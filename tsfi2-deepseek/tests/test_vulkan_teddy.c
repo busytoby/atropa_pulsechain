@@ -486,6 +486,12 @@ static float dna_eye_r = 0.0f;
 static float dna_eye_g = 1.0f;
 static float dna_eye_b = 0.0f;
 
+// Dynamic Fur Physics parameters
+static float wind_velocity = 0.8f;
+static float fur_stiffness = 1.0f;
+static float dynamic_wind_dx = 0.0f;
+static float dynamic_wind_dy = 0.0f;
+
 // 1960s Popular Mechanics DIY Stepping-Switch Frame Sequencer with Closed-Loop State Verification
 typedef struct {
     float fur_length;
@@ -584,7 +590,7 @@ static void init_dl_game(void) {
 static int mouse_x = 0;
 static int mouse_y = 0;
 static bool mouse_pressed = false;
-static int active_slider = -1; // -1: none, 0: Fur Length, 1: Scale, 2: Light Angle
+static int active_slider = -1; // -1: none, 0: Fur Length, 1: Scale, 2: Light Angle, 3: Wind Velocity, 4: Fur Stiffness
 
 static TsfiValveTriode mouse_valve_x;
 static TsfiValveTriode mouse_valve_y;
@@ -751,6 +757,10 @@ static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
     float warped_x = input_x + (wx - 0.5f) * warp_strength;
     float warped_y = input_y + (wy - 0.5f) * warp_strength;
     
+    // Calculate wind offset in noise space (coordinate shift)
+    float wind_offset_x = (normalized_height * dynamic_wind_dx) / (fur_stiffness + 0.01f);
+    float wind_offset_y = (normalized_height * dynamic_wind_dy) / (fur_stiffness + 0.01f);
+    
     // Cellular hair strand simulation
     float max_val = 0.0f;
     int ix = (int)floorf(warped_x);
@@ -774,9 +784,9 @@ static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
             float jx = (float)(hash & 0xFF) / 255.0f;
             float jy = (float)((hash >> 8) & 0xFF) / 255.0f;
             
-            // Grooming direction offset (comb_x, comb_y)
-            float fx = (float)cx + 0.5f + (jx - 0.5f) * 0.7f - fabsf(comb_x) * density;
-            float fy = (float)cy + 0.5f + (jy - 0.5f) * 0.7f - comb_y * density;
+            // Grooming direction offset (comb_x, comb_y) and wind offset
+            float fx = (float)cx + 0.5f + (jx - 0.5f) * 0.7f - (fabsf(comb_x) + wind_offset_x) * density;
+            float fy = (float)cy + 0.5f + (jy - 0.5f) * 0.7f - (comb_y + wind_offset_y) * density;
             
             float dist_x = warped_x - fx;
             float dist_y = warped_y - fy;
@@ -1082,38 +1092,34 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
 
 
 static float sphere_ao(float px, float py, float pz, float nx, float ny, float nz, float cx, float cy, float cz, float r, float sx, float sy, float sz, float lx, float ly, float lz) {
-    float dx = (cx - px) / sx;
-    float dy = (cy - py) / sy;
-    float dz = (cz - pz) / sz;
-    float d2 = dx*dx + dy*dy + dz*dz;
-    float d = sqrtf(d2);
-    if (d < r + 0.001f) return 1.0f;
-    
-    float sin_theta2 = (r * r) / d2;
-    float sx_dir = dx / d;
-    float sy_dir = dy / d;
-    float sz_dir = dz / d;
-    
-    float nx_s = nx / sx;
-    float ny_s = ny / sy;
-    float nz_s = nz / sz;
-    float nlen = sqrtf(nx_s*nx_s + ny_s*ny_s + nz_s*nz_s);
-    if (nlen > 0.0001f) { nx_s /= nlen; ny_s /= nlen; nz_s /= nlen; }
-    
-    float ndots = nx_s * sx_dir + ny_s * sy_dir + nz_s * sz_dir;
-    if (ndots < 0.0f) ndots = 0.0f;
-    
-    // Project the occlusion direction onto the light vector L in world space to modulate occlusion
     float wdx = cx - px;
     float wdy = cy - py;
     float wdz = cz - pz;
-    float wd = sqrtf(wdx*wdx + wdy*wdy + wdz*wdz);
-    float ldot = 0.0f;
-    if (wd > 0.0001f) {
-        ldot = (wdx * lx + wdy * ly + wdz * lz) / wd;
-    }
+    float wd2 = wdx*wdx + wdy*wdy + wdz*wdz;
+    float wd = sqrtf(wd2);
     
-    return 1.0f - ndots * sin_theta2 * (0.5f + 0.5f * ldot);
+    // Average scaled radius of the ellipsoid
+    float avg_r = r * (sx + sy + sz) / 3.0f;
+    if (wd < avg_r + 0.001f) return 1.0f;
+    
+    float vx = wdx / wd;
+    float vy = wdy / wd;
+    float vz = wdz / wd;
+    
+    // Normal-oriented cosine weighting in world space
+    float ndot = nx * vx + ny * vy + nz * vz;
+    if (ndot < 0.0f) ndot = 0.0f;
+    
+    // Solid angle approximation of the sphere
+    float sin_theta2 = (avg_r * avg_r) / wd2;
+    if (sin_theta2 > 1.0f) sin_theta2 = 1.0f;
+    
+    // Directional weighting based on light alignment (directional AO)
+    float ldot = vx * lx + vy * ly + vz * lz;
+    float directional_factor = 0.4f + 0.6f * ldot;
+    if (directional_factor < 0.0f) directional_factor = 0.0f;
+    
+    return 1.0f - ndot * sin_theta2 * directional_factor;
 }
 
 static float calculate_shadow(float px, float py, float pz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx) {
@@ -1146,12 +1152,16 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
             // Ray intersects the ellipsoid interior: full shadow
             return 0.15f;
         } else {
-            // Ray passes outside: compute soft penumbra boundary
+            // Cone-traced contact-hardening soft shadow approximation
             float dist_sq = oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b;
             float dist_to_surface = sqrtf(fmaxf(0.0f, dist_sq)) - body[i].r;
             if (dist_to_surface < 0.0f) dist_to_surface = 0.0f;
             
-            float penumbra = 8.0f * (dist_to_surface * avg_scale) / b;
+            // Light source size/spread coefficient for contact-hardening penumbra width
+            float light_spread = 0.12f;
+            float penumbra_radius = b * light_spread + 0.01f;
+            
+            float penumbra = 0.15f + 0.85f * (dist_to_surface * avg_scale) / penumbra_radius;
             if (penumbra < shadow) {
                 shadow = penumbra;
                 if (shadow <= 0.15f) return 0.15f;
@@ -1323,6 +1333,10 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     float lz = 1.0f;
     float len = sqrtf(lx*lx + ly*ly + lz*lz);
     lx /= len; ly /= len; lz /= len;
+
+    // Dynamic wind components calculated dynamically
+    dynamic_wind_dx = (float)cos(light_rad) * wind_velocity;
+    dynamic_wind_dy = (float)sin(light_rad) * wind_velocity;
 
     float pos_x = ((float)(params.identity_pole % 40) - 20.0f) * 0.02f;
     float theta = (float)frame * 0.04f;

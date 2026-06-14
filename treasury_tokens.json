@@ -474,5 +474,19 @@
         "name": "Rebirth",
         "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
         "ignored": false
+    },
+    "0x50b4e4434af606569c75cff1da1a05d90ca49167": {
+        "address": "0x50b4e4434af606569c75cff1da1a05d90ca49167",
+        "symbol": "\u20bfONNIE",
+        "name": "\u20bfonnie Blue Coin",
+        "owner": "0x962aa307b0ee9d3fae9ca6b2d9fa9cfd5d197454",
+        "ignored": false
+    },
+    "0x0763ec193c63eb1b72c068f807ac88063b46188a": {
+        "address": "0x0763ec193c63eb1b72c068f807ac88063b46188a",
+        "symbol": "SP\u327eCY",
+        "name": "The Fiery Heat",
+        "owner": "0xd36802b68627904594b03f1b7938e283b9708650",
+        "ignored": false
     }
 }
