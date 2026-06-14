@@ -195,7 +195,10 @@ static void* play_sound_thread(void *arg) {
         len = 12000; buf = malloc(len);
         if (buf) {
             float y1 = 0.0f, y2 = 0.0f;
-            float soul_pitch_offset = (float)(params.soul % 20);
+            float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
+            float siu_soul_factor     = (float)((params.soul % 1000000ULL) / 1000000.0f);
+            float siu_aura_factor     = (float)((params.aura % 1000000ULL) / 1000000.0f);
+
             float *raw_sig = malloc(len * sizeof(float));
             float *valve_out = malloc(len * sizeof(float));
             if (raw_sig && valve_out) {
@@ -203,11 +206,12 @@ static void* play_sound_thread(void *arg) {
                     float t = (float)i / 8000.0f;
                     float pitch_env_fast = expf(-150.0f * t);
                     float pitch_env_slow = expf(-25.0f * t);
-                    float base_f = 42.0f + soul_pitch_offset;
-                    float f = base_f + 80.0f * pitch_env_slow + 200.0f * pitch_env_fast;
+                    float base_f = 35.0f + 15.0f * siu_soul_factor;
+                    float sweep_depth = 120.0f + 80.0f * siu_identity_factor;
+                    float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
                     float w = 2.0f * 3.14159265f * f / 8000.0f;
                     float cos_w = cosf(w);
-                    float decay_rate = 0.9935f * expf(-1.5f * t);
+                    float decay_rate = (0.9920f + 0.0030f * siu_aura_factor) * expf(-1.5f * t);
                     float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
                     if (selected_valve == 1 || selected_valve == 2) {
                         if (i > 80 && i < 3000 && (rand() % 120 == 0)) {
@@ -218,7 +222,8 @@ static void* play_sound_thread(void *arg) {
                     float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
                     y2 = y1;
                     y1 = out;
-                    float click = sinf(1800.0f * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
+                    float click_freq = 1500.0f + 600.0f * siu_soul_factor;
+                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
                     raw_sig[i] = (1.8f * out + 3.0f * click);
                 }
                 TsfiValveTriode kick_valve;
@@ -239,15 +244,15 @@ static void* play_sound_thread(void *arg) {
     } else if (strcmp(sd->type, "snare") == 0) {
         len = 3200; buf = malloc(len);
         if (buf) {
-            float aura_pitch_offset = (float)(params.aura % 60);
-            float aura_noise_mix = 0.5f + (float)(params.aura % 100) / 200.0f;
+            float siu_soul_factor = (float)((params.soul % 1000000ULL) / 1000000.0f);
+            float siu_aura_factor = (float)((params.aura % 1000000ULL) / 1000000.0f);
             float last_noise = 0.0f;
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
                 
                 // 1. Dual-mode skin/shell resonance (fundamental + first overtone)
-                float f1 = 180.0f + aura_pitch_offset;
-                float f2 = 330.0f + aura_pitch_offset * 1.6f;
+                float f1 = 150.0f + 50.0f * siu_aura_factor;
+                float f2 = 280.0f + 100.0f * siu_aura_factor;
                 float tone1 = sinf(f1 * t * 2.0f * 3.14159f);
                 float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.5f;
                 float skin_env = expf(-45.0f * t); // rapid skin decay
@@ -259,6 +264,7 @@ static void* play_sound_thread(void *arg) {
                 last_noise = white_noise;
                 
                 float rattle_env = expf(-14.0f * t); // slower snare wire rattle decay
+                float aura_noise_mix = 0.4f + 0.4f * siu_soul_factor;
                 float rattle = hp_noise * rattle_env * 0.65f * aura_noise_mix;
                 
                 // Combine and apply selected valve saturation
@@ -270,13 +276,14 @@ static void* play_sound_thread(void *arg) {
         len = 6000; buf = malloc(len);
         if (buf) {
             float y1 = 0.0f, y2 = 0.0f;
-            float identity_offset = (float)(params.identity_pole % 30);
+            float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
                 // Tom sweep: frequency dynamically sweeps from 160Hz + offset down to 80Hz + offset
                 float pitch_env = expf(-30.0f * t);
-                float base_f = 80.0f + identity_offset;
-                float f = base_f + 80.0f * pitch_env;
+                float base_f = 70.0f + 25.0f * siu_identity_factor;
+                float sweep_depth = 60.0f + 40.0f * siu_identity_factor;
+                float f = base_f + sweep_depth * pitch_env;
                 float w = 2.0f * 3.14159265f * f / 8000.0f;
                 float cos_w = cosf(w);
                 
