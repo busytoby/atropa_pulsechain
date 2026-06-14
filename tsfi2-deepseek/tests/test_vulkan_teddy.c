@@ -1798,9 +1798,40 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         draw_rect_ab4h(canvas, sel_x + 27, 12, 2, 56, ring_col);
     }
 
-    // Section Header: Controls
+    // Live Valve Telemetry (Voltmeter & Ammeter)
+    float active_ammeter = 0.05f * (ammeter_T - 293.15f);
+    char v0_v_str[16], v0_i_str[16];
+    char v1_v_str[16], v1_i_str[16];
+    char v2_v_str[16], v2_i_str[16];
+    
+    snprintf(v0_v_str, sizeof(v0_v_str), "%.0fV", voltmeter_V * (0.85f + 0.15f * v0_intensity));
+    snprintf(v0_i_str, sizeof(v0_i_str), "%.1fmA", active_ammeter * v0_intensity * 100.0f);
+    
+    snprintf(v1_v_str, sizeof(v1_v_str), "%.0fV", voltmeter_V * (0.85f + 0.15f * v1_intensity));
+    snprintf(v1_i_str, sizeof(v1_i_str), "%.1fmA", active_ammeter * v1_intensity * 100.0f);
+    
+    snprintf(v2_v_str, sizeof(v2_v_str), "%.0fV", voltmeter_V * (0.85f + 0.15f * v2_intensity));
+    snprintf(v2_i_str, sizeof(v2_i_str), "%.1fmA", active_ammeter * v2_intensity * 100.0f);
+
+    Ab4hPixel col_v0 = make_ab4h_pixel(0.4f, 0.6f, 1.0f, 1.0f); // Blue glow for SG
+    Ab4hPixel col_v1 = make_ab4h_pixel(1.0f, 0.4f, 0.6f, 1.0f); // Pink glow for LS
+    Ab4hPixel col_v2 = make_ab4h_pixel(1.0f, 0.8f, 0.2f, 1.0f); // Yellow/gold glow for TB
+
+    draw_string_ab4h(canvas, "SG",   1094, 70, col_v0);
+    draw_string_ab4h(canvas, v0_v_str, 1088, 81, col_v0);
+    draw_string_ab4h(canvas, v0_i_str, 1084, 92, col_v0);
+
+    draw_string_ab4h(canvas, "LS",   1129, 70, col_v1);
+    draw_string_ab4h(canvas, v1_v_str, 1123, 81, col_v1);
+    draw_string_ab4h(canvas, v1_i_str, 1119, 92, col_v1);
+
+    draw_string_ab4h(canvas, "TB",   1164, 70, col_v2);
+    draw_string_ab4h(canvas, v2_v_str, 1158, 81, col_v2);
+    draw_string_ab4h(canvas, v2_i_str, 1154, 92, col_v2);
+
+    // Section Header: Controls (Shifted down to 108 to clear valve telemetry)
     Ab4hPixel text_hdr = make_ab4h_pixel(0.9f, 0.9f, 0.95f, 1.0f);
-    draw_string_ab4h(canvas, "=== PARAMETER TOOL PALETTE ===", 820, 80, text_hdr);
+    draw_string_ab4h(canvas, "=== PARAMETER TOOL PALETTE ===", 820, 108, text_hdr);
 
     Ab4hPixel track_col = make_ab4h_pixel(0.2f, 0.2f, 0.22f, 1.0f);
     Ab4hPixel thumb_col = make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f);
