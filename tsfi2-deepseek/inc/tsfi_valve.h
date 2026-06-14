@@ -23,6 +23,8 @@ typedef struct {
     double shot_noise_scale;  // Schottky shot noise coefficient [0.0, 1.0]
     double flicker_noise_scale;// flicker noise coefficient [0.0, 1.0]
     uint64_t noise_seed;      // State for micro-physical noise LCG generator
+    double state_vp;          // Persistent plate voltage state for continuous differential solvers
+    double state_vk;          // Persistent cathode voltage state for continuous differential solvers
 } TsfiValveTriode;
 
 
@@ -67,6 +69,45 @@ void tsfi_valve_process_rk4_dynamic(
     double kappa,
     double dt,
     double C_parasitic
+);
+
+// Process a block of samples using Heun's method (2nd order Runge-Kutta predictor-corrector)
+void tsfi_valve_process_heun_dynamic(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+);
+
+// Process a block of samples using Implicit Trapezoidal Method with Newton-Raphson iteration
+void tsfi_valve_process_implicit_trapezoidal(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+);
+
+// Process a block of samples using a state-space Differential Feedback Valve Solver
+void tsfi_valve_process_differential_feedback(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic,
+    double C_cathode,
+    double R_cathode,
+    double beta
 );
 
 #endif // TSFI_VALVE_H

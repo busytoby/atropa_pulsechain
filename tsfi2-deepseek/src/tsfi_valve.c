@@ -21,6 +21,8 @@ void tsfi_valve_init(TsfiValveTriode *valve, double base_mu, double base_k, doub
     valve->shot_noise_scale = 1.0;   // Fully active shot noise by default
     valve->flicker_noise_scale = 1.0;// Fully active flicker noise by default
     valve->noise_seed = 0xDEADAFFE12345678ULL;
+    valve->state_vp = base_vp;
+    valve->state_vk = 0.0;
 }
 
 
@@ -308,5 +310,273 @@ void tsfi_valve_process_rk4_dynamic(
 
     valve->epsilon_state = eps;
 }
+
+void tsfi_valve_process_heun_dynamic(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+) {
+    if (!valve || !vg_in || !vp_out || count == 0 || dt <= 0.0 || C_parasitic <= 0.0) return;
+
+    double active_mu = valve->mu * (1.0 + eta);
+    double active_k = valve->K * kappa;
+    double vp_supply = valve->Vp + valve->Vp_tuner_offset;
+    double bias = valve->Vg_bias;
+    double r_plate = valve->R_plate;
+    double geom_scale = valve->is_tubular ? 0.85 : 1.0;
+
+    double vp = vp_supply;
+    double eps = valve->epsilon_state;
+
+    for (size_t i = 0; i < count; i++) {
+        double current_bias = bias;
+        if (valve->use_deforest_ground) {
+            current_bias -= (valve->V_filament / 2.0);
+        }
+        double vg = vg_in[i] + current_bias;
+
+        eps = 1.0 + eta * vg_in[i];
+        if (eps < 0.1) eps = 0.1;
+        valve->epsilon_state = eps;
+
+        double f_init = tsfi_valve_dvp_dt(vp, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+        double vp_pred = vp + dt * f_init;
+        if (vp_pred < 0.0) vp_pred = 0.0;
+        if (vp_pred > vp_supply) vp_pred = vp_supply;
+
+        double f_pred = tsfi_valve_dvp_dt(vp_pred, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+        vp = vp + 0.5 * dt * (f_init + f_pred);
+
+        if (vp < 0.0) vp = 0.0;
+        if (vp > vp_supply) vp = vp_supply;
+
+        vp_out[i] = (float)vp;
+    }
+
+    valve->epsilon_state = eps;
+}
+
+static inline void tsfi_valve_ip_and_deriv(
+    double vp,
+    double vg,
+    TsfiValveTriode *valve,
+    double active_mu,
+    double active_k,
+    double geom_scale,
+    double *out_ip,
+    double *out_dip_dvp
+) {
+    double vg_mod = (vg / valve->epsilon_state) * geom_scale;
+    double factor = (vp / active_mu) + vg_mod;
+    if (factor <= 0.0) {
+        *out_ip = 0.0;
+        *out_dip_dvp = 0.0;
+        return;
+    }
+    double sqrt_factor = sqrt(factor);
+    double ip_base = active_k * factor * sqrt_factor;
+    double dip_dvp_base = (1.5 * active_k * sqrt_factor) / active_mu;
+
+    if (vp > valve->V_ionization) {
+        double diff = vp - valve->V_ionization;
+        double abs_diff = fabs(diff);
+        double sig = diff / (1.0 + abs_diff);
+        double sig_norm = 0.5 + 0.5 * sig;
+        double dsig_dvp = 0.5 / ((1.0 + abs_diff) * (1.0 + abs_diff));
+        
+        double ion_mult = 1.0 + valve->ionization_factor * sig_norm;
+        double dion_dvp = valve->ionization_factor * dsig_dvp;
+        
+        *out_ip = ip_base * ion_mult;
+        *out_dip_dvp = dip_dvp_base * ion_mult + ip_base * dion_dvp;
+    } else {
+        *out_ip = ip_base;
+        *out_dip_dvp = dip_dvp_base;
+    }
+}
+
+void tsfi_valve_process_implicit_trapezoidal(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+) {
+    if (!valve || !vg_in || !vp_out || count == 0 || dt <= 0.0 || C_parasitic <= 0.0) return;
+
+    double active_mu = valve->mu * (1.0 + eta);
+    double active_k = valve->K * kappa;
+    double vp_supply = valve->Vp + valve->Vp_tuner_offset;
+    double bias = valve->Vg_bias;
+    double r_plate = valve->R_plate;
+    double geom_scale = valve->is_tubular ? 0.85 : 1.0;
+
+    double vp = vp_supply;
+    double eps = valve->epsilon_state;
+
+    double current_bias = bias;
+    if (valve->use_deforest_ground) {
+        current_bias -= (valve->V_filament / 2.0);
+    }
+    double vg_prev = vg_in[0] + current_bias;
+
+    for (size_t i = 0; i < count; i++) {
+        double vg = vg_in[i] + current_bias;
+
+        eps = 1.0 + eta * vg_in[i];
+        if (eps < 0.1) eps = 0.1;
+        valve->epsilon_state = eps;
+
+        double ip_prev, dip_prev;
+        tsfi_valve_ip_and_deriv(vp, vg_prev, valve, active_mu, active_k, geom_scale, &ip_prev, &dip_prev);
+        double f_prev = (vp_supply - vp - ip_prev * r_plate);
+
+        double A = vp + (dt / (2.0 * C_parasitic)) * f_prev;
+
+        double vp_guess = vp;
+        for (int iter = 0; iter < 16; iter++) {
+            double ip_curr, dip_curr;
+            tsfi_valve_ip_and_deriv(vp_guess, vg, valve, active_mu, active_k, geom_scale, &ip_curr, &dip_curr);
+            
+            double f_curr = (vp_supply - vp_guess - ip_curr * r_plate);
+            double g = vp_guess - A - (dt / (2.0 * C_parasitic)) * f_curr;
+            double dg = 1.0 + (dt / (2.0 * C_parasitic)) * (1.0 + r_plate * dip_curr);
+            
+            double step = g / dg;
+            vp_guess -= step;
+            
+            if (vp_guess < 0.0) vp_guess = 0.0;
+            if (vp_guess > vp_supply) vp_guess = vp_supply;
+            
+            if (fabs(step) < 1e-6) {
+                break;
+            }
+        }
+        vp = vp_guess;
+        vg_prev = vg;
+        vp_out[i] = (float)vp;
+    }
+
+    valve->epsilon_state = eps;
+}
+
+static void tsfi_valve_differential_derivatives(
+    double vp,
+    double vk,
+    double vg,
+    TsfiValveTriode *valve,
+    double active_mu,
+    double active_k,
+    double r_plate,
+    double vp_supply,
+    double geom_scale,
+    double C_parasitic,
+    double C_cathode,
+    double R_cathode,
+    double beta,
+    double idle_vp,
+    double *dvp_dt,
+    double *dvk_dt
+) {
+    double vgk = (vg - vk) + beta * (vp - idle_vp);
+    
+    double factor = ((vp - vk) / active_mu) + (vgk / valve->epsilon_state) * geom_scale;
+    if (factor < 0.0) factor = 0.0;
+    
+    double ip = active_k * factor * sqrt(factor);
+    
+    if (vp > valve->V_ionization) {
+        double diff = vp - valve->V_ionization;
+        double sig = diff / (1.0 + fabs(diff));
+        double sig_norm = 0.5 + 0.5 * sig;
+        ip *= (1.0 + valve->ionization_factor * sig_norm);
+    }
+    
+    double ig = 0.0;
+    if (vgk > 0.0) {
+        ig = 0.15 * active_k * vgk * sqrt(vgk);
+    }
+    
+    double ik = ip + ig;
+    
+    *dvp_dt = (vp_supply - vp - ip * r_plate) / C_parasitic;
+    *dvk_dt = (ik - vk / R_cathode) / C_cathode;
+}
+
+void tsfi_valve_process_differential_feedback(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic,
+    double C_cathode,
+    double R_cathode,
+    double beta
+) {
+    if (!valve || !vg_in || !vp_out || count == 0 || dt <= 0.0 || C_parasitic <= 0.0 || C_cathode <= 0.0 || R_cathode <= 0.0) return;
+
+    double active_mu = valve->mu * (1.0 + eta);
+    double active_k = valve->K * kappa;
+    double vp_supply = valve->Vp + valve->Vp_tuner_offset;
+    double bias = valve->Vg_bias;
+    double r_plate = valve->R_plate;
+    double geom_scale = valve->is_tubular ? 0.85 : 1.0;
+
+    double vp = valve->state_vp;
+    double vk = valve->state_vk;
+    double eps = valve->epsilon_state;
+    double idle_vp = vp_supply;
+
+    for (size_t i = 0; i < count; i++) {
+        double current_bias = bias;
+        if (valve->use_deforest_ground) {
+            current_bias -= (valve->V_filament / 2.0);
+        }
+        double vg = vg_in[i] + current_bias;
+
+        eps = 1.0 + eta * vg_in[i];
+        if (eps < 0.1) eps = 0.1;
+        valve->epsilon_state = eps;
+
+        double k1_vp, k1_vk;
+        tsfi_valve_differential_derivatives(vp, vk, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale, C_parasitic, C_cathode, R_cathode, beta, idle_vp, &k1_vp, &k1_vk);
+
+        double k2_vp, k2_vk;
+        tsfi_valve_differential_derivatives(vp + 0.5 * dt * k1_vp, vk + 0.5 * dt * k1_vk, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale, C_parasitic, C_cathode, R_cathode, beta, idle_vp, &k2_vp, &k2_vk);
+
+        double k3_vp, k3_vk;
+        tsfi_valve_differential_derivatives(vp + 0.5 * dt * k2_vp, vk + 0.5 * dt * k2_vk, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale, C_parasitic, C_cathode, R_cathode, beta, idle_vp, &k3_vp, &k3_vk);
+
+        double k4_vp, k4_vk;
+        tsfi_valve_differential_derivatives(vp + dt * k3_vp, vk + dt * k3_vk, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale, C_parasitic, C_cathode, R_cathode, beta, idle_vp, &k4_vp, &k4_vk);
+
+        vp = vp + (dt / 6.0) * (k1_vp + 2.0 * k2_vp + 2.0 * k3_vp + k4_vp);
+        vk = vk + (dt / 6.0) * (k1_vk + 2.0 * k2_vk + 2.0 * k3_vk + k4_vk);
+
+        if (vp < 0.0) vp = 0.0;
+        if (vp > vp_supply) vp = vp_supply;
+        if (vk < 0.0) vk = 0.0;
+        if (vk > vp_supply) vk = vp_supply;
+
+        vp_out[i] = (float)vp;
+    }
+
+    valve->epsilon_state = eps;
+    valve->state_vp = vp;
+    valve->state_vk = vk;
+}
+
+
 
 

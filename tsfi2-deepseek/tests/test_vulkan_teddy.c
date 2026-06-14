@@ -344,6 +344,57 @@ static void* play_sound_thread(void *arg) {
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
+    } else if (strcmp(sd->type, "clap") == 0) {
+        len = 4000; buf = malloc(len);
+        if (buf) {
+            float y1 = 0.0f, y2 = 0.0f;
+            float cos_w = cosf(2.0f * 3.14159265f * 1100.0f / 8000.0f);
+            float r = 0.72f;
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float env = 0.0f;
+                if (i < 100) {
+                    env = expf(-0.03f * i);
+                } else if (i < 200) {
+                    env = expf(-0.03f * (i - 100));
+                } else if (i < 300) {
+                    env = expf(-0.03f * (i - 200));
+                } else {
+                    env = expf(-14.0f * (t - 0.0375f));
+                }
+                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float in_val = noise * env * 0.7f;
+                float out = in_val + 2.0f * r * cos_w * y1 - r * r * y2;
+                y2 = y1;
+                y1 = out;
+                
+                float sat = apply_valve_simulation(out * 1.5f, selected_valve);
+                buf[i] = 128 + (int)(sat * 110.0f);
+            }
+        }
+    } else if (strcmp(sd->type, "snap") == 0) {
+        len = 2000; buf = malloc(len);
+        if (buf) {
+            float y1 = 0.0f, y2 = 0.0f;
+            float cos_w = cosf(2.0f * 3.14159265f * 2000.0f / 8000.0f);
+            float r = 0.78f;
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float trigger = (i == 0) ? 1.0f : ((i < 30) ? 0.3f * expf(-0.15f * i) : 0.0f);
+                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float click = noise * expf(-180.0f * t) * 0.4f;
+                
+                float out = trigger + 2.0f * r * cos_w * y1 - r * r * y2;
+                y2 = y1;
+                y1 = out;
+                
+                float body = out * expf(-110.0f * t) * 0.7f;
+                float mix = click + body;
+                
+                float sat = apply_valve_simulation(mix * 1.8f, selected_valve);
+                buf[i] = 128 + (int)(sat * 115.0f);
+            }
+        }
     }
     if (buf && len > 0) {
         snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
@@ -384,6 +435,7 @@ static void play_synth_sound(const char *type) {
 #include "tsfi_genetic.h"
 #include "tsfi_vm_dft_bridge.h"
 #include "tsfi_staging.h"
+#include "tsfi_valve.h"
 
 // Define custom CV_16FC4 layout pixel mapping to AB4H
 typedef struct {
@@ -444,13 +496,15 @@ static int seq_frame_counter = 0;
 static bool seq_halted = false;
 static bool seq_validation_passed = true;
 
-// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms, Track 3 = Hats, Track 4 = Ride)
-static uint8_t seq_grid[5][8] = {
+// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms, Track 3 = Hats, Track 4 = Ride, Track 5 = Clap, Track 6 = Snap)
+static uint8_t seq_grid[7][8] = {
     {1, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 1, 0, 0, 0, 1, 0},
     {0, 1, 0, 1, 0, 1, 0, 0},
     {0, 0, 1, 0, 0, 1, 0, 1},
-    {1, 0, 0, 0, 1, 0, 0, 0}
+    {1, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 1, 0, 0, 0, 1}
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
@@ -517,6 +571,14 @@ static int mouse_x = 0;
 static int mouse_y = 0;
 static bool mouse_pressed = false;
 static int active_slider = -1; // -1: none, 0: Fur Length, 1: Scale, 2: Light Angle
+
+static TsfiValveTriode mouse_valve_x;
+static TsfiValveTriode mouse_valve_y;
+static double mouse_sim_x = 0.0;
+static double mouse_sim_y = 0.0;
+static bool mouse_valves_initialized = false;
+static float haptic_rumble_amplitude = 0.0f;
+static float haptic_rumble_frequency = 0.0f;
 
 // Hover states for dynamic aesthetics
 static bool hover_slider0 = false;
@@ -1067,23 +1129,31 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 598.0f + 10.0f, 0.2f, 0.9f, 0.2f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 622.0f + 5.0f, 0.2f, 0.9f, 0.2f);
         }
         if (seq_grid[1][seq_play_step]) {
             play_synth_sound("snare");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 622.0f + 10.0f, 0.3f, 0.8f, 1.0f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 635.0f + 5.0f, 0.3f, 0.8f, 1.0f);
         }
         if (seq_grid[2][seq_play_step]) {
             play_synth_sound("tom");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 646.0f + 10.0f, 0.9f, 0.6f, 0.1f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 648.0f + 5.0f, 0.9f, 0.6f, 0.1f);
         }
         if (seq_grid[3][seq_play_step]) {
             play_synth_sound("hats");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 670.0f + 10.0f, 0.9f, 0.9f, 0.2f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 661.0f + 5.0f, 0.9f, 0.9f, 0.2f);
         }
         if (seq_grid[4][seq_play_step]) {
             play_synth_sound("ride");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 694.0f + 10.0f, 0.4f, 0.9f, 0.9f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 674.0f + 5.0f, 0.4f, 0.9f, 0.9f);
+        }
+        if (seq_grid[5][seq_play_step]) {
+            play_synth_sound("clap");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 687.0f + 5.0f, 1.0f, 0.5f, 0.5f);
+        }
+        if (seq_grid[6][seq_play_step]) {
+            play_synth_sound("snap");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 700.0f + 5.0f, 0.8f, 0.4f, 1.0f);
         }
     }
 
@@ -1180,15 +1250,23 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     int num_shells = 32;
     bool boost_active = opt_viewport_boost && mouse_pressed && (active_slider >= 0 && active_slider <= 2);
 
-    #pragma omp parallel for collapse(2)
+    float frame_jitter_x = 0.0f;
+    float frame_jitter_y = 0.0f;
+    if (haptic_rumble_amplitude > 0.0f) {
+        float angle = (float)(rand() % 360) * 3.14159f / 180.0f;
+        frame_jitter_x = haptic_rumble_amplitude * cosf(angle) * 0.1f;
+        frame_jitter_y = haptic_rumble_amplitude * sinf(angle) * 0.1f;
+    }
+
+    #pragma omp parallel for collapse(2) shared(frame_jitter_x, frame_jitter_y)
     for (int y = 0; y < 720; y++) {
         for (int x = 0; x < 800; x++) {
             if (boost_active && ((x % 2 != 0) || (y % 2 != 0))) {
                 continue;
             }
             // Quick bounding check for optimization (spatial pruning)
-            float cx_center = ((float)x / 800.0f) * 2.4f - 1.2f;
-            float cy_center = ((float)y / 720.0f) * 2.16f - 1.08f;
+            float cx_center = ((float)x / 800.0f) * 2.4f - 1.2f + frame_jitter_x;
+            float cy_center = ((float)y / 720.0f) * 2.16f - 1.08f + frame_jitter_y;
             
             bool skip_shading = true;
             if (display_synthesized_image) {
@@ -1247,8 +1325,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     float sx = (float)x + offsets_x[sub];
                     float sy = (float)y + offsets_y[sub];
 
-                    float cx = (sx / 800.0f) * 2.4f - 1.2f;
-                    float cy = (sy / 720.0f) * 2.16f - 1.08f;
+                    float cx = (sx / 800.0f) * 2.4f - 1.2f + frame_jitter_x;
+                    float cy = (sy / 720.0f) * 2.16f - 1.08f + frame_jitter_y;
 
                     float sub_uvx = (sx / 800.0f) * 2.0f - 1.0f;
                     float sub_uvy = (sy / 720.0f) * 2.0f - 1.0f;
@@ -1678,10 +1756,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         for (int tx = 0; tx < fill_w0; tx++) {
             float t = (float)tx / 350.0f;
             Ab4hPixel col = evaluate_palette(t);
-            if (hover_slider0) {
-                col.r = double_to_half(half_to_float(col.r) * 1.2f);
-                col.g = double_to_half(half_to_float(col.g) * 1.2f);
-                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            if (hover_slider0 || active_slider == 0) {
+                float mult = 1.2f + haptic_rumble_amplitude * 2.5f;
+                col.r = double_to_half(half_to_float(col.r) * mult);
+                col.g = double_to_half(half_to_float(col.g) * mult);
+                col.b = double_to_half(half_to_float(col.b) * mult);
             }
             draw_rect_ab4h(canvas, 850 + tx, 150, 1, 8, col);
         }
@@ -1695,10 +1774,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         for (int tx = 0; tx < fill_w1; tx++) {
             float t = (float)tx / 350.0f;
             Ab4hPixel col = evaluate_palette(t);
-            if (hover_slider1) {
-                col.r = double_to_half(half_to_float(col.r) * 1.2f);
-                col.g = double_to_half(half_to_float(col.g) * 1.2f);
-                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            if (hover_slider1 || active_slider == 1) {
+                float mult = 1.2f + haptic_rumble_amplitude * 2.5f;
+                col.r = double_to_half(half_to_float(col.r) * mult);
+                col.g = double_to_half(half_to_float(col.g) * mult);
+                col.b = double_to_half(half_to_float(col.b) * mult);
             }
             draw_rect_ab4h(canvas, 850 + tx, 250, 1, 8, col);
         }
@@ -1712,10 +1792,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         for (int tx = 0; tx < fill_w2; tx++) {
             float t = (float)tx / 350.0f;
             Ab4hPixel col = evaluate_palette(t);
-            if (hover_slider2) {
-                col.r = double_to_half(half_to_float(col.r) * 1.2f);
-                col.g = double_to_half(half_to_float(col.g) * 1.2f);
-                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            if (hover_slider2 || active_slider == 2) {
+                float mult = 1.2f + haptic_rumble_amplitude * 2.5f;
+                col.r = double_to_half(half_to_float(col.r) * mult);
+                col.g = double_to_half(half_to_float(col.g) * mult);
+                col.b = double_to_half(half_to_float(col.b) * mult);
             }
             draw_rect_ab4h(canvas, 850 + tx, 350, 1, 8, col);
         }
@@ -1802,23 +1883,25 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     // Run Optimizer & Dragon's Lair Buttons
     Ab4hPixel run_btn_bg = hover_run_btn ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.25f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 610, 170, 35, run_btn_bg);
-    draw_string_ab4h(canvas, "RUN OPTIMIZER", 880, 620, btn_text);
+    draw_rect_ab4h(canvas, 850, 605, 170, 25, run_btn_bg);
+    draw_string_ab4h(canvas, "RUN OPTIMIZER", 880, 613, btn_text);
 
     Ab4hPixel dl_btn_bg = hover_dl_btn ? make_ab4h_pixel(0.35f, 0.15f, 0.15f, 1.0f) : (dl_game_active ? make_ab4h_pixel(0.25f, 0.08f, 0.08f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.08f, 1.0f));
-    draw_rect_ab4h(canvas, 1030, 610, 170, 35, dl_btn_bg);
-    draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 620, btn_text);
+    draw_rect_ab4h(canvas, 1030, 605, 170, 25, dl_btn_bg);
+    draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 613, btn_text);
 
-    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (5-Track, 8-Step)
+    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (7-Track, 8-Step)
     Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
-    draw_string_ab4h(canvas, "KICK", 812, 650, grid_label_col);
-    draw_string_ab4h(canvas, "SNAR", 812, 664, grid_label_col);
-    draw_string_ab4h(canvas, "TOMS", 812, 678, grid_label_col);
-    draw_string_ab4h(canvas, "HATS", 812, 692, grid_label_col);
-    draw_string_ab4h(canvas, "RIDE", 812, 706, grid_label_col);
+    draw_string_ab4h(canvas, "KICK", 812, 638, grid_label_col);
+    draw_string_ab4h(canvas, "SNAR", 812, 650, grid_label_col);
+    draw_string_ab4h(canvas, "TOMS", 812, 662, grid_label_col);
+    draw_string_ab4h(canvas, "HATS", 812, 674, grid_label_col);
+    draw_string_ab4h(canvas, "RIDE", 812, 686, grid_label_col);
+    draw_string_ab4h(canvas, "CLAP", 812, 698, grid_label_col);
+    draw_string_ab4h(canvas, "SNAP", 812, 710, grid_label_col);
  
-    for (int t = 0; t < 5; t++) {
-        int y_pos = 648 + t * 14;
+    for (int t = 0; t < 7; t++) {
+        int y_pos = 635 + t * 12;
         for (int s = 0; s < 8; s++) {
             int x_pos = 850 + s * 30;
             Ab4hPixel cell_bg;
@@ -1827,12 +1910,12 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
             } else {
                 cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.3f, 0.3f, 0.4f, 1.0f) : make_ab4h_pixel(0.15f, 0.15f, 0.2f, 1.0f);
             }
-            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 12, cell_bg);
+            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 10, cell_bg);
             
             if (seq_play_step == s) {
                 Ab4hPixel border_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
                 draw_rect_ab4h(canvas, x_pos, y_pos, 22, 2, border_col);
-                draw_rect_ab4h(canvas, x_pos, y_pos + 10, 22, 2, border_col);
+                draw_rect_ab4h(canvas, x_pos, y_pos + 8, 22, 2, border_col);
             }
         }
     }
@@ -2073,8 +2156,61 @@ static void pointer_handle_leave(void *data, struct wl_pointer *wl_pointer, uint
 
 static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
     (void)data; (void)wl_pointer; (void)time;
-    mouse_x = wl_fixed_to_int(surface_x);
-    mouse_y = wl_fixed_to_int(surface_y);
+    double target_x = (double)wl_fixed_to_int(surface_x);
+    double target_y = (double)wl_fixed_to_int(surface_y);
+
+    if (!mouse_valves_initialized) {
+        tsfi_valve_init(&mouse_valve_x, 15.0, 0.0003, 1280.0, -0.5);
+        tsfi_valve_init(&mouse_valve_y, 15.0, 0.0003, 720.0, -0.5);
+        mouse_valve_x.R_plate = 100000.0;
+        mouse_valve_y.R_plate = 100000.0;
+        mouse_valve_x.state_vp = target_x;
+        mouse_valve_y.state_vp = target_y;
+        mouse_sim_x = target_x;
+        mouse_sim_y = target_y;
+        mouse_valves_initialized = true;
+    }
+
+    float vg_in_x[16];
+    float vg_in_y[16];
+    for (int k = 0; k < 16; k++) {
+        vg_in_x[k] = -((float)target_x / 1280.0f * 2.0f - 1.0f);
+        vg_in_y[k] = -((float)target_y / 720.0f * 2.0f - 1.0f);
+    }
+
+    float vp_out_x[16];
+    float vp_out_y[16];
+
+    tsfi_valve_process_differential_feedback(&mouse_valve_x, vg_in_x, vp_out_x, 16, 0.0, 1.0, 0.001, 0.00002, 0.0002, 50000.0, 0.35);
+    tsfi_valve_process_differential_feedback(&mouse_valve_y, vg_in_y, vp_out_y, 16, 0.0, 1.0, 0.001, 0.00002, 0.0002, 50000.0, 0.35);
+
+    mouse_sim_x = vp_out_x[15];
+    mouse_sim_y = vp_out_y[15];
+
+    mouse_x = (int)mouse_sim_x;
+    mouse_y = (int)mouse_sim_y;
+
+    float mean_vp = 0.0f;
+    for (int k = 0; k < 16; k++) {
+        mean_vp += vp_out_x[k];
+    }
+    mean_vp /= 16.0f;
+
+    float variance = 0.0f;
+    int zero_crossings = 0;
+    float prev_dev = vp_out_x[0] - mean_vp;
+    for (int k = 0; k < 16; k++) {
+        float dev = vp_out_x[k] - mean_vp;
+        variance += dev * dev;
+        if ((prev_dev < 0.0f && dev >= 0.0f) || (prev_dev > 0.0f && dev <= 0.0f)) {
+            zero_crossings++;
+        }
+        prev_dev = dev;
+    }
+    variance /= 16.0f;
+
+    haptic_rumble_amplitude = sqrtf(variance) / 1280.0f;
+    haptic_rumble_frequency = (float)zero_crossings * 60.0f;
 
     // Recalculate hover states
     hover_slider0 = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 135 && mouse_y <= 165);
@@ -2090,8 +2226,8 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     hover_valve_btn = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 1030 && mouse_x <= 1200);
     hover_vlm_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 530 && mouse_y <= 560);
     hover_gen_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 570 && mouse_y <= 600);
-    hover_run_btn = (mouse_x >= 850 && mouse_x <= 1020 && mouse_y >= 610 && mouse_y <= 645);
-    hover_dl_btn = (mouse_x >= 1030 && mouse_x <= 1200 && mouse_y >= 610 && mouse_y <= 645);
+    hover_run_btn = (mouse_x >= 850 && mouse_x <= 1020 && mouse_y >= 605 && mouse_y <= 630);
+    hover_dl_btn = (mouse_x >= 1030 && mouse_x <= 1200 && mouse_y >= 605 && mouse_y <= 630);
 
     if (mouse_pressed && active_slider != -1) {
         float pct = (float)(mouse_x - 850) / 350.0f;
@@ -2115,10 +2251,10 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
             mouse_pressed = true;
 
-            // Check click on step sequencer grid (Kick/Snare/Toms/Hats/Ride tracks)
-            for (int t = 0; t < 5; t++) {
-                int y_start = 648 + t * 14;
-                if (mouse_y >= y_start && mouse_y <= y_start + 12) {
+            // Check click on step sequencer grid (Kick/Snare/Toms/Hats/Ride/Clap/Snap tracks)
+            for (int t = 0; t < 7; t++) {
+                int y_start = 635 + t * 12;
+                if (mouse_y >= y_start && mouse_y <= y_start + 10) {
                     for (int s = 0; s < 8; s++) {
                         int x_start = 850 + s * 30;
                         if (mouse_x >= x_start && mouse_x <= x_start + 22) {
@@ -2245,7 +2381,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                         init_dl_game();
                     }
                 }
-            } else if (mouse_y >= 610 && mouse_y <= 645) {
+            } else if (mouse_y >= 605 && mouse_y <= 630) {
                 if (mouse_x >= 850 && mouse_x <= 1020) {
                     char run_cmd[512];
                     snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
