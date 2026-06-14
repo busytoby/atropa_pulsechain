@@ -1551,10 +1551,18 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.2f;
                                         sub_g = 0.80f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.15f;
                                         sub_b = 0.70f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.1f;
-                                    } else if (i == 9) { // Nose
-                                        sub_r = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
-                                        sub_g = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
-                                        sub_b = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                    } else if (i == 9) { // Nose with glossy specular highlights
+                                         float hx = lx;
+                                         float hy = ly;
+                                         float hz = lz + 1.0f;
+                                         float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                         if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
+                                         float spec = nx*hx + ny*hy + nz*hz;
+                                         if (spec < 0.0f) spec = 0.0f;
+                                         spec = powf(spec, 24.0f) * 0.6f;
+                                         sub_r = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
+                                         sub_g = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
+                                         sub_b = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
                                     } else if (i == 10 || i == 11) { // Eyes with specular highlights
                                         float hx = lx;
                                         float hy = ly;
