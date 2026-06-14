@@ -1078,23 +1078,30 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
 }
 
 static void draw_vaesen_valve_ab4h(TsfiAb4hMat *canvas, int x, int y, int w, int h, float intensity, int type) {
+    if (x < 0 || y < 0 || x + w >= canvas->cols || y + h >= canvas->rows) return;
     Ab4hPixel gold = make_ab4h_pixel(0.85f, 0.65f, 0.2f, 1.0f);
     Ab4hPixel base_col = make_ab4h_pixel(0.4f, 0.25f, 0.1f, 1.0f);
     for (int cy = y + h - 12; cy < y + h; cy++) {
         for (int cx = x + 4; cx < x + w - 4; cx++) {
-            canvas->data[cy * canvas->stride + cx] = base_col;
+            Ab4hPixel *dest = (Ab4hPixel *)((char *)canvas->data + cy * canvas->stride) + cx;
+            *dest = base_col;
         }
     }
     for (int cy = y + 10; cy < y + h - 12; cy++) {
-        canvas->data[cy * canvas->stride + x + 2] = gold;
-        canvas->data[cy * canvas->stride + x + w - 3] = gold;
+        Ab4hPixel *d1 = (Ab4hPixel *)((char *)canvas->data + cy * canvas->stride) + (x + 2);
+        Ab4hPixel *d2 = (Ab4hPixel *)((char *)canvas->data + cy * canvas->stride) + (x + w - 3);
+        *d1 = gold;
+        *d2 = gold;
     }
     for (int cx = x + 5; cx < x + w - 5; cx++) {
-        canvas->data[(y + 5) * canvas->stride + cx] = gold;
+        Ab4hPixel *dest = (Ab4hPixel *)((char *)canvas->data + (y + 5) * canvas->stride) + cx;
+        *dest = gold;
     }
     for (int cx = x + 3; cx <= x + 5; cx++) {
-        canvas->data[(y + 7) * canvas->stride + cx] = gold;
-        canvas->data[(y + 7) * canvas->stride + w - 1 - cx + x] = gold;
+        Ab4hPixel *d1 = (Ab4hPixel *)((char *)canvas->data + (y + 7) * canvas->stride) + cx;
+        Ab4hPixel *d2 = (Ab4hPixel *)((char *)canvas->data + (y + 7) * canvas->stride) + (w - 1 - cx + x);
+        *d1 = gold;
+        *d2 = gold;
     }
     Ab4hPixel glow_col;
     if (type == 1) {
@@ -1108,21 +1115,25 @@ static void draw_vaesen_valve_ab4h(TsfiAb4hMat *canvas, int x, int y, int w, int
     }
     for (int gy = y + 8; gy < y + h - 12; gy++) {
         for (int gx = x + 3; gx < x + w - 3; gx++) {
-            Ab4hPixel existing = canvas->data[gy * canvas->stride + gx];
-            existing.r = double_to_half(half_to_float(existing.r) + half_to_float(glow_col.r) * 0.4f);
-            existing.g = double_to_half(half_to_float(existing.g) + half_to_float(glow_col.g) * 0.4f);
-            existing.b = double_to_half(half_to_float(existing.b) + half_to_float(glow_col.b) * 0.4f);
-            canvas->data[gy * canvas->stride + gx] = existing;
+            Ab4hPixel *dest = (Ab4hPixel *)((char *)canvas->data + gy * canvas->stride) + gx;
+            float r_val = half_to_float(dest->r) + half_to_float(glow_col.r) * 0.4f;
+            float g_val = half_to_float(dest->g) + half_to_float(glow_col.g) * 0.4f;
+            float b_val = half_to_float(dest->b) + half_to_float(glow_col.b) * 0.4f;
+            dest->r = double_to_half(r_val);
+            dest->g = double_to_half(g_val);
+            dest->b = double_to_half(b_val);
         }
     }
     Ab4hPixel filament_col = make_ab4h_pixel(1.0f, 0.7f + 0.3f * intensity, 0.3f + 0.7f * (1.0f - intensity), 1.0f);
     for (int gy = y + 12; gy < y + h - 18; gy++) {
-        canvas->data[gy * canvas->stride + x + w / 2] = filament_col;
+        Ab4hPixel *dest = (Ab4hPixel *)((char *)canvas->data + gy * canvas->stride) + (x + w / 2);
+        *dest = filament_col;
     }
     Ab4hPixel grid_col = make_ab4h_pixel(0.5f, 0.5f, 0.5f, 1.0f);
     for (int gy = y + 16; gy < y + h - 22; gy += 8) {
         for (int gx = x + 6; gx < x + w - 6; gx++) {
-            canvas->data[gy * canvas->stride + gx] = grid_col;
+            Ab4hPixel *dest = (Ab4hPixel *)((char *)canvas->data + gy * canvas->stride) + gx;
+            *dest = grid_col;
         }
     }
 }
