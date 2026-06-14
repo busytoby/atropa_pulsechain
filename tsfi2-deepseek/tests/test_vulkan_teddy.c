@@ -262,6 +262,35 @@ static void* play_sound_thread(void *arg) {
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
+    } else if (strcmp(sd->type, "tom") == 0) {
+        len = 6000; buf = malloc(len);
+        if (buf) {
+            float y1 = 0.0f, y2 = 0.0f;
+            float identity_offset = (float)(params.identity_pole % 30);
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                // Tom sweep: frequency dynamically sweeps from 160Hz + offset down to 80Hz + offset
+                float pitch_env = expf(-30.0f * t);
+                float base_f = 80.0f + identity_offset;
+                float f = base_f + 80.0f * pitch_env;
+                float w = 2.0f * 3.14159265f * f / 8000.0f;
+                float cos_w = cosf(w);
+                
+                // Resonator active decay rate
+                float decay_rate = 0.992f * expf(-2.0f * t);
+                
+                // Impulse trigger (slower rise than kick)
+                float trigger = (i == 0) ? 0.8f : ((i < 60) ? 0.15f * expf(-0.1f * i) : 0.0f);
+                
+                float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
+                y2 = y1;
+                y1 = out;
+                
+                // Saturate output using chosen Audion preset
+                float sat = apply_valve_simulation(1.7f * out, selected_valve);
+                buf[i] = 128 + (int)(sat * 115.0f);
+            }
+        }
     }
     if (buf && len > 0) {
         snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
@@ -362,10 +391,11 @@ static int seq_frame_counter = 0;
 static bool seq_halted = false;
 static bool seq_validation_passed = true;
 
-// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare)
-static uint8_t seq_grid[2][8] = {
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 1, 0}
+// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms)
+static uint8_t seq_grid[3][8] = {
+    {1, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 1, 0},
+    {0, 1, 0, 1, 0, 1, 0, 0}
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
@@ -982,11 +1012,15 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 648.0f + 10.0f, 0.2f, 0.9f, 0.2f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 638.0f + 10.0f, 0.2f, 0.9f, 0.2f);
         }
         if (seq_grid[1][seq_play_step]) {
             play_synth_sound("snare");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 673.0f + 10.0f, 0.3f, 0.8f, 1.0f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 663.0f + 10.0f, 0.3f, 0.8f, 1.0f);
+        }
+        if (seq_grid[2][seq_play_step]) {
+            play_synth_sound("tom");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 688.0f + 10.0f, 0.9f, 0.6f, 0.1f);
         }
     }
 
@@ -1712,13 +1746,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_rect_ab4h(canvas, 1030, 610, 170, 35, dl_btn_bg);
     draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 620, btn_text);
 
-    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (2-Track, 8-Step)
+    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (3-Track, 8-Step)
     Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
-    draw_string_ab4h(canvas, "KICK", 812, 652, grid_label_col);
-    draw_string_ab4h(canvas, "SNAR", 812, 677, grid_label_col);
-
-    for (int t = 0; t < 2; t++) {
-        int y_pos = 648 + t * 25;
+    draw_string_ab4h(canvas, "KICK", 812, 642, grid_label_col);
+    draw_string_ab4h(canvas, "SNAR", 812, 667, grid_label_col);
+    draw_string_ab4h(canvas, "TOMS", 812, 692, grid_label_col);
+ 
+    for (int t = 0; t < 3; t++) {
+        int y_pos = 638 + t * 25;
         for (int s = 0; s < 8; s++) {
             int x_pos = 850 + s * 30;
             Ab4hPixel cell_bg;
@@ -2012,9 +2047,9 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
             mouse_pressed = true;
 
-            // Check click on step sequencer grid (Kick/Snare tracks)
-            for (int t = 0; t < 2; t++) {
-                int y_start = 648 + t * 25;
+            // Check click on step sequencer grid (Kick/Snare/Toms tracks)
+            for (int t = 0; t < 3; t++) {
+                int y_start = 638 + t * 25;
                 if (mouse_y >= y_start && mouse_y <= y_start + 20) {
                     for (int s = 0; s < 8; s++) {
                         int x_start = 850 + s * 30;
