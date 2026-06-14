@@ -2980,18 +2980,18 @@ int main(int argc, char *argv[]) {
 
     // Verify standard OBJ loader imports a bear model
     printf("[OBJ] Verifying standard 3D mesh loader...\n");
-    TsfiObjMesh *bear_mesh = tsfi_obj_load("assets/sample_bear.obj");
-    assert(bear_mesh != NULL && "Failed to load assets/sample_bear.obj");
-    assert(bear_mesh->vertex_count == 6 && "Unexpected vertex count loaded from sample bear");
-    assert(bear_mesh->face_count == 3 && "Unexpected face count loaded from sample bear");
+    TsfiObjMesh *bear_mesh = tsfi_obj_load("assets/teddy_bear.obj");
+    assert(bear_mesh != NULL && "Failed to load assets/teddy_bear.obj");
+    assert(bear_mesh->vertex_count == 2601 && "Unexpected vertex count loaded from teddy bear");
+    assert(bear_mesh->face_count == 4608 && "Unexpected face count loaded from teddy bear");
     
     TsfiRenderVertex *render_verts = NULL;
     uint32_t *render_indices = NULL;
     int r_vert_count = 0;
     int r_ind_count = 0;
     tsfi_obj_generate_buffers(bear_mesh, &render_verts, &render_indices, &r_vert_count, &r_ind_count);
-    assert(r_vert_count == 9 && "Expected 9 vertices generated for 3 faces");
-    assert(r_ind_count == 9 && "Expected 9 indices generated for 3 faces");
+    assert(r_vert_count == 13824 && "Expected 13824 vertices generated for 4608 faces");
+    assert(r_ind_count == 13824 && "Expected 13824 indices generated for 4608 faces");
     
     free(render_verts);
     free(render_indices);
