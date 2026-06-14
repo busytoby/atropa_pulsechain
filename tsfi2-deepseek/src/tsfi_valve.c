@@ -230,3 +230,83 @@ void tsfi_valve_process_regenerative(
     valve->epsilon_state = eps;
 }
 
+static double tsfi_valve_dvp_dt(
+    double vp,
+    double vg,
+    TsfiValveTriode *valve,
+    double active_mu,
+    double active_k,
+    double r_plate,
+    double vp_supply,
+    double geom_scale
+) {
+    double vg_mod = (vg / valve->epsilon_state) * geom_scale;
+    double factor = (vp / active_mu) + vg_mod;
+    if (factor < 0.0) factor = 0.0;
+    double ip = active_k * factor * sqrt(factor);
+    
+    // soft ionization
+    if (vp > valve->V_ionization) {
+        double diff = vp - valve->V_ionization;
+        double sig = diff / (1.0 + fabs(diff));
+        double sig_norm = 0.5 + 0.5 * sig;
+        ip *= (1.0 + valve->ionization_factor * sig_norm);
+    }
+    
+    // dVp/dt = (Vp_supply - Vp - Ip * R_plate)
+    return (vp_supply - vp - ip * r_plate);
+}
+
+void tsfi_valve_process_rk4_dynamic(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+) {
+    if (!valve || !vg_in || !vp_out || count == 0 || dt <= 0.0 || C_parasitic <= 0.0) return;
+
+    double active_mu = valve->mu * (1.0 + eta);
+    double active_k = valve->K * kappa;
+    double vp_supply = valve->Vp + valve->Vp_tuner_offset;
+    double bias = valve->Vg_bias;
+    double r_plate = valve->R_plate;
+    double geom_scale = valve->is_tubular ? 0.85 : 1.0;
+
+    double vp = vp_supply; // start at supply rails
+    double eps = valve->epsilon_state;
+
+    for (size_t i = 0; i < count; i++) {
+        double current_bias = bias;
+        if (valve->use_deforest_ground) {
+            current_bias -= (valve->V_filament / 2.0);
+        }
+        double vg = vg_in[i] + current_bias;
+
+        // Dielectric modulation
+        eps = 1.0 + eta * vg_in[i];
+        if (eps < 0.1) eps = 0.1;
+        valve->epsilon_state = eps;
+
+        // Runge-Kutta 4th Order numerical integration for capacitor state
+        double k1 = tsfi_valve_dvp_dt(vp, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+        double k2 = tsfi_valve_dvp_dt(vp + 0.5 * dt * k1, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+        double k3 = tsfi_valve_dvp_dt(vp + 0.5 * dt * k2, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+        double k4 = tsfi_valve_dvp_dt(vp + dt * k3, vg, valve, active_mu, active_k, r_plate, vp_supply, geom_scale) / C_parasitic;
+
+        vp = vp + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+
+        // Clamp plate output to physical boundaries [0.0, Vp_supply]
+        if (vp < 0.0) vp = 0.0;
+        if (vp > vp_supply) vp = vp_supply;
+
+        vp_out[i] = (float)vp;
+    }
+
+    valve->epsilon_state = eps;
+}
+
+

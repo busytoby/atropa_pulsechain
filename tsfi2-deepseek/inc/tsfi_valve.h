@@ -57,5 +57,16 @@ void tsfi_valve_process_regenerative(
     double beta
 );
 
+// Process a block of samples using RK4 dynamic solver for plate capacitance simulation
+void tsfi_valve_process_rk4_dynamic(
+    TsfiValveTriode *valve,
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double eta,
+    double kappa,
+    double dt,
+    double C_parasitic
+);
 
 #endif // TSFI_VALVE_H
