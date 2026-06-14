@@ -417,3 +417,9 @@ $(OBJ_DIR)/firmware:
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) tsfi2 src/firmware/*_rtl.*
+
+.PHONY: generate_artifacts
+generate_artifacts: bin/test_vulkan_teddy
+	bin/test_vulkan_teddy --render-once
+	convert /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/photorealistic_teddy_bear.ppm /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/photorealistic_bear_final.png
+
