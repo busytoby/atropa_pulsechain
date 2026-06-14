@@ -27,6 +27,27 @@ struct SoundData {
     char type[32];
 };
 
+static const char* valve_names[] = {"Audion Classic", "12AX7 Preamp", "EL84 Pentode", "Class C Radio"};
+static int selected_valve = 0;
+
+static inline float apply_valve_simulation(float input_sig, int valve_type) {
+    if (valve_type == 0) {
+        return tanhf(input_sig);
+    } else if (valve_type == 1) {
+        if (input_sig > 0.3f) {
+            return 0.3f + 0.2f * tanhf((input_sig - 0.3f) * 1.5f);
+        } else {
+            return tanhf(input_sig * 1.2f);
+        }
+    } else if (valve_type == 2) {
+        return input_sig / sqrtf(1.0f + input_sig * input_sig);
+    } else {
+        if (input_sig > 0.4f) return 1.0f;
+        if (input_sig < -0.4f) return -1.0f;
+        return 0.0f;
+    }
+}
+
 static void* play_sound_thread(void *arg) {
     struct SoundData *sd = (struct SoundData*)arg;
     snd_pcm_t *pcm_handle;
@@ -45,7 +66,7 @@ static void* play_sound_thread(void *arg) {
                 float t = (float)i / 8000.0f;
                 float freq = 220.0f + 330.0f * (1.0f - expf(-8.0f * t));
                 float phase = freq * t * 2.0f * 3.14159265f;
-                float sat = tanhf(1.2f * sinf(phase));
+                float sat = apply_valve_simulation(1.2f * sinf(phase), selected_valve);
                 buf[i] = 128 + (int)((1.0f - t/0.25f) * 110.0f * sat);
             }
         }
@@ -56,7 +77,7 @@ static void* play_sound_thread(void *arg) {
                 float t = (float)i / 8000.0f;
                 float freq = 440.0f - 180.0f * sinf(3.14159f * (t / 0.2f));
                 float phase = freq * t * 2.0f * 3.14159265f;
-                float sat = tanhf(1.0f * sinf(phase));
+                float sat = apply_valve_simulation(1.0f * sinf(phase), selected_valve);
                 buf[i] = 128 + (int)((1.0f - t/0.2f) * 110.0f * sat);
             }
         }
@@ -69,7 +90,7 @@ static void* play_sound_thread(void *arg) {
                 float phase = freq * t * 2.0f * 3.14159265f;
                 float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
                 float wave = sinf(phase) * 0.6f + noise * 0.4f;
-                float sat = tanhf(1.5f * wave);
+                float sat = apply_valve_simulation(1.5f * wave, selected_valve);
                 buf[i] = 128 + (int)((1.0f - t/0.15f) * 120.0f * sat);
             }
         }
@@ -79,7 +100,7 @@ static void* play_sound_thread(void *arg) {
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
                 float wave = sinf(523.25f * t * 2.0f * 3.14159f) * 0.5f + sinf(783.99f * t * 2.0f * 3.14159f) * 0.5f;
-                float sat = tanhf(2.0f * wave);
+                float sat = apply_valve_simulation(2.0f * wave, selected_valve);
                 buf[i] = 128 + (int)((1.0f - t/0.3f) * 110.0f * sat);
             }
         }
@@ -89,7 +110,7 @@ static void* play_sound_thread(void *arg) {
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
                 float wave = sinf(80.0f * t * 2.0f * 3.14159f) * 0.7f + sinf(120.0f * t * 2.0f * 3.14159f) * 0.3f;
-                float sat = wave > 0.0f ? 1.0f : -1.0f;
+                float sat = apply_valve_simulation(wave * 2.0f, selected_valve);
                 buf[i] = 128 + (int)((1.0f - t/0.4f) * 120.0f * sat);
             }
         }
@@ -99,19 +120,12 @@ static void* play_sound_thread(void *arg) {
             float phase = 0.0f;
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                // Deep sub-bass frequency sweep down to 39 Hz
                 float freq = 39.0f + 141.0f * expf(-80.0f * t);
                 phase += freq * (1.0f / 8000.0f) * 2.0f * 3.14159265f;
-                
-                // Slow decay envelope for long sub-bass tail
                 float env = expf(-2.2f * t);
                 float body = sinf(phase) * env;
-                
-                // Attack beater click transient
                 float click = sinf(1600.0f * t * 2.0f * 3.14159265f) * expf(-400.0f * t) * 0.40f;
-                
-                // Saturation curve
-                float sat = tanhf(2.2f * body + 3.5f * click);
+                float sat = apply_valve_simulation(2.2f * body + 3.5f * click, selected_valve);
                 buf[i] = 128 + (int)(sat * 120.0f);
             }
         }
@@ -122,7 +136,7 @@ static void* play_sound_thread(void *arg) {
                 float t = (float)i / 8000.0f;
                 float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
                 float tone = sinf(180.0f * t * 2.0f * 3.14159f) * 0.3f;
-                float sat = tanhf(1.5f * (noise * 0.7f + tone) * expf(-20.0f * t));
+                float sat = apply_valve_simulation((noise * 0.7f + tone) * expf(-20.0f * t) * 1.5f, selected_valve);
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
@@ -272,6 +286,7 @@ static bool hover_slider2 = false;
 static bool hover_btn1 = false;
 static bool hover_btn2 = false;
 static bool hover_btn3 = false;
+static bool hover_valve_btn = false;
 
 static bool demo_mode = false;
 static bool opt_ssaa = true;
@@ -1515,8 +1530,15 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     // Button 3: Reset
     if (hover_btn3) btn_bg = make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f);
     else btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 480, 350, 40, btn_bg);
-    draw_string_ab4h(canvas, "RESET DEFAULT STATE", 930, 492, btn_text);
+    draw_rect_ab4h(canvas, 850, 480, 160, 40, btn_bg);
+    draw_string_ab4h(canvas, "RESET STATE", 880, 492, btn_text);
+
+    // Button 4: Valve Preset Selector
+    Ab4hPixel valve_btn_bg = hover_valve_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    draw_rect_ab4h(canvas, 1030, 480, 170, 40, valve_btn_bg);
+    char valve_lbl[64];
+    snprintf(valve_lbl, sizeof(valve_lbl), "VALVE: %s", valve_names[selected_valve]);
+    draw_string_ab4h(canvas, valve_lbl, 1040, 492, btn_text);
 
     // VLM Selector
     draw_string_ab4h(canvas, "VLM Critic:", 820, 540, text_hdr);
@@ -1791,7 +1813,8 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     hover_viewport_boost = (mouse_y >= 380 && mouse_y <= 410 && mouse_x >= 1120 && mouse_x <= 1200);
     hover_btn1 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 850 && mouse_x <= 1010);
     hover_btn2 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 1030 && mouse_x <= 1200);
-    hover_btn3 = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 850 && mouse_x <= 1200);
+    hover_btn3 = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 850 && mouse_x <= 1010);
+    hover_valve_btn = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 1030 && mouse_x <= 1200);
     hover_vlm_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 530 && mouse_y <= 560);
     hover_gen_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 570 && mouse_y <= 600);
     hover_run_btn = (mouse_x >= 850 && mouse_x <= 1020 && mouse_y >= 610 && mouse_y <= 645);
@@ -1877,11 +1900,14 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                     active_slider = -2;
                 }
             } else if (mouse_y >= 480 && mouse_y <= 520) {
-                if (mouse_x >= 850 && mouse_x <= 1200) {
+                if (mouse_x >= 850 && mouse_x <= 1010) {
                     fur_length = 0.08f;
                     scale_val = 1.0f;
                     light_angle_deg = 135.0f;
                     display_synthesized_image = false;
+                } else if (mouse_x >= 1030 && mouse_x <= 1200) {
+                    selected_valve = (selected_valve + 1) % 4;
+                    printf("  -> Cycled Valve Preset: %d (%s)\n", selected_valve, valve_names[selected_valve]);
                 }
             } else if (mouse_y >= 530 && mouse_y <= 560 && mouse_x >= 960 && mouse_x <= 1200) {
                 selected_vlm = (selected_vlm + 1) % 6;
