@@ -68,13 +68,22 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             pools = {}
+            reserves = {}
             if os.path.exists("nonukes_pools.json"):
                 try:
                     with open("nonukes_pools.json", "r") as f:
                         pools = json.load(f)
                 except Exception:
                     pass
-            self.wfile.write(json.dumps({"success": True, "pools": pools}, indent=2).encode('utf-8'))
+            # Load reserves from scratch directory
+            res_path = "/home/mariarahel/.gemini/antigravity-cli/brain/5a8d4144-99a3-4e64-93ac-47c55dad5b24/scratch/nonukes_pulsex_reserves.json"
+            if os.path.exists(res_path):
+                try:
+                    with open(res_path, "r") as f:
+                        reserves = json.load(f)
+                except Exception:
+                    pass
+            self.wfile.write(json.dumps({"success": True, "pools": pools, "reserves": reserves}, indent=2).encode('utf-8'))
         elif self.path.startswith('/api/pools'):
             parsed_url = urllib.parse.urlparse(self.path)
             params = urllib.parse.parse_qs(parsed_url.query)

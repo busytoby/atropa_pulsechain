@@ -140,7 +140,7 @@
 
         .grid-header {
             display: grid;
-            grid-template-columns: 80px 120px 1fr 180px;
+            grid-template-columns: 80px 120px 1fr 220px 100px 180px;
             padding: 12px 16px;
             background: rgba(16, 22, 38, 0.9);
             border: 1px solid #1e293b;
@@ -162,7 +162,7 @@
 
         .pool-row {
             display: grid;
-            grid-template-columns: 80px 120px 1fr 180px;
+            grid-template-columns: 80px 120px 1fr 220px 100px 180px;
             padding: 14px 16px;
             background: rgba(10, 15, 30, 0.6);
             border: 1px solid rgba(30, 41, 59, 0.5);
@@ -276,7 +276,7 @@
                     <div id="stat-v2-pools" class="stat-value">-</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Active Oracle Swaps</div>
+                    <div class="stat-label">Total Pool Swaps</div>
                     <div id="stat-active-swaps" class="stat-value highlight">-</div>
                 </div>
             </div>
@@ -285,6 +285,8 @@
                 <div>Version</div>
                 <div>Symbol</div>
                 <div>LP Pair Address</div>
+                <div>Reserves (T0 / T1)</div>
+                <div>Swaps</div>
                 <div>Ecosystem Group</div>
             </div>
 
@@ -296,6 +298,7 @@
 
     <script>
         let allPools = {};
+        let reservesData = {};
         let currentGroupFilter = 'All';
 
         async function loadData() {
@@ -304,6 +307,7 @@
                 const data = await response.json();
                 if (data.success) {
                     allPools = data.pools;
+                    reservesData = data.reserves || {};
                     renderDashboard();
                 }
             } catch (err) {
@@ -330,6 +334,7 @@
             let countV1 = 0;
             let countV2 = 0;
             let total = 0;
+            let totalSwaps = 0;
 
             const searchVal = document.getElementById('search').value.toLowerCase();
 
@@ -346,12 +351,20 @@
                 if (pool.version === 'V1') countV1++;
                 if (pool.version === 'V2') countV2++;
 
+                const pRes = reservesData[address.toLowerCase()] || {};
+                const res0 = pRes.reserve0 !== undefined ? pRes.reserve0.toFixed(2) : "0.00";
+                const res1 = pRes.reserve1 !== undefined ? pRes.reserve1.toFixed(2) : "0.00";
+                const swaps = pRes.swaps || 0;
+                totalSwaps += swaps;
+
                 const row = document.createElement('div');
                 row.className = 'pool-row';
                 row.innerHTML = `
                     <div><span class="tag ${pool.version.toLowerCase()}">${pool.version}</span></div>
                     <div class="pool-symbol">${pool.symbol}</div>
                     <div class="pool-address">${address}</div>
+                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">${res0} / ${res1}</div>
+                    <div style="font-family: 'Share Tech Mono', monospace; font-weight: bold; color: var(--glow-cyan);">${swaps}</div>
                     <div style="color: var(--glow-magenta); font-weight: bold;">${pool.target_group}</div>
                 `;
                 listContainer.appendChild(row);
@@ -360,7 +373,7 @@
             document.getElementById('stat-total-pools').innerText = total;
             document.getElementById('stat-v1-pools').innerText = countV1;
             document.getElementById('stat-v2-pools').innerText = countV2;
-            document.getElementById('stat-active-swaps').innerText = '480';
+            document.getElementById('stat-active-swaps').innerText = totalSwaps;
         }
 
         function filterPools() {
