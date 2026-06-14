@@ -98,3 +98,51 @@ void tsfi_obj_free(TsfiObjMesh *mesh) {
     free(mesh->faces);
     free(mesh);
 }
+
+void tsfi_obj_generate_buffers(const TsfiObjMesh *mesh, TsfiRenderVertex **out_vertices, uint32_t **out_indices, int *out_vertex_count, int *out_index_count) {
+    if (!mesh || !out_vertices || !out_indices || !out_vertex_count || !out_index_count) return;
+
+    int index_count = mesh->face_count * 3;
+    int vertex_count = index_count;
+
+    TsfiRenderVertex *verts = (TsfiRenderVertex*)malloc(vertex_count * sizeof(TsfiRenderVertex));
+    uint32_t *ind = (uint32_t*)malloc(index_count * sizeof(uint32_t));
+
+    int v_idx = 0;
+    for (int f = 0; f < mesh->face_count; f++) {
+        const TsfiObjFace *face = &mesh->faces[f];
+        for (int corner = 0; corner < 3; corner++) {
+            TsfiRenderVertex *v = &verts[v_idx];
+            memset(v, 0, sizeof(TsfiRenderVertex));
+
+            // OBJ indices are 1-based, check bounds
+            int pos_idx = face->v_idx[corner] - 1;
+            if (pos_idx >= 0 && pos_idx < mesh->vertex_count) {
+                v->x = mesh->vertices[pos_idx].x;
+                v->y = mesh->vertices[pos_idx].y;
+                v->z = mesh->vertices[pos_idx].z;
+            }
+
+            int tex_idx = face->t_idx[corner] - 1;
+            if (tex_idx >= 0 && tex_idx < mesh->texcoord_count) {
+                v->u = mesh->texcoords[tex_idx].u;
+                v->v = mesh->texcoords[tex_idx].v;
+            }
+
+            int norm_idx = face->n_idx[corner] - 1;
+            if (norm_idx >= 0 && norm_idx < mesh->normal_count) {
+                v->nx = mesh->normals[norm_idx].x;
+                v->ny = mesh->normals[norm_idx].y;
+                v->nz = mesh->normals[norm_idx].z;
+            }
+
+            ind[v_idx] = (uint32_t)v_idx;
+            v_idx++;
+        }
+    }
+
+    *out_vertices = verts;
+    *out_indices = ind;
+    *out_vertex_count = vertex_count;
+    *out_index_count = index_count;
+}

@@ -40,7 +40,14 @@ typedef struct {
     int face_capacity;
 } TsfiObjMesh;
 
+typedef struct {
+    float x, y, z;
+    float nx, ny, nz;
+    float u, v;
+} TsfiRenderVertex;
+
 TsfiObjMesh* tsfi_obj_load(const char *filepath);
 void tsfi_obj_free(TsfiObjMesh *mesh);
+void tsfi_obj_generate_buffers(const TsfiObjMesh *mesh, TsfiRenderVertex **out_vertices, uint32_t **out_indices, int *out_vertex_count, int *out_index_count);
 
 #endif // TSFI_OBJ_LOADER_H
