@@ -193,17 +193,33 @@ static void* play_sound_thread(void *arg) {
     } else if (strcmp(sd->type, "kick") == 0) {
         len = 12000; buf = malloc(len);
         if (buf) {
-            float phase = 0.0f;
-            float soul_pitch_offset = (float)(params.soul % 20); // slightly offsets base pitch
-            float soul_phase_rotation = (float)(params.soul % 360) * (3.14159265f / 180.0f);
+            float y1 = 0.0f, y2 = 0.0f;
+            float soul_pitch_offset = (float)(params.soul % 20);
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                float freq = (39.0f + soul_pitch_offset) + 141.0f * expf(-80.0f * t);
-                phase += freq * (1.0f / 8000.0f) * 2.0f * 3.14159265f;
-                float env = expf(-2.2f * t);
-                float body = sinf(phase + soul_phase_rotation) * env;
-                float click = sinf(1600.0f * t * 2.0f * 3.14159265f) * expf(-400.0f * t) * 0.40f;
-                float sat = apply_valve_simulation(2.2f * body + 3.5f * click, selected_valve);
+                // Pitch sweep: frequency dynamically decreases from 180Hz + offset to 48Hz + offset
+                float pitch_env = expf(-45.0f * t);
+                float base_f = 48.0f + soul_pitch_offset;
+                float f = base_f + 132.0f * pitch_env;
+                float w = 2.0f * 3.14159265f * f / 8000.0f;
+                float cos_w = cosf(w);
+                
+                // High Q decay coefficient (simulating bridged-T filter damping)
+                float decay_rate = 0.9935f * expf(-1.5f * t);
+                
+                // Excitation pulse trigger at t = 0
+                float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
+                
+                // Second-order time-varying resonant filter equations
+                float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
+                y2 = y1;
+                y1 = out;
+                
+                // Transient kick click
+                float click = sinf(1800.0f * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
+                
+                // Saturation via chosen Audion valve preset
+                float sat = apply_valve_simulation(1.8f * out + 3.0f * click, selected_valve);
                 buf[i] = 128 + (int)(sat * 120.0f);
             }
         }
