@@ -210,6 +210,15 @@ static void* play_sound_thread(void *arg) {
                 // Excitation pulse trigger at t = 0
                 float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
                 
+                // Inject gaseous ionization (ions) based on the selected Audion type
+                if (selected_valve == 1 || selected_valve == 2) {
+                    // Random micro-discharge ion strikes during early decay
+                    if (i > 80 && i < 3000 && (rand() % 120 == 0)) {
+                        float ion_intensity = (selected_valve == 2) ? 0.22f : 0.08f; // Landslide ionization is more violent
+                        trigger += ((float)(rand() % 200 - 100) / 100.0f) * ion_intensity * expf(-2.0f * t);
+                    }
+                }
+                
                 // Second-order time-varying resonant filter equations
                 float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
                 y2 = y1;
