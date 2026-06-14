@@ -34,22 +34,75 @@ struct SoundData {
     char type[32];
 };
 
-static const char* valve_names[] = {"Audion Classic", "12AX7 Preamp", "EL84 Pentode", "Class C Radio"};
+static const char* valve_names[] = {
+    "Audion Classic", 
+    "Audion Soft-Gas", 
+    "Audion Tubular T", 
+    "Audion Flat-Plate D", 
+    "Audion Cold-Cathode",
+    "Audion Regenerative", 
+    "Audion Grid-Leak",
+    "12AX7 Preamp", 
+    "EL84 Pentode", 
+    "Class C Radio"
+};
 static int selected_valve = 0;
 
 static inline float apply_valve_simulation(float input_sig, int valve_type) {
     if (valve_type == 0) {
-        // DeForest Audion Classic warm saturation with pre-gain boost
+        // DeForest Audion Classic: standard warm saturation
         return tanhf(input_sig * 2.5f);
     } else if (valve_type == 1) {
+        // Audion Soft-Gas: gas ionization surge when grid is positive
+        float base = tanhf(input_sig * 2.2f);
+        if (input_sig > 0.2f) {
+            base += 0.25f * (input_sig - 0.2f) * expf(0.5f * (input_sig - 0.2f));
+        }
+        return base;
+    } else if (valve_type == 2) {
+        // Audion Tubular T: coaxial quadratic smooth geometry
+        if (input_sig > 0.0f) {
+            return input_sig / (1.0f + 0.35f * input_sig);
+        } else {
+            return input_sig * (1.0f + 0.15f * input_sig);
+        }
+    } else if (valve_type == 3) {
+        // Audion Flat-Plate D: sharp flat-plate cutoff
+        if (input_sig < -0.6f) return -0.9f;
+        return tanhf(input_sig * 2.8f);
+    } else if (valve_type == 4) {
+        // Audion Cold-Cathode: starvation emission limits
+        float val = tanhf(input_sig * 3.0f);
+        if (val > 0.55f) val = 0.55f + 0.05f * tanhf((val - 0.55f) * 2.0f);
+        if (val < -0.7f) val = -0.7f + 0.05f * tanhf((val + 0.7f) * 2.0f);
+        return val;
+    } else if (valve_type == 5) {
+        // Audion Regenerative: feedback phase-ringing emulation
+        static float last_out = 0.0f;
+        float val = tanhf((input_sig + last_out * 0.35f) * 2.4f);
+        last_out = val;
+        return val;
+    } else if (valve_type == 6) {
+        // Audion Grid-Leak: dynamic negative bias self-rectification (envelope compressor)
+        static float grid_leak_bias = 0.0f;
+        if (input_sig > 0.0f) {
+            grid_leak_bias += 0.05f * (input_sig - grid_leak_bias);
+        } else {
+            grid_leak_bias *= 0.995f; // decay
+        }
+        return tanhf((input_sig - grid_leak_bias * 0.8f) * 2.5f);
+    } else if (valve_type == 7) {
+        // 12AX7 Preamp
         if (input_sig > 0.3f) {
             return 0.3f + 0.2f * tanhf((input_sig - 0.3f) * 1.5f);
         } else {
             return tanhf(input_sig * 1.2f);
         }
-    } else if (valve_type == 2) {
+    } else if (valve_type == 8) {
+        // EL84 Pentode
         return input_sig / sqrtf(1.0f + input_sig * input_sig);
     } else {
+        // Class C Radio
         if (input_sig > 0.4f) return 1.0f;
         if (input_sig < -0.4f) return -1.0f;
         return 0.0f;
@@ -1966,7 +2019,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                     light_angle_deg = 135.0f;
                     display_synthesized_image = false;
                 } else if (mouse_x >= 1030 && mouse_x <= 1200) {
-                    selected_valve = (selected_valve + 1) % 4;
+                    selected_valve = (selected_valve + 1) % 10;
                     printf("  -> Cycled Valve Preset: %d (%s)\n", selected_valve, valve_names[selected_valve]);
                 }
             } else if (mouse_y >= 530 && mouse_y <= 560 && mouse_x >= 960 && mouse_x <= 1200) {
