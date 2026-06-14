@@ -126,312 +126,425 @@ static inline float apply_valve_simulation(float input_sig, int valve_type) {
     }
 }
 
-static void* play_sound_thread(void *arg) {
-    struct SoundData *sd = (struct SoundData*)arg;
-    snd_pcm_t *pcm_handle;
-    if (snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
-        free(sd); return NULL;
-    }
-    if (snd_pcm_set_params(pcm_handle, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 8000, 1, 500000) < 0) {
-        snd_pcm_close(pcm_handle); free(sd); return NULL;
-    }
-    int len = 0;
-    uint8_t *buf = NULL;
-    if (strcmp(sd->type, "leap") == 0) {
-        len = 2000; buf = malloc(len);
-        if (buf) {
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float freq = 220.0f + 330.0f * (1.0f - expf(-8.0f * t));
-                float phase = freq * t * 2.0f * 3.14159265f;
-                float sat = apply_valve_simulation(1.2f * sinf(phase), selected_valve);
-                buf[i] = 128 + (int)((1.0f - t/0.25f) * 110.0f * sat);
-            }
+#define MAX_VOICES 16
+struct Voice {
+    bool active;
+    const uint8_t *buf;
+    int len;
+    int pos;
+};
+static struct Voice g_voices[MAX_VOICES] = {0};
+static pthread_mutex_t g_audio_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool g_audio_running = true;
+static pthread_t g_audio_thread;
+
+struct PrecomputedSound {
+    const char *name;
+    uint8_t *buf;
+    int len;
+};
+#define NUM_SOUND_TYPES 12
+static struct PrecomputedSound g_precomputed_sounds[NUM_SOUND_TYPES] = {
+    {"leap", NULL, 0},
+    {"dodge", NULL, 0},
+    {"sword", NULL, 0},
+    {"success", NULL, 0},
+    {"fail", NULL, 0},
+    {"kick", NULL, 0},
+    {"snare", NULL, 0},
+    {"tom", NULL, 0},
+    {"hats", NULL, 0},
+    {"ride", NULL, 0},
+    {"clap", NULL, 0},
+    {"snap", NULL, 0}
+};
+
+void precompute_all_sounds() {
+    pthread_mutex_lock(&g_audio_mutex);
+    for (int idx = 0; idx < NUM_SOUND_TYPES; idx++) {
+        struct PrecomputedSound *ps = &g_precomputed_sounds[idx];
+        if (ps->buf) {
+            free(ps->buf);
+            ps->buf = NULL;
         }
-    } else if (strcmp(sd->type, "dodge") == 0) {
-        len = 1600; buf = malloc(len);
-        if (buf) {
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float freq = 440.0f - 180.0f * sinf(3.14159f * (t / 0.2f));
-                float phase = freq * t * 2.0f * 3.14159265f;
-                float sat = apply_valve_simulation(1.0f * sinf(phase), selected_valve);
-                buf[i] = 128 + (int)((1.0f - t/0.2f) * 110.0f * sat);
-            }
-        }
-    } else if (strcmp(sd->type, "sword") == 0) {
-        len = 1200; buf = malloc(len);
-        if (buf) {
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float freq = 600.0f * expf(-12.0f * t) + 150.0f;
-                float phase = freq * t * 2.0f * 3.14159265f;
-                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float wave = sinf(phase) * 0.6f + noise * 0.4f;
-                float sat = apply_valve_simulation(1.5f * wave, selected_valve);
-                buf[i] = 128 + (int)((1.0f - t/0.15f) * 120.0f * sat);
-            }
-        }
-    } else if (strcmp(sd->type, "success") == 0) {
-        len = 2400; buf = malloc(len);
-        if (buf) {
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float wave = sinf(523.25f * t * 2.0f * 3.14159f) * 0.5f + sinf(783.99f * t * 2.0f * 3.14159f) * 0.5f;
-                float sat = apply_valve_simulation(2.0f * wave, selected_valve);
-                buf[i] = 128 + (int)((1.0f - t/0.3f) * 110.0f * sat);
-            }
-        }
-    } else if (strcmp(sd->type, "fail") == 0) {
-        len = 3200; buf = malloc(len);
-        if (buf) {
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float wave = sinf(80.0f * t * 2.0f * 3.14159f) * 0.7f + sinf(120.0f * t * 2.0f * 3.14159f) * 0.3f;
-                float sat = apply_valve_simulation(wave * 2.0f, selected_valve);
-                buf[i] = 128 + (int)((1.0f - t/0.4f) * 120.0f * sat);
-            }
-        }
-    } else if (strcmp(sd->type, "kick") == 0) {
-        len = 12000; buf = malloc(len);
-        if (buf) {
-            float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
-            float siu_soul_factor     = (float)((params.soul % 1000000ULL) / 1000000.0f);
-            float *raw_sig = malloc(len * sizeof(float));
-            float *valve_out = malloc(len * sizeof(float));
-            if (raw_sig && valve_out) {
-                float phase_acc = 0.0f;
+        int len = 0;
+        uint8_t *buf = NULL;
+        const char *type = ps->name;
+
+        if (strcmp(type, "leap") == 0) {
+            len = 2000; buf = malloc(len);
+            if (buf) {
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
-                    float pitch_env_fast = expf(-150.0f * t);
-                    float pitch_env_slow = expf(-18.0f * t);
-                    float base_f = 45.0f + 10.0f * siu_soul_factor;
-                    float sweep_depth = 180.0f + 120.0f * siu_identity_factor;
-                    
-                    float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
-                    phase_acc += 2.0f * 3.14159265f * f / 8000.0f;
-                    
-                    float sine_body = sinf(phase_acc);
-                    float amp_env = expf(-10.0f * t);
-                    float body = sine_body * amp_env;
-                    
-                    // Beater click (transient)
-                    float click_freq = 2000.0f + 800.0f * siu_soul_factor;
-                    float click_env = expf(-350.0f * t);
-                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * click_env * 0.35f;
-                    
-                    // Add a tiny bit of noise burst for the initial impact thud
-                    float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                    float noise_env = expf(-450.0f * t);
-                    float click_noise = noise * noise_env * 0.15f;
-                    
-                    float mixed = body + click + click_noise;
-                    float saturated_out = tanhf(1.8f * mixed);
-                    raw_sig[i] = saturated_out * 1.5f;
+                    float freq = 220.0f + 330.0f * (1.0f - expf(-8.0f * t));
+                    float phase = freq * t * 2.0f * 3.14159265f;
+                    float sat = apply_valve_simulation(1.2f * sinf(phase), selected_valve);
+                    buf[i] = 128 + (int)((1.0f - t/0.25f) * 110.0f * sat);
                 }
-                TsfiValveTriode kick_valve;
-                tsfi_valve_init(&kick_valve, 30.0, 0.00045, 250.0, -1.5);
-                kick_valve.R_plate = 80000.0;
-                kick_valve.is_tubular = (selected_valve == 3);
-                tsfi_valve_process_differential_feedback(&kick_valve, raw_sig, valve_out, len, 0.0, 1.0, 1.0 / 8000.0, 0.00003, 0.0003, 40000.0, 0.2);
+            }
+        } else if (strcmp(type, "dodge") == 0) {
+            len = 1600; buf = malloc(len);
+            if (buf) {
                 for (int i = 0; i < len; i++) {
-                    float sample = (valve_out[i] - 125.0f) / 125.0f;
-                    if (sample < -1.0f) sample = -1.0f;
-                    if (sample > 1.0f) sample = 1.0f;
-                    buf[i] = 128 + (int)(sample * 120.0f);
+                    float t = (float)i / 8000.0f;
+                    float freq = 440.0f - 180.0f * sinf(3.14159f * (t / 0.2f));
+                    float phase = freq * t * 2.0f * 3.14159265f;
+                    float sat = apply_valve_simulation(1.0f * sinf(phase), selected_valve);
+                    buf[i] = 128 + (int)((1.0f - t/0.2f) * 110.0f * sat);
                 }
             }
-            if (raw_sig) free(raw_sig);
-            if (valve_out) free(valve_out);
-        }
-    } else if (strcmp(sd->type, "snare") == 0) {
-        len = 3200; buf = malloc(len);
-        if (buf) {
-            float siu_soul_factor = (float)((params.soul % 1000000ULL) / 1000000.0f);
-            float siu_aura_factor = (float)((params.aura % 1000000ULL) / 1000000.0f);
-            float last_noise = 0.0f;
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                
-                // 1. Dual-mode skin/shell resonance (fundamental + first overtone)
-                float f1 = 150.0f + 50.0f * siu_aura_factor;
-                float f2 = 280.0f + 100.0f * siu_aura_factor;
-                float tone1 = sinf(f1 * t * 2.0f * 3.14159f);
-                float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.5f;
-                float skin_env = expf(-45.0f * t); // rapid skin decay
-                float shell = (tone1 + tone2) * skin_env * 0.45f;
-                
-                // 2. High-pass filtered snare wire rattle noise
-                float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float hp_noise = white_noise - last_noise; // high-pass difference filter
-                last_noise = white_noise;
-                
-                float rattle_env = expf(-14.0f * t); // slower snare wire rattle decay
-                float aura_noise_mix = 0.4f + 0.4f * siu_soul_factor;
-                float rattle = hp_noise * rattle_env * 0.65f * aura_noise_mix;
-                
-                // Combine and apply selected valve saturation
-                float sat = apply_valve_simulation((shell + rattle) * 1.8f, selected_valve);
-                buf[i] = 128 + (int)(sat * 115.0f);
-            }
-        }
-    } else if (strcmp(sd->type, "tom") == 0) {
-        len = 6000; buf = malloc(len);
-        if (buf) {
-            float y1 = 0.0f, y2 = 0.0f;
-            float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                // Tom sweep: frequency dynamically sweeps from 160Hz + offset down to 80Hz + offset
-                float pitch_env = expf(-30.0f * t);
-                float base_f = 70.0f + 25.0f * siu_identity_factor;
-                float sweep_depth = 60.0f + 40.0f * siu_identity_factor;
-                float f = base_f + sweep_depth * pitch_env;
-                float w = 2.0f * 3.14159265f * f / 8000.0f;
-                float cos_w = cosf(w);
-                
-                // Resonator active decay rate
-                float decay_rate = 0.992f * expf(-2.0f * t);
-                
-                // Impulse trigger (slower rise than kick)
-                float trigger = (i == 0) ? 0.8f : ((i < 60) ? 0.15f * expf(-0.1f * i) : 0.0f);
-                
-                float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
-                y2 = y1;
-                y1 = out;
-                
-                // Saturate output using chosen Audion preset
-                float sat = apply_valve_simulation(1.7f * out, selected_valve);
-                buf[i] = 128 + (int)(sat * 115.0f);
-            }
-        }
-    } else if (strcmp(sd->type, "hats") == 0) {
-        len = 3500; buf = malloc(len);
-        if (buf) {
-            float last_sum = 0.0f;
-            float freqs[6] = {315.0f, 435.0f, 565.0f, 690.0f, 820.0f, 950.0f};
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                // Mix 6 detuned square-wave oscillators for metallic texture
-                float sum = 0.0f;
-                for (int osc = 0; osc < 6; osc++) {
-                    sum += (sinf(freqs[osc] * t * 2.0f * 3.14159265f) > 0.0f ? 1.0f : -1.0f) * 0.12f;
+        } else if (strcmp(type, "sword") == 0) {
+            len = 1200; buf = malloc(len);
+            if (buf) {
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float freq = 600.0f * expf(-12.0f * t) + 150.0f;
+                    float phase = freq * t * 2.0f * 3.14159265f;
+                    float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float wave = sinf(phase) * 0.6f + noise * 0.4f;
+                    float sat = apply_valve_simulation(1.5f * wave, selected_valve);
+                    buf[i] = 128 + (int)((1.0f - t/0.15f) * 120.0f * sat);
                 }
-                // Add white noise wash
-                sum += ((float)(rand() % 200) - 100.0f) / 100.0f * 0.25f;
-                
-                // Fast high-pass filter (difference)
-                float hp = sum - last_sum;
-                last_sum = sum;
-                
-                // Rapid hi-hat decay (exponential envelope)
-                float env = expf(-65.0f * t);
-                
-                // Saturation and gain
-                float sat = apply_valve_simulation(hp * env * 2.0f, selected_valve);
-                buf[i] = 128 + (int)(sat * 115.0f);
             }
-        }
-    } else if (strcmp(sd->type, "ride") == 0) {
-        len = 16000; buf = malloc(len);
-        if (buf) {
-            float last_sum = 0.0f;
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                // 1. FM-style bell tone (carrier=380Hz, modulator=912Hz)
-                float mod = sinf(912.0f * t * 2.0f * 3.14159265f);
-                float bell = sinf(380.0f * t * 2.0f * 3.14159265f + 1.8f * mod) * 0.45f;
-                
-                // 2. Metallic high-frequency noise wash
-                float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float hp_noise = white_noise - last_sum;
-                last_sum = white_noise;
-                
-                // Combine bell strike with metallic noise wash
-                float strike = bell + hp_noise * 0.22f;
-                
-                // Long cymbal decay rate
-                float env = expf(-3.5f * t);
-                
-                // Saturate through valve simulation
-                float sat = apply_valve_simulation(strike * env * 1.5f, selected_valve);
-                buf[i] = 128 + (int)(sat * 115.0f);
-            }
-        }
-    } else if (strcmp(sd->type, "clap") == 0) {
-        len = 4000; buf = malloc(len);
-        if (buf) {
-            float y1 = 0.0f, y2 = 0.0f;
-            float cos_w = cosf(2.0f * 3.14159265f * 1100.0f / 8000.0f);
-            float r = 0.72f;
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float env = 0.0f;
-                if (i < 100) {
-                    env = expf(-0.03f * i);
-                } else if (i < 200) {
-                    env = expf(-0.03f * (i - 100));
-                } else if (i < 300) {
-                    env = expf(-0.03f * (i - 200));
-                } else {
-                    env = expf(-14.0f * (t - 0.0375f));
+        } else if (strcmp(type, "success") == 0) {
+            len = 2400; buf = malloc(len);
+            if (buf) {
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float wave = sinf(523.25f * t * 2.0f * 3.14159f) * 0.5f + sinf(783.99f * t * 2.0f * 3.14159f) * 0.5f;
+                    float sat = apply_valve_simulation(2.0f * wave, selected_valve);
+                    buf[i] = 128 + (int)((1.0f - t/0.3f) * 110.0f * sat);
                 }
-                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float in_val = noise * env * 0.7f;
-                float out = in_val + 2.0f * r * cos_w * y1 - r * r * y2;
-                y2 = y1;
-                y1 = out;
-                
-                float sat = apply_valve_simulation(out * 1.5f, selected_valve);
-                buf[i] = 128 + (int)(sat * 110.0f);
+            }
+        } else if (strcmp(type, "fail") == 0) {
+            len = 3200; buf = malloc(len);
+            if (buf) {
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float wave = sinf(80.0f * t * 2.0f * 3.14159f) * 0.7f + sinf(120.0f * t * 2.0f * 3.14159f) * 0.3f;
+                    float sat = apply_valve_simulation(wave * 2.0f, selected_valve);
+                    buf[i] = 128 + (int)((1.0f - t/0.4f) * 120.0f * sat);
+                }
+            }
+        } else if (strcmp(type, "kick") == 0) {
+            len = 12000; buf = malloc(len);
+            if (buf) {
+                float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
+                float siu_soul_factor     = (float)((params.soul % 1000000ULL) / 1000000.0f);
+                float *raw_sig = malloc(len * sizeof(float));
+                float *valve_out = malloc(len * sizeof(float));
+                if (raw_sig && valve_out) {
+                    float phase_acc = 0.0f;
+                    for (int i = 0; i < len; i++) {
+                        float t = (float)i / 8000.0f;
+                        float pitch_env_fast = expf(-150.0f * t);
+                        float pitch_env_slow = expf(-18.0f * t);
+                        float base_f = 45.0f + 10.0f * siu_soul_factor;
+                        float sweep_depth = 180.0f + 120.0f * siu_identity_factor;
+                        
+                        float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
+                        phase_acc += 2.0f * 3.14159265f * f / 8000.0f;
+                        
+                        float sine_body = sinf(phase_acc);
+                        float amp_env = expf(-10.0f * t);
+                        float body = sine_body * amp_env;
+                        
+                        // Beater click (transient)
+                        float click_freq = 2000.0f + 800.0f * siu_soul_factor;
+                        float click_env = expf(-350.0f * t);
+                        float click = sinf(click_freq * t * 2.0f * 3.14159265f) * click_env * 0.35f;
+                        
+                        // Add a tiny bit of noise burst for the initial impact thud
+                        float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                        float noise_env = expf(-450.0f * t);
+                        float click_noise = noise * noise_env * 0.15f;
+                        
+                        float mixed = body + click + click_noise;
+                        float saturated_out = tanhf(1.8f * mixed);
+                        raw_sig[i] = saturated_out * 1.5f;
+                    }
+                    TsfiValveTriode kick_valve;
+                    tsfi_valve_init(&kick_valve, 30.0, 0.00045, 250.0, -1.5);
+                    kick_valve.R_plate = 80000.0;
+                    kick_valve.is_tubular = (selected_valve == 3);
+                    tsfi_valve_process_differential_feedback(&kick_valve, raw_sig, valve_out, len, 0.0, 1.0, 1.0 / 8000.0, 0.00003, 0.0003, 40000.0, 0.2);
+                    for (int i = 0; i < len; i++) {
+                        float sample = (valve_out[i] - 125.0f) / 125.0f;
+                        if (sample < -1.0f) sample = -1.0f;
+                        if (sample > 1.0f) sample = 1.0f;
+                        buf[i] = 128 + (int)(sample * 120.0f);
+                    }
+                }
+                if (raw_sig) free(raw_sig);
+                if (valve_out) free(valve_out);
+            }
+        } else if (strcmp(type, "snare") == 0) {
+            len = 3200; buf = malloc(len);
+            if (buf) {
+                float siu_soul_factor = (float)((params.soul % 1000000ULL) / 1000000.0f);
+                float siu_aura_factor = (float)((params.aura % 1000000ULL) / 1000000.0f);
+                float last_noise = 0.0f;
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    
+                    // 1. Dual-mode skin/shell resonance (fundamental + first overtone)
+                    float f1 = 150.0f + 50.0f * siu_aura_factor;
+                    float f2 = 280.0f + 100.0f * siu_aura_factor;
+                    float tone1 = sinf(f1 * t * 2.0f * 3.14159f);
+                    float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.5f;
+                    float skin_env = expf(-45.0f * t); // rapid skin decay
+                    float shell = (tone1 + tone2) * skin_env * 0.45f;
+                    
+                    // 2. High-pass filtered snare wire rattle noise
+                    float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float hp_noise = white_noise - last_noise; // high-pass difference filter
+                    last_noise = white_noise;
+                    
+                    float rattle_env = expf(-14.0f * t); // slower snare wire rattle decay
+                    float aura_noise_mix = 0.4f + 0.4f * siu_soul_factor;
+                    float rattle = hp_noise * rattle_env * 0.65f * aura_noise_mix;
+                    
+                    // Combine and apply selected valve saturation
+                    float sat = apply_valve_simulation((shell + rattle) * 1.8f, selected_valve);
+                    buf[i] = 128 + (int)(sat * 115.0f);
+                }
+            }
+        } else if (strcmp(type, "tom") == 0) {
+            len = 6000; buf = malloc(len);
+            if (buf) {
+                float y1 = 0.0f, y2 = 0.0f;
+                float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    // Tom sweep: frequency dynamically sweeps from 160Hz + offset down to 80Hz + offset
+                    float pitch_env = expf(-30.0f * t);
+                    float base_f = 70.0f + 25.0f * siu_identity_factor;
+                    float sweep_depth = 60.0f + 40.0f * siu_identity_factor;
+                    float f = base_f + sweep_depth * pitch_env;
+                    float w = 2.0f * 3.14159265f * f / 8000.0f;
+                    float cos_w = cosf(w);
+                    
+                    // Resonator active decay rate
+                    float decay_rate = 0.992f * expf(-2.0f * t);
+                    
+                    // Impulse trigger (slower rise than kick)
+                    float trigger = (i == 0) ? 0.8f : ((i < 60) ? 0.15f * expf(-0.1f * i) : 0.0f);
+                    
+                    float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
+                    y2 = y1;
+                    y1 = out;
+                    
+                    // Saturate output using chosen Audion preset
+                    float sat = apply_valve_simulation(1.7f * out, selected_valve);
+                    buf[i] = 128 + (int)(sat * 115.0f);
+                }
+            }
+        } else if (strcmp(type, "hats") == 0) {
+            len = 3500; buf = malloc(len);
+            if (buf) {
+                float last_sum = 0.0f;
+                float freqs[6] = {315.0f, 435.0f, 565.0f, 690.0f, 820.0f, 950.0f};
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    // Mix 6 detuned square-wave oscillators for metallic texture
+                    float sum = 0.0f;
+                    for (int osc = 0; osc < 6; osc++) {
+                        sum += (sinf(freqs[osc] * t * 2.0f * 3.14159265f) > 0.0f ? 1.0f : -1.0f) * 0.12f;
+                    }
+                    // Add white noise wash
+                    sum += ((float)(rand() % 200) - 100.0f) / 100.0f * 0.25f;
+                    
+                    // Fast high-pass filter (difference)
+                    float hp = sum - last_sum;
+                    last_sum = sum;
+                    
+                    // Rapid hi-hat decay (exponential envelope)
+                    float env = expf(-65.0f * t);
+                    
+                    // Saturation and gain
+                    float sat = apply_valve_simulation(hp * env * 2.0f, selected_valve);
+                    buf[i] = 128 + (int)(sat * 115.0f);
+                }
+            }
+        } else if (strcmp(type, "ride") == 0) {
+            len = 16000; buf = malloc(len);
+            if (buf) {
+                float last_sum = 0.0f;
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    // 1. FM-style bell tone (carrier=380Hz, modulator=912Hz)
+                    float mod = sinf(912.0f * t * 2.0f * 3.14159265f);
+                    float bell = sinf(380.0f * t * 2.0f * 3.14159265f + 1.8f * mod) * 0.45f;
+                    
+                    // 2. Metallic high-frequency noise wash
+                    float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float hp_noise = white_noise - last_sum;
+                    last_sum = white_noise;
+                    
+                    // Combine bell strike with metallic noise wash
+                    float strike = bell + hp_noise * 0.22f;
+                    
+                    // Long cymbal decay rate
+                    float env = expf(-3.5f * t);
+                    
+                    // Saturate through valve simulation
+                    float sat = apply_valve_simulation(strike * env * 1.5f, selected_valve);
+                    buf[i] = 128 + (int)(sat * 115.0f);
+                }
+            }
+        } else if (strcmp(type, "clap") == 0) {
+            len = 4000; buf = malloc(len);
+            if (buf) {
+                float y1 = 0.0f, y2 = 0.0f;
+                float cos_w = cosf(2.0f * 3.14159265f * 1100.0f / 8000.0f);
+                float r = 0.72f;
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float env = 0.0f;
+                    if (i < 100) {
+                        env = expf(-0.03f * i);
+                    } else if (i < 200) {
+                        env = expf(-0.03f * (i - 100));
+                    } else if (i < 300) {
+                        env = expf(-0.03f * (i - 200));
+                    } else {
+                        env = expf(-14.0f * (t - 0.0375f));
+                    }
+                    float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float in_val = noise * env * 0.7f;
+                    float out = in_val + 2.0f * r * cos_w * y1 - r * r * y2;
+                    y2 = y1;
+                    y1 = out;
+                    
+                    float sat = apply_valve_simulation(out * 1.5f, selected_valve);
+                    buf[i] = 128 + (int)(sat * 110.0f);
+                }
+            }
+        } else if (strcmp(type, "snap") == 0) {
+            len = 2000; buf = malloc(len);
+            if (buf) {
+                float y1 = 0.0f, y2 = 0.0f;
+                float cos_w = cosf(2.0f * 3.14159265f * 2000.0f / 8000.0f);
+                float r = 0.78f;
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float trigger = (i == 0) ? 1.0f : ((i < 30) ? 0.3f * expf(-0.15f * i) : 0.0f);
+                    float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float click = noise * expf(-180.0f * t) * 0.4f;
+                    float out = trigger + 2.0f * r * cos_w * y1 - r * r * y2;
+                    y2 = y1;
+                    y1 = out;
+                    float body = out * expf(-110.0f * t) * 0.7f;
+                    float mix = click + body;
+                    
+                    float sat = apply_valve_simulation(mix * 1.8f, selected_valve);
+                    buf[i] = 128 + (int)(sat * 115.0f);
+                }
             }
         }
-    } else if (strcmp(sd->type, "snap") == 0) {
-        len = 2000; buf = malloc(len);
-        if (buf) {
-            float y1 = 0.0f, y2 = 0.0f;
-            float cos_w = cosf(2.0f * 3.14159265f * 2000.0f / 8000.0f);
-            float r = 0.78f;
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                float trigger = (i == 0) ? 1.0f : ((i < 30) ? 0.3f * expf(-0.15f * i) : 0.0f);
-                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float click = noise * expf(-180.0f * t) * 0.4f;
-                
-                float out = trigger + 2.0f * r * cos_w * y1 - r * r * y2;
-                y2 = y1;
-                y1 = out;
-                
-                float body = out * expf(-110.0f * t) * 0.7f;
-                float mix = click + body;
-                
-                float sat = apply_valve_simulation(mix * 1.8f, selected_valve);
-                buf[i] = 128 + (int)(sat * 115.0f);
+        
+        ps->buf = buf;
+        ps->len = len;
+    }
+    pthread_mutex_unlock(&g_audio_mutex);
+}
+
+static void* audio_mixer_thread(void *arg) {
+    (void)arg;
+    snd_pcm_t *pcm_handle;
+    if (snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
+        return NULL;
+    }
+    if (snd_pcm_set_params(pcm_handle, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 8000, 1, 20000) < 0) {
+        snd_pcm_close(pcm_handle);
+        return NULL;
+    }
+
+    #define AUDIO_BLOCK_SIZE 256
+    uint8_t mix_buf[AUDIO_BLOCK_SIZE];
+
+    while (g_audio_running) {
+        pthread_mutex_lock(&g_audio_mutex);
+        bool any_active = false;
+        for (int i = 0; i < AUDIO_BLOCK_SIZE; i++) {
+            int sum = 0;
+            int count = 0;
+            for (int v = 0; v < MAX_VOICES; v++) {
+                if (g_voices[v].active) {
+                    any_active = true;
+                    int sample = (int)g_voices[v].buf[g_voices[v].pos] - 128;
+                    sum += sample;
+                    count++;
+                    g_voices[v].pos++;
+                    if (g_voices[v].pos >= g_voices[v].len) {
+                        g_voices[v].active = false;
+                    }
+                }
             }
+            int mixed = sum + 128;
+            if (mixed < 0) mixed = 0;
+            if (mixed > 255) mixed = 255;
+            mix_buf[i] = (uint8_t)mixed;
+        }
+        pthread_mutex_unlock(&g_audio_mutex);
+
+        if (any_active) {
+            snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, mix_buf, AUDIO_BLOCK_SIZE);
+            if (frames < 0) {
+                snd_pcm_prepare(pcm_handle);
+                snd_pcm_writei(pcm_handle, mix_buf, AUDIO_BLOCK_SIZE);
+            }
+        } else {
+            // Write silence to keep stream open and responsive
+            memset(mix_buf, 128, AUDIO_BLOCK_SIZE);
+            snd_pcm_writei(pcm_handle, mix_buf, AUDIO_BLOCK_SIZE);
         }
     }
-    if (buf && len > 0) {
-        snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
-        if (frames < 0) {
-            snd_pcm_prepare(pcm_handle);
-            snd_pcm_writei(pcm_handle, buf, len);
-        }
-        free(buf);
-    }
-    snd_pcm_drain(pcm_handle);
     snd_pcm_close(pcm_handle);
-    free(sd);
     return NULL;
 }
 
+static void start_audio_mixer() {
+    g_audio_running = true;
+    pthread_create(&g_audio_thread, NULL, audio_mixer_thread, NULL);
+}
+
+static void stop_audio_mixer() {
+    g_audio_running = false;
+    pthread_join(g_audio_thread, NULL);
+    for (int idx = 0; idx < NUM_SOUND_TYPES; idx++) {
+        if (g_precomputed_sounds[idx].buf) {
+            free(g_precomputed_sounds[idx].buf);
+            g_precomputed_sounds[idx].buf = NULL;
+        }
+    }
+}
+
 static void play_synth_sound(const char *type) {
-    struct SoundData *sd = malloc(sizeof(struct SoundData));
-    if (!sd) return;
-    strncpy(sd->type, type, sizeof(sd->type) - 1);
-    sd->type[sizeof(sd->type) - 1] = '\0';
-    pthread_t thread;
-    pthread_create(&thread, NULL, play_sound_thread, sd);
-    pthread_detach(thread);
+    const uint8_t *buf = NULL;
+    int len = 0;
+    
+    pthread_mutex_lock(&g_audio_mutex);
+    for (int idx = 0; idx < NUM_SOUND_TYPES; idx++) {
+        if (strcmp(g_precomputed_sounds[idx].name, type) == 0) {
+            buf = g_precomputed_sounds[idx].buf;
+            len = g_precomputed_sounds[idx].len;
+            break;
+        }
+    }
+    
+    if (buf && len > 0) {
+        for (int i = 0; i < MAX_VOICES; i++) {
+            if (!g_voices[i].active) {
+                g_voices[i].buf = buf;
+                g_voices[i].len = len;
+                g_voices[i].pos = 0;
+                g_voices[i].active = true;
+                break;
+            }
+        }
+    }
+    pthread_mutex_unlock(&g_audio_mutex);
 }
 
 #include "tsfi_svdag.h"
@@ -604,6 +717,8 @@ static float haptic_rumble_frequency = 0.0f;
 static bool hover_slider0 = false;
 static bool hover_slider1 = false;
 static bool hover_slider2 = false;
+static bool hover_slider3 = false;
+static bool hover_slider4 = false;
 static bool hover_btn1 = false;
 static bool hover_btn2 = false;
 static bool hover_btn3 = false;
@@ -1091,7 +1206,7 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
 }
 
 
-static float sphere_ao(float px, float py, float pz, float nx, float ny, float nz, float cx, float cy, float cz, float r, float sx, float sy, float sz, float lx, float ly, float lz) {
+__attribute__((unused)) static float sphere_ao(float px, float py, float pz, float nx, float ny, float nz, float cx, float cy, float cz, float r, float sx, float sy, float sz, float lx, float ly, float lz) {
     float wdx = cx - px;
     float wdy = cy - py;
     float wdz = cz - pz;
@@ -1121,6 +1236,7 @@ static float sphere_ao(float px, float py, float pz, float nx, float ny, float n
     
     return 1.0f - ndot * sin_theta2 * directional_factor;
 }
+
 
 static float calculate_shadow(float px, float py, float pz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx) {
     float shadow = 1.0f;
@@ -1170,6 +1286,86 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
     }
     if (shadow < 0.15f) shadow = 0.15f;
     return shadow;
+}
+
+static void calculate_combined_shadow_ao(float px, float py, float pz, float nx, float ny, float nz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx, float *out_shadow, float *out_ao) {
+    float shadow = 1.0f;
+    float ao = 1.0f;
+    
+    for (int i = 0; i < 15; i++) {
+        if (i == ignore_idx) continue;
+        
+        float wdx = body[i].x - px;
+        float wdy = body[i].y - py;
+        float wdz = body[i].z - pz;
+        float wd2 = wdx*wdx + wdy*wdy + wdz*wdz;
+        float wd = sqrtf(wd2);
+        
+        // --- 1. Ambient Occlusion ---
+        float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
+        float avg_r = body[i].r * avg_scale;
+        if (wd >= avg_r + 0.001f) {
+            float vx = wdx / wd;
+            float vy = wdy / wd;
+            float vz = wdz / wd;
+            
+            // Normal-oriented cosine weighting in world space
+            float ndot = nx * vx + ny * vy + nz * vz;
+            if (ndot < 0.0f) ndot = 0.0f;
+            
+            // Solid angle approximation of the sphere
+            float sin_theta2 = (avg_r * avg_r) / wd2;
+            if (sin_theta2 > 1.0f) sin_theta2 = 1.0f;
+            
+            // Directional weighting based on light alignment (directional AO)
+            float ldot = vx * lx + vy * ly + vz * lz;
+            float directional_factor = 0.4f + 0.6f * ldot;
+            if (directional_factor < 0.0f) directional_factor = 0.0f;
+            
+            ao *= (1.0f - ndot * sin_theta2 * directional_factor);
+        }
+        
+        // --- 2. Soft Shadow ---
+        float inv_sx = 1.0f / body[i].sx;
+        float inv_sy = 1.0f / body[i].sy;
+        float inv_sz = 1.0f / body[i].sz;
+        
+        float oc_x = wdx * inv_sx;
+        float oc_y = wdy * inv_sy;
+        float oc_z = wdz * inv_sz;
+        
+        float r_lx = lx * inv_sx;
+        float r_ly = ly * inv_sy;
+        float r_lz = lz * inv_sz;
+        float r_len = sqrtf(r_lx*r_lx + r_ly*r_ly + r_lz*r_lz);
+        if (r_len > 0.0001f) { r_lx /= r_len; r_ly /= r_len; r_lz /= r_len; }
+        
+        float b = oc_x * r_lx + oc_y * r_ly + oc_z * r_lz;
+        if (b >= 0.001f) {
+            float c = oc_x * oc_x + oc_y * oc_y + oc_z * oc_z - body[i].r * body[i].r;
+            float h = b * b - c;
+            
+            if (h > 0.0f) {
+                shadow = 0.15f;
+            } else {
+                float dist_sq = oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b;
+                float dist_to_surface = sqrtf(fmaxf(0.0f, dist_sq)) - body[i].r;
+                if (dist_to_surface < 0.0f) dist_to_surface = 0.0f;
+                
+                float light_spread = 0.12f;
+                float penumbra_radius = b * light_spread + 0.01f;
+                
+                float penumbra = 0.15f + 0.85f * (dist_to_surface * avg_scale) / penumbra_radius;
+                if (penumbra < shadow) {
+                    shadow = penumbra;
+                }
+            }
+        }
+    }
+    
+    if (shadow < 0.15f) shadow = 0.15f;
+    *out_shadow = shadow;
+    *out_ao = ao;
 }
 
 static void draw_vaesen_valve_ab4h(TsfiAb4hMat *canvas, int x, int y, int w, int h, float intensity, int type) {
@@ -1543,14 +1739,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                 float ny = dy / body[i].r;
 
                                 float pz = body[i].z + sqrtf(r2 - dist2);
-                                float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, i);
-
-                                // Analytical ambient occlusion from other spheres
+                                float shadow_val = 1.0f;
                                 float analytical_ao = 1.0f;
-                                for (int j = 0; j < 15; j++) {
-                                    if (j == i) continue;
-                                    analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
-                                }
+                                calculate_combined_shadow_ao(cx, cy, pz, nx, ny, nz, lx, ly, lz, body, i, &shadow_val, &analytical_ao);
 
                                 // 3-point hemisphere lighting
                                 float diffuse_key = nx*lx + ny*ly + nz*lz;
@@ -1698,13 +1889,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     float dy_closest = cy - body[closest_idx].y;
                                     float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
                                     float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
-                                    float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
-
+                                    float shadow_val = 1.0f;
                                     float analytical_ao = 1.0f;
-                                    for (int j = 0; j < 15; j++) {
-                                        if (j == closest_idx) continue;
-                                        analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
-                                    }
+                                    calculate_combined_shadow_ao(cx, cy, pz, nx, ny, nz, lx, ly, lz, body, closest_idx, &shadow_val, &analytical_ao);
 
                                     float diffuse_key = nx*lx + ny*ly + nz*lz;
                                     if (diffuse_key < 0.0f) diffuse_key = 0.0f;
@@ -1776,13 +1963,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float dy_closest = cy - body[closest_idx].y;
                                         float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
                                         float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
-                                        float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
-
+                                        float shadow_val = 1.0f;
                                         float analytical_ao = 1.0f;
-                                        for (int j = 0; j < 15; j++) {
-                                            if (j == closest_idx) continue;
-                                            analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
-                                        }
+                                        calculate_combined_shadow_ao(cx, cy, pz, nx, ny, nz, lx, ly, lz, body, closest_idx, &shadow_val, &analytical_ao);
 
                                         float diffuse_key = nx*lx + ny*ly + nz*lz;
                                         if (diffuse_key < 0.0f) diffuse_key = 0.0f;
@@ -2017,8 +2200,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         // Slider 0: Fur Length
         char str_buf[128];
         snprintf(str_buf, sizeof(str_buf), "Fur Length: %.3f", fur_length);
-        draw_string_ab4h(canvas, str_buf, 820, 120, text_hdr);
-        draw_rect_ab4h(canvas, 850, 150, 350, 8, track_col);
+        draw_string_ab4h(canvas, str_buf, 820, 100, text_hdr);
+        draw_rect_ab4h(canvas, 850, 120, 350, 8, track_col);
         int fill_w0 = (int)(350 * (fur_length - 0.01f) / (0.20f - 0.01f));
         for (int tx = 0; tx < fill_w0; tx++) {
             float t = (float)tx / 350.0f;
@@ -2029,14 +2212,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 col.g = double_to_half(half_to_float(col.g) * mult);
                 col.b = double_to_half(half_to_float(col.b) * mult);
             }
-            draw_rect_ab4h(canvas, 850 + tx, 150, 1, 8, col);
+            draw_rect_ab4h(canvas, 850 + tx, 120, 1, 8, col);
         }
-        draw_rect_ab4h(canvas, 850 + fill_w0 - 6, 144, 12, 20, thumb_col);
+        draw_rect_ab4h(canvas, 850 + fill_w0 - 6, 114, 12, 20, thumb_col);
 
         // Slider 1: Scale
         snprintf(str_buf, sizeof(str_buf), "Scale: %.2f", scale_val);
-        draw_string_ab4h(canvas, str_buf, 820, 220, text_hdr);
-        draw_rect_ab4h(canvas, 850, 250, 350, 8, track_col);
+        draw_string_ab4h(canvas, str_buf, 820, 150, text_hdr);
+        draw_rect_ab4h(canvas, 850, 170, 350, 8, track_col);
         int fill_w1 = (int)(350 * (scale_val - 0.2f) / (2.0f - 0.2f));
         for (int tx = 0; tx < fill_w1; tx++) {
             float t = (float)tx / 350.0f;
@@ -2047,14 +2230,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 col.g = double_to_half(half_to_float(col.g) * mult);
                 col.b = double_to_half(half_to_float(col.b) * mult);
             }
-            draw_rect_ab4h(canvas, 850 + tx, 250, 1, 8, col);
+            draw_rect_ab4h(canvas, 850 + tx, 170, 1, 8, col);
         }
-        draw_rect_ab4h(canvas, 850 + fill_w1 - 6, 244, 12, 20, thumb_col);
+        draw_rect_ab4h(canvas, 850 + fill_w1 - 6, 164, 12, 20, thumb_col);
 
         // Slider 2: Light Angle
         snprintf(str_buf, sizeof(str_buf), "Light Angle: %.1f Deg", light_angle_deg);
-        draw_string_ab4h(canvas, str_buf, 820, 320, text_hdr);
-        draw_rect_ab4h(canvas, 850, 350, 350, 8, track_col);
+        draw_string_ab4h(canvas, str_buf, 820, 200, text_hdr);
+        draw_rect_ab4h(canvas, 850, 220, 350, 8, track_col);
         int fill_w2 = (int)(350 * (light_angle_deg / 360.0f));
         for (int tx = 0; tx < fill_w2; tx++) {
             float t = (float)tx / 350.0f;
@@ -2065,9 +2248,45 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 col.g = double_to_half(half_to_float(col.g) * mult);
                 col.b = double_to_half(half_to_float(col.b) * mult);
             }
-            draw_rect_ab4h(canvas, 850 + tx, 350, 1, 8, col);
+            draw_rect_ab4h(canvas, 850 + tx, 220, 1, 8, col);
         }
-        draw_rect_ab4h(canvas, 850 + fill_w2 - 6, 344, 12, 20, thumb_col);
+        draw_rect_ab4h(canvas, 850 + fill_w2 - 6, 214, 12, 20, thumb_col);
+
+        // Slider 3: Wind Velocity
+        snprintf(str_buf, sizeof(str_buf), "Wind Velocity: %.2f", wind_velocity);
+        draw_string_ab4h(canvas, str_buf, 820, 250, text_hdr);
+        draw_rect_ab4h(canvas, 850, 270, 350, 8, track_col);
+        int fill_w3 = (int)(350 * (wind_velocity / 2.0f));
+        for (int tx = 0; tx < fill_w3; tx++) {
+            float t = (float)tx / 350.0f;
+            Ab4hPixel col = evaluate_palette(t);
+            if (hover_slider3 || active_slider == 3) {
+                float mult = 1.2f + haptic_rumble_amplitude * 2.5f;
+                col.r = double_to_half(half_to_float(col.r) * mult);
+                col.g = double_to_half(half_to_float(col.g) * mult);
+                col.b = double_to_half(half_to_float(col.b) * mult);
+            }
+            draw_rect_ab4h(canvas, 850 + tx, 270, 1, 8, col);
+        }
+        draw_rect_ab4h(canvas, 850 + fill_w3 - 6, 264, 12, 20, thumb_col);
+
+        // Slider 4: Fur Stiffness
+        snprintf(str_buf, sizeof(str_buf), "Fur Stiffness: %.2f", fur_stiffness);
+        draw_string_ab4h(canvas, str_buf, 820, 300, text_hdr);
+        draw_rect_ab4h(canvas, 850, 320, 350, 8, track_col);
+        int fill_w4 = (int)(350 * (fur_stiffness - 0.1f) / (5.0f - 0.1f));
+        for (int tx = 0; tx < fill_w4; tx++) {
+            float t = (float)tx / 350.0f;
+            Ab4hPixel col = evaluate_palette(t);
+            if (hover_slider4 || active_slider == 4) {
+                float mult = 1.2f + haptic_rumble_amplitude * 2.5f;
+                col.r = double_to_half(half_to_float(col.r) * mult);
+                col.g = double_to_half(half_to_float(col.g) * mult);
+                col.b = double_to_half(half_to_float(col.b) * mult);
+            }
+            draw_rect_ab4h(canvas, 850 + tx, 320, 1, 8, col);
+        }
+        draw_rect_ab4h(canvas, 850 + fill_w4 - 6, 314, 12, 20, thumb_col);
     }
 
     // Action Buttons
@@ -2081,8 +2300,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         ssaa_bg.g = double_to_half(half_to_float(ssaa_bg.g) + 0.10f);
         ssaa_bg.b = double_to_half(half_to_float(ssaa_bg.b) + 0.15f);
     }
-    draw_rect_ab4h(canvas, 850, 380, 80, 30, ssaa_bg);
-    draw_string_ab4h(canvas, opt_ssaa ? "SSAA: ON" : "SSAA: OFF", 855, 388, btn_text);
+    draw_rect_ab4h(canvas, 850, 350, 80, 30, ssaa_bg);
+    draw_string_ab4h(canvas, opt_ssaa ? "SSAA: ON" : "SSAA: OFF", 855, 358, btn_text);
 
     Ab4hPixel vig_bg = opt_vignette ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
     if (hover_vignette) {
@@ -2090,8 +2309,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         vig_bg.g = double_to_half(half_to_float(vig_bg.g) + 0.10f);
         vig_bg.b = double_to_half(half_to_float(vig_bg.b) + 0.15f);
     }
-    draw_rect_ab4h(canvas, 940, 380, 80, 30, vig_bg);
-    draw_string_ab4h(canvas, opt_vignette ? "VIG: ON" : "VIG: OFF", 948, 388, btn_text);
+    draw_rect_ab4h(canvas, 940, 350, 80, 30, vig_bg);
+    draw_string_ab4h(canvas, opt_vignette ? "VIG: ON" : "VIG: OFF", 948, 358, btn_text);
 
     Ab4hPixel tone_bg = opt_tonemap ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
     if (hover_tonemap) {
@@ -2099,8 +2318,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         tone_bg.g = double_to_half(half_to_float(tone_bg.g) + 0.10f);
         tone_bg.b = double_to_half(half_to_float(tone_bg.b) + 0.15f);
     }
-    draw_rect_ab4h(canvas, 1030, 380, 80, 30, tone_bg);
-    draw_string_ab4h(canvas, opt_tonemap ? "TONE: ON" : "TONE: OFF", 1035, 388, btn_text);
+    draw_rect_ab4h(canvas, 1030, 350, 80, 30, tone_bg);
+    draw_string_ab4h(canvas, opt_tonemap ? "TONE: ON" : "TONE: OFF", 1035, 358, btn_text);
 
     Ab4hPixel boost_bg = opt_viewport_boost ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
     if (hover_viewport_boost) {
@@ -2108,54 +2327,54 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         boost_bg.g = double_to_half(half_to_float(boost_bg.g) + 0.10f);
         boost_bg.b = double_to_half(half_to_float(boost_bg.b) + 0.15f);
     }
-    draw_rect_ab4h(canvas, 1120, 380, 80, 30, boost_bg);
-    draw_string_ab4h(canvas, opt_viewport_boost ? "BOOST: ON" : "BOOST: OFF", 1125, 388, btn_text);
+    draw_rect_ab4h(canvas, 1120, 350, 80, 30, boost_bg);
+    draw_string_ab4h(canvas, opt_viewport_boost ? "BOOST: ON" : "BOOST: OFF", 1125, 358, btn_text);
 
     // Button 1: Randomize
     if (hover_btn1) btn_bg = make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f);
     else btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 430, 160, 40, btn_bg);
-    draw_string_ab4h(canvas, "RANDOMIZE", 880, 442, btn_text);
+    draw_rect_ab4h(canvas, 850, 400, 160, 40, btn_bg);
+    draw_string_ab4h(canvas, "RANDOMIZE", 880, 412, btn_text);
 
     // Button 2: Export PPM
     if (hover_btn2) btn_bg = make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f);
     else btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 1030, 430, 170, 40, btn_bg);
-    draw_string_ab4h(canvas, "EXPORT PPM", 1060, 442, btn_text);
+    draw_rect_ab4h(canvas, 1030, 400, 170, 40, btn_bg);
+    draw_string_ab4h(canvas, "EXPORT PPM", 1060, 412, btn_text);
 
     // Button 3: Reset
     if (hover_btn3) btn_bg = make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f);
     else btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 480, 160, 40, btn_bg);
-    draw_string_ab4h(canvas, "RESET STATE", 880, 492, btn_text);
+    draw_rect_ab4h(canvas, 850, 450, 160, 40, btn_bg);
+    draw_string_ab4h(canvas, "RESET STATE", 880, 462, btn_text);
 
     // Button 4: Valve Preset Selector
     Ab4hPixel valve_btn_bg = hover_valve_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 1030, 480, 170, 40, valve_btn_bg);
+    draw_rect_ab4h(canvas, 1030, 450, 170, 40, valve_btn_bg);
     char valve_lbl[64];
     snprintf(valve_lbl, sizeof(valve_lbl), "VALVE: %s", valve_names[selected_valve]);
-    draw_string_ab4h(canvas, valve_lbl, 1040, 492, btn_text);
+    draw_string_ab4h(canvas, valve_lbl, 1040, 462, btn_text);
 
     // VLM Selector
-    draw_string_ab4h(canvas, "VLM Critic:", 820, 540, text_hdr);
+    draw_string_ab4h(canvas, "VLM Critic:", 820, 510, text_hdr);
     Ab4hPixel vlm_btn_bg = hover_vlm_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 960, 530, 240, 30, vlm_btn_bg);
-    draw_string_ab4h(canvas, vlm_names[selected_vlm], 980, 538, btn_text);
+    draw_rect_ab4h(canvas, 960, 500, 240, 30, vlm_btn_bg);
+    draw_string_ab4h(canvas, vlm_names[selected_vlm], 980, 508, btn_text);
 
     // Generator Selector
-    draw_string_ab4h(canvas, "Generator:", 820, 580, text_hdr);
+    draw_string_ab4h(canvas, "Generator:", 820, 550, text_hdr);
     Ab4hPixel gen_btn_bg = hover_gen_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
-    draw_rect_ab4h(canvas, 960, 570, 240, 30, gen_btn_bg);
-    draw_string_ab4h(canvas, generator_names[selected_generator], 980, 578, btn_text);
+    draw_rect_ab4h(canvas, 960, 540, 240, 30, gen_btn_bg);
+    draw_string_ab4h(canvas, generator_names[selected_generator], 980, 548, btn_text);
 
     // Run Optimizer & Dragon's Lair Buttons
     Ab4hPixel run_btn_bg = hover_run_btn ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.25f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 605, 170, 25, run_btn_bg);
-    draw_string_ab4h(canvas, "RUN OPTIMIZER", 880, 613, btn_text);
+    draw_rect_ab4h(canvas, 850, 580, 170, 25, run_btn_bg);
+    draw_string_ab4h(canvas, "RUN OPTIMIZER", 880, 588, btn_text);
 
     Ab4hPixel dl_btn_bg = hover_dl_btn ? make_ab4h_pixel(0.35f, 0.15f, 0.15f, 1.0f) : (dl_game_active ? make_ab4h_pixel(0.25f, 0.08f, 0.08f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.08f, 1.0f));
-    draw_rect_ab4h(canvas, 1030, 605, 170, 25, dl_btn_bg);
-    draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 613, btn_text);
+    draw_rect_ab4h(canvas, 1030, 580, 170, 25, dl_btn_bg);
+    draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 588, btn_text);
 
     // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (7-Track, 8-Step)
     const char* seq_labels[7] = {"KICK", "SNAR", "TOMS", "HATS", "RIDE", "CLAP", "SNAP"};
@@ -2466,33 +2685,42 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     tsfi_valve_process_differential_feedback(&mouse_valve_x, vg_in_x, vp_out_x, 16, 0.0, 1.0, 0.001, 0.00002, 0.0002, 50000.0, 0.35);
     tsfi_valve_process_differential_feedback(&mouse_valve_y, vg_in_y, vp_out_y, 16, 0.0, 1.0, 0.001, 0.00002, 0.0002, 50000.0, 0.35);
 
-    mouse_sim_x = vp_out_x[15];
-    mouse_sim_y = vp_out_y[15];
+    if (force_procedural_rendering) {
+        mouse_x = (int)target_x;
+        mouse_y = (int)target_y;
+        mouse_sim_x = (float)target_x;
+        mouse_sim_y = (float)target_y;
+        haptic_rumble_amplitude = 0.0f;
+        haptic_rumble_frequency = 0.0f;
+    } else {
+        mouse_sim_x = vp_out_x[15];
+        mouse_sim_y = vp_out_y[15];
 
-    mouse_x = (int)mouse_sim_x;
-    mouse_y = (int)mouse_sim_y;
+        mouse_x = (int)mouse_sim_x;
+        mouse_y = (int)mouse_sim_y;
 
-    float mean_vp = 0.0f;
-    for (int k = 0; k < 16; k++) {
-        mean_vp += vp_out_x[k];
-    }
-    mean_vp /= 16.0f;
-
-    float variance = 0.0f;
-    int zero_crossings = 0;
-    float prev_dev = vp_out_x[0] - mean_vp;
-    for (int k = 0; k < 16; k++) {
-        float dev = vp_out_x[k] - mean_vp;
-        variance += dev * dev;
-        if ((prev_dev < 0.0f && dev >= 0.0f) || (prev_dev > 0.0f && dev <= 0.0f)) {
-            zero_crossings++;
+        float mean_vp = 0.0f;
+        for (int k = 0; k < 16; k++) {
+            mean_vp += vp_out_x[k];
         }
-        prev_dev = dev;
-    }
-    variance /= 16.0f;
+        mean_vp /= 16.0f;
 
-    haptic_rumble_amplitude = sqrtf(variance) / 1280.0f;
-    haptic_rumble_frequency = (float)zero_crossings * 60.0f;
+        float variance = 0.0f;
+        int zero_crossings = 0;
+        float prev_dev = vp_out_x[0] - mean_vp;
+        for (int k = 0; k < 16; k++) {
+            float dev = vp_out_x[k] - mean_vp;
+            variance += dev * dev;
+            if ((prev_dev < 0.0f && dev >= 0.0f) || (prev_dev > 0.0f && dev <= 0.0f)) {
+                zero_crossings++;
+            }
+            prev_dev = dev;
+        }
+        variance /= 16.0f;
+
+        haptic_rumble_amplitude = sqrtf(variance) / 1280.0f;
+        haptic_rumble_frequency = (float)zero_crossings * 60.0f;
+    }
 
     // Recalculate hover states
     hover_slider0 = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 135 && mouse_y <= 165);
@@ -2599,6 +2827,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                 } else if (mouse_x >= 1030 && mouse_x <= 1200) {
                     selected_valve = (selected_valve + 1) % 11;
                     printf("  -> Cycled Valve Preset: %d (%s)\n", selected_valve, valve_names[selected_valve]);
+                    precompute_all_sounds();
                 }
             } else if (mouse_y >= 530 && mouse_y <= 560 && mouse_x >= 960 && mouse_x <= 1200) {
                 selected_vlm = (selected_vlm + 1) % 6;
@@ -3062,6 +3291,9 @@ int main(int argc, char *argv[]) {
     
     // Load small 12-byte procedural bear DNA genome
     reload_genome();
+    
+    precompute_all_sounds();
+    start_audio_mixer();
 
     if (argc > 1 && strcmp(argv[1], "--test") == 0) {
         int W = 1280;
@@ -3320,5 +3552,6 @@ int main(int argc, char *argv[]) {
     munmap(framebuffer, argb_sz);
     close(mfd);
     free(offscreen_buf);
+    stop_audio_mixer();
     return 0;
 }

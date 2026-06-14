@@ -11,6 +11,11 @@
 #include <unistd.h>
 #include <time.h>
 
+#define SKELETON_NO_MAIN
+#include "tsfi_teddy_skeleton.c"
+#undef W
+#undef H
+
 /**
  * @brief Teddy Bear Channel: High-Speed Animation Loop
  */
@@ -36,6 +41,11 @@ int main(int argc, char **argv) {
     TsfiSafetensorsAsset *lcm = tsfi_safetensors_cache_attach("assets/models/lcm_lora_sd15.safetensors");
     if (!model || !lcm) return 1;
 
+    // Attach/create shared memory
+    TsfiControlNetMap *shm_depth = tsfi_cn_shm_create(TSFI_CN_SHM_DEPTH);
+    TsfiControlNetMap *shm_pose  = tsfi_cn_shm_create(TSFI_CN_SHM_POSE);
+    TsfiPuppetState *pstate = tsfi_puppetry_shm_attach();
+
     // 3. Animation Loop
     int w = 256, h = 256; // We updated SD worker to 256
     int lw = w/8, lh = h/8;
@@ -60,11 +70,16 @@ int main(int argc, char **argv) {
             }
         }
         
-        // Generate Dynamic 16-inch Skeleton (Depth + Pose)
+        // Generate Dynamic 16-inch Skeleton (Depth + Pose) in-process
         float t = (float)i * 0.1f;
-        char skel_cmd[256];
-        snprintf(skel_cmd, sizeof(skel_cmd), "bin/tsfi_teddy_skeleton %f", t);
-        system(skel_cmd);
+        if (shm_depth && shm_pose) {
+            memset(shm_depth->data, 0, TSFI_CN_MAP_SIZE);
+            memset(shm_pose->data, 0, TSFI_CN_MAP_SIZE);
+            render_puppet_at(shm_depth->data, shm_pose->data, 64, 64,   t, 0, pstate); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 192, 64,  t, 1, pstate); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 64, 192,  t, 2, pstate); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 192, 192, t, 3, pstate); 
+        }
 
         // B. Generation Phase (Seek-and-Warp)
         int steps = (i == 0) ? 8 : 2; // Initial frame is higher quality, then high-speed seek
@@ -79,7 +94,8 @@ int main(int argc, char **argv) {
         // C. Capture Latent for next frame
         FILE *lf = fopen("tmp/sd_latent_out.bin", "rb");
         if (lf) {
-            fread(last_latent, 1, latent_sz, lf);
+            size_t read_bytes = fread(last_latent, 1, latent_sz, lf);
+            (void)read_bytes;
             fclose(lf);
         }
 
@@ -89,7 +105,8 @@ int main(int argc, char **argv) {
         FILE *rf = fopen(frame_path, "rb");
         if (rf) {
             uint8_t *rgb = (uint8_t*)malloc(w * h * 3);
-            fread(rgb, 1, w * h * 3, rf);
+            size_t read_bytes = fread(rgb, 1, w * h * 3, rf);
+            (void)read_bytes;
             fclose(rf);
 
             uint32_t *rgba = (uint32_t*)malloc(w * h * 4);
@@ -128,6 +145,10 @@ int main(int argc, char **argv) {
         double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
         printf("[ANIM] Frame %04d: %.3fs (%.1f FPS)\n", i, elapsed, 1.0/elapsed);
     }
+
+    if (pstate) tsfi_puppetry_shm_close(pstate);
+    if (shm_depth) tsfi_cn_shm_close(shm_depth);
+    if (shm_pose) tsfi_cn_shm_close(shm_pose);
 
     tsfi_safetensors_cache_detach(model);
     tsfi_safetensors_cache_detach(lcm);

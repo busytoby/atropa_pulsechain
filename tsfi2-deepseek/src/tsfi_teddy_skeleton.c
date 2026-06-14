@@ -340,6 +340,7 @@ void render_puppet_at(uint8_t *depth, uint8_t *pose, float cx, float cy, float t
     }
 }
 
+#ifndef SKELETON_NO_MAIN
 int main(int argc, char **argv) {
     float time_t = 0.0f;
     if (argc > 1) time_t = atof(argv[1]);
@@ -365,3 +366,4 @@ int main(int argc, char **argv) {
     tsfi_cn_shm_close(shm_pose);
     return 0;
 }
+#endif

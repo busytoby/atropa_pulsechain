@@ -39,6 +39,21 @@ typedef struct {
     float sickness;
     uint32_t active;      // 1 if this puppet is being controlled
     uint32_t animal_type; // TsfiPuppetType
+
+    // Legacy joints
+    TsfiJoint head;
+    TsfiJoint body;
+    TsfiJoint neck;
+    TsfiJoint l_shoulder;
+    TsfiJoint r_shoulder;
+    TsfiJoint l_hip;
+    TsfiJoint r_hip;
+    TsfiJoint beak_upper;
+    TsfiJoint beak_lower;
+    TsfiJoint l_hand;
+    TsfiJoint r_hand;
+    TsfiJoint l_foot;
+    TsfiJoint r_foot;
 } TsfiPuppet;
 
 #define TSFI_PUPPET_SHM "/tsfi_puppet_state"

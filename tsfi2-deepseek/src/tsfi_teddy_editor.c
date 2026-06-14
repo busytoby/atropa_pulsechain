@@ -132,6 +132,11 @@ static void application_key_hook(void *data, uint32_t serial, uint32_t time, uin
 
 
 
+#define SKELETON_NO_MAIN
+#include "tsfi_teddy_skeleton.c"
+#undef W
+#undef H
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
     signal(SIGINT, handle_sigint);
@@ -178,11 +183,11 @@ int main(int argc, char **argv) {
 
     
     tsfi_io_printf(stdout, "[TEDDY] Session Active.\n");
-    const TsfiControlNetMap *shm_depth = tsfi_cn_shm_attach(TSFI_CN_SHM_DEPTH);
-    const TsfiControlNetMap *shm_pose  = tsfi_cn_shm_attach(TSFI_CN_SHM_POSE);
+    TsfiControlNetMap *shm_depth = tsfi_cn_shm_create(TSFI_CN_SHM_DEPTH);
+    TsfiControlNetMap *shm_pose  = tsfi_cn_shm_create(TSFI_CN_SHM_POSE);
     
     if (!shm_depth || !shm_pose) {
-        tsfi_io_printf(stderr, "[FRACTURE] Could not attach to Teddy Skeleton SHM.\n");
+        tsfi_io_printf(stderr, "[FRACTURE] Could not create/attach to Teddy Skeleton SHM.\n");
     }
 
 
@@ -194,10 +199,14 @@ int main(int argc, char **argv) {
         
         
         static float time_t = 0.0f;
-        char skel_cmd[256];
-        snprintf(skel_cmd, sizeof(skel_cmd), "bin/tsfi_teddy_skeleton %f", time_t);
-        int sys_res = system(skel_cmd);
-        (void)sys_res;
+        if (shm_depth && shm_pose) {
+            memset(shm_depth->data, 0, TSFI_CN_MAP_SIZE);
+            memset(shm_pose->data, 0, TSFI_CN_MAP_SIZE);
+            render_puppet_at(shm_depth->data, shm_pose->data, 64, 64,   time_t, 0, g_puppet_state); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 192, 64,  time_t, 1, g_puppet_state); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 64, 192,  time_t, 2, g_puppet_state); 
+            render_puppet_at(shm_depth->data, shm_pose->data, 192, 192, time_t, 3, g_puppet_state); 
+        }
         time_t += 0.1f;
         
         if (g_dirty || true) { // Always render for animation
@@ -214,8 +223,8 @@ int main(int argc, char **argv) {
     lau_free(left_buf);
     lau_free(right_buf);
     
-    if (shm_depth) tsfi_cn_shm_detach(shm_depth);
-    if (shm_pose) tsfi_cn_shm_detach(shm_pose);
+    if (shm_depth) tsfi_cn_shm_close(shm_depth);
+    if (shm_pose) tsfi_cn_shm_close(shm_pose);
     destroy_vulkan_system(s);
     if (g_puppet_state) tsfi_puppetry_shm_close(g_puppet_state);
 
