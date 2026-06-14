@@ -233,15 +233,32 @@ static void* play_sound_thread(void *arg) {
             }
         }
     } else if (strcmp(sd->type, "snare") == 0) {
-        len = 2500; buf = malloc(len);
+        len = 3200; buf = malloc(len);
         if (buf) {
-            float aura_pitch_offset = (float)(params.aura % 60); // offsets snare resonance pitch
-            float aura_noise_mix = 0.5f + (float)(params.aura % 100) / 200.0f; // modulates noise level
+            float aura_pitch_offset = (float)(params.aura % 60);
+            float aura_noise_mix = 0.5f + (float)(params.aura % 100) / 200.0f;
+            float last_noise = 0.0f;
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float tone = sinf((180.0f + aura_pitch_offset) * t * 2.0f * 3.14159f) * 0.3f;
-                float sat = apply_valve_simulation((noise * 0.7f * aura_noise_mix + tone) * expf(-20.0f * t) * 1.5f, selected_valve);
+                
+                // 1. Dual-mode skin/shell resonance (fundamental + first overtone)
+                float f1 = 180.0f + aura_pitch_offset;
+                float f2 = 330.0f + aura_pitch_offset * 1.6f;
+                float tone1 = sinf(f1 * t * 2.0f * 3.14159f);
+                float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.5f;
+                float skin_env = expf(-45.0f * t); // rapid skin decay
+                float shell = (tone1 + tone2) * skin_env * 0.45f;
+                
+                // 2. High-pass filtered snare wire rattle noise
+                float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float hp_noise = white_noise - last_noise; // high-pass difference filter
+                last_noise = white_noise;
+                
+                float rattle_env = expf(-14.0f * t); // slower snare wire rattle decay
+                float rattle = hp_noise * rattle_env * 0.65f * aura_noise_mix;
+                
+                // Combine and apply selected valve saturation
+                float sat = apply_valve_simulation((shell + rattle) * 1.8f, selected_valve);
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
