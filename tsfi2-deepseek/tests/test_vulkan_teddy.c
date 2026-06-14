@@ -94,24 +94,24 @@ static void* play_sound_thread(void *arg) {
             }
         }
     } else if (strcmp(sd->type, "kick") == 0) {
-        len = 3600; buf = malloc(len);
+        len = 12000; buf = malloc(len);
         if (buf) {
             float phase = 0.0f;
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                // TR-808 pitch sweep: sweeps quickly from 180 Hz to 48 Hz
-                float freq = 48.0f + 132.0f * expf(-75.0f * t);
+                // Deep sub-bass frequency sweep down to 39 Hz
+                float freq = 39.0f + 141.0f * expf(-80.0f * t);
                 phase += freq * (1.0f / 8000.0f) * 2.0f * 3.14159265f;
                 
-                // Bridged-T decay envelope
-                float env = expf(-8.5f * t);
+                // Slow decay envelope for long sub-bass tail
+                float env = expf(-2.2f * t);
                 float body = sinf(phase) * env;
                 
-                // Initial beater click component (high frequency transient)
-                float click = sinf(1500.0f * t * 2.0f * 3.14159265f) * expf(-300.0f * t) * 0.35f;
+                // Attack beater click transient
+                float click = sinf(1600.0f * t * 2.0f * 3.14159265f) * expf(-400.0f * t) * 0.40f;
                 
-                // Audion triode warm saturation
-                float sat = tanhf(3.2f * (body + click));
+                // Saturation curve
+                float sat = tanhf(2.2f * body + 3.5f * click);
                 buf[i] = 128 + (int)(sat * 120.0f);
             }
         }
