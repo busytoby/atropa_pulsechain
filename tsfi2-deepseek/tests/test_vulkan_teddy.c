@@ -204,11 +204,11 @@ static void* play_sound_thread(void *arg) {
             if (raw_sig && valve_out) {
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
-                    float pitch_env_fast = expf(-150.0f * t);
-                    float pitch_env_slow = expf(-25.0f * t);
+                    float pitch_env_fast = expf(-180.0f * t); // slightly faster transient drop
+                    float pitch_env_slow = expf(-22.0f * t);  // slightly slower bass settle
                     float base_f = 35.0f + 15.0f * siu_soul_factor;
-                    float sweep_depth = 120.0f + 80.0f * siu_identity_factor;
-                    float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
+                    float sweep_depth = 140.0f + 90.0f * siu_identity_factor; // punchier sweep range
+                    float f = base_f + 90.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
                     float w = 2.0f * 3.14159265f * f / 8000.0f;
                     float cos_w = cosf(w);
                     float decay_rate = (0.9920f + 0.0030f * siu_aura_factor) * expf(-1.5f * t);
@@ -222,9 +222,11 @@ static void* play_sound_thread(void *arg) {
                     float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
                     y2 = y1;
                     y1 = out;
-                    float click_freq = 1500.0f + 600.0f * siu_soul_factor;
-                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
-                    raw_sig[i] = (1.8f * out + 3.0f * click);
+                    float click_freq = 1600.0f + 600.0f * siu_soul_factor;
+                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * expf(-380.0f * t) * 0.35f;
+                    // Apply warm analog tanhf waveshaping to the main drum body
+                    float saturated_out = tanhf(1.9f * out);
+                    raw_sig[i] = (1.8f * saturated_out + 3.0f * click);
                 }
                 TsfiValveTriode kick_valve;
                 tsfi_valve_init(&kick_valve, 30.0, 0.00045, 250.0, -1.5);
@@ -1529,9 +1531,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         if (spec < 0.0f) spec = 0.0f;
                                         spec = powf(spec, 32.0f) * 0.8f;
 
-                                        sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
-                                        sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
-                                        sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                        // Dynamic beat-responsive glow on the eyes synchronized with the kick drum
+                                        float kick_glow = track_trigger_env[0] * 0.4f;
+                                        sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.4f * track_trigger_env[0]) + kick_glow;
+                                        sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.2f * track_trigger_env[0]) + (kick_glow * 0.2f);
+                                        sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.2f * track_trigger_env[0]) + (kick_glow * 0.2f);
                                     } else { // Red Bow Tie (Indices 12, 13, 14)
                                         float hx = lx;
                                         float hy = ly;
@@ -1555,9 +1559,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     }
 
                     if (!hit_bear) {
-                        float base_r = dna_fur_r;
-                        float base_g = dna_fur_g;
-                        float base_b = dna_fur_b;
+                        float base_r = dna_fur_r + 0.08f * track_trigger_env[0];
+                        float base_g = dna_fur_g + 0.05f * track_trigger_env[0];
+                        float base_b = dna_fur_b + 0.03f * track_trigger_env[0];
                         float nx_blend = 0.0f;
                         float ny_blend = 0.0f;
                         float d_blend = evaluate_d_blend_all(cx, cy, body, &nx_blend, &ny_blend, &base_r, &base_g, &base_b);
