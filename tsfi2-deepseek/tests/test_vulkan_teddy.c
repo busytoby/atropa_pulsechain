@@ -291,6 +291,59 @@ static void* play_sound_thread(void *arg) {
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
+    } else if (strcmp(sd->type, "hats") == 0) {
+        len = 3500; buf = malloc(len);
+        if (buf) {
+            float last_sum = 0.0f;
+            float freqs[6] = {315.0f, 435.0f, 565.0f, 690.0f, 820.0f, 950.0f};
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                // Mix 6 detuned square-wave oscillators for metallic texture
+                float sum = 0.0f;
+                for (int osc = 0; osc < 6; osc++) {
+                    sum += (sinf(freqs[osc] * t * 2.0f * 3.14159265f) > 0.0f ? 1.0f : -1.0f) * 0.12f;
+                }
+                // Add white noise wash
+                sum += ((float)(rand() % 200) - 100.0f) / 100.0f * 0.25f;
+                
+                // Fast high-pass filter (difference)
+                float hp = sum - last_sum;
+                last_sum = sum;
+                
+                // Rapid hi-hat decay (exponential envelope)
+                float env = expf(-65.0f * t);
+                
+                // Saturation and gain
+                float sat = apply_valve_simulation(hp * env * 2.0f, selected_valve);
+                buf[i] = 128 + (int)(sat * 115.0f);
+            }
+        }
+    } else if (strcmp(sd->type, "ride") == 0) {
+        len = 16000; buf = malloc(len);
+        if (buf) {
+            float last_sum = 0.0f;
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                // 1. FM-style bell tone (carrier=380Hz, modulator=912Hz)
+                float mod = sinf(912.0f * t * 2.0f * 3.14159265f);
+                float bell = sinf(380.0f * t * 2.0f * 3.14159265f + 1.8f * mod) * 0.45f;
+                
+                // 2. Metallic high-frequency noise wash
+                float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float hp_noise = white_noise - last_sum;
+                last_sum = white_noise;
+                
+                // Combine bell strike with metallic noise wash
+                float strike = bell + hp_noise * 0.22f;
+                
+                // Long cymbal decay rate
+                float env = expf(-3.5f * t);
+                
+                // Saturate through valve simulation
+                float sat = apply_valve_simulation(strike * env * 1.5f, selected_valve);
+                buf[i] = 128 + (int)(sat * 115.0f);
+            }
+        }
     }
     if (buf && len > 0) {
         snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
@@ -391,11 +444,13 @@ static int seq_frame_counter = 0;
 static bool seq_halted = false;
 static bool seq_validation_passed = true;
 
-// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms)
-static uint8_t seq_grid[3][8] = {
+// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms, Track 3 = Hats, Track 4 = Ride)
+static uint8_t seq_grid[5][8] = {
     {1, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 1, 0, 0, 0, 1, 0},
-    {0, 1, 0, 1, 0, 1, 0, 0}
+    {0, 1, 0, 1, 0, 1, 0, 0},
+    {0, 0, 1, 0, 0, 1, 0, 1},
+    {1, 0, 0, 0, 1, 0, 0, 0}
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
@@ -1012,15 +1067,23 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 638.0f + 10.0f, 0.2f, 0.9f, 0.2f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 598.0f + 10.0f, 0.2f, 0.9f, 0.2f);
         }
         if (seq_grid[1][seq_play_step]) {
             play_synth_sound("snare");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 663.0f + 10.0f, 0.3f, 0.8f, 1.0f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 622.0f + 10.0f, 0.3f, 0.8f, 1.0f);
         }
         if (seq_grid[2][seq_play_step]) {
             play_synth_sound("tom");
-            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 688.0f + 10.0f, 0.9f, 0.6f, 0.1f);
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 646.0f + 10.0f, 0.9f, 0.6f, 0.1f);
+        }
+        if (seq_grid[3][seq_play_step]) {
+            play_synth_sound("hats");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 670.0f + 10.0f, 0.9f, 0.9f, 0.2f);
+        }
+        if (seq_grid[4][seq_play_step]) {
+            play_synth_sound("ride");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 694.0f + 10.0f, 0.4f, 0.9f, 0.9f);
         }
     }
 
@@ -1746,14 +1809,16 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_rect_ab4h(canvas, 1030, 610, 170, 35, dl_btn_bg);
     draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 620, btn_text);
 
-    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (3-Track, 8-Step)
+    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (5-Track, 8-Step)
     Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
-    draw_string_ab4h(canvas, "KICK", 812, 642, grid_label_col);
-    draw_string_ab4h(canvas, "SNAR", 812, 667, grid_label_col);
-    draw_string_ab4h(canvas, "TOMS", 812, 692, grid_label_col);
+    draw_string_ab4h(canvas, "KICK", 812, 650, grid_label_col);
+    draw_string_ab4h(canvas, "SNAR", 812, 664, grid_label_col);
+    draw_string_ab4h(canvas, "TOMS", 812, 678, grid_label_col);
+    draw_string_ab4h(canvas, "HATS", 812, 692, grid_label_col);
+    draw_string_ab4h(canvas, "RIDE", 812, 706, grid_label_col);
  
-    for (int t = 0; t < 3; t++) {
-        int y_pos = 638 + t * 25;
+    for (int t = 0; t < 5; t++) {
+        int y_pos = 648 + t * 14;
         for (int s = 0; s < 8; s++) {
             int x_pos = 850 + s * 30;
             Ab4hPixel cell_bg;
@@ -1762,36 +1827,39 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
             } else {
                 cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.3f, 0.3f, 0.4f, 1.0f) : make_ab4h_pixel(0.15f, 0.15f, 0.2f, 1.0f);
             }
-            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 20, cell_bg);
+            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 12, cell_bg);
             
             if (seq_play_step == s) {
                 Ab4hPixel border_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
                 draw_rect_ab4h(canvas, x_pos, y_pos, 22, 2, border_col);
-                draw_rect_ab4h(canvas, x_pos, y_pos + 18, 22, 2, border_col);
+                draw_rect_ab4h(canvas, x_pos, y_pos + 10, 22, 2, border_col);
             }
         }
     }
+
+    // Sleek HUD overlay for Telemetry and Diagnostics in the viewport (bottom-left)
+    draw_rect_ab4h(canvas, 10, 640, 480, 75, make_ab4h_pixel(0.0f, 0.0f, 0.0f, 0.6f));
 
     char telemetry_buf[256];
     float ammeter_val = 0.05f * (ammeter_T - 293.15f);
     snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | DJ: BIOTIKA_ALPHA (ELECTED) | %s", ammeter_val, voltmeter_V, opt_status);
     Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
-    draw_string_ab4h(canvas, telemetry_buf, 812, 698, telemetry_col);
-
+    draw_string_ab4h(canvas, telemetry_buf, 15, 650, telemetry_col);
+ 
     char status_buf[128];
     bool geniac_active = (opt_ssaa && opt_vignette) || (opt_tonemap || opt_viewport_boost);
     snprintf(status_buf, sizeof(status_buf), "GENIAC: %s | DIAG SEQ: %d/6 (%s)",
              geniac_active ? "CLOSED" : "OPEN",
              seq_current_step + 1,
              seq_validation_passed ? "OK" : "FAULT");
-    draw_string_ab4h(canvas, status_buf, 812, 708, make_ab4h_pixel(0.9f, 0.7f, 0.2f, 1.0f));
-
+    draw_string_ab4h(canvas, status_buf, 15, 670, make_ab4h_pixel(0.9f, 0.7f, 0.2f, 1.0f));
+ 
     Ab4hPixel log_col = make_ab4h_pixel(0.5f, 0.85f, 0.5f, 1.0f);
     const char *prompt_fur = (fur_length > 0.14f) ? "dense" : ((fur_length < 0.05f) ? "short" : "fluffy");
     const char *prompt_size = (scale_val > 1.4f) ? "giant" : ((scale_val < 0.6f) ? "tiny" : "standard");
     char dynamic_prompt[128];
     snprintf(dynamic_prompt, sizeof(dynamic_prompt), "Prompt: 'a %s %s golden-brown' [1042, 9811]", prompt_fur, prompt_size);
-    draw_string_ab4h(canvas, dynamic_prompt, 812, 718, log_col);
+    draw_string_ab4h(canvas, dynamic_prompt, 15, 690, log_col);
     // Update and draw particles
     for (int i = 0; i < MAX_PARTICLES; i++) {
         if (particles[i].active) {
@@ -2047,10 +2115,10 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
             mouse_pressed = true;
 
-            // Check click on step sequencer grid (Kick/Snare/Toms tracks)
-            for (int t = 0; t < 3; t++) {
-                int y_start = 638 + t * 25;
-                if (mouse_y >= y_start && mouse_y <= y_start + 20) {
+            // Check click on step sequencer grid (Kick/Snare/Toms/Hats/Ride tracks)
+            for (int t = 0; t < 5; t++) {
+                int y_start = 648 + t * 14;
+                if (mouse_y >= y_start && mouse_y <= y_start + 12) {
                     for (int s = 0; s < 8; s++) {
                         int x_start = 850 + s * 30;
                         if (mouse_x >= x_start && mouse_x <= x_start + 22) {
