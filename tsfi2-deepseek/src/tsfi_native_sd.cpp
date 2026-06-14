@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
     params.keep_clip_on_cpu = false;
     params.keep_control_net_on_cpu = false;
     params.keep_vae_on_cpu = false;
-    params.flash_attn = false;
-    params.diffusion_flash_attn = false;
+    params.flash_attn = true;
+    params.diffusion_flash_attn = true;
     params.tensor_type_rules = ""; 
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
@@ -120,13 +120,25 @@ int main(int argc, char** argv) {
     
     if (strcmp(method_str, "euler_a") == 0) {
         gen_params.sample_params.sample_method = EULER_A_SAMPLE_METHOD;
+    } else if (strcmp(method_str, "heun") == 0) {
+        gen_params.sample_params.sample_method = HEUN_SAMPLE_METHOD;
     } else if (strcmp(method_str, "lcm") == 0) {
         gen_params.sample_params.sample_method = LCM_SAMPLE_METHOD;
+    } else if (strcmp(method_str, "dpmpp2m") == 0) {
+        gen_params.sample_params.sample_method = DPMPP2M_SAMPLE_METHOD;
     } else {
         gen_params.sample_params.sample_method = EULER_SAMPLE_METHOD;
     }
 
-    gen_params.sample_params.scheduler = (profile == MODEL_TURBO) ? DISCRETE_SCHEDULER : KARRAS_SCHEDULER;
+    if (profile == MODEL_TURBO) {
+        gen_params.sample_params.scheduler = DISCRETE_SCHEDULER;
+    } else if (strcmp(method_str, "heun") == 0) {
+        gen_params.sample_params.scheduler = EXPONENTIAL_SCHEDULER; // Exponential decay mapping for Heun
+    } else if (strcmp(method_str, "lcm") == 0) {
+        gen_params.sample_params.scheduler = AYM_SCHEDULER; // Faster sampling for LCM
+    } else {
+        gen_params.sample_params.scheduler = KARRAS_SCHEDULER;
+    }
 
     if (shm_depth) {
         gen_params.control_image.width = shm_depth->width; gen_params.control_image.height = shm_depth->height;
