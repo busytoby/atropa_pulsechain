@@ -23,6 +23,7 @@
 #include <alsa/asoundlib.h>
 #include <pthread.h>
 #include "tsfi_vm_dft_bridge.h"
+#include "tsfi_valve.h"
 
 static TSFiVmStateParams params = {
     .identity_pole = 261640507549433ULL,
@@ -195,42 +196,44 @@ static void* play_sound_thread(void *arg) {
         if (buf) {
             float y1 = 0.0f, y2 = 0.0f;
             float soul_pitch_offset = (float)(params.soul % 20);
-            for (int i = 0; i < len; i++) {
-                float t = (float)i / 8000.0f;
-                // Pitch sweep: frequency dynamically decreases from 180Hz + offset to 48Hz + offset
-                float pitch_env = expf(-45.0f * t);
-                float base_f = 48.0f + soul_pitch_offset;
-                float f = base_f + 132.0f * pitch_env;
-                float w = 2.0f * 3.14159265f * f / 8000.0f;
-                float cos_w = cosf(w);
-                
-                // High Q decay coefficient (simulating bridged-T filter damping)
-                float decay_rate = 0.9935f * expf(-1.5f * t);
-                
-                // Excitation pulse trigger at t = 0
-                float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
-                
-                // Inject gaseous ionization (ions) based on the selected Audion type
-                if (selected_valve == 1 || selected_valve == 2) {
-                    // Random micro-discharge ion strikes during early decay
-                    if (i > 80 && i < 3000 && (rand() % 120 == 0)) {
-                        float ion_intensity = (selected_valve == 2) ? 0.22f : 0.08f; // Landslide ionization is more violent
-                        trigger += ((float)(rand() % 200 - 100) / 100.0f) * ion_intensity * expf(-2.0f * t);
+            float *raw_sig = malloc(len * sizeof(float));
+            float *valve_out = malloc(len * sizeof(float));
+            if (raw_sig && valve_out) {
+                for (int i = 0; i < len; i++) {
+                    float t = (float)i / 8000.0f;
+                    float pitch_env = expf(-45.0f * t);
+                    float base_f = 48.0f + soul_pitch_offset;
+                    float f = base_f + 132.0f * pitch_env;
+                    float w = 2.0f * 3.14159265f * f / 8000.0f;
+                    float cos_w = cosf(w);
+                    float decay_rate = 0.9935f * expf(-1.5f * t);
+                    float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
+                    if (selected_valve == 1 || selected_valve == 2) {
+                        if (i > 80 && i < 3000 && (rand() % 120 == 0)) {
+                            float ion_intensity = (selected_valve == 2) ? 0.22f : 0.08f;
+                            trigger += ((float)(rand() % 200 - 100) / 100.0f) * ion_intensity * expf(-2.0f * t);
+                        }
                     }
+                    float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
+                    y2 = y1;
+                    y1 = out;
+                    float click = sinf(1800.0f * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
+                    raw_sig[i] = (1.8f * out + 3.0f * click);
                 }
-                
-                // Second-order time-varying resonant filter equations
-                float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
-                y2 = y1;
-                y1 = out;
-                
-                // Transient kick click
-                float click = sinf(1800.0f * t * 2.0f * 3.14159265f) * expf(-350.0f * t) * 0.35f;
-                
-                // Saturation via chosen Audion valve preset
-                float sat = apply_valve_simulation(1.8f * out + 3.0f * click, selected_valve);
-                buf[i] = 128 + (int)(sat * 120.0f);
+                TsfiValveTriode kick_valve;
+                tsfi_valve_init(&kick_valve, 30.0, 0.00045, 250.0, -1.5);
+                kick_valve.R_plate = 80000.0;
+                kick_valve.is_tubular = (selected_valve == 3);
+                tsfi_valve_process_differential_feedback(&kick_valve, raw_sig, valve_out, len, 0.0, 1.0, 1.0 / 8000.0, 0.00003, 0.0003, 40000.0, 0.2);
+                for (int i = 0; i < len; i++) {
+                    float sample = (valve_out[i] - 125.0f) / 125.0f;
+                    if (sample < -1.0f) sample = -1.0f;
+                    if (sample > 1.0f) sample = 1.0f;
+                    buf[i] = 128 + (int)(sample * 120.0f);
+                }
             }
+            if (raw_sig) free(raw_sig);
+            if (valve_out) free(valve_out);
         }
     } else if (strcmp(sd->type, "snare") == 0) {
         len = 3200; buf = malloc(len);
@@ -435,7 +438,6 @@ static void play_synth_sound(const char *type) {
 #include "tsfi_genetic.h"
 #include "tsfi_vm_dft_bridge.h"
 #include "tsfi_staging.h"
-#include "tsfi_valve.h"
 
 // Define custom CV_16FC4 layout pixel mapping to AB4H
 typedef struct {
