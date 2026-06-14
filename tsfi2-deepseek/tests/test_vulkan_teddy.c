@@ -22,6 +22,13 @@
 #include <omp.h>
 #include <alsa/asoundlib.h>
 #include <pthread.h>
+#include "tsfi_vm_dft_bridge.h"
+
+static TSFiVmStateParams params = {
+    .identity_pole = 261640507549433ULL,
+    .soul = 525772616431102ULL,
+    .aura = 341042560473881ULL
+};
 
 struct SoundData {
     char type[32];
@@ -118,12 +125,14 @@ static void* play_sound_thread(void *arg) {
         len = 12000; buf = malloc(len);
         if (buf) {
             float phase = 0.0f;
+            float soul_pitch_offset = (float)(params.soul % 20); // slightly offsets base pitch
+            float soul_phase_rotation = (float)(params.soul % 360) * (3.14159265f / 180.0f);
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                float freq = 39.0f + 141.0f * expf(-80.0f * t);
+                float freq = (39.0f + soul_pitch_offset) + 141.0f * expf(-80.0f * t);
                 phase += freq * (1.0f / 8000.0f) * 2.0f * 3.14159265f;
                 float env = expf(-2.2f * t);
-                float body = sinf(phase) * env;
+                float body = sinf(phase + soul_phase_rotation) * env;
                 float click = sinf(1600.0f * t * 2.0f * 3.14159265f) * expf(-400.0f * t) * 0.40f;
                 float sat = apply_valve_simulation(2.2f * body + 3.5f * click, selected_valve);
                 buf[i] = 128 + (int)(sat * 120.0f);
@@ -132,11 +141,13 @@ static void* play_sound_thread(void *arg) {
     } else if (strcmp(sd->type, "snare") == 0) {
         len = 2500; buf = malloc(len);
         if (buf) {
+            float aura_pitch_offset = (float)(params.aura % 60); // offsets snare resonance pitch
+            float aura_noise_mix = 0.5f + (float)(params.aura % 100) / 200.0f; // modulates noise level
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
                 float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                float tone = sinf(180.0f * t * 2.0f * 3.14159f) * 0.3f;
-                float sat = apply_valve_simulation((noise * 0.7f + tone) * expf(-20.0f * t) * 1.5f, selected_valve);
+                float tone = sinf((180.0f + aura_pitch_offset) * t * 2.0f * 3.14159f) * 0.3f;
+                float sat = apply_valve_simulation((noise * 0.7f * aura_noise_mix + tone) * expf(-20.0f * t) * 1.5f, selected_valve);
                 buf[i] = 128 + (int)(sat * 115.0f);
             }
         }
@@ -554,12 +565,7 @@ void draw_string_ab4h(TsfiAb4hMat *canvas, const char *str, int x, int y, Ab4hPi
     }
 }
 
-// Global state variables for the Dysnomia VM context
-static TSFiVmStateParams params = {
-    .identity_pole = 261640507549433ULL,
-    .soul = 525772616431102ULL,
-    .aura = 341042560473881ULL
-};
+
 
 static float smin_cubic(float a, float b, float k) {
     float h = k - fabs(a - b);
