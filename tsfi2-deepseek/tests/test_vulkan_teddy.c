@@ -37,7 +37,7 @@ struct SoundData {
 static const char* valve_names[] = {
     "Audion Classic", 
     "Audion Soft-Gas", 
-    "Audion Hard-Gas",
+    "Audion Landslide",
     "Audion Tubular T", 
     "Audion Flat-Plate D", 
     "Audion Cold-Cathode",
@@ -61,7 +61,7 @@ static inline float apply_valve_simulation(float input_sig, int valve_type) {
         }
         return base;
     } else if (valve_type == 2) {
-        // Audion Hard-Gas: avalanche gas breakdown discharge with hysteresis
+        // Audion Landslide: landslide gas breakdown discharge with hysteresis
         static int gas_latched = 0;
         float gain_sig = input_sig * 2.2f;
         if (gain_sig > 0.45f) {
