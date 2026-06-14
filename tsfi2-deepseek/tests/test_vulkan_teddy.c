@@ -195,39 +195,39 @@ static void* play_sound_thread(void *arg) {
     } else if (strcmp(sd->type, "kick") == 0) {
         len = 12000; buf = malloc(len);
         if (buf) {
-            float y1 = 0.0f, y2 = 0.0f;
             float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
             float siu_soul_factor     = (float)((params.soul % 1000000ULL) / 1000000.0f);
-            float siu_aura_factor     = (float)((params.aura % 1000000ULL) / 1000000.0f);
-
             float *raw_sig = malloc(len * sizeof(float));
             float *valve_out = malloc(len * sizeof(float));
             if (raw_sig && valve_out) {
+                float phase_acc = 0.0f;
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
-                    float pitch_env_fast = expf(-180.0f * t); // slightly faster transient drop
-                    float pitch_env_slow = expf(-22.0f * t);  // slightly slower bass settle
-                    float base_f = 35.0f + 15.0f * siu_soul_factor;
-                    float sweep_depth = 140.0f + 90.0f * siu_identity_factor; // punchier sweep range
-                    float f = base_f + 90.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
-                    float w = 2.0f * 3.14159265f * f / 8000.0f;
-                    float cos_w = cosf(w);
-                    float decay_rate = (0.9920f + 0.0030f * siu_aura_factor) * expf(-1.5f * t);
-                    float trigger = (i == 0) ? 1.0f : ((i < 80) ? 0.2f * expf(-0.08f * i) : 0.0f);
-                    if (selected_valve == 1 || selected_valve == 2) {
-                        if (i > 80 && i < 3000 && (rand() % 120 == 0)) {
-                            float ion_intensity = (selected_valve == 2) ? 0.22f : 0.08f;
-                            trigger += ((float)(rand() % 200 - 100) / 100.0f) * ion_intensity * expf(-2.0f * t);
-                        }
-                    }
-                    float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
-                    y2 = y1;
-                    y1 = out;
-                    float click_freq = 1600.0f + 600.0f * siu_soul_factor;
-                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * expf(-380.0f * t) * 0.35f;
-                    // Apply warm analog tanhf waveshaping to the main drum body
-                    float saturated_out = tanhf(1.9f * out);
-                    raw_sig[i] = (1.8f * saturated_out + 3.0f * click);
+                    float pitch_env_fast = expf(-150.0f * t);
+                    float pitch_env_slow = expf(-18.0f * t);
+                    float base_f = 45.0f + 10.0f * siu_soul_factor;
+                    float sweep_depth = 180.0f + 120.0f * siu_identity_factor;
+                    
+                    float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
+                    phase_acc += 2.0f * 3.14159265f * f / 8000.0f;
+                    
+                    float sine_body = sinf(phase_acc);
+                    float amp_env = expf(-10.0f * t);
+                    float body = sine_body * amp_env;
+                    
+                    // Beater click (transient)
+                    float click_freq = 2000.0f + 800.0f * siu_soul_factor;
+                    float click_env = expf(-350.0f * t);
+                    float click = sinf(click_freq * t * 2.0f * 3.14159265f) * click_env * 0.35f;
+                    
+                    // Add a tiny bit of noise burst for the initial impact thud
+                    float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                    float noise_env = expf(-450.0f * t);
+                    float click_noise = noise * noise_env * 0.15f;
+                    
+                    float mixed = body + click + click_noise;
+                    float saturated_out = tanhf(1.8f * mixed);
+                    raw_sig[i] = saturated_out * 1.5f;
                 }
                 TsfiValveTriode kick_valve;
                 tsfi_valve_init(&kick_valve, 30.0, 0.00045, 250.0, -1.5);
@@ -1606,20 +1606,22 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                          sub_g = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
                                          sub_b = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
                                     } else if (i == 10 || i == 11) { // Eyes with specular highlights
-                                        float hx = lx;
-                                        float hy = ly;
-                                        float hz = lz + 1.0f;
-                                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                                        hx /= hlen; hy /= hlen; hz /= hlen;
-                                        float spec = nx*hx + ny*hy + nz*hz;
-                                        if (spec < 0.0f) spec = 0.0f;
-                                        spec = powf(spec, 32.0f) * 0.8f;
+                                         float hx = lx;
+                                         float hy = ly;
+                                         float hz = lz + 1.0f;
+                                         float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                         hx /= hlen; hy /= hlen; hz /= hlen;
+                                         float spec = nx*hx + ny*hy + nz*hz;
+                                         if (spec < 0.0f) spec = 0.0f;
+                                         float spec_base = powf(spec, 32.0f) * 0.6f;
+                                         float spec_coat = powf(spec, 128.0f) * 1.5f; // Sharp clear-coat glass highlight
+                                         float eye_reflection = (ny * 0.4f + 0.6f) * fresnel * 0.8f; // Glossy reflections
 
-                                        // Dynamic beat-responsive glow on the eyes synchronized with the kick drum
-                                        float kick_glow = track_trigger_env[0] * 0.4f;
-                                        sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.4f * track_trigger_env[0]) + kick_glow;
-                                        sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.2f * track_trigger_env[0]) + (kick_glow * 0.2f);
-                                        sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * (0.4f + 0.2f * track_trigger_env[0]) + (kick_glow * 0.2f);
+                                         // Dynamic beat-responsive glow on the eyes synchronized with the kick drum
+                                         float kick_glow = track_trigger_env[0] * 0.4f;
+                                         sub_r = dna_eye_r * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + kick_glow;
+                                         sub_g = dna_eye_g * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f);
+                                         sub_b = dna_eye_b * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f);
                                     } else { // Red Bow Tie (Indices 12, 13, 14)
                                         float hx = lx;
                                         float hy = ly;
@@ -1795,9 +1797,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float hz = lz + 1.0f;
                                         float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
                                         if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
-                                        float dotNH = nx*hx + ny*hy + nz*hz;
-                                        float sinNH = sqrtf(fmaxf(0.0f, 1.0f - dotNH*dotNH));
-                                        float fur_spec = powf(sinNH, 24.0f) * 0.45f * tip_factor;
+                                         float dotNH = nx*hx + ny*hy + nz*hz;
+                                         float fur_spec = powf(fmaxf(0.0f, dotNH), 32.0f) * 0.5f * tip_factor;
 
                                         float shell_r = current_r * (diffuse * 0.8f + 0.2f) + fresnel * 0.85f + fur_spec;
                                         float shell_g = current_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
@@ -1808,15 +1809,15 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         shell_g += sheen * 0.65f;
                                         shell_b += sheen * 0.50f;
 
-                                        if (closest_idx == 2 || closest_idx == 3) {
-                                            float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.35f;
-                                            shell_r += sss * 0.8f;
-                                            shell_g += sss * 0.3f;
-                                            shell_b += sss * 0.2f;
-                                        }
+                                         // Generalized Subsurface Scattering for translucent organic fur look
+                                         float sss_thickness = 1.0f - tip_factor;
+                                         float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.28f * sss_thickness;
+                                         shell_r += sss * 0.85f;
+                                         shell_g += sss * 0.45f;
+                                         shell_b += sss * 0.30f;
 
-                                        float ao = 0.4f + 0.6f * ((float)shell / num_shells);
-                                        shell_r *= ao; shell_g *= ao; shell_b *= ao;
+                                         float ao = 0.4f + 0.6f * ((float)shell / num_shells);
+                                         shell_r *= ao; shell_g *= ao; shell_b *= ao;
 
                                         float shell_a = (shell == 0) ? 1.0f : (noise_val - threshold) * 2.5f;
                                         if (shell_a < 0.0f) shell_a = 0.0f;
