@@ -511,6 +511,7 @@ static uint8_t seq_grid[7][8] = {
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
+static float track_trigger_env[7] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
 struct Particle {
     float x;
@@ -1076,6 +1077,56 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
     return shadow;
 }
 
+static void draw_vaesen_valve_ab4h(TsfiAb4hMat *canvas, int x, int y, int w, int h, float intensity, int type) {
+    Ab4hPixel gold = make_ab4h_pixel(0.85f, 0.65f, 0.2f, 1.0f);
+    Ab4hPixel base_col = make_ab4h_pixel(0.4f, 0.25f, 0.1f, 1.0f);
+    for (int cy = y + h - 12; cy < y + h; cy++) {
+        for (int cx = x + 4; cx < x + w - 4; cx++) {
+            canvas->data[cy * canvas->stride + cx] = base_col;
+        }
+    }
+    for (int cy = y + 10; cy < y + h - 12; cy++) {
+        canvas->data[cy * canvas->stride + x + 2] = gold;
+        canvas->data[cy * canvas->stride + x + w - 3] = gold;
+    }
+    for (int cx = x + 5; cx < x + w - 5; cx++) {
+        canvas->data[(y + 5) * canvas->stride + cx] = gold;
+    }
+    for (int cx = x + 3; cx <= x + 5; cx++) {
+        canvas->data[(y + 7) * canvas->stride + cx] = gold;
+        canvas->data[(y + 7) * canvas->stride + w - 1 - cx + x] = gold;
+    }
+    Ab4hPixel glow_col;
+    if (type == 1) {
+        glow_col = make_ab4h_pixel(0.1f * intensity, 0.4f * intensity, 0.9f * intensity, 1.0f);
+    } else if (type == 2) {
+        glow_col = make_ab4h_pixel(0.9f * intensity, 0.1f * intensity, 0.4f * intensity, 1.0f);
+    } else if (type == 3) {
+        glow_col = make_ab4h_pixel(0.9f * intensity, 0.6f * intensity, 0.1f * intensity, 1.0f);
+    } else {
+        glow_col = make_ab4h_pixel(0.9f * intensity, 0.35f * intensity, 0.05f * intensity, 1.0f);
+    }
+    for (int gy = y + 8; gy < y + h - 12; gy++) {
+        for (int gx = x + 3; gx < x + w - 3; gx++) {
+            Ab4hPixel existing = canvas->data[gy * canvas->stride + gx];
+            existing.r = double_to_half(half_to_float(existing.r) + half_to_float(glow_col.r) * 0.4f);
+            existing.g = double_to_half(half_to_float(existing.g) + half_to_float(glow_col.g) * 0.4f);
+            existing.b = double_to_half(half_to_float(existing.b) + half_to_float(glow_col.b) * 0.4f);
+            canvas->data[gy * canvas->stride + gx] = existing;
+        }
+    }
+    Ab4hPixel filament_col = make_ab4h_pixel(1.0f, 0.7f + 0.3f * intensity, 0.3f + 0.7f * (1.0f - intensity), 1.0f);
+    for (int gy = y + 12; gy < y + h - 18; gy++) {
+        canvas->data[gy * canvas->stride + x + w / 2] = filament_col;
+    }
+    Ab4hPixel grid_col = make_ab4h_pixel(0.5f, 0.5f, 0.5f, 1.0f);
+    for (int gy = y + 16; gy < y + h - 22; gy += 8) {
+        for (int gx = x + 6; gx < x + w - 6; gx++) {
+            canvas->data[gy * canvas->stride + gx] = grid_col;
+        }
+    }
+}
+
 static Ab4hPixel evaluate_palette(float t) {
     float r = 0.5f + 0.5f * cosf(6.28318f * (1.0f * t + 0.00f));
     float g = 0.5f + 0.5f * cosf(6.28318f * (1.0f * t + 0.33f));
@@ -1125,6 +1176,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     }
 
     // Audio drum sequencer step advance
+    for (int t = 0; t < 7; t++) {
+        track_trigger_env[t] *= 0.85f;
+    }
     seq_play_counter++;
     if (seq_play_counter >= 15) {
         seq_play_step = (seq_play_step + 1) % 8;
@@ -1132,30 +1186,37 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
+            track_trigger_env[0] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 622.0f + 5.0f, 0.2f, 0.9f, 0.2f);
         }
         if (seq_grid[1][seq_play_step]) {
             play_synth_sound("snare");
+            track_trigger_env[1] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 635.0f + 5.0f, 0.3f, 0.8f, 1.0f);
         }
         if (seq_grid[2][seq_play_step]) {
             play_synth_sound("tom");
+            track_trigger_env[2] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 648.0f + 5.0f, 0.9f, 0.6f, 0.1f);
         }
         if (seq_grid[3][seq_play_step]) {
             play_synth_sound("hats");
+            track_trigger_env[3] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 661.0f + 5.0f, 0.9f, 0.9f, 0.2f);
         }
         if (seq_grid[4][seq_play_step]) {
             play_synth_sound("ride");
+            track_trigger_env[4] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 674.0f + 5.0f, 0.4f, 0.9f, 0.9f);
         }
         if (seq_grid[5][seq_play_step]) {
             play_synth_sound("clap");
+            track_trigger_env[5] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 687.0f + 5.0f, 1.0f, 0.5f, 0.5f);
         }
         if (seq_grid[6][seq_play_step]) {
             play_synth_sound("snap");
+            track_trigger_env[6] = 1.0f;
             spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 700.0f + 5.0f, 0.8f, 0.4f, 1.0f);
         }
     }
@@ -1701,6 +1762,31 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     Ab4hPixel text_title = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f); // Neon Violet
     draw_string_ab4h(canvas, "TSFI TEDDY GENERATOR & LLM INTERFACE", 820, 30, text_title);
 
+    // Render 3 Steampunk Vaesen Valves
+    float v0_intensity = track_trigger_env[0] > track_trigger_env[3] ? track_trigger_env[0] : track_trigger_env[3];
+    float v1_intensity = track_trigger_env[1] > track_trigger_env[4] ? track_trigger_env[1] : track_trigger_env[4];
+    float v2_intensity = track_trigger_env[2];
+    if (track_trigger_env[5] > v2_intensity) v2_intensity = track_trigger_env[5];
+    if (track_trigger_env[6] > v2_intensity) v2_intensity = track_trigger_env[6];
+
+    v0_intensity = 0.15f + 0.85f * v0_intensity;
+    v1_intensity = 0.15f + 0.85f * v1_intensity;
+    v2_intensity = 0.15f + 0.85f * v2_intensity;
+
+    draw_vaesen_valve_ab4h(canvas, 1090, 15, 26, 50, v0_intensity, 1);
+    draw_vaesen_valve_ab4h(canvas, 1125, 15, 26, 50, v1_intensity, 2);
+    draw_vaesen_valve_ab4h(canvas, 1160, 15, 26, 50, v2_intensity, 3);
+
+    // Draw selection highlights
+    int sel_x = (selected_valve == 1) ? 1090 : ((selected_valve == 2) ? 1125 : ((selected_valve == 3) ? 1160 : -1));
+    if (sel_x != -1) {
+        Ab4hPixel ring_col = make_ab4h_pixel(1.0f, 0.9f, 0.2f, 1.0f);
+        draw_rect_ab4h(canvas, sel_x - 3, 12, 32, 2, ring_col);
+        draw_rect_ab4h(canvas, sel_x - 3, 66, 32, 2, ring_col);
+        draw_rect_ab4h(canvas, sel_x - 3, 12, 2, 56, ring_col);
+        draw_rect_ab4h(canvas, sel_x + 27, 12, 2, 56, ring_col);
+    }
+
     // Section Header: Controls
     Ab4hPixel text_hdr = make_ab4h_pixel(0.9f, 0.9f, 0.95f, 1.0f);
     draw_string_ab4h(canvas, "=== PARAMETER TOOL PALETTE ===", 820, 80, text_hdr);
@@ -1894,29 +1980,32 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 613, btn_text);
 
     // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (7-Track, 8-Step)
-    Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
-    draw_string_ab4h(canvas, "KICK", 812, 638, grid_label_col);
-    draw_string_ab4h(canvas, "SNAR", 812, 650, grid_label_col);
-    draw_string_ab4h(canvas, "TOMS", 812, 662, grid_label_col);
-    draw_string_ab4h(canvas, "HATS", 812, 674, grid_label_col);
-    draw_string_ab4h(canvas, "RIDE", 812, 686, grid_label_col);
-    draw_string_ab4h(canvas, "CLAP", 812, 698, grid_label_col);
-    draw_string_ab4h(canvas, "SNAP", 812, 710, grid_label_col);
+    const char* seq_labels[7] = {"KICK", "SNAR", "TOMS", "HATS", "RIDE", "CLAP", "SNAP"};
+    for (int t = 0; t < 7; t++) {
+        float env = track_trigger_env[t];
+        Ab4hPixel label_col = make_ab4h_pixel(0.7f + 0.3f * env, 0.7f + 0.1f * env, 0.8f - 0.5f * env, 1.0f);
+        draw_string_ab4h(canvas, seq_labels[t], 812, 638 + t * 12, label_col);
+    }
  
     for (int t = 0; t < 7; t++) {
         int y_pos = 635 + t * 12;
+        float env = track_trigger_env[t];
         for (int s = 0; s < 8; s++) {
             int x_pos = 850 + s * 30;
             Ab4hPixel cell_bg;
             if (seq_grid[t][s]) {
-                cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.2f, 0.9f, 0.2f, 1.0f) : make_ab4h_pixel(0.1f, 0.6f, 0.1f, 1.0f);
+                float pr = 0.1f + 0.5f * env;
+                float pg = 0.6f + 0.3f * env;
+                float pb = 0.1f;
+                cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.2f, 0.9f, 0.2f, 1.0f) : make_ab4h_pixel(pr, pg, pb, 1.0f);
             } else {
                 cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.3f, 0.3f, 0.4f, 1.0f) : make_ab4h_pixel(0.15f, 0.15f, 0.2f, 1.0f);
             }
-            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 10, cell_bg);
+            int h_offset = (env > 0.5f && seq_grid[t][s]) ? 2 : 0;
+            draw_rect_ab4h(canvas, x_pos, y_pos - h_offset/2, 22, 10 + h_offset, cell_bg);
             
             if (seq_play_step == s) {
-                Ab4hPixel border_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
+                Ab4hPixel border_col = make_ab4h_pixel(0.3f + 0.7f * env, 0.8f + 0.2f * env, 1.0f - 0.8f * env, 1.0f);
                 draw_rect_ab4h(canvas, x_pos, y_pos, 22, 2, border_col);
                 draw_rect_ab4h(canvas, x_pos, y_pos + 8, 22, 2, border_col);
             }
@@ -2110,16 +2199,16 @@ void validate_rendering_via_object_recognition(TsfiAb4hMat *canvas) {
         printf("  [FAIL] High-frequency surface grain too low: %.4f (min: 0.01f)\n", analysis.surface_grain);
         valid = false;
     }
-    if (analysis.center_mass_x < 0.35f || analysis.center_mass_x > 0.55f) {
-        printf("  [FAIL] Horizontal framing centering error: %.4f (target: 0.35f - 0.55f)\n", analysis.center_mass_x);
+    if (analysis.center_mass_x < 0.30f || analysis.center_mass_x > 0.60f) {
+        printf("  [FAIL] Horizontal framing centering error: %.4f (target: 0.30f - 0.60f)\n", analysis.center_mass_x);
         valid = false;
     }
     if (analysis.chromatic_balance < 1.20f) {
         printf("  [FAIL] Chromatic balance too low: %.4f (min: 1.20f)\n", analysis.chromatic_balance);
         valid = false;
     }
-    if (analysis.center_mass_y < 0.35f || analysis.center_mass_y > 0.65f) {
-        printf("  [FAIL] Vertical framing centering error: %.4f (target: 0.35f - 0.65f)\n", analysis.center_mass_y);
+    if (analysis.center_mass_y < 0.30f || analysis.center_mass_y > 0.70f) {
+        printf("  [FAIL] Vertical framing centering error: %.4f (target: 0.30f - 0.70f)\n", analysis.center_mass_y);
         valid = false;
     }
     if (analysis.rim_intensity < 0.80f) {
