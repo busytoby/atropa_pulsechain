@@ -93,6 +93,28 @@ static void* play_sound_thread(void *arg) {
                 buf[i] = 128 + (int)((1.0f - t/0.4f) * 120.0f * sat);
             }
         }
+    } else if (strcmp(sd->type, "kick") == 0) {
+        len = 3000; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float freq = 45.0f + 105.0f * expf(-40.0f * t);
+                float phase = freq * t * 2.0f * 3.14159265f;
+                float sat = tanhf(2.5f * sinf(phase) * expf(-15.0f * t));
+                buf[i] = 128 + (int)(sat * 120.0f);
+            }
+        }
+    } else if (strcmp(sd->type, "snare") == 0) {
+        len = 2500; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float tone = sinf(180.0f * t * 2.0f * 3.14159f) * 0.3f;
+                float sat = tanhf(1.5f * (noise * 0.7f + tone) * expf(-20.0f * t));
+                buf[i] = 128 + (int)(sat * 115.0f);
+            }
+        }
     }
     if (buf && len > 0) {
         snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
@@ -784,6 +806,10 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         seq_play_counter = 0;
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
+            play_synth_sound("kick");
+        }
+        if (seq_grid[1][seq_play_step]) {
+            play_synth_sound("snare");
         }
     }
 
