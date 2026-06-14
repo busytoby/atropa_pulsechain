@@ -1098,18 +1098,21 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
         
         float c = oc_x * oc_x + oc_y * oc_y + oc_z * oc_z - body[i].r * body[i].r;
         float h = b * b - c;
+        
+        float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
         if (h > 0.0f) {
-            float t = b - sqrtf(h);
-            if (t > 0.01f) {
-                float dist_to_ray = sqrtf(fabsf(oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b)) - body[i].r;
-                if (dist_to_ray < 0.0f) dist_to_ray = 0.0f;
-                // Scale distance back by average scale factor to keep shadows uniform
-                float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
-                float penumbra = 6.0f * (dist_to_ray * avg_scale) / t;
-                if (penumbra < shadow) {
-                    shadow = penumbra;
-                    if (shadow <= 0.15f) return 0.15f;
-                }
+            // Ray intersects the ellipsoid interior: full shadow
+            return 0.15f;
+        } else {
+            // Ray passes outside: compute soft penumbra boundary
+            float dist_sq = oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b;
+            float dist_to_surface = sqrtf(fmaxf(0.0f, dist_sq)) - body[i].r;
+            if (dist_to_surface < 0.0f) dist_to_surface = 0.0f;
+            
+            float penumbra = 8.0f * (dist_to_surface * avg_scale) / b;
+            if (penumbra < shadow) {
+                shadow = penumbra;
+                if (shadow <= 0.15f) return 0.15f;
             }
         }
     }
