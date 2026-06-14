@@ -2095,6 +2095,18 @@ void present_ab4h_to_argb(TsfiAb4hMat *canvas, uint32_t *dest_argb) {
                 r *= vignette;
                 g *= vignette;
                 b *= vignette;
+
+                // CRT Scanlines and Scrolling Refresh Line
+                static int scan_frame = 0;
+                if (x == 0 && y == 0) {
+                    scan_frame++;
+                }
+                float scanline = 0.93f + 0.07f * sinf((float)y * 1.6f);
+                float scroll = sinf((float)y * 0.02f - (float)scan_frame * 0.03f);
+                float bar = (scroll > 0.98f) ? 1.08f : (scroll > 0.95f ? 1.0f + 4.0f * (scroll - 0.95f) : 1.0f);
+                r *= scanline * bar;
+                g *= scanline * bar;
+                b *= scanline * bar;
             }
 
             // Gamma correction approximation
