@@ -25,6 +25,8 @@ typedef struct {
     uint64_t noise_seed;      // State for micro-physical noise LCG generator
     double state_vp;          // Persistent plate voltage state for continuous differential solvers
     double state_vk;          // Persistent cathode voltage state for continuous differential solvers
+    double dV_dt_history[4];  // History of plate voltage derivatives for feedback solvers
+    double dI_dt_history[4];  // History of plate current derivatives for feedback solvers
 } TsfiValveTriode;
 
 

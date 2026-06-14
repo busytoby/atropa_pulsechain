@@ -23,6 +23,10 @@ void tsfi_valve_init(TsfiValveTriode *valve, double base_mu, double base_k, doub
     valve->noise_seed = 0xDEADAFFE12345678ULL;
     valve->state_vp = base_vp;
     valve->state_vk = 0.0;
+    for (int i = 0; i < 4; i++) {
+        valve->dV_dt_history[i] = 0.0;
+        valve->dI_dt_history[i] = 0.0;
+    }
 }
 
 
@@ -568,6 +572,18 @@ void tsfi_valve_process_differential_feedback(
         if (vp > vp_supply) vp = vp_supply;
         if (vk < 0.0) vk = 0.0;
         if (vk > vp_supply) vk = vp_supply;
+
+        // Calculate current sample plate current ip
+        double ip, dip;
+        tsfi_valve_ip_and_deriv(vp, vg, valve, active_mu, active_k, geom_scale, &ip, &dip);
+
+        // Shift history left and store new derivatives
+        for (int h = 0; h < 3; h++) {
+            valve->dV_dt_history[h] = valve->dV_dt_history[h + 1];
+            valve->dI_dt_history[h] = valve->dI_dt_history[h + 1];
+        }
+        valve->dV_dt_history[3] = (vp - valve->state_vp) / dt;
+        valve->dI_dt_history[3] = ip; // Storing the current state-space derivative value
 
         vp_out[i] = (float)vp;
     }
