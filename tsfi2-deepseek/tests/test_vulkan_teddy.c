@@ -1628,7 +1628,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     char telemetry_buf[256];
     float ammeter_val = 0.05f * (ammeter_T - 293.15f);
-    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | %s", ammeter_val, voltmeter_V, opt_status);
+    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | DJ: BIOTIKA_ALPHA (ELECTED) | %s", ammeter_val, voltmeter_V, opt_status);
     Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
     draw_string_ab4h(canvas, telemetry_buf, 812, 698, telemetry_col);
 
