@@ -956,6 +956,21 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
             sphere_b += 0.05f * cosf(3.14159f * (height_factor + 0.50f));
         }
 
+        if (!dl_game_active && i == 0) {
+            float active_scale = body[0].r / 0.32f;
+            float chest_dx = cx - body[0].x;
+            float chest_dy = cy - (body[0].y - 0.05f * active_scale);
+            float chest_dist = sqrtf(chest_dx*chest_dx * 2.2f + chest_dy*chest_dy * 1.6f);
+            float patch_blend = 1.0f - (chest_dist / (body[0].r * 0.72f));
+            if (patch_blend < 0.0f) patch_blend = 0.0f;
+            if (patch_blend > 1.0f) patch_blend = 1.0f;
+            patch_blend = patch_blend * patch_blend * (3.0f - 2.0f * patch_blend);
+            
+            sphere_r = sphere_r * (1.0f - patch_blend) + 0.88f * patch_blend;
+            sphere_g = sphere_g * (1.0f - patch_blend) + 0.80f * patch_blend;
+            sphere_b = sphere_b * (1.0f - patch_blend) + 0.68f * patch_blend;
+        }
+
         if (!dl_game_active && (i == 2 || i == 3)) {
             float active_scale = body[i].r / 0.09f;
             float inner_dx = cx - (body[i].x + (i == 2 ? 0.015f : -0.015f) * active_scale);
@@ -969,6 +984,21 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
             sphere_r = dna_fur_r * (1.0f - ear_blend) + 0.82f * ear_blend;
             sphere_g = dna_fur_g * (1.0f - ear_blend) + 0.62f * ear_blend;
             sphere_b = dna_fur_b * (1.0f - ear_blend) + 0.52f * ear_blend;
+        }
+
+        if (!dl_game_active && (i == 6 || i == 7)) {
+            float active_scale = body[i].r / 0.09f;
+            float pad_dx = cx - body[i].x;
+            float pad_dy = cy - (body[i].y - 0.02f * active_scale);
+            float pad_dist = sqrtf(pad_dx*pad_dx + pad_dy*pad_dy);
+            float pad_blend = 1.0f - (pad_dist / (body[i].r * 0.65f));
+            if (pad_blend < 0.0f) pad_blend = 0.0f;
+            if (pad_blend > 1.0f) pad_blend = 1.0f;
+            pad_blend = pad_blend * pad_blend * (3.0f - 2.0f * pad_blend);
+
+            sphere_r = sphere_r * (1.0f - pad_blend) + 0.82f * pad_blend;
+            sphere_g = sphere_g * (1.0f - pad_blend) + 0.62f * pad_blend;
+            sphere_b = sphere_b * (1.0f - pad_blend) + 0.52f * pad_blend;
         }
         
         r_acc += sphere_r * w;
@@ -1712,9 +1742,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float hz = lz + 1.0f;
                                         float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
                                         if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
-                                        float spec = nx*hx + ny*hy + nz*hz;
-                                        if (spec < 0.0f) spec = 0.0f;
-                                        float fur_spec = powf(spec, 16.0f) * 0.35f * tip_factor;
+                                        float dotNH = nx*hx + ny*hy + nz*hz;
+                                        float sinNH = sqrtf(fmaxf(0.0f, 1.0f - dotNH*dotNH));
+                                        float fur_spec = powf(sinNH, 24.0f) * 0.45f * tip_factor;
 
                                         float shell_r = current_r * (diffuse * 0.8f + 0.2f) + fresnel * 0.85f + fur_spec;
                                         float shell_g = current_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
