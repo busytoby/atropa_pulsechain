@@ -421,6 +421,7 @@
                     </div>
                     <div class="card-desc" id="cardDesc">Stable Diffusion Description Prompt</div>
                     <div class="card-address" id="cardAddress">0x000...000</div>
+                    <div class="card-qing" id="cardQing" style="font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted); border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 4px; margin-top: 4px;">QING: None</div>
                     <div class="card-stats" id="cardStats" style="margin-top: 10px; font-family: monospace; font-size: 0.8rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; color: var(--primary);">Loading live stats...</div>
                 </div>
 
@@ -516,8 +517,15 @@
                 }
                 el.onclick = () => selectCard(tok, el);
 
+                const qingBadge = tok.qingExists 
+                    ? `<span style="color: #39ff14; font-size: 0.75rem; margin-right: 4px;" title="QING Active: ${tok.qingAddress}">🟢</span>` 
+                    : `<span style="color: #8c80a2; font-size: 0.75rem; margin-right: 4px;" title="No QING mapping">⚫</span>`;
+
                 el.innerHTML = `
-                    <div class="token-item-name">${tok.name.split(' (')[0]}</div>
+                    <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${qingBadge}
+                        <div class="token-item-name">${tok.name.split(' (')[0]}</div>
+                    </div>
                     <div class="token-item-symbol">${tok.symbol}</div>
                 `;
                 container.appendChild(el);
@@ -554,6 +562,13 @@
             document.getElementById("cardId").textContent = tok.size;
             document.getElementById("cardDesc").textContent = tok.desc;
             document.getElementById("cardAddress").textContent = tok.address;
+
+            const qingEl = document.getElementById("cardQing");
+            if (tok.qingExists && tok.qingAddress) {
+                qingEl.innerHTML = `QING: <span style="color: #39ff14; font-weight: bold;">${tok.qingAddress}</span>`;
+            } else {
+                qingEl.innerHTML = `QING: <span style="color: var(--muted);">Inactive (No Map)</span>`;
+            }
 
             // Load pre-generated art asset immediately
             const artImage = document.getElementById("artImage");

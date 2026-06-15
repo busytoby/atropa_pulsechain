@@ -81,14 +81,39 @@ const server = http.createServer((req, res) => {
     // API endpoint to serve NoNukes partner cards (aggregated)
     if (req.url === "/api/nonukes-cards") {
         const dataDir = path.join(__dirname, "../solidity/dysnomia/domain/data");
+        const statusPath = path.join(__dirname, "../config/nonukes_qings_status.json");
         try {
             const cards = [];
+            let qingsMap = {};
+            if (fs.existsSync(statusPath)) {
+                try {
+                    const statusData = JSON.parse(fs.readFileSync(statusPath, "utf8"));
+                    statusData.forEach(item => {
+                        qingsMap[item.address.toLowerCase()] = {
+                            exists: item.exists,
+                            qing: item.qing
+                        };
+                    });
+                } catch (e) {
+                    console.error("Failed to parse status path:", e);
+                }
+            }
+
             if (fs.existsSync(dataDir)) {
                 const files = fs.readdirSync(dataDir);
                 files.forEach(file => {
                     if (file.startsWith("0x") && file.endsWith(".json")) {
                         const content = fs.readFileSync(path.join(dataDir, file), "utf8");
-                        cards.push(JSON.parse(content));
+                        const card = JSON.parse(content);
+                        const addrKey = card.address.toLowerCase();
+                        if (qingsMap[addrKey]) {
+                            card.qingExists = qingsMap[addrKey].exists;
+                            card.qingAddress = qingsMap[addrKey].qing;
+                        } else {
+                            card.qingExists = false;
+                            card.qingAddress = null;
+                        }
+                        cards.push(card);
                     }
                 });
             }
@@ -460,6 +485,8 @@ const server = http.createServer((req, res) => {
                 if (cfg) renderCmd += ` --cfg ${cfg}`;
                 if (promptOverride) renderCmd += ` --prompt "${promptOverride}"`;
                 if (payload.address) renderCmd += ` --address "${payload.address}"`;
+                if (payload.hypobar) renderCmd += ` --hypobar ${Number(payload.hypobar)}`;
+                if (payload.epibar) renderCmd += ` --epibar ${Number(payload.epibar)}`;
 
                 console.log(`[SERVER] Running VLM Synthesizer rendering command: ${renderCmd}`);
                 exec(renderCmd, { cwd: path.join(__dirname, "..") }, (error, stdout, stderr) => {
