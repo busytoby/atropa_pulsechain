@@ -363,13 +363,9 @@ def generate_voxel_shape(desc, seed_str=None):
     return voxels
 
 def sanitize_text_for_font(text, fallback="TOKEN"):
-    import unicodedata
-    # Normalize unicode compatibility characters (e.g. circled letters like ⓐ -> a)
-    normalized = unicodedata.normalize('NFKD', text)
-    # Keep only standard printable ASCII characters (32 to 126)
-    # This guarantees 100% rendering compatibility on both Liberation TrueType fonts
-    # and PIL's default fallback font (which does not support Latin-1 or other ranges).
-    sanitized = "".join(c for c in normalized if 32 <= ord(c) <= 126)
+    # Keep standard printable ASCII (32-126) and Enclosed Alphanumerics block (9312-9450)
+    # This preserves circled letters (like Ⓐ and ⓐ) exactly as they are.
+    sanitized = "".join(c for c in text if (32 <= ord(c) <= 126) or (9312 <= ord(c) <= 9450))
     sanitized = " ".join(sanitized.split())
     if not sanitized:
         return fallback
@@ -475,14 +471,25 @@ def render_card_art(card, output_path):
     draw.polygon([(740, 40), (1220, 40), (1240, 60), (1240, 660), (1220, 680), (740, 680), (720, 660), (720, 60)], outline=get_shade(color_rgb, 0.4), fill=(10, 6, 18), width=2)
     
     # Load fonts
-    font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+    font_path = "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
+    if not os.path.exists(font_path):
+        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    if not os.path.exists(font_path):
+        font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
     if not os.path.exists(font_path):
         font_path = "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
+
+    font_mono_path = "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+    if not os.path.exists(font_mono_path):
+        font_mono_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+    if not os.path.exists(font_mono_path):
+        font_mono_path = "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
+
     try:
         font_title = ImageFont.truetype(font_path, 34)
         font_body = ImageFont.truetype(font_path, 20)
         font_small = ImageFont.truetype(font_path, 15)
-        font_mono = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf", 15)
+        font_mono = ImageFont.truetype(font_mono_path, 15)
     except:
         font_title = ImageFont.load_default()
         font_body = ImageFont.load_default()
