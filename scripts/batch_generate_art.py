@@ -42,7 +42,7 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     draw.line([center, left_top], fill=outline_color, width=1)
     draw.line([center, right_top], fill=outline_color, width=1)
 
-def generate_voxel_shape(desc):
+def generate_voxel_shape(desc, seed_str=None):
     import re
     tokens = re.findall(r'[a-z0-9]+', desc.lower())
     voxels = []
@@ -279,18 +279,30 @@ def generate_voxel_shape(desc):
         for z in range(-3, 4):
             voxels.append((0, 0, z, 1))
             
-    else:  # Fallback to standard Coin/Token disc
-        for z in range(-1, 2):
-            for x in range(-3, 4):
-                for y in range(-3, 4):
-                    d = x*x + y*y
-                    if d <= 9:
-                        is_rim = d >= 7 or z == 1
-                        is_core = d == 0
-                        if is_rim:
-                            voxels.append((x, y, z, 0))
-                        elif is_core:
-                            voxels.append((x, y, z, 1))
+    else:  # Procedural unique geometric shape based on seed_str/address hash
+        import hashlib
+        h = hashlib.md5((seed_str if seed_str else desc).encode('utf-8')).hexdigest()
+        val = int(h, 16)
+        
+        # 4-way rotational symmetry ensures high-tech glyph/rune shape
+        bit_index = 0
+        for z in range(-2, 3):
+            for x in range(0, 3):
+                for y in range(0, 3):
+                    if x == 0 and y == 0:
+                        continue
+                    bit = (val >> bit_index) & 1
+                    bit_index = (bit_index + 1) % 128
+                    if bit:
+                        color_bit = (val >> ((bit_index + 5) % 128)) & 1
+                        for mx, my in ((x, y), (-x, y), (x, -y), (-x, -y)):
+                            pt = (mx, my, z, color_bit)
+                            if pt not in voxels:
+                                voxels.append(pt)
+        # Add central core column for structural connectivity
+        core_color_type = (val >> 2) & 1
+        for z in range(-2, 3):
+            voxels.append((0, 0, z, core_color_type))
                             
     voxels.sort(key=lambda v: (v[0] + v[1] + v[2]))
     return voxels
@@ -335,7 +347,8 @@ def render_card_art(card, output_path):
         draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
 
     desc = card.get('desc', '')
-    voxels = generate_voxel_shape(desc)
+    addr = card.get('address', '')
+    voxels = generate_voxel_shape(desc, seed_str=addr)
     voxel_size = 22
     
     for vx, vy, vz, color_type in voxels:
