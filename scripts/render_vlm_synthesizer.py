@@ -39,18 +39,117 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     draw.line([center, left_top], fill=outline_color, width=1)
     draw.line([center, right_top], fill=outline_color, width=1)
 
-def generate_voxel_shape(seed_str, shape_type):
-    h = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
+def generate_voxel_shape(desc):
+    desc = desc.lower()
     voxels = []
     
-    if shape_type == 0:  # Diamond / Crystal
+    if "key" in desc:
+        # Ring at top (z=2)
+        for x in range(-2, 3):
+            for y in range(-2, 3):
+                if 2 <= x*x + y*y <= 5:
+                    voxels.append((x, y, 2, 0))
+        # Shaft
+        for z in range(-3, 2):
+            voxels.append((0, 0, z, 0))
+        # Teeth
+        voxels.append((1, 0, -2, 0))
+        voxels.append((2, 0, -2, 1))
+        voxels.append((1, 0, -1, 0))
+        
+    elif "sword" in desc or "blade" in desc or "dirk" in desc:
+        # Blade
+        for z in range(-1, 4):
+            voxels.append((0, 0, z, 1))
+        # Guard
+        for x in range(-2, 3):
+            voxels.append((x, 0, -2, 0))
+        # Hilt
+        voxels.append((0, 0, -3, 0))
+        voxels.append((0, 0, -4, 0))
+        
+    elif "shield" in desc or "sentinel" in desc or "vault" in desc or "guard" in desc:
+        for z in range(-2, 3):
+            width = 2 if z >= 0 else 2 + z
+            for x in range(-width, width + 1):
+                voxels.append((x, 0, z, 0))
+                if x == 0 and z == 0:
+                    voxels.append((x, 0, z, 1))
+                    
+    elif "crown" in desc or "king" in desc or "princess" in desc or "queen" in desc:
+        # Base Ring
+        for x in range(-2, 3):
+            for y in range(-2, 3):
+                if 3 <= x*x + y*y <= 5:
+                    voxels.append((x, y, -2, 0))
+        # Crown peaks
+        voxels.append((-2, 0, -1, 0))
+        voxels.append((-2, 0, 0, 1))
+        voxels.append((2, 0, -1, 0))
+        voxels.append((2, 0, 0, 1))
+        voxels.append((0, 2, -1, 0))
+        voxels.append((0, 2, 0, 1))
+        voxels.append((0, -2, -1, 0))
+        voxels.append((0, -2, 0, 1))
+        voxels.append((0, 0, 1, 1))
+        
+    elif "gas" in desc or "fuel" in desc or "fire" in desc or "burn" in desc or "flame" in desc:
         for z in range(-3, 4):
-            r = 3 - abs(z)
-            for x in range(-r, r + 1):
-                for y in range(-r, r + 1):
-                    if abs(x) + abs(y) <= r:
-                        voxels.append((x, y, z, 0))
-    elif shape_type == 1:  # Token / Disc
+            max_r = 3 - (z + 3)//2
+            for x in range(-max_r, max_r + 1):
+                for y in range(-max_r, max_r + 1):
+                    if x*x + y*y <= max_r*max_r:
+                        is_inner = (x*x + y*y <= 1) and z < 2
+                        voxels.append((x, y, z, 1 if is_inner else 0))
+                        
+    elif "heart" in desc or "love" in desc:
+        for x in (-1, 1):
+            for y in (-1, 1):
+                voxels.append((x, y, 2, 0))
+        for x in range(-2, 3):
+            for y in range(-2, 3):
+                if abs(x) + abs(y) <= 3:
+                    voxels.append((x, y, 1, 0))
+                if abs(x) + abs(y) <= 2:
+                    voxels.append((x, y, 0, 1))
+                if abs(x) + abs(y) <= 1:
+                    voxels.append((x, y, -1, 0))
+        voxels.append((0, 0, -2, 0))
+        
+    elif "drop" in desc or "water" in desc or "liquid" in desc or "pool" in desc:
+        for z in range(-3, 4):
+            r = 3 - (z + 3)//2
+            for x in range(-r, r+1):
+                for y in range(-r, r+1):
+                    if x*x + y*y <= r*r:
+                        voxels.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
+                        
+    elif "star" in desc or "electric" in desc or "lightning" in desc or "energy" in desc or "spark" in desc:
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                for z in range(-1, 2):
+                    if abs(x)+abs(y)+abs(z) <= 1:
+                        voxels.append((x, y, z, 1))
+        for d in range(-3, 4):
+            if abs(d) > 1:
+                voxels.append((d, 0, 0, 0))
+                voxels.append((0, d, 0, 0))
+                voxels.append((0, 0, d, 0))
+                
+    elif "usd" in desc or "dai" in desc or "usdc" in desc or "usdt" in desc or "stable" in desc or "dollar" in desc:
+        s_points = [
+            (1, 0, 2), (0, 0, 2), (-1, 0, 2),
+            (-1, 0, 1),
+            (-1, 0, 0), (0, 0, 0), (1, 0, 0),
+            (1, 0, -1),
+            (1, 0, -2), (0, 0, -2), (-1, 0, -2)
+        ]
+        for x, y, z in s_points:
+            voxels.append((x, y, z, 0))
+        for z in range(-3, 4):
+            voxels.append((0, 0, z, 1))
+            
+    else:  # Fallback to standard Coin/Token disc
         for z in range(-1, 2):
             for x in range(-3, 4):
                 for y in range(-3, 4):
@@ -62,34 +161,7 @@ def generate_voxel_shape(seed_str, shape_type):
                             voxels.append((x, y, z, 0))
                         elif is_core:
                             voxels.append((x, y, z, 1))
-    elif shape_type == 2:  # Atomic Core
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                for z in range(-1, 2):
-                    if abs(x)+abs(y)+abs(z) <= 2:
-                        voxels.append((x, y, z, 1))
-        for i in range(-3, 4):
-            if i != 0:
-                voxels.append((i, 0, 0, 0))
-                voxels.append((0, i, 0, 0))
-                voxels.append((0, 0, i, 0))
-    elif shape_type == 3:  # Shield / Monolith
-        for x in range(-2, 3):
-            for y in range(-1, 2):
-                for z in range(-3, 4):
-                    if abs(x) <= 3 - abs(z)//2:
-                        is_core = (x == 0 and z == 0)
-                        voxels.append((x, y, z, 1 if is_core else 0))
-    else:  # Open Ring / Gear
-        for z in range(-1, 2):
-            for x in range(-3, 4):
-                for y in range(-3, 4):
-                    d = x*x + y*y
-                    if 4 <= d <= 10:
-                        voxels.append((x, y, z, 0))
-                    elif d == 0:
-                        voxels.append((x, y, z, 1))
-                        
+                            
     voxels.sort(key=lambda v: (v[0] + v[1] + v[2]))
     return voxels
 
@@ -223,13 +295,12 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             y2 = cy + 250 * math.sin(rad)
             draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
 
-        # 3. Generate and Render the 3D Voxel Model
-        shape_type = int(addr_hash[:2], 16) % 5
-        if is_minter:
-            shape_type = 3
+        desc = prompt_override if prompt_override else seed_str
+        if is_minter and "minter" not in desc.lower() and "shield" not in desc.lower():
+            desc += " minter sentinel shield"
             
         voxel_size = 22
-        voxels = generate_voxel_shape(seed_str, shape_type)
+        voxels = generate_voxel_shape(desc)
         
         accent_rgb = (255, 255, 255)
         for vx, vy, vz, color_type in voxels:
