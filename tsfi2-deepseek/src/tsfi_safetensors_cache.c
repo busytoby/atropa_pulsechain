@@ -91,7 +91,7 @@ TsfiSafetensorsAsset* tsfi_safetensors_cache_attach(const char *path) {
         struct stat sb;
         if (fstat(fd, &sb) == 0) {
             size = sb.st_size;
-            data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
         }
     } else {
         // 3. Perform Initial Load
@@ -105,6 +105,9 @@ TsfiSafetensorsAsset* tsfi_safetensors_cache_attach(const char *path) {
         struct stat sb;
         fstat(file_fd, &sb);
         size = sb.st_size;
+
+        // Advise kernel of sequential access pattern
+        posix_fadvise(file_fd, 0, size, POSIX_FADV_SEQUENTIAL);
 
         fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0666);
         if (fd < 0 && errno == EEXIST) {
@@ -128,7 +131,7 @@ TsfiSafetensorsAsset* tsfi_safetensors_cache_attach(const char *path) {
             return NULL;
         }
 
-        data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
         if (data == MAP_FAILED) {
             perror("mmap shm");
             close(file_fd); close(fd);
