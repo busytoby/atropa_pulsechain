@@ -475,30 +475,53 @@ const server = http.createServer((req, res) => {
                     }
                 }
 
-                const { exec } = require("child_process");
+                const { spawn } = require("child_process");
                 const steps = payload.steps !== undefined ? Number(payload.steps) : 4;
                 const cfg = payload.cfg !== undefined ? Number(payload.cfg) : 1.5;
                 const promptOverride = payload.promptOverride ? payload.promptOverride.replace(/"/g, '\\"') : "";
                 
-                let renderCmd = `python3 scripts/render_vlm_synthesizer.py ${frameIdx}`;
-                if (steps) renderCmd += ` --steps ${steps}`;
-                if (cfg) renderCmd += ` --cfg ${cfg}`;
-                if (promptOverride) renderCmd += ` --prompt "${promptOverride}"`;
-                if (payload.address) renderCmd += ` --address "${payload.address}"`;
-                if (payload.hypobar) renderCmd += ` --hypobar ${Number(payload.hypobar)}`;
-                if (payload.epibar) renderCmd += ` --epibar ${Number(payload.epibar)}`;
+                const args = [frameIdx.toString()];
+                if (steps) args.push("--steps", steps.toString());
+                if (cfg) args.push("--cfg", cfg.toString());
+                if (promptOverride) args.push("--prompt", promptOverride);
+                if (payload.address) args.push("--address", payload.address);
+                if (payload.hypobar) args.push("--hypobar", payload.hypobar.toString());
+                if (payload.epibar) args.push("--epibar", payload.epibar.toString());
 
-                console.log(`[SERVER] Running VLM Synthesizer rendering command: ${renderCmd}`);
-                exec(renderCmd, { cwd: path.join(__dirname, "..") }, (error, stdout, stderr) => {
-                    if (error) {
-                        console.error("[SERVER] render_vlm_synthesizer.py failed:", error);
-                        res.writeHead(500, { "Content-Type": "application/json" });
-                        res.end(JSON.stringify({ error: error.message, stderr }));
-                        return;
+                console.log(`[SERVER] Spawning VLM Synthesizer rendering: python3 scripts/render_vlm_synthesizer.py ${args.join(" ")}`);
+                
+                res.writeHead(200, {
+                    "Content-Type": "text/event-stream",
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Access-Control-Allow-Origin": "*"
+                });
+
+                const child = spawn("python3", ["scripts/render_vlm_synthesizer.py", ...args], { cwd: path.join(__dirname, "..") });
+                
+                let fullLog = "";
+                
+                child.stdout.on("data", data => {
+                    const chunk = data.toString();
+                    fullLog += chunk;
+                    res.write(`data: ${JSON.stringify({ type: "stdout", content: chunk })}\n\n`);
+                });
+                
+                child.stderr.on("data", data => {
+                    const chunk = data.toString();
+                    fullLog += chunk;
+                    res.write(`data: ${JSON.stringify({ type: "stderr", content: chunk })}\n\n`);
+                });
+
+                child.on("close", code => {
+                    if (code !== 0) {
+                        console.error(`[SERVER] render_vlm_synthesizer.py failed with exit code ${code}`);
+                        res.write(`data: ${JSON.stringify({ type: "error", content: `Failed with exit code ${code}`, code })}\n\n`);
+                    } else {
+                        console.log("[SERVER] VLM Synthesizer DNA frame rendered successfully.");
+                        res.write(`data: ${JSON.stringify({ type: "success", url: "assets/storybook/page_dragon_dna.png", logs: fullLog })}\n\n`);
                     }
-                    console.log("[SERVER] VLM Synthesizer DNA frame rendered successfully:", stdout);
-                    res.writeHead(200, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ success: true, url: "assets/storybook/page_dragon_dna.png", logs: stdout }));
+                    res.end();
                 });
             } catch (err) {
                 res.writeHead(500, { "Content-Type": "application/json" });
