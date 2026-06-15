@@ -166,15 +166,15 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         __m512 half_vec = _mm512_set1_ps(0.5f);
         
         for (int i = 0; i < simd_end; i += 16) {
-            __m512 dec = _mm512_loadu_ps(&decoder_half[i]);
-            __m512 skip = _mm512_loadu_ps(&skip_connection[i]);
-            __m512 blended = _mm512_add_ps(_mm512_mul_ps(dec, half_vec), _mm512_mul_ps(skip, half_vec));
-            _mm512_storeu_ps(&decoder_half[i], blended);
+            __m512 dec = _mm512_load_ps(&decoder_half[i]);
+            __m512 skip = _mm512_load_ps(&skip_connection[i]);
+            __m512 blended = _mm512_mul_ps(_mm512_add_ps(dec, skip), half_vec);
+            _mm512_store_ps(&decoder_half[i], blended);
         }
         
         // Cleanup scalar tail
         for (int i = simd_end; i < total_floats; i++) {
-            decoder_half[i] = 0.5f * decoder_half[i] + 0.5f * skip_connection[i];
+            decoder_half[i] = (decoder_half[i] + skip_connection[i]) * 0.5f;
         }
 
         // --- 6. Upsampling Path: Phase 2 (Intermediate -> Full Output) ---
