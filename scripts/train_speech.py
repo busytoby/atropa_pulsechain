@@ -30,10 +30,10 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
         samples, sample_rate = load_wav(filename)
     except Exception as e:
         print(f"Error loading {filename}: {e}")
-        return [220] * num_frames
+        return [380] * num_frames
 
-    min_freq = 80
-    max_freq = 350
+    min_freq = 300
+    max_freq = 580
     min_period = int(sample_rate / max_freq)
     max_period = int(sample_rate / min_freq)
 
@@ -50,7 +50,7 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
         
         # Check energy level to ignore silence/noise floor
         if np.max(np.abs(frame)) < 100.0:
-            pitches.append(220)  # default pitch for silent frames
+            pitches.append(380)  # default pitch for silent frames in child range
             continue
             
         corr = np.correlate(frame, frame, mode='full')
@@ -62,13 +62,31 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
                 peak = np.argmax(search_area) + min_period
                 pitch = sample_rate / peak
                 pitch = max(min_freq, min(max_freq, pitch))
+                
+                # Double-check against running average to prevent octave doubling/halving jumps
+                if len(pitches) > 0:
+                    prev_pitch = pitches[-1]
+                    # If pitch jumped by a huge factor, try to pull it back
+                    if abs(pitch - prev_pitch) / prev_pitch > 0.35:
+                        if abs((pitch / 2) - prev_pitch) / prev_pitch <= 0.35:
+                            pitch = pitch / 2
+                        elif abs((pitch * 2) - prev_pitch) / prev_pitch <= 0.35:
+                            pitch = pitch * 2
+                        else:
+                            pitch = prev_pitch # fallback to smooth
                 pitches.append(round(pitch))
             else:
-                pitches.append(220)
+                pitches.append(380)
         else:
-            pitches.append(220)
+            pitches.append(380)
             
-    return pitches
+    # Apply a moving average smoothing filter to remove remaining jitter (Welsh inflection)
+    smoothed_pitches = []
+    for idx in range(len(pitches)):
+        window = pitches[max(0, idx - 1) : min(len(pitches), idx + 2)]
+        smoothed_pitches.append(int(round(np.mean(window))))
+        
+    return smoothed_pitches
 
 def run_synthesis_and_eval(embedding, phonemes, pitch_contour):
     # 1. Run C speech controller with coefficients and pitch contour env var
