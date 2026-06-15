@@ -385,6 +385,63 @@
             height: 100%;
             object-fit: cover;
         }
+        
+        /* Glassmorphic Market Stats Grid */
+        .market-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+        }
+        .market-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .market-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+        .market-stat {
+            display: flex;
+            flex-direction: column;
+        }
+        .market-label {
+            font-size: 0.6rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .market-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .change-up {
+            color: #39ff14;
+            text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+        }
+        .change-down {
+            color: #ff3860;
+            text-shadow: 0 0 5px rgba(255, 56, 96, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -423,6 +480,25 @@
                     <div class="card-desc" id="cardDesc">Stable Diffusion Description Prompt</div>
                     <div class="card-address" id="cardAddress">0x000...000</div>
                     <div class="card-qing" id="cardQing" style="font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted); border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 4px; margin-top: 4px;">QING: None</div>
+                    
+                    <!-- Market Info Glassmorphic Box -->
+                    <div class="market-container">
+                        <div class="market-title">
+                            <span>📈 Market Metrics</span>
+                            <span id="marketDex" style="font-size: 0.55rem; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: none;"></span>
+                        </div>
+                        <div class="market-grid">
+                            <div class="market-stat">
+                                <span class="market-label">Price (USD)</span>
+                                <span class="market-value" id="marketPrice">-</span>
+                            </div>
+                            <div class="market-stat">
+                                <span class="market-label">Total Liquidity</span>
+                                <span class="market-value" id="marketLiquidity">-</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card-stats" id="cardStats" style="margin-top: 10px; font-family: monospace; font-size: 0.8rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; color: var(--primary);">Loading live stats...</div>
                 </div>
 
@@ -659,6 +735,29 @@
             document.getElementById("cardId").textContent = tok.size;
             document.getElementById("cardDesc").textContent = tok.desc;
             document.getElementById("cardAddress").textContent = tok.address;
+
+            // Load market metrics
+            const market = tok.market || {
+                priceUsd: "0",
+                priceChange24h: 0,
+                liquidityUsd: 0,
+                dexId: "unknown",
+                quoteSymbol: "WPLS"
+            };
+            const priceVal = parseFloat(market.priceUsd);
+            let priceStr = priceVal === 0 ? "$0.00" : (priceVal < 0.0001 ? "$" + priceVal.toFixed(8) : "$" + priceVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4}));
+            
+            const liqVal = parseFloat(market.liquidityUsd);
+            let liqStr = liqVal === 0 ? "$0" : "$" + Math.round(liqVal).toLocaleString();
+
+            const priceChange = parseFloat(market.priceChange24h) || 0;
+            const changeClass = priceChange >= 0 ? "change-up" : "change-down";
+            const changeArrow = priceChange >= 0 ? "▲" : "▼";
+            const changeStr = `<span class="${changeClass}">${changeArrow} ${Math.abs(priceChange).toFixed(2)}%</span>`;
+
+            document.getElementById("marketPrice").innerHTML = `${priceStr} ${changeStr}`;
+            document.getElementById("marketLiquidity").textContent = `${liqStr} USD`;
+            document.getElementById("marketDex").textContent = `${market.quoteSymbol || "WPLS"} (${market.dexId || "unknown"})`;
 
             // Auto populate target inputs in ABI registry
             document.getElementById("abiSelectorsInput").value = tok.address;

@@ -20,6 +20,143 @@ mcpProcess.on("error", err => {
     console.error("[SERVER] Failed to start native ZMM VM MCP server:", err);
 });
 
+// Spawn the resident VLM Synthesizer Python daemon at startup
+const pythonDaemon = spawn("python3", ["-u", "scripts/render_vlm_synthesizer.py", "--daemon"], {
+    cwd: path.join(__dirname, ".."),
+    env: { ...process.env }
+});
+
+let daemonBuffer = "";
+const currentListeners = {
+    onLine: null,
+    onComplete: null
+};
+
+pythonDaemon.stdout.on("data", data => {
+    daemonBuffer += data.toString();
+    const lines = daemonBuffer.split("\n");
+    daemonBuffer = lines.pop(); // keep incomplete line
+    
+    for (const line of lines) {
+        if (line.trim() === "__RENDER_COMPLETE__") {
+            if (currentListeners.onComplete) {
+                currentListeners.onComplete();
+            }
+        } else {
+            if (currentListeners.onLine) {
+                currentListeners.onLine(line + "\n");
+            }
+        }
+    }
+});
+
+pythonDaemon.stderr.on("data", data => {
+    console.error(`[PYTHON DAEMON STDERR] ${data.toString()}`);
+});
+
+pythonDaemon.on("error", err => {
+    console.error("[SERVER] Failed to start Python Synthesizer Daemon:", err);
+});
+
+const renderQueue = [];
+let renderInProgress = false;
+
+function queueRender(payload, onLine, onComplete) {
+    renderQueue.push({ payload, onLine, onComplete });
+    processRenderQueue();
+}
+
+function processRenderQueue() {
+    if (renderInProgress || renderQueue.length === 0) return;
+    renderInProgress = true;
+    
+    const task = renderQueue[0];
+    
+    currentListeners.onLine = task.onLine;
+    currentListeners.onComplete = () => {
+        currentListeners.onLine = null;
+        currentListeners.onComplete = null;
+        task.onComplete();
+        renderQueue.shift();
+        renderInProgress = false;
+        processRenderQueue();
+    };
+    
+    pythonDaemon.stdin.write(JSON.stringify(task.payload) + "\n");
+}
+
+const https = require("https");
+const MARKET_CACHE_PATH = path.join(__dirname, "../tmp/market_cache.json");
+let marketFetchInProgress = false;
+
+function fetchMarketData(addresses) {
+    if (marketFetchInProgress || !addresses || addresses.length === 0) return;
+    marketFetchInProgress = true;
+    console.log(`[MARKET CACHE] Starting update for ${addresses.length} token addresses...`);
+    
+    // Chunk addresses into groups of 30
+    const chunks = [];
+    for (let i = 0; i < addresses.length; i += 30) {
+        chunks.push(addresses.slice(i, i + 30));
+    }
+
+    const marketData = {};
+    const processNextChunk = (chunkIndex) => {
+        if (chunkIndex >= chunks.length) {
+            // Save cache to file
+            try {
+                fs.mkdirSync(path.dirname(MARKET_CACHE_PATH), { recursive: true });
+                fs.writeFileSync(MARKET_CACHE_PATH, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: marketData
+                }, null, 2), "utf8");
+                console.log(`[MARKET CACHE] Successfully saved ${Object.keys(marketData).length} token price records.`);
+            } catch (err) {
+                console.error("[MARKET CACHE] Failed to write cache file:", err);
+            }
+            marketFetchInProgress = false;
+            return;
+        }
+
+        const chunk = chunks[chunkIndex];
+        const url = `https://api.dexscreener.com/latest/dex/tokens/${chunk.join(",")}`;
+
+        https.get(url, (res) => {
+            let body = "";
+            res.on("data", chunkData => body += chunkData);
+            res.on("end", () => {
+                try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.pairs) {
+                        parsed.pairs.forEach(pair => {
+                            const addr = pair.baseToken.address.toLowerCase();
+                            // Select pair with highest liquidity or first one
+                            if (!marketData[addr] || (pair.liquidity && pair.liquidity.usd > (marketData[addr].liquidityUsd || 0))) {
+                                marketData[addr] = {
+                                    priceUsd: pair.priceUsd || "0",
+                                    priceChange24h: pair.priceChange?.h24 || 0,
+                                    liquidityUsd: pair.liquidity?.usd || 0,
+                                    dexId: pair.dexId || "unknown",
+                                    quoteSymbol: pair.quoteToken?.symbol || "WPLS"
+                                };
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error(`[MARKET CACHE] Failed parsing chunk ${chunkIndex} response:`, e.message);
+                }
+                setTimeout(() => processNextChunk(chunkIndex + 1), 100); // 100ms throttle to prevent API rate limiting
+            });
+        }).on("error", (err) => {
+            console.error(`[MARKET CACHE] HTTP error for chunk ${chunkIndex}:`, err.message);
+            setTimeout(() => processNextChunk(chunkIndex + 1), 100);
+        });
+    };
+
+    processNextChunk(0);
+}
+
+
 
 const MIME_TYPES = {
     ".html": "text/html",
@@ -84,6 +221,7 @@ const server = http.createServer((req, res) => {
         const statusPath = path.join(__dirname, "../config/nonukes_qings_status.json");
         try {
             const cards = [];
+            const addresses = [];
             let qingsMap = {};
             if (fs.existsSync(statusPath)) {
                 try {
@@ -99,6 +237,15 @@ const server = http.createServer((req, res) => {
                 }
             }
 
+            let marketCache = { timestamp: 0, data: {} };
+            if (fs.existsSync(MARKET_CACHE_PATH)) {
+                try {
+                    marketCache = JSON.parse(fs.readFileSync(MARKET_CACHE_PATH, "utf8"));
+                } catch (e) {
+                    console.error("Failed to read market cache:", e);
+                }
+            }
+
             if (fs.existsSync(dataDir)) {
                 const files = fs.readdirSync(dataDir);
                 files.forEach(file => {
@@ -106,6 +253,9 @@ const server = http.createServer((req, res) => {
                         const content = fs.readFileSync(path.join(dataDir, file), "utf8");
                         const card = JSON.parse(content);
                         const addrKey = card.address.toLowerCase();
+                        
+                        addresses.push(card.address);
+
                         if (qingsMap[addrKey]) {
                             card.qingExists = qingsMap[addrKey].exists;
                             card.qingAddress = qingsMap[addrKey].qing;
@@ -113,10 +263,31 @@ const server = http.createServer((req, res) => {
                             card.qingExists = false;
                             card.qingAddress = null;
                         }
+
+                        // Attach market metrics
+                        if (marketCache.data[addrKey]) {
+                            card.market = marketCache.data[addrKey];
+                        } else {
+                            card.market = {
+                                priceUsd: "0",
+                                priceChange24h: 0,
+                                liquidityUsd: 0,
+                                dexId: "unknown",
+                                quoteSymbol: "WPLS"
+                            };
+                        }
+
                         cards.push(card);
                     }
                 });
             }
+
+            // Check cache age and trigger background update if expired (> 5 minutes)
+            const cacheAge = Date.now() - marketCache.timestamp;
+            if (cacheAge > 5 * 60 * 1000 && addresses.length > 0) {
+                fetchMarketData(addresses);
+            }
+
             res.writeHead(200, {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
@@ -488,7 +659,7 @@ const server = http.createServer((req, res) => {
                 if (payload.hypobar) args.push("--hypobar", payload.hypobar.toString());
                 if (payload.epibar) args.push("--epibar", payload.epibar.toString());
 
-                console.log(`[SERVER] Spawning VLM Synthesizer rendering: python3 scripts/render_vlm_synthesizer.py ${args.join(" ")}`);
+                console.log(`[SERVER] Dispatching rendering request to daemon: steps=${steps}, cfg=${cfg}, prompt=${payload.promptOverride || ""}`);
                 
                 res.writeHead(200, {
                     "Content-Type": "text/event-stream",
@@ -497,32 +668,27 @@ const server = http.createServer((req, res) => {
                     "Access-Control-Allow-Origin": "*"
                 });
 
-                const child = spawn("python3", ["scripts/render_vlm_synthesizer.py", ...args], { cwd: path.join(__dirname, "..") });
-                
                 let fullLog = "";
-                
-                child.stdout.on("data", data => {
-                    const chunk = data.toString();
-                    fullLog += chunk;
-                    res.write(`data: ${JSON.stringify({ type: "stdout", content: chunk })}\n\n`);
-                });
-                
-                child.stderr.on("data", data => {
-                    const chunk = data.toString();
-                    fullLog += chunk;
-                    res.write(`data: ${JSON.stringify({ type: "stderr", content: chunk })}\n\n`);
-                });
-
-                child.on("close", code => {
-                    if (code !== 0) {
-                        console.error(`[SERVER] render_vlm_synthesizer.py failed with exit code ${code}`);
-                        res.write(`data: ${JSON.stringify({ type: "error", content: `Failed with exit code ${code}`, code })}\n\n`);
-                    } else {
-                        console.log("[SERVER] VLM Synthesizer DNA frame rendered successfully.");
-                        res.write(`data: ${JSON.stringify({ type: "success", url: "assets/storybook/page_dragon_dna.png", logs: fullLog })}\n\n`);
+                queueRender(
+                    {
+                        frame: frameIdx,
+                        steps,
+                        cfg,
+                        promptOverride: payload.promptOverride,
+                        address: payload.address,
+                        hypobar: payload.hypobar || 0,
+                        epibar: payload.epibar || 0
+                    },
+                    (line) => {
+                        fullLog += line;
+                        res.write(`data: ${JSON.stringify({ type: "stdout", content: line })}\n\n`);
+                    },
+                    () => {
+                        console.log("[SERVER] VLM Synthesizer DNA frame rendered successfully via daemon.");
+                        res.write(`data: ${JSON.stringify({ type: "success", url: payload.address ? `assets/${payload.address.toLowerCase()}.png` : "assets/storybook/page_dragon_dna.png", logs: fullLog })}\n\n`);
+                        res.end();
                     }
-                    res.end();
-                });
+                );
             } catch (err) {
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ error: err.message }));

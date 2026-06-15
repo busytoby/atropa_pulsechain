@@ -10,6 +10,9 @@ import struct
 import time
 import subprocess
 
+sd_proc_global = None
+import sys
+
 def write_to_shm_depth(art_panel_image):
     # Resize to 512x512 which is the native SD 1.5 resolution
     img = art_panel_image.convert("RGB").resize((512, 512))
@@ -736,14 +739,13 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
 
     is_voxel_render = (dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255) or is_token or is_minter or address
 
-    # 2. Concurrently launch C++ Stable Diffusion worker to overlap model loading with stats/voxel rendering
-    sd_proc = None
-    cmd = []
-    raw_out = "tmp/vlm_sd_out.raw"
+    sd_prompt = ""
+    seed_str = ""
+    scale_color = (dna['r'], dna['g'], dna['b'], 255)
+    
     if is_voxel_render:
         seed_str = address if address else (prompt_override if prompt_override else "default_token")
         desc = ""
-        scale_color = (dna['r'], dna['g'], dna['b'], 255)
         if address:
             json_path = f"solidity/dysnomia/domain/data/{address.lower()}.json"
             if os.path.exists(json_path):
@@ -768,6 +770,13 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             f"Vibrant high-fidelity sci-fi trading card game art, cel-shaded neon vector style, representing '{desc_for_voxel}', "
             f"bold retro 1980s futuristic cyber aesthetic, neon glows, clean vector outlines, hand-painted gouache coloration, masterpiece"
         )
+
+    # 2. Concurrently launch C++ Stable Diffusion worker to overlap model loading with stats/voxel rendering
+    global sd_proc_global
+    sd_proc = sd_proc_global
+    cmd = []
+    raw_out = "tmp/vlm_sd_out.raw"
+    if is_voxel_render and not sd_proc_global:
         os.makedirs("tsfi2-deepseek/tmp", exist_ok=True)
         worker_path = "./bin/tsfi_sd_worker"
         cmd = [
@@ -775,7 +784,7 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             sd_prompt,
             raw_out,
             "1", # use_shm = 1
-            "dream",
+            "sd15",
             str(steps),
             "euler_a",
             str(cfg)
@@ -1284,9 +1293,21 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         print("[Synthesizer] Synchronizing with concurrent Stable Diffusion worker...")
         try:
             if sd_proc:
-                sd_proc.wait()
-                if sd_proc.returncode != 0:
-                    raise Exception(f"SD worker exited with code {sd_proc.returncode}")
+                if sd_proc_global:
+                    sd_proc.stdin.write(f"STEPS={steps} CFG={cfg} PROMPT={sd_prompt}\n")
+                    sd_proc.stdin.flush()
+                    while True:
+                        line = sd_proc.stdout.readline()
+                        if not line:
+                            break
+                        print(line, end="")
+                        sys.stdout.flush()
+                        if "SUCCESS" in line or "ERROR" in line:
+                            break
+                else:
+                    sd_proc.wait()
+                    if sd_proc.returncode != 0:
+                        raise Exception(f"SD worker exited with code {sd_proc.returncode}")
             else:
                 # Fallback if Popen failed
                 print(f"[Synthesizer] SD worker was not started early, running synchronously: {' '.join(cmd)}")
@@ -1331,7 +1352,6 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     if not is_deep_render and steps <= 4:
         deep_steps = 15
         print(f"[Synthesizer] Spawning deeper background render ({deep_steps} steps) to upgrade card quality...")
-        import sys
         try:
             bg_cmd = [
                 sys.executable,
@@ -1394,6 +1414,48 @@ if __name__ == "__main__":
     parser.add_argument("--hypobar", type=int, default=0)
     parser.add_argument("--epibar", type=int, default=0)
     parser.add_argument("--is-deep-render", action="store_true", help="Is background deep render run")
+    parser.add_argument("--daemon", action="store_true", help="Run persistently as a daemon listening to JSON on stdin")
     args = parser.parse_args()
     
-    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address, args.hypobar, args.epibar, args.is_deep_render)
+    if args.daemon:
+        print("[DAEMON] Stable Diffusion worker initialized in dynamic one-shot mode.")
+        sys.stdout.flush()
+        
+        # Listen for JSON render payloads line-by-line on stdin
+        for line in sys.stdin:
+            line_str = line.strip()
+            if not line_str:
+                continue
+            if line_str == "EXIT":
+                break
+            try:
+                payload = json.loads(line_str)
+                frame_idx = payload.get("frame", 700)
+                steps = payload.get("steps", 4)
+                cfg = payload.get("cfg", 1.5)
+                prompt_override = payload.get("promptOverride")
+                address = payload.get("address")
+                hypobar = payload.get("hypobar", 0)
+                epibar = payload.get("epibar", 0)
+                is_deep = payload.get("is_deep_render", False)
+                
+                # Perform the render
+                render_vlm_synthesized_frame(frame_idx, steps, cfg, prompt_override, address, hypobar, epibar, is_deep)
+                # Signal completion to parent process
+                print("__RENDER_COMPLETE__")
+                sys.stdout.flush()
+            except Exception as e:
+                print(f"[DAEMON ERROR] Failed processing request: {e}")
+                print("__RENDER_COMPLETE__")
+                sys.stdout.flush()
+                
+        # Cleanup
+        if sd_proc_global:
+            try:
+                sd_proc_global.stdin.write("EXIT\n")
+                sd_proc_global.stdin.flush()
+                sd_proc_global.wait()
+            except:
+                pass
+    else:
+        render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address, args.hypobar, args.epibar, args.is_deep_render)

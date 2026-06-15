@@ -467,7 +467,7 @@ static void reset_game_yul() {
     thunk_poke(55028, 500); // py
     thunk_poke(55029, 0);   // pvy
     thunk_poke(55030, 0);   // jumping
-    thunk_poke(55031, 100); // energy
+    thunk_poke(55031, 999); // energy
     thunk_poke(55032, 0);   // score
     thunk_poke(55033, 1);   // screen
     thunk_poke(55034, 0);   // isGameOver
@@ -1012,21 +1012,13 @@ int main(int argc, char **argv) {
             }
         }
         thunk_poke(55024, 1);
+        thunk_poke(55031, 999); // Force energy to 999 (Infinite Health Cheat)
 
         // 4. Fetch updated game states from Yul EVM Registers
         smurf_x        = (float)thunk_peek(55027);
         smurf_y        = (float)thunk_peek(55028);
         smurf_jumping  = (thunk_peek(55030) != 0);
         energy         = (int)thunk_peek(55031);
-        if (game_screen == 2 && energy < prev_energy) {
-            int loss = prev_energy - energy;
-            if (loss > 8) {
-                int adjusted_energy = prev_energy - 8;
-                if (adjusted_energy > 100) adjusted_energy = 100;
-                thunk_poke(55031, adjusted_energy);
-                energy = adjusted_energy;
-            }
-        }
         score          = (int)thunk_peek(55032);
         game_screen    = (int)thunk_peek(55033);
         game_over      = (thunk_peek(55034) != 0);

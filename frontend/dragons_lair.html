@@ -2910,6 +2910,7 @@
         }
 
         let cachedCabsCards = [];
+        let cachedNoNukesCards = [];
         let voxelCardTimers = [];
 
         async function renderCabsCards() {
@@ -2919,6 +2920,14 @@
                     cachedCabsCards = await res.json();
                 } catch (err) {
                     console.warn("Failed to fetch CABS cards from server, using local fallback:", err);
+                }
+            }
+            if (cachedNoNukesCards.length === 0) {
+                try {
+                    const res = await fetch("/api/nonukes-cards");
+                    cachedNoNukesCards = await res.json();
+                } catch (err) {
+                    console.warn("Failed to fetch NoNukes cards:", err);
                 }
             }
             filterCabsCards();
@@ -3018,7 +3027,7 @@
                 }
             }
 
-            const cabsCardsData = [...reactorCards, roomCard, bagCard, ...roomItemCards, ...cachedCabsCards];
+            const cabsCardsData = [...reactorCards, roomCard, bagCard, ...roomItemCards, ...cachedCabsCards, ...cachedNoNukesCards];
 
             cabsCardsData.forEach(card => {
                 const isMatchedSearch = card.name.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query);
@@ -3322,6 +3331,26 @@
                             <span>${card.size}</span>
                         </div>
                         <div class="cabs-card-desc">${card.desc}</div>
+                        
+                        ${card.market ? `
+                        <div class="market-container" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 6px; padding: 6px; margin-top: 6px; font-size: 0.7rem; display: flex; flex-direction: column; gap: 3px; backdrop-filter: blur(4px);">
+                            <div style="font-weight: bold; color: var(--glow-cyan); margin-bottom: 2px;">📈 MARKET METRICS</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Price:</span>
+                                <span style="font-family: monospace; color: #fff;">
+                                    $${parseFloat(card.market.priceUsd) === 0 ? "0.00" : (parseFloat(card.market.priceUsd) < 0.0001 ? parseFloat(card.market.priceUsd).toFixed(8) : parseFloat(card.market.priceUsd).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4}))}
+                                    <span style="color: ${parseFloat(card.market.priceChange24h) >= 0 ? '#39ff14' : '#ff3860'}; font-weight: bold;">
+                                        ${parseFloat(card.market.priceChange24h) >= 0 ? '▲' : '▼'}${Math.abs(parseFloat(card.market.priceChange24h)).toFixed(2)}%
+                                    </span>
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Liquidity:</span>
+                                <span style="font-family: monospace; color: #fff;">$${Math.round(parseFloat(card.market.liquidityUsd)).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+
                         <div class="cabs-card-address" style="font-family: monospace; font-size: 0.65rem; color: #8a7c9d; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px;" title="${card.address || 'N/A'}">
                             ADDR: ${card.address || 'N/A'}
                         </div>
@@ -4020,18 +4049,41 @@
                     })
                 });
 
-                const data = await res.json();
-                if (data.success) {
-                    logs.innerHTML += `[SUCCESS] Output generated at: ${data.url}\n`;
-                    logs.innerHTML += `=== CLI Output logs ===\n${data.logs}`;
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
                     
-                    // Display newly synthesized cel frame inside the cabinet display
-                    document.getElementById("gameScreen").src = "/" + data.url + "?t=" + Date.now();
-                    
-                    // Switch back to Cabinet tab so they can see the masterpiece
-                    switchDashboardTab('game');
-                } else {
-                    logs.innerHTML += `[ERROR] Synthesis failed: ${data.error}\n`;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop(); // save incomplete line
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.type === "stdout" || data.type === "stderr") {
+                                    logs.innerHTML += data.content;
+                                    logs.scrollTop = logs.scrollHeight;
+                                } else if (data.type === "success") {
+                                    logs.innerHTML += `\n[SUCCESS] Art rendered to local assets.\n`;
+                                    
+                                    // Display newly synthesized cel frame inside the cabinet display
+                                    document.getElementById("gameScreen").src = "/" + data.url + "?t=" + Date.now();
+                                    
+                                    // Switch back to Cabinet tab so they can see the masterpiece
+                                    switchDashboardTab('game');
+                                } else if (data.type === "error") {
+                                    logs.innerHTML += `\n[ERROR] Synthesis failed: ${data.content}\n`;
+                                }
+                            } catch (e) {
+                                // Ignore JSON parse errors for incomplete/non-data messages
+                            }
+                        }
+                    }
                 }
             } catch(e) {
                 logs.innerHTML += `[ERROR] Connection failed: ${e.message}\n`;

@@ -202,7 +202,25 @@ int main(int argc, char** argv) {
             if (strlen(input_buf) == 0) continue;
             if (strcmp(input_buf, "EXIT") == 0) break;
             
-            gen_params.prompt = input_buf;
+            int steps_val = steps;
+            float cfg_val = cfg;
+            char* prompt_ptr = input_buf;
+            
+            if (strncmp(input_buf, "STEPS=", 6) == 0) {
+                steps_val = atoi(input_buf + 6);
+                char* cfg_ptr = strstr(input_buf, "CFG=");
+                if (cfg_ptr) {
+                    cfg_val = atof(cfg_ptr + 4);
+                }
+                char* prompt_tag = strstr(input_buf, "PROMPT=");
+                if (prompt_tag) {
+                    prompt_ptr = prompt_tag + 7;
+                }
+            }
+            
+            gen_params.prompt = prompt_ptr;
+            gen_params.sample_params.sample_steps = steps_val;
+            gen_params.sample_params.guidance.txt_cfg = cfg_val;
             
             // Dynamically refresh control image pointers from SHM
             if (shm_depth) {
