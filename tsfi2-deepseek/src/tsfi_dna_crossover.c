@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
 
     ParentA->type = GENETIC_TYPE_YI; ParentA->dys_ptr = allocYI();
     ParentB->type = GENETIC_TYPE_YI; ParentB->dys_ptr = allocYI();
+    Child->type = GENETIC_TYPE_YI; Child->dys_ptr = allocYI();
+    memset(Child->dys_ptr, 0, sizeof(struct YI));
 
     FILE *fA = fopen(argv[1], "rb");
     FILE *fB = fopen(argv[2], "rb");
@@ -45,8 +47,8 @@ int main(int argc, char **argv) {
     tsfi_bn_from_bytes(((struct YI*)ParentA->dys_ptr)->Xi, bufA, nA);
     tsfi_bn_from_bytes(((struct YI*)ParentB->dys_ptr)->Xi, bufB, nB);
 
-    // 2. Perform AVX-512 Crossover
-    Fourier_UniversalCrossover(ParentA, ParentB, Child);
+    // 2. Perform AVX-512 Crossover In-Place (Zero-Copy)
+    Fourier_UniversalCrossover_InPlace(ParentA, ParentB, Child);
 
     // 3. Save Child DNA
     FILE *fOut = fopen(argv[3], "wb");
