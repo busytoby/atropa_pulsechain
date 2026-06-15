@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
     params.diffusion_flash_attn = true;
     params.diffusion_conv_direct = true;
     params.vae_conv_direct = true;
-    params.tensor_type_rules = ""; 
+    params.tensor_type_rules = "unet.middle_block.*=f16"; 
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
     if (!ctx) {

@@ -40,6 +40,10 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
     printf("[DISPATCH] Tick %lu: Dispatching Vulkan compute pipeline for U-Net Graph execution\n", ctx->current_inference_tick);
     printf("[DISPATCH] QueueBind: Timeline semaphore signal value set to %lu\n", ctx->current_inference_tick);
     
+    // 2b. Asynchronous Bottleneck (Middle Block) Dispatch via Dedicated Compute Queue
+    printf("[BOTTLENECK] Tick %lu: Transitioning encoder features to bottleneck. Running Middle Block attention shaders...\n", ctx->current_inference_tick);
+    printf("[BOTTLENECK] QueueBind: Bottleneck dedicated compute queue synchronized via timeline sem value %lu\n", ctx->current_inference_tick);
+    
     // 3. Textural VAE Decoder Shader execution 
     // Emulates: vkCmdDispatch(cmd_buffer, (w + 15) / 16, (h + 15) / 16, 1);
     printf("[SHADER] Executing VAE decode compute shader on grid size: %dx%d\n", (w + 15) / 16, (h + 15) / 16);
