@@ -1,0 +1,9 @@
+{
+  "name": "bWETH (Baby WETH)",
+  "symbol": "bWETH",
+  "address": "0xfede210090acc84f3db9c8c7bc8ffbed544b07e4",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "bweth baby weth currency token digital coin art",
+  "color": "#ff2643"
+}

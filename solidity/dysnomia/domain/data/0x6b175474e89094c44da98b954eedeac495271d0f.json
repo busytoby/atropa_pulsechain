@@ -1,0 +1,9 @@
+{
+  "name": "DAI (Dai Stablecoin)",
+  "symbol": "DAI",
+  "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "dai dai stablecoin currency token digital coin art",
+  "color": "#ff9d26"
+}

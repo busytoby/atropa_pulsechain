@@ -1,0 +1,9 @@
+{
+  "name": "rDai (rETH $Dai)",
+  "symbol": "rDai",
+  "address": "0x6bddbcf4534f7bb0dc91ededc293f8b2197e792d",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "rdai reth $dai currency token digital coin art",
+  "color": "#ff263f"
+}

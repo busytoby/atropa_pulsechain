@@ -1,0 +1,9 @@
+{
+  "name": "USDC (USD Coin from Ethereum)",
+  "symbol": "USDC",
+  "address": "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "usdc usd coin from ethereum currency token digital coin art",
+  "color": "#59ff26"
+}

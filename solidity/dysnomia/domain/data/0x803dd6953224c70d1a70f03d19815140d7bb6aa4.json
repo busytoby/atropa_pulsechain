@@ -1,0 +1,9 @@
+{
+  "name": "$PCB (PulseChain Billionaire)",
+  "symbol": "$PCB",
+  "address": "0x803dd6953224c70d1a70f03d19815140d7bb6aa4",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "$pcb pulsechain billionaire currency token digital coin art",
+  "color": "#ff26a5"
+}

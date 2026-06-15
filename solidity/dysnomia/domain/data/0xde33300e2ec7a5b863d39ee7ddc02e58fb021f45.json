@@ -1,0 +1,9 @@
+{
+  "name": "SPX (SPX6900)",
+  "symbol": "SPX",
+  "address": "0xde33300e2ec7a5b863d39ee7ddc02e58fb021f45",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "spx spx6900 currency token digital coin art",
+  "color": "#263fff"
+}

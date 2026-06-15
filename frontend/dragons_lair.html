@@ -1084,6 +1084,9 @@
                 <option value="ROOM">Z-Machine Rooms</option>
                 <option value="BAG">Backpack (Bag)</option>
                 <option value="ITEM">Room Items</option>
+                <option value="Token">Tokens</option>
+                <option value="Minter">Minters</option>
+                <option value="NONUKES">NoNukes Sensors</option>
                 <option value="VOXEL">Voxel Assets</option>
             </select>
         </div>
@@ -2937,6 +2940,8 @@
                 {
                     name: "Dirk's Fortitude",
                     type: "VIGOUR",
+                    symbol: "VIGOUR",
+                    address: "0x0000000000000000000000000000000000000010",
                     color: "#c5a059",
                     size: "16x16x16",
                     desc: `Vigour: ${Math.round(transEfficiency * 100)}%. Power transmission matching efficiency.`
@@ -2944,6 +2949,8 @@
                 {
                     name: "Panic Sentinel",
                     type: "TERROR",
+                    symbol: "TERROR",
+                    address: "0x0000000000000000000000000000000000000020",
                     color: "#ff3c3c",
                     size: "12x12x16",
                     desc: `Terror Resistance: ${Math.round(vaesenTerror * 100)}%. SWR stress indicator: ${swr.toFixed(2)}:1`
@@ -2951,9 +2958,20 @@
                 {
                     name: "Alchemical Sight",
                     type: "SIGHT",
+                    symbol: "SIGHT",
+                    address: "0x0000000000000000000000000000000000000030",
                     color: "#00e676",
                     size: "8x8x12",
                     desc: `Sight: ${Math.round(Math.min(1, returnLoss / 30.0) * 100)}%. Return Loss: ${returnLoss.toFixed(2)} dB.`
+                },
+                {
+                    name: "NoNukes Sensor",
+                    type: "NONUKES",
+                    symbol: "NONUKES",
+                    address: "0x0000000000000000000000000000000000000040",
+                    color: "#00f0ff",
+                    size: "16x16x24",
+                    desc: `NoNukes liquidity matching depth sensor: ${swr > 1.5 ? "DIVERGENT" : "STABLE"}. SWR: ${swr.toFixed(2)}:1.`
                 }
             ];
 
@@ -2963,6 +2981,8 @@
             const roomCard = {
                 name: `Room: ${currentRoomName}`,
                 type: "ROOM",
+                symbol: "ROOM",
+                address: `0x000000000000000000000000000000000000005${mockZmRoom.toString(16)}`,
                 color: "#9c27b0",
                 size: "32x32x16",
                 desc: `Dirk's active location. Exits: ${roomExits}.`
@@ -2973,6 +2993,8 @@
             const bagCard = {
                 name: "Dirk's Backpack (Bag)",
                 type: "BAG",
+                symbol: "BAG",
+                address: "0x0000000000000000000000000000000000000060",
                 color: "#795548",
                 size: "16x16x20",
                 desc: `Items carried: [${bagItemsStr}]. Use the terminal to drop or take items.`
@@ -2986,6 +3008,8 @@
                     roomItemCards.push({
                         name: `Item: ${itemName}`,
                         type: "ITEM",
+                        symbol: itemName.toUpperCase(),
+                        address: `0x000000000000000000000000000000000000007${Number(itemId).toString(16)}`,
                         color: "#00bcd4",
                         size: "8x8x8",
                         desc: `A ${itemName} lies resting on the ground in the ${currentRoomName}. Type 'take ${itemName.toLowerCase()}' in terminal.`
@@ -2997,7 +3021,7 @@
 
             cabsCardsData.forEach(card => {
                 const isMatchedSearch = card.name.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query);
-                const isMatchedType = (filterType === "ALL") || (card.type === filterType) || (filterType === "VOXEL" && !["VIGOUR", "TERROR", "SIGHT", "ROOM", "BAG", "ITEM"].includes(card.type));
+                const isMatchedType = (filterType === "ALL") || (card.type === filterType) || (filterType === "VOXEL" && !["VIGOUR", "TERROR", "SIGHT", "ROOM", "BAG", "ITEM", "NONUKES"].includes(card.type));
 
                 if (!isMatchedSearch || !isMatchedType) {
                     return;
@@ -3005,9 +3029,51 @@
 
                 const el = document.createElement("div");
                 el.className = "cabs-card";
-                                ctx.fill();
-                            }
-                        } else if (activeScene === 'electric') {
+                    
+                // Procedural thumbnail using Canvas (3D rotating voxel projection)
+                const canvas = document.createElement("canvas");
+                canvas.width = 160;
+                canvas.height = 120;
+                canvas.style.display = "block";
+                canvas.style.margin = "0 auto";
+                const ctx = canvas.getContext("2d");
+                
+                // Decode size e.g. "32x16x64 voxels" or "8x3x2 voxels"
+                const sizeMatch = card.size.match(/(\d+)x(\d+)x(\d+)/);
+                const dims = sizeMatch ? [parseInt(sizeMatch[1]), parseInt(sizeMatch[2]), parseInt(sizeMatch[3])] : [16, 16, 16];
+                
+                let angle = 0;
+                let activeScene = 'default';
+
+                function drawVoxelCard() {
+                    // Background based on activeScene
+                    if (activeScene === 'castle') {
+                        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                        grad.addColorStop(0, '#3d2b4f');
+                        grad.addColorStop(1, '#0c0714');
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Castle stone texture details
+                        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+                    } else if (activeScene === 'lava') {
+                        let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 5, canvas.width/2, canvas.height/2, canvas.width/2);
+                        grad.addColorStop(0, '#5e2000');
+                        grad.addColorStop(1, '#110200');
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Lava particles
+                        ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+                        for(let i=0; i<8; i++) {
+                            let px = (Math.sin(Date.now()*0.001 + i) * 0.5 + 0.5) * canvas.width;
+                            let py = (Math.cos(Date.now()*0.0013 + i) * 0.5 + 0.5) * canvas.height;
+                            ctx.beginPath();
+                            ctx.arc(px, py, 2, 0, Math.PI*2);
+                            ctx.fill();
+                        }
+                    } else if (activeScene === 'electric') {
                             ctx.fillStyle = '#050a12';
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
                             
@@ -3169,6 +3235,33 @@
                                             shouldDraw = true;
                                             voxelColor = card.color; // Magenta dress
                                         }
+                                    } else if (pName.includes("nonukes")) {
+                                        // Render NoNukes: An atomic core with a floating outer electron shell ring
+                                        const core = (vx*vx + vy*vy + vz*vz) < 0.18;
+                                        const ring = Math.abs(vx*vx + vy*vy - 0.4) < 0.05 && Math.abs(vz) < 0.08;
+                                        if (core) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ffffff";
+                                        } else if (ring) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color;
+                                        }
+                                    } else if (pName.includes("federalminter")) {
+                                        // Render FederalMinter Sentinel: A monumental tower
+                                        const base = Math.abs(vx) < 0.25 && Math.abs(vy) < 0.25 && vz > -0.5 && vz < 0.3;
+                                        const top = Math.abs(vx) < 0.15 && Math.abs(vy) < 0.15 && vz >= 0.3 && vz < 0.5;
+                                        if (base || top) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color;
+                                        }
+                                    } else if (pName.includes("personalminter")) {
+                                        // Render PersonalMinter Vault: A cubic vault
+                                        const outerBox = Math.abs(vx) < 0.4 && Math.abs(vy) < 0.4 && Math.abs(vz) < 0.4;
+                                        const innerHollow = Math.abs(vx) < 0.3 && Math.abs(vy) < 0.3 && Math.abs(vz) < 0.3;
+                                        if (outerBox && !innerHollow) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color;
+                                        }
                                     } else {
                                         // Default items or hazards (generate a glowing geometric voxel pattern)
                                         const centerCore = (vx*vx + vy*vy + vz*vz) < 0.2;
@@ -3209,8 +3302,9 @@
                     el.dataset.animId = animId;
 
                     el.innerHTML = `
-                        <div class="cabs-card-artwork">
+                        <div class="cabs-card-artwork" style="position: relative;">
                             <span class="cabs-card-badge">${card.type}</span>
+                            ${card.symbol ? `<span class="cabs-card-symbol-badge" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.75); color: ${card.color}; border: 1px solid ${card.color}; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; font-family: monospace; text-shadow: 0 0 4px ${card.color};">${card.symbol}</span>` : ''}
                         </div>
                         <div class="cabs-card-title">${card.name}</div>
                         <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
@@ -3227,6 +3321,9 @@
                             <span>${card.size}</span>
                         </div>
                         <div class="cabs-card-desc">${card.desc}</div>
+                        <div class="cabs-card-address" style="font-family: monospace; font-size: 0.65rem; color: #8a7c9d; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px;" title="${card.address || 'N/A'}">
+                            ADDR: ${card.address || 'N/A'}
+                        </div>
                         <button class="btn btn-sword btn-block" style="font-size: 0.75rem; padding: 6px; justify-content: center;" onclick="loadCardDnaIntoEditor(${JSON.stringify(card).replace(/"/g, '&quot;')})">
                             🧬 Render Card DNA
                         </button>

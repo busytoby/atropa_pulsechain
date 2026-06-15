@@ -1,0 +1,9 @@
+{
+  "name": "WETH (Wrapped Ether)",
+  "symbol": "WETH",
+  "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "weth wrapped ether currency token digital coin art",
+  "color": "#26a1ff"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "crvUSD (Curve.Fi USD Stablecoin from Ethereum)",
+  "symbol": "crvUSD",
+  "address": "0x1681e2bf93f47569ed1a7efc0a606147ed11207c",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "crvusd curve.fi usd stablecoin from ethereum currency token digital coin art",
+  "color": "#a126ff"
+}

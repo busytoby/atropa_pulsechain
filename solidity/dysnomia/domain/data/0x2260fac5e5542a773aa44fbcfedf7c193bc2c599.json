@@ -1,0 +1,9 @@
+{
+  "name": "WBTC (Wrapped BTC)",
+  "symbol": "WBTC",
+  "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "wbtc wrapped btc currency token digital coin art",
+  "color": "#26ffbf"
+}

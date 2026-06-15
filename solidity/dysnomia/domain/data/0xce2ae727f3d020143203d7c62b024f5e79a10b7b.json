@@ -1,0 +1,9 @@
+{
+  "name": "pmETH (pegmeETH)",
+  "symbol": "pmETH",
+  "address": "0xce2ae727f3d020143203d7c62b024f5e79a10b7b",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "pmeth pegmeeth currency token digital coin art",
+  "color": "#26ff6a"
+}

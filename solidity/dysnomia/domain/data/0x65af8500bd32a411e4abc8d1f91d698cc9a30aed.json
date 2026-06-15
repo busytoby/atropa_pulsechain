@@ -1,0 +1,9 @@
+{
+  "name": "Glag (Glagolitic)",
+  "symbol": "Glag",
+  "address": "0x65af8500bd32a411e4abc8d1f91d698cc9a30aed",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "glag glagolitic currency token digital coin art",
+  "color": "#26ff44"
+}

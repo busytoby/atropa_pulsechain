@@ -1,0 +1,9 @@
+{
+  "name": "BSV (Bitcoin SV)",
+  "symbol": "BSV",
+  "address": "0xfa20cf06874ee15d5e007471968837124e43ced7",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "bsv bitcoin sv currency token digital coin art",
+  "color": "#ff26d8"
+}

@@ -87,3 +87,7 @@ state.json
 price_cache.json
 resolved_swaps.json
 unresolved_swaps.json
+
+# Ignore generated art assets
+assets/**/*.png
+assets/*.png
