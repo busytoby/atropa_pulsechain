@@ -1595,7 +1595,7 @@ int main(int argc, char **argv) {
 
         // Render Frame
         if (headless && (frame_counter >= headless_frames - 1 || exit_requested)) {
-            FILE *f = fopen("/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/vaesen_smurfs_render.ppm", "wb");
+            FILE *f = fopen("/home/mariarahel/.gemini/antigravity-cli/brain/5a8d4144-99a3-4e64-93ac-47c55dad5b24/scratch/vaesen_smurfs_render.ppm", "wb");
             if (f) {
                 fprintf(f, "P6\n%d %d\n255\n", W, H);
                 for (int py_idx = 0; py_idx < H; py_idx++) {
@@ -1619,7 +1619,7 @@ int main(int argc, char **argv) {
                     }
                 }
                 fclose(f);
-                printf("[SMURFS] Successfully exported headless frame (frame %d) to /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/vaesen_smurfs_render.ppm\n", frame_counter);
+                printf("[SMURFS] Successfully exported headless frame (frame %d) to /home/mariarahel/.gemini/antigravity-cli/brain/5a8d4144-99a3-4e64-93ac-47c55dad5b24/scratch/vaesen_smurfs_render.ppm\n", frame_counter);
             }
             break;
         }

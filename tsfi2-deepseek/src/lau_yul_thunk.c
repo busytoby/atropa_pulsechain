@@ -182,7 +182,7 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
     if (is_solidity) {
         snprintf(cmd, sizeof(cmd), "solc --optimize --bin --allow-paths .. \"%s\" 2>/dev/null", yul_path);
     } else {
-        snprintf(cmd, sizeof(cmd), "solc --strict-assembly --allow-paths .. \"%s\" --bin 2>/dev/null", yul_path);
+        snprintf(cmd, sizeof(cmd), "solc --strict-assembly --allow-paths .. \"%s\" 2>/dev/null", yul_path);
     }
     FILE *fp = popen(cmd, "r");
     if (!fp) {
@@ -203,13 +203,17 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
             continue;
         }
         if (found_bin) {
-            size_t len = strlen(line);
-            while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r' || line[len-1] == ' ')) {
-                line[len-1] = '\0';
+            char *start = line;
+            while (*start == ' ' || *start == '\t') {
+                start++;
+            }
+            size_t len = strlen(start);
+            while (len > 0 && (start[len-1] == '\n' || start[len-1] == '\r' || start[len-1] == ' ')) {
+                start[len-1] = '\0';
                 len--;
             }
             if (len > 10) {
-                bytecode_hex = strdup(line);
+                bytecode_hex = strdup(start);
                 break;
             }
             found_bin = false;
