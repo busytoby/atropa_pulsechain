@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <immintrin.h>
 #include "tsfi_sd_thunk.h"
 
 bool tsfi_sd_thunk_init(TsfiSdContext* ctx, const char* safetensors_path) {
@@ -144,16 +145,22 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                     }
                 }
                 
-                // --- 5. Skip Connection Blending ---
-                printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d)\n", hw, hh);
-                for (int y = 0; y < hh; y++) {
-                    for (int x = 0; x < hw; x++) {
-                        int idx = (y * hw + x) * 3;
-                        // Blend 50% from encoder skip path and 50% from decoder expanding path
-                        decoder_half[idx + 0] = 0.5f * decoder_half[idx + 0] + 0.5f * skip_connection[idx + 0];
-                        decoder_half[idx + 1] = 0.5f * decoder_half[idx + 1] + 0.5f * skip_connection[idx + 1];
-                        decoder_half[idx + 2] = 0.5f * decoder_half[idx + 2] + 0.5f * skip_connection[idx + 2];
-                    }
+                // --- 5. Skip Connection Blending (Vectorized via AVX-512) ---
+                printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d) [AVX-512 ACTIVE]\n", hw, hh);
+                int total_floats = hw * hh * 3;
+                int simd_end = (total_floats / 16) * 16;
+                __m512 half_vec = _mm512_set1_ps(0.5f);
+                
+                for (int i = 0; i < simd_end; i += 16) {
+                    __m512 dec = _mm512_loadu_ps(&decoder_half[i]);
+                    __m512 skip = _mm512_loadu_ps(&skip_connection[i]);
+                    __m512 blended = _mm512_add_ps(_mm512_mul_ps(dec, half_vec), _mm512_mul_ps(skip, half_vec));
+                    _mm512_storeu_ps(&decoder_half[i], blended);
+                }
+                
+                // Cleanup scalar tail
+                for (int i = simd_end; i < total_floats; i++) {
+                    decoder_half[i] = 0.5f * decoder_half[i] + 0.5f * skip_connection[i];
                 }
 
                 // --- 6. Upsampling Path: Phase 2 (Intermediate -> Full Output) ---
