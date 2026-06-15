@@ -48,8 +48,85 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
     // Emulates: vkCmdDispatch(cmd_buffer, (w + 15) / 16, (h + 15) / 16, 1);
     printf("[SHADER] Executing VAE decode compute shader on grid size: %dx%d\n", (w + 15) / 16, (h + 15) / 16);
     
-    size_t pixel_mass = w * h * 3;
-    memcpy(out_pixels, in_dna_mask, pixel_mass); 
+    // Concrete Bottleneck Downsample -> Attention -> Upsample Simulation
+    int lw = 64;
+    int lh = 64;
+    float* latent = (float*)malloc(lw * lh * 3 * sizeof(float));
+    if (latent) {
+        float rx = (float)w / lw;
+        float ry = (float)h / lh;
+        
+        // Downsample Phase (Encoder output mapping)
+        for (int y = 0; y < lh; y++) {
+            for (int x = 0; x < lw; x++) {
+                int sx = (int)(x * rx);
+                int sy = (int)(y * ry);
+                int src_idx = (sy * w + sx) * 3;
+                int dst_idx = (y * lw + x) * 3;
+                latent[dst_idx + 0] = in_dna_mask[src_idx + 0] / 255.0f;
+                latent[dst_idx + 1] = in_dna_mask[src_idx + 1] / 255.0f;
+                latent[dst_idx + 2] = in_dna_mask[src_idx + 2] / 255.0f;
+            }
+        }
+
+        // Bottleneck Self-Attention (Spatial Blending / Mixing)
+        float* latent_att = (float*)malloc(lw * lh * 3 * sizeof(float));
+        if (latent_att) {
+            for (int y = 0; y < lh; y++) {
+                for (int x = 0; x < lw; x++) {
+                    float r_sum = 0, g_sum = 0, b_sum = 0;
+                    int count = 0;
+                    
+                    // Local 3x3 Attention Window
+                    for (int dy = -1; dy <= 1; dy++) {
+                        for (int dx = -1; dx <= 1; dx++) {
+                            int nx = x + dx;
+                            int ny = y + dy;
+                            if (nx >= 0 && nx < lw && ny >= 0 && ny < lh) {
+                                int idx = (ny * lw + nx) * 3;
+                                r_sum += latent[idx + 0];
+                                g_sum += latent[idx + 1];
+                                b_sum += latent[idx + 2];
+                                count++;
+                            }
+                        }
+                    }
+                    
+                    int dst_idx = (y * lw + x) * 3;
+                    float mix_r = r_sum / count;
+                    float mix_g = g_sum / count;
+                    float mix_b = b_sum / count;
+                    
+                    // Mix original feature map with localized attention outputs
+                    latent_att[dst_idx + 0] = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
+                    latent_att[dst_idx + 1] = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
+                    latent_att[dst_idx + 2] = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
+                }
+            }
+
+            // Upsample Phase (Decoder expansion mapping)
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int lx = (int)(x / rx);
+                    int ly = (int)(y / ry);
+                    if (lx >= lw) lx = lw - 1;
+                    if (ly >= lh) ly = lh - 1;
+                    
+                    int src_idx = (ly * lw + lx) * 3;
+                    int dst_idx = (y * w + x) * 3;
+                    out_pixels[dst_idx + 0] = (uint8_t)(latent_att[src_idx + 0] * 255.0f);
+                    out_pixels[dst_idx + 1] = (uint8_t)(latent_att[src_idx + 1] * 255.0f);
+                    out_pixels[dst_idx + 2] = (uint8_t)(latent_att[src_idx + 2] * 255.0f);
+                }
+            }
+            free(latent_att);
+        }
+        free(latent);
+    } else {
+        // Fallback in case of allocation failure
+        size_t pixel_mass = w * h * 3;
+        memcpy(out_pixels, in_dna_mask, pixel_mass);
+    } 
 }
 
 void tsfi_sd_thunk_teardown(TsfiSdContext* ctx) {

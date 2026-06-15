@@ -385,12 +385,145 @@
         .deck-card-thumb:hover .deck-card-delete {
             opacity: 1;
         }
+        /* Flat-Pastel Neo-Brutalist Performance Diagnostics Styles */
+        .btn-diagnostics {
+            background-color: #bde0fe;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-diagnostics:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000000;
+        }
+        .btn-diagnostics:hover {
+            background-color: #ffd1dc;
+        }
+
+        #diagnostics-drawer {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 420px;
+            height: 100vh;
+            background-color: #faf0d2;
+            border-left: 3px solid #000000;
+            box-shadow: -5px 0px 0px rgba(0,0,0,0.15);
+            z-index: 9999;
+            transition: right 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Share Tech Mono', monospace;
+            color: #000000;
+            box-sizing: border-box;
+        }
+        #diagnostics-drawer.open {
+            right: 0;
+        }
+        .diagnostics-header {
+            background-color: #ffd1dc;
+            border-bottom: 3px solid #000000;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .diagnostics-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #000000;
+            margin: 0;
+        }
+        .diagnostics-close {
+            background-color: #ffccd5;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px #000000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .diagnostics-close:active {
+            transform: translate(1px, 1px);
+            box-shadow: 0px 0px 0px #000000;
+        }
+        .diagnostics-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .diagnostics-metrics {
+            display: flex;
+            gap: 12px;
+        }
+        .diagnostics-card {
+            flex: 1;
+            border: 2px solid #000000;
+            padding: 12px;
+            box-shadow: 2px 2px 0px #000000;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .diagnostics-card.fps {
+            background-color: #bde0fe;
+        }
+        .diagnostics-card.latency {
+            background-color: #ffd1dc;
+        }
+        .diagnostics-card-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333333;
+        }
+        .diagnostics-card-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+        }
+        .diagnostics-iframe-container {
+            flex: 1;
+            background-color: #e8aeef;
+            border: 2px solid #000000;
+            box-shadow: 3px 3px 0px #000000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .diagnostics-iframe-header {
+            background-color: #e8aeef;
+            border-bottom: 2px solid #000000;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #000000;
+        }
+        #diagnostics-iframe {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background-color: #ffffff;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <div class="logo">TSFi Tournament 3D Engine</div>
+        <button class="btn-diagnostics" onclick="toggleDiagnosticsDrawer()">Performance Diagnostics</button>
         <div class="subtitle" id="synth-status">SYNTHESIS SYNAPSE ENGINE: ACTIVE</div>
     </header>
 
@@ -550,6 +683,30 @@ Ready to initiate tournament match.</div>
         </div>
         <div id="deck-list-container" style="flex: 1; padding: 12px 30px; display: flex; gap: 16px; overflow-x: auto; align-items: center; background: rgba(1, 2, 5, 0.4);">
             <div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>
+        </div>
+    </div>
+
+    <!-- Viewport-Overlay Slide-Out Drawer for Performance Diagnostics -->
+    <div id="diagnostics-drawer">
+        <div class="diagnostics-header">
+            <span class="diagnostics-title">PERFORMANCE DIAGNOSTICS</span>
+            <button class="diagnostics-close" onclick="toggleDiagnosticsDrawer()">[X] CLOSE</button>
+        </div>
+        <div class="diagnostics-body">
+            <div class="diagnostics-metrics">
+                <div class="diagnostics-card fps">
+                    <span class="diagnostics-card-label">Avg FPS</span>
+                    <span class="diagnostics-card-value" id="diag-fps-val">--</span>
+                </div>
+                <div class="diagnostics-card latency">
+                    <span class="diagnostics-card-label">Audio Latency</span>
+                    <span class="diagnostics-card-value" id="diag-latency-val">--</span>
+                </div>
+            </div>
+            <div class="diagnostics-iframe-container">
+                <div class="diagnostics-iframe-header">PROFILER DETAILED REPORT</div>
+                <iframe id="diagnostics-iframe" src="tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
+            </div>
         </div>
     </div>
 
@@ -1818,6 +1975,69 @@ Ready to initiate tournament match.</div>
             }
             overlay.innerHTML = `<img src="${imgSrc}" style="max-height: 85vh; border: 5px solid #d2b48c; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">`;
             overlay.style.display = "flex";
+        }
+
+        // Performance Diagnostics Drawer Logic
+        function toggleDiagnosticsDrawer() {
+            const drawer = document.getElementById("diagnostics-drawer");
+            if (drawer) {
+                drawer.classList.toggle("open");
+            }
+        }
+
+        function onDiagnosticsIframeLoad() {
+            try {
+                const iframe = document.getElementById("diagnostics-iframe");
+                if (!iframe) return;
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                if (!iframeDoc) return;
+
+                const statCards = iframeDoc.querySelectorAll(".stat-card");
+                let fpsVal = "";
+                let latencyVal = "";
+
+                statCards.forEach(card => {
+                    const titleEl = card.querySelector(".stat-title");
+                    if (titleEl) {
+                        const titleText = titleEl.textContent.trim().toLowerCase();
+                        const valueEl = card.querySelector(".stat-value");
+                        if (valueEl) {
+                            const valueText = valueEl.textContent.trim();
+                            if (titleText.includes("render") || titleText.includes("fps")) {
+                                fpsVal = valueText;
+                            } else if (titleText.includes("audio latency") || titleText.includes("latency")) {
+                                latencyVal = valueText;
+                            }
+                        }
+                    }
+                });
+
+                if (!fpsVal || !latencyVal) {
+                    const iframeWin = iframe.contentWindow;
+                    if (iframeWin && iframeWin.BENCHMARK_DATA) {
+                        const data = iframeWin.BENCHMARK_DATA;
+                        if (data.summary) {
+                            if (data.summary.average_fps && !fpsVal) {
+                                fpsVal = parseFloat(data.summary.average_fps).toFixed(1) + " FPS";
+                            }
+                        }
+                        if (data.audio_latency_records && data.audio_latency_records.length > 0 && !latencyVal) {
+                            const latencies = data.audio_latency_records.map(r => r.total_latency_seconds);
+                            const avgLat = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+                            latencyVal = (avgLat * 1000).toFixed(3) + " ms";
+                        }
+                    }
+                }
+
+                if (fpsVal) {
+                    document.getElementById("diag-fps-val").innerText = fpsVal;
+                }
+                if (latencyVal) {
+                    document.getElementById("diag-latency-val").innerText = latencyVal;
+                }
+            } catch (e) {
+                console.warn("Unable to read diagnostics iframe content:", e);
+            }
         }
 
         loadDeckList();

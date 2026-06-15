@@ -221,9 +221,11 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         ((struct YI*)ParentB->dys_ptr)->Xi = tsfi_bn_alloc();
         tsfi_bn_from_bytes(((struct YI*)ParentB->dys_ptr)->Xi, (const uint8_t*)strategy, strlen(strategy));
 
-        // Perform Crossover
+        // Perform Crossover In-Place (Zero-Copy)
         GeneticNode* InternalLLM = (GeneticNode*)lau_malloc_wired(sizeof(GeneticNode));
-        Fourier_UniversalCrossover(ParentA, ParentB, InternalLLM);
+        InternalLLM->type = GENETIC_TYPE_YI; InternalLLM->dys_ptr = allocYI();
+        memset(InternalLLM->dys_ptr, 0, sizeof(struct YI));
+        Fourier_UniversalCrossover_InPlace(ParentA, ParentB, InternalLLM);
 
         // Extract resulting bytecode
         char evolved_code[1024] = {0};
