@@ -78,6 +78,32 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API endpoint to serve NoNukes partner cards (aggregated)
+    if (req.url === "/api/nonukes-cards") {
+        const dataDir = path.join(__dirname, "../solidity/dysnomia/domain/data");
+        try {
+            const cards = [];
+            if (fs.existsSync(dataDir)) {
+                const files = fs.readdirSync(dataDir);
+                files.forEach(file => {
+                    if (file.startsWith("0x") && file.endsWith(".json")) {
+                        const content = fs.readFileSync(path.join(dataDir, file), "utf8");
+                        cards.push(JSON.parse(content));
+                    }
+                });
+            }
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify(cards));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
+
     // API endpoint to serve thunk storage reconciliation data
     if (req.url === "/api/thunk-storage") {
         const storagePath = path.join(__dirname, "../tsfi2-deepseek/evm_storage.json");

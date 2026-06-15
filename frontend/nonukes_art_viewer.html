@@ -462,26 +462,11 @@
         let canvasAngle = 0;
         let activeScene = 'default';
 
-        // Load all JSON cards from solidity directory using api listing
+        // Load all NoNukes partner cards from the server in a single call
         async function loadTokenCards() {
             try {
-                const res = await fetch("/api/workspace-files");
-                const files = await res.json();
-                
-                // Filter for individual card files in solidity/dysnomia/domain/data/
-                const cardFiles = files.filter(f => 
-                    f.startsWith("solidity/dysnomia/domain/data/") && 
-                    f.endsWith(".json") && 
-                    !f.endsWith("cabs_cards.json")
-                );
-
-                // Fetch each card file contents
-                const fetches = cardFiles.map(async (f) => {
-                    const r = await fetch(`/api/read-file?path=${encodeURIComponent(f)}`);
-                    return r.json();
-                });
-
-                allTokens = await Promise.all(fetches);
+                const res = await fetch("/api/nonukes-cards");
+                allTokens = await res.json();
                 renderTokenList(allTokens);
             } catch (err) {
                 console.error("Failed to load tokens:", err);
