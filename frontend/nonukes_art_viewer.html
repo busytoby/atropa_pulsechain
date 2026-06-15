@@ -533,7 +533,7 @@
 
             // Load pre-generated art asset immediately
             const artImage = document.getElementById("artImage");
-            artImage.src = `/assets/${tok.address.toLowerCase()}.png`;
+            artImage.src = `/assets/${tok.address.toLowerCase()}.png?t=${Date.now()}`;
             artImage.style.display = "block";
             document.getElementById("artPlaceholder").style.display = "none";
             document.getElementById("logPanel").style.display = "none";
@@ -744,7 +744,7 @@
                 cardEl.className = "gallery-card";
                 cardEl.innerHTML = `
                     <div class="gallery-art">
-                        <img src="/assets/${tok.address.toLowerCase()}.png" class="gallery-img" onerror="this.style.display='none';">
+                        <img src="/assets/${tok.address.toLowerCase()}.png?t=${Date.now()}" class="gallery-img" onerror="this.style.display='none';">
                         <div class="no-art-placeholder" style="height: 100%; justify-content: center; font-size: 0.75rem; color: var(--muted);">No Image</div>
                     </div>
                     <div style="font-weight: 800; font-size: 0.9rem; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${tok.name.split(' (')[0]}</div>
