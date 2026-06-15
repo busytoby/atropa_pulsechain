@@ -31,7 +31,7 @@ def write_to_shm_depth(art_panel_image):
 def get_shade(color, factor):
     return tuple(min(255, int(c * factor)) for c in color)
 
-def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
+def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color, occupied_set=None):
     dx = size * 0.866
     dy = size * 0.5
     px = cx + (x - y) * dx
@@ -45,15 +45,30 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     right_top = (px + dx, py - dy)
     right_bottom = (px + dx, py + dy)
     
-    top_color = get_shade(base_color, 1.2)
-    left_color = get_shade(base_color, 0.9)
-    right_color = get_shade(base_color, 0.7)
+    top_factor = 1.2
+    left_factor = 0.9
+    right_factor = 0.7
+    
+    if occupied_set:
+        # Top face shadow (if block above exists)
+        if (x, y, z + 1) in occupied_set:
+            top_factor *= 0.65
+        # Left face shadow (if block to left/back-left exists)
+        if (x - 1, y, z) in occupied_set or (x, y + 1, z) in occupied_set:
+            left_factor *= 0.65
+        # Right face shadow (if block to right/back-right exists)
+        if (x + 1, y, z) in occupied_set or (x, y - 1, z) in occupied_set:
+            right_factor *= 0.65
+            
+    top_color = get_shade(base_color, top_factor)
+    left_color = get_shade(base_color, left_factor)
+    right_color = get_shade(base_color, right_factor)
     
     draw.polygon([top, right_top, center, left_top], fill=top_color)
     draw.polygon([left_top, center, bottom, left_bottom], fill=left_color)
     draw.polygon([center, right_top, right_bottom, bottom], fill=right_color)
     
-    outline_color = get_shade(base_color, 1.4)
+    outline_color = get_shade(base_color, max(top_factor, 1.1) * 1.2)
     draw.line([top, right_top, bottom, left_top, top], fill=outline_color, width=1)
     draw.line([center, top], fill=outline_color, width=1)
     draw.line([center, bottom], fill=outline_color, width=1)
@@ -400,6 +415,71 @@ def generate_voxel_shape(desc, seed_str=None):
                     v.append((x, 0, z, 0))
         return v
 
+    def get_clover():
+        v = []
+        # Stem
+        for z in range(-3, 0):
+            v.append((0, 0, z, 0))
+        # 4 leaves
+        for z in range(0, 2):
+            for x, y in [(-1.5, 0), (1.5, 0), (0, -1.5), (0, 1.5)]:
+                for dx in range(-1, 2):
+                    for dy in range(-1, 2):
+                        if abs(dx) + abs(dy) <= 1:
+                            v.append((int(x + dx), int(y + dy), z, 1 if (dx==0 and dy==0) else 0))
+        return v
+
+    def get_glasses():
+        v = []
+        for z in range(0, 2):
+            # Left glass
+            for x in range(-3, -1):
+                for y in range(-1, 2):
+                    v.append((x, y, z, 0))
+            # Right glass
+            for x in range(1, 4):
+                for y in range(-1, 2):
+                    v.append((x, y, z, 0))
+            # Bridge
+            v.append((0, 0, z, 1))
+        # Frames/sides
+        for z in (0, 1):
+            v.append((-4, 0, z, 1))
+            v.append((4, 0, z, 1))
+        return v
+
+    def get_music():
+        v = []
+        # Note stem
+        for z in range(-2, 3):
+            v.append((1, 0, z, 0))
+        # Note base (circle)
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                if x*x + y*y <= 1:
+                    v.append((x, y, -2, 1 if (x==0 and y==0) else 0))
+        # Flag
+        v.append((2, 0, 2, 0))
+        v.append((3, 0, 1, 1))
+        return v
+
+    def get_rocket():
+        v = []
+        # Body
+        for z in range(-2, 3):
+            r = 1 if z in (-2, 2) else 2
+            for x in range(-r, r+1):
+                for y in range(-r, r+1):
+                    if x*x + y*y <= r*r:
+                        v.append((x, y, z, 1 if z == 2 else 0))
+        # Fins
+        for z in range(-3, 0):
+            v.append((-3, 0, z, 1))
+            v.append((3, 0, z, 1))
+            v.append((0, -3, z, 1))
+            v.append((0, 3, z, 1))
+        return v
+
     def get_beast():
         v = []
         for z in range(-2, 3):
@@ -441,6 +521,10 @@ def generate_voxel_shape(desc, seed_str=None):
         (["food", "pizza", "burger"], get_food, False),
         (["goat"], get_goat, False),
         (["mirror", "glass", "reflect"], get_mirror, False),
+        (["clover", "emerald", "luck", "green", "gem"], get_clover, False),
+        (["glasses", "sunglasses", "shades", "cool", "swag"], get_glasses, False),
+        (["music", "note", "rhythm", "beat", "drum", "sound", "audio"], get_music, False),
+        (["rocket", "ship", "spacecraft", "moon", "pump"], get_rocket, False),
         (["beast", "monster", "creature", "dragon", "demon"], get_beast, False)
     ]
 
@@ -936,11 +1020,13 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             
         # 3. Draw Pedestal Base
         pedestal_color = get_shade(color_rgb, 0.5)
+        pedestal_voxels = []
         for px_grid in range(-2, 3):
             for py_grid in range(-2, 3):
                 if abs(px_grid) + abs(py_grid) <= 3:
-                    draw_isometric_cube(draw, cx, cy, px_grid, py_grid, -4, 30, pedestal_color)
-
+                    pedestal_voxels.append((px_grid, py_grid, -4))
+        pedestal_set = {(vx, vy, vz) for vx, vy, vz in pedestal_voxels}
+        
         desc_for_voxel = prompt_override if prompt_override else desc
         if is_minter and "minter" not in desc_for_voxel.lower() and "shield" not in desc_for_voxel.lower():
             desc_for_voxel += " minter sentinel shield"
@@ -964,10 +1050,41 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
                     if 8 <= (vx_ring*vx_ring + vy_ring*vy_ring) <= 10:
                         voxels.append((vx_ring, vy_ring, -3, 1))
 
-        accent_rgb = (255, 255, 255)
+        occupied_set = {(vx, vy, vz) for vx, vy, vz, _ in voxels}
+        # Include pedestal blocks in occupied set for shading/hiding checks
+        all_occupied = occupied_set.union(pedestal_set)
+
+        # Draw Pedestal Base (only visible ones)
+        for px_grid, py_grid, pz_grid in pedestal_voxels:
+            # A block is completely hidden internally if surrounded in all 6 directions
+            is_hidden = (
+                (px_grid + 1, py_grid, pz_grid) in all_occupied and
+                (px_grid - 1, py_grid, pz_grid) in all_occupied and
+                (px_grid, py_grid + 1, pz_grid) in all_occupied and
+                (px_grid, py_grid - 1, pz_grid) in all_occupied and
+                (px_grid, py_grid, pz_grid + 1) in all_occupied and
+                (px_grid, py_grid, pz_grid - 1) in all_occupied
+            )
+            if not is_hidden:
+                draw_isometric_cube(draw, cx, cy, px_grid, py_grid, pz_grid, 30, pedestal_color, occupied_set=all_occupied)
+
+        visible_voxels = []
         for vx, vy, vz, color_type in voxels:
+            is_hidden = (
+                (vx + 1, vy, vz) in all_occupied and
+                (vx - 1, vy, vz) in all_occupied and
+                (vx, vy + 1, vz) in all_occupied and
+                (vx, vy - 1, vz) in all_occupied and
+                (vx, vy, vz + 1) in all_occupied and
+                (vx, vy, vz - 1) in all_occupied
+            )
+            if not is_hidden:
+                visible_voxels.append((vx, vy, vz, color_type))
+                
+        accent_rgb = (255, 255, 255)
+        for vx, vy, vz, color_type in visible_voxels:
             v_color = accent_rgb if color_type == 1 else scale_color[:3]
-            draw_isometric_cube(draw, cx, cy, vx, vy, vz, voxel_size, v_color)
+            draw_isometric_cube(draw, cx, cy, vx, vy, vz, voxel_size, v_color, occupied_set=all_occupied)
             
         # 5. Right side Info Panel on overlay
         draw.polygon([(740, 40), (1220, 40), (1240, 60), (1240, 660), (1220, 680), (740, 680), (720, 660), (720, 60)], outline=get_shade(color_rgb, 0.4), fill=(10, 6, 18, 240), width=2)
