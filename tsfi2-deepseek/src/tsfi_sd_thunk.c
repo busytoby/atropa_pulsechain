@@ -139,14 +139,18 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                 float mix_g = g_sum / count;
                 float mix_b = b_sum / count;
                 
-                // Mix original feature map with localized attention outputs and apply SiLU (Swish) activation
+                // Mix original feature map with localized attention outputs and apply SiLU (Swish) activation (fast algebraic approx)
                 float val_r = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
                 float val_g = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
                 float val_b = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
                 
-                latent_att[dst_idx + 0] = val_r / (1.0f + expf(-val_r));
-                latent_att[dst_idx + 1] = val_g / (1.0f + expf(-val_g));
-                latent_att[dst_idx + 2] = val_b / (1.0f + expf(-val_b));
+                float sig_r = 0.5f + 0.5f * val_r / (1.0f + fabsf(val_r));
+                float sig_g = 0.5f + 0.5f * val_g / (1.0f + fabsf(val_g));
+                float sig_b = 0.5f + 0.5f * val_b / (1.0f + fabsf(val_b));
+                
+                latent_att[dst_idx + 0] = val_r * sig_r;
+                latent_att[dst_idx + 1] = val_g * sig_g;
+                latent_att[dst_idx + 2] = val_b * sig_b;
             }
         }
 
