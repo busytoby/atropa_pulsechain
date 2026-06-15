@@ -59,6 +59,32 @@ TSFiBigInt* MixDNA_bn(TSFiBigInt* A, TSFiBigInt* B) {
     return res;
 }
 
+void MixDNA_bn_InPlace(TSFiBigInt* A, TSFiBigInt* B, TSFiBigInt* Dest) {
+    if (!Dest) return;
+    if (!A && !B) {
+        memset(Dest->limbs, 0, sizeof(Dest->limbs));
+        Dest->active_limbs = 0;
+        return;
+    }
+    if (!A) {
+        tsfi_bn_copy(Dest, B);
+        return;
+    }
+    if (!B) {
+        tsfi_bn_copy(Dest, A);
+        return;
+    }
+    int n = (A->active_limbs > B->active_limbs) ? A->active_limbs : B->active_limbs;
+    for (int i = 0; i < n; i++) {
+        uint64_t valA = (i < (int)A->active_limbs) ? A->limbs[i] : B->limbs[i];
+        uint64_t valB = (i < (int)B->active_limbs) ? B->limbs[i] : A->limbs[i];
+        Dest->limbs[i] = ((valA + valB) / 2) & TSFI_LIMB_MASK;
+    }
+    Dest->active_limbs = n;
+    while(Dest->active_limbs > 0 && Dest->limbs[Dest->active_limbs-1] == 0) Dest->active_limbs--;
+}
+
+
 void tsfi_k0rn_mutate(K0RnStream *s, float rate) {
     if (!s || s->op_count == 0) return;
     for (uint32_t i = 0; i < s->op_count; i++) {
@@ -294,3 +320,68 @@ void Fourier_UniversalCrossover(GeneticNode* A, GeneticNode* B, GeneticNode* Chi
     }
 
 }
+
+void Fourier_UniversalCrossover_InPlace(GeneticNode* A, GeneticNode* B, GeneticNode* Child) {
+    if (!A || !B || !Child) return;
+
+    Child->react_shio = (rand() % 2 == 0) ? A->react_shio : B->react_shio;
+    Child->react_sha = (rand() % 2 == 0) ? A->react_sha : B->react_sha;
+    snprintf(Child->generation_id, 63, "XO_IP_%08X", (unsigned int)rand());
+
+    if (Child->type == GENETIC_TYPE_YI) {
+        struct YI* yiA = (struct YI*)A->dys_ptr;
+        struct YI* yiB = (struct YI*)B->dys_ptr;
+        struct YI* yiC = (struct YI*)Child->dys_ptr;
+
+        if (yiA && yiB && yiC) {
+            if (!yiC->Xi) yiC->Xi = tsfi_bn_alloc();
+            MixDNA_bn_InPlace(yiA->Xi, yiB->Xi, yiC->Xi);
+
+            if (!yiC->Ring) yiC->Ring = tsfi_bn_alloc();
+            MixDNA_bn_InPlace(yiA->Ring, yiB->Ring, yiC->Ring);
+
+            if (yiA->Psi && yiB->Psi) {
+                if (!yiC->Psi) {
+                    yiC->Psi = (struct SHIO*)allocSHIO();
+                    memset(yiC->Psi, 0, sizeof(struct SHIO));
+                }
+                
+                if (yiA->Psi->Rho && yiB->Psi->Rho) {
+                    if (!yiC->Psi->Rho) {
+                        yiC->Psi->Rho = (struct SHAO*)allocSHAO();
+                        memset(yiC->Psi->Rho, 0, sizeof(struct SHAO));
+                    }
+                    
+                    if (yiA->Psi->Rho->Rod && yiB->Psi->Rho->Rod) {
+                        if (!yiC->Psi->Rho->Rod) {
+                            yiC->Psi->Rho->Rod = (struct SHA*)allocSHA();
+                            memset(yiC->Psi->Rho->Rod, 0, sizeof(struct SHA));
+                        }
+                        
+                        if (yiA->Psi->Rho->Rod->Mu && yiB->Psi->Rho->Rod->Mu) {
+                            if (!yiC->Psi->Rho->Rod->Mu) {
+                                yiC->Psi->Rho->Rod->Mu = (struct Fa*)allocFa();
+                                memset(yiC->Psi->Rho->Rod->Mu, 0, sizeof(struct Fa));
+                            }
+                            
+                            if (!yiC->Psi->Rho->Rod->Mu->Base) {
+                                yiC->Psi->Rho->Rod->Mu->Base = tsfi_bn_alloc();
+                            }
+                            MixDNA_bn_InPlace(yiA->Psi->Rho->Rod->Mu->Base, yiB->Psi->Rho->Rod->Mu->Base, yiC->Psi->Rho->Rod->Mu->Base);
+                        }
+                    }
+                }
+            }
+        }
+    } else if (Child->type == GENETIC_TYPE_YANG) {
+        struct YANG* yangA = (struct YANG*)A->dys_ptr;
+        struct YANG* yangB = (struct YANG*)B->dys_ptr;
+        struct YANG* yangC = (struct YANG*)Child->dys_ptr;
+
+        if (yangA && yangB && yangC) {
+            if (!yangC->Ring) yangC->Ring = tsfi_bn_alloc();
+            MixDNA_bn_InPlace(yangA->Ring, yangB->Ring, yangC->Ring);
+        }
+    }
+}
+
