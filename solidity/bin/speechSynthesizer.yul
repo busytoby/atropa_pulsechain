@@ -428,7 +428,7 @@ object "SpeechSynthesizer" {
             if eq(selector, 0xc69b606a) {
                 let key := calldataload(4)
                 let voiceId := sload(2) // 0 = Ana, 1 = Moloch
-                let basePitch := 360
+                let basePitch := 420
                 if eq(voiceId, 1) {
                     basePitch := 150
                 }
@@ -648,7 +648,7 @@ object "SpeechSynthesizer" {
                 if gt(numSamples, 1000) { numSamples := 1000 }
 
                 let synthVoiceId := sload(2) // 0 = Ana, 1 = Moloch
-                let synthBasePitch := 360
+                let synthBasePitch := 420
                 if eq(synthVoiceId, 1) {
                     synthBasePitch := 150
                 }
@@ -780,7 +780,7 @@ object "SpeechSynthesizer" {
                         let noise := sub(mod(seed, 200), 100) // [-100, 100]
 
                         // Pitch contour + Jitter (using seed)
-                        let baseContourPitch := sub(synthBasePitch, div(t, 120))
+                        let baseContourPitch := synthBasePitch
                         let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
                         let jitteredPitch := add(baseContourPitch, sdiv(mul(baseContourPitch, jitterPercent), 1000))
                         
@@ -964,7 +964,7 @@ object "SpeechSynthesizer" {
                 if gt(numSamples, 1000) { numSamples := 1000 }
 
                 let synthVoiceId := sload(2) // 0 = Ana, 1 = Moloch
-                let synthBasePitch := 360
+                let synthBasePitch := 420
                 if eq(synthVoiceId, 1) {
                     synthBasePitch := 150
                 }
@@ -1113,7 +1113,7 @@ object "SpeechSynthesizer" {
                         let noise := sub(mod(seed, 200), 100) // [-100, 100]
 
                         // Pitch contour + Jitter (using seed)
-                        let baseContourPitch := sub(synthBasePitch, div(t, 120))
+                        let baseContourPitch := synthBasePitch
                         let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
                         let jitteredPitch := add(baseContourPitch, sdiv(mul(baseContourPitch, jitterPercent), 1000))
                         
@@ -1445,7 +1445,7 @@ object "SpeechSynthesizer" {
                 let phase := 0
 
                 // Keep track of current parameters for smoothing
-                let currentPitch := 360
+                let currentPitch := 420
                 let currentEnergy := 0
                 for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
                     mstore(add(0x4300, mul(i, 32)), 0)
@@ -1492,7 +1492,7 @@ object "SpeechSynthesizer" {
  
                     // Determine target pitch: extract from m7 (8th byte of Mel frame)
                     let targetPitch := m7
-                    if iszero(targetPitch) { targetPitch := 360 }
+                    if iszero(targetPitch) { targetPitch := 420 }
 
                     // Apply Autotune Pitch Correction if on-chain pitch contour exists
                     if baseSlot {

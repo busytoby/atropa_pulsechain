@@ -30,10 +30,10 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
         samples, sample_rate = load_wav(filename)
     except Exception as e:
         print(f"Error loading {filename}: {e}")
-        return [380] * num_frames
+        return [420] * num_frames
 
-    min_freq = 300
-    max_freq = 580
+    min_freq = 120
+    max_freq = 600
     min_period = int(sample_rate / max_freq)
     max_period = int(sample_rate / min_freq)
 
@@ -50,7 +50,7 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
         
         # Check energy level to ignore silence/noise floor
         if np.max(np.abs(frame)) < 100.0:
-            pitches.append(380)  # default pitch for silent frames in child range
+            pitches.append(420)  # default pitch for silent frames in child range
             continue
             
         corr = np.correlate(frame, frame, mode='full')
@@ -76,9 +76,9 @@ def extract_pitch_contour(filename, num_frames=24, frame_size=1024):
                             pitch = prev_pitch # fallback to smooth
                 pitches.append(round(pitch))
             else:
-                pitches.append(380)
+                pitches.append(420)
         else:
-            pitches.append(380)
+            pitches.append(420)
             
     # Apply a moving average smoothing filter to remove remaining jitter (Welsh inflection)
     smoothed_pitches = []
