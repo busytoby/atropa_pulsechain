@@ -41,6 +41,18 @@ UNRESOLVED_FILE = "unresolved_swaps.json"
 PRICE_CACHE_FILE = "price_cache.json"
 RESOLVED_FILE = "resolved_swaps.json"
 TREASURY_TOKENS_FILE = "treasury_tokens.json"
+NONUKES_POOLS_FILE = "nonukes_pools.json"
+
+# Load NoNukes LP pairs to tag swaps matching these pools
+nonukes_pools = {}
+if os.path.exists(NONUKES_POOLS_FILE):
+    try:
+        with open(NONUKES_POOLS_FILE, "r") as f:
+            nonukes_pools = json.load(f)
+        print(f"Loaded {len(nonukes_pools)} target NoNukes pools for swap tagging.")
+    except Exception as e:
+        print(f"Error loading nonukes pools config: {e}")
+
 
 def save_treasury_token(address, symbol, name, owner):
     try:
@@ -368,6 +380,10 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
             )
             print(f"📈 Price update: {sent_token['symbol']} price set to ${get_cached_price(sent_token['address']):.8f} USD")
             
+    is_nonukes = pool_address.lower() in nonukes_pools
+    if is_nonukes:
+        print(f"🎯 Target Swap: Swapped in NoNukes Pool ({nonukes_pools[pool_address.lower()]['target_group']})")
+        
     print(f"\n------------------------------------------------------------")
     print(f"🌐 Swap Version: {version}")
     print(f"🔗 Tx Hash: {tx_hash}")
@@ -377,7 +393,7 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     
     if usd_val is not None:
         print(f"💵 Swap Value: ${usd_val:.4f} USD")
-        save_resolved({
+        swap_obj = {
             "tx_hash": tx_hash,
             "pool_address": pool_address,
             "version": version,
@@ -387,14 +403,17 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
             "amount1": recv_amt,
             "usd_value": usd_val,
             "timestamp": time.time()
-        })
+        }
+        if is_nonukes:
+            swap_obj["is_nonukes"] = True
+        save_resolved(swap_obj)
         # Since we resolved a new price, try resolving pending swaps
         resolve_retroactive_prices()
     else:
         print(f"⚠️ USD Value: Unresolved (no price path to USD)")
         # Store in unresolved table
         unresolved = load_unresolved()
-        unresolved.append({
+        swap_obj = {
             "tx_hash": tx_hash,
             "pool_address": pool_address,
             "version": version,
@@ -403,7 +422,10 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
             "amount0": sent_amt,
             "amount1": recv_amt,
             "timestamp": time.time()
-        })
+        }
+        if is_nonukes:
+            swap_obj["is_nonukes"] = True
+        unresolved.append(swap_obj)
         save_unresolved(unresolved)
         print(f"💾 Swap stored in {UNRESOLVED_FILE} for future resolution.")
 

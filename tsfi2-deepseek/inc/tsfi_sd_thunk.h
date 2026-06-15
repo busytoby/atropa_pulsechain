@@ -28,6 +28,14 @@ typedef struct {
     // Asynchronous Handshakes
     VkSemaphore tsfi_zhong_timeline_sem;
     uint64_t current_inference_tick;
+    
+    // Pre-allocated U-Net Simulation Buffers (Zero-Copy / AVX-512)
+    float* skip_connection_buf;
+    float* latent_buf;
+    float* latent_att_buf;
+    float* decoder_half_buf;
+    int allocated_max_w;
+    int allocated_max_h;
 } TsfiSdContext;
 
 // The Primary Interface

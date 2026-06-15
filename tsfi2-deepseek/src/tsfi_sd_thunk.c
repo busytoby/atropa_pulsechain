@@ -29,6 +29,15 @@ bool tsfi_sd_thunk_init(TsfiSdContext* ctx, const char* safetensors_path) {
     ctx->unet_buffer_vk = (VkBuffer)0xBAADF00D;  // Bind mock buffer reference
     ctx->unet_memory_vk = (VkDeviceMemory)0xDEADBEEF; // Bind mock device memory
     
+    // 3. Pre-allocate U-Net Simulation Buffers via wired allocator to bypass malloc latency
+    ctx->allocated_max_w = 1280;
+    ctx->allocated_max_h = 720;
+    size_t half_pixels = (ctx->allocated_max_w / 2) * (ctx->allocated_max_h / 2) * 3;
+    ctx->skip_connection_buf = (float*)lau_malloc_wired(half_pixels * sizeof(float));
+    ctx->latent_buf = (float*)lau_malloc_wired(64 * 64 * 3 * sizeof(float));
+    ctx->latent_att_buf = (float*)lau_malloc_wired(64 * 64 * 3 * sizeof(float));
+    ctx->decoder_half_buf = (float*)lau_malloc_wired(half_pixels * sizeof(float));
+    
     printf("[PASS] %zu Bytes successfully wired to ReBAR Substrate (Vulkan host-visible mapping active).\n", ctx->total_mass_bytes);
     return true;
 }
@@ -49,16 +58,25 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
     // Emulates: vkCmdDispatch(cmd_buffer, (w + 15) / 16, (h + 15) / 16, 1);
     printf("[SHADER] Executing VAE decode compute shader on grid size: %dx%d\n", (w + 15) / 16, (h + 15) / 16);
     
+    // Safety check for pre-allocated bounds
+    if (w > ctx->allocated_max_w || h > ctx->allocated_max_h) {
+        fprintf(stderr, "[ERROR] Requested dimensions %dx%d exceed pre-allocated limits (%dx%d)\n",
+                w, h, ctx->allocated_max_w, ctx->allocated_max_h);
+        return;
+    }
+
     // U-Net Two-Path Downsample -> Skip Connection -> Attention -> Upsample Synthesis
     int hw = w / 2;
     int hh = h / 2;
     int lw = 64;
     int lh = 64;
     
-    float* skip_connection = (float*)malloc(hw * hh * 3 * sizeof(float));
-    float* latent = (float*)malloc(lw * lh * 3 * sizeof(float));
+    float* skip_connection = ctx->skip_connection_buf;
+    float* latent = ctx->latent_buf;
+    float* latent_att = ctx->latent_att_buf;
+    float* decoder_half = ctx->decoder_half_buf;
     
-    if (skip_connection && latent) {
+    if (skip_connection && latent && latent_att && decoder_half) {
         // --- 1. Downsampling Path: Phase 1 (Full -> Intermediate Skip Resolution) ---
         printf("[ENCODER] Phase 1: Downsampling features to intermediate skip resolution (%dx%d)\n", hw, hh);
         float r_hw = (float)w / hw;
@@ -92,105 +110,94 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         }
 
         // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
-        float* latent_att = (float*)malloc(lw * lh * 3 * sizeof(float));
-        if (latent_att) {
-            for (int y = 0; y < lh; y++) {
-                for (int x = 0; x < lw; x++) {
-                    float r_sum = 0, g_sum = 0, b_sum = 0;
-                    int count = 0;
-                    
-                    // Local 3x3 Attention Window
-                    for (int dy = -1; dy <= 1; dy++) {
-                        for (int dx = -1; dx <= 1; dx++) {
-                            int nx = x + dx;
-                            int ny = y + dy;
-                            if (nx >= 0 && nx < lw && ny >= 0 && ny < lh) {
-                                int idx = (ny * lw + nx) * 3;
-                                r_sum += latent[idx + 0];
-                                g_sum += latent[idx + 1];
-                                b_sum += latent[idx + 2];
-                                count++;
-                            }
+        for (int y = 0; y < lh; y++) {
+            for (int x = 0; x < lw; x++) {
+                float r_sum = 0, g_sum = 0, b_sum = 0;
+                int count = 0;
+                
+                // Local 3x3 Attention Window
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if (nx >= 0 && nx < lw && ny >= 0 && ny < lh) {
+                            int idx = (ny * lw + nx) * 3;
+                            r_sum += latent[idx + 0];
+                            g_sum += latent[idx + 1];
+                            b_sum += latent[idx + 2];
+                            count++;
                         }
                     }
-                    
-                    int dst_idx = (y * lw + x) * 3;
-                    float mix_r = r_sum / count;
-                    float mix_g = g_sum / count;
-                    float mix_b = b_sum / count;
-                    
-                    // Mix original feature map with localized attention outputs
-                    latent_att[dst_idx + 0] = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
-                    latent_att[dst_idx + 1] = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
-                    latent_att[dst_idx + 2] = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
                 }
+                
+                int dst_idx = (y * lw + x) * 3;
+                float mix_r = r_sum / count;
+                float mix_g = g_sum / count;
+                float mix_b = b_sum / count;
+                
+                // Mix original feature map with localized attention outputs
+                latent_att[dst_idx + 0] = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
+                latent_att[dst_idx + 1] = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
+                latent_att[dst_idx + 2] = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
             }
+        }
 
-            // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
-            printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
-            float* decoder_half = (float*)malloc(hw * hh * 3 * sizeof(float));
-            if (decoder_half) {
-                for (int y = 0; y < hh; y++) {
-                    for (int x = 0; x < hw; x++) {
-                        int lx = (int)(x / r_lw);
-                        int ly = (int)(y / r_lh);
-                        if (lx >= lw) lx = lw - 1;
-                        if (ly >= lh) ly = lh - 1;
-                        
-                        int src_idx = (ly * lw + lx) * 3;
-                        int dst_idx = (y * hw + x) * 3;
-                        decoder_half[dst_idx + 0] = latent_att[src_idx + 0];
-                        decoder_half[dst_idx + 1] = latent_att[src_idx + 1];
-                        decoder_half[dst_idx + 2] = latent_att[src_idx + 2];
-                    }
-                }
+        // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
+        printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
+        for (int y = 0; y < hh; y++) {
+            for (int x = 0; x < hw; x++) {
+                int lx = (int)(x / r_lw);
+                int ly = (int)(y / r_lh);
+                if (lx >= lw) lx = lw - 1;
+                if (ly >= lh) ly = lh - 1;
                 
-                // --- 5. Skip Connection Blending (Vectorized via AVX-512) ---
-                printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d) [AVX-512 ACTIVE]\n", hw, hh);
-                int total_floats = hw * hh * 3;
-                int simd_end = (total_floats / 16) * 16;
-                __m512 half_vec = _mm512_set1_ps(0.5f);
-                
-                for (int i = 0; i < simd_end; i += 16) {
-                    __m512 dec = _mm512_loadu_ps(&decoder_half[i]);
-                    __m512 skip = _mm512_loadu_ps(&skip_connection[i]);
-                    __m512 blended = _mm512_add_ps(_mm512_mul_ps(dec, half_vec), _mm512_mul_ps(skip, half_vec));
-                    _mm512_storeu_ps(&decoder_half[i], blended);
-                }
-                
-                // Cleanup scalar tail
-                for (int i = simd_end; i < total_floats; i++) {
-                    decoder_half[i] = 0.5f * decoder_half[i] + 0.5f * skip_connection[i];
-                }
-
-                // --- 6. Upsampling Path: Phase 2 (Intermediate -> Full Output) ---
-                printf("[DECODER] Phase 2: Generating final photorealistic frame to target resolution (%dx%d)\n", w, h);
-                for (int y = 0; y < h; y++) {
-                    for (int x = 0; x < w; x++) {
-                        int lx = (int)(x / r_hw);
-                        int ly = (int)(y / r_hh);
-                        if (lx >= hw) lx = hw - 1;
-                        if (ly >= hh) ly = hh - 1;
-                        
-                        int src_idx = (ly * hw + lx) * 3;
-                        int dst_idx = (y * w + x) * 3;
-                        out_pixels[dst_idx + 0] = (uint8_t)(decoder_half[src_idx + 0] * 255.0f);
-                        out_pixels[dst_idx + 1] = (uint8_t)(decoder_half[src_idx + 1] * 255.0f);
-                        out_pixels[dst_idx + 2] = (uint8_t)(decoder_half[src_idx + 2] * 255.0f);
-                    }
-                }
-                free(decoder_half);
+                int src_idx = (ly * lw + lx) * 3;
+                int dst_idx = (y * hw + x) * 3;
+                decoder_half[dst_idx + 0] = latent_att[src_idx + 0];
+                decoder_half[dst_idx + 1] = latent_att[src_idx + 1];
+                decoder_half[dst_idx + 2] = latent_att[src_idx + 2];
             }
-            free(latent_att);
+        }
+        
+        // --- 5. Skip Connection Blending (Vectorized via AVX-512) ---
+        printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d) [AVX-512 ACTIVE]\n", hw, hh);
+        int total_floats = hw * hh * 3;
+        int simd_end = (total_floats / 16) * 16;
+        __m512 half_vec = _mm512_set1_ps(0.5f);
+        
+        for (int i = 0; i < simd_end; i += 16) {
+            __m512 dec = _mm512_loadu_ps(&decoder_half[i]);
+            __m512 skip = _mm512_loadu_ps(&skip_connection[i]);
+            __m512 blended = _mm512_add_ps(_mm512_mul_ps(dec, half_vec), _mm512_mul_ps(skip, half_vec));
+            _mm512_storeu_ps(&decoder_half[i], blended);
+        }
+        
+        // Cleanup scalar tail
+        for (int i = simd_end; i < total_floats; i++) {
+            decoder_half[i] = 0.5f * decoder_half[i] + 0.5f * skip_connection[i];
+        }
+
+        // --- 6. Upsampling Path: Phase 2 (Intermediate -> Full Output) ---
+        printf("[DECODER] Phase 2: Generating final photorealistic frame to target resolution (%dx%d)\n", w, h);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int lx = (int)(x / r_hw);
+                int ly = (int)(y / r_hh);
+                if (lx >= hw) lx = hw - 1;
+                if (ly >= hh) ly = hh - 1;
+                
+                int src_idx = (ly * hw + lx) * 3;
+                int dst_idx = (y * w + x) * 3;
+                out_pixels[dst_idx + 0] = (uint8_t)(decoder_half[src_idx + 0] * 255.0f);
+                out_pixels[dst_idx + 1] = (uint8_t)(decoder_half[src_idx + 1] * 255.0f);
+                out_pixels[dst_idx + 2] = (uint8_t)(decoder_half[src_idx + 2] * 255.0f);
+            }
         }
     } else {
         // Fallback in case of allocation failure
         size_t pixel_mass = w * h * 3;
         memcpy(out_pixels, in_dna_mask, pixel_mass);
     }
-    
-    if (skip_connection) free(skip_connection);
-    if (latent) free(latent);
 }
 
 void tsfi_sd_thunk_teardown(TsfiSdContext* ctx) {
@@ -206,6 +213,22 @@ void tsfi_sd_thunk_teardown(TsfiSdContext* ctx) {
         tsfi_safetensors_cache_detach(ctx->asset);
         ctx->asset = NULL;
         ctx->raw_safetensors = NULL;
+    }
+    if (ctx->skip_connection_buf) {
+        lau_free(ctx->skip_connection_buf);
+        ctx->skip_connection_buf = NULL;
+    }
+    if (ctx->latent_buf) {
+        lau_free(ctx->latent_buf);
+        ctx->latent_buf = NULL;
+    }
+    if (ctx->latent_att_buf) {
+        lau_free(ctx->latent_att_buf);
+        ctx->latent_att_buf = NULL;
+    }
+    if (ctx->decoder_half_buf) {
+        lau_free(ctx->decoder_half_buf);
+        ctx->decoder_half_buf = NULL;
     }
     printf("[THUNK] Memory Annihilated.\n");
 }
