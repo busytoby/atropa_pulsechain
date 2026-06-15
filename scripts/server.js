@@ -459,6 +459,7 @@ const server = http.createServer((req, res) => {
                 if (steps) renderCmd += ` --steps ${steps}`;
                 if (cfg) renderCmd += ` --cfg ${cfg}`;
                 if (promptOverride) renderCmd += ` --prompt "${promptOverride}"`;
+                if (payload.address) renderCmd += ` --address "${payload.address}"`;
 
                 console.log(`[SERVER] Running VLM Synthesizer rendering command: ${renderCmd}`);
                 exec(renderCmd, { cwd: path.join(__dirname, "..") }, (error, stdout, stderr) => {

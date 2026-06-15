@@ -4,6 +4,95 @@ import json
 import urllib.request
 import base64
 from PIL import Image, ImageDraw, ImageFilter
+import hashlib
+import math
+
+def get_shade(color, factor):
+    return tuple(min(255, int(c * factor)) for c in color)
+
+def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
+    dx = size * 0.866
+    dy = size * 0.5
+    px = cx + (x - y) * dx
+    py = cy + (x + y) * dy - z * size
+    
+    center = (px, py)
+    top = (px, py - size)
+    bottom = (px, py + size)
+    left_top = (px - dx, py - dy)
+    left_bottom = (px - dx, py + dy)
+    right_top = (px + dx, py - dy)
+    right_bottom = (px + dx, py + dy)
+    
+    top_color = get_shade(base_color, 1.2)
+    left_color = get_shade(base_color, 0.9)
+    right_color = get_shade(base_color, 0.7)
+    
+    draw.polygon([top, right_top, center, left_top], fill=top_color)
+    draw.polygon([left_top, center, bottom, left_bottom], fill=left_color)
+    draw.polygon([center, right_top, right_bottom, bottom], fill=right_color)
+    
+    outline_color = get_shade(base_color, 1.4)
+    draw.line([top, right_top, bottom, left_top, top], fill=outline_color, width=1)
+    draw.line([center, top], fill=outline_color, width=1)
+    draw.line([center, bottom], fill=outline_color, width=1)
+    draw.line([center, left_top], fill=outline_color, width=1)
+    draw.line([center, right_top], fill=outline_color, width=1)
+
+def generate_voxel_shape(seed_str, shape_type):
+    h = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
+    voxels = []
+    
+    if shape_type == 0:  # Diamond / Crystal
+        for z in range(-3, 4):
+            r = 3 - abs(z)
+            for x in range(-r, r + 1):
+                for y in range(-r, r + 1):
+                    if abs(x) + abs(y) <= r:
+                        voxels.append((x, y, z, 0))
+    elif shape_type == 1:  # Token / Disc
+        for z in range(-1, 2):
+            for x in range(-3, 4):
+                for y in range(-3, 4):
+                    d = x*x + y*y
+                    if d <= 9:
+                        is_rim = d >= 7 or z == 1
+                        is_core = d == 0
+                        if is_rim:
+                            voxels.append((x, y, z, 0))
+                        elif is_core:
+                            voxels.append((x, y, z, 1))
+    elif shape_type == 2:  # Atomic Core
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                for z in range(-1, 2):
+                    if abs(x)+abs(y)+abs(z) <= 2:
+                        voxels.append((x, y, z, 1))
+        for i in range(-3, 4):
+            if i != 0:
+                voxels.append((i, 0, 0, 0))
+                voxels.append((0, i, 0, 0))
+                voxels.append((0, 0, i, 0))
+    elif shape_type == 3:  # Shield / Monolith
+        for x in range(-2, 3):
+            for y in range(-1, 2):
+                for z in range(-3, 4):
+                    if abs(x) <= 3 - abs(z)//2:
+                        is_core = (x == 0 and z == 0)
+                        voxels.append((x, y, z, 1 if is_core else 0))
+    else:  # Open Ring / Gear
+        for z in range(-1, 2):
+            for x in range(-3, 4):
+                for y in range(-3, 4):
+                    d = x*x + y*y
+                    if 4 <= d <= 10:
+                        voxels.append((x, y, z, 0))
+                    elif d == 0:
+                        voxels.append((x, y, z, 1))
+                        
+    voxels.sort(key=lambda v: (v[0] + v[1] + v[2]))
+    return voxels
+
 
 def load_dna_record(dna_path, frame_idx):
     import struct
@@ -27,7 +116,7 @@ def load_dna_record(dna_path, frame_idx):
             'er': er, 'eg': eg, 'eb': eb, 'ec': ec
         }
 
-def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None):
+def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None):
     print("=== TSFi Autonomous VLM Synthesizer Frame Director ===")
     
     # Load attributes
@@ -49,10 +138,8 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         
     if os.path.exists(bg_path):
         bg_img = Image.open(bg_path).convert("RGB")
-        # Resize to standard widescreen HD
         bg_img = bg_img.resize((1280, 720))
     else:
-        # Create solid canvas fallback
         bg_img = Image.new("RGB", (1280, 720), (12, 7, 20))
 
     # 2. Procedural high-fidelity character / vector outline rendering
@@ -70,7 +157,6 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     eye_color = (dna['er'], dna['eg'], dna['eb'], 255)
     
     # Draw character vector outlines (High-fidelity custom shapes)
-    # Detect token or minter traits from prompt
     is_token = False
     is_minter = False
     symbol_text = "TKN"
@@ -82,80 +168,108 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         elif "minter" in p_lower:
             is_minter = True
 
-    if dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255:
-        # Render NoNukes Core: Glowing atomic nucleus with orbiting rings
-        draw.ellipse([cx - 50, cy - 50, cx + 50, cy + 50], outline=(255, 255, 255, 255), width=6)
-        # Orbiting ring 1
-        draw.ellipse([cx - scale_w, cy - scale_h//3, cx + scale_w, cy + scale_h//3], outline=scale_color, width=4)
-        # Orbiting ring 2
-        draw.ellipse([cx - scale_w//3, cy - scale_h, cx + scale_w//3, cy + scale_h], outline=scale_color, width=4)
-    elif is_token:
-        # Render Partner LP Token: Double-bordered neon coin with symbol text
-        draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
-        draw.ellipse([cx - scale_w + 12, cy - scale_h + 12, cx + scale_w - 12, cy + scale_h - 12], outline=scale_color, width=2)
-        # Draw central symbol letter path or simple crossbars
-        draw.line([cx - 20, cy, cx + 20, cy], fill=scale_color, width=6)
-        draw.line([cx, cy - 20, cx, cy + 20], fill=scale_color, width=6)
-    elif is_minter:
-        # Render Minter (Federal or Personal): Cyberpunk security monolith vault
-        draw.rectangle([cx - scale_w//2, cy - scale_h, cx + scale_w//2, cy + scale_h], outline=scale_color, width=8)
-        # Safe Dial
-        draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], outline=(255, 255, 255, 255), width=4)
-        draw.line([cx, cy - 30, cx, cy + 30], fill=(255, 255, 255, 255), width=3)
-    elif dna['r'] == 255 and dna['g'] == 170 and dna['b'] == 0:
-        # Render Dirk the Daring Knight overlay
-        draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
-        draw.rectangle([cx - scale_w//2, cy - scale_h//4, cx + scale_w//2, cy + scale_h//4], fill=(150, 150, 150, 200))
-        # Plume
-        draw.chord([cx - scale_w, cy - scale_h - 40, cx, cy - scale_h//2], 180, 360, fill=(255, 0, 0, 255))
-    elif dna['r'] == 255 and dna['g'] == 0 and dna['b'] == 187:
-        # Render Princess Daphne crown overlay
-        draw.ellipse([cx - scale_w//2, cy - scale_h//2, cx + scale_w//2, cy + scale_h//2], outline=scale_color, width=6)
-        # Crown points
-        crown_points = [
-            (cx - 40, cy - 80), (cx - 50, cy - 120), (cx - 20, cy - 100),
-            (cx, cy - 140), (cx + 20, cy - 100), (cx + 50, cy - 120), (cx + 40, cy - 80)
-        ]
-        draw.polygon(crown_points, fill=(255, 215, 0, 255), outline=(255, 255, 255, 255))
-    elif dna['r'] == 0 and dna['g'] == 255 and dna['b'] == 102:
-        # Lizard King (#00ff66) - Draw scaly round body and scepter
-        draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
-        draw.line([cx - scale_w, cy, cx - scale_w - 30, cy - 60], fill=(255, 215, 0, 255), width=6) # Scepter
-        draw.ellipse([cx - scale_w - 40, cy - 80, cx - scale_w - 20, cy - 60], fill=(255, 215, 0, 255)) # Scepter top
-    elif dna['r'] == 119 and dna['g'] == 255 and dna['b'] == 0:
-        # Giddy Goon (#77ff00) - Draw pointed ears and chaotic shape
-        draw.polygon([
-            (cx - scale_w, cy), (cx - scale_w - 40, cy - 40), (cx - scale_w + 10, cy - 20),
-            (cx, cy - scale_h), (cx + scale_w - 10, cy - 20), (cx + scale_w + 40, cy - 40), (cx + scale_w, cy)
-        ], outline=scale_color, width=6)
-    elif dna['r'] == 0 and dna['g'] == 255 and dna['b'] == 255:
-        # Electric Knight (#00ffff) - Draw robotic shield armor and lightning bolts
-        draw.rectangle([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
-        # Draw lightning aesthetic lines
-        draw.line([cx - 10, cy - 40, cx - 30, cy + 10], fill=(255, 255, 0, 255), width=4)
-        draw.line([cx - 30, cy + 10, cx - 10, cy + 40], fill=(255, 255, 0, 255), width=4)
-    else:
-        # Render Singe the Dragon outline (#ff3c3c)
-        # Main Head
-        draw.chord([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], 0, 360, outline=scale_color, width=10)
-        # Snout
-        draw.polygon([
-            (cx - scale_w, cy - scale_h//4), (cx - scale_w*1.5, cy - scale_h//6),
-            (cx - scale_w*1.5, cy + scale_h//6), (cx - scale_w, cy + scale_h//4)
-        ], outline=scale_color, fill=(dna['r']//2, dna['g']//2, dna['b']//2, 180))
+    is_voxel_render = (dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255) or is_token or is_minter or address
 
-    # Draw eyes
-    for i in range(dna['ec']):
-        ex = cx - 40 + (i * 30)
-        ey = cy - 30
-        if dna['r'] == 255 and (dna['g'] == 170 or dna['g'] == 0):
-            ex = cx - 15 + (i * 30)
-            ey = cy - 10
-        draw.ellipse([ex - 12, ey - 12, ex + 12, ey + 12], fill=eye_color)
-        draw.ellipse([ex - 4, ey - 4, ex + 4, ey + 4], fill=(255, 255, 255, 255))
+    if is_voxel_render:
+        # 1. Draw soft ambient glow behind the model on the main bg_img
+        glow_mask = Image.new("L", (1280, 720), 0)
+        glow_draw = ImageDraw.Draw(glow_mask)
+        glow_draw.ellipse([cx - 300, cy - 300, cx + 300, cy + 300], fill=60)
+        glow_color_img = Image.new("RGB", (1280, 720), scale_color[:3])
+        bg_img = Image.composite(glow_color_img, bg_img, glow_mask)
+        
+        # Re-fetch Draw object for overlay
+        draw = ImageDraw.Draw(overlay)
+        
+        # 2. Draw Holographic background grid lines
+        grid_color = get_shade(scale_color[:3], 0.15)
+        for i in range(0, 1280, 40):
+            draw.line([i, 0, i, 720], fill=grid_color, width=1)
+        for j in range(0, 720, 40):
+            draw.line([0, j, 1280, j], fill=grid_color, width=1)
+            
+        # Draw futuristic HUD rings
+        hud_color = get_shade(scale_color[:3], 0.4)
+        draw.ellipse([cx - 280, cy - 280, cx + 280, cy + 280], outline=hud_color, width=2)
+        draw.ellipse([cx - 240, cy - 240, cx + 240, cy + 240], outline=get_shade(scale_color[:3], 0.6), width=1)
+        draw.line([cx - 300, cy, cx - 260, cy], fill=hud_color, width=3)
+        draw.line([cx + 260, cy, cx + 300, cy], fill=hud_color, width=3)
+        draw.line([cx, cy - 300, cx, cy - 260], fill=hud_color, width=3)
+        draw.line([cx, cy + 260, cx, cy + 300], fill=hud_color, width=3)
+        
+        for angle in range(0, 360, 45):
+            rad = math.radians(angle)
+            x1 = cx + 230 * math.cos(rad)
+            y1 = cy + 230 * math.sin(rad)
+            x2 = cx + 250 * math.cos(rad)
+            y2 = cy + 250 * math.sin(rad)
+            draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
+
+        # 3. Generate and Render the 3D Voxel Model
+        seed_str = address if address else (prompt_override if prompt_override else "default_token")
+        addr_hash = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
+        shape_type = int(addr_hash[:2], 16) % 5
+        if is_minter:
+            shape_type = 3
+            
+        voxel_size = 22
+        voxels = generate_voxel_shape(seed_str, shape_type)
+        
+        accent_rgb = (255, 255, 255)
+        for vx, vy, vz, color_type in voxels:
+            v_color = accent_rgb if color_type == 1 else scale_color[:3]
+            draw_isometric_cube(draw, cx, cy, vx, vy, vz, voxel_size, v_color)
+    else:
+        # Standard character rendering logic (original vector overlay & eyes)
+        if dna['r'] == 255 and dna['g'] == 170 and dna['b'] == 0:
+            # Dirk the Daring Knight overlay
+            draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
+            draw.rectangle([cx - scale_w//2, cy - scale_h//4, cx + scale_w//2, cy + scale_h//4], fill=(150, 150, 150, 200))
+            draw.chord([cx - scale_w, cy - scale_h - 40, cx, cy - scale_h//2], 180, 360, fill=(255, 0, 0, 255))
+        elif dna['r'] == 255 and dna['g'] == 0 and dna['b'] == 187:
+            # Princess Daphne crown overlay
+            draw.ellipse([cx - scale_w//2, cy - scale_h//2, cx + scale_w//2, cy + scale_h//2], outline=scale_color, width=6)
+            crown_points = [
+                (cx - 40, cy - 80), (cx - 50, cy - 120), (cx - 20, cy - 100),
+                (cx, cy - 140), (cx + 20, cy - 100), (cx + 50, cy - 120), (cx + 40, cy - 80)
+            ]
+            draw.polygon(crown_points, fill=(255, 215, 0, 255), outline=(255, 255, 255, 255))
+        elif dna['r'] == 0 and dna['g'] == 255 and dna['b'] == 102:
+            # Lizard King
+            draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
+            draw.line([cx - scale_w, cy, cx - scale_w - 30, cy - 60], fill=(255, 215, 0, 255), width=6)
+            draw.ellipse([cx - scale_w - 40, cy - 80, cx - scale_w - 20, cy - 60], fill=(255, 215, 0, 255))
+        elif dna['r'] == 119 and dna['g'] == 255 and dna['b'] == 0:
+            # Giddy Goon
+            draw.polygon([
+                (cx - scale_w, cy), (cx - scale_w - 40, cy - 40), (cx - scale_w + 10, cy - 20),
+                (cx, cy - scale_h), (cx + scale_w - 10, cy - 20), (cx + scale_w + 40, cy - 40), (cx + scale_w, cy)
+            ], outline=scale_color, width=6)
+        elif dna['r'] == 0 and dna['g'] == 255 and dna['b'] == 255:
+            # Electric Knight
+            draw.rectangle([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
+            draw.line([cx - 10, cy - 40, cx - 30, cy + 10], fill=(255, 255, 0, 255), width=4)
+            draw.line([cx - 30, cy + 10, cx - 10, cy + 40], fill=(255, 255, 0, 255), width=4)
+        else:
+            # Singe the Dragon
+            draw.chord([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], 0, 360, outline=scale_color, width=10)
+            draw.polygon([
+                (cx - scale_w, cy - scale_h//4), (cx - scale_w*1.5, cy - scale_h//6),
+                (cx - scale_w*1.5, cy + scale_h//6), (cx - scale_w, cy + scale_h//4)
+            ], outline=scale_color, fill=(dna['r']//2, dna['g']//2, dna['b']//2, 180))
+
+        # Draw character eyes
+        for i in range(dna['ec']):
+            ex = cx - 40 + (i * 30)
+            ey = cy - 30
+            if dna['r'] == 255 and (dna['g'] == 170 or dna['g'] == 0):
+                ex = cx - 15 + (i * 30)
+                ey = cy - 10
+            draw.ellipse([ex - 12, ey - 12, ex + 12, ey + 12], fill=eye_color)
+            draw.ellipse([ex - 4, ey - 4, ex + 4, ey + 4], fill=(255, 255, 255, 255))
 
     # Fire eruption layer
-    if dna['fire'] > 0.05:
+    if not is_voxel_render and dna['fire'] > 0.05:
         fire_layer = Image.new("RGBA", (1280, 720), (0, 0, 0, 0))
         fire_draw = ImageDraw.Draw(fire_layer)
         fire_w = int(dna['fire'] * 300)
@@ -164,13 +278,11 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             (cx - scale_w - fire_w - 50, cy), (cx - scale_w - fire_w, cy + 60)
         ]
         fire_draw.polygon(fire_points, fill=(255, 120, 0, 180))
-        # Inner flame core
         fire_draw.polygon([
             (cx - scale_w, cy), (cx - scale_w - fire_w//2, cy - 30),
             (cx - scale_w - fire_w//2 - 20, cy), (cx - scale_w - fire_w//2, cy + 30)
         ], fill=(255, 230, 0, 220))
         
-        # Apply slight blur to fire layer
         fire_layer = fire_layer.filter(ImageFilter.GaussianBlur(5))
         overlay.alpha_composite(fire_layer)
 
@@ -180,6 +292,12 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     png_out = "assets/storybook/page_dragon_dna.png"
     bg_img.save(png_out)
     print(f"[Synthesizer] Composite page frame written to: {png_out}")
+
+    # Copy to custom address if provided
+    if address:
+        custom_out = f"assets/{address.lower()}.png"
+        bg_img.save(custom_out)
+        print(f"[Synthesizer] Copied card art to custom destination: {custom_out}")
 
     # 4. Initiate VLM Moondream interrogation check
     print("[Synthesizer] Waking Moondream VLM node check...")
@@ -217,6 +335,7 @@ if __name__ == "__main__":
     parser.add_argument("--steps", type=int, default=4)
     parser.add_argument("--cfg", type=float, default=1.5)
     parser.add_argument("--prompt", type=str, default=None)
+    parser.add_argument("--address", type=str, default=None)
     args = parser.parse_args()
     
-    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt)
+    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address)
