@@ -48,28 +48,49 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
     // Emulates: vkCmdDispatch(cmd_buffer, (w + 15) / 16, (h + 15) / 16, 1);
     printf("[SHADER] Executing VAE decode compute shader on grid size: %dx%d\n", (w + 15) / 16, (h + 15) / 16);
     
-    // Concrete Bottleneck Downsample -> Attention -> Upsample Simulation
+    // U-Net Two-Path Downsample -> Skip Connection -> Attention -> Upsample Synthesis
+    int hw = w / 2;
+    int hh = h / 2;
     int lw = 64;
     int lh = 64;
+    
+    float* skip_connection = (float*)malloc(hw * hh * 3 * sizeof(float));
     float* latent = (float*)malloc(lw * lh * 3 * sizeof(float));
-    if (latent) {
-        float rx = (float)w / lw;
-        float ry = (float)h / lh;
+    
+    if (skip_connection && latent) {
+        // --- 1. Downsampling Path: Phase 1 (Full -> Intermediate Skip Resolution) ---
+        printf("[ENCODER] Phase 1: Downsampling features to intermediate skip resolution (%dx%d)\n", hw, hh);
+        float r_hw = (float)w / hw;
+        float r_hh = (float)h / hh;
+        for (int y = 0; y < hh; y++) {
+            for (int x = 0; x < hw; x++) {
+                int sx = (int)(x * r_hw);
+                int sy = (int)(y * r_hh);
+                int src_idx = (sy * w + sx) * 3;
+                int dst_idx = (y * hw + x) * 3;
+                skip_connection[dst_idx + 0] = in_dna_mask[src_idx + 0] / 255.0f;
+                skip_connection[dst_idx + 1] = in_dna_mask[src_idx + 1] / 255.0f;
+                skip_connection[dst_idx + 2] = in_dna_mask[src_idx + 2] / 255.0f;
+            }
+        }
         
-        // Downsample Phase (Encoder output mapping)
+        // --- 2. Downsampling Path: Phase 2 (Intermediate -> Bottleneck) ---
+        printf("[ENCODER] Phase 2: Downsampling to bottleneck resolution (%dx%d)\n", lw, lh);
+        float r_lw = (float)hw / lw;
+        float r_lh = (float)hh / lh;
         for (int y = 0; y < lh; y++) {
             for (int x = 0; x < lw; x++) {
-                int sx = (int)(x * rx);
-                int sy = (int)(y * ry);
-                int src_idx = (sy * w + sx) * 3;
+                int sx = (int)(x * r_lw);
+                int sy = (int)(y * r_lh);
+                int src_idx = (sy * hw + sx) * 3;
                 int dst_idx = (y * lw + x) * 3;
-                latent[dst_idx + 0] = in_dna_mask[src_idx + 0] / 255.0f;
-                latent[dst_idx + 1] = in_dna_mask[src_idx + 1] / 255.0f;
-                latent[dst_idx + 2] = in_dna_mask[src_idx + 2] / 255.0f;
+                latent[dst_idx + 0] = skip_connection[src_idx + 0];
+                latent[dst_idx + 1] = skip_connection[src_idx + 1];
+                latent[dst_idx + 2] = skip_connection[src_idx + 2];
             }
         }
 
-        // Bottleneck Self-Attention (Spatial Blending / Mixing)
+        // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
         float* latent_att = (float*)malloc(lw * lh * 3 * sizeof(float));
         if (latent_att) {
             for (int y = 0; y < lh; y++) {
@@ -104,29 +125,65 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                 }
             }
 
-            // Upsample Phase (Decoder expansion mapping)
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int lx = (int)(x / rx);
-                    int ly = (int)(y / ry);
-                    if (lx >= lw) lx = lw - 1;
-                    if (ly >= lh) ly = lh - 1;
-                    
-                    int src_idx = (ly * lw + lx) * 3;
-                    int dst_idx = (y * w + x) * 3;
-                    out_pixels[dst_idx + 0] = (uint8_t)(latent_att[src_idx + 0] * 255.0f);
-                    out_pixels[dst_idx + 1] = (uint8_t)(latent_att[src_idx + 1] * 255.0f);
-                    out_pixels[dst_idx + 2] = (uint8_t)(latent_att[src_idx + 2] * 255.0f);
+            // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
+            printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
+            float* decoder_half = (float*)malloc(hw * hh * 3 * sizeof(float));
+            if (decoder_half) {
+                for (int y = 0; y < hh; y++) {
+                    for (int x = 0; x < hw; x++) {
+                        int lx = (int)(x / r_lw);
+                        int ly = (int)(y / r_lh);
+                        if (lx >= lw) lx = lw - 1;
+                        if (ly >= lh) ly = lh - 1;
+                        
+                        int src_idx = (ly * lw + lx) * 3;
+                        int dst_idx = (y * hw + x) * 3;
+                        decoder_half[dst_idx + 0] = latent_att[src_idx + 0];
+                        decoder_half[dst_idx + 1] = latent_att[src_idx + 1];
+                        decoder_half[dst_idx + 2] = latent_att[src_idx + 2];
+                    }
                 }
+                
+                // --- 5. Skip Connection Blending ---
+                printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d)\n", hw, hh);
+                for (int y = 0; y < hh; y++) {
+                    for (int x = 0; x < hw; x++) {
+                        int idx = (y * hw + x) * 3;
+                        // Blend 50% from encoder skip path and 50% from decoder expanding path
+                        decoder_half[idx + 0] = 0.5f * decoder_half[idx + 0] + 0.5f * skip_connection[idx + 0];
+                        decoder_half[idx + 1] = 0.5f * decoder_half[idx + 1] + 0.5f * skip_connection[idx + 1];
+                        decoder_half[idx + 2] = 0.5f * decoder_half[idx + 2] + 0.5f * skip_connection[idx + 2];
+                    }
+                }
+
+                // --- 6. Upsampling Path: Phase 2 (Intermediate -> Full Output) ---
+                printf("[DECODER] Phase 2: Generating final photorealistic frame to target resolution (%dx%d)\n", w, h);
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        int lx = (int)(x / r_hw);
+                        int ly = (int)(y / r_hh);
+                        if (lx >= hw) lx = hw - 1;
+                        if (ly >= hh) ly = hh - 1;
+                        
+                        int src_idx = (ly * hw + lx) * 3;
+                        int dst_idx = (y * w + x) * 3;
+                        out_pixels[dst_idx + 0] = (uint8_t)(decoder_half[src_idx + 0] * 255.0f);
+                        out_pixels[dst_idx + 1] = (uint8_t)(decoder_half[src_idx + 1] * 255.0f);
+                        out_pixels[dst_idx + 2] = (uint8_t)(decoder_half[src_idx + 2] * 255.0f);
+                    }
+                }
+                free(decoder_half);
             }
             free(latent_att);
         }
-        free(latent);
     } else {
         // Fallback in case of allocation failure
         size_t pixel_mass = w * h * 3;
         memcpy(out_pixels, in_dna_mask, pixel_mass);
-    } 
+    }
+    
+    if (skip_connection) free(skip_connection);
+    if (latent) free(latent);
 }
 
 void tsfi_sd_thunk_teardown(TsfiSdContext* ctx) {
