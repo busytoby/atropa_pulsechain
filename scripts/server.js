@@ -88,6 +88,7 @@ function processRenderQueue() {
 const https = require("https");
 const MARKET_CACHE_PATH = path.join(__dirname, "../tmp/market_cache.json");
 let marketFetchInProgress = false;
+let currentNoNukesPriceUsd = 1.74;
 function fetchMarketData(addresses) {
     if (marketFetchInProgress || !addresses || addresses.length === 0) return;
     marketFetchInProgress = true;
@@ -112,6 +113,7 @@ function fetchMarketData(addresses) {
                 console.error("[MARKET CACHE] Failed to parse NoNukes price:", e.message);
             }
             console.log(`[MARKET CACHE] Current NoNukes USD price: ${nonukesPriceUsd}`);
+            currentNoNukesPriceUsd = nonukesPriceUsd;
 
             // 2. Load nonukes_pools.json
             let poolsMap = {};
@@ -264,6 +266,16 @@ const server = http.createServer((req, res) => {
             res.writeHead(404, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Cards database not found" }));
         }
+        return;
+    }
+
+    // API endpoint to serve current NoNukes price in USD
+    if (req.url === "/api/nonukes-price") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({ priceUsd: currentNoNukesPriceUsd }));
         return;
     }
 

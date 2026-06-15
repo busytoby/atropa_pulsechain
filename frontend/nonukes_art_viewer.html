@@ -442,9 +442,59 @@
             color: #ff3860;
             text-shadow: 0 0 5px rgba(255, 56, 96, 0.3);
         }
+        
+        /* Top Price Ticker Banner Styling */
+        .top-price-banner {
+            width: 100%;
+            background: linear-gradient(90deg, rgba(12, 7, 20, 0.95) 0%, rgba(26, 15, 46, 0.9) 50%, rgba(12, 7, 20, 0.95) 100%);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
+        .banner-symbol {
+            color: #00f0ff;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+            letter-spacing: 1.5px;
+        }
+        .banner-price-label {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .banner-price-value {
+            color: #39ff14;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+        }
     </style>
 </head>
 <body>
+
+    <!-- Top Price Ticker Banner -->
+    <div class="top-price-banner">
+        <div class="banner-content">
+            <span class="banner-symbol">☢️ NONUKES</span>
+            <span class="banner-price-label">Live Price:</span>
+            <span class="banner-price-value" id="topNonukesPrice">⏳ Loading...</span>
+        </div>
+    </div>
 
     <header>
         <h1>NoNukes Card Art Viewer</h1>
@@ -653,6 +703,17 @@
         // Load all NoNukes partner cards from the server in a single call
         async function loadTokenCards() {
             try {
+                // Fetch live NoNukes USD price
+                try {
+                    const priceRes = await fetch("/api/nonukes-price");
+                    const priceData = await priceRes.json();
+                    if (priceData && priceData.priceUsd !== undefined) {
+                        document.getElementById("topNonukesPrice").textContent = `$${parseFloat(priceData.priceUsd).toFixed(4)} USD`;
+                    }
+                } catch (pe) {
+                    console.error("Failed to load NoNukes price:", pe);
+                }
+
                 const res = await fetch("/api/nonukes-cards");
                 allTokens = await res.json();
                 renderTokenList(allTokens);
