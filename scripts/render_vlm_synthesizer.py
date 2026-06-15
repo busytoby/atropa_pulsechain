@@ -382,8 +382,122 @@ def load_dna_record(dna_path, frame_idx):
             'er': er, 'eg': eg, 'eb': eb, 'ec': ec
         }
 
+def eth_call(to_address, data):
+    url = "https://rpc.pulsechain.com"
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "eth_call",
+        "params": [
+            {
+                "to": to_address,
+                "data": data
+            },
+            "latest"
+        ],
+        "id": 1
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            if "result" in res_data:
+                return res_data["result"]
+            elif "error" in res_data:
+                err = res_data["error"]
+                if "data" in err:
+                    return err["data"]
+    except:
+        pass
+    return None
+
+def fetch_onchain_yue_stats(token_address):
+    def pad_address(addr):
+        clean = addr.lower().replace("0x", "")
+        return clean.rjust(64, "0")
+
+    token_padded = pad_address(token_address)
+    call_data = "0xddb59200" + token_padded
+    
+    # 1. Resolve QING address
+    res = eth_call("0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75", call_data)
+    qing_address = None
+    if res and res.startswith("0xc0136ba1"):
+        qing_address = "0x" + res[-40:]
+    
+    if not qing_address:
+        return 0, 0
+
+    # 2. Resolve YUE addresses
+    yue_addresses = []
+    owner_res = eth_call(token_address, "0x8da87903")
+    owner_address = None
+    if owner_res and len(owner_res) >= 66:
+        owner_address = "0x" + owner_res[-40:]
+    
+    if owner_address and owner_address != "0x0000000000000000000000000000000000000000":
+        chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", "0x18025d89" + pad_address(owner_address))
+        if chan_res and len(chan_res) >= 66:
+            yue_addr = "0x" + chan_res[-40:]
+            if yue_addr != "0x0000000000000000000000000000000000000000":
+                yue_addresses.append(yue_addr)
+
+    minters = [
+        "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B",
+        "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354",
+        "0x0b92aD7eD0da6c44Bf71B3FCEe668D1670000Ff5",
+        "0x0c4F73328dFCECfbecf235C9F78A4494a7EC5ddC",
+        "0x394c3D5990cEfC7Be36B82FDB07a7251ACe61cc7",
+        "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62"
+    ]
+    for m in minters:
+        tt_res = eth_call(m, "0x5f5c5585" + pad_address(token_address))
+        if tt_res and len(tt_res) >= 66:
+            m_owner = "0x" + tt_res[-40:]
+            if m_owner and m_owner != "0x0000000000000000000000000000000000000000":
+                chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", "0x18025d89" + pad_address(m_owner))
+                if chan_res and len(chan_res) >= 66:
+                    yue_addr = "0x" + chan_res[-40:]
+                    if yue_addr != "0x0000000000000000000000000000000000000000":
+                        yue_addresses.append(yue_addr)
+
+    yue_addresses.extend([
+        "0x4a32b4391db5771a3a3682183a6b109d516f723f",
+        "0x424d379CFEe2b79b9D66bf9f94cC51AE0165554B",
+        "0x4f94f27d9655411927e72799c6e797989a86f2d4"
+    ])
+
+    # 3. Query Bar(qing) stats
+    max_hypobar = 0
+    max_epibar = 0
+    bar_call_data = "0xc253aded" + pad_address(qing_address)
+    for yue_addr in yue_addresses:
+        bar_res = eth_call(yue_addr, bar_call_data)
+        if bar_res and len(bar_res) >= 130:
+            try:
+                h_val = int(bar_res[2:66], 16)
+                e_val = int(bar_res[66:130], 16)
+                if h_val > max_hypobar:
+                    max_hypobar = h_val
+                if e_val > max_epibar:
+                    max_epibar = e_val
+            except:
+                pass
+    return max_hypobar, max_epibar
+
 def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None, hypobar=0, epibar=0):
     print("=== TSFi Autonomous VLM Synthesizer Frame Director ===")
+    
+    if address and hypobar == 0 and epibar == 0:
+        print(f"[Synthesizer] Fetching live YUE on-chain stats for address: {address}...")
+        try:
+            hypobar, epibar = fetch_onchain_yue_stats(address)
+            print(f"[Synthesizer] On-chain stats resolved: Hypobar={hypobar}, Epibar={epibar}")
+        except Exception as e:
+            print(f"[Synthesizer] Failed fetching YUE stats: {e}")
     
     # Load attributes
     dna_path = "tsfi2-deepseek/assets/dragon.dna"
