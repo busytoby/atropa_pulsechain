@@ -4,11 +4,36 @@ import json
 import http.server
 import socketserver
 import urllib.parse
+import threading
+import re
+import glob
 
-PORT = 8080
+PORT = int(os.environ.get("PORT", 8080))
 PRICE_CACHE_FILE = "price_cache.json"
 UNRESOLVED_FILE = "unresolved_swaps.json"
 RESOLVED_FILE = "resolved_swaps.json"
+
+reserves_files = glob.glob(os.path.expanduser("~/.gemini/antigravity-cli/brain/*/scratch/nonukes_pulsex_reserves.json"))
+default_reserves_path = reserves_files[0] if reserves_files else "nonukes_pulsex_reserves.json"
+RESERVES_FILE_PATH = os.environ.get("RESERVES_FILE_PATH", default_reserves_path)
+
+IGNORE_LOCK = threading.Lock()
+
+def get_price(prices, addr):
+    if not isinstance(prices, dict) or not addr:
+        return 0.0
+    val = prices.get(addr)
+    price_val = 0.0
+    if isinstance(val, dict):
+        price_val = val.get("price")
+    else:
+        price_val = val
+    if price_val is None:
+        return 0.0
+    try:
+        return float(price_val)
+    except (ValueError, TypeError):
+        return 0.0
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -16,7 +41,40 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        if self.path == '/api/data':
+        if self.path == '/nonukes' or self.path == '/nonukes/' or self.path == '/nonukes/index.html':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'nonukes_dashboard', 'index.html'))
+            if not os.path.exists(file_path):
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'nonukes_dashboard', 'index.html')
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        elif self.path == '/nonukes/style.css':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/css; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'nonukes_dashboard', 'style.css'))
+            if not os.path.exists(file_path):
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'nonukes_dashboard', 'style.css')
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        elif self.path == '/nonukes/app.js':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/javascript; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'nonukes_dashboard', 'app.js'))
+            if not os.path.exists(file_path):
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'nonukes_dashboard', 'app.js')
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        elif self.path == '/api/data':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -29,6 +87,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         prices = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(prices, dict): prices = {}
                     
             unresolved = []
             if os.path.exists(UNRESOLVED_FILE):
@@ -48,12 +107,13 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             treasury_tokens = {}
             import glob
-            for fpath in glob.glob("treasury_tokens_*.json"):
-                try:
-                    with open(fpath, "r") as f:
-                        treasury_tokens.update(json.load(f))
-                except Exception:
-                    pass
+            with IGNORE_LOCK:
+                for fpath in glob.glob("treasury_tokens_*.json"):
+                    try:
+                        with open(fpath, "r") as f:
+                            treasury_tokens.update(json.load(f))
+                    except Exception:
+                        pass
             
             response = {
                 "prices": prices,
@@ -61,6 +121,256 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 "resolved": resolved,
                 "treasury_tokens": treasury_tokens
             }
+            self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+        elif self.path == '/api/nonukes/pools':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            pools_data = {}
+            if os.path.exists("nonukes_pools.json"):
+                try:
+                    with open("nonukes_pools.json", "r") as f:
+                        pools_data = json.load(f)
+                except Exception:
+                    pass
+                    
+            reserves_data = {}
+            res_path = RESERVES_FILE_PATH
+            if os.path.exists(res_path):
+                try:
+                    with open(res_path, "r") as f:
+                        reserves_data = json.load(f)
+                except Exception:
+                    pass
+                    
+            resolved_swaps = []
+            if os.path.exists("resolved_swaps.json"):
+                try:
+                    with open("resolved_swaps.json", "r") as f:
+                        resolved_swaps = json.load(f)
+                except Exception:
+                    pass
+            
+            # Load price cache for dynamic USD fallback
+            prices = {}
+            if os.path.exists("price_cache.json"):
+                try:
+                    with open("price_cache.json", "r") as f:
+                        prices = json.load(f)
+                except Exception:
+                    pass
+            if not isinstance(prices, dict): prices = {}
+            
+            # Aggregate stats from swaps
+            pool_stats = {}
+            for swap in resolved_swaps:
+                p_addr = swap.get("pool_address", "").lower()
+                if not p_addr:
+                    continue
+                if p_addr not in pool_stats:
+                    pool_stats[p_addr] = {"count": 0, "volume": 0.0}
+                
+                usd_val = float(swap.get("usd_value", 0.0))
+                # Fallback if usd_value is 0.0
+                if usd_val == 0.0:
+                    t0_info = swap.get("token0")
+                    t1_info = swap.get("token1")
+                    t0_addr = t0_info.get("address", "").lower() if isinstance(t0_info, dict) else ""
+                    t1_addr = t1_info.get("address", "").lower() if isinstance(t1_info, dict) else ""
+                    p0 = get_price(prices, t0_addr)
+                    p1 = get_price(prices, t1_addr)
+                    if p0 > 0:
+                        usd_val = float(swap.get("amount0", 0.0)) * p0
+                    elif p1 > 0:
+                        usd_val = float(swap.get("amount1", 0.0)) * p1
+                        
+                pool_stats[p_addr]["count"] += 1
+                pool_stats[p_addr]["volume"] += usd_val
+                
+            pools_list = []
+            for addr, info in pools_data.items():
+                addr_lower = addr.lower()
+                res = reserves_data.get(addr_lower, {})
+                stats = pool_stats.get(addr_lower, {"count": 0, "volume": 0.0})
+                
+                pools_list.append({
+                    "address": addr,
+                    "symbol": info.get("symbol", ""),
+                    "name": info.get("name", ""),
+                    "target_group": info.get("target_group", ""),
+                    "version": info.get("version", ""),
+                    "reserves": {
+                        "token0": float(res.get("reserve0", 0.0)),
+                        "token1": float(res.get("reserve1", 0.0))
+                    },
+                    "swap_count": stats["count"],
+                    "volume_usd": stats["volume"]
+                })
+                
+            success = bool(pools_data)
+            self.wfile.write(json.dumps({"success": success, "pools": pools_list}, indent=2).encode('utf-8'))
+        elif self.path.startswith('/api/nonukes/pool_details'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            address = params.get('address', [None])[0]
+            
+            address_lower = address.lower() if address else ""
+            
+            pools_data = {}
+            if os.path.exists("nonukes_pools.json"):
+                try:
+                    with open("nonukes_pools.json", "r") as f:
+                        pools_data = json.load(f)
+                except Exception:
+                    pass
+                    
+            pools_data_lower = {k.lower(): v for k, v in pools_data.items()}
+            if not address or len(address) < 42 or not address.startswith("0x") or address_lower not in pools_data_lower:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Invalid pool address or pool not found"}).encode('utf-8'))
+                return
+                
+            pool_info = pools_data_lower[address_lower]
+            
+            reserves_data = {}
+            res_path = RESERVES_FILE_PATH
+            if os.path.exists(res_path):
+                try:
+                    with open(res_path, "r") as f:
+                        reserves_data = json.load(f)
+                except Exception:
+                    pass
+                    
+            res = reserves_data.get(address_lower, {})
+            
+            prices = {}
+            price_cache_corrupt = False
+            if os.path.exists("price_cache.json"):
+                try:
+                    with open("price_cache.json", "r") as f:
+                        prices = json.load(f)
+                except Exception:
+                    price_cache_corrupt = True
+            if not isinstance(prices, dict): prices = {}
+                    
+            token0_addr = res.get("token0", "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62").lower()
+            token1_addr = res.get("token1", pool_info.get("other_addr", "")).lower()
+            
+            def get_symbol(addr):
+                if addr == "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62":
+                    return "NoNukes"
+                if addr == pool_info.get("other_addr", "").lower():
+                    return pool_info.get("symbol", "UNKNOWN")
+                entry = prices.get(addr, {})
+                if isinstance(entry, dict):
+                    return entry.get("symbol", "UNKNOWN")
+                return "UNKNOWN"
+                
+            token0_symbol = get_symbol(token0_addr)
+            token1_symbol = get_symbol(token1_addr)
+            
+            resolved_swaps = []
+            if os.path.exists("resolved_swaps.json"):
+                try:
+                    with open("resolved_swaps.json", "r") as f:
+                        resolved_swaps = json.load(f)
+                except Exception:
+                    pass
+                    
+            matching_swaps = []
+            for swap in resolved_swaps:
+                if swap.get("pool_address", "").lower() == address_lower:
+                    matching_swaps.append(swap)
+            
+            # Sort chronologically for trends
+            matching_swaps.sort(key=lambda s: float(s.get("timestamp", 0)))
+            
+            price_trends = []
+            swap_history = []
+            minter_addr = pool_info.get("other_addr", "").lower()
+            
+            for swap in matching_swaps:
+                timestamp = int(swap.get("timestamp", 0))
+                amt0 = float(swap.get("amount0", 0.0))
+                amt1 = float(swap.get("amount1", 0.0))
+                usd_val = float(swap.get("usd_value", 0.0))
+                
+                # Dynamic USD fallback
+                if usd_val == 0.0:
+                    t0_info = swap.get("token0")
+                    t1_info = swap.get("token1")
+                    t0_addr = t0_info.get("address", "").lower() if isinstance(t0_info, dict) else ""
+                    t1_addr = t1_info.get("address", "").lower() if isinstance(t1_info, dict) else ""
+                    p0 = get_price(prices, t0_addr)
+                    p1 = get_price(prices, t1_addr)
+                    if p0 > 0:
+                        usd_val = amt0 * p0
+                    elif p1 > 0:
+                        usd_val = amt1 * p1
+                
+                t0_info = swap.get("token0")
+                t1_info = swap.get("token1")
+                t0_addr = t0_info.get("address", "").lower() if isinstance(t0_info, dict) else ""
+                t1_addr = t1_info.get("address", "").lower() if isinstance(t1_info, dict) else ""
+                
+                amt_m = 0.0
+                if t0_addr == minter_addr:
+                    amt_m = amt0
+                elif t1_addr == minter_addr:
+                    amt_m = amt1
+                else:
+                    amt_m = amt1
+                    
+                price = 0.0
+                if usd_val > 0 and amt_m > 0:
+                    price = usd_val / amt_m
+                
+                price_trends.append({
+                    "timestamp": timestamp,
+                    "price": price
+                })
+                
+                tx_hash = swap.get("tx_hash", "")
+                if tx_hash and not tx_hash.startswith("0x"):
+                    tx_hash = "0x" + tx_hash
+                    
+                swap_history.append({
+                    "tx_hash": tx_hash,
+                    "timestamp": timestamp,
+                    "amount0": amt0,
+                    "amount1": amt1,
+                    "usd_value": usd_val
+                })
+                
+            # History is returned newest first
+            swap_history.reverse()
+            
+            if price_cache_corrupt:
+                price_trends = [0.0, 0.0, 0.0]
+
+            response = {
+                "success": True,
+                "address": address,
+                "price_trends": price_trends,
+                "reserves": {
+                    "token0": float(res.get("reserve0", 0.0)),
+                    "token1": float(res.get("reserve1", 0.0)),
+                    "token0_symbol": token0_symbol,
+                    "token1_symbol": token1_symbol
+                },
+                "swap_history": swap_history,
+                "swaps": swap_history
+            }
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
         elif self.path == '/api/nonukes':
             self.send_response(200)
@@ -75,8 +385,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         pools = json.load(f)
                 except Exception:
                     pass
-            # Load reserves from scratch directory
-            res_path = "/home/mariarahel/.gemini/antigravity-cli/brain/5a8d4144-99a3-4e64-93ac-47c55dad5b24/scratch/nonukes_pulsex_reserves.json"
+            # Load reserves from scratch directory or fallback to current directory
+            res_path = RESERVES_FILE_PATH
             if os.path.exists(res_path):
                 try:
                     with open(res_path, "r") as f:
@@ -217,8 +527,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             address = params.get('address', [None])[0]
             ignored_val = params.get('ignored', ['true'])[0].lower() == 'true'
             
-            if address:
-                address = address.lower()
+            if not address or not re.match(r"^0x[0-9a-fA-F]{40}$", address):
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Invalid address parameter"}).encode('utf-8'))
+                return
+            
+            address = address.lower()
+            
+            with IGNORE_LOCK:
                 import glob
                 target_fpath = None
                 tokens = {}
@@ -261,15 +580,15 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     except Exception:
                         pass
                 
-                try:
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'application/json')
-                    self.send_header('Access-Control-Allow-Origin', '*')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"success": True, "address": address, "ignored": ignored_val}).encode('utf-8'))
-                    return
-                except Exception as e:
-                    print(f"Error sending ignore response: {e}")
+            try:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True, "address": address, "ignored": ignored_val}).encode('utf-8'))
+                return
+            except Exception as e:
+                print(f"Error sending ignore response: {e}")
             
             self.send_response(400)
             self.end_headers()
@@ -280,6 +599,35 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(HTML_CONTENT.encode('utf-8'))
         else:
+            # Check if the requested path corresponds to a file relative to the server's working directory
+            clean_path = self.path.split('?')[0].lstrip('/')
+            if clean_path:
+                frontend_dir = os.path.abspath("frontend")
+                abs_clean = os.path.abspath(clean_path)
+                try:
+                    is_safe = os.path.commonpath([frontend_dir, abs_clean]) == frontend_dir
+                except ValueError:
+                    is_safe = False
+                
+                if is_safe and os.path.exists(abs_clean) and os.path.isfile(abs_clean):
+                    self.send_response(200)
+                    if abs_clean.endswith('.html'):
+                        self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    elif abs_clean.endswith('.js'):
+                        self.send_header('Content-Type', 'application/javascript')
+                    elif abs_clean.endswith('.css'):
+                        self.send_header('Content-Type', 'text/css')
+                    elif abs_clean.endswith('.json'):
+                        self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    with open(abs_clean, 'rb') as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    self.send_response(400)
+                    self.end_headers()
+                    self.wfile.write(b"Bad Request or File not found")
+                    return
             self.send_error(404, "File not found")
 
 HTML_CONTENT = """<!DOCTYPE html>
@@ -1366,9 +1714,12 @@ HTML_CONTENT = """<!DOCTYPE html>
 </html>
 """
 
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    pass
+
 if __name__ == "__main__":
     handler = DashboardHandler
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), handler) as httpd:
+    ThreadingHTTPServer.allow_reuse_address = True
+    with ThreadingHTTPServer(("", PORT), handler) as httpd:
         print(f"Dashboard web server active on http://localhost:{PORT}")
         httpd.serve_forever()
