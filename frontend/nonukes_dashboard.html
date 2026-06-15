@@ -362,19 +362,6 @@
         let reservesData = {};
         let currentGroupFilter = 'All';
 
-        function sanitizeText(str) {
-            if (!str) return '';
-            let normalized = str.toString().normalize("NFKD");
-            let sanitized = "";
-            for (let i = 0; i < normalized.length; i++) {
-                let code = normalized.charCodeAt(i);
-                if (code >= 32 && code <= 126) {
-                    sanitized += normalized[i];
-                }
-            }
-            return sanitized;
-        }
-
         async function loadData() {
             try {
                 const response = await fetch('/api/nonukes');
@@ -436,7 +423,7 @@
                 row.onclick = () => showLpModal(address);
                 row.innerHTML = `
                     <div><span class="tag ${pool.version.toLowerCase()}">${pool.version}</span></div>
-                    <div class="pool-symbol">${sanitizeText(pool.symbol)}</div>
+                    <div class="pool-symbol">${pool.symbol}</div>
                     <div class="pool-address">${address}</div>
                     <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">${res0} / ${res1}</div>
                     <div style="font-family: 'Share Tech Mono', monospace; font-weight: bold; color: var(--glow-cyan);">${swaps}</div>
@@ -470,7 +457,7 @@
                     modalBody.innerHTML = `
                         <h2 style="color: #fff; margin-bottom: 15px;">Pool Details</h2>
                         <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Address:</strong> <span style="font-family: monospace;">${data.address}</span></p>
-                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Reserves:</strong> ${data.reserves.token0} (${sanitizeText(data.reserves.token0_symbol)}) / ${data.reserves.token1} (${sanitizeText(data.reserves.token1_symbol)})</p>
+                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Reserves:</strong> ${data.reserves.token0} (${data.reserves.token0_symbol}) / ${data.reserves.token1} (${data.reserves.token1_symbol})</p>
                     `;
                 } else {
                     throw new Error("Failed fetching pool reserves");

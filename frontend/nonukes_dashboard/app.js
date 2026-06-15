@@ -1,14 +1,6 @@
 function escapeHtml(str) {
     if (!str) return '';
-    let normalized = str.toString().normalize("NFKD");
-    let sanitized = "";
-    for (let i = 0; i < normalized.length; i++) {
-        let code = normalized.charCodeAt(i);
-        if (code >= 32 && code <= 126) {
-            sanitized += normalized[i];
-        }
-    }
-    return sanitized.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 let pools = [];

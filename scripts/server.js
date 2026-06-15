@@ -81,18 +81,6 @@ const server = http.createServer((req, res) => {
     // API endpoint to serve NoNukes partner cards (aggregated)
     if (req.url === "/api/nonukes-cards") {
         const dataDir = path.join(__dirname, "../solidity/dysnomia/domain/data");
-        const sanitizeCardText = (text) => {
-            if (!text) return "";
-            let normalized = text.normalize("NFKD");
-            let sanitized = "";
-            for (let i = 0; i < normalized.length; i++) {
-                let code = normalized.charCodeAt(i);
-                if (code >= 32 && code <= 126) {
-                    sanitized += normalized[i];
-                }
-            }
-            return sanitized.replace(/\s+/g, " ").trim();
-        };
         try {
             const cards = [];
             if (fs.existsSync(dataDir)) {
@@ -100,11 +88,7 @@ const server = http.createServer((req, res) => {
                 files.forEach(file => {
                     if (file.startsWith("0x") && file.endsWith(".json")) {
                         const content = fs.readFileSync(path.join(dataDir, file), "utf8");
-                        let card = JSON.parse(content);
-                        if (card.name) card.name = sanitizeCardText(card.name);
-                        if (card.symbol) card.symbol = sanitizeCardText(card.symbol);
-                        if (card.desc) card.desc = sanitizeCardText(card.desc);
-                        cards.push(card);
+                        cards.push(JSON.parse(content));
                     }
                 });
             }
