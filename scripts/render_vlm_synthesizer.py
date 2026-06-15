@@ -70,7 +70,39 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     eye_color = (dna['er'], dna['eg'], dna['eb'], 255)
     
     # Draw character vector outlines (High-fidelity custom shapes)
-    if dna['r'] == 255 and dna['g'] == 170 and dna['b'] == 0:
+    # Detect token or minter traits from prompt
+    is_token = False
+    is_minter = False
+    symbol_text = "TKN"
+    if prompt_override:
+        p_lower = prompt_override.lower()
+        if "currency token" in p_lower or "nonukes core" in p_lower:
+            is_token = True
+            symbol_text = prompt_override.split()[0].upper()
+        elif "minter" in p_lower:
+            is_minter = True
+
+    if dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255:
+        # Render NoNukes Core: Glowing atomic nucleus with orbiting rings
+        draw.ellipse([cx - 50, cy - 50, cx + 50, cy + 50], outline=(255, 255, 255, 255), width=6)
+        # Orbiting ring 1
+        draw.ellipse([cx - scale_w, cy - scale_h//3, cx + scale_w, cy + scale_h//3], outline=scale_color, width=4)
+        # Orbiting ring 2
+        draw.ellipse([cx - scale_w//3, cy - scale_h, cx + scale_w//3, cy + scale_h], outline=scale_color, width=4)
+    elif is_token:
+        # Render Partner LP Token: Double-bordered neon coin with symbol text
+        draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
+        draw.ellipse([cx - scale_w + 12, cy - scale_h + 12, cx + scale_w - 12, cy + scale_h - 12], outline=scale_color, width=2)
+        # Draw central symbol letter path or simple crossbars
+        draw.line([cx - 20, cy, cx + 20, cy], fill=scale_color, width=6)
+        draw.line([cx, cy - 20, cx, cy + 20], fill=scale_color, width=6)
+    elif is_minter:
+        # Render Minter (Federal or Personal): Cyberpunk security monolith vault
+        draw.rectangle([cx - scale_w//2, cy - scale_h, cx + scale_w//2, cy + scale_h], outline=scale_color, width=8)
+        # Safe Dial
+        draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], outline=(255, 255, 255, 255), width=4)
+        draw.line([cx, cy - 30, cx, cy + 30], fill=(255, 255, 255, 255), width=3)
+    elif dna['r'] == 255 and dna['g'] == 170 and dna['b'] == 0:
         # Render Dirk the Daring Knight overlay
         draw.ellipse([cx - scale_w, cy - scale_h, cx + scale_w, cy + scale_h], outline=scale_color, width=8)
         draw.rectangle([cx - scale_w//2, cy - scale_h//4, cx + scale_w//2, cy + scale_h//4], fill=(150, 150, 150, 200))

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoNukes Voxel Card Art Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --primary-glow: rgba(0, 240, 255, 0.4);
+            --secondary: #e040fb;
+            --secondary-glow: rgba(224, 64, 251, 0.4);
+            --background: #0b080f;
+            --panel-bg: rgba(18, 12, 24, 0.8);
+            --border: rgba(0, 240, 255, 0.15);
+            --text: #e2dcf0;
+            --muted: #8c80a2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1b0e2b 0%, var(--background) 100%);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px var(--primary-glow);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Sidebar Selector */
+        .sidebar {
+            width: 320px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 680px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 16px;
+            background: #07040a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-bar:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .token-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+        }
+
+        .token-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .token-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .token-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .token-item:hover {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .token-item.active {
+            background: rgba(224, 64, 251, 0.1);
+            border-color: var(--secondary);
+            box-shadow: 0 0 8px var(--secondary-glow);
+        }
+
+        .token-item-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .token-item-symbol {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--primary);
+        }
+
+        /* Card Preview Workspace */
+        .workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .main-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            gap: 30px;
+            min-height: 400px;
+        }
+
+        /* Card Preview Card styling */
+        .card-view {
+            width: 280px;
+            background: #11091a;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .card-artwork {
+            width: 100%;
+            height: 200px;
+            background: #07030a;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: var(--secondary);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .card-symbol-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            font-family: 'Space Mono', monospace;
+            padding: 2px 6px;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--muted);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 6px;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: var(--text);
+            flex-grow: 1;
+        }
+
+        .card-address {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--muted);
+            word-break: break-all;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 6px;
+        }
+
+        /* Art Display Panel */
+        .art-display-panel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: space-between;
+        }
+
+        .art-canvas {
+            width: 100%;
+            height: 280px;
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .art-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-art-placeholder {
+            color: var(--muted);
+            text-align: center;
+            font-style: italic;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--secondary) 0%, #a820c7 100%);
+            border: none;
+            color: #fff;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(224, 64, 251, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--secondary-glow);
+        }
+
+        .btn:disabled {
+            background: #33243a;
+            color: var(--muted);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .log-panel {
+            background: #07040a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: #00ff66;
+            max-height: 120px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>NoNukes Card Art Viewer</h1>
+        <p class="subtitle">Test environment to inspect rotating 3D voxel models and trigger Stable Diffusion vector-style art synthesis for PulseChain LP tokens.</p>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar Token list -->
+        <div class="sidebar">
+            <input type="text" id="tokenSearchInput" class="search-bar" placeholder="🔍 Search tokens..." oninput="filterTokens()">
+            <div class="token-list" id="tokenListContainer">
+                <div style="color: var(--muted); text-align: center; margin-top: 50px;">Loading partner tokens...</div>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <div class="main-panel">
+                <!-- Voxel Preview Card -->
+                <div class="card-view" id="activeCardView" style="display: none;">
+                    <div class="card-artwork" id="artworkContainer">
+                        <span class="card-badge" id="cardBadge">Token</span>
+                        <span class="card-symbol-badge" id="cardSymbol">SYM</span>
+                    </div>
+                    <div class="card-title" id="cardTitle">Token Name</div>
+                    <div class="card-meta">
+                        <span>DIM: 16x16x16</span>
+                        <span id="cardId">#1000</span>
+                    </div>
+                    <div class="card-desc" id="cardDesc">Stable Diffusion Description Prompt</div>
+                    <div class="card-address" id="cardAddress">0x000...000</div>
+                </div>
+
+                <div class="card-view" id="cardPlaceholder" style="display: flex; justify-content: center; align-items: center; text-align: center; color: var(--muted); font-style: italic;">
+                    Select a token from the sidebar to inspect its voxel card.
+                </div>
+
+                <!-- Art Display and Control Panel -->
+                <div class="art-display-panel">
+                    <div class="art-canvas" id="artCanvas">
+                        <div class="no-art-placeholder" id="artPlaceholder">
+                            <span>✨ No art synthesized yet</span>
+                            <span style="font-size: 0.8rem;">Click the button below to execute render_vlm_synthesizer.py</span>
+                        </div>
+                        <img src="" class="art-image" id="artImage" style="display: none;">
+                    </div>
+
+                    <button class="btn" id="btnSynthesize" disabled onclick="synthesizeDefaultArt()">
+                        🎨 Synthesize Default Art
+                    </button>
+
+                    <div class="log-panel" id="logPanel" style="display: none;">
+                        [SYSTEM] Ready for DNA pipeline request...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/dragons_lair.html" class="back-link">🔙 Return to Dragon's Lair</a>
+
+    <script>
+        let allTokens = [];
+        let activeCard = null;
+        let animationInterval = null;
+        let canvasAngle = 0;
+        let activeScene = 'default';
+
+        // Load all JSON cards from solidity directory using api listing
+        async function loadTokenCards() {
+            try {
+                const res = await fetch("/api/workspace-files");
+                const files = await res.json();
+                
+                // Filter for individual card files in solidity/dysnomia/domain/data/
+                const cardFiles = files.filter(f => 
+                    f.startsWith("solidity/dysnomia/domain/data/") && 
+                    f.endsWith(".json") && 
+                    !f.endsWith("cabs_cards.json")
+                );
+
+                // Fetch each card file contents
+                const fetches = cardFiles.map(async (f) => {
+                    const r = await fetch(`/api/read-file?path=${encodeURIComponent(f)}`);
+                    return r.json();
+                });
+
+                allTokens = await Promise.all(fetches);
+                renderTokenList(allTokens);
+            } catch (err) {
+                console.error("Failed to load tokens:", err);
+                document.getElementById("tokenListContainer").innerHTML = 
+                    `<div style="color: red; text-align: center; margin-top: 50px;">Error loading token cards.</div>`;
+            }
+        }
+
+        function renderTokenList(tokens) {
+            const container = document.getElementById("tokenListContainer");
+            container.innerHTML = "";
+            
+            if (tokens.length === 0) {
+                container.innerHTML = `<div style="color: var(--muted); text-align: center; margin-top: 50px;">No tokens matched.</div>`;
+                return;
+            }
+
+            tokens.forEach(tok => {
+                const el = document.createElement("div");
+                el.className = "token-item";
+                if (activeCard && activeCard.address === tok.address) {
+                    el.classList.add("active");
+                }
+                el.onclick = () => selectCard(tok, el);
+
+                el.innerHTML = `
+                    <div class="token-item-name">${tok.name.split(' (')[0]}</div>
+                    <div class="token-item-symbol">${tok.symbol}</div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function filterTokens() {
+            const query = document.getElementById("tokenSearchInput").value.toLowerCase();
+            const filtered = allTokens.filter(tok => 
+                tok.name.toLowerCase().includes(query) || 
+                tok.symbol.toLowerCase().includes(query) ||
+                tok.address.toLowerCase().includes(query)
+            );
+            renderTokenList(filtered);
+        }
+
+        function selectCard(tok, itemEl) {
+            document.querySelectorAll(".token-item").forEach(item => item.classList.remove("active"));
+            itemEl.classList.add("active");
+
+            activeCard = tok;
+            
+            // Show workspace panels
+            document.getElementById("cardPlaceholder").style.display = "none";
+            document.getElementById("activeCardView").style.display = "flex";
+            document.getElementById("btnSynthesize").disabled = false;
+
+            // Fill card data
+            document.getElementById("cardTitle").textContent = tok.name;
+            document.getElementById("cardBadge").textContent = tok.type;
+            document.getElementById("cardSymbol").textContent = tok.symbol;
+            document.getElementById("cardSymbol").style.color = tok.color;
+            document.getElementById("cardSymbol").style.borderColor = tok.color;
+            document.getElementById("cardId").textContent = tok.size;
+            document.getElementById("cardDesc").textContent = tok.desc;
+            document.getElementById("cardAddress").textContent = tok.address;
+
+            // Reset synthesized art view
+            document.getElementById("artPlaceholder").style.display = "flex";
+            document.getElementById("artImage").style.display = "none";
+            document.getElementById("logPanel").style.display = "none";
+
+            // Draw Voxel canvas preview
+            initVoxelPreview(tok);
+        }
+
+        function initVoxelPreview(card) {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+
+            const artworkContainer = document.getElementById("artworkContainer");
+            // Remove previous canvas if exists
+            const prevCanvas = artworkContainer.querySelector("canvas");
+            if (prevCanvas) prevCanvas.remove();
+
+            const canvas = document.createElement("canvas");
+            canvas.width = 240;
+            canvas.height = 180;
+            canvas.style.display = "block";
+            const ctx = canvas.getContext("2d");
+            artworkContainer.appendChild(canvas);
+
+            // Parse size e.g. "16x16x16 voxels"
+            const sizeMatch = card.size.match(/(\d+)x(\d+)x(\d+)/);
+            const dims = sizeMatch ? [parseInt(sizeMatch[1]), parseInt(sizeMatch[2]), parseInt(sizeMatch[3])] : [16, 16, 16];
+
+            canvasAngle = 0;
+
+            function drawFrame() {
+                ctx.fillStyle = "#07030a";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const maxDim = Math.max(...dims);
+                const baseScale = Math.min(canvas.width, canvas.height) / (maxDim * 1.5 || 24);
+
+                ctx.strokeStyle = card.color;
+                ctx.lineWidth = 1;
+
+                const cos = Math.cos(canvasAngle);
+                const sin = Math.sin(canvasAngle);
+
+                const project = (x, y, z) => {
+                    const rx = x * cos - z * sin;
+                    const rz = x * sin + z * cos;
+                    const screenX = cx + (rx - y) * Math.cos(Math.PI / 6) * baseScale;
+                    const screenY = cy + (rx + y) * Math.sin(Math.PI / 6) * baseScale - rz * baseScale * 0.5;
+                    return [screenX, screenY];
+                };
+
+                const dx = dims[0] / 2;
+                const dy = dims[1] / 2;
+                const dz = dims[2] / 2;
+
+                const corners = [
+                    [-dx, -dy, -dz], [dx, -dy, -dz], [dx, dy, -dz], [-dx, dy, -dz],
+                    [-dx, -dy, dz], [dx, -dy, dz], [dx, dy, dz], [-dx, dy, dz]
+                ].map(c => project(c[0], c[1], c[2]));
+
+                const edges = [
+                    [0, 1], [1, 2], [2, 3], [3, 0], // Bottom
+                    [4, 5], [5, 6], [6, 7], [7, 4], // Top
+                    [0, 4], [1, 5], [2, 6], [3, 7]  // Vertical
+                ];
+
+                // Draw filled transparent faces
+                ctx.fillStyle = card.color + "15";
+                ctx.beginPath();
+                ctx.moveTo(corners[0][0], corners[0][1]);
+                corners.forEach(c => ctx.lineTo(c[0], c[1]));
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw edges
+                ctx.beginPath();
+                edges.forEach(([u, v]) => {
+                    ctx.moveTo(corners[u][0], corners[u][1]);
+                    ctx.lineTo(corners[v][0], corners[v][1]);
+                });
+                ctx.stroke();
+
+                // Render volumetric voxel configurations
+                const maxSteps = 5;
+                for (let x = -maxSteps; x <= maxSteps; x++) {
+                    for (let y = -maxSteps; y <= maxSteps; y++) {
+                        for (let z = -maxSteps; z <= maxSteps; z++) {
+                            const vx = x / maxSteps;
+                            const vy = y / maxSteps;
+                            const vz = z / maxSteps;
+
+                            let shouldDraw = false;
+                            let voxelColor = card.color;
+
+                            // Draw double concentric rings with a central core (token model)
+                            const centerCore = (vx*vx + vy*vy + vz*vz) < 0.15;
+                            const outerRing = Math.abs(vx*vx + vy*vy - 0.45) < 0.06 && Math.abs(vz) < 0.08;
+                            if (centerCore) {
+                                shouldDraw = true;
+                                voxelColor = "#ffffff";
+                            } else if (outerRing) {
+                                shouldDraw = true;
+                                voxelColor = card.color;
+                            }
+
+                            if (shouldDraw) {
+                                const [px, py] = project(x * (dims[0] / (maxSteps * 2)), y * (dims[1] / (maxSteps * 2)), z * (dims[2] / (maxSteps * 2)));
+                                ctx.fillStyle = voxelColor;
+                                ctx.beginPath();
+                                ctx.arc(px, py, 2, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+
+                canvasAngle += 0.03;
+            }
+
+            animationInterval = setInterval(drawFrame, 40);
+        }
+
+        // Synthesize the Stable Diffusion vector art Still using DApp render-dna API
+        async function synthesizeDefaultArt() {
+            if (!activeCard) return;
+
+            const btn = document.getElementById("btnSynthesize");
+            const logPanel = document.getElementById("logPanel");
+            btn.disabled = true;
+            btn.textContent = "⏳ Synthesizing Art...";
+            logPanel.style.display = "block";
+            logPanel.textContent = `[SYSTEM] Preparing Stable Diffusion payload for: ${activeCard.symbol}...\n`;
+
+            try {
+                // Trigger DApp DNA render using card characteristics
+                const res = await fetch("/api/render-dna", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        frame: 777, // Special index for testing NoNukes custom cards
+                        g_x: 0.0,
+                        g_y: 0.0,
+                        stretch: 1.0,
+                        pulse: 0.0,
+                        fire: 0.0,
+                        light: 1.0,
+                        scaleColor: activeCard.color,
+                        eyeColor: "#ffffff",
+                        eyeCount: 2,
+                        steps: 4,
+                        cfg: 1.5,
+                        promptOverride: activeCard.desc
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    logPanel.textContent += `[SUCCESS] Art rendered to local assets.\n`;
+                    logPanel.textContent += `=== Synthesis Critique ===\n${data.logs}`;
+                    
+                    // Display image
+                    const artImage = document.getElementById("artImage");
+                    artImage.src = "/" + data.url + "?t=" + Date.now();
+                    artImage.style.display = "block";
+                    document.getElementById("artPlaceholder").style.display = "none";
+                } else {
+                    logPanel.textContent += `[ERROR] Synthesis failed: ${data.error}\n`;
+                }
+            } catch (err) {
+                logPanel.textContent += `[ERROR] Network failed: ${err.message}\n`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🎨 Synthesize Default Art";
+            }
+        }
+
+        window.onload = loadTokenCards;
+    </script>
+</body>
+</html>
