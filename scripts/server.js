@@ -172,14 +172,24 @@ function fetchMarketData(addresses) {
 
                 if (poolAddr && reservesMap[poolAddr]) {
                     const res = reservesMap[poolAddr];
-                    const reserve0 = parseFloat(res.reserve0 || 0); // NoNukes
-                    const reserve1 = parseFloat(res.reserve1 || 0); // Partner token
+                    const reserve0 = parseFloat(res.reserve0 || 0);
+                    const reserve1 = parseFloat(res.reserve1 || 0);
+                    const t0 = (res.token0 || "").toLowerCase();
+                    const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
+
+                    let reserveNoNukes = reserve0;
+                    let reservePartner = reserve1;
+
+                    if (t0 !== nonukesAddr) {
+                        reserveNoNukes = reserve1;
+                        reservePartner = reserve0;
+                    }
                     
-                    if (reserve1 > 0) {
-                        const priceInNoNukes = reserve0 / reserve1;
+                    if (reservePartner > 0) {
+                        const priceInNoNukes = reserveNoNukes / reservePartner;
                         priceUsd = (priceInNoNukes * nonukesPriceUsd).toFixed(6);
                     }
-                    liquidityUsd = reserve0 * nonukesPriceUsd * 2;
+                    liquidityUsd = reserveNoNukes * nonukesPriceUsd * 2;
                 }
 
                 marketData[addrKey] = {
