@@ -43,31 +43,144 @@ def generate_voxel_shape(desc):
     desc = desc.lower()
     voxels = []
     
-    if "key" in desc:
-        # Ring at top (z=2)
+    # 1. Animal / Dog / Inu
+    if "inu" in desc or "dog" in desc or "pinu" in desc:
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                voxels.append((x, y, -1, 0))
+        voxels.append((-2, -2, 0, 0))
+        voxels.append((-1, -3, 0, 1))
+        voxels.append((1, -3, 0, 1))
+        voxels.append((2, -2, 0, 0))
+        
+    # 2. Yin Yang
+    elif "yinyang" in desc or "yyang" in desc or "yin" in desc or "yang" in desc:
+        for z in range(-1, 2):
+            for x in range(-3, 4):
+                for y in range(-3, 4):
+                    if x*x + y*y <= 9:
+                        is_white = y > 0 or (y == 0 and x > 0)
+                        if x == 0 and y == 2:
+                            is_white = False
+                        elif x == 0 and y == -2:
+                            is_white = True
+                        voxels.append((x, y, z, 1 if is_white else 0))
+                        
+    # 3. Poop / Poo
+    elif "poop" in desc or "poo" in desc or "p0op" in desc:
+        for z in range(-2, 3):
+            r = 3 - (z + 2)
+            if r < 0: r = 0
+            for x in range(-r, r+1):
+                for y in range(-r, r+1):
+                    if x*x + y*y <= r*r:
+                        voxels.append((x, y, z, 0 if z % 2 == 0 else 1))
+                        
+    # 4. Dinosaur / Dino
+    elif "dino" in desc or "dinosaur" in desc:
+        for z in range(-2, 3):
+            for x in range(-2, 3):
+                for y in range(-2, 3):
+                    voxels.append((x, y, z, 0))
+        for z in range(-1, 2):
+            for x in range(-2, 3):
+                voxels.append((x, 3, z, 0))
+        voxels.append((-1, 2, 2, 1))
+        voxels.append((1, 2, 2, 1))
+        
+    # 5. Tree / Forest / Wildlife / Refuge
+    elif "wildlife" in desc or "refuge" in desc or "tree" in desc or "forest" in desc or "🌲" in desc or "fox" in desc or "duck" in desc:
+        for z in range(-3, 0):
+            voxels.append((0, 0, z, 0))
+        for z in range(0, 4):
+            r = 3 - z
+            for x in range(-r, r+1):
+                for y in range(-r, r+1):
+                    if x*x + y*y <= r*r:
+                        voxels.append((x, y, z, 1))
+                        
+    # 6. Star Gazer
+    elif "stargazer" in desc or "gazer" in desc or "star" in desc:
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                for z in range(-1, 2):
+                    if abs(x)+abs(y)+abs(z) <= 1:
+                        voxels.append((x, y, z, 1))
+        for d in range(-3, 4):
+            if abs(d) > 1:
+                voxels.append((d, 0, 0, 0))
+                voxels.append((0, d, 0, 0))
+                voxels.append((0, 0, d, 0))
+                
+    # 7. Tits
+    elif "tits" in desc or "doubledd" in desc:
+        for z in range(-1, 2):
+            for x in range(-3, 0):
+                for y in range(-2, 3):
+                    if (x+1.5)**2 + y**2 + z**2 <= 2.25:
+                        voxels.append((x, y, z, 0))
+            for x in range(1, 4):
+                for y in range(-2, 3):
+                    if (x-1.5)**2 + y**2 + z**2 <= 2.25:
+                        voxels.append((x, y, z, 0))
+        voxels.append((-2, 0, 1, 1))
+        voxels.append((2, 0, 1, 1))
+        
+    # 8. Printer / Press
+    elif "printer" in desc or "press" in desc:
+        for x in range(-2, 3):
+            for y in range(-2, 3):
+                for z in range(-3, 1):
+                    voxels.append((x, y, z, 0))
+        for y in range(-1, 2):
+            voxels.append((0, y, 1, 1))
+            voxels.append((0, y, 2, 1))
+            
+    # 9. Ghost / Shadow
+    elif "shadow" in desc or "ghost" in desc:
+        for z in range(-2, 3):
+            r = 2 if z >= 0 else 1
+            for x in range(-r, r+1):
+                for y in range(-r, r+1):
+                    if x*x + y*y <= r*r:
+                        voxels.append((x, y, z, 0))
+        voxels.append((-1, 0, -3, 0))
+        voxels.append((1, 0, -3, 0))
+        voxels.append((-1, 1, 1, 1))
+        voxels.append((1, 1, 1, 1))
+        
+    # 10. Firefly / Fly
+    elif "firefly" in desc or "fly" in desc:
+        for z in range(-1, 2):
+            voxels.append((0, 0, z, 0))
+        voxels.append((0, 0, -2, 1))
+        voxels.append((-1, 0, 0, 1))
+        voxels.append((1, 0, 0, 1))
+        voxels.append((-2, 0, 1, 1))
+        voxels.append((2, 0, 1, 1))
+        
+    # 11. Key
+    elif "key" in desc:
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 2 <= x*x + y*y <= 5:
                     voxels.append((x, y, 2, 0))
-        # Shaft
         for z in range(-3, 2):
             voxels.append((0, 0, z, 0))
-        # Teeth
         voxels.append((1, 0, -2, 0))
         voxels.append((2, 0, -2, 1))
         voxels.append((1, 0, -1, 0))
         
+    # 12. Sword
     elif "sword" in desc or "blade" in desc or "dirk" in desc:
-        # Blade
         for z in range(-1, 4):
             voxels.append((0, 0, z, 1))
-        # Guard
         for x in range(-2, 3):
             voxels.append((x, 0, -2, 0))
-        # Hilt
         voxels.append((0, 0, -3, 0))
         voxels.append((0, 0, -4, 0))
         
+    # 13. Shield
     elif "shield" in desc or "sentinel" in desc or "vault" in desc or "guard" in desc:
         for z in range(-2, 3):
             width = 2 if z >= 0 else 2 + z
@@ -76,13 +189,12 @@ def generate_voxel_shape(desc):
                 if x == 0 and z == 0:
                     voxels.append((x, 0, z, 1))
                     
+    # 14. Crown
     elif "crown" in desc or "king" in desc or "princess" in desc or "queen" in desc:
-        # Base Ring
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 3 <= x*x + y*y <= 5:
                     voxels.append((x, y, -2, 0))
-        # Crown peaks
         voxels.append((-2, 0, -1, 0))
         voxels.append((-2, 0, 0, 1))
         voxels.append((2, 0, -1, 0))
@@ -93,6 +205,7 @@ def generate_voxel_shape(desc):
         voxels.append((0, -2, 0, 1))
         voxels.append((0, 0, 1, 1))
         
+    # 15. Gas/Flame
     elif "gas" in desc or "fuel" in desc or "fire" in desc or "burn" in desc or "flame" in desc:
         for z in range(-3, 4):
             max_r = 3 - (z + 3)//2
@@ -102,6 +215,7 @@ def generate_voxel_shape(desc):
                         is_inner = (x*x + y*y <= 1) and z < 2
                         voxels.append((x, y, z, 1 if is_inner else 0))
                         
+    # 16. Heart
     elif "heart" in desc or "love" in desc:
         for x in (-1, 1):
             for y in (-1, 1):
@@ -116,6 +230,7 @@ def generate_voxel_shape(desc):
                     voxels.append((x, y, -1, 0))
         voxels.append((0, 0, -2, 0))
         
+    # 17. Droplet
     elif "drop" in desc or "water" in desc or "liquid" in desc or "pool" in desc:
         for z in range(-3, 4):
             r = 3 - (z + 3)//2
@@ -124,18 +239,7 @@ def generate_voxel_shape(desc):
                     if x*x + y*y <= r*r:
                         voxels.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
                         
-    elif "star" in desc or "electric" in desc or "lightning" in desc or "energy" in desc or "spark" in desc:
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                for z in range(-1, 2):
-                    if abs(x)+abs(y)+abs(z) <= 1:
-                        voxels.append((x, y, z, 1))
-        for d in range(-3, 4):
-            if abs(d) > 1:
-                voxels.append((d, 0, 0, 0))
-                voxels.append((0, d, 0, 0))
-                voxels.append((0, 0, d, 0))
-                
+    # 18. Stablecoin/USD/Dollar
     elif "usd" in desc or "dai" in desc or "usdc" in desc or "usdt" in desc or "stable" in desc or "dollar" in desc:
         s_points = [
             (1, 0, 2), (0, 0, 2), (-1, 0, 2),
