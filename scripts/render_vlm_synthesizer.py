@@ -560,6 +560,8 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         if not os.path.exists(font_mono_path):
             font_mono_path = "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
 
+        font_fallback_path = "/usr/share/fonts/truetype/ancient-scripts/Symbola_hint.ttf"
+
         try:
             font_title = ImageFont.truetype(font_path, 34)
             font_body = ImageFont.truetype(font_path, 20)
@@ -570,33 +572,55 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             font_body = ImageFont.load_default()
             font_small = ImageFont.load_default()
             font_mono = ImageFont.load_default()
+
+        if os.path.exists(font_fallback_path):
+            font_title_fb = ImageFont.truetype(font_fallback_path, 34)
+            font_body_fb = ImageFont.truetype(font_fallback_path, 20)
+            font_small_fb = ImageFont.truetype(font_fallback_path, 15)
+            font_mono_fb = ImageFont.truetype(font_fallback_path, 15)
+        else:
+            font_title_fb = font_title
+            font_body_fb = font_body
+            font_small_fb = font_small
+            font_mono_fb = font_mono
             
         # Title
         def sanitize_text_for_font(text, fallback="TOKEN"):
-            # Keep standard printable ASCII (32-126) and Enclosed Alphanumerics block (9312-9450)
-            # This preserves circled letters (like Ⓐ and ⓐ) exactly as they are.
-            sanitized = "".join(c for c in text if (32 <= ord(c) <= 126) or (9312 <= ord(c) <= 9450))
+            # Keep standard printable characters, including emojis and special unicode symbols (ord >= 32)
+            sanitized = "".join(c for c in text if ord(c) >= 32)
             sanitized = " ".join(sanitized.split())
             if not sanitized:
                 return fallback
             return sanitized
 
+        def draw_text_with_fallback(draw, position, text, fill, font_primary, font_fallback):
+            x, y = position
+            for c in text:
+                # Standard ASCII and Enclosed Alphanumerics go to primary font (FreeSans)
+                # Everything else (emojis, peace, fuel, wave, wood etc.) goes to Symbola
+                if (32 <= ord(c) <= 126) or (9312 <= ord(c) <= 9450):
+                    font = font_primary
+                else:
+                    font = font_fallback
+                draw.text((x, y), c, fill=fill, font=font)
+                x += draw.textlength(c, font=font)
+
         raw_token_name = (card_data.get('name', 'UNKNOWN') if card_data else seed_str).split(' (')[0].upper()
         token_name = sanitize_text_for_font(raw_token_name, fallback="PARTNER TOKEN")
-        draw.text((750, 70), token_name, fill=accent_rgb, font=font_title)
+        draw_text_with_fallback(draw, (750, 70), token_name, accent_rgb, font_title, font_title_fb)
         
         # Type Badge
         card_type = (card_data.get('type', 'TOKEN') if card_data else ('MINTER' if is_minter else 'TOKEN')).upper()
-        badge_w = len(card_type) * 11 + 20
+        badge_w = int(draw.textlength(card_type, font=font_small)) + 20
         draw.rectangle([750, 130, 750 + badge_w, 160], fill=get_shade(color_rgb, 0.7), outline=color_rgb, width=1)
-        draw.text((760, 137), card_type, fill=accent_rgb, font=font_small)
+        draw_text_with_fallback(draw, (760, 137), card_type, accent_rgb, font_small, font_small_fb)
         
         # Symbol Badge
         raw_symbol = (card_data.get('symbol', 'TKN') if card_data else symbol_text).upper()
         symbol = sanitize_text_for_font(raw_symbol, fallback="TKN")
-        badge_sym_w = len(symbol) * 12 + 20
+        badge_sym_w = int(draw.textlength(symbol, font=font_small)) + 20
         draw.rectangle([760 + badge_w, 130, 760 + badge_w + badge_sym_w, 160], fill=(24, 15, 36), outline=accent_rgb, width=1)
-        draw.text((770 + badge_w, 137), symbol, fill=accent_rgb, font=font_small)
+        draw_text_with_fallback(draw, (770 + badge_w, 137), symbol, accent_rgb, font_small, font_small_fb)
         
         # Description
         draw.text((750, 190), "CHARACTERISTICS / DEFI GENOME:", fill=get_shade(color_rgb, 0.8), font=font_small)
@@ -622,7 +646,7 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         desc_lines = wrap_text(desc_sanitized, 38)
         curr_y = 225
         for line in desc_lines:
-            draw.text((750, curr_y), line, fill=accent_rgb, font=font_body)
+            draw_text_with_fallback(draw, (750, curr_y), line, accent_rgb, font_body, font_body_fb)
             curr_y += 26
             
         # Stats
