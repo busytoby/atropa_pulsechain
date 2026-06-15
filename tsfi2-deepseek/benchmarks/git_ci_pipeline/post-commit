@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# Resolve the repository root.
+# We do this before unsetting GIT_DIR, etc., so git can resolve it properly.
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [ -z "$REPO_ROOT" ]; then
+    # Fallback to resolving relative to the script location
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    if [[ "$SCRIPT_DIR" == */.git/hooks ]]; then
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    elif [[ "$SCRIPT_DIR" == */git_ci_pipeline ]]; then
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+    else
+        REPO_ROOT="$(pwd)"
+    fi
+fi
+
+# Scrub (unset) Git environment variables
+unset GIT_DIR
+unset GIT_WORK_TREE
+unset GIT_INDEX_FILE
+
+# Navigate to repo root and into tsfi2-deepseek
+cd "${REPO_ROOT}/tsfi2-deepseek" || {
+    echo "[WARNING] Could not navigate to ${REPO_ROOT}/tsfi2-deepseek"
+    exit 0
+}
+
+# Compile the Vulkan benchmark target
+echo "[INFO] Compiling Vulkan benchmark..."
+if ! make bin/test_vulkan_teddy; then
+    echo "[WARNING] Compilation of Vulkan benchmark failed."
+    exit 0
+fi
+
+# If compilation succeeds:
+cd benchmarks/profiler_suite || {
+    echo "[WARNING] Could not navigate to benchmarks/profiler_suite"
+    exit 0
+}
+
+echo "[INFO] Running benchmarks..."
+if [ -f "./run_benchmarks.sh" ]; then
+    ./run_benchmarks.sh
+else
+    echo "[WARNING] run_benchmarks.sh not found."
+fi
+
+echo "[INFO] Generating HTML report..."
+if [ -f "generate_report.py" ]; then
+    python3 generate_report.py
+else
+    echo "[WARNING] generate_report.py not found."
+fi
+
+# Parse benchmark_results.json and print formatted ASCII metrics table summary to stdout
+python3 -c "
+import sys, json, os
+
+try:
+    path = 'benchmark_results.json'
+    if not os.path.exists(path):
+        raise FileNotFoundError('Results file not found')
+    with open(path, 'r') as f:
+        data = json.load(f)
+    summary = data.get('summary', {})
+    
+    total_frames = summary.get('total_frames', 'N/A')
+    elapsed = summary.get('elapsed_time_seconds', 'N/A')
+    render_time = summary.get('total_render_time_seconds', 'N/A')
+    avg_fps = summary.get('average_fps', 'N/A')
+    avg_frame_time = summary.get('average_frame_render_time_seconds', 'N/A')
+    
+    def fmt(v, is_time=False, decimals=2):
+        if v == 'N/A': return 'N/A'
+        try:
+            val = float(v)
+            if is_time:
+                return f'{val * 1000:.{decimals}f} ms'
+            else:
+                return f'{val:.{decimals}f}'
+        except Exception:
+            return str(v)
+            
+    tf_str = str(total_frames)
+    el_str = fmt(elapsed)
+    rt_str = fmt(render_time)
+    fps_str = fmt(avg_fps)
+    ft_str = fmt(avg_frame_time, is_time=True, decimals=3)
+
+except Exception as e:
+    print(f'Warning: Failed to parse benchmark results: {e}')
+    tf_str, el_str, rt_str, fps_str, ft_str = 'N/A', 'N/A', 'N/A', 'N/A', 'N/A'
+
+print('+------------------------------------+----------------+')
+print('| Metric                             | Value          |')
+print('+------------------------------------+----------------+')
+print(f'| Total Frames                       | {tf_str:<14} |')
+print(f'| Elapsed Time                       | {el_str:<14} |')
+print(f'| Total Render Time                  | {rt_str:<14} |')
+print(f'| Average FPS                        | {fps_str:<14} |')
+print(f'| Average Frame Render Time          | {ft_str:<14} |')
+print('+------------------------------------+----------------+')
+"
+
+exit 0

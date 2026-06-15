@@ -19,7 +19,7 @@ typedef enum {
 
 void sd_log_cb(enum sd_log_level_t level, const char* text, void* data) {
     (void)data;
-    if (level >= SD_LOG_INFO) printf("[SD] %s", text);
+    if (level >= SD_LOG_INFO) fprintf(stderr, "[SD] %s", text);
 }
 
 int main(int argc, char** argv) {
@@ -62,11 +62,14 @@ int main(int argc, char** argv) {
         method_str = "euler_a";
     } else if (profile == MODEL_DREAMSHAPER) {
         params.model_path = "assets/models/LCM_Dreamshaper_v7.safetensors";
+        params.clip_l_path = "assets/models/sd15.safetensors";
+        params.vae_path = "assets/models/sd15.safetensors";
     } else {
         params.model_path = "assets/models/sd15.safetensors";
     }
 
-    params.vae_path = ""; params.taesd_path = ""; 
+    params.vae_path = (profile == MODEL_DREAMSHAPER) ? "assets/models/sd15.safetensors" : "";
+    params.taesd_path = ""; 
     params.control_net_path = shm_depth ? "assets/models/control_depth.safetensors" : ""; 
     params.control_net_path_2 = shm_pose ? "assets/models/control_openpose.safetensors" : ""; 
     
@@ -76,7 +79,11 @@ int main(int argc, char** argv) {
     params.rng_type = STD_DEFAULT_RNG;
     params.sampler_rng_type = STD_DEFAULT_RNG;
     params.use_teddy_vae = true; 
-    params.n_threads = 16;
+    int threads = 16;
+    if (const char* env_threads = getenv("SD_THREADS")) {
+        threads = atoi(env_threads);
+    }
+    params.n_threads = threads;
     params.vae_decode_only = false;
     params.free_params_immediately = true;
     params.enable_mmap = true;
@@ -181,20 +188,76 @@ int main(int argc, char** argv) {
     printf("[INFO] Generating 720p Masterpiece (%dx%d)...\n", 
            shm_depth ? (int)shm_depth->width : 1280, 
            shm_depth ? (int)shm_depth->height : 720);
-    auto start = std::chrono::high_resolution_clock::now();
-    
-    sd_image_t* res = generate_image(ctx, &gen_params);
-    if (!res) {
-        printf("[FRACTURE] Image generation failed (UNet Error)\n");
-    }
-    
-    auto end = std::chrono::high_resolution_clock::now();
-    double elapsed = std::chrono::duration<double>(end - start).count();
+    if (strcmp(prompt, "stdin") == 0) {
+        printf("READY\n");
+        fflush(stdout);
+        
+        char input_buf[1024];
+        while (fgets(input_buf, sizeof(input_buf), stdin)) {
+            // Strip newline
+            size_t len = strlen(input_buf);
+            if (len > 0 && input_buf[len - 1] == '\n') {
+                input_buf[len - 1] = '\0';
+            }
+            if (strlen(input_buf) == 0) continue;
+            if (strcmp(input_buf, "EXIT") == 0) break;
+            
+            gen_params.prompt = input_buf;
+            
+            // Dynamically refresh control image pointers from SHM
+            if (shm_depth) {
+                gen_params.control_image.width = shm_depth->width;
+                gen_params.control_image.height = shm_depth->height;
+                gen_params.control_image.channel = 3;
+                gen_params.control_image.data = (uint8_t*)shm_depth->data;
+                gen_params.control_strength = dgui ? dgui->depth_strength : 0.8f;
+            }
+            if (shm_pose) {
+                gen_params.control_image_2.width = shm_pose->width;
+                gen_params.control_image_2.height = shm_pose->height;
+                gen_params.control_image_2.channel = 3;
+                gen_params.control_image_2.data = (uint8_t*)shm_pose->data;
+                gen_params.control_strength_2 = dgui ? dgui->pose_strength : 0.6f;
+            }
+            
+            srand((unsigned int)time(NULL) ^ (unsigned int)clock());
+            gen_params.seed = rand();
+            
+            auto t_start = std::chrono::high_resolution_clock::now();
+            sd_image_t* res = generate_image(ctx, &gen_params);
+            auto t_end = std::chrono::high_resolution_clock::now();
+            double elapsed = std::chrono::duration<double>(t_end - t_start).count();
+            
+            if (res && res->data) {
+                FILE* f = fopen(output_path, "wb");
+                if (f) {
+                    fwrite(res->data, 1, res->width * res->height * 3, f);
+                    fclose(f);
+                }
+                free(res->data);
+                free(res);
+                printf("SUCCESS (Render: %.3fs)\n", elapsed);
+            } else {
+                printf("ERROR\n");
+            }
+            fflush(stdout);
+        }
+    } else {
+        auto start = std::chrono::high_resolution_clock::now();
+        sd_image_t* res = generate_image(ctx, &gen_params);
+        if (!res) {
+            printf("[FRACTURE] Image generation failed (UNet Error)\n");
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration<double>(end - start).count();
 
-    if (res && res->data) {
-        FILE* f = fopen(output_path, "wb");
-        if (f) { fwrite(res->data, 1, res->width * res->height * 3, f); fclose(f); }
-        printf("[BENCH] Render complete in %.3fs\n", elapsed);
+        if (res && res->data) {
+            FILE* f = fopen(output_path, "wb");
+            if (f) { fwrite(res->data, 1, res->width * res->height * 3, f); fclose(f); }
+            printf("[BENCH] Render complete in %.3fs\n", elapsed);
+            free(res->data);
+            free(res);
+        }
     }
 
     if (shm_depth) tsfi_cn_shm_detach(shm_depth);

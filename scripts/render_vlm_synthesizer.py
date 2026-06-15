@@ -6,6 +6,24 @@ import base64
 from PIL import Image, ImageDraw, ImageFilter
 import hashlib
 import math
+import struct
+import time
+import subprocess
+
+def write_to_shm_depth(art_panel_image):
+    # Resize to 512x512 which is the native SD 1.5 resolution
+    img = art_panel_image.convert("RGB").resize((512, 512))
+    raw_data = img.tobytes()
+    timestamp_ns = int(time.time_ns())
+    header = struct.pack('=IIIIIQ', 0x54434E4D, 1, 512, 512, 3, timestamp_ns)
+    
+    shm_path = "/dev/shm/tsfi_cn_depth"
+    fd = os.open(shm_path, os.O_CREAT | os.O_RDWR, 0o666)
+    try:
+        os.ftruncate(fd, len(header) + 786432) # Keep exact size of 512x512 payload
+        os.write(fd, header + raw_data)
+    finally:
+        os.close(fd)
 
 def get_shade(color, factor):
     return tuple(min(255, int(c * factor)) for c in color)
@@ -41,38 +59,39 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
 
 def generate_voxel_shape(desc, seed_str=None):
     desc_lower = desc.lower()
-    voxels = []
     
-    # 0. BOZO Clown Face
-    if "bozo" in desc_lower or "clown" in desc_lower:
-        voxels.append((0, 0, 0, 1)) # Nose
+    def get_bozo():
+        v = []
+        v.append((0, 0, 0, 1)) # Nose
         for z in range(-1, 2):
             for x in range(-1, 2):
                 for y in range(-1, 2):
                     if (x, y, z) != (0, 0, 0) and (x, y, z) != (0, 0, 1):
-                        voxels.append((x, y, z, 1))
+                        v.append((x, y, z, 1))
         for z in range(-1, 3):
             for y in range(-1, 2):
-                voxels.append((-2, y, z, 0))
-                voxels.append((2, y, z, 0))
-        voxels.append((-1, -1, -2, 0))
-        voxels.append((0, -1, -2, 0))
-        voxels.append((1, -1, -2, 0))
-        voxels.append((-2, -1, -1, 0))
-        voxels.append((2, -1, -1, 0))
+                v.append((-2, y, z, 0))
+                v.append((2, y, z, 0))
+        v.append((-1, -1, -2, 0))
+        v.append((0, -1, -2, 0))
+        v.append((1, -1, -2, 0))
+        v.append((-2, -1, -1, 0))
+        v.append((2, -1, -1, 0))
+        return v
 
-    # 1. Animal / Dog / Inu
-    elif "inu" in desc_lower or "dog" in desc_lower or "pinu" in desc_lower or "puppy" in desc_lower:
+    def get_inu():
+        v = []
         for x in range(-1, 2):
             for y in range(-1, 2):
-                voxels.append((x, y, -1, 0))
-        voxels.append((-2, -2, 0, 0))
-        voxels.append((-1, -3, 0, 1))
-        voxels.append((1, -3, 0, 1))
-        voxels.append((2, -2, 0, 0))
-        
-    # 2. Yin Yang
-    elif "yinyang" in desc_lower or "yyang" in desc_lower or ("yin" in desc_lower and "yang" in desc_lower):
+                v.append((x, y, -1, 0))
+        v.append((-2, -2, 0, 0))
+        v.append((-1, -3, 0, 1))
+        v.append((1, -3, 0, 1))
+        v.append((2, -2, 0, 0))
+        return v
+
+    def get_yinyang():
+        v = []
         for z in range(-1, 2):
             for x in range(-3, 4):
                 for y in range(-3, 4):
@@ -82,183 +101,199 @@ def generate_voxel_shape(desc, seed_str=None):
                             is_white = False
                         elif x == 0 and y == -2:
                             is_white = True
-                        voxels.append((x, y, z, 1 if is_white else 0))
-                        
-    # 3. Poop / Poo
-    elif "poop" in desc_lower or "poo" in desc_lower or "p0op" in desc_lower or "po0p" in desc_lower:
+                        v.append((x, y, z, 1 if is_white else 0))
+        return v
+
+    def get_poop():
+        v = []
         for z in range(-2, 3):
             r = 3 - (z + 2)
             if r < 0: r = 0
             for x in range(-r, r+1):
                 for y in range(-r, r+1):
                     if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 0 if z % 2 == 0 else 1))
-                        
-    # 4. Dinosaur / Dino
-    elif "dino" in desc_lower or "dinosaur" in desc_lower:
+                        v.append((x, y, z, 0 if z % 2 == 0 else 1))
+        return v
+
+    def get_dino():
+        v = []
         for z in range(-2, 3):
             for x in range(-2, 3):
                 for y in range(-2, 3):
-                    voxels.append((x, y, z, 0))
+                    v.append((x, y, z, 0))
         for z in range(-1, 2):
             for x in range(-2, 3):
-                voxels.append((x, 3, z, 0))
-        voxels.append((-1, 2, 2, 1))
-        voxels.append((1, 2, 2, 1))
-        
-    # 5. Tree / Forest / Wildlife / Refuge
-    elif "wildlife" in desc_lower or "refuge" in desc_lower or "tree" in desc_lower or "forest" in desc_lower or "🌲" in desc_lower or "wood" in desc_lower or "nature" in desc_lower:
+                v.append((x, 3, z, 0))
+        v.append((-1, 2, 2, 1))
+        v.append((1, 2, 2, 1))
+        return v
+
+    def get_tree():
+        v = []
         for z in range(-3, 0):
-            voxels.append((0, 0, z, 0))
+            v.append((0, 0, z, 0))
         for z in range(0, 4):
             r = 3 - z
             for x in range(-r, r+1):
                 for y in range(-r, r+1):
                     if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 1))
-                        
-    # 6. Star Gazer
-    elif "stargazer" in desc_lower or "gazer" in desc_lower or "star" in desc_lower or "spark" in desc_lower:
+                        v.append((x, y, z, 1))
+        return v
+
+    def get_star():
+        v = []
         for x in range(-1, 2):
             for y in range(-1, 2):
                 for z in range(-1, 2):
                     if abs(x)+abs(y)+abs(z) <= 1:
-                        voxels.append((x, y, z, 1))
+                        v.append((x, y, z, 1))
         for d in range(-3, 4):
             if abs(d) > 1:
-                voxels.append((d, 0, 0, 0))
-                voxels.append((0, d, 0, 0))
-                voxels.append((0, 0, d, 0))
-                
-    # 7. Tits
-    elif "tits" in desc_lower or "doubledd" in desc_lower:
+                v.append((d, 0, 0, 0))
+                v.append((0, d, 0, 0))
+                v.append((0, 0, d, 0))
+        return v
+
+    def get_tits():
+        v = []
         for z in range(-1, 2):
             for x in range(-3, 0):
                 for y in range(-2, 3):
                     if (x+1.5)**2 + y**2 + z**2 <= 2.25:
-                        voxels.append((x, y, z, 0))
+                        v.append((x, y, z, 0))
             for x in range(1, 4):
                 for y in range(-2, 3):
                     if (x-1.5)**2 + y**2 + z**2 <= 2.25:
-                        voxels.append((x, y, z, 0))
-        voxels.append((-2, 0, 1, 1))
-        voxels.append((2, 0, 1, 1))
-        
-    # 8. Printer / Press
-    elif "printer" in desc_lower or "press" in desc_lower:
+                        v.append((x, y, z, 0))
+        v.append((-2, 0, 1, 1))
+        v.append((2, 0, 1, 1))
+        return v
+
+    def get_printer():
+        v = []
         for x in range(-2, 3):
             for y in range(-2, 3):
                 for z in range(-3, 1):
-                    voxels.append((x, y, z, 0))
+                    v.append((x, y, z, 0))
         for y in range(-1, 2):
-            voxels.append((0, y, 1, 1))
-            voxels.append((0, y, 2, 1))
-            
-    # 9. Ghost / Shadow
-    elif "shadow" in desc_lower or "ghost" in desc_lower or "phantom" in desc_lower or "specter" in desc_lower:
+            v.append((0, y, 1, 1))
+            v.append((0, y, 2, 1))
+        return v
+
+    def get_ghost():
+        v = []
         for z in range(-2, 3):
             r = 2 if z >= 0 else 1
             for x in range(-r, r+1):
                 for y in range(-r, r+1):
                     if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 0))
-        voxels.append((-1, 0, -3, 0))
-        voxels.append((1, 0, -3, 0))
-        voxels.append((-1, 1, 1, 1))
-        voxels.append((1, 1, 1, 1))
-        
-    # 10. Firefly / Fly
-    elif "firefly" in desc_lower or "fly" in desc_lower or "bug" in desc_lower or "insect" in desc_lower:
+                        v.append((x, y, z, 0))
+        v.append((-1, 0, -3, 0))
+        v.append((1, 0, -3, 0))
+        v.append((-1, 1, 1, 1))
+        v.append((1, 1, 1, 1))
+        return v
+
+    def get_firefly():
+        v = []
         for z in range(-1, 2):
-            voxels.append((0, 0, z, 0))
-        voxels.append((0, 0, -2, 1))
-        voxels.append((-1, 0, 0, 1))
-        voxels.append((1, 0, 0, 1))
-        voxels.append((-2, 0, 1, 1))
-        voxels.append((2, 0, 1, 1))
-        
-    # 11. Key
-    elif "key" in desc_lower:
+            v.append((0, 0, z, 0))
+        v.append((0, 0, -2, 1))
+        v.append((-1, 0, 0, 1))
+        v.append((1, 0, 0, 1))
+        v.append((-2, 0, 1, 1))
+        v.append((2, 0, 1, 1))
+        return v
+
+    def get_key():
+        v = []
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 2 <= x*x + y*y <= 5:
-                    voxels.append((x, y, 2, 0))
+                    v.append((x, y, 2, 0))
         for z in range(-3, 2):
-            voxels.append((0, 0, z, 0))
-        voxels.append((1, 0, -2, 0))
-        voxels.append((2, 0, -2, 1))
-        voxels.append((1, 0, -1, 0))
-        
-    # 12. Sword
-    elif "sword" in desc_lower or "blade" in desc_lower or "dirk" in desc_lower or "dagger" in desc_lower or "weapon" in desc_lower:
+            v.append((0, 0, z, 0))
+        v.append((1, 0, -2, 0))
+        v.append((2, 0, -2, 1))
+        v.append((1, 0, -1, 0))
+        return v
+
+    def get_sword():
+        v = []
         for z in range(-1, 4):
-            voxels.append((0, 0, z, 1))
+            v.append((0, 0, z, 1))
         for x in range(-2, 3):
-            voxels.append((x, 0, -2, 0))
-        voxels.append((0, 0, -3, 0))
-        voxels.append((0, 0, -4, 0))
-        
-    # 13. Shield
-    elif "shield" in desc_lower or "sentinel" in desc_lower or "vault" in desc_lower or "guard" in desc_lower or "defense" in desc_lower or "protect" in desc_lower:
+            v.append((x, 0, -2, 0))
+        v.append((0, 0, -3, 0))
+        v.append((0, 0, -4, 0))
+        return v
+
+    def get_shield():
+        v = []
         for z in range(-2, 3):
             width = 2 if z >= 0 else 2 + z
             for x in range(-width, width + 1):
-                voxels.append((x, 0, z, 0))
+                v.append((x, 0, z, 0))
                 if x == 0 and z == 0:
-                    voxels.append((x, 0, z, 1))
-                    
-    # 14. Crown
-    elif "crown" in desc_lower or "king" in desc_lower or "princess" in desc_lower or "queen" in desc_lower or "emperor" in desc_lower:
+                    v.append((x, 0, z, 1))
+        return v
+
+    def get_crown():
+        v = []
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 3 <= x*x + y*y <= 5:
-                    voxels.append((x, y, -2, 0))
-        voxels.append((-2, 0, -1, 0))
-        voxels.append((-2, 0, 0, 1))
-        voxels.append((2, 0, -1, 0))
-        voxels.append((2, 0, 0, 1))
-        voxels.append((0, 2, -1, 0))
-        voxels.append((0, 2, 0, 1))
-        voxels.append((0, -2, -1, 0))
-        voxels.append((0, -2, 0, 1))
-        voxels.append((0, 0, 1, 1))
-        
-    # 15. Gas/Flame
-    elif "gas" in desc_lower or "fuel" in desc_lower or "fire" in desc_lower or "burn" in desc_lower or "flame" in desc_lower or "plasma" in desc_lower:
+                    v.append((x, y, -2, 0))
+        v.append((-2, 0, -1, 0))
+        v.append((-2, 0, 0, 1))
+        v.append((2, 0, -1, 0))
+        v.append((2, 0, 0, 1))
+        v.append((0, 2, -1, 0))
+        v.append((0, 2, 0, 1))
+        v.append((0, -2, -1, 0))
+        v.append((0, -2, 0, 1))
+        v.append((0, 0, 1, 1))
+        return v
+
+    def get_gas():
+        v = []
         for z in range(-3, 4):
             max_r = 3 - (z + 3)//2
             for x in range(-max_r, max_r + 1):
                 for y in range(-max_r, max_r + 1):
                     if x*x + y*y <= max_r*max_r:
                         is_inner = (x*x + y*y <= 1) and z < 2
-                        voxels.append((x, y, z, 1 if is_inner else 0))
-                        
-    # 16. Heart
-    elif "heart" in desc_lower or "love" in desc_lower or "peace" in desc_lower or "humanity" in desc_lower:
+                        v.append((x, y, z, 1 if is_inner else 0))
+        return v
+
+    def get_heart():
+        v = []
         for x in (-1, 1):
             for y in (-1, 1):
-                voxels.append((x, y, 2, 0))
+                v.append((x, y, 2, 0))
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if abs(x) + abs(y) <= 3:
-                    voxels.append((x, y, 1, 0))
+                    v.append((x, y, 1, 0))
                 if abs(x) + abs(y) <= 2:
-                    voxels.append((x, y, 0, 1))
+                    v.append((x, y, 0, 1))
                 if abs(x) + abs(y) <= 1:
-                    voxels.append((x, y, -1, 0))
-        voxels.append((0, 0, -2, 0))
-        
-    # 17. Droplet
-    elif "drop" in desc_lower or "water" in desc_lower or "liquid" in desc_lower or "pool" in desc_lower or "fluid" in desc_lower:
+                    v.append((x, y, -1, 0))
+        v.append((0, 0, -2, 0))
+        return v
+
+    def get_drop():
+        v = []
         for z in range(-3, 4):
             r = 3 - (z + 3)//2
             for x in range(-r, r+1):
                 for y in range(-r, r+1):
                     if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
-                        
-    # 18. Stablecoin/USD/Dollar
-    elif "usd" in desc_lower or "dai" in desc_lower or "usdc" in desc_lower or "usdt" in desc_lower or "stable" in desc_lower or "dollar" in desc_lower or "cash" in desc_lower or "money" in desc_lower:
+                        v.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
+        return v
+
+    def get_usd():
+        v = []
         s_points = [
             (1, 0, 2), (0, 0, 2), (-1, 0, 2),
             (-1, 0, 1),
@@ -267,12 +302,13 @@ def generate_voxel_shape(desc, seed_str=None):
             (1, 0, -2), (0, 0, -2), (-1, 0, -2)
         ]
         for x, y, z in s_points:
-            voxels.append((x, y, z, 0))
+            v.append((x, y, z, 0))
         for z in range(-3, 4):
-            voxels.append((0, 0, z, 1))
+            v.append((0, 0, z, 1))
+        return v
 
-    # 19. Crypto / Bitcoin / Ethereum / Coin / Token Icon
-    elif "btc" in desc_lower or "bitcoin" in desc_lower or "eth" in desc_lower or "ethereum" in desc_lower or "bnb" in desc_lower or "pls" in desc_lower or "pulse" in desc_lower or "coin" in desc_lower:
+    def get_crypto():
+        v = []
         for z in range(-1, 2):
             for x in range(-3, 4):
                 for y in range(-3, 4):
@@ -280,58 +316,163 @@ def generate_voxel_shape(desc, seed_str=None):
                     if d <= 9:
                         is_glyph = (x == -1 and -2 <= y <= 2) or (x >= 0 and y in (-2, 0) and x*x <= 4) or (x == 2 and y in (-1,))
                         if is_glyph:
-                            voxels.append((x, y, z, 1))
+                            v.append((x, y, z, 1))
                         else:
-                            voxels.append((x, y, z, 0))
+                            v.append((x, y, z, 0))
+        return v
 
-    # 20. Bear
-    elif "bear" in desc_lower:
+    def get_bear():
+        v = []
         for z in range(-1, 2):
             for x in range(-2, 3):
                 for y in range(-2, 3):
                     if x*x + y*y <= 4:
-                        voxels.append((x, y, z, 0))
-        voxels.append((0, -2, -1, 1))
-        voxels.append((0, -3, -1, 1))
-        voxels.append((-2, 0, 2, 0))
-        voxels.append((2, 0, 2, 0))
+                        v.append((x, y, z, 0))
+        v.append((0, -2, -1, 1))
+        v.append((0, -3, -1, 1))
+        v.append((-2, 0, 2, 0))
+        v.append((2, 0, 2, 0))
+        return v
 
-    # 21. UFO / Flying Saucer
-    elif "ufo" in desc_lower or "alien" in desc_lower or "space" in desc_lower or "cosmos" in desc_lower or "galaxy" in desc_lower:
+    def get_ufo():
+        v = []
         for x in range(-3, 4):
             for y in range(-3, 4):
                 if x*x + y*y <= 9:
-                    voxels.append((x, y, 0, 0))
-        voxels.append((0, 0, 1, 1))
-        voxels.append((0, 1, 1, 1))
-        voxels.append((0, -1, 1, 1))
-        voxels.append((1, 0, 1, 1))
-        voxels.append((-1, 0, 1, 1))
-        voxels.append((0, 0, 2, 1))
+                    v.append((x, y, 0, 0))
+        v.append((0, 0, 1, 1))
+        v.append((0, 1, 1, 1))
+        v.append((0, -1, 1, 1))
+        v.append((1, 0, 1, 1))
+        v.append((-1, 0, 1, 1))
+        v.append((0, 0, 2, 1))
+        return v
 
-    # 22. Pirate / Skull
-    elif "pirate" in desc_lower or "skull" in desc_lower or "caw" in desc_lower or "death" in desc_lower:
+    def get_pirate():
+        v = []
         for z in range(0, 3):
             for x in range(-2, 3):
                 for y in range(-2, 3):
                     if x*x + y*y <= 4:
-                        voxels.append((x, y, z, 0))
+                        v.append((x, y, z, 0))
         for x in range(-1, 2):
-            voxels.append((x, -1, -1, 0))
-            voxels.append((x, -1, -2, 0))
-        voxels.append((-1, -2, 0, 1))
-        voxels.append((1, -2, 0, 1))
+            v.append((x, -1, -1, 0))
+            v.append((x, -1, -2, 0))
+        v.append((-1, -2, 0, 1))
+        v.append((1, -2, 0, 1))
+        return v
 
-    # 23. Food / Pizza
-    elif "food" in desc_lower or "pizza" in desc_lower or "burger" in desc_lower:
+    def get_food():
+        v = []
         for z in range(-1, 1):
             for y in range(-3, 4):
                 max_x = y + 3
                 for x in range(-max_x, max_x + 1):
                     is_crust = y == 3
-                    voxels.append((x, y, z, 1 if is_crust else 0))
+                    v.append((x, y, z, 1 if is_crust else 0))
+        return v
 
-    else:  # Procedural unique geometric shape based on seed_str/address hash
+    def get_goat():
+        v = []
+        for z in range(-1, 1):
+            for y in range(-3, 1):
+                v.append((0, y, z, 0))
+        for x in (-1, 0, 1):
+            v.append((x, 0, 1, 0))
+        v.append((-1, 1, 2, 1))
+        v.append((-2, 2, 3, 1))
+        v.append((1, 1, 2, 1))
+        v.append((2, 2, 3, 1))
+        v.append((0, -2, -2, 1))
+        return v
+
+    def get_mirror():
+        v = []
+        for z in range(-3, 4):
+            for x in range(-2, 3):
+                is_edge = (abs(x) == 2) or (abs(z) == 3)
+                if is_edge:
+                    v.append((x, 0, z, 1))
+                else:
+                    v.append((x, 0, z, 0))
+        return v
+
+    def get_beast():
+        v = []
+        for z in range(-2, 3):
+            for x in range(-1, 2):
+                for y in range(-1, 2):
+                    v.append((x, y, z, 0))
+        v.append((-2, 0, 1, 1))
+        v.append((-3, 0, 2, 1))
+        v.append((2, 0, 1, 1))
+        v.append((3, 0, 2, 1))
+        v.append((-1, -1, 3, 1))
+        v.append((1, -1, 3, 1))
+        return v
+
+    generators = [
+        (["bozo", "clown"], get_bozo, False),
+        (["inu", "dog", "pinu", "puppy"], get_inu, False),
+        (["yinyang", "yyang", "yin", "yang"], get_yinyang, False),
+        (["poop", "poo", "p0op", "po0p"], get_poop, False),
+        (["dino", "dinosaur"], get_dino, False),
+        (["wildlife", "refuge", "tree", "forest", "wood", "nature"], get_tree, False),
+        (["stargazer", "gazer", "star", "spark"], get_star, False),
+        (["tits", "doubledd"], get_tits, False),
+        (["printer", "press"], get_printer, False),
+        (["shadow", "ghost", "phantom", "specter"], get_ghost, False),
+        (["firefly", "fly", "bug", "insect"], get_firefly, False),
+        (["key"], get_key, False),
+        (["sword", "blade", "dirk", "dagger", "weapon"], get_sword, False),
+        (["shield", "sentinel", "vault", "guard", "defense", "protect"], get_shield, False),
+        (["crown", "king", "princess", "queen", "emperor"], get_crown, False),
+        (["gas", "fuel", "fire", "burn", "flame", "plasma"], get_gas, False),
+        (["heart", "love", "peace", "humanity"], get_heart, False),
+        (["drop", "water", "liquid", "pool", "fluid"], get_drop, False),
+        (["usd", "dai", "usdc", "usdt", "stable", "dollar", "cash", "money"], get_usd, True),
+        (["btc", "bitcoin", "eth", "ethereum", "bnb", "pls", "pulse", "coin"], get_crypto, True),
+        (["bear", "teddy", "babybear"], get_bear, False),
+        (["ufo", "alien", "space", "cosmos", "galaxy"], get_ufo, False),
+        (["pirate", "skull", "caw", "death"], get_pirate, False),
+        (["food", "pizza", "burger"], get_food, False),
+        (["goat"], get_goat, False),
+        (["mirror", "glass", "reflect"], get_mirror, False),
+        (["beast", "monster", "creature", "dragon", "demon"], get_beast, False)
+    ]
+
+    specific_matches = []
+    generic_matches = []
+    for keywords, gen_func, is_generic in generators:
+        if any(kw in desc_lower for kw in keywords):
+            if is_generic:
+                generic_matches.append(gen_func())
+            else:
+                specific_matches.append(gen_func())
+
+    # Filter: if any specific templates match, drop the generic "coin" templates
+    if specific_matches:
+        matched_shapes = specific_matches
+    else:
+        matched_shapes = generic_matches
+
+    voxels = []
+    if len(matched_shapes) == 1:
+        voxels = matched_shapes[0]
+    elif len(matched_shapes) > 1:
+        # Dynamically offset multiple matching concepts horizontally (isometric screen-space)
+        N = len(matched_shapes)
+        d_step = 3.5
+        start_d = -((N - 1) * d_step) / 2.0
+        for i, shape_voxels in enumerate(matched_shapes):
+            offset_d = start_d + i * d_step
+            for vx, vy, vz, vc in shape_voxels:
+                # Apply opposite offsets on X and Y for pure screen-space horizontal shift
+                nx = vx + offset_d
+                ny = vy - offset_d
+                voxels.append((nx, ny, vz, vc))
+    elif len(matched_shapes) == 0:
+        # Procedural unique geometric shape based on seed_str/address hash
         import hashlib
         h = hashlib.md5((seed_str if seed_str else desc).encode('utf-8')).hexdigest()
         val = int(h, 16)
@@ -414,13 +555,57 @@ def eth_call(to_address, data):
         pass
     return None
 
+def resolve_selector_via_abi(signature, default_hex):
+    # ABI contract address: 0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C
+    # Encode(string) selector: 0xc25b8f37
+    try:
+        sig_bytes = signature.encode('utf-8')
+        sig_len = len(sig_bytes)
+        offset_hex = '0000000000000000000000000000000000000000000000000000000000000020'
+        len_hex = hex(sig_len)[2:].rjust(64, '0')
+        sig_hex = sig_bytes.hex()
+        pad_len = 64 * ((sig_len + 31) // 32)
+        sig_hex = sig_hex.ljust(pad_len, '0')
+        
+        call_data = '0xc25b8f37' + offset_hex + len_hex + sig_hex
+        res = eth_call('0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C', call_data)
+        if res and len(res) >= 10:
+            return '0x' + res[2:10]
+    except:
+        pass
+    return default_hex
+
 def fetch_onchain_yue_stats(token_address):
+    cache_dir = "tmp"
+    cache_path = os.path.join(cache_dir, "yue_stats_cache.json")
+    
+    # Load cache if exists
+    cache = {}
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, "r") as f:
+                cache = json.load(f)
+        except:
+            pass
+            
+    addr_key = token_address.lower()
+    if addr_key in cache:
+        print(f"[Synthesizer] YUE stats cache hit for {token_address}: {cache[addr_key]}")
+        return cache[addr_key]["hypobar"], cache[addr_key]["epibar"]
+
     def pad_address(addr):
         clean = addr.lower().replace("0x", "")
         return clean.rjust(64, "0")
 
+    # Resolve selectors dynamically from ABI registry
+    sel_new = resolve_selector_via_abi("New(address)", "0xddb59200")
+    sel_owner = resolve_selector_via_abi("owner()", "0x8da87903")
+    sel_yan = resolve_selector_via_abi("Yan(address)", "0x18025d89")
+    sel_tt = resolve_selector_via_abi("TreasuryTokens(address)", "0x5f5c5585")
+    sel_bar = resolve_selector_via_abi("Bar(address)", "0xc253aded")
+
     token_padded = pad_address(token_address)
-    call_data = "0xddb59200" + token_padded
+    call_data = sel_new + token_padded
     
     # 1. Resolve QING address
     res = eth_call("0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75", call_data)
@@ -429,17 +614,25 @@ def fetch_onchain_yue_stats(token_address):
         qing_address = "0x" + res[-40:]
     
     if not qing_address:
+        # Cache the 0,0 stats for this address
+        try:
+            os.makedirs(cache_dir, exist_ok=True)
+            cache[addr_key] = {"hypobar": 0, "epibar": 0, "timestamp": time.time()}
+            with open(cache_path, "w") as f:
+                json.dump(cache, f, indent=2)
+        except:
+            pass
         return 0, 0
 
     # 2. Resolve YUE addresses
     yue_addresses = []
-    owner_res = eth_call(token_address, "0x8da87903")
+    owner_res = eth_call(token_address, sel_owner)
     owner_address = None
     if owner_res and len(owner_res) >= 66:
         owner_address = "0x" + owner_res[-40:]
     
     if owner_address and owner_address != "0x0000000000000000000000000000000000000000":
-        chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", "0x18025d89" + pad_address(owner_address))
+        chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", sel_yan + pad_address(owner_address))
         if chan_res and len(chan_res) >= 66:
             yue_addr = "0x" + chan_res[-40:]
             if yue_addr != "0x0000000000000000000000000000000000000000":
@@ -454,11 +647,11 @@ def fetch_onchain_yue_stats(token_address):
         "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62"
     ]
     for m in minters:
-        tt_res = eth_call(m, "0x5f5c5585" + pad_address(token_address))
+        tt_res = eth_call(m, sel_tt + pad_address(token_address))
         if tt_res and len(tt_res) >= 66:
             m_owner = "0x" + tt_res[-40:]
             if m_owner and m_owner != "0x0000000000000000000000000000000000000000":
-                chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", "0x18025d89" + pad_address(m_owner))
+                chan_res = eth_call("0xe250bf9729076B14A8399794B61C72d0F4AeFcd8", sel_yan + pad_address(m_owner))
                 if chan_res and len(chan_res) >= 66:
                     yue_addr = "0x" + chan_res[-40:]
                     if yue_addr != "0x0000000000000000000000000000000000000000":
@@ -473,7 +666,7 @@ def fetch_onchain_yue_stats(token_address):
     # 3. Query Bar(qing) stats
     max_hypobar = 0
     max_epibar = 0
-    bar_call_data = "0xc253aded" + pad_address(qing_address)
+    bar_call_data = sel_bar + pad_address(qing_address)
     for yue_addr in yue_addresses:
         bar_res = eth_call(yue_addr, bar_call_data)
         if bar_res and len(bar_res) >= 130:
@@ -486,11 +679,29 @@ def fetch_onchain_yue_stats(token_address):
                     max_epibar = e_val
             except:
                 pass
+    # Write to local cache
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        cache[addr_key] = {"hypobar": max_hypobar, "epibar": max_epibar, "timestamp": time.time()}
+        with open(cache_path, "w") as f:
+            json.dump(cache, f, indent=2)
+    except Exception as e:
+        print(f"[WARNING] Failed to write YUE stats cache: {e}")
+
     return max_hypobar, max_epibar
 
-def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None, hypobar=0, epibar=0):
+def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None, hypobar=0, epibar=0, is_deep_render=False):
     print("=== TSFi Autonomous VLM Synthesizer Frame Director ===")
     
+    # 1. Load DNA attributes early to determine voxel card status
+    dna_path = "tsfi2-deepseek/assets/dragon.dna"
+    dna = load_dna_record(dna_path, frame_idx)
+    if not dna:
+        dna = {
+            'g_x': 0.0, 'g_y': 0.0, 'stretch': 1.0, 'pulse': 0.0, 'fire': 0.0, 'light': 1.0,
+            'r': 200, 'g': 30, 'b': 45, 'er': 255, 'eg': 215, 'eb': 0, 'ec': 2
+        }
+
     # Resolve token name/symbol dynamically if address is not provided
     if not address and prompt_override:
         import re
@@ -512,6 +723,72 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
                 except:
                     pass
 
+    is_token = False
+    is_minter = False
+    symbol_text = "TKN"
+    if prompt_override:
+        p_lower = prompt_override.lower()
+        if "currency token" in p_lower or "nonukes core" in p_lower:
+            is_token = True
+            symbol_text = prompt_override.split()[0].upper()
+        elif "minter" in p_lower:
+            is_minter = True
+
+    is_voxel_render = (dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255) or is_token or is_minter or address
+
+    # 2. Concurrently launch C++ Stable Diffusion worker to overlap model loading with stats/voxel rendering
+    sd_proc = None
+    cmd = []
+    raw_out = "tmp/vlm_sd_out.raw"
+    if is_voxel_render:
+        seed_str = address if address else (prompt_override if prompt_override else "default_token")
+        desc = ""
+        scale_color = (dna['r'], dna['g'], dna['b'], 255)
+        if address:
+            json_path = f"solidity/dysnomia/domain/data/{address.lower()}.json"
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r') as f:
+                        card_data = json.load(f)
+                        desc = card_data.get('desc', '')
+                        card_color = card_data.get('color')
+                        if card_color:
+                            hex_str = card_color.lstrip('#')
+                            scale_color = tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4)) + (255,)
+                except:
+                    pass
+        if not desc:
+            desc = prompt_override if prompt_override else seed_str
+
+        desc_for_voxel = prompt_override if prompt_override else desc
+        if is_minter and "minter" not in desc_for_voxel.lower() and "shield" not in desc_for_voxel.lower():
+            desc_for_voxel += " minter sentinel shield"
+
+        sd_prompt = (
+            f"Vibrant high-fidelity sci-fi trading card game art, cel-shaded neon vector style, representing '{desc_for_voxel}', "
+            f"bold retro 1980s futuristic cyber aesthetic, neon glows, clean vector outlines, hand-painted gouache coloration, masterpiece"
+        )
+        os.makedirs("tsfi2-deepseek/tmp", exist_ok=True)
+        worker_path = "./bin/tsfi_sd_worker"
+        cmd = [
+            worker_path,
+            sd_prompt,
+            raw_out,
+            "1", # use_shm = 1
+            "dream",
+            str(steps),
+            "euler_a",
+            str(cfg)
+        ]
+        print(f"[Synthesizer] Launching Stable Diffusion worker in background (Threads: 8): {' '.join(cmd)}")
+        try:
+            env = os.environ.copy()
+            env["SD_THREADS"] = "8"
+            sd_proc = subprocess.Popen(cmd, cwd="tsfi2-deepseek", env=env)
+        except Exception as e:
+            print(f"[WARNING] Failed starting SD worker concurrently: {e}")
+
+    # 3. Fetch YUE on-chain stats (blocks for ~3.2 seconds)
     if address and hypobar == 0 and epibar == 0:
         print(f"[Synthesizer] Fetching live YUE on-chain stats for address: {address}...")
         try:
@@ -519,15 +796,6 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             print(f"[Synthesizer] On-chain stats resolved: Hypobar={hypobar}, Epibar={epibar}")
         except Exception as e:
             print(f"[Synthesizer] Failed fetching YUE stats: {e}")
-    
-    # Load attributes
-    dna_path = "tsfi2-deepseek/assets/dragon.dna"
-    dna = load_dna_record(dna_path, frame_idx)
-    if not dna:
-        dna = {
-            'g_x': 0.0, 'g_y': 0.0, 'stretch': 1.0, 'pulse': 0.0, 'fire': 0.0, 'light': 1.0,
-            'r': 200, 'g': 30, 'b': 45, 'er': 255, 'eg': 215, 'eb': 0, 'ec': 2
-        }
 
     print(f"[Synthesizer] Context variables -> scale RGB({dna['r']},{dna['g']},{dna['b']}) | fire: {dna['fire']:.2f} | eyes: {dna['ec']}")
     
@@ -1004,6 +1272,51 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     # 3. Composite overlays
     bg_img.paste(overlay, (0, 0), overlay)
     
+    if is_voxel_render:
+        # Save a clean copy of the card template (stats sheet, frame, metadata)
+        card_template = bg_img.copy()
+
+        # Crop the left artwork viewport panel and feed it to the depth SHM at 512x512
+        art_panel = bg_img.crop((40, 40, 680, 680))
+        write_to_shm_depth(art_panel)
+        
+        # Synchronize with concurrent Stable Diffusion worker
+        print("[Synthesizer] Synchronizing with concurrent Stable Diffusion worker...")
+        try:
+            if sd_proc:
+                sd_proc.wait()
+                if sd_proc.returncode != 0:
+                    raise Exception(f"SD worker exited with code {sd_proc.returncode}")
+            else:
+                # Fallback if Popen failed
+                print(f"[Synthesizer] SD worker was not started early, running synchronously: {' '.join(cmd)}")
+                env = os.environ.copy()
+                env["SD_THREADS"] = "8"
+                subprocess.run(cmd, cwd="tsfi2-deepseek", env=env, check=True)
+            raw_path_adj = "tsfi2-deepseek/" + raw_out
+            if os.path.exists(raw_path_adj):
+                with open(raw_path_adj, 'rb') as f:
+                    raw_data = f.read()
+                if len(raw_data) == 1280 * 704 * 3:
+                    sd_img = Image.frombytes('RGB', (1280, 704), raw_data).resize((1280, 720))
+                    # Crop generated art from the left panel and paste it back to the template
+                    art_crop = sd_img.crop((40, 40, 680, 680))
+                    card_template.paste(art_crop, (40, 40))
+                    bg_img = card_template
+                elif len(raw_data) == 512 * 512 * 3:
+                    sd_img = Image.frombytes('RGB', (512, 512), raw_data).resize((640, 640))
+                    card_template.paste(sd_img, (40, 40))
+                    bg_img = card_template
+                else:
+                    print(f"[WARNING] SD output size mismatch: {len(raw_data)}")
+                
+                try:
+                    os.remove(raw_path_adj)
+                except:
+                    pass
+        except Exception as e:
+            print(f"[Synthesizer] SD worker failed, falling back to raw voxel card render: {e}")
+
     png_out = "assets/storybook/page_dragon_dna.png"
     bg_img.save(png_out)
     print(f"[Synthesizer] Composite page frame written to: {png_out}")
@@ -1013,6 +1326,42 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         custom_out = f"assets/{address.lower()}.png"
         bg_img.save(custom_out)
         print(f"[Synthesizer] Copied card art to custom destination: {custom_out}")
+
+    # 4. Trigger deeper background render if this was an initial fast render
+    if not is_deep_render and steps <= 4:
+        deep_steps = 15
+        print(f"[Synthesizer] Spawning deeper background render ({deep_steps} steps) to upgrade card quality...")
+        import sys
+        try:
+            bg_cmd = [
+                sys.executable,
+                os.path.abspath(__file__),
+                str(frame_idx),
+                "--steps", str(deep_steps),
+                "--cfg", str(cfg),
+                "--is-deep-render"
+            ]
+            if prompt_override:
+                bg_cmd.extend(["--prompt", prompt_override])
+            if address:
+                bg_cmd.extend(["--address", address])
+            if hypobar:
+                bg_cmd.extend(["--hypobar", str(hypobar)])
+            if epibar:
+                bg_cmd.extend(["--epibar", str(epibar)])
+
+            subprocess.Popen(
+                bg_cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                close_fds=True,
+                start_new_session=True
+            )
+            print("[Synthesizer] Background deep render spawned successfully.")
+        except Exception as e:
+            print(f"[WARNING] Failed spawning background deep render: {e}")
+
+    # 5. Initiate VLM Moondream interrogation check (Direct local detector fallback)
 
     # 4. Initiate VLM Moondream interrogation check (Direct local detector fallback)
     print("[Synthesizer] Running local VLM node verification...")
@@ -1044,6 +1393,7 @@ if __name__ == "__main__":
     parser.add_argument("--address", type=str, default=None)
     parser.add_argument("--hypobar", type=int, default=0)
     parser.add_argument("--epibar", type=int, default=0)
+    parser.add_argument("--is-deep-render", action="store_true", help="Is background deep render run")
     args = parser.parse_args()
     
-    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address, args.hypobar, args.epibar)
+    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address, args.hypobar, args.epibar, args.is_deep_render)

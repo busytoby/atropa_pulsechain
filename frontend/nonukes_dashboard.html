@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NoNukes PulseX Ecosystem Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
         :root {
             --bg-color: #030408;
@@ -442,6 +443,11 @@
             renderDashboard();
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
         async function showLpModal(address) {
             const modal = document.getElementById('lp-modal');
             const modalBody = document.getElementById('lp-modal-body');
@@ -454,11 +460,142 @@
                 }
                 const data = await response.json();
                 if (data.success) {
+                    let yueHtml = `
+                        <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                            <h3 style="color: var(--glow-magenta); font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Live YUE Score (Hypobar / Epibar)</h3>
+                            <div style="color: #64748b; font-size: 12px; margin-bottom: 10px;">Connecting to PulseChain node...</div>
+                        </div>
+                    `;
                     modalBody.innerHTML = `
                         <h2 style="color: #fff; margin-bottom: 15px;">Pool Details</h2>
-                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Address:</strong> <span style="font-family: monospace;">${data.address}</span></p>
-                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Reserves:</strong> ${data.reserves.token0} (${data.reserves.token0_symbol}) / ${data.reserves.token1} (${data.reserves.token1_symbol})</p>
+                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Address:</strong> <span style="font-family: monospace; font-size: 13px;">${data.address}</span></p>
+                        <p style="margin-bottom: 10px;"><strong style="color: var(--glow-cyan);">Reserves:</strong> ${data.reserves.token0} (${escapeHtml(data.reserves.token0_symbol)}) / ${data.reserves.token1} (${escapeHtml(data.reserves.token1_symbol)})</p>
+                        <div id="yue-scores-container">${yueHtml}</div>
                     `;
+
+                    // Run the asynchronous on-chain query directly from the client side
+                    (async () => {
+                        try {
+                            const MAP_ADDR = "0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75";
+                            const CHAN_ADDR = "0xe250bf9729076B14A8399794B61C72d0F4AeFcd8";
+                            const provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
+                            
+                            const mapContract = new ethers.Contract(MAP_ADDR, [
+                                "function New(address Integrative) external returns(address)"
+                            ], provider);
+
+                            const chanContract = new ethers.Contract(CHAN_ADDR, [
+                                "function Yan(address) external view returns(address)"
+                            ], provider);
+
+                            const minters = [
+                                "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B",
+                                "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354",
+                                "0x0b92aD7eD0da6c44Bf71B3FCEe668D1670000Ff5",
+                                "0x0c4F73328dFCECfbecf235C9F78A4494a7EC5ddC",
+                                "0x394c3D5990cEfC7Be36B82FDB07a7251ACe61cc7",
+                                "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62"
+                            ];
+
+                            async function getQingAddress(tokenAddr) {
+                                try {
+                                    await mapContract.New.staticCall(tokenAddr);
+                                    return null; // Not registered yet
+                                } catch (err) {
+                                    const errData = err.data || (err.error && err.error.data) || err.revert?.data;
+                                    if (errData) {
+                                        const iface = new ethers.Interface(["error QingAlreadyExists(address Token, address Qing)"]);
+                                        try {
+                                            const parsed = iface.parseError(errData);
+                                            if (parsed && parsed.name === "QingAlreadyExists") {
+                                                return parsed.args[1];
+                                            }
+                                        } catch (e) {}
+                                    }
+                                }
+                                return null;
+                            }
+
+                            async function resolveYueContract(tokenAddr) {
+                                // 1. Try generic owner call
+                                try {
+                                    const c = new ethers.Contract(tokenAddr, ["function owner() external view returns (address)"], provider);
+                                    const owner = await c.owner();
+                                    if (owner && owner !== ethers.ZeroAddress) {
+                                        const yue = await chanContract.Yan(owner);
+                                        if (yue && yue !== ethers.ZeroAddress) return yue;
+                                    }
+                                } catch (e) {}
+                                
+                                // 2. Try PKMinter mapping
+                                for (const m of minters) {
+                                    try {
+                                        const c = new ethers.Contract(m, ["function TreasuryTokens(address) external view returns (address)"], provider);
+                                        const owner = await c.TreasuryTokens(tokenAddr);
+                                        if (owner && owner !== ethers.ZeroAddress) {
+                                            const yue = await chanContract.Yan(owner);
+                                            if (yue && yue !== ethers.ZeroAddress) return yue;
+                                        }
+                                    } catch (e) {}
+                                }
+
+                                // 3. Fallback to hardcoded candidates if owner is not resolved
+                                const hardcodedYueList = [
+                                    "0x4a32b4391db5771a3a3682183a6b109d516f723f", // WIZYUE?
+                                    "0x424d379CFEe2b79b9D66bf9f94cC51AE0165554B", // generic
+                                    "0x4f94f27d9655411927e72799c6e797989a86f2d4"  // YUE_TEST
+                                ];
+                                return hardcodedYueList;
+                            }
+
+                            async function queryScoreForToken(tokenAddr) {
+                                const qing = await getQingAddress(tokenAddr);
+                                if (!qing) return { hypobar: 0, epibar: 0 };
+                                const yueRes = await resolveYueContract(tokenAddr);
+                                const yueAddresses = Array.isArray(yueRes) ? yueRes : [yueRes];
+                                
+                                let maxHypobar = 0n;
+                                let maxEpibar = 0n;
+                                for (const yueAddr of yueAddresses) {
+                                    try {
+                                        const yue = new ethers.Contract(yueAddr, ["function Bar(address) external view returns (uint256, uint256)"], provider);
+                                        const bar = await yue.Bar(qing);
+                                        if (bar[0] > maxHypobar) maxHypobar = bar[0];
+                                        if (bar[1] > maxEpibar) maxEpibar = bar[1];
+                                    } catch (e) {}
+                                }
+                                return { hypobar: maxHypobar.toString(), epibar: maxEpibar.toString() };
+                            }
+
+                            const score0 = await queryScoreForToken(data.reserves.token0_addr || "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62");
+                            const score1 = await queryScoreForToken(data.reserves.token1_addr || data.reserves.token1);
+
+                            const container = document.getElementById('yue-scores-container');
+                            container.innerHTML = `
+                                <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                                    <h3 style="color: var(--glow-magenta); font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Live YUE Score (Hypobar / Epibar)</h3>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1);">
+                                            <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token0_symbol)}</div>
+                                            <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
+                                                <div>Hypobar: ${score0.hypobar}</div>
+                                                <div>Epibar: ${score0.epibar}</div>
+                                            </div>
+                                        </div>
+                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1);">
+                                            <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token1_symbol)}</div>
+                                            <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
+                                                <div>Hypobar: ${score0.hypobar === "0" && score1.hypobar === "0" ? "0" : score1.hypobar}</div>
+                                                <div>Epibar: ${score0.epibar === "0" && score1.epibar === "0" ? "0" : score1.epibar}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } catch (err) {
+                            console.error("Client side YUE score query failed", err);
+                        }
+                    })();
                 } else {
                     throw new Error("Failed fetching pool reserves");
                 }

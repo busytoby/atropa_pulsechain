@@ -42,325 +42,8 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     draw.line([center, left_top], fill=outline_color, width=1)
     draw.line([center, right_top], fill=outline_color, width=1)
 
-def generate_voxel_shape(desc, seed_str=None):
-    desc_lower = desc.lower()
-    voxels = []
-    
-    # 0. BOZO Clown Face
-    if "bozo" in desc_lower or "clown" in desc_lower:
-        voxels.append((0, 0, 0, 1)) # Nose
-        for z in range(-1, 2):
-            for x in range(-1, 2):
-                for y in range(-1, 2):
-                    if (x, y, z) != (0, 0, 0) and (x, y, z) != (0, 0, 1):
-                        voxels.append((x, y, z, 1))
-        for z in range(-1, 3):
-            for y in range(-1, 2):
-                voxels.append((-2, y, z, 0))
-                voxels.append((2, y, z, 0))
-        voxels.append((-1, -1, -2, 0))
-        voxels.append((0, -1, -2, 0))
-        voxels.append((1, -1, -2, 0))
-        voxels.append((-2, -1, -1, 0))
-        voxels.append((2, -1, -1, 0))
-
-    # 1. Animal / Dog / Inu
-    elif "inu" in desc_lower or "dog" in desc_lower or "pinu" in desc_lower or "puppy" in desc_lower:
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                voxels.append((x, y, -1, 0))
-        voxels.append((-2, -2, 0, 0))
-        voxels.append((-1, -3, 0, 1))
-        voxels.append((1, -3, 0, 1))
-        voxels.append((2, -2, 0, 0))
-        
-    # 2. Yin Yang
-    elif "yinyang" in desc_lower or "yyang" in desc_lower or ("yin" in desc_lower and "yang" in desc_lower):
-        for z in range(-1, 2):
-            for x in range(-3, 4):
-                for y in range(-3, 4):
-                    if x*x + y*y <= 9:
-                        is_white = y > 0 or (y == 0 and x > 0)
-                        if x == 0 and y == 2:
-                            is_white = False
-                        elif x == 0 and y == -2:
-                            is_white = True
-                        voxels.append((x, y, z, 1 if is_white else 0))
-                        
-    # 3. Poop / Poo
-    elif "poop" in desc_lower or "poo" in desc_lower or "p0op" in desc_lower or "po0p" in desc_lower:
-        for z in range(-2, 3):
-            r = 3 - (z + 2)
-            if r < 0: r = 0
-            for x in range(-r, r+1):
-                for y in range(-r, r+1):
-                    if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 0 if z % 2 == 0 else 1))
-                        
-    # 4. Dinosaur / Dino
-    elif "dino" in desc_lower or "dinosaur" in desc_lower:
-        for z in range(-2, 3):
-            for x in range(-2, 3):
-                for y in range(-2, 3):
-                    voxels.append((x, y, z, 0))
-        for z in range(-1, 2):
-            for x in range(-2, 3):
-                voxels.append((x, 3, z, 0))
-        voxels.append((-1, 2, 2, 1))
-        voxels.append((1, 2, 2, 1))
-        
-    # 5. Tree / Forest / Wildlife / Refuge
-    elif "wildlife" in desc_lower or "refuge" in desc_lower or "tree" in desc_lower or "forest" in desc_lower or "🌲" in desc_lower or "wood" in desc_lower or "nature" in desc_lower:
-        for z in range(-3, 0):
-            voxels.append((0, 0, z, 0))
-        for z in range(0, 4):
-            r = 3 - z
-            for x in range(-r, r+1):
-                for y in range(-r, r+1):
-                    if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 1))
-                        
-    # 6. Star Gazer
-    elif "stargazer" in desc_lower or "gazer" in desc_lower or "star" in desc_lower or "spark" in desc_lower:
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                for z in range(-1, 2):
-                    if abs(x)+abs(y)+abs(z) <= 1:
-                        voxels.append((x, y, z, 1))
-        for d in range(-3, 4):
-            if abs(d) > 1:
-                voxels.append((d, 0, 0, 0))
-                voxels.append((0, d, 0, 0))
-                voxels.append((0, 0, d, 0))
-                
-    # 7. Tits
-    elif "tits" in desc_lower or "doubledd" in desc_lower:
-        for z in range(-1, 2):
-            for x in range(-3, 0):
-                for y in range(-2, 3):
-                    if (x+1.5)**2 + y**2 + z**2 <= 2.25:
-                        voxels.append((x, y, z, 0))
-            for x in range(1, 4):
-                for y in range(-2, 3):
-                    if (x-1.5)**2 + y**2 + z**2 <= 2.25:
-                        voxels.append((x, y, z, 0))
-        voxels.append((-2, 0, 1, 1))
-        voxels.append((2, 0, 1, 1))
-        
-    # 8. Printer / Press
-    elif "printer" in desc_lower or "press" in desc_lower:
-        for x in range(-2, 3):
-            for y in range(-2, 3):
-                for z in range(-3, 1):
-                    voxels.append((x, y, z, 0))
-        for y in range(-1, 2):
-            voxels.append((0, y, 1, 1))
-            voxels.append((0, y, 2, 1))
-            
-    # 9. Ghost / Shadow
-    elif "shadow" in desc_lower or "ghost" in desc_lower or "phantom" in desc_lower or "specter" in desc_lower:
-        for z in range(-2, 3):
-            r = 2 if z >= 0 else 1
-            for x in range(-r, r+1):
-                for y in range(-r, r+1):
-                    if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 0))
-        voxels.append((-1, 0, -3, 0))
-        voxels.append((1, 0, -3, 0))
-        voxels.append((-1, 1, 1, 1))
-        voxels.append((1, 1, 1, 1))
-        
-    # 10. Firefly / Fly
-    elif "firefly" in desc_lower or "fly" in desc_lower or "bug" in desc_lower or "insect" in desc_lower:
-        for z in range(-1, 2):
-            voxels.append((0, 0, z, 0))
-        voxels.append((0, 0, -2, 1))
-        voxels.append((-1, 0, 0, 1))
-        voxels.append((1, 0, 0, 1))
-        voxels.append((-2, 0, 1, 1))
-        voxels.append((2, 0, 1, 1))
-        
-    # 11. Key
-    elif "key" in desc_lower:
-        for x in range(-2, 3):
-            for y in range(-2, 3):
-                if 2 <= x*x + y*y <= 5:
-                    voxels.append((x, y, 2, 0))
-        for z in range(-3, 2):
-            voxels.append((0, 0, z, 0))
-        voxels.append((1, 0, -2, 0))
-        voxels.append((2, 0, -2, 1))
-        voxels.append((1, 0, -1, 0))
-        
-    # 12. Sword
-    elif "sword" in desc_lower or "blade" in desc_lower or "dirk" in desc_lower or "dagger" in desc_lower or "weapon" in desc_lower:
-        for z in range(-1, 4):
-            voxels.append((0, 0, z, 1))
-        for x in range(-2, 3):
-            voxels.append((x, 0, -2, 0))
-        voxels.append((0, 0, -3, 0))
-        voxels.append((0, 0, -4, 0))
-        
-    # 13. Shield
-    elif "shield" in desc_lower or "sentinel" in desc_lower or "vault" in desc_lower or "guard" in desc_lower or "defense" in desc_lower or "protect" in desc_lower:
-        for z in range(-2, 3):
-            width = 2 if z >= 0 else 2 + z
-            for x in range(-width, width + 1):
-                voxels.append((x, 0, z, 0))
-                if x == 0 and z == 0:
-                    voxels.append((x, 0, z, 1))
-                    
-    # 14. Crown
-    elif "crown" in desc_lower or "king" in desc_lower or "princess" in desc_lower or "queen" in desc_lower or "emperor" in desc_lower:
-        for x in range(-2, 3):
-            for y in range(-2, 3):
-                if 3 <= x*x + y*y <= 5:
-                    voxels.append((x, y, -2, 0))
-        voxels.append((-2, 0, -1, 0))
-        voxels.append((-2, 0, 0, 1))
-        voxels.append((2, 0, -1, 0))
-        voxels.append((2, 0, 0, 1))
-        voxels.append((0, 2, -1, 0))
-        voxels.append((0, 2, 0, 1))
-        voxels.append((0, -2, -1, 0))
-        voxels.append((0, -2, 0, 1))
-        voxels.append((0, 0, 1, 1))
-        
-    # 15. Gas/Flame
-    elif "gas" in desc_lower or "fuel" in desc_lower or "fire" in desc_lower or "burn" in desc_lower or "flame" in desc_lower or "plasma" in desc_lower:
-        for z in range(-3, 4):
-            max_r = 3 - (z + 3)//2
-            for x in range(-max_r, max_r + 1):
-                for y in range(-max_r, max_r + 1):
-                    if x*x + y*y <= max_r*max_r:
-                        is_inner = (x*x + y*y <= 1) and z < 2
-                        voxels.append((x, y, z, 1 if is_inner else 0))
-                        
-    # 16. Heart
-    elif "heart" in desc_lower or "love" in desc_lower or "peace" in desc_lower or "humanity" in desc_lower:
-        for x in (-1, 1):
-            for y in (-1, 1):
-                voxels.append((x, y, 2, 0))
-        for x in range(-2, 3):
-            for y in range(-2, 3):
-                if abs(x) + abs(y) <= 3:
-                    voxels.append((x, y, 1, 0))
-                if abs(x) + abs(y) <= 2:
-                    voxels.append((x, y, 0, 1))
-                if abs(x) + abs(y) <= 1:
-                    voxels.append((x, y, -1, 0))
-        voxels.append((0, 0, -2, 0))
-        
-    # 17. Droplet
-    elif "drop" in desc_lower or "water" in desc_lower or "liquid" in desc_lower or "pool" in desc_lower or "fluid" in desc_lower:
-        for z in range(-3, 4):
-            r = 3 - (z + 3)//2
-            for x in range(-r, r+1):
-                for y in range(-r, r+1):
-                    if x*x + y*y <= r*r:
-                        voxels.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
-                        
-    # 18. Stablecoin/USD/Dollar
-    elif "usd" in desc_lower or "dai" in desc_lower or "usdc" in desc_lower or "usdt" in desc_lower or "stable" in desc_lower or "dollar" in desc_lower or "cash" in desc_lower or "money" in desc_lower:
-        s_points = [
-            (1, 0, 2), (0, 0, 2), (-1, 0, 2),
-            (-1, 0, 1),
-            (-1, 0, 0), (0, 0, 0), (1, 0, 0),
-            (1, 0, -1),
-            (1, 0, -2), (0, 0, -2), (-1, 0, -2)
-        ]
-        for x, y, z in s_points:
-            voxels.append((x, y, z, 0))
-        for z in range(-3, 4):
-            voxels.append((0, 0, z, 1))
-
-    # 19. Crypto / Bitcoin / Ethereum / Coin / Token Icon
-    elif "btc" in desc_lower or "bitcoin" in desc_lower or "eth" in desc_lower or "ethereum" in desc_lower or "bnb" in desc_lower or "pls" in desc_lower or "pulse" in desc_lower or "coin" in desc_lower:
-        for z in range(-1, 2):
-            for x in range(-3, 4):
-                for y in range(-3, 4):
-                    d = x*x + y*y
-                    if d <= 9:
-                        is_glyph = (x == -1 and -2 <= y <= 2) or (x >= 0 and y in (-2, 0) and x*x <= 4) or (x == 2 and y in (-1,))
-                        if is_glyph:
-                            voxels.append((x, y, z, 1))
-                        else:
-                            voxels.append((x, y, z, 0))
-
-    # 20. Bear
-    elif "bear" in desc_lower:
-        for z in range(-1, 2):
-            for x in range(-2, 3):
-                for y in range(-2, 3):
-                    if x*x + y*y <= 4:
-                        voxels.append((x, y, z, 0))
-        voxels.append((0, -2, -1, 1))
-        voxels.append((0, -3, -1, 1))
-        voxels.append((-2, 0, 2, 0))
-        voxels.append((2, 0, 2, 0))
-
-    # 21. UFO / Flying Saucer
-    elif "ufo" in desc_lower or "alien" in desc_lower or "space" in desc_lower or "cosmos" in desc_lower or "galaxy" in desc_lower:
-        for x in range(-3, 4):
-            for y in range(-3, 4):
-                if x*x + y*y <= 9:
-                    voxels.append((x, y, 0, 0))
-        voxels.append((0, 0, 1, 1))
-        voxels.append((0, 1, 1, 1))
-        voxels.append((0, -1, 1, 1))
-        voxels.append((1, 0, 1, 1))
-        voxels.append((-1, 0, 1, 1))
-        voxels.append((0, 0, 2, 1))
-
-    # 22. Pirate / Skull
-    elif "pirate" in desc_lower or "skull" in desc_lower or "caw" in desc_lower or "death" in desc_lower:
-        for z in range(0, 3):
-            for x in range(-2, 3):
-                for y in range(-2, 3):
-                    if x*x + y*y <= 4:
-                        voxels.append((x, y, z, 0))
-        for x in range(-1, 2):
-            voxels.append((x, -1, -1, 0))
-            voxels.append((x, -1, -2, 0))
-        voxels.append((-1, -2, 0, 1))
-        voxels.append((1, -2, 0, 1))
-
-    # 23. Food / Pizza
-    elif "food" in desc_lower or "pizza" in desc_lower or "burger" in desc_lower:
-        for z in range(-1, 1):
-            for y in range(-3, 4):
-                max_x = y + 3
-                for x in range(-max_x, max_x + 1):
-                    is_crust = y == 3
-                    voxels.append((x, y, z, 1 if is_crust else 0))
-
-    else:  # Procedural unique geometric shape based on seed_str/address hash
-        import hashlib
-        h = hashlib.md5((seed_str if seed_str else desc).encode('utf-8')).hexdigest()
-        val = int(h, 16)
-        
-        # 4-way rotational symmetry ensures high-tech glyph/rune shape
-        bit_index = 0
-        for z in range(-2, 3):
-            for x in range(0, 3):
-                for y in range(0, 3):
-                    if x == 0 and y == 0:
-                        continue
-                    bit = (val >> bit_index) & 1
-                    bit_index = (bit_index + 1) % 128
-                    if bit:
-                        color_bit = (val >> ((bit_index + 5) % 128)) & 1
-                        for mx, my in ((x, y), (-x, y), (x, -y), (-x, -y)):
-                            pt = (mx, my, z, color_bit)
-                            if pt not in voxels:
-                                voxels.append(pt)
-        # Add central core column for structural connectivity
-        core_color_type = (val >> 2) & 1
-        for z in range(-2, 3):
-            voxels.append((0, 0, z, core_color_type))
-                            
-    voxels.sort(key=lambda v: (v[0] + v[1] + v[2]))
-    return voxels
+from render_vlm_synthesizer import generate_voxel_shape, write_to_shm_depth
+import subprocess
 
 def sanitize_text_for_font(text, fallback="TOKEN"):
     # Keep standard printable characters, including emojis and special unicode symbols (ord >= 32)
@@ -576,6 +259,48 @@ def render_card_art(card, output_path):
     vignette = vignette.filter(ImageFilter.GaussianBlur(15))
     bg_img.paste(vignette, (0, 0), vignette)
     
+    # Run SD stylization pipeline
+    write_to_shm_depth(bg_img)
+    
+    sd_prompt = (
+        f"Vibrant high-fidelity sci-fi trading card game art, cel-shaded neon vector style, representing '{desc}', "
+        f"bold retro 1980s futuristic cyber aesthetic, neon glows, clean vector outlines, hand-painted gouache coloration, masterpiece"
+    )
+    
+    raw_out = f"tmp/batch_sd_out_{addr_hash}.raw"
+    os.makedirs("tsfi2-deepseek/tmp", exist_ok=True)
+    
+    worker_path = "./bin/tsfi_sd_worker"
+    cmd = [
+        worker_path,
+        sd_prompt,
+        raw_out,
+        "1", # use_shm = 1
+        "dream", # profile (LCM Dreamshaper v7)
+        "4", # steps
+        "euler_a", # sampler
+        "1.5" # cfg
+    ]
+    
+    print(f"[Batch Generator] Executing Stable Diffusion worker for {card.get('name')}: {' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, cwd="tsfi2-deepseek", check=True)
+        raw_path_adj = "tsfi2-deepseek/" + raw_out
+        if os.path.exists(raw_path_adj):
+            with open(raw_path_adj, 'rb') as f:
+                raw_data = f.read()
+            if len(raw_data) == 1280 * 704 * 3:
+                bg_img = Image.frombytes('RGB', (1280, 704), raw_data).resize((1280, 720))
+            elif len(raw_data) == 512 * 512 * 3:
+                bg_img = Image.frombytes('RGB', (512, 512), raw_data).resize((1280, 720))
+            
+            try:
+                os.remove(raw_path_adj)
+            except:
+                pass
+    except Exception as e:
+        print(f"[Batch Generator] SD worker failed, falling back to raw render: {e}")
+        
     bg_img.save(output_path)
 
 def main():

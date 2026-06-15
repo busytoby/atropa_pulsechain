@@ -353,6 +353,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             if price_cache_corrupt:
                 price_trends = [0.0, 0.0, 0.0]
 
+            yue_scores = {
+                "token0": {"hypobar": 0, "epibar": 0},
+                "token1": {"hypobar": 0, "epibar": 0}
+            }
+
             response = {
                 "success": True,
                 "address": address,
@@ -363,6 +368,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     "token0_symbol": token0_symbol,
                     "token1_symbol": token1_symbol
                 },
+                "yue_scores": yue_scores,
                 "swap_history": swap_history,
                 "swaps": swap_history
             }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NoNukes Voxel Card Art Viewer</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
         :root {
             --primary: #00f0ff;
@@ -462,12 +463,86 @@
                         </div>
                     </div>
 
+                    <!-- SD Generation Quality Controls -->
+                    <div id="sdConfigPanel" style="background: rgba(7, 4, 10, 0.8); border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                        <span style="font-weight: bold; font-size: 0.9rem; color: var(--primary);">⚙️ SD Quality Settings</span>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                <span>Steps: <span id="lblStepsVal" style="color: var(--primary); font-family: monospace;">20</span></span>
+                                <input type="range" id="rngSteps" min="1" max="50" value="20" oninput="document.getElementById('lblStepsVal').textContent = this.value" style="width: 60%; cursor: pointer;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                <span>CFG Scale: <span id="lblCfgVal" style="color: var(--secondary); font-family: monospace;">7.5</span></span>
+                                <input type="range" id="rngCfg" min="1.0" max="15.0" step="0.5" value="7.5" oninput="document.getElementById('lblCfgVal').textContent = this.value" style="width: 60%; cursor: pointer;">
+                            </div>
+                        </div>
+                    </div>
+
                     <button class="btn" id="btnSynthesize" disabled onclick="synthesizeDefaultArt()">
                         🎨 Synthesize Default Art
                     </button>
 
                     <div class="log-panel" id="logPanel" style="display: none;">
                         [SYSTEM] Ready for DNA pipeline request...
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABI Registry Panel -->
+            <div class="abi-panel" style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: 16px; padding: 25px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+                    <div>
+                        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 10px var(--primary-glow);">📖 ABI Selector Registry</h2>
+                        <div style="font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Contract: <a href="https://scan.pulsechain.com/address/0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C" target="_blank" style="color: var(--primary); text-decoration: none;">0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C</a></div>
+                    </div>
+                    <div>
+                        <button class="btn" id="btnConnectWallet" onclick="connectWallet()" style="font-size: 0.8rem; padding: 8px 16px; background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%); box-shadow: 0 4px 10px rgba(0, 240, 255, 0.2); text-transform: none;">🔌 Connect Wallet</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;">
+                    <!-- Decode Card -->
+                    <div style="background: rgba(7, 4, 10, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <h3 style="font-size: 1rem; color: #fff; font-weight: 600;">Decode Selector</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="abiDecodeInput" placeholder="e.g. 0xddb59200" style="flex-grow: 1; padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.9rem;">
+                            <button class="btn" onclick="abiDecode()" style="font-size: 0.8rem; padding: 8px 16px;">Decode</button>
+                        </div>
+                        <div id="abiDecodeResult" style="font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #00ff66; min-height: 24px; padding: 6px; background: rgba(0,255,102,0.05); border-radius: 4px; border: 1px dashed rgba(0,255,102,0.15); display: none; word-break: break-all;"></div>
+                    </div>
+
+                    <!-- Encode Card -->
+                    <div style="background: rgba(7, 4, 10, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <h3 style="font-size: 1rem; color: #fff; font-weight: 600;">Encode Signature</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="abiEncodeInput" placeholder="e.g. New(address)" style="flex-grow: 1; padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.9rem;">
+                            <button class="btn" onclick="abiEncode()" style="font-size: 0.8rem; padding: 8px 16px;">Encode</button>
+                        </div>
+                        <div id="abiEncodeResult" style="font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #00ff66; min-height: 24px; padding: 6px; background: rgba(0,255,102,0.05); border-radius: 4px; border: 1px dashed rgba(0,255,102,0.15); display: none; word-break: break-all;"></div>
+                    </div>
+
+                    <!-- Get Selectors Card -->
+                    <div style="background: rgba(7, 4, 10, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <h3 style="font-size: 1rem; color: #fff; font-weight: 600;">Inspect Target Selectors</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="abiSelectorsInput" placeholder="Contract Address (e.g. active card)" style="flex-grow: 1; padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.9rem;">
+                            <button class="btn" onclick="abiGetSelectors()" style="font-size: 0.8rem; padding: 8px 16px;">Get</button>
+                        </div>
+                        <div id="abiSelectorsResult" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-family: 'Space Mono', monospace; font-size: 0.85rem;"></div>
+                    </div>
+
+                    <!-- Submit Selector Card -->
+                    <div style="background: rgba(7, 4, 10, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <h3 style="font-size: 1rem; color: #fff; font-weight: 600;">Submit New Selector Mapping</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" id="abiSubmitTarget" placeholder="Target Address" style="padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.85rem;">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="abiSubmitSelector" placeholder="Selector (e.g. 0xddb59200)" style="flex: 1; padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.85rem;">
+                                <input type="text" id="abiSubmitSignature" placeholder="Signature (e.g. New(address))" style="flex: 2; padding: 8px 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-family: monospace; font-size: 0.85rem;">
+                            </div>
+                            <button class="btn" id="btnAbiSubmit" onclick="abiSubmit()" style="font-size: 0.8rem; padding: 10px; width: 100%;" disabled>Submit Selector To Chain</button>
+                        </div>
+                        <div id="abiSubmitResult" style="font-family: 'Space Mono', monospace; font-size: 0.75rem; color: #00ff66; padding: 6px; display: none; background: rgba(0,255,102,0.05); border: 1px dashed rgba(0,255,102,0.15); border-radius: 4px; word-break: break-all;"></div>
                     </div>
                 </div>
             </div>
@@ -481,6 +556,18 @@
     <a href="/dragons_lair.html" class="back-link">🔙 Return to Dragon's Lair</a>
 
     <script>
+        const ABI_ADDR = "0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C";
+        const globalProvider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
+        const abiAbi = [
+            "function Decode(bytes4 selector) external view returns (string memory)",
+            "function Encode(string memory Signature) external view returns (bytes4)",
+            "function getSelectors(address Target) external returns (bytes4[] memory selectors)",
+            "function Submit(address Target, bytes4 Selector, string memory Signature) external"
+        ];
+        const abiContractRead = new ethers.Contract(ABI_ADDR, abiAbi, globalProvider);
+        let userAddress = null;
+        let abiContractWrite = null;
+
         let allTokens = [];
         let activeCard = null;
         let animationInterval = null;
@@ -533,12 +620,22 @@
         }
 
         function filterTokens() {
-            const query = document.getElementById("tokenSearchInput").value.toLowerCase();
-            const filtered = allTokens.filter(tok => 
-                tok.name.toLowerCase().includes(query) || 
-                tok.symbol.toLowerCase().includes(query) ||
-                tok.address.toLowerCase().includes(query)
-            );
+            const query = document.getElementById("tokenSearchInput").value.toLowerCase().trim();
+            if (!query) {
+                renderTokenList(allTokens);
+                return;
+            }
+            const queryTokens = query.split(/\s+/);
+            const filtered = allTokens.filter(tok => {
+                const nameLower = tok.name.toLowerCase();
+                const symbolLower = tok.symbol.toLowerCase();
+                const addrLower = tok.address.toLowerCase();
+                return queryTokens.every(qTok => 
+                    nameLower.includes(qTok) || 
+                    symbolLower.includes(qTok) || 
+                    addrLower.includes(qTok)
+                );
+            });
             renderTokenList(filtered);
         }
 
@@ -562,6 +659,10 @@
             document.getElementById("cardId").textContent = tok.size;
             document.getElementById("cardDesc").textContent = tok.desc;
             document.getElementById("cardAddress").textContent = tok.address;
+
+            // Auto populate target inputs in ABI registry
+            document.getElementById("abiSelectorsInput").value = tok.address;
+            document.getElementById("abiSubmitTarget").value = tok.address;
 
             const qingEl = document.getElementById("cardQing");
             if (tok.qingExists && tok.qingAddress) {
@@ -588,15 +689,14 @@
                 try {
                     const MAP_ADDR = "0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75";
                     const CHAN_ADDR = "0xe250bf9729076B14A8399794B61C72d0F4AeFcd8";
-                    const provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
                     
                     const mapContract = new ethers.Contract(MAP_ADDR, [
                         "function New(address Integrative) external returns(address)"
-                    ], provider);
+                    ], globalProvider);
 
                     const chanContract = new ethers.Contract(CHAN_ADDR, [
                         "function Yan(address) external view returns(address)"
-                    ], provider);
+                    ], globalProvider);
 
                     const minters = [
                         "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B",
@@ -628,7 +728,7 @@
 
                     async function resolveYueContract(tokenAddr) {
                         try {
-                            const c = new ethers.Contract(tokenAddr, ["function owner() external view returns (address)"], provider);
+                            const c = new ethers.Contract(tokenAddr, ["function owner() external view returns (address)"], globalProvider);
                             const owner = await c.owner();
                             if (owner && owner !== ethers.ZeroAddress) {
                                 const yue = await chanContract.Yan(owner);
@@ -638,7 +738,7 @@
                         
                         for (const m of minters) {
                             try {
-                                const c = new ethers.Contract(m, ["function TreasuryTokens(address) external view returns (address)"], provider);
+                                const c = new ethers.Contract(m, ["function TreasuryTokens(address) external view returns (address)"], globalProvider);
                                 const owner = await c.TreasuryTokens(tokenAddr);
                                 if (owner && owner !== ethers.ZeroAddress) {
                                     const yue = await chanContract.Yan(owner);
@@ -662,7 +762,7 @@
                         let maxEpibar = 0n;
                         for (const yueAddr of yueAddresses) {
                             try {
-                                const yue = new ethers.Contract(yueAddr, ["function Bar(address) external view returns (uint256, uint256)"], provider);
+                                const yue = new ethers.Contract(yueAddr, ["function Bar(address) external view returns (uint256, uint256)"], globalProvider);
                                 const bar = await yue.Bar(qing);
                                 if (bar[0] > maxHypobar) maxHypobar = bar[0];
                                 if (bar[1] > maxEpibar) maxEpibar = bar[1];
@@ -855,8 +955,8 @@
                         scaleColor: activeCard.color,
                         eyeColor: "#ffffff",
                         eyeCount: 2,
-                        steps: 4,
-                        cfg: 1.5,
+                        steps: parseInt(document.getElementById("rngSteps").value) || 20,
+                        cfg: parseFloat(document.getElementById("rngCfg").value) || 7.5,
                         promptOverride: activeCard.desc,
                         address: activeCard.address,
                         hypobar: getEffectiveStats().hypobar,
@@ -1011,6 +1111,199 @@
 
                 gallery.appendChild(cardEl);
             });
+        }
+
+        // Wallet connection helper
+        async function connectWallet() {
+            const btn = document.getElementById("btnConnectWallet");
+            const submitBtn = document.getElementById("btnAbiSubmit");
+            if (typeof window.ethereum === "undefined") {
+                alert("MetaMask or compatible Web3 browser extension not found. Write operations require a Web3 wallet.");
+                return;
+            }
+            try {
+                btn.textContent = "⏳ Connecting...";
+                btn.disabled = true;
+                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                if (accounts && accounts.length > 0) {
+                    userAddress = accounts[0];
+                    walletProvider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await walletProvider.getSigner();
+                    abiContractWrite = new ethers.Contract(ABI_ADDR, abiAbi, signer);
+                    
+                    btn.textContent = `🟢 ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+                    btn.style.background = "linear-gradient(135deg, #00ff66 0%, #009933 100%)";
+                    btn.style.boxShadow = "0 4px 10px rgba(0, 255, 102, 0.2)";
+                    btn.disabled = false;
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error("Wallet connection failed:", err);
+                btn.textContent = "🔌 Connect Wallet";
+                btn.disabled = false;
+                submitBtn.disabled = true;
+                alert("Failed to connect wallet: " + err.message);
+            }
+        }
+
+        // Decode selector function calling ABI contract Decode
+        async function abiDecode(customSelector) {
+            const input = customSelector || document.getElementById("abiDecodeInput").value.trim();
+            const resultDiv = document.getElementById("abiDecodeResult");
+            
+            if (!input) {
+                alert("Please enter a bytes4 selector to decode.");
+                return;
+            }
+            
+            // Format input selector to ensure it is 0x prefixed and 10 characters long
+            let selector = input.toLowerCase();
+            if (!selector.startsWith("0x")) selector = "0x" + selector;
+            if (selector.length !== 10) {
+                alert("Selector must be a 4-byte hex string (e.g. 0xddb59200).");
+                return;
+            }
+
+            try {
+                resultDiv.style.display = "block";
+                resultDiv.textContent = "⏳ Querying ABI contract...";
+                resultDiv.style.color = "var(--primary)";
+                
+                const signature = await abiContractRead.Decode(selector);
+                if (signature) {
+                    resultDiv.innerHTML = `Decoded: <span style="color: #00ff66; font-weight: bold;">${signature}</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span style="color: var(--muted);">Selector not registered on-chain.</span>`;
+                }
+            } catch (err) {
+                console.error("ABI Decode failed:", err);
+                resultDiv.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+            }
+        }
+
+        // Encode signature function calling ABI contract Encode
+        async function abiEncode() {
+            const input = document.getElementById("abiEncodeInput").value.trim();
+            const resultDiv = document.getElementById("abiEncodeResult");
+            
+            if (!input) {
+                alert("Please enter a signature string (e.g. New(address)).");
+                return;
+            }
+
+            try {
+                resultDiv.style.display = "block";
+                resultDiv.textContent = "⏳ Generating selector...";
+                resultDiv.style.color = "var(--primary)";
+                
+                const selector = await abiContractRead.Encode(input);
+                resultDiv.innerHTML = `Selector: <span style="color: #00ff66; font-weight: bold;">${selector}</span>`;
+            } catch (err) {
+                console.error("ABI Encode failed:", err);
+                resultDiv.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+            }
+        }
+
+        // getSelectors call using staticCall
+        async function abiGetSelectors() {
+            const input = document.getElementById("abiSelectorsInput").value.trim();
+            const resultDiv = document.getElementById("abiSelectorsResult");
+            
+            if (!input || !ethers.isAddress(input)) {
+                alert("Please enter a valid target contract address.");
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = "<div style='color: var(--primary);'>⏳ Inspecting target selectors...</div>";
+                
+                // Since getSelectors is a non-view function returning bytes4[], we call staticCall to dry-run
+                const selectors = await abiContractRead.getSelectors.staticCall(input);
+                if (selectors && selectors.length > 0) {
+                    resultDiv.innerHTML = "";
+                    selectors.forEach(sel => {
+                        const row = document.createElement("div");
+                        row.style.display = "flex";
+                        row.style.justifyContent = "space-between";
+                        row.style.alignItems = "center";
+                        row.style.padding = "6px 8px";
+                        row.style.background = "rgba(255,255,255,0.02)";
+                        row.style.border = "1px solid rgba(255,255,255,0.05)";
+                        row.style.borderRadius = "6px";
+                        row.style.marginBottom = "4px";
+                        
+                        row.innerHTML = `
+                            <span style="color: #fff; font-family: monospace;">${sel}</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn" onclick="populateSubmit('${input}', '${sel}')" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(0,240,255,0.1); border: 1px solid var(--primary); text-transform: none; box-shadow: none;">Populate</button>
+                                <button class="btn" onclick="quickDecode('${sel}')" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(224,64,251,0.1); border: 1px solid var(--secondary); text-transform: none; box-shadow: none;">Decode</button>
+                            </div>
+                        `;
+                        resultDiv.appendChild(row);
+                    });
+                } else {
+                    resultDiv.innerHTML = "<div style='color: var(--muted); font-style: italic;'>No selectors found or contract has no registered selectors.</div>";
+                }
+            } catch (err) {
+                console.error("ABI getSelectors failed:", err);
+                resultDiv.innerHTML = `<div style="color: red;">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Helper to quick decode selectors from list
+        function quickDecode(selector) {
+            document.getElementById("abiDecodeInput").value = selector;
+            abiDecode(selector);
+        }
+
+        // Helper to populate Submit form
+        function populateSubmit(target, selector) {
+            document.getElementById("abiSubmitTarget").value = target;
+            document.getElementById("abiSubmitSelector").value = selector;
+            // Focus signature field for user convenience
+            document.getElementById("abiSubmitSignature").focus();
+        }
+
+        // Submit selector transaction
+        async function abiSubmit() {
+            const target = document.getElementById("abiSubmitTarget").value.trim();
+            const selector = document.getElementById("abiSubmitSelector").value.trim();
+            const signature = document.getElementById("abiSubmitSignature").value.trim();
+            const resultDiv = document.getElementById("abiSubmitResult");
+            
+            if (!abiContractWrite) {
+                alert("Please connect wallet first.");
+                return;
+            }
+            if (!ethers.isAddress(target)) {
+                alert("Invalid target address.");
+                return;
+            }
+            if (!selector.startsWith("0x") || selector.length !== 10) {
+                alert("Selector must be a 4-byte hex string (e.g. 0xddb59200).");
+                return;
+            }
+            if (!signature) {
+                alert("Signature is required.");
+                return;
+            }
+
+            try {
+                resultDiv.style.display = "block";
+                resultDiv.textContent = "⏳ Sending transaction to MetaMask...";
+                resultDiv.style.color = "var(--primary)";
+                
+                const tx = await abiContractWrite.Submit(target, selector, signature);
+                resultDiv.textContent = `⏳ Transaction sent: ${tx.hash}\nWaiting for confirmation...`;
+                
+                const receipt = await tx.wait();
+                resultDiv.style.color = "#00ff66";
+                resultDiv.innerHTML = `🟢 Selector registered successfully!<br>Tx Hash: <a href="https://scan.pulsechain.com/tx/${receipt.hash}" target="_blank" style="color: #00ff66; text-decoration: underline;">${receipt.hash.slice(0, 20)}...</a>`;
+            } catch (err) {
+                console.error("ABI Submit failed:", err);
+                resultDiv.style.color = "red";
+                resultDiv.textContent = `Error: ${err.message}`;
+            }
         }
 
         window.onload = loadTokenCards;

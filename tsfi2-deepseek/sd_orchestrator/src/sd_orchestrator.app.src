@@ -1,0 +1,14 @@
+{application, sd_orchestrator,
+ [{description, "Stable Diffusion Native Worker Orchestrator"},
+  {vsn, "0.1.0"},
+  {registered, [sd_orchestrator_sup, sd_worker]},
+  {mod, {sd_orchestrator_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+  {licenses, ["Apache-2.0"]},
+  {links, []}
+ ]}.
