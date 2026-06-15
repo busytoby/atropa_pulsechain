@@ -354,6 +354,36 @@
             text-decoration: underline;
             opacity: 0.8;
         }
+
+        /* Gallery Layout */
+        .gallery-card {
+            background: #11091a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            transition: transform 0.2s;
+        }
+        .gallery-card:hover {
+            transform: scale(1.03);
+            border-color: var(--primary);
+        }
+        .gallery-art {
+            width: 100%;
+            height: 140px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -361,9 +391,12 @@
     <header>
         <h1>NoNukes Card Art Viewer</h1>
         <p class="subtitle">Test environment to inspect rotating 3D voxel models and trigger Stable Diffusion vector-style art synthesis for PulseChain LP tokens.</p>
+        <div style="margin-top: 20px; display: flex; gap: 15px; justify-content: center;">
+            <button class="btn" id="btnToggleView" onclick="toggleViewMode()" style="font-size: 0.85rem; padding: 8px 16px;">🖼️ Toggle Grid Gallery</button>
+        </div>
     </header>
 
-    <div class="container">
+    <div class="container" id="workspaceContainer">
         <!-- Sidebar Token list -->
         <div class="sidebar">
             <input type="text" id="tokenSearchInput" class="search-bar" placeholder="🔍 Search tokens..." oninput="filterTokens()">
@@ -415,6 +448,10 @@
             </div>
         </div>
     </div>
+
+    </div>
+
+    <div id="galleryContainer" style="display: none; width: 100%; max-width: 1200px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 20px 0;"></div>
 
     <a href="/dragons_lair.html" class="back-link">🔙 Return to Dragon's Lair</a>
 
@@ -689,6 +726,56 @@
                 btn.disabled = false;
                 btn.textContent = "🎨 Synthesize Default Art";
             }
+        }
+
+        let viewMode = 'workspace';
+
+        function toggleViewMode() {
+            const workspace = document.getElementById("workspaceContainer");
+            const gallery = document.getElementById("galleryContainer");
+            const btn = document.getElementById("btnToggleView");
+
+            if (viewMode === 'workspace') {
+                viewMode = 'gallery';
+                workspace.style.display = 'none';
+                gallery.style.display = 'grid';
+                btn.textContent = '🖥️ Toggle Workspace View';
+                renderGridGallery();
+            } else {
+                viewMode = 'workspace';
+                workspace.style.display = 'flex';
+                gallery.style.display = 'none';
+                btn.textContent = '🖼️ Toggle Grid Gallery';
+            }
+        }
+
+        function renderGridGallery() {
+            const gallery = document.getElementById("galleryContainer");
+            gallery.innerHTML = "";
+
+            allTokens.forEach(tok => {
+                const cardEl = document.createElement("div");
+                cardEl.className = "gallery-card";
+                cardEl.innerHTML = `
+                    <div class="gallery-art">
+                        <img src="/assets/${tok.address.toLowerCase()}.png" class="gallery-img" onerror="this.style.display='none';">
+                        <div class="no-art-placeholder" style="height: 100%; justify-content: center; font-size: 0.75rem; color: var(--muted);">No Image</div>
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${tok.name.split(' (')[0]}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px;">
+                        <span style="color: ${tok.color}; font-family: monospace; font-weight: bold;">${tok.symbol}</span>
+                        <span style="color: var(--muted); font-size: 0.65rem;">${tok.type}</span>
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.6rem; color: var(--muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${tok.address}">ADDR: ${tok.address}</div>
+                `;
+                
+                // Hide generic no-art placeholder if image loads successfully
+                const img = cardEl.querySelector('.gallery-img');
+                const placeholder = cardEl.querySelector('.no-art-placeholder');
+                img.onload = () => { placeholder.style.display = 'none'; };
+
+                gallery.appendChild(cardEl);
+            });
         }
 
         window.onload = loadTokenCards;
