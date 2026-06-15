@@ -139,11 +139,26 @@ TsfiSafetensorsAsset* tsfi_safetensors_cache_attach(const char *path) {
             return NULL;
         }
 
-        // Pull into SHM
+        // Pull into SHM in a loop to support files larger than 2GB (avoiding SSIZE_MAX limits)
         printf("[CACHE] Loading %s into SHM Matrix (%zu bytes)...\n", path, size);
-        ssize_t n = read(file_fd, data, size);
-        if (n < (ssize_t)size) {
-            perror("read into shm");
+        size_t total_read = 0;
+        char *ptr = (char *)data;
+        while (total_read < size) {
+            size_t to_read = size - total_read;
+            if (to_read > 0x7ffff000) to_read = 0x7ffff000;
+            ssize_t n = read(file_fd, ptr + total_read, to_read);
+            if (n < 0) {
+                if (errno == EINTR) continue;
+                perror("read into shm");
+                munmap(data, size); close(fd); close(file_fd);
+                cache_unlock();
+                return NULL;
+            }
+            if (n == 0) break; // EOF
+            total_read += n;
+        }
+        if (total_read < size) {
+            fprintf(stderr, "[FRACTURE] Short read: read %zu of %zu bytes\n", total_read, size);
             munmap(data, size); close(fd); close(file_fd);
             cache_unlock();
             return NULL;
