@@ -276,7 +276,7 @@ def render_card_art(card, output_path):
         sd_prompt,
         raw_out,
         "1", # use_shm = 1
-        "dream", # profile (LCM Dreamshaper v7)
+        "sd15", # profile
         "4", # steps
         "euler_a", # sampler
         "1.5" # cfg
