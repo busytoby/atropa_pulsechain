@@ -113,13 +113,52 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         }
 
         // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
+        // Fast path for core region (x and y in [1, 62]) - No bounds checks, constant multiply instead of division
+        #pragma omp parallel for schedule(static)
+        for (int y = 1; y < lh - 1; y++) {
+            for (int x = 1; x < lw - 1; x++) {
+                float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
+                
+                // Unrolled 3x3 neighborhood (guaranteed in-bounds)
+                for (int dy = -1; dy <= 1; dy++) {
+                    int ny = y + dy;
+                    int row_idx = ny * lw;
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx;
+                        int idx = (row_idx + nx) * 3;
+                        r_sum += latent[idx + 0];
+                        g_sum += latent[idx + 1];
+                        b_sum += latent[idx + 2];
+                    }
+                }
+                
+                int dst_idx = (y * lw + x) * 3;
+                float mix_r = r_sum * 0.11111111f;
+                float mix_g = g_sum * 0.11111111f;
+                float mix_b = b_sum * 0.11111111f;
+                
+                float val_r = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
+                float val_g = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
+                float val_b = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
+                
+                latent_att[dst_idx + 0] = val_r > 0.0f ? val_r : val_r * 0.1f;
+                latent_att[dst_idx + 1] = val_g > 0.0f ? val_g : val_g * 0.1f;
+                latent_att[dst_idx + 2] = val_b > 0.0f ? val_b : val_b * 0.1f;
+            }
+        }
+
+        // Slow path for border regions (y = 0, y = 63, x = 0, x = 63)
         #pragma omp parallel for schedule(static)
         for (int y = 0; y < lh; y++) {
             for (int x = 0; x < lw; x++) {
-                float r_sum = 0, g_sum = 0, b_sum = 0;
+                // Skip the core region that was handled in the fast path
+                if (y > 0 && y < lh - 1 && x > 0 && x < lw - 1) {
+                    continue;
+                }
+                
+                float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
                 int count = 0;
                 
-                // Local 3x3 Attention Window
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dx = -1; dx <= 1; dx++) {
                         int nx = x + dx;
@@ -139,7 +178,6 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                 float mix_g = g_sum / count;
                 float mix_b = b_sum / count;
                 
-                // Mix original feature map with localized attention outputs and apply Leaky ReLU (alpha = 0.1) activation
                 float val_r = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
                 float val_g = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
                 float val_b = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
