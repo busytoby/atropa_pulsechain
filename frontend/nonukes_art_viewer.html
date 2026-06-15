@@ -509,9 +509,11 @@
             document.getElementById("cardDesc").textContent = tok.desc;
             document.getElementById("cardAddress").textContent = tok.address;
 
-            // Reset synthesized art view
-            document.getElementById("artPlaceholder").style.display = "flex";
-            document.getElementById("artImage").style.display = "none";
+            // Load pre-generated art asset immediately
+            const artImage = document.getElementById("artImage");
+            artImage.src = `/assets/${tok.address.toLowerCase()}.png`;
+            artImage.style.display = "block";
+            document.getElementById("artPlaceholder").style.display = "none";
             document.getElementById("logPanel").style.display = "none";
 
             // Draw Voxel canvas preview
