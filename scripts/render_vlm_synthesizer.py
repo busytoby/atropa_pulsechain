@@ -90,7 +90,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 1 if is_white else 0))
                         
     # 3. Poop / Poo
-    elif "poop" in tokens or "poo" in tokens or "p0op" in tokens:
+    elif "poop" in tokens or "poo" in tokens or "p0op" in tokens or "po0p" in tokens:
         for z in range(-2, 3):
             r = 3 - (z + 2)
             if r < 0: r = 0
