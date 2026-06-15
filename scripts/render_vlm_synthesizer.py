@@ -350,8 +350,13 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         seed_str = address if address else (prompt_override if prompt_override else "default_token")
         addr_hash = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
 
-        # Deterministically vary the scene background
-        bg_type = int(addr_hash[2:4], 16) % 3
+        # Set background contextually (Tokens/Minters default to Dark Space Grid)
+        bg_type = 2
+        desc_lower = seed_str.lower()
+        if "cavern" in desc_lower or "cave" in desc_lower or "ruins" in desc_lower:
+            bg_type = 0
+        elif "castle" in desc_lower or "corridor" in desc_lower or "chamber" in desc_lower:
+            bg_type = 1
         if bg_type == 0 and os.path.exists("tsfi2-deepseek/assets/cavern_bg.png"):
             bg_img = Image.open("tsfi2-deepseek/assets/cavern_bg.png").convert("RGB").resize((1280, 720))
         elif bg_type == 1 and os.path.exists("tsfi2-deepseek/assets/castle_bg.png"):
