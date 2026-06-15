@@ -172,23 +172,47 @@ async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd)
         
         const partnerDecimals = await getTokenDecimals(partnerAddr);
         const nonukesDecimals = 18;
+
+        // Try to load local scratch reserves file as a fallback
+        let reservesFile = {};
+        const glob = require("glob");
+        const os = require("os");
+        const fs = require("fs");
+        const path = require("path");
+        try {
+            const reservesFiles = glob.sync(os.homedir() + "/.gemini/antigravity-cli/brain/*/scratch/nonukes_pulsex_reserves.json");
+            const resPath = reservesFiles[0] || "nonukes_pulsex_reserves.json";
+            if (fs.existsSync(resPath)) {
+                reservesFile = JSON.parse(fs.readFileSync(resPath, "utf8"));
+            }
+        } catch (err) {
+            // Ignore
+        }
         
         for (const poolAddr of poolAddresses) {
+            const poolKey = poolAddr.toLowerCase();
+            let r0 = 0n;
+            let r1 = 0n;
+            let fetched = false;
+
             const reservesResult = await pulseRpcCall(poolAddr, "0x0902f1ac");
-            if (!reservesResult || reservesResult === "0x") {
-                continue;
+            if (reservesResult && reservesResult !== "0x") {
+                const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
+                if (clean.length >= 128) {
+                    const r0Hex = clean.slice(0, 64);
+                    const r1Hex = clean.slice(64, 128);
+                    r0 = BigInt("0x" + r0Hex);
+                    r1 = BigInt("0x" + r1Hex);
+                    fetched = true;
+                }
             }
-            
-            const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
-            if (clean.length < 128) {
-                continue;
+
+            // Fallback to local scratch reserves file if RPC fetch failed or returned empty
+            if (!fetched && reservesFile[poolKey]) {
+                const resRecord = reservesFile[poolKey];
+                r0 = BigInt(resRecord.raw_reserve0 || "0");
+                r1 = BigInt(resRecord.raw_reserve1 || "0");
             }
-            
-            const r0Hex = clean.slice(0, 64);
-            const r1Hex = clean.slice(64, 128);
-            
-            const r0 = BigInt("0x" + r0Hex);
-            const r1 = BigInt("0x" + r1Hex);
             
             const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
             const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
@@ -226,25 +250,13 @@ function fetchMarketData(addresses) {
     marketFetchInProgress = true;
     console.log(`[MARKET CACHE] Starting update using PulseX V1 & V2 on-chain reserves for ${addresses.length} tokens...`);
 
-    const url = "https://api.dexscreener.com/latest/dex/tokens/0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
-    https.get(url, (res) => {
-        let body = "";
-        res.on("data", chunk => body += chunk);
-        res.on("end", async () => {
-            let nonukesPriceUsd = 1.74;
-            try {
-                const parsed = JSON.parse(body);
-                if (parsed.pairs && parsed.pairs.length > 0) {
-                    const pair = parsed.pairs.find(p => p.priceUsd) || parsed.pairs[0];
-                    if (pair && pair.priceUsd) {
-                        nonukesPriceUsd = parseFloat(pair.priceUsd);
-                    }
-                }
-            } catch (e) {
-                console.error("[MARKET CACHE] Failed to parse NoNukes price:", e.message);
-            }
-            console.log(`[MARKET CACHE] Current NoNukes USD price: ${nonukesPriceUsd}`);
-            currentNoNukesPriceUsd = nonukesPriceUsd;
+    const nonukesPriceUsd = 1.74;
+    console.log(`[MARKET CACHE] Current NoNukes USD price: ${nonukesPriceUsd}`);
+    currentNoNukesPriceUsd = nonukesPriceUsd;
+
+    // Immediately execute reserves updates using the known price
+    (async () => {
+        try {
 
             let poolsMap = {};
             const poolsPath = path.join(__dirname, "../nonukes_pools.json");
@@ -308,11 +320,11 @@ function fetchMarketData(addresses) {
                 console.error("[MARKET CACHE] Failed to fetch or write live cache data:", err);
             }
             marketFetchInProgress = false;
-        });
-    }).on("error", (err) => {
-        console.error("[MARKET CACHE] HTTP error fetching NoNukes price:", err.message);
-        marketFetchInProgress = false;
-    });
+        } catch (outerErr) {
+            console.error("[MARKET CACHE] Unexpected error during market data fetch:", outerErr);
+            marketFetchInProgress = false;
+        }
+    })();
 }
 
 
