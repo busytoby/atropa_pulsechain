@@ -25,7 +25,7 @@ void sd_log_cb(enum sd_log_level_t level, const char* text, void* data) {
 int main(int argc, char** argv) {
     sd_set_log_callback(sd_log_cb, NULL);
     if (argc < 7) {
-        printf("Usage: %s <prompt> <output.raw> <use_shm> <profile: sd15|turbo|dream> <steps> <method> [cfg] [strength]\n", argv[0]);
+        printf("Usage: %s <prompt> <output.raw> <use_shm> <profile: sd15|turbo|dream> <steps> <method> [cfg] [strength] [scheduler]\n", argv[0]);
         return 1;
     }
 
@@ -37,6 +37,7 @@ int main(int argc, char** argv) {
     const char* method_str = argv[6];
     float cfg = (argc > 7) ? atof(argv[7]) : 1.0f;
     float strength = (argc > 8) ? atof(argv[8]) : 0.75f;
+    const char* scheduler_str = (argc > 9) ? argv[9] : "default";
 
     TsfiModelProfile profile = MODEL_SD15;
     if (strcmp(profile_str, "turbo") == 0) profile = MODEL_TURBO;
@@ -132,14 +133,31 @@ int main(int argc, char** argv) {
         gen_params.sample_params.sample_method = EULER_SAMPLE_METHOD;
     }
 
-    if (profile == MODEL_TURBO) {
-        gen_params.sample_params.scheduler = DISCRETE_SCHEDULER;
-    } else if (strcmp(method_str, "heun") == 0) {
-        gen_params.sample_params.scheduler = EXPONENTIAL_SCHEDULER; // Exponential decay mapping for Heun
-    } else if (strcmp(method_str, "lcm") == 0) {
-        gen_params.sample_params.scheduler = AYS_SCHEDULER; // Faster sampling for LCM
-    } else {
+    if (strcmp(scheduler_str, "karras") == 0) {
         gen_params.sample_params.scheduler = KARRAS_SCHEDULER;
+    } else if (strcmp(scheduler_str, "exponential") == 0) {
+        gen_params.sample_params.scheduler = EXPONENTIAL_SCHEDULER;
+    } else if (strcmp(scheduler_str, "discrete") == 0) {
+        gen_params.sample_params.scheduler = DISCRETE_SCHEDULER;
+    } else if (strcmp(scheduler_str, "ays") == 0) {
+        gen_params.sample_params.scheduler = AYS_SCHEDULER;
+    } else if (strcmp(scheduler_str, "gits") == 0) {
+        gen_params.sample_params.scheduler = GITS_SCHEDULER;
+    } else if (strcmp(scheduler_str, "kl_optimal") == 0) {
+        gen_params.sample_params.scheduler = KL_OPTIMAL_SCHEDULER;
+    } else if (strcmp(scheduler_str, "simple") == 0) {
+        gen_params.sample_params.scheduler = SIMPLE_SCHEDULER;
+    } else {
+        // Fallback to default heuristic mapping
+        if (profile == MODEL_TURBO) {
+            gen_params.sample_params.scheduler = DISCRETE_SCHEDULER;
+        } else if (strcmp(method_str, "heun") == 0) {
+            gen_params.sample_params.scheduler = EXPONENTIAL_SCHEDULER;
+        } else if (strcmp(method_str, "lcm") == 0) {
+            gen_params.sample_params.scheduler = AYS_SCHEDULER;
+        } else {
+            gen_params.sample_params.scheduler = KARRAS_SCHEDULER;
+        }
     }
 
     if (shm_depth) {
