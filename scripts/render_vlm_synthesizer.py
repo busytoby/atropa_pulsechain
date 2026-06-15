@@ -650,6 +650,22 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         voxel_size = 30
         voxels = generate_voxel_shape(desc_for_voxel, seed_str=address if address else desc_for_voxel)
         
+        # Inject procedural YUE-boosted visual elements to reward high stats
+        if hypobar > 0:
+            # Add offensive orbital spikes extending from the sides
+            for vz in range(-2, 3):
+                voxels.append((-3, 0, vz, 1))
+                voxels.append((3, 0, vz, 1))
+            voxels.append((-4, 0, 0, 0))
+            voxels.append((4, 0, 0, 0))
+            
+        if epibar > 0:
+            # Add a protective shield ring orbiting the character pedestal
+            for vx_ring in range(-3, 4):
+                for vy_ring in range(-3, 4):
+                    if 8 <= (vx_ring*vx_ring + vy_ring*vy_ring) <= 10:
+                        voxels.append((vx_ring, vy_ring, -3, 1))
+
         accent_rgb = (255, 255, 255)
         for vx, vy, vz, color_type in voxels:
             v_color = accent_rgb if color_type == 1 else scale_color[:3]
