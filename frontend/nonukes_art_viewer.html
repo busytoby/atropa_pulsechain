@@ -421,6 +421,7 @@
                     </div>
                     <div class="card-desc" id="cardDesc">Stable Diffusion Description Prompt</div>
                     <div class="card-address" id="cardAddress">0x000...000</div>
+                    <div class="card-stats" id="cardStats" style="margin-top: 10px; font-family: monospace; font-size: 0.8rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; color: var(--primary);">Loading live stats...</div>
                 </div>
 
                 <div class="card-view" id="cardPlaceholder" style="display: flex; justify-content: center; align-items: center; text-align: center; color: var(--muted); font-style: italic;">
@@ -435,6 +436,29 @@
                             <span style="font-size: 0.8rem;">Click the button below to execute render_vlm_synthesizer.py</span>
                         </div>
                         <img src="" class="art-image" id="artImage" style="display: none;">
+                    </div>
+
+                    <!-- Interactive YUE Stat Override Controls -->
+                    <div id="yueOverridePanel" style="background: rgba(7, 4, 10, 0.8); border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-weight: bold; font-size: 0.9rem; color: var(--primary);">🧪 YUE Stats Simulator Override</span>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text);">
+                                <input type="checkbox" id="chkOverrideStats" onchange="toggleOverrideMode()"> Enable Override
+                            </label>
+                        </div>
+                        <div id="overrideSliders" style="opacity: 0.5; pointer-events: none; display: flex; flex-direction: column; gap: 8px; transition: opacity 0.2s;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                <span>Hypobar (ATK Boost): <span id="lblHypobarOverride" style="color: var(--primary); font-family: monospace;">0</span></span>
+                                <input type="number" id="txtHypobarOverride" value="0" min="0" oninput="syncFromInput('hypobar')" style="width: 100px; background: #000; border: 1px solid var(--border); color: #fff; padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; font-family: monospace;">
+                            </div>
+                            <input type="range" id="rngHypobarOverride" min="0" max="1000000" value="0" oninput="syncFromSlider('hypobar')" style="width: 100%; cursor: pointer;">
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                <span>Epibar (DEF Boost): <span id="lblEpibarOverride" style="color: var(--secondary); font-family: monospace;">0</span></span>
+                                <input type="number" id="txtEpibarOverride" value="0" min="0" oninput="syncFromInput('epibar')" style="width: 100px; background: #000; border: 1px solid var(--border); color: #fff; padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; font-family: monospace;">
+                            </div>
+                            <input type="range" id="rngEpibarOverride" min="0" max="1000000" value="0" oninput="syncFromSlider('epibar')" style="width: 100%; cursor: pointer;">
+                        </div>
                     </div>
 
                     <button class="btn" id="btnSynthesize" disabled onclick="synthesizeDefaultArt()">
@@ -537,6 +561,119 @@
             artImage.style.display = "block";
             document.getElementById("artPlaceholder").style.display = "none";
             document.getElementById("logPanel").style.display = "none";
+
+            // Load live stats asynchronously
+            const statsContainer = document.getElementById("cardStats");
+            statsContainer.textContent = "⏳ Loading live stats...";
+            statsContainer.style.color = "var(--primary)";
+            tok.hypobar = 0;
+            tok.epibar = 0;
+
+            (async () => {
+                try {
+                    const MAP_ADDR = "0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75";
+                    const CHAN_ADDR = "0xe250bf9729076B14A8399794B61C72d0F4AeFcd8";
+                    const provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
+                    
+                    const mapContract = new ethers.Contract(MAP_ADDR, [
+                        "function New(address Integrative) external returns(address)"
+                    ], provider);
+
+                    const chanContract = new ethers.Contract(CHAN_ADDR, [
+                        "function Yan(address) external view returns(address)"
+                    ], provider);
+
+                    const minters = [
+                        "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B",
+                        "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354",
+                        "0x0b92aD7eD0da6c44Bf71B3FCEe668D1670000Ff5",
+                        "0x0c4F73328dFCECfbecf235C9F78A4494a7EC5ddC",
+                        "0x394c3D5990cEfC7Be36B82FDB07a7251ACe61cc7",
+                        "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62"
+                    ];
+
+                    async function getQingAddress(tokenAddr) {
+                        try {
+                            await mapContract.New.staticCall(tokenAddr);
+                            return null;
+                        } catch (err) {
+                            const errData = err.data || (err.error && err.error.data) || err.revert?.data;
+                            if (errData) {
+                                const iface = new ethers.Interface(["error QingAlreadyExists(address Token, address Qing)"]);
+                                try {
+                                    const parsed = iface.parseError(errData);
+                                    if (parsed && parsed.name === "QingAlreadyExists") {
+                                        return parsed.args[1];
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                        return null;
+                    }
+
+                    async function resolveYueContract(tokenAddr) {
+                        try {
+                            const c = new ethers.Contract(tokenAddr, ["function owner() external view returns (address)"], provider);
+                            const owner = await c.owner();
+                            if (owner && owner !== ethers.ZeroAddress) {
+                                const yue = await chanContract.Yan(owner);
+                                if (yue && yue !== ethers.ZeroAddress) return yue;
+                            }
+                        } catch (e) {}
+                        
+                        for (const m of minters) {
+                            try {
+                                const c = new ethers.Contract(m, ["function TreasuryTokens(address) external view returns (address)"], provider);
+                                const owner = await c.TreasuryTokens(tokenAddr);
+                                if (owner && owner !== ethers.ZeroAddress) {
+                                    const yue = await chanContract.Yan(owner);
+                                    if (yue && yue !== ethers.ZeroAddress) return yue;
+                                }
+                            } catch (e) {}
+                        }
+
+                        return [
+                            "0x4a32b4391db5771a3a3682183a6b109d516f723f", // WIZYUE?
+                            "0x424d379CFEe2b79b9D66bf9f94cC51AE0165554B", // generic
+                            "0x4f94f27d9655411927e72799c6e797989a86f2d4"  // YUE_TEST
+                        ];
+                    }
+
+                    const qing = await getQingAddress(tok.address);
+                    if (qing) {
+                        const yueRes = await resolveYueContract(tok.address);
+                        const yueAddresses = Array.isArray(yueRes) ? yueRes : [yueRes];
+                        let maxHypobar = 0n;
+                        let maxEpibar = 0n;
+                        for (const yueAddr of yueAddresses) {
+                            try {
+                                const yue = new ethers.Contract(yueAddr, ["function Bar(address) external view returns (uint256, uint256)"], provider);
+                                const bar = await yue.Bar(qing);
+                                if (bar[0] > maxHypobar) maxHypobar = bar[0];
+                                if (bar[1] > maxEpibar) maxEpibar = bar[1];
+                            } catch (e) {}
+                        }
+                        tok.hypobar = Number(maxHypobar);
+                        tok.epibar = Number(maxEpibar);
+                    }
+
+                    if (!document.getElementById("chkOverrideStats").checked) {
+                        document.getElementById("txtHypobarOverride").value = tok.hypobar;
+                        document.getElementById("rngHypobarOverride").value = tok.hypobar;
+                        document.getElementById("lblHypobarOverride").textContent = tok.hypobar;
+                        
+                        document.getElementById("txtEpibarOverride").value = tok.epibar;
+                        document.getElementById("rngEpibarOverride").value = tok.epibar;
+                        document.getElementById("lblEpibarOverride").textContent = tok.epibar;
+                    }
+
+                    updateStatsDisplay();
+                } catch (err) {
+                    console.error("Failed loading stats", err);
+                    statsContainer.textContent = "⚠️ Failed loading stats";
+                    statsContainer.style.color = "var(--secondary)";
+                }
+            })();
 
             // Draw Voxel canvas preview
             initVoxelPreview(tok);
@@ -689,7 +826,9 @@
                         steps: 4,
                         cfg: 1.5,
                         promptOverride: activeCard.desc,
-                        address: activeCard.address
+                        address: activeCard.address,
+                        hypobar: getEffectiveStats().hypobar,
+                        epibar: getEffectiveStats().epibar
                     })
                 });
 
@@ -712,6 +851,84 @@
                 btn.disabled = false;
                 btn.textContent = "🎨 Synthesize Default Art";
             }
+        }
+
+        function toggleOverrideMode() {
+            const checked = document.getElementById("chkOverrideStats").checked;
+            const slidersDiv = document.getElementById("overrideSliders");
+            if (checked) {
+                slidersDiv.style.opacity = "1";
+                slidersDiv.style.pointerEvents = "auto";
+            } else {
+                slidersDiv.style.opacity = "0.5";
+                slidersDiv.style.pointerEvents = "none";
+                if (activeCard) {
+                    document.getElementById("txtHypobarOverride").value = activeCard.hypobar || 0;
+                    document.getElementById("rngHypobarOverride").value = activeCard.hypobar || 0;
+                    document.getElementById("lblHypobarOverride").textContent = activeCard.hypobar || 0;
+                    
+                    document.getElementById("txtEpibarOverride").value = activeCard.epibar || 0;
+                    document.getElementById("rngEpibarOverride").value = activeCard.epibar || 0;
+                    document.getElementById("lblEpibarOverride").textContent = activeCard.epibar || 0;
+                }
+            }
+            updateStatsDisplay();
+        }
+
+        function syncFromSlider(type) {
+            if (type === 'hypobar') {
+                const val = document.getElementById("rngHypobarOverride").value;
+                document.getElementById("txtHypobarOverride").value = val;
+                document.getElementById("lblHypobarOverride").textContent = val;
+            } else {
+                const val = document.getElementById("rngEpibarOverride").value;
+                document.getElementById("txtEpibarOverride").value = val;
+                document.getElementById("lblEpibarOverride").textContent = val;
+            }
+            updateStatsDisplay();
+        }
+
+        function syncFromInput(type) {
+            if (type === 'hypobar') {
+                const val = Math.max(0, parseInt(document.getElementById("txtHypobarOverride").value) || 0);
+                document.getElementById("rngHypobarOverride").value = Math.min(1000000, val);
+                document.getElementById("lblHypobarOverride").textContent = val;
+            } else {
+                const val = Math.max(0, parseInt(document.getElementById("txtEpibarOverride").value) || 0);
+                document.getElementById("rngEpibarOverride").value = Math.min(1000000, val);
+                document.getElementById("lblEpibarOverride").textContent = val;
+            }
+            updateStatsDisplay();
+        }
+
+        function getEffectiveStats() {
+            if (!activeCard) return { hypobar: 0, epibar: 0 };
+            const checked = document.getElementById("chkOverrideStats").checked;
+            if (checked) {
+                const h = Math.max(0, parseInt(document.getElementById("txtHypobarOverride").value) || 0);
+                const e = Math.max(0, parseInt(document.getElementById("txtEpibarOverride").value) || 0);
+                return { hypobar: h, epibar: e };
+            }
+            return { hypobar: activeCard.hypobar || 0, epibar: activeCard.epibar || 0 };
+        }
+
+        function updateStatsDisplay() {
+            if (!activeCard) return;
+            const stats = getEffectiveStats();
+            const statsContainer = document.getElementById("cardStats");
+            
+            const hypoBoost = stats.hypobar > 0 ? Math.floor(Math.log10(stats.hypobar + 1) * 2) : 0;
+            const epiBoost = stats.epibar > 0 ? Math.floor(Math.log10(stats.epibar + 1) * 2) : 0;
+
+            const isOverridden = document.getElementById("chkOverrideStats").checked;
+            const labelStr = isOverridden ? "SIMULATED STATS BOOSTS:" : "LIVE STATS BOOSTS:";
+
+            statsContainer.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px; color: ${isOverridden ? 'var(--secondary)' : 'var(--primary)'};">${labelStr}</div>
+                <div>Hypobar: ${stats.hypobar} (+${hypoBoost} ATK/BURST)</div>
+                <div>Epibar: ${stats.epibar} (+${epiBoost} DEF/SHIELD)</div>
+            `;
+            statsContainer.style.color = isOverridden ? "var(--secondary)" : "var(--primary)";
         }
 
         let viewMode = 'workspace';

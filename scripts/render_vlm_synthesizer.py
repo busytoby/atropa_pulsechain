@@ -382,7 +382,7 @@ def load_dna_record(dna_path, frame_idx):
             'er': er, 'eg': eg, 'eb': eb, 'ec': ec
         }
 
-def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None):
+def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None, hypobar=0, epibar=0):
     print("=== TSFi Autonomous VLM Synthesizer Frame Director ===")
     
     # Load attributes
@@ -583,44 +583,141 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             font_body_fb = font_body
             font_small_fb = font_small
             font_mono_fb = font_mono
-            
+
+        # Load Noto fallback fonts if available to avoid block rendering
+        font_noto_symbols = "/usr/share/fonts/truetype/noto/NotoSansSymbols-Regular.ttf"
+        font_noto_emoji = "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"
+
+        def try_load_font(path, size):
+            if os.path.exists(path):
+                try:
+                    return ImageFont.truetype(path, size)
+                except:
+                    pass
+            return None
+
+        font_title_noto_sym = try_load_font(font_noto_symbols, 34)
+        font_title_noto_emoji = try_load_font(font_noto_emoji, 109)
+        title_fallbacks = [font_title_fb, font_title_noto_sym, font_title_noto_emoji]
+
+        font_body_noto_sym = try_load_font(font_noto_symbols, 20)
+        font_body_noto_emoji = try_load_font(font_noto_emoji, 109)
+        body_fallbacks = [font_body_fb, font_body_noto_sym, font_body_noto_emoji]
+
+        font_small_noto_sym = try_load_font(font_noto_symbols, 15)
+        font_small_noto_emoji = try_load_font(font_noto_emoji, 109)
+        small_fallbacks = [font_small_fb, font_small_noto_sym, font_small_noto_emoji]
+
+        # Scan for other regular Noto fonts in the system for lazy-loaded fallback
+        noto_font_paths = []
+        try:
+            for root, dirs, files in os.walk("/usr/share/fonts"):
+                for f in files:
+                    if ("Noto" in f or "noto" in f) and (f.endswith("Regular.ttf") or f.endswith("Regular.ttc") or f.endswith("gothic.ttf") or f.endswith("mincho.ttf")):
+                        noto_font_paths.append(os.path.join(root, f))
+        except:
+            pass
+
         # Title
         def sanitize_text_for_font(text, fallback="TOKEN"):
-            # Keep standard printable characters, including emojis and special unicode symbols (ord >= 32)
             sanitized = "".join(c for c in text if ord(c) >= 32)
             sanitized = " ".join(sanitized.split())
             if not sanitized:
                 return fallback
             return sanitized
 
-        def draw_text_with_fallback(draw, position, text, fill, font_primary, font_fallback):
+        _missing_glyphs = {}
+        _font_cache = {}
+        _lazy_fonts = {}
+
+        def get_missing_glyph_bytes_pair(font):
+            if font not in _missing_glyphs:
+                try:
+                    m0 = bytes(font.getmask('\u0000'))
+                except:
+                    m0 = b''
+                try:
+                    mf = bytes(font.getmask('\uffff'))
+                except:
+                    mf = b''
+                _missing_glyphs[font] = (m0, mf)
+            return _missing_glyphs[font]
+
+        def font_supports_char(font, c):
+            if c in (' ', '\t', '\n', '\r'):
+                return True
+            try:
+                m = bytes(font.getmask(c))
+                if len(m) == 0:
+                    return False
+                m0, mf = get_missing_glyph_bytes_pair(font)
+                if m == m0 or m == mf:
+                    return False
+                return True
+            except:
+                return False
+
+        def get_best_font(c, primary, fallbacks):
+            cache_key = (c, primary)
+            if cache_key in _font_cache:
+                return _font_cache[cache_key]
+
+            if font_supports_char(primary, c):
+                _font_cache[cache_key] = primary
+                return primary
+
+            for fb in fallbacks:
+                if not fb:
+                    continue
+                if font_supports_char(fb, c):
+                    _font_cache[cache_key] = fb
+                    return fb
+
+            # Try system Noto fonts dynamically for special non-latin scripts
+            target_size = primary.size
+            for path in noto_font_paths:
+                font_key = (path, target_size)
+                if font_key not in _lazy_fonts:
+                    try:
+                        # Standardize TTC index loading for collection files
+                        if path.endswith(".ttc"):
+                            _lazy_fonts[font_key] = ImageFont.truetype(path, target_size, index=0)
+                        else:
+                            _lazy_fonts[font_key] = ImageFont.truetype(path, target_size)
+                    except:
+                        _lazy_fonts[font_key] = None
+                
+                font_obj = _lazy_fonts[font_key]
+                if font_obj and font_supports_char(font_obj, c):
+                    _font_cache[cache_key] = font_obj
+                    return font_obj
+
+            _font_cache[cache_key] = primary
+            return primary
+
+        def draw_text_with_fallback(draw, position, text, fill, font_primary, fallbacks):
             x, y = position
             for c in text:
-                # Standard ASCII and Enclosed Alphanumerics go to primary font (FreeSans)
-                # Everything else (emojis, peace, fuel, wave, wood etc.) goes to Symbola
-                if (32 <= ord(c) <= 126) or (9312 <= ord(c) <= 9450):
-                    font = font_primary
-                else:
-                    font = font_fallback
+                font = get_best_font(c, font_primary, fallbacks)
                 draw.text((x, y), c, fill=fill, font=font)
                 x += draw.textlength(c, font=font)
 
         raw_token_name = (card_data.get('name', 'UNKNOWN') if card_data else seed_str).split(' (')[0].upper()
         token_name = sanitize_text_for_font(raw_token_name, fallback="PARTNER TOKEN")
-        draw_text_with_fallback(draw, (750, 70), token_name, accent_rgb, font_title, font_title_fb)
+        draw_text_with_fallback(draw, (750, 70), token_name, accent_rgb, font_title, title_fallbacks)
         
         # Type Badge
         card_type = (card_data.get('type', 'TOKEN') if card_data else ('MINTER' if is_minter else 'TOKEN')).upper()
         badge_w = int(draw.textlength(card_type, font=font_small)) + 20
         draw.rectangle([750, 130, 750 + badge_w, 160], fill=get_shade(color_rgb, 0.7), outline=color_rgb, width=1)
-        draw_text_with_fallback(draw, (760, 137), card_type, accent_rgb, font_small, font_small_fb)
+        draw_text_with_fallback(draw, (760, 137), card_type, accent_rgb, font_small, small_fallbacks)
         
         # Symbol Badge
         raw_symbol = (card_data.get('symbol', 'TKN') if card_data else symbol_text).upper()
         symbol = sanitize_text_for_font(raw_symbol, fallback="TKN")
         badge_sym_w = int(draw.textlength(symbol, font=font_small)) + 20
         draw.rectangle([760 + badge_w, 130, 760 + badge_w + badge_sym_w, 160], fill=(24, 15, 36), outline=accent_rgb, width=1)
-        draw_text_with_fallback(draw, (770 + badge_w, 137), symbol, accent_rgb, font_small, font_small_fb)
+        draw_text_with_fallback(draw, (770 + badge_w, 137), symbol, accent_rgb, font_small, small_fallbacks)
         
         # Description
         draw.text((750, 190), "CHARACTERISTICS / DEFI GENOME:", fill=get_shade(color_rgb, 0.8), font=font_small)
@@ -646,15 +743,27 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         desc_lines = wrap_text(desc_sanitized, 38)
         curr_y = 225
         for line in desc_lines:
-            draw_text_with_fallback(draw, (750, curr_y), line, accent_rgb, font_body, font_body_fb)
+            draw_text_with_fallback(draw, (750, curr_y), line, accent_rgb, font_body, body_fallbacks)
             curr_y += 26
             
         # Stats
-        draw.text((750, 420), "CORE POWER INDEX:", fill=get_shade(color_rgb, 0.8), font=font_small)
+        label_str = "CORE POWER INDEX:"
+        if hypobar > 0 or epibar > 0:
+            label_str = f"CORE POWER INDEX (HYPO:{hypobar} / EPI:{epibar}):"
+        draw.text((750, 420), label_str, fill=get_shade(color_rgb, 0.8), font=font_small)
+        
         h_val = int(addr_hash, 16)
         atk_val = (h_val % 8) + 3
         def_val = ((h_val >> 4) % 8) + 3
         nrg_val = ((h_val >> 8) % 8) + 3
+        
+        # Calculate YUE boosts
+        hypo_boost = int(math.log10(float(hypobar) + 1.0) * 2.0) if hypobar > 0 else 0
+        epi_boost = int(math.log10(float(epibar) + 1.0) * 2.0) if epibar > 0 else 0
+        
+        atk_val = min(10, atk_val + hypo_boost)
+        def_val = min(10, def_val + epi_boost)
+        nrg_val = min(10, nrg_val + (hypo_boost + epi_boost) // 2)
         
         stats = [
             ("ATK/BURST", atk_val),
@@ -782,6 +891,8 @@ if __name__ == "__main__":
     parser.add_argument("--cfg", type=float, default=1.5)
     parser.add_argument("--prompt", type=str, default=None)
     parser.add_argument("--address", type=str, default=None)
+    parser.add_argument("--hypobar", type=int, default=0)
+    parser.add_argument("--epibar", type=int, default=0)
     args = parser.parse_args()
     
-    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address)
+    render_vlm_synthesized_frame(args.frame, args.steps, args.cfg, args.prompt, args.address, args.hypobar, args.epibar)
