@@ -411,64 +411,167 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             bg_type = 0
         elif "castle" in desc_lower or "corridor" in desc_lower or "chamber" in desc_lower:
             bg_type = 1
-        if bg_type == 0 and os.path.exists("tsfi2-deepseek/assets/cavern_bg.png"):
-            bg_img = Image.open("tsfi2-deepseek/assets/cavern_bg.png").convert("RGB").resize((1280, 720))
-        elif bg_type == 1 and os.path.exists("tsfi2-deepseek/assets/castle_bg.png"):
-            bg_img = Image.open("tsfi2-deepseek/assets/castle_bg.png").convert("RGB").resize((1280, 720))
-        else:
-            bg_img = Image.new("RGB", (1280, 720), (8, 5, 15))
 
-        # Deterministically offset composition positioning
-        offset_x = ((int(addr_hash[4:6], 16) % 100) / 100.0 - 0.5) * 160  # [-80, 80]
-        offset_y = ((int(addr_hash[6:8], 16) % 100) / 100.0 - 0.5) * 100  # [-50, 50]
-        cx = 640 + int(offset_x)
-        cy = 360 + int(offset_y)
-
-        # 1. Draw soft ambient glow behind the model on the main bg_img
+        # Reset bg_img to be empty dark canvas so we build the card template
+        bg_img = Image.new("RGB", (1280, 720), (8, 5, 15))
+        color_rgb = scale_color[:3]
+        accent_rgb = (255, 255, 255)
+        
+        # 1. Outer chamfered high-tech card frame
+        draw_temp = ImageDraw.Draw(bg_img)
+        draw_temp.polygon([(40, 15), (1240, 15), (1265, 40), (1265, 680), (1240, 705), (40, 705), (15, 680), (15, 40)], outline=get_shade(color_rgb, 0.8), width=4)
+        
+        # 2. Left side Artwork Panel (640x640)
         glow_mask = Image.new("L", (1280, 720), 0)
         glow_draw = ImageDraw.Draw(glow_mask)
-        glow_draw.ellipse([cx - 300, cy - 300, cx + 300, cy + 300], fill=60)
-        glow_color_img = Image.new("RGB", (1280, 720), scale_color[:3])
+        glow_draw.ellipse([360 - 260, 360 - 260, 360 + 260, 360 + 260], fill=70)
+        glow_color_img = Image.new("RGB", (1280, 720), color_rgb)
         bg_img = Image.composite(glow_color_img, bg_img, glow_mask)
         
         # Re-fetch Draw object for overlay
         draw = ImageDraw.Draw(overlay)
         
-        # 2. Draw Holographic background grid lines
-        grid_color = get_shade(scale_color[:3], 0.15)
-        for i in range(0, 1280, 40):
-            draw.line([i, 0, i, 720], fill=grid_color, width=1)
-        for j in range(0, 720, 40):
-            draw.line([0, j, 1280, j], fill=grid_color, width=1)
+        # Chamfered artwork panel border on overlay
+        draw.polygon([(60, 40), (660, 40), (680, 60), (680, 660), (660, 680), (60, 680), (40, 660), (40, 60)], outline=get_shade(color_rgb, 0.4), width=2)
+        
+        # Holographic space grid inside artwork panel on overlay
+        grid_color = get_shade(color_rgb, 0.12)
+        for x_line in range(40, 681, 40):
+            draw.line([x_line, 40, x_line, 680], fill=grid_color, width=1)
+        for y_line in range(40, 681, 40):
+            draw.line([40, y_line, 680, y_line], fill=grid_color, width=1)
             
-        # Draw futuristic HUD rings
-        hud_color = get_shade(scale_color[:3], 0.4)
-        draw.ellipse([cx - 280, cy - 280, cx + 280, cy + 280], outline=hud_color, width=2)
-        draw.ellipse([cx - 240, cy - 240, cx + 240, cy + 240], outline=get_shade(scale_color[:3], 0.6), width=1)
-        draw.line([cx - 300, cy, cx - 260, cy], fill=hud_color, width=3)
-        draw.line([cx + 260, cy, cx + 300, cy], fill=hud_color, width=3)
-        draw.line([cx, cy - 300, cx, cy - 260], fill=hud_color, width=3)
-        draw.line([cx, cy + 260, cx, cy + 300], fill=hud_color, width=2)
+        # Floating particles inside artwork panel
+        for i in range(15):
+            px = 40 + ((int(addr_hash, 16) >> (i * 2)) % 600 + 20)
+            py = 40 + ((int(addr_hash, 16) >> (i * 3)) % 600 + 20)
+            p_sz = (int(addr_hash, 16) >> (i * 4)) % 3 + 1
+            p_color = accent_rgb if i % 3 == 0 else get_shade(color_rgb, 1.2)
+            draw.ellipse([px - p_sz, py - p_sz, px + p_sz, py + p_sz], fill=p_color)
+            
+        # Center targeting HUD rings in the artwork box
+        cx, cy = 360, 360
+        hud_color = get_shade(color_rgb, 0.35)
+        draw.ellipse([cx - 240, cy - 240, cx + 240, cy + 240], outline=hud_color, width=2)
+        draw.ellipse([cx - 210, cy - 210, cx + 210, cy + 210], outline=get_shade(color_rgb, 0.5), width=1)
+        draw.line([cx - 260, cy, cx - 220, cy], fill=hud_color, width=3)
+        draw.line([cx + 220, cy, cx + 260, cy], fill=hud_color, width=3)
+        draw.line([cx, cy - 260, cx, cy - 220], fill=hud_color, width=3)
+        draw.line([cx, cy + 220, cx, cy + 260], fill=hud_color, width=3)
         
         for angle in range(0, 360, 45):
             rad = math.radians(angle)
-            x1 = cx + 230 * math.cos(rad)
-            y1 = cy + 230 * math.sin(rad)
-            x2 = cx + 250 * math.cos(rad)
-            y2 = cy + 250 * math.sin(rad)
+            x1 = cx + 200 * math.cos(rad)
+            y1 = cy + 200 * math.sin(rad)
+            x2 = cx + 215 * math.cos(rad)
+            y2 = cy + 215 * math.sin(rad)
             draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
+            
+        # 3. Draw Pedestal Base
+        pedestal_color = get_shade(color_rgb, 0.5)
+        for px_grid in range(-2, 3):
+            for py_grid in range(-2, 3):
+                if abs(px_grid) + abs(py_grid) <= 3:
+                    draw_isometric_cube(draw, cx, cy, px_grid, py_grid, -4, 30, pedestal_color)
 
         desc_for_voxel = prompt_override if prompt_override else desc
         if is_minter and "minter" not in desc_for_voxel.lower() and "shield" not in desc_for_voxel.lower():
             desc_for_voxel += " minter sentinel shield"
             
-        voxel_size = 22
+        voxel_size = 30
         voxels = generate_voxel_shape(desc_for_voxel, seed_str=address if address else desc_for_voxel)
         
         accent_rgb = (255, 255, 255)
         for vx, vy, vz, color_type in voxels:
             v_color = accent_rgb if color_type == 1 else scale_color[:3]
             draw_isometric_cube(draw, cx, cy, vx, vy, vz, voxel_size, v_color)
+            
+        # 5. Right side Info Panel on overlay
+        draw.polygon([(740, 40), (1220, 40), (1240, 60), (1240, 660), (1220, 680), (740, 680), (720, 660), (720, 60)], outline=get_shade(color_rgb, 0.4), fill=(10, 6, 18, 240), width=2)
+        
+        # Load fonts
+        from PIL import ImageFont
+        font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+        if not os.path.exists(font_path):
+            font_path = "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
+        try:
+            font_title = ImageFont.truetype(font_path, 34)
+            font_body = ImageFont.truetype(font_path, 20)
+            font_small = ImageFont.truetype(font_path, 15)
+            font_mono = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf", 15)
+        except:
+            font_title = ImageFont.load_default()
+            font_body = ImageFont.load_default()
+            font_small = ImageFont.load_default()
+            font_mono = ImageFont.load_default()
+            
+        # Title
+        token_name = (card_data.get('name', 'UNKNOWN') if card_data else seed_str).split(' (')[0].upper()
+        draw.text((750, 70), token_name, fill=accent_rgb, font=font_title)
+        
+        # Type Badge
+        card_type = (card_data.get('type', 'TOKEN') if card_data else ('MINTER' if is_minter else 'TOKEN')).upper()
+        badge_w = len(card_type) * 11 + 20
+        draw.rectangle([750, 130, 750 + badge_w, 160], fill=get_shade(color_rgb, 0.7), outline=color_rgb, width=1)
+        draw.text((760, 137), card_type, fill=accent_rgb, font=font_small)
+        
+        # Symbol Badge
+        symbol = (card_data.get('symbol', 'TKN') if card_data else symbol_text).upper()
+        badge_sym_w = len(symbol) * 12 + 20
+        draw.rectangle([760 + badge_w, 130, 760 + badge_w + badge_sym_w, 160], fill=(24, 15, 36), outline=accent_rgb, width=1)
+        draw.text((770 + badge_w, 137), symbol, fill=accent_rgb, font=font_small)
+        
+        # Description
+        draw.text((750, 190), "CHARACTERISTICS / DEFI GENOME:", fill=get_shade(color_rgb, 0.8), font=font_small)
+        
+        def wrap_text(text, width_chars):
+            words = text.split()
+            lines = []
+            current_line = []
+            current_length = 0
+            for word in words:
+                if current_length + len(word) + 1 > width_chars:
+                    lines.append(" ".join(current_line))
+                    current_line = [word]
+                    current_length = len(word)
+                else:
+                    current_line.append(word)
+                    current_length += len(word) + 1
+            if current_line:
+                lines.append(" ".join(current_line))
+            return lines
+
+        desc_lines = wrap_text(desc, 38)
+        curr_y = 225
+        for line in desc_lines:
+            draw.text((750, curr_y), line, fill=accent_rgb, font=font_body)
+            curr_y += 26
+            
+        # Stats
+        draw.text((750, 420), "CORE POWER INDEX:", fill=get_shade(color_rgb, 0.8), font=font_small)
+        h_val = int(addr_hash, 16)
+        atk_val = (h_val % 8) + 3
+        def_val = ((h_val >> 4) % 8) + 3
+        nrg_val = ((h_val >> 8) % 8) + 3
+        
+        stats = [
+            ("ATK/BURST", atk_val),
+            ("DEF/SHIELD", def_val),
+            ("LIQUIDITY", nrg_val)
+        ]
+        stat_y = 455
+        for label, val in stats:
+            draw.text((750, stat_y), label, fill=accent_rgb, font=font_small)
+            for i in range(10):
+                bx = 890 + i * 22
+                fill_color = color_rgb if i < val else get_shade(color_rgb, 0.15)
+                draw.rectangle([bx, stat_y + 1, bx + 16, stat_y + 13], fill=fill_color)
+            stat_y += 32
+            
+        # Address
+        draw.text((750, 610), "CRYPTOGRAPHIC SIGNATURE:", fill=get_shade(color_rgb, 0.8), font=font_small)
+        addr_str = address if address else "0x0000000000000000000000000000000000000000"
+        draw.text((750, 635), f"ADDR: {addr_str.upper()}", fill=color_rgb, font=font_mono)
     else:
         # Standard character rendering logic (original vector overlay & eyes)
         if dna['r'] == 255 and dna['g'] == 170 and dna['b'] == 0:
