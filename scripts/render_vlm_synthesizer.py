@@ -373,9 +373,28 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         seed_str = address if address else (prompt_override if prompt_override else "default_token")
         addr_hash = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
 
+        # Load desc and color from card JSON if address is given
+        desc = ""
+        if address:
+            json_path = f"solidity/dysnomia/domain/data/{address.lower()}.json"
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r') as f:
+                        card_data = json.load(f)
+                        desc = card_data.get('desc', '')
+                        card_color = card_data.get('color')
+                        if card_color:
+                            hex_str = card_color.lstrip('#')
+                            scale_color = tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4)) + (255,)
+                except Exception as e:
+                    print(f"Error reading card json: {e}")
+
+        if not desc:
+            desc = prompt_override if prompt_override else seed_str
+
         # Set background contextually (Tokens/Minters default to Dark Space Grid)
         bg_type = 2
-        desc_lower = seed_str.lower()
+        desc_lower = desc.lower()
         if "cavern" in desc_lower or "cave" in desc_lower or "ruins" in desc_lower:
             bg_type = 0
         elif "castle" in desc_lower or "corridor" in desc_lower or "chamber" in desc_lower:
@@ -427,12 +446,12 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             y2 = cy + 250 * math.sin(rad)
             draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
 
-        desc = prompt_override if prompt_override else seed_str
-        if is_minter and "minter" not in desc.lower() and "shield" not in desc.lower():
-            desc += " minter sentinel shield"
+        desc_for_voxel = prompt_override if prompt_override else desc
+        if is_minter and "minter" not in desc_for_voxel.lower() and "shield" not in desc_for_voxel.lower():
+            desc_for_voxel += " minter sentinel shield"
             
         voxel_size = 22
-        voxels = generate_voxel_shape(desc)
+        voxels = generate_voxel_shape(desc_for_voxel)
         
         accent_rgb = (255, 255, 255)
         for vx, vy, vz, color_type in voxels:
