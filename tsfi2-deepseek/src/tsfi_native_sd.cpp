@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     
     // Explicitly disable TAESD preview
     params.tae_preview_only = false;
-    params.wtype = SD_TYPE_F32;
+    params.wtype = SD_TYPE_F16;
     params.rng_type = STD_DEFAULT_RNG;
     params.sampler_rng_type = STD_DEFAULT_RNG;
     params.use_teddy_vae = false; 
