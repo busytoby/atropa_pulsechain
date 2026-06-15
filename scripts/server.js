@@ -89,18 +89,141 @@ const https = require("https");
 const MARKET_CACHE_PATH = path.join(__dirname, "../tmp/market_cache.json");
 let marketFetchInProgress = false;
 let currentNoNukesPriceUsd = 1.74;
+
+const decimalsCache = {
+    "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62": 18
+};
+
+function pulseRpcCall(to, data) {
+    return new Promise((resolve) => {
+        const postData = JSON.stringify({
+            jsonrpc: "2.0",
+            method: "eth_call",
+            params: [
+                {
+                    to: to,
+                    data: data
+                },
+                "latest"
+            ],
+            id: 1
+        });
+
+        const options = {
+            hostname: "rpc.pulsechain.com",
+            port: 443,
+            path: "/",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": postData.length
+            },
+            timeout: 5000
+        };
+
+        const req = https.request(options, (res) => {
+            let body = "";
+            res.on("data", chunk => body += chunk);
+            res.on("end", () => {
+                try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.error) {
+                        resolve(null);
+                    } else {
+                        resolve(parsed.result);
+                    }
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        });
+
+        req.on("error", () => resolve(null));
+        req.write(postData);
+        req.end();
+    });
+}
+
+async function getTokenDecimals(tokenAddress) {
+    const addr = tokenAddress.toLowerCase();
+    if (decimalsCache[addr] !== undefined) {
+        return decimalsCache[addr];
+    }
+    let decimals = 18;
+    try {
+        const result = await pulseRpcCall(tokenAddress, "0x313ce567");
+        if (result && result !== "0x") {
+            const parsed = parseInt(result, 16);
+            if (!isNaN(parsed)) {
+                decimals = parsed;
+            }
+        }
+    } catch (e) {
+        // Fallback
+    }
+    decimalsCache[addr] = decimals;
+    return decimals;
+}
+
+async function queryTokenMarketData(partnerAddr, poolAddr, nonukesPriceUsd) {
+    try {
+        const reservesResult = await pulseRpcCall(poolAddr, "0x0902f1ac");
+        if (!reservesResult || reservesResult === "0x") {
+            return { priceUsd: "0", liquidityUsd: 0 };
+        }
+        
+        const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
+        if (clean.length < 128) {
+            return { priceUsd: "0", liquidityUsd: 0 };
+        }
+        
+        const r0Hex = clean.slice(0, 64);
+        const r1Hex = clean.slice(64, 128);
+        
+        const r0 = BigInt("0x" + r0Hex);
+        const r1 = BigInt("0x" + r1Hex);
+        
+        const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
+        const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
+        
+        const rawReservePartner = isPartner0 ? r0 : r1;
+        const rawReserveNoNukes = isPartner0 ? r1 : r0;
+        
+        const partnerDecimals = await getTokenDecimals(partnerAddr);
+        const nonukesDecimals = 18;
+        
+        const reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
+        const reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
+        
+        let priceUsd = "0";
+        if (reservePartner > 0) {
+            const priceInNoNukes = reserveNoNukes / reservePartner;
+            priceUsd = (priceInNoNukes * nonukesPriceUsd).toFixed(6);
+        }
+        
+        const liquidityUsd = Math.round(reserveNoNukes * nonukesPriceUsd * 2);
+        
+        return {
+            priceUsd,
+            liquidityUsd
+        };
+    } catch (e) {
+        console.error(`[MARKET CACHE] Error querying live data for ${partnerAddr}:`, e.message);
+        return { priceUsd: "0", liquidityUsd: 0 };
+    }
+}
+
 function fetchMarketData(addresses) {
     if (marketFetchInProgress || !addresses || addresses.length === 0) return;
     marketFetchInProgress = true;
-    console.log(`[MARKET CACHE] Starting update using NoNukes reserves calculation for ${addresses.length} tokens...`);
+    console.log(`[MARKET CACHE] Starting update using PulseX on-chain reserves for ${addresses.length} tokens...`);
 
-    // 1. Fetch NoNukes price from DexScreener
-    const url = "https://api.dexscreener.com/latest/dex/tokens/0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
+    const url = "https://api.dexscreener.com/latest/dex/tokens/0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
     https.get(url, (res) => {
         let body = "";
         res.on("data", chunk => body += chunk);
-        res.on("end", () => {
-            let nonukesPriceUsd = 1.74; // default fallback
+        res.on("end", async () => {
+            let nonukesPriceUsd = 1.74;
             try {
                 const parsed = JSON.parse(body);
                 if (parsed.pairs && parsed.pairs.length > 0) {
@@ -115,7 +238,6 @@ function fetchMarketData(addresses) {
             console.log(`[MARKET CACHE] Current NoNukes USD price: ${nonukesPriceUsd}`);
             currentNoNukesPriceUsd = nonukesPriceUsd;
 
-            // 2. Load nonukes_pools.json
             let poolsMap = {};
             const poolsPath = path.join(__dirname, "../nonukes_pools.json");
             if (fs.existsSync(poolsPath)) {
@@ -126,37 +248,6 @@ function fetchMarketData(addresses) {
                 }
             }
 
-            // 3. Find reserves file path
-            const os = require("os");
-            const brainDir = path.join(os.homedir(), ".gemini/antigravity-cli/brain");
-            let reservesPath = path.join(__dirname, "../nonukes_pulsex_reserves.json");
-            if (fs.existsSync(brainDir)) {
-                const subdirs = fs.readdirSync(brainDir);
-                for (const subdir of subdirs) {
-                    const checkPath = path.join(brainDir, subdir, "scratch/nonukes_pulsex_reserves.json");
-                    if (fs.existsSync(checkPath)) {
-                        reservesPath = checkPath;
-                        break;
-                    }
-                }
-            }
-
-            // 4. Load reserves data
-            let reservesMap = {};
-            if (fs.existsSync(reservesPath)) {
-                try {
-                    reservesMap = JSON.parse(fs.readFileSync(reservesPath, "utf8"));
-                } catch (e) {
-                    console.error("[MARKET CACHE] Failed to read reserves file:", e.message);
-                }
-            } else {
-                console.warn("[MARKET CACHE] Reserves file not found at:", reservesPath);
-            }
-
-            // 5. Compute price for each partner token
-            const marketData = {};
-            
-            // Map partner token addresses to their LP pools
             const partnerToPool = {};
             for (const [poolAddr, poolInfo] of Object.entries(poolsMap)) {
                 if (poolInfo.other_addr) {
@@ -164,53 +255,45 @@ function fetchMarketData(addresses) {
                 }
             }
 
-            addresses.forEach(addr => {
-                const addrKey = addr.toLowerCase();
-                const poolAddr = partnerToPool[addrKey];
-                let priceUsd = "0";
-                let liquidityUsd = 0;
-
-                if (poolAddr && reservesMap[poolAddr]) {
-                    const res = reservesMap[poolAddr];
-                    const reserve0 = parseFloat(res.reserve0 || 0);
-                    const reserve1 = parseFloat(res.reserve1 || 0);
-                    const t0 = (res.token0 || "").toLowerCase();
-                    const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
-
-                    let reserveNoNukes = reserve0;
-                    let reservePartner = reserve1;
-
-                    if (t0 !== nonukesAddr) {
-                        reserveNoNukes = reserve1;
-                        reservePartner = reserve0;
-                    }
-                    
-                    if (reservePartner > 0) {
-                        const priceInNoNukes = reserveNoNukes / reservePartner;
-                        priceUsd = (priceInNoNukes * nonukesPriceUsd).toFixed(6);
-                    }
-                    liquidityUsd = reserveNoNukes * nonukesPriceUsd * 2;
+            const marketData = {};
+            const batchSize = 10;
+            
+            try {
+                for (let i = 0; i < addresses.length; i += batchSize) {
+                    const batch = addresses.slice(i, i + batchSize);
+                    await Promise.all(batch.map(async (addr) => {
+                        const addrKey = addr.toLowerCase();
+                        const poolAddr = partnerToPool[addrKey];
+                        
+                        if (poolAddr) {
+                            const metrics = await queryTokenMarketData(addr, poolAddr, nonukesPriceUsd);
+                            marketData[addrKey] = {
+                                priceUsd: metrics.priceUsd,
+                                priceChange24h: 0,
+                                liquidityUsd: metrics.liquidityUsd,
+                                dexId: "pulsex",
+                                quoteSymbol: "NONUKES"
+                            };
+                        } else {
+                            marketData[addrKey] = {
+                                priceUsd: "0",
+                                priceChange24h: 0,
+                                liquidityUsd: 0,
+                                dexId: "unknown",
+                                quoteSymbol: "NONUKES"
+                            };
+                        }
+                    }));
                 }
 
-                marketData[addrKey] = {
-                    priceUsd: priceUsd,
-                    priceChange24h: 0,
-                    liquidityUsd: Math.round(liquidityUsd),
-                    dexId: "pulsex",
-                    quoteSymbol: "NONUKES"
-                };
-            });
-
-            // 6. Write to market_cache.json
-            try {
                 fs.mkdirSync(path.dirname(MARKET_CACHE_PATH), { recursive: true });
                 fs.writeFileSync(MARKET_CACHE_PATH, JSON.stringify({
                     timestamp: Date.now(),
                     data: marketData
                 }, null, 2), "utf8");
-                console.log(`[MARKET CACHE] Calculated and saved ${Object.keys(marketData).length} token price records based on NoNukes LP reserves.`);
+                console.log(`[MARKET CACHE] Calculated and saved ${Object.keys(marketData).length} token price records directly from PulseX.`);
             } catch (err) {
-                console.error("[MARKET CACHE] Failed to write cache file:", err);
+                console.error("[MARKET CACHE] Failed to fetch or write live cache data:", err);
             }
             marketFetchInProgress = false;
         });
