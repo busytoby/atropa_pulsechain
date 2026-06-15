@@ -43,11 +43,34 @@ def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     draw.line([center, right_top], fill=outline_color, width=1)
 
 def generate_voxel_shape(desc):
-    desc = desc.lower()
+    import re
+    tokens = re.findall(r'[a-z0-9]+', desc.lower())
     voxels = []
     
+    # 0. BOZO Clown Face
+    if "bozo" in tokens or "clown" in tokens:
+        # Red Nose (Accent)
+        voxels.append((0, 0, 0, 1))
+        # White face makeup (Accent)
+        for z in range(-1, 2):
+            for x in range(-1, 2):
+                for y in range(-1, 2):
+                    if (x, y, z) != (0, 0, 0) and (x, y, z) != (0, 0, 1):
+                        voxels.append((x, y, z, 1))
+        # Hair (Theme color)
+        for z in range(-1, 3):
+            for y in range(-1, 2):
+                voxels.append((-2, y, z, 0))
+                voxels.append((2, y, z, 0))
+        # Smile (Theme color)
+        voxels.append((-1, -1, -2, 0))
+        voxels.append((0, -1, -2, 0))
+        voxels.append((1, -1, -2, 0))
+        voxels.append((-2, -1, -1, 0))
+        voxels.append((2, -1, -1, 0))
+
     # 1. Animal / Dog / Inu
-    if "inu" in desc or "dog" in desc or "pinu" in desc:
+    elif "inu" in tokens or "dog" in tokens or "pinu" in tokens:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 voxels.append((x, y, -1, 0))
@@ -57,7 +80,7 @@ def generate_voxel_shape(desc):
         voxels.append((2, -2, 0, 0))
         
     # 2. Yin Yang
-    elif "yinyang" in desc or "yyang" in desc or "yin" in desc or "yang" in desc:
+    elif "yinyang" in tokens or "yyang" in tokens or "yin" in tokens or "yang" in tokens:
         for z in range(-1, 2):
             for x in range(-3, 4):
                 for y in range(-3, 4):
@@ -70,7 +93,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 1 if is_white else 0))
                         
     # 3. Poop / Poo
-    elif "poop" in desc or "poo" in desc or "p0op" in desc:
+    elif "poop" in tokens or "poo" in tokens or "p0op" in tokens:
         for z in range(-2, 3):
             r = 3 - (z + 2)
             if r < 0: r = 0
@@ -80,7 +103,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 0 if z % 2 == 0 else 1))
                         
     # 4. Dinosaur / Dino
-    elif "dino" in desc or "dinosaur" in desc:
+    elif "dino" in tokens or "dinosaur" in tokens:
         for z in range(-2, 3):
             for x in range(-2, 3):
                 for y in range(-2, 3):
@@ -92,7 +115,7 @@ def generate_voxel_shape(desc):
         voxels.append((1, 2, 2, 1))
         
     # 5. Tree / Forest / Wildlife / Refuge
-    elif "wildlife" in desc or "refuge" in desc or "tree" in desc or "forest" in desc or "🌲" in desc or "fox" in desc or "duck" in desc:
+    elif "wildlife" in tokens or "refuge" in tokens or "tree" in tokens or "forest" in tokens or "🌲" in tokens or "fox" in tokens or "duck" in tokens:
         for z in range(-3, 0):
             voxels.append((0, 0, z, 0))
         for z in range(0, 4):
@@ -103,7 +126,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 1))
                         
     # 6. Star Gazer
-    elif "stargazer" in desc or "gazer" in desc or "star" in desc:
+    elif "stargazer" in tokens or "gazer" in tokens or "star" in tokens:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 for z in range(-1, 2):
@@ -116,7 +139,7 @@ def generate_voxel_shape(desc):
                 voxels.append((0, 0, d, 0))
                 
     # 7. Tits
-    elif "tits" in desc or "doubledd" in desc:
+    elif "tits" in tokens or "doubledd" in tokens:
         for z in range(-1, 2):
             for x in range(-3, 0):
                 for y in range(-2, 3):
@@ -130,7 +153,7 @@ def generate_voxel_shape(desc):
         voxels.append((2, 0, 1, 1))
         
     # 8. Printer / Press
-    elif "printer" in desc or "press" in desc:
+    elif "printer" in tokens or "press" in tokens:
         for x in range(-2, 3):
             for y in range(-2, 3):
                 for z in range(-3, 1):
@@ -140,7 +163,7 @@ def generate_voxel_shape(desc):
             voxels.append((0, y, 2, 1))
             
     # 9. Ghost / Shadow
-    elif "shadow" in desc or "ghost" in desc:
+    elif "shadow" in tokens or "ghost" in tokens:
         for z in range(-2, 3):
             r = 2 if z >= 0 else 1
             for x in range(-r, r+1):
@@ -153,7 +176,7 @@ def generate_voxel_shape(desc):
         voxels.append((1, 1, 1, 1))
         
     # 10. Firefly / Fly
-    elif "firefly" in desc or "fly" in desc:
+    elif "firefly" in tokens or "fly" in tokens:
         for z in range(-1, 2):
             voxels.append((0, 0, z, 0))
         voxels.append((0, 0, -2, 1))
@@ -163,7 +186,7 @@ def generate_voxel_shape(desc):
         voxels.append((2, 0, 1, 1))
         
     # 11. Key
-    elif "key" in desc:
+    elif "key" in tokens:
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 2 <= x*x + y*y <= 5:
@@ -175,7 +198,7 @@ def generate_voxel_shape(desc):
         voxels.append((1, 0, -1, 0))
         
     # 12. Sword
-    elif "sword" in desc or "blade" in desc or "dirk" in desc:
+    elif "sword" in tokens or "blade" in tokens or "dirk" in tokens:
         for z in range(-1, 4):
             voxels.append((0, 0, z, 1))
         for x in range(-2, 3):
@@ -184,7 +207,7 @@ def generate_voxel_shape(desc):
         voxels.append((0, 0, -4, 0))
         
     # 13. Shield
-    elif "shield" in desc or "sentinel" in desc or "vault" in desc or "guard" in desc:
+    elif "shield" in tokens or "sentinel" in tokens or "vault" in tokens or "guard" in tokens:
         for z in range(-2, 3):
             width = 2 if z >= 0 else 2 + z
             for x in range(-width, width + 1):
@@ -193,7 +216,7 @@ def generate_voxel_shape(desc):
                     voxels.append((x, 0, z, 1))
                     
     # 14. Crown
-    elif "crown" in desc or "king" in desc or "princess" in desc or "queen" in desc:
+    elif "crown" in tokens or "king" in tokens or "princess" in tokens or "queen" in tokens:
         for x in range(-2, 3):
             for y in range(-2, 3):
                 if 3 <= x*x + y*y <= 5:
@@ -209,7 +232,7 @@ def generate_voxel_shape(desc):
         voxels.append((0, 0, 1, 1))
         
     # 15. Gas/Flame
-    elif "gas" in desc or "fuel" in desc or "fire" in desc or "burn" in desc or "flame" in desc:
+    elif "gas" in tokens or "fuel" in tokens or "fire" in tokens or "burn" in tokens or "flame" in tokens:
         for z in range(-3, 4):
             max_r = 3 - (z + 3)//2
             for x in range(-max_r, max_r + 1):
@@ -219,7 +242,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 1 if is_inner else 0))
                         
     # 16. Heart
-    elif "heart" in desc or "love" in desc:
+    elif "heart" in tokens or "love" in tokens:
         for x in (-1, 1):
             for y in (-1, 1):
                 voxels.append((x, y, 2, 0))
@@ -234,7 +257,7 @@ def generate_voxel_shape(desc):
         voxels.append((0, 0, -2, 0))
         
     # 17. Droplet
-    elif "drop" in desc or "water" in desc or "liquid" in desc or "pool" in desc:
+    elif "drop" in tokens or "water" in tokens or "liquid" in tokens or "pool" in tokens:
         for z in range(-3, 4):
             r = 3 - (z + 3)//2
             for x in range(-r, r+1):
@@ -243,7 +266,7 @@ def generate_voxel_shape(desc):
                         voxels.append((x, y, z, 1 if (z == -2 and x == 0 and y == 0) else 0))
                         
     # 18. Stablecoin/USD/Dollar
-    elif "usd" in desc or "dai" in desc or "usdc" in desc or "usdt" in desc or "stable" in desc or "dollar" in desc:
+    elif "usd" in tokens or "dai" in tokens or "usdc" in tokens or "usdt" in tokens or "stable" in tokens or "dollar" in tokens:
         s_points = [
             (1, 0, 2), (0, 0, 2), (-1, 0, 2),
             (-1, 0, 1),
