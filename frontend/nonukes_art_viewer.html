@@ -684,9 +684,26 @@
 
                     updateStatsDisplay();
                 } catch (err) {
-                    console.error("Failed loading stats", err);
-                    statsContainer.textContent = "⚠️ Failed loading stats";
-                    statsContainer.style.color = "var(--secondary)";
+                    console.warn("Failed loading on-chain stats (RPC offline/slow), defaulting to 0:", err);
+                    tok.hypobar = 0;
+                    tok.epibar = 0;
+                    if (!document.getElementById("chkOverrideStats").checked) {
+                        document.getElementById("txtHypobarOverride").value = 0;
+                        document.getElementById("rngHypobarOverride").value = 0;
+                        document.getElementById("lblHypobarOverride").textContent = 0;
+                        
+                        document.getElementById("txtEpibarOverride").value = 0;
+                        document.getElementById("rngEpibarOverride").value = 0;
+                        document.getElementById("lblEpibarOverride").textContent = 0;
+                    }
+                    updateStatsDisplay();
+                    
+                    const note = document.createElement("div");
+                    note.style.fontSize = "0.7rem";
+                    note.style.color = "var(--muted)";
+                    note.style.marginTop = "4px";
+                    note.textContent = "⚠️ RPC Offline (Using defaults)";
+                    statsContainer.appendChild(note);
                 }
             })();
 
