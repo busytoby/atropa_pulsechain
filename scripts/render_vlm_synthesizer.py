@@ -491,6 +491,27 @@ def fetch_onchain_yue_stats(token_address):
 def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=None, address=None, hypobar=0, epibar=0):
     print("=== TSFi Autonomous VLM Synthesizer Frame Director ===")
     
+    # Resolve token name/symbol dynamically if address is not provided
+    if not address and prompt_override:
+        import re
+        import glob
+        tokens = [t.lower() for t in re.findall(r'[A-Za-z0-9]+', prompt_override)]
+        if tokens:
+            data_dir = "solidity/dysnomia/domain/data"
+            card_files = glob.glob(os.path.join(data_dir, "0x*.json"))
+            for card_file in card_files:
+                try:
+                    with open(card_file, 'r') as f:
+                        card_data = json.load(f)
+                    c_symbol = card_data.get('symbol', '').lower()
+                    c_name = card_data.get('name', '').lower()
+                    if any(t in c_symbol or t in c_name for t in tokens):
+                        address = card_data.get('address')
+                        print(f"[Synthesizer] Resolved token prompt '{prompt_override}' to card address: {address}")
+                        break
+                except:
+                    pass
+
     if address and hypobar == 0 and epibar == 0:
         print(f"[Synthesizer] Fetching live YUE on-chain stats for address: {address}...")
         try:
