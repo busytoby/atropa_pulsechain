@@ -562,7 +562,13 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             
         # Title
         def sanitize_text_for_font(text, fallback="TOKEN"):
-            sanitized = "".join(c for c in text if ord(c) < 256)
+            import unicodedata
+            # Normalize unicode compatibility characters (e.g. circled letters like ⓐ -> a)
+            normalized = unicodedata.normalize('NFKD', text)
+            # Keep only standard printable ASCII characters (32 to 126)
+            # This guarantees 100% rendering compatibility on both Liberation TrueType fonts
+            # and PIL's default fallback font (which does not support Latin-1 or other ranges).
+            sanitized = "".join(c for c in normalized if 32 <= ord(c) <= 126)
             sanitized = " ".join(sanitized.split())
             if not sanitized:
                 return fallback

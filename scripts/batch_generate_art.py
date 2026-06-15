@@ -363,8 +363,13 @@ def generate_voxel_shape(desc, seed_str=None):
     return voxels
 
 def sanitize_text_for_font(text, fallback="TOKEN"):
-    # Strip characters with ordinal > 255 (which Liberation fonts can't render)
-    sanitized = "".join(c for c in text if ord(c) < 256)
+    import unicodedata
+    # Normalize unicode compatibility characters (e.g. circled letters like ⓐ -> a)
+    normalized = unicodedata.normalize('NFKD', text)
+    # Keep only standard printable ASCII characters (32 to 126)
+    # This guarantees 100% rendering compatibility on both Liberation TrueType fonts
+    # and PIL's default fallback font (which does not support Latin-1 or other ranges).
+    sanitized = "".join(c for c in normalized if 32 <= ord(c) <= 126)
     sanitized = " ".join(sanitized.split())
     if not sanitized:
         return fallback
