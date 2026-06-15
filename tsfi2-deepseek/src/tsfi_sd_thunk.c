@@ -113,7 +113,8 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         }
 
         // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
-        // Fast path for core region (x and y in [1, 62]) - No bounds checks, constant multiply instead of division
+        // Step A: Calculate neighborhood averages and store in latent_att
+        // Fast path for core region (x and y in [1, 62])
         #pragma omp parallel for schedule(static)
         for (int y = 1; y < lh - 1; y++) {
             for (int x = 1; x < lw - 1; x++) {
@@ -133,17 +134,9 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                 }
                 
                 int dst_idx = (y * lw + x) * 3;
-                float mix_r = r_sum * 0.11111111f;
-                float mix_g = g_sum * 0.11111111f;
-                float mix_b = b_sum * 0.11111111f;
-                
-                float val_r = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
-                float val_g = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
-                float val_b = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
-                
-                latent_att[dst_idx + 0] = val_r > 0.0f ? val_r : val_r * 0.1f;
-                latent_att[dst_idx + 1] = val_g > 0.0f ? val_g : val_g * 0.1f;
-                latent_att[dst_idx + 2] = val_b > 0.0f ? val_b : val_b * 0.1f;
+                latent_att[dst_idx + 0] = r_sum * 0.11111111f;
+                latent_att[dst_idx + 1] = g_sum * 0.11111111f;
+                latent_att[dst_idx + 2] = b_sum * 0.11111111f;
             }
         }
 
@@ -151,7 +144,6 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         #pragma omp parallel for schedule(static)
         for (int y = 0; y < lh; y++) {
             for (int x = 0; x < lw; x++) {
-                // Skip the core region that was handled in the fast path
                 if (y > 0 && y < lh - 1 && x > 0 && x < lw - 1) {
                     continue;
                 }
@@ -174,18 +166,35 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
                 }
                 
                 int dst_idx = (y * lw + x) * 3;
-                float mix_r = r_sum / count;
-                float mix_g = g_sum / count;
-                float mix_b = b_sum / count;
-                
-                float val_r = 0.7f * latent[dst_idx + 0] + 0.3f * mix_r;
-                float val_g = 0.7f * latent[dst_idx + 1] + 0.3f * mix_g;
-                float val_b = 0.7f * latent[dst_idx + 2] + 0.3f * mix_b;
-                
-                latent_att[dst_idx + 0] = val_r > 0.0f ? val_r : val_r * 0.1f;
-                latent_att[dst_idx + 1] = val_g > 0.0f ? val_g : val_g * 0.1f;
-                latent_att[dst_idx + 2] = val_b > 0.0f ? val_b : val_b * 0.1f;
+                latent_att[dst_idx + 0] = r_sum / count;
+                latent_att[dst_idx + 1] = g_sum / count;
+                latent_att[dst_idx + 2] = b_sum / count;
             }
+        }
+
+        // Step B: Vectorized Linear Blend and Leaky ReLU (AVX-512)
+        int total_elements = lw * lh * 3;
+        int simd_end = (total_elements / 16) * 16;
+        __m512 c_07 = _mm512_set1_ps(0.7f);
+        __m512 c_03 = _mm512_set1_ps(0.3f);
+        __m512 c_01 = _mm512_set1_ps(0.1f);
+        __m512 zero = _mm512_setzero_ps();
+
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < simd_end; i += 16) {
+            __m512 l_val = _mm512_load_ps(&latent[i]);
+            __m512 m_val = _mm512_load_ps(&latent_att[i]);
+            __m512 val = _mm512_add_ps(_mm512_mul_ps(l_val, c_07), _mm512_mul_ps(m_val, c_03));
+            __mmask16 pos_mask = _mm512_cmp_ps_mask(val, zero, _CMP_GT_OQ);
+            __m512 scaled_val = _mm512_mul_ps(val, c_01);
+            __m512 activated = _mm512_mask_blend_ps(pos_mask, scaled_val, val);
+            _mm512_store_ps(&latent_att[i], activated);
+        }
+
+        // Tail cleanup
+        for (int i = simd_end; i < total_elements; i++) {
+            float val = 0.7f * latent[i] + 0.3f * latent_att[i];
+            latent_att[i] = val > 0.0f ? val : val * 0.1f;
         }
 
         // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
@@ -209,11 +218,11 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         // --- 5. Skip Connection Blending (Vectorized via AVX-512) ---
         printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d) [AVX-512 ACTIVE]\n", hw, hh);
         int total_floats = hw * hh * 3;
-        int simd_end = (total_floats / 16) * 16;
+        int simd_end_skip = (total_floats / 16) * 16;
         __m512 half_vec = _mm512_set1_ps(0.5f);
         
         #pragma omp parallel for schedule(static)
-        for (int i = 0; i < simd_end; i += 16) {
+        for (int i = 0; i < simd_end_skip; i += 16) {
             __m512 dec = _mm512_load_ps(&decoder_half[i]);
             __m512 skip = _mm512_load_ps(&skip_connection[i]);
             __m512 blended = _mm512_mul_ps(_mm512_add_ps(dec, skip), half_vec);
@@ -221,7 +230,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         }
         
         // Cleanup scalar tail
-        for (int i = simd_end; i < total_floats; i++) {
+        for (int i = simd_end_skip; i < total_floats; i++) {
             decoder_half[i] = (decoder_half[i] + skip_connection[i]) * 0.5f;
         }
 
