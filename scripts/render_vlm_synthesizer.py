@@ -171,6 +171,24 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
     is_voxel_render = (dna['r'] == 0 and dna['g'] == 240 and dna['b'] == 255) or is_token or is_minter or address
 
     if is_voxel_render:
+        seed_str = address if address else (prompt_override if prompt_override else "default_token")
+        addr_hash = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
+
+        # Deterministically vary the scene background
+        bg_type = int(addr_hash[2:4], 16) % 3
+        if bg_type == 0 and os.path.exists("tsfi2-deepseek/assets/cavern_bg.png"):
+            bg_img = Image.open("tsfi2-deepseek/assets/cavern_bg.png").convert("RGB").resize((1280, 720))
+        elif bg_type == 1 and os.path.exists("tsfi2-deepseek/assets/castle_bg.png"):
+            bg_img = Image.open("tsfi2-deepseek/assets/castle_bg.png").convert("RGB").resize((1280, 720))
+        else:
+            bg_img = Image.new("RGB", (1280, 720), (8, 5, 15))
+
+        # Deterministically offset composition positioning
+        offset_x = ((int(addr_hash[4:6], 16) % 100) / 100.0 - 0.5) * 160  # [-80, 80]
+        offset_y = ((int(addr_hash[6:8], 16) % 100) / 100.0 - 0.5) * 100  # [-50, 50]
+        cx = 640 + int(offset_x)
+        cy = 360 + int(offset_y)
+
         # 1. Draw soft ambient glow behind the model on the main bg_img
         glow_mask = Image.new("L", (1280, 720), 0)
         glow_draw = ImageDraw.Draw(glow_mask)
@@ -195,7 +213,7 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
         draw.line([cx - 300, cy, cx - 260, cy], fill=hud_color, width=3)
         draw.line([cx + 260, cy, cx + 300, cy], fill=hud_color, width=3)
         draw.line([cx, cy - 300, cx, cy - 260], fill=hud_color, width=3)
-        draw.line([cx, cy + 260, cx, cy + 300], fill=hud_color, width=3)
+        draw.line([cx, cy + 260, cx, cy + 300], fill=hud_color, width=2)
         
         for angle in range(0, 360, 45):
             rad = math.radians(angle)
@@ -206,8 +224,6 @@ def render_vlm_synthesized_frame(frame_idx, steps=4, cfg=1.5, prompt_override=No
             draw.line([x1, y1, x2, y2], fill=hud_color, width=2)
 
         # 3. Generate and Render the 3D Voxel Model
-        seed_str = address if address else (prompt_override if prompt_override else "default_token")
-        addr_hash = hashlib.md5(seed_str.encode('utf-8')).hexdigest()
         shape_type = int(addr_hash[:2], 16) % 5
         if is_minter:
             shape_type = 3
