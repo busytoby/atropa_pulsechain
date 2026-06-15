@@ -165,43 +165,51 @@ async function getTokenDecimals(tokenAddress) {
     return decimals;
 }
 
-async function queryTokenMarketData(partnerAddr, poolAddr, nonukesPriceUsd) {
+async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd) {
     try {
-        const reservesResult = await pulseRpcCall(poolAddr, "0x0902f1ac");
-        if (!reservesResult || reservesResult === "0x") {
-            return { priceUsd: "0", liquidityUsd: 0 };
-        }
-        
-        const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
-        if (clean.length < 128) {
-            return { priceUsd: "0", liquidityUsd: 0 };
-        }
-        
-        const r0Hex = clean.slice(0, 64);
-        const r1Hex = clean.slice(64, 128);
-        
-        const r0 = BigInt("0x" + r0Hex);
-        const r1 = BigInt("0x" + r1Hex);
-        
-        const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
-        const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
-        
-        const rawReservePartner = isPartner0 ? r0 : r1;
-        const rawReserveNoNukes = isPartner0 ? r1 : r0;
+        let totalReservePartner = 0;
+        let totalReserveNoNukes = 0;
         
         const partnerDecimals = await getTokenDecimals(partnerAddr);
         const nonukesDecimals = 18;
         
-        const reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
-        const reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
+        for (const poolAddr of poolAddresses) {
+            const reservesResult = await pulseRpcCall(poolAddr, "0x0902f1ac");
+            if (!reservesResult || reservesResult === "0x") {
+                continue;
+            }
+            
+            const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
+            if (clean.length < 128) {
+                continue;
+            }
+            
+            const r0Hex = clean.slice(0, 64);
+            const r1Hex = clean.slice(64, 128);
+            
+            const r0 = BigInt("0x" + r0Hex);
+            const r1 = BigInt("0x" + r1Hex);
+            
+            const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
+            const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
+            
+            const rawReservePartner = isPartner0 ? r0 : r1;
+            const rawReserveNoNukes = isPartner0 ? r1 : r0;
+            
+            const reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
+            const reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
+            
+            totalReservePartner += reservePartner;
+            totalReserveNoNukes += reserveNoNukes;
+        }
         
         let priceUsd = "0";
-        if (reservePartner > 0) {
-            const priceInNoNukes = reserveNoNukes / reservePartner;
+        if (totalReservePartner > 0) {
+            const priceInNoNukes = totalReserveNoNukes / totalReservePartner;
             priceUsd = (priceInNoNukes * nonukesPriceUsd).toFixed(6);
         }
         
-        const liquidityUsd = Math.round(reserveNoNukes * nonukesPriceUsd * 2);
+        const liquidityUsd = Math.round(totalReserveNoNukes * nonukesPriceUsd * 2);
         
         return {
             priceUsd,
@@ -216,7 +224,7 @@ async function queryTokenMarketData(partnerAddr, poolAddr, nonukesPriceUsd) {
 function fetchMarketData(addresses) {
     if (marketFetchInProgress || !addresses || addresses.length === 0) return;
     marketFetchInProgress = true;
-    console.log(`[MARKET CACHE] Starting update using PulseX on-chain reserves for ${addresses.length} tokens...`);
+    console.log(`[MARKET CACHE] Starting update using PulseX V1 & V2 on-chain reserves for ${addresses.length} tokens...`);
 
     const url = "https://api.dexscreener.com/latest/dex/tokens/0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
     https.get(url, (res) => {
@@ -248,10 +256,14 @@ function fetchMarketData(addresses) {
                 }
             }
 
-            const partnerToPool = {};
+            const partnerToPools = {};
             for (const [poolAddr, poolInfo] of Object.entries(poolsMap)) {
                 if (poolInfo.other_addr) {
-                    partnerToPool[poolInfo.other_addr.toLowerCase()] = poolAddr.toLowerCase();
+                    const partnerAddr = poolInfo.other_addr.toLowerCase();
+                    if (!partnerToPools[partnerAddr]) {
+                        partnerToPools[partnerAddr] = [];
+                    }
+                    partnerToPools[partnerAddr].push(poolAddr.toLowerCase());
                 }
             }
 
@@ -263,10 +275,10 @@ function fetchMarketData(addresses) {
                     const batch = addresses.slice(i, i + batchSize);
                     await Promise.all(batch.map(async (addr) => {
                         const addrKey = addr.toLowerCase();
-                        const poolAddr = partnerToPool[addrKey];
+                        const poolsList = partnerToPools[addrKey];
                         
-                        if (poolAddr) {
-                            const metrics = await queryTokenMarketData(addr, poolAddr, nonukesPriceUsd);
+                        if (poolsList && poolsList.length > 0) {
+                            const metrics = await queryTokenMarketData(addr, poolsList, nonukesPriceUsd);
                             marketData[addrKey] = {
                                 priceUsd: metrics.priceUsd,
                                 priceChange24h: 0,
