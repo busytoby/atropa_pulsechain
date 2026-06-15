@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     params.wtype = SD_TYPE_F16;
     params.rng_type = STD_DEFAULT_RNG;
     params.sampler_rng_type = STD_DEFAULT_RNG;
-    params.use_teddy_vae = false; 
+    params.use_teddy_vae = true; 
     params.n_threads = 16;
     params.vae_decode_only = false;
     params.free_params_immediately = true;
@@ -84,6 +84,8 @@ int main(int argc, char** argv) {
     params.keep_vae_on_cpu = false;
     params.flash_attn = true;
     params.diffusion_flash_attn = true;
+    params.diffusion_conv_direct = true;
+    params.vae_conv_direct = true;
     params.tensor_type_rules = ""; 
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
@@ -135,7 +137,7 @@ int main(int argc, char** argv) {
     } else if (strcmp(method_str, "heun") == 0) {
         gen_params.sample_params.scheduler = EXPONENTIAL_SCHEDULER; // Exponential decay mapping for Heun
     } else if (strcmp(method_str, "lcm") == 0) {
-        gen_params.sample_params.scheduler = AYM_SCHEDULER; // Faster sampling for LCM
+        gen_params.sample_params.scheduler = AYS_SCHEDULER; // Faster sampling for LCM
     } else {
         gen_params.sample_params.scheduler = KARRAS_SCHEDULER;
     }
