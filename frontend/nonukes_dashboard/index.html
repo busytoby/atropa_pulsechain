@@ -43,51 +43,122 @@
             </div>
         </section>
 
-        <!-- LAU Profile Section -->
+        <!-- LAU & YUE Setup Wizard Section -->
         <section class="lau-section glass" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px);">
             <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
                 <span style="display:inline-block; width: 8px; height: 8px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan);"></span>
-                LAU Identity Manager
+                LAU & YUE Setup Wizard
             </h2>
-            <div id="lau-disconnected" class="text-center text-muted" style="padding: 1rem; text-align: center;">
-                Connect MetaMask wallet to access your LAU identity profile.
-            </div>
-            <div id="lau-connected" style="display: none; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                <div>
-                    <h3 style="color: var(--cyan); margin-top: 0;">My LAU Contract</h3>
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                        <input type="text" id="lau-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Contract Address...">
-                        <button id="btn-load-lau" class="btn">Load</button>
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">
-                        Enter an existing LAU contract address or deploy a new one.
+            
+            <div class="wizard-container" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem;">
+                <!-- Progress Steps Header -->
+                <div class="wizard-steps-header" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; font-size: 0.85rem; font-weight: 600;">
+                    <div id="step-tab-1" class="step-tab active" style="padding: 6px; border-bottom: 3px solid var(--cyan); color: var(--cyan);">1. Connect</div>
+                    <div id="step-tab-2" class="step-tab" style="padding: 6px; border-bottom: 3px solid rgba(255,255,255,0.1); color: var(--text-muted);">2. Fund</div>
+                    <div id="step-tab-3" class="step-tab" style="padding: 6px; border-bottom: 3px solid rgba(255,255,255,0.1); color: var(--text-muted);">3. LAU</div>
+                    <div id="step-tab-4" class="step-tab" style="padding: 6px; border-bottom: 3px solid rgba(255,255,255,0.1); color: var(--text-muted);">4. YUE</div>
+                    <div id="step-tab-5" class="step-tab" style="padding: 6px; border-bottom: 3px solid rgba(255,255,255,0.1); color: var(--text-muted);">5. Play</div>
+                </div>
+                
+                <!-- Step 1: Connect -->
+                <div id="wizard-step-1" class="wizard-step-panel">
+                    <p style="margin-top: 0; color: var(--text-muted);">Connect your MetaMask wallet to interact with PulseChain and establish your on-chain identity.</p>
+                    <button id="btn-wizard-connect" class="btn" style="border-color: var(--cyan); color: var(--cyan); width: 100%; padding: 10px;">Connect MetaMask Wallet</button>
+                </div>
+                
+                <!-- Step 2: Fund -->
+                <div id="wizard-step-2" class="wizard-step-panel" style="display: none;">
+                    <h4 style="margin-top: 0; color: var(--magenta);">How to Fund Your Account:</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.4; color: var(--text-muted);">
+                        A new wallet needs test PLS (for gas) and DYSNOMIA tokens to pay for the LAU registration and YUE deployment transactions.
+                        <br><br>
+                        Run this CLI command in your workspace terminal to automatically fund your connected wallet:
+                        <br>
+                        <code style="display: block; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Share Tech Mono'; color: #fff; margin-top: 8px; font-size: 0.95rem;" id="code-fund-cmd">
+                            node scripts/create_mariarahel_lau.js [YOUR_WALLET_ADDRESS]
+                        </code>
+                    </p>
+                    <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                        <button onclick="goToStep(1)" class="btn">Back</button>
+                        <button onclick="goToStep(3)" class="btn" style="border-color: var(--cyan); color: var(--cyan);">I Have Funded My Address</button>
                     </div>
                 </div>
                 
-                <div>
-                    <h3 style="color: var(--magenta); margin-top: 0;">LAU Profile Info</h3>
-                    <div style="margin-bottom: 8px;">
-                        <span class="text-muted">Username:</span> 
-                        <strong id="lau-profile-username" style="color: #fff; font-family: 'Share Tech Mono'; font-size: 1.1rem; margin-left: 8px;">None</strong>
+                <!-- Step 3: Deploy/Load LAU -->
+                <div id="wizard-step-3" class="wizard-step-panel" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4 style="margin-top: 0; color: var(--green);">Option A: Deploy New LAU Identity</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="lau-factory-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; display: none;" value="0x8013Dd64084e9c9122567563AA86981F4C20576B">
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="lau-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Name (e.g. MyUser)">
+                                    <input type="text" id="lau-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Symbol (e.g. MYLAU)">
+                                </div>
+                                <button id="btn-deploy-lau" class="btn" style="border-color: var(--green); color: var(--green); width: 100%;">Deploy LAU via Factory</button>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                Factory: <span id="laufactory-address-lbl" style="font-family: 'Share Tech Mono';">0x8013Dd64084e9c9122567563AA86981F4C20576B</span>
+                            </div>
+                        </div>
+                        
+                        <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 20px;">
+                            <h4 style="margin-top: 0; color: var(--cyan);">Option B: Load Existing LAU Address</h4>
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <input type="text" id="lau-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Address...">
+                                <button id="btn-load-lau" class="btn">Load</button>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-bottom: 12px;">
+                                Username: <strong id="lau-profile-username" style="color: var(--cyan);">None Loaded</strong>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="lau-new-username" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="New username...">
+                                <button id="btn-update-username" class="btn" style="border-color: var(--magenta); color: var(--magenta);">Update</button>
+                            </div>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="lau-new-username" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="New username...">
-                        <button id="btn-update-username" class="btn" style="border-color: var(--magenta); color: var(--magenta);">Update</button>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                        <button onclick="goToStep(2)" class="btn">Back</button>
+                        <button id="btn-next-to-step-4" class="btn" style="border-color: var(--cyan); color: var(--cyan);" disabled>Next Step</button>
                     </div>
                 </div>
-
-                <div>
-                    <h3 style="color: var(--green); margin-top: 0;">Deploy New LAU</h3>
-                    <div style="margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted);">
-                        LAUFactory: <span id="laufactory-address-lbl" style="font-family: 'Share Tech Mono';">0x8013Dd64084e9c9122567563AA86981F4C20576B</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <input type="text" id="lau-factory-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAUFactory Address..." value="0x8013Dd64084e9c9122567563AA86981F4C20576B">
+                
+                <!-- Step 4: Start/Deploy YUE -->
+                <div id="wizard-step-4" class="wizard-step-panel" style="display: none;">
+                    <h4 style="margin-top: 0; color: var(--magenta);">Deploy your YUE Metric Token</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                        Tether your LAU identity card and compile a brand new YUE metric token to track reactions across NoNukes pools.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 400px; margin: 0 auto;">
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" id="lau-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Name">
-                            <input type="text" id="lau-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Symbol">
+                            <input type="text" id="yue-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Name (e.g. MyYue)">
+                            <input type="text" id="yue-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Symbol (e.g. MYYUE)">
                         </div>
-                        <button id="btn-deploy-lau" class="btn" style="border-color: var(--green); color: var(--green); width: 100%;">Deploy LAU Identity</button>
+                        <button id="btn-deploy-yue" class="btn" style="border-color: var(--magenta); color: var(--magenta); width: 100%; padding: 10px;">Start YUE Contract</button>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                        <button onclick="goToStep(3)" class="btn">Back</button>
+                        <button id="btn-next-to-step-5" class="btn" style="border-color: var(--cyan); color: var(--cyan);" disabled>Next Step</button>
+                    </div>
+                </div>
+                
+                <!-- Step 5: Play & Mint YUE -->
+                <div id="wizard-step-5" class="wizard-step-panel" style="display: none;">
+                    <h4 style="margin-top: 0; color: var(--green);">Activate Play & Mint Initial YUE Balance</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                        Finalize integration by registering your YUE score counters in the CHOA play matrix. Doing so triggers a block rewards minting operation, establishing your initial token balance!
+                    </p>
+                    <div style="max-width: 300px; margin: 0 auto; margin-bottom: 1rem;">
+                        <button id="btn-activate-play" class="btn" style="border-color: var(--green); color: var(--green); width: 100%; padding: 12px; font-weight: bold;">Activate Play & Mint YUE</button>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                        <button onclick="goToStep(4)" class="btn">Back</button>
+                        <div style="color: var(--green); font-weight: bold; display: flex; align-items: center; gap: 8px;" id="lbl-status-complete">
+                            <!-- Status ready text -->
+                        </div>
                     </div>
                 </div>
             </div>

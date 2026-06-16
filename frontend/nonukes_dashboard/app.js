@@ -326,7 +326,30 @@ function encodeAbiTwoStrings(str1, str2) {
     return offset1Hex + offset2Hex + data1 + data2;
 }
 
-// LAU Elements
+// Global Deployed Addresses
+let deployedAddresses = {
+    LAUFactory: '0x8013Dd64084e9c9122567563AA86981F4C20576B',
+    SEI: '0xfDFB68F5195DF817824Ee881CF63E94402eEc46A',
+    CHOA: '0xe4BD72fC5498d94fD5c364015696653DeF6e8F61'
+};
+
+async function fetchConfigAddresses() {
+    try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        if (data && data.networks && data.networks.localhost) {
+            deployedAddresses = { ...deployedAddresses, ...data.networks.localhost };
+            console.log("Loaded deployed addresses from config:", deployedAddresses);
+            const factoryLbl = document.getElementById('laufactory-address-lbl');
+            if (factoryLbl) factoryLbl.innerText = deployedAddresses.LAUFactory;
+            if (lauFactoryAddressInput) lauFactoryAddressInput.value = deployedAddresses.LAUFactory;
+        }
+    } catch (e) {
+        console.error("Failed to load backend config addresses, using defaults:", e);
+    }
+}
+
+// LAU Wizard Elements
 const lauAddressInput = document.getElementById('lau-address-input');
 const btnLoadLau = document.getElementById('btn-load-lau');
 const lauProfileUsername = document.getElementById('lau-profile-username');
@@ -336,23 +359,58 @@ const lauFactoryAddressInput = document.getElementById('lau-factory-address-inpu
 const lauDeployName = document.getElementById('lau-deploy-name');
 const lauDeploySymbol = document.getElementById('lau-deploy-symbol');
 const btnDeployLau = document.getElementById('btn-deploy-lau');
-const lauDisconnected = document.getElementById('lau-disconnected');
-const lauConnected = document.getElementById('lau-connected');
+
+const yueDeployName = document.getElementById('yue-deploy-name');
+const yueDeploySymbol = document.getElementById('yue-deploy-symbol');
+const btnDeployYue = document.getElementById('btn-deploy-yue');
+const btnActivatePlay = document.getElementById('btn-activate-play');
+const lblStatusComplete = document.getElementById('lbl-status-complete');
+
+const btnWizardConnect = document.getElementById('btn-wizard-connect');
+const btnNextToStep4 = document.getElementById('btn-next-to-step-4');
+const btnNextToStep5 = document.getElementById('btn-next-to-step-5');
+
+// Active wizard step tracking
+let activeStep = 1;
+
+function goToStep(step) {
+    activeStep = step;
+    for (let i = 1; i <= 5; i++) {
+        const tab = document.getElementById(`step-tab-${i}`);
+        const panel = document.getElementById(`wizard-step-${i}`);
+        if (tab) {
+            if (i === step) {
+                tab.classList.add('active');
+                tab.style.borderColor = 'var(--cyan)';
+                tab.style.color = 'var(--cyan)';
+            } else if (i < step) {
+                tab.classList.remove('active');
+                tab.style.borderColor = 'var(--green)';
+                tab.style.color = 'var(--green)';
+            } else {
+                tab.classList.remove('active');
+                tab.style.borderColor = 'rgba(255,255,255,0.1)';
+                tab.style.color = 'var(--text-muted)';
+            }
+        }
+        if (panel) {
+            panel.style.display = (i === step) ? 'block' : 'none';
+        }
+    }
+}
+window.goToStep = goToStep;
 
 // Load stored values
 if (lauAddressInput) {
     lauAddressInput.value = localStorage.getItem('lau_address') || '';
     lauAddressInput.addEventListener('input', (e) => {
         localStorage.setItem('lau_address', e.target.value);
+        if (e.target.value.trim().startsWith('0x') && e.target.value.trim().length >= 42) {
+            if (btnNextToStep4) btnNextToStep4.disabled = false;
+        } else {
+            if (btnNextToStep4) btnNextToStep4.disabled = true;
+        }
     });
-}
-if (lauFactoryAddressInput) {
-    lauFactoryAddressInput.value = localStorage.getItem('laufactory_address') || '0x8013Dd64084e9c9122567563AA86981F4C20576B';
-    lauFactoryAddressInput.addEventListener('input', (e) => {
-        localStorage.setItem('laufactory_address', e.target.value);
-        document.getElementById('laufactory-address-lbl').innerText = e.target.value;
-    });
-    document.getElementById('laufactory-address-lbl').innerText = lauFactoryAddressInput.value;
 }
 
 async function connectWallet() {
@@ -364,9 +422,14 @@ async function connectWallet() {
             btnConnect.style.borderColor = 'var(--cyan)';
             btnConnect.style.color = 'var(--cyan)';
             
-            // Toggle LAU interface
-            if (lauDisconnected) lauDisconnected.style.display = 'none';
-            if (lauConnected) lauConnected.style.display = 'grid';
+            // Step 2 Command Update
+            const fundCmd = document.getElementById('code-fund-cmd');
+            if (fundCmd) {
+                fundCmd.innerText = `node scripts/create_mariarahel_lau.js ${userAccount}`;
+            }
+            
+            // Advance Wizard to Step 2
+            goToStep(2);
             
             // Auto-load LAU if saved
             if (lauAddressInput && lauAddressInput.value) {
@@ -399,6 +462,8 @@ async function loadLauInfo() {
         
         const username = decodeAbiString(result);
         lauProfileUsername.innerText = username || 'No Username Set';
+        localStorage.setItem('lau_address', lauAddress);
+        if (btnNextToStep4) btnNextToStep4.disabled = false;
     } catch (err) {
         console.error("Error reading LAU contract:", err);
         lauProfileUsername.innerText = "Error Loading Contract";
@@ -440,14 +505,10 @@ async function updateLauUsername() {
 }
 
 async function deployNewLau() {
-    const factoryAddr = lauFactoryAddressInput.value.trim();
+    const factoryAddr = deployedAddresses.LAUFactory;
     const name = lauDeployName.value.trim();
     const symbol = lauDeploySymbol.value.trim();
 
-    if (!factoryAddr || factoryAddr.length < 42 || !factoryAddr.startsWith('0x')) {
-        alert("Please enter a valid LAUFactory address.");
-        return;
-    }
     if (!name || !symbol) {
         alert("Please specify a Name and Symbol.");
         return;
@@ -467,10 +528,117 @@ async function deployNewLau() {
             }]
         });
 
-        alert(`LAU Deployment transaction submitted! Hash: ${txHash}`);
+        alert(`LAU Deployment transaction submitted! Hash: ${txHash}\n\nPlease copy the deployed contract address from the transaction logs once confirmed and input it into Option B.`);
     } catch (err) {
         console.error("Error deploying LAU:", err);
         alert(`Failed to deploy LAU: ${err.message || err}`);
+    }
+}
+
+// ABI encoding helper for SEI.Start(address,string,string) -> selector 0x78519019
+function encodeStartParams(lauAddr, yueName, yueSymbol) {
+    const cleanAddr = lauAddr.startsWith('0x') ? lauAddr.slice(2) : lauAddr;
+    const param1Hex = cleanAddr.padStart(64, '0');
+    
+    // Offset for dynamic string 1 (YueName starts at index 96)
+    const offset1 = 96;
+    const offset1Hex = offset1.toString(16).padStart(64, '0');
+    
+    // Encode YueName
+    let hex1 = '';
+    for (let i = 0; i < yueName.length; i++) {
+        hex1 += yueName.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    const len1Hex = yueName.length.toString(16).padStart(64, '0');
+    const paddedHex1 = hex1.padEnd(Math.ceil(hex1.length / 64) * 64, '0');
+    const data1 = len1Hex + paddedHex1;
+    
+    // Offset for dynamic string 2 (YueSymbol starts after YueName data)
+    const offset2 = offset1 + (data1.length / 2);
+    const offset2Hex = offset2.toString(16).padStart(64, '0');
+    
+    // Encode YueSymbol
+    let hex2 = '';
+    for (let i = 0; i < yueSymbol.length; i++) {
+        hex2 += yueSymbol.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    const len2Hex = yueSymbol.length.toString(16).padStart(64, '0');
+    const paddedHex2 = hex2.padEnd(Math.ceil(hex2.length / 64) * 64, '0');
+    const data2 = len2Hex + paddedHex2;
+    
+    return param1Hex + offset1Hex + offset2Hex + data1 + data2;
+}
+
+async function startYue() {
+    const lauAddress = lauAddressInput.value.trim();
+    const name = yueDeployName.value.trim();
+    const symbol = yueDeploySymbol.value.trim();
+
+    if (!lauAddress) {
+        alert("No LAU address loaded. Go back to Step 3.");
+        return;
+    }
+    if (!name || !symbol) {
+        alert("Please specify a YUE Name and Symbol.");
+        return;
+    }
+
+    try {
+        const encodedParams = encodeStartParams(lauAddress, name, symbol);
+        const calldata = '0x78519019' + encodedParams;
+
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                from: userAccount,
+                to: deployedAddresses.SEI,
+                data: calldata
+            }]
+        });
+
+        alert(`YUE Deployment (Start) transaction submitted! Hash: ${txHash}`);
+        
+        // Save YUE candidate state in storage
+        localStorage.setItem('yue_address', deployedAddresses.SEI);
+        if (yueInput) yueInput.value = deployedAddresses.SEI;
+        
+        if (btnNextToStep5) btnNextToStep5.disabled = false;
+    } catch (err) {
+        console.error("Error starting YUE:", err);
+        alert(`Failed to start YUE: ${err.message || err}`);
+    }
+}
+
+async function activatePlayAndMint() {
+    const lauAddress = lauAddressInput.value.trim();
+    if (!lauAddress) {
+        alert("LAU address not loaded.");
+        return;
+    }
+
+    try {
+        // Encode Play(address) call (selector 0x74ff4718)
+        const cleanAddr = lauAddress.startsWith('0x') ? lauAddress.slice(2) : lauAddress;
+        const paddedAddress = cleanAddr.padStart(64, '0');
+        const calldata = '0x74ff4718' + paddedAddress;
+
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                from: userAccount,
+                to: deployedAddresses.CHOA,
+                data: calldata
+            }]
+        });
+
+        alert(`Play Activated & YUE Minted! Hash: ${txHash}`);
+        
+        if (lblStatusComplete) {
+            lblStatusComplete.innerHTML = `✓ Setup Complete! Ready to Play NoNukes.`;
+        }
+    } catch (err) {
+        console.error("Error activating play:", err);
+        alert(`Failed to activate play: ${err.message || err}`);
     }
 }
 
@@ -516,11 +684,27 @@ async function reactYue() {
 }
 
 if (btnConnect) btnConnect.addEventListener('click', connectWallet);
+if (btnWizardConnect) btnWizardConnect.addEventListener('click', connectWallet);
 if (btnReact) btnReact.addEventListener('click', reactYue);
 if (btnLoadLau) btnLoadLau.addEventListener('click', loadLauInfo);
 if (btnUpdateUsername) btnUpdateUsername.addEventListener('click', updateLauUsername);
 if (btnDeployLau) btnDeployLau.addEventListener('click', deployNewLau);
+if (btnDeployYue) btnDeployYue.addEventListener('click', startYue);
+if (btnActivatePlay) btnActivatePlay.addEventListener('click', activatePlayAndMint);
+
+if (btnNextToStep4) {
+    btnNextToStep4.addEventListener('click', () => goToStep(4));
+    // Enable if there's already a saved LAU
+    if (localStorage.getItem('lau_address')) {
+        btnNextToStep4.disabled = false;
+    }
+}
+if (btnNextToStep5) {
+    btnNextToStep5.addEventListener('click', () => goToStep(5));
+}
 
 // Initial Setup
+fetchConfigAddresses();
 fetchPools();
 setInterval(fetchPools, 5000);
+
