@@ -184,9 +184,61 @@ async function openPoolDetails(address) {
             
             // Render Chart
             drawChart(data.price_trends);
+            
+            // Auto-load connected wallet YUE address
+            autoLoadYueAddress();
         }
     } catch (err) {
         console.error("Error fetching pool details:", err);
+    }
+}
+
+async function autoLoadYueAddress() {
+    if (!userAccount) {
+        if (btnReact) {
+            btnReact.disabled = true;
+            btnReact.innerText = "Connect Wallet First";
+        }
+        return;
+    }
+    try {
+        // Chi() -> selector 0x1cb77ea7
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                from: userAccount,
+                to: deployedAddresses.SEI,
+                data: '0x1cb77ea7'
+            }, 'latest']
+        });
+        
+        if (result && result !== '0x' && result !== '0x' + '0'.repeat(64)) {
+            // result is raw bytes containing Yue address slot and LAU address slot
+            // parse the Yue address from slot 1
+            const cleanResult = result.startsWith('0x') ? result.slice(2) : result;
+            const yueAddress = '0x' + cleanResult.slice(24, 64); // parse 20-byte address from padded 32-byte slot
+            console.log("Resolved active YUE address from SEI:", yueAddress);
+            if (yueInput) {
+                yueInput.value = yueAddress;
+                localStorage.setItem('yue_address', yueAddress);
+            }
+            if (btnReact) {
+                btnReact.disabled = false;
+                btnReact.innerText = "Raise the Bar (React)";
+            }
+        } else {
+            console.log("No active YUE found for:", userAccount);
+            if (btnReact) {
+                btnReact.disabled = true;
+                btnReact.innerText = "YUE Not Deployed (Setup Required)";
+            }
+        }
+    } catch (e) {
+        console.error("Failed to query SEI.Chi() for YUE address:", e);
+        if (btnReact) {
+            btnReact.disabled = true;
+            btnReact.innerText = "YUE Not Deployed (Setup Required)";
+        }
     }
 }
 
