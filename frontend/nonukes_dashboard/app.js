@@ -453,6 +453,128 @@ function goToStep(step) {
 }
 window.goToStep = goToStep;
 
+// LAU history tracking helper
+// LAU history tracking helper
+async function updateLauHistoryDisplay() {
+    const listContainer = document.getElementById('lau-history-list');
+    if (!listContainer) return;
+    
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    
+    // Automatically scan the local chain for all LAU tokens ever created by querying the LAUFactory deployment transactions
+    if (window.ethereum) {
+        try {
+            const factoryAddr = deployedAddresses.LAUFactory ? deployedAddresses.LAUFactory.toLowerCase() : '';
+            if (factoryAddr) {
+                const blockNumHex = await window.ethereum.request({ method: 'eth_blockNumber' });
+                const maxBlock = parseInt(blockNumHex, 16);
+                
+                // Fetch transaction details of all blocks to recover LAU Factory deploys
+                for (let i = 0; i <= maxBlock; i++) {
+                    const blockHex = '0x' + i.toString(16);
+                    const block = await window.ethereum.request({
+                        method: 'eth_getBlockByNumber',
+                        params: [blockHex, true]
+                    });
+                    if (block && block.transactions) {
+                        for (const tx of block.transactions) {
+                            if (tx.to && tx.to.toLowerCase() === factoryAddr) {
+                                const receipt = await window.ethereum.request({
+                                    method: 'eth_getTransactionReceipt',
+                                    params: [tx.hash]
+                                });
+                                if (receipt && receipt.logs && receipt.logs.length > 0) {
+                                    const log = receipt.logs.find(x => x.address.toLowerCase() !== factoryAddr);
+                                    if (log) {
+                                        const address = log.address;
+                                        if (!history.find(x => x.address.toLowerCase() === address.toLowerCase())) {
+                                            // Get the name/username of the deployed token
+                                            try {
+                                                const nameResult = await window.ethereum.request({
+                                                    method: 'eth_call',
+                                                    params: [{ to: address, data: '0x06fdde03' }, 'latest']
+                                                });
+                                                let name = 'LAU Token';
+                                                if (nameResult && nameResult !== '0x') {
+                                                    const cleanRes = nameResult.startsWith('0x') ? nameResult.slice(2) : nameResult;
+                                                    const offset = parseInt(cleanRes.slice(0, 64), 16) * 2;
+                                                    const len = parseInt(cleanRes.slice(offset, offset + 64), 16);
+                                                    const hexStr = cleanRes.slice(offset + 64, offset + 64 + len * 2);
+                                                    let decoded = '';
+                                                    for (let j = 0; j < hexStr.length; j += 2) {
+                                                        decoded += String.fromCharCode(parseInt(hexStr.slice(j, j + 2), 16));
+                                                    }
+                                                    if (decoded) name = decoded;
+                                                }
+                                                history.push({ name, address });
+                                            } catch (e) {
+                                                history.push({ name: 'LAU Token', address });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                localStorage.setItem('lau_history', JSON.stringify(history));
+            }
+        } catch (err) {
+            console.error('Auto scan for LAU deployments failed:', err);
+        }
+    }
+    
+    if (history.length === 0) {
+        listContainer.innerHTML = '<div style="color: var(--text-muted); font-style: italic; padding: 2px 4px; font-size: 0.75rem;">None deployed or imported yet</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = history.map(item => {
+        const shortAddr = item.address.slice(0, 8) + '...' + item.address.slice(-6);
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="cursor: pointer; color: var(--cyan); font-family: 'Share Tech Mono'; font-weight: bold;" onclick="selectLauFromHistory('${item.address}')" title="Click to Load LAU">
+                    ${item.name} (${shortAddr})
+                </div>
+                <button onclick="removeLauFromHistory('${item.address}')" style="background: none; border: none; color: var(--magenta); cursor: pointer; font-size: 0.75rem;">✕</button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.selectLauFromHistory = function(address) {
+    if (lauAddressInput) {
+        lauAddressInput.value = address;
+        localStorage.setItem('lau_address', address);
+    }
+    loadLauInfo();
+};
+
+window.removeLauFromHistory = function(address) {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    history = history.filter(x => x.address !== address);
+    localStorage.setItem('lau_history', JSON.stringify(history));
+    updateLauHistoryDisplay();
+};
+
+function addLauToHistory(name, address) {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    if (!history.find(x => x.address === address)) {
+        history.push({ name, address });
+        localStorage.setItem('lau_history', JSON.stringify(history));
+    }
+    updateLauHistoryDisplay();
+}
+
 // Load stored values
 if (lauAddressInput) {
     lauAddressInput.value = localStorage.getItem('lau_address') || '';
@@ -464,6 +586,8 @@ if (lauAddressInput) {
             if (btnNextToStep4) btnNextToStep4.disabled = true;
         }
     });
+    // Render initial list
+    updateLauHistoryDisplay();
 }
 
 async function checkActiveLau() {
@@ -491,6 +615,10 @@ async function checkActiveLau() {
                 lauAddressInput.value = lauAddress;
                 localStorage.setItem('lau_address', lauAddress);
             }
+            try {
+                const name = document.getElementById("lau-profile-username")?.innerText || "LAU Token";
+                addLauToHistory(name, lauAddress);
+            } catch(e) {}
             await loadLauInfo();
             // Automatically advance to Step 4 since they already have a LAU!
             goToStep(4);
@@ -520,12 +648,28 @@ async function connectWallet() {
             // Advance Wizard to Step 2
             goToStep(2);
             
+            // Scan for all LAU tokens from the factory first to update history list
+            await updateLauHistoryDisplay();
+
             // Check if user has an existing LAU registered in CHO
             await checkActiveLau();
             
-            // Auto-load LAU if saved (fallback)
+            // Auto-load LAU if saved (fallback) or auto-detect first ever created LAU from history if not registered in CHO yet
             if (lauAddressInput && lauAddressInput.value) {
-                loadLauInfo();
+                await loadLauInfo();
+            } else {
+                try {
+                    const history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+                    if (history && history.length > 0) {
+                        const firstLau = history[history.length - 1].address; // get latest created
+                        console.log('Auto-detected previously created LAU:', firstLau);
+                        if (lauAddressInput) {
+                            lauAddressInput.value = firstLau;
+                            localStorage.setItem('lau_address', firstLau);
+                        }
+                        await loadLauInfo();
+                    }
+                } catch(e) {}
             }
         } catch (err) {
             console.error("User rejected wallet connection", err);
@@ -620,7 +764,36 @@ async function deployNewLau() {
             }]
         });
 
-        alert(`LAU Deployment transaction submitted! Hash: ${txHash}\n\nPlease copy the deployed contract address from the transaction logs once confirmed and input it into Option B.`);
+        alert(`LAU Deployment transaction submitted! Hash: ${txHash}
+
+Waiting for transaction confirmation to automatically load address...`);
+
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        if (receipt && receipt.logs && receipt.logs.length > 0) {
+            const lauAddress = receipt.logs.find(x => x.address && x.address.toLowerCase() !== factoryAddr.toLowerCase())?.address || receipt.logs[0].address;
+            if (lauAddressInput) {
+                lauAddressInput.value = lauAddress;
+                localStorage.setItem('lau_address', lauAddress);
+            // Save newly deployed LAU to history
+            addLauToHistory(name, lauAddress);
+            }
+            await loadLauInfo();
+            alert(`LAU contract auto-resolved and loaded successfully!
+Address: ${lauAddress}`);
+        } else {
+            alert(`Transaction confirmed but could not automatically parse address. Please verify logs manually.`);
+        }
     } catch (err) {
         console.error("Error deploying LAU:", err);
         alert(`Failed to deploy LAU: ${err.message || err}`);
