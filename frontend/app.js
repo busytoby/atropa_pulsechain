@@ -1446,13 +1446,13 @@ async function runYulConsoleCommand() {
                 // If not deployed locally yet, deploy the identical compiled PulseChain bytecode directly!
                 const bytecode = config.abiLookupToken;
                 if (!bytecode) throw new Error("PulseChain ABI lookup token bytecode not loaded in config");
-                consoleLogsEl.innerText += `\n[On-Chain] Deploying identical PulseChain CL9 ABI Lookup contract to local network...`;
+                consoleLogsEl.innerText += `\n[On-Chain] Deploying identical PulseChain ABI Lookup contract to local network...`;
                 const factory = new ethers.ContractFactory([], bytecode, currentSigner);
                 const deployedContract = await factory.deploy();
                 await deployedContract.waitForDeployment();
                 abiContractAddr = await deployedContract.getAddress();
                 config.networks.localhost.abiLookupAddress = abiContractAddr;
-                consoleLogsEl.innerText += `\n[Deployed]: Deployed identical CL9 contract at: ${abiContractAddr}`;
+                consoleLogsEl.innerText += `\n[Deployed]: Deployed identical ABI contract at: ${abiContractAddr}`;
             } else if (!abiContractAddr) {
                 abiContractAddr = "0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C";
             }

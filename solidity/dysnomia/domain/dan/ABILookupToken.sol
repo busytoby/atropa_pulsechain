@@ -15,8 +15,8 @@ interface IABILookupToken {
 }
 
 contract ABILookupToken is IABILookupToken {
-    string public constant name = "CL9 ABI Lookup Token";
-    string public constant symbol = "CL9";
+    string public constant name = "ABI Lookup Token";
+    string public constant symbol = "ABIL";
     uint8 public constant decimals = 18;
 
     mapping(bytes4 => string) private _signatures;
