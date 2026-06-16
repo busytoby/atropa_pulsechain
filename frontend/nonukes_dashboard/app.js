@@ -718,6 +718,104 @@ async function enterCho() {
     }
 }
 
+async function checkActiveYue() {
+    if (!userAccount) return;
+    try {
+        const yueStatusEl = document.getElementById('yue-status-lbl');
+        const playStatusEl = document.getElementById('play-status-lbl');
+        const yueDeployBtn = document.getElementById('btn-deploy-yue');
+
+        // Chi() -> selector 0x1cb77ea7
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                to: deployedAddresses.SEI,
+                data: '0x1cb77ea7'
+            }, 'latest']
+        });
+
+        if (result && result !== '0x' && result !== '0x' + '0'.repeat(64)) {
+            // The result will be two 32-byte words: [Yue address, Lau address]
+            const cleanRes = result.startsWith('0x') ? result.slice(2) : result;
+            const yueAddress = '0x' + cleanRes.slice(24, 64);
+            const lauAddress = '0x' + cleanRes.slice(88, 128);
+            
+            console.log("Found active YUE address from SEI:", yueAddress, "for LAU:", lauAddress);
+            
+            localStorage.setItem('yue_address', yueAddress);
+            const yueInput = document.getElementById('yue-address-input');
+            if (yueInput) yueInput.value = yueAddress;
+
+            if (yueStatusEl) {
+                const shortYue = yueAddress.slice(0, 8) + '...' + yueAddress.slice(-6);
+                yueStatusEl.innerText = `Started (YUE: ${shortYue})`;
+                yueStatusEl.style.color = 'var(--green)';
+            }
+            if (yueDeployBtn) {
+                yueDeployBtn.innerText = "YUE Already Started";
+                yueDeployBtn.disabled = true;
+            }
+            if (btnNextToStep5) btnNextToStep5.disabled = false;
+
+            // Check if Play has been activated (YUE balance > 0)
+            // balanceOf(address) -> selector 0x70a08231
+            const cleanUserAddr = userAccount.startsWith('0x') ? userAccount.slice(2) : userAccount;
+            const paddedUserAddr = cleanUserAddr.padStart(64, '0');
+            const balCalldata = '0x70a08231' + paddedUserAddr;
+
+            try {
+                const balResult = await window.ethereum.request({
+                    method: 'eth_call',
+                    params: [{
+                        to: yueAddress,
+                        data: balCalldata
+                    }, 'latest']
+                });
+                if (balResult && balResult !== '0x') {
+                    const balance = parseInt(balResult, 16);
+                    if (balance > 0) {
+                        if (playStatusEl) {
+                            playStatusEl.innerText = `Activated & Minted (${(balance / 10**18).toFixed(2)} YUE)`;
+                            playStatusEl.style.color = 'var(--green)';
+                        }
+                        if (btnActivatePlay) {
+                            btnActivatePlay.innerText = "Play Already Active";
+                            btnActivatePlay.disabled = true;
+                        }
+                        if (lblStatusComplete) {
+                            lblStatusComplete.innerHTML = `✓ Setup Complete! Ready to Play NoNukes.`;
+                        }
+                    } else {
+                        if (playStatusEl) {
+                            playStatusEl.innerText = 'Not Activated';
+                            playStatusEl.style.color = 'var(--magenta)';
+                        }
+                    }
+                }
+            } catch (balErr) {
+                console.error("Failed to query YUE balance:", balErr);
+            }
+
+        } else {
+            console.log("No active YUE registered on SEI for:", userAccount);
+            if (yueStatusEl) {
+                yueStatusEl.innerText = 'Not Started';
+                yueStatusEl.style.color = 'var(--magenta)';
+            }
+            if (yueDeployBtn) {
+                yueDeployBtn.innerText = "Start YUE Contract";
+                yueDeployBtn.disabled = false;
+            }
+            if (playStatusEl) {
+                playStatusEl.innerText = 'Not Activated';
+                playStatusEl.style.color = 'var(--magenta)';
+            }
+        }
+    } catch (err) {
+        console.error("Failed to query SEI for active YUE:", err);
+    }
+}
+
 async function connectWallet() {
     if (typeof window.ethereum !== 'undefined') {
         try {
@@ -741,6 +839,9 @@ async function connectWallet() {
 
             // Check if user has an existing LAU registered in CHO
             await checkActiveLau();
+
+            // Check if user has an existing YUE registered in SEI and played in CHOA
+            await checkActiveYue();
             
             // Auto-load LAU if saved (fallback) or auto-detect first ever created LAU from history if not registered in CHO yet
             if (lauAddressInput && lauAddressInput.value) {
@@ -951,11 +1052,20 @@ async function startYue() {
 
         alert(`YUE Deployment (Start) transaction submitted! Hash: ${txHash}`);
         
-        // Save YUE candidate state in storage
-        localStorage.setItem('yue_address', deployedAddresses.SEI);
-        if (yueInput) yueInput.value = deployedAddresses.SEI;
-        
-        if (btnNextToStep5) btnNextToStep5.disabled = false;
+        // Wait for confirmation
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        await checkActiveYue();
     } catch (err) {
         console.error("Error starting YUE:", err);
         alert(`Failed to start YUE: ${err.message || err}`);
@@ -986,9 +1096,20 @@ async function activatePlayAndMint() {
 
         alert(`Play Activated & YUE Minted! Hash: ${txHash}`);
         
-        if (lblStatusComplete) {
-            lblStatusComplete.innerHTML = `✓ Setup Complete! Ready to Play NoNukes.`;
+        // Wait for confirmation
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
         }
+
+        await checkActiveYue();
     } catch (err) {
         console.error("Error activating play:", err);
         alert(`Failed to activate play: ${err.message || err}`);
