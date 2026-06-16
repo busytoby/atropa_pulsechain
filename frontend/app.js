@@ -1432,6 +1432,40 @@ async function runYulConsoleCommand() {
             });
 
             consoleLogsEl.innerText += `\n[Result Hex]: ${result}\n# _`;
+        } else if (mode === "abi") {
+            // Deploy local instance of ABILookupToken or connect to it
+            // We compile it on the fly or connect if active in network config
+            const abiContractAddr = config.networks.localhost.abiLookupAddress || "0x004226a0199d002358c78bae868ad59c633a653f";
+            
+            const abiAbi = [
+                "function registerABI(string calldata signature) external returns (bytes4 selector)",
+                "function getSignature(bytes4 selector) external view returns (string memory signature)",
+                "function isRegistered(bytes4 selector) external view returns (bool)"
+            ];
+
+            let contract = new ethers.Contract(abiContractAddr, abiAbi, currentSigner || currentProvider);
+
+            if (inputStr.startsWith("0x") && inputStr.length === 10) {
+                // Query signature lookup
+                const isReg = await contract.isRegistered(inputStr);
+                if (isReg) {
+                    const sig = await contract.getSignature(inputStr);
+                    consoleLogsEl.innerText += `\n[Lookup SUCCESS]: Selector ${inputStr} is registered to:\n"${sig}"\n# _`;
+                } else {
+                    consoleLogsEl.innerText += `\n[Lookup FAILED]: Selector ${inputStr} not registered.\n# _`;
+                }
+            } else if (inputStr.includes("(") && inputStr.includes(")")) {
+                // Register a new ABI
+                consoleLogsEl.innerText += `\n[On-Chain] Sending registration transaction...`;
+                const tx = await contract.registerABI(inputStr);
+                log(`Registering ABI transaction sent: ${tx.hash}`);
+                const receipt = await tx.wait();
+                
+                const selector = ethers.dataSlice(ethers.id(inputStr), 0, 4);
+                consoleLogsEl.innerText += `\n[Registration SUCCESS]: Signature "${inputStr}" registered!\n- Selector: ${selector}\n# _`;
+            } else {
+                consoleLogsEl.innerText += `\n[Error]: Input must be a 4-byte selector (e.g. '0xa9059cbb') or a complete function signature (e.g. 'transfer(address,uint256)').\n# _`;
+            }
         }
         consoleLogsEl.scrollTop = consoleLogsEl.scrollHeight;
     } catch (err) {
