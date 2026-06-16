@@ -453,6 +453,64 @@ function goToStep(step) {
 }
 window.goToStep = goToStep;
 
+// LAU history tracking helper
+function updateLauHistoryDisplay() {
+    const listContainer = document.getElementById('lau-history-list');
+    if (!listContainer) return;
+    
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    
+    if (history.length === 0) {
+        listContainer.innerHTML = `<div style="color: var(--text-muted); font-style: italic; padding: 2px 4px; font-size: 0.75rem;">None deployed or imported yet</div>`;
+        return;
+    }
+    
+    listContainer.innerHTML = history.map(item => {
+        const shortAddr = item.address.slice(0, 8) + '...' + item.address.slice(-6);
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="cursor: pointer; color: var(--cyan); font-family: 'Share Tech Mono'; font-weight: bold;" onclick="selectLauFromHistory('${item.address}')" title="Click to Load LAU">
+                    ${item.name} (${shortAddr})
+                </div>
+                <button onclick="removeLauFromHistory('${item.address}')" style="background: none; border: none; color: var(--magenta); cursor: pointer; font-size: 0.75rem;">✕</button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.selectLauFromHistory = function(address) {
+    if (lauAddressInput) {
+        lauAddressInput.value = address;
+        localStorage.setItem('lau_address', address);
+    }
+    loadLauInfo();
+};
+
+window.removeLauFromHistory = function(address) {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    history = history.filter(x => x.address !== address);
+    localStorage.setItem('lau_history', JSON.stringify(history));
+    updateLauHistoryDisplay();
+};
+
+function addLauToHistory(name, address) {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('lau_history') || '[]');
+    } catch(e) {}
+    if (!history.find(x => x.address === address)) {
+        history.push({ name, address });
+        localStorage.setItem('lau_history', JSON.stringify(history));
+    }
+    updateLauHistoryDisplay();
+}
+
 // Load stored values
 if (lauAddressInput) {
     lauAddressInput.value = localStorage.getItem('lau_address') || '';
@@ -464,6 +522,8 @@ if (lauAddressInput) {
             if (btnNextToStep4) btnNextToStep4.disabled = true;
         }
     });
+    // Render initial list
+    updateLauHistoryDisplay();
 }
 
 async function checkActiveLau() {
@@ -620,7 +680,36 @@ async function deployNewLau() {
             }]
         });
 
-        alert(`LAU Deployment transaction submitted! Hash: ${txHash}\n\nPlease copy the deployed contract address from the transaction logs once confirmed and input it into Option B.`);
+        alert(`LAU Deployment transaction submitted! Hash: ${txHash}
+
+Waiting for transaction confirmation to automatically load address...`);
+
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        if (receipt && receipt.logs && receipt.logs.length > 0) {
+            const lauAddress = receipt.logs.find(x => x.address && x.address.toLowerCase() !== factoryAddr.toLowerCase())?.address || receipt.logs[0].address;
+            if (lauAddressInput) {
+                lauAddressInput.value = lauAddress;
+                localStorage.setItem('lau_address', lauAddress);
+            // Save newly deployed LAU to history
+            addLauToHistory(name, lauAddress);
+            }
+            await loadLauInfo();
+            alert(`LAU contract auto-resolved and loaded successfully!
+Address: ${lauAddress}`);
+        } else {
+            alert(`Transaction confirmed but could not automatically parse address. Please verify logs manually.`);
+        }
     } catch (err) {
         console.error("Error deploying LAU:", err);
         alert(`Failed to deploy LAU: ${err.message || err}`);

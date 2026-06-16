@@ -92,8 +92,8 @@
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
                                 <input type="text" id="lau-factory-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; display: none;" value="0x8013Dd64084e9c9122567563AA86981F4C20576B">
                                 <div style="display: flex; gap: 8px;">
-                                    <input type="text" id="lau-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Name (e.g. MyUser)">
-                                    <input type="text" id="lau-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Symbol (e.g. MYLAU)">
+                                    <input type="text" id="lau-deploy-name" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Name (e.g. MyUser)">
+                                    <input type="text" id="lau-deploy-symbol" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Symbol (e.g. MYLAU)">
                                 </div>
                                 <button id="btn-deploy-lau" class="btn" style="border-color: var(--green); color: var(--green); width: 100%;">Deploy LAU via Factory</button>
                             </div>
@@ -105,14 +105,21 @@
                         <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 20px;">
                             <h4 style="margin-top: 0; color: var(--cyan);">Option B: Load Existing LAU Address</h4>
                             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                <input type="text" id="lau-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Address...">
+                                <input type="text" id="lau-address-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Address...">
                                 <button id="btn-load-lau" class="btn">Load</button>
                             </div>
                             <div style="font-size: 0.9rem; margin-bottom: 12px;">
                                 Username: <strong id="lau-profile-username" style="color: var(--cyan);">None Loaded</strong>
                             </div>
+                            <!-- LAU tokens history list -->
+                            <div style="font-size: 0.85rem; margin-bottom: 12px;">
+                                <span style="color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: bold;">Your Created LAU Tokens:</span>
+                                <div id="lau-history-list" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; max-height: 80px; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="color: var(--text-muted); font-style: italic; padding: 2px 4px; font-size: 0.75rem;">None deployed or imported yet</div>
+                                </div>
+                            </div>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="lau-new-username" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="New username...">
+                                <input type="text" id="lau-new-username" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="New username...">
                                 <button id="btn-update-username" class="btn" style="border-color: var(--magenta); color: var(--magenta);">Update</button>
                             </div>
                         </div>
@@ -132,8 +139,8 @@
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 8px; max-width: 400px; margin: 0 auto;">
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" id="yue-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Name (e.g. MyYue)">
-                            <input type="text" id="yue-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Symbol (e.g. MYYUE)">
+                            <input type="text" id="yue-deploy-name" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Name (e.g. MyYue)">
+                            <input type="text" id="yue-deploy-symbol" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="YUE Symbol (e.g. MYYUE)">
                         </div>
                         <button id="btn-deploy-yue" class="btn" style="border-color: var(--magenta); color: var(--magenta); width: 100%; padding: 10px;">Start YUE Contract</button>
                     </div>
@@ -160,6 +167,22 @@
                             <!-- Status ready text -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Z-Machine CLI Console Section -->
+        <section class="lau-section glass" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px);">
+            <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                <span style="display:inline-block; width: 8px; height: 8px; background: var(--magenta); border-radius: 50%; box-shadow: 0 0 10px var(--magenta);"></span>
+                Z-Machine Console
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
+                <div id="zmachine-console-terminal" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 12px; font-family: 'Share Tech Mono', monospace; color: var(--cyan); font-size: 0.9rem; height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">Welcome to the on-chain Z-Machine. Type 'help' to list available system command verbs.</div>
+                <div style="display: flex; gap: 8px;">
+                    <span style="color: var(--cyan); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; display: flex; align-items: center;">&gt;</span>
+                    <input type="text" id="zmachine-console-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; font-family: 'Share Tech Mono', monospace;" placeholder="Enter console command...">
+                    <button id="btn-submit-zmachine" class="btn" style="border-color: var(--cyan); color: var(--cyan);">Submit</button>
                 </div>
             </div>
         </section>
@@ -226,7 +249,7 @@
                     <div class="subcard glass">
                         <h3>YUE Actions (MetaMask)</h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                            <input type="text" id="yue-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="YUE Contract Address..." value="">
+                            <input type="text" id="yue-address-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="YUE Contract Address..." value="">
                             <button id="btn-react-yue" class="btn" style="width: 100%; border-color: var(--magenta); color: var(--magenta);">Raise the Bar (React)</button>
                         </div>
                     </div>
@@ -252,12 +275,27 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Price Trend Chart -->
+                <!-- Right Column: Price Trend Chart & Voxel Art -->
                 <div class="modal-col">
-                    <div class="subcard glass flex-fill">
+                    <div class="subcard glass" style="margin-bottom: 15px;">
                         <h3>Price Trend (USD)</h3>
                         <div id="chart-container" class="chart-container">
                             <!-- SVG chart will be drawn here -->
+                        </div>
+                    </div>
+                    
+                    <div class="subcard glass flex-fill" style="display: flex; flex-direction: column; gap: 10px;">
+                        <h3>Voxel Card Art (DYSNOMIA)</h3>
+                        <div id="modal-art-container" style="width: 100%; height: 200px; background: #000; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                            <div id="modal-art-placeholder" style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">No art generated yet</div>
+                            <img id="modal-art-image" style="width: 100%; height: 100%; object-fit: cover; display: none;" src="">
+                        </div>
+                        <div id="modal-card-desc" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                            Prompt: -
+                        </div>
+                        <div id="modal-card-meta" style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: var(--cyan); display: flex; justify-content: space-between;">
+                            <span>Size: -</span>
+                            <span>QING: Inactive</span>
                         </div>
                     </div>
                 </div>

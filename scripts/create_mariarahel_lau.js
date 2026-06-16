@@ -42,9 +42,20 @@ async function main() {
     const tx = await factoryContract.New("mariarahel", "MARIARAHEL");
     const receipt = await tx.wait();
 
-    // NewLau event is emitted. Let's find it
-    const newLauEvent = receipt.logs.find(x => x.fragment && x.fragment.name === "NewLau") || receipt.logs[0];
-    const lauAddress = newLauEvent.args ? newLauEvent.args[1] : newLauEvent.address;
+    // Resolve LAU address from transaction logs or trace
+    let lauAddress = null;
+    if (receipt.logs && receipt.logs.length > 0) {
+        // Find mapping or transfer log address that is not the factory itself
+        const log = receipt.logs.find(x => x.address && x.address.toLowerCase() !== lauFactoryAddress.toLowerCase());
+        if (log) {
+            lauAddress = log.address;
+        } else {
+            lauAddress = receipt.logs[0].address;
+        }
+    }
+    if (!lauAddress) {
+        throw new Error('Could not resolve LAU deployment address from receipt logs.');
+    }
     console.log(` -> LAU deployed at: ${lauAddress}`);
 
     console.log("Setting username to 'mariarahel' on LAU contract...");
