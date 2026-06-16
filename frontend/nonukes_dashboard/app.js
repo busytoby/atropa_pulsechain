@@ -330,7 +330,8 @@ function encodeAbiTwoStrings(str1, str2) {
 let deployedAddresses = {
     LAUFactory: '0x8013Dd64084e9c9122567563AA86981F4C20576B',
     SEI: '0xfDFB68F5195DF817824Ee881CF63E94402eEc46A',
-    CHOA: '0xe4BD72fC5498d94fD5c364015696653DeF6e8F61'
+    CHOA: '0xe4BD72fC5498d94fD5c364015696653DeF6e8F61',
+    CHO: '0xCb591105c732C55bc81e109dCAeEd9E136AC6c89'
 };
 
 async function fetchConfigAddresses() {
@@ -413,6 +414,42 @@ if (lauAddressInput) {
     });
 }
 
+async function checkActiveLau() {
+    if (!userAccount) return;
+    try {
+        // GetUserTokenAddress(address) -> selector 0xe80c28bf
+        const cleanAddr = userAccount.startsWith('0x') ? userAccount.slice(2) : userAccount;
+        const paddedAddr = cleanAddr.padStart(64, '0');
+        const calldata = '0xe80c28bf' + paddedAddr;
+
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                to: deployedAddresses.CHO,
+                data: calldata
+            }, 'latest']
+        });
+
+        // The result will be a 32-byte word containing the address
+        if (result && result !== '0x' && result !== '0x' + '0'.repeat(64)) {
+            // Clean the address
+            const lauAddress = '0x' + result.slice(-40);
+            console.log("Found active LAU address from CHO:", lauAddress);
+            if (lauAddressInput) {
+                lauAddressInput.value = lauAddress;
+                localStorage.setItem('lau_address', lauAddress);
+            }
+            await loadLauInfo();
+            // Automatically advance to Step 4 since they already have a LAU!
+            goToStep(4);
+        } else {
+            console.log("No active LAU address registered on CHO for:", userAccount);
+        }
+    } catch (err) {
+        console.error("Failed to query CHO for active LAU:", err);
+    }
+}
+
 async function connectWallet() {
     if (typeof window.ethereum !== 'undefined') {
         try {
@@ -431,7 +468,10 @@ async function connectWallet() {
             // Advance Wizard to Step 2
             goToStep(2);
             
-            // Auto-load LAU if saved
+            // Check if user has an existing LAU registered in CHO
+            await checkActiveLau();
+            
+            // Auto-load LAU if saved (fallback)
             if (lauAddressInput && lauAddressInput.value) {
                 loadLauInfo();
             }
