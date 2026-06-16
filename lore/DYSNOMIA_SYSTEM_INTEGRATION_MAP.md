@@ -95,3 +95,21 @@ The structure of the `Fomalhaute` contract and its coordinates inside the physic
 1. **Fomalhaut A**: The primary massive star and its surrounding debris disk define the **Dielectric Rod** base coordinates (`Xi`).
 2. **Fomalhaut B** (TW Piscis Austrini): The variable flare star dictates the dynamic **drift velocity** and temporal logic mutations in the Logic Gates.
 3. **Fomalhaut C** (LP 876-10): The distant red dwarf coordinates act as the boundary constraint of the **Diejective Cone** endpoint (`Daiichi`).
+
+---
+
+## 4. Locus of Control & Decoupled Bottleneck Elimination
+
+> [!IMPORTANT]
+> **Ecosystem Maxim:** *All external locus of control problems are void.*
+> 
+> Under the rules of the Dysnomia engine, all external dependencies are structurally dismissed (declared void) and mathematically routed back into the **`Void`** core contract (`10_void.sol`), which serves as the ultimate authority for system properties and state values.
+
+A major architectural trap is that **solved external locus of control problems can still act as bottlenecks** if the core execution pipeline blocks on them. For instance, having a "working MetaMask wallet integration" or a "working node fallback cache" is structurally useless if the main thread waits synchronously for external consensus or I/O.
+
+### Architectural Rules for Eliminating Locus Bottlenecks:
+1. **Asynchronous Non-Blocking Telemetry (`PEEK`):** Monitoring (PEEK) operations must run completely independently of write (POKE) pipelines. System telemetry queries memory states in parallel without blocking the main event loops.
+2. **Optimistic UI Updates / Lazy Validation:** The frontend and local interfaces display state changes instantly (optimistically) based on local computations, executing on-chain validation lazily in the background. The user is never blocked by consensus validation speed.
+3. **State Autonomy (Internal Locus):** The application thread acts as the final authority on its current state. External indicators (like network RPCs) are treated as advisory inputs that update the cache asynchronously rather than blocking guards.
+
+---
