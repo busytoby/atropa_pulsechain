@@ -170,7 +170,6 @@ async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd)
         let totalReservePartner = 0;
         let totalReserveNoNukes = 0;
         
-        const partnerDecimals = await getTokenDecimals(partnerAddr);
         const nonukesDecimals = 18;
 
         // Try to load local scratch reserves file as a fallback
@@ -187,6 +186,55 @@ async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd)
             }
         } catch (err) {
             // Ignore
+        }
+        
+        let partnerDecimals = 18;
+        let decimalsFetched = false;
+        
+        // Try to get decimals from RPC
+        try {
+            const result = await pulseRpcCall(partnerAddr, "0x313ce567");
+            if (result && result !== "0x") {
+                const parsed = parseInt(result, 16);
+                if (!isNaN(parsed)) {
+                    partnerDecimals = parsed;
+                    decimalsFetched = true;
+                }
+            }
+        } catch (e) {
+            // Ignore
+        }
+        
+        // If RPC failed to fetch decimals, try to derive it from the reserves file
+        if (!decimalsFetched) {
+            for (const poolAddr of poolAddresses) {
+                const poolKey = poolAddr.toLowerCase();
+                if (reservesFile[poolKey]) {
+                    const resRecord = reservesFile[poolKey];
+                    let rawR = 0n;
+                    let adjR = 0;
+                    
+                    const fileToken0 = (resRecord.token0 || "").toLowerCase();
+                    const fileToken1 = (resRecord.token1 || "").toLowerCase();
+                    if (fileToken0 === partnerAddr.toLowerCase()) {
+                        rawR = BigInt(resRecord.raw_reserve0 || "0");
+                        adjR = Number(resRecord.reserve0 || 0);
+                    } else if (fileToken1 === partnerAddr.toLowerCase()) {
+                        rawR = BigInt(resRecord.raw_reserve1 || "0");
+                        adjR = Number(resRecord.reserve1 || 0);
+                    }
+                    
+                    if (rawR > 0n && adjR > 0) {
+                        const ratio = Number(rawR) / adjR;
+                        const derivedDec = Math.round(Math.log10(ratio));
+                        if (derivedDec >= 0 && derivedDec <= 36) {
+                            partnerDecimals = derivedDec;
+                            decimalsFetched = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
         for (const poolAddr of poolAddresses) {
@@ -207,21 +255,44 @@ async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd)
                 }
             }
 
-            // Fallback to local scratch reserves file if RPC fetch failed or returned empty
-            if (!fetched && reservesFile[poolKey]) {
+            let reservePartner = 0;
+            let reserveNoNukes = 0;
+
+            if (fetched) {
+                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
+                const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
+                
+                const rawReservePartner = isPartner0 ? r0 : r1;
+                const rawReserveNoNukes = isPartner0 ? r1 : r0;
+                
+                reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
+                reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
+            } else if (reservesFile[poolKey]) {
                 const resRecord = reservesFile[poolKey];
-                r0 = BigInt(resRecord.raw_reserve0 || "0");
-                r1 = BigInt(resRecord.raw_reserve1 || "0");
+                const fileR0 = Number(resRecord.reserve0 || 0);
+                const fileR1 = Number(resRecord.reserve1 || 0);
+                
+                let fileToken0 = (resRecord.token0 || "").toLowerCase();
+                let fileToken1 = (resRecord.token1 || "").toLowerCase();
+                if (!fileToken0 || !fileToken1) {
+                    if (partnerAddr.toLowerCase() < "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62") {
+                        fileToken0 = partnerAddr.toLowerCase();
+                        fileToken1 = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
+                    } else {
+                        fileToken0 = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
+                        fileToken1 = partnerAddr.toLowerCase();
+                    }
+                }
+                
+                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
+                if (fileToken0 === nonukesAddr) {
+                    reserveNoNukes = fileR0;
+                    reservePartner = fileR1 * Math.pow(10, 18 - partnerDecimals);
+                } else {
+                    reserveNoNukes = fileR1;
+                    reservePartner = fileR0 * Math.pow(10, 18 - partnerDecimals);
+                }
             }
-            
-            const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
-            const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
-            
-            const rawReservePartner = isPartner0 ? r0 : r1;
-            const rawReserveNoNukes = isPartner0 ? r1 : r0;
-            
-            const reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
-            const reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
             
             totalReservePartner += reservePartner;
             totalReserveNoNukes += reserveNoNukes;

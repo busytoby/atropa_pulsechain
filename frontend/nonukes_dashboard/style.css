@@ -1,0 +1,419 @@
+:root {
+    --bg-dark: hsl(220, 40%, 3%);
+    --bg-card: hsla(220, 35%, 8%, 0.65);
+    --border-glass: hsla(0, 0%, 100%, 0.06);
+    --border-active: hsla(180, 100%, 50%, 0.3);
+    
+    --text-primary: hsl(210, 40%, 95%);
+    --text-muted: hsl(215, 20%, 65%);
+    
+    --cyan: hsl(180, 100%, 50%);
+    --magenta: hsl(320, 100%, 50%);
+    --yellow: hsl(45, 100%, 50%);
+    --green: hsl(140, 100%, 50%);
+    
+    --glow-cyan: rgba(0, 240, 255, 0.15);
+    --glow-magenta: rgba(255, 0, 127, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 2rem;
+}
+
+.glass-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(180, 100%, 50%, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(320, 100%, 50%, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, hsla(45, 100%, 50%, 0.03) 0px, transparent 50%);
+}
+
+.glass {
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 2rem;
+    margin: 1.5rem 2rem 0;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-logo h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+}
+
+.pulse-indicator {
+    width: 12px;
+    height: 12px;
+    background-color: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+    animation: heartbeat 2s infinite ease-in-out;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(0.95); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    background: var(--cyan);
+    color: #000;
+    box-shadow: 0 0 12px var(--cyan);
+    border-color: var(--cyan);
+}
+
+/* Main Layout */
+main {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    padding: 1.5rem;
+    transition: transform 0.3s, border-color 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-active);
+}
+
+.card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.text-cyan { color: var(--cyan); text-shadow: 0 0 10px var(--glow-cyan); }
+.text-magenta { color: var(--magenta); text-shadow: 0 0 10px var(--glow-magenta); }
+
+/* Filter Bar */
+.filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-container input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-glass);
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-container input:focus {
+    border-color: var(--cyan);
+}
+
+.group-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-chip {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-chip.active, .filter-chip:hover {
+    background: rgba(255, 0, 127, 0.1);
+    border-color: var(--magenta);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(255, 0, 127, 0.2);
+}
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+    padding: 1rem;
+}
+
+.pool-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.pool-table th, .pool-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.pool-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+
+.pool-table tbody tr {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pool-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+    transform: translateX(4px);
+}
+
+/* Modal details */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(3, 4, 8, 0.8);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 1000px;
+    height: 80vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal-header h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.modal-header div {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.modal-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow: hidden;
+}
+
+.subcard {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.subcard h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 0.5rem;
+    color: var(--cyan);
+}
+
+.flex-fill {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Reserves Display */
+.reserves-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.reserve-bar {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--magenta);
+}
+
+.reserve-bar:first-child {
+    border-left-color: var(--cyan);
+}
+
+.reserve-lbl {
+    font-weight: 600;
+}
+
+.reserve-val {
+    font-family: 'Share Tech Mono', monospace;
+}
+
+/* History table */
+.history-table-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+#history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+#history-table th, #history-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-glass);
+    text-align: left;
+}
+
+#history-table th {
+    color: var(--text-muted);
+}
+
+/* Chart Container */
+.chart-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.chart-svg {
+    width: 100%;
+    height: 100%;
+}

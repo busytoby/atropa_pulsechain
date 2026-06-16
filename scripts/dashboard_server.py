@@ -9,6 +9,7 @@ import re
 import glob
 
 PORT = int(os.environ.get("PORT", 8080))
+http.server.BaseHTTPRequestHandler.max_line_size = 1048576
 PRICE_CACHE_FILE = "price_cache.json"
 UNRESOLVED_FILE = "unresolved_swaps.json"
 RESOLVED_FILE = "resolved_swaps.json"
@@ -35,7 +36,159 @@ def get_price(prices, addr):
     except (ValueError, TypeError):
         return 0.0
 
+def get_adjusted_and_aligned_reserves(pool_addr, reserves_data, pool_info):
+    NONUKES_ADDR = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62"
+    partner_addr = pool_info.get("other_addr", "").lower() if isinstance(pool_info, dict) else ""
+    partner_symbol = pool_info.get("symbol", "UNKNOWN") if isinstance(pool_info, dict) else "UNKNOWN"
+    
+    res = reserves_data.get(pool_addr.lower(), {})
+    if not isinstance(res, dict):
+        res = {}
+        
+    t0 = res.get("token0", "").lower()
+    t1 = res.get("token1", "").lower()
+    
+    r0_val = res.get("reserve0")
+    r1_val = res.get("reserve1")
+    try:
+        r0 = float(r0_val) if r0_val is not None else 0.0
+    except (ValueError, TypeError):
+        r0 = 0.0
+    try:
+        r1 = float(r1_val) if r1_val is not None else 0.0
+    except (ValueError, TypeError):
+        r1 = 0.0
+        
+    if not t0 or not t1:
+        if partner_addr < NONUKES_ADDR:
+            t0, t1 = partner_addr, NONUKES_ADDR
+        else:
+            t0, t1 = NONUKES_ADDR, partner_addr
+            
+    if t0 == NONUKES_ADDR:
+        nonukes_res = r0
+        partner_res = r1
+        partner_token_key = "1"
+    elif t1 == NONUKES_ADDR:
+        nonukes_res = r1
+        partner_res = r0
+        partner_token_key = "0"
+    else:
+        nonukes_res = r0
+        partner_res = r1
+        partner_token_key = "1"
+        
+    partner_decimals = 18
+    raw_r_val = res.get(f"raw_reserve{partner_token_key}")
+    adj_r_val = res.get(f"reserve{partner_token_key}")
+    if raw_r_val is not None and adj_r_val is not None:
+        try:
+            raw_r = float(raw_r_val)
+            adj_r = float(adj_r_val)
+            if raw_r > 0.0 and adj_r > 0.0:
+                import math
+                derived_dec = round(math.log10(raw_r / adj_r))
+                if 0 <= derived_dec <= 36:
+                    partner_decimals = derived_dec
+        except Exception:
+            pass
+            
+    partner_res_adjusted = partner_res * (10 ** (18 - partner_decimals))
+    
+    return {
+        "token0": nonukes_res,
+        "token1": partner_res_adjusted,
+        "token0_symbol": "NoNukes",
+        "token1_symbol": partner_symbol
+    }
+
+def derive_prices(pools_data, reserves_data, cached_prices=None):
+    if not isinstance(pools_data, dict):
+        pools_data = {}
+    if not isinstance(reserves_data, dict):
+        reserves_data = {}
+        
+    NONUKES_PRICE = 1.74
+    NONUKES_ADDR = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62"
+    
+    nonukes_price_val = 0.0
+    if isinstance(cached_prices, dict):
+        for k, v in cached_prices.items():
+            if isinstance(k, str) and k.lower() == NONUKES_ADDR:
+                price_field = None
+                if isinstance(v, dict):
+                    price_field = v.get("price")
+                else:
+                    price_field = v
+                if price_field is not None:
+                    try:
+                        nonukes_price_val = float(price_field)
+                    except (ValueError, TypeError):
+                        pass
+                break
+                
+    if nonukes_price_val <= 0.0:
+        nonukes_price_val = NONUKES_PRICE
+        
+    partner_pools = {}
+    for pool_addr, info in pools_data.items():
+        if not isinstance(info, dict):
+            continue
+        partner_addr = info.get("other_addr")
+        if isinstance(partner_addr, str):
+            p_addr_lower = partner_addr.lower()
+            if p_addr_lower not in partner_pools:
+                partner_pools[p_addr_lower] = []
+            partner_pools[p_addr_lower].append((pool_addr.lower(), info))
+            
+    derived_prices = {}
+    for partner_addr, pools_list in partner_pools.items():
+        total_reserve_partner = 0.0
+        total_reserve_nonukes = 0.0
+        symbol = "UNKNOWN"
+        name = "Unknown Token"
+        for pool_addr, info in pools_list:
+            if info.get("symbol"):
+                symbol = info.get("symbol")
+            if info.get("name"):
+                name = info.get("name")
+            
+            res = reserves_data.get(pool_addr.lower())
+            if not isinstance(res, dict):
+                continue
+                
+            adjusted = get_adjusted_and_aligned_reserves(pool_addr, reserves_data, info)
+            total_reserve_nonukes += adjusted["token0"]
+            total_reserve_partner += adjusted["token1"]
+            
+        price_usd = 0.0
+        if total_reserve_partner > 0.0:
+            price_usd = (total_reserve_nonukes / total_reserve_partner) * nonukes_price_val
+            
+        liquidity_usd = total_reserve_nonukes * nonukes_price_val * 2.0
+        
+        derived_prices[partner_addr] = {
+            "price": price_usd,
+            "symbol": symbol,
+            "name": name,
+            "liquidity": liquidity_usd
+        }
+        
+    # Add NoNukes itself
+    derived_prices[NONUKES_ADDR] = {
+        "price": nonukes_price_val,
+        "symbol": "NoNukes",
+        "name": "NoNukes",
+        "liquidity": sum(item.get("liquidity", 0.0) for item in derived_prices.values() if isinstance(item, dict))
+    }
+    return derived_prices
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def send_error(self, code, message=None, explain=None):
+        if code == 414:
+            code = 400
+        super().send_error(code, message, explain)
+
     def log_message(self, format, *args):
         # Suppress request logging to keep stderr clean
         pass
@@ -80,11 +233,36 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             
-            prices = {}
+            pools_data = {}
+            if os.path.exists("nonukes_pools.json"):
+                try:
+                    with open("nonukes_pools.json", "r") as f:
+                        pools_data = json.load(f)
+                except Exception:
+                    pass
+            if not isinstance(pools_data, dict): pools_data = {}
+            
+            reserves_data = {}
+            res_path = RESERVES_FILE_PATH
+            if os.path.exists(res_path):
+                try:
+                    with open(res_path, "r") as f:
+                        reserves_data = json.load(f)
+                except Exception:
+                    pass
+            if not isinstance(reserves_data, dict): reserves_data = {}
+            
+            prices = derive_prices(pools_data, reserves_data)
+            
             if os.path.exists(PRICE_CACHE_FILE):
                 try:
                     with open(PRICE_CACHE_FILE, "r") as f:
-                        prices = json.load(f)
+                        cached_prices = json.load(f)
+                        if isinstance(cached_prices, dict):
+                            for k, v in cached_prices.items():
+                                k_lower = k.lower()
+                                if k_lower not in prices:
+                                    prices[k_lower] = v
                 except Exception:
                     pass
             if not isinstance(prices, dict): prices = {}
@@ -96,6 +274,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         unresolved = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(unresolved, list): unresolved = []
                     
             resolved = []
             if os.path.exists(RESOLVED_FILE):
@@ -104,6 +283,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         resolved = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(resolved, list): resolved = []
             
             treasury_tokens = {}
             import glob
@@ -111,7 +291,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 for fpath in glob.glob("treasury_tokens_*.json"):
                     try:
                         with open(fpath, "r") as f:
-                            treasury_tokens.update(json.load(f))
+                            t_data = json.load(f)
+                            if isinstance(t_data, dict):
+                                treasury_tokens.update(t_data)
                     except Exception:
                         pass
             
@@ -123,20 +305,22 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             }
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
         elif self.path == '/api/nonukes/pools':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            
-            pools_data = {}
+            pools_data = None
             if os.path.exists("nonukes_pools.json"):
                 try:
                     with open("nonukes_pools.json", "r") as f:
                         pools_data = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(pools_data, dict):
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Invalid pools data"}).encode('utf-8'))
+                return
                     
-            reserves_data = {}
+            reserves_data = None
             res_path = RESERVES_FILE_PATH
             if os.path.exists(res_path):
                 try:
@@ -144,28 +328,50 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         reserves_data = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(reserves_data, dict):
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Invalid reserves data"}).encode('utf-8'))
+                return
                     
-            resolved_swaps = []
+            resolved_swaps = None
             if os.path.exists("resolved_swaps.json"):
                 try:
                     with open("resolved_swaps.json", "r") as f:
                         resolved_swaps = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(resolved_swaps, list):
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Invalid swaps data"}).encode('utf-8'))
+                return
             
-            # Load price cache for dynamic USD fallback
-            prices = {}
+            cached_prices = {}
             if os.path.exists("price_cache.json"):
                 try:
                     with open("price_cache.json", "r") as f:
-                        prices = json.load(f)
+                        cached_prices = json.load(f)
                 except Exception:
                     pass
-            if not isinstance(prices, dict): prices = {}
+            if not isinstance(cached_prices, dict): cached_prices = {}
+            
+            prices = derive_prices(pools_data, reserves_data, cached_prices)
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
             
             # Aggregate stats from swaps
             pool_stats = {}
             for swap in resolved_swaps:
+                if not isinstance(swap, dict):
+                    continue
                 p_addr = swap.get("pool_address", "").lower()
                 if not p_addr:
                     continue
@@ -191,8 +397,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 
             pools_list = []
             for addr, info in pools_data.items():
+                if not isinstance(info, dict):
+                    continue
                 addr_lower = addr.lower()
                 res = reserves_data.get(addr_lower, {})
+                if not isinstance(res, dict):
+                    res = {}
                 stats = pool_stats.get(addr_lower, {"count": 0, "volume": 0.0})
                 
                 pools_list.append({
@@ -201,10 +411,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     "name": info.get("name", ""),
                     "target_group": info.get("target_group", ""),
                     "version": info.get("version", ""),
-                    "reserves": {
-                        "token0": float(res.get("reserve0", 0.0)),
-                        "token1": float(res.get("reserve1", 0.0))
-                    },
+                    "partner_address": info.get("other_addr", ""),
+                    "reserves": get_adjusted_and_aligned_reserves(addr, reserves_data, info),
                     "swap_count": stats["count"],
                     "volume_usd": stats["volume"]
                 })
@@ -225,8 +433,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         pools_data = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(pools_data, dict): pools_data = {}
                     
-            pools_data_lower = {k.lower(): v for k, v in pools_data.items()}
+            pools_data_lower = {k.lower(): v for k, v in pools_data.items() if isinstance(k, str) and isinstance(v, dict)}
             if not address or len(address) < 42 or not address.startswith("0x") or address_lower not in pools_data_lower:
                 self.send_response(400)
                 self.send_header('Content-Type', 'application/json')
@@ -245,18 +454,22 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         reserves_data = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(reserves_data, dict): reserves_data = {}
                     
             res = reserves_data.get(address_lower, {})
+            if not isinstance(res, dict): res = {}
             
-            prices = {}
+            cached_prices = {}
             price_cache_corrupt = False
             if os.path.exists("price_cache.json"):
                 try:
                     with open("price_cache.json", "r") as f:
-                        prices = json.load(f)
+                        cached_prices = json.load(f)
                 except Exception:
                     price_cache_corrupt = True
-            if not isinstance(prices, dict): prices = {}
+            if not isinstance(cached_prices, dict): cached_prices = {}
+            
+            prices = derive_prices(pools_data, reserves_data, cached_prices)
                     
             token0_addr = res.get("token0", "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62").lower()
             token1_addr = res.get("token1", pool_info.get("other_addr", "")).lower()
@@ -281,10 +494,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         resolved_swaps = json.load(f)
                 except Exception:
                     pass
+            if not isinstance(resolved_swaps, list): resolved_swaps = []
                     
             matching_swaps = []
             for swap in resolved_swaps:
-                if swap.get("pool_address", "").lower() == address_lower:
+                if isinstance(swap, dict) and swap.get("pool_address", "").lower() == address_lower:
                     matching_swaps.append(swap)
             
             # Sort chronologically for trends
@@ -352,22 +566,18 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             if price_cache_corrupt:
                 price_trends = [0.0, 0.0, 0.0]
-
+ 
             yue_scores = {
                 "token0": {"hypobar": 0, "epibar": 0},
                 "token1": {"hypobar": 0, "epibar": 0}
             }
-
+ 
             response = {
                 "success": True,
                 "address": address,
+                "partner_address": pool_info.get("other_addr", ""),
                 "price_trends": price_trends,
-                "reserves": {
-                    "token0": float(res.get("reserve0", 0.0)),
-                    "token1": float(res.get("reserve1", 0.0)),
-                    "token0_symbol": token0_symbol,
-                    "token1_symbol": token1_symbol
-                },
+                "reserves": get_adjusted_and_aligned_reserves(address, reserves_data, pool_info),
                 "yue_scores": yue_scores,
                 "swap_history": swap_history,
                 "swaps": swap_history
@@ -407,6 +617,13 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             if address:
                 address = address.lower()
+                if not re.match(r"^0x[0-9a-fA-F]{40}$", address):
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": "Invalid address format"}).encode('utf-8'))
+                    return
                 from web3 import Web3
                 w3 = Web3(Web3.HTTPProvider("https://rpc.pulsechain.com"))
                 
@@ -554,7 +771,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     try:
                         with open(fpath, "r") as f:
                             data = json.load(f)
-                        if address in data:
+                        if isinstance(data, dict) and address in data:
                             data[address]["ignored"] = ignored_val
                             with open(fpath, "w") as f:
                                 json.dump(data, f, indent=4)
@@ -565,13 +782,22 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 if not found_any:
                     # Default to unknown_minter if not found anywhere
                     target_fpath = "treasury_tokens_unknown_minter.json"
-                    tokens = {}
+                    tokens = None
                     if os.path.exists(target_fpath):
                         try:
                             with open(target_fpath, "r") as f:
                                 tokens = json.load(f)
                         except Exception:
                             pass
+                    if os.path.exists(target_fpath) and not isinstance(tokens, dict):
+                        self.send_response(400)
+                        self.send_header('Content-Type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": False, "error": "Invalid tokens format"}).encode('utf-8'))
+                        return
+                    if not isinstance(tokens, dict):
+                        tokens = {}
                     tokens[address] = {
                         "address": address,
                         "symbol": "UNKNOWN",

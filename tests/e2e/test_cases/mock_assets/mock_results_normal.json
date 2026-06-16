@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "total_frames": 500,
+    "elapsed_time_seconds": 50.186421,
+    "total_render_time_seconds": 50.186395,
+    "average_fps": 9.962860,
+    "average_frame_render_time_seconds": 0.100373
+  },
+  "frame_times_seconds": [0.100373],
+  "audio_latency_records": []
+}

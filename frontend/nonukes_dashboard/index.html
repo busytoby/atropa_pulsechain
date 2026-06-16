@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoNukes Token Family Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    
+    <header class="glass">
+        <div class="header-logo">
+            <div class="pulse-indicator"></div>
+            <h1>NoNukes Family</h1>
+        </div>
+        <div class="header-status">
+            <span>Ecosystem Node Connected</span>
+            <button id="btn-connect-wallet" class="btn" style="margin-right: 8px;">Connect Wallet</button>
+            <button id="btn-refresh" class="btn">↻ Refresh</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Statistics Section -->
+        <section class="stats-grid">
+            <div class="card glass">
+                <div class="card-label">Total Unique Pools</div>
+                <div id="stat-total-pools" class="card-value">-</div>
+            </div>
+            <div class="card glass">
+                <div class="card-label">Active Groups</div>
+                <div id="stat-active-groups" class="card-value">-</div>
+            </div>
+            <div class="card glass">
+                <div class="card-label">Total Volume (USD)</div>
+                <div id="stat-total-volume" class="card-value text-cyan">-</div>
+            </div>
+            <div class="card glass">
+                <div class="card-label">Total Swap Count</div>
+                <div id="stat-total-swaps" class="card-value text-magenta">-</div>
+            </div>
+        </section>
+
+        <!-- LAU Profile Section -->
+        <section class="lau-section glass" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px);">
+            <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                <span style="display:inline-block; width: 8px; height: 8px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan);"></span>
+                LAU Identity Manager
+            </h2>
+            <div id="lau-disconnected" class="text-center text-muted" style="padding: 1rem; text-align: center;">
+                Connect MetaMask wallet to access your LAU identity profile.
+            </div>
+            <div id="lau-connected" style="display: none; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <h3 style="color: var(--cyan); margin-top: 0;">My LAU Contract</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="text" id="lau-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Contract Address...">
+                        <button id="btn-load-lau" class="btn">Load</button>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">
+                        Enter an existing LAU contract address or deploy a new one.
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--magenta); margin-top: 0;">LAU Profile Info</h3>
+                    <div style="margin-bottom: 8px;">
+                        <span class="text-muted">Username:</span> 
+                        <strong id="lau-profile-username" style="color: #fff; font-family: 'Share Tech Mono'; font-size: 1.1rem; margin-left: 8px;">None</strong>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="lau-new-username" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="New username...">
+                        <button id="btn-update-username" class="btn" style="border-color: var(--magenta); color: var(--magenta);">Update</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="color: var(--green); margin-top: 0;">Deploy New LAU</h3>
+                    <div style="margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted);">
+                        LAUFactory: <span id="laufactory-address-lbl" style="font-family: 'Share Tech Mono';">0x8013Dd64084e9c9122567563AA86981F4C20576B</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="text" id="lau-factory-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAUFactory Address..." value="0x8013Dd64084e9c9122567563AA86981F4C20576B">
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="lau-deploy-name" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Name">
+                            <input type="text" id="lau-deploy-symbol" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 50%; box-sizing: border-box;" placeholder="Symbol">
+                        </div>
+                        <button id="btn-deploy-lau" class="btn" style="border-color: var(--green); color: var(--green); width: 100%;">Deploy LAU Identity</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Catalog Section -->
+        <section class="catalog-section">
+            <div class="filter-bar glass">
+                <div class="search-container">
+                    <input type="text" id="pool-search" placeholder="Search by Minter symbol or Address...">
+                </div>
+                <div class="group-filters" id="group-filters">
+                    <!-- Dynamic group filters -->
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <table class="pool-table" id="pool-table">
+                    <thead>
+                        <tr>
+                            <th onclick="changeSort('symbol')">Minter Token ⇅</th>
+                            <th onclick="changeSort('version')">Version ⇅</th>
+                            <th onclick="changeSort('target_group')">Group ⇅</th>
+                            <th onclick="changeSort('reserves')">Reserves (NoNukes / Minter) ⇅</th>
+                            <th onclick="changeSort('swap_count')">Swaps ⇅</th>
+                            <th onclick="changeSort('volume_usd')">Volume (USD) ⇅</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Loading NoNukes family catalog...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <div class="modal-header">
+                <h2 id="modal-title">Minter Pool Details</h2>
+                <div id="modal-subtitle">0x...</div>
+            </div>
+            
+            <div class="modal-grid">
+                <!-- Left Column: Reserves & Swap History -->
+                <div class="modal-col">
+                    <div class="subcard glass">
+                        <h3>Pool Reserves</h3>
+                        <div class="reserves-display">
+                            <div class="reserve-bar">
+                                <div class="reserve-lbl" id="res0-lbl">NoNukes</div>
+                                <div class="reserve-val" id="res0-val">-</div>
+                            </div>
+                            <div class="reserve-bar">
+                                <div class="reserve-lbl" id="res1-lbl">Minter</div>
+                                <div class="reserve-val" id="res1-val">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subcard glass">
+                        <h3>YUE Actions (MetaMask)</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <input type="text" id="yue-address-input" class="btn" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="YUE Contract Address..." value="">
+                            <button id="btn-react-yue" class="btn" style="width: 100%; border-color: var(--magenta); color: var(--magenta);">Raise the Bar (React)</button>
+                        </div>
+                    </div>
+
+                    <div class="subcard glass flex-fill">
+                        <h3>Swap History</h3>
+                        <div class="history-table-container">
+                            <table id="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tx Hash</th>
+                                        <th>Amount In</th>
+                                        <th>Amount Out</th>
+                                        <th>USD Value</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic history -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Price Trend Chart -->
+                <div class="modal-col">
+                    <div class="subcard glass flex-fill">
+                        <h3>Price Trend (USD)</h3>
+                        <div id="chart-container" class="chart-container">
+                            <!-- SVG chart will be drawn here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
