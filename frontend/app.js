@@ -1454,7 +1454,7 @@ async function runYulConsoleCommand() {
                 config.networks.localhost.abiLookupAddress = abiContractAddr;
                 consoleLogsEl.innerText += `\n[Deployed]: Deployed identical CL9 contract at: ${abiContractAddr}`;
             } else if (!abiContractAddr) {
-                abiContractAddr = "0x004226a0199d002358c78bae868ad59c633a653f";
+                abiContractAddr = "0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C";
             }
 
             let contract = new ethers.Contract(abiContractAddr, abiAbi, currentSigner || currentProvider);
