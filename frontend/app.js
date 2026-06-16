@@ -133,6 +133,38 @@ async function loadConfigKeys() {
         });
 
         log(`Loaded ${addressList.length} deployed metadata key sets successfully.`, "success");
+
+        // Populate Quick-view top panel
+        const quickPkiKeys = document.getElementById("quickPkiKeys");
+        const quickLauContracts = document.getElementById("quickLauContracts");
+        
+        if (quickPkiKeys && config.networks && config.networks.localhost) {
+            quickPkiKeys.innerHTML = "";
+            let pkiCount = 0;
+            for (const [name, val] of Object.entries(config.networks.localhost)) {
+                if (name.startsWith("Genesis PK")) {
+                    pkiCount++;
+                    quickPkiKeys.innerHTML += `<div>${name}: <span style="color:#fff;">${val.substring(0, 6)}...${val.substring(val.length - 4)}</span></div>`;
+                }
+            }
+            if (pkiCount === 0) {
+                quickPkiKeys.innerHTML = "<div>No active PKI keys.</div>";
+            }
+        }
+
+        if (quickLauContracts && config.networks && config.networks.localhost) {
+            quickLauContracts.innerHTML = "";
+            let lauCount = 0;
+            for (const [name, val] of Object.entries(config.networks.localhost)) {
+                if (name.includes("Lau") || name.includes("LAU")) {
+                    lauCount++;
+                    quickLauContracts.innerHTML += `<div>${name}: <span style="color:#fff;">${val.substring(0, 6)}...${val.substring(val.length - 4)}</span></div>`;
+                }
+            }
+            if (lauCount === 0) {
+                quickLauContracts.innerHTML = "<div>No active LAU contracts.</div>";
+            }
+        }
     } catch (err) {
         log(`Could not load local keys: ${err.message}. Make sure server.js is running.`, "error");
     }

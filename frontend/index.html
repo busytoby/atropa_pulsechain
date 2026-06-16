@@ -45,6 +45,39 @@
         </header>
 
         <!-- Main Dashboard Layout -->
+        <!-- PKI Keys & LAU Contracts Status Panel -->
+        <section class="card" style="margin: 0 20px 20px 20px; border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 242, 254, 0.15); grid-column: span 2;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px;">
+                <h2 style="margin: 0; font-family: 'Orbitron', sans-serif;"><span class="icon">🌌</span> PKI Keys & LAU Status Hub</h2>
+                <div style="font-size: 0.85rem; font-family: monospace; color: var(--neon-magenta);">
+                    VOID: <span id="quickVoidAddr" style="color:#fff;">0xA51...1C0</span> | 
+                    CHO: <span id="quickChoAddr" style="color:#fff;">0x68B...aed</span>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <!-- Deployed PKI Key Sets -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px; padding: 12px;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">🔑 Deployed PKI Key Sets</h4>
+                    <div id="quickPkiKeys" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; max-height: 120px; overflow-y: auto; font-family: monospace; color: var(--text-secondary);">
+                        Loading PKI sets...
+                    </div>
+                </div>
+                <!-- Dynamic LAU Status -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(57, 255, 20, 0.2); border-radius: 8px; padding: 12px;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--neon-green); font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">📜 Active LAU Contracts</h4>
+                    <div id="quickLauContracts" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; max-height: 120px; overflow-y: auto; font-family: monospace; color: var(--text-secondary);">
+                        mariarahelLau: <span style="color:#fff;">0xAD4e...FE4B</span><br>
+                        TestLAU: <span style="color:#fff;">0x8e80...93</span>
+                    </div>
+                </div>
+                <!-- Interactive Action Links -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+                    <a href="/wallet.html" class="btn btn-secondary btn-small" style="display: block; text-align: center; border-color: var(--neon-blue); color: var(--neon-blue); font-size: 0.8rem;">👛 Open Wallet Hub</a>
+                    <a href="/zmachine.html" class="btn btn-secondary btn-small" style="display: block; text-align: center; border-color: var(--neon-purple); color: var(--neon-purple); font-size: 0.8rem;">⚔️ Open Z-Machine</a>
+                </div>
+            </div>
+        </section>
+
         <main class="dashboard-grid">
             
             <!-- Left Side: Config & Keys -->
