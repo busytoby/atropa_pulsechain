@@ -408,6 +408,7 @@ const btnLoadLau = document.getElementById('btn-load-lau');
 const lauProfileUsername = document.getElementById('lau-profile-username');
 const lauNewUsername = document.getElementById('lau-new-username');
 const btnUpdateUsername = document.getElementById('btn-update-username');
+const btnEnterCho = document.getElementById('btn-enter-cho');
 const lauFactoryAddressInput = document.getElementById('lau-factory-address-input');
 const lauDeployName = document.getElementById('lau-deploy-name');
 const lauDeploySymbol = document.getElementById('lau-deploy-symbol');
@@ -529,6 +530,9 @@ async function updateLauHistoryDisplay() {
     
     if (history.length === 0) {
         listContainer.innerHTML = '<div style="color: var(--text-muted); font-style: italic; padding: 2px 4px; font-size: 0.75rem;">None deployed or imported yet</div>';
+        if (lauAddressInput) {
+            lauAddressInput.innerHTML = '<option value="">-- No LAU Loaded --</option>';
+        }
         return;
     }
     
@@ -543,6 +547,17 @@ async function updateLauHistoryDisplay() {
             </div>
         `;
     }).join('');
+
+    if (lauAddressInput) {
+        const currentVal = localStorage.getItem('lau_address') || '';
+        lauAddressInput.innerHTML = '<option value="">-- Select or scan a LAU --</option>' + 
+            history.map(item => `<option value="${item.address}">${item.name} (${item.address.slice(0, 8)}...${item.address.slice(-6)})</option>`).join('');
+        if (currentVal && history.some(item => item.address.toLowerCase() === currentVal.toLowerCase())) {
+            lauAddressInput.value = currentVal;
+        } else {
+            lauAddressInput.value = '';
+        }
+    }
 }
 
 window.selectLauFromHistory = function(address) {
@@ -578,14 +593,17 @@ function addLauToHistory(name, address) {
 // Load stored values
 if (lauAddressInput) {
     lauAddressInput.value = localStorage.getItem('lau_address') || '';
-    lauAddressInput.addEventListener('input', (e) => {
-        localStorage.setItem('lau_address', e.target.value);
-        if (e.target.value.trim().startsWith('0x') && e.target.value.trim().length >= 42) {
+    const onLauAddressChange = (val) => {
+        localStorage.setItem('lau_address', val);
+        if (val.trim().startsWith('0x') && val.trim().length >= 42) {
             if (btnNextToStep4) btnNextToStep4.disabled = false;
         } else {
             if (btnNextToStep4) btnNextToStep4.disabled = true;
         }
-    });
+        checkActiveLau();
+    };
+    lauAddressInput.addEventListener('input', (e) => onLauAddressChange(e.target.value));
+    lauAddressInput.addEventListener('change', (e) => onLauAddressChange(e.target.value));
     // Render initial list
     updateLauHistoryDisplay();
 }
@@ -606,27 +624,99 @@ async function checkActiveLau() {
             }, 'latest']
         });
 
+        const choStatusEl = document.getElementById('cho-entry-status');
+        const enterChoBtn = document.getElementById('btn-enter-cho');
+
         // The result will be a 32-byte word containing the address
         if (result && result !== '0x' && result !== '0x' + '0'.repeat(64)) {
             // Clean the address
             const lauAddress = '0x' + result.slice(-40);
             console.log("Found active LAU address from CHO:", lauAddress);
-            if (lauAddressInput) {
-                lauAddressInput.value = lauAddress;
-                localStorage.setItem('lau_address', lauAddress);
+            
+            if (choStatusEl) {
+                const shortLau = lauAddress.slice(0, 8) + '...' + lauAddress.slice(-6);
+                choStatusEl.innerText = `Entered (LAU: ${shortLau})`;
+                choStatusEl.style.color = 'var(--green)';
             }
-            try {
-                const name = document.getElementById("lau-profile-username")?.innerText || "LAU Token";
-                addLauToHistory(name, lauAddress);
-            } catch(e) {}
-            await loadLauInfo();
+            if (enterChoBtn) {
+                enterChoBtn.style.display = 'none';
+            }
+
+            // Check if the loaded address matches, update if not
+            const currentLoadedLau = localStorage.getItem('lau_address') || '';
+            if (currentLoadedLau.toLowerCase() !== lauAddress.toLowerCase()) {
+                if (lauAddressInput) {
+                    lauAddressInput.value = lauAddress;
+                    localStorage.setItem('lau_address', lauAddress);
+                }
+                try {
+                    const name = document.getElementById("lau-profile-username")?.innerText || "LAU Token";
+                    addLauToHistory(name, lauAddress);
+                } catch(e) {}
+                await loadLauInfo();
+            }
             // Automatically advance to Step 4 since they already have a LAU!
             goToStep(4);
         } else {
             console.log("No active LAU address registered on CHO for:", userAccount);
+            if (choStatusEl) {
+                choStatusEl.innerText = 'Not Entered';
+                choStatusEl.style.color = 'var(--magenta)';
+            }
+            
+            // Check if the loaded/selected option in the dropdown is a valid LAU
+            const currentVal = lauAddressInput ? lauAddressInput.value : '';
+            if (enterChoBtn) {
+                if (currentVal && currentVal.startsWith('0x') && currentVal.length >= 42) {
+                    enterChoBtn.style.display = 'inline-block';
+                } else {
+                    enterChoBtn.style.display = 'none';
+                }
+            }
         }
     } catch (err) {
         console.error("Failed to query CHO for active LAU:", err);
+    }
+}
+
+async function enterCho() {
+    const lauAddress = lauAddressInput.value.trim();
+    if (!lauAddress || lauAddress.length < 42 || !lauAddress.startsWith('0x')) {
+        alert("Please load or select a valid LAU first.");
+        return;
+    }
+    try {
+        // Enter(address) -> selector 0x37a2e752
+        const cleanAddr = lauAddress.startsWith('0x') ? lauAddress.slice(2) : lauAddress;
+        const paddedAddr = cleanAddr.padStart(64, '0');
+        const calldata = '0x37a2e752' + paddedAddr;
+
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                from: userAccount,
+                to: deployedAddresses.CHO,
+                data: calldata
+            }]
+        });
+        alert(`CHO Entry transaction submitted! Hash: ${txHash}`);
+        
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        await checkActiveLau();
+    } catch (err) {
+        console.error("Failed to enter CHO:", err);
+        alert(`Failed to enter CHO: ${err.message || err}`);
     }
 }
 
@@ -953,6 +1043,7 @@ if (btnWizardConnect) btnWizardConnect.addEventListener('click', connectWallet);
 if (btnReact) btnReact.addEventListener('click', reactYue);
 if (btnLoadLau) btnLoadLau.addEventListener('click', loadLauInfo);
 if (btnUpdateUsername) btnUpdateUsername.addEventListener('click', updateLauUsername);
+if (btnEnterCho) btnEnterCho.addEventListener('click', enterCho);
 if (btnDeployLau) btnDeployLau.addEventListener('click', deployNewLau);
 if (btnDeployYue) btnDeployYue.addEventListener('click', startYue);
 if (btnActivatePlay) btnActivatePlay.addEventListener('click', activatePlayAndMint);

@@ -105,11 +105,17 @@
                         <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 20px;">
                             <h4 style="margin-top: 0; color: var(--cyan);">Option B: Load Existing LAU Address</h4>
                             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                <input type="text" id="lau-address-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box;" placeholder="LAU Address...">
+                                <select id="lau-address-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; color: #fff; padding: 6px; border-radius: 4px;">
+                                    <option value="">-- No LAU Loaded --</option>
+                                </select>
                                 <button id="btn-load-lau" class="btn">Load</button>
                             </div>
-                            <div style="font-size: 0.9rem; margin-bottom: 12px;">
+                            <div style="font-size: 0.9rem; margin-bottom: 8px;">
                                 Username: <strong id="lau-profile-username" style="color: var(--cyan);">None Loaded</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-bottom: 12px;">
+                                CHO Entry: <strong id="cho-entry-status" style="color: var(--magenta);">Not Entered</strong>
+                                <button id="btn-enter-cho" class="btn" style="display: none; margin-left: 8px; border-color: var(--magenta); color: var(--magenta); font-size: 0.75rem; padding: 2px 6px;">Enter CHO</button>
                             </div>
                             <!-- LAU tokens history list -->
                             <div style="font-size: 0.85rem; margin-bottom: 12px;">
