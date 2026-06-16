@@ -1434,14 +1434,28 @@ async function runYulConsoleCommand() {
             consoleLogsEl.innerText += `\n[Result Hex]: ${result}\n# _`;
         } else if (mode === "abi") {
             // Deploy local instance of ABILookupToken or connect to it
-            // We compile it on the fly or connect if active in network config
-            const abiContractAddr = config.networks.localhost.abiLookupAddress || "0x004226a0199d002358c78bae868ad59c633a653f";
+            let abiContractAddr = config.networks.localhost.abiLookupAddress;
             
             const abiAbi = [
                 "function registerABI(string calldata signature) external returns (bytes4 selector)",
                 "function getSignature(bytes4 selector) external view returns (string memory signature)",
                 "function isRegistered(bytes4 selector) external view returns (bool)"
             ];
+
+            if (!abiContractAddr && currentSigner) {
+                // If not deployed locally yet, deploy the identical compiled PulseChain bytecode directly!
+                const bytecode = config.abiLookupToken;
+                if (!bytecode) throw new Error("PulseChain ABI lookup token bytecode not loaded in config");
+                consoleLogsEl.innerText += `\n[On-Chain] Deploying identical PulseChain CL9 ABI Lookup contract to local network...`;
+                const factory = new ethers.ContractFactory([], bytecode, currentSigner);
+                const deployedContract = await factory.deploy();
+                await deployedContract.waitForDeployment();
+                abiContractAddr = await deployedContract.getAddress();
+                config.networks.localhost.abiLookupAddress = abiContractAddr;
+                consoleLogsEl.innerText += `\n[Deployed]: Deployed identical CL9 contract at: ${abiContractAddr}`;
+            } else if (!abiContractAddr) {
+                abiContractAddr = "0x004226a0199d002358c78bae868ad59c633a653f";
+            }
 
             let contract = new ethers.Contract(abiContractAddr, abiAbi, currentSigner || currentProvider);
 
