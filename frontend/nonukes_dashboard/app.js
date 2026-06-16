@@ -455,7 +455,6 @@ function goToStep(step) {
 window.goToStep = goToStep;
 
 // LAU history tracking helper
-// LAU history tracking helper
 async function updateLauHistoryDisplay() {
     const listContainer = document.getElementById('lau-history-list');
     if (!listContainer) return;
@@ -547,7 +546,6 @@ async function updateLauHistoryDisplay() {
             </div>
         `;
     }).join('');
-
     if (lauAddressInput) {
         const currentVal = localStorage.getItem('lau_address') || '';
         lauAddressInput.innerHTML = '<option value="">-- Select or scan a LAU --</option>' + 
