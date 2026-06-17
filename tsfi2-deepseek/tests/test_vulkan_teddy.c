@@ -597,6 +597,9 @@ void tb303_trigger_note(uint8_t note, bool accent, bool slide) {
     pthread_mutex_unlock(&g_audio_mutex);
 }
 
+static float fur_length;
+static float breathing_freq;
+
 static void* audio_mixer_thread(void *arg) {
     (void)arg;
     snd_pcm_t *pcm_handle = NULL;
@@ -642,14 +645,15 @@ static void* audio_mixer_thread(void *arg) {
             tb303_env_val *= decay_rate;
             tb303_vca_env *= 0.9994f;
             
-            // Diode Ladder Filter parameters
-            float base_cutoff_hz = 250.0f + 150.0f * (1.0f - tb303_accent_intensity);
+            // Diode Ladder Filter parameters modulated by Teddy Bear's physical traits
+            float base_cutoff_hz = 200.0f + 150.0f * (1.0f - tb303_accent_intensity) + 120.0f * breathing_freq;
             float env_mod_hz = 900.0f + 600.0f * tb303_accent_intensity;
             float cutoff_hz = base_cutoff_hz + tb303_env_val * env_mod_hz;
             if (cutoff_hz > 3800.0f) cutoff_hz = 3800.0f;
             
             float g = tanhf(3.14159265f * cutoff_hz / 8000.0f);
-            float res_k = 0.82f + 0.12f * tb303_accent_intensity;
+            float res_k = 0.70f + 0.10f * tb303_accent_intensity + 0.15f * (fur_length / 0.15f);
+            if (res_k > 0.94f) res_k = 0.94f; // cap to prevent excessive feedback distortion
             float fb = res_k * 4.0f * tanhf(tb303_s4);
             
             float input_stage = saw - fb;
@@ -2647,7 +2651,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     char telemetry_buf[256];
     float ammeter_val = 0.05f * (ammeter_T - 293.15f);
-    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | DJ: BIOTIKA_ALPHA (ELECTED) | %s", ammeter_val, voltmeter_V, opt_status);
+    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | TEDDY BEAR 303 ACTIVE | %s", ammeter_val, voltmeter_V, opt_status);
     Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
     draw_string_ab4h(canvas, telemetry_buf, 15, 650, telemetry_col);
  
