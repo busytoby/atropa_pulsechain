@@ -44,6 +44,7 @@ static const DysnomiaContract g_dysnomia_system[] = {
     { "sei",          "../solidity/dysnomia/domain/tang/01_sei.sol",     "0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d" },
     { "choa",         "../solidity/dysnomia/domain/sky/02_choa.sol",     "0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D" },
     { "cheon",        "../solidity/dysnomia/domain/tang/02_cheon.sol",    "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F" },
+    { "cabsMarketMachine", "../solidity/dysnomia/domain/sky/CABSMarketMachine.sol", "0x74ef2B06A1D2035C33244A4a263FF00B84504865" },
     { "zmachine",       "../solidity/bin/zmachine.yul",             "5" },
     { "zmachineParser", "../solidity/bin/zmachineParser.yul",       "6" }
 };
@@ -90,6 +91,10 @@ int main() {
     snprintf(exec_cmd, sizeof(exec_cmd), "YULEXEC \"laufactory\", \"%s\"", calldata_new);
     tsfi_io_printf(stderr, "[ZMM_VM] Creating default LAU token: %s\n", exec_cmd);
     tsfi_zmm_vm_exec(&state, exec_cmd);
+    
+    // Bind zmachineParser (6) to zmachine (5) to enable parseCommand thunking
+    tsfi_io_printf(stderr, "[ZMM_VM] Binding zmachineParser to zmachine...\n");
+    tsfi_zmm_vm_exec(&state, "YULEXEC \"zmachine\", \"7e1ef7e90000000000000000000000000000000000000000000000000000000000000006\"");
 
     size_t cap = 1024 * 1024 * 4; 
     char *input = (char*)lau_malloc(cap);

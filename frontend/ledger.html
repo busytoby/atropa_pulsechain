@@ -108,8 +108,8 @@
                 <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
                 <a href="/protecto.html" class="btn btn-secondary">Protecto Console</a>
                 <select id="networkSelect" class="btn btn-secondary" style="background: #000; color: #fff; border: 1px solid var(--neon-purple); cursor: pointer; text-transform: uppercase;" onchange="switchNetwork()">
-                    <option value="localhost">Local EVM (Anvil)</option>
                     <option value="zmm">ZMM VM (On-Chain)</option>
+                    <option value="localhost">Local EVM (Anvil)</option>
                 </select>
                 <div class="network-badge" id="networkBadge">Disconnected</div>
                 <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
@@ -221,31 +221,112 @@ Loading ZMM VM inventory coordinates and items...
                 </div>
             </section>
 
-            <!-- Right Side: Double-Entry Journal Entry Logs -->
-            <section class="card">
-                <h2><span class="icon">📜</span> Ledger Journal Logs</h2>
-                <div style="overflow-x: auto;">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Account</th>
-                                <th>Description</th>
-                                <th>Debit (+)</th>
-                                <th>Credit (-)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ledgerJournalBody">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">
-                                    Connecting to network to retrieve transaction journal entries...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
+            <!-- Right Side: CABS Store & Journal Logs -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- CABS Vanity Key Storefront -->
+                <section class="card" style="border-color: var(--neon-magenta); box-shadow: 0 0 20px rgba(255, 0, 127, 0.15);">
+                    <h2><span class="icon">🔑</span> CABS Vanity Key Storefront</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
+                        Purchase exclusive private keys for vanity public addresses featuring 19 or more '1' characters, managed natively in-memory via ZMM VM thunks.
+                    </p>
+                    <div id="cabsStorefrontList" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+                        <div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">Querying storefront registry...</div>
+                    </div>
+                </section>
+
+                <!-- CABS Escrow Store -->
+                <section class="card" style="border-color: #00ffcc; box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);">
+                    <h2><span class="icon">🛒</span> CABS Escrow Store</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
+                        Stage, verify, and settle on-chain escrow agreements locked via Z-Machine object property targets.
+                    </p>
+                    
+                    <!-- Form to Stage Escrow -->
+                    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.15); display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <span style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #00ffcc; text-transform: uppercase;">Stage New Escrow</span>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">REWARD TOKEN:</label>
+                                <select id="cabsEscrowToken" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-size: 0.8rem; border-radius: 4px;">
+                                    <option value="LAU">LAU Token</option>
+                                    <option value="CHO">CHO Token</option>
+                                    <option value="CUSTOM">Custom Address</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">ESCROW AMOUNT:</label>
+                                <input type="number" id="cabsEscrowAmount" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="10.0" value="10.0">
+                            </div>
+                        </div>
+
+                        <div id="cabsCustomTokenRow" style="display: none; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary);">CUSTOM TOKEN ADDR:</label>
+                            <input type="text" id="cabsCustomTokenAddr" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="0x...">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary);">RECIPIENT ADDRESS:</label>
+                            <input type="text" id="cabsEscrowRecipient" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="0x...">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">OBJ ID:</label>
+                                <input type="number" id="cabsEscrowObj" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="101" value="101">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">PROP ID:</label>
+                                <input type="number" id="cabsEscrowProp" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="10" value="10">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">TARGET VAL:</label>
+                                <input type="number" id="cabsEscrowTarget" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="1" value="1">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary);">TIMEOUT BLOCKS:</label>
+                            <input type="number" id="cabsEscrowTimeout" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="100" value="100">
+                        </div>
+
+                        <button class="transmute-btn" id="btnStageEscrow" style="margin-top: 5px; padding: 10px; font-size: 0.85rem; box-shadow: 0 0 10px rgba(0, 255, 204, 0.3); background: linear-gradient(135deg, #00ffcc, var(--neon-blue)); border: none;">Stage Escrow Trade</button>
+                    </div>
+
+                    <!-- List of Active Escrows -->
+                    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(186, 85, 211, 0.15);">
+                        <span style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--neon-purple); text-transform: uppercase; display: block; margin-bottom: 8px;">Active Escrow Registers</span>
+                        <div id="cabsActiveEscrowsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; font-size: 0.8rem;">
+                            <div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No active escrow trades found.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Ledger Journal Logs -->
+                <section class="card">
+                    <h2><span class="icon">📜</span> Ledger Journal Logs</h2>
+                    <div style="overflow-x: auto;">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Account</th>
+                                    <th>Description</th>
+                                    <th>Debit (+)</th>
+                                    <th>Credit (-)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledgerJournalBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">
+                                        Connecting to network to retrieve transaction journal entries...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
 
         <!-- Terminal Logs Footer -->
         <footer>
@@ -262,7 +343,7 @@ Loading ZMM VM inventory coordinates and items...
         let provider;
         let signer;
         let config = {};
-        let currentEnv = "localhost";
+        let currentEnv = "zmm";
         
         const btnConnect = document.getElementById("btnConnect");
         const networkBadge = document.getElementById("networkBadge");
@@ -291,12 +372,21 @@ Loading ZMM VM inventory coordinates and items...
             currentEnv = select.value;
             log(`Switched target ledger environment to: ${currentEnv === 'zmm' ? 'ZMM VM (CHO Token)' : 'Local EVM (LAU Token)'}`, "info");
             
-            if (signer) {
+            if (signer || currentEnv === 'zmm') {
                 networkBadge.innerText = currentEnv === 'zmm' ? "ZMM VM (On-Chain)" : "Localhost (Anvil)";
                 networkBadge.className = "network-badge connected";
+                if (currentEnv === 'zmm') {
+                    btnConnect.innerText = "ZMM VM Active";
+                    btnConnect.disabled = true;
+                } else {
+                    btnConnect.innerText = signer ? `${signer.address.substring(0, 6)}...${signer.address.substring(signer.address.length - 4)}` : "Connect Wallet";
+                    btnConnect.disabled = false;
+                }
             } else {
                 networkBadge.innerText = "Disconnected";
                 networkBadge.className = "network-badge";
+                btnConnect.innerText = "Connect Wallet";
+                btnConnect.disabled = false;
             }
             
             updateBalances(signer ? signer.address : null);
@@ -674,15 +764,371 @@ Loading ZMM VM inventory coordinates and items...
                 if (!res.ok) throw new Error("Failed to load config");
                 config = await res.json();
                 provider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                
+                // Set network badge connected by default for ZMM VM (since ZMM reads are native and don't require signer)
+                networkBadge.innerText = "ZMM VM (On-Chain)";
+                networkBadge.className = "network-badge connected";
+                btnConnect.innerText = "ZMM VM Active";
+                btnConnect.disabled = true;
+                
+                setHubTab('zmm');
                 await updateBalances(null);
             } catch (e) {
                 log(`Init failed: ${e.message}`, "error");
             }
         }
 
+        // CABS Market Machine ABI
+        const cabsAbi = [
+            "function activeTrades(uint256) external view returns (address depositor, address recipient, address rewardToken, uint256 amount, uint256 zObjId, uint256 zPropId, uint256 targetValue, uint256 lockBlock, uint256 timeoutBlocks, bool active)",
+            "function nextTradeId() external view returns (uint256)",
+            "function stageEscrow(address recipient, address rewardToken, uint256 amount, uint256 zObjId, uint256 zPropId, uint256 targetValue, uint256 timeoutBlocks) external returns (uint256)",
+            "function evaluateAndSettle(uint256 tradeId) external returns (bool)",
+            "function refundEscrow(uint256 tradeId) external"
+        ];
+
+        // Toggle custom token input row
+        document.getElementById("cabsEscrowToken").addEventListener("change", (e) => {
+            const customRow = document.getElementById("cabsCustomTokenRow");
+            customRow.style.display = e.target.value === "CUSTOM" ? "flex" : "none";
+        });
+
+        // Stage CABS Escrow Trade
+        async function stageCabsEscrow() {
+            if (currentEnv !== "zmm" && !signer) {
+                log("Please connect your wallet to stage an escrow on EVM.", "warning");
+                alert("Please connect your wallet first.");
+                return;
+            }
+            const btn = document.getElementById("btnStageEscrow");
+            btn.innerText = "Staging...";
+            btn.disabled = true;
+
+            try {
+                const tokenSelect = document.getElementById("cabsEscrowToken").value;
+                let tokenAddr = "";
+                
+                if (tokenSelect === "LAU") {
+                    tokenAddr = config.networks.localhost.mariarahelLau || "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B";
+                } else if (tokenSelect === "CHO") {
+                    tokenAddr = config.networks.localhost.CHO || "0x0B306BF915C4d645ff596e518fAf3F9669b97016";
+                } else {
+                    tokenAddr = document.getElementById("cabsCustomTokenAddr").value.trim();
+                    if (!ethers.isAddress(tokenAddr)) {
+                        throw new Error("Invalid custom token address.");
+                    }
+                }
+
+                const amountVal = document.getElementById("cabsEscrowAmount").value;
+                const amount = ethers.parseEther(amountVal);
+                const recipient = document.getElementById("cabsEscrowRecipient").value.trim();
+                const objId = parseInt(document.getElementById("cabsEscrowObj").value);
+                const propId = parseInt(document.getElementById("cabsEscrowProp").value);
+                const targetVal = parseInt(document.getElementById("cabsEscrowTarget").value);
+                const timeout = parseInt(document.getElementById("cabsEscrowTimeout").value);
+
+                if (!ethers.isAddress(recipient)) {
+                    throw new Error("Invalid recipient address.");
+                }
+
+                const cabsMarketAddr = config.networks.localhost.CABSMarketMachine || "0x74ef2B06A1D2035C33244A4a263FF00B84504865";
+                
+                if (currentEnv === "zmm") {
+                    log(`[ZMM VM] Bypassing approval. Invoking stageEscrow natively in-memory...`, "info");
+                    const cabsInterface = new ethers.Interface(cabsAbi);
+                    const calldata = cabsInterface.encodeFunctionData("stageEscrow", [recipient, tokenAddr, amount, objId, propId, targetVal, timeout]);
+                    
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cabsMarketMachine", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    log(`[ZMM VM] Escrow staged natively. Return value: ${resJson.result.output}`, "success");
+                } else {
+                    log(`Approving ${amountVal} tokens for CABS Market Machine...`, "info");
+                    const tokenContract = new ethers.Contract(tokenAddr, [
+                        "function approve(address spender, uint256 value) external returns (bool)"
+                    ], signer);
+                    
+                    const txApprove = await tokenContract.approve(cabsMarketAddr, amount);
+                    await txApprove.wait();
+                    log("Approval confirmed. Sending stageEscrow transaction...", "info");
+
+                    const marketContract = new ethers.Contract(cabsMarketAddr, cabsAbi, signer);
+                    const txStage = await marketContract.stageEscrow(recipient, tokenAddr, amount, objId, propId, targetVal, timeout);
+                    log(`Escrow staging sent. Hash: ${txStage.hash}`, "info");
+                    await txStage.wait();
+                    log("Escrow trade staged successfully!", "success");
+                }
+
+                // Clear input form
+                document.getElementById("cabsEscrowRecipient").value = "";
+                
+                // Refresh list and balances
+                const address = signer ? await signer.getAddress() : null;
+                await updateBalances(address);
+                await updateCabsEscrows();
+            } catch (err) {
+                log(`Failed to stage escrow: ${err.message}`, "error");
+                alert(`Error staging escrow: ${err.message}`);
+            } finally {
+                btn.innerText = "Stage Escrow Trade";
+                btn.disabled = false;
+            }
+        }
+
+        // Fetch and render CABS active trades
+        async function updateCabsEscrows() {
+            const listContainer = document.getElementById("cabsActiveEscrowsList");
+            const cabsMarketAddr = config.networks.localhost.CABSMarketMachine || "0x74ef2B06A1D2035C33244A4a263FF00B84504865";
+            
+            try {
+                const cabsInterface = new ethers.Interface(cabsAbi);
+                let nextId = 0n;
+
+                if (currentEnv === "zmm") {
+                    const nextIdCalldata = cabsInterface.encodeFunctionData("nextTradeId");
+                    const res = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cabsMarketMachine", calldata: nextIdCalldata })
+                    });
+                    const resJson = await res.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    nextId = cabsInterface.decodeFunctionResult("nextTradeId", "0x" + resJson.result.output)[0];
+                } else {
+                    const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                    const marketContract = new ethers.Contract(cabsMarketAddr, cabsAbi, activeProvider);
+                    nextId = await marketContract.nextTradeId();
+                }
+
+                let html = "";
+                let count = 0;
+
+                for (let id = 1; id < nextId; id++) {
+                    let trade;
+                    if (currentEnv === "zmm") {
+                        const tradeCalldata = cabsInterface.encodeFunctionData("activeTrades", [id]);
+                        const res = await fetch("/api/zmm-exec", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: "cabsMarketMachine", calldata: tradeCalldata })
+                        });
+                        const resJson = await res.json();
+                        if (resJson.error) continue;
+                        const decoded = cabsInterface.decodeFunctionResult("activeTrades", "0x" + resJson.result.output);
+                        trade = {
+                            depositor: decoded.depositor,
+                            recipient: decoded.recipient,
+                            rewardToken: decoded.rewardToken,
+                            amount: decoded.amount,
+                            zObjId: decoded.zObjId,
+                            zPropId: decoded.zPropId,
+                            targetValue: decoded.targetValue,
+                            lockBlock: decoded.lockBlock,
+                            timeoutBlocks: decoded.timeoutBlocks,
+                            active: decoded.active
+                        };
+                    } else {
+                        const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                        const marketContract = new ethers.Contract(cabsMarketAddr, cabsAbi, activeProvider);
+                        trade = await marketContract.activeTrades(id);
+                    }
+
+                    if (trade.active) {
+                        count++;
+                        const amtFormatted = parseFloat(ethers.formatUnits(trade.amount, 18)).toFixed(2);
+                        html += `
+                            <div style="background: rgba(0,0,0,0.5); padding: 8px; border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 4px; margin-bottom: 5px;">
+                                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #00ffcc;">
+                                    <span>Escrow #${id}</span>
+                                    <span>${amtFormatted} Tokens</span>
+                                </div>
+                                <div style="margin-top: 4px; color: var(--text-secondary); font-size: 0.75rem;">
+                                    <div>Depositor: <span style="font-family: monospace;">${trade.depositor.substring(0, 6)}...</span></div>
+                                    <div>Recipient: <span style="font-family: monospace;">${trade.recipient.substring(0, 6)}...</span></div>
+                                    <div>Quest: Obj ${trade.zObjId}, Prop ${trade.zPropId} -> Target ${trade.targetValue}</div>
+                                </div>
+                                <div style="display: flex; gap: 6px; margin-top: 6px;">
+                                    <button class="btn" onclick="settleCabsEscrow(${id})" style="flex: 1; padding: 4px; font-size: 0.7rem; border-color: #00ffcc; background: rgba(0,255,204,0.1); color: #fff;">Verify & Settle</button>
+                                    <button class="btn" onclick="refundCabsEscrow(${id})" style="flex: 1; padding: 4px; font-size: 0.7rem; border-color: var(--neon-magenta); background: rgba(255,0,127,0.1); color: #fff;">Refund</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (count === 0) {
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No active escrow trades found.</div>`;
+                } else {
+                    listContainer.innerHTML = html;
+                }
+            } catch (e) {
+                console.error("Failed to fetch escrow list:", e);
+                listContainer.innerHTML = `<div style="color: var(--danger); text-align: center; padding: 10px; font-family: monospace;">Error querying contract</div>`;
+            }
+        }
+
+        // Settle active trade
+        async function settleCabsEscrow(tradeId) {
+            if (currentEnv !== "zmm" && !signer) {
+                alert("Please connect your wallet first.");
+                return;
+            }
+            log(`Evaluating and settling escrow #${tradeId}...`, "info");
+            try {
+                const cabsMarketAddr = config.networks.localhost.CABSMarketMachine || "0x74ef2B06A1D2035C33244A4a263FF00B84504865";
+                
+                if (currentEnv === "zmm") {
+                    log(`[ZMM VM] Evaluating and settling escrow #${tradeId} natively in-memory...`, "info");
+                    const cabsInterface = new ethers.Interface(cabsAbi);
+                    const calldata = cabsInterface.encodeFunctionData("evaluateAndSettle", [tradeId]);
+                    
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cabsMarketMachine", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    
+                    const decoded = cabsInterface.decodeFunctionResult("evaluateAndSettle", "0x" + resJson.result.output);
+                    log(`[ZMM VM] Settle result: ${decoded[0]}`, "success");
+                } else {
+                    const marketContract = new ethers.Contract(cabsMarketAddr, cabsAbi, signer);
+                    const tx = await marketContract.evaluateAndSettle(tradeId);
+                    log(`Settle tx sent. Hash: ${tx.hash}`, "info");
+                    await tx.wait();
+                    log(`Escrow #${tradeId} evaluation completed. If target was met, settlement is complete!`, "success");
+                }
+                
+                const address = signer ? await signer.getAddress() : null;
+                await updateBalances(address);
+                await updateCabsEscrows();
+            } catch (e) {
+                log(`Settlement of #${tradeId} failed: ${e.message}`, "error");
+                alert(`Error: ${e.message}`);
+            }
+        }
+
+        // Refund active trade
+        async function refundCabsEscrow(tradeId) {
+            if (currentEnv !== "zmm" && !signer) {
+                alert("Please connect your wallet first.");
+                return;
+            }
+            log(`Attempting refund of escrow #${tradeId}...`, "info");
+            try {
+                const cabsMarketAddr = config.networks.localhost.CABSMarketMachine || "0x74ef2B06A1D2035C33244A4a263FF00B84504865";
+                
+                if (currentEnv === "zmm") {
+                    log(`[ZMM VM] Refunding escrow #${tradeId} natively in-memory...`, "info");
+                    const cabsInterface = new ethers.Interface(cabsAbi);
+                    const calldata = cabsInterface.encodeFunctionData("refundEscrow", [tradeId]);
+                    
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cabsMarketMachine", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    log(`[ZMM VM] Refund completed.`, "success");
+                } else {
+                    const marketContract = new ethers.Contract(cabsMarketAddr, cabsAbi, signer);
+                    const tx = await marketContract.refundEscrow(tradeId);
+                    log(`Refund tx sent. Hash: ${tx.hash}`, "info");
+                    await tx.wait();
+                    log(`Escrow #${tradeId} refund processed successfully!`, "success");
+                }
+                
+                const address = signer ? await signer.getAddress() : null;
+                await updateBalances(address);
+                await updateCabsEscrows();
+            } catch (e) {
+                log(`Refund of #${tradeId} failed: ${e.message}`, "error");
+                alert(`Error: ${e.message}`);
+            }
+        }
+
+        // Pre-populate escrow form for purchasing a vanity key
+        function buyVanityKey(address, onesCount, index) {
+            log(`Pre-populating escrow for vanity key: ${address} (${onesCount} ones)...`, "info");
+            document.getElementById("cabsEscrowToken").value = "LAU";
+            document.getElementById("cabsEscrowAmount").value = (onesCount * 10).toString();
+            document.getElementById("cabsEscrowRecipient").value = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+            document.getElementById("cabsEscrowObj").value = (2000 + index).toString();
+            document.getElementById("cabsEscrowProp").value = "1";
+            document.getElementById("cabsEscrowTarget").value = "1";
+            document.getElementById("cabsEscrowTimeout").value = "100";
+            
+            // Scroll to the stage escrow section
+            document.getElementById("btnStageEscrow").scrollIntoView({ behavior: 'smooth' });
+            
+            // Highlight the staging button
+            const stageBtn = document.getElementById("btnStageEscrow");
+            stageBtn.style.outline = "2px solid var(--neon-magenta)";
+            setTimeout(() => {
+                stageBtn.style.outline = "";
+            }, 3000);
+        }
+
+        // Fetch and render storefront keys
+        async function updateVanityStorefront() {
+            const listContainer = document.getElementById("cabsStorefrontList");
+            try {
+                const res = await fetch("/api/vanity-keys");
+                const data = await res.json();
+                if (!data.keys || data.keys.length === 0) {
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No vanity keys found. Run profanity2 to mine addresses.</div>`;
+                    return;
+                }
+
+                let html = "";
+                data.keys.forEach((k, idx) => {
+                    const price = k.ones * 10;
+                    const addressDisplay = k.address;
+                    const isPremium = k.ones >= 19;
+                    const premiumStyle = isPremium ? "border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.05);" : "border-color: rgba(0, 255, 204, 0.2); background: rgba(0, 0, 0, 0.3);";
+                    const badge = isPremium ? `<span style="background: var(--neon-magenta); color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">PREMIUM</span>` : "";
+                    
+                    html += `
+                        <div style="padding: 8px; border: 1px solid; border-radius: 6px; margin-bottom: 5px; ${premiumStyle}">
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; color: #fff; font-size: 0.85rem;">
+                                <span style="font-family: monospace; color: #00ffcc;">${addressDisplay.substring(0, 10)}...${addressDisplay.substring(34)}</span>
+                                <span style="color: var(--neon-magenta);">${price} LAU</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 0.75rem; color: var(--text-secondary);">
+                                <span>${k.ones} '1's ${badge}</span>
+                                <button class="btn" onclick="buyVanityKey('${k.address}', ${k.ones}, ${idx})" style="padding: 3px 8px; font-size: 0.7rem; border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.1); color: #fff;">Buy Key</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                listContainer.innerHTML = html;
+            } catch (err) {
+                console.error("Failed to load storefront vanity keys:", err);
+                listContainer.innerHTML = `<div style="color: var(--danger); text-align: center; padding: 10px; font-family: monospace;">Error querying storefront registry</div>`;
+            }
+        }
+
+        // Make window methods available for HTML onclick handlers
+        window.settleCabsEscrow = settleCabsEscrow;
+        window.refundCabsEscrow = refundCabsEscrow;
+        window.buyVanityKey = buyVanityKey;
+        window.updateVanityStorefront = updateVanityStorefront;
+
         btnConnect.addEventListener("click", connectWallet);
         btnTransmute.addEventListener("click", transmute);
-        window.addEventListener("DOMContentLoaded", init);
+        document.getElementById("btnStageEscrow").addEventListener("click", stageCabsEscrow);
+        
+        window.addEventListener("DOMContentLoaded", async () => {
+            await init();
+            await updateCabsEscrows();
+            await updateVanityStorefront();
+        });
     </script>
     <script src="checklist_widget.js"></script>
 </body>

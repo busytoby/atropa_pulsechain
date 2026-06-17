@@ -698,6 +698,37 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.url === "/api/vanity-keys" && req.method === "GET") {
+        try {
+            const filePath = path.join(__dirname, "../found_addresses.txt");
+            if (!fs.existsSync(filePath)) {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ keys: [] }));
+                return;
+            }
+            const data = fs.readFileSync(filePath, "utf8");
+            const matches = [];
+            const blocks = data.split("==================================================");
+            for (const block of blocks) {
+                if (!block.includes("MATCH FOUND!")) continue;
+                const addrMatch = block.match(/Address:\s+(0x[a-fA-F0-9]+)/);
+                const pkMatch = block.match(/Final Private Key:\s+(0x[a-fA-F0-9]+)/);
+                if (addrMatch && pkMatch) {
+                    const address = addrMatch[1];
+                    const privateKey = pkMatch[1];
+                    const onesCount = (address.toLowerCase().substring(2).match(/1/g) || []).length;
+                    matches.push({ address, privateKey, ones: onesCount });
+                }
+            }
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ keys: matches }));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
+
     // API endpoint to write a workspace file
     if (req.url === "/api/write-file" && req.method === "POST") {
         let body = "";
