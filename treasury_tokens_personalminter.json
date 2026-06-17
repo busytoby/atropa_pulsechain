@@ -7092,18 +7092,6 @@
         "minter_name": "PersonalMinter",
         "parent_address": "0xc51c643790a2c1ea3b0a10d140532fd19717e5c2",
         "parent_symbol": "i\u327e13",
-        "ignored": true
-    },
-    "0xc1ff1e62c78b0f3cef2348f61a7d634e35d8b91e": {
-        "address": "0xc1ff1e62c78b0f3cef2348f61a7d634e35d8b91e",
-        "symbol": "Yue see? ",
-        "name": "Enigmatic",
-        "owner": "0xb644ba4797c8eab1c5a33c41e00096eb4e06d465",
-        "minter_address": "0x394c3d5990cefc7be36b82fdb07a7251ace61cc7",
-        "minter_name": "PersonalMinter",
-        "parent_address": "0x158288d0ce96a49e365c73dd912d0158b8656b1e",
-        "parent_symbol": "Never done before",
-        "ignored": true
     },
     "0xc2023af42fe487c016e1753fd582d5e235fa5fc5": {
         "address": "0xc2023af42fe487c016e1753fd582d5e235fa5fc5",

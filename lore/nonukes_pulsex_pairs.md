@@ -498,7 +498,7 @@ Total Unique Liquidity Pools Found: **481**
 | :--- | :--- | :--- | :--- | :--- |
 | V1 | **WBTC** | Wrapped BTC | `0x44e36c42abe45af4e3f4f849b8fcd33ca7731e6c` | `0x2260fac5e5542a773aa44fbcfedf7c193bc2c599` |
 | V1 | **WPLS** | Wrapped Pulse | `0x86977db2122ac6387ca6d0710c8153cb9dfe31d3` | `0xa1077a294dde1b09bb078844df40758a5d0f9a27` |
-| V1 | **Yue see? ** | Enigmatic | `0x5599571e4d89f18cadd47fde7905e369ba291b99` | `0xc1ff1e62c78b0f3cef2348f61a7d634e35d8b91e` |
+
 
 ## ᠵᠡᠮ Pools
 
