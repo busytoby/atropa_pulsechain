@@ -297,6 +297,38 @@
             box-shadow: 0 0 10px var(--primary-glow);
         }
 
+        /* CABS Escrow Modal Styles */
+        .cabs-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 8, 14, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .cabs-modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 500px;
+            background: rgba(20, 16, 28, 0.85);
+            border-radius: 12px;
+            border: 2px solid rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            gap: 15px;
+            color: #fff;
+        }
+
         /* Paginated Storybook Modal */
         .book-modal {
             position: fixed;
@@ -1367,6 +1399,57 @@
                     <button class="book-btn book-btn-read" onclick="toggleReadAloud()" id="btnReadAloud">🔊 Read Aloud</button>
                 </div>
                 <button class="book-btn" onclick="nextPage()" id="btnNextPage">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CABS Escrow Modal -->
+    <div class="cabs-modal" id="cabsEscrowModal">
+        <div class="cabs-modal-content">
+            <h3 style="margin-top: 0; color: #00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.5); font-family: 'Orbitron', sans-serif;">🛡️ CABS Escrow: Stage Trade</h3>
+            <div style="font-size: 0.8rem; color: #a59cb4; margin-bottom: 5px;">
+                Token: <strong id="cabsEscrowTokenSymbol" style="color: #fff;">-</strong> (<span id="cabsEscrowTokenAddr" style="font-family: monospace;">-</span>)
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label>Recipient Address:</label>
+                    <input type="text" id="cabsEscrowRecipient" placeholder="0x..." style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label>Amount to Escrow:</label>
+                    <input type="number" id="cabsEscrowAmount" step="any" placeholder="1.0" style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label>Object ID (zObjId):</label>
+                        <input type="number" id="cabsEscrowObj" value="0" style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label>Property ID (zPropId):</label>
+                        <input type="number" id="cabsEscrowProp" value="0" style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label>Target Value:</label>
+                        <input type="number" id="cabsEscrowTarget" value="100" style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label>Timeout Blocks:</label>
+                        <input type="number" id="cabsEscrowTimeout" value="5000" style="background: #110e16; color: #fff; border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+
+            <div id="cabsModalLogs" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(0,240,255,0.2); border-radius: 6px; padding: 8px; font-family: monospace; font-size: 0.75rem; color: #6f9; max-height: 80px; overflow-y: auto; display: none;"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px;">
+                <button class="btn btn-save" style="border-color: rgba(255,255,255,0.2); color: #ccc;" onclick="closeCabsEscrowModal()">Cancel</button>
+                <button class="btn btn-sword" id="btnSubmitCabsEscrow" onclick="submitCabsEscrowFromLair()">🛡️ Stage Escrow</button>
             </div>
         </div>
     </div>
@@ -3357,6 +3440,11 @@
                         <button class="btn btn-sword btn-block" style="font-size: 0.75rem; padding: 6px; justify-content: center;" onclick="loadCardDnaIntoEditor(${JSON.stringify(card).replace(/"/g, '&quot;')})">
                             🧬 Render Card DNA
                         </button>
+                        ${card.address && card.address !== 'N/A' && !card.address.startsWith('0x00000000000000000000000000000000000000') ? `
+                        <button class="btn btn-save btn-block" style="font-size: 0.75rem; padding: 6px; justify-content: center; margin-top: 4px; border-color: #00f0ff; color: #00f0ff; background: rgba(0, 240, 255, 0.05);" onclick="stageEscrowForToken('${card.address}', '${card.symbol || card.name}')">
+                            🛡️ Stage Escrow
+                        </button>
+                        ` : ''}
                     `;
                     el.querySelector(".cabs-card-artwork").appendChild(canvas);
 
@@ -3370,6 +3458,89 @@
             } catch (err) {
                 console.error("Failed to fetch CABS cards:", err);
                 container.innerHTML = "<p style='color: var(--danger); font-family: monospace;'>Error: Failed to load CABS Voxel Cards JSON database.</p>";
+            }
+        }
+
+        // CABS Escrow Dialog Functions
+        let activeEscrowTokenAddr = "";
+        let activeEscrowTokenSymbol = "";
+
+        function stageEscrowForToken(tokenAddr, tokenSymbol) {
+            activeEscrowTokenAddr = tokenAddr;
+            activeEscrowTokenSymbol = tokenSymbol;
+            
+            document.getElementById("cabsEscrowTokenSymbol").innerText = tokenSymbol;
+            document.getElementById("cabsEscrowTokenAddr").innerText = tokenAddr;
+            document.getElementById("cabsEscrowModal").style.display = "flex";
+            
+            // Clear prior logs
+            const logEl = document.getElementById("cabsModalLogs");
+            logEl.style.display = "none";
+            logEl.innerText = "";
+        }
+
+        function closeCabsEscrowModal() {
+            document.getElementById("cabsEscrowModal").style.display = "none";
+        }
+
+        async function submitCabsEscrowFromLair() {
+            const btn = document.getElementById("btnSubmitCabsEscrow");
+            const logEl = document.getElementById("cabsModalLogs");
+            
+            logEl.style.display = "block";
+            logEl.innerText = "Initializing escrow submission...\n";
+            btn.disabled = true;
+            btn.innerText = "Staging...";
+
+            try {
+                const recipient = document.getElementById("cabsEscrowRecipient").value.trim();
+                const amountVal = document.getElementById("cabsEscrowAmount").value;
+                const objId = parseInt(document.getElementById("cabsEscrowObj").value);
+                const propId = parseInt(document.getElementById("cabsEscrowProp").value);
+                const targetVal = parseInt(document.getElementById("cabsEscrowTarget").value);
+                const timeout = parseInt(document.getElementById("cabsEscrowTimeout").value);
+
+                if (!ethers.isAddress(recipient)) {
+                    throw new Error("Invalid recipient address.");
+                }
+                if (!amountVal || parseFloat(amountVal) <= 0) {
+                    throw new Error("Invalid escrow amount.");
+                }
+
+                const amount = ethers.parseEther(amountVal);
+                const cabsMarketAddr = "0x74ef2B06A1D2035C33244A4a263FF00B84504865";
+                const cabsAbi = [
+                    "function stageEscrow(address recipient, address rewardToken, uint256 amount, uint256 zObjId, uint256 zPropId, uint256 targetValue, uint256 timeoutBlocks) external returns (uint256)"
+                ];
+
+                logEl.innerText += `Target Token: ${activeEscrowTokenSymbol}\n`;
+                logEl.innerText += `Recipient: ${recipient}\n`;
+                
+                // We'll execute through our zmm-exec since we are in the dev environment / sandbox ZMM mode
+                logEl.innerText += `[ZMM VM] Invoking stageEscrow natively in-memory...\n`;
+                const cabsInterface = new ethers.Interface(cabsAbi);
+                const calldata = cabsInterface.encodeFunctionData("stageEscrow", [recipient, activeEscrowTokenAddr, amount, objId, propId, targetVal, timeout]);
+                
+                const response = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "cabsMarketMachine", calldata: calldata })
+                });
+                const resJson = await response.json();
+                if (resJson.error) {
+                    throw new Error(resJson.error);
+                }
+                
+                logEl.innerText += `[SUCCESS] Escrow staged successfully.\nTx Return: ${resJson.result.output}\n`;
+                setTimeout(() => {
+                    closeCabsEscrowModal();
+                }, 2000);
+
+            } catch (err) {
+                logEl.innerText += `[ERROR] Staging failed: ${err.message}\n`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🛡️ Stage Escrow";
             }
         }
 
