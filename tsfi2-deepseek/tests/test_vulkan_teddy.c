@@ -274,8 +274,9 @@ void precompute_all_sounds() {
                         phase_acc += 2.0f * 3.14159265f * f / 8000.0f;
                         
                         float sine_body = sinf(phase_acc);
-                        float amp_env = expf(-10.0f * t);
-                        float body = sine_body * amp_env;
+                        float sine_harm = sinf(phase_acc * 2.0f); // 2nd harmonic warmth
+                        float amp_env = expf(-9.5f * t);
+                        float body = (sine_body + 0.18f * sine_harm) * amp_env;
                         
                         // Beater click (transient)
                         float click_freq = 2000.0f + 800.0f * siu_soul_factor;
@@ -311,29 +312,35 @@ void precompute_all_sounds() {
             if (buf) {
                 float siu_soul_factor = (float)((params.soul % 1000000ULL) / 1000000.0f);
                 float siu_aura_factor = (float)((params.aura % 1000000ULL) / 1000000.0f);
-                float last_noise = 0.0f;
+                float y1 = 0.0f, y2 = 0.0f;
+                float cos_w = cosf(2.0f * 3.14159265f * 2400.0f / 8000.0f); // 2.4 kHz bandpass for snappy rattle
+                float r = 0.68f; // Resonant filter damping
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     
                     // 1. Dual-mode skin/shell resonance (fundamental + first overtone)
-                    float f1 = 150.0f + 50.0f * siu_aura_factor;
-                    float f2 = 280.0f + 100.0f * siu_aura_factor;
+                    float f1 = 180.0f + 40.0f * siu_aura_factor;
+                    float f2 = 330.0f + 80.0f * siu_aura_factor;
                     float tone1 = sinf(f1 * t * 2.0f * 3.14159f);
-                    float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.5f;
-                    float skin_env = expf(-45.0f * t); // rapid skin decay
-                    float shell = (tone1 + tone2) * skin_env * 0.45f;
+                    float tone2 = sinf(f2 * t * 2.0f * 3.14159f) * 0.45f;
+                    float skin_env = expf(-55.0f * t); // rapid skin decay
+                    float shell = (tone1 + tone2) * skin_env * 0.5f;
                     
-                    // 2. High-pass filtered snare wire rattle noise
+                    // Transient crack click
+                    float transient = sinf(3500.0f * t * 2.0f * 3.14159f) * expf(-400.0f * t) * 0.25f;
+                    
+                    // 2. Band-pass filtered snare wire rattle noise
                     float white_noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
-                    float hp_noise = white_noise - last_noise; // high-pass difference filter
-                    last_noise = white_noise;
+                    float rattle_bp = white_noise + 2.0f * r * cos_w * y1 - r * r * y2;
+                    y2 = y1;
+                    y1 = rattle_bp;
                     
-                    float rattle_env = expf(-14.0f * t); // slower snare wire rattle decay
-                    float aura_noise_mix = 0.4f + 0.4f * siu_soul_factor;
-                    float rattle = hp_noise * rattle_env * 0.65f * aura_noise_mix;
+                    float rattle_env = expf(-16.0f * t); // slower snare wire rattle decay
+                    float aura_noise_mix = 0.45f + 0.35f * siu_soul_factor;
+                    float rattle = rattle_bp * rattle_env * 0.48f * aura_noise_mix;
                     
                     // Combine and apply selected valve saturation
-                    float sat = apply_valve_simulation((shell + rattle) * 1.8f, selected_valve);
+                    float sat = apply_valve_simulation((shell + transient + rattle) * 1.8f, selected_valve);
                     buf[i] = 128 + (int)(sat * 115.0f);
                 }
             }
@@ -370,7 +377,8 @@ void precompute_all_sounds() {
         } else if (strcmp(type, "hats") == 0) {
             len = 3500; buf = malloc(len);
             if (buf) {
-                float last_sum = 0.0f;
+                float x1 = 0.0f, x2 = 0.0f;
+                float y1 = 0.0f, y2 = 0.0f;
                 float freqs[6] = {315.0f, 435.0f, 565.0f, 690.0f, 820.0f, 950.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
@@ -380,17 +388,20 @@ void precompute_all_sounds() {
                         sum += (sinf(freqs[osc] * t * 2.0f * 3.14159265f) > 0.0f ? 1.0f : -1.0f) * 0.12f;
                     }
                     // Add white noise wash
-                    sum += ((float)(rand() % 200) - 100.0f) / 100.0f * 0.25f;
+                    sum += ((float)(rand() % 200) - 100.0f) / 100.0f * 0.28f;
                     
-                    // Fast high-pass filter (difference)
-                    float hp = sum - last_sum;
-                    last_sum = sum;
+                    // 2-pole high-pass filter (cutoff around 6.5kHz at 8kHz sample rate)
+                    float hp = sum - 2.0f * x1 + x2 + 1.35f * y1 - 0.55f * y2;
+                    x2 = x1;
+                    x1 = sum;
+                    y2 = y1;
+                    y1 = hp;
                     
                     // Rapid hi-hat decay (exponential envelope)
-                    float env = expf(-65.0f * t);
+                    float env = expf(-68.0f * t);
                     
                     // Saturation and gain
-                    float sat = apply_valve_simulation(hp * env * 2.0f, selected_valve);
+                    float sat = apply_valve_simulation(hp * env * 2.2f, selected_valve);
                     buf[i] = 128 + (int)(sat * 115.0f);
                 }
             }
@@ -692,13 +703,13 @@ static bool seq_validation_passed = true;
 
 // Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms, Track 3 = Hats, Track 4 = Ride, Track 5 = Clap, Track 6 = Snap)
 static uint8_t seq_grid[7][8] = {
-    {1, 0, 0, 0, 1, 0, 0, 1}, // Kick: steady on 0 and 4, syncopated on 7
-    {0, 0, 1, 0, 0, 0, 1, 0}, // Snare: heavy backbeat on 2 and 6
-    {0, 0, 0, 0, 0, 1, 0, 0}, // Toms: high tom fill on step 5
-    {0, 1, 0, 1, 0, 1, 0, 1}, // Hats: driving open hi-hats on offbeats (1, 3, 5, 7)
-    {1, 0, 1, 0, 1, 0, 1, 0}, // Ride: ride cymbal pulsing on downbeats
-    {0, 0, 0, 0, 1, 0, 0, 0}, // Clap: accent clap layer on step 4
-    {0, 0, 0, 1, 0, 0, 0, 0}  // Snap: snap accent on step 3
+    {1, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 1, 0},
+    {0, 1, 0, 1, 0, 1, 0, 0},
+    {0, 0, 1, 0, 0, 1, 0, 1},
+    {1, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 1, 0, 0, 0, 1}
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
