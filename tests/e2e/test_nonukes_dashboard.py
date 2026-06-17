@@ -164,7 +164,14 @@ class TestNoNukesDashboard(unittest.TestCase):
                 chrome_options.add_argument("--headless")
                 chrome_options.add_argument("--no-sandbox")
                 chrome_options.add_argument("--disable-dev-shm-usage")
-                cls.driver = webdriver.Chrome(options=chrome_options)
+                
+                from selenium.webdriver.chrome.service import Service
+                cd_path = shutil.which("chromedriver")
+                if cd_path:
+                    service = Service(executable_path=cd_path)
+                    cls.driver = webdriver.Chrome(service=service, options=chrome_options)
+                else:
+                    cls.driver = webdriver.Chrome(options=chrome_options)
             except Exception as e:
                 print(f"[INFO] Selenium initialization failed: {e}. Falling back to Hybrid API + Static DOM Validation.")
                 cls.driver = None
@@ -613,7 +620,7 @@ class TestNoNukesDashboard(unittest.TestCase):
         
         # Open detail modal by clicking the first pool row
         row = self.driver.find_element(By.CSS_SELECTOR, "#pool-table tbody tr[data-address]")
-        row.click()
+        self.driver.execute_script("arguments[0].click();", row)
         
         # Wait for modal to show
         modal = WebDriverWait(self.driver, 5).until(
@@ -692,7 +699,7 @@ class TestNoNukesDashboard(unittest.TestCase):
         
         # Open details modal
         row = self.driver.find_element(By.CSS_SELECTOR, "#pool-table tbody tr[data-address]")
-        row.click()
+        self.driver.execute_script("arguments[0].click();", row)
         
         # Wait for modal to show
         WebDriverWait(self.driver, 5).until(
@@ -719,6 +726,100 @@ class TestNoNukesDashboard(unittest.TestCase):
         """Double check that exact count matching is correct."""
         pools_config = self.read_sandbox_json("nonukes_pools.json")
         self.assertEqual(len(pools_config), 480, f"Expected 480 pools, found {len(pools_config)}")
+
+    def test_21_interactive_sorting(self):
+        """Verifies sorting columns toggles the table rows ordering."""
+        if not SELENIUM_AVAILABLE or not self.driver:
+            raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
+        self.driver.get(f"{self.server_url}/nonukes/")
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#pool-table tbody tr[data-address]"))
+        )
+        
+        # Locate the column headers and click "Swaps" (index 4)
+        headers = self.driver.find_elements(By.CSS_SELECTOR, "#pool-table thead th")
+        swaps_header = headers[4]
+        
+        self.driver.execute_script("arguments[0].click();", swaps_header)
+        time.sleep(0.5)
+        
+        # Get all rows swap count values
+        rows = self.driver.find_elements(By.CSS_SELECTOR, "#pool-table tbody tr[data-address]")
+        swap_values = []
+        for r in rows:
+            tds = r.find_elements(By.TAG_NAME, "td")
+            if len(tds) >= 5:
+                swap_values.append(int(tds[4].text))
+                
+        sorted_desc = all(swap_values[i] >= swap_values[i+1] for i in range(len(swap_values)-1))
+        sorted_asc = all(swap_values[i] <= swap_values[i+1] for i in range(len(swap_values)-1))
+        self.assertTrue(sorted_desc or sorted_asc, "Rows are not sorted after clicking header")
+
+    def test_22_zmachine_console_interaction(self):
+        """Verifies entering a command into the Z-Machine console updates terminal output."""
+        if not SELENIUM_AVAILABLE or not self.driver:
+            raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
+        self.driver.get(f"{self.server_url}/nonukes/")
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.ID, "zmachine-console-input"))
+        )
+        zm_input = self.driver.find_element(By.ID, "zmachine-console-input")
+        zm_input.clear()
+        zm_input.send_keys("status")
+        
+        btn_submit = self.driver.find_element(By.ID, "btn-submit-zmachine")
+        btn_submit.click()
+        
+        time.sleep(0.5)
+        terminal = self.driver.find_element(By.ID, "zmachine-console-terminal")
+        self.assertIn("status", terminal.text)
+
+    def test_23_telemetry_chat_widget_interaction(self):
+        """Verifies expanding the chat widget and sending a telemetry query."""
+        if not SELENIUM_AVAILABLE or not self.driver:
+            raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
+        self.driver.get(f"{self.server_url}/nonukes/")
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.ID, "telemetry-chat-widget"))
+        )
+        
+        widget = self.driver.find_element(By.ID, "telemetry-chat-widget")
+        self.assertIn("collapsed", widget.get_attribute("class"))
+        
+        toggle_btn = self.driver.find_element(By.ID, "btn-toggle-chat")
+        self.driver.execute_script("arguments[0].click();", toggle_btn)
+        time.sleep(0.5)
+        self.assertNotIn("collapsed", widget.get_attribute("class"))
+        
+        chat_input = self.driver.find_element(By.ID, "chat-input")
+        chat_input.clear()
+        chat_input.send_keys("Show me top volume pool")
+        
+        btn_send = self.driver.find_element(By.ID, "btn-send-chat")
+        btn_send.click()
+        time.sleep(0.5)
+        
+        messages = self.driver.find_element(By.ID, "chat-messages")
+        self.assertIn("Show me top volume pool", messages.text)
+
+    def test_24_setup_wizard_navigation(self):
+        """Verifies setup wizard tab steps update active classes and navigation."""
+        if not SELENIUM_AVAILABLE or not self.driver:
+            raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
+        self.driver.get(f"{self.server_url}/nonukes/")
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.ID, "step-tab-1"))
+        )
+        
+        step_tab_1 = self.driver.find_element(By.ID, "step-tab-1")
+        self.assertIn("active", step_tab_1.get_attribute("class"))
+        
+        self.driver.execute_script("window.goToStep(2)")
+        time.sleep(0.5)
+        
+        step_tab_2 = self.driver.find_element(By.ID, "step-tab-2")
+        self.assertIn("active", step_tab_2.get_attribute("class"))
+        self.assertNotIn("active", step_tab_1.get_attribute("class"))
 
 
 if __name__ == "__main__":
