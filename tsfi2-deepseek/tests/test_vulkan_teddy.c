@@ -187,6 +187,23 @@ static struct PrecomputedSound g_precomputed_sounds[NUM_SOUND_TYPES] = {
     {"snap", NULL, 0}
 };
 
+typedef struct {
+    float mass;
+    float damping;
+    float stiffness;
+    float non_lin_k;
+    float pos;
+    float vel;
+} SpeakerModel;
+
+static float process_speaker(SpeakerModel *sp, float input_force, float dt) {
+    float current_stiffness = sp->stiffness + sp->non_lin_k * sp->pos * sp->pos;
+    float accel = (input_force - sp->damping * sp->vel - current_stiffness * sp->pos) / sp->mass;
+    sp->vel += accel * dt;
+    sp->pos += sp->vel * dt;
+    return sp->vel;
+}
+
 void precompute_all_sounds() {
     pthread_mutex_lock(&g_audio_mutex);
     for (int idx = 0; idx < NUM_SOUND_TYPES; idx++) {
@@ -297,11 +314,15 @@ void precompute_all_sounds() {
                     kick_valve.R_plate = 80000.0;
                     kick_valve.is_tubular = (selected_valve == 3);
                     tsfi_valve_process_differential_feedback(&kick_valve, raw_sig, valve_out, len, 0.0, 1.0, 1.0 / 8000.0, 0.00003, 0.0003, 40000.0, 0.2);
+                    
+                    // Virtual 12" Subwoofer speaker emulation
+                    SpeakerModel kick_sp = {1.0f, 28.0f, 750.0f, 9000.0f, 0.0f, 0.0f};
                     for (int i = 0; i < len; i++) {
                         float sample = (valve_out[i] - 125.0f) / 125.0f;
-                        if (sample < -1.0f) sample = -1.0f;
-                        if (sample > 1.0f) sample = 1.0f;
-                        buf[i] = 128 + (int)(sample * 120.0f);
+                        float speaker_out = process_speaker(&kick_sp, sample * 450.0f, 1.0f / 8000.0f);
+                        if (speaker_out < -1.0f) speaker_out = -1.0f;
+                        if (speaker_out > 1.0f) speaker_out = 1.0f;
+                        buf[i] = 128 + (int)(speaker_out * 120.0f);
                     }
                 }
                 if (raw_sig) free(raw_sig);
@@ -315,6 +336,9 @@ void precompute_all_sounds() {
                 float y1 = 0.0f, y2 = 0.0f;
                 float cos_w = cosf(2.0f * 3.14159265f * 2400.0f / 8000.0f); // 2.4 kHz bandpass for snappy rattle
                 float r = 0.68f; // Resonant filter damping
+                
+                // Virtual full-range speaker emulation for snappy midrange crack
+                SpeakerModel snare_sp = {0.25f, 65.0f, 8500.0f, 12000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     
@@ -341,7 +365,10 @@ void precompute_all_sounds() {
                     
                     // Combine and apply selected valve saturation
                     float sat = apply_valve_simulation((shell + transient + rattle) * 1.8f, selected_valve);
-                    buf[i] = 128 + (int)(sat * 115.0f);
+                    float speaker_out = process_speaker(&snare_sp, sat * 300.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 115.0f);
                 }
             }
         } else if (strcmp(type, "tom") == 0) {
@@ -349,6 +376,9 @@ void precompute_all_sounds() {
             if (buf) {
                 float y1 = 0.0f, y2 = 0.0f;
                 float siu_identity_factor = (float)((params.identity_pole % 1000000ULL) / 1000000.0f);
+                
+                // Virtual mid-woofer cabinet emulation
+                SpeakerModel tom_sp = {0.55f, 32.0f, 1500.0f, 6000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     // Tom sweep: frequency dynamically sweeps from 160Hz + offset down to 80Hz + offset
@@ -371,7 +401,10 @@ void precompute_all_sounds() {
                     
                     // Saturate output using chosen Audion preset
                     float sat = apply_valve_simulation(1.7f * out, selected_valve);
-                    buf[i] = 128 + (int)(sat * 115.0f);
+                    float speaker_out = process_speaker(&tom_sp, sat * 380.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 115.0f);
                 }
             }
         } else if (strcmp(type, "hats") == 0) {
@@ -380,6 +413,9 @@ void precompute_all_sounds() {
                 float x1 = 0.0f, x2 = 0.0f;
                 float y1 = 0.0f, y2 = 0.0f;
                 float freqs[6] = {315.0f, 435.0f, 565.0f, 690.0f, 820.0f, 950.0f};
+                
+                // High-pass micro-tweeter speaker emulation
+                SpeakerModel hats_sp = {0.06f, 135.0f, 42000.0f, 18000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     // Mix 6 detuned square-wave oscillators for metallic texture
@@ -402,13 +438,19 @@ void precompute_all_sounds() {
                     
                     // Saturation and gain
                     float sat = apply_valve_simulation(hp * env * 2.2f, selected_valve);
-                    buf[i] = 128 + (int)(sat * 115.0f);
+                    float speaker_out = process_speaker(&hats_sp, sat * 250.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 115.0f);
                 }
             }
         } else if (strcmp(type, "ride") == 0) {
             len = 16000; buf = malloc(len);
             if (buf) {
                 float last_sum = 0.0f;
+                
+                // Bright cymbal tweeter emulation
+                SpeakerModel ride_sp = {0.08f, 95.0f, 32000.0f, 15000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     // 1. FM-style bell tone (carrier=380Hz, modulator=912Hz)
@@ -428,7 +470,10 @@ void precompute_all_sounds() {
                     
                     // Saturate through valve simulation
                     float sat = apply_valve_simulation(strike * env * 1.5f, selected_valve);
-                    buf[i] = 128 + (int)(sat * 115.0f);
+                    float speaker_out = process_speaker(&ride_sp, sat * 280.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 115.0f);
                 }
             }
         } else if (strcmp(type, "clap") == 0) {
@@ -437,6 +482,9 @@ void precompute_all_sounds() {
                 float y1 = 0.0f, y2 = 0.0f;
                 float cos_w = cosf(2.0f * 3.14159265f * 1100.0f / 8000.0f);
                 float r = 0.72f;
+                
+                // Resonant midrange speaker emulation
+                SpeakerModel clap_sp = {0.28f, 75.0f, 9500.0f, 10000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     float env = 0.0f;
@@ -456,7 +504,10 @@ void precompute_all_sounds() {
                     y1 = out;
                     
                     float sat = apply_valve_simulation(out * 1.5f, selected_valve);
-                    buf[i] = 128 + (int)(sat * 110.0f);
+                    float speaker_out = process_speaker(&clap_sp, sat * 320.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 110.0f);
                 }
             }
         } else if (strcmp(type, "snap") == 0) {
@@ -465,6 +516,9 @@ void precompute_all_sounds() {
                 float y1 = 0.0f, y2 = 0.0f;
                 float cos_w = cosf(2.0f * 3.14159265f * 2000.0f / 8000.0f);
                 float r = 0.78f;
+                
+                // Lighter high-midrange dome speaker emulation
+                SpeakerModel snap_sp = {0.22f, 90.0f, 14000.0f, 15000.0f, 0.0f, 0.0f};
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
                     float trigger = (i == 0) ? 1.0f : ((i < 30) ? 0.3f * expf(-0.15f * i) : 0.0f);
@@ -477,7 +531,10 @@ void precompute_all_sounds() {
                     float mix = click + body;
                     
                     float sat = apply_valve_simulation(mix * 1.8f, selected_valve);
-                    buf[i] = 128 + (int)(sat * 115.0f);
+                    float speaker_out = process_speaker(&snap_sp, sat * 350.0f, 1.0f / 8000.0f);
+                    if (speaker_out < -1.0f) speaker_out = -1.0f;
+                    if (speaker_out > 1.0f) speaker_out = 1.0f;
+                    buf[i] = 128 + (int)(speaker_out * 115.0f);
                 }
             }
         }
