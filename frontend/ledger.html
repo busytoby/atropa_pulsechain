@@ -1087,27 +1087,32 @@ Loading ZMM VM inventory coordinates and items...
                 }
 
                 let html = "";
+                let count = 0;
                 data.keys.forEach((k, idx) => {
+                    if (k.ones < 20) return; // Only show addresses with 20 or more '1's
+                    count++;
                     const price = k.ones * 10;
                     const addressDisplay = k.address;
-                    const isPremium = k.ones >= 19;
-                    const premiumStyle = isPremium ? "border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.05);" : "border-color: rgba(0, 255, 204, 0.2); background: rgba(0, 0, 0, 0.3);";
-                    const badge = isPremium ? `<span style="background: var(--neon-magenta); color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">PREMIUM</span>` : "";
                     
                     html += `
-                        <div style="padding: 8px; border: 1px solid; border-radius: 6px; margin-bottom: 5px; ${premiumStyle}">
+                        <div style="padding: 8px; border: 1px solid var(--neon-magenta); border-radius: 6px; margin-bottom: 5px; background: rgba(255, 0, 127, 0.05);">
                             <div style="display: flex; justify-content: space-between; font-weight: bold; color: #fff; font-size: 0.85rem;">
                                 <span style="font-family: monospace; color: #00ffcc;">${addressDisplay.substring(0, 10)}...${addressDisplay.substring(34)}</span>
                                 <span style="color: var(--neon-magenta);">${price} LAU</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 0.75rem; color: var(--text-secondary);">
-                                <span>${k.ones} '1's ${badge}</span>
+                                <span>${k.ones} '1's <span style="background: var(--neon-magenta); color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">ELIGIBLE</span></span>
                                 <button class="btn" onclick="buyVanityKey('${k.address}', ${k.ones}, ${idx})" style="padding: 3px 8px; font-size: 0.7rem; border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.1); color: #fff;">Buy Key</button>
                             </div>
                         </div>
                     `;
                 });
-                listContainer.innerHTML = html;
+                
+                if (count === 0) {
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No eligible vanity keys (20+ '1's) found in registry.</div>`;
+                } else {
+                    listContainer.innerHTML = html;
+                }
             } catch (err) {
                 console.error("Failed to load storefront vanity keys:", err);
                 listContainer.innerHTML = `<div style="color: var(--danger); text-align: center; padding: 10px; font-family: monospace;">Error querying storefront registry</div>`;

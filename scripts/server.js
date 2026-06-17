@@ -700,24 +700,29 @@ const server = http.createServer((req, res) => {
 
     if (req.url === "/api/vanity-keys" && req.method === "GET") {
         try {
-            const filePath = path.join(__dirname, "../found_addresses.txt");
-            if (!fs.existsSync(filePath)) {
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ keys: [] }));
-                return;
-            }
-            const data = fs.readFileSync(filePath, "utf8");
+            const files = [
+                path.join(__dirname, "../found_addresses.txt"),
+                "/home/mariarahel/repkeys.txt",
+                "/home/mariarahel/repkeys2.txt"
+            ];
             const matches = [];
-            const blocks = data.split("==================================================");
-            for (const block of blocks) {
-                if (!block.includes("MATCH FOUND!")) continue;
-                const addrMatch = block.match(/Address:\s+(0x[a-fA-F0-9]+)/);
-                const pkMatch = block.match(/Final Private Key:\s+(0x[a-fA-F0-9]+)/);
-                if (addrMatch && pkMatch) {
-                    const address = addrMatch[1];
-                    const privateKey = pkMatch[1];
-                    const onesCount = (address.toLowerCase().substring(2).match(/1/g) || []).length;
-                    matches.push({ address, privateKey, ones: onesCount });
+            const seen = new Set();
+            for (const file of files) {
+                if (!fs.existsSync(file)) continue;
+                const data = fs.readFileSync(file, "utf8");
+                const blocks = data.split("==================================================");
+                for (const block of blocks) {
+                    if (!block.includes("MATCH FOUND!")) continue;
+                    const addrMatch = block.match(/Address:\s+(0x[a-fA-F0-9]+)/);
+                    const pkMatch = block.match(/Final Private Key:\s+(0x[a-fA-F0-9]+)/);
+                    if (addrMatch && pkMatch) {
+                        const address = addrMatch[1];
+                        const privateKey = pkMatch[1];
+                        if (seen.has(address.toLowerCase())) continue;
+                        seen.add(address.toLowerCase());
+                        const onesCount = (address.toLowerCase().substring(2).match(/1/g) || []).length;
+                        matches.push({ address, privateKey, ones: onesCount });
+                    }
                 }
             }
             res.writeHead(200, { "Content-Type": "application/json" });
