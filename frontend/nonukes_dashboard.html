@@ -448,6 +448,34 @@
             return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
+        async function beatYue(yueAddr, qingAddr, symbol) {
+            if (!yueAddr || !qingAddr || yueAddr === "undefined" || qingAddr === "undefined") {
+                alert("Cannot Beat: YUE or Qing contract mapping not resolved for this token.");
+                return;
+            }
+            if (!window.ethereum) {
+                alert("Web3 Wallet not detected. Please connect MetaMask or equivalent wallet.");
+                return;
+            }
+            try {
+                const browserProvider = new ethers.BrowserProvider(window.ethereum);
+                const signer = await browserProvider.getSigner();
+                const yueContract = new ethers.Contract(yueAddr, [
+                    "function React(address Qing) external returns (uint256)"
+                ], signer);
+                
+                console.log(`Sending React(${qingAddr}) to YUE at ${yueAddr} for ${symbol}...`);
+                const tx = await yueContract.React(qingAddr);
+                alert(`Transaction submitted! Hash: ${tx.hash}\nWaiting for confirmation...`);
+                await tx.wait();
+                alert(`Beat successful for ${symbol}! The bars have been raised.`);
+            } catch (err) {
+                console.error("React transaction failed:", err);
+                alert("Beat failed: " + (err.reason || err.message));
+            }
+        }
+        window.beatYue = beatYue;
+
         async function showLpModal(address) {
             const modal = document.getElementById('lp-modal');
             const modalBody = document.getElementById('lp-modal-body');
@@ -550,7 +578,7 @@
 
                             async function queryScoreForToken(tokenAddr) {
                                 const qing = await getQingAddress(tokenAddr);
-                                if (!qing) return { hypobar: 0, epibar: 0 };
+                                if (!qing) return { hypobar: 0, epibar: 0, qing: null, yueAddr: null };
                                 const yueRes = await resolveYueContract(tokenAddr);
                                 const yueAddresses = Array.isArray(yueRes) ? yueRes : [yueRes];
                                 
@@ -564,30 +592,40 @@
                                         if (bar[1] > maxEpibar) maxEpibar = bar[1];
                                     } catch (e) {}
                                 }
-                                return { hypobar: maxHypobar.toString(), epibar: maxEpibar.toString() };
+                                return { hypobar: maxHypobar.toString(), epibar: maxEpibar.toString(), qing, yueAddr: yueAddresses[0] };
                             }
 
                             const score0 = await queryScoreForToken(data.reserves.token0_addr || "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62");
                             const score1 = await queryScoreForToken(data.reserves.token1_addr || data.reserves.token1);
 
                             const container = document.getElementById('yue-scores-container');
+                            
+                            const btn0 = score0.qing ? `<button class="btn" onclick="beatYue('${score0.yueAddr}', '${score0.qing}', '${escapeHtml(data.reserves.token0_symbol)}')" style="margin-top: 8px; padding: 2px 6px; font-size: 10px; border-color: var(--glow-magenta); background: rgba(255, 0, 127, 0.1); color: #fff; width: 100%; cursor: pointer;">Beat</button>` : `<button class="btn" disabled style="margin-top: 8px; padding: 2px 6px; font-size: 10px; border-color: #444; background: rgba(255, 255, 255, 0.02); color: #555; width: 100%; cursor: not-allowed;">Unmapped</button>`;
+                            const btn1 = score1.qing ? `<button class="btn" onclick="beatYue('${score1.yueAddr}', '${score1.qing}', '${escapeHtml(data.reserves.token1_symbol)}')" style="margin-top: 8px; padding: 2px 6px; font-size: 10px; border-color: var(--glow-magenta); background: rgba(255, 0, 127, 0.1); color: #fff; width: 100%; cursor: pointer;">Beat</button>` : `<button class="btn" disabled style="margin-top: 8px; padding: 2px 6px; font-size: 10px; border-color: #444; background: rgba(255, 255, 255, 0.02); color: #555; width: 100%; cursor: not-allowed;">Unmapped</button>`;
+
                             container.innerHTML = `
                                 <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
                                     <h3 style="color: var(--glow-magenta); font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Live YUE Score (Hypobar / Epibar)</h3>
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1);">
-                                            <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token0_symbol)}</div>
-                                            <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
-                                                <div>Hypobar: ${score0.hypobar}</div>
-                                                <div>Epibar: ${score0.epibar}</div>
+                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1); display: flex; flex-direction: column; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token0_symbol)}</div>
+                                                <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
+                                                    <div>Hypobar: ${score0.hypobar}</div>
+                                                    <div>Epibar: ${score0.epibar}</div>
+                                                </div>
                                             </div>
+                                            ${btn0}
                                         </div>
-                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1);">
-                                            <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token1_symbol)}</div>
-                                            <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
-                                                <div>Hypobar: ${score0.hypobar === "0" && score1.hypobar === "0" ? "0" : score1.hypobar}</div>
-                                                <div>Epibar: ${score0.epibar === "0" && score1.epibar === "0" ? "0" : score1.epibar}</div>
+                                        <div style="background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.1); display: flex; flex-direction: column; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px;">${escapeHtml(data.reserves.token1_symbol)}</div>
+                                                <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
+                                                    <div>Hypobar: ${score0.hypobar === "0" && score1.hypobar === "0" ? "0" : score1.hypobar}</div>
+                                                    <div>Epibar: ${score0.epibar === "0" && score1.epibar === "0" ? "0" : score1.epibar}</div>
+                                                </div>
                                             </div>
+                                            ${btn1}
                                         </div>
                                     </div>
                                 </div>

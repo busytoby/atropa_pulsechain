@@ -200,6 +200,26 @@
                             </div>
                         </div>
                     </div>
+
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                        <h4 style="font-family: 'Orbitron', sans-serif; color: var(--neon-magenta); font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase;">YUE Score Metrics</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; background: rgba(255,255,255,0.02); padding: 6px; border-radius: 4px; border: 1px solid rgba(0,240,255,0.1);">
+                                <div>
+                                    <div style="font-weight: bold; color: var(--neon-purple);">LAU Bar Values</div>
+                                    <div style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);" id="hubLauYueBars">Hypobar: 0 | Epibar: 0</div>
+                                </div>
+                                <button class="btn" id="btnBeatLau" style="padding: 2px 8px; font-size: 0.7rem; border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.1); color: #fff;">Beat</button>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; background: rgba(255,255,255,0.02); padding: 6px; border-radius: 4px; border: 1px solid rgba(0,240,255,0.1);">
+                                <div>
+                                    <div style="font-weight: bold; color: var(--neon-blue);">CHO Bar Values</div>
+                                    <div style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);" id="hubChoYueBars">Hypobar: 0 | Epibar: 0</div>
+                                </div>
+                                <button class="btn" id="btnBeatCho" style="padding: 2px 8px; font-size: 0.7rem; border-color: var(--neon-magenta); background: rgba(255, 0, 127, 0.1); color: #fff;">Beat</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ZMM VM Tab Panel -->
@@ -507,6 +527,50 @@ Loading ZMM VM inventory coordinates and items...
             }
         }
 
+        async function beatYue(yueAddr, qingAddr, symbol) {
+            if (!yueAddr || !qingAddr || yueAddr === "undefined" || qingAddr === "undefined") {
+                alert("Cannot Beat: YUE or Qing contract mapping not resolved for this token.");
+                return;
+            }
+            if (currentEnv !== "zmm" && !signer) {
+                alert("Please connect your wallet to submit transactions to the network.");
+                return;
+            }
+            log(`Triggering Beat (React) for ${symbol}...`, "info");
+            try {
+                if (currentEnv === "zmm") {
+                    log(`[ZMM VM] Executing React(${qingAddr}) on YUE natively...`, "info");
+                    const yueInterface = new ethers.Interface([
+                        "function React(address) external returns (uint256)"
+                    ]);
+                    const calldata = yueInterface.encodeFunctionData("React", [qingAddr]);
+                    
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "yue", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    log(`[ZMM VM] Beat React completed successfully!`, "success");
+                } else {
+                    const yueContract = new ethers.Contract(yueAddr, [
+                        "function React(address) external returns (uint256)"
+                    ], signer);
+                    const tx = await yueContract.React(qingAddr);
+                    log(`React transaction sent. Hash: ${tx.hash}`, "info");
+                    await tx.wait();
+                    log(`Beat confirmed on-chain for ${symbol}!`, "success");
+                }
+                const address = signer ? await signer.getAddress() : null;
+                await updateBalances(address);
+            } catch (err) {
+                log(`Beat failed: ${err.message}`, "error");
+                alert("Beat failed: " + err.message);
+            }
+        }
+        window.beatYue = beatYue;
+
         async function updateBalances(userAddress) {
             if (currentEnv === "zmm") {
                 try {
@@ -659,6 +723,90 @@ Loading ZMM VM inventory coordinates and items...
                     document.getElementById("lauMetricIdentity").innerText = "Error";
                     document.getElementById("lauMetricSoul").innerText = "Error";
                     document.getElementById("lauMetricAura").innerText = "Error";
+                }
+
+                // Resolve YUE score for LAU and CHO in EVM mode
+                try {
+                    const MAP_ADDR = "0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75";
+                    const CHAN_ADDR = "0xe250bf9729076B14A8399794B61C72d0F4AeFcd8";
+                    
+                    const mapContract = new ethers.Contract(MAP_ADDR, [
+                        "function New(address Integrative) external returns(address)"
+                    ], activeProvider);
+                    const chanContract = new ethers.Contract(CHAN_ADDR, [
+                        "function Yan(address) external view returns(address)"
+                    ], activeProvider);
+
+                    async function getQing(tokenAddr) {
+                        try {
+                            await mapContract.New.staticCall(tokenAddr);
+                            return null;
+                        } catch (err) {
+                            const errData = err.data || (err.error && err.error.data) || err.revert?.data;
+                            if (errData) {
+                                const iface = new ethers.Interface(["error QingAlreadyExists(address Token, address Qing)"]);
+                                try {
+                                    const parsed = iface.parseError(errData);
+                                    if (parsed && parsed.name === "QingAlreadyExists") return parsed.args[1];
+                                } catch (e) {}
+                            }
+                        }
+                        return null;
+                    }
+
+                    async function getBarValues(tokenAddr) {
+                        const qing = await getQing(tokenAddr);
+                        if (!qing) return { hypobar: 0n, epibar: 0n, qing: null, yueAddr: null };
+                        
+                        let yueAddr = null;
+                        try {
+                            const c = new ethers.Contract(tokenAddr, ["function owner() external view returns (address)"], activeProvider);
+                            const owner = await c.owner();
+                            if (owner && owner !== ethers.ZeroAddress) {
+                                yueAddr = await chanContract.Yan(owner);
+                            }
+                        } catch (e) {}
+                        
+                        if (!yueAddr || yueAddr === ethers.ZeroAddress) {
+                            yueAddr = "0x4f94f27d9655411927e72799c6e797989a86f2d4"; // Fallback
+                        }
+
+                        try {
+                            const yue = new ethers.Contract(yueAddr, ["function Bar(address) external view returns (uint256, uint256)"], activeProvider);
+                            const bar = await yue.Bar(qing);
+                            return { hypobar: bar[0], epibar: bar[1], qing, yueAddr };
+                        } catch (e) {}
+                        return { hypobar: 0n, epibar: 0n, qing, yueAddr };
+                    }
+
+                    const lauBar = await getBarValues(hubLauAddress);
+                    const choBar = await getBarValues(hubChoAddress);
+
+                    document.getElementById("hubLauYueBars").innerText = `Hypobar: ${lauBar.hypobar} | Epibar: ${lauBar.epibar}`;
+                    document.getElementById("hubChoYueBars").innerText = `Hypobar: ${choBar.hypobar} | Epibar: ${choBar.epibar}`;
+
+                    // Bind Beat buttons
+                    const btnBeatLau = document.getElementById("btnBeatLau");
+                    const btnBeatCho = document.getElementById("btnBeatCho");
+
+                    if (lauBar.qing) {
+                        btnBeatLau.disabled = false;
+                        btnBeatLau.onclick = () => beatYue(lauBar.yueAddr, lauBar.qing, "LAU");
+                    } else {
+                        btnBeatLau.disabled = true;
+                        btnBeatLau.innerText = "Unmapped";
+                    }
+
+                    if (choBar.qing) {
+                        btnBeatCho.disabled = false;
+                        btnBeatCho.onclick = () => beatYue(choBar.yueAddr, choBar.qing, "CHO");
+                    } else {
+                        btnBeatCho.disabled = true;
+                        btnBeatCho.innerText = "Unmapped";
+                    }
+
+                } catch (barErr) {
+                    console.error("YUE bars query failed for Hub:", barErr);
                 }
 
                 // Refresh ZMM panel if it is active
