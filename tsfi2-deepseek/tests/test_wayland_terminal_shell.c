@@ -3530,17 +3530,15 @@ static void handle_fidgits_input(char ch) {
 
 static void init_drum(void) {
     memset(g_drum_grid, 0, sizeof(g_drum_grid));
-    // Pre-populate some classic patterns (e.g. Kick on 0, 4, 7, Snare on 2 and 6, Hi-hat on offbeats)
+    // Pre-populate some classic patterns (e.g. Kick on 0 and 4, Snare on 2 and 6, Hi-hat on all even steps)
     g_drum_grid[0][0] = true;
     g_drum_grid[0][4] = true;
-    g_drum_grid[0][7] = true;
     g_drum_grid[1][2] = true;
     g_drum_grid[1][6] = true;
-    g_drum_grid[2][1] = true;
-    g_drum_grid[2][3] = true;
-    g_drum_grid[2][5] = true;
-    g_drum_grid[2][7] = true;
-    g_drum_grid[3][3] = true;
+    g_drum_grid[2][0] = true;
+    g_drum_grid[2][2] = true;
+    g_drum_grid[2][4] = true;
+    g_drum_grid[2][6] = true;
 
     g_drum_cursor_track = 0;
     g_drum_cursor_step = 0;

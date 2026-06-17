@@ -557,6 +557,46 @@ void precompute_all_sounds() {
     pthread_mutex_unlock(&g_audio_mutex);
 }
 
+// TB-303 acid bass sequencer pattern (Classic 303 baseline)
+typedef struct {
+    uint8_t note;
+    bool gate;
+    bool slide;
+    bool accent;
+} Tb303Step;
+
+static Tb303Step tb303_pattern[8] = {
+    { 36, true,  false, false }, // C2
+    { 36, true,  true,  false }, // C2 slide
+    { 48, true,  false, true  }, // C3 accent
+    { 38, true,  false, false }, // D2
+    { 41, true,  true,  false }, // F2 slide
+    { 43, true,  false, false }, // G2
+    { 36, true,  false, true  }, // C2 accent
+    { 48, false, false, false }  // rest
+};
+
+static float tb303_phase = 0.0f;
+static float tb303_freq_curr = 0.0f;
+static float tb303_freq_target = 0.0f;
+static float tb303_env_val = 0.0f;
+static float tb303_vca_env = 0.0f;
+static float tb303_s1 = 0.0f, tb303_s2 = 0.0f, tb303_s3 = 0.0f, tb303_s4 = 0.0f;
+static float tb303_accent_intensity = 0.0f;
+
+void tb303_trigger_note(uint8_t note, bool accent, bool slide) {
+    pthread_mutex_lock(&g_audio_mutex);
+    float midi_freq = 440.0f * powf(2.0f, ((float)note - 69.0f) / 12.0f);
+    tb303_freq_target = midi_freq;
+    if (!slide || tb303_freq_curr == 0.0f) {
+        tb303_freq_curr = midi_freq;
+        tb303_env_val = 1.0f;
+        tb303_vca_env = 1.0f;
+    }
+    tb303_accent_intensity = accent ? 1.0f : 0.0f;
+    pthread_mutex_unlock(&g_audio_mutex);
+}
+
 static void* audio_mixer_thread(void *arg) {
     (void)arg;
     snd_pcm_t *pcm_handle = NULL;
@@ -590,6 +630,46 @@ static void* audio_mixer_thread(void *arg) {
                     }
                 }
             }
+            
+            // 303 Synth Engine sample generation
+            tb303_freq_curr += (tb303_freq_target - tb303_freq_curr) * 0.0028f; // glide
+            tb303_phase += tb303_freq_curr / 8000.0f;
+            if (tb303_phase >= 1.0f) tb303_phase -= 1.0f;
+            float saw = 2.0f * tb303_phase - 1.0f;
+            
+            // 303 Decay Envelopes
+            float decay_rate = 0.9992f - 0.0003f * tb303_accent_intensity;
+            tb303_env_val *= decay_rate;
+            tb303_vca_env *= 0.9994f;
+            
+            // Diode Ladder Filter parameters
+            float base_cutoff_hz = 250.0f + 150.0f * (1.0f - tb303_accent_intensity);
+            float env_mod_hz = 900.0f + 600.0f * tb303_accent_intensity;
+            float cutoff_hz = base_cutoff_hz + tb303_env_val * env_mod_hz;
+            if (cutoff_hz > 3800.0f) cutoff_hz = 3800.0f;
+            
+            float g = tanhf(3.14159265f * cutoff_hz / 8000.0f);
+            float res_k = 0.82f + 0.12f * tb303_accent_intensity;
+            float fb = res_k * 4.0f * tanhf(tb303_s4);
+            
+            float input_stage = saw - fb;
+            float ds1 = g * (tanhf(input_stage) - tanhf(tb303_s1));
+            tb303_s1 += ds1;
+            float ds2 = g * (tanhf(tb303_s1) - tanhf(tb303_s2));
+            tb303_s2 += ds2;
+            float ds3 = g * (tanhf(tb303_s2) - tanhf(tb303_s3));
+            tb303_s3 += ds3;
+            float ds4 = g * (tanhf(tb303_s3) - tanhf(tb303_s4));
+            tb303_s4 += ds4;
+            
+            float synth_out = tb303_s4 * tb303_vca_env * 0.38f;
+            int tb303_sample = (int)(synth_out * 128.0f);
+            
+            sum += tb303_sample;
+            if (tb303_vca_env > 0.001f) {
+                any_active = true;
+            }
+            
             int mixed = sum + 128;
             if (mixed < 0) mixed = 0;
             if (mixed > 255) mixed = 255;
@@ -1627,6 +1707,17 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     if (seq_play_counter >= 15) {
         seq_play_step = (seq_play_step + 1) % 8;
         seq_play_counter = 0;
+        
+        // Trigger TB-303 acid bassline step
+        extern void tb303_trigger_note(uint8_t note, bool accent, bool slide);
+        if (tb303_pattern[seq_play_step].gate) {
+            tb303_trigger_note(
+                tb303_pattern[seq_play_step].note,
+                tb303_pattern[seq_play_step].accent,
+                tb303_pattern[seq_play_step].slide
+            );
+        }
+        
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
