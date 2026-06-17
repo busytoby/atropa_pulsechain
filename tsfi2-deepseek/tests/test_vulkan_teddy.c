@@ -279,21 +279,33 @@ void precompute_all_sounds() {
                 float *raw_sig = malloc(len * sizeof(float));
                 float *valve_out = malloc(len * sizeof(float));
                 if (raw_sig && valve_out) {
-                    float phase_acc = 0.0f;
+                    float y1 = 0.0f, y2 = 0.0f;
                     for (int i = 0; i < len; i++) {
                         float t = (float)i / 8000.0f;
-                        float pitch_env_fast = expf(-150.0f * t);
-                        float pitch_env_slow = expf(-18.0f * t);
-                        float base_f = 45.0f + 10.0f * siu_soul_factor;
-                        float sweep_depth = 180.0f + 120.0f * siu_identity_factor;
                         
-                        float f = base_f + 80.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
-                        phase_acc += 2.0f * 3.14159265f * f / 8000.0f;
+                        // Dynamic frequency sweep of the active Bridged-T resonator circuit
+                        float pitch_env_fast = expf(-170.0f * t);
+                        float pitch_env_slow = expf(-20.0f * t);
+                        float base_f = 46.0f + 8.0f * siu_soul_factor;
+                        float sweep_depth = 190.0f + 110.0f * siu_identity_factor;
+                        float f = base_f + 70.0f * pitch_env_slow + sweep_depth * pitch_env_fast;
                         
-                        float sine_body = sinf(phase_acc);
-                        float sine_harm = sinf(phase_acc * 2.0f); // 2nd harmonic warmth
-                        float amp_env = expf(-9.5f * t);
-                        float body = (sine_body + 0.18f * sine_harm) * amp_env;
+                        // Resonator coefficients
+                        float w = 2.0f * 3.14159265f * f / 8000.0f;
+                        float cos_w = cosf(w);
+                        
+                        // Decay envelope adjusting Q dynamically over time (simulating analog circuit dampening)
+                        float decay_rate = 0.994f * expf(-2.2f * t);
+                        
+                        // Trigger excitation impulse (narrow 1ms trigger pulse + cap discharge swing)
+                        float trigger = 0.0f;
+                        if (i == 0) trigger = 1.0f;
+                        else if (i < 8) trigger = -0.5f * expf(-0.5f * (float)i);
+                        
+                        // 2-pole filter active loop
+                        float out = trigger + 2.0f * decay_rate * cos_w * y1 - decay_rate * decay_rate * y2;
+                        y2 = y1;
+                        y1 = out;
                         
                         // Beater click (transient)
                         float click_freq = 2000.0f + 800.0f * siu_soul_factor;
@@ -305,7 +317,7 @@ void precompute_all_sounds() {
                         float noise_env = expf(-450.0f * t);
                         float click_noise = noise * noise_env * 0.15f;
                         
-                        float mixed = body + click + click_noise;
+                        float mixed = out * 0.95f + click + click_noise;
                         float saturated_out = tanhf(1.8f * mixed);
                         raw_sig[i] = saturated_out * 1.5f;
                     }
