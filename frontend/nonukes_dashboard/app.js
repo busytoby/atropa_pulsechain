@@ -186,10 +186,129 @@ async function openPoolDetails(address) {
             drawChart(data.price_trends);
             
             // Auto-load connected wallet YUE address
-            autoLoadYueAddress();
+            await autoLoadYueAddress();
+            await fetchYueReactionStats();
+            
+            // Set dynamic QING address for chat feed
+            if (data.qing_address) {
+                activeQingAddress = data.qing_address;
+                activeQingSymbol = data.reserves.token1_symbol;
+            } else {
+                activeQingAddress = '0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20';
+                activeQingSymbol = 'NoNukes (Fallback)';
+            }
+            fetchQingChat();
+            
+            const artImg = document.getElementById('modal-art-image');
+            const artPlaceholder = document.getElementById('modal-art-placeholder');
+            const cardDesc = document.getElementById('modal-card-desc');
+            const generateArtBtn = document.getElementById('btn-generate-art');
+            const cardMeta = document.getElementById('modal-card-meta');
+            
+            if (cardDesc) {
+                cardDesc.innerHTML = `<strong>Lore Description:</strong> ${escapeHtml(data.lore)}`;
+            }
+            if (cardMeta) {
+                const statsHtml = data.stats ? `
+                    <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; width: 100%;">
+                        <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.15);">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); font-family: 'Outfit';">ATK / BURST</div>
+                            <div style="font-weight: bold; color: var(--cyan); font-size: 1rem; font-family: 'Share Tech Mono';">${data.stats.atk}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255, 38, 225, 0.15);">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); font-family: 'Outfit';">DEF / SHIELD</div>
+                            <div style="font-weight: bold; color: var(--magenta); font-size: 1rem; font-family: 'Share Tech Mono';">${data.stats.def}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(0, 230, 118, 0.15);">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); font-family: 'Outfit';">LIQUIDITY</div>
+                            <div style="font-weight: bold; color: var(--green); font-size: 1rem; font-family: 'Share Tech Mono';">${data.stats.liq}</div>
+                        </div>
+                    </div>
+                ` : '';
+
+                cardMeta.style.flexDirection = 'column';
+                cardMeta.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <span>Partner Address: ${currentPartnerAddress.slice(0,6)}...${currentPartnerAddress.slice(-4)}</span>
+                        <span>QING: ${data.qing_address ? 'Active' : 'Inactive'}</span>
+                    </div>
+                    ${statsHtml}
+                `;
+            }
+            
+            if (artImg && artPlaceholder && generateArtBtn) {
+                generateArtBtn.disabled = false;
+                generateArtBtn.innerText = "Generate Card Art (LangChain)";
+                
+                const artUrl = `/assets/${currentPartnerAddress.toLowerCase()}.png`;
+                try {
+                    const checkRes = await fetch(artUrl, { method: 'HEAD' });
+                    if (checkRes.ok) {
+                        artImg.src = artUrl + "?t=" + Date.now();
+                        artImg.style.display = 'block';
+                        artPlaceholder.style.display = 'none';
+                        generateArtBtn.innerText = "Regenerate Card Art";
+                    } else {
+                        artImg.style.display = 'none';
+                        artPlaceholder.style.display = 'block';
+                    }
+                } catch (e) {
+                    artImg.style.display = 'none';
+                    artPlaceholder.style.display = 'block';
+                }
+            }
         }
     } catch (err) {
         console.error("Error fetching pool details:", err);
+    }
+}
+
+async function fetchYueReactionStats() {
+    const statsCard = document.getElementById('yue-stats-card');
+    const hypobarEl = document.getElementById('yue-stat-hypobar');
+    const epibarEl = document.getElementById('yue-stat-epibar');
+    
+    if (!statsCard || !hypobarEl || !epibarEl) return;
+    
+    const yueAddress = yueInput ? yueInput.value.trim() : '';
+    if (!yueAddress || yueAddress.length < 42 || !yueAddress.startsWith('0x') || !currentPartnerAddress) {
+        statsCard.style.display = 'none';
+        return;
+    }
+    
+    try {
+        // Selector for Bar(address): 0xe76caed5
+        const cleanPartnerAddr = currentPartnerAddress.startsWith('0x') ? currentPartnerAddress.slice(2) : currentPartnerAddress;
+        const paddedAddress = cleanPartnerAddr.padStart(64, '0');
+        const calldata = '0xe76caed5' + paddedAddress;
+        
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                to: yueAddress,
+                data: calldata
+            }, 'latest']
+        });
+        
+        if (result && result !== '0x' && result !== '0x' + '0'.repeat(64)) {
+            const cleanRes = result.startsWith('0x') ? result.slice(2) : result;
+            const hypobarHex = cleanRes.slice(0, 64);
+            const epibarHex = cleanRes.slice(64, 128);
+            
+            const hypobarVal = BigInt('0x' + hypobarHex);
+            const epibarVal = BigInt('0x' + epibarHex);
+            
+            hypobarEl.innerText = hypobarVal.toString();
+            epibarEl.innerText = epibarVal.toString();
+            statsCard.style.display = 'block';
+        } else {
+            hypobarEl.innerText = "0";
+            epibarEl.innerText = "0";
+            statsCard.style.display = 'block';
+        }
+    } catch (err) {
+        console.error("Failed to query YUE.Bar stats:", err);
+        statsCard.style.display = 'none';
     }
 }
 
@@ -302,6 +421,9 @@ searchInput.addEventListener('input', renderPools);
 document.getElementById('btn-refresh').addEventListener('click', fetchPools);
 document.getElementById('modal-close-btn').addEventListener('click', () => {
     detailModal.classList.remove('active');
+    activeQingAddress = '0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20';
+    activeQingSymbol = 'NoNukes';
+    fetchQingChat();
 });
 
 // Expose functions to window for onclick handlers in index.html
@@ -321,6 +443,7 @@ if (yueInput) {
     yueInput.value = localStorage.getItem('yue_address') || '';
     yueInput.addEventListener('input', (e) => {
         localStorage.setItem('yue_address', e.target.value);
+        fetchYueReactionStats();
     });
 }
 
@@ -811,6 +934,7 @@ async function checkActiveYue() {
                 playStatusEl.style.color = 'var(--magenta)';
             }
         }
+        await fetchYueReactionStats();
     } catch (err) {
         console.error("Failed to query SEI for active YUE:", err);
     }
@@ -1151,6 +1275,21 @@ async function reactYue() {
         });
 
         alert(`Transaction submitted! Hash: ${txHash}`);
+
+        // Wait for confirmation
+        let receipt = null;
+        for (let i = 0; i < 20; i++) {
+            try {
+                receipt = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [txHash]
+                });
+                if (receipt && (receipt.blockNumber || receipt.status)) break;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        await fetchYueReactionStats();
     } catch (err) {
         console.error("Transaction failed", err);
         alert(`Transaction failed: ${err.message || err}`);
@@ -1167,6 +1306,46 @@ if (btnDeployLau) btnDeployLau.addEventListener('click', deployNewLau);
 if (btnDeployYue) btnDeployYue.addEventListener('click', startYue);
 if (btnActivatePlay) btnActivatePlay.addEventListener('click', activatePlayAndMint);
 
+const btnGenerateArt = document.getElementById('btn-generate-art');
+if (btnGenerateArt) {
+    btnGenerateArt.addEventListener('click', async () => {
+        if (!currentPartnerAddress) return;
+        
+        const artImg = document.getElementById('modal-art-image');
+        const artPlaceholder = document.getElementById('modal-art-placeholder');
+        const cardDesc = document.getElementById('modal-card-desc');
+        
+        btnGenerateArt.disabled = true;
+        btnGenerateArt.innerText = "Generating Lore & Rendering... (LangChain)";
+        
+        try {
+            const res = await fetch(`/api/nonukes/generate-card-art?address=${encodeURIComponent(currentPartnerAddress)}`);
+            const data = await res.json();
+            
+            if (data.success) {
+                if (artImg && artPlaceholder) {
+                    artImg.src = data.art_url + "?t=" + Date.now();
+                    artImg.style.display = 'block';
+                    artPlaceholder.style.display = 'none';
+                }
+                if (cardDesc && data.lore) {
+                    cardDesc.innerHTML = `<strong>Lore Description:</strong> ${escapeHtml(data.lore)}`;
+                }
+                btnGenerateArt.innerText = "Art Generated ✓";
+            } else {
+                alert("Failed to generate art: " + data.error);
+                btnGenerateArt.innerText = "Generation Failed";
+                btnGenerateArt.disabled = false;
+            }
+        } catch (err) {
+            console.error("Error generating card art:", err);
+            alert("Error communicating with art agent: " + err.message);
+            btnGenerateArt.innerText = "Error";
+            btnGenerateArt.disabled = false;
+        }
+    });
+}
+
 if (btnNextToStep4) {
     btnNextToStep4.addEventListener('click', () => goToStep(4));
     // Enable if there's already a saved LAU
@@ -1179,7 +1358,286 @@ if (btnNextToStep5) {
 }
 
 // Initial Setup
+let activeQingAddress = '0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20';
+let activeQingSymbol = 'NoNukes';
+
 fetchConfigAddresses();
 fetchPools();
 setInterval(fetchPools, 5000);
+
+async function fetchQingChat() {
+    const feed = document.getElementById('qing-chat-feed');
+    if (!feed) return;
+    try {
+        const url = activeQingAddress ? `/api/nonukes/qing-chat?address=${encodeURIComponent(activeQingAddress)}` : '/api/nonukes/qing-chat';
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.success && data.chat) {
+            // Update UI headers
+            const symbolEl = document.getElementById('qing-chat-title-symbol');
+            const addressEl = document.getElementById('qing-chat-header-address');
+            if (symbolEl) {
+                symbolEl.innerText = `QING Chat: ${activeQingSymbol}`;
+            }
+            if (addressEl) {
+                const qingToShow = activeQingAddress || '0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20';
+                addressEl.innerText = qingToShow.slice(0, 8) + '...' + qingToShow.slice(-6);
+                addressEl.title = qingToShow;
+            }
+
+            if (data.chat.length === 0) {
+                feed.innerHTML = `<div style="color: var(--text-muted); font-style: italic; text-align: center; margin-top: auto; margin-bottom: auto;">No chat messages yet on this QING.</div>`;
+                return;
+            }
+            const scrollAtBottom = feed.scrollHeight - feed.clientHeight <= feed.scrollTop + 10;
+            feed.innerHTML = data.chat.map(c => {
+                const shortTx = c.tx ? (c.tx.slice(0, 6) + '...' + c.tx.slice(-4)) : '';
+                return `
+                    <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--green); padding: 8px; border-radius: 4px; border-top: 1px solid rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
+                            <span style="font-weight: bold; color: var(--cyan);">${escapeHtml(c.username || 'Anonymous')}</span>
+                            <span style="color: var(--text-muted); font-size: 0.7rem; font-family: 'Share Tech Mono', monospace;">
+                                ${c.tx ? `<a href="https://otter.pulsechain.com/tx/${c.tx}" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px dotted var(--text-muted);">${shortTx}</a>` : ''}
+                                (S:${c.soul} A:${c.aura})
+                            </span>
+                        </div>
+                        <div style="word-break: break-word; line-height: 1.3;">${escapeHtml(c.message)}</div>
+                    </div>
+                `;
+            }).join('');
+            if (scrollAtBottom) {
+                feed.scrollTop = feed.scrollHeight;
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching QING chat:", err);
+    }
+}
+fetchQingChat();
+setInterval(fetchQingChat, 5000);
+
+
+// Floating Telemetry Chat Widget Logic
+const chatWidget = document.getElementById('telemetry-chat-widget');
+const chatHeader = document.getElementById('chat-header');
+const btnToggleChat = document.getElementById('btn-toggle-chat');
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const btnSendChat = document.getElementById('btn-send-chat');
+
+if (chatHeader) {
+    chatHeader.addEventListener('click', () => {
+        chatWidget.classList.toggle('collapsed');
+        if (chatWidget.classList.contains('collapsed')) {
+            btnToggleChat.innerText = '▲';
+        } else {
+            btnToggleChat.innerText = '▼';
+            // Scroll to bottom when expanded
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+        }
+    });
+}
+
+function formatMarkdown(text) {
+    // Escape HTML to prevent injection
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    
+    // Headers
+    html = html.replace(/^### (.*$)/gim, '<h4 style="margin: 6px 0; color: var(--cyan); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;">$1</h4>');
+    html = html.replace(/^## (.*$)/gim, '<h3 style="margin: 8px 0; color: var(--cyan);">$1</h3>');
+    html = html.replace(/^# (.*$)/gim, '<h2 style="margin: 10px 0; color: var(--cyan);">$1</h2>');
+    
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #fff;">$1</strong>');
+    // Italic
+    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+    
+    // Code block
+    html = html.replace(/`(.*?)`/gim, '<code style="background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; font-family: monospace; color: var(--cyan);">$1</code>');
+    
+    // Lists
+    html = html.replace(/^\s*-\s+(.*$)/gim, '<li style="margin-left: 15px; list-style-type: square;">$1</li>');
+    
+    // Line breaks
+    html = html.replace(/\n/gim, '<br>');
+    
+    // Simple table parser
+    if (html.includes('|')) {
+        const lines = html.split('<br>');
+        let inTable = false;
+        let tableHtml = '<table style="width:100%; border-collapse:collapse; margin: 8px 0; font-size:0.75rem;">';
+        let newLines = [];
+        
+        for (let line of lines) {
+            if (line.trim().startsWith('|')) {
+                // Skip separator line | --- | --- |
+                if (line.includes('---')) continue;
+                
+                inTable = true;
+                const cells = line.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+                tableHtml += '<tr>' + cells.map(c => `<td style="border: 1px solid rgba(255,255,255,0.1); padding: 4px 6px;">${c}</td>`).join('') + '</tr>';
+            } else {
+                if (inTable) {
+                    tableHtml += '</table>';
+                    newLines.push(tableHtml);
+                    tableHtml = '<table style="width:100%; border-collapse:collapse; margin: 8px 0; font-size:0.75rem;">';
+                    inTable = false;
+                }
+                newLines.push(line);
+            }
+        }
+        if (inTable) {
+            tableHtml += '</table>';
+            newLines.push(tableHtml);
+        }
+        html = newLines.join('<br>');
+    }
+    
+    return html;
+}
+
+async function sendChatMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    
+    // Display user message
+    const userMsgDiv = document.createElement('div');
+    userMsgDiv.className = 'chat-message user';
+    userMsgDiv.innerText = text;
+    chatMessages.appendChild(userMsgDiv);
+    
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Add temporary assistant loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chat-message assistant';
+    loadingDiv.innerHTML = '<span class="pulse-indicator" style="display:inline-block; width:8px; height:8px;"></span> Analyzing blockchain telemetry...';
+    chatMessages.appendChild(loadingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    try {
+        const response = await fetch('/api/nonukes/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: text })
+        });
+        
+        // Remove loading indicator
+        chatMessages.removeChild(loadingDiv);
+        
+        if (!response.ok) throw new Error("Server error");
+        const data = await response.json();
+        
+        const assistantMsgDiv = document.createElement('div');
+        assistantMsgDiv.className = 'chat-message assistant';
+        assistantMsgDiv.innerHTML = formatMarkdown(data.response || "No response received.");
+        chatMessages.appendChild(assistantMsgDiv);
+    } catch (err) {
+        if (loadingDiv.parentNode) {
+            chatMessages.removeChild(loadingDiv);
+        }
+        const errorMsgDiv = document.createElement('div');
+        errorMsgDiv.className = 'chat-message assistant';
+        errorMsgDiv.style.borderColor = 'var(--danger)';
+        errorMsgDiv.innerText = `Error contacting telemetry advisor: ${err.message || err}`;
+        chatMessages.appendChild(errorMsgDiv);
+    }
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+if (btnSendChat) btnSendChat.addEventListener('click', sendChatMessage);
+if (chatInput) {
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
+}
+
+const zmConsoleInput = document.getElementById('zmachine-console-input');
+const btnSubmitZmachine = document.getElementById('btn-submit-zmachine');
+const zmConsoleTerminal = document.getElementById('zmachine-console-terminal');
+
+async function sendZmachineCommand() {
+    if (!zmConsoleInput || !zmConsoleTerminal) return;
+    const cmdText = zmConsoleInput.value.trim();
+    if (!cmdText) return;
+    
+    zmConsoleTerminal.innerText += `\n> ${cmdText}`;
+    zmConsoleTerminal.scrollTop = zmConsoleTerminal.scrollHeight;
+    
+    zmConsoleInput.value = '';
+    
+    try {
+        const res = await fetch('/api/nonukes/zmachine-console', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: cmdText })
+        });
+        const data = await res.json();
+        
+        if (data.success && data.response) {
+            zmConsoleTerminal.innerText += `\n${data.response}`;
+        } else {
+            zmConsoleTerminal.innerText += `\n>> Error executing command.`;
+        }
+    } catch (err) {
+        console.error("Z-Machine console error:", err);
+        zmConsoleTerminal.innerText += `\n>> Network Error: ${err.message}`;
+    }
+    
+    zmConsoleTerminal.scrollTop = zmConsoleTerminal.scrollHeight;
+}
+
+if (btnSubmitZmachine) {
+    btnSubmitZmachine.addEventListener('click', sendZmachineCommand);
+}
+if (zmConsoleInput) {
+    zmConsoleInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            sendZmachineCommand();
+        }
+    });
+}
+
+const btnZmachineLore = document.getElementById('btn-zmachine-lore');
+if (btnZmachineLore) {
+    btnZmachineLore.addEventListener('click', async () => {
+        if (!zmConsoleTerminal) return;
+        
+        btnZmachineLore.disabled = true;
+        btnZmachineLore.innerText = "Consulting Lore...";
+        
+        try {
+            const logs = zmConsoleTerminal.innerText;
+            const res = await fetch('/api/nonukes/zmachine-lore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logs: logs })
+            });
+            const data = await res.json();
+            
+            if (data.success && data.response) {
+                zmConsoleTerminal.innerText += `\n\n[AI LORE MASTER]\n${data.response}`;
+            } else {
+                zmConsoleTerminal.innerText += `\n>> Error consulting Lore Master.`;
+            }
+        } catch (err) {
+            console.error("Z-Machine lore guide error:", err);
+            zmConsoleTerminal.innerText += `\n>> Lore Guide Network Error: ${err.message}`;
+        }
+        
+        btnZmachineLore.disabled = false;
+        btnZmachineLore.innerText = "AI Lore Guide";
+        zmConsoleTerminal.scrollTop = zmConsoleTerminal.scrollHeight;
+    });
+}
+
 

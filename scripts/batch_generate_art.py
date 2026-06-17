@@ -12,6 +12,68 @@ def hex_to_rgb(hex_str):
 def get_shade(color, factor):
     return tuple(min(255, int(c * factor)) for c in color)
 
+def get_rich_description(card):
+    desc = card.get('desc', '')
+    has_keys = any(os.environ.get(k) for k in ["GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"])
+    if not has_keys:
+        return desc
+        
+    try:
+        cache_file = "tmp/rich_descriptions_cache.json"
+        os.makedirs("tmp", exist_ok=True)
+        cache = {}
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "r") as f:
+                    cache = json.load(f)
+            except:
+                pass
+                
+        addr = card.get("address", "").lower()
+        if addr in cache:
+            return cache[addr]
+            
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are the Lore Master of Dysnomia. Write a single-sentence sci-fi trading card description for a digital asset. Be extremely creative, futuristic, and dramatic. Do not use markdown, quotes, or exceed 150 characters."),
+            ("user", "Token Name: {name}\nSymbol: {symbol}\nOriginal Type: {type}\nAttributes: {desc}\nColor: {color}\n\nWrite a 1-sentence sci-fi card lore description:")
+        ])
+        
+        llm = None
+        if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+        elif os.environ.get("OPENAI_API_KEY"):
+            from langchain_openai import ChatOpenAI
+            llm = ChatOpenAI(model="gpt-4o-mini")
+            
+        if llm:
+            chain = prompt | llm | StrOutputParser()
+            rich_desc = chain.invoke({
+                "name": card.get("name", "Unknown Token"),
+                "symbol": card.get("symbol", "TKN"),
+                "type": card.get("type", "Token"),
+                "desc": desc,
+                "color": card.get("color", "#00f0ff")
+            }).strip()
+            
+            # Clean up quotes if LLM returned them
+            rich_desc = rich_desc.replace('"', '').replace("'", "")
+            
+            cache[addr] = rich_desc
+            with open(cache_file, "w") as f:
+                json.dump(cache, f, indent=4)
+                
+            print(f"[Lore Master] Generated rich lore for {card.get('name')}: {rich_desc}")
+            return rich_desc
+    except Exception as e:
+        print(f"[Lore Master Error] {e}. Falling back to default description.")
+        
+    return desc
+
 def draw_isometric_cube(draw, cx, cy, x, y, z, size, base_color):
     dx = size * 0.866
     dy = size * 0.5
@@ -153,7 +215,7 @@ def render_card_art(card, output_path):
                 draw_isometric_cube(draw, cx, cy, px, py, -4, 30, pedestal_color)
 
     # 4. Generate & render the Voxel Shape inside HUD rings
-    desc = card.get('desc', '')
+    desc = get_rich_description(card)
     voxels = generate_voxel_shape(desc, seed_str=addr)
     voxel_size = 30
     

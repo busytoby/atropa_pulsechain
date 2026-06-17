@@ -31,9 +31,6 @@ contract RING is DYSNOMIA {
         (YUEINTERFACE Yue, LAU Usertoken) = Pang.Zi().Choa().Sei().Chi();
         Chao = Yue.React(address(Phobos));
         (Iota, Omicron, Phoebe, Omega, Charge)  = Pang.Push(Phobos.Waat());
-        Chao = Chao / Omicron;
-        Charge = Charge / Omega;
         Moments[Usertoken.Saat(1)] = Iota;
-        Iota = Iota * Iota;
     }
 }

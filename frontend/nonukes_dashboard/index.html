@@ -182,21 +182,43 @@
             </div>
         </section>
 
-        <!-- Z-Machine CLI Console Section -->
-        <section class="lau-section glass" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px);">
-            <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
-                <span style="display:inline-block; width: 8px; height: 8px; background: var(--magenta); border-radius: 50%; box-shadow: 0 0 10px var(--magenta);"></span>
-                Z-Machine Console
-            </h2>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
-                <div id="zmachine-console-terminal" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 12px; font-family: 'Share Tech Mono', monospace; color: var(--cyan); font-size: 0.9rem; height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">Welcome to the on-chain Z-Machine. Type 'help' to list available system command verbs.</div>
-                <div style="display: flex; gap: 8px;">
-                    <span style="color: var(--cyan); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; display: flex; align-items: center;">&gt;</span>
-                    <input type="text" id="zmachine-console-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; font-family: 'Share Tech Mono', monospace;" placeholder="Enter console command...">
-                    <button id="btn-submit-zmachine" class="btn" style="border-color: var(--cyan); color: var(--cyan);">Submit</button>
+        <!-- Two Column Interactive Section (Z-Machine & QING Chat) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <!-- Z-Machine CLI Console -->
+            <section class="lau-section glass" style="padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px); display: flex; flex-direction: column; margin-bottom: 0;">
+                <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        <span style="display:inline-block; width: 8px; height: 8px; background: var(--magenta); border-radius: 50%; box-shadow: 0 0 10px var(--magenta);"></span>
+                        Z-Machine Console
+                    </span>
+                    <button id="btn-zmachine-lore" class="btn" style="border-color: var(--magenta); color: var(--magenta); font-size: 0.75rem; padding: 2px 8px;">AI Lore Guide</button>
+                </h2>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem; flex-grow: 1;">
+                    <div id="zmachine-console-terminal" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 12px; font-family: 'Share Tech Mono', monospace; color: var(--cyan); font-size: 0.9rem; height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">Welcome to the on-chain Z-Machine. Type 'help' to list available system command verbs.</div>
+                    <div style="display: flex; gap: 8px;">
+                        <span style="color: var(--cyan); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; display: flex; align-items: center;">&gt;</span>
+                        <input type="text" id="zmachine-console-input" class="input-glow" style="text-align: left; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); width: 100%; box-sizing: border-box; font-family: 'Share Tech Mono', monospace;" placeholder="Enter console command...">
+                        <button id="btn-submit-zmachine" class="btn" style="border-color: var(--cyan); color: var(--cyan);">Submit</button>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+
+            <!-- On-Chain QING Chat Stream -->
+            <section class="lau-section glass" style="padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); backdrop-filter: blur(10px); display: flex; flex-direction: column; margin-bottom: 0;">
+                <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        <span style="display:inline-block; width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green);"></span>
+                        <span id="qing-chat-title-symbol">On-Chain QING Chat</span>
+                    </span>
+                    <span id="qing-chat-header-address" style="font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--cyan);">0x4dd037...2d20</span>
+                </h2>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem; flex-grow: 1;">
+                    <div id="qing-chat-feed" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 12px; font-family: 'Outfit', sans-serif; color: #fff; font-size: 0.85rem; height: 218px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                        <div style="color: var(--text-muted); font-style: italic; text-align: center; margin-top: auto; margin-bottom: auto;">Connecting to mainnet QING chat stream...</div>
+                    </div>
+                </div>
+            </section>
+        </div>
 
         <!-- Catalog Section -->
         <section class="catalog-section">
@@ -265,6 +287,14 @@
                         </div>
                     </div>
 
+                    <div class="subcard glass" id="yue-stats-card" style="display: none;">
+                        <h3>YUE Domain Reaction Stats</h3>
+                        <div style="display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; margin-top: 8px;">
+                            <div>Hypobar (Omega): <span id="yue-stat-hypobar" style="color: var(--cyan); font-weight: bold;">0</span></div>
+                            <div>Epibar (Omicron): <span id="yue-stat-epibar" style="color: var(--magenta); font-weight: bold;">0</span></div>
+                        </div>
+                    </div>
+
                     <div class="subcard glass flex-fill">
                         <h3>Swap History</h3>
                         <div class="history-table-container">
@@ -301,6 +331,7 @@
                             <div id="modal-art-placeholder" style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">No art generated yet</div>
                             <img id="modal-art-image" style="width: 100%; height: 100%; object-fit: cover; display: none;" src="">
                         </div>
+                        <button id="btn-generate-art" class="btn" style="width: 100%; border-color: var(--cyan); color: var(--cyan); font-size: 0.8rem; padding: 6px; margin-top: 2px;">Generate Card Art (LangChain)</button>
                         <div id="modal-card-desc" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
                             Prompt: -
                         </div>
@@ -310,6 +341,28 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Glassmorphic Chat Widget -->
+    <div id="telemetry-chat-widget" class="chat-widget glass collapsed">
+        <div class="chat-header" id="chat-header">
+            <div class="chat-header-title">
+                <span class="chat-pulse"></span>
+                <h3>Telemetry Advisor AI</h3>
+            </div>
+            <button class="chat-toggle-btn" id="btn-toggle-chat">▲</button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message assistant">
+                    Hello! Ask me any natural language question about NoNukes pools, volumes, swaps, or reserves.
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type a telemetry query...">
+                <button id="btn-send-chat" class="btn">Send</button>
             </div>
         </div>
     </div>

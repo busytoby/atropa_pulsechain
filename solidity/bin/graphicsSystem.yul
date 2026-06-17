@@ -1710,10 +1710,10 @@ object "GraphicsSystem" {
                 let dy := abs(sub(y2, y1))
                 
                 let sx := 1
-                if lt(x2, x1) { sx := -1 }
+                if lt(x2, x1) { sx := sub(0, 1) }
                 
                 let sy := 1
-                if lt(y2, y1) { sy := -1 }
+                if lt(y2, y1) { sy := sub(0, 1) }
                 
                 let err := sub(dx, dy)
                 

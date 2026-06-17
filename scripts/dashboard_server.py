@@ -19,6 +19,208 @@ default_reserves_path = reserves_files[0] if reserves_files else "nonukes_pulsex
 RESERVES_FILE_PATH = os.environ.get("RESERVES_FILE_PATH", default_reserves_path)
 
 IGNORE_LOCK = threading.Lock()
+QING_CHAT_LOGS = []
+
+def start_qing_chat_poller():
+    global QING_CHAT_LOGS
+    import urllib.request
+    import json
+    import time
+    
+    QING_ADDR = "0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20"
+    TOPIC_0 = "0xb916a3aaef1d0f80cd78f5fca0067f557f3db4a63748929d2e5e8d0014549374"
+    RPC_URL = "https://rpc.pulsechain.com"
+    
+    def decode_abi_log_event(data_hex):
+        try:
+            if data_hex.startswith("0x"):
+                data_hex = data_hex[2:]
+            words = [data_hex[i:i+64] for i in range(0, len(data_hex), 64)]
+            if len(words) < 4:
+                return None
+            soul = int(words[1], 16)
+            aura = int(words[2], 16)
+            username_word_idx = int(words[0], 16) // 32
+            msg_word_idx = int(words[3], 16) // 32
+            username_len = int(words[username_word_idx], 16)
+            username_hex = "".join(words[username_word_idx + 1 : username_word_idx + 1 + (username_len + 31) // 32])
+            username = bytes.fromhex(username_hex[:username_len * 2]).decode('utf-8', errors='ignore')
+            msg_len = int(words[msg_word_idx], 16)
+            msg_hex = "".join(words[msg_word_idx + 1 : msg_word_idx + 1 + (msg_len + 31) // 32])
+            msg = bytes.fromhex(msg_hex[:msg_len * 2]).decode('utf-8', errors='ignore')
+            return {
+                "username": username,
+                "soul": soul,
+                "aura": aura,
+                "message": msg
+            }
+        except Exception:
+            return None
+
+    def poll():
+        global QING_CHAT_LOGS
+        last_block = 0
+        while True:
+            try:
+                req = urllib.request.Request(
+                    RPC_URL,
+                    data=json.dumps({"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1}).encode('utf-8'),
+                    headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    resp = json.loads(res.read().decode('utf-8'))
+                    current_block = int(resp['result'], 16)
+                
+                if last_block == 0:
+                    start_block = current_block - 15000
+                else:
+                    start_block = last_block + 1
+                
+                if start_block <= current_block:
+                    req_logs = urllib.request.Request(
+                        RPC_URL,
+                        data=json.dumps({
+                            "jsonrpc": "2.0",
+                            "method": "eth_getLogs",
+                            "params": [{
+                                "fromBlock": hex(start_block),
+                                "toBlock": hex(current_block),
+                                "address": QING_ADDR,
+                                "topics": [TOPIC_0]
+                            }],
+                            "id": 2
+                        }).encode('utf-8'),
+                        headers={"Content-Type": "application/json"}
+                    )
+                    with urllib.request.urlopen(req_logs, timeout=8) as res:
+                        resp = json.loads(res.read().decode('utf-8'))
+                        logs = resp.get('result', [])
+                        
+                        new_chats = []
+                        for log in logs:
+                            decoded = decode_abi_log_event(log.get('data', ''))
+                            if decoded:
+                                decoded["block"] = int(log.get("blockNumber", "0"), 16)
+                                decoded["tx"] = log.get("transactionHash", "")
+                                new_chats.append(decoded)
+                        
+                        if new_chats:
+                            # Use lock to update safely
+                            QING_CHAT_LOGS.extend(new_chats)
+                            seen = set()
+                            unique_chats = []
+                            for c in QING_CHAT_LOGS:
+                                if c["tx"] not in seen:
+                                    seen.add(c["tx"])
+                                    unique_chats.append(c)
+                            QING_CHAT_LOGS = unique_chats[-100:]
+                    
+                    last_block = current_block
+            except Exception:
+                pass
+            time.sleep(8)
+            
+    t = threading.Thread(target=poll, daemon=True)
+    t.start()
+
+start_qing_chat_poller()
+
+def get_qings_mapping():
+    mapping_path = "config/nonukes_qings_status.json"
+    if not os.path.exists(mapping_path):
+        mapping_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "nonukes_qings_status.json")
+    
+    qings = {}
+    if os.path.exists(mapping_path):
+        try:
+            with open(mapping_path, "r") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    for item in data:
+                        addr = item.get("address")
+                        qing = item.get("qing")
+                        if addr and qing:
+                            qings[addr.lower()] = qing
+        except Exception:
+            pass
+    return qings
+
+def fetch_logs_for_qing(qing_address):
+    import urllib.request
+    import json
+    
+    TOPIC_0 = "0xb916a3aaef1d0f80cd78f5fca0067f557f3db4a63748929d2e5e8d0014549374"
+    RPC_URL = "https://rpc.pulsechain.com"
+    
+    def decode_abi_log_event(data_hex):
+        try:
+            if data_hex.startswith("0x"):
+                data_hex = data_hex[2:]
+            words = [data_hex[i:i+64] for i in range(0, len(data_hex), 64)]
+            if len(words) < 4:
+                return None
+            soul = int(words[1], 16)
+            aura = int(words[2], 16)
+            username_word_idx = int(words[0], 16) // 32
+            msg_word_idx = int(words[3], 16) // 32
+            username_len = int(words[username_word_idx], 16)
+            username_hex = "".join(words[username_word_idx + 1 : username_word_idx + 1 + (username_len + 31) // 32])
+            username = bytes.fromhex(username_hex[:username_len * 2]).decode('utf-8', errors='ignore')
+            msg_len = int(words[msg_word_idx], 16)
+            msg_hex = "".join(words[msg_word_idx + 1 : msg_word_idx + 1 + (msg_len + 31) // 32])
+            msg = bytes.fromhex(msg_hex[:msg_len * 2]).decode('utf-8', errors='ignore')
+            return {
+                "username": username,
+                "soul": soul,
+                "aura": aura,
+                "message": msg
+            }
+        except Exception:
+            return None
+
+    try:
+        req = urllib.request.Request(
+            RPC_URL,
+            data=json.dumps({"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1}).encode('utf-8'),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as res:
+            resp = json.loads(res.read().decode('utf-8'))
+            current_block = int(resp['result'], 16)
+        
+        start_block = current_block - 20000
+        
+        req_logs = urllib.request.Request(
+            RPC_URL,
+            data=json.dumps({
+                "jsonrpc": "2.0",
+                "method": "eth_getLogs",
+                "params": [{
+                    "fromBlock": hex(start_block),
+                    "toBlock": hex(current_block),
+                    "address": qing_address,
+                    "topics": [TOPIC_0]
+                }],
+                "id": 2
+            }).encode('utf-8'),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req_logs, timeout=8) as res:
+            resp = json.loads(res.read().decode('utf-8'))
+            logs = resp.get('result', [])
+            
+            chats = []
+            for log in logs:
+                decoded = decode_abi_log_event(log.get('data', ''))
+                if decoded:
+                    decoded["block"] = int(log.get("blockNumber", "0"), 16)
+                    decoded["tx"] = log.get("transactionHash", "")
+                    chats.append(decoded)
+            return chats
+    except Exception as e:
+        print(f"Error fetching logs for dynamic QING {qing_address}: {e}")
+        return []
+
 
 def get_price(prices, addr):
     if not isinstance(prices, dict) or not addr:
@@ -395,6 +597,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 pool_stats[p_addr]["count"] += 1
                 pool_stats[p_addr]["volume"] += usd_val
                 
+            qings_map = get_qings_mapping()
             pools_list = []
             for addr, info in pools_data.items():
                 if not isinstance(info, dict):
@@ -405,13 +608,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     res = {}
                 stats = pool_stats.get(addr_lower, {"count": 0, "volume": 0.0})
                 
+                partner_addr = info.get("other_addr", "")
+                qing_addr = qings_map.get(partner_addr.lower())
+                
                 pools_list.append({
                     "address": addr,
                     "symbol": info.get("symbol", ""),
                     "name": info.get("name", ""),
                     "target_group": info.get("target_group", ""),
                     "version": info.get("version", ""),
-                    "partner_address": info.get("other_addr", ""),
+                    "partner_address": partner_addr,
+                    "qing_address": qing_addr,
                     "reserves": get_adjusted_and_aligned_reserves(addr, reserves_data, info),
                     "swap_count": stats["count"],
                     "volume_usd": stats["volume"]
@@ -572,13 +779,52 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 "token1": {"hypobar": 0, "epibar": 0}
             }
  
+            qings_map = get_qings_mapping()
+            partner_addr = pool_info.get("other_addr", "")
+            qing_addr = qings_map.get(partner_addr.lower())
+
+            # Retrieve lore description
+            lore_desc = "Primary minter contract paired in the NoNukes pool family."
+            import glob
+            card_files = glob.glob(f"solidity/dysnomia/domain/data/{partner_addr.lower()}.json")
+            if card_files:
+                try:
+                    with open(card_files[0], "r") as f:
+                        card_data = json.load(f)
+                        lore_desc = card_data.get("desc", lore_desc)
+                except Exception:
+                    pass
+            try:
+                cache_file = "tmp/rich_descriptions_cache.json"
+                if os.path.exists(cache_file):
+                    with open(cache_file, "r") as f:
+                        cache = json.load(f)
+                        if partner_addr.lower() in cache:
+                            lore_desc = cache[partner_addr.lower()]
+            except Exception:
+                pass
+
+            import hashlib
+            addr_hash = hashlib.md5(partner_addr.lower().encode('utf-8')).hexdigest()
+            h_val = int(addr_hash, 16)
+            atk_val = (h_val % 8) + 3
+            def_val = ((h_val >> 4) % 8) + 3
+            liq_val = ((h_val >> 8) % 8) + 3
+
             response = {
                 "success": True,
                 "address": address,
-                "partner_address": pool_info.get("other_addr", ""),
+                "partner_address": partner_addr,
+                "qing_address": qing_addr,
+                "lore": lore_desc,
                 "price_trends": price_trends,
                 "reserves": get_adjusted_and_aligned_reserves(address, reserves_data, pool_info),
                 "yue_scores": yue_scores,
+                "stats": {
+                    "atk": atk_val,
+                    "def": def_val,
+                    "liq": liq_val
+                },
                 "swap_history": swap_history,
                 "swaps": swap_history
             }
@@ -825,6 +1071,131 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(400)
             self.end_headers()
             self.wfile.write(b"Invalid request")
+        elif self.path.startswith('/api/nonukes/qing-chat'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            qing_addr = params.get('address', [None])[0]
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            NONUKES_QING = "0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20"
+            if not qing_addr or qing_addr.lower() == NONUKES_QING.lower():
+                self.wfile.write(json.dumps({"success": True, "chat": QING_CHAT_LOGS, "address": NONUKES_QING}).encode('utf-8'))
+            else:
+                dynamic_chats = fetch_logs_for_qing(qing_addr)
+                self.wfile.write(json.dumps({"success": True, "chat": dynamic_chats, "address": qing_addr}).encode('utf-8'))
+            return
+        elif self.path.startswith('/api/nonukes/generate-card-art'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            address = params.get('address', [None])[0]
+            
+            if not address or not address.startswith("0x"):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"Invalid address")
+                return
+                
+            address = address.lower()
+            card_data = None
+            import glob
+            card_files = glob.glob(f"solidity/dysnomia/domain/data/{address}.json")
+            if card_files:
+                try:
+                    with open(card_files[0], "r") as f:
+                        card_data = json.load(f)
+                except Exception:
+                    pass
+            
+            if not card_data:
+                pools_data = {}
+                if os.path.exists("nonukes_pools.json"):
+                    try:
+                        with open("nonukes_pools.json", "r") as f:
+                            pools_data = json.load(f)
+                    except Exception:
+                        pass
+                
+                symbol = "UNKNOWN"
+                name = "Unknown Token"
+                for p_addr, p_info in pools_data.items():
+                    if p_info.get("other_addr", "").lower() == address:
+                        symbol = p_info.get("symbol", "UNKNOWN")
+                        name = p_info.get("name", "Unknown Token")
+                        break
+                        
+                card_data = {
+                    "address": address,
+                    "symbol": symbol,
+                    "name": name,
+                    "type": "Minter Asset",
+                    "desc": f"Primary minter contract paired in the NoNukes pool family.",
+                    "color": "#a02be2"
+                }
+                
+            os.makedirs("assets", exist_ok=True)
+            output_path = f"assets/{address}.png"
+            
+            try:
+                import sys
+                scripts_dir = os.path.dirname(os.path.abspath(__file__))
+                if scripts_dir not in sys.path:
+                    sys.path.append(scripts_dir)
+                from batch_generate_art import render_card_art
+                render_card_art(card_data, output_path)
+                success = True
+                error_msg = ""
+            except Exception as e:
+                success = False
+                error_msg = str(e)
+                
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            lore_desc = card_data.get("desc", "")
+            try:
+                cache_file = "tmp/rich_descriptions_cache.json"
+                if os.path.exists(cache_file):
+                    with open(cache_file, "r") as f:
+                        cache = json.load(f)
+                        if address in cache:
+                            lore_desc = cache[address]
+            except Exception:
+                pass
+                
+            self.wfile.write(json.dumps({
+                "success": success,
+                "error": error_msg,
+                "art_url": f"/assets/{address}.png",
+                "lore": lore_desc
+            }).encode('utf-8'))
+            return
+        elif self.path.startswith('/api/nonukes/chat'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            query = params.get('q', [''])[0]
+            
+            import sys
+            scripts_dir = os.path.dirname(os.path.abspath(__file__))
+            if scripts_dir not in sys.path:
+                sys.path.append(scripts_dir)
+            try:
+                from telemetry_advisor import query_telemetry
+                response_text = query_telemetry(query)
+            except Exception as e:
+                response_text = f"Telemetry engine error: {str(e)}"
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "response": response_text}).encode('utf-8'))
+            return
         elif self.path == '/' or self.path == '/index.html':
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -835,9 +1206,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             clean_path = self.path.split('?')[0].lstrip('/')
             if clean_path:
                 frontend_dir = os.path.abspath("frontend")
+                assets_dir = os.path.abspath("assets")
                 abs_clean = os.path.abspath(clean_path)
                 try:
-                    is_safe = os.path.commonpath([frontend_dir, abs_clean]) == frontend_dir
+                    is_safe_frontend = os.path.commonpath([frontend_dir, abs_clean]) == frontend_dir
+                    is_safe_assets = os.path.commonpath([assets_dir, abs_clean]) == assets_dir
+                    is_safe = is_safe_frontend or is_safe_assets
                 except ValueError:
                     is_safe = False
                 
@@ -851,6 +1225,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_header('Content-Type', 'text/css')
                     elif abs_clean.endswith('.json'):
                         self.send_header('Content-Type', 'application/json')
+                    elif abs_clean.endswith('.png'):
+                        self.send_header('Content-Type', 'image/png')
                     self.end_headers()
                     with open(abs_clean, 'rb') as f:
                         self.wfile.write(f.read())
@@ -861,6 +1237,161 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(b"Bad Request or File not found")
                     return
             self.send_error(404, "File not found")
+
+    def do_POST(self):
+        if self.path == '/api/nonukes/chat':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(post_data)
+                query = data.get("query", "")
+            except Exception:
+                query = ""
+            
+            import sys
+            scripts_dir = os.path.dirname(os.path.abspath(__file__))
+            if scripts_dir not in sys.path:
+                sys.path.append(scripts_dir)
+            try:
+                from telemetry_advisor import query_telemetry
+                response_text = query_telemetry(query)
+            except Exception as e:
+                response_text = f"Telemetry engine error: {str(e)}"
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "response": response_text}).encode('utf-8'))
+            return
+        elif self.path == '/api/nonukes/zmachine-console':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(post_data)
+                command = data.get("command", "")
+            except Exception:
+                command = ""
+                
+            has_keys = any(os.environ.get(k) for k in ["GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"])
+            response_text = ""
+            
+            if has_keys:
+                try:
+                    from langchain_core.prompts import ChatPromptTemplate
+                    from langchain_core.output_parsers import StrOutputParser
+                    
+                    system_prompt = (
+                        "You are the Z-Machine AI Game Co-Pilot. The player is playing an on-chain interactive text adventure "
+                        "story game on PulseChain. Translate their natural language intent into standard game action verbs "
+                        "if possible (e.g. 'look', 'take [item]', 'use [item]', 'Reaction [address]', 'east', 'west', 'north', 'south', 'help'). "
+                        "Reply with a retro sci-fi interactive fiction response. Start by showing the translated Z-Machine command "
+                        "like: '>> TRANSLATED: look' or '>> GUIDANCE: Type east to proceed', followed by a short immersive description "
+                        "of what they see or do. Keep it under 250 characters, in clean Share Tech Mono text style."
+                    )
+                    
+                    prompt = ChatPromptTemplate.from_messages([
+                        ("system", system_prompt),
+                        ("user", "Player Input: {command}\n\nAI Guide Response:")
+                    ])
+                    
+                    llm = None
+                    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+                        from langchain_google_genai import ChatGoogleGenerativeAI
+                        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+                    elif os.environ.get("OPENAI_API_KEY"):
+                        from langchain_openai import ChatOpenAI
+                        llm = ChatOpenAI(model="gpt-4o-mini")
+                        
+                    if llm:
+                        chain = prompt | llm | StrOutputParser()
+                        response_text = chain.invoke({"command": command}).strip()
+                except Exception as e:
+                    response_text = f">> AI Co-Pilot Error: {str(e)}"
+                    
+            if not response_text:
+                cmd_low = command.lower().strip()
+                if "help" in cmd_low:
+                    response_text = ">> Z-Machine Verbs: look, take [item], use [item], Reaction [address], north, south, east, west, help."
+                elif "look" in cmd_low:
+                    response_text = ">> TRANSLATED: look\nAn empty room looms with metallic voxel panels. Exit paths lead East and West."
+                elif "take" in cmd_low or "pick" in cmd_low:
+                    response_text = f">> TRANSLATED: take\nAttempting to acquire target asset. Inventory bounds verified."
+                elif "east" in cmd_low or "go east" in cmd_low:
+                    response_text = ">> TRANSLATED: east\nSteering corridor corridor. Transiting to Segment 2."
+                elif "west" in cmd_low or "go west" in cmd_low:
+                    response_text = ">> TRANSLATED: west\nSteering corridor corridor. Transiting to Segment 1."
+                else:
+                    response_text = f">> COMMAND PARSED: {command}\nNo active thunk attached. Verify Z-Machine console verbs or enable LLM keys."
+                    
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "response": response_text}).encode('utf-8'))
+            return
+        elif self.path == '/api/nonukes/zmachine-lore':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(post_data)
+                terminal_logs = data.get("logs", "")
+            except Exception:
+                terminal_logs = ""
+                
+            has_keys = any(os.environ.get(k) for k in ["GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"])
+            response_text = ""
+            
+            if has_keys:
+                try:
+                    from langchain_core.prompts import ChatPromptTemplate
+                    from langchain_core.output_parsers import StrOutputParser
+                    
+                    system_prompt = (
+                        "You are the Z-Machine Lore Master and Guide. The player is playing an on-chain text adventure "
+                        "story game on PulseChain. Look at the terminal logs of their game session. "
+                        "Provide a helpful hint, a secret, or guide them on what action verbs to try next "
+                        "(e.g. going north/south/east/west, taking items, or using attributes). "
+                        "Write in an immersive retro-sci-fi style under 250 characters, in clean Share Tech Mono text style."
+                    )
+                    
+                    prompt = ChatPromptTemplate.from_messages([
+                        ("system", system_prompt),
+                        ("user", "Console Terminal Logs:\n{logs}\n\nHelpful Lore Guidance:")
+                    ])
+                    
+                    llm = None
+                    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+                        from langchain_google_genai import ChatGoogleGenerativeAI
+                        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+                    elif os.environ.get("OPENAI_API_KEY"):
+                        from langchain_openai import ChatOpenAI
+                        llm = ChatOpenAI(model="gpt-4o-mini")
+                        
+                    if llm:
+                        chain = prompt | llm | StrOutputParser()
+                        response_text = chain.invoke({"logs": terminal_logs}).strip()
+                except Exception as e:
+                    response_text = f">> AI Lore Guide Error: {str(e)}"
+                    
+            if not response_text:
+                response_text = (
+                    ">> LORE HINT: You are trapped in a system of dark corridors. "
+                    "Type 'look' to scan the current segment, and try moving 'east' or 'west' to explore new segments."
+                )
+                
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "response": response_text}).encode('utf-8'))
+            return
+        else:
+            self.send_response(404)
+            self.end_headers()
+
 
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">

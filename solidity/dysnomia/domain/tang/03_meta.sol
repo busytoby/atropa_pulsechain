@@ -29,6 +29,6 @@ contract META is DYSNOMIA {
         (Yeo, Omicron, Dione, Omega, Charge) = Ring.Pang().Push(QingWaat);
         Charge = Charge1 * Charge  / Iota1;
         Deimos = Xiao.modExp(Dione, Phoebe, Ring.Pang().Zi().Choa().Yuan(address(Qing)));
-        Yeo = Yeo / Chao;
+        Yeo = Chao / Yeo;
     }
 }
