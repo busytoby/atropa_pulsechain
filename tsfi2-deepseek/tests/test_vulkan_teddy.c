@@ -692,13 +692,13 @@ static bool seq_validation_passed = true;
 
 // Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare, Track 2 = Toms, Track 3 = Hats, Track 4 = Ride, Track 5 = Clap, Track 6 = Snap)
 static uint8_t seq_grid[7][8] = {
-    {1, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 1, 0},
-    {0, 1, 0, 1, 0, 1, 0, 0},
-    {0, 0, 1, 0, 0, 1, 0, 1},
-    {1, 0, 0, 0, 1, 0, 0, 0},
-    {0, 0, 0, 0, 1, 0, 0, 0},
-    {0, 0, 0, 1, 0, 0, 0, 1}
+    {1, 0, 0, 0, 1, 0, 0, 1}, // Kick: steady on 0 and 4, syncopated on 7
+    {0, 0, 1, 0, 0, 0, 1, 0}, // Snare: heavy backbeat on 2 and 6
+    {0, 0, 0, 0, 0, 1, 0, 0}, // Toms: high tom fill on step 5
+    {0, 1, 0, 1, 0, 1, 0, 1}, // Hats: driving open hi-hats on offbeats (1, 3, 5, 7)
+    {1, 0, 1, 0, 1, 0, 1, 0}, // Ride: ride cymbal pulsing on downbeats
+    {0, 0, 0, 0, 1, 0, 0, 0}, // Clap: accent clap layer on step 4
+    {0, 0, 0, 1, 0, 0, 0, 0}  // Snap: snap accent on step 3
 };
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
