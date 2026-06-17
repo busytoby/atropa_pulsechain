@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
+#include <unistd.h>
 #include "tsfi_zmm_vm.h"
 #include "tsfi_wire_firmware.h"
 
@@ -61,7 +63,19 @@ static uint64_t decode_uint256_scaled_by_1e18(const uint8_t *bytes) {
 }
 
 int main() {
+    srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
     printf("=== TSFi ZMM VM Full Dysnomia Systems Integration Test ===\n");
+    FILE *clear_fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+    if (clear_fp) {
+        fprintf(clear_fp, "{\n  \"storage\": []\n}\n");
+        fclose(clear_fp);
+    } else {
+        clear_fp = fopen("evm_storage.json", "w");
+        if (clear_fp) {
+            fprintf(clear_fp, "{\n  \"storage\": []\n}\n");
+            fclose(clear_fp);
+        }
+    }
     tsfi_wire_firmware_init();
 
     TsfiZmmVmState vm;
@@ -80,6 +94,13 @@ int main() {
             sscanf(addr_str + len - 16, "%lx", &addr64);
         } else {
             sscanf(addr_str, "%lx", &addr64);
+        }
+        if (strcmp(g_dysnomia_system[i].name, "shafactory") == 0) {
+            printf("\n -> [SEEDING] Calling vmreq.Random() 5 times to advance the PRNG...\n");
+            for (int r = 0; r < 5; r++) {
+                tsfi_zmm_vm_exec(&vm, "YULEXEC \"vmreq\", \"604a6fa9\"");
+            }
+            printf("\n");
         }
         snprintf(cmd, sizeof(cmd), "YULINIT \"%s\", \"%s\", %lu", 
                  g_dysnomia_system[i].name, 
@@ -148,6 +169,23 @@ int main() {
     memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
     printf(" -> Executing: %s\n", chat_cmd);
     tsfi_zmm_vm_exec(&vm, chat_cmd);
+
+    int logs_count = lau_yul_thunk_get_log_count();
+    printf(" -> Manual Event Verification: Emitted %d events in last transaction\n", logs_count);
+    for (int l = 0; l < logs_count; l++) {
+        uint64_t addr = 0;
+        int num_topics = 0;
+        u256_t topics[4];
+        uint8_t data[2048] = {0};
+        size_t d_size = sizeof(data);
+        if (lau_yul_thunk_get_log(l, &addr, &num_topics, topics, data, &d_size)) {
+            printf("      * Log %d: contract=0x%lx, topics=%d", l, addr, num_topics);
+            for (int t = 0; t < num_topics; t++) {
+                printf(", topic%d=0x%016lx%016lx%016lx%016lx", t, topics[t].d[3], topics[t].d[2], topics[t].d[1], topics[t].d[0]);
+            }
+            printf("\n");
+        }
+    }
 
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL FULL DYSNOMIA SYSTEM INTEGRATION TESTS COMPLETED ===\n");

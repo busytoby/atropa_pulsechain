@@ -720,6 +720,17 @@ static u256_t get_namespaced_key(uint64_t self_addr, u256_t key) {
 
 static u256_t context_sload(YulEvmContext *ctx, u256_t key) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
+    if (ctx->self_address == 0x14 && key.d[3] == 0x7c3a41e3c4516389ULL) {
+        printf("[DEBUG_SLOAD_ZHENG_COLLISION] key=%016lx%016lx%016lx%016lx, ns_key=%016lx%016lx%016lx%016lx, storage_count=%d\n",
+               key.d[3], key.d[2], key.d[1], key.d[0],
+               ns_key.d[3], ns_key.d[2], ns_key.d[1], ns_key.d[0],
+               ctx->storage_count);
+        for (int i = 0; i < ctx->storage_count; i++) {
+            printf("  - [%d] key=%016lx%016lx%016lx%016lx, val=%016lx%016lx%016lx%016lx\n",
+                   i, ctx->storage_keys[i].d[3], ctx->storage_keys[i].d[2], ctx->storage_keys[i].d[1], ctx->storage_keys[i].d[0],
+                   ctx->storage_vals[i].d[3], ctx->storage_vals[i].d[2], ctx->storage_vals[i].d[1], ctx->storage_vals[i].d[0]);
+        }
+    }
     for (int i = 0; i < ctx->storage_count; i++) {
         if (u256_eq(ctx->storage_keys[i], ns_key)) {
             if (ctx->self_address == 0x14) {
@@ -749,8 +760,9 @@ static u256_t context_sload(YulEvmContext *ctx, u256_t key) {
 static void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     if (ctx->self_address == 0x14) {
-        printf("[SSTORE_ZHENG] key=%016lx%016lx%016lx%016lx, val=%016lx%016lx%016lx%016lx\n",
+        printf("[SSTORE_ZHENG] key=%016lx%016lx%016lx%016lx, ns_key=%016lx%016lx%016lx%016lx, val=%016lx%016lx%016lx%016lx\n",
                key.d[3], key.d[2], key.d[1], key.d[0],
+               ns_key.d[3], ns_key.d[2], ns_key.d[1], ns_key.d[0],
                val.d[3], val.d[2], val.d[1], val.d[0]);
     }
     for (int i = 0; i < ctx->storage_count; i++) {
@@ -765,6 +777,11 @@ static void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
     if (ctx->storage_count < 4096) {
         ctx->storage_keys[ctx->storage_count] = ns_key;
         ctx->storage_vals[ctx->storage_count] = val;
+        printf("[DEBUG_SSTORE_NEW] addr=0x%lx, idx=%d, key=%016lx%016lx%016lx%016lx, ns_key=%016lx%016lx%016lx%016lx, val=%016lx%016lx%016lx%016lx\n",
+               ctx->self_address, ctx->storage_count,
+               key.d[3], key.d[2], key.d[1], key.d[0],
+               ns_key.d[3], ns_key.d[2], ns_key.d[1], ns_key.d[0],
+               val.d[3], val.d[2], val.d[1], val.d[0]);
         ctx->storage_count++;
         g_storage_dirty = true;
     }
@@ -1102,6 +1119,13 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                             r.d[i] = (r.d[i] << 8) | hash.data[(3 - i) * 8 + (7 - j)];
                         }
                     }
+                    if (ctx->self_address == 0x14 || strcmp(name, "zhou") == 0) {
+                        printf("[DEBUG_SHA3] addr=0x%lx, offset=%lu, len=%zu, input=", ctx->self_address, offset.d[0], len);
+                        for (size_t i = 0; i < len && i < 64; i++) {
+                            printf("%02x", ctx->memory[offset.d[0] + i]);
+                        }
+                        printf(" -> hash=%016lx%016lx%016lx%016lx\n", r.d[3], r.d[2], r.d[1], r.d[0]);
+                    }
                     if (len == 64) {
                         bool is_slot_0 = true;
                         for (int i = 32; i < 64; i++) {
@@ -1228,6 +1252,18 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 u256_t offset = ctx->stack[--ctx->stack_ptr];
                 u256_t size = ctx->stack[--ctx->stack_ptr];
                 
+                YulEventLog *log = NULL;
+                if (ctx->log_count < 64) {
+                    log = &ctx->logs[ctx->log_count++];
+                    log->address = ctx->self_address;
+                    log->num_topics = num_topics;
+                    log->data_size = size.d[0] < 2048 ? size.d[0] : 2048;
+                    for (size_t i = 0; i < log->data_size; i++) {
+                        uint64_t src = offset.d[0] + i;
+                        log->data[i] = (src < 524288) ? ctx->memory[src] : 0;
+                    }
+                }
+                
                 printf("[EVENT_EMITTED] LOG%d: offset=%lu, size=%lu", num_topics, offset.d[0], size.d[0]);
                 FILE *ev_fp = fopen("recent_emits.log", "a");
                 if (ev_fp) {
@@ -1235,6 +1271,9 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 }
                 for (int t = 0; t < num_topics; t++) {
                     u256_t topic = ctx->stack[--ctx->stack_ptr];
+                    if (log) {
+                        log->topics[t] = topic;
+                    }
                     printf(", topic%d=0x%016lx%016lx%016lx%016lx", t, topic.d[3], topic.d[2], topic.d[1], topic.d[0]);
                     if (ev_fp) {
                         fprintf(ev_fp, ", topic%d=0x%016lx%016lx%016lx%016lx", t, topic.d[3], topic.d[2], topic.d[1], topic.d[0]);
@@ -1669,6 +1708,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     }
 
     g_transaction_diyat_tax_total = 0;
+    g_yul_evm_context.log_count = 0;
 
     // Setup calldata
     memset(g_yul_evm_context.calldata, 0, sizeof(g_yul_evm_context.calldata));
@@ -2126,4 +2166,30 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
 
 uint64_t lau_yul_get_diyat_tax_total(void) {
     return g_transaction_diyat_tax_total;
+}
+
+int lau_yul_thunk_get_log_count(void) {
+    return g_yul_evm_context.log_count;
+}
+
+bool lau_yul_thunk_get_log(int index, uint64_t *address, int *num_topics, u256_t *topics, uint8_t *data, size_t *data_size) {
+    if (index < 0 || index >= g_yul_evm_context.log_count) {
+        return false;
+    }
+    YulEventLog *log = &g_yul_evm_context.logs[index];
+    if (address) *address = log->address;
+    if (num_topics) *num_topics = log->num_topics;
+    if (topics) {
+        for (int i = 0; i < log->num_topics; i++) {
+            topics[i] = log->topics[i];
+        }
+    }
+    if (data && data_size) {
+        size_t limit = *data_size < log->data_size ? *data_size : log->data_size;
+        memcpy(data, log->data, limit);
+        *data_size = limit;
+    } else if (data_size) {
+        *data_size = log->data_size;
+    }
+    return true;
 }

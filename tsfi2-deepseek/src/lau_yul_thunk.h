@@ -10,6 +10,14 @@ typedef struct {
 } u256_t;
 
 typedef struct {
+    uint64_t address;
+    int num_topics;
+    u256_t topics[4];
+    size_t data_size;
+    uint8_t data[2048];
+} YulEventLog;
+
+typedef struct {
     u256_t stack[1024];
     int stack_ptr;
     uint8_t memory[524288];
@@ -24,6 +32,9 @@ typedef struct {
     bool reverted;
     uint64_t self_address;
     u256_t caller_address;
+    
+    YulEventLog logs[64];
+    int log_count;
 } YulEvmContext;
 
 extern _Thread_local YulEvmContext g_yul_evm_context;
@@ -45,5 +56,11 @@ size_t lau_yul_thunk_get_size(const char *name);
 
 // Getter for the accumulated transaction diyat tax total (the voltmeter value)
 uint64_t lau_yul_get_diyat_tax_total(void);
+
+// Retrieve the number of events emitted in the last execution transaction
+int lau_yul_thunk_get_log_count(void);
+
+// Retrieve a specific event log from the last execution transaction
+bool lau_yul_thunk_get_log(int index, uint64_t *address, int *num_topics, u256_t *topics, uint8_t *data, size_t *data_size);
 
 #endif
