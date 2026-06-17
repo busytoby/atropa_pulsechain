@@ -587,7 +587,9 @@ Loading ZMM VM inventory coordinates and items...
                         body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("symbol", []) })
                     });
                     const symJson = await symRes.json();
-                    const symbol = symJson.error ? "CHO" : ethers.toUtf8String(zmInterface.decodeFunctionResult("symbol", "0x" + symJson.result.output)[0]);
+                    const symbol = (symJson.error || !symJson.result || !symJson.result.output || symJson.result.output === "0x" || symJson.result.output === "") 
+                        ? "CHO" 
+                        : zmInterface.decodeFunctionResult("symbol", "0x" + symJson.result.output.replace(/^0x/, ""))[0];
 
                     // Natively query decimals
                     const decRes = await fetch("/api/zmm-exec", {
@@ -596,7 +598,9 @@ Loading ZMM VM inventory coordinates and items...
                         body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("decimals", []) })
                     });
                     const decJson = await decRes.json();
-                    const decimals = decJson.error ? 18 : Number(zmInterface.decodeFunctionResult("decimals", "0x" + decJson.result.output)[0]);
+                    const decimals = (decJson.error || !decJson.result || !decJson.result.output || decJson.result.output === "0x" || decJson.result.output === "") 
+                        ? 18 
+                        : Number(zmInterface.decodeFunctionResult("decimals", "0x" + decJson.result.output.replace(/^0x/, ""))[0]);
 
                     // Natively query user balance (0x44c)
                     const userBalRes = await fetch("/api/zmm-exec", {
@@ -605,7 +609,9 @@ Loading ZMM VM inventory coordinates and items...
                         body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x000000000000000000000000000000000000044C"]) })
                     });
                     const userBalJson = await userBalRes.json();
-                    const userBal = userBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + userBalJson.result.output)[0];
+                    const userBal = (userBalJson.error || !userBalJson.result || !userBalJson.result.output || userBalJson.result.output === "0x" || userBalJson.result.output === "") 
+                        ? 0n 
+                        : zmInterface.decodeFunctionResult("balanceOf", "0x" + userBalJson.result.output.replace(/^0x/, ""))[0];
                     const userFormatted = parseFloat(ethers.formatUnits(userBal, decimals)).toFixed(4);
                     document.getElementById("ledgerAcc1100").innerText = `${userFormatted} ${symbol}`;
 
@@ -616,7 +622,9 @@ Loading ZMM VM inventory coordinates and items...
                         body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x00000000000000000000000000000000000004B0"]) })
                     });
                     const treasuryBalJson = await treasuryBalRes.json();
-                    const treasuryBal = treasuryBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + treasuryBalJson.result.output)[0];
+                    const treasuryBal = (treasuryBalJson.error || !treasuryBalJson.result || !treasuryBalJson.result.output || treasuryBalJson.result.output === "0x" || treasuryBalJson.result.output === "") 
+                        ? 0n 
+                        : zmInterface.decodeFunctionResult("balanceOf", "0x" + treasuryBalJson.result.output.replace(/^0x/, ""))[0];
                     const treasuryFormatted = parseFloat(ethers.formatUnits(treasuryBal, decimals)).toFixed(4);
                     document.getElementById("ledgerAcc1200").innerText = `${treasuryFormatted} ${symbol}`;
 
@@ -627,7 +635,9 @@ Loading ZMM VM inventory coordinates and items...
                         body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x0000000000000000000000000000000000000898"]) })
                     });
                     const diyatBalJson = await diyatBalRes.json();
-                    const diyatBal = diyatBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + diyatBalJson.result.output)[0];
+                    const diyatBal = (diyatBalJson.error || !diyatBalJson.result || !diyatBalJson.result.output || diyatBalJson.result.output === "0x" || diyatBalJson.result.output === "") 
+                        ? 0n 
+                        : zmInterface.decodeFunctionResult("balanceOf", "0x" + diyatBalJson.result.output.replace(/^0x/, ""))[0];
                     const diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, decimals)).toFixed(4);
                     document.getElementById("ledgerAcc2200").innerText = `${diyatFormatted} ${symbol}`;
 
