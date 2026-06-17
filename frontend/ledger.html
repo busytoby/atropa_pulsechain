@@ -1247,7 +1247,7 @@ Loading ZMM VM inventory coordinates and items...
                 let html = "";
                 let count = 0;
                 data.keys.forEach((k, idx) => {
-                    if (k.ones < 20) return; // Only show addresses with 20 or more '1's
+                    if (k.ones < 19) return; // Only show addresses with 19 or more '1's
                     count++;
                     const price = k.ones * 10;
                     const addressDisplay = k.address;
@@ -1267,7 +1267,7 @@ Loading ZMM VM inventory coordinates and items...
                 });
                 
                 if (count === 0) {
-                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No eligible vanity keys (20+ '1's) found in registry.</div>`;
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No eligible vanity keys (19+ '1's) found in registry.</div>`;
                 } else {
                     listContainer.innerHTML = html;
                 }

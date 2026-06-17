@@ -12,21 +12,24 @@ typedef struct {
 } DysnomiaContract;
 
 static const DysnomiaContract g_dysnomia_system[] = {
-    { "vmreq",        "../solidity/dysnomia/00b_vmreq.sol",              "0x10" },
-    { "shafactory",   "../solidity/dysnomia/02c_shafactory.sol",          "0x11" },
-    { "shiofactory",  "../solidity/dysnomia/03c_shiofactory.sol",         "0x12" },
+    { "vmreq",        "../solidity/dysnomia/00b_vmreq.sol",              "0x0000000000000000000000000000000000000010" },
+    { "shafactory",   "../solidity/dysnomia/02c_shafactory.sol",          "0x0000000000000000000000000000000000000011" },
+    { "shiofactory",  "../solidity/dysnomia/03c_shiofactory.sol",         "0x0000000000000000000000000000000000000012" },
     { "yi",           "../solidity/dysnomia/04_yi.sol",                  "0x83a918056aB9316837Dc48a216119D679D561d91" },
-    { "zheng",        "../solidity/dysnomia/05_zheng.sol",               "0x14" },
+    { "zheng",        "../solidity/dysnomia/05_zheng.sol",               "0x0000000000000000000000000000000000000014" },
     { "zhou",         "../solidity/dysnomia/06_zhou.sol",                "0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11" },
     { "yau",          "../solidity/dysnomia/07_yau.sol",                 "0xb9A44De20f26a027e467CB6c2F98766F01904189" },
     { "yang",         "../solidity/dysnomia/08_yang.sol",                "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61" },
     { "siu",          "../solidity/dysnomia/09_siu.sol",                 "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10" },
     { "void",         "../solidity/dysnomia/10_void.sol",                "0xCd19062a6d3019b02A676D72e51D8de7A398dE25" },
+    { "strings",      "../solidity/dysnomia/lib/stringlib.sol",          "0x8dAF17A20c9DBA35f005b6324F493785D2397191" },
+    { "libattribute", "../solidity/dysnomia/lib/attribute.sol",          "0x8dAF17A20c9DBA35f005b6324F493785D2397192" },
+    { "corereactions","../solidity/dysnomia/lib/reactions_core.sol",      "0x8dAF17A20c9DBA35f005b6324F493785D2397193" },
     { "laufactory",   "../solidity/dysnomia/11c_laufactory.sol",         "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3" },
-    { "lau",          "../solidity/dysnomia/11_lau.sol",                  "0x25" },
-    { "cho",          "../solidity/dysnomia/domain/dan/01_cho.sol",      "0x1b" },
-    { "map",          "../solidity/dysnomia/domain/map.sol",             "0x1c" },
-    { "qi",           "../solidity/dysnomia/domain/soeng/01_qi.sol",     "0x1b8F9E19360D1dc94295D984b7Ca7eA9b810D9ee" },
+    { "lau",          "../solidity/dysnomia/11_lau.sol",                  "0x8dAF17A20c9DBA35f005b6324F493785D239719d" },
+    { "cho",          "../solidity/dysnomia/domain/dan/01_cho.sol",      "0x000000000000000000000000000000000000001b" },
+    { "map",          "../solidity/dysnomia/domain/map.sol",             "0x000000000000000000000000000000000000001c" },
+    { "qi",           "../solidity/dysnomia/domain/soeng/01_qi.sol",     "0xb7ca7ea9b810d9ee" },
     { "mai",          "../solidity/dysnomia/domain/soeng/02_mai.sol",     "0xf69e9f943674027Cedf05564A8D5A01041d07c62" },
     { "xia",          "../solidity/dysnomia/domain/soeng/03_xia.sol",     "0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89" },
     { "xie",          "../solidity/dysnomia/domain/soeng/04_xie.sol",     "0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD" },
@@ -35,6 +38,27 @@ static const DysnomiaContract g_dysnomia_system[] = {
     { "choa",         "../solidity/dysnomia/domain/sky/02_choa.sol",     "0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D" },
     { "cheon",        "../solidity/dysnomia/domain/tang/02_cheon.sol",    "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F" }
 };
+
+#include "lau_yul_thunk.h"
+
+static uint64_t decode_uint256_scaled_by_1e18(const uint8_t *bytes) {
+    uint64_t rem = 0;
+    uint64_t quotient[4] = {0};
+    uint64_t divisor = 1000000000000000000ULL;
+    uint64_t digits[4];
+    for (int i = 0; i < 4; i++) {
+        digits[i] = 0;
+        for (int b = 0; b < 8; b++) {
+            digits[i] = (digits[i] << 8) | bytes[i * 8 + b];
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        unsigned __int128 dividend = ((unsigned __int128)rem << 64) | digits[i];
+        quotient[i] = (uint64_t)(dividend / divisor);
+        rem = (uint64_t)(dividend % divisor);
+    }
+    return quotient[3];
+}
 
 int main() {
     printf("=== TSFi ZMM VM Full Dysnomia Systems Integration Test ===\n");
@@ -65,16 +89,37 @@ int main() {
     }
 
     printf("\n=== [CONSTRUCTOR SETUP] Verifying constructor configurations via execution loop ===\n");
-    // Seed random distributions
-    srand(10042);
     
-    // Default wallet address context (0x44C)
-    const char *default_wallet = "0x000000000000000000000000000000000000044C";
+    // Default wallet address context (0x4CC)
+    const char *default_wallet = "0x00000000000000000000000000000000000004CC";
     
-    // Simulate initcode construction loops and randomize distributions for the 15 tiers to address 44C
+    // Query actual token balances held in the balance on the contract thunks
     for (int i = 0; i < count; i++) {
-        uint64_t distribution_amount = (rand() % 9000000 + 1000000); // Random allocation between 1M and 10M tokens
-        printf(" -> [INITCODE] Executed constructor for tier: %s. Minted %lu tokens to %s\n", 
+        uint64_t distribution_amount = 0;
+        if (strcmp(g_dysnomia_system[i].name, "shafactory") != 0 &&
+            strcmp(g_dysnomia_system[i].name, "shiofactory") != 0 &&
+            strcmp(g_dysnomia_system[i].name, "laufactory") != 0 &&
+            strcmp(g_dysnomia_system[i].name, "strings") != 0 &&
+            strcmp(g_dysnomia_system[i].name, "libattribute") != 0 &&
+            strcmp(g_dysnomia_system[i].name, "corereactions") != 0) {
+            
+            // Selector for balanceOf(address) is 70a08231
+            uint8_t calldata[36] = {0};
+            calldata[0] = 0x70;
+            calldata[1] = 0xa0;
+            calldata[2] = 0x82;
+            calldata[3] = 0x31;
+            calldata[34] = 0x04;
+            calldata[35] = 0xcc;
+            
+            uint8_t retval[32] = {0};
+            size_t retval_len = sizeof(retval);
+            bool success = lau_yul_thunk_execute(g_dysnomia_system[i].name, calldata, sizeof(calldata), retval, &retval_len);
+            if (success && retval_len == 32) {
+                distribution_amount = decode_uint256_scaled_by_1e18(retval);
+            }
+        }
+        printf(" -> [INITCODE] Executed constructor for tier: %s. Minted %lu.000000000000000000 tokens to %s\n", 
                g_dysnomia_system[i].name, 
                distribution_amount, 
                default_wallet);
