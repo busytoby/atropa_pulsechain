@@ -79,8 +79,24 @@ async function main() {
     console.log(`\nPlayer and NPC spawned in Room 12.`);
     console.log("Ready for interactive testing. Type '/exit' to quit.");
 
-    const getAiResponse = (msg) => {
+    const countRooms = async () => {
+        let count = 0;
+        for (let r = 0; r <= 50; r++) {
+            const slot = ethers.toBeHex(3200000 + r);
+            const val = await provider.send("eth_getStorageAt", [zmAddress, slot, "latest"]);
+            if (ethers.toBigInt(val) !== 0n) {
+                count++;
+            }
+        }
+        return count;
+    };
+
+    const getAiResponse = async (msg) => {
         const query = msg.toLowerCase();
+        if (query.includes("how many rooms") || query.includes("room count")) {
+            const numRooms = await countRooms();
+            return `NPC Responds: Based on my realtime EVM scan of layout slots (3200000 to 3200050), there are currently ${numRooms} active rooms configured with exit mappings in this Z-Machine instance.`;
+        }
         if (query.includes("identity") || query.includes("who are you")) {
             return "NPC Responds: I am the daemon process running on Card ID 2. I regulate time-sliced ZMM activity.";
         }
@@ -91,7 +107,7 @@ async function main() {
             return "NPC Responds: I can walk, take items, and process chat commands under my registered card identity.";
         }
         if (query.includes("hello") || query.includes("hi")) {
-            return "NPC Responds: Greetings traveler! Ask me about my identity, position, or capabilities.";
+            return "NPC Responds: Greetings traveler! Ask me about my identity, position, capabilities, or how many rooms there are.";
         }
         return `NPC Responds: Processing prompt "${msg}"... My internal states are fully synchronized.`;
     };
@@ -136,7 +152,7 @@ async function main() {
 
                 // Mocking the background AI Daemon detecting the event & responding
                 console.log("[AI DAEMON] Intercepted prompt. Simulating LLM response...");
-                const response = getAiResponse(trimmed);
+                const response = await getAiResponse(trimmed);
                 console.log(`[AI DAEMON] NPC Response Generated: "${response}"`);
 
                 // Write response to Room DNA
