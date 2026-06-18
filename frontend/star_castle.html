@@ -742,84 +742,7 @@
             const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
             const speed = Math.hypot(ship.vx, ship.vy);
             
-            // 1. Gather all inputs (Gamepad, Keyboard, Mouse) to support cooperative blending
-            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-            let gp = null;
-            for (let i = 0; i < gamepads.length; i++) {
-                if (gamepads[i]) {
-                    gp = gamepads[i];
-                    break;
-                }
-            }
-            
-            // Keyboard flags
-            let kbTurnLeft = keys["KeyA"] || keys["ArrowLeft"];
-            let kbTurnRight = keys["KeyD"] || keys["ArrowRight"];
-            let kbThrust = keys["KeyW"] || keys["ArrowUp"];
-            let kbShoot = keys["Space"] || keys["KeyJ"];
-            if (kbShoot) {
-                keys["Space"] = false;
-                keys["KeyJ"] = false;
-            }
-            
-            // Gamepad flags
-            let gpTurnLeft = false;
-            let gpTurnRight = false;
-            let gpThrust = false;
-            let gpShoot = false;
-            let gpAnalogSteer = false;
-            let gpAnalogSteerAngle = 0;
-            let gpStickTurnSpeed = 0;
-            
-            if (gp) {
-                // Left stick horizontal for fine analog steering
-                const lsX = gp.axes[0];
-                if (Math.abs(lsX) > 0.15) {
-                    gpStickTurnSpeed = lsX * ship.rotSpeed;
-                    gpAnalogSteer = true;
-                }
-                
-                // D-pad Left/Right
-                if (gp.buttons[14] && gp.buttons[14].pressed) gpTurnLeft = true;
-                if (gp.buttons[15] && gp.buttons[15].pressed) gpTurnRight = true;
-                
-                // Right stick for direct point-to-aim
-                const rsX = gp.axes[2];
-                const rsY = gp.axes[3];
-                if (Math.hypot(rsX, rsY) > 0.25) {
-                    gpAnalogSteerAngle = Math.atan2(rsY, rsX);
-                    gpAnalogSteer = true;
-                }
-                
-                // Thrust triggers / buttons
-                const buttonA = gp.buttons[0] && gp.buttons[0].pressed;
-                const triggerRT = gp.buttons[7] && gp.buttons[7].pressed;
-                const dpadUp = gp.buttons[12] && gp.buttons[12].pressed;
-                const lsY = gp.axes[1];
-                if (buttonA || triggerRT || dpadUp || lsY < -0.25) {
-                    gpThrust = true;
-                }
-                
-                // Shoot buttons
-                const buttonX = gp.buttons[2] && gp.buttons[2].pressed;
-                const bumperRB = gp.buttons[5] && gp.buttons[5].pressed;
-                const triggerLT = gp.buttons[6] && gp.buttons[6].pressed;
-                const buttonY = gp.buttons[3] && gp.buttons[3].pressed;
-                if (buttonX || bumperRB || triggerLT || buttonY) {
-                    gpShoot = true;
-                }
-            }
-            
-            // Mouse flags
-            let mouseThrust = rightMousePressed;
-            let mouseShoot = mousePressed;
-            
-            // Determine active overrides
-            const isUserSteering = kbTurnLeft || kbTurnRight || gpTurnLeft || gpTurnRight || gpAnalogSteer || mouseActive;
-            const isUserThrusting = kbThrust || gpThrust || mouseThrust;
-            const isUserShooting = kbShoot || gpShoot || mouseShoot;
-            
-            // 2. Compute AI's vector field forces for steering and evasive dodging
+            // 1. Compute AI's vector field forces for steering and evasive dodging
             let orbitRadius = 220 + Math.sin(Date.now() * 0.0008) * 15;
             
             // Tangential base vector
@@ -906,78 +829,41 @@
             // Calculate final AI target steering direction
             let aiTargetAngle = Math.atan2(fy, fx);
             
-            // 3. Resolve Cooperative Steering (Blending AI with human steering overrides)
-            let finalTargetAngle = aiTargetAngle;
-            let manualAngleOverride = false;
+            // Rotate ship towards computed steering target
+            let diff = aiTargetAngle - ship.angle;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
             
-            if (isUserSteering) {
-                if (mouseActive) {
-                    finalTargetAngle = Math.atan2(mouseY - ship.y, mouseX - ship.x);
-                    manualAngleOverride = true;
-                } else if (gp && Math.hypot(gp.axes[2], gp.axes[3]) > 0.25) {
-                    finalTargetAngle = gpAnalogSteerAngle;
-                    manualAngleOverride = true;
-                } else if (gp && Math.abs(gp.axes[0]) > 0.15) {
-                    ship.angle += gpStickTurnSpeed;
-                    manualAngleOverride = true;
-                } else {
-                    if (kbTurnLeft || gpTurnLeft) ship.angle -= ship.rotSpeed;
-                    if (kbTurnRight || gpTurnRight) ship.angle += ship.rotSpeed;
-                    manualAngleOverride = true;
-                }
+            if (Math.abs(diff) > 0.02) {
+                ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
             }
             
-            // Rotate ship towards computed steering target if not manually overridden by direct rotation offset
-            if (!manualAngleOverride || mouseActive || (gp && Math.hypot(gp.axes[2], gp.axes[3]) > 0.25)) {
-                let diff = finalTargetAngle - ship.angle;
-                while (diff < -Math.PI) diff += Math.PI * 2;
-                while (diff > Math.PI) diff -= Math.PI * 2;
-                
-                if (Math.abs(diff) > 0.02) {
-                    ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
-                }
-            }
-            
-            // 4. Resolve Cooperative Thrust
+            // 2. Resolve Thrust
             let shouldThrust = false;
-            if (isUserThrusting) {
-                shouldThrust = true;
-            } else {
-                const forceMag = Math.hypot(fx, fy);
-                let diff = aiTargetAngle - ship.angle;
-                while (diff < -Math.PI) diff += Math.PI * 2;
-                while (diff > Math.PI) diff -= Math.PI * 2;
-                
-                shouldThrust = (forceMag > 0.6) && (Math.abs(diff) < 0.6);
-            }
+            const forceMag = Math.hypot(fx, fy);
+            let diffThrust = aiTargetAngle - ship.angle;
+            while (diffThrust < -Math.PI) diffThrust += Math.PI * 2;
+            while (diffThrust > Math.PI) diffThrust -= Math.PI * 2;
+            
+            shouldThrust = (forceMag > 0.6) && (Math.abs(diffThrust) < 0.6);
             
             if (shouldThrust) {
                 ship.vx += Math.cos(ship.angle) * ship.speed;
                 ship.vy += Math.sin(ship.angle) * ship.speed;
-                thrusting = true;
             }
             
-            // 5. Resolve Cooperative Firing
-            let shouldShoot = false;
-            if (isUserShooting) {
-                shouldShoot = true;
-            } else {
-                let targetAngleToShoot = angleToCenter;
-                if (mouseActive) {
-                    targetAngleToShoot = Math.atan2(mouseY - ship.y, mouseX - ship.x);
-                }
-                
-                let angleDiffTarget = targetAngleToShoot - ship.angle;
-                while (angleDiffTarget < -Math.PI) angleDiffTarget += Math.PI * 2;
-                while (angleDiffTarget > Math.PI) angleDiffTarget -= Math.PI * 2;
-                
-                const fireProbability = mineNearby ? 0.65 : 0.28;
-                shouldShoot = (Math.abs(angleDiffTarget) < 0.22) && (Math.random() < fireProbability);
-            }
+            // 3. Resolve Firing (target the core center or nearby mines)
+            let targetAngleToShoot = angleToCenter;
+            let angleDiffTarget = targetAngleToShoot - ship.angle;
+            while (angleDiffTarget < -Math.PI) angleDiffTarget += Math.PI * 2;
+            while (angleDiffTarget > Math.PI) angleDiffTarget -= Math.PI * 2;
             
-            if (shouldShoot) {
+            const fireProbability = mineNearby ? 0.65 : 0.28;
+            if ((Math.abs(angleDiffTarget) < 0.22) && (Math.random() < fireProbability)) {
                 fireLaser();
             }
+            
+            return shouldThrust;
         }
 
         function update() {
@@ -986,7 +872,7 @@
             let thrusting = false;
 
             if (aiMode) {
-                runAiLogic();
+                thrusting = runAiLogic();
             } else {
                 // Handle Keyboard Input
                 let turnLeft = keys["KeyA"] || keys["ArrowLeft"];
