@@ -587,6 +587,8 @@
         // AI Mode toggle state
         let aiMode = false;
         let aiOrbitClockwise = true;
+        const aiHistory = [];
+        const maxAiHistory = 15;
 
         function toggleAiMode() {
             aiMode = !aiMode;
@@ -606,75 +608,142 @@
         function runAiLogic() {
             const targetX = size / 2;
             const targetY = size / 2;
-            const dist = Math.hypot(ship.x - targetX, ship.y - targetY);
             
-            // 1. Orbit Control: Maintain a clean orbital radius of 200px
-            const desiredRadius = 200;
+            let pullFx = 0;
+            let pullFy = 0;
+            let pushFx = 0;
+            let pushFy = 0;
+            
+            // 1. Attractors: Maintain orbit radius and move tangentially
+            const dist = Math.hypot(ship.x - targetX, ship.y - targetY);
             const angleToCenter = Math.atan2(targetY - ship.y, targetX - ship.x);
             
-            // Handle laser threat - reverse orbit direction or thrust radially out
-            const shipAngle = Math.atan2(ship.y - size/2, ship.x - size/2);
-            if (laser.active || laser.charge > 0) {
-                let laserDiff = shipAngle - laser.angle;
-                while (laserDiff < -Math.PI) laserDiff += Math.PI * 2;
-                while (laserDiff > Math.PI) laserDiff -= Math.PI * 2;
-                
-                if (Math.abs(laserDiff) < 0.65) {
-                    // Urgent laser evasion: thrust radially outwards to escape the sweep line
-                    ship.vx += Math.cos(shipAngle) * ship.speed * 1.5;
-                    ship.vy += Math.sin(shipAngle) * ship.speed * 1.5;
+            const desiredRadius = 200;
+            const orbitTargetX = targetX - Math.cos(angleToCenter) * desiredRadius;
+            const orbitTargetY = targetY - Math.sin(angleToCenter) * desiredRadius;
+            
+            // Pull towards the desired orbital radius
+            const orbitPullX = orbitTargetX - ship.x;
+            const orbitPullY = orbitTargetY - ship.y;
+            const distToOrbit = Math.hypot(orbitPullX, orbitPullY);
+            if (distToOrbit > 0) {
+                pullFx += (orbitPullX / distToOrbit) * 1.3;
+                pullFy += (orbitPullY / distToOrbit) * 1.3;
+            }
+            
+            // Tangential pull along the orbit (moves ship clockwise or counter-clockwise)
+            const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
+            pullFx += Math.cos(tangentAngle) * 2.2;
+            pullFy += Math.sin(tangentAngle) * 2.2;
+            
+            // 2. Repellers: Castle Bullets (push away from trajectory)
+            castleBullets.forEach(cb => {
+                const dx = ship.x - cb.x;
+                const dy = ship.y - cb.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 110 && d > 0) {
+                    const force = 350 / (d * d);
+                    pushFx += (dx / d) * force;
+                    pushFy += (dy / d) * force;
+                }
+            });
+            
+            // Repellers: Homing & Serpentine Mines
+            mines.forEach(m => {
+                const dx = ship.x - m.x;
+                const dy = ship.y - m.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 130 && d > 0) {
+                    const force = 500 / (d * d);
+                    pushFx += (dx / d) * force;
+                    pushFy += (dy / d) * force;
+                }
+            });
+            
+            // Repellers: Active Shield Rings (prevents crashing into rings)
+            rings.forEach(ring => {
+                const d = Math.abs(dist - ring.radius);
+                if (d < 35) {
+                    let angle = Math.atan2(ship.y - targetY, ship.x - targetX);
+                    if (angle < 0) angle += Math.PI * 2;
+                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    let relAngle = angle - currentRot;
+                    if (relAngle < 0) relAngle += Math.PI * 2;
+                    const totalSegments = ring.segments.length;
+                    const segIdx = Math.floor((relAngle / (Math.PI * 2)) * totalSegments) % totalSegments;
                     
-                    // Periodically toggle orbit direction to outrun the tracking laser
-                    if (Math.abs(laserDiff) < 0.35 && Math.random() < 0.05) {
+                    if (ring.segments[segIdx] === 1) {
+                        // Push away radially depending on whether ship is inside or outside
+                        const pushDir = dist > ring.radius ? 1 : -1;
+                        const force = 8.0 / (d + 2);
+                        pushFx += Math.cos(angle) * pushDir * force;
+                        pushFy += Math.sin(angle) * pushDir * force;
+                    }
+                }
+            });
+            
+            // Repeller: Laser warning / active laser beam
+            if (laser.active || laser.charge > 0) {
+                const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
+                let angleDiff = shipAngle - laser.angle;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                
+                if (Math.abs(angleDiff) < 0.6) {
+                    // Push perpendicular to the laser ray line
+                    const perpAngle = laser.angle + (Math.PI / 2) * Math.sign(angleDiff);
+                    const force = 4.5 / (Math.abs(angleDiff) + 0.12);
+                    pushFx += Math.cos(perpAngle) * force;
+                    pushFy += Math.sin(perpAngle) * force;
+                    
+                    // Periodically reverse orbit direction if trapped
+                    if (Math.abs(angleDiff) < 0.35 && Math.random() < 0.05) {
                         aiOrbitClockwise = !aiOrbitClockwise;
                     }
                 }
             }
-
-            // Calculate tangent direction (clockwise or counter-clockwise orbit)
-            const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
             
-            // Combine tangential velocity with radial correction velocity
-            const radialCorrection = (dist - desiredRadius) * 0.05; // Proportional feedback
-            const desiredVx = Math.cos(tangentAngle) * 3 + Math.cos(angleToCenter) * radialCorrection;
-            const desiredVy = Math.sin(tangentAngle) * 3 + Math.sin(angleToCenter) * radialCorrection;
+            // Repellers: Visited Path History (Tabu decaying repeller nodes)
+            aiHistory.forEach((hist, index) => {
+                const dx = ship.x - hist.x;
+                const dy = ship.y - hist.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 60 && d > 0) {
+                    const weight = (index + 1) / aiHistory.length; // newer nodes repel more
+                    const force = (1.8 * weight) / (d + 2);
+                    pushFx += (dx / d) * force;
+                    pushFy += (dy / d) * force;
+                }
+            });
             
-            // Smoothly adjust ship velocities towards desired values
-            ship.vx += (desiredVx - ship.vx) * 0.1;
-            ship.vy += (desiredVy - ship.vy) * 0.1;
-
-            // 2. Targeting Core & Aim Control
-            const angleToTarget = Math.atan2(targetY - ship.y, targetX - ship.x);
-            let angleDiff = angleToTarget - ship.angle;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            // Compile forces
+            const netFx = pullFx + pushFx;
+            const netFy = pullFy + pushFy;
             
-            if (Math.abs(angleDiff) > 0.02) {
-                ship.angle += Math.sign(angleDiff) * ship.rotSpeed;
+            // Apply steering forces to ship velocity
+            ship.vx += netFx * ship.speed * 0.45;
+            ship.vy += netFy * ship.speed * 0.45;
+            
+            // Add current coordinates to decaying history buffer
+            aiHistory.push({ x: ship.x, y: ship.y });
+            if (aiHistory.length > maxAiHistory) {
+                aiHistory.shift();
             }
-
-            // 3. Bullet & Homing Mine Evasion System
-            castleBullets.forEach(cb => {
-                const distToBullet = Math.hypot(cb.x - ship.x, cb.y - ship.y);
-                if (distToBullet < 70) {
-                    // Thrust away from bullet path radially
-                    const angleFromBullet = Math.atan2(ship.y - cb.y, ship.x - cb.x);
-                    ship.vx += Math.cos(angleFromBullet) * ship.speed * 0.8;
-                    ship.vy += Math.sin(angleFromBullet) * ship.speed * 0.8;
-                }
-            });
-            mines.forEach(m => {
-                const distToMine = Math.hypot(m.x - ship.x, m.y - ship.y);
-                if (distToMine < 80) {
-                    // Thrust away from homing mine radially
-                    const angleFromMine = Math.atan2(ship.y - m.y, ship.x - m.x);
-                    ship.vx += Math.cos(angleFromMine) * ship.speed * 0.9;
-                    ship.vy += Math.sin(angleFromMine) * ship.speed * 0.9;
-                }
-            });
-
-            // 4. Smart Firing Logic: Fire when reasonably aligned
-            if (Math.abs(angleDiff) < 0.15 && Math.random() < 0.25) {
+            
+            // Facing and Aim Control: Keep ship facing target center
+            const angleToTarget = Math.atan2(targetY - ship.y, targetX - ship.x);
+            let angleDiffFacing = angleToTarget - ship.angle;
+            while (angleDiffFacing < -Math.PI) angleDiffFacing += Math.PI * 2;
+            while (angleDiffFacing > Math.PI) angleDiffFacing -= Math.PI * 2;
+            if (Math.abs(angleDiffFacing) > 0.02) {
+                ship.angle += Math.sign(angleDiffFacing) * ship.rotSpeed;
+            }
+            
+            // Save forces for visualization overlay
+            ship.aiForces = { pullX: pullFx, pullY: pullFy, pushX: pushFx, pushY: pushFy };
+            
+            // Smart Firing Logic: Fire when reasonably aligned
+            if (Math.abs(angleDiffFacing) < 0.15 && Math.random() < 0.25) {
                 fireLaser();
             }
         }
@@ -1129,6 +1198,29 @@
             // Draw game elements
             drawCastle();
             drawShip();
+
+            // Draw AI vector field planning overlay (vector graphics style)
+            if (aiMode && ship.aiForces) {
+                const startX = ship.x;
+                const startY = ship.y;
+                
+                // Draw Attractor pull (blue arrow/line)
+                const pullLen = 15;
+                const px = startX + ship.aiForces.pullX * pullLen;
+                const py = startY + ship.aiForces.pullY * pullLen;
+                drawVectorLine(startX, startY, px, py, "#00a2ff", 3);
+                
+                // Draw Repeller push (red arrow/line)
+                const pushLen = 15;
+                const rx = startX + ship.aiForces.pushX * pushLen;
+                const ry = startY + ship.aiForces.pushY * pushLen;
+                drawVectorLine(startX, startY, rx, ry, "#ff3300", 3);
+                
+                // Draw Net Force (green arrow/line)
+                const netX = startX + (ship.aiForces.pullX + ship.aiForces.pushX) * pullLen;
+                const netY = startY + (ship.aiForces.pullY + ship.aiForces.pushY) * pullLen;
+                drawVectorLine(startX, startY, netX, netY, "#00ff66", 5);
+            }
 
             // Draw player bullets (green glow)
             bullets.forEach(b => {
