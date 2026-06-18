@@ -456,6 +456,7 @@
         let score = 0;
         let lives = 3;
         let lastBonusLifeMilestone = 0;
+        let shouldClearHazards = false;
 
         const ship = {
             x: size / 2,
@@ -1208,6 +1209,16 @@
                     }
                 }
             }
+
+            // Apply deferred hazard clearing safely outside loops
+            if (shouldClearHazards) {
+                mines.length = 0;
+                castleBullets.length = 0;
+                bullets.length = 0;
+                laser.active = false;
+                laser.charge = 0;
+                shouldClearHazards = false;
+            }
         }
 
         function getShipHitboxRadius() {
@@ -1223,6 +1234,9 @@
             ship.aiForces = null;
             ship.aiState = "thrust";
             aiHistory.length = 0;
+            
+            // Defer hazard clearing to prevent array mutation exceptions during loop iterations
+            shouldClearHazards = true;
         }
 
         function resetCastle() {
