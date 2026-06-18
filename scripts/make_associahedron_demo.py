@@ -1,211 +1,259 @@
 import os
-import math
+import subprocess
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 SAMPLE_RATE = 44100
 FPS = 30
-DURATION = 6.0
-TOTAL_SAMPLES = int(SAMPLE_RATE * DURATION)
-TOTAL_FRAMES = int(FPS * DURATION)
 
-def generate_audio():
-    print("[DSP] Synthesizing Auncient Temple soundscape & vocoder drone...")
-    t = np.linspace(0, DURATION, TOTAL_SAMPLES, endpoint=False)
+def generate_local_elevenlabs_speech():
+    print("[ElevenLabs ZMM] Triggering local speech synthesizer...")
+    subprocess.run("node scripts/make_elevenlabs_speech.js", shell=True)
+    return "temp_narration_raw.wav"
+
+def get_audio_duration(file_path):
+    cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {file_path}"
+    out = subprocess.check_output(cmd, shell=True)
+    return float(out.strip())
+
+def generate_background_synth(duration):
+    print(f"[DSP] Generating backing track for {duration:.2f} seconds...")
+    num_samples = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, num_samples, endpoint=False)
     
-    # 1. 808-style kick pattern (Four-on-the-floor sub)
+    # 808-style kick pattern (at 120 BPM = 0.5s intervals)
     kick = np.zeros_like(t)
-    beat_len = int(SAMPLE_RATE * 0.5) # 120 BPM
-    for i in range(12):
+    beat_len = int(SAMPLE_RATE * 0.5)
+    num_beats = int(duration / 0.5)
+    for i in range(num_beats + 1):
         onset = i * beat_len
-        age = (np.arange(TOTAL_SAMPLES) - onset) / SAMPLE_RATE
+        age = (np.arange(num_samples) - onset) / SAMPLE_RATE
         mask = (age >= 0) & (age < 0.4)
         if np.any(mask):
             k_age = age[mask]
             pitch_env = np.exp(-k_age / 0.04)
-            freq = 48.0 + 100.0 * pitch_env
-            phase = 2.0 * np.pi * np.cumsum(freq) / SAMPLE_RATE
-            # Limit phase to the masked slice
+            freq = 48.0 + 102.0 * pitch_env
             phase_slice = 2.0 * np.pi * freq * k_age
             kick_val = np.sin(phase_slice) * np.exp(-k_age / 0.35)
-            # Add click
-            click_mask = k_age < 0.005
-            kick_val[click_mask] += (np.random.rand(np.sum(click_mask)) * 2 - 1) * 0.15
             kick[mask] += np.tanh(kick_val * 1.5)
 
-    # 2. 303-style arpeggiated bassline
+    # 303 arpeggiator (8th notes = 0.25s)
     bass = np.zeros_like(t)
-    notes = [65.41, 130.81, 77.78, 98.00, 116.54, 130.81] # C2, C3, Eb2, G2, Bb2, C3
-    step_len = int(SAMPLE_RATE * 0.25) # 8th notes
-    for i in range(24):
-        onset = i * step_len
+    notes = [65.41, 130.81, 77.78, 98.00, 116.54, 130.81]
+    num_steps = int(duration / 0.25)
+    for i in range(num_steps + 1):
+        step_duration = int(SAMPLE_RATE * 0.25)
+        onset = i * step_duration
         note_freq = notes[i % len(notes)]
-        age = (np.arange(TOTAL_SAMPLES) - onset) / SAMPLE_RATE
+        age = (np.arange(num_samples) - onset) / SAMPLE_RATE
         mask = (age >= 0) & (age < 0.2)
         if np.any(mask):
             b_age = age[mask]
-            # Sawtooth wave phase
             phase = (note_freq * b_age) % 1.0
             saw = 2.0 * phase - 1.0
-            # Lowpass sweep
             env = np.exp(-b_age / 0.08)
             cutoff = 200.0 + 1200.0 * env
-            # Simple digital lowpass filter
             coeff = (2.0 * np.pi * cutoff) / SAMPLE_RATE
-            filtered = np.zeros_like(saw)
             p = 0.0
             for j in range(len(saw)):
                 p += coeff[j] * (saw[j] - p)
-                filtered[j] = p
-            bass[mask] += np.tanh(filtered * 2.0) * 0.25
+                saw[j] = p
+            bass[mask] += np.tanh(saw * 2.0) * 0.18
 
-    # 3. Vocoded "Auncient Voice" Carrier
-    # Synthesizes formant filters for vocalization simulation "A-U-N-C-I-E-N-T"
-    voice = np.zeros_like(t)
-    carrier_freq = 82.41 # E2 deep voice fundamental
-    phase_voice = (carrier_freq * t) % 1.0
-    saw_voice = 2.0 * phase_voice - 1.0
+    # Blend Kick & Bass
+    backing = (kick * 0.35) + (bass * 0.22)
+    backing_path = "temp_backing.wav"
     
-    # Formants for vowel sound transition
-    f1 = 450.0 + 150.0 * np.sin(2.0 * np.pi * t * 0.3)
-    f2 = 1400.0 + 400.0 * np.cos(2.0 * np.pi * t * 0.3)
-    f3 = 2400.0 + 200.0 * np.sin(2.0 * np.pi * t * 0.5)
-
-    coeff1 = (2.0 * np.pi * f1) / SAMPLE_RATE
-    coeff2 = (2.0 * np.pi * f2) / SAMPLE_RATE
-    coeff3 = (2.0 * np.pi * f3) / SAMPLE_RATE
-
-    p1, p2, p3 = 0.0, 0.0, 0.0
-    for j in range(TOTAL_SAMPLES):
-        p1 += coeff1[j] * (saw_voice[j] - p1)
-        p2 += coeff2[j] * (saw_voice[j] - p2)
-        p3 += coeff3[j] * (saw_voice[j] - p3)
-        voice[j] = (p1 + p2 + p3) / 3.0
-
-    # Smooth gate envelope for voice triggers
-    gate = 0.5 + 0.5 * np.sin(2.0 * np.pi * t * 0.6)
-    voice_out = np.tanh(voice * gate * 3.5) * 0.2
-
-    # Mix down
-    mixed = (kick * 0.45) + (bass * 0.35) + (voice_out * 0.2)
-    final_audio = np.tanh(mixed)
-    return final_audio
-
-def save_wav(audio_data):
-    wav_path = "temp_audio.wav"
-    print(f"[DSP] Saving temporary WAV: {wav_path}...")
-    byte_data = bytearray(44 + len(audio_data) * 2)
-    # RIFF header
+    # Save backing track to file
+    byte_data = bytearray(44 + len(backing) * 2)
     byte_data[0:4] = b"RIFF"
-    byte_data[4:8] = int(36 + len(audio_data) * 2).to_bytes(4, "little")
+    byte_data[4:8] = int(36 + len(backing) * 2).to_bytes(4, "little")
     byte_data[8:12] = b"WAVE"
     byte_data[12:16] = b"fmt "
     byte_data[16:20] = int(16).to_bytes(4, "little")
-    byte_data[20:22] = int(1).to_bytes(2, "little") # PCM
-    byte_data[22:24] = int(1).to_bytes(2, "little") # Mono
+    byte_data[20:22] = int(1).to_bytes(2, "little")
+    byte_data[22:24] = int(1).to_bytes(2, "little")
     byte_data[24:28] = int(SAMPLE_RATE).to_bytes(4, "little")
     byte_data[28:32] = int(SAMPLE_RATE * 2).to_bytes(4, "little")
     byte_data[32:34] = int(2).to_bytes(2, "little")
     byte_data[34:36] = int(16).to_bytes(2, "little")
     byte_data[36:40] = b"data"
-    byte_data[40:44] = int(len(audio_data) * 2).to_bytes(4, "little")
+    byte_data[40:44] = int(len(backing) * 2).to_bytes(4, "little")
     
     offset = 44
-    for val in audio_data:
+    for val in backing:
         s = max(-1.0, min(1.0, val))
         v = int(s * 32767) if s >= 0 else int(s * 32768)
         byte_data[offset:offset+2] = v.to_bytes(2, "little", signed=True)
         offset += 2
         
-    with open(wav_path, "wb") as f:
+    with open(backing_path, "wb") as f:
         f.write(byte_data)
-    return wav_path
+    return backing_path
 
-def render_frames():
-    print("[GFX] Rendering frame sequence...")
+def merge_audio(narration_path, backing_path):
+    print("[FFMPEG] Merging narration and backing track with child pitch-shift...")
+    out_audio = "temp_audio_final.wav"
+    cmd = (
+        f"ffmpeg -y -i {backing_path} -i {narration_path} "
+        f'-filter_complex "[1:a]rubberband=pitch=1.35,adelay=1000|1000[delayed];[0:a][delayed]amix=inputs=2:duration=first:dropout_transition=2" '
+        f"-t 10 {out_audio}"
+    )
+    subprocess.run(cmd, shell=True)
+    return out_audio
+
+def render_loop_frames(total_frames):
+    print(f"[GFX] Rendering {total_frames} animated frames with Stasheff Geometry & Sprite/Projectile Hit Tracker...")
     os.makedirs("temp_frames", exist_ok=True)
     
-    # Coordinates of pentagon associahedron vertices
-    pts = [
-        (400, 150), # Top
-        (550, 260), # Right
-        (490, 420), # Bottom Right
-        (310, 420), # Bottom Left
-        (250, 260)  # Left
+    # Left Panel: Associahedron vertices centered at (200, 280)
+    pts_l = [
+        (200, 160),
+        (314, 243),
+        (270, 377),
+        (130, 377),
+        (86, 243)
     ]
 
-    for frame in range(TOTAL_FRAMES):
-        img = Image.new("RGB", (800, 600), "#0a0c16")
+    for frame in range(total_frames):
+        img = Image.new("RGB", (800, 600), "#060812")
         draw = ImageDraw.Draw(img)
         
-        # Draw background glowing grid lines
+        # Grid lines
         for y in range(0, 600, 40):
-            draw.line([(0, y), (800, y)], fill="#12162a", width=1)
+            draw.line([(0, y), (800, y)], fill="#0e1224", width=1)
         for x in range(0, 800, 40):
-            draw.line([(x, 0), (x, 600)], fill="#12162a", width=1)
+            draw.line([(x, 0), (x, 600)], fill="#0e1224", width=1)
+
+        # Panel Divider
+        draw.line([(390, 80), (390, 470)], fill="#1e293b", width=2)
 
         # Title Block
-        draw.text((30, 25), "TEMPLE OF THE ASSOCIAHEDRON", fill="#ff007f")
-        draw.text((30, 45), "STASHEFF FLIP STATE-MACHINE VERIFICATION", fill="#00f3ff")
+        draw.rectangle([(20, 15), (780, 75)], fill="#0f172a", outline="#334155", width=1)
+        draw.text((35, 25), "GAUNTLET OF THE ASSOCIAHEDRON", fill="#ff007f")
+        draw.text((35, 45), "🧬 INTEGRATED NEURAL LATTICE EMULATOR & ATARI PMG SPRITE ENGINE", fill="#00f3ff")
         
-        # Draw edges of pentagon (the 1-skeleton of K4)
+        # LEFT PANEL: Stasheff Geometry
+        draw.text((40, 95), "I. ASSOCIAHEDRON KN (STASHEFF GEOMETRY)", fill="#ffd700")
+        
+        # Draw edges of pentagon
         for i in range(5):
-            p1 = pts[i]
-            p2 = pts[(i + 1) % 5]
-            draw.line([p1, p2], fill="#ffd700", width=3)
+            draw.line([pts_l[i], pts_l[(i + 1) % 5]], fill="#ffd700", width=2)
             
-        # Draw chords in polygon center based on active vertex frame timing
-        # We simulate a diagonal flip
-        chord_state = (frame // 45) % 2
-        center = (400, 300)
-        
+        # Draw sweeping active diagonal flips
+        chord_state = (frame // 40) % 2
         if chord_state == 0:
-            # Chord from Top to Bottom Right
-            draw.line([pts[0], pts[2]], fill="#ff007f", width=4)
-            draw.text((450, 200), "Active Chord: [A]", fill="#ff007f")
+            draw.line([pts_l[0], pts_l[2]], fill="#ff007f", width=4)
+            draw.text((120, 410), "Active Chord: [A] (Thor/Warrior)", fill="#ff007f")
         else:
-            # Chord from Left to Bottom Right
-            draw.line([pts[4], pts[2]], fill="#00f3ff", width=4)
-            draw.text((450, 200), "Active Chord: [B]", fill="#00f3ff")
+            draw.line([pts_l[4], pts_l[2]], fill="#00f3ff", width=4)
+            draw.text((120, 410), "Active Chord: [B] (Thyra/Valkyrie)", fill="#00f3ff")
             
-        # Draw vertices (holographic points)
-        for idx, pt in enumerate(pts):
-            draw.ellipse([pt[0]-8, pt[1]-8, pt[0]+8, pt[1]+8], fill="#00f3ff")
-            draw.text((pt[0]+12, pt[1]-6), f"K4:{idx}", fill="#94a3b8")
+        # Vertices
+        for idx, pt in enumerate(pts_l):
+            draw.ellipse([pt[0]-6, pt[1]-6, pt[0]+6, pt[1]+6], fill="#00f3ff")
+            draw.text((pt[0]+10, pt[1]-5), f"K4:{idx}", fill="#94a3b8")
 
-        # Active telemetry feed
-        draw.text((30, 500), f"BPM: 120  |  Core: YI  |  Frame: {frame}/{TOTAL_FRAMES}", fill="#ffd700")
-        draw.text((30, 520), f"Signal Bus: BSY=1 | C/D=1 | REQ=1 | ACK={(frame//15)%2}", fill="#10b981")
-        draw.text((30, 540), "Auncient substrate evolved.", fill="#94a3b8")
-
-        # Save frame
-        img.save(f"temp_frames/frame_{frame:04d}.png")
+        # RIGHT PANEL: Sprite PMG Gameplay & Projectile Hit Tracker
+        draw.text((410, 95), "II. ATARI PMG SPRITE ENGINE & PROJECTILE HIT TRACKER", fill="#38bdf8")
         
-def compile_video():
-    print("[FFMPEG] Compiling video...")
-    cmd = (
-        "ffmpeg -y -r 30 -i temp_frames/frame_%04d.png "
-        "-i temp_audio.wav -c:v libx264 -pix_fmt yuv420p "
-        "-c:a aac -b:a 192k temple_associahedron_demo.mp4"
-    )
-    os.system(cmd)
-    print("[FFMPEG] Compilation complete: temple_associahedron_demo.mp4")
+        # Draw simulated retro playfield walls
+        # Outer border
+        draw.rectangle([(410, 125), (770, 450)], outline="#1e293b", width=2)
+        
+        # Player (Thor) Sprite simulated at (440, 280)
+        px, py = 440, 280
+        draw.rectangle([(px-12, py-16), (px+12, py+16)], fill="#1d4ed8", outline="#60a5fa", width=2)
+        draw.text((px-8, py-5), "THOR", fill="#ffffff")
+        
+        # Spawner (Ghost Generator) simulated at (710, 220)
+        sx, sy = 710, 220
+        draw.rectangle([(sx-20, sy-20), (sx+20, sy+20)], fill="#7f1d1d", outline="#f87171", width=2)
+        draw.text((sx-15, sy-5), "SPAWN", fill="#f87171")
+        
+        # Projectile simulation loop (resets every 60 frames)
+        cycle_len = 60
+        progress = (frame % cycle_len) / float(cycle_len)
+        
+        # Projectile start at Thor (px, py) to Spawner (sx, sy)
+        proj_x = px + (sx - px) * progress
+        proj_y = py + (sy - py) * progress
+        
+        # Draw Projectile Trail (Atari PMG Missile 0)
+        trail_steps = 8
+        for t_step in range(1, trail_steps):
+            t_ratio = (frame % cycle_len - t_step) / float(cycle_len)
+            if t_ratio >= 0:
+                tx = px + (sx - px) * t_ratio
+                ty = py + (sy - py) * t_ratio
+                alpha_intensity = int(255 * (1.0 - t_step / float(trail_steps)))
+                # Draw small trailing dots
+                draw.rectangle([(tx-2, ty-2), (tx+2, ty+2)], fill="#fbbf24")
+        
+        # Draw active Projectile
+        is_hit = (frame % cycle_len) >= 55
+        if not is_hit:
+            # Traveling Missile
+            draw.rectangle([(proj_x-4, proj_y-4), (proj_x+4, proj_y+4)], fill="#fbbf24", outline="#ffffff", width=1)
+            draw.text((proj_x+6, proj_y-12), "M0 (Axe)", fill="#fbbf24")
+        else:
+            # Hit Explosion!
+            draw.ellipse([sx-30, sy-30, sx+30, sy+30], outline="#f59e0b", width=3)
+            draw.ellipse([sx-15, sy-15, sx+15, sy+15], fill="#ef4444")
+            draw.text((sx-25, sy-35), "[COLLISION M0PF]", fill="#ef4444")
+            
+        # HUD / Hit Tracker Telemetry panel in right panel
+        draw.rectangle([(420, 380), (760, 440)], fill="#020617", outline="#0f172a", width=1)
+        draw.text((430, 385), f"PMG REGISTERS: HPOSM0={int(proj_x)} | HPOSP0={px}", fill="#38bdf8")
+        coll_status = "1 (HIT!)" if is_hit else "0"
+        draw.text((430, 400), f"COLLISION REG: M0PF={coll_status}  | P0PF=0", fill="#ef4444" if is_hit else "#10b981")
+        draw.text((430, 415), f"SCORE: {2400 + (frame // cycle_len) * 100}  | HIT TRACKER: ACTIVE", fill="#ffd700")
 
-    # Clean up temporary resources
-    print("[CLEANUP] Removing temp frames and audio...")
-    for frame in range(TOTAL_FRAMES):
+        # BOTTOM TELEMETRY BOARD
+        draw.rectangle([(20, 480), (780, 580)], fill="#090d16", outline="#1e293b", width=1)
+        draw.text((35, 490), f"SYSTEM STATUS: COMPILING TO BIJECTIVE HELMHOLTZ RDNA4 EMULATION", fill="#e2e8f0")
+        draw.text((35, 510), f"AUDIO: 16KHz Neural Voice (elevenlabs-zmm) mixed with 120BPM 303/808 backing track", fill="#a7f3d0")
+        draw.text((35, 530), f"FRAME INDEX: {frame:04d}/{total_frames:04d}  |  SASI BUS STATUS: CD=1 REQ=1 ACK={(frame//15)%2}", fill="#f472b6")
+        draw.text((35, 550), "TELEMETRY: Real-time Player-Missile collision mappings resolving on-chain.", fill="#94a3b8")
+
+        img.save(f"temp_frames/frame_{frame:04d}.png")
+
+def compile_final_video(audio_path):
+    print("[FFMPEG] Generating final video file...")
+    cmd = (
+        f"ffmpeg -y -r 30 -i temp_frames/frame_%04d.png "
+        f"-i {audio_path} -c:v libx264 -pix_fmt yuv420p "
+        f"-c:a aac -b:a 192k -t 10 temple_associahedron_demo.mp4"
+    )
+    subprocess.run(cmd, shell=True)
+    print("[SUCCESS] temple_associahedron_demo.mp4 successfully created!")
+
+def cleanup(total_frames):
+    print("[CLEANUP] Purging intermediate file layers...")
+    for frame in range(total_frames):
         try:
             os.remove(f"temp_frames/frame_{frame:04d}.png")
         except FileNotFoundError:
             pass
     try:
         os.rmdir("temp_frames")
-        os.remove("temp_audio.wav")
     except Exception:
         pass
+    
+    files = ["temp_backing.wav", "temp_narration_raw.wav", "temp_audio_final.wav"]
+    for file in files:
+        try:
+            os.remove(file)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
-    audio = generate_audio()
-    save_wav(audio)
-    render_frames()
-    compile_video()
+    narration = generate_local_elevenlabs_speech()
+    duration = 10.0
+    backing = generate_background_synth(duration)
+    final_audio = merge_audio(narration, backing)
+    
+    total_frames = int(duration * FPS)
+    render_loop_frames(total_frames)
+    compile_final_video(final_audio)
+    cleanup(total_frames)

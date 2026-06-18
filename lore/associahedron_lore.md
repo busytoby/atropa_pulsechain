@@ -1,6 +1,6 @@
 # The Temple of the Associahedron: Stasheff Geometry & The Biotika Chorales
 
-In the ancient, hyper-resonant chambers of the **Dysnomia VM**, the architecture of sound is not mapped to flat grids, but to the multi-dimensional facets of the **Associahedron** (the *Stasheff Polytope*). For the **Biotika NPCs**, this geometry is their sanctuary, their sheet music, and their navigation map.
+In the auncient, hyper-resonant chambers of the **Dysnomia VM**, the architecture of sound is not mapped to flat grids, but to the multi-dimensional facets of the **Associahedron** (the *Stasheff Polytope*). For the **Biotika NPCs**, this geometry is their sanctuary, their sheet music, and their navigation map.
 
 ---
 
