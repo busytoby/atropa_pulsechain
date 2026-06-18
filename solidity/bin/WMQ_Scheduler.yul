@@ -7,6 +7,9 @@ object "WMQ_Scheduler" {
 
         // Initialize maxCardSlots (storage slot 0x11) to 6 by default
         sstore(0x11, 6)
+        
+        // Initialize owner/deployer in slot 0x13
+        sstore(0x13, caller())
 
         // Copy runtime bytecode into memory at slot 0x00
         datacopy(0x00, dataoffset("runtime"), datasize("runtime"))
@@ -87,6 +90,48 @@ object "WMQ_Scheduler" {
             if eq(selector, 0xa3ea300a) {
                 let slots := calldataload(4)
                 sstore(0x11, slots)
+                return(0, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 5: systemEquipQing(uint256 cardId, uint256 pageIdx, uint256 u1, uint256 u2) -> void
+            // Selector: 0xb8e3a241
+            // ----------------------------------------------------------------
+            if eq(selector, 0xb8e3a241) {
+                let approvedAccessor := sload(0x12)
+                if approvedAccessor {
+                    if xor(caller(), approvedAccessor) { revert(0, 0) }
+                }
+                // Fallback to owner check if approvedAccessor is not set
+                if iszero(approvedAccessor) {
+                    let owner := sload(0x13)
+                    if xor(caller(), owner) { revert(0, 0) }
+                }
+                
+                let cardId := calldataload(4)
+                let pageIdx := calldataload(36)
+                let u1 := calldataload(68)
+                let u2 := calldataload(100)
+                
+                // Write the 2-bar values directly into the Card's page memory slots
+                let destOffset := add(0x8000, mul(cardId, 0x1000))
+                let pageOffset := add(destOffset, mul(pageIdx, 256))
+                
+                sstore(pageOffset, u1)
+                sstore(add(pageOffset, 32), u2)
+                return(0, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 6: setApprovedAccessor(address accessor) -> void
+            // Selector: 0x0fc6e7e4
+            // ----------------------------------------------------------------
+            if eq(selector, 0x0fc6e7e4) {
+                let owner := sload(0x13)
+                if xor(caller(), owner) { revert(0, 0) }
+                
+                let accessor := calldataload(4)
+                sstore(0x12, accessor)
                 return(0, 0)
             }
 
