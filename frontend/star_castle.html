@@ -216,6 +216,7 @@
         <div class="btn-group">
             <button class="btn" id="btnStart" onclick="startGame()">Start Game</button>
             <button class="btn" id="btnAiToggle" onclick="toggleAiMode()">AI Mode: Off</button>
+            <button class="btn" id="btnMuteToggle" onclick="toggleMute()">Mute Sound</button>
             <button class="btn" onclick="resetGame()">Reset</button>
         </div>
 
@@ -289,6 +290,7 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let engineOsc = null;
         let engineGain = null;
+        let isMuted = localStorage.getItem("star_castle_muted") === "true";
 
         function initEngineSound() {
             try {
@@ -310,6 +312,7 @@
         }
         
         function playLaserSound() {
+            if (isMuted) return;
             try {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -326,6 +329,7 @@
         }
 
         function playExplodeSound(freq) {
+            if (isMuted) return;
             try {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -657,6 +661,33 @@
             }
         }
 
+        function updateMuteButtonUI() {
+            const btn = document.getElementById("btnMuteToggle");
+            if (!btn) return;
+            if (isMuted) {
+                btn.innerText = "Unmute Sound";
+                btn.style.borderColor = "var(--border)";
+                btn.style.color = "var(--text)";
+                btn.style.boxShadow = "";
+            } else {
+                btn.innerText = "Mute Sound";
+                btn.style.borderColor = "#ff007f";
+                btn.style.color = "#ff007f";
+                btn.style.boxShadow = "0 0 8px rgba(255, 0, 127, 0.2)";
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStorage.setItem("star_castle_muted", isMuted);
+            updateMuteButtonUI();
+            
+            // If muting right now, instantly silence the engine hum
+            if (isMuted && engineGain) {
+                engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
+        }
+
         function synthesizeMutation(type) {
             // First, load from localStorage/variables to ensure sync
             loadHarvestedReagents();
@@ -710,6 +741,7 @@
         }
 
         function playAlchemicalChime() {
+            if (isMuted) return;
             try {
                 if (!audioCtx) return;
                 const now = audioCtx.currentTime;
@@ -1057,7 +1089,7 @@
                 
                 if (engineOsc && engineGain) {
                     const targetFreq = isThrusting ? 150 : 60;
-                    const targetVol = isThrusting ? 0.12 : 0.02;
+                    const targetVol = isMuted ? 0 : (isThrusting ? 0.12 : 0.02);
                     
                     const currentFreq = engineOsc.frequency.value;
                     const nextFreq = currentFreq + (targetFreq - currentFreq) * 0.08;
@@ -1665,6 +1697,9 @@
 
         // Load reagents initially
         loadHarvestedReagents();
+
+        // Update mute toggle UI on load
+        updateMuteButtonUI();
 
         // Start render loop immediately
         loop();
