@@ -261,7 +261,9 @@
         <div class="controls-info">
             <strong>Keyboard:</strong> [A / D] Rotate | [W] Thrust | [SPACE / J] Fire
             <br>
-            <strong>Xbox:</strong> [Left Stick / D-Pad] Rotate | [A / RT] Thrust | [X / RB / LT] Fire
+            <strong>Mouse:</strong> [Cursor] Aim/Steer | [Left Click] Fire | [Right Click] Thrust
+            <br>
+            <strong>Xbox:</strong> [Right Stick] Direct Aim | [Left Stick / D-Pad] Rotate | [A / RT] Thrust | [X / RB / LT] Fire
             <br>
             Destroy the rotating energy shields to strike the central castle core!
         </div>
@@ -506,6 +508,30 @@
             keys[e.code] = false;
         });
 
+        // Mouse state variables
+        let mouseX = size / 2;
+        let mouseY = size / 2;
+        let mousePressed = false;
+        let rightMousePressed = false;
+        let mouseActive = false;
+
+        // Mouse listeners on canvas
+        canvas.addEventListener("mousemove", e => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            mouseActive = true;
+        });
+        canvas.addEventListener("mousedown", e => {
+            if (e.button === 0) mousePressed = true;
+            if (e.button === 2) rightMousePressed = true;
+        });
+        canvas.addEventListener("mouseup", e => {
+            if (e.button === 0) mousePressed = false;
+            if (e.button === 2) rightMousePressed = false;
+        });
+        canvas.addEventListener("contextmenu", e => e.preventDefault());
+
         function fireLaser() {
             if (bullets.length >= 4) return;
             playLaserSound();
@@ -716,110 +742,240 @@
             const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
             const speed = Math.hypot(ship.vx, ship.vy);
             
-            // Calculate base target orbit
-            let targetOrbit = 220 + Math.sin(Date.now() * 0.0008) * 15;
-            
-            // Inflate target orbit based on mine proximity
-            mines.forEach(m => {
-                const d = Math.hypot(ship.x - m.x, ship.y - m.y);
-                if (d < 180 && d > 0) {
-                    targetOrbit += (180 - d) * 0.75;
-                }
-            });
-            
-            // Inflate target orbit based on castle bullet proximity
-            castleBullets.forEach(cb => {
-                const d = Math.hypot(ship.x - cb.x, ship.y - cb.y);
-                if (d < 120 && d > 0) {
-                    targetOrbit += (120 - d) * 0.45;
-                }
-            });
-            
-            // Laser sector check and orbit inflation
-            let laserDiff = 0;
-            let nearLaser = false;
-            if (laser.active || laser.charge > 0) {
-                laserDiff = shipAngle - laser.angle;
-                while (laserDiff < -Math.PI) laserDiff += Math.PI * 2;
-                while (laserDiff > Math.PI) laserDiff -= Math.PI * 2;
-                
-                if (Math.abs(laserDiff) < 0.5) {
-                    nearLaser = true;
-                    targetOrbit += 60; // Push orbit outward
-                    
-                    // Periodically reverse orbit direction if trapped
-                    if (Math.abs(laserDiff) < 0.35 && Math.random() < 0.04) {
-                        aiOrbitClockwise = !aiOrbitClockwise;
-                    }
-                }
-            }
-            
-            // Clamp target orbit to safe radius limits
-            targetOrbit = Math.min(285, Math.max(160, targetOrbit));
-            
-            // Tangential direction
-            const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
-            
-            // Calculate target angle using smooth blending
-            const delta = dist - targetOrbit;
-            let t = (delta + 40) / 80;
-            if (t < 0) t = 0;
-            if (t > 1) t = 1;
-            
-            let angleOffset = 0;
-            if (aiOrbitClockwise) {
-                if (t < 0.5) {
-                    const u = t / 0.5;
-                    angleOffset = 1.92 + (0.22 - 1.92) * u;
-                } else {
-                    const u = (t - 0.5) / 0.5;
-                    angleOffset = 0.22 * (1.5 - 1.5 * u);
-                }
-            } else {
-                if (t < 0.5) {
-                    const u = t / 0.5;
-                    angleOffset = -1.92 + (-0.22 - -1.92) * u;
-                } else {
-                    const u = (t - 0.5) / 0.5;
-                    angleOffset = -0.22 * (1.5 - 1.5 * u);
-                }
-            }
-            
-            const targetAngle = angleToCenter + angleOffset;
-            
-            // Determine thrusting: thrust to escape closeness/farness or keep minimum speed
-            const shouldThrust = (t < 0.45) || (t > 0.55) || (speed < 1.4) || nearLaser;
-            
-            // Rotate ship towards targetAngle
-            let diff = targetAngle - ship.angle;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            
-            if (Math.abs(diff) > 0.02) {
-                ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
-            }
-            
-            // Apply engine thrust
-            if (shouldThrust && Math.abs(diff) < 0.45) {
-                ship.vx += Math.cos(ship.angle) * ship.speed;
-                ship.vy += Math.sin(ship.angle) * ship.speed;
-            }
-            
-            // Smart active defense firing: increase rate if threat is near
-            let mineNearby = false;
-            for (let m of mines) {
-                if (Math.hypot(ship.x - m.x, ship.y - m.y) < 160) {
-                    mineNearby = true;
+            // 1. Gather all inputs (Gamepad, Keyboard, Mouse) to support cooperative blending
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let gp = null;
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i]) {
+                    gp = gamepads[i];
                     break;
                 }
             }
             
-            let angleDiffCenter = angleToCenter - ship.angle;
-            while (angleDiffCenter < -Math.PI) angleDiffCenter += Math.PI * 2;
-            while (angleDiffCenter > Math.PI) angleDiffCenter -= Math.PI * 2;
+            // Keyboard flags
+            let kbTurnLeft = keys["KeyA"] || keys["ArrowLeft"];
+            let kbTurnRight = keys["KeyD"] || keys["ArrowRight"];
+            let kbThrust = keys["KeyW"] || keys["ArrowUp"];
+            let kbShoot = keys["Space"] || keys["KeyJ"];
+            if (kbShoot) {
+                keys["Space"] = false;
+                keys["KeyJ"] = false;
+            }
             
-            const fireProbability = mineNearby ? 0.65 : 0.28;
-            if (Math.abs(angleDiffCenter) < 0.22 && Math.random() < fireProbability) {
+            // Gamepad flags
+            let gpTurnLeft = false;
+            let gpTurnRight = false;
+            let gpThrust = false;
+            let gpShoot = false;
+            let gpAnalogSteer = false;
+            let gpAnalogSteerAngle = 0;
+            let gpStickTurnSpeed = 0;
+            
+            if (gp) {
+                // Left stick horizontal for fine analog steering
+                const lsX = gp.axes[0];
+                if (Math.abs(lsX) > 0.15) {
+                    gpStickTurnSpeed = lsX * ship.rotSpeed;
+                    gpAnalogSteer = true;
+                }
+                
+                // D-pad Left/Right
+                if (gp.buttons[14] && gp.buttons[14].pressed) gpTurnLeft = true;
+                if (gp.buttons[15] && gp.buttons[15].pressed) gpTurnRight = true;
+                
+                // Right stick for direct point-to-aim
+                const rsX = gp.axes[2];
+                const rsY = gp.axes[3];
+                if (Math.hypot(rsX, rsY) > 0.25) {
+                    gpAnalogSteerAngle = Math.atan2(rsY, rsX);
+                    gpAnalogSteer = true;
+                }
+                
+                // Thrust triggers / buttons
+                const buttonA = gp.buttons[0] && gp.buttons[0].pressed;
+                const triggerRT = gp.buttons[7] && gp.buttons[7].pressed;
+                const dpadUp = gp.buttons[12] && gp.buttons[12].pressed;
+                const lsY = gp.axes[1];
+                if (buttonA || triggerRT || dpadUp || lsY < -0.25) {
+                    gpThrust = true;
+                }
+                
+                // Shoot buttons
+                const buttonX = gp.buttons[2] && gp.buttons[2].pressed;
+                const bumperRB = gp.buttons[5] && gp.buttons[5].pressed;
+                const triggerLT = gp.buttons[6] && gp.buttons[6].pressed;
+                const buttonY = gp.buttons[3] && gp.buttons[3].pressed;
+                if (buttonX || bumperRB || triggerLT || buttonY) {
+                    gpShoot = true;
+                }
+            }
+            
+            // Mouse flags
+            let mouseThrust = rightMousePressed;
+            let mouseShoot = mousePressed;
+            
+            // Determine active overrides
+            const isUserSteering = kbTurnLeft || kbTurnRight || gpTurnLeft || gpTurnRight || gpAnalogSteer || mouseActive;
+            const isUserThrusting = kbThrust || gpThrust || mouseThrust;
+            const isUserShooting = kbShoot || gpShoot || mouseShoot;
+            
+            // 2. Compute AI's vector field forces for steering and evasive dodging
+            let orbitRadius = 220 + Math.sin(Date.now() * 0.0008) * 15;
+            
+            // Tangential base vector
+            const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
+            let fx = Math.cos(tangentAngle) * 2.0;
+            let fy = Math.sin(tangentAngle) * 2.0;
+            
+            // Radial correction force
+            const radialDiff = dist - orbitRadius;
+            const radialForce = -radialDiff * 0.08;
+            fx += Math.cos(angleToCenter - Math.PI) * radialForce;
+            fy += Math.sin(angleToCenter - Math.PI) * radialForce;
+            
+            // Homing/magnetic mine avoidance (Potential Field)
+            let mineNearby = false;
+            mines.forEach(m => {
+                const dx = ship.x - m.x;
+                const dy = ship.y - m.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 160 && d > 0) {
+                    mineNearby = true;
+                    const strength = Math.pow((160 - d) / 160, 2) * 5.0;
+                    // Repulsive
+                    fx += (dx / d) * strength;
+                    fy += (dy / d) * strength;
+                    
+                    // Lateral slide around mine
+                    const perpAngle = Math.atan2(dy, dx) + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
+                    fx += Math.cos(perpAngle) * strength * 0.7;
+                    fy += Math.sin(perpAngle) * strength * 0.7;
+                }
+            });
+            
+            // Castle bullets (sparks) avoidance
+            castleBullets.forEach(cb => {
+                const dx = ship.x - cb.x;
+                const dy = ship.y - cb.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 110 && d > 0) {
+                    const strength = Math.pow((110 - d) / 110, 2) * 3.5;
+                    fx += (dx / d) * strength;
+                    fy += (dy / d) * strength;
+                }
+            });
+            
+            // Core Laser avoidance (Very high priority!)
+            if (laser.active || laser.charge > 0) {
+                let diff = shipAngle - laser.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                
+                if (Math.abs(diff) < 0.6) {
+                    const laserDist = Math.abs(diff);
+                    const escapeDirection = Math.sign(diff) === 0 ? (Math.random() < 0.5 ? 1 : -1) : Math.sign(diff);
+                    
+                    // Toggle rotation direction to run away from laser path
+                    if (escapeDirection > 0 && !aiOrbitClockwise) aiOrbitClockwise = true;
+                    if (escapeDirection < 0 && aiOrbitClockwise) aiOrbitClockwise = false;
+                    
+                    const escapeStrength = Math.pow((0.6 - laserDist) / 0.6, 2) * 8.5;
+                    const escapeAngle = shipAngle + (escapeDirection > 0 ? Math.PI / 2 : -Math.PI / 2);
+                    fx += Math.cos(escapeAngle) * escapeStrength;
+                    fy += Math.sin(escapeAngle) * escapeStrength;
+                    
+                    // Outward push
+                    fx += Math.cos(shipAngle) * escapeStrength * 0.5;
+                    fy += Math.sin(shipAngle) * escapeStrength * 0.5;
+                }
+            }
+            
+            // Push out if too close to rings
+            if (dist < 145) {
+                const pushStrength = (145 - dist) * 0.2;
+                fx += Math.cos(shipAngle) * pushStrength;
+                fy += Math.sin(shipAngle) * pushStrength;
+            }
+            
+            // Keep on screen borders
+            if (ship.x < 60) fx += 2.5;
+            if (ship.x > size - 60) fx -= 2.5;
+            if (ship.y < 60) fy += 2.5;
+            if (ship.y > size - 60) fy -= 2.5;
+            
+            // Calculate final AI target steering direction
+            let aiTargetAngle = Math.atan2(fy, fx);
+            
+            // 3. Resolve Cooperative Steering (Blending AI with human steering overrides)
+            let finalTargetAngle = aiTargetAngle;
+            let manualAngleOverride = false;
+            
+            if (isUserSteering) {
+                if (mouseActive) {
+                    finalTargetAngle = Math.atan2(mouseY - ship.y, mouseX - ship.x);
+                    manualAngleOverride = true;
+                } else if (gp && Math.hypot(gp.axes[2], gp.axes[3]) > 0.25) {
+                    finalTargetAngle = gpAnalogSteerAngle;
+                    manualAngleOverride = true;
+                } else if (gp && Math.abs(gp.axes[0]) > 0.15) {
+                    ship.angle += gpStickTurnSpeed;
+                    manualAngleOverride = true;
+                } else {
+                    if (kbTurnLeft || gpTurnLeft) ship.angle -= ship.rotSpeed;
+                    if (kbTurnRight || gpTurnRight) ship.angle += ship.rotSpeed;
+                    manualAngleOverride = true;
+                }
+            }
+            
+            // Rotate ship towards computed steering target if not manually overridden by direct rotation offset
+            if (!manualAngleOverride || mouseActive || (gp && Math.hypot(gp.axes[2], gp.axes[3]) > 0.25)) {
+                let diff = finalTargetAngle - ship.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                
+                if (Math.abs(diff) > 0.02) {
+                    ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
+                }
+            }
+            
+            // 4. Resolve Cooperative Thrust
+            let shouldThrust = false;
+            if (isUserThrusting) {
+                shouldThrust = true;
+            } else {
+                const forceMag = Math.hypot(fx, fy);
+                let diff = aiTargetAngle - ship.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                
+                shouldThrust = (forceMag > 0.6) && (Math.abs(diff) < 0.6);
+            }
+            
+            if (shouldThrust) {
+                ship.vx += Math.cos(ship.angle) * ship.speed;
+                ship.vy += Math.sin(ship.angle) * ship.speed;
+                thrusting = true;
+            }
+            
+            // 5. Resolve Cooperative Firing
+            let shouldShoot = false;
+            if (isUserShooting) {
+                shouldShoot = true;
+            } else {
+                let targetAngleToShoot = angleToCenter;
+                if (mouseActive) {
+                    targetAngleToShoot = Math.atan2(mouseY - ship.y, mouseX - ship.x);
+                }
+                
+                let angleDiffTarget = targetAngleToShoot - ship.angle;
+                while (angleDiffTarget < -Math.PI) angleDiffTarget += Math.PI * 2;
+                while (angleDiffTarget > Math.PI) angleDiffTarget -= Math.PI * 2;
+                
+                const fireProbability = mineNearby ? 0.65 : 0.28;
+                shouldShoot = (Math.abs(angleDiffTarget) < 0.22) && (Math.random() < fireProbability);
+            }
+            
+            if (shouldShoot) {
                 fireLaser();
             }
         }
@@ -890,6 +1046,23 @@
                     } else {
                         lastGamepadShootPressed = false;
                     }
+                }
+
+                // Handle Mouse Input
+                if (mouseActive) {
+                    const mouseTargetAngle = Math.atan2(mouseY - ship.y, mouseX - ship.x);
+                    let diff = mouseTargetAngle - ship.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    if (Math.abs(diff) > 0.02) {
+                        ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
+                    }
+                }
+                if (mousePressed) {
+                    shootLaser = true;
+                }
+                if (rightMousePressed) {
+                    applyThrust = true;
                 }
 
                 // Apply actions
