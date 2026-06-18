@@ -324,8 +324,32 @@ object "WinchesterMQ" {
                         leave
                     }
                     
-                    // Block write finished successfully. Advance queue indices if applicable.
+                    // Block write finished successfully. Determine priority routing.
                     let blockId := getCdbLba()
+                    let cacheKey := keccak256(add(0x1000, blockId), 32)
+                    let word0 := sload(cacheKey)
+                    
+                    // Extract Priority byte (Byte 6 of sector, low byte of high 16-bit word)
+                    let priority := and(shr(200, word0), 0xFF)
+                    
+                    // If high priority (Priority > 4), perform head insertion
+                    if gt(priority, 4) {
+                        let currentHead := sload(14)
+                        let newHead := sub(currentHead, 1)
+                        sstore(14, newHead) // Decrement head pointer
+                        
+                        // Remap block data cache to the new head position
+                        let newHeadKey := keccak256(add(0x1000, newHead), 32)
+                        for { let j := 0 } lt(j, 8) { j := add(j, 1) } {
+                            sstore(add(newHeadKey, j), sload(add(cacheKey, j)))
+                            sstore(add(cacheKey, j), 0) // Clean up old LBA cache slot
+                        }
+                        
+                        transitionToStatus(0x00)
+                        leave
+                    }
+
+                    // Standard priority: advance tail index
                     let currentTail := sload(15)
                     if eq(blockId, currentTail) {
                         sstore(15, add(currentTail, 1)) // Grow queue tail index
