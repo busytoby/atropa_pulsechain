@@ -455,6 +455,9 @@
 
         const bullets = [];
         const castleBullets = [];
+        const mines = [];
+        const laser = { active: false, charge: 0, angle: 0 };
+        let mineSpawnTimer = 0;
 
         // Rings configurations (3 concentric rings with segment gaps)
         const rings = [
@@ -619,7 +622,7 @@
                 ship.angle += Math.sign(angleDiff) * ship.rotSpeed;
             }
 
-            // 3. Bullet Evasion System
+            // 3. Bullet & Homing Mine Evasion System
             castleBullets.forEach(cb => {
                 const distToBullet = Math.hypot(cb.x - ship.x, cb.y - ship.y);
                 if (distToBullet < 70) {
@@ -627,6 +630,15 @@
                     const angleFromBullet = Math.atan2(ship.y - cb.y, ship.x - cb.x);
                     ship.vx += Math.cos(angleFromBullet) * ship.speed * 0.8;
                     ship.vy += Math.sin(angleFromBullet) * ship.speed * 0.8;
+                }
+            });
+            mines.forEach(m => {
+                const distToMine = Math.hypot(m.x - ship.x, m.y - ship.y);
+                if (distToMine < 80) {
+                    // Thrust away from homing mine radially
+                    const angleFromMine = Math.atan2(ship.y - m.y, ship.x - m.x);
+                    ship.vx += Math.cos(angleFromMine) * ship.speed * 0.9;
+                    ship.vy += Math.sin(angleFromMine) * ship.speed * 0.9;
                 }
             });
 
@@ -741,8 +753,25 @@
                     }
                 });
 
+                // Collision with homing mines
+                let hitMine = false;
+                for (let j = mines.length - 1; j >= 0; j--) {
+                    const m = mines[j];
+                    const distToMine = Math.hypot(b.x - m.x, b.y - m.y);
+                    if (distToMine < 14) {
+                        hitMine = true;
+                        mines.splice(j, 1);
+                        playExplodeSound(350);
+                        score += 200;
+                        // Harvest mercury
+                        mercuryHarvested += 1;
+                        saveHarvestedReagents();
+                        break;
+                    }
+                }
+
                 // Check core collision
-                if (!hitRing && distToCenter < 20) {
+                if (!hitRing && !hitMine && distToCenter < 20) {
                     playExplodeSound(600);
                     score += 5000;
                     leadHarvested += 5;
@@ -752,8 +781,99 @@
                     hitRing = true;
                 }
 
-                if (b.life <= 0 || hitRing || b.x < 0 || b.x > size || b.y < 0 || b.y > size) {
+                if (b.life <= 0 || hitRing || hitMine || b.x < 0 || b.x > size || b.y < 0 || b.y > size) {
                     bullets.splice(i, 1);
+                }
+            }
+
+            // Spawn homing mines
+            mineSpawnTimer++;
+            const currentMineSpawnDelay = Math.max(100, 240 - Math.floor(score / 2000) * 20);
+            if (mineSpawnTimer > currentMineSpawnDelay) {
+                mineSpawnTimer = 0;
+                mines.push({
+                    x: size / 2,
+                    y: size / 2,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: 1.8 + Math.min(1.5, (score / 15000) * 0.5)
+                });
+            }
+
+            // Update homing mines
+            for (let i = mines.length - 1; i >= 0; i--) {
+                const m = mines[i];
+                const angle = Math.atan2(ship.y - m.y, ship.x - m.x);
+                m.x += Math.cos(angle) * m.speed;
+                m.y += Math.sin(angle) * m.speed;
+                m.angle += 0.1;
+
+                // Collision with player ship
+                const distToShip = Math.hypot(m.x - ship.x, m.y - ship.y);
+                if (distToShip < ship.radius + 6) {
+                    playExplodeSound(100);
+                    lives--;
+                    resetShip();
+                    mines.splice(i, 1);
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                    continue;
+                }
+            }
+
+            // Core Laser path checking & execution
+            const angleToShip = Math.atan2(ship.y - size/2, ship.x - size/2);
+            
+            function isPathOpen(angle) {
+                let open = true;
+                rings.forEach(ring => {
+                    const totalSegments = ring.segments.length;
+                    const segAngle = (Math.PI * 2) / totalSegments;
+                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    let relAngle = angle - currentRot;
+                    while (relAngle < 0) relAngle += Math.PI * 2;
+                    while (relAngle >= Math.PI * 2) relAngle -= Math.PI * 2;
+                    const segIdx = Math.floor(relAngle / segAngle) % totalSegments;
+                    if (ring.segments[segIdx] === 1) {
+                        open = false;
+                    }
+                });
+                return open;
+            }
+
+            if (!laser.active) {
+                if (isPathOpen(angleToShip)) {
+                    laser.charge++;
+                    laser.angle = angleToShip;
+                    if (laser.charge >= 50) {
+                        laser.active = true;
+                        laser.charge = 0;
+                        playExplodeSound(500); // laser sound
+                    }
+                } else {
+                    if (laser.charge > 0) laser.charge--;
+                }
+            } else {
+                laser.charge++;
+                if (laser.charge < 25) {
+                    // Laser active: check collision with player ship
+                    const shipAngle = Math.atan2(ship.y - size/2, ship.x - size/2);
+                    let diff = Math.abs(shipAngle - laser.angle);
+                    while (diff > Math.PI) diff = Math.PI * 2 - diff;
+                    
+                    if (diff < 0.06) {
+                        playExplodeSound(100);
+                        lives--;
+                        resetShip();
+                        laser.active = false;
+                        laser.charge = 0;
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                } else {
+                    laser.active = false;
+                    laser.charge = 0;
                 }
             }
 
@@ -873,6 +993,60 @@
                 drawVectorLine(cb.x, cb.y, cb.x - cb.vx * 1.5, cb.y - cb.vy * 1.5, "#ff0055", 6);
             });
 
+            // Draw homing mines
+            mines.forEach(m => {
+                ctx.strokeStyle = "#ff5500";
+                ctx.shadowColor = "#ff5500";
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                // Draw rotating diamond
+                for (let i = 0; i < 4; i++) {
+                    const a = m.angle + (i * Math.PI / 2);
+                    const r = (i % 2 === 0) ? 8 : 4;
+                    const px = m.x + Math.cos(a) * r;
+                    const py = m.y + Math.sin(a) * r;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            });
+
+            // Draw Laser Warning / Fire
+            if (laser.active) {
+                const lx = size/2 + Math.cos(laser.angle) * size;
+                const ly = size/2 + Math.sin(laser.angle) * size;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = "#ff3300";
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 10;
+                ctx.beginPath();
+                ctx.moveTo(size/2, size/2);
+                ctx.lineTo(lx, ly);
+                ctx.stroke();
+                
+                ctx.strokeStyle = "#ff3300";
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            } else if (laser.charge > 0) {
+                // Warning indicator: pulsating red line
+                const lx = size/2 + Math.cos(laser.angle) * size;
+                const ly = size/2 + Math.sin(laser.angle) * size;
+                const alpha = (Math.sin(Date.now() * 0.05) + 1) / 2;
+                ctx.strokeStyle = `rgba(255, 50, 0, ${alpha})`;
+                ctx.shadowColor = "#ff3300";
+                ctx.shadowBlur = 8;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(size/2, size/2);
+                ctx.lineTo(lx, ly);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.shadowBlur = 0;
+            }
+
             // HUD Score & Lives top text (vector styled)
             ctx.font = "14px Orbitron";
             ctx.fillStyle = shipColor;
@@ -907,6 +1081,12 @@
             gameActive = true;
             resetShip();
             resetCastle();
+            bullets.length = 0;
+            castleBullets.length = 0;
+            mines.length = 0;
+            laser.active = false;
+            laser.charge = 0;
+            mineSpawnTimer = 0;
             loadHarvestedReagents();
             document.getElementById("btnStart").innerText = "Resume Game";
         }
@@ -920,6 +1100,11 @@
             }
             resetShip();
             resetCastle();
+            bullets.length = 0;
+            castleBullets.length = 0;
+            mines.length = 0;
+            laser.active = false;
+            laser.charge = 0;
             leadHarvested = 0;
             mercuryHarvested = 0;
             sulfurHarvested = 0;
@@ -932,6 +1117,11 @@
             if (engineGain) {
                 engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
             }
+            bullets.length = 0;
+            castleBullets.length = 0;
+            mines.length = 0;
+            laser.active = false;
+            laser.charge = 0;
             saveHarvestedReagents();
             alert(`GAME OVER! Final Score: ${score}\nLead Harvested: ${leadHarvested}\nMercury Harvested: ${mercuryHarvested}\nSulfur Harvested: ${sulfurHarvested}`);
             resetGame();
