@@ -175,11 +175,11 @@ object "Unix1Utils" {
                 return(0x00, 0x20)
             }
 
-            // 0x70730000: ps() -> returns PCB status array (IP, SP, status, idle) for all 52 process cards
+            // 0x70730000: ps() -> returns PCB status array (IP, SP, status, idle) for all 6 process cards
             case 0x70730000 {
                 let ptr := mload(0x40)
                 
-                for { let card := 0 } lt(card, 52) { card := add(card, 1) } {
+                for { let card := 0 } lt(card, 6) { card := add(card, 1) } {
                     // Calculate PCB base offset matching WMQ_Scheduler layout: 0x6000 + card * 16
                     let pcbBase := add(0x6000, mul(card, 16))
                     
@@ -196,7 +196,7 @@ object "Unix1Utils" {
                     mstore(add(ptr, add(cardOffset, 96)), idle)
                 }
                 
-                return(ptr, mul(52, 128))
+                return(ptr, mul(6, 128))
             }
             
             default {
