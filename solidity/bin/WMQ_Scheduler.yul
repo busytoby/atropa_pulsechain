@@ -93,8 +93,38 @@ object "WMQ_Scheduler" {
                 let y := sload(add(pcbBase, 4))
                 let sr := sload(add(pcbBase, 5))
 
+                // Check if we need to inject a WinchesterMQ hardware interrupt (IRQ)
+                // If Inbox queue has pending messages, force vector jump
+                let mqHead := sload(add(0x2000, nextCard))
+                let mqTail := sload(add(0x2050, nextCard))
+                if lt(mqHead, mqTail) {
+                    // Check if CPU interrupts are not disabled in SR (6502 Interrupt Disable flag is Bit 2)
+                    let interruptDisable := and(sr, 0x04)
+                    if iszero(interruptDisable) {
+                        // 1. Push PC (ip) High and Low to stack (represented in memory at $0100 + SP)
+                        // SP decrements by 2
+                        let stackPage := 0x0100
+                        sstore(add(stackPage, sp), shr(8, and(ip, 0xFF00)))
+                        sp := sub(sp, 1)
+                        sstore(add(stackPage, sp), and(ip, 0x00FF))
+                        sp := sub(sp, 1)
+
+                        // 2. Push Status Register (sr) to stack
+                        sstore(add(stackPage, sp), sr)
+                        sp := sub(sp, 1)
+
+                        // 3. Force IP to point to the IRQ entry point (configured at $FFFE-$FFFF vector value)
+                        // For our thunk environment, the IRQ entry handler address defaults to $FF00
+                        let irqVector := sload(0xFFFE)
+                        if iszero(irqVector) { irqVector := 0xFF00 } // fallback
+                        ip := irqVector
+
+                        // 4. Set Interrupt Disable flag in SR to prevent nested IRQs
+                        sr := or(sr, 0x04)
+                    }
+                }
+
                 // Simulate execution slice inside the ZMM Guest Emulator thunk
-                // Note: In runtime, the host maps active execution registers into memory
                 let exitReason, steps := executeGuestVmSlice(nextCard, ip, sp, a, x, y, sr, stepLimit)
                 executedSteps := steps
 
