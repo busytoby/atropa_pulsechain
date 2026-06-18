@@ -10,10 +10,34 @@ const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 const mcpBinary = path.join(__dirname, "../tsfi2-deepseek/bin/tsfi_mcp_server");
 const mcpCwd = path.join(__dirname, "../tsfi2-deepseek");
 
+// Load stored private keys from config for VM startup
+let defaultPkiKey = "";
+try {
+    if (fs.existsSync(CONFIG_PATH)) {
+        const configData = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+        if (configData.default && configData.default.keys && configData.default.keys.length > 0) {
+            defaultPkiKey = configData.default.keys[0];
+        } else if (configData.saved_keys) {
+            const keys = Object.values(configData.saved_keys)[0];
+            if (Array.isArray(keys) && keys.length > 0) {
+                defaultPkiKey = keys[0];
+            } else if (keys && Array.isArray(keys.privateKeys) && keys.privateKeys.length > 0) {
+                defaultPkiKey = keys.privateKeys[0];
+            }
+        }
+    }
+} catch (e) {
+    console.error("[SERVER] Failed to load default PKI key from config:", e.message);
+}
+
 console.log(`[SERVER] Spawning native ZMM VM MCP server: ${mcpBinary}`);
 const mcpProcess = spawn(mcpBinary, [], {
     cwd: mcpCwd,
-    stdio: "inherit"
+    stdio: "inherit",
+    env: {
+        ...process.env,
+        TSFI_DEFAULT_PKI_KEY: defaultPkiKey
+    }
 });
 
 mcpProcess.on("error", err => {
@@ -411,7 +435,7 @@ const MIME_TYPES = {
     ".svg": "image/svg+xml"
 };
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     // Enable CORS for all requests
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -982,6 +1006,280 @@ const server = http.createServer((req, res) => {
                 res.end(JSON.stringify({ error: err.message }));
             }
         });
+        return;
+    }
+
+    // In-memory store for validator wallets generated during init
+    if (!global.validatorWallets) {
+        global.validatorWallets = [];
+    }
+
+    // POST /api/arena/init
+    if (req.url === "/api/arena/init" && req.method === "POST") {
+        try {
+            const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+            const arenaAddr = config.networks.localhost.arenaProcessorAddress;
+            const pkiAddr = config.networks.localhost.consensusPkiAddress;
+            
+            if (!arenaAddr || !pkiAddr) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "ArenaProcessor or ConsensusPKI not deployed" }));
+                return;
+            }
+            
+            const { ethers } = require("ethers");
+            const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const deployer = await provider.getSigner();
+            
+            // 1. Load 11 validator wallets from stored private keys in config
+            global.validatorWallets = [];
+            const validatorAddresses = [];
+            const pk11Addr = "0xb0279Db6a2F1E01fbC8483FCCef0Be2bC6299cC3";
+            const storedKeys = (config.saved_keys && config.saved_keys[pk11Addr]) || (config.default && config.default.keys) || [];
+            
+            for (let i = 0; i < 11; i++) {
+                let wallet;
+                if (storedKeys[i]) {
+                    wallet = new ethers.Wallet(storedKeys[i], provider);
+                } else {
+                    wallet = ethers.Wallet.createRandom().connect(provider);
+                }
+                global.validatorWallets.push(wallet);
+                validatorAddresses.push(wallet.address);
+            }
+            
+            // 2. Initialize ConsensusPKI validators
+            const pkiContract = new ethers.Contract(pkiAddr, [
+                "function initializeValidatorKeys(address[11] keys) external"
+            ], deployer);
+            
+            const txInit = await pkiContract.initializeValidatorKeys(validatorAddresses);
+            await txInit.wait();
+            
+            // 3. Register 5 players (Card 0, 1, 2, 3, 4)
+            const arenaContract = new ethers.Contract(arenaAddr, [
+                "function registerPlayerYue(uint256 yueCardId) external",
+                "function processBatch(uint256 batchSize) external"
+            ], deployer);
+            
+            // Clear total players in slot 0x200
+            await provider.send("anvil_setStorageAt", [arenaAddr, ethers.zeroPadValue(ethers.toBeHex(0x200), 32), ethers.zeroPadValue("0x00", 32)]);
+            
+            for (let i = 0; i < 5; i++) {
+                const txReg = await arenaContract.registerPlayerYue(i);
+                await txReg.wait();
+            }
+            
+            // 4. Set their 2-bar equipment params in storage using anvil_setStorageAt
+            const mockBars = [
+                { u1: 0, u2: 20 },  // Width: 20
+                { u1: 10, u2: 50 }, // Width: 40
+                { u1: 5, u2: 80 },  // Width: 75
+                { u1: 20, u2: 30 }, // Width: 10
+                { u1: 0, u2: 90 }   // Width: 90 (Winner)
+            ];
+            
+            for (let i = 0; i < 5; i++) {
+                const destOffset = 0x8000 + i * 0x1000;
+                const pageOffset = destOffset + 0x70 * 256;
+                const u1Slot = ethers.zeroPadValue(ethers.toBeHex(pageOffset), 32);
+                const u2Slot = ethers.zeroPadValue(ethers.toBeHex(pageOffset + 32), 32);
+                
+                await provider.send("anvil_setStorageAt", [
+                    arenaAddr,
+                    u1Slot,
+                    ethers.zeroPadValue(ethers.toBeHex(mockBars[i].u1), 32)
+                ]);
+                await provider.send("anvil_setStorageAt", [
+                    arenaAddr,
+                    u2Slot,
+                    ethers.zeroPadValue(ethers.toBeHex(mockBars[i].u2), 32)
+                ]);
+            }
+            
+            res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+            res.end(JSON.stringify({
+                status: "success",
+                validators: validatorAddresses,
+                playersRegistered: 5
+            }));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
+
+    // POST /api/arena/set-target
+    if (req.url === "/api/arena/set-target" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", async () => {
+            try {
+                const payload = JSON.parse(body);
+                const { qingId } = payload;
+                if (qingId === undefined) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Missing qingId" }));
+                    return;
+                }
+                
+                if (!global.validatorWallets || global.validatorWallets.length < 11) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Validators not initialized. Run POST /api/arena/init first." }));
+                    return;
+                }
+                
+                const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+                const arenaAddr = config.networks.localhost.arenaProcessorAddress;
+                const pkiAddr = config.networks.localhost.consensusPkiAddress;
+                
+                const { ethers } = require("ethers");
+                const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const deployer = await provider.getSigner();
+                
+                // 1. Create message hash
+                const msgHash = ethers.solidityPackedKeccak256(["uint256"], [qingId]);
+                
+                // 2. Sign message hash directly (raw, without prefix)
+                const signatures = [];
+                for (let i = 0; i < 11; i++) {
+                    const signature = global.validatorWallets[i].signingKey.sign(msgHash);
+                    const sig = ethers.Signature.from(signature).serialized;
+                    signatures.push(sig);
+                }
+                
+                // 3. Format setTargetQingViaPKI raw calldata
+                const selector = "0x5e2cf9f1";
+                const pkiAddrPadded = ethers.zeroPadValue(pkiAddr, 32);
+                const qingIdPadded = ethers.zeroPadValue(ethers.toBeHex(qingId), 32);
+                const msgHashPadded = ethers.zeroPadValue(msgHash, 32);
+                
+                const sigsEncoded = ethers.AbiCoder.defaultAbiCoder().encode(["bytes[]"], [signatures]);
+                const sigsRaw = ethers.getBytes(sigsEncoded).slice(32);
+                
+                const txCalldata = ethers.concat([
+                    selector,
+                    pkiAddrPadded,
+                    qingIdPadded,
+                    msgHashPadded,
+                    sigsRaw
+                ]);
+                
+                const tx = await deployer.sendTransaction({
+                    to: arenaAddr,
+                    data: txCalldata,
+                    gasLimit: 30000000
+                });
+                await tx.wait();
+                
+                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify({
+                    status: "success",
+                    txHash: tx.hash,
+                    msgHash: msgHash
+                }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // POST /api/arena/process-batch
+    if (req.url === "/api/arena/process-batch" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", async () => {
+            try {
+                const payload = JSON.parse(body);
+                const { batchSize } = payload;
+                if (batchSize === undefined) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Missing batchSize" }));
+                    return;
+                }
+                
+                const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+                const arenaAddr = config.networks.localhost.arenaProcessorAddress;
+                
+                const { ethers } = require("ethers");
+                const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const deployer = await provider.getSigner();
+                
+                const arenaContract = new ethers.Contract(arenaAddr, [
+                    "function processBatch(uint256 batchSize) external returns (uint256, uint256, uint256)"
+                ], deployer);
+                
+                const tx = await arenaContract.processBatch(batchSize);
+                await tx.wait();
+                
+                const [targetQing, cursor, leader, maxWidth, completed] = await Promise.all([
+                    provider.getStorage(arenaAddr, "0x100"),
+                    provider.getStorage(arenaAddr, "0x101"),
+                    provider.getStorage(arenaAddr, "0x102"),
+                    provider.getStorage(arenaAddr, "0x103"),
+                    provider.getStorage(arenaAddr, "0x104")
+                ]);
+                
+                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify({
+                    status: "success",
+                    txHash: tx.hash,
+                    cursor: parseInt(cursor, 16) || 0,
+                    leader: parseInt(leader, 16) === 0xFFFFFFFF ? null : parseInt(leader, 16),
+                    maxWidth: parseInt(maxWidth, 16) || 0,
+                    completed: parseInt(completed, 16) || 0
+                }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // GET /api/arena/status
+    if (req.url === "/api/arena/status" && req.method === "GET") {
+        try {
+            const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+            const arenaAddr = config.networks.localhost.arenaProcessorAddress;
+            const pkiAddr = config.networks.localhost.consensusPkiAddress;
+            
+            if (!arenaAddr) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "ArenaProcessor not deployed" }));
+                return;
+            }
+            
+            const { ethers } = require("ethers");
+            const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            
+            const [targetQing, cursor, leader, maxWidth, completed, totalPlayers] = await Promise.all([
+                provider.getStorage(arenaAddr, "0x100"),
+                provider.getStorage(arenaAddr, "0x101"),
+                provider.getStorage(arenaAddr, "0x102"),
+                provider.getStorage(arenaAddr, "0x103"),
+                provider.getStorage(arenaAddr, "0x104"),
+                provider.getStorage(arenaAddr, "0x200")
+            ]);
+            
+            res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+            res.end(JSON.stringify({
+                targetQing: parseInt(targetQing, 16) || 0,
+                cursor: parseInt(cursor, 16) || 0,
+                leader: parseInt(leader, 16) === 0xFFFFFFFF ? null : parseInt(leader, 16),
+                maxWidth: parseInt(maxWidth, 16) || 0,
+                completed: parseInt(completed, 16) || 0,
+                totalPlayers: parseInt(totalPlayers, 16) || 0,
+                arenaAddress: arenaAddr,
+                pkiAddress: pkiAddr
+            }));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
         return;
     }
 

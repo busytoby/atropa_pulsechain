@@ -645,6 +645,7 @@ Status: Awaiting user to start music.</div>
         let isSoundPlaying = false;
         let synthBpm = 96;
         let filterQ = 1;
+        let synthVoiceType = "triangle";
 
         function initAudio() {
             if (audioCtx) return;
@@ -702,7 +703,7 @@ Status: Awaiting user to start music.</div>
             let duration = (60 / synthBpm) * 1.5;
             chord.forEach((freq, index) => {
                 let noteTime = now + index * (60 / synthBpm) * 0.25;
-                playChordNote(freq, noteTime, duration, "triangle");
+                playChordNote(freq, noteTime, duration, synthVoiceType);
             });
 
             // Drum beat rhythm
@@ -2152,6 +2153,49 @@ Status: Awaiting user to start music.</div>
                 } else if (action === "zoom") {
                     cameraZoom(arg);
                     consoleBox.innerHTML += `\n[Z-Machine] Zooming camera ${arg}`;
+                } else if (action === "synth") {
+                    const arg2 = parts[2] ? parts[2].toLowerCase() : "";
+                    if (arg === "wave") {
+                        const validWaves = ["sine", "square", "sawtooth", "triangle"];
+                        if (validWaves.includes(arg2)) {
+                            synthVoiceType = arg2;
+                            consoleBox.innerHTML += `\n[Z-Machine] Synth wave shape set to: ${arg2.toUpperCase()}`;
+                        } else {
+                            consoleBox.innerHTML += `\n[Z-Machine] Invalid wave type. Choose from: ${validWaves.join(", ")}`;
+                        }
+                    } else if (arg === "resonance" || arg === "res") {
+                        const val = parseFloat(arg2);
+                        if (!isNaN(val) && val >= 0 && val <= 100) {
+                            filterQ = val / 10;
+                            const resSlider = document.getElementById("resonance-slider");
+                            if (resSlider) {
+                                resSlider.value = val;
+                                document.getElementById("val-resonance").innerText = val + "%";
+                            }
+                            consoleBox.innerHTML += `\n[Z-Machine] Synth filter resonance (Q) set to: ${filterQ}`;
+                        } else {
+                            consoleBox.innerHTML += `\n[Z-Machine] Invalid resonance value. Range: 0 to 100.`;
+                        }
+                    } else if (arg === "bpm" || arg === "tempo" || arg === "speed") {
+                        const val = parseInt(arg2);
+                        if (!isNaN(val) && val >= 40 && val <= 240) {
+                            synthBpm = val;
+                            const bpmSlider = document.getElementById("bpm-slider");
+                            if (bpmSlider) {
+                                bpmSlider.value = val;
+                                document.getElementById("val-bpm").innerText = val;
+                            }
+                            consoleBox.innerHTML += `\n[Z-Machine] Synth tempo (BPM) set to: ${synthBpm}`;
+                            if (isSoundPlaying) {
+                                toggleSound();
+                                toggleSound();
+                            }
+                        } else {
+                            consoleBox.innerHTML += `\n[Z-Machine] Invalid BPM value. Range: 40 to 240.`;
+                        }
+                    } else {
+                        consoleBox.innerHTML += `\n[Z-Machine] Synth commands: 'synth wave [sine|square|sawtooth|triangle]', 'synth res [0-100]', 'synth bpm [40-240]'`;
+                    }
                 } else {
                     consoleBox.innerHTML += `\n[Z-Machine] Unrecognized command. Try 'dance plie', 'director start', or 'practice start'.`;
                 }

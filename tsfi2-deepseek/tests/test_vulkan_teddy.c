@@ -25,6 +25,10 @@
 #include "tsfi_vm_dft_bridge.h"
 #include "tsfi_valve.h"
 #include "tsfi_obj_loader.h"
+#include "tsfi_zener.h"
+#include "tsfi_elektuur_issue25.h"
+
+
 
 static TSFiVmStateParams params = {
     .identity_pole = 261640507549433ULL,
@@ -279,6 +283,8 @@ void precompute_all_sounds() {
                 float *raw_sig = malloc(len * sizeof(float));
                 float *valve_out = malloc(len * sizeof(float));
                 if (raw_sig && valve_out) {
+                    TsfiZener kick_zener;
+                    tsfi_zener_init(&kick_zener, 4.7, 0.003, 8000.0); // 4.7V breakdown clamp
                     float y1 = 0.0f, y2 = 0.0f;
                     for (int i = 0; i < len; i++) {
                         float t = (float)i / 8000.0f;
@@ -318,7 +324,15 @@ void precompute_all_sounds() {
                         float click_noise = noise * noise_env * 0.15f;
                         
                         float mixed = out * 0.95f + click + click_noise;
-                        float saturated_out = tanhf(1.8f * mixed);
+                        
+                        // Route through Zener diode clamp in series (Vs = mixed * 8.0V drive, Rs = 470 ohms)
+                        double z_noise = 0.0;
+                        double clamped = tsfi_zener_tick(&kick_zener, (double)mixed * 8.0, 470.0, &z_noise);
+                        
+                        // Rescale back to normal range
+                        float mixed_clamped = (float)(clamped + z_noise) * 0.25f;
+                        
+                        float saturated_out = tanhf(1.8f * mixed_clamped);
                         raw_sig[i] = saturated_out * 1.5f;
                     }
                     TsfiValveTriode kick_valve;
@@ -583,6 +597,10 @@ static float tb303_env_val = 0.0f;
 static float tb303_vca_env = 0.0f;
 static float tb303_s1 = 0.0f, tb303_s2 = 0.0f, tb303_s3 = 0.0f, tb303_s4 = 0.0f;
 static float tb303_accent_intensity = 0.0f;
+static bool tb303_square_mode = false;
+static TsfiAtoomVersterker tb303_amp;
+
+
 
 void tb303_trigger_note(uint8_t note, bool accent, bool slide) {
     pthread_mutex_lock(&g_audio_mutex);
@@ -599,6 +617,8 @@ void tb303_trigger_note(uint8_t note, bool accent, bool slide) {
 
 static float fur_length;
 static float breathing_freq;
+static bool opt_ssaa;
+static bool opt_viewport_boost;
 
 static void* audio_mixer_thread(void *arg) {
     (void)arg;
@@ -638,7 +658,13 @@ static void* audio_mixer_thread(void *arg) {
             tb303_freq_curr += (tb303_freq_target - tb303_freq_curr) * 0.0028f; // glide
             tb303_phase += tb303_freq_curr / 8000.0f;
             if (tb303_phase >= 1.0f) tb303_phase -= 1.0f;
-            float saw = 2.0f * tb303_phase - 1.0f;
+            
+            float source_wave;
+            if (tb303_square_mode) {
+                source_wave = (tb303_phase < 0.5f) ? 0.45f : -0.45f;
+            } else {
+                source_wave = 2.0f * tb303_phase - 1.0f;
+            }
             
             // 303 Decay Envelopes
             float decay_rate = 0.9992f - 0.0003f * tb303_accent_intensity;
@@ -656,7 +682,7 @@ static void* audio_mixer_thread(void *arg) {
             if (res_k > 0.94f) res_k = 0.94f; // cap to prevent excessive feedback distortion
             float fb = res_k * 4.0f * tanhf(tb303_s4);
             
-            float input_stage = saw - fb;
+            float input_stage = source_wave - fb;
             float ds1 = g * (tanhf(input_stage) - tanhf(tb303_s1));
             tb303_s1 += ds1;
             float ds2 = g * (tanhf(tb303_s1) - tanhf(tb303_s2));
@@ -667,7 +693,20 @@ static void* audio_mixer_thread(void *arg) {
             tb303_s4 += ds4;
             
             float synth_out = tb303_s4 * tb303_vca_env * 0.38f;
-            int tb303_sample = (int)(synth_out * 128.0f);
+            
+            // Map viewport boost & SSAA to drive valve saturation
+            float drive = 1.0f;
+            if (opt_viewport_boost) drive += 1.3f;
+            if (opt_ssaa) drive += 0.8f;
+            float driven_out = synth_out * drive;
+            
+            float sat_out = apply_valve_simulation(driven_out, selected_valve);
+            
+            // Involve Elektuur's transistor amplifier (AtoomVersterker)
+            // Scale input to match base-emitter clipping range (input gain is 10x), process, and scale back down
+            float amp_out = tsfi_atoom_versterker_process(&tb303_amp, sat_out * 0.1f) * 1.5f;
+            
+            int tb303_sample = (int)(amp_out * 128.0f);
             
             sum += tb303_sample;
             if (tb303_vca_env > 0.001f) {
@@ -727,6 +766,7 @@ static void* audio_mixer_thread(void *arg) {
 }
 
 static void start_audio_mixer() {
+    tsfi_atoom_versterker_init(&tb303_amp, 25.0f); // 25C baseline temp
     g_audio_running = true;
     pthread_create(&g_audio_thread, NULL, audio_mixer_thread, NULL);
 }
@@ -2059,11 +2099,12 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                          float spec_coat = powf(spec, 128.0f) * 1.5f; // Sharp clear-coat glass highlight
                                          float eye_reflection = (ny * 0.4f + 0.6f) * fresnel * 0.8f; // Glossy reflections
 
-                                         // Dynamic beat-responsive glow on the eyes synchronized with the kick drum
+                                         // Dynamic beat-responsive glow on the eyes synchronized with the kick drum and TB-303 env
                                          float kick_glow = track_trigger_env[0] * 0.4f;
-                                         sub_r = dna_eye_r * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + kick_glow;
-                                         sub_g = dna_eye_g * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f);
-                                         sub_b = dna_eye_b * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f);
+                                         float acid_glow = tb303_vca_env * (0.2f + 0.6f * tb303_accent_intensity);
+                                         sub_r = dna_eye_r * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + kick_glow + acid_glow * 0.1f;
+                                         sub_g = dna_eye_g * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.7f;
+                                         sub_b = dna_eye_b * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.4f;
                                     } else { // Red Bow Tie (Indices 12, 13, 14)
                                         float hx = lx;
                                         float hy = ly;
@@ -2651,7 +2692,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     char telemetry_buf[256];
     float ammeter_val = 0.05f * (ammeter_T - 293.15f);
-    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | TEDDY BEAR 303 ACTIVE | %s", ammeter_val, voltmeter_V, opt_status);
+    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | TEDDY BEAR 303 ACTIVE (%s) | %s", ammeter_val, voltmeter_V, tb303_square_mode ? "SQ" : "SAW", opt_status);
     Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
     draw_string_ab4h(canvas, telemetry_buf, 15, 650, telemetry_col);
  
@@ -3211,6 +3252,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *kb, uint32_t ser
     if (key == KEY_ESC && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         printf("\n[WAYLAND] ESC key detected via seat keyboard. Closing window.\n");
         window_running = false;
+    }
+    if (key == KEY_W && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        tb303_square_mode = !tb303_square_mode;
+        printf("  -> TB-303 Waveform Toggled: %s\n", tb303_square_mode ? "SQUARE" : "SAWTOOTH");
+        display_synthesized_image = false;
     }
 }
 static void keyboard_handle_modifiers(void *data, struct wl_keyboard *kb, uint32_t serial, uint32_t mods_depended, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {

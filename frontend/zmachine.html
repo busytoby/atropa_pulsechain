@@ -383,6 +383,15 @@ Connect your wallet to retrieve the active story ROM.</div>
                 </section>
             </div>
         </main>
+
+        <!-- Yul Hardware Cores Deck Section -->
+        <section class="card" style="margin-top: 30px; border-color: var(--vaesen-gold-dim);">
+            <h2><span class="icon">🎴</span> Yul VM Virtual Hardware Cores</h2>
+            <p class="description">Select a Yul virtual hardware card component to review on-chain role/address and double-click to load its specifications directly into the Z-Machine engine.</p>
+            <div id="yulHardwareDeck" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 15px;">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
     </div>
 
     <!-- Collapsible Card Deck Tray Crossover -->
@@ -1485,9 +1494,124 @@ Connect your wallet to retrieve the active story ROM.</div>
             termScreen.scrollTop = termScreen.scrollHeight;
         }
 
+        function renderYulHardwareDeck() {
+            const yulHardwareDeck = document.getElementById("yulHardwareDeck");
+            if (!yulHardwareDeck) return;
+
+            const hardwareModules = [
+                { name: "cpu6502 (cpu6502.yul)", role: "MOS 6502 Instruction Core", capacity: "8-bit Registers, 16-bit PC", glow: "var(--vaesen-gold)", desc: "Implements strict instruction decoding, program counter incrementation, stack pointer, and ALU flags logic." },
+                { name: "graphicsSystem (graphicsSystem.yul)", role: "VIC-II Video Controller", capacity: "Color RAM, sprites colliders", glow: "#00d2d3", desc: "Calculates scanline offsets, parses coordinate bounds for up to 8 sprites, and registers collision overlaps." },
+                { name: "musicMaker (musicMaker.yul)", role: "SID 6581 Sound Synthesis Engine", capacity: "3 voices, ADSR envelope generators", glow: "#ff9f43", desc: "Modulates sawtooth, triangle, noise wave shapes, and drives low-pass filter thunks with resonance parameters." },
+                { name: "diskSystem (diskSystem.yul)", role: "Commodore 1541 Disk Encoder", capacity: "Dynamic sector index, head tracking", glow: "#1dd1a1", desc: "Simulates physical floppy drive sectors, GCR alignment sync marks, and directory header queries." },
+                { name: "dc (dc.yul)", role: "On-Chain RPN Postfix Calculator", capacity: "Stack compiler / Evaluator", glow: "#32ff6a", desc: "Operates math stacks dynamically on-chain using Yul assembly instructions like add, sub, mul, div, sload." },
+                { name: "zmachine (zmachine.yul)", role: "Z-Machine Story Interpreter VM", capacity: "Z-code instruction decoder", glow: "#5f27cd", desc: "Reads on-chain story file headers, resolves variable lookups, and tracks location indices." },
+                { name: "zmachineParser (zmachineParser.yul)", role: "Interpreter Command Syntax Parser", capacity: "Dictionary matcher", glow: "#54a0ff", desc: "Decodes console user inputs against story vocabulary dictionaries for fast path execution." },
+                { name: "gameCoprocessor (gameCoprocessor.yul)", role: "Game Save-State Coprocessor", capacity: "Serialization buffers", glow: "#ed4c67", desc: "Serializes and deserializes overall game engine registers into standard packed hexadecimal strings." },
+                { name: "keySystem (keySystem.yul)", role: "Access Control Verification Gate", capacity: "ERC20 keycard approvals validation", glow: "#ee5253", desc: "Verifies user access limits, decrementing key usage counters upon successful decryption routines." },
+                { name: "biorhythm (biorhythm.yul)", role: "Biological Cycle Calculator", capacity: "Triple sine wave tracker", glow: "#1dd1a1", desc: "Calculates physical, emotional, and intellectual sine waves based on Unix epoch timestamp offsets." },
+                { name: "tunnelDiodeOscillator (tunnelDiodeOscillator.yul)", role: "Analog Diode Oscillator Model", capacity: "Negative differential resistance solver", glow: "#ff9f43", desc: "Models tunnel-diode peak/valley voltage characteristics to generate ultra-high-frequency waveforms." },
+                { name: "steamWhistle (steamWhistle.yul)", role: "Fluid Dynamics Simulator", capacity: "Cavity volume modeling", glow: "#c8d6e5", desc: "Calculates sound pressure outputs based on virtual steam flow velocities and resonance chamber parameters." },
+                { name: "tty (tty.yul)", role: "Teletype Terminal Serial I/O", capacity: "7-bit ASCII character buffers", glow: "#54a0ff", desc: "Translates parallel on-chain word arrays to sequential asynchronous serial line communications." },
+                { name: "sphere (sphere.yul)", role: "Ray-Marched 3D Vector Generator", capacity: "Trigonometric projection parameters", glow: "#00d2d3", desc: "Computes ray-to-sphere surface intersections to output raw coordinate grids for vector graphics monitors." },
+                { name: "isepicSnapshot (isepicSnapshot.yul)", role: "Action-Replay Memory Freezer", capacity: "RAM snapshot allocation segments", glow: "#5f27cd", desc: "Freezes active system state to non-volatile registers to implement instant restore/checkpoint mechanics." },
+                { name: "bGraph (bGraph.yul)", role: "Vector Biorhythm Graph Renderer", capacity: "Coordinate grids mapping", glow: "#00d2d3", desc: "Transforms calculated biorhythm curves into plot strings for display terminal vector grid viewports." },
+                { name: "vdt (vdt.yul)", role: "Cathode-Ray Display Grid Controller", capacity: "80x25 character array buffer", glow: "#54a0ff", desc: "Emulates grid-based terminal displays, rendering text rows with cursor tracking." },
+                { name: "mathCoprocessor (mathCoprocessor.yul)", role: "Precision Multi-Word Calculator", capacity: "Fixed-point division/multiplication stacks", glow: "#1dd1a1", desc: "Provides optimized math helper routines for fractional synthesizers and coordinate calculations." },
+                { name: "core_memory (core_memory.yul)", role: "Magnetic Core RAM Bank Allocator", capacity: "Dynamic segment offset mapping", glow: "#5f27cd", desc: "Manages safe reading and writing to isolated virtual RAM frames to prevent collision issues." },
+                { name: "adc_tts (adc_tts.yul)", role: "Formant Vocoder Text-to-Speech", capacity: "Phoneme code lookup / DA converter", glow: "#ff9f43", desc: "Converts text arrays to physical voice formants, outputting audio frames dynamically." },
+                { name: "starCastle (starCastle.yul)", role: "Star Castle Vector Game Engine", capacity: "Shield segment colliders, target tracking", glow: "#ed4c67", desc: "Processes rotating shield state physics, missile trajectories, and vector lines updates." },
+                { name: "tvcolor (tvcolor.yul)", role: "PAL/NTSC Video signal Modulator", capacity: "Chrominance phase shift maps", glow: "#00d2d3", desc: "Encodes on-chain graphics registers into standard composite video waveforms with colorburst subcarriers." },
+                { name: "semafoonDecoder (semafoonDecoder.yul)", role: "Radio Pager Semafoon Tone Decoder", capacity: "Tone frequency filtering registers", glow: "#ff9f43", desc: "Decodes standard A/B radio pager tones to extract alphanumeric messages from carrier signals." },
+                { name: "transducerStage (transducerStage.yul)", role: "Acoustic Piezoelectric Model", capacity: "Impedance match filters", glow: "#ff9f43", desc: "Simulates physical speaker cone reactions and acoustic chamber pressure curves for synthesizers." },
+                { name: "i8080 (i8080.yul)", role: "Intel 8080 Instruction Core", capacity: "8-bit Registers, 16-bit address space", glow: "var(--vaesen-gold)", desc: "Emulates the instruction set of the 8080 processor, driving early microcomputer state machinery." },
+                { name: "musicNotationParser (musicNotationParser.yul)", role: "ALTO Music Score Compiler", capacity: "MML notation parser, voice queues", glow: "#ff9f43", desc: "Parses standard Music Macro Language notation into frequency and duration structures for synthesis cards." },
+                { name: "bionikaNeuron (bionikaNeuron.yul)", role: "Synaptic Neural Weight Node", capacity: "Multi-input sigmoid activator", glow: "#1dd1a1", desc: "Computes weighted threshold activation states to model biological neurons on-chain." },
+                { name: "formantFilter (formantFilter.yul)", role: "Acoustic Vocal Formant Filter", capacity: "Triple bandpass active coefficients", glow: "#ff9f43", desc: "Shapes raw oscillator noise inputs to resemble human vowel sounds (A, E, I, O, U)." },
+                { name: "speechSynthesizer (speechSynthesizer.yul)", role: "Linear Predictive Coding Vocal Engine", capacity: "Reflection filter coefficients", glow: "#ff9f43", desc: "Synthesizes voice sequences by running excitation impulses through simulated vocal tract filters." },
+                { name: "pulsecatcher (pulsecatcher.yul)", role: "Hardware Event Logic Gate Patcher", capacity: "State change interrupt logic", glow: "#5f27cd", desc: "Monitors voltage shifts and captures fast input transitions to raise simulated interrupts." },
+                { name: "ledger (ledger.yul)", role: "On-Chain Ledger State Database", capacity: "Safe account balance mapping", glow: "#1dd1a1", desc: "Maintains double-entry transactional accounting balances for virtual coin tokens." },
+                { name: "diyat (diyat.yul)", role: "Settlement Valuation Registry", capacity: "Compensation index tables", glow: "#1dd1a1", desc: "Applies traditional compensation matrix formulas to output fair on-chain settlements." },
+                { name: "pushPullStage (pushPullStage.yul)", role: "Push-Pull Transistor Output Driver", capacity: "Phase split symmetry filters", glow: "#ff9f43", desc: "Models crossover distortion and harmonic content of class AB push-pull power amplifier systems." },
+                { name: "equaAmplifier (equaAmplifier.yul)", role: "Multi-Band Parametric Equalizer", capacity: "Gain parameters, center frequencies", glow: "#ff9f43", desc: "Shapes frequency bands to optimize audio signals before routing to simulation drivers." },
+                { name: "envelopeDetector (envelopeDetector.yul)", role: "Diode Envelope Signal Detector", capacity: "RC time constant decay filters", glow: "#ff9f43", desc: "Extracts signal envelopes from incoming audio feeds to modulate filter sweeps." },
+                { name: "debugger (debugger.yul)", role: "Yul VM Interactive Debugger", capacity: "Step execution, breakpoint registers", glow: "#5f27cd", desc: "Enables manual step inspection, stack frame dumps, and contract code memory monitoring." },
+                { name: "elm (elm.yul)", role: "Functional VM Language Interpreter", capacity: "Abstract Syntax Tree (AST) parser", glow: "#5f27cd", desc: "Runs functional code snippets on-chain by constructing expression trees dynamically." },
+                { name: "yars_revenge (yars_revenge.yul)", role: "Yars' Revenge Graphics Engine", capacity: "Zorlon cannon tracking, shield segments", glow: "#ed4c67", desc: "Simulates retro collision logic, screen layout arrays, and score thresholds." },
+                { name: "gyratorFilter (gyratorFilter.yul)", role: "Active Inductance Filter Model", capacity: "Operational amplifier parameters", glow: "#ff9f43", desc: "Simulates inductors using active op-amp circuitry to build filters without bulky coils." },
+                { name: "snareSynthesizer (snareSynthesizer.yul)", role: "TR-808 Noise Snare Synthesizer", capacity: "Bandpassed noise filter decay envelope", glow: "#ff9f43", desc: "Generates snare sounds by blending bandpass-filtered white noise with decay sweeps." },
+                { name: "rhythmGenerator (rhythmGenerator.yul)", role: "TR-808 Rhythm Sequencer", capacity: "16-step grid patterns, voice trigger registers", glow: "#ff9f43", desc: "Sequences drum voices based on trigger grids, accents, and tempo offsets." },
+                { name: "z550mIndicator (z550mIndicator.yul)", role: "Nixie Tube Indicator Model", capacity: "Decade counter lookup arrays", glow: "#ff9f43", desc: "Models neon glow characteristics and cathode voltage thresholds of vintage Nixie displays." },
+                { name: "drumSynthesizer (drumSynthesizer.yul)", role: "TR-808 Analog Drums Generator", capacity: "Dual-bridged T-oscillator kick decay", glow: "#ff9f43", desc: "Emulates bridged T-network resonance circuits to synthesize punchy bass drums and toms." },
+                { name: "breadboard (breadboard.yul)", role: "Virtual Patch Routing", capacity: "Dynamic pin cross-point route matrix", glow: "#5f27cd", desc: "Routes signals dynamically between active virtual hardware modules." },
+                { name: "dragonsLair (dragonsLair.yul)", role: "Laserdisc Frame Index Mapper", capacity: "Frame search registers, prompt timers", glow: "#ed4c67", desc: "Maps user choices to laserdisc seek indexes for interactive arcade hardware." },
+                { name: "germaniumStage (germaniumStage.yul)", role: "Germanium Diode Breakdown Solver", capacity: "Forward voltage curve lookup", glow: "#ff9f43", desc: "Models non-linear clipping behavior of vintage germanium transistor stages." },
+                { name: "pmgSystem (pmgSystem.yul)", role: "Player-Missile Graphics Memory", capacity: "2KB high-resolution sprite buffers", glow: "#00d2d3", desc: "Manages fast hardware-based sprite drawing for retro scrolling engines." },
+                { name: "minder (minder.yul)", role: "Minder Core Scheduler", capacity: "State priority thread tables", glow: "#5f27cd", desc: "Orchestrates execution cycles between active virtual components on-chain." },
+                { name: "tms9900 (tms9900.yul)", role: "TI-99 Processor Emulation Core", capacity: "16-bit register files pointer mapping", glow: "var(--vaesen-gold)", desc: "Recreates workspace pointer and instruction mappings of TI-99/4A hardware." },
+                { name: "lunar_lander (lunar_lander.yul)", role: "Lunar Lander Gravity Engine", capacity: "Velocity vectors, fuel thresholds", glow: "#ed4c67", desc: "Computes thrust acceleration, retro-rocket fuel burn, and landing gear impact angles." },
+                { name: "philicordaGenerator (philicordaGenerator.yul)", role: "Philicorda Neon Divider Organ", capacity: "Divider scale frequencies mapping", glow: "#ff9f43", desc: "Models master neon-relaxation oscillators dividing frequencies to synthesize rich organ tones." },
+                { name: "ringModulator (ringModulator.yul)", role: "Ring Modulator Mixing Stage", capacity: "Dual balanced mixer parameters", glow: "#ff9f43", desc: "Multiplies carrier and modulator signals to produce classic metallic retro effects." }
+            ];
+
+            yulHardwareDeck.innerHTML = "";
+            hardwareModules.forEach(mod => {
+                const cardNode = document.createElement("div");
+                cardNode.style.background = "var(--vaesen-parchment)";
+                cardNode.style.border = `1px solid ${mod.glow}60`;
+                cardNode.style.borderRadius = "4px";
+                cardNode.style.padding = "18px";
+                cardNode.style.display = "flex";
+                cardNode.style.flexDirection = "column";
+                cardNode.style.gap = "6px";
+                cardNode.style.position = "relative";
+                cardNode.style.cursor = "pointer";
+                cardNode.style.transition = "all 0.3s ease";
+                cardNode.title = "Double-click to load specifications into Z-Machine";
+
+                cardNode.onmouseover = () => {
+                    cardNode.style.borderColor = mod.glow;
+                    cardNode.style.boxShadow = `0 4px 15px ${mod.glow}30`;
+                    cardNode.style.transform = "translateY(-2px)";
+                };
+                cardNode.onmouseout = () => {
+                    cardNode.style.borderColor = `${mod.glow}60`;
+                    cardNode.style.boxShadow = "none";
+                    cardNode.style.transform = "none";
+                };
+
+                cardNode.ondblclick = () => {
+                    loadYulHardwareCardIntoZmachine(mod);
+                };
+
+                cardNode.innerHTML = `
+                    <div style="font-family: var(--font-header); font-size: 1.1rem; color: var(--vaesen-gold); border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 4px; font-weight: bold;">${mod.name}</div>
+                    <div style="font-size: 0.85rem; color: ${mod.glow}; text-transform: uppercase; letter-spacing: 0.5px;">${mod.role}</div>
+                    <div style="font-size: 0.8rem; color: var(--vaesen-muted);">Capacity: ${mod.capacity}</div>
+                    <div style="font-size: 0.85rem; line-height: 1.4; color: var(--vaesen-cream); margin-top: 4px;">${mod.desc}</div>
+                    <div style="font-size: 9px; align-self: flex-end; color: var(--vaesen-muted); border: 1px dashed rgba(197,160,89,0.3); padding: 2px 6px; border-radius: 2px; margin-top: 8px; font-family: monospace;">LOAD SPEC</div>
+                `;
+                yulHardwareDeck.appendChild(cardNode);
+            });
+        }
+
+        function loadYulHardwareCardIntoZmachine(mod) {
+            const termScreen = document.getElementById("termScreen");
+            termScreen.innerText += `\n\n[Z-Machine] Mounting Virtual Hardware Card: ${mod.name}\n`;
+            termScreen.innerText += `--------------------------------------------------\n`;
+            termScreen.innerText += `- Class/Role: ${mod.role}\n`;
+            termScreen.innerText += `- Capacity: ${mod.capacity}\n`;
+            termScreen.innerText += `- Specifications: ${mod.desc}\n`;
+            termScreen.innerText += `- Addressing: dynamically mapped in compiled_yul.json\n`;
+            termScreen.innerText += `- Signals: routed through core_memory and the virtual breadboard.\n`;
+            termScreen.innerText += `--------------------------------------------------\n`;
+            termScreen.innerText += `\n# _`;
+            termScreen.scrollTop = termScreen.scrollHeight;
+        }
+
         window.onload = () => {
             init();
             loadDeckList();
+            renderYulHardwareDeck();
         };
     </script>
 </body>

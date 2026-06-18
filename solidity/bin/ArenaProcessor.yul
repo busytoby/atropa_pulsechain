@@ -60,11 +60,11 @@ object "ArenaProcessor" {
                 return(0, 0)
             }
 
-            // ----------------------------------------------------------------
-            // METHOD 2: registerPlayerYue(uint256 yueCardId) -> void
-            // Selector: 0x9330dae5
-            // ----------------------------------------------------------------
-            if eq(selector, 0x9330dae5) {
+             // ----------------------------------------------------------------
+             // METHOD 2: registerPlayerYue(uint256 yueCardId) -> void
+             // Selector: 0xd8fce734
+             // ----------------------------------------------------------------
+             if eq(selector, 0xd8fce734) {
                 let yueCardId := calldataload(4)
                 let totalPlayers := sload(0x200)
                 
@@ -77,9 +77,9 @@ object "ArenaProcessor" {
 
             // ----------------------------------------------------------------
             // METHOD 3: processBatch(uint256 batchSize) -> (uint256 processed, uint256 cursor, uint256 completed)
-            // Selector: 0x3d02b5c0
-            // ----------------------------------------------------------------
-            if eq(selector, 0x3d02b5c0) {
+             // Selector: 0x6309463b
+             // ----------------------------------------------------------------
+             if eq(selector, 0x6309463b) {
                 let batchSize := calldataload(4)
                 let targetQing := sload(0x100)
                 let roundCompleted := sload(0x104)

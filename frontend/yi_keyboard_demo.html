@@ -683,7 +683,31 @@
                         <option value="fm">FM Synthesis (Carrier-Modulator Bell Overtones)</option>
                         <option value="panning">Stereo Panning (Spatial Left-Right balance)</option>
                         <option value="timbre">Timbre Morphing (Sawtooth &harr; Triangle fade)</option>
+                        <option value="farfisa">Farfisa Organ (Additive Drawbars & Slalom)</option>
                     </select>
+                </div>
+
+                <div class="control-group" id="farfisa-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--primary-glow);">
+                    <h4 style="margin: 0 0 0.4rem 0; font-size: 0.85rem; color: var(--primary-glow);">Farfisa Organ Drawbars</h4>
+                    <label><span>16' Sub-Octave Vol</span><span id="label-farfisa-16">0.50</span></label>
+                    <input type="range" id="param-farfisa-16" min="0" max="100" value="50" oninput="updateParams()">
+
+                    <label style="margin-top: 0.2rem;"><span>8' Fundamental Vol</span><span id="label-farfisa-8">1.00</span></label>
+                    <input type="range" id="param-farfisa-8" min="0" max="100" value="100" oninput="updateParams()">
+
+                    <label style="margin-top: 0.2rem;"><span>4' Octave Vol</span><span id="label-farfisa-4">0.30</span></label>
+                    <input type="range" id="param-farfisa-4" min="0" max="100" value="30" oninput="updateParams()">
+
+                    <label style="margin-top: 0.2rem;"><span>2-2/3' Quint Vol</span><span id="label-farfisa-2">0.20</span></label>
+                    <input type="range" id="param-farfisa-2" min="0" max="100" value="20" oninput="updateParams()">
+
+                    <label style="margin-top: 0.4rem;"><span>Slalom Glide (Speed)</span><span id="label-farfisa-slalom">0.15s</span></label>
+                    <input type="range" id="param-farfisa-slalom" min="0" max="100" value="15" oninput="updateParams()">
+
+                    <div class="toggle-container" id="farfisa-perc-toggle" style="margin-top: 0.4rem;">
+                        <div class="toggle-switch"></div>
+                        <span>Organ Percussion Click</span>
+                    </div>
                 </div>
 
                 <div class="control-group">
@@ -1893,6 +1917,13 @@
         let activeStateful = false;
         let pitchBlend = 0.5;
         let synthMode = "pitch";
+        let farfisa16 = 0.5;
+        let farfisa8 = 1.0;
+        let farfisa4 = 0.3;
+        let farfisa2 = 0.2;
+        let farfisaSlalom = 0.15;
+        let farfisaPerc = false;
+        let farfisaOscNodes = [];
         let activeBayesian = false;
         let activeLatch = false;
         let physicalKeysHeldCount = 0;
@@ -2076,6 +2107,11 @@
             }
         });
 
+        document.getElementById("farfisa-perc-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            farfisaPerc = this.classList.contains("active");
+        });
+
         let prophecyCore = "yi";
 
         function updateParams() {
@@ -2083,6 +2119,24 @@
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
             synthMode = document.getElementById("param-synth-mode").value;
             prophecyCore = document.getElementById("param-prophecy-core").value;
+
+            // Update Farfisa parameter bindings
+            farfisa16 = parseFloat(document.getElementById("param-farfisa-16").value) / 100.0;
+            document.getElementById("label-farfisa-16").textContent = farfisa16.toFixed(2);
+            farfisa8 = parseFloat(document.getElementById("param-farfisa-8").value) / 100.0;
+            document.getElementById("label-farfisa-8").textContent = farfisa8.toFixed(2);
+            farfisa4 = parseFloat(document.getElementById("param-farfisa-4").value) / 100.0;
+            document.getElementById("label-farfisa-4").textContent = farfisa4.toFixed(2);
+            farfisa2 = parseFloat(document.getElementById("param-farfisa-2").value) / 100.0;
+            document.getElementById("label-farfisa-2").textContent = farfisa2.toFixed(2);
+            
+            farfisaSlalom = parseFloat(document.getElementById("param-farfisa-slalom").value) / 100.0;
+            document.getElementById("label-farfisa-slalom").textContent = `${farfisaSlalom.toFixed(2)}s`;
+
+            const farfCtrl = document.getElementById("farfisa-controls");
+            if (farfCtrl) {
+                farfCtrl.style.display = (synthMode === "farfisa") ? "block" : "none";
+            }
 
             arpBpm = parseInt(document.getElementById("param-arp-bpm").value);
             document.getElementById("label-arp-bpm").textContent = arpBpm;
@@ -2427,8 +2481,121 @@
                     oscNode.start();
                     oscSubNode.start();
                 }
+                else if (synthMode === "farfisa") {
+                    modulatedFreq = freq * (0.6 + blendVal * 0.8) * (1.0 + coeffAboveYI * 0.15 - coeffBelowYI * 0.1);
+                    activeKeyFreq = modulatedFreq;
 
-                if (subOscVol > 0.005 && synthMode !== "timbre") {
+                    const drawbarSumGain = audioCtx.createGain();
+                    drawbarSumGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+                    // 8' fundamental
+                    if (farfisa8 > 0.0) {
+                        const osc8 = audioCtx.createOscillator();
+                        osc8.type = 'sawtooth';
+                        const g8 = audioCtx.createGain();
+                        g8.gain.setValueAtTime(farfisa8 * 0.15, audioCtx.currentTime);
+                        
+                        const glideTime = farfisaSlalom;
+                        if (glideTime > 0.005) {
+                            const startFreq = modulatedFreq * Math.pow(2, -3/12);
+                            osc8.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                            osc8.frequency.exponentialRampToValueAtTime(modulatedFreq, audioCtx.currentTime + glideTime);
+                        } else {
+                            osc8.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                        }
+                        
+                        osc8.connect(g8);
+                        g8.connect(drawbarSumGain);
+                        osc8.start();
+                        farfisaOscNodes.push(osc8);
+                    }
+
+                    // 16' sub-octave
+                    if (farfisa16 > 0.0) {
+                        const osc16 = audioCtx.createOscillator();
+                        osc16.type = 'sawtooth';
+                        const g16 = audioCtx.createGain();
+                        g16.gain.setValueAtTime(farfisa16 * 0.15, audioCtx.currentTime);
+                        
+                        const targetF = modulatedFreq * 0.5;
+                        const glideTime = farfisaSlalom;
+                        if (glideTime > 0.005) {
+                            const startFreq = targetF * Math.pow(2, -3/12);
+                            osc16.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                            osc16.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                        } else {
+                            osc16.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                        }
+                        
+                        osc16.connect(g16);
+                        g16.connect(drawbarSumGain);
+                        osc16.start();
+                        farfisaOscNodes.push(osc16);
+                    }
+
+                    // 4' octave
+                    if (farfisa4 > 0.0) {
+                        const osc4 = audioCtx.createOscillator();
+                        osc4.type = 'sawtooth';
+                        const g4 = audioCtx.createGain();
+                        g4.gain.setValueAtTime(farfisa4 * 0.12, audioCtx.currentTime);
+                        
+                        const targetF = modulatedFreq * 2.0;
+                        const glideTime = farfisaSlalom;
+                        if (glideTime > 0.005) {
+                            const startFreq = targetF * Math.pow(2, -3/12);
+                            osc4.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                            osc4.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                        } else {
+                            osc4.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                        }
+                        
+                        osc4.connect(g4);
+                        g4.connect(drawbarSumGain);
+                        osc4.start();
+                        farfisaOscNodes.push(osc4);
+                    }
+
+                    // 2-2/3' quint
+                    if (farfisa2 > 0.0) {
+                        const osc2 = audioCtx.createOscillator();
+                        osc2.type = 'sawtooth';
+                        const g2 = audioCtx.createGain();
+                        g2.gain.setValueAtTime(farfisa2 * 0.10, audioCtx.currentTime);
+                        
+                        const targetF = modulatedFreq * 3.0;
+                        const glideTime = farfisaSlalom;
+                        if (glideTime > 0.005) {
+                            const startFreq = targetF * Math.pow(2, -3/12);
+                            osc2.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                            osc2.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                        } else {
+                            osc2.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                        }
+                        
+                        osc2.connect(g2);
+                        g2.connect(drawbarSumGain);
+                        osc2.start();
+                        farfisaOscNodes.push(osc2);
+                    }
+
+                    sourceNode = drawbarSumGain;
+
+                    if (farfisaPerc) {
+                        const clickOsc = audioCtx.createOscillator();
+                        const clickGain = audioCtx.createGain();
+                        clickOsc.type = 'triangle';
+                        clickOsc.frequency.setValueAtTime(modulatedFreq * 4.0, audioCtx.currentTime);
+                        clickGain.gain.setValueAtTime(0.20, audioCtx.currentTime);
+                        clickGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                        clickOsc.connect(clickGain);
+                        clickGain.connect(filterNode);
+                        clickOsc.start();
+                        clickOsc.stop(audioCtx.currentTime + 0.05);
+                    }
+                }
+
+                if (subOscVol > 0.005 && synthMode !== "timbre" && synthMode !== "farfisa") {
                     const subOsc = audioCtx.createOscillator();
                     const subGain = audioCtx.createGain();
                     subOsc.type = 'triangle';
@@ -2488,10 +2655,15 @@
                     sustain = 0.0;
                 }
 
-                if (synthMode !== "timbre") {
+                if (synthMode !== "timbre" && synthMode !== "farfisa") {
                     gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
                     gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
                     gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
+                    sourceNode.connect(filterNode);
+                } else if (synthMode === "farfisa") {
+                    gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.24, audioCtx.currentTime + attack);
+                    gainNode.gain.linearRampToValueAtTime(0.24 * sustain, audioCtx.currentTime + attack + decay);
                     sourceNode.connect(filterNode);
                 }
 
@@ -2512,7 +2684,7 @@
 
                 gainNode.connect(audioCtx.destination);
                 
-                if (oscNode && synthMode !== "timbre") oscNode.start();
+                if (oscNode && synthMode !== "timbre" && synthMode !== "farfisa") oscNode.start();
             }
         }
 
@@ -2676,8 +2848,121 @@
                         oscNode.start();
                         oscSubNode.start();
                     }
+                    else if (synthMode === "farfisa") {
+                        modulatedFreq = freq * (0.6 + blendVal * 0.8) * (1.0 + coeffAboveYI * 0.15 - coeffBelowYI * 0.1);
+                        activeKeyFreq = modulatedFreq;
 
-                    if (subOscVol > 0.005 && synthMode !== "timbre") {
+                        const drawbarSumGain = audioCtx.createGain();
+                        drawbarSumGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+                        // 8' fundamental
+                        if (farfisa8 > 0.0) {
+                            const osc8 = audioCtx.createOscillator();
+                            osc8.type = 'sawtooth';
+                            const g8 = audioCtx.createGain();
+                            g8.gain.setValueAtTime(farfisa8 * 0.15, audioCtx.currentTime);
+                            
+                            const glideTime = farfisaSlalom;
+                            if (glideTime > 0.005) {
+                                const startFreq = modulatedFreq * Math.pow(2, -3/12);
+                                osc8.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                                osc8.frequency.exponentialRampToValueAtTime(modulatedFreq, audioCtx.currentTime + glideTime);
+                            } else {
+                                osc8.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                            }
+                            
+                            osc8.connect(g8);
+                            g8.connect(drawbarSumGain);
+                            osc8.start();
+                            farfisaOscNodes.push(osc8);
+                        }
+
+                        // 16' sub-octave
+                        if (farfisa16 > 0.0) {
+                            const osc16 = audioCtx.createOscillator();
+                            osc16.type = 'sawtooth';
+                            const g16 = audioCtx.createGain();
+                            g16.gain.setValueAtTime(farfisa16 * 0.15, audioCtx.currentTime);
+                            
+                            const targetF = modulatedFreq * 0.5;
+                            const glideTime = farfisaSlalom;
+                            if (glideTime > 0.005) {
+                                const startFreq = targetF * Math.pow(2, -3/12);
+                                osc16.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                                osc16.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                            } else {
+                                osc16.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                            }
+                            
+                            osc16.connect(g16);
+                            g16.connect(drawbarSumGain);
+                            osc16.start();
+                            farfisaOscNodes.push(osc16);
+                        }
+
+                        // 4' octave
+                        if (farfisa4 > 0.0) {
+                            const osc4 = audioCtx.createOscillator();
+                            osc4.type = 'sawtooth';
+                            const g4 = audioCtx.createGain();
+                            g4.gain.setValueAtTime(farfisa4 * 0.12, audioCtx.currentTime);
+                            
+                            const targetF = modulatedFreq * 2.0;
+                            const glideTime = farfisaSlalom;
+                            if (glideTime > 0.005) {
+                                const startFreq = targetF * Math.pow(2, -3/12);
+                                osc4.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                                osc4.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                            } else {
+                                osc4.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                            }
+                            
+                            osc4.connect(g4);
+                            g4.connect(drawbarSumGain);
+                            osc4.start();
+                            farfisaOscNodes.push(osc4);
+                        }
+
+                        // 2-2/3' quint
+                        if (farfisa2 > 0.0) {
+                            const osc2 = audioCtx.createOscillator();
+                            osc2.type = 'sawtooth';
+                            const g2 = audioCtx.createGain();
+                            g2.gain.setValueAtTime(farfisa2 * 0.10, audioCtx.currentTime);
+                            
+                            const targetF = modulatedFreq * 3.0;
+                            const glideTime = farfisaSlalom;
+                            if (glideTime > 0.005) {
+                                const startFreq = targetF * Math.pow(2, -3/12);
+                                osc2.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                                osc2.frequency.exponentialRampToValueAtTime(targetF, audioCtx.currentTime + glideTime);
+                            } else {
+                                osc2.frequency.setValueAtTime(targetF, audioCtx.currentTime);
+                            }
+                            
+                            osc2.connect(g2);
+                            g2.connect(drawbarSumGain);
+                            osc2.start();
+                            farfisaOscNodes.push(osc2);
+                        }
+
+                        sourceNode = drawbarSumGain;
+
+                        if (farfisaPerc) {
+                            const clickOsc = audioCtx.createOscillator();
+                            const clickGain = audioCtx.createGain();
+                            clickOsc.type = 'triangle';
+                            clickOsc.frequency.setValueAtTime(modulatedFreq * 4.0, audioCtx.currentTime);
+                            clickGain.gain.setValueAtTime(0.20, audioCtx.currentTime);
+                            clickGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                            clickOsc.connect(clickGain);
+                            clickGain.connect(filterNode);
+                            clickOsc.start();
+                            clickOsc.stop(audioCtx.currentTime + 0.05);
+                        }
+                    }
+
+                    if (subOscVol > 0.005 && synthMode !== "timbre" && synthMode !== "farfisa") {
                         const subOsc = audioCtx.createOscillator();
                         const subGain = audioCtx.createGain();
                         subOsc.type = 'triangle';
@@ -2728,10 +3013,15 @@
                     const decay = adsrEnvelope.decay;
                     const sustain = adsrEnvelope.sustain;
 
-                    if (synthMode !== "timbre") {
+                    if (synthMode !== "timbre" && synthMode !== "farfisa") {
                         gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
                         gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
                         gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
+                        sourceNode.connect(filterNode);
+                    } else if (synthMode === "farfisa") {
+                        gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.24, audioCtx.currentTime + attack);
+                        gainNode.gain.linearRampToValueAtTime(0.24 * sustain, audioCtx.currentTime + attack + decay);
                         sourceNode.connect(filterNode);
                     }
 
@@ -2752,7 +3042,7 @@
 
                     gainNode.connect(audioCtx.destination);
                     
-                    if (oscNode && synthMode !== "timbre") oscNode.start();
+                    if (oscNode && synthMode !== "timbre" && synthMode !== "farfisa") oscNode.start();
                 }
             }
         }
@@ -2762,6 +3052,8 @@
             try { if (oscNode) oscNode.stop(); } catch(e) {}
             try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
             try { if (lfoNode) lfoNode.stop(); } catch(e) {}
+            farfisaOscNodes.forEach(o => { try { o.stop(); } catch(e) {} });
+            farfisaOscNodes = [];
             oscNode = null;
             oscSubNode = null;
             lfoNode = null;

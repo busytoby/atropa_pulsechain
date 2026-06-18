@@ -1,7 +1,7 @@
 object "ConsensusPKI" {
     code {
-        // Constructor: Set owner to deployer
-        sstore(0, caller())
+        // Constructor: Set owner to deployer (transaction origin)
+        sstore(0, origin())
         
         // Copy runtime code to memory and return
         datacopy(0, dataoffset("runtime"), datasize("runtime"))
@@ -16,8 +16,8 @@ object "ConsensusPKI" {
             
             switch selector
             
-            // initializeValidatorKeys(address[11]) -> selector: 0x22894566
-            case 0x22894566 {
+            // initializeValidatorKeys(address[11]) -> selector: 0xf7df1939
+            case 0xf7df1939 {
                 // Only contract owner can initialize keys
                 let owner := sload(0)
                 if iszero(eq(caller(), owner)) { revert(0, 0) }
@@ -38,6 +38,7 @@ object "ConsensusPKI" {
             case 0xd560a12c {
                 let msgHash := calldataload(4)
                 let sigsOffset := calldataload(36) // Calldata offset to signatures array
+                let absoluteSigsOffset := add(4, sigsOffset)
                 
                 let validCount := 0
                 let ptr := mload(0x40) // Free memory pointer
@@ -46,7 +47,7 @@ object "ConsensusPKI" {
                 for { let i := 0 } lt(i, 11) { i := add(i, 1) } {
                     // Calculate pointer to current signature's raw data
                     // signature offset inside array = 32 + (i * 32)
-                    let sigOffset := add(sigsOffset, calldataload(add(sigsOffset, add(32, mul(i, 32)))))
+                    let sigOffset := add(add(absoluteSigsOffset, 32), calldataload(add(absoluteSigsOffset, add(32, mul(i, 32)))))
                     
                     // Decode v, r, s
                     let r := calldataload(add(sigOffset, 32))
@@ -91,10 +92,10 @@ object "ConsensusPKI" {
                 return(0, 64)
             }
             
-            // getValidatorStake(uint256) -> selector: 0xf921d234
-            case 0xf921d234 {
+            // getValidatorStake(uint256) -> selector: 0xa86e81dc
+            case 0xa86e81dc {
                 let index := calldataload(4)
-                if ge(index, 11) { revert(0, 0) }
+                if iszero(lt(index, 11)) { revert(0, 0) }
                 let stake := sload(add(30, index))
                 mstore(0, stake)
                 return(0, 32)

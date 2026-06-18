@@ -1229,6 +1229,19 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
         delayNode.connect(delayFeedback);
         delayFeedback.connect(delayNode);
 
+        // 5. Stereo Chorus (Modulated Delay Line)
+        const chorusDelay = audioCtx.createDelay(0.1);
+        chorusDelay.delayTime.setValueAtTime(0.022, audioCtx.currentTime); // 22ms base delay
+        const chorusLfo = audioCtx.createOscillator();
+        const chorusLfoGain = audioCtx.createGain();
+        chorusLfo.frequency.setValueAtTime(1.1, audioCtx.currentTime); // 1.1Hz slow modulation
+        chorusLfoGain.gain.setValueAtTime(0.0022, audioCtx.currentTime); // 2.2ms depth modulation
+        chorusLfo.connect(chorusLfoGain);
+        chorusLfoGain.connect(chorusDelay.delayTime);
+        chorusLfo.start();
+        const chorusDryWet = audioCtx.createGain();
+        chorusDryWet.gain.setValueAtTime(0.33, audioCtx.currentTime); // 33% wet chorus
+
         // Routing path
         masterBus.connect(tremoloGain);
         tremoloGain.connect(audioCtx.destination); // Main Dry Path
@@ -1241,6 +1254,10 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
         reverbNode.connect(reverbDryWet);
         reverbDryWet.connect(audioCtx.destination); // Reverb Send
 
+        masterBus.connect(chorusDelay);
+        chorusDelay.connect(chorusDryWet);
+        chorusDryWet.connect(audioCtx.destination); // Chorus Send
+
         // Initialize voices connected to the Master Bus
         voices = [
             new TB303Voice(audioCtx, masterBus),
@@ -1248,8 +1265,9 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
             new SIDVoice(audioCtx, masterBus)
         ];
         
-        // Save LFO reference so we can stop it later
+        // Save LFO references so we can stop them later
         voices._lfo = tremoloLfo;
+        voices._chorusLfo = chorusLfo;
         
         isAudioPlaying = true;
         document.getElementById("btnAudioToggle").innerText = "Mute Audio";
@@ -1259,6 +1277,9 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
         voices.forEach(v => v.stop());
         if (voices._lfo) {
             try { voices._lfo.stop(); } catch (e) {}
+        }
+        if (voices._chorusLfo) {
+            try { voices._chorusLfo.stop(); } catch (e) {}
         }
         voices = [];
         isAudioPlaying = false;

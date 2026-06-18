@@ -25,7 +25,9 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "ledger_v2", path: "../solidity/bin/ledger.yul", configKey: "ledgerAddress" },
     { name: "biorhythm", path: "../solidity/bin/biorhythm.yul", configKey: "biorhythmAddress" },
     { name: "dragonsLair", path: "../solidity/bin/dragonsLair.yul", configKey: "dragonsLairAddress" },
-    { name: "starCastle", path: "../solidity/bin/starCastle.yul", configKey: "starCastleAddress" }
+    { name: "starCastle", path: "../solidity/bin/starCastle.yul", configKey: "starCastleAddress" },
+    { name: "ConsensusPKI", path: "../solidity/ConsensusPKI.yul", configKey: "consensusPkiAddress" },
+    { name: "ArenaProcessor", path: "../solidity/bin/ArenaProcessor.yul", configKey: "arenaProcessorAddress" }
 ];
 
 // Compile Yul contract using solc
