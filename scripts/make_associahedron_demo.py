@@ -161,53 +161,59 @@ def render_loop_frames(total_frames):
         # Outer border
         draw.rectangle([(410, 125), (770, 450)], outline="#1e293b", width=2)
         
-        # Player (Thor) Sprite simulated at (440, 280)
-        px, py = 440, 280
-        draw.rectangle([(px-12, py-16), (px+12, py+16)], fill="#1d4ed8", outline="#60a5fa", width=2)
-        draw.text((px-8, py-5), "THOR", fill="#ffffff")
+        # Draw Teddy Bear Army formation (3x3 grid)
+        bears = []
+        for r_idx in range(3):
+            for c_idx in range(3):
+                bx = 430 + c_idx * 30
+                by = 240 + r_idx * 35
+                bears.append((bx, by))
+                # Draw small bear sprite (representing a Teddy Soldier)
+                draw.rectangle([(bx-6, by-8), (bx+6, by+8)], fill="#78350f", outline="#b45309", width=1)
+                # Draw tiny green eyes to signify DNA matches
+                draw.rectangle([(bx-3, by-4), (bx-1, by-2)], fill="#00ff00")
+                draw.rectangle([(bx+1, by-4), (bx+3, by-2)], fill="#00ff00")
         
-        # Spawner (Ghost Generator) simulated at (710, 220)
-        sx, sy = 710, 220
+        # Spawner (Ghost Generator) simulated at (710, 280)
+        sx, sy = 710, 280
         draw.rectangle([(sx-20, sy-20), (sx+20, sy+20)], fill="#7f1d1d", outline="#f87171", width=2)
         draw.text((sx-15, sy-5), "SPAWN", fill="#f87171")
         
         # Projectile simulation loop (resets every 60 frames)
         cycle_len = 60
         progress = (frame % cycle_len) / float(cycle_len)
-        
-        # Projectile start at Thor (px, py) to Spawner (sx, sy)
-        proj_x = px + (sx - px) * progress
-        proj_y = py + (sy - py) * progress
-        
-        # Draw Projectile Trail (Atari PMG Missile 0)
-        trail_steps = 8
-        for t_step in range(1, trail_steps):
-            t_ratio = (frame % cycle_len - t_step) / float(cycle_len)
-            if t_ratio >= 0:
-                tx = px + (sx - px) * t_ratio
-                ty = py + (sy - py) * t_ratio
-                alpha_intensity = int(255 * (1.0 - t_step / float(trail_steps)))
-                # Draw small trailing dots
-                draw.rectangle([(tx-2, ty-2), (tx+2, ty+2)], fill="#fbbf24")
-        
-        # Draw active Projectile
         is_hit = (frame % cycle_len) >= 55
-        if not is_hit:
-            # Traveling Missile
-            draw.rectangle([(proj_x-4, proj_y-4), (proj_x+4, proj_y+4)], fill="#fbbf24", outline="#ffffff", width=1)
-            draw.text((proj_x+6, proj_y-12), "M0 (Axe)", fill="#fbbf24")
-        else:
+        
+        # Draw missiles from each bear towards Spawner (sx, sy)
+        for idx, (bx, by) in enumerate(bears):
+            proj_x = bx + (sx - bx) * progress
+            proj_y = by + (sy - by) * progress
+            
+            # Draw Projectile Trail (Atari PMG Missile 0)
+            trail_steps = 6
+            for t_step in range(1, trail_steps):
+                t_ratio = (frame % cycle_len - t_step) / float(cycle_len)
+                if t_ratio >= 0:
+                    tx = bx + (sx - bx) * t_ratio
+                    ty = by + (sy - by) * t_ratio
+                    draw.rectangle([(tx-1, ty-1), (tx+1, ty+1)], fill="#fbbf24")
+            
+            # Draw active Projectile
+            if not is_hit:
+                draw.rectangle([(proj_x-3, proj_y-3), (proj_x+3, proj_y+3)], fill="#fbbf24", outline="#ffffff", width=1)
+        
+        if is_hit:
             # Hit Explosion!
-            draw.ellipse([sx-30, sy-30, sx+30, sy+30], outline="#f59e0b", width=3)
-            draw.ellipse([sx-15, sy-15, sx+15, sy+15], fill="#ef4444")
-            draw.text((sx-25, sy-35), "[COLLISION M0PF]", fill="#ef4444")
+            draw.ellipse([sx-35, sy-35, sx+35, sy+35], outline="#f59e0b", width=3)
+            draw.ellipse([sx-18, sy-18, sx+18, sy+18], fill="#ef4444")
+            draw.text((sx-30, sy-42), "[ARMY COLLISION]", fill="#ef4444")
             
         # HUD / Hit Tracker Telemetry panel in right panel
         draw.rectangle([(420, 380), (760, 440)], fill="#020617", outline="#0f172a", width=1)
-        draw.text((430, 385), f"PMG REGISTERS: HPOSM0={int(proj_x)} | HPOSP0={px}", fill="#38bdf8")
+        draw.text((430, 385), f"PMG REGISTERS: HPOSM0-8 | HPOSP0-8 (Army Linked)", fill="#38bdf8")
         coll_status = "1 (HIT!)" if is_hit else "0"
-        draw.text((430, 400), f"COLLISION REG: M0PF={coll_status}  | P0PF=0", fill="#ef4444" if is_hit else "#10b981")
-        draw.text((430, 415), f"SCORE: {2400 + (frame // cycle_len) * 100}  | HIT TRACKER: ACTIVE", fill="#ffd700")
+        draw.text((430, 400), f"COLLISION REG: M0-8_PF={coll_status}  | P0-8_PF=0", fill="#ef4444" if is_hit else "#10b981")
+        draw.text((430, 415), f"SCORE: {2400 + (frame // cycle_len) * 100}  | TEDDY ARMY: ACTIVE", fill="#ffd700")
 
         # BOTTOM TELEMETRY BOARD
         draw.rectangle([(20, 480), (780, 580)], fill="#090d16", outline="#1e293b", width=1)
