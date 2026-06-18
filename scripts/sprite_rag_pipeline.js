@@ -188,5 +188,10 @@ function querySpriteRag(queryText) {
 }
 
 // Run test queries
-querySpriteRag("Retrieve a blue sick troll with high mutation traits");
-querySpriteRag("Fetch a red wizard carrying an active fireball");
+const userQuery = process.argv[2];
+if (userQuery) {
+    querySpriteRag(userQuery);
+} else {
+    querySpriteRag("Retrieve a blue sick troll with high mutation traits");
+    querySpriteRag("Fetch a red wizard carrying an active fireball");
+}
