@@ -602,6 +602,8 @@
                 btn.innerText = "AI Mode: Off";
                 btn.style.borderColor = "";
                 btn.style.boxShadow = "";
+                ship.aiForces = null;
+                aiHistory.length = 0;
             }
         }
 
@@ -1131,6 +1133,8 @@
             ship.vx = 0;
             ship.vy = 0;
             ship.angle = -Math.PI / 2;
+            ship.aiForces = null;
+            aiHistory.length = 0;
         }
 
         function resetCastle() {
