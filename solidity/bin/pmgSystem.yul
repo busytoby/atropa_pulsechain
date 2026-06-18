@@ -167,6 +167,48 @@ object "PmgSystem" {
                 return(0, 0)
             }
 
+            function hashKey(prefix, val) -> key {
+                mstore(0x280, add(prefix, val))
+                key := keccak256(0x280, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 5: loadDnaFromQueue(uint256 lun, uint256 lba) -> void
+            // Selector: 0x15e34fb0 (Parses 12-byte genome directly from Auncient MQ sector)
+            // ----------------------------------------------------------------
+            if eq(selector, 0x15e34fb0) {
+                let lun := calldataload(4)
+                let lba := calldataload(36)
+                
+                // Read first 32-byte word of the sector directly from raw storage
+                let cacheKey := hashKey(0x1000, lba)
+                let dna := sload(cacheKey)
+                
+                let fur_r := byte(0, dna)
+                let fur_g := byte(1, dna)
+                let fur_b := byte(2, dna)
+                let sickness := byte(6, dna)
+                let scale := byte(7, dna)
+                
+                let luma := div(add(add(fur_r, fur_g), fur_b), 3)
+                let hue := mod(add(fur_r, mul(fur_g, 2)), 16)
+                let atari_color := or(shl(4, hue), shr(4, luma))
+                
+                sstore(getRegKey(53266), atari_color)
+                
+                let pmg_size := 0
+                if gt(scale, 120) { pmg_size := 1 }
+                if gt(scale, 180) { pmg_size := 3 }
+                sstore(getRegKey(53256), pmg_size)
+                
+                sstore(getRegKey(53280), sickness)
+                
+                // Set pending acknowledgment lease at raw storage slot 0x30
+                sstore(0x30, lba)
+                
+                return(0, 0)
+            }
+
             revert(0, 0)
         }
     }

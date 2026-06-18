@@ -66,6 +66,23 @@ object "ArenaProcessor" {
              // ----------------------------------------------------------------
              if eq(selector, 0xd8fce734) {
                 let yueCardId := calldataload(4)
+                
+                // Track the Auncient owner of the card in storage slot 0x7000 + cardId if not yet set
+                let cardOwner := sload(add(0x7000, yueCardId))
+                if iszero(cardOwner) {
+                    cardOwner := caller()
+                    sstore(add(0x7000, yueCardId), cardOwner)
+                }
+                
+                // Verify caller is the Auncient owner or an approved accessor
+                mstore(0x00, yueCardId)
+                mstore(0x20, caller())
+                let isApproved := sload(keccak256(0x00, 0x40))
+                
+                if iszero(isApproved) {
+                    if xor(caller(), cardOwner) { revert(0, 0) }
+                }
+                
                 let totalPlayers := sload(0x200)
                 
                 // Append player Card ID to registry
@@ -74,6 +91,56 @@ object "ArenaProcessor" {
                 
                 return(0, 0)
             }
+
+             // ----------------------------------------------------------------
+             // METHOD 4: approveAccessorForCard(uint256 cardId, address accessor, uint256 approved) -> void
+             // Selector: 0x19a84a60 (typo) / 0x21e6303f (standard)
+             // ----------------------------------------------------------------
+             if or(eq(selector, 0x19a84a60), eq(selector, 0x21e6303f)) {
+                let cardId := calldataload(4)
+                let accessor := calldataload(36)
+                let approved := calldataload(68)
+                
+                // Only the registered Auncient owner of the Card/Yue can approve accessors
+                let cardOwner := sload(add(0x7000, cardId))
+                if xor(caller(), cardOwner) { revert(0, 0) }
+                
+                mstore(0x00, cardId)
+                mstore(0x20, accessor)
+                sstore(keccak256(0x00, 0x40), approved)
+                return(0, 0)
+             }
+
+             // ----------------------------------------------------------------
+             // METHOD 5: systemEquipQing(uint256 cardId, uint256 pageIdx, uint256 u1, uint256 u2) -> void
+             // Selector: 0xb8e3a241 (typo) / 0xdcde94f8 (standard)
+             // ----------------------------------------------------------------
+             if or(eq(selector, 0xb8e3a241), eq(selector, 0xdcde94f8)) {
+                let cardId := calldataload(4)
+                
+                // Verify caller has been approved for this specific Yue/Card by the Auncient owner
+                mstore(0x00, cardId)
+                mstore(0x20, caller())
+                let isApproved := sload(keccak256(0x00, 0x40))
+                
+                if iszero(isApproved) {
+                    // Fallback: Auncient owner of the card is always authorized
+                    let cardOwner := sload(add(0x7000, cardId))
+                    if xor(caller(), cardOwner) { revert(0, 0) }
+                }
+                
+                let pageIdx := calldataload(36)
+                let u1 := calldataload(68)
+                let u2 := calldataload(100)
+                
+                // Write the 2-bar values directly into the Card's page memory slots
+                let destOffset := add(0x8000, mul(cardId, 0x1000))
+                let pageOffset := add(destOffset, mul(pageIdx, 256))
+                
+                sstore(pageOffset, u1)
+                sstore(add(pageOffset, 32), u2)
+                return(0, 0)
+             }
 
             // ----------------------------------------------------------------
             // METHOD 3: processBatch(uint256 batchSize) -> (uint256 processed, uint256 cursor, uint256 completed)

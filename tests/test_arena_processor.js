@@ -75,13 +75,23 @@ class MockArenaProcessor {
     }
 
     // METHOD 2: registerPlayerYue
-    registerPlayerYue(yueCardId, ownerAddress) {
+    registerPlayerYue(yueCardId, caller) {
+        let cardOwner = this.storage.get(0x7000 + yueCardId);
+        if (!cardOwner) {
+            cardOwner = caller;
+            this.storage.set(0x7000 + yueCardId, cardOwner);
+        }
+
+        const key = `${yueCardId}_${caller}`;
+        const isApproved = this.storage.get(key) === 1;
+
+        if (!isApproved && caller !== cardOwner) {
+            throw new Error("Caller is not owner or approved accessor for registration!");
+        }
+
         const total = this.storage.get(0x200);
         this.storage.set(0x210 + total, yueCardId);
         this.storage.set(0x200, total + 1);
-        
-        // Track the owner of the card in storage slot 0x7000 + cardId
-        this.storage.set(0x7000 + yueCardId, ownerAddress);
     }
 
     // METHOD 6: approveAccessorForCard
@@ -185,6 +195,12 @@ function runArenaTests() {
     }
     assert.strictEqual(arena.storage.get(0x200), 5, "Total registered players should be 5");
     console.log("✓ Step 1: Registered 5 Player Yues in Arena");
+
+    // Verification of unauthorized registration rejection
+    assert.throws(() => {
+        arena.registerPlayerYue(1, "0xunauthorized_attacker");
+    }, /Caller is not owner or approved accessor for registration/, "Should reject unauthorized registration");
+    console.log("✓ Step 1.1: Verified unauthorized player registration rejection");
 
     // 4. Equip Qings using Yue Owners & Approved Accessors
     const arenaContractAddress = "0xarenahardware";

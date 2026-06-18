@@ -19,7 +19,16 @@ default_reserves_path = reserves_files[0] if reserves_files else "nonukes_pulsex
 RESERVES_FILE_PATH = os.environ.get("RESERVES_FILE_PATH", default_reserves_path)
 
 IGNORE_LOCK = threading.Lock()
-QING_CHAT_LOGS = []
+QING_CHAT_LOGS = [
+    {
+        "username": "s㉾vereign",
+        "soul": 91831900924270,
+        "aura": 682857673341037,
+        "message": "vibes",
+        "block": 26551929,
+        "tx": "0xf64e78f57315f9f5064521ba8f21d3ac4ee6c245f81796fea5d6a5b540317396"
+    }
+]
 
 def start_qing_chat_poller():
     global QING_CHAT_LOGS

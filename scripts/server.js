@@ -448,6 +448,31 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // Proxy NoNukes dashboard requests to python server on port 8080
+    if (
+        req.url.startsWith("/api/nonukes") || 
+        req.url.startsWith("/api/data") || 
+        req.url.startsWith("/api/pools") || 
+        req.url.startsWith("/api/ignore")
+    ) {
+        const proxyReq = http.request({
+            host: "127.0.0.1",
+            port: 8080,
+            path: req.url,
+            method: req.method,
+            headers: req.headers
+        }, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+        });
+        proxyReq.on("error", (err) => {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Failed to connect to dashboard backend", details: err.message }));
+        });
+        req.pipe(proxyReq);
+        return;
+    }
+
     // API endpoint to serve config keys
     if (req.url === "/api/config") {
         if (fs.existsSync(CONFIG_PATH)) {
@@ -1059,6 +1084,7 @@ const server = http.createServer(async (req, res) => {
             // 3. Register 5 players (Card 0, 1, 2, 3, 4)
             const arenaContract = new ethers.Contract(arenaAddr, [
                 "function registerPlayerYue(uint256 yueCardId) external",
+                "function systemEquipQing(uint256 cardId, uint256 pageIdx, uint256 u1, uint256 u2) external",
                 "function processBatch(uint256 batchSize) external"
             ], deployer);
             
@@ -1066,11 +1092,15 @@ const server = http.createServer(async (req, res) => {
             await provider.send("anvil_setStorageAt", [arenaAddr, ethers.zeroPadValue(ethers.toBeHex(0x200), 32), ethers.zeroPadValue("0x00", 32)]);
             
             for (let i = 0; i < 5; i++) {
+                // Clear owner slot 0x7000 + i to allow clean re-registration in testing
+                const ownerSlot = ethers.zeroPadValue(ethers.toBeHex(0x7000 + i), 32);
+                await provider.send("anvil_setStorageAt", [arenaAddr, ownerSlot, ethers.zeroPadValue("0x00", 32)]);
+
                 const txReg = await arenaContract.registerPlayerYue(i);
                 await txReg.wait();
             }
             
-            // 4. Set their 2-bar equipment params in storage using anvil_setStorageAt
+            // 4. Set their 2-bar equipment params using systemEquipQing on-chain method
             const mockBars = [
                 { u1: 0, u2: 20 },  // Width: 20
                 { u1: 10, u2: 50 }, // Width: 40
@@ -1080,21 +1110,8 @@ const server = http.createServer(async (req, res) => {
             ];
             
             for (let i = 0; i < 5; i++) {
-                const destOffset = 0x8000 + i * 0x1000;
-                const pageOffset = destOffset + 0x70 * 256;
-                const u1Slot = ethers.zeroPadValue(ethers.toBeHex(pageOffset), 32);
-                const u2Slot = ethers.zeroPadValue(ethers.toBeHex(pageOffset + 32), 32);
-                
-                await provider.send("anvil_setStorageAt", [
-                    arenaAddr,
-                    u1Slot,
-                    ethers.zeroPadValue(ethers.toBeHex(mockBars[i].u1), 32)
-                ]);
-                await provider.send("anvil_setStorageAt", [
-                    arenaAddr,
-                    u2Slot,
-                    ethers.zeroPadValue(ethers.toBeHex(mockBars[i].u2), 32)
-                ]);
+                const txEquip = await arenaContract.systemEquipQing(i, 0x70, mockBars[i].u1, mockBars[i].u2);
+                await txEquip.wait();
             }
             
             res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });

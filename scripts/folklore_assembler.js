@@ -20,7 +20,8 @@ const OP = {
     SBC_IM: 0xE9, SBC_ZP: 0xE5,
     CMP_IM: 0xC9, CMP_ZP: 0xC5,
     BNE: 0xD0, BEQ: 0xF0,
-    JMP: 0x4C, RTS: 0x60
+    JMP: 0x4C, RTS: 0x60,
+    MQ_PUT: 0x0B, MQ_GET: 0x1B, MQ_ACK: 0x2B
 };
 
 function evaluateExpression(exprStr, labels) {
@@ -346,6 +347,15 @@ function assemble(codeLines) {
         } else if (mnemonic === "RTS") {
             bytes.push(OP.RTS);
             currentPC += 1;
+        } else if (mnemonic === "MQ_PUT") {
+            bytes.push(OP.MQ_PUT);
+            currentPC += 1;
+        } else if (mnemonic === "MQ_GET") {
+            bytes.push(OP.MQ_GET);
+            currentPC += 1;
+        } else if (mnemonic === "MQ_ACK") {
+            bytes.push(OP.MQ_ACK);
+            currentPC += 1;
         }
     }
 
@@ -528,10 +538,12 @@ async function main() {
     console.log("\n>>> SUCCESS: Both CPU and Folklore demos compiled & executed successfully! <<<");
 }
 
-main().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}
 
 module.exports = { assemble, evaluateExpression };
 

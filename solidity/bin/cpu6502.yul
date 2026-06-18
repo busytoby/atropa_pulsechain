@@ -223,6 +223,11 @@ object "CPU6502Emulator" {
                 w := or(and(sload(getUserSlot(addr)), 0xFF), shl(8, and(sload(getUserSlot(add(addr, 1))), 0xFF)))
             }
 
+            function hashKey(prefix, val) -> key {
+                mstore(0x280, add(prefix, val))
+                key := keccak256(0x280, 32)
+            }
+
             function delegateGame(addr, val) {
                 let cop := sload(getUserSlot(54698))
                 if cop {
@@ -2129,6 +2134,65 @@ object "CPU6502Emulator" {
                     setReg(0x82, val)
                     updateFlags(val)
                 }
+                // Auncient WinchesterMQ Asynchronous I/O Opcodes
+                // MQ_PUT (0x0B): Asynchronously put a 256-byte message block from guest RAM into the queue
+                case 0x0B {
+                    let lun := getReg(0x80)
+                    let lba := getReg(0x82)
+                    let ramAddr := readWord(0x02)
+                    let cacheKey := hashKey(0x1000, lba)
+                    for { let wordOffset := 0 } lt(wordOffset, 8) { wordOffset := add(wordOffset, 1) } {
+                        let wordVal := 0
+                        for { let byteOffset := 0 } lt(byteOffset, 32) { byteOffset := add(byteOffset, 1) } {
+                            let addr := add(ramAddr, add(mul(wordOffset, 32), byteOffset))
+                            let byteVal := and(readMemory(addr), 0xFF)
+                            wordVal := or(shl(8, wordVal), byteVal)
+                        }
+                        sstore(add(cacheKey, wordOffset), wordVal)
+                    }
+                    let tailKey := add(0x2050, lun)
+                    let tail := and(sload(tailKey), 0xFF)
+                    if eq(lba, tail) {
+                        sstore(tailKey, and(add(tail, 1), 0xFF))
+                    }
+                    setReg(0x80, 0) // Return success
+                }
+                // MQ_GET (0x1B): Asynchronously get a 256-byte message block from the queue into guest RAM
+                case 0x1B {
+                    let lun := getReg(0x80)
+                    let lba := getReg(0x82)
+                    let ramAddr := readWord(0x02)
+                    let cacheKey := hashKey(0x1000, lba)
+                    for { let wordOffset := 0 } lt(wordOffset, 8) { wordOffset := add(wordOffset, 1) } {
+                        let wordVal := sload(add(cacheKey, wordOffset))
+                        for { let byteOffset := 0 } lt(byteOffset, 32) { byteOffset := add(byteOffset, 1) } {
+                            let shift := mul(sub(31, byteOffset), 8)
+                            let byteVal := and(shr(shift, wordVal), 0xFF)
+                            let addr := add(ramAddr, add(mul(wordOffset, 32), byteOffset))
+                            writeMemory(addr, byteVal)
+                        }
+                    }
+                    sstore(0x30, lba) // Set pending acknowledgment lease
+                    setReg(0x80, 0)   // Return success
+                }
+                // MQ_ACK (0x2B): Asynchronously commit/acknowledge the leased message block
+                case 0x2B {
+                    let lun := getReg(0x80)
+                    let lba := getReg(0x82)
+                    let pending := sload(0x30)
+                    let status := 2 // Error condition (Check Condition)
+                    if eq(lba, pending) {
+                        let headKey := add(0x2000, lun)
+                        let head := and(sload(headKey), 0xFF)
+                        if eq(lba, head) {
+                            sstore(headKey, and(add(head, 1), 0xFF))
+                        }
+                        sstore(0x30, 0xFFFFFFFF) // Clear lease
+                        status := 0 // Success (Good status)
+                    }
+                    setReg(0x80, status)
+                }
+
                 // Undocumented and Standard NOPs
                 case 0xEA {}
                 case 0x04 {} case 0x14 {} case 0x34 {} case 0x44 {} case 0x54 {} case 0x64 {} case 0x74 {}

@@ -247,7 +247,7 @@ Loading ZMM VM inventory coordinates and items...
                 <section class="card" style="border-color: var(--neon-magenta); box-shadow: 0 0 20px rgba(255, 0, 127, 0.15);">
                     <h2><span class="icon">🔑</span> CABS Vanity Key Storefront</h2>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-                        Purchase exclusive private keys for vanity public addresses featuring 19 or more '1' characters, managed natively in-memory via ZMM VM thunks.
+                        Purchase exclusive private keys for vanity public addresses featuring 20 or more '1' characters, managed natively in-memory via ZMM VM thunks.
                     </p>
                     <div id="cabsStorefrontList" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
                         <div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">Querying storefront registry...</div>
@@ -1247,7 +1247,7 @@ Loading ZMM VM inventory coordinates and items...
                 let html = "";
                 let count = 0;
                 data.keys.forEach((k, idx) => {
-                    if (k.ones < 19) return; // Only show addresses with 19 or more '1's
+                    if (k.ones < 20) return; // Only show addresses with 20 or more '1's
                     count++;
                     const price = k.ones * 10;
                     const addressDisplay = k.address;
@@ -1267,7 +1267,7 @@ Loading ZMM VM inventory coordinates and items...
                 });
                 
                 if (count === 0) {
-                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No eligible vanity keys (19+ '1's) found in registry.</div>`;
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px; font-style: italic;">No eligible vanity keys (20+ '1's) found in registry.</div>`;
                 } else {
                     listContainer.innerHTML = html;
                 }

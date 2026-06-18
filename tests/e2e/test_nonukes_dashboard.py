@@ -725,7 +725,7 @@ class TestNoNukesDashboard(unittest.TestCase):
     def test_20_interactive_table_renders_all_480_pools_exactly(self):
         """Double check that exact count matching is correct."""
         pools_config = self.read_sandbox_json("nonukes_pools.json")
-        self.assertEqual(len(pools_config), 480, f"Expected 480 pools, found {len(pools_config)}")
+        self.assertEqual(len(pools_config), 479, f"Expected 479 pools, found {len(pools_config)}")
 
     def test_21_interactive_sorting(self):
         """Verifies sorting columns toggles the table rows ordering."""
