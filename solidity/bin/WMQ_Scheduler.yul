@@ -78,6 +78,9 @@ object "WMQ_Scheduler" {
             // CORE TASK DISPATCHER LOOP
             // ================================================================
             function schedulerDispatch(stepLimit) -> executedSteps {
+                // Before scheduling next slice, poll for process launch requests
+                pollProcessLaunches()
+
                 let nextCard := findReadyCard()
                 if eq(nextCard, 0xFFFFFFFF) {
                     executedSteps := 0
@@ -94,32 +97,24 @@ object "WMQ_Scheduler" {
                 let sr := sload(add(pcbBase, 5))
 
                 // Check if we need to inject a WinchesterMQ hardware interrupt (IRQ)
-                // If Inbox queue has pending messages, force vector jump
                 let mqHead := sload(add(0x2000, nextCard))
                 let mqTail := sload(add(0x2050, nextCard))
                 if lt(mqHead, mqTail) {
-                    // Check if CPU interrupts are not disabled in SR (6502 Interrupt Disable flag is Bit 2)
                     let interruptDisable := and(sr, 0x04)
                     if iszero(interruptDisable) {
-                        // 1. Push PC (ip) High and Low to stack (represented in memory at $0100 + SP)
-                        // SP decrements by 2
                         let stackPage := 0x0100
                         sstore(add(stackPage, sp), shr(8, and(ip, 0xFF00)))
                         sp := sub(sp, 1)
                         sstore(add(stackPage, sp), and(ip, 0x00FF))
                         sp := sub(sp, 1)
 
-                        // 2. Push Status Register (sr) to stack
                         sstore(add(stackPage, sp), sr)
                         sp := sub(sp, 1)
 
-                        // 3. Force IP to point to the IRQ entry point (configured at $FFFE-$FFFF vector value)
-                        // For our thunk environment, the IRQ entry handler address defaults to $FF00
                         let irqVector := sload(0xFFFE)
                         if iszero(irqVector) { irqVector := 0xFF00 } // fallback
                         ip := irqVector
 
-                        // 4. Set Interrupt Disable flag in SR to prevent nested IRQs
                         sr := or(sr, 0x04)
                     }
                 }
@@ -128,21 +123,78 @@ object "WMQ_Scheduler" {
                 let exitReason, steps := executeGuestVmSlice(nextCard, ip, sp, a, x, y, sr, stepLimit)
                 executedSteps := steps
 
-                // Check exit state (0 = StepLimit reached, 1 = Yielded, 2 = Halted)
+                // Check exit state
                 switch exitReason
-                case 1 { // Yielded: Save state and keep active for next slice rotation
+                case 1 { // Yielded
                     saveCardContext(nextCard, pcbBase)
                 }
-                case 2 { // Halted: Suspend card process
+                case 2 { // Halted
                     saveCardContext(nextCard, pcbBase)
-                    sstore(add(pcbBase, 6), 0) // Set status to Suspended
+                    sstore(add(pcbBase, 6), 0) // Suspended
                 }
-                default { // Step limit or generic yield: Save current context state
+                default {
                     saveCardContext(nextCard, pcbBase)
                 }
                 
-                // Rotate scheduler head pointer to next Card index
                 sstore(0x10, mod(add(nextCard, 1), 52))
+            }
+
+            // Checks the scheduler's inbox for pending LAUN (0x4c41554e) spawn request blocks
+            function pollProcessLaunches() {
+                // LUN 5 is the broker. Let's inspect scheduler launch queue (mapped to LUN 5, LBA index 0xFF)
+                let head := sload(0x2005) // Scheduler head for LAUN topic (0x2000 + 5)
+                let tail := sload(0x2055) // Scheduler tail for LAUN topic (0x2050 + 5)
+                
+                if lt(head, tail) {
+                    let cacheKey := keccak256(add(0x1000, head), 32)
+                    let word0 := sload(cacheKey)
+                    
+                    // Validate LAUN magic header (bytes 0-3)
+                    let magic := shr(224, word0)
+                    if eq(magic, 0x4c41554e) {
+                        // Extract target Card ID (bytes 4-7)
+                        let targetCard := and(shr(192, word0), 0xFFFFFFFF)
+                        
+                        // Extract 20-byte target binary contract address (bytes 8-27)
+                        let binaryAddr := and(word0, 0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                        
+                        // Execute process spawner loading sequence
+                        spawnProcess(targetCard, binaryAddr)
+                    }
+                    
+                    // Consume launch message block
+                    sstore(0x2005, add(head, 1))
+                }
+            }
+
+            // Performs raw bytecode copy and initializes guest process context
+            function spawnProcess(cardId, binaryAddr) {
+                if gt(cardId, 51) { leave }
+                if iszero(extcodesize(binaryAddr)) { leave }
+                
+                // Copy guest binary into RAM memory window for this Card (represented at 0x8000 + cardId * 0x1000)
+                let destOffset := add(0x8000, mul(cardId, 0x1000))
+                let codeSize := extcodesize(binaryAddr)
+                if gt(codeSize, 4096) { codeSize := 4096 } // Cap at 4KB RAM page size limit
+                
+                let ptr := mload(0x40)
+                extcodecopy(binaryAddr, ptr, 0, codeSize)
+                
+                // Copy loaded code directly to the card's transient RAM storage slots
+                for { let offset := 0 } lt(offset, codeSize) { offset := add(offset, 32) } {
+                    sstore(add(destOffset, offset), mload(add(ptr, offset)))
+                }
+
+                // Initialize control block registers for fresh start
+                let pcbBase := getPcbOffset(cardId)
+                sstore(add(pcbBase, 0), 0)          // PC (IP) = 0 (Start vector)
+                sstore(add(pcbBase, 1), 0xFD)       // SP
+                sstore(add(pcbBase, 2), 0)          // A
+                sstore(add(pcbBase, 3), 0)          // X
+                sstore(add(pcbBase, 4), 0)          // Y
+                sstore(add(pcbBase, 5), 0)          // SR
+                sstore(add(pcbBase, 6), 1)          // Status = Active
+                sstore(add(pcbBase, 7), 0)          // Idle state = 0 (Ready)
             }
 
             // Scans the 52 card slots to find a runnable/ready process context
