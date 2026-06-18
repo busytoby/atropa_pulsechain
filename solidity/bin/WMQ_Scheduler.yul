@@ -26,6 +26,7 @@ object "WMQ_Scheduler" {
             // ----------------------------------------------------------------
             if eq(selector, 0x8a1b9c7e) {
                 let cardId := calldataload(4)
+                if gt(cardId, 5) { revert(0, 0) } // Cap Card ID at 5 (0 to 5)
                 let entryPoint := calldataload(36)
                 
                 // Initialize process control block (PCB) slots for the Card
@@ -58,6 +59,7 @@ object "WMQ_Scheduler" {
             // ----------------------------------------------------------------
             if eq(selector, 0x47657267) {
                 let cardId := calldataload(4)
+                if gt(cardId, 5) { revert(0, 0) } // Cap query Card ID at 5 (0 to 5)
                 let pcbBase := getPcbOffset(cardId)
                 
                 let ptr := mload(0x40)
@@ -136,7 +138,7 @@ object "WMQ_Scheduler" {
                     saveCardContext(nextCard, pcbBase)
                 }
                 
-                sstore(0x10, mod(add(nextCard, 1), 52))
+                sstore(0x10, mod(add(nextCard, 1), 6))
             }
 
             // Checks the scheduler's inbox for pending LAUN (0x4c41554e) spawn request blocks
@@ -169,7 +171,7 @@ object "WMQ_Scheduler" {
 
             // Performs raw bytecode copy and initializes guest process context
             function spawnProcess(cardId, binaryAddr) {
-                if gt(cardId, 51) { leave }
+                if gt(cardId, 5) { leave } // Cap Card ID at 5 (6 slots: 0 to 5)
                 if iszero(extcodesize(binaryAddr)) { leave }
                 
                 // Copy guest binary into RAM memory window for this Card (represented at 0x8000 + cardId * 0x1000)
@@ -197,24 +199,22 @@ object "WMQ_Scheduler" {
                 sstore(add(pcbBase, 7), 0)          // Idle state = 0 (Ready)
             }
 
-            // Scans the 52 card slots to find a runnable/ready process context
+            // Scans the 6 card slots to find a runnable/ready process context
             function findReadyCard() -> cardId {
                 cardId := 0xFFFFFFFF
                 let currentHead := sload(0x10) // Read scheduler queue pointer
                 
-                for { let i := 0 } lt(i, 52) { i := add(i, 1) } {
-                    let candidate := mod(add(currentHead, i), 52)
+                for { let i := 0 } lt(i, 6) { i := add(i, 1) } {
+                    let candidate := mod(add(currentHead, i), 6)
                     let pcbBase := getPcbOffset(candidate)
                     let status := sload(add(pcbBase, 6)) // Status flag
 
                     // Process is active
                     if eq(status, 1) {
                         // Check if its Winchester LUN inbox queue has pending messages to wake it
-                        // LUN index is mapped to Card ID. Check Winchester head != tail.
                         let mqHead := sload(add(0x2000, candidate)) // Inbox Head register index
                         let mqTail := sload(add(0x2050, candidate)) // Inbox Tail register index
                         
-                        // If there is data in the inbox or process is actively running without idle yield
                         if or(lt(mqHead, mqTail), iszero(sload(add(pcbBase, 7)))) {
                             cardId := candidate
                             break
