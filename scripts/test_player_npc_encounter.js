@@ -55,6 +55,10 @@ async function main() {
     await (await zmContract.bindParserAddress(parserAddress)).wait();
     console.log("Parser address bound successfully.");
 
+    // Trigger parser initialization on-chain
+    console.log("Initializing parser state on-chain...");
+    await (await zmContract.parseCommand(playerAddress, ethers.hexlify(Buffer.from("look")))).wait();
+
     // 2. Setup Game Map using direct storage injection on Anvil
     // Room 10 exits: North -> 11 (0x0B000000)
     const exitsRoom10Slot = ethers.toBeHex(3200000 + 10);

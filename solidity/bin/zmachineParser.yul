@@ -31,6 +31,7 @@ object "ZMachineParser" {
                     sstore(add(2000300, 60), 20) // Item 60: Magic Sword (starts in Room 20)
                     sstore(add(2000300, 61), 24) // Item 61: Golden Crown (starts in Room 24)
                     sstore(add(2000300, 62), 23) // Item 62: Fire Key (starts in Room 23)
+                    sstore(add(4000000, 2), 10) // Spawn Daemon NPC (Card ID 2) in Room 10
                 }
 
                 let resultPtr := 0x40

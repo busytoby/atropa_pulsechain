@@ -52,6 +52,10 @@ async function main() {
     await (await zmContract.bindParserAddress(parserAddress)).wait();
     console.log("Parser address bound successfully.");
 
+    // Trigger parser initialization on-chain
+    console.log("Initializing parser state on-chain...");
+    await (await zmContract.parseCommand(playerAddress, ethers.hexlify(Buffer.from("look")))).wait();
+
     // Helper to bind Room DNA using the custom selector 0xb23e800d
     const bindRoomDnaCustom = async (roomId, dnaText) => {
         const dummyInterface = new ethers.Interface([
