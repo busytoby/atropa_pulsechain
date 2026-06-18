@@ -220,12 +220,16 @@ object "WinchesterMQ" {
                     // 6-byte CDB complete. Parse command type.
                     let opcode := sload(7) // Opcode stored in CDB index 0 (slot 7)
                     
-                    // Opcode 0x08 = Read Block / MQGET
+                    // Opcode 0x08 = Read Block / MQGET (Updated for 2-phase commit)
                     if eq(opcode, 0x08) {
                         sstore(2, 0) // C/D = 0 (Data phase)
                         sstore(3, 1) // I/O = 1 (Read from controller to guest)
                         sstore(13, 0) // Clear DATA_BYTE_COUNT
                         
+                        // Set the currently read block as pending acknowledgment lease (slot 0x30)
+                        let blockId := getCdbLba()
+                        sstore(0x30, blockId)
+
                         // Load first read byte to data port and assert REQ
                         setupNextReadByte(0)
                         leave
@@ -244,8 +248,28 @@ object "WinchesterMQ" {
                     if eq(opcode, 0x0C) {
                         sstore(2, 0) // C/D = 0 (Data phase)
                         sstore(3, 0) // I/O = 0 (Host will write 32-byte CorrelId first)
-                        sstore(13, 0) // Clear data count (we will read 32 bytes of CorrelId)
+                        sstore(13, 0) // Clear data count
                         sstore(1, 1)  // Assert REQ = 1
+                        leave
+                    }
+
+                    // Opcode 0x1E = Acknowledge Message (Commit MQGET)
+                    if eq(opcode, 0x1E) {
+                        let blockId := getCdbLba()
+                        let pending := sload(0x30)
+                        
+                        // Verify block is indeed leased for ACK
+                        if eq(blockId, pending) {
+                            let currentHead := sload(14)
+                            if eq(blockId, currentHead) {
+                                sstore(14, add(currentHead, 1)) // Permanently consume block
+                            }
+                            sstore(0x30, 0xFFFFFFFF) // Clear lease
+                            transitionToStatus(0x00) // Good status
+                            leave
+                        }
+                        
+                        transitionToStatus(0x02) // Error status
                         leave
                     }
 
@@ -280,10 +304,12 @@ object "WinchesterMQ" {
                             leave
                         }
 
-                        // Match found! Transition to Data Read Phase to send block payload to guest
-                        sstore(8, and(shr(16, matchedBlock), 0x1F)) // Inject matched LBA into CDB slots
+                        // Match found! Transition to Data Read Phase
+                        sstore(8, and(shr(16, matchedBlock), 0x1F)) // Inject matched LBA
                         sstore(9, and(shr(8, matchedBlock), 0xFF))
                         sstore(10, and(matchedBlock, 0xFF))
+
+                        sstore(0x30, matchedBlock) // Set pending lease
 
                         sstore(2, 0) // C/D = 0
                         sstore(3, 1) // I/O = 1 (Read phase)
@@ -320,13 +346,7 @@ object "WinchesterMQ" {
                         leave
                     }
 
-                    // Read complete. Advance queue head pointer if we consumed the current head.
-                    let blockId := getCdbLba()
-                    let currentHead := sload(14)
-                    if eq(blockId, currentHead) {
-                        sstore(14, add(currentHead, 1)) // Consume head index
-                    }
-
+                    // Read complete. (Queue pointer is NOT advanced yet, waiting for Opcode 0x1E)
                     transitionToStatus(0x00) // Good status
                     leave
                 }
