@@ -8,6 +8,13 @@ object "RhythmGenerator" {
             if lt(calldatasize(), 4) { revert(0, 0) }
             let selector := shr(224, calldataload(0))
 
+            // Namespaced storage slot mapper for multi-user isolation
+            function getNamespacedSlot(index) -> slot {
+                mstore(0x280, caller())
+                mstore(0x2A0, index)
+                slot := keccak256(0x280, 64)
+            }
+
             // ----------------------------------------------------------------
             // METHOD 1: processSample(int256 triggerClock, int256 patternSelect) -> int256 drumTriggers
             // Selector: 0x07a96d8c
@@ -17,17 +24,17 @@ object "RhythmGenerator" {
                 let patternSelect := calldataload(36)
 
                 // Load internal clock state:
-                // slot 100: last clock signal
-                // slot 101: step index
-                let lastClock := sload(100)
-                let step := sload(101)
+                // slot 100: last clock signal (namespaced)
+                // slot 101: step index (namespaced)
+                let lastClock := sload(getNamespacedSlot(100))
+                let step := sload(getNamespacedSlot(101))
 
                 let trigger := 0
 
                 // Detect clock rising edge (clock transition from <= 0 to > 0)
                 if and(sgt(clockSignal, 0), iszero(sgt(lastClock, 0))) {
                     // Get pattern length (default 16, custom stored at 0x1000 + patternSelect)
-                    let patLength := sload(add(0x1000, patternSelect))
+                    let patLength := sload(getNamespacedSlot(add(0x1000, patternSelect)))
                     if iszero(patLength) {
                         patLength := 16
                         // Default Waltz override (Pattern 1)
@@ -41,14 +48,14 @@ object "RhythmGenerator" {
                     if iszero(lt(step, patLength)) {
                         step := 0
                     }
-                    sstore(101, step)
+                    sstore(getNamespacedSlot(101), step)
 
                     // Retrieve triggers for the current step under selected pattern
                     trigger := getPatternTrigger(patternSelect, step)
                 }
 
                 // Save clock state
-                sstore(100, clockSignal)
+                sstore(getNamespacedSlot(100), clockSignal)
 
                 mstore(0, trigger)
                 return(0, 32)
@@ -63,8 +70,8 @@ object "RhythmGenerator" {
                 let stepIdx := calldataload(36)
                 let triggers := calldataload(68)
 
-                // Store custom triggers at slot: 0x2000 + patternId * 256 + stepIdx
-                sstore(add(0x2000, add(mul(patternId, 256), stepIdx)), triggers)
+                // Store custom triggers at namespaced slot
+                sstore(getNamespacedSlot(add(0x2000, add(mul(patternId, 256), stepIdx))), triggers)
                 return(0, 0)
             }
 
@@ -76,8 +83,8 @@ object "RhythmGenerator" {
                 let patternId := calldataload(4)
                 let length := calldataload(36)
 
-                // Store custom length at slot: 0x1000 + patternId
-                sstore(add(0x1000, patternId), length)
+                // Store custom length at namespaced slot
+                sstore(getNamespacedSlot(add(0x1000, patternId)), length)
                 return(0, 0)
             }
 
@@ -99,7 +106,7 @@ object "RhythmGenerator" {
             // Selector: 0x1d3824ea
             // ----------------------------------------------------------------
             if eq(selector, 0x1d3824ea) {
-                mstore(0, sload(101))
+                mstore(0, sload(getNamespacedSlot(101)))
                 return(0, 32)
             }
 
@@ -116,8 +123,8 @@ object "RhythmGenerator" {
             // Bit 7 = Accent (128)
             function getPatternTrigger(pattern, stepIdx) -> triggers {
                 // First, check if there's a custom trigger stored for this pattern and step
-                // Storage slot: 0x2000 + pattern * 256 + stepIdx
-                triggers := sload(add(0x2000, add(mul(pattern, 256), stepIdx)))
+                // Storage slot: 0x2000 + pattern * 256 + stepIdx (namespaced)
+                triggers := sload(getNamespacedSlot(add(0x2000, add(mul(pattern, 256), stepIdx))))
                 if triggers {
                     leave
                 }
