@@ -243,6 +243,21 @@
             </div>
         </div>
 
+        <!-- Alchemical Mutation Synthesizer -->
+        <div style="margin-top: 15px; width: 100%; border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 12px; background: rgba(12, 8, 18, 0.85); padding: 15px; font-family: 'Rajdhani', sans-serif; box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);">
+            <div style="font-size: 1.1rem; color: var(--primary); text-shadow: 0 0 8px var(--primary-glow); margin-bottom: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                🧬 Alchemical Mutation Synthesizer
+            </div>
+            <div style="display: flex; justify-content: space-around; gap: 10px; margin-bottom: 12px;">
+                <button class="btn" id="btnMutateShield" onclick="synthesizeMutation('shield')" style="font-size: 0.8rem; padding: 8px; border-color: var(--ring-inner); color: var(--ring-inner);">Shield Regen<br><span style="font-size: 0.7rem; color: #a59cb4;">5 Lead, 5 Sulfur</span></button>
+                <button class="btn" id="btnMutateSpeed" onclick="synthesizeMutation('speed')" style="font-size: 0.8rem; padding: 8px; border-color: var(--ring-mid); color: var(--ring-mid);">Drift Rotation<br><span style="font-size: 0.7rem; color: #a59cb4;">5 Mercury, 5 Lead</span></button>
+                <button class="btn" id="btnMutateMines" onclick="synthesizeMutation('mines')" style="font-size: 0.8rem; padding: 8px; border-color: var(--ring-outer); color: var(--ring-outer);">Magnetic Mines<br><span style="font-size: 0.7rem; color: #a59cb4;">5 Sulfur, 5 Mercury</span></button>
+            </div>
+            <div id="mutationStatus" style="font-size: 0.85rem; color: #ece5fa; text-align: center; min-height: 20px;">
+                Mutate core parameters using harvested reagents to increase difficulty and AI training.
+            </div>
+        </div>
+
         <div class="controls-info">
             <strong>[A / D]</strong> Rotate Ship &nbsp;|&nbsp; 
             <strong>[W]</strong> Thrust &nbsp;|&nbsp; 
@@ -461,6 +476,11 @@
         let shieldRegenTimer = 0;
         let regenEffect = null;
 
+        // Dynamic Mutation Parameters (synthesized via reagents)
+        let regenDelay = 600;
+        let ringSpeedMultiplier = 1.0;
+        let magneticMineProbability = 0.45;
+
         // Rings configurations (3 concentric rings with segment gaps)
         const rings = [
             { radius: 60, speed: 0.006, color: "#00e676", segments: [1, 1, 0, 1, 1, 0, 1, 0] },
@@ -556,7 +576,7 @@
             rings.forEach((ring, rIdx) => {
                 const totalSegments = ring.segments.length;
                 const segAngle = (Math.PI * 2) / totalSegments;
-                const currentRot = ringAngle * ring.speed * 100;
+                const currentRot = ringAngle * ring.speed * ringSpeedMultiplier * 100;
                 
                 for (let i = 0; i < totalSegments; i++) {
                     if (ring.segments[i] === 0) continue; // broken segment
@@ -604,6 +624,82 @@
                 btn.style.boxShadow = "";
                 ship.aiForces = null;
                 aiHistory.length = 0;
+            }
+        }
+
+        function synthesizeMutation(type) {
+            // First, load from localStorage/variables to ensure sync
+            loadHarvestedReagents();
+
+            let success = false;
+            let msg = "";
+
+            if (type === 'shield') {
+                if (leadHarvested >= 5 && sulfurHarvested >= 5) {
+                    leadHarvested -= 5;
+                    sulfurHarvested -= 5;
+                    regenDelay = 300;
+                    success = true;
+                    msg = "🧬 Shield Mutation complete: Regen delay halved (6s)!";
+                } else {
+                    msg = "❌ Need 5 Lead & 5 Sulfur to synthesize Shield Mutation!";
+                }
+            } else if (type === 'speed') {
+                if (mercuryHarvested >= 5 && leadHarvested >= 5) {
+                    mercuryHarvested -= 5;
+                    leadHarvested -= 5;
+                    ringSpeedMultiplier = 1.65;
+                    success = true;
+                    msg = "🧬 Speed Mutation complete: Castle rotation speed increased by 65%!";
+                } else {
+                    msg = "❌ Need 5 Mercury & 5 Lead to synthesize Speed Mutation!";
+                }
+            } else if (type === 'mines') {
+                if (sulfurHarvested >= 5 && mercuryHarvested >= 5) {
+                    sulfurHarvested -= 5;
+                    mercuryHarvested -= 5;
+                    magneticMineProbability = 0.80;
+                    success = true;
+                    msg = "🧬 Mine Mutation complete: Serpentine mine spawn rate boosted to 80%!";
+                } else {
+                    msg = "❌ Need 5 Sulfur & 5 Mercury to synthesize Mine Mutation!";
+                }
+            }
+
+            if (success) {
+                saveHarvestedReagents();
+                playAlchemicalChime();
+                const statusDiv = document.getElementById("mutationStatus");
+                statusDiv.innerText = msg;
+                statusDiv.style.color = "#00ff66";
+            } else {
+                const statusDiv = document.getElementById("mutationStatus");
+                statusDiv.innerText = msg;
+                statusDiv.style.color = "#ff3333";
+            }
+        }
+
+        function playAlchemicalChime() {
+            try {
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                // Ascending synthesizer alchemical triad
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0, now + idx * 0.12);
+                    gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.12 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.45);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.5);
+                });
+            } catch (e) {
+                console.error("Alchemical sound synthesis error:", e);
             }
         }
 
@@ -668,7 +764,7 @@
                 if (d < 35) {
                     let angle = Math.atan2(ship.y - targetY, ship.x - targetX);
                     if (angle < 0) angle += Math.PI * 2;
-                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    const currentRot = (ringAngle * ring.speed * ringSpeedMultiplier * 100) % (Math.PI * 2);
                     let relAngle = angle - currentRot;
                     if (relAngle < 0) relAngle += Math.PI * 2;
                     const totalSegments = ring.segments.length;
@@ -826,7 +922,7 @@
                     let angle = Math.atan2(ship.y - size/2, ship.x - size/2);
                     if (angle < 0) angle += Math.PI * 2;
                     
-                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    const currentRot = (ringAngle * ring.speed * ringSpeedMultiplier * 100) % (Math.PI * 2);
                     let relAngle = angle - currentRot;
                     if (relAngle < 0) relAngle += Math.PI * 2;
                     
@@ -864,7 +960,7 @@
                         let angle = Math.atan2(b.y - size/2, b.x - size/2);
                         if (angle < 0) angle += Math.PI * 2;
                         
-                        const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                        const currentRot = (ringAngle * ring.speed * ringSpeedMultiplier * 100) % (Math.PI * 2);
                         let relAngle = angle - currentRot;
                         if (relAngle < 0) relAngle += Math.PI * 2;
                         
@@ -942,7 +1038,7 @@
 
             // Shield regeneration logic: check every frame
             shieldRegenTimer++;
-            const currentRegenDelay = 600; // regenerate a segment every 10 seconds (600 frames)
+            const currentRegenDelay = regenDelay; // regenerate a segment depending on alchemical mutations
             if (shieldRegenTimer > currentRegenDelay) {
                 shieldRegenTimer = 0;
                 regenerateShieldSegment();
@@ -960,7 +1056,7 @@
             const currentMineSpawnDelay = Math.max(100, 240 - Math.floor(score / 2000) * 20);
             if (mineSpawnTimer > currentMineSpawnDelay) {
                 mineSpawnTimer = 0;
-                const isMagnetic = Math.random() < 0.45; // 45% chance of spawning a serpentine magnetic mine
+                const isMagnetic = Math.random() < magneticMineProbability; // chance of spawning a serpentine magnetic mine
                 mines.push({
                     x: size / 2,
                     y: size / 2,
@@ -1012,7 +1108,7 @@
                 rings.forEach(ring => {
                     const totalSegments = ring.segments.length;
                     const segAngle = (Math.PI * 2) / totalSegments;
-                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    const currentRot = (ringAngle * ring.speed * ringSpeedMultiplier * 100) % (Math.PI * 2);
                     let relAngle = angle - currentRot;
                     while (relAngle < 0) relAngle += Math.PI * 2;
                     while (relAngle >= Math.PI * 2) relAngle -= Math.PI * 2;
@@ -1359,6 +1455,17 @@
             mercuryHarvested = 0;
             sulfurHarvested = 0;
             saveHarvestedReagents();
+
+            // Reset mutations
+            regenDelay = 600;
+            ringSpeedMultiplier = 1.0;
+            magneticMineProbability = 0.45;
+            const statusDiv = document.getElementById("mutationStatus");
+            if (statusDiv) {
+                statusDiv.innerText = "Mutate core parameters using harvested reagents to increase difficulty and AI training.";
+                statusDiv.style.color = "#ece5fa";
+            }
+
             document.getElementById("btnStart").innerText = "Start Game";
         }
 
