@@ -713,34 +713,26 @@
             const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
             const speed = Math.hypot(ship.vx, ship.vy);
             
-            // Organic drifting target orbit radius (human-like weaving)
-            const targetOrbit = 220 + Math.sin(Date.now() * 0.0008) * 15;
+            // Calculate base target orbit
+            let targetOrbit = 220 + Math.sin(Date.now() * 0.0008) * 15;
             
-            // 1. Calculate escape vector (ax, ay) in case of urgent hazards
-            let ax = 0;
-            let ay = 0;
-            
-            // Mines push
+            // Inflate target orbit based on mine proximity
             mines.forEach(m => {
                 const d = Math.hypot(ship.x - m.x, ship.y - m.y);
-                if (d < 120 && d > 0) {
-                    const f = 3.5 * (120 - d) / 120;
-                    ax += ((ship.x - m.x) / d) * f;
-                    ay += ((ship.y - m.y) / d) * f;
+                if (d < 180 && d > 0) {
+                    targetOrbit += (180 - d) * 0.75;
                 }
             });
             
-            // Castle Bullets push
+            // Inflate target orbit based on castle bullet proximity
             castleBullets.forEach(cb => {
                 const d = Math.hypot(ship.x - cb.x, ship.y - cb.y);
-                if (d < 90 && d > 0) {
-                    const f = 2.5 * (90 - d) / 90;
-                    ax += ((ship.x - cb.x) / d) * f;
-                    ay += ((ship.y - cb.y) / d) * f;
+                if (d < 120 && d > 0) {
+                    targetOrbit += (120 - d) * 0.45;
                 }
             });
             
-            // Laser Beam push
+            // Laser sector check and orbit inflation
             let laserDiff = 0;
             let nearLaser = false;
             if (laser.active || laser.charge > 0) {
@@ -750,72 +742,50 @@
                 
                 if (Math.abs(laserDiff) < 0.5) {
                     nearLaser = true;
-                    const sign = Math.sign(laserDiff) || (Math.random() < 0.5 ? 1 : -1);
-                    const perpAngle = laser.angle + (Math.PI / 2) * sign;
-                    const f = 4.5 * (0.5 - Math.abs(laserDiff)) / 0.5;
-                    ax += Math.cos(perpAngle) * f;
-                    ay += Math.sin(perpAngle) * f;
+                    targetOrbit += 60; // Push orbit outward
+                    
+                    // Periodically reverse orbit direction if trapped
+                    if (Math.abs(laserDiff) < 0.35 && Math.random() < 0.04) {
+                        aiOrbitClockwise = !aiOrbitClockwise;
+                    }
                 }
             }
             
-            // Tangential orbit force direction
+            // Clamp target orbit to safe radius limits
+            targetOrbit = Math.min(285, Math.max(160, targetOrbit));
+            
+            // Tangential direction
             const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
             
-            // Get distances to closest threats for state transitions
-            let minMineDist = Infinity;
-            mines.forEach(m => {
-                const d = Math.hypot(ship.x - m.x, ship.y - m.y);
-                if (d < minMineDist) minMineDist = d;
-            });
+            // Calculate target angle using smooth blending
+            const delta = dist - targetOrbit;
+            let t = (delta + 40) / 80;
+            if (t < 0) t = 0;
+            if (t > 1) t = 1;
             
-            let minBulletDist = Infinity;
-            castleBullets.forEach(cb => {
-                const d = Math.hypot(ship.x - cb.x, ship.y - cb.y);
-                if (d < minBulletDist) minBulletDist = d;
-            });
-            
-            // Determine if we have an URGENT close-by hazard that forces escape
-            let urgentHazard = false;
-            if (minMineDist < 75) urgentHazard = true;
-            if (minBulletDist < 55) urgentHazard = true;
-            if (nearLaser && Math.abs(laserDiff) < 0.35) urgentHazard = true;
-            
-            let targetAngle = 0;
-            let shouldThrust = false;
-            
-            if (urgentHazard) {
-                // Priority 1: Emergency Escape
-                targetAngle = Math.atan2(ay, ax);
-                shouldThrust = true;
-            } else {
-                // Priority 2: Standard Orbit & Shooting Core (with continuous blend)
-                const delta = dist - targetOrbit;
-                let t = (delta + 40) / 80;
-                if (t < 0) t = 0;
-                if (t > 1) t = 1;
-                
-                let angleOffset = 0;
-                if (aiOrbitClockwise) {
-                    if (t < 0.5) {
-                        const u = t / 0.5;
-                        angleOffset = 1.92 + (0.22 - 1.92) * u;
-                    } else {
-                        const u = (t - 0.5) / 0.5;
-                        angleOffset = 0.22 * (1.5 - 1.5 * u);
-                    }
+            let angleOffset = 0;
+            if (aiOrbitClockwise) {
+                if (t < 0.5) {
+                    const u = t / 0.5;
+                    angleOffset = 1.92 + (0.22 - 1.92) * u;
                 } else {
-                    if (t < 0.5) {
-                        const u = t / 0.5;
-                        angleOffset = -1.92 + (-0.22 - -1.92) * u;
-                    } else {
-                        const u = (t - 0.5) / 0.5;
-                        angleOffset = -0.22 * (1.5 - 1.5 * u);
-                    }
+                    const u = (t - 0.5) / 0.5;
+                    angleOffset = 0.22 * (1.5 - 1.5 * u);
                 }
-                
-                targetAngle = angleToCenter + angleOffset;
-                shouldThrust = (t < 0.45) || (t > 0.55) || (speed < 1.35);
+            } else {
+                if (t < 0.5) {
+                    const u = t / 0.5;
+                    angleOffset = -1.92 + (-0.22 - -1.92) * u;
+                } else {
+                    const u = (t - 0.5) / 0.5;
+                    angleOffset = -0.22 * (1.5 - 1.5 * u);
+                }
             }
+            
+            const targetAngle = angleToCenter + angleOffset;
+            
+            // Determine thrusting: thrust to escape closeness/farness or keep minimum speed
+            const shouldThrust = (t < 0.45) || (t > 0.55) || (speed < 1.4) || nearLaser;
             
             // Rotate ship towards targetAngle
             let diff = targetAngle - ship.angle;
@@ -832,12 +802,21 @@
                 ship.vy += Math.sin(ship.angle) * ship.speed;
             }
             
-            // Fire weapon when aligned with center
+            // Smart active defense firing: increase rate if threat is near
+            let mineNearby = false;
+            for (let m of mines) {
+                if (Math.hypot(ship.x - m.x, ship.y - m.y) < 160) {
+                    mineNearby = true;
+                    break;
+                }
+            }
+            
             let angleDiffCenter = angleToCenter - ship.angle;
             while (angleDiffCenter < -Math.PI) angleDiffCenter += Math.PI * 2;
             while (angleDiffCenter > Math.PI) angleDiffCenter -= Math.PI * 2;
             
-            if (Math.abs(angleDiffCenter) < 0.22 && Math.random() < 0.3) {
+            const fireProbability = mineNearby ? 0.65 : 0.28;
+            if (Math.abs(angleDiffCenter) < 0.22 && Math.random() < fireProbability) {
                 fireLaser();
             }
         }
