@@ -327,6 +327,39 @@ object "WMQ_Scheduler" {
                 sstore(0x104, y)
                 sstore(0x105, sr)
                 
+                // If it is our daemon NPC (Card ID 2)
+                if eq(cardId, 2) {
+                    let roomKey := add(4000000, 2)
+                    let currentRoom := sload(roomKey)
+                    if iszero(currentRoom) { currentRoom := 10 }
+                    
+                    let exitsKey := add(3200000, currentRoom)
+                    let exits := sload(exitsKey)
+                    
+                    let stepCount := x
+                    let choice := mod(stepCount, 4)
+                    let dest := 0
+                    
+                    switch choice
+                    case 0 { dest := and(shr(24, exits), 0xff) } // North
+                    case 1 { dest := and(shr(16, exits), 0xff) } // South
+                    case 2 { dest := and(shr(8, exits), 0xff) }  // East
+                    case 3 { dest := and(exits, 0xff) }         // West
+                    
+                    // Fallback to any non-zero exit if chosen direction is blocked
+                    if iszero(dest) {
+                        dest := and(shr(24, exits), 0xff)
+                        if iszero(dest) { dest := and(shr(16, exits), 0xff) }
+                        if iszero(dest) { dest := and(shr(8, exits), 0xff) }
+                        if iszero(dest) { dest := and(exits, 0xff) }
+                    }
+                    
+                    if dest {
+                        sstore(roomKey, dest)
+                    }
+                    sstore(0x103, add(stepCount, 1)) // Update register X with new step count
+                }
+
                 // Emulated execution slice loop thunk. Returns step counts and yield signals.
                 // For test verification purposes, dry-runs execute mock steps.
                 steps := stepLimit
