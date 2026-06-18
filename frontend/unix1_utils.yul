@@ -80,6 +80,67 @@ object "Unix1Utils" {
                 mstore(0x00, found)
                 return(0x00, 0x20)
             }
+
+            // 0xc3a012ff: ipcs() -> returns active msg count for LUNs 0-7
+            case 0xc3a012ff {
+                let ptr := mload(0x40)
+                for { let lun := 0 } lt(lun, 8) { lun := add(lun, 1) } {
+                    // Load queue head (0x2000 + lun) and tail (0x2050 + lun) from controller state
+                    let head := sload(add(0x2000, lun))
+                    let tail := sload(add(0x2050, lun))
+                    let pending := 0
+                    if lt(head, tail) { pending := sub(tail, head) }
+                    mstore(add(ptr, mul(lun, 32)), pending)
+                }
+                return(ptr, 256)
+            }
+
+            // 0x5b8a0fc1: mqsend(lun, priority, word0, word1) -> success
+            case 0x5b8a0fc1 {
+                let lun := calldataload(4)
+                let priority := calldataload(36)
+                let w0 := calldataload(68)
+                let w1 := calldataload(100)
+
+                let tail := sload(add(0x2050, lun))
+                let cacheKey := keccak256(add(0x1000, tail), 32)
+                
+                // Pack Priority byte (Byte 6) into word0
+                let headerWord := or(w0, shl(200, and(priority, 0xFF)))
+                sstore(cacheKey, headerWord)
+                sstore(add(cacheKey, 1), w1)
+
+                // Increment tail index
+                sstore(add(0x2050, lun), add(tail, 1))
+                
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
+
+            // 0x4d710ab0: mqrecv(lun) -> returns message payload (word0, word1) and commits ACK
+            case 0x4d710ab0 {
+                let lun := calldataload(4)
+                let head := sload(add(0x2000, lun))
+                let tail := sload(add(0x2050, lun))
+
+                if iszero(lt(head, tail)) {
+                    // Empty queue status
+                    mstore(0x00, 0)
+                    mstore(0x20, 0)
+                    return(0x00, 0x40)
+                }
+
+                let cacheKey := keccak256(add(0x1000, head), 32)
+                let w0 := sload(cacheKey)
+                let w1 := sload(add(cacheKey, 1))
+
+                // Perform 2-phase commit automatically for shell utility: Increment head
+                sstore(add(0x2000, lun), add(head, 1))
+
+                mstore(0x00, w0)
+                mstore(0x20, w1)
+                return(0x00, 0x40)
+            }
             
             default {
                 revert(0, 0)
