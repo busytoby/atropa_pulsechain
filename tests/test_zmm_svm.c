@@ -68,11 +68,72 @@ void test_svm_page_locking() {
     tsfi_zmm_svm_destroy();
 }
 
+void test_svm_mmu_registers() {
+    printf("[TEST] Running SVM MMU register ($DF10-$DF13) checks...\n");
+    tsfi_zmm_svm_init();
+
+    // 1. Write telemetry to Card 1, Page 0x70, offset 5 ($7005)
+    uint16_t telemetry_addr = 0x7005;
+    tsfi_zmm_svm_write_byte(1, telemetry_addr, 0xEE);
+
+    // 2. Perform Mount of Card 1's Page 0x70 to Card 2 via MMU registers
+    // Write Source Card (1) to Card 2's MMU_SRC_CARD ($DF11)
+    tsfi_zmm_svm_write_byte(2, 0xDF11, 1);
+    // Write Page Index (0x70) to Card 2's MMU_PAGE ($DF12)
+    tsfi_zmm_svm_write_byte(2, 0xDF12, 0x70);
+    // Trigger Mount command (0x01) on Card 2's MMU_CMD ($DF10)
+    tsfi_zmm_svm_write_byte(2, 0xDF10, 0x01);
+
+    // Verify status register MMU_STATUS ($DF13) is 0 (success)
+    uint8_t status = tsfi_zmm_svm_read_byte(2, 0xDF13);
+    assert(status == 0);
+
+    // Card 2 must now see telemetry data from Card 1
+    uint8_t read_val = tsfi_zmm_svm_read_byte(2, telemetry_addr);
+    assert(read_val == 0xEE);
+
+    // 3. Lock Page 0x70 on Card 2 via MMU registers
+    tsfi_zmm_svm_write_byte(2, 0xDF12, 0x70);
+    tsfi_zmm_svm_write_byte(2, 0xDF10, 0x02); // Trigger Lock
+
+    status = tsfi_zmm_svm_read_byte(2, 0xDF13);
+    assert(status == 0);
+
+    // Verify writing is ignored because page is locked
+    tsfi_zmm_svm_write_byte(2, telemetry_addr, 0x99);
+    read_val = tsfi_zmm_svm_read_byte(2, telemetry_addr);
+    assert(read_val == 0xEE);
+
+    // 4. Try mounting Card 0 page over locked Page 0x70 (should fail with -2 status)
+    tsfi_zmm_svm_write_byte(2, 0xDF11, 0);
+    tsfi_zmm_svm_write_byte(2, 0xDF12, 0x70);
+    tsfi_zmm_svm_write_byte(2, 0xDF10, 0x01); // Trigger Mount
+
+    status = tsfi_zmm_svm_read_byte(2, 0xDF13);
+    assert(status == (uint8_t)-2); // -2 cast to uint8_t is 254
+
+    // 5. Unlock page 0x70 on Card 2 via MMU registers
+    tsfi_zmm_svm_write_byte(2, 0xDF12, 0x70);
+    tsfi_zmm_svm_write_byte(2, 0xDF10, 0x03); // Trigger Unlock
+
+    status = tsfi_zmm_svm_read_byte(2, 0xDF13);
+    assert(status == 0);
+
+    // Modify and check that writing works again
+    tsfi_zmm_svm_write_byte(2, telemetry_addr, 0x55);
+    read_val = tsfi_zmm_svm_read_byte(2, telemetry_addr);
+    assert(read_val == 0x55);
+
+    printf("[SUCCESS] SVM MMU registers passed.\n");
+    tsfi_zmm_svm_destroy();
+}
+
 int main() {
     printf("=== RUNNING TSFI ZMM SVM INTEGRATION TESTS ===\n");
     
     test_svm_basic_mapping();
     test_svm_page_locking();
+    test_svm_mmu_registers();
 
     printf("=== ALL SVM INTEGRATION TESTS PASSED ===\n");
     return 0;

@@ -18,6 +18,9 @@ typedef struct {
 
 static CardMemoryMap g_vm_memory[MAX_CARDS];
 
+static inline void tsfi_zmm_svm_lock_page(uint8_t card_id, uint8_t page_idx);
+static inline void tsfi_zmm_svm_unlock_page(uint8_t card_id, uint8_t page_idx);
+
 /**
  * @notice Initialize the virtual memory page directories for all 6 card cores.
  */
@@ -112,6 +115,23 @@ static inline void tsfi_zmm_svm_write_byte(uint8_t card_id, uint16_t addr, uint8
     // Write only if page is not locked
     if (!g_vm_memory[card_id].page_locks[page]) {
         g_vm_memory[card_id].pages[page][offset] = val;
+        
+        // Emulate MMU register interface mapped at $DF10 - $DF13
+        if (addr == 0xDF10) {
+            uint8_t src_card = g_vm_memory[card_id].pages[0xDF][0x11];
+            uint8_t page_idx = g_vm_memory[card_id].pages[0xDF][0x12];
+            int status = 0;
+            if (val == 0x01) { // MMU_MOUNT command
+                status = tsfi_zmm_svm_mount(src_card, card_id, page_idx);
+            } else if (val == 0x02) { // MMU_LOCK command
+                tsfi_zmm_svm_lock_page(card_id, page_idx);
+                status = 0;
+            } else if (val == 0x03) { // MMU_UNLOCK command
+                tsfi_zmm_svm_unlock_page(card_id, page_idx);
+                status = 0;
+            }
+            g_vm_memory[card_id].pages[0xDF][0x13] = (uint8_t)status;
+        }
     }
 }
 
