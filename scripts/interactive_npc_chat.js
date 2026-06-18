@@ -19,7 +19,7 @@ function compileYul(yulPath) {
 async function main() {
     console.clear();
     console.log("=================================================================");
-    console.log("          DYSNOMIA / Z-MACHINE INTERACTIVE AI NPC CHAT           ");
+    console.log("       DYSNOMIA / Z-MACHINE ADVANCED AUTONOMOUS NPC CAMPAIGN     ");
     console.log("=================================================================");
 
     const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
@@ -65,19 +65,52 @@ async function main() {
         await tx.wait();
     };
 
-    // 2. Setup game map (Room 12 is ZMM room)
-    const exitsRoom12Slot = ethers.toBeHex(3200000 + 12);
-    const exitsRoom12Value = ethers.zeroPadValue("0x00000000", 32); // Isolated test chamber
-    await provider.send("anvil_setStorageAt", [zmAddress, exitsRoom12Slot, exitsRoom12Value]);
+    // 2. Configure game map exits in storage directly
+    // Segments: North (0), South (1), East (2), West (3)
+    const exits = {
+        10: "0x0B0D0C00", // Grand Lobby: N->11, S->13, E->12
+        11: "0x000A0E00", // Dusty Library: S->10, E->14
+        12: "0x0000000A", // Royal Garden: W->10
+        13: "0x0A000000", // Cold Dungeon: N->10
+        14: "0x0000000B"  // Golden Treasury: W->11
+    };
 
-    // 3. Initialize room locations to Room 12
+    console.log("Configuring game map layout on EVM...");
+    for (const [roomId, hexExits] of Object.entries(exits)) {
+        const exitSlot = ethers.toBeHex(3200000 + Number(roomId));
+        await provider.send("anvil_setStorageAt", [zmAddress, exitSlot, ethers.zeroPadValue(hexExits, 32)]);
+    }
+
+    // 3. Initialize room locations: both start in Room 10
     const playerRoomSlot = ethers.zeroPadValue(ethers.toBeHex(BigInt(4000000) + BigInt(playerAddress)), 32);
     const npcRoomSlot = ethers.zeroPadValue(ethers.toBeHex(BigInt(4000000) + BigInt(npcCardId)), 32);
-    await provider.send("anvil_setStorageAt", [zmAddress, playerRoomSlot, ethers.zeroPadValue(ethers.toBeHex(12), 32)]);
-    await provider.send("anvil_setStorageAt", [zmAddress, npcRoomSlot, ethers.zeroPadValue(ethers.toBeHex(12), 32)]);
+    await provider.send("anvil_setStorageAt", [zmAddress, playerRoomSlot, ethers.zeroPadValue(ethers.toBeHex(10), 32)]);
+    await provider.send("anvil_setStorageAt", [zmAddress, npcRoomSlot, ethers.zeroPadValue(ethers.toBeHex(10), 32)]);
 
-    console.log(`\nPlayer and NPC spawned in Room 12.`);
-    console.log("Ready for interactive testing. Type '/exit' to quit.");
+    // 4. Set custom room metadata/descriptions
+    await bindRoomDnaCustom(10, "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling.");
+    await bindRoomDnaCustom(11, "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks.");
+    await bindRoomDnaCustom(12, "You step into the Royal Garden. Exotic flowers bloom under the sunshine.");
+    await bindRoomDnaCustom(13, "You creep into the Cold Dungeon. Chains hang from stone walls, and it smells damp.");
+    await bindRoomDnaCustom(14, "You discover the Golden Treasury! Shimmering coins and glowing gems pile high.");
+
+    // Helper to query active room ID of player or NPC
+    const getRoomId = async (slotHex) => {
+        const val = await provider.send("eth_getStorageAt", [zmAddress, slotHex, "latest"]);
+        return Number(ethers.toBigInt(val));
+    };
+
+    // Helper to get exits of a room
+    const getRoomExits = async (roomId) => {
+        const raw = await provider.send("eth_getStorageAt", [zmAddress, ethers.toBeHex(3200000 + roomId), "latest"]);
+        const bytes = ethers.getBytes(raw);
+        return {
+            north: bytes[0],
+            south: bytes[1],
+            east: bytes[2],
+            west: bytes[3]
+        };
+    };
 
     const countRooms = async () => {
         let count = 0;
@@ -91,6 +124,7 @@ async function main() {
         return count;
     };
 
+    // Get response depending on NPC position
     const getAiResponse = async (msg) => {
         const query = msg.toLowerCase();
         if (query.includes("how many rooms") || query.includes("room count")) {
@@ -101,7 +135,8 @@ async function main() {
             return "NPC Responds: I am the daemon process running on Card ID 2. I regulate time-sliced ZMM activity.";
         }
         if (query.includes("where") || query.includes("position") || query.includes("room")) {
-            return "NPC Responds: My storage slot 4000002 indicates we are currently inside Room 12.";
+            const rId = await getRoomId(npcRoomSlot);
+            return `NPC Responds: My storage slot 4000002 indicates we are currently inside Room ${rId}.`;
         }
         if (query.includes("capability") || query.includes("what can you do")) {
             return "NPC Responds: I can walk, take items, and process chat commands under my registered card identity.";
@@ -125,11 +160,10 @@ async function main() {
         console.log("======================================================");
     };
 
-    // Print initial state
     await displayRoom();
 
     const askPrompt = () => {
-        rl.question("\nEnter chat prompt (e.g. 'hello npc'): ", async (input) => {
+        rl.question("\nEnter command ('look', 'north', 'south', 'east', 'west', 'Chat ...'): ", async (input) => {
             const trimmed = input.trim();
             if (trimmed.toLowerCase() === "/exit") {
                 rl.close();
@@ -141,27 +175,65 @@ async function main() {
                 return;
             }
 
-            const chatCommand = `Chat ${trimmed}`;
-            console.log(`\nExecuting: "${chatCommand}"...`);
-            
             try {
-                // Submit Player's Chat command to Z-Machine
-                const cmdBytes = ethers.hexlify(Buffer.from(chatCommand));
-                const tx = await zmContract.parseCommand(playerAddress, cmdBytes);
-                await tx.wait();
+                const isChat = trimmed.toLowerCase().startsWith("chat");
+                const isMovement = ["north", "south", "east", "west"].includes(trimmed.toLowerCase());
+                const isLook = trimmed.toLowerCase() === "look";
 
-                // Mocking the background AI Daemon detecting the event & responding
-                console.log("[AI DAEMON] Intercepted prompt. Simulating LLM response...");
-                const response = await getAiResponse(trimmed);
-                console.log(`[AI DAEMON] NPC Response Generated: "${response}"`);
+                const playerRoomBefore = await getRoomId(playerRoomSlot);
+                const npcRoomBefore = await getRoomId(npcRoomSlot);
 
-                // Write response to Room DNA
-                await bindRoomDnaCustom(12, response);
+                if (isChat) {
+                    if (playerRoomBefore !== npcRoomBefore) {
+                        console.log("\n[SYSTEM] You call out, but the NPC is not in this room to hear you.");
+                    } else {
+                        // Submit Player's Chat command
+                        const cmdBytes = ethers.hexlify(Buffer.from(trimmed));
+                        await (await zmContract.parseCommand(playerAddress, cmdBytes)).wait();
 
-                // Show updated room output
+                        // NPC processes chat and responds
+                        const promptText = trimmed.slice(5).trim();
+                        console.log("\n[AI NPC] Processing your message...");
+                        const response = await getAiResponse(promptText);
+                        await bindRoomDnaCustom(playerRoomBefore, response);
+                    }
+                } else if (isMovement || isLook) {
+                    // Send command to Z-Machine parser
+                    const cmdBytes = ethers.hexlify(Buffer.from(trimmed));
+                    const tx = await zmContract.parseCommand(playerAddress, cmdBytes);
+                    await tx.wait();
+                } else {
+                    console.log("\n[SYSTEM] Unknown command.");
+                    askPrompt();
+                    return;
+                }
+
+                // NPC Autonomous Wandering Step (50% chance of walking to a connected exit)
+                const playerRoomAfter = await getRoomId(playerRoomSlot);
+                const npcRoomAfter = await getRoomId(npcRoomSlot);
+
+                if (Math.random() < 0.6) {
+                    const npcExits = await getRoomExits(npcRoomAfter);
+                    const validExits = Object.values(npcExits).filter(id => id !== 0);
+                    if (validExits.length > 0) {
+                        const nextNpcRoom = validExits[Math.floor(Math.random() * validExits.length)];
+                        
+                        // Update NPC location slot
+                        await provider.send("anvil_setStorageAt", [zmAddress, npcRoomSlot, ethers.zeroPadValue(ethers.toBeHex(nextNpcRoom), 32)]);
+                        
+                        if (nextNpcRoom === playerRoomAfter && npcRoomAfter !== playerRoomAfter) {
+                            console.log("\n[AI NPC] Active Process Card 2 has entered the room.");
+                        } else if (npcRoomAfter === playerRoomAfter && nextNpcRoom !== playerRoomAfter) {
+                            console.log("\n[AI NPC] Active Process Card 2 has walked away.");
+                        }
+                    }
+                }
+
+                // Show new room state
                 await displayRoom();
+
             } catch (err) {
-                console.error("Error executing command:", err.message);
+                console.error("Error:", err.message);
             }
 
             askPrompt();
