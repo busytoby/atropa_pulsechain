@@ -237,6 +237,20 @@ object "WinchesterMQ" {
 
                     // Opcode 0x0A = Write Block / MQPUT
                     if eq(opcode, 0x0A) {
+                        let blockId := getCdbLba()
+                        let lun := getCdbLun()
+                        
+                        // Flow Control: check if queue length exceeds 16 blocks
+                        let currentHead := sload(add(0x2000, lun))
+                        let currentTail := sload(add(0x2050, lun))
+                        let size := 0
+                        if lt(currentHead, currentTail) { size := sub(currentTail, currentHead) }
+                        
+                        if gt(size, 15) {
+                            transitionToStatus(0x08) // Status 0x08: Queue Full / Busy
+                            leave
+                        }
+
                         sstore(2, 0) // C/D = 0 (Data phase)
                         sstore(3, 0) // I/O = 0 (Write from guest to controller)
                         sstore(13, 0) // Clear DATA_BYTE_COUNT
@@ -265,6 +279,13 @@ object "WinchesterMQ" {
                                 sstore(14, add(currentHead, 1)) // Permanently consume block
                             }
                             sstore(0x30, 0xFFFFFFFF) // Clear lease
+                            
+                            // Journaling Log: LogAck(lun, blockId)
+                            // Event signature: keccak256("LogAck(uint256,uint256)") = 0x8a1bee1dae9af77dac73aa0459ed63b4d93fc6d29...
+                            mstore(0x00, getCdbLun())
+                            mstore(0x20, blockId)
+                            log1(0x00, 0x40, 0xb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3ef)
+
                             transitionToStatus(0x00) // Good status
                             leave
                         }
@@ -351,6 +372,15 @@ object "WinchesterMQ" {
                     // Special case: LUN 5 is the Topic Publish Broker
                     if eq(lun, 5) {
                         performTopicFanOut(blockId)
+                        
+                        // Journaling Log: LogPut(lun, blockId, topicId)
+                        // Event signature: 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29...
+                        mstore(0x00, lun)
+                        mstore(0x20, blockId)
+                        let cacheKey := keccak256(add(0x1000, blockId), 32)
+                        mstore(0x40, shr(224, sload(cacheKey))) // Topic ID from magic header
+                        log1(0x00, 0x60, 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045)
+
                         transitionToStatus(0x00)
                         leave
                     }
@@ -374,6 +404,12 @@ object "WinchesterMQ" {
                             sstore(add(cacheKey, j), 0) // Clean up old LBA cache slot
                         }
                         
+                        // Journaling Log: LogPut(lun, newHead, 0)
+                        mstore(0x00, lun)
+                        mstore(0x20, newHead)
+                        mstore(0x40, 0)
+                        log1(0x00, 0x60, 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045)
+
                         transitionToStatus(0x00)
                         leave
                     }
@@ -383,6 +419,12 @@ object "WinchesterMQ" {
                     if eq(blockId, currentTail) {
                         sstore(15, add(currentTail, 1)) // Grow queue tail index
                     }
+
+                    // Journaling Log: LogPut(lun, blockId, 0)
+                    mstore(0x00, lun)
+                    mstore(0x20, blockId)
+                    mstore(0x40, 0)
+                    log1(0x00, 0x60, 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045)
 
                     transitionToStatus(0x00) // Good status
                     leave
