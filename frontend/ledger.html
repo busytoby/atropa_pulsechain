@@ -1277,6 +1277,17 @@ Loading ZMM VM inventory coordinates and items...
             }
         }
 
+        async function autoUpdate() {
+            try {
+                const address = signer ? await signer.getAddress() : null;
+                await updateBalances(address);
+                await updateCabsEscrows();
+                await updateVanityStorefront();
+            } catch (err) {
+                console.error("Auto-update failed:", err);
+            }
+        }
+
         // Make window methods available for HTML onclick handlers
         window.settleCabsEscrow = settleCabsEscrow;
         window.refundCabsEscrow = refundCabsEscrow;
@@ -1291,6 +1302,9 @@ Loading ZMM VM inventory coordinates and items...
             await init();
             await updateCabsEscrows();
             await updateVanityStorefront();
+            
+            // Auto update every 5 seconds
+            setInterval(autoUpdate, 5000);
         });
     </script>
     <script src="checklist_widget.js"></script>
