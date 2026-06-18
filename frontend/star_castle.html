@@ -259,9 +259,9 @@
         </div>
 
         <div class="controls-info">
-            <strong>[A / D]</strong> Rotate Ship &nbsp;|&nbsp; 
-            <strong>[W]</strong> Thrust &nbsp;|&nbsp; 
-            <strong>[SPACE / J]</strong> Fire Laser
+            <strong>Keyboard:</strong> [A / D] Rotate | [W] Thrust | [SPACE / J] Fire
+            <br>
+            <strong>Xbox:</strong> [Left Stick / D-Pad] Rotate | [A / RT] Thrust | [X / RB / LT] Fire
             <br>
             Destroy the rotating energy shields to strike the central castle core!
         </div>
@@ -457,6 +457,8 @@
         let lives = 3;
         let lastBonusLifeMilestone = 0;
         let shouldClearHazards = false;
+        let simulationSpeed = 1;
+        let lastGamepadShootPressed = false;
 
         const ship = {
             x: size / 2,
@@ -830,18 +832,76 @@
             if (aiMode) {
                 runAiLogic();
             } else {
-                // Handle Input
-                if (keys["KeyA"] || keys["ArrowLeft"]) ship.angle -= ship.rotSpeed;
-                if (keys["KeyD"] || keys["ArrowRight"]) ship.angle += ship.rotSpeed;
-                if (keys["KeyW"] || keys["ArrowUp"]) {
+                // Handle Keyboard Input
+                let turnLeft = keys["KeyA"] || keys["ArrowLeft"];
+                let turnRight = keys["KeyD"] || keys["ArrowRight"];
+                let applyThrust = keys["KeyW"] || keys["ArrowUp"];
+                let shootLaser = keys["Space"] || keys["KeyJ"];
+                if (shootLaser) {
+                    keys["Space"] = false;
+                    keys["KeyJ"] = false;
+                }
+
+                // Handle Gamepad (Xbox style) Input
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                let gp = null;
+                for (let i = 0; i < gamepads.length; i++) {
+                    if (gamepads[i]) {
+                        gp = gamepads[i];
+                        break;
+                    }
+                }
+                
+                if (gp) {
+                    // Left stick horizontal or D-pad Left/Right for rotation
+                    const stickX = gp.axes[0];
+                    if (Math.abs(stickX) > 0.2) {
+                        ship.angle += stickX * ship.rotSpeed;
+                    }
+                    if (gp.buttons[14] && gp.buttons[14].pressed) {
+                        turnLeft = true;
+                    }
+                    if (gp.buttons[15] && gp.buttons[15].pressed) {
+                        turnRight = true;
+                    }
+
+                    // A Button, Right Trigger, Left Stick vertical (up), or D-pad Up for thrust
+                    const stickY = gp.axes[1];
+                    const buttonA = gp.buttons[0] && gp.buttons[0].pressed;
+                    const triggerRT = gp.buttons[7] && gp.buttons[7].pressed;
+                    const dpadUp = gp.buttons[12] && gp.buttons[12].pressed;
+                    
+                    if (buttonA || triggerRT || dpadUp || stickY < -0.2) {
+                        applyThrust = true;
+                    }
+
+                    // X Button, Right Bumper, Left Trigger, or Y Button to shoot
+                    const buttonX = gp.buttons[2] && gp.buttons[2].pressed;
+                    const bumperRB = gp.buttons[5] && gp.buttons[5].pressed;
+                    const triggerLT = gp.buttons[6] && gp.buttons[6].pressed;
+                    const buttonY = gp.buttons[3] && gp.buttons[3].pressed;
+                    const gamepadShoot = buttonX || bumperRB || triggerLT || buttonY;
+                    
+                    if (gamepadShoot) {
+                        if (!lastGamepadShootPressed) {
+                            shootLaser = true;
+                        }
+                        lastGamepadShootPressed = true;
+                    } else {
+                        lastGamepadShootPressed = false;
+                    }
+                }
+
+                // Apply actions
+                if (turnLeft) ship.angle -= ship.rotSpeed;
+                if (turnRight) ship.angle += ship.rotSpeed;
+                if (applyThrust) {
                     ship.vx += Math.cos(ship.angle) * ship.speed;
                     ship.vy += Math.sin(ship.angle) * ship.speed;
                     thrusting = true;
                 }
-                if (keys["Space"] || keys["KeyJ"]) {
+                if (shootLaser) {
                     fireLaser();
-                    keys["Space"] = false; // Prevents continuous firing on single press
-                    keys["KeyJ"] = false;
                 }
             }
 
@@ -1045,7 +1105,9 @@
 
             // Update homing & magnetic mines
             for (let i = mines.length - 1; i >= 0; i--) {
+                if (!gameActive) break;
                 const m = mines[i];
+                if (!m) continue;
                 const angle = Math.atan2(ship.y - m.y, ship.x - m.x);
                 let vx = Math.cos(angle) * m.speed;
                 let vy = Math.sin(angle) * m.speed;
@@ -1071,6 +1133,7 @@
                     mines.splice(i, 1);
                     if (lives <= 0) {
                         gameOver();
+                        break;
                     }
                     continue;
                 }
@@ -1175,7 +1238,9 @@
 
             // Update Castle Bullets
             for (let i = castleBullets.length - 1; i >= 0; i--) {
+                if (!gameActive) break;
                 const cb = castleBullets[i];
+                if (!cb) continue;
                 cb.x += cb.vx;
                 cb.y += cb.vy;
                 cb.life--;
@@ -1188,6 +1253,7 @@
                     resetShip();
                     if (lives <= 0) {
                         gameOver();
+                        break;
                     }
                     castleBullets.splice(i, 1);
                     continue;
@@ -1391,9 +1457,11 @@
         }
 
         function loop() {
-            update();
+            for (let i = 0; i < simulationSpeed; i++) {
+                update();
+            }
             draw();
-            requestAnimationFrame(loop);
+            setTimeout(loop, 16);
         }
 
         function startGame() {
@@ -1425,6 +1493,7 @@
             lives = 3;
             lastBonusLifeMilestone = 0;
             gameActive = false;
+            simulationSpeed = 1;
             if (engineGain) {
                 engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
             }
