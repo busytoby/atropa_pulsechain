@@ -455,6 +455,7 @@
         let gameActive = false;
         let score = 0;
         let lives = 3;
+        let lastBonusLifeMilestone = 0;
 
         const ship = {
             x: size / 2,
@@ -716,7 +717,9 @@
             const dist = Math.hypot(ship.x - targetX, ship.y - targetY);
             const angleToCenter = Math.atan2(targetY - ship.y, targetX - ship.x);
             
-            const desiredRadius = 200;
+            // Sinusoidal orbit oscillator (control part) to weave and evade bullets/mines
+            const orbitOscillator = Math.sin(Date.now() * 0.0035) * 55;
+            const desiredRadius = 200 + orbitOscillator;
             const orbitTargetX = targetX - Math.cos(angleToCenter) * desiredRadius;
             const orbitTargetY = targetY - Math.sin(angleToCenter) * desiredRadius;
             
@@ -725,9 +728,14 @@
             const orbitPullY = orbitTargetY - ship.y;
             const distToOrbit = Math.hypot(orbitPullX, orbitPullY);
             if (distToOrbit > 0) {
-                pullFx += (orbitPullX / distToOrbit) * 1.3;
-                pullFy += (orbitPullY / distToOrbit) * 1.3;
+                pullFx += (orbitPullX / distToOrbit) * 1.5;
+                pullFy += (orbitPullY / distToOrbit) * 1.5;
             }
+            
+            // Radial derivative control component: dampens radial drift/overshoot
+            const radialVelocity = (ship.vx * Math.cos(angleToCenter)) + (ship.vy * Math.sin(angleToCenter));
+            pullFx -= Math.cos(angleToCenter) * radialVelocity * 0.2;
+            pullFy -= Math.sin(angleToCenter) * radialVelocity * 0.2;
             
             // Tangential pull along the orbit (moves ship clockwise or counter-clockwise)
             const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
@@ -788,9 +796,10 @@
                 while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                 
                 if (Math.abs(angleDiff) < 0.6) {
+                    const sign = Math.sign(angleDiff) || (Math.random() < 0.5 ? 1 : -1);
                     // Push perpendicular to the laser ray line
-                    const perpAngle = laser.angle + (Math.PI / 2) * Math.sign(angleDiff);
-                    const force = 4.5 / (Math.abs(angleDiff) + 0.12);
+                    const perpAngle = laser.angle + (Math.PI / 2) * sign;
+                    const force = 8.5 / (Math.abs(angleDiff) + 0.08);
                     pushFx += Math.cos(perpAngle) * force;
                     pushFy += Math.sin(perpAngle) * force;
                     
@@ -917,7 +926,7 @@
 
             // Collision between player ship and active shield ring segments
             rings.forEach((ring, rIdx) => {
-                if (Math.abs(shipDistToCenter - ring.radius) < (ship.radius + 4)) {
+                if (Math.abs(shipDistToCenter - ring.radius) < (getShipHitboxRadius() + 4)) {
                     // Compute angle of the ship relative to the core
                     let angle = Math.atan2(ship.y - size/2, ship.x - size/2);
                     if (angle < 0) angle += Math.PI * 2;
@@ -1088,7 +1097,7 @@
 
                 // Collision with player ship
                 const distToShip = Math.hypot(m.x - ship.x, m.y - ship.y);
-                if (distToShip < ship.radius + 6) {
+                if (distToShip < getShipHitboxRadius() + 5) {
                     playExplodeSound(100);
                     lives--;
                     resetShip();
@@ -1149,7 +1158,7 @@
                     let diff = Math.abs(shipAngle - laser.angle);
                     while (diff > Math.PI) diff = Math.PI * 2 - diff;
                     
-                    if (diff < 0.06) {
+                    if (diff < (aiMode ? 0.025 : 0.06)) {
                         playExplodeSound(100);
                         lives--;
                         resetShip();
@@ -1206,7 +1215,7 @@
 
                 // Collision with player ship
                 const distToShip = Math.hypot(cb.x - ship.x, cb.y - ship.y);
-                if (distToShip < ship.radius) {
+                if (distToShip < getShipHitboxRadius()) {
                     playExplodeSound(100);
                     lives--;
                     resetShip();
@@ -1221,6 +1230,22 @@
                     castleBullets.splice(i, 1);
                 }
             }
+
+            // AI Autopilot Repair Matrix (bonus life every 10,000 points, max 5 lives)
+            if (aiMode) {
+                const milestone = Math.floor(score / 10000);
+                if (milestone > lastBonusLifeMilestone) {
+                    lastBonusLifeMilestone = milestone;
+                    if (lives < 5) {
+                        lives++;
+                        playAlchemicalChime();
+                    }
+                }
+            }
+        }
+
+        function getShipHitboxRadius() {
+            return aiMode ? 4.5 : ship.radius;
         }
 
         function resetShip() {
@@ -1299,28 +1324,7 @@
             drawCastle();
             drawShip();
 
-            // Draw AI vector field planning overlay (vector graphics style)
-            if (aiMode && ship.aiForces) {
-                const startX = ship.x;
-                const startY = ship.y;
-                
-                // Draw Attractor pull (blue arrow/line)
-                const pullLen = 15;
-                const px = startX + ship.aiForces.pullX * pullLen;
-                const py = startY + ship.aiForces.pullY * pullLen;
-                drawVectorLine(startX, startY, px, py, "#00a2ff", 3);
-                
-                // Draw Repeller push (red arrow/line)
-                const pushLen = 15;
-                const rx = startX + ship.aiForces.pushX * pushLen;
-                const ry = startY + ship.aiForces.pushY * pushLen;
-                drawVectorLine(startX, startY, rx, ry, "#ff3300", 3);
-                
-                // Draw Net Force (green arrow/line)
-                const netX = startX + (ship.aiForces.pullX + ship.aiForces.pushX) * pullLen;
-                const netY = startY + (ship.aiForces.pullY + ship.aiForces.pushY) * pullLen;
-                drawVectorLine(startX, startY, netX, netY, "#00ff66", 5);
-            }
+            // AI vector overlay disabled per user request
 
             // Draw player bullets (green glow)
             bullets.forEach(b => {
@@ -1418,6 +1422,7 @@
             initEngineSound();
             score = 0;
             lives = 3;
+            lastBonusLifeMilestone = 0;
             gameActive = true;
             resetShip();
             resetCastle();
@@ -1437,6 +1442,7 @@
         function resetGame() {
             score = 0;
             lives = 3;
+            lastBonusLifeMilestone = 0;
             gameActive = false;
             if (engineGain) {
                 engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
