@@ -702,6 +702,16 @@
                 }
             }
 
+            // Core Gravity: Inward pull towards the central rings
+            const dx = size / 2 - ship.x;
+            const dy = size / 2 - ship.y;
+            const shipDistToCenter = Math.hypot(dx, dy);
+            if (shipDistToCenter > 30) {
+                const pullStrength = 0.035; // constant pull force
+                ship.vx += (dx / shipDistToCenter) * pullStrength;
+                ship.vy += (dy / shipDistToCenter) * pullStrength;
+            }
+
             // Ship Movement and friction
             ship.vx *= ship.friction;
             ship.vy *= ship.friction;
@@ -737,6 +747,31 @@
             if (ship.x > size) ship.x = 0;
             if (ship.y < 0) ship.y = size;
             if (ship.y > size) ship.y = 0;
+
+            // Collision between player ship and active shield ring segments
+            rings.forEach((ring, rIdx) => {
+                if (Math.abs(shipDistToCenter - ring.radius) < (ship.radius + 4)) {
+                    // Compute angle of the ship relative to the core
+                    let angle = Math.atan2(ship.y - size/2, ship.x - size/2);
+                    if (angle < 0) angle += Math.PI * 2;
+                    
+                    const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                    let relAngle = angle - currentRot;
+                    if (relAngle < 0) relAngle += Math.PI * 2;
+                    
+                    const totalSegments = ring.segments.length;
+                    const segIdx = Math.floor((relAngle / (Math.PI * 2)) * totalSegments) % totalSegments;
+                    
+                    if (ring.segments[segIdx] === 1) {
+                        playExplodeSound(100);
+                        lives--;
+                        resetShip();
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            });
 
             // Rotate castle rings
             ringAngle += 0.05;
@@ -797,6 +832,23 @@
                         // Harvest mercury
                         mercuryHarvested += 1;
                         saveHarvestedReagents();
+
+                        // Spawn 2 hostile sparks flying outward/toward player
+                        const mAngle = Math.atan2(ship.y - m.y, ship.x - m.x);
+                        castleBullets.push({
+                            x: m.x,
+                            y: m.y,
+                            vx: Math.cos(mAngle - 0.25) * 4.2,
+                            vy: Math.sin(mAngle - 0.25) * 4.2,
+                            life: 75
+                        });
+                        castleBullets.push({
+                            x: m.x,
+                            y: m.y,
+                            vx: Math.cos(mAngle + 0.25) * 4.2,
+                            vy: Math.sin(mAngle + 0.25) * 4.2,
+                            life: 75
+                        });
                         break;
                     }
                 }
