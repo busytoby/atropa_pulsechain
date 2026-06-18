@@ -742,7 +742,12 @@
             const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
             const speed = Math.hypot(ship.vx, ship.vy);
             
-            // 1. Compute AI's vector field forces for steering and evasive dodging
+            // Initialize persistent state for speed hysteresis if not present
+            if (ship.aiAccelerating === undefined) {
+                ship.aiAccelerating = false;
+            }
+            
+            // 1. Compute potential field forces for movement
             let orbitRadius = 220 + Math.sin(Date.now() * 0.0008) * 15;
             
             // Tangential base vector
@@ -756,27 +761,34 @@
             fx += Math.cos(angleToCenter - Math.PI) * radialForce;
             fy += Math.sin(angleToCenter - Math.PI) * radialForce;
             
-            // Homing/magnetic mine avoidance (Potential Field)
-            let mineNearby = false;
+            // Track closest mine and check proximity
+            let closestMine = null;
+            let minMineDist = Infinity;
+            mines.forEach(m => {
+                const d = Math.hypot(ship.x - m.x, ship.y - m.y);
+                if (d < minMineDist) {
+                    minMineDist = d;
+                    closestMine = m;
+                }
+            });
+            
+            // Apply mine avoidance forces
             mines.forEach(m => {
                 const dx = ship.x - m.x;
                 const dy = ship.y - m.y;
                 const d = Math.hypot(dx, dy);
                 if (d < 160 && d > 0) {
-                    mineNearby = true;
                     const strength = Math.pow((160 - d) / 160, 2) * 5.0;
-                    // Repulsive
                     fx += (dx / d) * strength;
                     fy += (dy / d) * strength;
                     
-                    // Lateral slide around mine
                     const perpAngle = Math.atan2(dy, dx) + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
                     fx += Math.cos(perpAngle) * strength * 0.7;
                     fy += Math.sin(perpAngle) * strength * 0.7;
                 }
             });
             
-            // Castle bullets (sparks) avoidance
+            // Spark avoidance forces
             castleBullets.forEach(cb => {
                 const dx = ship.x - cb.x;
                 const dy = ship.y - cb.y;
@@ -788,17 +800,18 @@
                 }
             });
             
-            // Core Laser avoidance (Very high priority!)
+            // Laser avoidance (Very high priority!)
+            let laserThreat = false;
             if (laser.active || laser.charge > 0) {
                 let diff = shipAngle - laser.angle;
                 while (diff < -Math.PI) diff += Math.PI * 2;
                 while (diff > Math.PI) diff -= Math.PI * 2;
                 
                 if (Math.abs(diff) < 0.6) {
+                    laserThreat = true;
                     const laserDist = Math.abs(diff);
                     const escapeDirection = Math.sign(diff) === 0 ? (Math.random() < 0.5 ? 1 : -1) : Math.sign(diff);
                     
-                    // Toggle rotation direction to run away from laser path
                     if (escapeDirection > 0 && !aiOrbitClockwise) aiOrbitClockwise = true;
                     if (escapeDirection < 0 && aiOrbitClockwise) aiOrbitClockwise = false;
                     
@@ -807,7 +820,6 @@
                     fx += Math.cos(escapeAngle) * escapeStrength;
                     fy += Math.sin(escapeAngle) * escapeStrength;
                     
-                    // Outward push
                     fx += Math.cos(shipAngle) * escapeStrength * 0.5;
                     fy += Math.sin(shipAngle) * escapeStrength * 0.5;
                 }
@@ -820,16 +832,45 @@
                 fy += Math.sin(shipAngle) * pushStrength;
             }
             
-            // Keep on screen borders
+            // Screen border push
             if (ship.x < 60) fx += 2.5;
             if (ship.x > size - 60) fx -= 2.5;
             if (ship.y < 60) fy += 2.5;
             if (ship.y > size - 60) fy -= 2.5;
             
-            // Calculate final AI target steering direction
-            let aiTargetAngle = Math.atan2(fy, fx);
+            const moveAngle = Math.atan2(fy, fx);
             
-            // Rotate ship towards computed steering target
+            // 2. Decide if we need urgent evasive thrusting
+            const urgentEvasion = laserThreat || (minMineDist < 100) || (dist < 145) || (dist > 250);
+            
+            // Speed hysteresis control
+            if (speed < 1.3) {
+                ship.aiAccelerating = true;
+            }
+            if (speed > 1.8) {
+                ship.aiAccelerating = false;
+            }
+            
+            // 3. Set target angle and thrust intent
+            let aiTargetAngle = angleToCenter;
+            let shouldThrust = false;
+            
+            if (urgentEvasion || ship.aiAccelerating) {
+                // Face potential field force vector to move/escape
+                aiTargetAngle = moveAngle;
+                shouldThrust = true;
+            } else {
+                // If there's a mine nearby, aim at it to shoot it down
+                if (closestMine && minMineDist < 180) {
+                    aiTargetAngle = Math.atan2(closestMine.y - ship.y, closestMine.x - ship.x);
+                } else {
+                    // Otherwise aim at the center core
+                    aiTargetAngle = angleToCenter;
+                }
+                shouldThrust = false;
+            }
+            
+            // 4. Rotate ship towards target angle
             let diff = aiTargetAngle - ship.angle;
             while (diff < -Math.PI) diff += Math.PI * 2;
             while (diff > Math.PI) diff -= Math.PI * 2;
@@ -838,32 +879,37 @@
                 ship.angle += Math.sign(diff) * Math.min(Math.abs(diff), ship.rotSpeed);
             }
             
-            // 2. Resolve Thrust
-            let shouldThrust = false;
-            const forceMag = Math.hypot(fx, fy);
-            let diffThrust = aiTargetAngle - ship.angle;
-            while (diffThrust < -Math.PI) diffThrust += Math.PI * 2;
-            while (diffThrust > Math.PI) diffThrust -= Math.PI * 2;
-            
-            shouldThrust = (forceMag > 0.6) && (Math.abs(diffThrust) < 0.6);
-            
+            // 5. Apply Thrust
+            let applyThrustNow = false;
             if (shouldThrust) {
+                // Only thrust when reasonably aligned with target angle to avoid pushing in wrong direction
+                let diffToTarget = aiTargetAngle - ship.angle;
+                while (diffToTarget < -Math.PI) diffToTarget += Math.PI * 2;
+                while (diffToTarget > Math.PI) diffToTarget -= Math.PI * 2;
+                
+                if (Math.abs(diffToTarget) < 0.6) {
+                    applyThrustNow = true;
+                }
+            }
+            
+            if (applyThrustNow) {
                 ship.vx += Math.cos(ship.angle) * ship.speed;
                 ship.vy += Math.sin(ship.angle) * ship.speed;
             }
             
-            // 3. Resolve Firing (target the core center or nearby mines)
-            let targetAngleToShoot = angleToCenter;
-            let angleDiffTarget = targetAngleToShoot - ship.angle;
-            while (angleDiffTarget < -Math.PI) angleDiffTarget += Math.PI * 2;
-            while (angleDiffTarget > Math.PI) angleDiffTarget -= Math.PI * 2;
-            
-            const fireProbability = mineNearby ? 0.65 : 0.28;
-            if ((Math.abs(angleDiffTarget) < 0.22) && (Math.random() < fireProbability)) {
-                fireLaser();
+            // 6. Fire weapons if not thrusting and aligned with targeting angle
+            if (!shouldThrust) {
+                let diffToTarget = aiTargetAngle - ship.angle;
+                while (diffToTarget < -Math.PI) diffToTarget += Math.PI * 2;
+                while (diffToTarget > Math.PI) diffToTarget -= Math.PI * 2;
+                
+                const fireProbability = (closestMine && minMineDist < 180) ? 0.75 : 0.35;
+                if (Math.abs(diffToTarget) < 0.18 && Math.random() < fireProbability) {
+                    fireLaser();
+                }
             }
             
-            return shouldThrust;
+            return applyThrustNow;
         }
 
         function update() {
