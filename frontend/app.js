@@ -1182,18 +1182,84 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         audioCtx.resume();
+
+        // 1. Master Bus Routing
+        const masterBus = audioCtx.createGain();
+        masterBus.gain.setValueAtTime(0.7, audioCtx.currentTime);
+
+        // 2. Tremolo (LFO modulating Gain)
+        const tremoloGain = audioCtx.createGain();
+        tremoloGain.gain.setValueAtTime(0.85, audioCtx.currentTime); // base volume
+        const tremoloLfo = audioCtx.createOscillator();
+        const tremoloLfoGain = audioCtx.createGain();
+        tremoloLfo.frequency.setValueAtTime(5.8, audioCtx.currentTime); // 5.8Hz modulation speed
+        tremoloLfoGain.gain.setValueAtTime(0.15, audioCtx.currentTime); // 15% modulation depth
+        tremoloLfo.connect(tremoloLfoGain);
+        tremoloLfoGain.connect(tremoloGain.gain);
+        tremoloLfo.start();
+
+        // 3. Stereo Reverb (Programmatic Impulse Response Convolver)
+        const reverbNode = audioCtx.createConvolver();
+        const createReverbImpulse = (duration) => {
+            const rate = audioCtx.sampleRate;
+            const len = rate * duration;
+            const buf = audioCtx.createBuffer(2, len, rate);
+            for (let c = 0; c < 2; c++) {
+                const data = buf.getChannelData(c);
+                for (let i = 0; i < len; i++) {
+                    // Exponentially decaying white noise burst
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (rate * 0.35));
+                }
+            }
+            return buf;
+        };
+        reverbNode.buffer = createReverbImpulse(1.4);
+        const reverbDryWet = audioCtx.createGain();
+        reverbDryWet.gain.setValueAtTime(0.22, audioCtx.currentTime); // 22% wet mix
+
+        // 4. Feedback Delay
+        const delayNode = audioCtx.createDelay(1.0);
+        delayNode.delayTime.setValueAtTime(0.32, audioCtx.currentTime); // 320ms delay offset
+        const delayFeedback = audioCtx.createGain();
+        delayFeedback.gain.setValueAtTime(0.38, audioCtx.currentTime); // 38% delay feedback loop
+        const delayDryWet = audioCtx.createGain();
+        delayDryWet.gain.setValueAtTime(0.26, audioCtx.currentTime); // 26% wet mix
+
+        // Feedback connection
+        delayNode.connect(delayFeedback);
+        delayFeedback.connect(delayNode);
+
+        // Routing path
+        masterBus.connect(tremoloGain);
+        tremoloGain.connect(audioCtx.destination); // Main Dry Path
+
+        masterBus.connect(delayNode);
+        delayNode.connect(delayDryWet);
+        delayDryWet.connect(audioCtx.destination); // Delay Send
+
+        masterBus.connect(reverbNode);
+        reverbNode.connect(reverbDryWet);
+        reverbDryWet.connect(audioCtx.destination); // Reverb Send
+
+        // Initialize voices connected to the Master Bus
         voices = [
-            new TB303Voice(audioCtx, audioCtx.destination),
-            new SIDVoice(audioCtx, audioCtx.destination),
-            new SIDVoice(audioCtx, audioCtx.destination)
+            new TB303Voice(audioCtx, masterBus),
+            new SIDVoice(audioCtx, masterBus),
+            new SIDVoice(audioCtx, masterBus)
         ];
+        
+        // Save LFO reference so we can stop it later
+        voices._lfo = tremoloLfo;
         
         isAudioPlaying = true;
         document.getElementById("btnAudioToggle").innerText = "Mute Audio";
         document.getElementById("btnAudioToggle").classList.add("btn-danger");
-        log("Web Audio SID emulator started.", "info");
+        log("Web Audio SID emulator & FX Rack started.", "info");
     } else {
         voices.forEach(v => v.stop());
+        if (voices._lfo) {
+            try { voices._lfo.stop(); } catch (e) {}
+        }
         voices = [];
         isAudioPlaying = false;
         document.getElementById("btnAudioToggle").innerText = "Enable Audio Synth";
