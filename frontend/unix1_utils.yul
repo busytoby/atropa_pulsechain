@@ -141,6 +141,39 @@ object "Unix1Utils" {
                 mstore(0x20, w1)
                 return(0x00, 0x40)
             }
+
+            // 0x494e4954: init_complete() -> broadcasts INIT_COMPLETE event to LUN 5 topic 0x494e4954
+            case 0x494e4954 {
+                // Fetch LUN 5 tail
+                let tail := sload(0x2055) // LUN 5 tail index slot (0x2050 + 5)
+                let cacheKey := keccak256(add(0x1000, tail), 32)
+                
+                // Format block: Magic 'INIT' (0x494e4954) topic header
+                sstore(cacheKey, 0x494e495400000000000000000000000000000000000000000000000000000000)
+                sstore(add(cacheKey, 1), 0) // Padding
+
+                // Call internal fan-out manually (normally triggered by WinchesterMQ write block)
+                performTopicFanOutForUtils(0x494e4954, tail)
+
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
+
+            // 0x72656769: register_init_listener(lun) -> subscribes target LUN to INIT_COMPLETE topic
+            case 0x72656769 {
+                let lun := calldataload(4)
+                let topicId := 0x494e4954 // Topic: 'INIT'
+
+                let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                let subCount := sload(subscriberCountKey)
+                
+                let targetKey := keccak256(add(add(0x7100, topicId), subCount), 32)
+                sstore(targetKey, lun)
+                sstore(subscriberCountKey, add(subCount, 1))
+
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
             
             default {
                 revert(0, 0)
@@ -149,6 +182,35 @@ object "Unix1Utils" {
             /*
              * Helpers
              */
+            function performTopicFanOutForUtils(topicId, tail) {
+                let cacheKey := keccak256(add(0x1000, tail), 32)
+                let w0 := sload(cacheKey)
+                let w1 := sload(add(cacheKey, 1))
+
+                let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                let count := sload(subscriberCountKey)
+                if iszero(count) { leave }
+
+                for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                    let targetKey := keccak256(add(add(0x7100, topicId), i), 32)
+                    let destLun := sload(targetKey)
+
+                    // Write message block to subscriber's inbox queue tail
+                    let destTail := sload(add(0x2050, destLun))
+                    let destKey := keccak256(add(0x1000, destTail), 32)
+                    
+                    sstore(destKey, w0)
+                    sstore(add(destKey, 1), w1)
+
+                    // Increment the subscriber's tail index
+                    sstore(add(0x2050, destLun), add(destTail, 1))
+                }
+
+                // Clean up transient LUN 5 broker block cache
+                sstore(cacheKey, 0)
+                sstore(add(cacheKey, 1), 0)
+            }
+
             function findInode(nameHash) -> inode {
                 let count := sload(0x20)
                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
