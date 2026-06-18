@@ -17,6 +17,20 @@ object "GraphicsSystem" {
         code {
             if lt(calldatasize(), 4) { revert(0, 0) }
             let selector := shr(224, calldataload(0))
+            // Namespaced storage slot mapper for multi-user isolation
+            function getNamespacedSlot(index) -> slot {
+                mstore(0x280, caller())
+                mstore(0x2A0, index)
+                slot := keccak256(0x280, 64)
+            }
+
+            function loadNamespaced(index) -> val {
+                val := sload(getNamespacedSlot(index))
+            }
+
+            function storeNamespaced(index, val) {
+                sstore(getNamespacedSlot(index), val)
+            }
 
             // VIC-II Sprite Registers Map:
             // Storage slots mimic standard Commodore 64 VIC-II I/O registers:
@@ -26,12 +40,12 @@ object "GraphicsSystem" {
 
             // Helper to write coordinate byte
             function setReg(addr, val) {
-                sstore(addr, val)
+                storeNamespaced(addr, val)
             }
 
             // Helper to get coordinate byte
             function getReg(addr) -> val {
-                val := sload(addr)
+                val := loadNamespaced(addr)
             }
 
             // ----------------------------------------------------------------
@@ -67,8 +81,8 @@ object "GraphicsSystem" {
                 setReg(add(baseAddr, 1), y)
 
                 // Sprite Enable Register (53269) - set the bit for this sprite to active
-                let enabledMask := sload(53269)
-                sstore(53269, or(enabledMask, shl(index, 1)))
+                let enabledMask := loadNamespaced(53269)
+                storeNamespaced(53269, or(enabledMask, shl(index, 1)))
 
                 mstore(0x00, 1)
                 return(0x00, 32)
@@ -80,7 +94,7 @@ object "GraphicsSystem" {
             // ----------------------------------------------------------------
             if or(eq(selector, 0x5a18a994), eq(selector, 0x954e455a)) {
                 let collisionMask := 0
-                let enabled := sload(53269)
+                let enabled := loadNamespaced(53269)
 
                 // Compare active sprites (0-7) to check for overlapping 24x21 bounding boxes
                 for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
@@ -118,7 +132,7 @@ object "GraphicsSystem" {
                 }
 
                 // Update collision register (53278)
-                sstore(53278, collisionMask)
+                storeNamespaced(53278, collisionMask)
 
                 mstore(0x00, collisionMask)
                 return(0x00, 32)
@@ -136,8 +150,8 @@ object "GraphicsSystem" {
                 let part2 := calldataload(68)
 
                 let slotBase := add(54000, mul(index, 2))
-                sstore(slotBase, part1)
-                sstore(add(slotBase, 1), part2)
+                storeNamespaced(slotBase, part1)
+                storeNamespaced(add(slotBase, 1), part2)
 
                 mstore(0x00, 1)
                 return(0x00, 32)
@@ -156,7 +170,7 @@ object "GraphicsSystem" {
 
                 // Store at slot: 54000 + index * 32 + row
                 let slot := add(54000, add(mul(index, 32), row))
-                sstore(slot, val)
+                storeNamespaced(slot, val)
 
                 mstore(0x00, 1)
                 return(0x00, 32)
@@ -173,7 +187,7 @@ object "GraphicsSystem" {
                 let slotBase := add(54000, mul(index, 32))
                 for { let r := 0 } lt(r, 21) { r := add(r, 1) } {
                     let val := calldataload(add(36, mul(r, 32)))
-                    sstore(add(slotBase, r), val)
+                    storeNamespaced(add(slotBase, r), val)
                 }
 
                 mstore(0x00, 1)
@@ -189,7 +203,7 @@ object "GraphicsSystem" {
                 mstore(0x20, 1000) // Length: 1000 bytes
                 
                 for { let i := 0 } lt(i, 1000) { i := add(i, 1) } {
-                    let val := and(sload(add(1024, i)), 0xFF)
+                    let val := and(loadNamespaced(add(1024, i)), 0xFF)
                     mstore8(add(0x40, i), val)
                 }
                 
@@ -205,7 +219,7 @@ object "GraphicsSystem" {
                 mstore(0x20, 1000) // Length: 1000 bytes
                 
                 for { let i := 0 } lt(i, 1000) { i := add(i, 1) } {
-                    let val := and(sload(add(55296, i)), 0xFF)
+                    let val := and(loadNamespaced(add(55296, i)), 0xFF)
                     mstore8(add(0x40, i), val)
                 }
                 
@@ -1352,7 +1366,7 @@ object "GraphicsSystem" {
 
                 for { let line := scanline } lt(line, add(scanline, limit)) { line := add(line, 1) } {
                     let instrOffset := add(dlAddr, totalModeBytesFetched)
-                    let instr := and(sload(instrOffset), 0xff)
+                    let instr := and(loadNamespaced(instrOffset), 0xff)
 
                     // Parse instruction flags
                     let mode := and(instr, 0x0f)
@@ -1365,20 +1379,20 @@ object "GraphicsSystem" {
 
                     if isJump {
                         // Jump instruction: Next two bytes point to new Display List start address
-                        let targetLow := and(sload(add(instrOffset, 1)), 0xff)
-                        let targetHigh := and(sload(add(instrOffset, 2)), 0xff)
+                        let targetLow := and(loadNamespaced(add(instrOffset, 1)), 0xff)
+                        let targetHigh := and(loadNamespaced(add(instrOffset, 2)), 0xff)
                         dlAddr := or(shl(8, targetHigh), targetLow)
                         totalModeBytesFetched := 0
                         instrOffset := dlAddr
-                        instr := and(sload(instrOffset), 0xff)
+                        instr := and(loadNamespaced(instrOffset), 0xff)
                         mode := and(instr, 0x0f)
                         isLms := and(shr(6, instr), 1)
                     }
 
                     if isLms {
                         // Load Memory Scan: Next 2 bytes are pixel source RAM pointer
-                        let addrLow := and(sload(add(instrOffset, 1)), 0xff)
-                        let addrHigh := and(sload(add(instrOffset, 2)), 0xff)
+                        let addrLow := and(loadNamespaced(add(instrOffset, 1)), 0xff)
+                        let addrHigh := and(loadNamespaced(add(instrOffset, 2)), 0xff)
                         pixelAddressOffset := or(shl(8, addrHigh), addrLow)
                         totalModeBytesFetched := add(totalModeBytesFetched, 2)
                     }
@@ -1431,7 +1445,7 @@ object "GraphicsSystem" {
                 }
 
                 for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
-                    let colorVal := and(sload(add(53266, i)), 0xFF)
+                    let colorVal := and(loadNamespaced(add(53266, i)), 0xFF)
                     mstore(mul(i, 32), atariColorToRgba(colorVal))
                 }
                 return(0x00, 288)
@@ -1638,9 +1652,9 @@ object "GraphicsSystem" {
                 let y := and(calldataload(36), 0xFF)
                 let buttonState := and(calldataload(68), 0xFF)
                 
-                sstore(54297, x)
-                sstore(54298, y)
-                sstore(54299, buttonState)
+                storeNamespaced(54297, x)
+                storeNamespaced(54298, y)
+                storeNamespaced(54299, buttonState)
                 
                 mstore(0x00, 1)
                 return(0x00, 32)
@@ -1651,9 +1665,9 @@ object "GraphicsSystem" {
             // Selector: 0x34b7c40e
             // ----------------------------------------------------------------
             if eq(selector, 0x34b7c40e) {
-                let x := sload(54297)
-                let y := sload(54298)
-                let buttonState := sload(54299)
+                let x := loadNamespaced(54297)
+                let y := loadNamespaced(54298)
+                let buttonState := loadNamespaced(54299)
                 
                 mstore(0x00, x)
                 mstore(0x20, y)
@@ -1669,8 +1683,8 @@ object "GraphicsSystem" {
                 let x := calldataload(4)
                 let y := calldataload(36)
                 
-                sstore(53267, x)
-                sstore(53268, y)
+                storeNamespaced(53267, x)
+                storeNamespaced(53268, y)
                 
                 mstore(0x00, 1)
                 return(0x00, 32)
@@ -1681,8 +1695,8 @@ object "GraphicsSystem" {
             // Selector: 0x7db9a459
             // ----------------------------------------------------------------
             if eq(selector, 0x7db9a459) {
-                let x := sload(53267)
-                let y := sload(53268)
+                let x := loadNamespaced(53267)
+                let y := loadNamespaced(53268)
                 
                 mstore(0x00, x)
                 mstore(0x20, y)

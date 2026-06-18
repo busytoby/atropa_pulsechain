@@ -30,7 +30,7 @@ object "WinchesterMQ" {
                 let rst := and(shr(1, sigs), 0x01)
                 let ack := and(shr(2, sigs), 0x01)
 
-                let prevAck := sload(5) // Get last stored ACK
+                let prevAck := loadTransient(5) // Get last stored ACK
 
                 // Reset handling
                 if rst {
@@ -39,25 +39,25 @@ object "WinchesterMQ" {
                 }
 
                 // Selection Phase: SEL goes High and BSY is low
-                if and(sel, iszero(sload(0))) {
-                    sstore(0, 1)    // Assert BSY = 1
-                    sstore(2, 1)    // Assert C/D = 1 (Command phase)
-                    sstore(3, 0)    // Assert I/O = 0 (Host to Controller)
-                    sstore(4, 0)    // Assert MSG = 0
-                    sstore(6, 0)    // Clear CDB_BYTE_COUNT
-                    sstore(13, 0)   // Clear DATA_BYTE_COUNT
-                    sstore(1, 1)    // Assert REQ = 1 (Request first CDB byte)
+                if and(sel, iszero(loadTransient(0))) {
+                    storeTransient(0, 1)    // Assert BSY = 1
+                    storeTransient(2, 1)    // Assert C/D = 1 (Command phase)
+                    storeTransient(3, 0)    // Assert I/O = 0 (Host to Controller)
+                    storeTransient(4, 0)    // Assert MSG = 0
+                    storeTransient(6, 0)    // Clear CDB_BYTE_COUNT
+                    storeTransient(13, 0)   // Clear DATA_BYTE_COUNT
+                    storeTransient(1, 1)    // Assert REQ = 1 (Request first CDB byte)
                 }
 
                 // If ACK transitions from Low to High (Asserted by guest)
                 if and(ack, iszero(prevAck)) {
-                    sstore(5, 1) // Save new ACK state
+                    storeTransient(5, 1) // Save new ACK state
                     processAckHigh()
                 }
 
                 // If ACK transitions from High to Low (Deasserted by guest)
                 if and(iszero(ack), prevAck) {
-                    sstore(5, 0) // Save new ACK state
+                    storeTransient(5, 0) // Save new ACK state
                     processAckLow()
                 }
 
@@ -70,11 +70,11 @@ object "WinchesterMQ" {
             // ----------------------------------------------------------------
             if eq(selector, 0x525302b0) {
                 let sigs := 0
-                if sload(0) { sigs := or(sigs, 0x01) } // BSY
-                if sload(1) { sigs := or(sigs, 0x02) } // REQ
-                if sload(2) { sigs := or(sigs, 0x04) } // C/D
-                if sload(3) { sigs := or(sigs, 0x08) } // I/O
-                if sload(4) { sigs := or(sigs, 0x10) } // MSG
+                if loadTransient(0) { sigs := or(sigs, 0x01) } // BSY
+                if loadTransient(1) { sigs := or(sigs, 0x02) } // REQ
+                if loadTransient(2) { sigs := or(sigs, 0x04) } // C/D
+                if loadTransient(3) { sigs := or(sigs, 0x08) } // I/O
+                if loadTransient(4) { sigs := or(sigs, 0x10) } // MSG
                 mstore(0x00, sigs)
                 return(0x00, 32)
             }
@@ -85,7 +85,7 @@ object "WinchesterMQ" {
             // ----------------------------------------------------------------
             if eq(selector, 0x98d400c0) {
                 let val := and(calldataload(4), 0xFF)
-                sstore(0x20, val) // Store in transient Data Port register
+                storeTransient(0x20, val) // Store in transient Data Port register
                 return(0, 0)
             }
 
@@ -94,7 +94,7 @@ object "WinchesterMQ" {
             // Selector: 0x52d400d0 (Simulates reading from $DF00)
             // ----------------------------------------------------------------
             if eq(selector, 0x52d400d0) {
-                let val := sload(0x20)
+                let val := loadTransient(0x20)
                 mstore(0x00, val)
                 return(0x00, 32)
             }
@@ -136,38 +136,38 @@ object "WinchesterMQ" {
             // HELPER LOGIC FOR SASI EMULATOR
             // ================================================================
             function performReset() {
-                sstore(0, 0) // BSY = 0
-                sstore(1, 0) // REQ = 0
-                sstore(2, 0) // C/D = 0
-                sstore(3, 0) // I/O = 0
-                sstore(4, 0) // MSG = 0
-                sstore(5, 0) // ACK = 0
-                sstore(6, 0) // CDB count = 0
-                sstore(13, 0) // Data count = 0
+                storeTransient(0, 0) // BSY = 0
+                storeTransient(1, 0) // REQ = 0
+                storeTransient(2, 0) // C/D = 0
+                storeTransient(3, 0) // I/O = 0
+                storeTransient(4, 0) // MSG = 0
+                storeTransient(5, 0) // ACK = 0
+                storeTransient(6, 0) // CDB count = 0
+                storeTransient(13, 0) // Data count = 0
             }
 
             // Invoked when ACK rises: latch data or prepare output byte
             function processAckHigh() {
-                let cd := sload(2)
-                let io := sload(3)
+                let cd := loadTransient(2)
+                let io := loadTransient(3)
 
                 // 1. Command Phase: Guest is sending CDB command bytes (C/D = 1, I/O = 0)
                 if and(cd, iszero(io)) {
-                    let byteIndex := sload(6)
-                    let inputByte := sload(0x20) // Read current transient data port
-                    sstore(add(7, byteIndex), inputByte) // Store in CDB buffer slots 7-12
+                    let byteIndex := loadTransient(6)
+                    let inputByte := loadTransient(0x20) // Read current transient data port
+                    storeTransient(add(7, byteIndex), inputByte) // Store in CDB buffer slots 7-12
                     
                     let nextIndex := add(byteIndex, 1)
-                    sstore(6, nextIndex)
+                    storeTransient(6, nextIndex)
 
-                    sstore(1, 0) // Drop REQ = 0 to signify byte captured
+                    storeTransient(1, 0) // Drop REQ = 0 to signify byte captured
                     leave
                 }
 
                 // 2. Data Write Phase: Guest is sending payload data bytes (C/D = 0, I/O = 0)
                 if and(iszero(cd), iszero(io)) {
-                    let byteIndex := sload(13)
-                    let inputByte := sload(0x20)
+                    let byteIndex := loadTransient(13)
+                    let inputByte := loadTransient(0x20)
                     
                     let blockId := getCdbLba()
                     let lun := getCdbLun()
@@ -191,44 +191,44 @@ object "WinchesterMQ" {
                     // Mark sector as dirty (bitmask)
                     markSectorDirty(blockId)
                     
-                    sstore(13, add(byteIndex, 1))
-                    sstore(1, 0) // Drop REQ = 0
+                    storeTransient(13, add(byteIndex, 1))
+                    storeTransient(1, 0) // Drop REQ = 0
                     leave
                 }
 
                 // 3. Data Read Phase: Guest is reading bytes (C/D = 0, I/O = 1)
                 // Just drop REQ = 0 to acknowledge that the guest read the byte
                 if and(iszero(cd), io) {
-                    sstore(1, 0) // Drop REQ = 0
+                    storeTransient(1, 0) // Drop REQ = 0
                     leave
                 }
             }
 
             // Invoked when ACK drops: setup next byte or transition phases
             function processAckLow() {
-                let cd := sload(2)
-                let io := sload(3)
+                let cd := loadTransient(2)
+                let io := loadTransient(3)
 
                 // 1. Command Phase: Continue gathering command bytes or transition
                 if and(cd, iszero(io)) {
-                    let count := sload(6)
+                    let count := loadTransient(6)
                     if lt(count, 6) {
-                        sstore(1, 1) // Assert REQ = 1 for next command byte
+                        storeTransient(1, 1) // Assert REQ = 1 for next command byte
                         leave
                     }
                     
                     // 6-byte CDB complete. Parse command type.
-                    let opcode := sload(7) // Opcode stored in CDB index 0 (slot 7)
+                    let opcode := loadTransient(7) // Opcode stored in CDB index 0 (slot 7)
                     
                     // Opcode 0x08 = Read Block / MQGET (Updated for 2-phase commit)
                     if eq(opcode, 0x08) {
-                        sstore(2, 0) // C/D = 0 (Data phase)
-                        sstore(3, 1) // I/O = 1 (Read from controller to guest)
-                        sstore(13, 0) // Clear DATA_BYTE_COUNT
+                        storeTransient(2, 0) // C/D = 0 (Data phase)
+                        storeTransient(3, 1) // I/O = 1 (Read from controller to guest)
+                        storeTransient(13, 0) // Clear DATA_BYTE_COUNT
                         
                         // Set the currently read block as pending acknowledgment lease (slot 0x30)
                         let blockId := getCdbLba()
-                        sstore(0x30, blockId)
+                        storeTransient(0x30, blockId)
 
                         // Load first read byte to data port and assert REQ
                         setupNextReadByte(0)
@@ -251,26 +251,26 @@ object "WinchesterMQ" {
                             leave
                         }
 
-                        sstore(2, 0) // C/D = 0 (Data phase)
-                        sstore(3, 0) // I/O = 0 (Write from guest to controller)
-                        sstore(13, 0) // Clear DATA_BYTE_COUNT
-                        sstore(1, 1)  // Assert REQ = 1 to request first byte
+                        storeTransient(2, 0) // C/D = 0 (Data phase)
+                        storeTransient(3, 0) // I/O = 0 (Write from guest to controller)
+                        storeTransient(13, 0) // Clear DATA_BYTE_COUNT
+                        storeTransient(1, 1)  // Assert REQ = 1 to request first byte
                         leave
                     }
 
                     // Opcode 0x0C = Read Specific Block by Correlation ID
                     if eq(opcode, 0x0C) {
-                        sstore(2, 0) // C/D = 0 (Data phase)
-                        sstore(3, 0) // I/O = 0 (Host will write 32-byte CorrelId first)
-                        sstore(13, 0) // Clear data count
-                        sstore(1, 1)  // Assert REQ = 1
+                        storeTransient(2, 0) // C/D = 0 (Data phase)
+                        storeTransient(3, 0) // I/O = 0 (Host will write 32-byte CorrelId first)
+                        storeTransient(13, 0) // Clear data count
+                        storeTransient(1, 1)  // Assert REQ = 1
                         leave
                     }
 
                     // Opcode 0x1E = Acknowledge Message (Commit MQGET)
                     if eq(opcode, 0x1E) {
                         let blockId := getCdbLba()
-                        let pending := sload(0x30)
+                        let pending := loadTransient(0x30)
                         
                         // Verify block is indeed leased for ACK
                         if eq(blockId, pending) {
@@ -278,10 +278,9 @@ object "WinchesterMQ" {
                             if eq(blockId, currentHead) {
                                 sstore(14, add(currentHead, 1)) // Permanently consume block
                             }
-                            sstore(0x30, 0xFFFFFFFF) // Clear lease
+                            storeTransient(0x30, 0xFFFFFFFF) // Clear lease
                             
                             // Journaling Log: LogAck(lun, blockId)
-                            // Event signature: keccak256("LogAck(uint256,uint256)") = 0x8a1bee1dae9af77dac73aa0459ed63b4d93fc6d29...
                             mstore(0x00, getCdbLun())
                             mstore(0x20, blockId)
                             log1(0x00, 0x40, 0xb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3efb8b6a3ef)
@@ -321,20 +320,20 @@ object "WinchesterMQ" {
 
                 // 2. Data Write Phase: Wait for bytes to be written
                 if and(iszero(cd), iszero(io)) {
-                    let opcode := sload(7)
+                    let opcode := loadTransient(7)
 
                     // Special case: Opcode 0x0C (Writing the 32-byte target Correlation ID)
                     if eq(opcode, 0x0C) {
-                        let byteIndex := sload(13)
-                        let inputByte := sload(0x20)
+                        let byteIndex := loadTransient(13)
+                        let inputByte := loadTransient(0x20)
                         
                         // Store the 32-byte target Correlation ID in slots 0x50-0x6F
-                        sstore(add(0x50, byteIndex), inputByte)
+                        storeTransient(add(0x50, byteIndex), inputByte)
                         let nextCount := add(byteIndex, 1)
-                        sstore(13, nextCount)
+                        storeTransient(13, nextCount)
 
                         if lt(nextCount, 32) {
-                            sstore(1, 1) // Request next byte
+                            storeTransient(1, 1) // Request next byte
                             leave
                         }
 
@@ -346,22 +345,22 @@ object "WinchesterMQ" {
                         }
 
                         // Match found! Transition to Data Read Phase
-                        sstore(8, and(shr(16, matchedBlock), 0x1F)) // Inject matched LBA
-                        sstore(9, and(shr(8, matchedBlock), 0xFF))
-                        sstore(10, and(matchedBlock, 0xFF))
+                        storeTransient(8, and(shr(16, matchedBlock), 0x1F)) // Inject matched LBA
+                        storeTransient(9, and(shr(8, matchedBlock), 0xFF))
+                        storeTransient(10, and(matchedBlock, 0xFF))
 
-                        sstore(0x30, matchedBlock) // Set pending lease
+                        storeTransient(0x30, matchedBlock) // Set pending lease
 
-                        sstore(2, 0) // C/D = 0
-                        sstore(3, 1) // I/O = 1 (Read phase)
-                        sstore(13, 0) // Reset read data counter
+                        storeTransient(2, 0) // C/D = 0
+                        storeTransient(3, 1) // I/O = 1 (Read phase)
+                        storeTransient(13, 0) // Reset read data counter
                         setupNextReadByte(0)
                         leave
                     }
 
-                    let count := sload(13)
+                    let count := loadTransient(13)
                     if lt(count, 256) {
-                        sstore(1, 1) // Request next byte
+                        storeTransient(1, 1) // Request next byte
                         leave
                     }
                     
@@ -374,7 +373,6 @@ object "WinchesterMQ" {
                         performTopicFanOut(blockId)
                         
                         // Journaling Log: LogPut(lun, blockId, topicId)
-                        // Event signature: 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29...
                         mstore(0x00, lun)
                         mstore(0x20, blockId)
                         let cacheKey := hashKey(0x1000, blockId)
@@ -432,9 +430,9 @@ object "WinchesterMQ" {
 
                 // 3. Data Read Phase: Send next byte until 256 bytes transferred
                 if and(iszero(cd), io) {
-                    let count := sload(13)
+                    let count := loadTransient(13)
                     let nextCount := add(count, 1)
-                    sstore(13, nextCount)
+                    storeTransient(13, nextCount)
                     
                     if lt(nextCount, 256) {
                         setupNextReadByte(nextCount)
@@ -481,8 +479,8 @@ object "WinchesterMQ" {
                 let shift := mul(sub(31, byteOffset), 8)
                 let byteVal := and(shr(shift, word), 0xFF)
                 
-                sstore(0x20, byteVal) // Place byte on data port register
-                sstore(1, 1)          // Assert REQ = 1
+                storeTransient(0x20, byteVal) // Place byte on data port register
+                storeTransient(1, 1)          // Assert REQ = 1
             }
 
             // Validates if the message block contains an active TTL expiry
@@ -512,7 +510,7 @@ object "WinchesterMQ" {
                 // Pack 32 bytes of queried Correlation ID from slots 0x50-0x6F into a single 256-bit word
                 let targetWord := 0
                 for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
-                    targetWord := or(shl(8, targetWord), and(sload(add(0x50, i)), 0xFF))
+                    targetWord := or(shl(8, targetWord), and(loadTransient(add(0x50, i)), 0xFF))
                 }
 
                 let lun := getCdbLun()
@@ -574,24 +572,24 @@ object "WinchesterMQ" {
             }
 
             function transitionToStatus(statusCode) {
-                sstore(2, 1) // C/D = 1
-                sstore(3, 1) // I/O = 1
-                sstore(4, 1) // MSG = 1
-                sstore(0x20, statusCode) // Place status on data port
-                sstore(1, 1) // Assert REQ = 1
+                storeTransient(2, 1) // C/D = 1
+                storeTransient(3, 1) // I/O = 1
+                storeTransient(4, 1) // MSG = 1
+                storeTransient(0x20, statusCode) // Place status on data port
+                storeTransient(1, 1) // Assert REQ = 1
             }
 
             function getCdbLba() -> lba {
                 // Parse LBA from CDB (bytes 1, 2, and 3 stored at slots 8, 9, 10)
-                let b1 := sload(8)
-                let b2 := sload(9)
-                let b3 := sload(10)
+                let b1 := loadTransient(8)
+                let b2 := loadTransient(9)
+                let b3 := loadTransient(10)
                 lba := or(or(shl(16, and(b1, 0x1F)), shl(8, and(b2, 0xFF))), and(b3, 0xFF))
             }
 
             function getCdbLun() -> lun {
                 // LUN is stored in the high bits of byte 1 (CDB index 1, slot 8)
-                let b1 := sload(8)
+                let b1 := loadTransient(8)
                 lun := shr(5, and(b1, 0xE0))
             }
 
@@ -668,6 +666,21 @@ object "WinchesterMQ" {
             function hashKey(prefix, val) -> key {
                 mstore(0x200, add(prefix, val))
                 key := keccak256(0x200, 32)
+            }
+
+            // Namespaced Transient State Mappings for Public Chains
+            function getTransientSlot(index) -> slot {
+                mstore(0x280, caller())
+                mstore(0x2A0, index)
+                slot := keccak256(0x280, 64)
+            }
+
+            function loadTransient(idx) -> val {
+                val := sload(getTransientSlot(idx))
+            }
+
+            function storeTransient(idx, val) {
+                sstore(getTransientSlot(idx), val)
             }
         }
     }
