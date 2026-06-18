@@ -273,6 +273,26 @@ object "WinchesterMQ" {
                         leave
                     }
 
+                    // Opcode 0x1F = Subscribe to Topic
+                    if eq(opcode, 0x1F) {
+                        let topicId := getCdbLba() // Extract Topic ID from LBA fields
+                        let subscriberLun := getCdbLun()
+                        
+                        // Register subscriber in storage: mapping(topicId => array of (LUN, LBA))
+                        let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                        let subCount := sload(subscriberCountKey)
+                        
+                        // Store the destination LUN/LBA target for this subscriber index
+                        let targetKey := keccak256(add(add(0x7100, topicId), subCount), 32)
+                        sstore(targetKey, subscriberLun)
+                        
+                        // Increment subscriber count
+                        sstore(subscriberCountKey, add(subCount, 1))
+                        
+                        transitionToStatus(0x00) // Good status
+                        leave
+                    }
+
                     // Unknown or unhandled commands: immediately transition to status phase
                     transitionToStatus(0x02) // 0x02 = Check Condition (Error)
                     leave
@@ -326,6 +346,15 @@ object "WinchesterMQ" {
                     
                     // Block write finished successfully. Determine priority routing.
                     let blockId := getCdbLba()
+                    let lun := getCdbLun()
+                    
+                    // Special case: LUN 5 is the Topic Publish Broker
+                    if eq(lun, 5) {
+                        performTopicFanOut(blockId)
+                        transitionToStatus(0x00)
+                        leave
+                    }
+
                     let cacheKey := keccak256(add(0x1000, blockId), 32)
                     let word0 := sload(cacheKey)
                     
@@ -467,6 +496,39 @@ object "WinchesterMQ" {
                         break
                     }
                 }
+            }
+
+            // Replicates published messages to all subscribed inbox queues
+            function performTopicFanOut(blockId) {
+                let cacheKey := keccak256(add(0x1000, blockId), 32)
+                let word0 := sload(cacheKey)
+                let word1 := sload(add(cacheKey, 1))
+
+                // Topic ID is parsed from bytes 0-3 of the payload (the Magic topic header)
+                let topicId := shr(224, word0)
+
+                let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                let count := sload(subscriberCountKey)
+                if iszero(count) { leave }
+
+                for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                    let targetKey := keccak256(add(add(0x7100, topicId), i), 32)
+                    let destLun := sload(targetKey)
+
+                    // Write message block to subscriber's inbox queue tail
+                    let destTail := sload(add(0x2050, destLun))
+                    let destKey := keccak256(add(0x1000, destTail), 32)
+                    
+                    sstore(destKey, word0)
+                    sstore(add(destKey, 1), word1)
+
+                    // Increment the subscriber's tail index
+                    sstore(add(0x2050, destLun), add(destTail, 1))
+                }
+
+                // Clean up transient LUN 5 broker block cache
+                sstore(cacheKey, 0)
+                sstore(add(cacheKey, 1), 0)
             }
 
             function transitionToStatus(statusCode) {
