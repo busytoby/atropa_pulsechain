@@ -1159,23 +1159,6 @@
                         // Harvest mercury
                         mercuryHarvested += 1;
                         saveHarvestedReagents();
-
-                        // Spawn 2 hostile sparks flying outward/toward player
-                        const mAngle = Math.atan2(ship.y - m.y, ship.x - m.x);
-                        castleBullets.push({
-                            x: m.x,
-                            y: m.y,
-                            vx: Math.cos(mAngle - 0.25) * 4.2,
-                            vy: Math.sin(mAngle - 0.25) * 4.2,
-                            life: 75
-                        });
-                        castleBullets.push({
-                            x: m.x,
-                            y: m.y,
-                            vx: Math.cos(mAngle + 0.25) * 4.2,
-                            vy: Math.sin(mAngle + 0.25) * 4.2,
-                            life: 75
-                        });
                         break;
                     }
                 }
@@ -1217,11 +1200,13 @@
             if (mineSpawnTimer > currentMineSpawnDelay) {
                 mineSpawnTimer = 0;
                 const isMagnetic = Math.random() < magneticMineProbability; // chance of spawning a serpentine magnetic mine
+                const spawnAngle = Math.random() * Math.PI * 2;
                 mines.push({
                     x: size / 2,
                     y: size / 2,
-                    angle: Math.random() * Math.PI * 2,
-                    speed: 1.8 + Math.min(1.5, (score / 15000) * 0.5),
+                    angle: spawnAngle,
+                    moveAngle: spawnAngle, // initialize movement direction same as launch direction
+                    speed: 1.6 + Math.min(1.2, (score / 15000) * 0.4), // slightly lower base speed for balance
                     type: isMagnetic ? "magnetic" : "homing",
                     seed: Math.random() * 1000
                 });
@@ -1232,14 +1217,23 @@
                 if (!gameActive) break;
                 const m = mines[i];
                 if (!m) continue;
-                const angle = Math.atan2(ship.y - m.y, ship.x - m.x);
-                let vx = Math.cos(angle) * m.speed;
-                let vy = Math.sin(angle) * m.speed;
+                
+                const targetAngle = Math.atan2(ship.y - m.y, ship.x - m.x);
+                let diff = targetAngle - m.moveAngle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                
+                // Limit turn rate of the mines (arc-steering dynamics)
+                const turnRate = 0.035;
+                m.moveAngle += Math.sign(diff) * Math.min(Math.abs(diff), turnRate);
+                
+                let vx = Math.cos(m.moveAngle) * m.speed;
+                let vy = Math.sin(m.moveAngle) * m.speed;
                 
                 if (m.type === "magnetic") {
-                    // Serpentine wiggling trajectory: add wave force perpendicular to direct path
-                    const perpAngle = angle + Math.PI / 2;
-                    const wiggle = Math.sin(Date.now() * 0.012 + m.seed) * 1.6;
+                    // Serpentine wiggling trajectory: add wave force perpendicular to path
+                    const perpAngle = m.moveAngle + Math.PI / 2;
+                    const wiggle = Math.sin(Date.now() * 0.012 + m.seed) * 1.5;
                     vx += Math.cos(perpAngle) * wiggle;
                     vy += Math.sin(perpAngle) * wiggle;
                 }
@@ -1287,7 +1281,7 @@
                 if (isPathOpen(angleToShip)) {
                     laser.charge++;
                     laser.angle = angleToShip;
-                    if (laser.charge >= 50) {
+                    if (laser.charge >= 80) {
                         laser.active = true;
                         laser.charge = 0;
                         playExplodeSound(500); // laser sound
@@ -1305,8 +1299,8 @@
                     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                     
-                    // Rotate laser towards ship by up to 0.025 radians per frame (faster than ship orbit speed)
-                    const maxSweep = 0.025;
+                    // Rotate laser towards ship by up to 0.012 radians per frame (slower than player orbit speed to allow dodging)
+                    const maxSweep = 0.012;
                     laser.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), maxSweep);
 
                     let diff = Math.abs(shipAngle - laser.angle);
