@@ -138,6 +138,35 @@ object "PmgSystem" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD 4: loadDnaGenome(uint256 dnaRaw) -> void
+            // Selector: 0xd6a111a9 (Parses 12-byte genome and configures P0 size/color registers)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xd6a111a9) {
+                let dna := calldataload(4)
+                
+                let fur_r := byte(0, dna)
+                let fur_g := byte(1, dna)
+                let fur_b := byte(2, dna)
+                let sickness := byte(6, dna)
+                let scale := byte(7, dna)
+                
+                let luma := div(add(add(fur_r, fur_g), fur_b), 3)
+                let hue := mod(add(fur_r, mul(fur_g, 2)), 16)
+                let atari_color := or(shl(4, hue), shr(4, luma))
+                
+                sstore(getRegKey(53266), atari_color)
+                
+                let pmg_size := 0
+                if gt(scale, 120) { pmg_size := 1 }
+                if gt(scale, 180) { pmg_size := 3 }
+                sstore(getRegKey(53256), pmg_size)
+                
+                sstore(getRegKey(53280), sickness)
+                
+                return(0, 0)
+            }
+
             revert(0, 0)
         }
     }
