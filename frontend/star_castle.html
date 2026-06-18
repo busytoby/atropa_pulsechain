@@ -458,6 +458,8 @@
         const mines = [];
         const laser = { active: false, charge: 0, angle: 0 };
         let mineSpawnTimer = 0;
+        let shieldRegenTimer = 0;
+        let regenEffect = null;
 
         // Rings configurations (3 concentric rings with segment gaps)
         const rings = [
@@ -562,9 +564,18 @@
                     const startA = i * segAngle + currentRot;
                     const endA = startA + segAngle - 0.15; // Small spacer gap
                     
-                    ctx.shadowBlur = 6;
-                    ctx.shadowColor = ring.color;
-                    ctx.strokeStyle = ring.color;
+                    let segColor = ring.color;
+                    let glow = 6;
+                    if (regenEffect && regenEffect.rIdx === rIdx && regenEffect.segIdx === i) {
+                        const alpha = regenEffect.life / 30;
+                        // Beautiful Auncient neon green pulse when regenerating
+                        segColor = `rgba(0, 255, 170, ${alpha})`;
+                        glow = 15;
+                    }
+
+                    ctx.shadowBlur = glow;
+                    ctx.shadowColor = segColor;
+                    ctx.strokeStyle = segColor;
                     ctx.beginPath();
                     ctx.arc(cx, cy, ring.radius, startA, endA);
                     ctx.stroke();
@@ -575,6 +586,7 @@
 
         // AI Mode toggle state
         let aiMode = false;
+        let aiOrbitClockwise = true;
 
         function toggleAiMode() {
             aiMode = !aiMode;
@@ -600,8 +612,27 @@
             const desiredRadius = 200;
             const angleToCenter = Math.atan2(targetY - ship.y, targetX - ship.x);
             
-            // Calculate tangent direction (clockwise orbit)
-            const tangentAngle = angleToCenter + Math.PI / 2;
+            // Handle laser threat - reverse orbit direction or thrust radially out
+            const shipAngle = Math.atan2(ship.y - size/2, ship.x - size/2);
+            if (laser.active || laser.charge > 0) {
+                let laserDiff = shipAngle - laser.angle;
+                while (laserDiff < -Math.PI) laserDiff += Math.PI * 2;
+                while (laserDiff > Math.PI) laserDiff -= Math.PI * 2;
+                
+                if (Math.abs(laserDiff) < 0.65) {
+                    // Urgent laser evasion: thrust radially outwards to escape the sweep line
+                    ship.vx += Math.cos(shipAngle) * ship.speed * 1.5;
+                    ship.vy += Math.sin(shipAngle) * ship.speed * 1.5;
+                    
+                    // Periodically toggle orbit direction to outrun the tracking laser
+                    if (Math.abs(laserDiff) < 0.35 && Math.random() < 0.05) {
+                        aiOrbitClockwise = !aiOrbitClockwise;
+                    }
+                }
+            }
+
+            // Calculate tangent direction (clockwise or counter-clockwise orbit)
+            const tangentAngle = angleToCenter + (aiOrbitClockwise ? Math.PI / 2 : -Math.PI / 2);
             
             // Combine tangential velocity with radial correction velocity
             const radialCorrection = (dist - desiredRadius) * 0.05; // Proportional feedback
@@ -786,25 +817,54 @@
                 }
             }
 
-            // Spawn homing mines
+            // Shield regeneration logic: check every frame
+            shieldRegenTimer++;
+            const currentRegenDelay = 600; // regenerate a segment every 10 seconds (600 frames)
+            if (shieldRegenTimer > currentRegenDelay) {
+                shieldRegenTimer = 0;
+                regenerateShieldSegment();
+            }
+
+            if (regenEffect) {
+                regenEffect.life--;
+                if (regenEffect.life <= 0) {
+                    regenEffect = null;
+                }
+            }
+
+            // Spawn homing and serpentine magnetic mines
             mineSpawnTimer++;
             const currentMineSpawnDelay = Math.max(100, 240 - Math.floor(score / 2000) * 20);
             if (mineSpawnTimer > currentMineSpawnDelay) {
                 mineSpawnTimer = 0;
+                const isMagnetic = Math.random() < 0.45; // 45% chance of spawning a serpentine magnetic mine
                 mines.push({
                     x: size / 2,
                     y: size / 2,
                     angle: Math.random() * Math.PI * 2,
-                    speed: 1.8 + Math.min(1.5, (score / 15000) * 0.5)
+                    speed: 1.8 + Math.min(1.5, (score / 15000) * 0.5),
+                    type: isMagnetic ? "magnetic" : "homing",
+                    seed: Math.random() * 1000
                 });
             }
 
-            // Update homing mines
+            // Update homing & magnetic mines
             for (let i = mines.length - 1; i >= 0; i--) {
                 const m = mines[i];
                 const angle = Math.atan2(ship.y - m.y, ship.x - m.x);
-                m.x += Math.cos(angle) * m.speed;
-                m.y += Math.sin(angle) * m.speed;
+                let vx = Math.cos(angle) * m.speed;
+                let vy = Math.sin(angle) * m.speed;
+                
+                if (m.type === "magnetic") {
+                    // Serpentine wiggling trajectory: add wave force perpendicular to direct path
+                    const perpAngle = angle + Math.PI / 2;
+                    const wiggle = Math.sin(Date.now() * 0.012 + m.seed) * 1.6;
+                    vx += Math.cos(perpAngle) * wiggle;
+                    vy += Math.sin(perpAngle) * wiggle;
+                }
+                
+                m.x += vx;
+                m.y += vy;
                 m.angle += 0.1;
 
                 // Collision with player ship
@@ -857,7 +917,16 @@
                 laser.charge++;
                 if (laser.charge < 25) {
                     // Laser active: check collision with player ship
+                    // Track ship slightly during fire (sweeping effect)
                     const shipAngle = Math.atan2(ship.y - size/2, ship.x - size/2);
+                    let angleDiff = shipAngle - laser.angle;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    
+                    // Rotate laser towards ship by up to 0.025 radians per frame (faster than ship orbit speed)
+                    const maxSweep = 0.025;
+                    laser.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), maxSweep);
+
                     let diff = Math.abs(shipAngle - laser.angle);
                     while (diff > Math.PI) diff = Math.PI * 2 - diff;
                     
@@ -886,11 +955,19 @@
             
             if (castleFireTimer > currentFireDelay) {
                 castleFireTimer = 0;
-                // Fire bullet towards player ship
-                const angle = Math.atan2(ship.y - size/2, ship.x - size/2);
                 
                 // Scale bullet velocity dynamically from 2.5 up to 5.5 depending on score
                 const bulletSpeed = Math.min(5.5, 2.5 + (score / 10000) * 0.75);
+                
+                // Predictive Aiming: Fire bullet at predicted intercept point
+                const distToShip = Math.hypot(ship.x - size/2, ship.y - size/2);
+                const travelTime = distToShip / bulletSpeed;
+                
+                // Estimate ship position after travelTime frames
+                const predictedX = ship.x + ship.vx * travelTime;
+                const predictedY = ship.y + ship.vy * travelTime;
+                
+                const angle = Math.atan2(predictedY - size/2, predictedX - size/2);
                 
                 castleBullets.push({
                     x: size/2,
@@ -940,6 +1017,24 @@
             rings.forEach(ring => {
                 ring.segments = ring.segments.map(() => 1);
             });
+        }
+
+        function regenerateShieldSegment() {
+            const broken = [];
+            rings.forEach((ring, rIdx) => {
+                ring.segments.forEach((seg, sIdx) => {
+                    if (seg === 0) {
+                        broken.push({ rIdx, sIdx });
+                    }
+                });
+            });
+            
+            if (broken.length > 0) {
+                const target = broken[Math.floor(Math.random() * broken.length)];
+                rings[target.rIdx].segments[target.sIdx] = 1;
+                regenEffect = { rIdx: target.rIdx, segIdx: target.sIdx, life: 30 };
+                playExplodeSound(200); // Low synthesizer tone for regeneration
+            }
         }
 
         // Reagent Harvesting state
@@ -993,10 +1088,11 @@
                 drawVectorLine(cb.x, cb.y, cb.x - cb.vx * 1.5, cb.y - cb.vy * 1.5, "#ff0055", 6);
             });
 
-            // Draw homing mines
+            // Draw homing & magnetic mines
             mines.forEach(m => {
-                ctx.strokeStyle = "#ff5500";
-                ctx.shadowColor = "#ff5500";
+                const color = m.type === "magnetic" ? "#ff00ff" : "#ff5500";
+                ctx.strokeStyle = color;
+                ctx.shadowColor = color;
                 ctx.shadowBlur = 6;
                 ctx.beginPath();
                 // Draw rotating diamond
@@ -1087,6 +1183,9 @@
             laser.active = false;
             laser.charge = 0;
             mineSpawnTimer = 0;
+            shieldRegenTimer = 0;
+            regenEffect = null;
+            aiOrbitClockwise = true;
             loadHarvestedReagents();
             document.getElementById("btnStart").innerText = "Resume Game";
         }
@@ -1105,6 +1204,9 @@
             mines.length = 0;
             laser.active = false;
             laser.charge = 0;
+            shieldRegenTimer = 0;
+            regenEffect = null;
+            aiOrbitClockwise = true;
             leadHarvested = 0;
             mercuryHarvested = 0;
             sulfurHarvested = 0;
@@ -1122,6 +1224,8 @@
             mines.length = 0;
             laser.active = false;
             laser.charge = 0;
+            shieldRegenTimer = 0;
+            regenEffect = null;
             saveHarvestedReagents();
             alert(`GAME OVER! Final Score: ${score}\nLead Harvested: ${leadHarvested}\nMercury Harvested: ${mercuryHarvested}\nSulfur Harvested: ${sulfurHarvested}`);
             resetGame();
