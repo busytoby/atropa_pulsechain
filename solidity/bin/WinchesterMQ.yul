@@ -178,7 +178,7 @@ object "WinchesterMQ" {
                     // Write data byte directly to dynamic storage array at matching offset
                     let wordOffset := div(byteIndex, 32)
                     let byteOffset := mod(byteIndex, 32)
-                    let cacheKey := keccak256(add(0x1000, blockId), 32)
+                    let cacheKey := hashKey(0x1000, blockId)
                     let currentWord := sload(add(cacheKey, wordOffset))
                     
                     // Inject byte into correct position of 256-bit word
@@ -300,11 +300,11 @@ object "WinchesterMQ" {
                         let subscriberLun := getCdbLun()
                         
                         // Register subscriber in storage: mapping(topicId => array of (LUN, LBA))
-                        let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                        let subscriberCountKey := hashKey(0x7000, topicId)
                         let subCount := sload(subscriberCountKey)
                         
                         // Store the destination LUN/LBA target for this subscriber index
-                        let targetKey := keccak256(add(add(0x7100, topicId), subCount), 32)
+                        let targetKey := hashKey(add(0x7100, topicId), subCount)
                         sstore(targetKey, subscriberLun)
                         
                         // Increment subscriber count
@@ -377,7 +377,7 @@ object "WinchesterMQ" {
                         // Event signature: 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29...
                         mstore(0x00, lun)
                         mstore(0x20, blockId)
-                        let cacheKey := keccak256(add(0x1000, blockId), 32)
+                        let cacheKey := hashKey(0x1000, blockId)
                         mstore(0x40, shr(224, sload(cacheKey))) // Topic ID from magic header
                         log1(0x00, 0x60, 0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045)
 
@@ -398,7 +398,7 @@ object "WinchesterMQ" {
                         sstore(14, newHead) // Decrement head pointer
                         
                         // Remap block data cache to the new head position
-                        let newHeadKey := keccak256(add(0x1000, newHead), 32)
+                        let newHeadKey := hashKey(0x1000, newHead)
                         for { let j := 0 } lt(j, 8) { j := add(j, 1) } {
                             sstore(add(newHeadKey, j), sload(add(cacheKey, j)))
                             sstore(add(cacheKey, j), 0) // Clean up old LBA cache slot
@@ -475,7 +475,7 @@ object "WinchesterMQ" {
                 
                 let wordOffset := div(index, 32)
                 let byteOffset := mod(index, 32)
-                let cacheKey := keccak256(add(0x1000, blockId), 32)
+                let cacheKey := hashKey(0x1000, blockId)
                 let word := sload(add(cacheKey, wordOffset))
                 
                 let shift := mul(sub(31, byteOffset), 8)
@@ -488,7 +488,7 @@ object "WinchesterMQ" {
             // Validates if the message block contains an active TTL expiry
             function checkBlockExpired(blockId) -> expired {
                 expired := 0
-                let cacheKey := keccak256(add(0x1000, blockId), 32)
+                let cacheKey := hashKey(0x1000, blockId)
                 
                 // ExpiryJiffies is stored in bytes 8-15 (word 0, low-mid bytes)
                 let word0 := sload(cacheKey)
@@ -521,7 +521,7 @@ object "WinchesterMQ" {
                 for { let lba := currentHead } lt(lba, currentTail) { lba := add(lba, 1) } {
                     ensureSectorLoaded(lun, lba)
                     
-                    let cacheKey := keccak256(add(0x1000, lba), 32)
+                    let cacheKey := hashKey(0x1000, lba)
                     
                     // Correlation ID is stored in bytes 16-47 (spanning word 0 and word 1 of the sector)
                     // Offset 16-31 is the lower 16 bytes of word 0
@@ -542,24 +542,24 @@ object "WinchesterMQ" {
 
             // Replicates published messages to all subscribed inbox queues
             function performTopicFanOut(blockId) {
-                let cacheKey := keccak256(add(0x1000, blockId), 32)
+                let cacheKey := hashKey(0x1000, blockId)
                 let word0 := sload(cacheKey)
                 let word1 := sload(add(cacheKey, 1))
 
                 // Topic ID is parsed from bytes 0-3 of the payload (the Magic topic header)
                 let topicId := shr(224, word0)
 
-                let subscriberCountKey := keccak256(add(0x7000, topicId), 32)
+                let subscriberCountKey := hashKey(0x7000, topicId)
                 let count := sload(subscriberCountKey)
                 if iszero(count) { leave }
 
                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
-                    let targetKey := keccak256(add(add(0x7100, topicId), i), 32)
+                    let targetKey := hashKey(add(0x7100, topicId), i)
                     let destLun := sload(targetKey)
 
                     // Write message block to subscriber's inbox queue tail
                     let destTail := sload(add(0x2050, destLun))
-                    let destKey := keccak256(add(0x1000, destTail), 32)
+                    let destKey := hashKey(0x1000, destTail)
                     
                     sstore(destKey, word0)
                     sstore(add(destKey, 1), word1)
@@ -601,7 +601,7 @@ object "WinchesterMQ" {
             
             // Checks if the memory cache page has been hydrated from VirtualDisk
             function ensureSectorLoaded(lun, lba) {
-                let initKey := keccak256(add(0x3000, lba), 32)
+                let initKey := hashKey(0x3000, lba)
                 let initialized := sload(initKey)
                 if initialized { leave }
 
@@ -618,7 +618,7 @@ object "WinchesterMQ" {
 
                 let success := staticcall(gas(), diskContract, ptr, 36, ptr, 256)
                 if success {
-                    let cacheKey := keccak256(add(0x1000, lba), 32)
+                    let cacheKey := hashKey(0x1000, lba)
                     for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
                         sstore(add(cacheKey, i), mload(add(ptr, mul(i, 32))))
                     }
@@ -629,7 +629,7 @@ object "WinchesterMQ" {
             function markSectorDirty(lba) {
                 let maskWordIdx := div(lba, 256)
                 let bitIdx := mod(lba, 256)
-                let maskKey := keccak256(add(0x4000, maskWordIdx), 32)
+                let maskKey := hashKey(0x4000, maskWordIdx)
                 let mask := sload(maskKey)
                 sstore(maskKey, or(mask, shl(bitIdx, 1)))
             }
@@ -639,7 +639,7 @@ object "WinchesterMQ" {
                 if iszero(diskContract) { leave }
 
                 // Scan dirty masks (currently supporting up to 256 sectors)
-                let maskKey := keccak256(0x4000, 32)
+                let maskKey := hashKey(0x4000, 0)
                 let mask := sload(maskKey)
                 if iszero(mask) { leave }
 
@@ -651,7 +651,7 @@ object "WinchesterMQ" {
                         mstore(ptr, 0x8aef890d00000000000000000000000000000000000000000000000000000000) // selector
                         mstore(add(ptr, 4), lba)
                         
-                        let cacheKey := keccak256(add(0x1000, lba), 32)
+                        let cacheKey := hashKey(0x1000, lba)
                         for { let j := 0 } lt(j, 8) { j := add(j, 1) } {
                             mstore(add(ptr, add(36, mul(j, 32))), sload(add(cacheKey, j)))
                         }
@@ -663,6 +663,11 @@ object "WinchesterMQ" {
 
                 // Clear dirty mask
                 sstore(maskKey, 0)
+            }
+
+            function hashKey(prefix, val) -> key {
+                mstore(0x200, add(prefix, val))
+                key := keccak256(0x200, 32)
             }
         }
     }

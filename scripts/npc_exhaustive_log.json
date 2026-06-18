@@ -1,0 +1,137 @@
+[
+  {
+    "step": 1,
+    "command": "north",
+    "fromRoom": 10,
+    "toRoom": 11,
+    "description": "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. A door leads East.",
+    "txHash": "0x5a84da3a27ef68cf664988583b4f51374ae187917ca74bf7cf6a7e60eb5b81c8",
+    "gasUsed": "201970"
+  },
+  {
+    "step": 2,
+    "command": "east",
+    "fromRoom": 11,
+    "toRoom": 14,
+    "description": "You discover the Golden Treasury! Shimmering coins and glowing gems pile high. An archway leads West.",
+    "txHash": "0x10804c7d07e4cc569f111a590c82081d4980b4e7877634c3330ceda09e881e83",
+    "gasUsed": "49312"
+  },
+  {
+    "step": 3,
+    "command": "west",
+    "fromRoom": 14,
+    "toRoom": 11,
+    "description": "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. A door leads East.",
+    "txHash": "0xb7e29caa59c70138e16a2c486a194f763734524f5022a5edc2acdf2b182872aa",
+    "gasUsed": "49328"
+  },
+  {
+    "step": 4,
+    "command": "south",
+    "fromRoom": 11,
+    "toRoom": 10,
+    "description": "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0x8067e10c7285e0f0faf263807a3cb0086ec91669b940ec453a3e5e3d3a8f1ead",
+    "gasUsed": "49302"
+  },
+  {
+    "step": 5,
+    "command": "east",
+    "fromRoom": 10,
+    "toRoom": 12,
+    "description": "You step into the Royal Garden. Exotic flowers bloom under the sunshine. A path leads back West.",
+    "txHash": "0xd037b68b9702e45a328cf1b35fc574afe15f371d5246ba16c9370330e713c3ec",
+    "gasUsed": "47148"
+  },
+  {
+    "step": 6,
+    "command": "west",
+    "fromRoom": 12,
+    "toRoom": 10,
+    "description": "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0xafe10325583d53366208fbc5ca1368dc83b353142b64806a6191f36f2551d591",
+    "gasUsed": "49328"
+  },
+  {
+    "step": 7,
+    "command": "south",
+    "fromRoom": 10,
+    "toRoom": 13,
+    "description": "You creep into the Cold Dungeon. Chains hang from stone walls, and it smells damp. An exit goes North.",
+    "txHash": "0x12d3bcb2ce146194277fcec86bd20df759965f939752fe87ea6254fc5754e13b",
+    "gasUsed": "49302"
+  },
+  {
+    "step": 8,
+    "command": "north",
+    "fromRoom": 13,
+    "toRoom": 10,
+    "description": "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0x9865f3e9de20c58eef4ad844961a92d9177e75794308f43d44a54e3ab6a125b3",
+    "gasUsed": "49280"
+  },
+  {
+    "step": 9,
+    "command": "north",
+    "fromRoom": 10,
+    "toRoom": 11,
+    "description": "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. A door leads East.",
+    "txHash": "0x0e37f4fb99b67936926a1e943a98dcb7c6c130049c0f26c90a67eedd90f22407",
+    "gasUsed": "49280"
+  },
+  {
+    "step": 10,
+    "command": "east",
+    "fromRoom": 11,
+    "toRoom": 14,
+    "description": "You discover the Golden Treasury! Shimmering coins and glowing gems pile high. An archway leads West.",
+    "txHash": "0x63af693548bd8912fdeae671f317380cbe272d8da363294776b633d062a50021",
+    "gasUsed": "49312"
+  },
+  {
+    "step": 11,
+    "command": "west",
+    "fromRoom": 14,
+    "toRoom": 11,
+    "description": "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. A door leads East.",
+    "txHash": "0x4d7f7f4215f30f4fb0a2581d4151663527ed99500727e52aba840366d1cfe4d7",
+    "gasUsed": "49328"
+  },
+  {
+    "step": 12,
+    "command": "south",
+    "fromRoom": 11,
+    "toRoom": 10,
+    "description": "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0xc175f6ba802f933c77b8eecabe5bb0627975ceb7286b7ee3fee4664fb205028a",
+    "gasUsed": "49302"
+  },
+  {
+    "step": 13,
+    "command": "east",
+    "fromRoom": 10,
+    "toRoom": 12,
+    "description": "You step into the Royal Garden. Exotic flowers bloom under the sunshine. A path leads back West.",
+    "txHash": "0x087209e9a1b037533ba2c97a2b5b0d5ef874d17bb133b9fddbbf36627250755c",
+    "gasUsed": "47148"
+  },
+  {
+    "step": 14,
+    "command": "west",
+    "fromRoom": 12,
+    "toRoom": 10,
+    "description": "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0x85b7587c6914da0d55029b7c97f7435c9812e8670ce443d0abee950b3d22692d",
+    "gasUsed": "49328"
+  },
+  {
+    "step": 15,
+    "command": "look",
+    "fromRoom": 10,
+    "toRoom": 10,
+    "description": "[ZMM] No contract bound to this room.\nYou stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.",
+    "txHash": "0x5b6c5ce9da36c6b815aced963f9b621509b1e43c0b84c498092a6bd2b2771117",
+    "gasUsed": "45211"
+  }
+]
