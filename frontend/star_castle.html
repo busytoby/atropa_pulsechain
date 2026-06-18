@@ -742,12 +742,7 @@
             const shipAngle = Math.atan2(ship.y - targetY, ship.x - targetX);
             const speed = Math.hypot(ship.vx, ship.vy);
             
-            // Initialize persistent state for speed hysteresis if not present
-            if (ship.aiAccelerating === undefined) {
-                ship.aiAccelerating = false;
-            }
-            
-            // 1. Compute potential field forces for movement
+            // 1. Compute potential field forces for movement/evasion
             let orbitRadius = 220 + Math.sin(Date.now() * 0.0008) * 15;
             
             // Tangential base vector
@@ -841,33 +836,35 @@
             const moveAngle = Math.atan2(fy, fx);
             
             // 2. Decide if we need urgent evasive thrusting
-            const urgentEvasion = laserThreat || (minMineDist < 100) || (dist < 145) || (dist > 250);
-            
-            // Speed hysteresis control
-            if (speed < 1.3) {
-                ship.aiAccelerating = true;
-            }
-            if (speed > 1.8) {
-                ship.aiAccelerating = false;
-            }
+            const urgentEvasion = laserThreat || (minMineDist < 100) || (dist < 140);
             
             // 3. Set target angle and thrust intent
             let aiTargetAngle = angleToCenter;
             let shouldThrust = false;
             
-            if (urgentEvasion || ship.aiAccelerating) {
+            if (urgentEvasion) {
                 // Face potential field force vector to move/escape
                 aiTargetAngle = moveAngle;
                 shouldThrust = true;
+            } else if (closestMine && minMineDist < 180) {
+                // Aim directly at the mine to shoot it down
+                aiTargetAngle = Math.atan2(closestMine.y - ship.y, closestMine.x - ship.x);
+                shouldThrust = (speed < 1.0); // Maintain minimal speed while aiming at mine
             } else {
-                // If there's a mine nearby, aim at it to shoot it down
-                if (closestMine && minMineDist < 180) {
-                    aiTargetAngle = Math.atan2(closestMine.y - ship.y, closestMine.x - ship.x);
-                } else {
-                    // Otherwise aim at the center core
-                    aiTargetAngle = angleToCenter;
+                // Orbiting: Angled-thrust approach to face core center while orbiting
+                const delta = dist - orbitRadius;
+                let angleOffset = 0.22; // base offset (12.6 degrees)
+                if (delta < -30) {
+                    angleOffset = 0.75; // steer outward
+                } else if (delta < 0) {
+                    angleOffset = 0.45; // steer slightly outward
+                } else if (delta > 35) {
+                    angleOffset = -0.1; // steer inward
                 }
-                shouldThrust = false;
+                
+                const offsetSign = aiOrbitClockwise ? 1 : -1;
+                aiTargetAngle = angleToCenter + angleOffset * offsetSign;
+                shouldThrust = (speed < 1.75); // maintain solid orbit speed
             }
             
             // 4. Rotate ship towards target angle
@@ -897,14 +894,29 @@
                 ship.vy += Math.sin(ship.angle) * ship.speed;
             }
             
-            // 6. Fire weapons if not thrusting and aligned with targeting angle
-            if (!shouldThrust) {
-                let diffToTarget = aiTargetAngle - ship.angle;
-                while (diffToTarget < -Math.PI) diffToTarget += Math.PI * 2;
-                while (diffToTarget > Math.PI) diffToTarget -= Math.PI * 2;
+            // 6. Fire weapons if not in urgent evasion
+            let targetAngleToShoot = null;
+            let fireProbability = 0.28;
+            let angleTolerance = 0.22;
+            
+            if (!urgentEvasion) {
+                if (closestMine && minMineDist < 180) {
+                    targetAngleToShoot = Math.atan2(closestMine.y - ship.y, closestMine.x - ship.x);
+                    fireProbability = 0.75;
+                    angleTolerance = 0.22;
+                } else {
+                    targetAngleToShoot = angleToCenter;
+                    fireProbability = 0.35;
+                    angleTolerance = 0.28; // wider tolerance allows shooting while holding orbit-offset angle
+                }
+            }
+            
+            if (targetAngleToShoot !== null) {
+                let diffToShoot = targetAngleToShoot - ship.angle;
+                while (diffToShoot < -Math.PI) diffToShoot += Math.PI * 2;
+                while (diffToShoot > Math.PI) diffToShoot -= Math.PI * 2;
                 
-                const fireProbability = (closestMine && minMineDist < 180) ? 0.75 : 0.35;
-                if (Math.abs(diffToTarget) < 0.18 && Math.random() < fireProbability) {
+                if (Math.abs(diffToShoot) < angleTolerance && Math.random() < fireProbability) {
                     fireLaser();
                 }
             }
