@@ -36,6 +36,9 @@ object "WMQ_Scheduler" {
                 if iszero(lt(cardId, maxSlots)) { revert(0, 0) } // Cap Card ID at maxSlots
                 let entryPoint := calldataload(36)
                 
+                // Track process owner (the caller who registers the Yue)
+                sstore(add(0x7000, cardId), caller())
+
                 // Initialize process control block (PCB) slots for the Card
                 let pcbBase := getPcbOffset(cardId)
                 sstore(add(pcbBase, 0), entryPoint) // Reg IP (Program Counter)
@@ -98,17 +101,19 @@ object "WMQ_Scheduler" {
             // Selector: 0xb8e3a241
             // ----------------------------------------------------------------
             if eq(selector, 0xb8e3a241) {
-                let approvedAccessor := sload(0x12)
-                if approvedAccessor {
-                    if xor(caller(), approvedAccessor) { revert(0, 0) }
-                }
-                // Fallback to owner check if approvedAccessor is not set
-                if iszero(approvedAccessor) {
-                    let owner := sload(0x13)
-                    if xor(caller(), owner) { revert(0, 0) }
+                let cardId := calldataload(4)
+                
+                // Verify caller has been approved for this specific Yue/Card by the owner
+                mstore(0x00, cardId)
+                mstore(0x20, caller())
+                let isApproved := sload(keccak256(0x00, 0x40))
+                
+                if iszero(isApproved) {
+                    // Fallback: Owner of the card is always authorized
+                    let cardOwner := sload(add(0x7000, cardId))
+                    if xor(caller(), cardOwner) { revert(0, 0) }
                 }
                 
-                let cardId := calldataload(4)
                 let pageIdx := calldataload(36)
                 let u1 := calldataload(68)
                 let u2 := calldataload(100)
@@ -123,15 +128,21 @@ object "WMQ_Scheduler" {
             }
 
             // ----------------------------------------------------------------
-            // METHOD 6: setApprovedAccessor(address accessor) -> void
-            // Selector: 0x0fc6e7e4
+            // METHOD 6: approveAccessorForCard(uint256 cardId, address accessor, uint256 approved) -> void
+            // Selector: 0x19a84a60
             // ----------------------------------------------------------------
-            if eq(selector, 0x0fc6e7e4) {
-                let owner := sload(0x13)
-                if xor(caller(), owner) { revert(0, 0) }
+            if eq(selector, 0x19a84a60) {
+                let cardId := calldataload(4)
+                let accessor := calldataload(36)
+                let approved := calldataload(68)
                 
-                let accessor := calldataload(4)
-                sstore(0x12, accessor)
+                // Only the registered owner of the Card/Yue can approve accessors
+                let cardOwner := sload(add(0x7000, cardId))
+                if xor(caller(), cardOwner) { revert(0, 0) }
+                
+                mstore(0x00, cardId)
+                mstore(0x20, accessor)
+                sstore(keccak256(0x00, 0x40), approved)
                 return(0, 0)
             }
 
