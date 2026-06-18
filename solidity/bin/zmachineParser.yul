@@ -338,6 +338,16 @@ object "ZMachineParser" {
                             }
                             resultPtr := add(resultPtr, customLen)
                         }
+
+                        // Scan other process cards for presence in the same room
+                        for { let c := 0 } lt(c, 6) { c := add(c, 1) } {
+                            if and(iszero(eq(c, player)), eq(sload(add(4000000, c)), roomId)) {
+                                mstore(resultPtr, 0x0a5b4e50435d204163746976652050726f636573732043617264200000000000) // "\n[NPC] Active Process Card "
+                                mstore8(add(resultPtr, 26), add(c, 48)) // '0' + c
+                                mstore(add(resultPtr, 27), 0x207374616e64696e6720686572652e0a000000000000000000000000000000) // " standing here.\n"
+                                resultPtr := add(resultPtr, 43)
+                            }
+                        }
                     }
                     if iszero(isZmmRoom) {
                         let tokenAddr := sload(add(2000000, roomId))
