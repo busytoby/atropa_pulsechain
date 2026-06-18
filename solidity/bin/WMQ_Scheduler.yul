@@ -5,6 +5,9 @@ object "WMQ_Scheduler" {
     code {
         if callvalue() { revert(0, 0) }
 
+        // Initialize maxCardSlots (storage slot 0x11) to 6 by default
+        sstore(0x11, 6)
+
         // Copy runtime bytecode into memory at slot 0x00
         datacopy(0x00, dataoffset("runtime"), datasize("runtime"))
         
@@ -26,7 +29,8 @@ object "WMQ_Scheduler" {
             // ----------------------------------------------------------------
             if eq(selector, 0x8a1b9c7e) {
                 let cardId := calldataload(4)
-                if gt(cardId, 5) { revert(0, 0) } // Cap Card ID at 5 (0 to 5)
+                let maxSlots := getMaxSlots()
+                if iszero(lt(cardId, maxSlots)) { revert(0, 0) } // Cap Card ID at maxSlots
                 let entryPoint := calldataload(36)
                 
                 // Initialize process control block (PCB) slots for the Card
@@ -38,6 +42,7 @@ object "WMQ_Scheduler" {
                 sstore(add(pcbBase, 4), 0)          // Reg Y
                 sstore(add(pcbBase, 5), 0)          // Reg Status flags (SR)
                 sstore(add(pcbBase, 6), 1)          // Active status (1 = Active, 0 = Suspended)
+                sstore(add(pcbBase, 7), 0)          // Idle state = 0 (Ready)
                 
                 return(0, 0)
             }
@@ -59,7 +64,8 @@ object "WMQ_Scheduler" {
             // ----------------------------------------------------------------
             if eq(selector, 0x47657267) {
                 let cardId := calldataload(4)
-                if gt(cardId, 5) { revert(0, 0) } // Cap query Card ID at 5 (0 to 5)
+                let maxSlots := getMaxSlots()
+                if iszero(lt(cardId, maxSlots)) { revert(0, 0) } // Cap query Card ID at maxSlots
                 let pcbBase := getPcbOffset(cardId)
                 
                 let ptr := mload(0x40)
@@ -72,6 +78,16 @@ object "WMQ_Scheduler" {
                 mstore(add(ptr, 192), sload(add(pcbBase, 6)))
                 
                 return(ptr, 224)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 4: setMaxCardSlots(uint256 slots) -> void
+            // Selector: 0xa3ea300a
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa3ea300a) {
+                let slots := calldataload(4)
+                sstore(0x11, slots)
+                return(0, 0)
             }
 
             revert(0, 0)
@@ -138,7 +154,10 @@ object "WMQ_Scheduler" {
                     saveCardContext(nextCard, pcbBase)
                 }
                 
-                sstore(0x10, mod(add(nextCard, 1), 6))
+                let maxSlots := getMaxSlots()
+                if gt(maxSlots, 0) {
+                    sstore(0x10, mod(add(nextCard, 1), maxSlots))
+                }
             }
 
             // Checks the scheduler's inbox for pending LAUN (0x4c41554e) spawn request blocks
@@ -171,7 +190,8 @@ object "WMQ_Scheduler" {
 
             // Performs raw bytecode copy and initializes guest process context
             function spawnProcess(cardId, binaryAddr) {
-                if gt(cardId, 5) { leave } // Cap Card ID at 5 (6 slots: 0 to 5)
+                let maxSlots := getMaxSlots()
+                if iszero(lt(cardId, maxSlots)) { leave } // Cap Card ID at maxSlots
                 if iszero(extcodesize(binaryAddr)) { leave }
                 
                 // Copy guest binary into RAM memory window for this Card (represented at 0x8000 + cardId * 0x1000)
@@ -199,13 +219,15 @@ object "WMQ_Scheduler" {
                 sstore(add(pcbBase, 7), 0)          // Idle state = 0 (Ready)
             }
 
-            // Scans the 6 card slots to find a runnable/ready process context
+            // Scans the card slots to find a runnable/ready process context
             function findReadyCard() -> cardId {
                 cardId := 0xFFFFFFFF
+                let maxSlots := getMaxSlots()
+                if iszero(maxSlots) { leave }
                 let currentHead := sload(0x10) // Read scheduler queue pointer
                 
-                for { let i := 0 } lt(i, 6) { i := add(i, 1) } {
-                    let candidate := mod(add(currentHead, i), 6)
+                for { let i := 0 } lt(i, maxSlots) { i := add(i, 1) } {
+                    let candidate := mod(add(currentHead, i), maxSlots)
                     let pcbBase := getPcbOffset(candidate)
                     let status := sload(add(pcbBase, 6)) // Status flag
 
@@ -253,6 +275,10 @@ object "WMQ_Scheduler" {
                 // For test verification purposes, dry-runs execute mock steps.
                 steps := stepLimit
                 exitReason := 1 // Yielded
+            }
+
+            function getMaxSlots() -> maxSlots {
+                maxSlots := sload(0x11)
             }
         }
     }
