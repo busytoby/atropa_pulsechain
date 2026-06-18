@@ -605,7 +605,191 @@ const originalLoadConfigKeys = loadConfigKeys;
 loadConfigKeys = async function() {
     await originalLoadConfigKeys();
     loadBearSynthesisStats();
+    renderYulHardwareDeck();
+    renderSynthHardwareDeck();
 };
+
+function renderSynthHardwareDeck() {
+    const synthHardwareDeck = document.getElementById("synthHardwareDeck");
+    if (!synthHardwareDeck) return;
+
+    const synthModules = [
+        {
+            name: "TB-303 Acid Bass Engine",
+            topology: "4-Pole Diode-Ladder Lowpass Filter Cascade",
+            saturation: "Triode Valve emulation / non-linear tanhf saturation",
+            features: "Exponential RC slide glide loop & VCA decay envelope",
+            status: "ACTIVE (TEDDY 303)",
+            glow: "#32ff6a",
+            desc: "Models individual capacitor discharge loops and internal diode forward resistance to replicate authentic 24dB/oct acid resonance."
+        },
+        {
+            name: "MOS 6581 SID Sound Card",
+            topology: "3-Voice Multi-waveform Synthesizer + Analog Filter",
+            saturation: "Standard linear mixing / optional overdrive thunk",
+            features: "ADSR envelope generators, Ring Modulation, Oscillator Sync",
+            status: "EMULATED (YUL)",
+            glow: "var(--neon-magenta)",
+            desc: "Faithful clock-cycle emulation of the SID sound chip compiled via musicMaker.yul. Controls arpeggiators and voice frequency registers."
+        },
+        {
+            name: "TR-808 Kick Drum Engine",
+            topology: "Active 2-Pole Bridged-T Resonator Circuit",
+            saturation: "Triode valve saturation overlay",
+            features: "1ms capacitor trigger impulse & decay depth selector",
+            status: "ACTIVE",
+            glow: "var(--neon-amber)",
+            desc: "Simulates an active twin-T bandpass filter driven into self-oscillation by a trigger pulse, creating the signature 808 sub bass decay."
+        },
+        {
+            name: "TMS5220 LPC Vocoder",
+            topology: "10-Stage Lattice Filter Speech Synthesizer",
+            saturation: "TMS5220 specific clipping models",
+            features: "K1-K10 reflection coefficient interpolation",
+            status: "EMULATED (C64)",
+            glow: "var(--neon-cyan)",
+            desc: "Linear Predictive Coding voice model reproducing Speak & Spell audio thunks. Uses dynamic lattice filters to morph voice timbres."
+        },
+        {
+            name: "Zener Diode Avalanche Shaper",
+            topology: "Series Resistor Rs + Zener Breakdown Model",
+            saturation: "Avalanche breakdown clipping & dynamic thermal regulation",
+            features: "5mV white noise avalanche generator & self-heating tracking",
+            status: "ACTIVE (PHYSICS)",
+            glow: "#ff9f1c",
+            desc: "Implements physical models of forward p-n junction conduction, temperature-dependent breakdown, and high-frequency avalanche noise generators."
+        }
+    ];
+
+    synthHardwareDeck.innerHTML = "";
+    synthModules.forEach(mod => {
+        const cardNode = document.createElement("div");
+        cardNode.style.background = "rgba(10, 10, 15, 0.6)";
+        cardNode.style.border = `1px solid ${mod.glow}40`;
+        cardNode.style.borderRadius = "8px";
+        cardNode.style.padding = "15px";
+        cardNode.style.display = "flex";
+        cardNode.style.flexDirection = "column";
+        cardNode.style.gap = "6px";
+        cardNode.style.transition = "border-color 0.2s, box-shadow 0.2s";
+
+        cardNode.onmouseover = () => {
+            cardNode.style.borderColor = mod.glow;
+            cardNode.style.boxShadow = `0 2px 10px ${mod.glow}20`;
+        };
+        cardNode.onmouseout = () => {
+            cardNode.style.borderColor = `${mod.glow}40`;
+            cardNode.style.boxShadow = "none";
+        };
+
+        cardNode.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: bold; color: ${mod.glow};">${mod.name}</div>
+                <div style="font-size: 0.75rem; color: #fff; background: ${mod.glow}30; border: 1px solid ${mod.glow}; border-radius: 4px; padding: 2px 6px; font-family: monospace;">${mod.status}</div>
+            </div>
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                Filter: ${mod.topology}
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 2px; font-family: monospace; font-size: 0.75rem; color: #a1a1aa; display: flex; flex-direction: column; gap: 2px;">
+                <div><span style="color: #64748b;">SHAPER:</span> <span style="color: #e2e8f0;">${mod.saturation}</span></div>
+                <div><span style="color: #64748b;">FEATURES:</span> <span style="color: #e2e8f0;">${mod.features}</span></div>
+            </div>
+            <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.3; margin-top: 4px;">${mod.desc}</div>
+        `;
+        synthHardwareDeck.appendChild(cardNode);
+    });
+}
+
+function renderYulHardwareDeck() {
+    const yulHardwareDeck = document.getElementById("yulHardwareDeck");
+    if (!yulHardwareDeck) return;
+
+    // Define virtual hardware modules compiled in Yul
+    const hardwareModules = [
+        {
+            name: "cpu6502 (folklore.yul)",
+            role: "MOS 6502 instruction execution core",
+            vaddr: "0x0000000000000001",
+            capacity: "256 registers + stack segments",
+            revision: "v1.2a",
+            glow: "var(--neon-blue)",
+            desc: "Implements strict instruction decoding, program counter incrementation, stack pointer, and ALU flags logic."
+        },
+        {
+            name: "graphicsSystem (graphicsSystem.yul)",
+            role: "VIC-II Video Controller emulation thunk",
+            vaddr: "0x0000000000000002",
+            capacity: "Color RAM, coordinates, sprite colliders",
+            revision: "v2.0-beta",
+            glow: "var(--neon-magenta)",
+            desc: "Calculates scanline offsets, parses coordinate bounds for up to 8 sprites, and registers collision overlaps."
+        },
+        {
+            name: "musicMaker (musicMaker.yul)",
+            role: "SID 6581 sound synthesis engine",
+            vaddr: "0x0000000000000003",
+            capacity: "3 voices, ADSR envelope generators",
+            revision: "v1.4",
+            glow: "var(--neon-amber)",
+            desc: "Modulates sawtooth, triangle, noise wave shapes, and drives low-pass filter thunks with resonance parameters."
+        },
+        {
+            name: "diskSystem (diskSystem.yul)",
+            role: "Commodore 1541 Disk Drive sector encoder",
+            vaddr: "0x0000000000000004",
+            capacity: "Dynamic sector index, head tracking",
+            revision: "v1.0",
+            glow: "var(--neon-cyan)",
+            desc: "Simulates physical floppy drive sectors, GCR alignment sync marks, and directory header queries."
+        },
+        {
+            name: "dc (dc.yul)",
+            role: "On-chain RPN postfix calculator",
+            vaddr: "Local Contract Call (dc)",
+            capacity: "Math expression compiler",
+            revision: "v1.1",
+            glow: "#32ff6a",
+            desc: "Operates math stacks dynamically on-chain using Yul assembly instructions like add, sub, mul, div, sload."
+        }
+    ];
+
+    yulHardwareDeck.innerHTML = "";
+    hardwareModules.forEach(mod => {
+        const cardNode = document.createElement("div");
+        cardNode.style.background = "rgba(10, 10, 15, 0.7)";
+        cardNode.style.border = `1px solid ${mod.glow}`;
+        cardNode.style.borderRadius = "12px";
+        cardNode.style.padding = "20px";
+        cardNode.style.position = "relative";
+        cardNode.style.boxShadow = `0 4px 15px ${mod.glow}20`;
+        cardNode.style.display = "flex";
+        cardNode.style.flexDirection = "column";
+        cardNode.style.gap = "8px";
+        cardNode.style.transition = "transform 0.2s, box-shadow 0.2s";
+
+        // Add subtle hover effect via JS
+        cardNode.onmouseover = () => {
+            cardNode.style.transform = "translateY(-4px)";
+            cardNode.style.boxShadow = `0 8px 25px ${mod.glow}40`;
+        };
+        cardNode.onmouseout = () => {
+            cardNode.style.transform = "none";
+            cardNode.style.boxShadow = `0 4px 15px ${mod.glow}20`;
+        };
+
+        cardNode.innerHTML = `
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: bold; color: ${mod.glow}; letter-spacing: 0.5px;">${mod.name.toUpperCase()}</div>
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Role: ${mod.role}</div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; margin-top: 4px; font-family: monospace; font-size: 0.75rem; color: #a1a1aa; display: flex; flex-direction: column; gap: 4px;">
+                <div><span style="color: #64748b;">VADDR:</span> <span style="color: #e2e8f0;">${mod.vaddr}</span></div>
+                <div><span style="color: #64748b;">CAPACITY:</span> <span style="color: #e2e8f0;">${mod.capacity}</span></div>
+                <div><span style="color: #64748b;">REV:</span> <span style="color: #e2e8f0;">${mod.revision}</span></div>
+            </div>
+            <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.3; margin-top: 6px;">${mod.desc}</div>
+        `;
+        yulHardwareDeck.appendChild(cardNode);
+    });
+}
 
 // ============================================================================
 // DATAMOST SIMULATOR EMBEDDED ENGINE
@@ -700,6 +884,127 @@ class SIDVoice {
             } else {
                 this.gain.gain.setValueAtTime(this.gain.gain.value, now);
                 this.gain.gain.exponentialRampToValueAtTime(0.0001, now + rTime);
+            }
+            this.gate = gate;
+        }
+    }
+
+    stop() {
+        if (this.osc) {
+            this.osc.stop();
+            this.osc.disconnect();
+            this.osc = null;
+        }
+    }
+}
+
+class TB303Voice {
+    constructor(audioCtx, destination) {
+        this.ctx = audioCtx;
+        this.dest = destination;
+        this.osc = null;
+        this.filter = null;
+        this.shaper = null;
+        this.gain = null;
+        this.gate = 0;
+        this.lastFreq = 0;
+        this.lastWave = 0;
+        
+        // 303 knobs default settings for high-resonance acid bass
+        this.cutoff = 400; // base cutoff frequency in Hz
+        this.resonance = 16; // high filter resonance Q
+        this.envMod = 2200; // envelope modulation sweep range
+        this.decay = 0.32; // exponential decay in seconds
+    }
+
+    update(freq, control, ad, sr) {
+        if (!this.ctx) return;
+        const gate = control & 1;
+        const waveBits = control & 0xF0;
+        
+        let type = 'sawtooth';
+        if (waveBits & 0x10) type = 'triangle';
+        else if (waveBits & 0x20) type = 'sawtooth';
+        else if (waveBits & 0x40) type = 'square';
+        else if (waveBits & 0x80) type = 'sawtooth'; 
+
+        const freqHz = Math.round(freq * 0.06097);
+
+        if (freqHz <= 0 || waveBits === 0) {
+            if (this.osc) {
+                this.osc.stop();
+                this.osc.disconnect();
+                this.osc = null;
+            }
+            return;
+        }
+
+        if (!this.osc || this.lastWave !== waveBits) {
+            if (this.osc) {
+                this.osc.stop();
+                this.osc.disconnect();
+            }
+            this.osc = this.ctx.createOscillator();
+            this.filter = this.ctx.createBiquadFilter();
+            this.shaper = this.ctx.createWaveShaper();
+            this.gain = this.ctx.createGain();
+
+            // Set up Biquad lowpass simulating a 4-pole diode ladder lowpass cascade
+            this.filter.type = 'lowpass';
+            this.filter.Q.value = this.resonance;
+            this.filter.frequency.value = this.cutoff;
+
+            // Generate authentic triode valve clipping wave-shaping transfer curve
+            const makeDistortionCurve = (amount) => {
+                const k = typeof amount === 'number' ? amount : 50;
+                const n_samples = 44100;
+                const curve = new Float32Array(n_samples);
+                const deg = Math.PI / 180;
+                for (let i = 0 ; i < n_samples; ++i ) {
+                    const x = (i * 2) / n_samples - 1;
+                    curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+                }
+                return curve;
+            };
+            this.shaper.curve = makeDistortionCurve(45);
+            this.shaper.oversample = '4x';
+
+            this.osc.type = type;
+            this.osc.connect(this.filter);
+            this.filter.connect(this.shaper);
+            this.shaper.connect(this.gain);
+            this.gain.connect(this.dest);
+            this.gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            this.osc.start();
+            this.lastWave = waveBits;
+            this.gate = 0;
+        }
+
+        // Exponential RC slide glide simulation (100ms slide time constant)
+        if (freqHz !== this.lastFreq) {
+            const now = this.ctx.currentTime;
+            this.osc.frequency.cancelScheduledValues(now);
+            this.osc.frequency.setTargetAtTime(freqHz, now, 0.09);
+            this.lastFreq = freqHz;
+        }
+
+        if (gate !== this.gate) {
+            const now = this.ctx.currentTime;
+            this.gain.gain.cancelScheduledValues(now);
+            this.filter.frequency.cancelScheduledValues(now);
+
+            if (gate === 1) {
+                // VCA Gate attack / decay sweep
+                this.gain.gain.setValueAtTime(0.001, now);
+                this.gain.gain.linearRampToValueAtTime(0.24, now + 0.004);
+                this.gain.gain.exponentialRampToValueAtTime(0.02, now + this.decay);
+
+                // VCF Diode ladder cutoff envelope decay sweep
+                this.filter.frequency.setValueAtTime(this.cutoff + this.envMod, now);
+                this.filter.frequency.exponentialRampToValueAtTime(this.cutoff, now + this.decay);
+            } else {
+                this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+                this.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
             }
             this.gate = gate;
         }
@@ -878,7 +1183,7 @@ document.getElementById("btnAudioToggle").addEventListener("click", () => {
         }
         audioCtx.resume();
         voices = [
-            new SIDVoice(audioCtx, audioCtx.destination),
+            new TB303Voice(audioCtx, audioCtx.destination),
             new SIDVoice(audioCtx, audioCtx.destination),
             new SIDVoice(audioCtx, audioCtx.destination)
         ];
