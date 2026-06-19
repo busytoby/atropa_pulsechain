@@ -368,6 +368,20 @@
                         activeNoteEl.style.color = "";
                     }, 800);
                 }
+            } else if (data.type === 'synth_reset') {
+                waveQ.fill(0);
+                waveP.fill(0);
+                qw = 1.0;
+                qx = 0.0;
+                qy = 0.0;
+                qz = 0.0;
+                activeNoteEl.innerText = "RESET";
+                activeNoteEl.style.color = "var(--neon-magenta)";
+                clearTimeout(noteTimeout);
+                noteTimeout = setTimeout(() => {
+                    activeNoteEl.innerText = "---";
+                    activeNoteEl.style.color = "";
+                }, 1000);
             }
         };
 
@@ -402,13 +416,7 @@
             console.error("Failed to initialize SSE EventSource:", sseErr);
         }
 
-        // Trigger autoplay of the incantation on load after a brief initialization wait
-        window.addEventListener("load", () => {
-            setTimeout(() => {
-                console.log("[AUTO-PLAY] Projecting quaternion incantation score sequence...");
-                btnPlayScore.click();
-            }, 1000);
-        });
+        // Autoplay on load has been removed as requested. We now await external process note inputs.
 
         // Render Frame
         function draw(time) {

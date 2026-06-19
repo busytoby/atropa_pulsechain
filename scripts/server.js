@@ -478,12 +478,16 @@ const server = http.createServer(async (req, res) => {
         const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         const sessionId = parsedUrl.searchParams.get("sessionId") || "global";
 
+        req.socket.setNoDelay(true);
+
         res.writeHead(200, {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*"
+            "Access-Control-Allow-Origin": "*",
+            "X-Accel-Buffering": "no"
         });
+        res.flushHeaders();
         
         if (!global.synthSessions) {
             global.synthSessions = {};
@@ -492,6 +496,9 @@ const server = http.createServer(async (req, res) => {
             global.synthSessions[sessionId] = [];
         }
         global.synthSessions[sessionId].push(res);
+
+        // Send connection initialization comment to finalize HTTP handshake
+        res.write(": ok\n\n");
         
         req.on("close", () => {
             if (global.synthSessions[sessionId]) {
@@ -513,14 +520,18 @@ const server = http.createServer(async (req, res) => {
         req.on("end", () => {
             try {
                 const data = JSON.parse(body);
+                let clientCount = 0;
                 if (global.synthSessions && global.synthSessions[sessionId]) {
+                    clientCount = global.synthSessions[sessionId].length;
                     global.synthSessions[sessionId].forEach(client => {
                         client.write(`data: ${JSON.stringify(data)}\n\n`);
                     });
                 }
+                console.log(`[SERVER] POST /api/synth-feed?sessionId=${sessionId} - Broadcasted to ${clientCount} clients`);
                 res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
                 res.end(JSON.stringify({ success: true }));
             } catch (err) {
+                console.error(`[SERVER] Error in POST /api/synth-feed: ${err.message}`);
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ error: err.message }));
             }
