@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Vulkan Synthesizer Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #020308;
+            --card-bg: rgba(6, 10, 26, 0.65);
+            --neon-cyan: #00f2fe;
+            --neon-magenta: #ff007f;
+            --neon-green: #39ff14;
+            --neon-orange: #ff7f00;
+            --border-color: rgba(0, 242, 254, 0.15);
+            --text-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at center, #070d24 0%, #020308 100%);
+        }
+
+        header {
+            margin: 30px 0 15px 0;
+            text-align: center;
+            z-index: 10;
+        }
+
+        h1 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.6), 0 0 20px rgba(0, 242, 254, 0.3);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            letter-spacing: 1px;
+            font-family: 'Share Tech Mono', monospace;
+            opacity: 0.85;
+            text-shadow: 0 0 5px rgba(0, 242, 254, 0.3);
+        }
+
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .display-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+            width: 100%;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .display-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--neon-cyan), transparent, var(--neon-magenta));
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 480px;
+            background-color: #010206;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 127, 0.1);
+        }
+
+        .controls-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .switch-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Neon Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #0d1326;
+            transition: .4s;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #4b5563;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        input:checked + .slider {
+            background-color: rgba(0, 242, 254, 0.1);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+            background-color: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+        }
+
+        .status-pill {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            color: var(--neon-magenta);
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(255, 0, 127, 0.1);
+        }
+
+        .status-pill.active {
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+        }
+
+        .cv-stats {
+            display: flex;
+            gap: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid var(--neon-magenta);
+            padding-left: 8px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 1.05rem;
+        }
+
+        /* Subtle matrix grid background */
+        .matrix-glow {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-glow"></div>
+    <header>
+        <h1>Auncient Vulkan Synthesizer</h1>
+        <div class="subtitle">iDOF PHASE SPACE VISUALIZER & SYNTH INTERFACE</div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Main Vulkan Canvas Display -->
+        <div class="display-card">
+            <canvas id="vulkanCanvas"></canvas>
+        </div>
+
+        <!-- Controls Dashboard -->
+        <div class="controls-card">
+            <div class="control-group">
+                <div class="switch-container">
+                    <span class="switch-label">Vulkan Core</span>
+                    <label class="switch">
+                        <input type="checkbox" id="vulkanToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="statusPill" class="status-pill active">Online</div>
+                
+                <button id="btnPlayScore" style="background: linear-gradient(135deg, var(--neon-magenta) 0%, #a200ff 100%); color: #fff; border: 1px solid rgba(255, 0, 127, 0.4); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; padding: 6px 14px; cursor: pointer; text-shadow: 0 0 5px rgba(255,255,255,0.5); box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); transition: all 0.2s ease;">
+                    🎹 Play Score
+                </button>
+            </div>
+
+            <div class="cv-stats">
+                <div class="stat-box">
+                    <span class="stat-label">Pitch CV Mode</span>
+                    <span id="cvPitch" class="stat-value">0.00 V</span>
+                </div>
+                <div class="stat-box" style="border-left-color: var(--neon-cyan)">
+                    <span class="stat-label">Yaw CV Mode</span>
+                    <span id="cvYaw" class="stat-value">0.00 V</span>
+                </div>
+                <div class="stat-box" style="border-left-color: var(--neon-green)">
+                    <span class="stat-label">Active Note</span>
+                    <span id="activeNote" class="stat-value">---</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("vulkanCanvas");
+        const ctx = canvas.getContext("2d");
+        const toggle = document.getElementById("vulkanToggle");
+        const statusPill = document.getElementById("statusPill");
+
+        const cvPitchEl = document.getElementById("cvPitch");
+        const cvYawEl = document.getElementById("cvYaw");
+        const activeNoteEl = document.getElementById("activeNote");
+
+        // Set high-DPI canvas density
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // Hamiltonian Phase Space
+        const waveM = 12;
+        const waveQ = new Float32Array(waveM);
+        const waveP = new Float32Array(waveM);
+        const waveOmega = new Float32Array(waveM);
+        const waveBaseOmega = 0.045;
+        const waveDamping = 0.985;
+        const waveDt = 0.5;
+
+        for (let k = 0; k < waveM; k++) {
+            waveOmega[k] = (k + 1) * waveBaseOmega;
+        }
+
+        // Base unit quaternion state variables
+        let qw = 1.0;
+        let qx = 0.0;
+        let qy = 0.0;
+        let qz = 0.0;
+
+        function exciteSpectralMode(modeIdx, intensity = 5.0) {
+            const idx = Math.max(0, Math.min(waveM - 1, Math.round(modeIdx)));
+            waveP[idx] += intensity;
+        }
+
+        // Space Stars background representation
+        const stars = [];
+        for (let i = 0; i < 80; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * 400,
+                y: (Math.random() - 0.5) * 400,
+                z: Math.random() * 400
+            });
+        }
+
+        // Listen for BroadcastChannel notes and window messages
+        const handleNoteEvent = (data) => {
+            if (!toggle.checked) return;
+            if (data.type === 'synth_poke') {
+                const freq = data.freq;
+                const note = data.note;
+                const control = data.control;
+                const gateOn = control & 1;
+                
+                if (gateOn) {
+                    // Excite corresponding harmonic index
+                    let targetMode = Math.floor(((freq - 60) / 1200) * waveM);
+                    exciteSpectralMode(targetMode, 6.5);
+
+                    activeNoteEl.innerText = note;
+                    activeNoteEl.style.color = "var(--neon-green)";
+                    
+                    clearTimeout(noteTimeout);
+                    noteTimeout = setTimeout(() => {
+                        activeNoteEl.innerText = "---";
+                        activeNoteEl.style.color = "";
+                    }, 800);
+                }
+            }
+        };
+
+        try {
+            const synthChannel = new BroadcastChannel('elektuur_synth');
+            synthChannel.onmessage = (e) => {
+                handleNoteEvent(e.data);
+            };
+        } catch (err) {
+            console.error("Failed to connect BroadcastChannel:", err);
+        }
+
+        window.addEventListener("message", (e) => {
+            handleNoteEvent(e.data);
+        });
+
+        // EventSource listener for backend-originated note broadcasts
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get("sessionId") || "global";
+            const eventSource = new EventSource(`/api/synth-feed?sessionId=${sessionId}`);
+            
+            eventSource.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    handleNoteEvent(data);
+                } catch (parseErr) {
+                    console.error("Failed to parse SSE event data:", parseErr);
+                }
+            };
+        } catch (sseErr) {
+            console.error("Failed to initialize SSE EventSource:", sseErr);
+        }
+
+        // Trigger autoplay of the incantation on load after a brief initialization wait
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                console.log("[AUTO-PLAY] Projecting quaternion incantation score sequence...");
+                btnPlayScore.click();
+            }, 1000);
+        });
+
+        // Render Frame
+        function draw(time) {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+
+            ctx.fillStyle = "#010207";
+            ctx.fillRect(0, 0, w, h);
+
+            if (!toggle.checked) {
+                // Standby mode
+                ctx.fillStyle = "rgba(255, 0, 127, 0.4)";
+                ctx.font = "bold 18px 'Share Tech Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("VULKAN CORE: STANDBY", w / 2, h / 2);
+                
+                ctx.fillStyle = "#475569";
+                ctx.font = "12px 'Share Tech Mono', monospace";
+                ctx.fillText("TOGGLE RUN SWITCH TO CONNECT SYNTH RESONANCE", w / 2, h / 2 + 25);
+                
+                animationFrameId = requestAnimationFrame(draw);
+                return;
+            }
+
+            // Symplectic Euler Integration for iDOF Hamiltonian Phase Space
+            for (let k = 0; k < waveM; k++) {
+                let force = -waveOmega[k] * waveOmega[k] * waveQ[k];
+                waveP[k] = (waveP[k] + force * waveDt) * waveDamping;
+            }
+            for (let k = 0; k < waveM; k++) {
+                waveQ[k] += waveP[k] * waveDt;
+            }
+
+            // Synthesizer values feedback variables
+            const pitchVal = (waveQ[2] - waveQ[3]) * 2.5;
+            const yawVal = waveQ[4] * 2.5;
+
+            cvPitchEl.innerText = pitchVal.toFixed(2) + " V";
+            cvYawEl.innerText = yawVal.toFixed(2) + " V";
+
+            // Modulated dynamic camera lens
+            let scaleVal = 4.2 + (waveQ[2] - waveQ[3]) * 1.8;
+            if (scaleVal < 1.0) scaleVal = 1.0;
+            if (scaleVal > 12.0) scaleVal = 12.0;
+
+            let alphaVal = 0.1 + Math.abs(waveQ[4]) * 0.25;
+            if (alphaVal < 0.05) alphaVal = 0.05;
+            if (alphaVal > 0.85) alphaVal = 0.85;
+
+            // Draw animated space dust moving matching mode coordinates
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + Math.abs(waveQ[0]) * 0.4})`;
+            stars.forEach(s => {
+                s.z -= 1.5 + Math.abs(waveQ[1]) * 4.0;
+                if (s.z <= 0) s.z = 400;
+
+                let sx = (s.x * 200) / s.z + w / 2;
+                let sy = (s.y * 200) / s.z + h / 2;
+
+                if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Render dynamic Vulkan grids controlled entirely by the synth
+            ctx.strokeStyle = `rgba(0, 242, 254, ${alphaVal})`;
+            ctx.lineWidth = 1.0 + Math.abs(waveQ[4]) * 3.0;
+
+            const gridLines = 14;
+            const gridSpacing = w / gridLines;
+
+            // Render vertical grids distorted by Hamiltonian harmonic amplitudes
+            for (let i = 0; i <= gridLines; i++) {
+                ctx.beginPath();
+                for (let y = 0; y < h; y += 10) {
+                    let offset = 0;
+                    for (let k = 0; k < 6; k++) {
+                        offset += waveQ[k] * 12.0 * Math.sin((k + 1) * Math.PI * (y / h));
+                    }
+                    let x = i * gridSpacing + offset;
+                    if (y === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // Render horizontal grids
+            const hLines = 10;
+            const hSpacing = h / hLines;
+            for (let j = 0; j <= hLines; j++) {
+                ctx.beginPath();
+                for (let x = 0; x < w; x += 10) {
+                    let offset = 0;
+                    for (let k = 0; k < 6; k++) {
+                        offset += waveQ[k] * 12.0 * Math.sin((k + 1) * Math.PI * (x / w));
+                    }
+                    let y = j * hSpacing + offset;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // --- Integrate & Render Dynamic Quaternion 3D Coordinate Axis ---
+            // Integrate angular rates modulated by low, mid, and high synthesizer harmonics
+            let velRoll = (waveQ[0] - waveQ[1]) * 0.08;
+            let velPitch = (waveQ[2] - waveQ[3]) * 0.08;
+            let velYaw = (waveQ[4] - waveQ[5]) * 0.08;
+
+            // Convert velocities to differential rotation quaternions
+            const qDeltaX = [Math.cos(velPitch/2), Math.sin(velPitch/2), 0, 0];
+            const qDeltaY = [Math.cos(velYaw/2), 0, Math.sin(velYaw/2), 0];
+            const qDeltaZ = [Math.cos(velRoll/2), 0, 0, Math.sin(velRoll/2)];
+
+            // Multiply unit quaternions: qTemp = qCurrent * qDeltaX * qDeltaY * qDeltaZ
+            let qTemp = [
+                qw * qDeltaX[0] - qx * qDeltaX[1],
+                qw * qDeltaX[1] + qx * qDeltaX[0],
+                qy * qDeltaX[0] + qz * qDeltaX[1],
+                qz * qDeltaX[0] - qy * qDeltaX[1]
+            ];
+            // Multiply by deltaY
+            let qTemp2 = [
+                qTemp[0] * qDeltaY[0] - qTemp[2] * qDeltaY[2],
+                qTemp[1] * qDeltaY[0] + qTemp[3] * qDeltaY[2],
+                qTemp[0] * qDeltaY[2] + qTemp[2] * qDeltaY[0],
+                qTemp[3] * qDeltaY[0] - qTemp[1] * qDeltaY[2]
+            ];
+            // Multiply by deltaZ
+            let qTemp3 = [
+                qTemp2[0] * qDeltaZ[0] - qTemp2[3] * qDeltaZ[3],
+                qTemp2[1] * qDeltaZ[0] - qTemp2[2] * qDeltaZ[3],
+                qTemp2[2] * qDeltaZ[0] + qTemp2[1] * qDeltaZ[3],
+                qTemp2[3] * qDeltaZ[0] + qTemp2[0] * qDeltaZ[3]
+            ];
+
+            // Normalize
+            const qMag = Math.sqrt(qTemp3[0]*qTemp3[0] + qTemp3[1]*qTemp3[1] + qTemp3[2]*qTemp3[2] + qTemp3[3]*qTemp3[3]);
+            if (qMag > 0.001) {
+                qw = qTemp3[0] / qMag;
+                qx = qTemp3[1] / qMag;
+                qy = qTemp3[2] / qMag;
+                qz = qTemp3[3] / qMag;
+            }
+
+            // Extract Rotation Matrix Columns from the active quaternion
+            const r00 = 1 - 2 * (qy * qy + qz * qz);
+            const r10 = 2 * (qx * qy + qz * qw);
+            const r20 = 2 * (qx * qz - qy * qw);
+
+            const r01 = 2 * (qx * qy - qz * qw);
+            const r11 = 1 - 2 * (qx * qx + qz * qz);
+            const r21 = 2 * (qy * qz + qx * qw);
+
+            const r02 = 2 * (qx * qz + qy * qw);
+            const r12 = 2 * (qy * qz - qx * qw);
+            const r22 = 1 - 2 * (qx * qx + qy * qy);
+
+            // Draw projected 3D coordinate frames at the center
+            const cx0 = w / 2;
+            const cy0 = h / 2;
+            const size = 65 + (waveQ[0] - waveQ[1]) * 10; // modulated base size
+
+            // Projected 3D vertices
+            const pRight = { x: cx0 + r00 * size, y: cy0 - r10 * size };
+            const pUp = { x: cx0 + r01 * size, y: cy0 - r11 * size };
+            const pForward = { x: cx0 + r02 * size, y: cy0 - r12 * size };
+
+            // Draw Right Axis (Red X)
+            ctx.strokeStyle = "#ff3b30";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pRight.x, pRight.y); ctx.stroke();
+            ctx.fillStyle = "#ff3b30"; ctx.font = "bold 11px 'Share Tech Mono'";
+            ctx.fillText("X (Pitch)", pRight.x + 5, pRight.y + 4);
+
+            // Draw Up Axis (Green Y)
+            ctx.strokeStyle = "#34c759";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pUp.x, pUp.y); ctx.stroke();
+            ctx.fillStyle = "#34c759";
+            ctx.fillText("Y (Yaw)", pUp.x + 5, pUp.y - 4);
+
+            // Draw Forward Axis (Blue Z)
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pForward.x, pForward.y); ctx.stroke();
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillText("Z (Roll)", pForward.x + 5, pForward.y + 4);
+
+            // Render holographic wave-phase orbit overlay at core center
+            ctx.save();
+            ctx.strokeStyle = "var(--neon-magenta)";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "var(--neon-magenta)";
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            
+            const steps = 180;
+            for (let i = 0; i <= steps; i++) {
+                const theta = (i / steps) * Math.PI * 2;
+                let radius = 60;
+                for (let k = 0; k < waveM; k++) {
+                    radius += waveQ[k] * 8.0 * Math.sin((k + 1) * theta);
+                }
+                const cx = w / 2 + Math.cos(theta) * radius;
+                const cy = h / 2 + Math.sin(theta) * radius;
+                if (i === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
+            // Overlay textual HUD quaternion outputs
+            ctx.save();
+            ctx.fillStyle = "var(--neon-cyan)";
+            ctx.font = "bold 15px 'Share Tech Mono', monospace";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "var(--neon-cyan)";
+            ctx.fillText("ACTIVE ATTITUDE QUACK QUATERNION (S³):", 20, 35);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 13px 'Share Tech Mono', monospace";
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "#fff";
+            ctx.fillText(`W: ${qw.toFixed(4)}`, 25, 60);
+            ctx.fillText(`X: ${qx.toFixed(4)}`, 25, 80);
+            ctx.fillText(`Y: ${qy.toFixed(4)}`, 25, 100);
+            ctx.fillText(`Z: ${qz.toFixed(4)}`, 25, 120);
+
+            // Draw bounding sphere projection of S3 manifold (Unit Sphere limit)
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.25)";
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "var(--neon-magenta)";
+            ctx.beginPath();
+            ctx.arc(cx0, cy0, size + 10, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            animationFrameId = requestAnimationFrame(draw);
+        }
+
+        // Toggle Switch event listener
+        toggle.addEventListener("change", () => {
+            if (toggle.checked) {
+                statusPill.innerText = "Online";
+                statusPill.classList.add("active");
+            } else {
+                statusPill.innerText = "Offline";
+                statusPill.classList.remove("active");
+            }
+        });
+
+        // Autoplay Score Trigger
+        const btnPlayScore = document.getElementById("btnPlayScore");
+        btnPlayScore.addEventListener("click", () => {
+            if (!toggle.checked) {
+                toggle.checked = true;
+                statusPill.innerText = "Online";
+                statusPill.classList.add("active");
+            }
+            
+            // Programmatically post note messages to self and BroadcastChannel
+            const score = [
+                { note: "C4", freq: 261.63, delay: 0 },
+                { note: "E4", freq: 329.63, delay: 300 },
+                { note: "G4", freq: 392.00, delay: 600 },
+                { note: "B4", freq: 493.88, delay: 900 },
+                { note: "D5", freq: 587.33, delay: 1200 },
+                { note: "A4", freq: 440.00, delay: 1500 }
+            ];
+
+            const bc = new BroadcastChannel('elektuur_synth');
+
+            score.forEach(step => {
+                setTimeout(() => {
+                    bc.postMessage({
+                        type: 'synth_poke',
+                        note: step.note,
+                        freq: step.freq,
+                        control: 1 // Gate On
+                    });
+                }, step.delay);
+
+                setTimeout(() => {
+                    bc.postMessage({
+                        type: 'synth_poke',
+                        note: step.note,
+                        freq: step.freq,
+                        control: 0 // Gate Off
+                    });
+                }, step.delay + 220);
+            });
+        });
+
+        // Initialize animation loop
+        animationFrameId = requestAnimationFrame(draw);
+    </script>
+</body>
+</html>

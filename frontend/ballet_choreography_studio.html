@@ -364,6 +364,7 @@
             <div class="logo">TSFi Ballet Choreography Studio</div>
             <div class="header-nav">
                 <a href="ballet_choreography_studio.html" class="active">Choreography Studio</a>
+                <a href="vulkan_synth_dashboard.html">Vulkan Synth</a>
                 <a href="dragons_lair.html">Storybook</a>
                 <a href="character_animator.html">Animator</a>
             </div>
@@ -375,6 +376,7 @@
         <!-- Left Panel: Ballet Position Choreography & Stance Controls -->
         <div class="panel">
             <button class="btn btn-gold" id="btn-director-mode" onclick="toggleDirectorMode()" style="margin-bottom: 8px; font-size: 13px;">🎬 START BALLET DIRECTOR</button>
+            <button class="btn" id="btn-autopilot-mode" onclick="toggleAutopilotMode()" style="margin-bottom: 8px; font-size: 13px; border-color: var(--glow-cyan); color: var(--glow-cyan);">🤖 START SPECTRAL AUTOPILOT</button>
 
             <div class="section-title">
                 CHOREOGRAPHY <span>POSITIONS</span>
@@ -425,6 +427,21 @@
                         <span id="val-resonance">45%</span>
                     </div>
                     <input type="range" id="resonance-slider" min="10" max="90" value="45" oninput="updateResonance()">
+                </div>
+            <div class="section-title">
+                YUL ASSEMBLY CV CIRCUIT <span>SYS_STATUS</span>
+            </div>
+            <div class="card" style="border-color: rgba(0, 240, 255, 0.25); background: rgba(5, 10, 25, 0.55);">
+                <div style="font-size: 11px; color: #94a3b8; font-family: 'Share Tech Mono', monospace; display: flex; justify-content: space-between;">
+                    <span>YUL REG STACK:</span>
+                    <span id="yul-stack-status" style="color: var(--glow-cyan);">[0.0,0.0,0.0,0.0]</span>
+                </div>
+                <div style="font-size: 10px; color: var(--glow-gold); font-family: 'Share Tech Mono', monospace; line-height: 1.4; margin-top: 4px; display: flex; justify-content: space-between;">
+                    <div>IP: <span id="yul-ip" style="color: #fff;">0x00</span> | ACC: <span id="yul-acc" style="color: #fff;">0.00</span> | STAT: <span id="yul-status" style="color: #4ade80;">READY</span></div>
+                    <div>CV BUS: <span id="yul-cv-bus" style="color: var(--glow-magenta);">0.00 V</span></div>
+                </div>
+                <div style="font-size: 9px; color: #4ade80; font-family: 'Share Tech Mono', monospace; background: #000; border: 1px solid #141c30; padding: 6px; border-radius: 6px; margin-top: 6px; height: 50px; overflow-y: auto;" id="yul-circuit-log">
+                    Circuit status: Idle. Awaiting synth voltage input...
                 </div>
             </div>
         </div>
@@ -685,6 +702,92 @@ Status: Awaiting user to start music.</div>
             }
         }
 
+        let jointSynthCarrier = null;
+        let jointSynthModulator = null;
+        let jointSynthModGain = null;
+        let jointSynthGain = null;
+
+        function initJointSynth() {
+            if (!audioCtx || jointSynthCarrier) return;
+            try {
+                jointSynthCarrier = audioCtx.createOscillator();
+                jointSynthModulator = audioCtx.createOscillator();
+                jointSynthModGain = audioCtx.createGain();
+                jointSynthGain = audioCtx.createGain();
+
+                jointSynthCarrier.type = "sine";
+                jointSynthModulator.type = "triangle";
+
+                // Modulate carrier frequency with mod gain
+                jointSynthModGain.gain.value = 150; // modulation index depth
+                jointSynthGain.gain.value = 0.05;   // background CV sound hum
+
+                jointSynthModulator.connect(jointSynthModGain);
+                jointSynthModGain.connect(jointSynthCarrier.frequency);
+                jointSynthCarrier.connect(jointSynthGain);
+                jointSynthGain.connect(analyser || audioCtx.destination);
+
+                jointSynthCarrier.start();
+                jointSynthModulator.start();
+            } catch (e) {
+                console.error("Failed to init joint synth:", e);
+            }
+        }
+
+        function playVoltageClick(velocity = 1.0) {
+            if (!audioCtx) return;
+            try {
+                let now = audioCtx.currentTime;
+                // Voltage control pulse sound representing physical button pop
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                
+                osc.type = "square";
+                osc.frequency.setValueAtTime(80, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.12);
+                
+                gain.gain.setValueAtTime(0.35 * velocity, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(analyser || audioCtx.destination);
+                
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } catch(e) {}
+        }
+
+        function playSingularityNoise() {
+            if (!audioCtx) return;
+            try {
+                let now = audioCtx.currentTime;
+                // High frequency digital screech representing algebraic overflow
+                let osc = audioCtx.createOscillator();
+                let osc2 = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                
+                osc.type = "sawtooth";
+                osc2.type = "square";
+                osc.frequency.setValueAtTime(3000, now);
+                osc2.frequency.setValueAtTime(3050, now);
+                
+                osc.frequency.exponentialRampToValueAtTime(16000, now + 0.5);
+                osc2.frequency.exponentialRampToValueAtTime(16500, now + 0.5);
+                
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                
+                osc.connect(gain);
+                osc2.connect(gain);
+                gain.connect(analyser || audioCtx.destination);
+                
+                osc.start(now);
+                osc2.start(now);
+                osc.stop(now + 0.6);
+                osc2.stop(now + 0.6);
+            } catch(e) {}
+        }
+
         function playChordNote(freq, startTime, duration, voiceType = "triangle") {
             if (!audioCtx) return;
             let osc = audioCtx.createOscillator();
@@ -772,6 +875,111 @@ Status: Awaiting user to start music.</div>
                         triggerControlNetRender();
                     }
                 }, 1600);
+            }
+
+            // AI Autopilot Stasheff Flip Sequencer (cycles every 8 beats)
+            if (autopilotMode && beatIndex > 0 && beatIndex % 8 === 0) {
+                const adj = ASSOCIAHEDRON_FLIPS[activeStance] || ["plie"];
+                const nextStance = adj[Math.floor(Math.random() * adj.length)];
+                performStasheffFlip(nextStance);
+            }
+        }
+
+        // Stasheff Polytope flip graph representing diagonal flips on the Associahedron
+        const ASSOCIAHEDRON_FLIPS = {
+            "plie": ["chasse", "arabesque"],
+            "arabesque": ["plie", "pirouette", "attitude"],
+            "pirouette": ["arabesque", "grandjete", "fouette"],
+            "grandjete": ["pirouette", "attitude", "releve"],
+            "attitude": ["arabesque", "grandjete", "adagio"],
+            "releve": ["grandjete", "fouette", "chasse"],
+            "fouette": ["pirouette", "releve", "adagio"],
+            "adagio": ["attitude", "fouette", "chasse"],
+            "chasse": ["plie", "releve", "adagio"]
+        };
+
+        let autopilotMode = false;
+        let autopilotInterval = null;
+
+        function performStasheffFlip(nextStance) {
+            logEvent(`🌀 ASSOCIAHEDRON FLIP: Performing diagonal flip from ${activeStance.toUpperCase()} to ${nextStance.toUpperCase()}.`);
+            playVoltageClick(1.4);
+            
+            // Excite the joint phase space with Hamiltonian momentum impulses
+            const impulseIntensity = 0.85;
+            const jointKeys = ["leftArm", "rightArm", "leftLeg", "rightLeg", "headYaw", "headPitch"];
+            
+            // Apply targeted momentum impulses depending on the transition to simulate torque of the flip
+            if (activeStance === "plie" || nextStance === "plie") {
+                jointMomenta.leftLeg += impulseIntensity;
+                jointMomenta.rightLeg -= impulseIntensity;
+            }
+            if (activeStance === "pirouette" || nextStance === "pirouette") {
+                jointMomenta.leftArm += impulseIntensity * 1.5;
+                jointMomenta.rightArm -= impulseIntensity * 1.5;
+                jointMomenta.headYaw += impulseIntensity * 2; 
+            }
+            if (activeStance === "grandjete" || nextStance === "grandjete") {
+                jointMomenta.leftLeg -= impulseIntensity * 1.8;
+                jointMomenta.rightLeg += impulseIntensity * 1.8;
+                jointMomenta.headPitch += impulseIntensity;
+            }
+            if (activeStance === "releve" || nextStance === "releve") {
+                jointMomenta.leftArm -= impulseIntensity * 1.2;
+                jointMomenta.rightArm -= impulseIntensity * 1.2;
+                jointMomenta.headPitch -= impulseIntensity;
+            }
+            
+            // Add a small random noise excitation to other joints
+            jointKeys.forEach(key => {
+                jointMomenta[key] += (Math.random() * 0.4 - 0.2);
+            });
+
+            setStance(nextStance);
+
+            // Auto-trigger ControlNet Pose synthesis
+            setTimeout(() => {
+                if (autopilotMode && activeStance === nextStance) {
+                    triggerControlNetRender();
+                }
+            }, 1200);
+        }
+
+        function toggleAutopilotMode() {
+            initAudio();
+            const btn = document.getElementById("btn-autopilot-mode");
+            if (autopilotMode) {
+                autopilotMode = false;
+                btn.innerText = "🤖 START SPECTRAL AUTOPILOT";
+                btn.style.borderColor = "var(--glow-cyan)";
+                btn.style.color = "var(--glow-cyan)";
+                btn.classList.remove("active");
+                logEvent("System: Spectral Autopilot deactivated.");
+                if (autopilotInterval) {
+                    clearInterval(autopilotInterval);
+                    autopilotInterval = null;
+                }
+            } else {
+                autopilotMode = true;
+                btn.innerText = "🤖 STOP SPECTRAL AUTOPILOT";
+                btn.style.borderColor = "var(--glow-gold)";
+                btn.style.color = "var(--glow-gold)";
+                btn.classList.add("active");
+                logEvent("System: Spectral Autopilot activated! Navigating Stasheff flip-graph.");
+                
+                // If director mode is active, disable it to prevent conflicts
+                if (directorMode) toggleDirectorMode();
+
+                if (!isSoundPlaying) {
+                    // Set up a local interval if soundtrack is not playing
+                    autopilotInterval = setInterval(() => {
+                        if (autopilotMode && !isSoundPlaying) {
+                            const adj = ASSOCIAHEDRON_FLIPS[activeStance] || ["plie"];
+                            const nextStance = adj[Math.floor(Math.random() * adj.length)];
+                            performStasheffFlip(nextStance);
+                        }
+                    }, 4000);
+                }
             }
         }
 
@@ -1386,6 +1594,7 @@ Status: Awaiting user to start music.</div>
 
         function setStance(name) {
             initAudio();
+            playVoltageClick(1.0);
             document.querySelectorAll(".choreography-btn").forEach(btn => btn.classList.remove("active"));
             document.getElementById(`pos-${name}`).classList.add("active");
             activeStance = name;
@@ -1999,6 +2208,206 @@ Status: Awaiting user to start music.</div>
 
         let currentAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0, headYaw: 0, headPitch: 0 };
         let currentOffset = new Point3D(0, 0, 0);
+        
+        // iDOF Hamiltonian Joint Momenta & Phase Space Coefficients
+        let jointMomenta = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0, headYaw: 0, headPitch: 0 };
+        let jointK = 0.14;     // Joint restorative force stiffness
+        let jointDamp = 0.85;   // Momentum dissipation factor
+        let jointDt = 0.45;     // Discrete step slice
+        
+        let lastNoteTime = 0;
+
+        // General Control Voltage (CV) Routing Matrix
+        // The synthesizer can route its "voltage" parameters to ANY variable on the stage
+        const CV_ROUTING = {
+            jointStiffness: true,   // Frequency -> Coulomb joint stiffness (jointK)
+            cameraOrbit: true,      // Pitch/Note -> Camera rotation rate
+            particleVelocity: true, // Amplitude/Bass -> Particle ejection velocity
+            spotlightColor: true,   // Note base -> Spotlight hue shift
+            translationDrift: true  // Control bits -> 3D stage translation drift
+        };
+
+        // Yul Virtual CPU (dc.yul / musicMaker.yul) state registers
+        let yulStack = [];
+        let yulAcc = 0.0;
+        let yulIP = 0;
+        let yulMathRegisters = { R0: 0, R1: 0, R2: 0, R3: 0 };
+        
+        function runVirtualYulInstruction(opcode, arg) {
+            playVoltageClick(0.45);
+            const logEl = document.getElementById("yul-circuit-log");
+            let outputMsg = "";
+            
+            switch (opcode) {
+                case "ADD": // dc.yul math step
+                    yulAcc += arg;
+                    outputMsg = `dc.yul::ADD ${arg.toFixed(2)} -> ACC: ${yulAcc.toFixed(2)}`;
+                    break;
+                case "SUB":
+                    yulAcc -= arg;
+                    outputMsg = `dc.yul::SUB ${arg.toFixed(2)} -> ACC: ${yulAcc.toFixed(2)}`;
+                    break;
+                case "MUL":
+                    yulAcc *= arg;
+                    outputMsg = `dc.yul::MUL ${arg.toFixed(2)} -> ACC: ${yulAcc.toFixed(2)}`;
+                    break;
+                case "SLOAD": // Store register load
+                    yulAcc = yulMathRegisters[arg] || 0;
+                    outputMsg = `dc.yul::SLOAD ${arg} -> ACC: ${yulAcc.toFixed(2)}`;
+                    break;
+                case "SSTORE": // Store register save
+                    yulMathRegisters[arg] = yulAcc;
+                    outputMsg = `dc.yul::SSTORE ACC -> ${arg}: ${yulAcc.toFixed(2)}`;
+                    break;
+                case "ARP_STEP": // musicMaker.yul non-sonic arpeggiator step
+                    // Sequences and cycles target coordinates through Stasheff flip vertices
+                    const vertices = ["plie", "arabesque", "pirouette", "grandjete", "attitude", "releve", "fouette", "adagio", "chasse"];
+                    yulIP = (yulIP + 1) % vertices.length;
+                    const nextStance = vertices[yulIP];
+                    
+                    // Excite Coulomb potential by performing Stasheff flip to this vertex
+                    performStasheffFlip(nextStance);
+                    
+                    // Scale Coulomb potential stiffness jointK by accumulator voltage CV
+                    jointK = Math.min(0.5, Math.max(0.01, 0.14 * (1.0 + Math.abs(yulAcc))));
+                    outputMsg = `musicMaker.yul::ARP_STEP to ${nextStance.toUpperCase()} | jointK potential set to ${jointK.toFixed(3)}`;
+                    break;
+            }
+            
+            if (logEl) {
+                logEl.innerHTML = `<div style="margin-bottom: 2px; border-bottom: 1px solid #141c30; padding-bottom: 2px;">[YUL] ${outputMsg}</div>` + logEl.innerHTML;
+                document.getElementById("yul-acc").innerText = yulAcc.toFixed(2);
+                document.getElementById("yul-ip").innerText = "0x" + yulIP.toString(16).toUpperCase();
+                document.getElementById("yul-stack-status").innerText = `[${Object.keys(yulMathRegisters).map(k => yulMathRegisters[k].toFixed(1)).join(",")}]`;
+                document.getElementById("yul-cv-bus").innerText = (yulAcc * 5).toFixed(2) + " V";
+            }
+        }
+
+        // Broadcast Channel Listener for Elektuur Synth Control
+        try {
+            const synthChannel = new BroadcastChannel('elektuur_synth');
+            synthChannel.onmessage = (e) => {
+                if (e.data.type === 'synth_poke') {
+                    const freq = e.data.freq;
+                    const note = e.data.note;
+                    const control = e.data.control;
+                    const now = Date.now();
+                    
+                    if (control & 1) {
+                        logEvent(`Synth Broadcast: Note ${note} (${freq} Hz) received. Coupling to joint phase space.`);
+                        
+                        // Route note frequency to virtual Yul math stack (emulating dc.yul assembly circuit)
+                        const voltageInput = (freq - 200) / 1000; // Normalized voltage
+                        runVirtualYulInstruction("ADD", voltageInput);
+                        
+                        // Use other keys in non-audio arpeggiator-like control sequence (musicMaker.yul)
+                        if (note.includes("C") || note.includes("E") || note.includes("G")) {
+                            runVirtualYulInstruction("ARP_STEP", null);
+                        } else if (note.includes("D") || note.includes("F")) {
+                            runVirtualYulInstruction("MUL", 1.15); // CV gain modulation
+                        } else if (note.includes("A") || note.includes("B")) {
+                            runVirtualYulInstruction("SSTORE", "R" + (freq % 4));
+                        }
+                        
+                        // 1. BUTTON-FINESSE: Micro-tuning & Dampening Modulations based on Frequency (Voltage control)
+                        if (CV_ROUTING.jointStiffness) {
+                            jointK = 0.05 + ((freq % 1000) / 1000) * 0.18;
+                            jointDamp = 0.75 + ((freq % 500) / 500) * 0.18;
+                        }
+                        
+                        // Micro angle perturbations
+                        const perturbation = ((freq % 100) / 100 - 0.5) * 0.12;
+                        currentAngles.headYaw += perturbation;
+                        currentAngles.headPitch += perturbation;
+
+                        // 2. BUTTON-ROLL: Rapid notes trigger sliding Stasheff flips
+                        const isRoll = (now - lastNoteTime) < 320;
+                        lastNoteTime = now;
+                        
+                        if (isRoll) {
+                            logEvent(`🎹 BUTTON-ROLL: High-frequency note roll detected. Performing adjacent Stasheff Flip.`);
+                            const adj = ASSOCIAHEDRON_FLIPS[activeStance] || ["plie"];
+                            const nextStance = adj[Math.floor(Math.random() * adj.length)];
+                            performStasheffFlip(nextStance);
+                        } else {
+                            // 3. BUTTON-PRESS: Direct note-to-stance mapping
+                            let noteBase = note.slice(0, -1);
+                            const noteStanceMap = {
+                                "C": "plie",
+                                "C#": "arabesque",
+                                "D": "pirouette",
+                                "D#": "grandjete",
+                                "E": "attitude",
+                                "F": "releve",
+                                "F#": "fouette",
+                                "G": "adagio",
+                                "G#": "chasse",
+                                "A": "plie",
+                                "A#": "arabesque",
+                                "B": "pirouette"
+                            };
+                            
+                            const targetStance = noteStanceMap[noteBase];
+                            if (targetStance && targetStance !== activeStance) {
+                                logEvent(`🎹 BUTTON-PRESS: Direct synth note trigger. Switching stance to ${targetStance.toUpperCase()}`);
+                                setStance(targetStance);
+                            }
+                        }
+
+                        // 4. BUTTON-MAGIC: Special Control Voltage chord mappings
+                        if (note === "C6" || note === "B5") {
+                            logEvent("✨ BUTTON-MAGIC: Activating automated practice barre support!");
+                            window.barreHold = true;
+                            window.practiceStudioActive = true;
+                        } else if (note === "A1" || note === "G1") {
+                            logEvent("✨ BUTTON-MAGIC: Toggling autopilot sequence!");
+                            toggleAutopilotMode();
+                        }
+
+                        // 5. WHOLY GENERAL CV MODULATIONS (Modulates Environment parameters via Synthesizer "Voltage")
+                        if (CV_ROUTING.cameraOrbit) {
+                            // High notes slide camera yaw angle
+                            camera.yaw += (freq > 800) ? 0.05 : -0.02;
+                        }
+                        if (CV_ROUTING.translationDrift) {
+                            // Control bits nudge the stage X/Z offset
+                            currentOffset.x += ((control & 2) ? 15 : -15);
+                            currentOffset.z += ((control & 4) ? 15 : -15);
+                        }
+
+                        // Hamiltonian phase space impulse coupling: inject momentum directly to joint phase space
+                        const impulse = 0.35;
+                        let noteBase = note.slice(0, -1);
+                        if (noteBase === "C") {
+                            jointMomenta.leftArm += impulse;
+                        } else if (noteBase === "D") {
+                            jointMomenta.leftArm -= impulse;
+                        } else if (noteBase === "E") {
+                            jointMomenta.rightArm += impulse;
+                        } else if (noteBase === "F") {
+                            jointMomenta.rightArm -= impulse;
+                        } else if (noteBase === "G") {
+                            jointMomenta.leftLeg += impulse;
+                        } else if (noteBase === "A") {
+                            jointMomenta.leftLeg -= impulse;
+                        } else if (noteBase === "B") {
+                            jointMomenta.rightLeg += impulse;
+                        } else if (noteBase === "C#") {
+                            jointMomenta.headYaw += impulse * 0.5;
+                        } else if (noteBase === "D#") {
+                            jointMomenta.headYaw -= impulse * 0.5;
+                        } else if (noteBase === "F#") {
+                            jointMomenta.headPitch += impulse * 0.5;
+                        } else if (noteBase === "G#") {
+                            jointMomenta.headPitch -= impulse * 0.5;
+                        }
+                    }
+                }
+            };
+        } catch (err) {
+            console.warn("Failed to init BroadcastChannel in Ballet Studio:", err);
+        }
+        
         let particles = [];
 
         function updateAndDrawParticles(bass, volume) {
@@ -2080,6 +2489,47 @@ Status: Awaiting user to start music.</div>
                 volume = (bass + mid + treble) / 3;
             }
 
+            // Synthesize Dancer Kinetics to sound dynamically (Control as Sound)
+            if (isSoundPlaying && audioCtx) {
+                initJointSynth();
+                if (jointSynthCarrier && jointSynthModulator) {
+                    let baseFreq = 220; // Default frequency base
+                    const stanceFreqs = {
+                        plie: 130.81, // C3
+                        arabesque: 146.83, // D3
+                        pirouette: 164.81, // E3
+                        grandjete: 174.61, // F3
+                        attitude: 196.00, // G3
+                        releve: 220.00, // A3
+                        fouette: 246.94, // B3
+                        adagio: 261.63, // C4
+                        chasse: 293.66  // D4
+                    };
+                    baseFreq = stanceFreqs[activeStance] || 220;
+
+                    // Carrier frequency is driven by active stance and head pitch
+                    let targetCarrierFreq = baseFreq + (currentAngles.headPitch * 45);
+                    jointSynthCarrier.frequency.setTargetAtTime(targetCarrierFreq, audioCtx.currentTime, 0.15);
+
+                    // Modulator frequency is driven by joint angles
+                    let targetModFreq = 110 + (Math.abs(currentAngles.leftArm + currentAngles.rightArm) * 65);
+                    jointSynthModulator.frequency.setTargetAtTime(targetModFreq, audioCtx.currentTime, 0.15);
+
+                    // Modulation index gain is driven by joint velocities/momenta (kinetic energy)
+                    let kineticEnergy = Object.values(jointMomenta).reduce((sum, v) => sum + v*v, 0);
+                    let targetModGain = 20 + Math.min(600, kineticEnergy * 450);
+                    jointSynthModGain.gain.setTargetAtTime(targetModGain, audioCtx.currentTime, 0.1);
+
+                    // Volume scales with control levels
+                    let targetVol = 0.03 + Math.min(0.12, volume * 0.5);
+                    jointSynthGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.1);
+                }
+            } else {
+                if (jointSynthGain) {
+                    jointSynthGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                }
+            }
+
             // 2. Draw Volumetric Spotlight Beam (tracks dancer and modulates on audio beats)
             drawSpotlight(currentOffset, bass, treble);
 
@@ -2091,18 +2541,59 @@ Status: Awaiting user to start music.</div>
                 let targetAngles = getChoreographyAngles(activeStance, choreographyTime, bass, mid, treble, volume);
                 let targetOffset = getModelOffset(activeStance, choreographyTime, bass, mid, treble, volume);
 
-                // 5. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
-                let lerpSpeed = 0.025;
-                currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
-                currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
-                currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
-                currentAngles.rightLeg += (targetAngles.rightLeg - currentAngles.rightLeg) * lerpSpeed;
-                
-                if (currentAngles.headYaw === undefined) currentAngles.headYaw = 0;
-                if (currentAngles.headPitch === undefined) currentAngles.headPitch = 0;
-                currentAngles.headYaw += ((targetAngles.headYaw || 0) - currentAngles.headYaw) * lerpSpeed;
-                currentAngles.headPitch += ((targetAngles.headPitch || 0) - currentAngles.headPitch) * lerpSpeed;
+                // 5. iDOF Hamiltonian Joint Phase Space Dynamics (Symplectic Euler Step)
+                const jointKeys = ["leftArm", "rightArm", "leftLeg", "rightLeg", "headYaw", "headPitch"];
+                jointKeys.forEach(key => {
+                    let target = targetAngles[key] || 0;
+                    let current = currentAngles[key] || 0;
+                    let momentum = jointMomenta[key] || 0;
+                    
+                    // Control as the Coulomb Force: F = -k_e * (q_current * q_target) / (r^2 + epsilon) * sgn(r)
+                    // The charges represent coordinate potentials and target stance weights.
+                    let r = current - target;
+                    let sign = Math.sign(r);
+                    let epsilon = window.singularityExploit ? 0.0 : 0.08; // Softening parameter (disabled in exploit mode)
+                    let q_current = 1.0;
+                    let q_target = 1.0 + volume * 2.0; // Stance charge is amplified by real-time audio volume
+                    
+                    let force = -jointK * (q_current * q_target) / (r * r + epsilon) * sign;
+                    momentum = (momentum + force * jointDt) * jointDamp;
+                    
+                    // Update canonical angle coordinate using newly updated momentum
+                    current += momentum * jointDt;
 
+                    // Singularity / NaN Detection (Blow Up)
+                    if (isNaN(current) || isNaN(momentum) || !isFinite(current) || !isFinite(momentum)) {
+                        logEvent("🚨 ALCHEMICAL SINGULARITY EXPLODED! Inverse-squared Coulomb divisor reached absolute zero.");
+                        playSingularityNoise();
+                        
+                        // Force coordinate reset
+                        current = target;
+                        momentum = 0;
+                        
+                        // Trigger visual glitch burst by spawning extra particles
+                        for (let k = 0; k < 60; k++) {
+                            particles.push({
+                                x: currentOffset.x + (Math.random() * 400 - 200),
+                                y: 50 + (Math.random() * 400 - 200),
+                                z: currentOffset.z + (Math.random() * 400 - 200),
+                                vx: (Math.random() * 8 - 4),
+                                vy: (Math.random() * 8 - 4),
+                                vz: (Math.random() * 8 - 4),
+                                life: 60,
+                                maxLife: 60,
+                                size: 5 + Math.random() * 10,
+                                color: "rgba(255, 0, 127, A)" // glowing hot pink explosion
+                            });
+                        }
+                    }
+                    
+                    currentAngles[key] = current;
+                    jointMomenta[key] = momentum;
+                });
+
+                // Smooth linear translation offset (retains standard lerp)
+                let lerpSpeed = 0.025;
                 currentOffset.x += (targetOffset.x - currentOffset.x) * lerpSpeed;
                 currentOffset.y += (targetOffset.y - currentOffset.y) * lerpSpeed;
                 currentOffset.z += (targetOffset.z - currentOffset.z) * lerpSpeed;
@@ -2151,6 +2642,22 @@ Status: Awaiting user to start music.</div>
                     } else if (arg === "stop") {
                         if (directorMode) toggleDirectorMode();
                         consoleBox.innerHTML += `\n[Z-Machine] Auto-Director sequence stopped.`;
+                    }
+                } else if (action === "autopilot") {
+                    if (arg === "start") {
+                        if (!autopilotMode) toggleAutopilotMode();
+                        consoleBox.innerHTML += `\n[Z-Machine] Spectral Autopilot activated. Navigating Stasheff flip-graph...`;
+                    } else if (arg === "stop") {
+                        if (autopilotMode) toggleAutopilotMode();
+                        consoleBox.innerHTML += `\n[Z-Machine] Spectral Autopilot deactivated.`;
+                    }
+                } else if (action === "singularity") {
+                    if (arg === "enable" || arg === "start") {
+                        window.singularityExploit = true;
+                        consoleBox.innerHTML += `\n[Z-Machine] Coulomb Singularity Exploit activated! WARNING: Perfect joint-stance alignment will trigger mathematical coordinate explosion.`;
+                    } else if (arg === "disable" || arg === "stop") {
+                        window.singularityExploit = false;
+                        consoleBox.innerHTML += `\n[Z-Machine] Coulomb Singularity Exploit deactivated. Numerical softening (epsilon=0.08) re-engaged.`;
                     }
                 } else if (action === "practice") {
                     if (arg === "start") {

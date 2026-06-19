@@ -473,6 +473,61 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // Server-Side Event Feed for Headless AI performance broadcasting
+    if (req.url.startsWith("/api/synth-feed") && req.method === "GET") {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const sessionId = parsedUrl.searchParams.get("sessionId") || "global";
+
+        res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*"
+        });
+        
+        if (!global.synthSessions) {
+            global.synthSessions = {};
+        }
+        if (!global.synthSessions[sessionId]) {
+            global.synthSessions[sessionId] = [];
+        }
+        global.synthSessions[sessionId].push(res);
+        
+        req.on("close", () => {
+            if (global.synthSessions[sessionId]) {
+                global.synthSessions[sessionId] = global.synthSessions[sessionId].filter(c => c !== res);
+                if (global.synthSessions[sessionId].length === 0) {
+                    delete global.synthSessions[sessionId];
+                }
+            }
+        });
+        return;
+    }
+
+    if (req.url.startsWith("/api/synth-feed") && req.method === "POST") {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const sessionId = parsedUrl.searchParams.get("sessionId") || "global";
+
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", () => {
+            try {
+                const data = JSON.parse(body);
+                if (global.synthSessions && global.synthSessions[sessionId]) {
+                    global.synthSessions[sessionId].forEach(client => {
+                        client.write(`data: ${JSON.stringify(data)}\n\n`);
+                    });
+                }
+                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
     // API endpoint to serve config keys
     if (req.url === "/api/config") {
         if (fs.existsSync(CONFIG_PATH)) {

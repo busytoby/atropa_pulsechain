@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Quaternion Spatial Control AI Autopilot & Telemetry Diagnostics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f2fe;
+            --neon-magenta: #ff007f;
+            --neon-green: #39ff14;
+            --neon-orange: #ffa500;
+            --dark-bg: #05060c;
+            --panel-bg: rgba(13, 17, 38, 0.75);
+            --border-color: rgba(0, 242, 254, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            margin: 0 0 5px 0;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Scanline CRT overlay effect */
+        .crt::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%);
+            background-size: 100% 4px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .viewport-wrapper {
+            position: relative;
+            width: 100%;
+            background: #010206;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 242, 254, 0.15);
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            cursor: grab;
+        }
+
+        .viewport-wrapper:active {
+            cursor: grabbing;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .telemetry-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: 8px;
+            padding: 12px 8px;
+            font-family: 'Share Tech Mono', monospace;
+            text-align: center;
+            position: relative;
+        }
+
+        .telemetry-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .telemetry-val {
+            font-size: 1.15rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        .val-w { color: var(--neon-green); }
+        .val-x { color: var(--neon-blue); }
+        .val-y { color: var(--neon-magenta); }
+        .val-z { color: var(--neon-orange); }
+
+        .bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 8px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.05rem;
+            margin: 0;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 8px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn {
+            background: rgba(0, 242, 254, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: #fff;
+            padding: 10px 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-active {
+            background: linear-gradient(135deg, rgba(255, 0, 127, 0.25) 0%, rgba(255, 0, 127, 0.1) 100%);
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+            box-shadow: 0 0 12px rgba(255, 0, 127, 0.35);
+            font-weight: bold;
+        }
+
+        .description-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.4;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .interactive-hud {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Virtual Joystick */
+        .joystick-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .joystick-pad {
+            width: 110px;
+            height: 110px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.03) 0%, rgba(0, 242, 254, 0.12) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.3);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+            box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.2);
+            cursor: pointer;
+        }
+
+        .joystick-handle {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, var(--neon-magenta) 0%, #b30059 100%);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 39px;
+            left: 39px;
+            box-shadow: 0 0 10px var(--neon-magenta);
+            transform: translate(0, 0);
+            pointer-events: none;
+        }
+
+        .keyboard-visualizer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .key-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .key-cap {
+            width: 34px;
+            height: 34px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .key-cap.pressed {
+            background: var(--neon-green);
+            color: #000;
+            border-color: #fff;
+            box-shadow: 0 0 10px var(--neon-green);
+            transform: translateY(2px);
+        }
+
+        .param-slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .slider-row input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--neon-blue);
+        }
+
+        .state-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .state-row {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .state-row.active {
+            border-color: rgba(57, 255, 20, 0.4);
+            background: rgba(57, 255, 20, 0.05);
+        }
+
+        .state-status {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛸 Auncient Quaternion Spaceflight Sandbox</h1>
+        <div class="subtitle">Totality of Control & Hypersphere (S³) Projection Platform</div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Left Column: CRT Viewport & Real-time Telemetry -->
+        <div class="card crt">
+            <div class="viewport-wrapper" id="canvasWrapper">
+                <canvas id="fighterCanvas"></canvas>
+            </div>
+            
+            <div class="telemetry-grid">
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Qw (Scalar)</div>
+                    <div id="telQw" class="telemetry-val val-w">1.000</div>
+                    <div class="bar-container"><div id="barQw" class="bar-fill" style="background-color: var(--neon-green);"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Qx (i Axis)</div>
+                    <div id="telQx" class="telemetry-val val-x">0.000</div>
+                    <div class="bar-container"><div id="barQx" class="bar-fill" style="background-color: var(--neon-blue);"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Qy (j Axis)</div>
+                    <div id="telQy" class="telemetry-val val-y">0.000</div>
+                    <div class="bar-container"><div id="barQy" class="bar-fill" style="background-color: var(--neon-magenta);"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Qz (k Axis)</div>
+                    <div id="telQz" class="telemetry-val val-z">0.000</div>
+                    <div class="bar-container"><div id="barQz" class="bar-fill" style="background-color: var(--neon-orange);"></div></div>
+                </div>
+            </div>
+
+            <div class="telemetry-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Yaw (Y-Axis)</div>
+                    <div id="telYaw" class="telemetry-val" style="color: var(--neon-blue);">0.0°</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Pitch (X-Axis)</div>
+                    <div id="telPitch" class="telemetry-val" style="color: var(--neon-magenta);">0.0°</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Roll (Z-Axis)</div>
+                    <div id="telRoll" class="telemetry-val" style="color: var(--neon-orange);">0.0°</div>
+                </div>
+            </div>
+
+            <!-- iDOF Spectral Phase Space Telemetry -->
+            <h4 class="section-title" style="margin-top: 15px; font-size: 0.8rem; letter-spacing: 1px; color: var(--neon-magenta); border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">iDOF Spectral Telemetry</h4>
+            <div class="telemetry-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 5px; gap: 8px;">
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 1 (Roll)</div>
+                    <div id="telModeQ1" class="telemetry-val" style="font-size: 1rem; color: var(--neon-green);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode1" class="bar-fill" style="background-color: var(--neon-green); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 2 (Roll)</div>
+                    <div id="telModeQ2" class="telemetry-val" style="font-size: 1rem; color: var(--neon-blue);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode2" class="bar-fill" style="background-color: var(--neon-blue); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 3 (Pitch)</div>
+                    <div id="telModeQ3" class="telemetry-val" style="font-size: 1rem; color: var(--neon-magenta);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode3" class="bar-fill" style="background-color: var(--neon-magenta); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 4 (Pitch)</div>
+                    <div id="telModeQ4" class="telemetry-val" style="font-size: 1rem; color: var(--neon-orange);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode4" class="bar-fill" style="background-color: var(--neon-orange); width: 0%;"></div></div>
+                </div>
+            </div>
+            <div class="telemetry-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 8px; gap: 8px;">
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 5 (Yaw)</div>
+                    <div id="telModeQ5" class="telemetry-val" style="font-size: 1rem; color: var(--neon-green);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode5" class="bar-fill" style="background-color: var(--neon-green); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 6 (Yaw)</div>
+                    <div id="telModeQ6" class="telemetry-val" style="font-size: 1rem; color: var(--neon-blue);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode6" class="bar-fill" style="background-color: var(--neon-blue); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 7 (Jitter)</div>
+                    <div id="telModeQ7" class="telemetry-val" style="font-size: 1rem; color: var(--neon-magenta);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode7" class="bar-fill" style="background-color: var(--neon-magenta); width: 0%;"></div></div>
+                </div>
+                <div class="telemetry-item" style="padding: 6px;">
+                    <div class="telemetry-label" style="font-size: 0.65rem;">Mode 8 (Jitter)</div>
+                    <div id="telModeQ8" class="telemetry-val" style="font-size: 1rem; color: var(--neon-orange);">0.000</div>
+                    <div class="bar-container" style="height: 4px;"><div id="barMode8" class="bar-fill" style="background-color: var(--neon-orange); width: 0%;"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Attitude Controls, Virtual Joystick, and Diagnostics -->
+        <div class="card controls-panel">
+            <h3 class="section-title">AI Auto-Attitude Routines</h3>
+            <div class="btn-grid">
+                <button id="btnStance" class="btn btn-active" onclick="setAiMode(0)">Identity Stance</button>
+                <button id="btnYawSweep" class="btn" onclick="setAiMode(1)">Yaw Sweep</button>
+                <button id="btnPitchSweep" class="btn" onclick="setAiMode(2)">Pitch Dive</button>
+                <button id="btnRollSweep" class="btn" onclick="setAiMode(3)">Roll Evasion</button>
+                <button id="btnSlerpDemo" class="btn" onclick="setAiMode(4)">Geodesic Slerp</button>
+                <button id="btnGimbalStress" class="btn" onclick="setAiMode(5)">Gimbal Test (90°)</button>
+                <button id="btnManualFlight" class="btn" onclick="setAiMode(6)">Keyboard Flight</button>
+                <button id="btnMouseSteer" class="btn" onclick="setAiMode(7)">Mouse Steering</button>
+                <button id="btnChoreographer" class="btn" onclick="setAiMode(8)" style="grid-column: span 2;">AI Choreographer</button>
+            </div>
+
+            <h3 class="section-title">Manual Active Flight Interface</h3>
+            <div class="interactive-hud">
+                <!-- Glowing Virtual Joystick -->
+                <div class="joystick-container">
+                    <div class="telemetry-label" style="margin-bottom: 2px;">Analog Joystick</div>
+                    <div class="joystick-pad" id="joyPad">
+                        <div class="joystick-handle" id="joyHandle"></div>
+                    </div>
+                    <span style="font-size: 0.65rem; color: rgba(255,255,255,0.4); text-align: center;">Drag to Pitch/Yaw</span>
+                </div>
+                <!-- Visual Keyboard Guide -->
+                <div class="keyboard-visualizer">
+                    <div class="telemetry-label" style="text-align: center; margin-bottom: 2px;">Key Map</div>
+                    <div class="key-row">
+                        <div class="key-cap" id="keyQ" title="Roll CCW">Q</div>
+                        <div class="key-cap" id="keyW" title="Pitch Down">W</div>
+                        <div class="key-cap" id="keyE" title="Roll CW">E</div>
+                    </div>
+                    <div class="key-row">
+                        <div class="key-cap" id="keyA" title="Yaw Left">A</div>
+                        <div class="key-cap" id="keyS" title="Pitch Up">S</div>
+                        <div class="key-cap" id="keyD" title="Yaw Right">D</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stability Configuration Parameters -->
+            <div class="param-slider-group">
+                <div class="slider-row">
+                    <span>Control Mode</span>
+                    <select id="controlStyle" style="background: #0d1126; color: #fff; border: 1px solid var(--neon-blue); border-radius: 4px; padding: 4px 8px; font-family: 'Share Tech Mono'; font-size: 0.8rem; cursor: pointer;">
+                        <option value="rate">Direct Rate (Snappy/Precise)</option>
+                        <option value="torque">Inertial RCS (Floaty/Space)</option>
+                    </select>
+                </div>
+                <div class="slider-row">
+                    <span>Camera View</span>
+                    <select id="cameraMode" style="background: #0d1126; color: #fff; border: 1px solid var(--neon-blue); border-radius: 4px; padding: 4px 8px; font-family: 'Share Tech Mono'; font-size: 0.8rem; cursor: pointer;">
+                        <option value="chase">Chase Cam (Flight Simulator)</option>
+                        <option value="fixed">Fixed Cam (Attitude Observer)</option>
+                    </select>
+                </div>
+                <div class="slider-row">
+                    <span>Inertial Dampening (Brakes)</span>
+                    <input type="range" id="slideDamp" min="0" max="100" value="70">
+                </div>
+                <div class="slider-row">
+                    <span>Auto-Alignment Force</span>
+                    <input type="range" id="slideAlign" min="0" max="100" value="0">
+                </div>
+                <div class="slider-row">
+                    <span>Roll Trim Slider</span>
+                    <input type="range" id="slideRoll" min="-100" max="100" value="0" oninput="manualRollTrim(this.value)">
+                </div>
+            </div>
+
+            <h3 class="section-title">Flight Subsystems Telemetry</h3>
+            <div class="state-list">
+                <div id="rowIdentity" class="state-row active">
+                    <span>Attitude Lock Status</span>
+                    <span id="statIdentity" class="state-status" style="color: var(--neon-green);">CONNECTED</span>
+                </div>
+                <div id="rowGimbal" class="state-row">
+                    <span>Gimbal Singularity Protection</span>
+                    <span id="statGimbal" class="state-status" style="color: var(--neon-blue);">IMMUNE (S³)</span>
+                </div>
+                <div id="rowManual" class="state-row">
+                    <span>Input Processing Loop</span>
+                    <span id="statManual" class="state-status" style="color: rgba(255,255,255,0.4);">DAMPENED</span>
+                </div>
+            </div>
+            
+            <div class="description-text" style="margin-top: auto; font-size: 0.8rem;">
+                <strong>Totality Proof:</strong> Any point on S³ coordinates $\mathbf{q} = w + xi + yj + zk$ with $w^2+x^2+y^2+z^2 = 1$ is guaranteed to map smoothly to a rotation in SO(3). Unlike 3D Euler angles, this manifold contains no singularities (Gimbal Lock) or axis overlap issues, ensuring total coverage of all possible moves.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("fighterCanvas");
+        const ctx = canvas.getContext("2d");
+        const canvasWrapper = document.getElementById("canvasWrapper");
+
+        // System state variables
+        let aiMode = 0; // 0: Stance, 1: Yaw, 2: Pitch, 3: Roll, 4: Slerp, 5: Gimbal, 6: Manual
+        let tickCounter = 0;
+
+        // Current Orientation Quaternion
+        let qw = 1.0, qx = 0.0, qy = 0.0, qz = 0.0;
+        let qHistory = [];
+
+        // Prophecy Incantation lock matrix
+        const PROPHECY_INCANTATION = ["C", "E", "G", "B"];
+        let incantationProgress = [];
+        let vulkanDisplayLocked = true;
+
+        // Synth connection variables
+        let hudSynthText = "";
+        let hudSynthTicks = 0;
+
+        // Vaesen Trauma connection variables
+        let vaesenPhys = 0;
+        let vaesenMent = 0;
+        let vaesenPhysLabel = "Normal";
+        let vaesenMentLabel = "Normal";
+        let vaesenAlertTicks = 0;
+
+        // Angular Velocities (Manual control physics)
+        let velPitch = 0;
+        let velYaw = 0;
+        let velRoll = 0;
+
+        // Active keys mapping
+        const keysPressed = {
+            w: false, s: false, a: false, d: false, q: false, e: false
+        };
+
+        // Interpolation targets for Slerp
+        let qStart = [1, 0, 0, 0];
+        let qEnd = [0.5, 0.5, 0.5, 0.5];
+        let slerpTime = 0.0;
+        let slerpDir = 1.0;
+
+        // View scale and coordinates
+        let scale = 4.2;
+        let camZ = 160;
+
+        // iDOF Hamiltonian Spectral Phase Space variables (Fourier Harmonics)
+        const waveM = 12; // 12 decoupled harmonic modes
+        const waveQ = new Float32Array(waveM); // Mode canonical coordinates q_k
+        const waveP = new Float32Array(waveM); // Mode conjugate momenta p_k
+        const waveOmega = new Float32Array(waveM); // Mode frequencies w_k
+        const waveBaseOmega = 0.045;
+        const waveDamping = 0.991;
+        const waveDt = 0.5;
+
+        for (let k = 0; k < waveM; k++) {
+            // Harmonics: eigenfrequencies scale linearly with mode number
+            waveOmega[k] = (k + 1) * waveBaseOmega;
+        }
+
+        function exciteSpectralMode(modeIdx, intensity = 2.5) {
+            const idx = Math.max(0, Math.min(waveM - 1, Math.round(modeIdx)));
+            waveP[idx] += intensity;
+        }
+
+        // Ground/Altitude parameters
+        let altitude = 0.0;
+        let verticalVelocity = 0.0;
+
+        // 3D Space Dust Starfield
+        const starCount = 120;
+        const stars = [];
+        for (let i = 0; i < starCount; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * 300,
+                y: (Math.random() - 0.5) * 300,
+                z: (Math.random() - 0.5) * 300
+            });
+        }
+
+        // 3D Starfighter wireframe vertices
+        const vertices = [
+            {x: 0, y: 12, z: 75},      // 0: Nose cone apex
+            {x: -20, y: -6, z: -10},   // 1: Port-side fuselage shoulder
+            {x: 20, y: -6, z: -10},    // 2: Starboard-side fuselage shoulder
+            {x: 0, y: 16, z: -25},     // 3: Canopy apex
+            {x: -55, y: -12, z: -35},  // 4: Port wingtip
+            {x: 55, y: -12, z: -35},   // 5: Starboard wingtip
+            {x: 0, y: -12, z: -45},    // 6: Engine thruster nozzle
+            {x: 0, y: 30, z: -40},     // 7: Tail fin apex
+            {x: -45, y: -8, z: -30},   // 8: Port intake flange
+            {x: 45, y: -8, z: -30}     // 9: Starboard intake flange
+        ];
+
+        const edges = [
+            [0, 1], [0, 2], [1, 2], // Nose core triangle
+            [0, 3], [1, 3], [2, 3], // Cockpit canopy
+            [1, 8], [8, 4], [4, 6], // Port wing profile
+            [2, 9], [9, 5], [5, 6], // Starboard wing profile
+            [6, 3], [1, 6], [2, 6], // Aft engine block
+            [6, 7], [3, 7]          // Stabilizing tail fin
+        ];
+
+        // Canvas sizing handler
+        function resize() {
+            canvas.width = canvasWrapper.clientWidth;
+            canvas.height = canvasWrapper.clientHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // Control Autopilot modes
+        function setAiMode(modeId) {
+            aiMode = modeId;
+            tickCounter = 0;
+            slerpTime = 0.0;
+            slerpDir = 1.0;
+
+            // Update button styles
+            const buttons = document.querySelectorAll(".btn");
+            buttons.forEach((btn, index) => {
+                if (index === modeId) btn.classList.add("btn-active");
+                else btn.classList.remove("btn-active");
+            });
+
+            // Adjust diagnostics panel values
+            const diagRows = document.querySelectorAll(".state-row");
+            diagRows.forEach(row => row.classList.remove("active"));
+            
+            document.getElementById("statIdentity").style.color = "rgba(255,255,255,0.4)";
+            document.getElementById("statGimbal").innerText = "IMMUNE (S³)";
+            document.getElementById("statGimbal").style.color = "var(--neon-blue)";
+            document.getElementById("statManual").innerText = "STANDBY";
+            document.getElementById("statManual").style.color = "rgba(255,255,255,0.4)";
+
+            if (modeId === 0) {
+                document.getElementById("rowIdentity").classList.add("active");
+                document.getElementById("statIdentity").innerText = "CONNECTED";
+                document.getElementById("statIdentity").style.color = "var(--neon-green)";
+            } else if (modeId === 4) {
+                qStart = [qw, qx, qy, qz];
+                // Slerp to a multi-axis rotation
+                qEnd = [0.5, 0.5, 0.5, 0.5];
+            } else if (modeId === 5) {
+                document.getElementById("rowGimbal").classList.add("active");
+                document.getElementById("statGimbal").innerText = "STRESS TESTING";
+                document.getElementById("statGimbal").style.color = "var(--neon-magenta)";
+            } else if (modeId === 6) {
+                document.getElementById("rowManual").classList.add("active");
+                document.getElementById("statManual").innerText = "KEYBOARD RATE FEED";
+                document.getElementById("statManual").style.color = "var(--neon-green)";
+            } else if (modeId === 7) {
+                document.getElementById("rowManual").classList.add("active");
+                document.getElementById("statManual").innerText = "MOUSE VECTOR LOCK";
+                document.getElementById("statManual").style.color = "var(--neon-magenta)";
+            } else if (modeId === 8) {
+                document.getElementById("rowManual").classList.add("active");
+                document.getElementById("statManual").innerText = "AUTO RUN TEST MATRIX";
+                document.getElementById("statManual").style.color = "var(--neon-orange)";
+                document.getElementById("cameraMode").value = "fixed";
+            }
+        }
+
+        // Quaternion Slerp Interpolation Helper
+        function slerp(q0, q1, t) {
+            let cosHalfTheta = q0[0]*q1[0] + q0[1]*q1[1] + q0[2]*q1[2] + q0[3]*q1[3];
+            
+            // Handle negative cosine dot product (take shortest path on S^3)
+            let targetQ = [...q1];
+            if (cosHalfTheta < 0) {
+                cosHalfTheta = -cosHalfTheta;
+                targetQ = q1.map(val => -val);
+            }
+
+            if (Math.abs(cosHalfTheta) >= 1.0) {
+                return q0;
+            }
+
+            let halfTheta = Math.acos(cosHalfTheta);
+            let sinHalfTheta = Math.sqrt(1.0 - cosHalfTheta*cosHalfTheta);
+
+            if (Math.abs(sinHalfTheta) < 0.001) {
+                return [
+                    q0[0]*0.5 + targetQ[0]*0.5,
+                    q0[1]*0.5 + targetQ[1]*0.5,
+                    q0[2]*0.5 + targetQ[2]*0.5,
+                    q0[3]*0.5 + targetQ[3]*0.5
+                ];
+            }
+
+            let ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
+            let ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
+
+            return [
+                q0[0] * ratioA + targetQ[0] * ratioB,
+                q0[1] * ratioA + targetQ[1] * ratioB,
+                q0[2] * ratioA + targetQ[2] * ratioB,
+                q0[3] * ratioA + targetQ[3] * ratioB
+            ];
+        }
+
+        // Convert Quaternion to Euler angles (degrees) for display
+        function getEulerAngles(w, x, y, z) {
+            let yaw, pitch, roll;
+
+            let sinr_cosp = 2 * (w * x + y * z);
+            let cosr_cosp = 1 - 2 * (x * x + y * y);
+            roll = Math.atan2(sinr_cosp, cosr_cosp);
+
+            let sinp = 2 * (w * y - z * x);
+            if (Math.abs(sinp) >= 1) {
+                pitch = Math.sign(sinp) * Math.PI / 2;
+            } else {
+                pitch = Math.asin(sinp);
+            }
+
+            let siny_cosp = 2 * (w * z + x * y);
+            let cosy_cosp = 1 - 2 * (y * y + z * z);
+            yaw = Math.atan2(siny_cosp, cosy_cosp);
+
+            return {
+                yaw: (yaw * 180) / Math.PI,
+                pitch: (pitch * 180) / Math.PI,
+                roll: (roll * 180) / Math.PI
+            };
+        }
+
+        // Multiply two unit quaternions: q_out = q_a * q_b
+        function quaternionMultiply(qa, qb) {
+            return [
+                qa[0]*qb[0] - qa[1]*qb[1] - qa[2]*qb[2] - qa[3]*qb[3], // w
+                qa[0]*qb[1] + qa[1]*qb[0] + qa[2]*qb[3] - qa[3]*qb[2], // x
+                qa[0]*qb[2] - qa[1]*qb[3] + qa[2]*qb[0] + qa[3]*qb[1], // y
+                qa[0]*qb[3] + qa[1]*qb[2] - qa[2]*qb[1] + qa[3]*qb[0]  // z
+            ];
+        }
+
+        // Re-normalize quaternion to avoid incremental calculation drift
+        function normalizeQuaternion(q) {
+            const mag = Math.sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+            if (mag === 0) return [1, 0, 0, 0];
+            return [q[0]/mag, q[1]/mag, q[2]/mag, q[3]/mag];
+        }
+
+        // Broadcast Channel Listener for Elektuur Synth Control
+        try {
+            const synthChannel = new BroadcastChannel('elektuur_synth');
+            synthChannel.onmessage = (e) => {
+                if (e.data.type === 'synth_poke') {
+                    const freq = e.data.freq;
+                    const note = e.data.note;
+                    const control = e.data.control;
+                    const gateOn = control & 1;
+                    let noteBase = note.slice(0, -1);
+                    
+                    if (gateOn && noteBase !== "---") {
+                        incantationProgress.push(noteBase);
+                        if (incantationProgress.length > 4) {
+                            incantationProgress.shift();
+                        }
+                        
+                        // Check if sequence matches PROPHECY_INCANTATION
+                        if (incantationProgress.join(",") === PROPHECY_INCANTATION.join(",")) {
+                            vulkanDisplayLocked = false;
+                            hudSynthText = "🔮 PROPHECY UNLOCKED: VULKAN MATRIX ONLINE";
+                            hudSynthTicks = 180;
+                            const keys = ["w", "s", "a", "d", "q", "e"];
+                            keys.forEach(k => {
+                                keysPressed[k] = false;
+                                const cap = document.getElementById("key" + k.toUpperCase());
+                                if (cap) cap.classList.remove("pressed");
+                            });
+                        }
+                    }
+                    
+                    hudSynthText = `SYNTH IN: ${note} (${freq} REG) | GATE: ${gateOn ? "ON" : "OFF"}`;
+                    hudSynthTicks = 90; // show for 90 frames
+
+                    // Automatically activate Manual Keyboard Flight Mode when synth plays
+                    if (aiMode !== 6) setAiMode(6);
+
+                    // Excite the infinite-DOF spectral mode phase space based on frequency
+                    if (gateOn) {
+                        let targetMode = Math.floor(((freq - 60) / 1200) * waveM);
+                        exciteSpectralMode(targetMode, 6.0);
+                    }
+
+                    // Map notes directly to press and release keyboard buttons:
+                    // C -> W (Pitch Down), D -> S (Pitch Up), E -> A (Yaw Left), F -> D (Yaw Right), G -> Q (Roll CCW), A -> E (Roll CW)
+                    let noteBase = note.slice(0, -1);
+                    const noteToKeyMap = {
+                        "C": "w",
+                        "D": "s",
+                        "E": "a",
+                        "F": "d",
+                        "G": "q",
+                        "A": "e"
+                    };
+                    
+                    const targetKey = noteToKeyMap[noteBase];
+                    if (targetKey) {
+                        keysPressed[targetKey] = !!gateOn;
+                        const keyCapEl = document.getElementById("key" + targetKey.toUpperCase());
+                        if (keyCapEl) {
+                            if (gateOn) {
+                                keyCapEl.classList.add("pressed");
+                            } else {
+                                keyCapEl.classList.remove("pressed");
+                            }
+                        }
+                    }
+
+                    // Map B to stabilize / reset all keys
+                    if (noteBase === "B" && gateOn) {
+                        const keys = ["w", "s", "a", "d", "q", "e"];
+                        keys.forEach(k => {
+                            keysPressed[k] = false;
+                            const cap = document.getElementById("key" + k.toUpperCase());
+                            if (cap) cap.classList.remove("pressed");
+                        });
+                        velPitch *= 0.1; velYaw *= 0.1; velRoll *= 0.1;
+                    }
+                }
+            };
+        } catch (err) {
+            console.warn("Failed to init BroadcastChannel:", err);
+        }
+
+        // Broadcast Channel Listener for Vaesen Trauma States
+        try {
+            const vaesenChannel = new BroadcastChannel('vaesen_state');
+            vaesenChannel.onmessage = (e) => {
+                if (e.data.type === 'vaesen_update') {
+                    vaesenPhys = e.data.physicalTrauma;
+                    vaesenMent = e.data.mentalTrauma;
+                    vaesenPhysLabel = e.data.physName;
+                    vaesenMentLabel = e.data.mentName;
+                    vaesenAlertTicks = 120;
+                }
+            };
+        } catch (err) {
+            console.warn("Failed to init Vaesen BroadcastChannel:", err);
+        }
+
+        // Keyboard listeners for direct flight processing
+        window.addEventListener("keydown", (e) => {
+            const key = e.key.toLowerCase();
+            if (keysPressed.hasOwnProperty(key)) {
+                keysPressed[key] = true;
+                const keyDom = document.getElementById("key" + key.toUpperCase());
+                if (keyDom) keyDom.classList.add("pressed");
+                if (aiMode !== 6) setAiMode(6);
+            }
+            if (e.key === " ") {
+                // Spacebar fires upward thruster to climb
+                verticalVelocity += 0.09;
+                if (altitude === 0) altitude = 0.15;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            const key = e.key.toLowerCase();
+            if (keysPressed.hasOwnProperty(key)) {
+                keysPressed[key] = false;
+                const keyDom = document.getElementById("key" + key.toUpperCase());
+                if (keyDom) keyDom.classList.remove("pressed");
+            }
+        });
+
+        // Virtual joystick drag logic
+        const joyPad = document.getElementById("joyPad");
+        const joyHandle = document.getElementById("joyHandle");
+        let isDraggingJoystick = false;
+        let joyPitchInput = 0;
+        let joyYawInput = 0;
+
+        function handleJoystickMove(x, y) {
+            const rect = joyPad.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            let dx = x - rect.left - centerX;
+            let dy = y - rect.top - centerY;
+            
+            // Cap handle range within circular pad boundary
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            const maxRadius = rect.width / 2 - 16;
+            if (distance > maxRadius) {
+                dx = (dx / distance) * maxRadius;
+                dy = (dy / distance) * maxRadius;
+            }
+            
+            joyHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            // Normalized inputs (-1 to 1)
+            joyYawInput = dx / maxRadius;
+            joyPitchInput = -dy / maxRadius; // invert Y for pitch standard orientation
+            
+            if (aiMode !== 6) setAiMode(6);
+        }
+
+        joyPad.addEventListener("mousedown", (e) => {
+            isDraggingJoystick = true;
+            handleJoystickMove(e.clientX, e.clientY);
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            if (isDraggingJoystick) {
+                handleJoystickMove(e.clientX, e.clientY);
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                joyHandle.style.transform = "translate(0px, 0px)";
+                joyYawInput = 0;
+                joyPitchInput = 0;
+            }
+        });
+
+        // Touch event handling for mobile/tablet screens
+        joyPad.addEventListener("touchstart", (e) => {
+            isDraggingJoystick = true;
+            if (e.touches.length > 0) {
+                handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        });
+        joyPad.addEventListener("touchmove", (e) => {
+            if (isDraggingJoystick && e.touches.length > 0) {
+                handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener("touchend", () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                joyHandle.style.transform = "translate(0px, 0px)";
+                joyYawInput = 0;
+                joyPitchInput = 0;
+            }
+        });
+
+        // Manual roll trim slider modifier
+        function manualRollTrim(val) {
+            velRoll = val / 2000;
+            if (aiMode !== 6) setAiMode(6);
+        }
+
+        // Mouse Drag & Cursor Coordinate Interaction
+        let isDraggingCanvas = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let mouseCanvasX = canvas.width / 2;
+        let mouseCanvasY = canvas.height / 2;
+
+        canvas.addEventListener("mousedown", (e) => {
+            isDraggingCanvas = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            if (aiMode !== 6 && aiMode !== 7) setAiMode(6);
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseCanvasX = e.clientX - rect.left;
+            mouseCanvasY = e.clientY - rect.top;
+
+            if (isDraggingCanvas) {
+                let dx = e.clientX - lastMouseX;
+                let dy = e.clientY - lastMouseY;
+                
+                // Trackball rotation axis perpendicular to cursor movement
+                let dragYaw = dx * 0.005;
+                let dragPitch = dy * 0.005;
+
+                // Create delta rotation quaternion
+                let qYaw = [Math.cos(dragYaw/2), 0, Math.sin(dragYaw/2), 0];
+                let qPitch = [Math.cos(dragPitch/2), Math.sin(dragPitch/2), 0, 0];
+                let qDelta = quaternionMultiply(qPitch, qYaw);
+                
+                let qRotated = quaternionMultiply(qDelta, [qw, qx, qy, qz]);
+                let qNorm = normalizeQuaternion(qRotated);
+                qw = qNorm[0]; qx = qNorm[1]; qy = qNorm[2]; qz = qNorm[3];
+
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            isDraggingCanvas = false;
+        });
+
+        function tick() {
+            tickCounter++;
+
+            // Record quaternion trajectory history (finite, compact unit sphere mapping)
+            qHistory.push({x: qx, y: qy, z: qz, w: qw});
+            if (qHistory.length > 50) qHistory.shift();
+
+            // Excite Fourier modes from keyboard/AI autopilot inputs in manual/choreo flight modes
+            if (aiMode === 6) {
+                if (keysPressed.q) exciteSpectralMode(0, 0.4);
+                if (keysPressed.e) exciteSpectralMode(1, -0.4);
+                if (keysPressed.w) exciteSpectralMode(2, 0.4);
+                if (keysPressed.s) exciteSpectralMode(3, -0.4);
+                if (keysPressed.a) exciteSpectralMode(4, 0.4);
+                if (keysPressed.d) exciteSpectralMode(5, -0.4);
+            } else if (aiMode === 8) {
+                // Autonomous AI Autopilot flight matrix: excites spectral modes sequentially
+                // Take off automatically if starting on the ground
+                if (altitude === 0) {
+                    verticalVelocity += 0.085;
+                    altitude = 0.15;
+                }
+
+                const duration = 450;
+                let progress = (tickCounter % duration) / duration;
+                let phaseText = "";
+
+                if (progress < 0.2) {
+                    phaseText = "PHASE 1: iDOF ROLL CHOREOGRAPHY";
+                    exciteSpectralMode(0, 0.28);
+                } else if (progress < 0.4) {
+                    phaseText = "PHASE 2: iDOF PITCH UP CLIMB";
+                    exciteSpectralMode(2, 0.28);
+                } else if (progress < 0.6) {
+                    phaseText = "PHASE 3: iDOF YAW PIVOT";
+                    exciteSpectralMode(4, 0.28);
+                } else if (progress < 0.8) {
+                    phaseText = "PHASE 4: iDOF SPECTRAL GLIDE RECOVERY";
+                    exciteSpectralMode(1, 0.24);
+                    exciteSpectralMode(3, 0.24);
+                } else {
+                    phaseText = "PHASE 5: iDOF STABILIZER RESTORE";
+                    // Dampen spectral modes to recover orientation
+                    for (let k = 0; k < waveM; k++) {
+                        waveP[k] *= 0.85;
+                        waveQ[k] *= 0.85;
+                    }
+                }
+                hudSynthText = phaseText;
+                hudSynthTicks = 2; // stay active
+            }
+
+            // Symplectic Euler Integration for iDOF Hamiltonian Spectral Phase Space
+            for (let k = 0; k < waveM; k++) {
+                // Step 1: Update conjugate momentum field p_k based on harmonic potential force
+                let force = -waveOmega[k] * waveOmega[k] * waveQ[k];
+                waveP[k] = (waveP[k] + force * waveDt) * waveDamping;
+            }
+            for (let k = 0; k < waveM; k++) {
+                // Step 2: Update coordinate q_k using newly updated momenta
+                waveQ[k] += waveP[k] * waveDt;
+            }
+
+            // Gravity and landing physics
+            if (altitude > 0) {
+                verticalVelocity -= 0.0035; // gravity pulling down
+                altitude += verticalVelocity * waveDt;
+                if (altitude <= 0) {
+                    altitude = 0;
+                    verticalVelocity = 0;
+                }
+            } else {
+                // Align flat to identity coordinate frame when resting on the ground
+                if (aiMode === 6) {
+                    let qLanded = slerp([qw, qx, qy, qz], [1, 0, 0, 0], 0.08);
+                    qw = qLanded[0]; qx = qLanded[1]; qy = qLanded[2]; qz = qLanded[3];
+                    velPitch *= 0.7; velYaw *= 0.7; velRoll *= 0.7;
+                }
+            }
+            
+            // Retrieve manual flight configuration coefficients
+            const dampVal = document.getElementById("slideDamp").value / 1000; // Dampening factor
+            const alignVal = document.getElementById("slideAlign").value / 1000; // Return-to-identity force
+
+            // 1. Process rotation depending on dynamic system state
+            if (aiMode === 0) {
+                // Identity stance: lock to base quaternion
+                qw = 1.0; qx = 0.0; qy = 0.0; qz = 0.0;
+                velPitch = 0; velYaw = 0; velRoll = 0;
+            } else if (aiMode === 1) {
+                // Autopilot: Yaw circumference sweep
+                let angle = (tickCounter * 1.2 * Math.PI) / 180;
+                qw = Math.cos(angle / 2);
+                qx = 0;
+                qy = Math.sin(angle / 2);
+                qz = 0;
+            } else if (aiMode === 2) {
+                // Autopilot: Pitch dive sweep
+                let angle = (tickCounter * 1.2 * Math.PI) / 180;
+                qw = Math.cos(angle / 2);
+                qx = Math.sin(angle / 2);
+                qy = 0;
+                qz = 0;
+            } else if (aiMode === 3) {
+                // Autopilot: Barrel roll evasion sweep
+                let angle = (tickCounter * 1.8 * Math.PI) / 180;
+                qw = Math.cos(angle / 2);
+                qx = 0;
+                qy = 0;
+                qz = Math.sin(angle / 2);
+            } else if (aiMode === 4) {
+                // Autopilot: Geodesic Slerp pathing
+                slerpTime += 0.008 * slerpDir;
+                if (slerpTime >= 1.0) { slerpTime = 1.0; slerpDir = -1.0; }
+                if (slerpTime <= 0.0) { slerpTime = 0.0; slerpDir = 1.0; }
+                
+                let qInterp = slerp(qStart, qEnd, slerpTime);
+                qw = qInterp[0];
+                qx = qInterp[1];
+                qy = qInterp[2];
+                qz = qInterp[3];
+            } else if (aiMode === 5) {
+                // Stress Test: Lock pitch to exactly 90 degrees while rolling dynamically
+                let pitchAngle = (90 * Math.PI) / 180;
+                let rollAngle = (tickCounter * 1.5 * Math.PI) / 180;
+
+                let qp = [Math.cos(pitchAngle / 2), Math.sin(pitchAngle / 2), 0, 0];
+                let qr = [Math.cos(rollAngle / 2), 0, 0, Math.sin(rollAngle / 2)];
+
+                let qCombined = quaternionMultiply(qp, qr);
+                let qNorm = normalizeQuaternion(qCombined);
+                qw = qNorm[0]; qx = qNorm[1]; qy = qNorm[2]; qz = qNorm[3];
+            } else if (aiMode === 6 || aiMode === 8) {
+                // Manual/AI iDOF Flight Mode: direct rate vs continuous physics integration
+                const controlStyle = document.getElementById("controlStyle").value;
+                const dampVal = document.getElementById("slideDamp").value / 1000;
+                
+                if (controlStyle === "rate") {
+                    // Direct Rate Command: snappy and precise keyboard/joystick mapping
+                    let targetPitch = 0;
+                    let targetYaw = 0;
+                    let targetRoll = 0;
+
+                    if (keysPressed.w) targetPitch = 0.035;
+                    if (keysPressed.s) targetPitch = -0.035;
+                    if (keysPressed.a) targetYaw = -0.035;
+                    if (keysPressed.d) targetYaw = 0.035;
+                    if (keysPressed.q) targetRoll = 0.045;   // Corrected Left roll direction
+                    if (keysPressed.e) targetRoll = -0.045;  // Corrected Right roll direction
+
+                    // Incorporate virtual analog joystick inputs
+                    if (isDraggingJoystick) {
+                        targetPitch = joyPitchInput * 0.035;
+                        targetYaw = joyYawInput * 0.035;
+                    }
+
+                    // Low-pass filter for smooth transitions without input lag
+                    velPitch = velPitch * 0.7 + targetPitch * 0.3;
+                    velYaw = velYaw * 0.7 + targetYaw * 0.3;
+                    velRoll = velRoll * 0.7 + targetRoll * 0.3;
+                } else {
+                    // Inertial RCS: floaty, momentum-based flight dynamics
+                    const targetAcceleration = 0.004;
+
+                    if (keysPressed.w) velPitch += targetAcceleration;
+                    if (keysPressed.s) velPitch -= targetAcceleration;
+                    if (keysPressed.a) velYaw -= targetAcceleration;
+                    if (keysPressed.d) velYaw += targetAcceleration;
+                    if (keysPressed.q) velRoll -= targetAcceleration;
+                    if (keysPressed.e) velRoll += targetAcceleration;
+
+                    // Incorporate virtual analog joystick feeds
+                    velPitch -= joyPitchInput * 0.005;
+                    velYaw += joyYawInput * 0.005;
+
+                }
+
+                // Map infinite-DOF spectral mode phase space coordinates to command velocities
+                // Low harmonics map to Roll, mid-harmonics map to Pitch, high-harmonics map to Yaw
+                let waveRoll = (waveQ[0] - waveQ[1]) * 0.09;
+                let wavePitch = (waveQ[2] - waveQ[3]) * 0.09;
+                let waveYaw = (waveQ[4] - waveQ[5]) * 0.09;
+
+                // Blend wave-field feedback into the flight model
+                velRoll = velRoll * 0.6 + waveRoll * 0.4;
+                velPitch = velPitch * 0.6 + wavePitch * 0.4;
+                velYaw = velYaw * 0.6 + waveYaw * 0.4;
+
+                // Apply Vaesen physical trauma flight agility limitations
+                let speedMod = 1.0;
+                if (vaesenPhys === 1) speedMod = 0.8;
+                else if (vaesenPhys === 2) speedMod = 0.6;
+                else if (vaesenPhys === 3) speedMod = 0.3;
+
+                velPitch *= speedMod;
+                velYaw *= speedMod;
+                velRoll *= speedMod;
+
+                // Apply Vaesen mental trauma stability modulations (angular jitter and drift)
+                if (vaesenMent === 1) { // Shaken
+                    velPitch += (Math.random() - 0.5) * 0.003;
+                    velYaw += (Math.random() - 0.5) * 0.003;
+                } else if (vaesenMent === 2) { // Terrified
+                    velPitch += (Math.random() - 0.5) * 0.012;
+                    velYaw += (Math.random() - 0.5) * 0.012;
+                    velRoll += (Math.random() - 0.5) * 0.012;
+                } else if (vaesenMent === 3) { // Panicked
+                    velPitch += (Math.random() - 0.5) * 0.03;
+                    velYaw += (Math.random() - 0.5) * 0.03;
+                    velRoll += (Math.random() - 0.5) * 0.03;
+                } else if (vaesenMent === 4) { // Melancholic
+                    velPitch *= 0.5;
+                    velYaw *= 0.5;
+                    velRoll *= 0.5;
+                    let qTempAlign = slerp([qw, qx, qy, qz], [1, 0, 0, 0], 0.015);
+                    qw = qTempAlign[0]; qx = qTempAlign[1]; qy = qTempAlign[2]; qz = qTempAlign[3];
+                }
+
+                // Convert angular rates to local differential rotation quaternions
+                const qDeltaX = [Math.cos(velPitch/2), Math.sin(velPitch/2), 0, 0];
+                const qDeltaY = [Math.cos(velYaw/2), 0, Math.sin(velYaw/2), 0];
+                const qDeltaZ = [Math.cos(velRoll/2), 0, 0, Math.sin(velRoll/2)];
+
+                // Chain multiplications to update ship's attitude
+                let qTemp = quaternionMultiply([qw, qx, qy, qz], qDeltaX);
+                qTemp = quaternionMultiply(qTemp, qDeltaY);
+                qTemp = quaternionMultiply(qTemp, qDeltaZ);
+
+                // If Auto-Alignment force is active, blend target stance via Coulomb potential slerp
+                if (alignVal > 0) {
+                    // Angular distance r (angle between current quaternion and identity [1,0,0,0])
+                    let dot = Math.abs(qTemp[0]); // dot product with [1,0,0,0] is qw
+                    let r = 2.0 * Math.acos(Math.min(1.0, Math.max(-1.0, dot)));
+                    let epsilon = 0.08; // softening factor
+                    let q_current = 1.0;
+                    let q_target = 1.0;
+                    // Coulomb potential coefficient
+                    let s = alignVal * (q_current * q_target) / (r * r + epsilon);
+                    let clampS = Math.min(0.65, Math.max(0.001, s)); // clamp to preserve numerical stability
+                    qTemp = slerp(qTemp, [1, 0, 0, 0], clampS);
+                }
+
+                let qNorm = normalizeQuaternion(qTemp);
+                qw = qNorm[0]; qx = qNorm[1]; qy = qNorm[2]; qz = qNorm[3];
+            } else if (aiMode === 7) {
+                // Mouse Steering: point ship's nose vector [0,0,1] towards projected mouse cursor vector
+                let cx = (mouseCanvasX - w / 2);
+                let cy = -(mouseCanvasY - h / 2);
+                let cz = 180; // depth coordinate target
+
+                let mag = Math.sqrt(cx*cx + cy*cy + cz*cz);
+                if (mag > 0.001) {
+                    let bx = cx / mag;
+                    let by = cy / mag;
+                    let bz = cz / mag;
+
+                    // Compute quaternion aligning [0, 0, 1] to target vector b:
+                    // q_target = normalize([1 + bz, -by, bx, 0])
+                    let q_target = normalizeQuaternion([1 + bz, -by, bx, 0]);
+
+                    // Slerp from current orientation towards q_target
+                    let qNew = slerp([qw, qx, qy, qz], q_target, 0.08);
+                    qw = qNew[0]; qx = qNew[1]; qy = qNew[2]; qz = qNew[3];
+                }
+            }
+
+            // 2. Render calculations and update numeric display panels
+            document.getElementById("telQw").innerText = qw.toFixed(4);
+            document.getElementById("telQx").innerText = qx.toFixed(4);
+            document.getElementById("telQy").innerText = qy.toFixed(4);
+            document.getElementById("telQz").innerText = qz.toFixed(4);
+
+            document.getElementById("barQw").style.width = (Math.abs(qw) * 100) + "%";
+            document.getElementById("barQx").style.width = (Math.abs(qx) * 100) + "%";
+            document.getElementById("barQy").style.width = (Math.abs(qy) * 100) + "%";
+            document.getElementById("barQz").style.width = (Math.abs(qz) * 100) + "%";
+
+            // Update iDOF Spectral Telemetry UI displays (modes 1-8)
+            for (let k = 0; k < 8; k++) {
+                const val = waveQ[k];
+                document.getElementById(`telModeQ${k+1}`).innerText = val.toFixed(3);
+                const percentage = Math.min(100, Math.max(0, Math.abs(val) * 85));
+                document.getElementById(`barMode${k+1}`).style.width = percentage + "%";
+            }
+
+            let euler = getEulerAngles(qw, qx, qy, qz);
+            document.getElementById("telYaw").innerText = euler.yaw.toFixed(1) + "°";
+            document.getElementById("telPitch").innerText = euler.pitch.toFixed(1) + "°";
+            document.getElementById("telRoll").innerText = euler.roll.toFixed(1) + "°";
+
+            // 3. Canvas Scene Construction
+            ctx.fillStyle = "#020309";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            if (vulkanDisplayLocked) {
+                // Render Locked Interface screen (Prophecy Matrix Lock)
+                ctx.fillStyle = "#03040c";
+                ctx.fillRect(0, 0, w, h);
+                
+                // Draw digital matrix grid
+                ctx.strokeStyle = "rgba(255, 0, 127, 0.08)";
+                ctx.lineWidth = 1.0;
+                for (let i = 0; i < w; i += 40) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+                }
+                for (let i = 0; i < h; i += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
+                }
+
+                ctx.save();
+                ctx.fillStyle = "var(--neon-magenta)";
+                ctx.font = "bold 20px 'Share Tech Mono', monospace";
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "var(--neon-magenta)";
+                ctx.textAlign = "center";
+                ctx.fillText("🔐 VULKAN DISPLAY CORE: LOCKED", w / 2, h / 2 - 30);
+                
+                ctx.fillStyle = "#fff";
+                ctx.font = "12px 'Share Tech Mono', monospace";
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#fff";
+                ctx.fillText("PLAY PROPHECY INCANTATION ON SYNTH TO DEPLOY INTERFACE", w / 2, h / 2 + 10);
+                
+                ctx.fillStyle = "var(--neon-cyan)";
+                ctx.fillText("HINT: MAJOR 7TH CHORD PROGRESSION [C ➔ E ➔ G ➔ B]", w / 2, h / 2 + 40);
+
+                // Draw input note progress
+                if (incantationProgress.length > 0) {
+                    ctx.fillStyle = "var(--neon-orange)";
+                    ctx.font = "bold 15px 'Share Tech Mono'";
+                    ctx.fillText(`INPUT CV BUF: [ ${incantationProgress.join(" ➔ ")} ]`, w / 2, h / 2 + 90);
+                }
+                ctx.restore();
+                
+                // Still draw basic HUD notifications at bottom if active
+                if (hudSynthTicks > 0) {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                    ctx.font = "11px 'Share Tech Mono'";
+                    ctx.fillText(hudSynthText, 25, h - 25);
+                }
+                
+                requestAnimationFrame(tick);
+                return;
+            }
+
+            const cameraMode = document.getElementById("cameraMode").value;
+
+            // Generate inverse rotation variables from current attitude to project space dust background
+            // Conjugate of unit quaternion equals its inverse
+            const iqw = qw, iqx = -qx, iqy = -qy, iqz = -qz;
+            
+            // Build rotation matrices
+            const r00 = 1 - 2 * (qy * qy + qz * qz);
+            const r01 = 2 * (qx * qy - qz * qw);
+            const r02 = 2 * (qx * qz + qy * qw);
+            const r10 = 2 * (qx * qy + qz * qw);
+            const r11 = 1 - 2 * (qx * qx + qz * qz);
+            const r12 = 2 * (qy * qz - qx * qw);
+            const r20 = 2 * (qx * qz - qy * qw);
+            const r21 = 2 * (qy * qz + qx * qw);
+            const r22 = 1 - 2 * (qx * qx + qy * qy);
+
+            // Matrix for background starfield relative displacement (inverse rotation)
+            const ir00 = 1 - 2 * (iqy * iqy + iqz * iqz);
+            const ir01 = 2 * (iqx * iqy - iqz * iqw);
+            const ir02 = 2 * (iqx * iqz + iqy * iqw);
+            const ir10 = 2 * (iqx * iqy + iqz * iqw);
+            const ir11 = 1 - 2 * (iqx * iqx + iqz * iqz);
+            const ir12 = 2 * (iqy * iqz - iqx * iqw);
+            const ir20 = 2 * (iqx * iqz - iqy * iqw);
+            const ir21 = 2 * (iqy * iqz + iqx * iqw);
+            const ir22 = 1 - 2 * (iqx * iqx + iqy * iqy);
+
+            // Modulate dynamic camera scale/zoom based on waveQ synthesizer coordinates (Pitch modes waveQ[2] & waveQ[3])
+            // Standard scale is 4.2. Let it oscillate or shift based on synthesizer amplitude.
+            let dynamicScale = 4.2 + (waveQ[2] - waveQ[3]) * 1.5;
+            if (dynamicScale < 1.0) dynamicScale = 1.0;
+            if (dynamicScale > 10.0) dynamicScale = 10.0;
+
+            // Modulate grid line transparency and color dynamically based on waveQ[4]
+            let gridAlpha = 0.12 + Math.abs(waveQ[4]) * 0.15;
+            if (gridAlpha < 0.05) gridAlpha = 0.05;
+            if (gridAlpha > 0.8) gridAlpha = 0.8;
+            let gridWidth = 1.0 + Math.abs(waveQ[4]) * 2.0;
+
+            // Draw 3D ground grid
+            ctx.strokeStyle = `rgba(0, 242, 254, ${gridAlpha})`;
+            ctx.lineWidth = gridWidth;
+            const gridSpacing = 40;
+            const gridLimit = 240;
+            const gridY = -12 - altitude * dynamicScale;
+
+            // Draw grid lines along Z
+            for (let x = -gridLimit; x <= gridLimit; x += gridSpacing) {
+                ctx.beginPath();
+                let first = true;
+                for (let z = -gridLimit; z <= gridLimit; z += 20) {
+                    let rx, ry, rz;
+                    if (cameraMode === "chase") {
+                        rx = x * ir00 + gridY * ir01 + z * ir02;
+                        ry = x * ir10 + gridY * ir11 + z * ir12;
+                        rz = x * ir20 + gridY * ir21 + z * ir22;
+                    } else {
+                        rx = x;
+                        ry = gridY;
+                        rz = z;
+                    }
+                    let cz = rz + camZ;
+                    if (cz > 5) {
+                        let sx = (rx * dynamicScale * 100) / cz + w / 2;
+                        let sy = -(ry * dynamicScale * 100) / cz + h / 2;
+                        if (first) {
+                            ctx.moveTo(sx, sy);
+                            first = false;
+                        } else {
+                            ctx.lineTo(sx, sy);
+                        }
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw grid lines along X
+            for (let z = -gridLimit; z <= gridLimit; z += gridSpacing) {
+                ctx.beginPath();
+                let first = true;
+                for (let x = -gridLimit; x <= gridLimit; x += 20) {
+                    let rx, ry, rz;
+                    if (cameraMode === "chase") {
+                        rx = x * ir00 + gridY * ir01 + z * ir02;
+                        ry = x * ir10 + gridY * ir11 + z * ir12;
+                        rz = x * ir20 + gridY * ir21 + z * ir22;
+                    } else {
+                        rx = x;
+                        ry = gridY;
+                        rz = z;
+                    }
+                    let cz = rz + camZ;
+                    if (cz > 5) {
+                        let sx = (rx * dynamicScale * 100) / cz + w / 2;
+                        let sy = -(ry * dynamicScale * 100) / cz + h / 2;
+                        if (first) {
+                            ctx.moveTo(sx, sy);
+                            first = false;
+                        } else {
+                            ctx.lineTo(sx, sy);
+                        }
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw relative moving Space Dust Starfield
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            stars.forEach(s => {
+                let rx, ry, rz;
+                if (cameraMode === "chase") {
+                    // Apply inverse rotation to simulate pilot view turning relative to sky
+                    rx = s.x * ir00 + s.y * ir01 + s.z * ir02;
+                    ry = s.x * ir10 + s.y * ir11 + s.z * ir12;
+                    rz = s.x * ir20 + s.y * ir21 + s.z * ir22;
+                } else {
+                    // In fixed view, starfield remains static
+                    rx = s.x;
+                    ry = s.y;
+                    rz = s.z;
+                }
+
+                // Move z range to prevent clipping
+                let sz = rz + 200;
+                if (sz > 0) {
+                    let sx = (rx * 180) / sz + w / 2;
+                    let sy = -(ry * 180) / sz + h / 2;
+                    
+                    if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+                        let size = Math.max(0.5, (1 - sz / 400) * 2.5);
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            });
+
+            // Project spacecraft model coordinates
+            let projected = [];
+            vertices.forEach(v => {
+                let rx, ry, rz;
+                if (cameraMode === "chase") {
+                    // In chase cam, the ship stays aligned with camera, but tilts dynamically based on velocities
+                    rx = v.x + velRoll * v.y * 6;
+                    ry = v.y - velPitch * v.z * 4;
+                    rz = v.z;
+                } else {
+                    // In observer mode, ship rotates directly in 3D screen coordinates
+                    rx = v.x * r00 + v.y * r01 + v.z * r02;
+                    ry = v.x * r10 + v.y * r11 + v.z * r12;
+                    rz = v.x * r20 + v.y * r21 + v.z * r22;
+                }
+
+                let cx = rx;
+                let cy = ry;
+                let cz = rz + camZ;
+
+                let sx = (cx * dynamicScale * 100) / cz + w / 2;
+                let sy = -(cy * dynamicScale * 100) / cz + h / 2;
+
+                projected.push({x: sx, y: sy, z: cz});
+            });
+
+            // Draw spacecraft wireframe lines
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.9)";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(0, 242, 254, 0.5)";
+            ctx.lineWidth = 2.2;
+            edges.forEach(edge => {
+                let p1 = projected[edge[0]];
+                let p2 = projected[edge[1]];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+            ctx.shadowBlur = 0; // reset glow
+
+            // Draw active dynamic RCS Thruster Plumes
+            ctx.strokeStyle = "rgba(255, 120, 0, 0.85)";
+            ctx.lineWidth = 2;
+            
+            const pNose = projected[0];
+            const pLOffset = projected[4];
+            const pROffset = projected[5];
+            const pEngine = projected[6];
+
+            // Helper to draw flickering plume vector
+            function drawPlume(pStart, dx, dy) {
+                const flicker = 0.7 + Math.random() * 0.4;
+                ctx.beginPath();
+                ctx.moveTo(pStart.x, pStart.y);
+                ctx.lineTo(pStart.x + dx * flicker, pStart.y + dy * flicker);
+                ctx.stroke();
+            }
+
+            // Main engine exhaust (always firing slightly for forward momentum)
+            drawPlume(pEngine, 0, 15);
+
+            // Roll thruster plumes
+            if (velRoll > 0.005) {
+                // Roll Left: port wingtip fires down, starboard fires up
+                drawPlume(pLOffset, 0, 15);
+                drawPlume(pROffset, 0, -15);
+            } else if (velRoll < -0.005) {
+                // Roll Right: port fires up, starboard fires down
+                drawPlume(pLOffset, 0, -15);
+                drawPlume(pROffset, 0, 15);
+            }
+
+            // Pitch thruster plumes
+            if (velPitch > 0.005) {
+                // Pitch Down: nose fires up, tail fires down
+                drawPlume(pNose, 0, -12);
+                drawPlume(pEngine, 0, 12);
+            } else if (velPitch < -0.005) {
+                // Pitch Up: nose fires down, tail fires up
+                drawPlume(pNose, 0, 12);
+                drawPlume(pEngine, 0, -12);
+            }
+
+            // Yaw thruster plumes
+            if (velYaw > 0.005) {
+                // Yaw Right: nose fires port (left), engine fires starboard (right)
+                drawPlume(pNose, -15, 0);
+                drawPlume(pEngine, 15, 0);
+            } else if (velYaw < -0.005) {
+                // Yaw Left: nose fires starboard (right), engine fires port (left)
+                drawPlume(pNose, 15, 0);
+                drawPlume(pEngine, -15, 0);
+            }
+
+            // Draw localized node points
+            ctx.fillStyle = "var(--neon-magenta)";
+            projected.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Project and render 3D coordinate axes directly on the ship's center
+            const sx0 = w / 2;
+            const sy0 = h / 2;
+            const axisLength = 45;
+
+            function projectLocalVector(lx, ly, lz) {
+                let rx, ry, rz;
+                if (cameraMode === "chase") {
+                    // Add banking lean in Chase Cam
+                    rx = lx + velRoll * ly * 6;
+                    ry = ly - velPitch * lz * 4;
+                    rz = lz;
+                } else {
+                    // Rotate fully by ship matrix in Fixed Cam
+                    rx = lx * r00 + ly * r01 + lz * r02;
+                    ry = lx * r10 + ly * r11 + lz * r12;
+                    rz = lx * r20 + ly * r21 + lz * r22;
+                }
+                let cz = rz + camZ;
+                let sx = (rx * dynamicScale * 100) / cz + w / 2;
+                let sy = -(ry * dynamicScale * 100) / cz + h / 2;
+                return {x: sx, y: sy};
+            }
+
+            const pRight = projectLocalVector(axisLength, 0, 0);
+            const pUp = projectLocalVector(0, axisLength, 0);
+            const pForward = projectLocalVector(0, 0, axisLength + 20);
+
+            // Draw Right vector (Red)
+            ctx.strokeStyle = "#ff3b30";
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(pRight.x, pRight.y); ctx.stroke();
+            ctx.fillStyle = "#ff3b30"; ctx.font = "bold 11px 'Share Tech Mono'";
+            ctx.fillText("X (Right)", pRight.x + 5, pRight.y + 3);
+
+            // Draw Up vector (Green)
+            ctx.strokeStyle = "#34c759";
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(pUp.x, pUp.y); ctx.stroke();
+            ctx.fillStyle = "#34c759";
+            ctx.fillText("Y (Up)", pUp.x + 5, pUp.y - 5);
+
+            // Draw Forward vector (Blue)
+            ctx.strokeStyle = "#007aff";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(pForward.x, pForward.y); ctx.stroke();
+            ctx.fillStyle = "#007aff";
+            ctx.fillText("Z (Nose)", pForward.x + 5, pForward.y + 3);
+
+            // Draw Local Reference Coordinate Axis Vectors (Reference Gizmo)
+            const gizmoSize = 40;
+            // Red (Right): column 1 of R
+            const axisRight = {x: r00 * gizmoSize, y: r10 * gizmoSize, z: r20 * gizmoSize};
+            // Green (Up): column 2 of R
+            const axisUp = {x: r01 * gizmoSize, y: r11 * gizmoSize, z: r21 * gizmoSize};
+            // Blue (Forward): column 3 of R
+            const axisForward = {x: r02 * gizmoSize, y: r12 * gizmoSize, z: r22 * gizmoSize};
+
+            // Corner base offset for Axis indicators
+            const gX = 80;
+            const gY = h - 80;
+
+            // Draw Axis lines
+            ctx.lineWidth = 3;
+            // X-Axis Right (Red)
+            ctx.strokeStyle = "#ff3b30";
+            ctx.beginPath(); ctx.moveTo(gX, gY); ctx.lineTo(gX + axisRight.x, gY - axisRight.y); ctx.stroke();
+            ctx.fillStyle = "#ff3b30"; ctx.font = "bold 10px sans-serif";
+            ctx.fillText("+X (R)", gX + axisRight.x + 5, gY - axisRight.y + 3);
+
+            // Y-Axis Up (Green)
+            ctx.strokeStyle = "#34c759";
+            ctx.beginPath(); ctx.moveTo(gX, gY); ctx.lineTo(gX + axisUp.x, gY - axisUp.y); ctx.stroke();
+            ctx.fillStyle = "#34c759";
+            ctx.fillText("+Y (U)", gX + axisUp.x + 5, gY - axisUp.y + 3);
+
+            // Z-Axis Forward (Blue)
+            ctx.strokeStyle = "#007aff";
+            ctx.beginPath(); ctx.moveTo(gX, gY); ctx.lineTo(gX + axisForward.x, gY - axisForward.y); ctx.stroke();
+            ctx.fillStyle = "#007aff";
+            ctx.fillText("+Z (F)", gX + axisForward.x + 5, gY - axisForward.y + 3);
+
+            ctx.stroke();
+
+            // Render glowing 3-Sphere Quaternion-to-Voltage Orbit
+            const orbitX = w - 100;
+            const orbitY = h - 100;
+            const orbitSize = 50;
+
+            ctx.save();
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(0, 242, 254, 0.4)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(orbitX, orbitY, orbitSize, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw crosshairs
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(orbitX - orbitSize - 10, orbitY);
+            ctx.lineTo(orbitX + orbitSize + 10, orbitY);
+            ctx.moveTo(orbitX, orbitY - orbitSize - 10);
+            ctx.lineTo(orbitX, orbitY + orbitSize + 10);
+            ctx.stroke();
+
+            // Draw the finite trajectory trail of the quaternion coords
+            if (qHistory.length > 1) {
+                ctx.lineWidth = 2.5;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                for (let i = 0; i < qHistory.length; i++) {
+                    const q = qHistory[i];
+                    const px = orbitX + q.x * orbitSize;
+                    const py = orbitY - q.y * orbitSize;
+                    
+                    const alpha = i / qHistory.length;
+                    ctx.strokeStyle = `rgba(255, 0, 127, ${alpha})`;
+                    ctx.shadowColor = "rgba(255, 0, 127, 0.85)";
+
+                    if (i === 0) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(px, py);
+                    }
+                }
+            }
+
+            // Draw current active quaternion coordinate point (voltage charge dot)
+            ctx.fillStyle = "var(--neon-green)";
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "var(--neon-green)";
+            ctx.beginPath();
+            ctx.arc(orbitX + qx * orbitSize, orbitY - qy * orbitSize, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.font = "8px 'Share Tech Mono'";
+            ctx.fillText("FINITE S3 MANIFOLD ORBIT", orbitX - 52, orbitY - orbitSize - 12);
+
+            // Overlay HUD textual notifications
+            ctx.fillStyle = "var(--neon-green)";
+            ctx.font = "13px 'Share Tech Mono', monospace";
+            if (aiMode === 6) {
+                ctx.fillText("MANUAL COMMAND OVERRIDE - ACTIVE", 25, 35);
+                ctx.fillStyle = "rgba(255,255,255,0.5)";
+                ctx.fillText("USE W/S, A/D, Q/E OR JOYSTICK FEED", 25, 55);
+            } else if (aiMode === 7) {
+                ctx.fillText("MOUSE STEERING CONTROLLER - ACTIVE", 25, 35);
+                ctx.fillStyle = "rgba(255,255,255,0.5)";
+                ctx.fillText("MOVE CURSOR ON VIEWPORT TO STEER SPACE VECTOR NOSE", 25, 55);
+
+                // Draw target reticle crosshair at mouse location
+                ctx.strokeStyle = "var(--neon-magenta)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(mouseCanvasX, mouseCanvasY, 15, 0, Math.PI * 2);
+                ctx.moveTo(mouseCanvasX - 25, mouseCanvasY); ctx.lineTo(mouseCanvasX + 25, mouseCanvasY);
+                ctx.moveTo(mouseCanvasX, mouseCanvasY - 25); ctx.lineTo(mouseCanvasX, mouseCanvasY + 25);
+                ctx.stroke();
+            } else {
+                ctx.fillText("AI AUTOMATED PATHING LOOP: ENGAGED", 25, 35);
+                ctx.fillStyle = "rgba(255,255,255,0.5)";
+                ctx.fillText("GIMBAL IMMUNIZATION ENVELOPE: 100%", 25, 55);
+            }
+
+            // Draw synth note trigger overlay
+            if (hudSynthTicks > 0) {
+                hudSynthTicks--;
+                ctx.fillStyle = "var(--neon-orange)";
+                ctx.font = "bold 14px 'Share Tech Mono', monospace";
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "var(--neon-orange)";
+                ctx.fillText(`🎹 ${hudSynthText}`, w - 220, 35);
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw active Vaesen Trauma overlay warnings
+            if (vaesenPhys > 0 || vaesenMent > 0) {
+                ctx.fillStyle = "var(--neon-magenta)";
+                ctx.font = "bold 13px 'Share Tech Mono', monospace";
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = "var(--neon-magenta)";
+                ctx.fillText(`⚠️ VAESEN: PHYS = ${vaesenPhysLabel.toUpperCase()} | MENT = ${vaesenMentLabel.toUpperCase()}`, 25, h - 35);
+                ctx.shadowBlur = 0;
+            }
+
+             // Reconstruct the continuous spatial wave from spectral Fourier modes in real-time
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(255, 0, 127, 0.65)";
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.9)";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            const visualSteps = 64;
+            for (let i = 0; i < visualSteps; i++) {
+                let sx = (i / (visualSteps - 1)) * w;
+                let phiX = 0;
+                for (let k = 0; k < waveM; k++) {
+                    phiX += waveQ[k] * Math.sin(((k + 1) * Math.PI * i) / (visualSteps - 1));
+                }
+                let sy = h - 60 + phiX * 12;
+                if (i === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Draw a label for the Wave Field
+            ctx.fillStyle = "rgba(255, 0, 127, 0.75)";
+            ctx.font = "bold 9px 'Share Tech Mono'";
+            ctx.fillText("iDOF HAMILTONIAN SPECTRAL PHASE SPACE (FOURIER HARMONICS)", 25, h - 80);
+
+            requestAnimationFrame(tick);
+        }
+
+        // Launch simulation loop
+        requestAnimationFrame(tick);
+    </script>
+</body>
+</html>
