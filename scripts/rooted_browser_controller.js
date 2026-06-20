@@ -418,7 +418,6 @@ async function main() {
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--window-size=800,600",
-            "--disable-dev-shm-usage",
             "--autoplay-policy=no-user-gesture-required",
             "--disable-blink-features=AutomationControlled",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
@@ -439,6 +438,14 @@ async function main() {
     });
     page.on('console', msg => {
         console.log('[PUPPETEER CONSOLE]', msg.text());
+    });
+    page.on('requestfailed', request => {
+        const failure = request.failure();
+        const errorText = failure ? failure.errorText : 'unknown';
+        const type = request.resourceType();
+        if (type === 'media' || type === 'xhr' || type === 'fetch' || errorText.includes('ERR_')) {
+            console.error(`[PUPPETEER REQUEST FAILED] Type: ${type} | URL: ${request.url()} | Error: ${errorText}`);
+        }
     });
     await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
     await page.setViewport({ width: 800, height: 600 });
@@ -494,10 +501,25 @@ async function main() {
                 const errScreen = document.querySelector('.ytp-error, .ytp-playability-error-supported-renderers, #error-screen');
                 const hasError = !!(errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0) || (document.body.innerText || "").includes("Something went wrong");
                 const errorText = document.querySelector('.ytp-error-message-text')?.innerText || "";
+                const errorSubtext = document.querySelector('.ytp-error-message-subtext')?.innerText || "";
 
                 const video = document.querySelector('video');
+                let videoError = null;
+                if (video && video.error) {
+                    videoError = {
+                        code: video.error.code,
+                        message: video.error.message
+                    };
+                }
+
+                let playerState = null;
+                const ytPlayer = document.querySelector('.html5-video-player');
+                if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+                    playerState = ytPlayer.getPlayerState();
+                }
+
                 if (!video) {
-                    return { found: false, hasError, errorText };
+                    return { found: false, hasError, errorText, errorSubtext, videoError, playerState };
                 }
 
                 return {
@@ -508,7 +530,10 @@ async function main() {
                     muted: video.muted,
                     title: document.title,
                     hasError,
-                    errorText
+                    errorText,
+                    errorSubtext,
+                    videoError,
+                    playerState
                 };
             });
 
@@ -544,10 +569,11 @@ async function main() {
                 } catch (postErr) {}
             }
 
-            if (status.hasError) {
+            if (status.hasError || status.videoError) {
+                console.log(`[VIDEO ERROR DETECTED] ErrorScreen: ${status.hasError}, ErrorText: "${status.errorText}", ErrorSubtext: "${status.errorSubtext}", VideoError: ${JSON.stringify(status.videoError)}, PlayerState: ${status.playerState}`);
                 const now = Date.now();
                 if (now - lastReloadTime > 15000) {
-                    console.log("[PUPPETEER] YouTube error overlay detected. Reloading page...");
+                    console.log("[PUPPETEER] Triggering page reload due to video error...");
                     lastReloadTime = now;
                     await page.reload({ waitUntil: "networkidle2" });
                 }
