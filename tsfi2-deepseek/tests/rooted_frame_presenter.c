@@ -51,12 +51,15 @@ static uint32_t pointer_id = 0;
 static uint32_t keyboard_id = 0;
 static uint32_t xdg_wm_base_id = 0;
 
-#define MAX_W 1920
-#define MAX_H 1080
+#define MAX_W 3840
+#define MAX_H 2160
 static int g_w = 800;
 static int g_h = 600;
 static uint32_t pid_val = 0;
 static uint32_t bid_val = 0;
+static uint32_t *g_scanout_px = NULL;
+static PFN_tsfi_zmm_set_scanout_buffer g_ptsfi_zmm_set_scanout_buffer = NULL;
+static uint32_t surf_id = 0;
 
 int pack_string(uint32_t *buf, const char *s) {
     uint32_t len = strlen(s) + 1;
@@ -174,7 +177,7 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
         uint32_t str_len = p[2];
         char *err_msg = (char *)&p[3];
         fprintf(stderr, "[Auncient Presenter ERR] Display Error: err_obj=%u, code=%u, msg=%.*s\n", err_obj, code, str_len, err_msg);
-    } else if (obj == 6 || (xdg_s_id + 1 == obj)) { // top (toplevel) close event (opcode 0 is configure, 1 is close)
+    } else if (xdg_s_id && (xdg_s_id + 1 == obj)) { // top (toplevel) close event (opcode 0 is configure, 1 is close)
         if (op == 1) {
             printf("WINDOW_CLOSE\n");
             fflush(stdout);
@@ -185,17 +188,30 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
             int32_t height = p[1];
             if (width > 0 && height > 0) {
                 if (width <= MAX_W && height <= MAX_H) {
-                    g_w = width;
-                    g_h = height;
-                    // Destroy old buffer
-                    send_msg(fd, bid_val, 0, NULL, 0, -1); // wl_buffer.destroy is op 0
-                    
-                    // Create new buffer with new width/height from the same pool
-                    uint32_t bf_args[] = {bid_val, 0, g_w, g_h, g_w * 4, 1}; // 1 = XRGB8888
-                    send_msg(fd, pid_val, 0, bf_args, 24, -1); // wl_shm_pool.create_buffer is op 0
-                    
-                    printf("WINDOW_RESIZE %d %d\n", width, height);
-                    fflush(stdout);
+                    if (width != g_w || height != g_h) {
+                        g_w = width;
+                        g_h = height;
+                        // Destroy old buffer
+                        send_msg(fd, bid_val, 0, NULL, 0, -1); // wl_buffer.destroy is op 0
+                        
+                        // Create new buffer with new width/height from the same pool
+                        uint32_t bf_args[] = {bid_val, 0, g_w, g_h, g_w * 4, 1}; // 1 = XRGB8888
+                        send_msg(fd, pid_val, 0, bf_args, 24, -1); // wl_shm_pool.create_buffer is op 0
+                        
+                        if (g_ptsfi_zmm_set_scanout_buffer && g_scanout_px) {
+                            g_ptsfi_zmm_set_scanout_buffer(g_scanout_px, g_w, g_h);
+                        }
+                        
+                        if (surf_id) {
+                            uint32_t attach_args[] = {bid_val, 0, 0};
+                            send_msg(fd, surf_id, WL_SURFACE_ATTACH, attach_args, 12, -1);
+                            uint32_t damage[] = {0, 0, g_w, g_h};
+                            send_msg(fd, surf_id, WL_SURFACE_DAMAGE, damage, 16, -1);
+                        }
+                        
+                        printf("WINDOW_RESIZE %d %d\n", width, height);
+                        fflush(stdout);
+                    }
                 }
             }
         }
@@ -303,7 +319,8 @@ int main() {
         }
     }
 
-    uint32_t surf = next_id++, xsurf = next_id++, top = next_id++;
+    surf_id = next_id++;
+    uint32_t surf = surf_id, xsurf = next_id++, top = next_id++;
     uint32_t s_args[] = {surf}; send_msg(fd, cid, WL_COMPOSITOR_CREATE_SURFACE, s_args, 4, -1);
     uint32_t xs_args[] = {xsurf, surf}; send_msg(fd, xid, XDG_WM_BASE_GET_XDG_SURFACE, xs_args, 8, -1);
     uint32_t t_args[] = {top}; send_msg(fd, xsurf, XDG_SURFACE_GET_TOPLEVEL, t_args, 4, -1);
@@ -335,6 +352,8 @@ int main() {
     send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
 
     // --- 3. Link Firmware ZMM to Wayland Scanout ---
+    g_scanout_px = scanout_px;
+    g_ptsfi_zmm_set_scanout_buffer = ptsfi_zmm_set_scanout_buffer;
     ptsfi_zmm_set_scanout_buffer(scanout_px, g_w, g_h);
     ptsfi_drmModeAddPlane(72, sz);
     uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
