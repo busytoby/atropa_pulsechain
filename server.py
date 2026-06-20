@@ -244,6 +244,7 @@ def update_guidance(m, depth=0.8, pose=0.0, cfg=7.5, steps=4):
 import threading
 
 sd_lock = threading.Lock()
+video_status_store = {"currentTime": 0.0, "duration": 0.0, "paused": True, "muted": True}
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     pass
@@ -260,6 +261,12 @@ class CustomHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path == '/api/video-status':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(video_status_store).encode('utf-8'))
+            return
         if self.path == '/api/config':
             config_path = os.path.join(os.getcwd(), 'config/user_config.json')
             if os.path.exists(config_path):
@@ -314,6 +321,16 @@ class CustomHandler(SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def do_POST(self):
+        if self.path == '/update-video-status':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            params = json.loads(post_data.decode('utf-8'))
+            video_status_store.update(params)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
+            return
         if self.path == '/generate-bear':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)

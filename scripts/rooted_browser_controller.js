@@ -481,6 +481,31 @@ async function main() {
                 const dur = (typeof status.duration === 'number') ? status.duration.toFixed(1) : '0';
                 console.log(`[VIDEO STATUS] Time: ${cur}s / ${dur}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
                 await sendWmqEvent("VIDEO_STATUS", `${cur},${dur},${status.paused},${status.muted}`);
+                
+                try {
+                    const http = require('http');
+                    const postData = JSON.stringify({
+                        currentTime: parseFloat(cur),
+                        duration: parseFloat(dur),
+                        paused: status.paused,
+                        muted: status.muted
+                    });
+                    const req = http.request({
+                        hostname: '127.0.0.1',
+                        port: 8000,
+                        path: '/update-video-status',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Content-Length': Buffer.byteLength(postData)
+                        }
+                    }, (res) => {
+                        res.resume();
+                    });
+                    req.on('error', () => {});
+                    req.write(postData);
+                    req.end();
+                } catch (postErr) {}
             }
 
             if (status.hasError) {

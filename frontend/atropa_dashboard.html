@@ -424,8 +424,12 @@
 
                 // Live dynamic ALU load bars
                 ctx.fillStyle = stage.color;
+                const isPlaying = window.latestVideoStatus && !window.latestVideoStatus.paused;
                 for (let b = 0; b < 4; b++) {
-                    const barH = 14 + Math.sin(time * 4 + idx * 3 + b * 1.8) * 8;
+                    let barH = 6;
+                    if (isPlaying) {
+                        barH = 14 + Math.sin(time * 4 + idx * 3 + b * 1.8) * 8;
+                    }
                     ctx.fillRect(-22 + b * 11, 22 - barH, 7, barH);
                 }
 
@@ -663,6 +667,18 @@
                 logToTerminal("Error sending command to server: " + err.message, "error");
             }
         });
+
+        // --- 5. Poll video status from server ---
+        window.latestVideoStatus = { paused: true };
+        async function pollVideoStatus() {
+            try {
+                const response = await fetch("/api/video-status");
+                const status = await response.json();
+                window.latestVideoStatus = status;
+            } catch (err) {}
+        }
+        setInterval(pollVideoStatus, 500);
+        pollVideoStatus();
 
         document.getElementById("btnClear").addEventListener("click", () => {
             termBody.innerHTML = "";
