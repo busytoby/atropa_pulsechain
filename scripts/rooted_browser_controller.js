@@ -46,6 +46,78 @@ async function main() {
         console.error(`[PRESENTER ERR] ${data.toString().trim()}`);
     });
 
+    let presenterReadyResolver;
+    const presenterReady = new Promise((resolve) => {
+        presenterReadyResolver = resolve;
+    });
+
+    // Define helper function to route input events to Puppeteer
+    let page = null;
+    let controlDown = false;
+    async function handleInputCommand(line) {
+        if (line.includes("Streaming starting...")) {
+            console.log(`[PRESENTER OUT] ${line}`);
+            if (presenterReadyResolver) {
+                presenterReadyResolver();
+            }
+            return;
+        }
+        if (!page) return;
+        const parts = line.split(' ');
+        const cmd = parts[0];
+        try {
+            if (cmd === 'MOUSE_MOVE') {
+                const x = parseInt(parts[1]);
+                const y = parseInt(parts[2]);
+                await page.mouse.move(x, y);
+            } else if (cmd === 'MOUSE_DOWN') {
+                const btn = parseInt(parts[1]);
+                const button = linuxButtonMap[btn] || 'left';
+                await page.mouse.down({ button });
+            } else if (cmd === 'MOUSE_UP') {
+                const btn = parseInt(parts[1]);
+                const button = linuxButtonMap[btn] || 'left';
+                await page.mouse.up({ button });
+            } else if (cmd === 'KEY_DOWN') {
+                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
+                const keyName = linuxKeyMap[key];
+                if (keyName === 'Control') {
+                    controlDown = true;
+                }
+                if (keyName === 'r' && controlDown) {
+                    console.log("[PUPPETEER] Control+R detected. Reloading page...");
+                    await page.reload({ waitUntil: "networkidle2" });
+                } else if (keyName) {
+                    await page.keyboard.down(keyName);
+                }
+            } else if (cmd === 'KEY_UP') {
+                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
+                const keyName = linuxKeyMap[key];
+                if (keyName === 'Control') {
+                    controlDown = false;
+                }
+                if (keyName) {
+                    await page.keyboard.up(keyName);
+                }
+            } else {
+                console.log(`[PRESENTER OUT] ${line}`);
+            }
+        } catch (err) {
+            // Suppress error if Puppeteer is closed or navigating
+        }
+    }
+
+    // 1. Read input events from presenter stdout (hooked early)
+    const rl = readline.createInterface({
+        input: presenter.stdout,
+        terminal: false
+    });
+    rl.on('line', handleInputCommand);
+
+    console.log("[PRESENTER] Waiting for presenter to initialize...");
+    await presenterReady;
+    console.log("[PRESENTER] Presenter is ready. Starting Puppeteer...");
+
     // 2. Launch Puppeteer
     console.log("[PUPPETEER] Launching system Google Chrome...");
     const browser = await puppeteer.launch({
@@ -58,11 +130,12 @@ async function main() {
             "--disable-gpu",
             "--window-size=800,600",
             "--autoplay-policy=no-user-gesture-required",
-            "--enable-audio-service"
+            "--enable-audio-service",
+            "--disable-dev-shm-usage"
         ]
     });
 
-    const page = await browser.newPage();
+    page = await browser.newPage();
     await page.setViewport({ width: 800, height: 600 });
 
     let active = true;
@@ -248,60 +321,6 @@ async function main() {
     } catch (e) {
         console.log("[PUPPETEER] Automatic search or filter flow failed: " + e.message);
     }
-
-    // Define helper function to route input events to Puppeteer
-    let controlDown = false;
-    async function handleInputCommand(line) {
-        const parts = line.split(' ');
-        const cmd = parts[0];
-        try {
-            if (cmd === 'MOUSE_MOVE') {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                await page.mouse.move(x, y);
-            } else if (cmd === 'MOUSE_DOWN') {
-                const btn = parseInt(parts[1]);
-                const button = linuxButtonMap[btn] || 'left';
-                await page.mouse.down({ button });
-            } else if (cmd === 'MOUSE_UP') {
-                const btn = parseInt(parts[1]);
-                const button = linuxButtonMap[btn] || 'left';
-                await page.mouse.up({ button });
-            } else if (cmd === 'KEY_DOWN') {
-                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
-                const keyName = linuxKeyMap[key];
-                if (keyName === 'Control') {
-                    controlDown = true;
-                }
-                if (keyName === 'r' && controlDown) {
-                    console.log("[PUPPETEER] Control+R detected. Reloading page...");
-                    await page.reload({ waitUntil: "networkidle2" });
-                } else if (keyName) {
-                    await page.keyboard.down(keyName);
-                }
-            } else if (cmd === 'KEY_UP') {
-                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
-                const keyName = linuxKeyMap[key];
-                if (keyName === 'Control') {
-                    controlDown = false;
-                }
-                if (keyName) {
-                    await page.keyboard.up(keyName);
-                }
-            } else {
-                console.log(`[PRESENTER OUT] ${line}`);
-            }
-        } catch (err) {
-            // Suppress error if Puppeteer is closed or navigating
-        }
-    }
-
-    // 1. Read input events from presenter stdout
-    const rl = readline.createInterface({
-        input: presenter.stdout,
-        terminal: false
-    });
-    rl.on('line', handleInputCommand);
 
 }
 
