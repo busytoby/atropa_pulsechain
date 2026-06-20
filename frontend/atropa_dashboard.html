@@ -217,7 +217,7 @@
                         </defs>
                         
                         <!-- Underlay: The actual browser screencast image frame -->
-                        <image id="browserStreamFrame" href="latest_frame.jpg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice" />
+                        <image id="browserStreamFrame" href="latest_frame.jpg" x="0" y="0" width="800" height="600" preserveAspectRatio="none" />
                         
                         <!-- SVG Interactive DNA overlay group -->
                         <g id="dnaOverlay" style="pointer-events: none;">
@@ -278,6 +278,7 @@
             canvas.height = rect.height;
         }
         resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
 
         const pipelineStages = [
             { name: "Input Assembly", x: 60, y: 190, color: "#4facfe" },
@@ -350,7 +351,7 @@
         setInterval(() => {
             // Append timestamp to prevent caching
             streamImg.setAttribute("href", "latest_frame.jpg?t=" + Date.now());
-        }, 300);
+        }, 80);
 
         let dnaPhase = 0;
         function animateSvgDna() {

@@ -212,7 +212,9 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
                             g_ptsfi_zmm_set_scanout_buffer(g_scanout_px, g_w, g_h);
                         }
                         
-                        // Removed out-of-order attach, damage, and commit calls. They are moved to the main event loop.
+                        // Set window geometry to notify compositor of new dimensions
+                        uint32_t geom_args[] = {0, 0, g_w, g_h};
+                        send_msg(fd, xdg_s_id, 3, geom_args, 16, -1);
                         
                         printf("WINDOW_RESIZE %d %d\n", width, height);
                         fflush(stdout);
