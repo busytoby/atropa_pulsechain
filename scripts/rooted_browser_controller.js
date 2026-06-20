@@ -59,7 +59,10 @@ function compileYul(yulPath) {
 }
 
 async function main() {
-    let url = process.argv[2] || "http://127.0.0.1:8000/atropa_dashboard.html";
+    let url = process.argv[2] || `file://${path.resolve(__dirname, '../frontend/hub_portal.html')}`;
+    if (url.includes("hub_portal.html") && !url.startsWith("file://")) {
+        url = `file://${path.resolve(__dirname, '../frontend/hub_portal.html')}`;
+    }
     
     // Verify local dashboard server is running and spawn if needed
     if (url.includes("127.0.0.1:8000") || url.includes("localhost:8000")) {
@@ -297,19 +300,27 @@ async function main() {
     const browser = await puppeteer.launch({
         executablePath: "/usr/bin/google-chrome",
         headless: true,
-        ignoreDefaultArgs: ["--mute-audio"],
+        dumpio: true,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-gpu",
             "--window-size=800,600",
-            "--autoplay-policy=no-user-gesture-required",
-            "--enable-audio-service",
-            "--disable-dev-shm-usage"
+            "--disable-dev-shm-usage",
+            `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
 
     page = await browser.newPage();
+    page.on('pageerror', err => {
+        console.error('[PUPPETEER PAGE ERROR]', err.stack || err.message);
+    });
+    page.on('error', err => {
+        console.error('[PUPPETEER PAGE CRASH]', err.message);
+    });
+    page.on('console', msg => {
+        console.log('[PUPPETEER CONSOLE]', msg.text());
+    });
     await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
     await page.setViewport({ width: 800, height: 600 });
 
@@ -320,49 +331,7 @@ async function main() {
         browser.close();
     });
 
-    // Start Chrome DevTools Protocol Screencast for ultra-high performance streaming
-    const client = await page.createCDPSession();
-    await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
-    
-    let frameCount = 0;
-    client.on('Page.screencastFrame', async ({ data, sessionId, metadata }) => {
-        try {
-            const jpegBuffer = Buffer.from(data, 'base64');
-            
-            if (active && presenter.stdin.writable) {
-                const lenBuf = Buffer.alloc(4);
-                lenBuf.writeUInt32LE(jpegBuffer.length, 0);
-
-                let ok = presenter.stdin.write(lenBuf);
-                if (ok) {
-                    ok = presenter.stdin.write(jpegBuffer);
-                }
-                if (!ok) {
-                    await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                }
-                frameCount++;
-                if (frameCount % 30 === 0) {
-                    try {
-                        const fs = require('fs');
-                        fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
-                    } catch (writeErr) {
-                        // ignore write errors
-                    }
-                }
-                if (frameCount % 90 === 0) {
-                    console.log(`[STREAM] Sent ${frameCount} screencast frames.`);
-                }
-            }
-        } catch (err) {
-            console.error("[STREAM ERR]", err);
-        } finally {
-            try {
-                await client.send('Page.screencastFrameAck', { sessionId });
-            } catch (ackErr) {
-                // ignore ack errors if closed
-            }
-        }
-    });
+    // Screenshot streaming loop will be declared and run after page load to prevent early crashes.
     
     let lastReloadTime = 0;
     // Auto-unmute and auto-recover YouTube video player continuously in the background
@@ -435,20 +404,52 @@ async function main() {
     }, 1000);
     
     try {
-        // Load Atropa Splash Screen first
-        const splashUrl = "http://127.0.0.1:8000/atropa_splash.html";
-        console.log(`[PUPPETEER] Exhibiting splash screen: ${splashUrl}`);
-        await page.goto(splashUrl, { waitUntil: "load" });
-        
-        // Display splash screen for 4 seconds
-        await new Promise(resolve => setTimeout(resolve, 4000));
-        
-        console.log(`[PUPPETEER] Navigating to target URL: ${url}...`);
+        console.log(`[PUPPETEER] Navigating directly to target URL: ${url}...`);
         await page.goto(url, { waitUntil: "networkidle2" });
-        console.log("[PUPPETEER] Navigation complete. Streaming frames...");
+        console.log("[PUPPETEER] Navigation complete.");
     } catch (navErr) {
-        console.log("[PUPPETEER] Initial navigation interrupted or failed: " + navErr.message);
+        console.log("[PUPPETEER] Initial navigation finished or timed out: " + navErr.message);
     }
+
+    let frameCount = 0;
+    async function screenshotLoop() {
+        while (active) {
+            try {
+                const startTime = Date.now();
+                const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
+                if (active && presenter.stdin.writable) {
+                    const lenBuf = Buffer.alloc(4);
+                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+
+                    let ok = presenter.stdin.write(lenBuf);
+                    if (ok) {
+                        ok = presenter.stdin.write(jpegBuffer);
+                    }
+                    if (!ok) {
+                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                    }
+                    frameCount++;
+                    if (frameCount % 30 === 0) {
+                        try {
+                            const fs = require('fs');
+                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                        } catch (writeErr) {
+                            // ignore write errors
+                        }
+                    }
+                    if (frameCount % 90 === 0) {
+                        console.log(`[STREAM] Sent ${frameCount} screenshot frames.`);
+                    }
+                }
+                const elapsed = Date.now() - startTime;
+                const delay = Math.max(50 - elapsed, 0);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } catch (err) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+    }
+    screenshotLoop();
 
     if (url.includes("youtube.com")) {
         try {

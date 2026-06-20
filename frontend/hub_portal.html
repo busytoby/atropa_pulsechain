@@ -212,55 +212,6 @@
             font-weight: bold;
         }
 
-        /* SVG Double Helix styling */
-        .dna-strand {
-            fill: none;
-            stroke-width: 2.5;
-            transition: stroke 0.5s ease;
-        }
-
-        .dna-basepair {
-            stroke-width: 1.5;
-            stroke-dasharray: 2, 2;
-            opacity: 0.7;
-        }
-
-        .svg-node {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .svg-node circle {
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.5));
-        }
-
-        .svg-node:hover circle {
-            r: 10;
-            filter: drop-shadow(0 0 12px var(--neon-blue));
-        }
-
-        .svg-node.active circle {
-            r: 12;
-            stroke-width: 3.5;
-            filter: drop-shadow(0 0 16px var(--neon-magenta));
-        }
-
-        .svg-label {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 10px;
-            fill: var(--text-secondary);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .svg-node:hover + .svg-label, .svg-node.active + .svg-label {
-            fill: #fff;
-            font-size: 11px;
-            font-weight: bold;
-            text-shadow: 0 0 5px rgba(255,255,255,0.5);
-        }
-
         /* WinchesterMQ Terminal Output */
         .terminal-tray {
             grid-column: span 2;
@@ -354,80 +305,13 @@
         </header>
 
         <div class="portal-layout">
-            <!-- Left Side: Interactive SVG Selector and telemetry details -->
+            <!-- Left Side: Interactive Canvas Selector and telemetry details -->
             <div class="sidebar">
                 <div class="node-map-card">
                     <h2>🧬 Morphing DNA Topology</h2>
                     <div id="svgMatrixContainer">
-                        <svg width="100%" height="100%" viewBox="0 0 340 300" id="matrixSvg">
-                            <defs>
-                                <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
-                                    <feGaussianBlur stdDeviation="3.5" result="blur" />
-                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                                <filter id="glowMagenta" x="-30%" y="-30%" width="160%" height="160%">
-                                    <feGaussianBlur stdDeviation="5.0" result="blur" />
-                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                            </defs>
-
-                            <!-- Dynamic DNA Helix Paths -->
-                            <g id="dnaHelixGroup">
-                                <!-- Basepair lines and strand paths will be rendered dynamically -->
-                                <path id="dnaStrandA" class="dna-strand" stroke="var(--neon-blue)" filter="url(#glowBlue)"></path>
-                                <path id="dnaStrandB" class="dna-strand" stroke="var(--neon-magenta)" filter="url(#glowMagenta)"></path>
-                                <g id="dnaBasePairs"></g>
-                            </g>
-
-                            <!-- Node interactive circles -->
-                            <!-- Core Gateway -->
-                            <g class="svg-node active" id="node-core" onclick="selectNode('core')">
-                                <circle cx="170" cy="150" r="14" fill="#0b0e26" stroke="#ff007f" stroke-width="2.5" />
-                            </g>
-                            <text x="170" y="180" text-anchor="middle" class="svg-label" style="fill: var(--neon-magenta); font-weight: bold;">CORE GATEWAY</text>
-
-                            <!-- Atropa Dashboard Node -->
-                            <g class="svg-node" id="node-atropa" onclick="selectNode('atropa')">
-                                <circle id="circle-atropa" cx="0" cy="0" r="8" fill="#020512" stroke="#00f2fe" stroke-width="1.5" />
-                            </g>
-                            <text id="label-atropa" x="0" y="0" text-anchor="middle" class="svg-label">ATROPA LIVE</text>
-
-                            <!-- NoNukes Node -->
-                            <g class="svg-node" id="node-nonukes" onclick="selectNode('nonukes')">
-                                <circle id="circle-nonukes" cx="0" cy="0" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
-                            </g>
-                            <text id="label-nonukes" x="0" y="0" text-anchor="middle" class="svg-label">NONUKES DAPP</text>
-
-                            <!-- Vulkan Synth Node -->
-                            <g class="svg-node" id="node-vulkan_synth" onclick="selectNode('vulkan_synth')">
-                                <circle id="circle-vulkan_synth" cx="0" cy="0" r="8" fill="#020512" stroke="#ff007f" stroke-width="1.5" />
-                            </g>
-                            <text id="label-vulkan_synth" x="0" y="0" text-anchor="middle" class="svg-label">AUNCIENT SYNTH</text>
-
-                            <!-- TTS Node -->
-                            <g class="svg-node" id="node-tts" onclick="selectNode('tts')">
-                                <circle id="circle-tts" cx="0" cy="0" r="8" fill="#020512" stroke="#00ffcc" stroke-width="1.5" />
-                            </g>
-                            <text id="label-tts" x="0" y="0" text-anchor="middle" class="svg-label">TTS AUDIO</text>
-
-                            <!-- Protecto Node -->
-                            <g class="svg-node" id="node-protecto" onclick="selectNode('protecto')">
-                                <circle id="circle-protecto" cx="0" cy="0" r="8" fill="#020512" stroke="#f59e0b" stroke-width="1.5" />
-                            </g>
-                            <text id="label-protecto" x="0" y="0" text-anchor="middle" class="svg-label">PROTECTO</text>
-
-                            <!-- Ledger Node -->
-                            <g class="svg-node" id="node-ledger" onclick="selectNode('ledger')">
-                                <circle id="circle-ledger" cx="0" cy="0" r="8" fill="#020512" stroke="#4facfe" stroke-width="1.5" />
-                            </g>
-                            <text id="label-ledger" x="0" y="0" text-anchor="middle" class="svg-label">ALCHEMICAL</text>
-
-                            <!-- Emulation Studio Node -->
-                            <g class="svg-node" id="node-emulation" onclick="selectNode('emulation')">
-                                <circle id="circle-emulation" cx="0" cy="0" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
-                            </g>
-                            <text id="label-emulation" x="0" y="0" text-anchor="middle" class="svg-label">EMU STUDIO</text>
-                        </svg>
+                        <!-- Canvas replacing SVG paths to avoid SwiftShader SVG rendering crash -->
+                        <canvas id="matrixCanvas" width="340" height="320" style="width:100%; height:100%; cursor:pointer;"></canvas>
                     </div>
                 </div>
 
@@ -445,6 +329,10 @@
                         <div class="hud-stat-row">
                             <span class="hud-stat-label">DNA Sequence:</span>
                             <span class="hud-stat-value" id="hudStatDna" style="color: var(--neon-blue); font-family:monospace;">ATG-CGT-TTA-GCA</span>
+                        </div>
+                        <div class="hud-stat-row">
+                            <span class="hud-stat-label">Host Domain:</span>
+                            <span class="hud-stat-value" id="hudStatDomain">127.0.0.1:8000</span>
                         </div>
                         <div class="hud-stat-row">
                             <span class="hud-stat-label">Yul Interface:</span>
@@ -505,6 +393,7 @@
                 network: "PulseChain (943)",
                 status: "ACTIVE",
                 dna: "ATG-CGT-TTA-GCA",
+                domain: "127.0.0.1:8000",
                 yul: "WinchesterMQ.yul",
                 desc: "The main hub connecting all modular sub-systems and live controllers. Pick a node on the matrix above to view its contents directly in the main console viewport.",
                 url: "",
@@ -515,9 +404,10 @@
                 network: "PulseChain / Anvil",
                 status: "ONLINE",
                 dna: "CGT-AAA-TTG-CGA",
+                domain: "localhost:8000",
                 yul: "WinchesterMQ.yul",
                 desc: "Realtime web controller dashboard utilizing WinchesterMQ and fast-path Yul events to navigate the browser and capture remote screencast frames.",
-                url: "/atropa_dashboard.html",
+                url: "atropa_dashboard.html",
                 amplitude: 28, frequency: 0.03, phaseSpeed: 0.07
             },
             nonukes: {
@@ -525,9 +415,10 @@
                 network: "PulseChain Mainnet",
                 status: "ACTIVE",
                 dna: "TTA-GCA-CGT-ATA",
+                domain: "localhost:8000",
                 yul: "NoNukesLiquidity.yul",
                 desc: "NoNukes liquidity pools, treasury arbitrage, and token distribution dashboard for real-time portfolio tracking.",
-                url: "/nonukes_dashboard.html",
+                url: "nonukes_dashboard.html",
                 amplitude: 35, frequency: 0.015, phaseSpeed: 0.05
             },
             vulkan_synth: {
@@ -535,9 +426,10 @@
                 network: "PulseChain / Anvil",
                 status: "ONLINE",
                 dna: "GCA-TTG-CCG-AAT",
+                domain: "localhost:8000",
                 yul: "VulkanCore / iDOF",
                 desc: "Hamiltonian Phase Space visualizer and synth interface running a symplectic Euler integrator linked to standard Pitch and Yaw CV note handlers.",
-                url: "/vulkan_synth_dashboard.html",
+                url: "vulkan_synth_dashboard.html",
                 amplitude: 20, frequency: 0.04, phaseSpeed: 0.09
             },
             tts: {
@@ -545,9 +437,10 @@
                 network: "PulseChain Node",
                 status: "ONLINE",
                 dna: "ATA-CGT-GCA-TTT",
+                domain: "localhost:8000",
                 yul: "Auncient Wavelet Vocoder",
                 desc: "Speech synthesis, vocoder adjustments, and audio sequence layout dashboard configured for real-time sound generation.",
-                url: "/tts_dashboard.html",
+                url: "tts_dashboard.html",
                 amplitude: 25, frequency: 0.025, phaseSpeed: 0.06
             },
             protecto: {
@@ -555,9 +448,10 @@
                 network: "PulseChain Mainnet",
                 status: "SYNCED",
                 dna: "CCG-AAT-TTA-GCA",
+                domain: "localhost:8000",
                 yul: "ProtectoRegistry.yul",
                 desc: "Dashboard monitoring alchemical security keys, token supply metrics, and registry rules within the network.",
-                url: "/protecto.html",
+                url: "protecto.html",
                 amplitude: 18, frequency: 0.035, phaseSpeed: 0.04
             },
             ledger: {
@@ -565,9 +459,10 @@
                 network: "PulseChain Mainnet",
                 status: "ACTIVE",
                 dna: "TTG-CGA-ATA-CGT",
+                domain: "localhost:8000",
                 yul: "LedgerRouter.yul",
                 desc: "Asset tracking, token registry distributions, and alchemical wallet ledger details for on-chain audits.",
-                url: "/ledger.html",
+                url: "ledger.html",
                 amplitude: 22, frequency: 0.022, phaseSpeed: 0.05
             },
             emulation: {
@@ -575,14 +470,18 @@
                 network: "Local VM Instance",
                 status: "STANDBY",
                 dna: "AAA-TTG-CGT-TTA",
+                domain: "localhost:8000",
                 yul: "Dysnomia CPU 6502",
                 desc: "Studio interface supporting emulator configurations, ROM memory layout inspections, and assembler setups.",
-                url: "/emulation_studio.html",
+                url: "emulation_studio.html",
                 amplitude: 30, frequency: 0.018, phaseSpeed: 0.06
             }
         };
 
-        // --- DNA Double Helix Physics / Rendering & Morphing Loop ---
+        // --- 2D Canvas Helix Renderer & Morphing Loop ---
+        const canvas = document.getElementById("matrixCanvas");
+        const ctx = canvas.getContext("2d");
+
         let currentAmp = 15;
         let currentFreq = 0.02;
         let currentPhaseSpeed = 0.03;
@@ -592,102 +491,155 @@
         let targetFreq = 0.02;
         let targetPhaseSpeed = 0.03;
 
-        const pathA = document.getElementById("dnaStrandA");
-        const pathB = document.getElementById("dnaStrandB");
-        const basePairsGroup = document.getElementById("dnaBasePairs");
+        let selectedNodeId = 'core';
 
-        // Define nodes and relative positioning factors (t from 0 to 1) along the helix
-        const nodePositionMapping = {
-            atropa: { t: 0.15, offsetSign: 1, labelY: -15 },
-            nonukes: { t: 0.28, offsetSign: -1, labelY: 20 },
-            vulkan_synth: { t: 0.42, offsetSign: 1, labelY: -15 },
-            tts: { t: 0.55, offsetSign: -1, labelY: 20 },
-            protecto: { t: 0.68, offsetSign: 1, labelY: -15 },
-            ledger: { t: 0.80, offsetSign: -1, labelY: 20 },
-            emulation: { t: 0.92, offsetSign: 1, labelY: -15 }
+        const nodeCoordinates = {
+            core: { cx: 170, cy: 160, r: 12, label: "CORE GATEWAY", color: "#ff007f" },
+            atropa: { t: 0.15, offsetSign: 1, label: "ATROPA LIVE", color: "#00f2fe", labelY: -15 },
+            nonukes: { t: 0.28, offsetSign: -1, label: "NONUKES DAPP", color: "#39ff14", labelY: 20 },
+            vulkan_synth: { t: 0.42, offsetSign: 1, label: "AUNCIENT SYNTH", color: "#ff007f", labelY: -15 },
+            tts: { t: 0.55, offsetSign: -1, label: "TTS AUDIO", color: "#00ffcc", labelY: 20 },
+            protecto: { t: 0.68, offsetSign: 1, label: "PROTECTO", color: "#f59e0b", labelY: -15 },
+            ledger: { t: 0.80, offsetSign: -1, label: "ALCHEMICAL", color: "#4facfe", labelY: 20 },
+            emulation: { t: 0.92, offsetSign: 1, label: "EMU STUDIO", color: "#39ff14", labelY: -15 }
         };
 
-        function animateHelix() {
-            // Smooth morphing interpolation
+        function drawCanvasHelix() {
+            // Morphing interpolation
             currentAmp += (targetAmp - currentAmp) * 0.08;
             currentFreq += (targetFreq - currentFreq) * 0.08;
             currentPhaseSpeed += (targetPhaseSpeed - currentPhaseSpeed) * 0.08;
 
             phase += currentPhaseSpeed;
 
-            const W = 340;
-            const H = 300;
+            const W = canvas.width;
+            const H = canvas.height;
             const baselineY = H / 2;
 
-            let pointsA = [];
-            let pointsB = [];
+            // Clear background
+            ctx.fillStyle = "rgba(3, 5, 15, 0.9)";
+            ctx.fillRect(0, 0, W, H);
 
-            let dPathA = "";
-            let dPathB = "";
-
-            basePairsGroup.innerHTML = "";
-
-            // Calculate helix lines
-            for (let x = 10; x <= W - 10; x += 2) {
+            // Draw base pairs
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            for (let x = 10; x <= W - 10; x += 16) {
                 const angle = x * currentFreq + phase;
                 const sinVal = Math.sin(angle);
                 const yA = baselineY + currentAmp * sinVal;
                 const yB = baselineY - currentAmp * sinVal;
-
-                pointsA.push({x, y: yA});
-                pointsB.push({x, y: yB});
-
-                if (x === 10) {
-                    dPathA += `M ${x} ${yA}`;
-                    dPathB += `M ${x} ${yB}`;
-                } else {
-                    dPathA += ` L ${x} ${yA}`;
-                    dPathB += ` L ${x} ${yB}`;
-                }
-
-                // Periodic base pairs
-                if (x % 16 === 0) {
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", x);
-                    line.setAttribute("y1", yA);
-                    line.setAttribute("x2", x);
-                    line.setAttribute("y2", yB);
-                    line.setAttribute("class", "dna-basepair");
-                    line.setAttribute("stroke", (sinVal > 0) ? "rgba(0, 242, 254, 0.45)" : "rgba(255, 0, 127, 0.45)");
-                    basePairsGroup.appendChild(line);
-                }
+                ctx.moveTo(x, yA);
+                ctx.lineTo(x, yB);
             }
+            ctx.stroke();
 
-            pathA.setAttribute("d", dPathA);
-            pathB.setAttribute("d", dPathB);
-
-            // Update interactive node circles along the wave
-            for (const [id, config] of Object.entries(nodePositionMapping)) {
-                const x = 15 + config.t * (W - 30);
+            // Draw Strand A (Blue)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.85)";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let x = 10; x <= W - 10; x += 2) {
                 const angle = x * currentFreq + phase;
-                const sinVal = Math.sin(angle);
-                
-                // Position on strand A or B depending on sign mapping
-                const y = baselineY + config.offsetSign * currentAmp * sinVal;
+                const y = baselineY + currentAmp * Math.sin(angle);
+                if (x === 10) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
 
-                const circle = document.getElementById(`circle-${id}`);
-                const label = document.getElementById(`label-${id}`);
+            // Draw Strand B (Magenta)
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.85)";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let x = 10; x <= W - 10; x += 2) {
+                const angle = x * currentFreq + phase;
+                const y = baselineY - currentAmp * Math.sin(angle);
+                if (x === 10) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
 
-                if (circle) {
-                    circle.setAttribute("cx", x);
-                    circle.setAttribute("cy", y);
+            // Render Nodes
+            ctx.font = "10px 'Share Tech Mono', monospace";
+            ctx.textAlign = "center";
+
+            for (const [id, node] of Object.entries(nodeCoordinates)) {
+                let x, y;
+                if (id === 'core') {
+                    x = node.cx;
+                    y = node.cy;
+                } else {
+                    x = 15 + node.t * (W - 30);
+                    const angle = x * currentFreq + phase;
+                    y = baselineY + node.offsetSign * currentAmp * Math.sin(angle);
                 }
-                if (label) {
-                    label.setAttribute("x", x);
-                    label.setAttribute("y", y + config.labelY);
+
+                // Node interactive position caching for clicks
+                node.actualX = x;
+                node.actualY = y;
+
+                const isActive = (selectedNodeId === id);
+
+                // Draw outer ring glow
+                if (isActive) {
+                    ctx.strokeStyle = "var(--neon-magenta)";
+                    ctx.lineWidth = 3.5;
+                    ctx.beginPath();
+                    ctx.arc(x, y, id === 'core' ? 15 : 11, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeStyle = node.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(x, y, id === 'core' ? 12 : 7, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Inner dot
+                ctx.fillStyle = isActive ? "#ff007f" : "#020512";
+                ctx.beginPath();
+                ctx.arc(x, y, id === 'core' ? 5 : 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Text Label
+                ctx.fillStyle = isActive ? "#fff" : "var(--text-secondary)";
+                if (isActive) {
+                    ctx.font = "bold 11px 'Share Tech Mono', monospace";
+                } else {
+                    ctx.font = "10px 'Share Tech Mono', monospace";
+                }
+                const labelYOffset = (id === 'core') ? 25 : node.labelY;
+                ctx.fillText(node.label, x, y + labelYOffset);
+            }
+
+            requestAnimationFrame(drawCanvasHelix);
+        }
+        drawCanvasHelix();
+
+        // Handle clicks on Canvas to select nodes
+        canvas.addEventListener("click", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            let closestId = null;
+            let minDistance = 25; // Click radius match threshold
+
+            for (const [id, node] of Object.entries(nodeCoordinates)) {
+                if (node.actualX !== undefined) {
+                    const dx = clickX - node.actualX;
+                    const dy = clickY - node.actualY;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestId = id;
+                    }
                 }
             }
 
-            requestAnimationFrame(animateHelix);
-        }
-        animateHelix();
-
-        let selectedNodeId = 'core';
+            if (closestId) {
+                selectNode(closestId);
+            }
+        });
 
         function selectNode(id) {
             selectedNodeId = id;
@@ -704,17 +656,9 @@
             document.getElementById("hudStatStatus").innerText = info.status;
             document.getElementById("hudStatStatus").style.color = (info.status === 'ONLINE' || info.status === 'ACTIVE' || info.status === 'SYNCED') ? 'var(--neon-green)' : 'var(--neon-amber)';
             document.getElementById("hudStatDna").innerText = info.dna || "ATG-CGT-TTA-GCA";
+            document.getElementById("hudStatDomain").innerText = info.domain;
             document.getElementById("hudStatYul").innerText = info.yul;
             document.getElementById("hudDescription").innerText = info.desc;
-
-            // Highlight node in SVG
-            document.querySelectorAll('.svg-node').forEach(node => {
-                node.classList.remove('active');
-            });
-            const selectedNodeElement = document.getElementById(`node-${id}`);
-            if (selectedNodeElement) {
-                selectedNodeElement.classList.add('active');
-            }
 
             // Show or hide iframe viewport
             const viewport = document.getElementById("portalViewport");
