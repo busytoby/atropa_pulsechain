@@ -281,11 +281,11 @@
         window.addEventListener("resize", resizeCanvas);
 
         const pipelineStages = [
-            { name: "Input Assembly", x: 60, y: 190, color: "#4facfe" },
-            { name: "Vertex Shader", x: 140, y: 190, color: "#00f2fe" },
-            { name: "Rasterization", x: 220, y: 190, color: "#ff007f" },
-            { name: "Fragment Shader", x: 300, y: 190, color: "#39ff14" },
-            { name: "Color Blend", x: 380, y: 190, color: "#ff7f00" }
+            { name: "Input Assembly", color: "#4facfe" },
+            { name: "Vertex Shader", color: "#00f2fe" },
+            { name: "Rasterization", color: "#ff007f" },
+            { name: "Fragment Shader", color: "#39ff14" },
+            { name: "Color Blend", color: "#ff7f00" }
         ];
 
         let time = 0;
@@ -293,53 +293,147 @@
             ctx.fillStyle = "#010207";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw connecting flow lines
+            // 1. Draw dynamic background scrolling grid
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.02)";
+            ctx.lineWidth = 1;
+            const gridSize = 24;
+            const offsetX = Math.floor(time * 10) % gridSize;
+            for (let x = offsetX; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Calculate dynamic positions based on canvas boundaries
+            const centerY = canvas.height / 2;
+            const startX = 60;
+            const endX = canvas.width - 60;
+            const stepX = (pipelineStages.length > 1) ? (endX - startX) / (pipelineStages.length - 1) : 0;
+
+            // 2. Draw connecting pipeline flow line
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
             ctx.beginPath();
-            ctx.moveTo(30, 190);
-            ctx.lineTo(canvas.width - 30, 190);
+            ctx.moveTo(startX, centerY);
+            ctx.lineTo(endX, centerY);
             ctx.stroke();
 
-            // Draw flowing data packets
+            // 3. Draw flowing data packets
             time += 0.05;
-            for (let i = 0; i < 5; i++) {
-                let packetX = (time * 30 + i * 80) % (canvas.width - 60) + 30;
-                ctx.fillStyle = "rgba(0, 242, 254, 0.8)";
+            for (let i = 0; i < 6; i++) {
+                let packetX = (time * 40 + i * 110) % (endX - startX) + startX;
+                ctx.fillStyle = "#00f2fe";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#00f2fe";
                 ctx.beginPath();
-                ctx.arc(packetX, 190, 4, 0, Math.PI * 2);
+                ctx.arc(packetX, centerY, 4, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.shadowBlur = 0; // Reset shadow glow
             }
 
-            // Draw stages
-            pipelineStages.forEach(stage => {
-                const scale = 1 + Math.sin(time + stage.x * 0.01) * 0.08;
+            // 4. Draw Vulkan pipeline stage boxes (squares) and sub-elements
+            pipelineStages.forEach((stage, idx) => {
+                const stageX = startX + idx * stepX;
+                const stageY = centerY;
+                const scale = 1 + Math.sin(time + stageX * 0.01) * 0.06;
+                
                 ctx.save();
-                ctx.translate(stage.x, stage.y);
+                ctx.translate(stageX, stageY);
                 ctx.scale(scale, scale);
 
-                // Draw stage box
-                ctx.fillStyle = "rgba(10, 15, 35, 0.8)";
+                // Stage Container Box (Square)
+                ctx.fillStyle = "rgba(8, 12, 30, 0.85)";
                 ctx.strokeStyle = stage.color;
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.rect(-35, -35, 70, 70);
                 ctx.fill();
                 ctx.stroke();
 
-                // Glowing outline
-                ctx.shadowBlur = 10;
+                // Holographic Glowing border
+                ctx.shadowBlur = 8;
                 ctx.shadowColor = stage.color;
-                ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Orbiting Electron rings
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(0, 0, 24, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Name
+                ctx.strokeStyle = stage.color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, 24, time * 2, time * 2 + Math.PI / 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, 0, 24, time * 2 + Math.PI, time * 2 + Math.PI * 1.5);
+                ctx.stroke();
+
+                // Active ALU wave visualizer inside the square
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let sx = -18; sx <= 18; sx++) {
+                    let sy = Math.sin(time * 5 + sx * 0.25) * 5;
+                    if (sx === -18) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+
+                // Floating Register Address inside
+                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.font = "8px 'Share Tech Mono'";
+                ctx.textAlign = "center";
+                ctx.fillText(`0x${(Math.floor(time * 3 + idx * 47) % 256).toString(16).toUpperCase()}`, 0, 16);
+
                 ctx.restore();
+
+                // Text labels below
                 ctx.fillStyle = "#f0f4f8";
                 ctx.font = "11px 'Share Tech Mono'";
                 ctx.textAlign = "center";
-                ctx.fillText(stage.name, stage.x, stage.y + 52);
+                ctx.fillText(stage.name, stageX, stageY + 54);
             });
+
+            // 5. Draw futuristic Vulkan metrics HUD card
+            ctx.fillStyle = "rgba(4, 8, 24, 0.65)";
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(15, 15, 150, 75, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(0, 242, 254, 0.95)";
+            ctx.font = "10px 'Share Tech Mono'";
+            ctx.textAlign = "left";
+            ctx.fillText("VULKAN DEVICE METRICS", 24, 30);
+            
+            ctx.fillStyle = "#8c9ba5";
+            ctx.font = "9px 'Share Tech Mono'";
+            ctx.fillText(`FPS: ${(8.2 + Math.sin(time)*0.1).toFixed(2)}`, 24, 45);
+            ctx.fillText("VRAM: 1.28 GB / 8.00 GB", 24, 57);
+            ctx.fillText("STATE: PIPELINE_STABLE", 24, 69);
+            
+            // Pulsing status LED
+            ctx.fillStyle = (Math.floor(time * 2) % 2 === 0) ? "#39ff14" : "#1b7f0a";
+            ctx.shadowBlur = (Math.floor(time * 2) % 2 === 0) ? 6 : 0;
+            ctx.shadowColor = "#39ff14";
+            ctx.beginPath();
+            ctx.arc(142, 27, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
 
             requestAnimationFrame(drawVulkanPipeline);
         }
