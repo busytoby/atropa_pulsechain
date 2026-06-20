@@ -249,14 +249,9 @@ async function main() {
         console.log("[PUPPETEER] Automatic search or filter flow failed: " + e.message);
     }
 
-    // Read input events from presenter stdout and route them to Puppeteer
-    const rl = readline.createInterface({
-        input: presenter.stdout,
-        terminal: false
-    });
-
+    // Define helper function to route input events to Puppeteer
     let controlDown = false;
-    rl.on('line', async (line) => {
+    async function handleInputCommand(line) {
         const parts = line.split(' ');
         const cmd = parts[0];
         try {
@@ -293,13 +288,59 @@ async function main() {
                 if (keyName) {
                     await page.keyboard.up(keyName);
                 }
+            } else if (cmd === 'CLICK') {
+                const x = parseInt(parts[1]);
+                const y = parseInt(parts[2]);
+                await page.mouse.click(x, y);
+            } else if (cmd === 'TYPE') {
+                const text = parts.slice(1).join(' ');
+                await page.keyboard.type(text, { delay: 100 });
+            } else if (cmd === 'RELOAD') {
+                await page.reload({ waitUntil: "networkidle2" });
+            } else if (cmd === 'NAVIGATE') {
+                const targetUrl = parts[1];
+                await page.goto(targetUrl, { waitUntil: "networkidle2" });
             } else {
                 console.log(`[PRESENTER OUT] ${line}`);
             }
         } catch (err) {
             // Suppress error if Puppeteer is closed or navigating
         }
+    }
+
+    // 1. Read input events from presenter stdout
+    const rl = readline.createInterface({
+        input: presenter.stdout,
+        terminal: false
     });
+    rl.on('line', handleInputCommand);
+
+    // 2. Set up external named pipe (FIFO) for AI agent process inputs
+    const fs = require('fs');
+    const { execSync } = require('child_process');
+    const fifoPath = '/tmp/auncient_browser_input.fifo';
+    
+    try {
+        if (!fs.existsSync(fifoPath)) {
+            execSync(`mkfifo ${fifoPath}`);
+        }
+    } catch (e) {
+        console.error("[FIFO ERR] Failed to create external input FIFO:", e);
+    }
+    
+    try {
+        const fifoStream = fs.createReadStream(fifoPath, { flags: 'r+' });
+        const fifoRl = readline.createInterface({
+            input: fifoStream,
+            terminal: false
+        });
+        fifoRl.on('line', async (line) => {
+            console.log(`[EXTERNAL INPUT] ${line}`);
+            await handleInputCommand(line);
+        });
+    } catch (e) {
+        console.error("[FIFO ERR] Failed to read from external input FIFO:", e);
+    }
 
 }
 
