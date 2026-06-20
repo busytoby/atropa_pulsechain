@@ -298,7 +298,9 @@ async function main() {
             });
 
             if (status.found) {
-                console.log(`[VIDEO STATUS] Time: ${status.currentTime.toFixed(1)}s / ${status.duration.toFixed(1)}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
+                const cur = (typeof status.currentTime === 'number') ? status.currentTime.toFixed(1) : '0';
+                const dur = (typeof status.duration === 'number') ? status.duration.toFixed(1) : '0';
+                console.log(`[VIDEO STATUS] Time: ${cur}s / ${dur}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
             }
 
             if (status.hasError) {
