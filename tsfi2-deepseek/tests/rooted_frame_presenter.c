@@ -104,6 +104,9 @@ static void my_error_exit(j_common_ptr cinfo) {
 }
 
 bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    for (int i = 0; i < width * height; i++) {
+        scanout_px[i] = 0xFF0B0214;
+    }
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -127,8 +130,8 @@ bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, 
     JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
     while (cinfo.output_scanline < cinfo.output_height) {
         int y = cinfo.output_scanline;
-        if (y >= height) break;
         jpeg_read_scanlines(&cinfo, buffer, 1);
+        if (y >= height) continue;
         uint8_t *src = buffer[0];
         uint32_t *dst = scanout_px + y * width;
         for (int x = 0; x < width && x < (int)cinfo.output_width; x++) {
