@@ -79,7 +79,7 @@ async function main() {
                 const button = linuxButtonMap[btn] || 'left';
                 await page.mouse.up({ button });
             } else if (cmd === 'KEY_DOWN') {
-                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
+                const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
                 const keyName = linuxKeyMap[key];
                 if (keyName === 'Control') {
                     controlDown = true;
@@ -91,7 +91,7 @@ async function main() {
                     await page.keyboard.down(keyName);
                 }
             } else if (cmd === 'KEY_UP') {
-                const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
+                const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
                 const keyName = linuxKeyMap[key];
                 if (keyName === 'Control') {
                     controlDown = false;
@@ -99,6 +99,22 @@ async function main() {
                 if (keyName) {
                     await page.keyboard.up(keyName);
                 }
+            } else if (cmd === 'MOUSE_SCROLL') {
+                const axis = parseInt(parts[1]); // 0 for vertical scroll, 1 for horizontal
+                const value = parseInt(parts[2]);
+                const deltaY = (axis === 0) ? value * 10 : 0;
+                const deltaX = (axis === 1) ? value * 10 : 0;
+                await page.mouse.wheel({ deltaX, deltaY });
+            } else if (cmd === 'WINDOW_CLOSE') {
+                console.log("[PUPPETEER] Wayland close event requested. Shutting down browser...");
+                active = false;
+                await browser.close();
+                process.exit(0);
+            } else if (cmd === 'WINDOW_RESIZE') {
+                const width = parseInt(parts[1]);
+                const height = parseInt(parts[2]);
+                console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
+                await page.setViewport({ width, height });
             } else {
                 console.log(`[PRESENTER OUT] ${line}`);
             }
@@ -113,6 +129,33 @@ async function main() {
         terminal: false
     });
     rl.on('line', handleInputCommand);
+
+    // 2. Set up external named pipe (FIFO) at /tmp/auncient_browser_input.fifo to capture Yul hardware/vulkan key inputs
+    const fs = require('fs');
+    const { execSync } = require('child_process');
+    const fifoPath = '/tmp/auncient_browser_input.fifo';
+    
+    try {
+        if (!fs.existsSync(fifoPath)) {
+            execSync(`mkfifo ${fifoPath}`);
+        }
+    } catch (e) {
+        console.error("[FIFO ERR] Failed to create external input FIFO:", e);
+    }
+    
+    try {
+        const fifoStream = fs.createReadStream(fifoPath, { flags: 'r+' });
+        const fifoRl = readline.createInterface({
+            input: fifoStream,
+            terminal: false
+        });
+        fifoRl.on('line', async (line) => {
+            console.log(`[EXTERNAL INPUT] ${line}`);
+            await handleInputCommand(line);
+        });
+    } catch (e) {
+        console.error("[FIFO ERR] Failed to read from external input FIFO:", e);
+    }
 
     console.log("[PRESENTER] Waiting for presenter to initialize...");
     await presenterReady;
@@ -136,6 +179,7 @@ async function main() {
     });
 
     page = await browser.newPage();
+    await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
     await page.setViewport({ width: 800, height: 600 });
 
     let active = true;
@@ -263,61 +307,14 @@ async function main() {
         console.log("[PUPPETEER] Search input identified. Typing 'Atropa'...");
         await page.focus(searchInputSelector);
         await page.type(searchInputSelector, "Atropa", { delay: 150 });
-        console.log("[PUPPETEER] Performing search by pressing Enter...");
-        await page.keyboard.press("Enter");
-
-        // Wait for search results page
-        console.log("[PUPPETEER] Waiting for search results to load...");
+        console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
+        // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
+        const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
+        await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
+        console.log("[PUPPETEER] Jumped directly to filtered search results.");
         await new Promise(resolve => setTimeout(resolve, 5000));
-
-        // Click on filters button
-        console.log("[PUPPETEER] Looking for 'Filters' button...");
-        const filtersButtonSelector = await page.evaluate(() => {
-            const elements = Array.from(document.querySelectorAll('ytd-toggle-button-renderer button, a[aria-label="Search filters"], button[aria-label="Search filters"]'));
-            if (elements.length > 0) {
-                elements[0].setAttribute('id', 'temp-filter-btn');
-                return '#temp-filter-btn';
-            }
-            const all = Array.from(document.querySelectorAll('button, a, ytd-toggle-button-renderer'));
-            const found = all.find(el => el.textContent && el.textContent.toLowerCase().includes('filter'));
-            if (found) {
-                const clickable = found.closest('button') || found.closest('a') || found;
-                clickable.setAttribute('id', 'temp-filter-btn');
-                return '#temp-filter-btn';
-            }
-            return null;
-        });
-
-        if (filtersButtonSelector) {
-            console.log("[PUPPETEER] Clicking Filters button using page.click...");
-            await page.click(filtersButtonSelector);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            // Click on "This week" option
-            console.log("[PUPPETEER] Looking for 'This week' filter option...");
-            const weekOptionSelector = await page.evaluate(() => {
-                const elements = Array.from(document.querySelectorAll('ytd-search-filter-renderer a, ytd-search-filter-renderer, a.ytd-search-filter-renderer'));
-                const found = elements.find(el => el.textContent && el.textContent.toLowerCase().includes('this week'));
-                if (found) {
-                    const clickable = found.closest('a') || found.closest('button') || found;
-                    clickable.setAttribute('id', 'temp-this-week-opt');
-                    return '#temp-this-week-opt';
-                }
-                return null;
-            });
-
-            if (weekOptionSelector) {
-                console.log("[PUPPETEER] Clicking 'This week' filter option using page.click...");
-                await page.click(weekOptionSelector);
-                await new Promise(resolve => setTimeout(resolve, 5000));
-            } else {
-                console.log("[PUPPETEER] Failed to find 'This week' filter option.");
-            }
-        } else {
-            console.log("[PUPPETEER] Failed to find 'Filters' button.");
-        }
     } catch (e) {
-        console.log("[PUPPETEER] Automatic search or filter flow failed: " + e.message);
+        console.log("[PUPPETEER] Auncient search flow or direct navigation failed: " + e.message);
     }
 
 }

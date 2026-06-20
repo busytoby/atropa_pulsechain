@@ -167,6 +167,19 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
         uint32_t str_len = p[2];
         char *err_msg = (char *)&p[3];
         fprintf(stderr, "[Auncient Presenter ERR] Display Error: err_obj=%u, code=%u, msg=%.*s\n", err_obj, code, str_len, err_msg);
+    } else if (obj == 6 || (xdg_s_id + 1 == obj)) { // top (toplevel) close event (opcode 0 is configure, 1 is close)
+        if (op == 1) {
+            printf("WINDOW_CLOSE\n");
+            fflush(stdout);
+            exit(0);
+        } else if (op == 0) { // configure resize
+            int32_t width = p[0];
+            int32_t height = p[1];
+            if (width > 0 && height > 0) {
+                printf("WINDOW_RESIZE %d %d\n", width, height);
+                fflush(stdout);
+            }
+        }
     } else if (pointer_id && obj == pointer_id) {
         if (op == 2) { // motion
             double x = ((int32_t)p[1]) / 256.0;
@@ -181,6 +194,11 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
             } else {
                 printf("MOUSE_UP %u\n", btn);
             }
+            fflush(stdout);
+        } else if (op == 4) { // axis
+            uint32_t axis = p[1];
+            double value = ((int32_t)p[2]) / 256.0;
+            printf("MOUSE_SCROLL %u %d\n", axis, (int)value);
             fflush(stdout);
         }
     } else if (keyboard_id && obj == keyboard_id) {
@@ -258,6 +276,12 @@ int main() {
         keyboard_id = next_id++;
         uint32_t k_args[] = {keyboard_id};
         send_msg(fd, seat_id, 1, k_args, 4, -1); // get_keyboard
+
+        // Dispatch events to flush seat and device binds
+        for (int i = 0; i < 50; i++) {
+            process_events(fd, 0, NULL);
+            tsfi_raw_usleep(2000);
+        }
     }
 
     uint32_t surf = next_id++, xsurf = next_id++, top = next_id++;
