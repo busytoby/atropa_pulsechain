@@ -446,14 +446,44 @@
             }
         }
 
+        let currentSvgW = 800;
+        let currentSvgH = 600;
+
         function getCoords(e) {
             const rect = streamSvg.getBoundingClientRect();
-            const scaleX = 800 / rect.width;
-            const scaleY = 600 / rect.height;
+            const scaleX = currentSvgW / rect.width;
+            const scaleY = currentSvgH / rect.height;
             const x = Math.round((e.clientX - rect.left) * scaleX);
             const y = Math.round((e.clientY - rect.top) * scaleY);
             return { x, y };
         }
+
+        let resizeTimer = null;
+        function handleSvgResize() {
+            const rect = streamSvg.getBoundingClientRect();
+            const w = Math.round(rect.width);
+            const h = Math.round(rect.height);
+            if (w === 0 || h === 0) return;
+            
+            currentSvgW = w;
+            currentSvgH = h;
+            
+            // Adjust SVG attributes to fit exactly
+            streamSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+            streamImg.setAttribute("width", w);
+            streamImg.setAttribute("height", h);
+            
+            // Dispatch WINDOW_RESIZE to the background browser session
+            sendControlCommand(`WINDOW_RESIZE ${w} ${h}`);
+        }
+
+        window.addEventListener("resize", () => {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(handleSvgResize, 150);
+        });
+
+        // Initialize size mappings on page load
+        setTimeout(handleSvgResize, 500);
 
         let throttleTimeout = null;
         streamSvg.addEventListener("mousemove", (e) => {
@@ -462,7 +492,7 @@
                 throttleTimeout = null;
                 const { x, y } = getCoords(e);
                 sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            }, 20);
+            }, 80); // Throttled to 80ms to prevent WinchesterMQ congestion
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
