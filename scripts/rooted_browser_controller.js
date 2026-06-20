@@ -550,7 +550,7 @@ async function main() {
                     }
                     const jpegBuffer = Buffer.from(data, 'base64');
                     frameCount++;
-                    if (isYouTube || frameCount % 30 === 0) {
+                    if (isYouTube) {
                         try {
                             const fs = require('fs');
                             const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
@@ -596,7 +596,7 @@ async function main() {
                 const startTime = Date.now();
                 const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
                 frameCount++;
-                if (isYouTube || frameCount % 30 === 0) {
+                if (isYouTube) {
                     try {
                         const fs = require('fs');
                         const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
