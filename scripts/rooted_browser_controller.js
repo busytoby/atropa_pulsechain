@@ -3,6 +3,25 @@ const { spawn } = require('child_process');
 const { PNG } = require('pngjs');
 const path = require('path');
 const readline = require('readline');
+const { ethers } = require('ethers');
+
+let wmqContract = null;
+let signer = null;
+
+async function sendWmqEvent(cmd, args) {
+    if (!wmqContract || !signer) return;
+    try {
+        const cmdHash = ethers.id(`${cmd}:${args}`);
+        const txData = ethers.concat([
+            "0x98d400c0", // writeDataPort
+            ethers.zeroPadValue(cmdHash, 32)
+        ]);
+        const wmqAddress = await wmqContract.getAddress();
+        await signer.sendTransaction({ to: wmqAddress, data: txData, gasLimit: 100000 });
+    } catch (e) {
+        // Suppress transaction errors if anvil is shut down dynamically
+    }
+}
 
 const linuxKeyMap = {
     1: 'Escape',
@@ -27,10 +46,43 @@ const linuxButtonMap = {
     274: 'middle'
 };
 
+function compileYul(yulPath) {
+    const absolutePath = path.resolve(__dirname, yulPath);
+    const { execSync } = require('child_process');
+    const output = execSync(`solc --strict-assembly --evm-version shanghai "${absolutePath}" --bin`, { encoding: "utf8" });
+    const lines = output.split("\n");
+    const binIndex = lines.findIndex(line => line.includes("Binary representation:"));
+    if (binIndex === -1) {
+        throw new Error(`Could not find binary representation for ${yulPath}`);
+    }
+    return "0x" + lines[binIndex + 1].trim();
+}
+
 async function main() {
     const url = process.argv[2] || "https://youtube.com";
     console.log("=== Auncient ROOTED Node.js Browser Controller ===");
     console.log(`Target URL: ${url}`);
+
+    // Initialize WinchesterMQ connection if anvil is running
+    try {
+        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+        // Quick check to see if provider is online
+        await provider.getNetwork();
+        signer = await provider.getSigner(0);
+        console.log(`[WMQ] Connected to local EVM provider. Signer: ${signer.address}`);
+        
+        const fs = require('fs');
+        const yulPath = path.join(__dirname, "../solidity/bin/WinchesterMQ.yul");
+        if (fs.existsSync(yulPath)) {
+            const wmqBytecode = compileYul(yulPath);
+            const wmqFactory = new ethers.ContractFactory([], wmqBytecode, signer);
+            wmqContract = await wmqFactory.deploy();
+            await wmqContract.waitForDeployment();
+            console.log(`[WMQ] WinchesterMQ successfully deployed at: ${await wmqContract.getAddress()}`);
+        }
+    } catch (e) {
+        console.log("[WMQ] WinchesterMQ not active or unreachable (Anvil offline). Using standard direct routing.");
+    }
 
     // 1. Launch presenter process
     const presenterPath = path.join(__dirname, "../tsfi2-deepseek/tests/rooted_frame_presenter");
@@ -71,9 +123,11 @@ async function main() {
             if (cmd === 'MOUSE_MOVE') {
                 const x = parseInt(parts[1]);
                 const y = parseInt(parts[2]);
+                await sendWmqEvent('MOUSE_MOVE', `${x},${y}`);
                 await page.mouse.move(x, y);
             } else if (cmd === 'MOUSE_DOWN') {
                 const btn = parseInt(parts[1]);
+                await sendWmqEvent('MOUSE_DOWN', `${btn}`);
                 const button = linuxButtonMap[btn] || 'left';
                 const now = Date.now();
                 if (now - lastClickTime < 300) {
@@ -89,6 +143,7 @@ async function main() {
                 await page.mouse.up({ button, clickCount });
             } else if (cmd === 'KEY_DOWN') {
                 const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
+                await sendWmqEvent('KEY_DOWN', `${key}`);
                 const keyName = linuxKeyMap[key];
                 if (keyName === 'Control') {
                     controlDown = true;
@@ -115,6 +170,7 @@ async function main() {
             } else if (cmd === 'MOUSE_SCROLL') {
                 const axis = parseInt(parts[1]); // 0 for vertical scroll, 1 for horizontal
                 const value = parseInt(parts[2]);
+                await sendWmqEvent('MOUSE_SCROLL', `${axis},${value}`);
                 const deltaY = (axis === 0) ? value * 10 : 0;
                 const deltaX = (axis === 1) ? value * 10 : 0;
                 await page.mouse.wheel({ deltaX, deltaY });
@@ -301,6 +357,7 @@ async function main() {
                 const cur = (typeof status.currentTime === 'number') ? status.currentTime.toFixed(1) : '0';
                 const dur = (typeof status.duration === 'number') ? status.duration.toFixed(1) : '0';
                 console.log(`[VIDEO STATUS] Time: ${cur}s / ${dur}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
+                await sendWmqEvent("VIDEO_STATUS", `${cur},${dur},${status.paused},${status.muted}`);
             }
 
             if (status.hasError) {
