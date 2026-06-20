@@ -250,34 +250,49 @@ async function main() {
     // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
         try {
-            const hasError = await page.evaluate(() => {
+            const status = await page.evaluate(() => {
                 // 1. Auto unmute
                 const muteBtn = document.querySelector('.ytp-mute-button');
                 if (muteBtn) {
                     const titleText = (muteBtn.getAttribute('title') || muteBtn.getAttribute('aria-label') || '').toLowerCase();
                     if (titleText.includes('unmute')) {
                         muteBtn.click();
-                        console.log("[PUPPETEER] Triggered YouTube Player unmute button.");
                     }
                 }
                 
-                // 2. Click retry button if visible (YouTube shows a retry button when playback fails)
+                // 2. Click retry button if visible
                 const retryBtn = document.querySelector('.ytp-error-message-button, .ytp-retry-button, button[aria-label="Retry"]');
                 if (retryBtn) {
                     retryBtn.click();
-                    console.log("[PUPPETEER] Clicked YouTube retry button.");
-                    return false;
                 }
 
                 // Check if playback error overlay is active
                 const errScreen = document.querySelector('.ytp-error, .ytp-playability-error-supported-renderers, #error-screen');
-                if (errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0) {
-                    return true;
+                const hasError = !!(errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0);
+                const errorText = document.querySelector('.ytp-error-message-text')?.innerText || "";
+
+                const video = document.querySelector('video');
+                if (!video) {
+                    return { found: false, hasError, errorText };
                 }
-                return false;
+
+                return {
+                    found: true,
+                    currentTime: video.currentTime,
+                    duration: video.duration,
+                    paused: video.paused,
+                    muted: video.muted,
+                    title: document.title,
+                    hasError,
+                    errorText
+                };
             });
 
-            if (hasError) {
+            if (status.found) {
+                console.log(`[VIDEO STATUS] Time: ${status.currentTime.toFixed(1)}s / ${status.duration.toFixed(1)}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
+            }
+
+            if (status.hasError) {
                 const now = Date.now();
                 if (now - lastReloadTime > 15000) {
                     console.log("[PUPPETEER] YouTube error overlay detected. Reloading page...");
