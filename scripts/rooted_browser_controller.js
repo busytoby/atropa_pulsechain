@@ -444,6 +444,14 @@ async function main() {
     // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
         try {
+            if (!isYouTube) {
+                const isLoaded = await page.evaluate(() => !!document.getElementById("btnOpenBrowser")).catch(() => false);
+                if (!isLoaded) {
+                    console.log("[PUPPETEER] Dashboard UI not detected. Reconnecting to " + url + "...");
+                    await page.goto(url, { waitUntil: "networkidle2" }).catch(() => {});
+                }
+                return;
+            }
             const status = await page.evaluate(() => {
                 // 1. Auto unmute
                 const muteBtn = document.querySelector('.ytp-mute-button');
