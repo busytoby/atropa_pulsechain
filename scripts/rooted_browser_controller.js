@@ -310,7 +310,15 @@ async function main() {
                 }
             }
         } catch (e) {
-            // Suppress errors during page transitions
+            console.log(`[MONITOR ERR] ${e.message}`);
+            if (e.message.includes("closed") || e.message.includes("destroyed") || e.message.includes("crashed")) {
+                try {
+                    console.log("[PUPPETEER] Attempting to recover page after crash...");
+                    await page.reload({ waitUntil: "networkidle2" });
+                } catch (re) {
+                    console.log("[PUPPETEER] Recovery failed: " + re.message);
+                }
+            }
         }
     }, 1000);
     
