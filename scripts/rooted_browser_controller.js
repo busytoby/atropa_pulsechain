@@ -88,7 +88,11 @@ async function main() {
                     console.log("[PUPPETEER] Control+R detected. Reloading page...");
                     await page.reload({ waitUntil: "networkidle2" });
                 } else if (keyName) {
-                    await page.keyboard.down(keyName);
+                    if (keyName === 'Enter') {
+                        await page.keyboard.press('Enter');
+                    } else {
+                        await page.keyboard.down(keyName);
+                    }
                 }
             } else if (cmd === 'KEY_UP') {
                 const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
@@ -96,7 +100,7 @@ async function main() {
                 if (keyName === 'Control') {
                     controlDown = false;
                 }
-                if (keyName) {
+                if (keyName && keyName !== 'Enter') {
                     await page.keyboard.up(keyName);
                 }
             } else if (cmd === 'MOUSE_SCROLL') {
