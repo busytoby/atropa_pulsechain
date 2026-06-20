@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <poll.h>
+#include <jpeglib.h>
+#include <setjmp.h>
 
 #include "lau_memory.h"
 #include "tsfi_raw.h"
@@ -74,6 +76,57 @@ void send_msg(int fd, uint32_t obj, uint16_t op, void *data, size_t len, int s_f
     if (ret < 0) {
         fprintf(stderr, "[Auncient Presenter ERR] sendmsg failed: obj=%u, op=%u, err=%s\n", obj, op, strerror(errno));
     }
+}
+
+struct my_error_mgr {
+    struct jpeg_error_mgr pub;
+    jmp_buf setjmp_buffer;
+};
+
+static void my_error_exit(j_common_ptr cinfo) {
+    struct my_error_mgr *myerr = (struct my_error_mgr *)cinfo->err;
+    (*cinfo->err->output_message)(cinfo);
+    longjmp(myerr->setjmp_buffer, 1);
+}
+
+bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    struct jpeg_decompress_struct cinfo;
+    struct my_error_mgr jerr;
+    cinfo.err = jpeg_std_error(&jerr.pub);
+    jerr.pub.error_exit = my_error_exit;
+    if (setjmp(jerr.setjmp_buffer)) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+    jpeg_create_decompress(&cinfo);
+    jpeg_mem_src(&cinfo, jpeg_buf, jpeg_sz);
+    if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+    cinfo.out_color_space = JCS_RGB;
+    if (!jpeg_start_decompress(&cinfo)) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+    int row_stride = cinfo.output_width * cinfo.output_components;
+    JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
+    while (cinfo.output_scanline < cinfo.output_height) {
+        int y = cinfo.output_scanline;
+        if (y >= height) break;
+        jpeg_read_scanlines(&cinfo, buffer, 1);
+        uint8_t *src = buffer[0];
+        uint32_t *dst = scanout_px + y * width;
+        for (int x = 0; x < width && x < (int)cinfo.output_width; x++) {
+            uint8_t r = src[x * 3];
+            uint8_t g = src[x * 3 + 1];
+            uint8_t b = src[x * 3 + 2];
+            dst[x] = (r << 16) | (g << 8) | b;
+        }
+    }
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
+    return true;
 }
 
 int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
@@ -239,6 +292,7 @@ int main() {
     ptsfi_zmm_set_scanout_buffer(scanout_px, w, h);
     ptsfi_drmModeAddPlane(72, sz);
     uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
+    (void)p72;
 
     VkSwapchainKHR mock_swapchain = (VkSwapchainKHR)0xB000;
     uint32_t imageIndex = 0;
@@ -270,8 +324,15 @@ int main() {
         { .fd = STDIN_FILENO, .events = POLLIN }
     };
 
+    enum {
+        STATE_READ_LEN,
+        STATE_READ_DATA
+    } stream_state = STATE_READ_LEN;
+
+    size_t target_len = 4;
     size_t total_read = 0;
-    uint8_t *ptr = (uint8_t*)p72;
+    static uint8_t input_buf[2 * 1024 * 1024]; // 2 MB static buffer
+    uint32_t jpeg_len = 0;
 
     while (1) {
         // Poll both file descriptors with a 10ms timeout
@@ -290,9 +351,9 @@ int main() {
             }
         }
 
-        // 2. Read incoming frame buffer segments from stdin
+        // 2. Read incoming JPEG frame buffer from stdin
         if (fds[1].revents & POLLIN) {
-            ssize_t bytes = read(STDIN_FILENO, ptr + total_read, sz - total_read);
+            ssize_t bytes = read(STDIN_FILENO, input_buf + total_read, target_len - total_read);
             if (bytes < 0) {
                 if (errno != EAGAIN && errno != EWOULDBLOCK) {
                     fprintf(stderr, "[Auncient Presenter] STDIN read error: %s\n", strerror(errno));
@@ -303,19 +364,31 @@ int main() {
                 goto out;
             } else {
                 total_read += bytes;
-                if (total_read >= sz) {
-                    // Frame fully received. Present and flip buffer.
-                    memcpy(scanout_px, p72, sz);
-                    pvkQueuePresentKHR(queue, &presentInfo);
+                if (total_read >= target_len) {
+                    if (stream_state == STATE_READ_LEN) {
+                        memcpy(&jpeg_len, input_buf, 4);
+                        if (jpeg_len > sizeof(input_buf)) {
+                            fprintf(stderr, "[Auncient Presenter ERR] Frame length %u exceeds buffer size!\n", jpeg_len);
+                            goto out;
+                        }
+                        stream_state = STATE_READ_DATA;
+                        target_len = jpeg_len;
+                        total_read = 0;
+                    } else {
+                        if (decode_jpeg(input_buf, jpeg_len, scanout_px, w, h)) {
+                            pvkQueuePresentKHR(queue, &presentInfo);
 
-                    uint32_t attach_args[] = {bid, 0, 0};
-                    send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
+                            uint32_t attach_args[] = {bid, 0, 0};
+                            send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
 
-                    uint32_t damage[] = {0, 0, w, h};
-                    send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
-                    send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
-
-                    total_read = 0; // Reset read index for next frame
+                            uint32_t damage[] = {0, 0, w, h};
+                            send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
+                            send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
+                        }
+                        stream_state = STATE_READ_LEN;
+                        target_len = 4;
+                        total_read = 0;
+                    }
                 }
             }
         }

@@ -51,12 +51,15 @@ async function main() {
     const browser = await puppeteer.launch({
         executablePath: "/usr/bin/google-chrome",
         headless: true,
+        ignoreDefaultArgs: ["--mute-audio"],
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--disable-gpu",
             "--window-size=800,600",
-            "--autoplay-policy=no-user-gesture-required"
+            "--autoplay-policy=no-user-gesture-required",
+            "--enable-gpu-rasterization",
+            "--enable-zero-copy",
+            "--ignore-gpu-blocklist"
         ]
     });
 
@@ -87,16 +90,62 @@ async function main() {
         await page.type(searchInputSelector, "Atropa", { delay: 150 });
         console.log("[PUPPETEER] Performing search by pressing Enter...");
         await page.keyboard.press("Enter");
+
+        // Wait for search results page
+        console.log("[PUPPETEER] Waiting for search results to load...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Click on filters button
+        console.log("[PUPPETEER] Looking for 'Filters' button...");
+        const filtersButtonSelector = await page.evaluate(() => {
+            const elements = Array.from(document.querySelectorAll('ytd-toggle-button-renderer button, a[aria-label="Search filters"], button[aria-label="Search filters"]'));
+            if (elements.length > 0) {
+                elements[0].setAttribute('id', 'temp-filter-btn');
+                return '#temp-filter-btn';
+            }
+            const all = Array.from(document.querySelectorAll('button, a, ytd-toggle-button-renderer'));
+            const found = all.find(el => el.textContent && el.textContent.toLowerCase().includes('filter'));
+            if (found) {
+                const clickable = found.closest('button') || found.closest('a') || found;
+                clickable.setAttribute('id', 'temp-filter-btn');
+                return '#temp-filter-btn';
+            }
+            return null;
+        });
+
+        if (filtersButtonSelector) {
+            console.log("[PUPPETEER] Clicking Filters button using page.click...");
+            await page.click(filtersButtonSelector);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Click on "This week" option
+            console.log("[PUPPETEER] Looking for 'This week' filter option...");
+            const weekOptionSelector = await page.evaluate(() => {
+                const elements = Array.from(document.querySelectorAll('ytd-search-filter-renderer a, ytd-search-filter-renderer, a.ytd-search-filter-renderer'));
+                const found = elements.find(el => el.textContent && el.textContent.toLowerCase().includes('this week'));
+                if (found) {
+                    const clickable = found.closest('a') || found.closest('button') || found;
+                    clickable.setAttribute('id', 'temp-this-week-opt');
+                    return '#temp-this-week-opt';
+                }
+                return null;
+            });
+
+            if (weekOptionSelector) {
+                console.log("[PUPPETEER] Clicking 'This week' filter option using page.click...");
+                await page.click(weekOptionSelector);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } else {
+                console.log("[PUPPETEER] Failed to find 'This week' filter option.");
+            }
+        } else {
+            console.log("[PUPPETEER] Failed to find 'Filters' button.");
+        }
     } catch (e) {
-        console.log("[PUPPETEER] Automatic search input identification failed: " + e.message);
+        console.log("[PUPPETEER] Automatic search or filter flow failed: " + e.message);
     }
 
     let active = true;
-    presenter.on("exit", (code, signal) => {
-        console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Stopping stream.`);
-        active = false;
-        browser.close();
-    });
 
     // Read input events from presenter stdout and route them to Puppeteer
     const rl = readline.createInterface({
@@ -140,43 +189,50 @@ async function main() {
         }
     });
 
-    // Frame capture loop
-    const frameInterval = 1000 / 5; // 5 FPS target (concept demo)
+    // Native CDP Screencast Stream
     let frameCount = 0;
+    const client = await page.target().createCDPSession();
+    
+    presenter.on("exit", (code, signal) => {
+        console.log(`[PRESENTER] Exited. Stopping screencast.`);
+        active = false;
+        client.send('Page.stopScreencast').catch(() => {});
+        browser.close();
+    });
 
-    async function captureLoop() {
-        while (active) {
-            const startTime = Date.now();
+    client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
+        // Acknowledge the frame immediately to keep the screencast stream going
+        await client.send('Page.screencastFrameAck', { sessionId });
+
+        if (active && presenter.stdin.writable) {
             try {
-                const pngBuffer = await page.screenshot({ type: 'png' });
-                const rawData = await new Promise((resolve, reject) => {
-                    new PNG().parse(pngBuffer, (err, parsed) => {
-                        if (err) reject(err);
-                        else resolve(parsed.data);
-                    });
-                });
+                const jpegBuffer = Buffer.from(data, 'base64');
+                const lenBuf = Buffer.alloc(4);
+                lenBuf.writeUInt32LE(jpegBuffer.length, 0);
 
-                if (active && presenter.stdin.writable) {
-                    const ok = presenter.stdin.write(rawData);
-                    if (!ok) {
-                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                    }
-                    frameCount++;
-                    if (frameCount % 30 === 0) {
-                        console.log(`[STREAM] Sent ${frameCount} frames.`);
-                    }
+                let ok = presenter.stdin.write(lenBuf);
+                if (ok) {
+                    ok = presenter.stdin.write(jpegBuffer);
+                }
+                if (!ok) {
+                    await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                }
+                frameCount++;
+                if (frameCount % 100 === 0) {
+                    console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
                 }
             } catch (err) {
-                console.error("[CAPTURE ERR]", err);
+                console.error("[STREAM ERR]", err);
             }
-
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, frameInterval - elapsed);
-            await new Promise(resolve => setTimeout(resolve, delay));
         }
-    }
+    });
 
-    captureLoop();
+    console.log("[PUPPETEER] Starting CDP screencast stream...");
+    await client.send('Page.startScreencast', {
+        format: 'jpeg',
+        quality: 80,
+        everyNthFrame: 1
+    });
 }
 
 main().catch(err => {
