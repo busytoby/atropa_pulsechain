@@ -174,6 +174,8 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
     } else if (obj == xdg_s_id && op == 0) {
         uint32_t ack[] = {p[0]};
         send_msg(fd, xdg_s_id, XDG_SURFACE_ACK_CONFIGURE, ack, 4, -1);
+        uint32_t geom[] = {0, 0, (uint32_t)g_w, (uint32_t)g_h};
+        send_msg(fd, xdg_s_id, 3, geom, 16, -1); // 3 = XDG_SURFACE_SET_WINDOW_GEOMETRY for Auncient dashboard bounds
         if (out_configure) *out_configure = true;
     } else if (xdg_wm_base_id && obj == xdg_wm_base_id && op == 0) {
         uint32_t pong[] = {p[0]};
