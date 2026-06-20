@@ -57,12 +57,31 @@ async function main() {
             "--disable-setuid-sandbox",
             "--disable-gpu",
             "--window-size=800,600",
-            "--autoplay-policy=no-user-gesture-required"
+            "--autoplay-policy=no-user-gesture-required",
+            "--enable-audio-service"
         ]
     });
 
     const page = await browser.newPage();
     await page.setViewport({ width: 800, height: 600 });
+    
+    // Auto-unmute YouTube video player continuously in the background
+    setInterval(async () => {
+        try {
+            await page.evaluate(() => {
+                const muteBtn = document.querySelector('.ytp-mute-button');
+                if (muteBtn) {
+                    const titleText = (muteBtn.getAttribute('title') || muteBtn.getAttribute('aria-label') || '').toLowerCase();
+                    if (titleText.includes('unmute')) {
+                        muteBtn.click();
+                        console.log("[PUPPETEER] Triggered YouTube Player unmute button.");
+                    }
+                }
+            });
+        } catch (e) {
+            // Suppress errors during page transitions
+        }
+    }, 1000);
     
     // Load Atropa Splash Screen first
     const splashPath = `file://${path.join(__dirname, "../frontend/atropa_splash.html")}`;
