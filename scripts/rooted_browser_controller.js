@@ -679,8 +679,11 @@ async function main() {
             console.log("[PUPPETEER] Identifying search input box...");
             const searchInputSelector = 'input[name="search_query"], input#search';
             await page.waitForSelector(searchInputSelector, { timeout: 10000 });
-            console.log("[PUPPETEER] Search input identified. Typing 'Atropa'...");
+            console.log("[PUPPETEER] Search input identified. Clearing and typing 'Atropa'...");
             await page.focus(searchInputSelector);
+            // Select all text in the search input and clear it
+            await page.click(searchInputSelector, { clickCount: 3 });
+            await page.keyboard.press('Backspace');
             await page.type(searchInputSelector, "Atropa", { delay: 150 });
             console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
             // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
