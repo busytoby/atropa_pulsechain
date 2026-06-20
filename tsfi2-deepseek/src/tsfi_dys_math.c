@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "tsfi_dys_math.h"
 #include "lau_memory.h"
 #include <string.h>
@@ -5,6 +6,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/random.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 // Constants (Native BigInt)
 static TSFiBigInt* g_APOGEE = NULL;
@@ -153,7 +156,7 @@ TSFiBigInt* RANDOM_bn(TSFiBigInt* Prime) {
     // Seed on first use if not seeded
     if (g_prng_state[0] == 0x12345678) {
         uint64_t seed;
-        if (getrandom(&seed, 8, 0) == 8) {
+        if (syscall(SYS_getrandom, &seed, 8, 0) == 8) {
             g_prng_state[0] = seed;
             g_prng_state[1] = seed ^ 0x5555555555555555ULL;
         }

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "tsfi_opt_zmm.h"
 #include <immintrin.h>
 #include <string.h>
@@ -116,6 +117,8 @@ void tsfi_dispatch_zmm_dynamic(TsfiZmmManifest *m) {
 }
 
 #include <sys/random.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -142,7 +145,7 @@ void tsfi_scramble_wave512(void *ptr, size_t size) {
     size_t seed_len = sizeof(state);
     uint8_t *seed_ptr = (uint8_t*)state;
     while (seed_len > 0) {
-        ssize_t ret = getrandom(seed_ptr, seed_len, 0);
+        ssize_t ret = syscall(SYS_getrandom, seed_ptr, seed_len, 0);
         if (ret < 0) {
             if (errno == EINTR) continue;
             abort();

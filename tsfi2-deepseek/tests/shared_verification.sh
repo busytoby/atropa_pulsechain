@@ -15,11 +15,19 @@ echo "==================================================="
 
 # 1. Build Phase
 echo "[STEP 1] Building..."
-if ! make debug > build_verify.log 2>&1; then
+if ! make tsfi2 > build_verify.log 2>&1; then
     echo "[FAIL] Build Failed."
     exit 1
 fi
 echo "[PASS] Build Successful."
+
+# 1.5 Unit Test Phase
+echo "[STEP 1.5] Executing ZMM VM Attitude Math Tests..."
+if ! ./tests/test_quaternion_flight; then
+    echo "[FAIL] ZMM VM Attitude Math Verification Failed."
+    exit 1
+fi
+echo "[PASS] ZMM VM Attitude Math Verification Passed."
 
 # 2. Execution Phase
 echo "[STEP 2] Launching Application..."

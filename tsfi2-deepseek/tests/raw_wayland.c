@@ -50,7 +50,10 @@ void send_msg(int fd, uint32_t obj, uint16_t op, void *data, size_t len, int s_f
         cm->cmsg_level = SOL_SOCKET; cm->cmsg_type = SCM_RIGHTS; cm->cmsg_len = CMSG_LEN(sizeof(int));
         *((int *)CMSG_DATA(cm)) = s_fd;
     }
-    sendmsg(fd, &msg, MSG_NOSIGNAL);
+    ssize_t ret = sendmsg(fd, &msg, MSG_NOSIGNAL);
+    if (ret < 0) {
+        printf("[SENDMSG ERROR] obj=%u, op=%u, err=%s\n", obj, op, strerror(errno)); fflush(stdout);
+    }
 }
 
 bool process_events(int fd, uint32_t xdg_s_id) {
@@ -63,6 +66,7 @@ bool process_events(int fd, uint32_t xdg_s_id) {
             return false;
         }
     }
+    printf("[EVENT] obj=%u, sz=%u, op=%u\n", obj, sz, op); fflush(stdout);
     bool conf = false;
     if (obj == WL_REGISTRY_ID && op == 0) {
         char *iface = (char *)&p[2];
@@ -73,6 +77,16 @@ bool process_events(int fd, uint32_t xdg_s_id) {
         uint32_t ack[] = {p[0]};
         send_msg(fd, xdg_s_id, XDG_SURFACE_ACK_CONFIGURE, ack, 4, -1);
         conf = true;
+    } else if (global_xdg_id && obj == global_xdg_id && op == 0) {
+        uint32_t pong[] = {p[0]};
+        send_msg(fd, global_xdg_id, 3, pong, 4, -1);
+        printf("[EVENT] Responded to ping with pong (serial=%u)\n", p[0]); fflush(stdout);
+    } else if (obj == 1 && op == 0) {
+        uint32_t err_obj = p[0];
+        uint32_t code = p[1];
+        uint32_t str_len = p[2];
+        char *err_msg = (char *)&p[3];
+        printf("[FATAL DISPLAY ERROR] err_obj=%u, code=%u, msg=%.*s\n", err_obj, code, str_len, err_msg); fflush(stdout);
     }
     if (p) lau_free(p);
     return conf;

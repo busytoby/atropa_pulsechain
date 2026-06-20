@@ -504,7 +504,10 @@
 
         // Dynamic coordinate display
         function updateMercenaryCoords() {
-            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+            let currentTerritory = "NEUTRAL ZONE";
+            if (playerX < 90) currentTerritory = "PALYAR SECTOR";
+            else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
         }
 
         function drawGrid() {
@@ -517,7 +520,15 @@
             const distortionIntensity = tempDiff * 0.04; // scale distortion based on ammeter thermal state
             const greenGlow = Math.min(255, Math.max(0, 240 - Math.floor(tempDiff * 1.5)));
             const redGlow = Math.min(255, Math.floor(tempDiff * 2.2));
-            vCtx.strokeStyle = `rgba(${redGlow}, ${greenGlow}, 255, 0.45)`;
+            
+            // Dynamic color coding for Palyar / Mechanoid space
+            let baseColor = `rgba(${redGlow}, ${greenGlow}, 255, 0.455)`; // Neutral: Neon Purple/Blue
+            if (playerX < 90) {
+                baseColor = `rgba(57, ${greenGlow}, 20, 0.55)`; // Palyar: Neon Green
+            } else if (playerX > 150) {
+                baseColor = `rgba(${redGlow}, 242, 254, 0.55)`; // Mechanoid: Neon Blue
+            }
+            vCtx.strokeStyle = baseColor;
             vCtx.lineWidth = 1.5;
 
             // Draw pseudo 3D wireframe mesh grid (distorted by ammeter heat)

@@ -3209,6 +3209,19 @@
             const mentNames = ["Normal", "Shaken (Subtle Jitter)", "Terrified (+20Hz, Mod Jitter)", "Panicked (+40Hz, High Jitter, Stutter)", "Melancholic (-25Hz, 50% Energy)"];
             
             statusEl.innerHTML = `<span style="color: var(--neon-pink);">[STATE]</span> Physical: <strong>${physNames[phys]}</strong> | Mental: <strong>${mentNames[ment]}</strong>`;
+
+            // Broadcast state to other tabs (like the Quaternion Flight Sandbox)
+            try {
+                const bc = new BroadcastChannel('vaesen_state');
+                bc.postMessage({
+                    type: 'vaesen_update',
+                    physicalTrauma: phys,
+                    mentalTrauma: ment,
+                    physName: physNames[phys].split(" ")[0],
+                    mentName: mentNames[ment].split(" ")[0]
+                });
+                bc.close();
+            } catch (e) {}
         }
 
         async function syncTraumaToChain() {

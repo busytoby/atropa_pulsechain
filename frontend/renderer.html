@@ -314,13 +314,15 @@
                         DISPLAY RENDERING STYLES
                     </h3>
                     
-                    <div class="mode-tabs" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="mode-tabs" style="grid-template-columns: repeat(4, 1fr); gap: 8px;">
                         <div id="tabTerminal" class="mode-tab active" onclick="setRenderMode(0)">TERMINAL TEXT</div>
                         <div id="tab2DScroller" class="mode-tab" onclick="setRenderMode(1)">2D SCROLLER</div>
                         <div id="tabPseudo3D" class="mode-tab" onclick="setRenderMode(2)">PSEUDO-3D</div>
                         <div id="tab3DWireframe" class="mode-tab" onclick="setRenderMode(3)">3D WIREFRAME</div>
                         <div id="tabRaycaster" class="mode-tab" onclick="setRenderMode(4)">RAYCASTER 3D</div>
                         <div id="tabAudioVisualizer" class="mode-tab" onclick="setRenderMode(5)">SID AUDIO</div>
+                        <div id="tabIsometric" class="mode-tab" onclick="setRenderMode(6)">ISOMETRIC 3D</div>
+                        <div id="tabQuaternion" class="mode-tab" onclick="setRenderMode(7)">QUATERNION 3D</div>
                     </div>
 
                     <div style="border-top: 1px solid rgba(0, 242, 254, 0.15); padding-top: 20px;">
@@ -792,6 +794,12 @@
                     break;
                 case 5:
                     drawAudioVisualizerMode();
+                    break;
+                case 6:
+                    drawIsometricMode();
+                    break;
+                case 7:
+                    drawQuaternionMode();
                     break;
             }
 
@@ -1414,6 +1422,229 @@
             ctx.fillStyle = "#fff";
             ctx.font = "14px 'Orbitron', sans-serif";
             ctx.fillText("SID CHANNELS AUDIO SYNTH VISUALIZER", 30, 40);
+        }
+
+        // Mode 6 Renderer: Classic Isometric View
+        function drawIsometricMode() {
+            ctx.fillStyle = "#030408";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const scale = reg.scale / 10;
+            const camX = reg.camX;
+            const camY = reg.camY;
+            const camZ = reg.camZ;
+            
+            // Isometric inclination angle (defaults to 30 degrees)
+            const angleDeg = reg.styleSpecific || 30;
+            const theta = (angleDeg * Math.PI) / 180;
+            const cosT = Math.cos(theta);
+            const sinT = Math.sin(theta);
+
+            // Project 3D points to 2D screen using isometric math
+            const projectIso = (x, y, z) => {
+                let rx = x - camX / 5;
+                let ry = y - camY / 5;
+                let rz = z - camZ / 5;
+                
+                let sx = (rx - rz) * cosT * scale + canvas.width / 2;
+                let sy = -(ry - (rx + rz) * sinT) * scale + canvas.height / 2;
+                return { x: sx, y: sy };
+            };
+
+            // Draw isometric ground grid with Palyar (green) / Mechanoid (blue) sector coloring
+            ctx.lineWidth = 1;
+            const getGridColor = (x) => {
+                if (x < -3) return "rgba(57, 255, 20, 0.18)";   // Palyar Sector (neon green)
+                if (x > 3) return "rgba(0, 242, 254, 0.18)";    // Mechanoid Sector (neon blue)
+                return "rgba(255, 0, 127, 0.18)";               // Neutral / Danger Zone (neon magenta)
+            };
+
+            // Grid lines along constant X
+            for (let x = -8; x <= 8; x += 2) {
+                ctx.strokeStyle = getGridColor(x);
+                ctx.beginPath();
+                let p1 = projectIso(x * 15, -45, -120);
+                let p2 = projectIso(x * 15, -45, 120);
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+
+            // Grid lines along constant Z
+            for (let z = -8; z <= 8; z += 2) {
+                ctx.beginPath();
+                let first = true;
+                for (let x = -8; x <= 8; x += 2) {
+                    ctx.strokeStyle = getGridColor(x);
+                    let p = projectIso(x * 15, -45, z * 15);
+                    if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                    else { ctx.lineTo(p.x, p.y); }
+                }
+                ctx.stroke();
+            }
+
+            // Draw thicker sector division fence lines at X = -45 and X = 45
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(57, 255, 20, 0.7)"; // Palyar Boundary
+            ctx.beginPath();
+            let pB1_1 = projectIso(-45, -45, -120);
+            let pB1_2 = projectIso(-45, -45, 120);
+            ctx.moveTo(pB1_1.x, pB1_1.y);
+            ctx.lineTo(pB1_2.x, pB1_2.y);
+            ctx.stroke();
+
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.7)"; // Mechanoid Boundary
+            ctx.beginPath();
+            let pB2_1 = projectIso(45, -45, -120);
+            let pB2_2 = projectIso(45, -45, 120);
+            ctx.moveTo(pB2_1.x, pB2_1.y);
+            ctx.lineTo(pB2_2.x, pB2_2.y);
+            ctx.stroke();
+
+            // Project model vertices
+            let projected = [];
+            vertices.forEach(v => {
+                let lx = v.x * 45;
+                let ly = v.y * 45;
+                let lz = v.z * 45;
+                projected.push(projectIso(lx, ly, lz));
+            });
+
+            // Draw model lines
+            ctx.strokeStyle = varColor("--neon-blue");
+            ctx.lineWidth = 2.5;
+            edges.forEach(edge => {
+                let p1 = projected[edge[0]];
+                let p2 = projected[edge[1]];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+
+            // Draw model vertex points
+            ctx.fillStyle = varColor("--neon-magenta");
+            projected.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Sector labels in isometric space
+            let pPalyarText = projectIso(-75, -25, 0);
+            ctx.fillStyle = "rgba(57, 255, 20, 0.7)";
+            ctx.font = "bold 9px 'Orbitron', monospace";
+            ctx.fillText("PALYAR SECTOR", pPalyarText.x - 30, pPalyarText.y);
+
+            let pMechText = projectIso(75, -25, 0);
+            ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+            ctx.fillText("MECHANOID SECTOR", pMechText.x - 35, pMechText.y);
+
+            // General status label
+            ctx.fillStyle = "#fff";
+            ctx.font = "14px 'Orbitron', sans-serif";
+            ctx.fillText("CLASSIC 3D ISOMETRIC DISPLAY", 30, 40);
+        }
+
+        // Mode 7 Renderer: Quaternion 6-DOF Flight Sim
+        function drawQuaternionMode() {
+            ctx.fillStyle = "#030307";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const scale = reg.scale;
+            const camX = reg.camX;
+            const camY = reg.camY;
+            const camZ = reg.camZ;
+
+            // Roll rate/speed from the styleSpecific slider
+            const rollSpeed = reg.styleSpecific || 5;
+
+            // Yaw, Pitch, Roll angles
+            const yaw = (reg.yaw * Math.PI) / 180;
+            const pitch = (reg.pitch * Math.PI) / 180;
+            const roll = (tickCounter * rollSpeed * 0.05 * Math.PI) / 180;
+
+            // Euler to Quaternion Conversion
+            const cy = Math.cos(yaw / 2), sy = Math.sin(yaw / 2);
+            const cp = Math.cos(pitch / 2), sp = Math.sin(pitch / 2);
+            const cr = Math.cos(roll / 2), sr = Math.sin(roll / 2);
+
+            const qw = cr * cp * cy + sr * sp * sy;
+            const qx = sr * cp * cy - cr * sp * sy;
+            const qy = cr * sp * cy + sr * cp * sy;
+            const qz = cr * cp * sy - sr * sp * cy;
+
+            // Quaternion to 3x3 Rotation Matrix
+            const r00 = 1 - 2 * (qy * qy + qz * qz);
+            const r01 = 2 * (qx * qy - qz * qw);
+            const r02 = 2 * (qx * qz + qy * qw);
+
+            const r10 = 2 * (qx * qy + qz * qw);
+            const r11 = 1 - 2 * (qx * qx + qz * qz);
+            const r12 = 2 * (qy * qz - qx * qw);
+
+            const r20 = 2 * (qx * qz - qy * qw);
+            const r21 = 2 * (qy * qz + qx * qw);
+            const r22 = 1 - 2 * (qx * qx + qy * qy);
+
+            let projected = [];
+
+            // Project 3D points
+            vertices.forEach(v => {
+                let lx = v.x * 45;
+                let ly = v.y * 45;
+                let lz = v.z * 45;
+
+                // Multiply vector by rotation matrix
+                let rx = lx * r00 + ly * r01 + lz * r02;
+                let ry = lx * r10 + ly * r11 + lz * r12;
+                let rz = lx * r20 + ly * r21 + lz * r22;
+
+                // Camera translation
+                let cx = rx - camX;
+                let cy = ry - camY;
+                let cz = rz + (camZ === 0 ? 0.001 : camZ);
+
+                // Perspective division
+                let screenX = (cx * scale) / cz + canvas.width / 2;
+                let screenY = -(cy * scale) / cz + canvas.height / 2;
+
+                projected.push({ x: screenX, y: screenY });
+            });
+
+            // Draw Vector edges
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.85)"; // Neon blue
+            ctx.lineWidth = 2;
+            edges.forEach(edge => {
+                let p1 = projected[edge[0]];
+                let p2 = projected[edge[1]];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+
+            // Draw points
+            ctx.fillStyle = "#ff007f"; // Neon Magenta
+            projected.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // HUD Overlay for Quaternion mathematical basis details
+            ctx.fillStyle = "rgba(57, 255, 20, 0.8)"; // Neon CRT Green
+            ctx.font = "11px 'Share Tech Mono', monospace";
+            ctx.fillText("--- QUATERNION GIMBAL-LOCK PREVENTION SYSTEM ---", 30, canvas.height - 90);
+            ctx.fillText(`Q_W: ${qw.toFixed(5)}`, 30, canvas.height - 75);
+            ctx.fillText(`Q_X: ${qx.toFixed(5)}`, 180, canvas.height - 75);
+            ctx.fillText(`Q_Y: ${qy.toFixed(5)}`, 30, canvas.height - 60);
+            ctx.fillText(`Q_Z: ${qz.toFixed(5)}`, 180, canvas.height - 60);
+            
+            // HUD general mode label
+            ctx.fillStyle = "#fff";
+            ctx.font = "14px 'Orbitron', sans-serif";
+            ctx.fillText("QUATERNION 6-DOF FLIGHT ROTATOR", 30, 40);
         }
 
         // Web Audio API Synth Engine

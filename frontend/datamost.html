@@ -10251,7 +10251,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             playNavigationSound();
-            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+            let currentTerritory = "NEUTRAL ZONE";
+            if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+            else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
             drawGolf3D();
         }
 
@@ -10321,33 +10324,91 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillRect(0, 0, w, h);
             
             if (isMercenaryMode) {
-                ctx.strokeStyle = "rgba(0, 255, 255, 0.12)";
-                ctx.lineWidth = 1;
+                // Color-coded boundary lines and sector grid coloring
+                // Boundaries are at X = -150 and X = 150
+                const getGridColor = (midX) => {
+                    if (midX < -150) return "rgba(57, 255, 20, 0.15)";   // Palyar Colony (neon green)
+                    if (midX > 150) return "rgba(0, 242, 254, 0.15)";    // Mechanoid Space (neon blue)
+                    return "rgba(255, 0, 127, 0.15)";                   // Neutral / Danger Zone (neon magenta)
+                };
                 
+                // Grid lines along Z (lines of constant X)
+                ctx.lineWidth = 1;
                 for (let x = -500; x <= 500; x += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let z = -500; z <= 1000; z += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let z = -500; z < 1000; z += 100) {
+                        ctx.strokeStyle = getGridColor(x);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x, 0, z + 100, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
                 }
                 
+                // Grid lines along X (lines of constant Z)
                 for (let z = -500; z <= 1000; z += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let x = -500; x <= 500; x += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let x = -500; x < 500; x += 100) {
+                        ctx.strokeStyle = getGridColor(x + 50);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x + 100, 0, z, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
+                }
+                
+                // Draw thicker solid boundary fence lines at X = -150 and X = 150
+                // Boundary 1: X = -150 (Palyar Boundary)
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "rgba(57, 255, 20, 0.8)"; // Neon green
+                ctx.beginPath();
+                let firstB1 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(-150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB1) { ctx.moveTo(p.x, p.y); firstB1 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+                
+                // Boundary 2: X = 150 (Mechanoid Boundary)
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.8)"; // Neon blue
+                ctx.beginPath();
+                let firstB2 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB2) { ctx.moveTo(p.x, p.y); firstB2 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+
+                // Add text labels in 3D space for the territories
+                let pPalyarLabel = project3D(-325, 0, 250, 0, 0, w, h);
+                if (pPalyarLabel) {
+                    ctx.fillStyle = "rgba(57, 255, 20, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("PALYAR SECTOR", pPalyarLabel.x - 40, pPalyarLabel.y);
+                }
+                let pMechLabel = project3D(325, 0, 250, 0, 0, w, h);
+                if (pMechLabel) {
+                    ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("MECHANOID SECTOR", pMechLabel.x - 45, pMechLabel.y);
+                }
+                let pDangerLabel = project3D(0, 0, 250, 0, 0, w, h);
+                if (pDangerLabel) {
+                    ctx.fillStyle = "rgba(255, 0, 127, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("NEUTRAL / DANGER ZONE", pDangerLabel.x - 55, pDangerLabel.y);
                 }
                 
                 const placements = [
@@ -10576,7 +10637,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     
                     coordsDiv.innerText = "Loading 3D geometries from chain...";
                     await loadMercenaryGeometries();
-                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+                    let currentTerritory = "NEUTRAL ZONE";
+                    if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+                    else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
                     
                     playRealSoundOnChainClip(4);
                 } else {
@@ -20362,7 +20426,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             playNavigationSound();
-            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+            let currentTerritory = "NEUTRAL ZONE";
+            if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+            else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
             drawGolf3D();
         }
 
@@ -20432,33 +20499,91 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillRect(0, 0, w, h);
             
             if (isMercenaryMode) {
-                ctx.strokeStyle = "rgba(0, 255, 255, 0.12)";
-                ctx.lineWidth = 1;
+                // Color-coded boundary lines and sector grid coloring
+                // Boundaries are at X = -150 and X = 150
+                const getGridColor = (midX) => {
+                    if (midX < -150) return "rgba(57, 255, 20, 0.15)";   // Palyar Colony (neon green)
+                    if (midX > 150) return "rgba(0, 242, 254, 0.15)";    // Mechanoid Space (neon blue)
+                    return "rgba(255, 0, 127, 0.15)";                   // Neutral / Danger Zone (neon magenta)
+                };
                 
+                // Grid lines along Z (lines of constant X)
+                ctx.lineWidth = 1;
                 for (let x = -500; x <= 500; x += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let z = -500; z <= 1000; z += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let z = -500; z < 1000; z += 100) {
+                        ctx.strokeStyle = getGridColor(x);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x, 0, z + 100, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
                 }
                 
+                // Grid lines along X (lines of constant Z)
                 for (let z = -500; z <= 1000; z += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let x = -500; x <= 500; x += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let x = -500; x < 500; x += 100) {
+                        ctx.strokeStyle = getGridColor(x + 50);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x + 100, 0, z, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
+                }
+                
+                // Draw thicker solid boundary fence lines at X = -150 and X = 150
+                // Boundary 1: X = -150 (Palyar Boundary)
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "rgba(57, 255, 20, 0.8)"; // Neon green
+                ctx.beginPath();
+                let firstB1 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(-150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB1) { ctx.moveTo(p.x, p.y); firstB1 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+                
+                // Boundary 2: X = 150 (Mechanoid Boundary)
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.8)"; // Neon blue
+                ctx.beginPath();
+                let firstB2 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB2) { ctx.moveTo(p.x, p.y); firstB2 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+
+                // Add text labels in 3D space for the territories
+                let pPalyarLabel = project3D(-325, 0, 250, 0, 0, w, h);
+                if (pPalyarLabel) {
+                    ctx.fillStyle = "rgba(57, 255, 20, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("PALYAR SECTOR", pPalyarLabel.x - 40, pPalyarLabel.y);
+                }
+                let pMechLabel = project3D(325, 0, 250, 0, 0, w, h);
+                if (pMechLabel) {
+                    ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("MECHANOID SECTOR", pMechLabel.x - 45, pMechLabel.y);
+                }
+                let pDangerLabel = project3D(0, 0, 250, 0, 0, w, h);
+                if (pDangerLabel) {
+                    ctx.fillStyle = "rgba(255, 0, 127, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("NEUTRAL / DANGER ZONE", pDangerLabel.x - 55, pDangerLabel.y);
                 }
                 
                 const placements = [
@@ -20687,7 +20812,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     
                     coordsDiv.innerText = "Loading 3D geometries from chain...";
                     await loadMercenaryGeometries();
-                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+                    let currentTerritory = "NEUTRAL ZONE";
+                    if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+                    else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
                     
                     playRealSoundOnChainClip(4);
                 } else {
@@ -30200,7 +30328,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             playNavigationSound();
-            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+            let currentTerritory = "NEUTRAL ZONE";
+            if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+            else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
             drawGolf3D();
         }
 
@@ -30270,33 +30401,91 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillRect(0, 0, w, h);
             
             if (isMercenaryMode) {
-                ctx.strokeStyle = "rgba(0, 255, 255, 0.12)";
-                ctx.lineWidth = 1;
+                // Color-coded boundary lines and sector grid coloring
+                // Boundaries are at X = -150 and X = 150
+                const getGridColor = (midX) => {
+                    if (midX < -150) return "rgba(57, 255, 20, 0.15)";   // Palyar Colony (neon green)
+                    if (midX > 150) return "rgba(0, 242, 254, 0.15)";    // Mechanoid Space (neon blue)
+                    return "rgba(255, 0, 127, 0.15)";                   // Neutral / Danger Zone (neon magenta)
+                };
                 
+                // Grid lines along Z (lines of constant X)
+                ctx.lineWidth = 1;
                 for (let x = -500; x <= 500; x += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let z = -500; z <= 1000; z += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let z = -500; z < 1000; z += 100) {
+                        ctx.strokeStyle = getGridColor(x);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x, 0, z + 100, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
                 }
                 
+                // Grid lines along X (lines of constant Z)
                 for (let z = -500; z <= 1000; z += 100) {
-                    ctx.beginPath();
-                    let first = true;
-                    for (let x = -500; x <= 500; x += 100) {
-                        let p = project3D(x, 0, z, 0, 0, w, h);
-                        if (p) {
-                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-                            else { ctx.lineTo(p.x, p.y); }
+                    for (let x = -500; x < 500; x += 100) {
+                        ctx.strokeStyle = getGridColor(x + 50);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x + 100, 0, z, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
                         }
                     }
-                    ctx.stroke();
+                }
+                
+                // Draw thicker solid boundary fence lines at X = -150 and X = 150
+                // Boundary 1: X = -150 (Palyar Boundary)
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "rgba(57, 255, 20, 0.8)"; // Neon green
+                ctx.beginPath();
+                let firstB1 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(-150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB1) { ctx.moveTo(p.x, p.y); firstB1 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+                
+                // Boundary 2: X = 150 (Mechanoid Boundary)
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.8)"; // Neon blue
+                ctx.beginPath();
+                let firstB2 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB2) { ctx.moveTo(p.x, p.y); firstB2 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+
+                // Add text labels in 3D space for the territories
+                let pPalyarLabel = project3D(-325, 0, 250, 0, 0, w, h);
+                if (pPalyarLabel) {
+                    ctx.fillStyle = "rgba(57, 255, 20, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("PALYAR SECTOR", pPalyarLabel.x - 40, pPalyarLabel.y);
+                }
+                let pMechLabel = project3D(325, 0, 250, 0, 0, w, h);
+                if (pMechLabel) {
+                    ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("MECHANOID SECTOR", pMechLabel.x - 45, pMechLabel.y);
+                }
+                let pDangerLabel = project3D(0, 0, 250, 0, 0, w, h);
+                if (pDangerLabel) {
+                    ctx.fillStyle = "rgba(255, 0, 127, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("NEUTRAL / DANGER ZONE", pDangerLabel.x - 55, pDangerLabel.y);
                 }
                 
                 const placements = [
@@ -30525,7 +30714,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     
                     coordsDiv.innerText = "Loading 3D geometries from chain...";
                     await loadMercenaryGeometries();
-                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+                    let currentTerritory = "NEUTRAL ZONE";
+                    if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+                    else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
                     
                     playRealSoundOnChainClip(4);
                 } else {

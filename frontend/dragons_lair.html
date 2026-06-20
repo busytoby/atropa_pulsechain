@@ -3785,6 +3785,37 @@
                     printTerminalLine("You don't have a keycard.");
                 }
             }
+            else if (lowerCmd.startsWith("guide")) {
+                printTerminalLine("🔮 Initiating Auncient Biotika Autopilot to the Lair...");
+                let steps = [];
+                if (mockZmRoom === 10) {
+                    steps = [20, 21, 22, 23, 24];
+                } else if (mockZmRoom === 20) {
+                    steps = [21, 22, 23, 24];
+                } else if (mockZmRoom === 21) {
+                    steps = [22, 23, 24];
+                } else if (mockZmRoom === 22) {
+                    steps = [23, 24];
+                } else if (mockZmRoom === 23) {
+                    steps = [24];
+                } else {
+                    // Teleport to Gates first
+                    mockZmRoom = 10;
+                    steps = [20, 21, 22, 23, 24];
+                }
+                
+                let stepIdx = 0;
+                function runNextStep() {
+                    if (stepIdx < steps.length) {
+                        changeMockRoom(steps[stepIdx]);
+                        stepIdx++;
+                        setTimeout(runNextStep, 1000);
+                    } else {
+                        printTerminalLine("👑 Auncient Biotika successfully guided to the Treasure Vault Lair!");
+                    }
+                }
+                runNextStep();
+            }
             else {
                 printTerminalLine("I don't understand that command.");
             }
