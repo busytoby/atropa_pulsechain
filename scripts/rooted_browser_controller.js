@@ -194,9 +194,11 @@ async function main() {
                     }
                     const fullStr = Buffer.from(blockBytes).toString('utf8');
                     const commandStr = fullStr.split('\0')[0].trim();
-                    if (commandStr) {
-                        console.log(`[WinchesterMQ Event Log] Routed input: ${commandStr}`);
-                        await handleInputCommand(commandStr);
+                    const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
+                    if (commandStr && commandStr.startsWith(targetPrefix)) {
+                        const actualCmd = commandStr.substring(targetPrefix.length);
+                        console.log(`[WinchesterMQ Event Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
+                        await handleInputCommand(actualCmd);
                     }
                 } catch (err) {
                     console.error("[WMQ Listener ERR] Failed to parse input command block:", err);
@@ -210,9 +212,11 @@ async function main() {
             }, async (log) => {
                 try {
                     const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
-                    if (commandStr) {
-                        console.log(`[WinchesterMQ Fast Log] Routed input: ${commandStr}`);
-                        await handleInputCommand(commandStr);
+                    const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
+                    if (commandStr && commandStr.startsWith(targetPrefix)) {
+                        const actualCmd = commandStr.substring(targetPrefix.length);
+                        console.log(`[WinchesterMQ Fast Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
+                        await handleInputCommand(actualCmd);
                     }
                 } catch (err) {
                     console.error("[WMQ Fast Listener ERR] Failed to parse command:", err);

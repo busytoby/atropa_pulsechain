@@ -438,7 +438,7 @@
                 await fetch("/control", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ command: cmd })
+                    body: JSON.stringify({ command: "YOUTUBE:" + cmd })
                 });
                 logToTerminal(`Dispatched WMQ Event: ${cmd}`, "success");
             } catch (err) {
