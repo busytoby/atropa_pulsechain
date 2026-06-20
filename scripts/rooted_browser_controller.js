@@ -405,7 +405,6 @@ async function main() {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--disable-gpu",
             "--window-size=800,600",
             "--disable-dev-shm-usage",
             "--autoplay-policy=no-user-gesture-required",
@@ -457,7 +456,7 @@ async function main() {
 
                 // Check if playback error overlay is active
                 const errScreen = document.querySelector('.ytp-error, .ytp-playability-error-supported-renderers, #error-screen');
-                const hasError = !!(errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0);
+                const hasError = !!(errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0) || (document.body.innerText || "").includes("Something went wrong");
                 const errorText = document.querySelector('.ytp-error-message-text')?.innerText || "";
 
                 const video = document.querySelector('video');
