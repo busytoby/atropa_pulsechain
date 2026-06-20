@@ -436,9 +436,9 @@ async function main() {
     
     try {
         // Load Atropa Splash Screen first
-        const splashPath = `file://${path.join(__dirname, "../frontend/atropa_splash.html")}`;
-        console.log(`[PUPPETEER] Exhibiting splash screen: ${splashPath}`);
-        await page.goto(splashPath, { waitUntil: "load" });
+        const splashUrl = "http://127.0.0.1:8000/atropa_splash.html";
+        console.log(`[PUPPETEER] Exhibiting splash screen: ${splashUrl}`);
+        await page.goto(splashUrl, { waitUntil: "load" });
         
         // Display splash screen for 4 seconds
         await new Promise(resolve => setTimeout(resolve, 4000));
