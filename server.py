@@ -483,6 +483,20 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({'status': 'success', 'frames': frame_urls}).encode('utf-8'))
                 return
+        elif self.path == '/open-browser':
+            # Terminate existing node browser controllers to prevent layout/display conflicts
+            subprocess.run(["pkill", "-f", "rooted_browser_controller.js"])
+            
+            # Spawn the new browser controller pointing to YouTube with Atropa "this week" query
+            target_url = "https://www.youtube.com/results?search_query=atropa&sp=EgQIAxAB"
+            print(f"[Server] Spawning Auncient rooted browser controller for URL: {target_url}")
+            subprocess.Popen(["node", "scripts/rooted_browser_controller.js", target_url])
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'success', 'message': 'Browser controller spawned successfully.'}).encode('utf-8'))
+            return
         else:
             super().do_POST()
 

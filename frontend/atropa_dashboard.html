@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Atropa Vulkan Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-base: #030511;
+            --card-bg: rgba(8, 12, 30, 0.75);
+            --neon-blue: #00f2fe;
+            --neon-purple: #4facfe;
+            --neon-magenta: #ff007f;
+            --neon-green: #39ff14;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            font-family: 'Rajdhani', sans-serif;
+            color: #f0f4f8;
+            padding: 20px;
+        }
+
+        .header-glow {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+            padding-bottom: 15px;
+        }
+
+        .header-glow h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.5));
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--neon-blue);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .canvas-container {
+            width: 100%;
+            background-color: #010206;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #vulkanPipelineCanvas {
+            width: 100%;
+            height: 380px;
+            background: #010207;
+        }
+
+        #browserStreamFrame {
+            width: 100%;
+            height: 380px;
+            object-fit: contain;
+            background: #000;
+            border-radius: 8px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-magenta));
+            border: none;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            text-align: center;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.6), 0 0 15px var(--neon-magenta);
+            filter: brightness(1.1);
+        }
+
+        .terminal-card {
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-radius: 12px;
+            background: rgba(3, 5, 15, 0.9);
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .terminal-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-purple);
+            font-size: 1.1rem;
+        }
+
+        .terminal-body {
+            height: 160px;
+            overflow-y: auto;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-line {
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .log-line::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--neon-blue);
+        }
+
+        .log-line.info { color: #f0f4f8; }
+        .log-line.success { color: var(--neon-green); }
+        .log-line.error { color: var(--neon-magenta); }
+        .log-line.warning { color: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header class="header-glow">
+            <h1>Auncient Atropa Vulkan Dashboard</h1>
+            <div class="subtitle">Realtime YouTube Browser Controller & Vulkan Graphics Pipeline Visualizer</div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Left Side: Vulkan Pipeline Visualizer Component -->
+            <div class="card">
+                <h2>⚙️ Vulkan Pipeline Monitor</h2>
+                <div class="canvas-container">
+                    <canvas id="vulkanPipelineCanvas"></canvas>
+                </div>
+                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: #8c9ba5; display: flex; justify-content: space-between;">
+                    <span>Device: Discrete GPU (Vulkan 1.3)</span>
+                    <span>Queues: Graphics, Compute, Transfer</span>
+                </div>
+            </div>
+
+            <!-- Right Side: Live Browser Stream View -->
+            <div class="card">
+                <h2>📺 Rooted Live Stream</h2>
+                <div class="canvas-container">
+                    <img id="browserStreamFrame" src="latest_frame.jpg" alt="Waiting for browser stream..." onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'600\'><rect width=\'100%\' height=\'100%\' fill=\'%23000\'/><text x=\'50%\' y=\'50%\' font-family=\'Orbitron\' font-size=\'20\' fill=\'%2300f2fe\' text-anchor=\'middle\'>WAITING FOR SCREENCAST...</text></svg>'">
+                </div>
+                <button id="btnOpenBrowser" class="btn-action">🚀 Open Browser & Search Atropa</button>
+            </div>
+        </div>
+
+        <!-- System Logs / Telemetry -->
+        <div class="terminal-card">
+            <div class="terminal-header">
+                <h3>💾 Realtime WinchesterMQ Event Log</h3>
+                <button id="btnClear" class="btn-clear" style="background:none; border:none; color:#8c9ba5; cursor:pointer; font-family:inherit;">Clear</button>
+            </div>
+            <div id="terminalBody" class="terminal-body">
+                <div class="log-line info">Auncient WinchesterMQ routing module initialized. Waiting for transaction logs...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Vulkan Pipeline Visualizer Animation ---
+        const canvas = document.getElementById("vulkanPipelineCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+
+        const pipelineStages = [
+            { name: "Input Assembly", x: 60, y: 190, color: "#4facfe" },
+            { name: "Vertex Shader", x: 140, y: 190, color: "#00f2fe" },
+            { name: "Rasterization", x: 220, y: 190, color: "#ff007f" },
+            { name: "Fragment Shader", x: 300, y: 190, color: "#39ff14" },
+            { name: "Color Blend", x: 380, y: 190, color: "#ff7f00" }
+        ];
+
+        let time = 0;
+        function drawVulkanPipeline() {
+            ctx.fillStyle = "#010207";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connecting flow lines
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+            ctx.beginPath();
+            ctx.moveTo(30, 190);
+            ctx.lineTo(canvas.width - 30, 190);
+            ctx.stroke();
+
+            // Draw flowing data packets
+            time += 0.05;
+            for (let i = 0; i < 5; i++) {
+                let packetX = (time * 30 + i * 80) % (canvas.width - 60) + 30;
+                ctx.fillStyle = "rgba(0, 242, 254, 0.8)";
+                ctx.beginPath();
+                ctx.arc(packetX, 190, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw stages
+            pipelineStages.forEach(stage => {
+                const scale = 1 + Math.sin(time + stage.x * 0.01) * 0.08;
+                ctx.save();
+                ctx.translate(stage.x, stage.y);
+                ctx.scale(scale, scale);
+
+                // Draw stage box
+                ctx.fillStyle = "rgba(10, 15, 35, 0.8)";
+                ctx.strokeStyle = stage.color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.rect(-35, -35, 70, 70);
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing outline
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = stage.color;
+                ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                ctx.stroke();
+
+                // Name
+                ctx.restore();
+                ctx.fillStyle = "#f0f4f8";
+                ctx.font = "11px 'Share Tech Mono'";
+                ctx.textAlign = "center";
+                ctx.fillText(stage.name, stage.x, stage.y + 52);
+            });
+
+            requestAnimationFrame(drawVulkanPipeline);
+        }
+        drawVulkanPipeline();
+
+        // --- 2. Live Screencast Frame Reloader ---
+        const streamImg = document.getElementById("browserStreamFrame");
+        setInterval(() => {
+            // Append timestamp to prevent caching
+            streamImg.src = "latest_frame.jpg?t=" + Date.now();
+        }, 300);
+
+        // --- 3. Action Trigger ---
+        const btnOpenBrowser = document.getElementById("btnOpenBrowser");
+        const termBody = document.getElementById("terminalBody");
+
+        function logToTerminal(message, type = "info") {
+            const line = document.createElement("div");
+            line.className = `log-line ${type}`;
+            const timeStr = new Date().toLocaleTimeString();
+            line.innerText = `[${timeStr}] ${message}`;
+            termBody.appendChild(line);
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        btnOpenBrowser.addEventListener("click", async () => {
+            logToTerminal("Sending POST request to /open-browser...", "warning");
+            try {
+                const response = await fetch("/open-browser", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                });
+                const result = await response.json();
+                if (result.status === "success") {
+                    logToTerminal("Browser controller spawned successfully. Navigating to YouTube filter results for Atropa...", "success");
+                } else {
+                    logToTerminal("Failed to spawn browser: " + result.message, "error");
+                }
+            } catch (err) {
+                logToTerminal("Error sending command to server: " + err.message, "error");
+            }
+        });
+
+        document.getElementById("btnClear").addEventListener("click", () => {
+            termBody.innerHTML = "";
+            logToTerminal("Terminal cleared.");
+        });
+    </script>
+</body>
+</html>
