@@ -343,9 +343,12 @@ Connect your wallet to retrieve the active story ROM.</div>
                 <div id="pipContainer" style="position: absolute; bottom: 85px; right: 40px; width: 280px; height: 210px; background: #000; border: 2px solid var(--vaesen-gold); border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; z-index: 100;">
                     <div style="background: var(--vaesen-sepia); border-bottom: 1px solid var(--vaesen-gold-dim); padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-header); font-size: 0.8rem; color: var(--vaesen-gold);">
                         <span>📺 Rooted Browser PiP</span>
-                        <button onclick="togglePip()" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem;">✕</button>
+                        <div>
+                            <button onclick="window.open('/atropa_dashboard.html', '_blank')" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem; margin-right: 5px;" title="Open Full Dashboard">🔗</button>
+                            <button onclick="togglePip()" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem;">✕</button>
+                        </div>
                     </div>
-                    <div style="flex-grow: 1; position: relative; cursor: pointer;" onclick="window.open('/atropa_dashboard.html', '_blank')">
+                    <div style="flex-grow: 1; position: relative; cursor: crosshair;">
                         <img id="pipBrowserFrame" src="latest_frame.jpg" style="width: 100%; height: 100%; object-fit: contain; background: #000;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'%23000\'/><text x=\'50%\' y=\'50%\' font-family=\'monospace\' font-size=\'12\' fill=\'%23c5a059\' text-anchor=\'middle\'>Awaiting screencast...</text></svg>'">
                     </div>
                 </div>
@@ -1722,6 +1725,59 @@ Connect your wallet to retrieve the active story ROM.</div>
                 }
             }
         }, 300);
+
+        // Click-through mapping for floating PiP sub-browser
+        async function sendPipControlCommand(cmd) {
+            try {
+                await fetch("/control", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ command: cmd })
+                });
+            } catch (err) {
+                console.error("Failed to dispatch PiP control event:", err);
+            }
+        }
+
+        const pipFrame = document.getElementById("pipBrowserFrame");
+        
+        function getPipCoords(e) {
+            const rect = pipFrame.getBoundingClientRect();
+            const scaleX = 800 / rect.width;
+            const scaleY = 600 / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            return { 
+                x: Math.max(0, Math.min(800, x)), 
+                y: Math.max(0, Math.min(600, y)) 
+            };
+        }
+
+        let pipThrottle = null;
+        pipFrame.addEventListener("mousemove", (e) => {
+            if (pipThrottle) return;
+            pipThrottle = setTimeout(() => {
+                pipThrottle = null;
+                const { x, y } = getPipCoords(e);
+                sendPipControlCommand(`MOUSE_MOVE ${x} ${y}`);
+            }, 150);
+        });
+
+        pipFrame.addEventListener("mousedown", (e) => {
+            const { x, y } = getPipCoords(e);
+            sendPipControlCommand(`MOUSE_MOVE ${x} ${y}`);
+            sendPipControlCommand("MOUSE_DOWN 272");
+        });
+
+        pipFrame.addEventListener("mouseup", (e) => {
+            sendPipControlCommand("MOUSE_UP 272");
+        });
+
+        pipFrame.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const value = Math.round(e.deltaY / 10) || (e.deltaY > 0 ? 1 : -1);
+            sendPipControlCommand(`MOUSE_SCROLL 0 ${value}`);
+        }, { passive: false });
 
         window.onload = () => {
             init();
