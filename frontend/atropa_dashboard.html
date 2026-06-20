@@ -540,43 +540,21 @@
             }
         }
 
-        let currentSvgW = 800;
-        let currentSvgH = 600;
-
         function getCoords(e) {
             const rect = streamSvg.getBoundingClientRect();
-            const scaleX = currentSvgW / rect.width;
-            const scaleY = currentSvgH / rect.height;
+            const scaleX = 800 / rect.width;
+            const scaleY = 600 / rect.height;
             const x = Math.round((e.clientX - rect.left) * scaleX);
             const y = Math.round((e.clientY - rect.top) * scaleY);
             return { x, y };
         }
 
-        let resizeTimer = null;
         function handleSvgResize() {
-            const rect = streamSvg.getBoundingClientRect();
-            const w = Math.round(rect.width);
-            const h = Math.round(rect.height);
-            if (w === 0 || h === 0) return;
-            
-            currentSvgW = w;
-            currentSvgH = h;
-            
-            // Adjust SVG attributes to fit exactly
-            streamSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-            streamImg.setAttribute("width", w);
-            streamImg.setAttribute("height", h);
-            
-            // Dispatch WINDOW_RESIZE to the background browser session
-            sendControlCommand(`WINDOW_RESIZE ${w} ${h}`);
+            // Keep YouTube viewport static at 800x600 to prevent layout crashes.
+            // SVG native scaling automatically maps it to the container bounds.
         }
 
-        window.addEventListener("resize", () => {
-            if (resizeTimer) clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(handleSvgResize, 150);
-        });
-
-        // Initialize size mappings on page load
+        window.addEventListener("resize", handleSvgResize);
         setTimeout(handleSvgResize, 500);
 
         let throttleTimeout = null;
