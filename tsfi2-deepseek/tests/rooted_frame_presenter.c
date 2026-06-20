@@ -39,7 +39,7 @@ typedef void (VKAPI_CALL *PFN_tsfi_drmModeFreeVirtualPlanes)(void);
 
 #define XDG_WM_BASE_GET_XDG_SURFACE 2
 #define XDG_SURFACE_GET_TOPLEVEL 1
-#define XDG_SURFACE_ACK_CONFIGURE 3
+#define XDG_SURFACE_ACK_CONFIGURE 4
 
 #define ALIGN(x) (((x) + 3) & ~3)
 

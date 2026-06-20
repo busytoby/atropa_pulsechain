@@ -94,13 +94,13 @@
 
         #vulkanPipelineCanvas {
             width: 100%;
-            height: 380px;
+            height: calc(100vh - 340px);
             background: #010207;
         }
 
         #browserStreamFrame {
             width: 100%;
-            height: 380px;
+            height: calc(100vh - 340px);
             object-fit: contain;
             background: #000;
             border-radius: 8px;
@@ -204,7 +204,7 @@
             <div class="card">
                 <h2>📺 Rooted Live Stream</h2>
                 <div class="canvas-container" style="position: relative; overflow: hidden; border-radius: 8px;">
-                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" height="380" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair;">
+                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair; height: calc(100vh - 340px);">
                         <defs>
                             <!-- Neon Glow Filter -->
                             <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
