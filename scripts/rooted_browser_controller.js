@@ -250,6 +250,14 @@ async function main() {
     // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
         try {
+            try {
+                const screenshotBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
+                const fs = require('fs');
+                fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), screenshotBuffer);
+            } catch (screenshotErr) {
+                // ignore screenshot errors
+            }
+
             const status = await page.evaluate(() => {
                 // 1. Auto unmute
                 const muteBtn = document.querySelector('.ytp-mute-button');
