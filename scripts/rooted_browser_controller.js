@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer-core');
 const { spawn } = require('child_process');
 const { PNG } = require('pngjs');
 const path = require('path');
+process.env.TMPDIR = path.join(__dirname, "../tmp");
 const readline = require('readline');
 const { ethers } = require('ethers');
 
