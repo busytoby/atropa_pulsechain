@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auncient Atropa Portal Hub</title>
-    <meta name="description" content="Universal Portal and Gateway to the Auncient Wavelet, Dysnomia VM, and Atropa PulseChain Dashboards.">
+    <meta name="description" content="Universal Portal and Gateway to the Auncient Wavelet, Dysnomia VM, NoNukes, and Atropa PulseChain Dashboards.">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -65,11 +65,11 @@
 
         .portal-layout {
             display: grid;
-            grid-template-columns: 360px 1fr;
+            grid-template-columns: 380px 1fr;
             gap: 25px;
             margin-bottom: 25px;
             height: calc(100vh - 180px);
-            min-height: 650px;
+            min-height: 680px;
         }
 
         .sidebar {
@@ -166,11 +166,12 @@
 
         #svgMatrixContainer {
             width: 100%;
-            height: 280px;
-            background: rgba(3, 5, 15, 0.7);
-            border: 1px solid rgba(0, 242, 254, 0.1);
+            height: 320px;
+            background: rgba(3, 5, 15, 0.85);
+            border: 1px solid rgba(0, 242, 254, 0.15);
             border-radius: 10px;
             overflow: hidden;
+            position: relative;
         }
 
         .hud-details-card {
@@ -211,7 +212,19 @@
             font-weight: bold;
         }
 
-        /* SVG Node styling */
+        /* SVG Double Helix styling */
+        .dna-strand {
+            fill: none;
+            stroke-width: 2.5;
+            transition: stroke 0.5s ease;
+        }
+
+        .dna-basepair {
+            stroke-width: 1.5;
+            stroke-dasharray: 2, 2;
+            opacity: 0.7;
+        }
+
         .svg-node {
             cursor: pointer;
             transition: all 0.3s ease;
@@ -219,7 +232,7 @@
 
         .svg-node circle {
             transition: all 0.3s ease;
-            filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.5));
+            filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.5));
         }
 
         .svg-node:hover circle {
@@ -228,35 +241,24 @@
         }
 
         .svg-node.active circle {
-            r: 11;
-            stroke-width: 3;
-            filter: drop-shadow(0 0 15px var(--neon-magenta));
-        }
-
-        .svg-line {
-            stroke: rgba(0, 242, 254, 0.15);
-            stroke-width: 1.5;
-            transition: all 0.3s ease;
-        }
-
-        .svg-line.active {
-            stroke: var(--neon-magenta);
-            stroke-width: 2.5;
-            filter: drop-shadow(0 0 4px var(--neon-magenta));
+            r: 12;
+            stroke-width: 3.5;
+            filter: drop-shadow(0 0 16px var(--neon-magenta));
         }
 
         .svg-label {
             font-family: 'Share Tech Mono', monospace;
             font-size: 10px;
             fill: var(--text-secondary);
-            pointer-events: none;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .svg-node:hover + .svg-label, .svg-node.active + .svg-label {
             fill: #fff;
             font-size: 11px;
             font-weight: bold;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
         }
 
         /* WinchesterMQ Terminal Output */
@@ -355,78 +357,83 @@
             <!-- Left Side: Interactive SVG Selector and telemetry details -->
             <div class="sidebar">
                 <div class="node-map-card">
-                    <h2>🌐 Dashboard Topology</h2>
+                    <h2>🧬 Morphing DNA Topology</h2>
                     <div id="svgMatrixContainer">
-                        <svg width="100%" height="100%" viewBox="0 0 320 280" id="matrixSvg">
-                            <!-- Definition for glowing effects -->
+                        <svg width="100%" height="100%" viewBox="0 0 340 300" id="matrixSvg">
                             <defs>
-                                <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="4" result="blur" />
+                                <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+                                    <feGaussianBlur stdDeviation="3.5" result="blur" />
                                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                                 </filter>
-                                <filter id="glowMagenta" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="5" result="blur" />
+                                <filter id="glowMagenta" x="-30%" y="-30%" width="160%" height="160%">
+                                    <feGaussianBlur stdDeviation="5.0" result="blur" />
                                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                                 </filter>
                             </defs>
 
-                            <!-- Node connecting paths -->
-                            <line x1="160" y1="140" x2="80" y2="70" class="svg-line" id="line-atropa" />
-                            <line x1="160" y1="140" x2="240" y2="70" class="svg-line" id="line-vulkan_synth" />
-                            <line x1="160" y1="140" x2="60" y2="180" class="svg-line" id="line-tts" />
-                            <line x1="160" y1="140" x2="260" y2="180" class="svg-line" id="line-protecto" />
-                            <line x1="160" y1="140" x2="160" y2="40" class="svg-line" id="line-ledger" />
-                            <line x1="160" y1="140" x2="160" y2="240" class="svg-line" id="line-emulation" />
-
-                            <!-- Central Core Hub -->
-                            <g class="svg-node active" id="node-core" onclick="selectNode('core')">
-                                <circle cx="160" cy="140" r="14" fill="#0b0e26" stroke="#ff007f" stroke-width="2.5" filter="url(#glowMagenta)" />
-                                <circle cx="160" cy="140" r="5" fill="#ff007f" />
+                            <!-- Dynamic DNA Helix Paths -->
+                            <g id="dnaHelixGroup">
+                                <!-- Basepair lines and strand paths will be rendered dynamically -->
+                                <path id="dnaStrandA" class="dna-strand" stroke="var(--neon-blue)" filter="url(#glowBlue)"></path>
+                                <path id="dnaStrandB" class="dna-strand" stroke="var(--neon-magenta)" filter="url(#glowMagenta)"></path>
+                                <g id="dnaBasePairs"></g>
                             </g>
-                            <text x="160" y="165" text-anchor="middle" class="svg-label" style="fill: var(--neon-magenta); font-weight: bold;">CORE GATEWAY</text>
+
+                            <!-- Node interactive circles -->
+                            <!-- Core Gateway -->
+                            <g class="svg-node active" id="node-core" onclick="selectNode('core')">
+                                <circle cx="170" cy="150" r="14" fill="#0b0e26" stroke="#ff007f" stroke-width="2.5" />
+                            </g>
+                            <text x="170" y="180" text-anchor="middle" class="svg-label" style="fill: var(--neon-magenta); font-weight: bold;">CORE GATEWAY</text>
 
                             <!-- Atropa Dashboard Node -->
                             <g class="svg-node" id="node-atropa" onclick="selectNode('atropa')">
-                                <circle cx="80" cy="70" r="8" fill="#020512" stroke="#00f2fe" stroke-width="1.5" />
+                                <circle id="circle-atropa" cx="0" cy="0" r="8" fill="#020512" stroke="#00f2fe" stroke-width="1.5" />
                             </g>
-                            <text x="80" y="55" text-anchor="middle" class="svg-label">ATROPA LIVE</text>
+                            <text id="label-atropa" x="0" y="0" text-anchor="middle" class="svg-label">ATROPA LIVE</text>
+
+                            <!-- NoNukes Node -->
+                            <g class="svg-node" id="node-nonukes" onclick="selectNode('nonukes')">
+                                <circle id="circle-nonukes" cx="0" cy="0" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
+                            </g>
+                            <text id="label-nonukes" x="0" y="0" text-anchor="middle" class="svg-label">NONUKES DAPP</text>
 
                             <!-- Vulkan Synth Node -->
                             <g class="svg-node" id="node-vulkan_synth" onclick="selectNode('vulkan_synth')">
-                                <circle cx="240" cy="70" r="8" fill="#020512" stroke="#ff007f" stroke-width="1.5" />
+                                <circle id="circle-vulkan_synth" cx="0" cy="0" r="8" fill="#020512" stroke="#ff007f" stroke-width="1.5" />
                             </g>
-                            <text x="240" y="55" text-anchor="middle" class="svg-label">AUNCIENT SYNTH</text>
+                            <text id="label-vulkan_synth" x="0" y="0" text-anchor="middle" class="svg-label">AUNCIENT SYNTH</text>
 
                             <!-- TTS Node -->
                             <g class="svg-node" id="node-tts" onclick="selectNode('tts')">
-                                <circle cx="60" cy="180" r="8" fill="#020512" stroke="#00ffcc" stroke-width="1.5" />
+                                <circle id="circle-tts" cx="0" cy="0" r="8" fill="#020512" stroke="#00ffcc" stroke-width="1.5" />
                             </g>
-                            <text x="60" y="200" text-anchor="middle" class="svg-label">TTS AUDIO</text>
+                            <text id="label-tts" x="0" y="0" text-anchor="middle" class="svg-label">TTS AUDIO</text>
 
                             <!-- Protecto Node -->
                             <g class="svg-node" id="node-protecto" onclick="selectNode('protecto')">
-                                <circle cx="260" cy="180" r="8" fill="#020512" stroke="#f59e0b" stroke-width="1.5" />
+                                <circle id="circle-protecto" cx="0" cy="0" r="8" fill="#020512" stroke="#f59e0b" stroke-width="1.5" />
                             </g>
-                            <text x="260" y="200" text-anchor="middle" class="svg-label">PROTECTO</text>
+                            <text id="label-protecto" x="0" y="0" text-anchor="middle" class="svg-label">PROTECTO</text>
 
                             <!-- Ledger Node -->
                             <g class="svg-node" id="node-ledger" onclick="selectNode('ledger')">
-                                <circle cx="160" cy="40" r="8" fill="#020512" stroke="#4facfe" stroke-width="1.5" />
+                                <circle id="circle-ledger" cx="0" cy="0" r="8" fill="#020512" stroke="#4facfe" stroke-width="1.5" />
                             </g>
-                            <text x="160" y="25" text-anchor="middle" class="svg-label">ALCHEMICAL LEDGER</text>
+                            <text id="label-ledger" x="0" y="0" text-anchor="middle" class="svg-label">ALCHEMICAL</text>
 
                             <!-- Emulation Studio Node -->
                             <g class="svg-node" id="node-emulation" onclick="selectNode('emulation')">
-                                <circle cx="160" cy="240" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
+                                <circle id="circle-emulation" cx="0" cy="0" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
                             </g>
-                            <text x="160" y="260" text-anchor="middle" class="svg-label">EMU STUDIO</text>
+                            <text id="label-emulation" x="0" y="0" text-anchor="middle" class="svg-label">EMU STUDIO</text>
                         </svg>
                     </div>
                 </div>
 
                 <div class="hud-details-card">
                     <h3 id="hudNodeTitle">Selected: Central Core</h3>
-                    <div style="flex-grow:1; display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                    <div style="flex-grow:1; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
                         <div class="hud-stat-row">
                             <span class="hud-stat-label">Network ID:</span>
                             <span class="hud-stat-value" id="hudStatNetwork">PulseChain (943)</span>
@@ -436,14 +443,14 @@
                             <span class="hud-stat-value" id="hudStatStatus" style="color: var(--neon-green);">ACTIVE</span>
                         </div>
                         <div class="hud-stat-row">
-                            <span class="hud-stat-label">Host Domain:</span>
-                            <span class="hud-stat-value" id="hudStatDomain">127.0.0.1:8000</span>
+                            <span class="hud-stat-label">DNA Sequence:</span>
+                            <span class="hud-stat-value" id="hudStatDna" style="color: var(--neon-blue); font-family:monospace;">ATG-CGT-TTA-GCA</span>
                         </div>
                         <div class="hud-stat-row">
                             <span class="hud-stat-label">Yul Interface:</span>
                             <span class="hud-stat-value" id="hudStatYul" style="font-size:0.75rem;">WinchesterMQ.yul</span>
                         </div>
-                        <p id="hudDescription" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin-top: 10px;">
+                        <p id="hudDescription" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin-top: 5px;">
                             The main hub connecting all modular sub-systems and live controllers. Pick a node on the matrix above to view its contents directly in the main console viewport.
                         </p>
                     </div>
@@ -497,66 +504,188 @@
                 title: "Selected: Central Core",
                 network: "PulseChain (943)",
                 status: "ACTIVE",
-                domain: "127.0.0.1:8000",
+                dna: "ATG-CGT-TTA-GCA",
                 yul: "WinchesterMQ.yul",
                 desc: "The main hub connecting all modular sub-systems and live controllers. Pick a node on the matrix above to view its contents directly in the main console viewport.",
-                url: ""
+                url: "",
+                amplitude: 15, frequency: 0.02, phaseSpeed: 0.03
             },
             atropa: {
                 title: "Atropa Browser Console",
                 network: "PulseChain / Anvil",
                 status: "ONLINE",
-                domain: "localhost:8000",
+                dna: "CGT-AAA-TTG-CGA",
                 yul: "WinchesterMQ.yul",
                 desc: "Realtime web controller dashboard utilizing WinchesterMQ and fast-path Yul events to navigate the browser and capture remote screencast frames.",
-                url: "/atropa_dashboard.html"
+                url: "/atropa_dashboard.html",
+                amplitude: 28, frequency: 0.03, phaseSpeed: 0.07
+            },
+            nonukes: {
+                title: "NoNukes Dashboard",
+                network: "PulseChain Mainnet",
+                status: "ACTIVE",
+                dna: "TTA-GCA-CGT-ATA",
+                yul: "NoNukesLiquidity.yul",
+                desc: "NoNukes liquidity pools, treasury arbitrage, and token distribution dashboard for real-time portfolio tracking.",
+                url: "/nonukes_dashboard.html",
+                amplitude: 35, frequency: 0.015, phaseSpeed: 0.05
             },
             vulkan_synth: {
                 title: "Auncient Vulkan Synth",
                 network: "PulseChain / Anvil",
                 status: "ONLINE",
-                domain: "localhost:8000",
+                dna: "GCA-TTG-CCG-AAT",
                 yul: "VulkanCore / iDOF",
                 desc: "Hamiltonian Phase Space visualizer and synth interface running a symplectic Euler integrator linked to standard Pitch and Yaw CV note handlers.",
-                url: "/vulkan_synth_dashboard.html"
+                url: "/vulkan_synth_dashboard.html",
+                amplitude: 20, frequency: 0.04, phaseSpeed: 0.09
             },
             tts: {
                 title: "Neural Speech & Audio",
                 network: "PulseChain Node",
                 status: "ONLINE",
-                domain: "localhost:8000",
+                dna: "ATA-CGT-GCA-TTT",
                 yul: "Auncient Wavelet Vocoder",
                 desc: "Speech synthesis, vocoder adjustments, and audio sequence layout dashboard configured for real-time sound generation.",
-                url: "/tts_dashboard.html"
+                url: "/tts_dashboard.html",
+                amplitude: 25, frequency: 0.025, phaseSpeed: 0.06
             },
             protecto: {
                 title: "Protecto Governance Console",
                 network: "PulseChain Mainnet",
                 status: "SYNCED",
-                domain: "localhost:8000",
+                dna: "CCG-AAT-TTA-GCA",
                 yul: "ProtectoRegistry.yul",
                 desc: "Dashboard monitoring alchemical security keys, token supply metrics, and registry rules within the network.",
-                url: "/protecto.html"
+                url: "/protecto.html",
+                amplitude: 18, frequency: 0.035, phaseSpeed: 0.04
             },
             ledger: {
                 title: "Alchemical Ledger",
                 network: "PulseChain Mainnet",
                 status: "ACTIVE",
-                domain: "localhost:8000",
+                dna: "TTG-CGA-ATA-CGT",
                 yul: "LedgerRouter.yul",
                 desc: "Asset tracking, token registry distributions, and alchemical wallet ledger details for on-chain audits.",
-                url: "/ledger.html"
+                url: "/ledger.html",
+                amplitude: 22, frequency: 0.022, phaseSpeed: 0.05
             },
             emulation: {
                 title: "Emulation Studio",
                 network: "Local VM Instance",
                 status: "STANDBY",
-                domain: "localhost:8000",
+                dna: "AAA-TTG-CGT-TTA",
                 yul: "Dysnomia CPU 6502",
                 desc: "Studio interface supporting emulator configurations, ROM memory layout inspections, and assembler setups.",
-                url: "/emulation_studio.html"
+                url: "/emulation_studio.html",
+                amplitude: 30, frequency: 0.018, phaseSpeed: 0.06
             }
         };
+
+        // --- DNA Double Helix Physics / Rendering & Morphing Loop ---
+        let currentAmp = 15;
+        let currentFreq = 0.02;
+        let currentPhaseSpeed = 0.03;
+        let phase = 0;
+
+        let targetAmp = 15;
+        let targetFreq = 0.02;
+        let targetPhaseSpeed = 0.03;
+
+        const pathA = document.getElementById("dnaStrandA");
+        const pathB = document.getElementById("dnaStrandB");
+        const basePairsGroup = document.getElementById("dnaBasePairs");
+
+        // Define nodes and relative positioning factors (t from 0 to 1) along the helix
+        const nodePositionMapping = {
+            atropa: { t: 0.15, offsetSign: 1, labelY: -15 },
+            nonukes: { t: 0.28, offsetSign: -1, labelY: 20 },
+            vulkan_synth: { t: 0.42, offsetSign: 1, labelY: -15 },
+            tts: { t: 0.55, offsetSign: -1, labelY: 20 },
+            protecto: { t: 0.68, offsetSign: 1, labelY: -15 },
+            ledger: { t: 0.80, offsetSign: -1, labelY: 20 },
+            emulation: { t: 0.92, offsetSign: 1, labelY: -15 }
+        };
+
+        function animateHelix() {
+            // Smooth morphing interpolation
+            currentAmp += (targetAmp - currentAmp) * 0.08;
+            currentFreq += (targetFreq - currentFreq) * 0.08;
+            currentPhaseSpeed += (targetPhaseSpeed - currentPhaseSpeed) * 0.08;
+
+            phase += currentPhaseSpeed;
+
+            const W = 340;
+            const H = 300;
+            const baselineY = H / 2;
+
+            let pointsA = [];
+            let pointsB = [];
+
+            let dPathA = "";
+            let dPathB = "";
+
+            basePairsGroup.innerHTML = "";
+
+            // Calculate helix lines
+            for (let x = 10; x <= W - 10; x += 2) {
+                const angle = x * currentFreq + phase;
+                const sinVal = Math.sin(angle);
+                const yA = baselineY + currentAmp * sinVal;
+                const yB = baselineY - currentAmp * sinVal;
+
+                pointsA.push({x, y: yA});
+                pointsB.push({x, y: yB});
+
+                if (x === 10) {
+                    dPathA += `M ${x} ${yA}`;
+                    dPathB += `M ${x} ${yB}`;
+                } else {
+                    dPathA += ` L ${x} ${yA}`;
+                    dPathB += ` L ${x} ${yB}`;
+                }
+
+                // Periodic base pairs
+                if (x % 16 === 0) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", x);
+                    line.setAttribute("y1", yA);
+                    line.setAttribute("x2", x);
+                    line.setAttribute("y2", yB);
+                    line.setAttribute("class", "dna-basepair");
+                    line.setAttribute("stroke", (sinVal > 0) ? "rgba(0, 242, 254, 0.45)" : "rgba(255, 0, 127, 0.45)");
+                    basePairsGroup.appendChild(line);
+                }
+            }
+
+            pathA.setAttribute("d", dPathA);
+            pathB.setAttribute("d", dPathB);
+
+            // Update interactive node circles along the wave
+            for (const [id, config] of Object.entries(nodePositionMapping)) {
+                const x = 15 + config.t * (W - 30);
+                const angle = x * currentFreq + phase;
+                const sinVal = Math.sin(angle);
+                
+                // Position on strand A or B depending on sign mapping
+                const y = baselineY + config.offsetSign * currentAmp * sinVal;
+
+                const circle = document.getElementById(`circle-${id}`);
+                const label = document.getElementById(`label-${id}`);
+
+                if (circle) {
+                    circle.setAttribute("cx", x);
+                    circle.setAttribute("cy", y);
+                }
+                if (label) {
+                    label.setAttribute("x", x);
+                    label.setAttribute("y", y + config.labelY);
+                }
+            }
+
+            requestAnimationFrame(animateHelix);
+        }
+        animateHelix();
 
         let selectedNodeId = 'core';
 
@@ -564,12 +693,17 @@
             selectedNodeId = id;
             const info = nodesInfo[id];
             
+            // Set morphing parameters
+            targetAmp = info.amplitude || 15;
+            targetFreq = info.frequency || 0.02;
+            targetPhaseSpeed = info.phaseSpeed || 0.03;
+
             // Update labels and HUD
             document.getElementById("hudNodeTitle").innerText = info.title;
             document.getElementById("hudStatNetwork").innerText = info.network;
             document.getElementById("hudStatStatus").innerText = info.status;
             document.getElementById("hudStatStatus").style.color = (info.status === 'ONLINE' || info.status === 'ACTIVE' || info.status === 'SYNCED') ? 'var(--neon-green)' : 'var(--neon-amber)';
-            document.getElementById("hudStatDomain").innerText = info.domain;
+            document.getElementById("hudStatDna").innerText = info.dna || "ATG-CGT-TTA-GCA";
             document.getElementById("hudStatYul").innerText = info.yul;
             document.getElementById("hudDescription").innerText = info.desc;
 
@@ -580,15 +714,6 @@
             const selectedNodeElement = document.getElementById(`node-${id}`);
             if (selectedNodeElement) {
                 selectedNodeElement.classList.add('active');
-            }
-
-            // Highlight connecting line
-            document.querySelectorAll('.svg-line').forEach(line => {
-                line.classList.remove('active');
-            });
-            const selectedLineElement = document.getElementById(`line-${id}`);
-            if (selectedLineElement) {
-                selectedLineElement.classList.add('active');
             }
 
             // Show or hide iframe viewport
