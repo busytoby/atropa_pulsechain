@@ -59,7 +59,35 @@ function compileYul(yulPath) {
 }
 
 async function main() {
-    const url = process.argv[2] || "https://youtube.com";
+    let url = process.argv[2] || "http://127.0.0.1:8000/atropa_dashboard.html";
+    
+    // Verify local dashboard server is running and spawn if needed
+    if (url.includes("127.0.0.1:8000") || url.includes("localhost:8000")) {
+        const http = require('http');
+        const checkServer = () => new Promise((resolve) => {
+            const req = http.get("http://127.0.0.1:8000/atropa_dashboard.html", (res) => {
+                resolve(res.statusCode === 200);
+            });
+            req.on('error', () => resolve(false));
+            req.setTimeout(1000, () => {
+                req.destroy();
+                resolve(false);
+            });
+        });
+
+        let isRunning = await checkServer();
+        if (!isRunning) {
+            console.log("[SERVER] Local dashboard server is offline. Spawning python3 server.py automatically...");
+            const serverProcess = spawn("python3", ["server.py"], {
+                cwd: path.join(__dirname, ".."),
+                detached: true,
+                stdio: 'ignore'
+            });
+            serverProcess.unref();
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+    }
+
     console.log("=== Auncient ROOTED Node.js Browser Controller ===");
     console.log(`Target URL: ${url}`);
 
@@ -381,44 +409,50 @@ async function main() {
         }
     }, 1000);
     
-    // Load Atropa Splash Screen first
-    const splashPath = `file://${path.join(__dirname, "../frontend/atropa_splash.html")}`;
-    console.log(`[PUPPETEER] Exhibiting splash screen: ${splashPath}`);
-    await page.goto(splashPath, { waitUntil: "load" });
-    
-    // Display splash screen for 4 seconds
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    
-    console.log(`[PUPPETEER] Navigating to target URL: ${url}...`);
-    await page.goto(url, { waitUntil: "networkidle2" });
-    console.log("[PUPPETEER] Navigation complete. Streaming frames...");
-
     try {
-        const consentButton = await page.$('button[aria-label*="Accept"], button[aria-label*="Agree"], ytd-button-renderer yt-button-shape button');
-        if (consentButton) {
-            console.log("[PUPPETEER] Clicking consent/agree button...");
-            await consentButton.click();
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-    } catch (e) {
-        console.log("[PUPPETEER] Consent check skipped: " + e.message);
+        // Load Atropa Splash Screen first
+        const splashPath = `file://${path.join(__dirname, "../frontend/atropa_splash.html")}`;
+        console.log(`[PUPPETEER] Exhibiting splash screen: ${splashPath}`);
+        await page.goto(splashPath, { waitUntil: "load" });
+        
+        // Display splash screen for 4 seconds
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        
+        console.log(`[PUPPETEER] Navigating to target URL: ${url}...`);
+        await page.goto(url, { waitUntil: "networkidle2" });
+        console.log("[PUPPETEER] Navigation complete. Streaming frames...");
+    } catch (navErr) {
+        console.log("[PUPPETEER] Initial navigation interrupted or failed: " + navErr.message);
     }
 
-    try {
-        console.log("[PUPPETEER] Identifying search input box...");
-        const searchInputSelector = 'input[name="search_query"], input#search';
-        await page.waitForSelector(searchInputSelector, { timeout: 10000 });
-        console.log("[PUPPETEER] Search input identified. Typing 'Atropa'...");
-        await page.focus(searchInputSelector);
-        await page.type(searchInputSelector, "Atropa", { delay: 150 });
-        console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
-        // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
-        const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
-        await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
-        console.log("[PUPPETEER] Jumped directly to filtered search results.");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (e) {
-        console.log("[PUPPETEER] Auncient search flow or direct navigation failed: " + e.message);
+    if (url.includes("youtube.com")) {
+        try {
+            const consentButton = await page.$('button[aria-label*="Accept"], button[aria-label*="Agree"], ytd-button-renderer yt-button-shape button');
+            if (consentButton) {
+                console.log("[PUPPETEER] Clicking consent/agree button...");
+                await consentButton.click();
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        } catch (e) {
+            console.log("[PUPPETEER] Consent check skipped: " + e.message);
+        }
+
+        try {
+            console.log("[PUPPETEER] Identifying search input box...");
+            const searchInputSelector = 'input[name="search_query"], input#search';
+            await page.waitForSelector(searchInputSelector, { timeout: 10000 });
+            console.log("[PUPPETEER] Search input identified. Typing 'Atropa'...");
+            await page.focus(searchInputSelector);
+            await page.type(searchInputSelector, "Atropa", { delay: 150 });
+            console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
+            // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
+            const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
+            await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
+            console.log("[PUPPETEER] Jumped directly to filtered search results.");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        } catch (e) {
+            console.log("[PUPPETEER] Auncient search flow or direct navigation failed: " + e.message);
+        }
     }
 
 }
