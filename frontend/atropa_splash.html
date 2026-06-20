@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atropa Video Viewer Splash</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: radial-gradient(circle at center, #1a0826 0%, #06020c 100%);
+            color: #f1e6ff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            animation: fadeIn 2s ease-out forwards;
+        }
+        .logo-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 30px;
+        }
+        .logo-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(176, 38, 255, 0.4) 0%, rgba(0,0,0,0) 70%);
+            animation: pulse 3s infinite ease-in-out;
+        }
+        .logo-circle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 160px;
+            height: 160px;
+            border: 2px solid rgba(176, 38, 255, 0.6);
+            border-radius: 50%;
+            border-top-color: #d896ff;
+            animation: spin 6s linear infinite;
+        }
+        .logo-inner {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4b0082 0%, #1e0036 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(176, 38, 255, 0.3);
+        }
+        .logo-text {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(216, 150, 255, 0.8);
+            letter-spacing: -2px;
+        }
+        h1 {
+            font-size: 38px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ffffff 30%, #e2b6ff 70%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 5px 20px rgba(176, 38, 255, 0.2);
+        }
+        p {
+            font-size: 16px;
+            color: #cbb4e3;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+        .loader {
+            width: 200px;
+            height: 4px;
+            background: rgba(176, 38, 255, 0.15);
+            border-radius: 2px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .loader-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #b026ff, #ff26b0);
+            box-shadow: 0 0 10px #b026ff;
+            border-radius: 2px;
+            animation: fillBar 3.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fillBar {
+            to { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo-glow"></div>
+            <div class="logo-circle"></div>
+            <div class="logo-inner">
+                <div class="logo-text">A</div>
+            </div>
+        </div>
+        <h1>ATROPA</h1>
+        <p>Video Emulation System</p>
+        <div class="loader">
+            <div class="loader-bar"></div>
+        </div>
+    </div>
+</body>
+</html>

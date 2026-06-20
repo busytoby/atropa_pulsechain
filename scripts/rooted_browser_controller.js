@@ -55,18 +55,24 @@ async function main() {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
+            "--disable-gpu",
             "--window-size=800,600",
-            "--autoplay-policy=no-user-gesture-required",
-            "--enable-gpu-rasterization",
-            "--enable-zero-copy",
-            "--ignore-gpu-blocklist"
+            "--autoplay-policy=no-user-gesture-required"
         ]
     });
 
     const page = await browser.newPage();
     await page.setViewport({ width: 800, height: 600 });
     
-    console.log(`[PUPPETEER] Navigating to ${url}...`);
+    // Load Atropa Splash Screen first
+    const splashPath = `file://${path.join(__dirname, "../frontend/atropa_splash.html")}`;
+    console.log(`[PUPPETEER] Exhibiting splash screen: ${splashPath}`);
+    await page.goto(splashPath, { waitUntil: "load" });
+    
+    // Display splash screen for 4 seconds
+    await new Promise(resolve => setTimeout(resolve, 4000));
+    
+    console.log(`[PUPPETEER] Navigating to target URL: ${url}...`);
     await page.goto(url, { waitUntil: "networkidle2" });
     console.log("[PUPPETEER] Navigation complete. Streaming frames...");
 
@@ -146,6 +152,11 @@ async function main() {
     }
 
     let active = true;
+    presenter.on("exit", (code, signal) => {
+        console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Stopping stream.`);
+        active = false;
+        browser.close();
+    });
 
     // Read input events from presenter stdout and route them to Puppeteer
     const rl = readline.createInterface({
@@ -189,50 +200,43 @@ async function main() {
         }
     });
 
-    // Native CDP Screencast Stream
+    // Frame capture loop
+    const frameInterval = 1000 / 30; // 30 FPS target (smooth)
     let frameCount = 0;
-    const client = await page.target().createCDPSession();
-    
-    presenter.on("exit", (code, signal) => {
-        console.log(`[PRESENTER] Exited. Stopping screencast.`);
-        active = false;
-        client.send('Page.stopScreencast').catch(() => {});
-        browser.close();
-    });
 
-    client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
-        // Acknowledge the frame immediately to keep the screencast stream going
-        await client.send('Page.screencastFrameAck', { sessionId });
-
-        if (active && presenter.stdin.writable) {
+    async function captureLoop() {
+        while (active) {
+            const startTime = Date.now();
             try {
-                const jpegBuffer = Buffer.from(data, 'base64');
-                const lenBuf = Buffer.alloc(4);
-                lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+                const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
 
-                let ok = presenter.stdin.write(lenBuf);
-                if (ok) {
-                    ok = presenter.stdin.write(jpegBuffer);
-                }
-                if (!ok) {
-                    await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                }
-                frameCount++;
-                if (frameCount % 100 === 0) {
-                    console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
+                if (active && presenter.stdin.writable) {
+                    const lenBuf = Buffer.alloc(4);
+                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+
+                    let ok = presenter.stdin.write(lenBuf);
+                    if (ok) {
+                        ok = presenter.stdin.write(jpegBuffer);
+                    }
+                    if (!ok) {
+                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                    }
+                    frameCount++;
+                    if (frameCount % 90 === 0) {
+                        console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
+                    }
                 }
             } catch (err) {
-                console.error("[STREAM ERR]", err);
+                console.error("[CAPTURE ERR]", err);
             }
-        }
-    });
 
-    console.log("[PUPPETEER] Starting CDP screencast stream...");
-    await client.send('Page.startScreencast', {
-        format: 'jpeg',
-        quality: 80,
-        everyNthFrame: 1
-    });
+            const elapsed = Date.now() - startTime;
+            const delay = Math.max(0, frameInterval - elapsed);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+    captureLoop();
 }
 
 main().catch(err => {

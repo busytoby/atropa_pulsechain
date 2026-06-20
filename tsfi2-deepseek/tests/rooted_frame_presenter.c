@@ -121,7 +121,7 @@ bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, 
             uint8_t r = src[x * 3];
             uint8_t g = src[x * 3 + 1];
             uint8_t b = src[x * 3 + 2];
-            dst[x] = (r << 16) | (g << 8) | b;
+            dst[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
         }
     }
     jpeg_finish_decompress(&cinfo);
