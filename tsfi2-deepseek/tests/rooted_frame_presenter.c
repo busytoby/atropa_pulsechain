@@ -61,6 +61,10 @@ static uint32_t *g_scanout_px = NULL;
 static PFN_tsfi_zmm_set_scanout_buffer g_ptsfi_zmm_set_scanout_buffer = NULL;
 static uint32_t surf_id = 0;
 
+static uint8_t last_jpeg_buf[2 * 1024 * 1024];
+static size_t last_jpeg_sz = 0;
+
+
 int pack_string(uint32_t *buf, const char *s) {
     uint32_t len = strlen(s) + 1;
     buf[0] = len; memcpy(&buf[1], s, len);
@@ -194,6 +198,9 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
                         // Destroy old buffer
                         send_msg(fd, bid_val, 0, NULL, 0, -1); // wl_buffer.destroy is op 0
                         
+                        // Allocate a new buffer ID to avoid compositor ID reuse race
+                        bid_val = next_id++;
+                        
                         // Create new buffer with new width/height from the same pool
                         uint32_t bf_args[] = {bid_val, 0, g_w, g_h, g_w * 4, 1}; // 1 = XRGB8888
                         send_msg(fd, pid_val, 0, bf_args, 24, -1); // wl_shm_pool.create_buffer is op 0
@@ -202,12 +209,7 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
                             g_ptsfi_zmm_set_scanout_buffer(g_scanout_px, g_w, g_h);
                         }
                         
-                        if (surf_id) {
-                            uint32_t attach_args[] = {bid_val, 0, 0};
-                            send_msg(fd, surf_id, WL_SURFACE_ATTACH, attach_args, 12, -1);
-                            uint32_t damage[] = {0, 0, g_w, g_h};
-                            send_msg(fd, surf_id, WL_SURFACE_DAMAGE, damage, 16, -1);
-                        }
+                        // Removed out-of-order attach, damage, and commit calls. They are moved to the main event loop.
                         
                         printf("WINDOW_RESIZE %d %d\n", width, height);
                         fflush(stdout);
@@ -411,6 +413,14 @@ int main() {
             bool conf = false;
             while (process_events(fd, xsurf, &conf) > 0);
             if (conf) {
+                if (last_jpeg_sz > 0) {
+                    decode_jpeg(last_jpeg_buf, last_jpeg_sz, p72, g_w, g_h);
+                }
+                pvkQueuePresentKHR(queue, &presentInfo);
+                uint32_t attach_args[] = {bid_val, 0, 0};
+                send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
+                uint32_t damage[] = {0, 0, g_w, g_h};
+                send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
                 send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
             }
         }
@@ -440,6 +450,10 @@ int main() {
                         total_read = 0;
                     } else {
                         if (decode_jpeg(input_buf, jpeg_len, p72, g_w, g_h)) {
+                            if (jpeg_len <= sizeof(last_jpeg_buf)) {
+                                memcpy(last_jpeg_buf, input_buf, jpeg_len);
+                                last_jpeg_sz = jpeg_len;
+                            }
                             pvkQueuePresentKHR(queue, &presentInfo);
 
                             uint32_t attach_args[] = {bid_val, 0, 0};
