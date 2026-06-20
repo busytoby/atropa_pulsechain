@@ -16,24 +16,49 @@
             --neon-green: #39ff14;
         }
 
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
             background-color: var(--bg-base);
             font-family: 'Rajdhani', sans-serif;
             color: #f0f4f8;
-            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        .glass-bg-container {
+            max-width: none !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+            padding: 15px !important;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: none !important;
+            background: transparent !important;
         }
 
         .header-glow {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 0px;
             border-bottom: 1px solid rgba(0, 242, 254, 0.15);
-            padding-bottom: 15px;
+            padding-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .header-glow h1 {
             font-family: 'Orbitron', sans-serif;
             font-weight: 900;
-            font-size: 2.5rem;
+            font-size: 2rem;
+            margin: 0;
             letter-spacing: 2px;
             background: linear-gradient(to right, var(--neon-blue), var(--neon-magenta));
             -webkit-background-clip: text;
@@ -44,45 +69,52 @@
 
         .subtitle {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: var(--neon-blue);
             letter-spacing: 4px;
             text-transform: uppercase;
+            margin-top: 5px;
         }
 
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid rgba(0, 242, 254, 0.15);
             border-radius: 14px;
-            padding: 22px;
+            padding: 15px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
             backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
+            min-height: 0;
         }
 
         .card h2 {
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-blue);
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
             gap: 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+            margin: 0;
             text-transform: uppercase;
+            flex-shrink: 0;
         }
 
         .canvas-container {
             width: 100%;
+            flex: 1;
+            min-height: 0;
             background-color: #010206;
             border-radius: 8px;
             border: 1px solid rgba(0, 242, 254, 0.1);
@@ -94,14 +126,23 @@
 
         #vulkanPipelineCanvas {
             width: 100%;
-            height: calc(100vh - 340px);
+            height: 100%;
             background: #010207;
+            display: block;
+        }
+
+        #browserStreamSvg {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            cursor: crosshair;
+            display: block;
         }
 
         #browserStreamFrame {
             width: 100%;
-            height: calc(100vh - 340px);
-            object-fit: contain;
+            height: 100%;
+            object-fit: fill;
             background: #000;
             border-radius: 8px;
         }
@@ -112,8 +153,8 @@
             color: #000;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 1.1rem;
-            padding: 12px 24px;
+            font-size: 1rem;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             text-transform: uppercase;
@@ -121,6 +162,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
             text-align: center;
+            flex-shrink: 0;
         }
 
         .btn-action:hover {
@@ -133,8 +175,11 @@
             border: 1px solid rgba(0, 242, 254, 0.15);
             border-radius: 12px;
             background: rgba(3, 5, 15, 0.9);
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .terminal-header {
@@ -142,24 +187,25 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
-            margin-bottom: 10px;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .terminal-header h3 {
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-purple);
-            font-size: 1.1rem;
+            font-size: 1rem;
+            margin: 0;
         }
 
         .terminal-body {
-            height: 160px;
+            height: 120px;
             overflow-y: auto;
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .log-line {
@@ -204,7 +250,7 @@
             <div class="card">
                 <h2>📺 Rooted Live Stream</h2>
                 <div class="canvas-container" style="position: relative; overflow: hidden; border-radius: 8px;">
-                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair; height: calc(100vh - 340px);">
+                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair;">
                         <defs>
                             <!-- Neon Glow Filter -->
                             <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
