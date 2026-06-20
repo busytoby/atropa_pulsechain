@@ -269,19 +269,24 @@ async function main() {
             }
             return;
         }
-        if (!page) return;
+        const eventPrefix = isYouTube ? 'YOUTUBE:' : 'MAIN:';
         const parts = line.split(' ');
         const cmd = parts[0];
         try {
             if (cmd === 'MOUSE_MOVE') {
                 const x = parseInt(parts[1]);
                 const y = parseInt(parts[2]);
-                await sendWmqEvent('MOUSE_MOVE', `${x},${y}`);
+                await sendWmqEvent(eventPrefix + 'MOUSE_MOVE', `${x},${y}`);
                 await page.mouse.move(x, y);
             } else if (cmd === 'MOUSE_DOWN') {
                 const btn = parseInt(parts[1]);
-                await sendWmqEvent('MOUSE_DOWN', `${btn}`);
                 const button = linuxButtonMap[btn] || 'left';
+                if (parts[2] !== undefined && parts[3] !== undefined) {
+                    const x = parseInt(parts[2]);
+                    const y = parseInt(parts[3]);
+                    await page.mouse.move(x, y);
+                }
+                await sendWmqEvent(eventPrefix + 'MOUSE_DOWN', `${btn}`);
                 const now = Date.now();
                 if (now - lastClickTime < 300) {
                     clickCount++;
@@ -293,10 +298,15 @@ async function main() {
             } else if (cmd === 'MOUSE_UP') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
+                if (parts[2] !== undefined && parts[3] !== undefined) {
+                    const x = parseInt(parts[2]);
+                    const y = parseInt(parts[3]);
+                    await page.mouse.move(x, y);
+                }
                 await page.mouse.up({ button, clickCount });
             } else if (cmd === 'KEY_DOWN') {
                 const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
-                await sendWmqEvent('KEY_DOWN', `${key}`);
+                await sendWmqEvent(eventPrefix + 'KEY_DOWN', `${key}`);
                 const keyName = linuxKeyMap[key];
                 if (keyName === 'Control') {
                     controlDown = true;
@@ -323,7 +333,7 @@ async function main() {
             } else if (cmd === 'MOUSE_SCROLL') {
                 const axis = parseInt(parts[1]); // 0 for vertical scroll, 1 for horizontal
                 const value = parseInt(parts[2]);
-                await sendWmqEvent('MOUSE_SCROLL', `${axis},${value}`);
+                await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
                 const deltaY = (axis === 0) ? value * 10 : 0;
                 const deltaX = (axis === 1) ? value * 10 : 0;
                 await page.mouse.wheel({ deltaX, deltaY });
