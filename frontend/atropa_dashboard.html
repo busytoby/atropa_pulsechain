@@ -306,7 +306,48 @@
             streamImg.src = "latest_frame.jpg?t=" + Date.now();
         }, 300);
 
-        // --- 3. Action Trigger ---
+        // --- 3. Interactive Web UI Over-EVM Controls ---
+        async function sendControlCommand(cmd) {
+            try {
+                await fetch("/control", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ command: cmd })
+                });
+                logToTerminal(`Dispatched WMQ Event: ${cmd}`, "success");
+            } catch (err) {
+                logToTerminal(`Failed to dispatch event: ${err.message}`, "error");
+            }
+        }
+
+        function getCoords(e) {
+            const rect = streamImg.getBoundingClientRect();
+            const scaleX = 800 / rect.width;
+            const scaleY = 600 / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            return { x, y };
+        }
+
+        let throttleTimeout = null;
+        streamImg.addEventListener("mousemove", (e) => {
+            if (throttleTimeout) return;
+            throttleTimeout = setTimeout(() => {
+                throttleTimeout = null;
+                const { x, y } = getCoords(e);
+                sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
+            }, 150);
+        });
+
+        streamImg.addEventListener("mousedown", (e) => {
+            sendControlCommand("MOUSE_DOWN 272");
+        });
+
+        streamImg.addEventListener("mouseup", (e) => {
+            sendControlCommand("MOUSE_UP 272");
+        });
+
+        // --- 4. Action Trigger ---
         const btnOpenBrowser = document.getElementById("btnOpenBrowser");
         const termBody = document.getElementById("terminalBody");
 

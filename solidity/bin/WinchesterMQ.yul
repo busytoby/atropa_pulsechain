@@ -130,6 +130,17 @@ object "WinchesterMQ" {
                 return(0, 0)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD 8: postEvent(bytes32 val) -> void
+            // Selector: 0xccb077a0
+            // ----------------------------------------------------------------
+            if eq(selector, 0xccb077a0) {
+                let val := calldataload(4)
+                mstore(0x00, val)
+                log1(0x00, 32, 0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da)
+                return(0, 0)
+            }
+
             revert(0, 0)
 
             // ================================================================

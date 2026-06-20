@@ -109,7 +109,12 @@ async function main() {
             const wmqAddress = await wmqContract.getAddress();
             console.log(`[WMQ] WinchesterMQ successfully deployed at: ${wmqAddress}`);
 
-            // Set up a listener for LogPut event from WinchesterMQ
+            // Write address to file for backend server reference
+            try {
+                fs.writeFileSync(path.join(__dirname, "../tmp/wmq_address.txt"), wmqAddress);
+            } catch (err) {}
+
+            // Set up a listener for LogPut event from WinchesterMQ (handshake mode)
             provider.on({
                 address: wmqAddress,
                 topics: ["0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045"]
@@ -134,6 +139,22 @@ async function main() {
                     }
                 } catch (err) {
                     console.error("[WMQ Listener ERR] Failed to parse input command block:", err);
+                }
+            });
+
+            // Set up a listener for postEvent fast-path command logs
+            provider.on({
+                address: wmqAddress,
+                topics: ["0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da"]
+            }, async (log) => {
+                try {
+                    const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
+                    if (commandStr) {
+                        console.log(`[WinchesterMQ Fast Log] Routed input: ${commandStr}`);
+                        await handleInputCommand(commandStr);
+                    }
+                } catch (err) {
+                    console.error("[WMQ Fast Listener ERR] Failed to parse command:", err);
                 }
             });
         }

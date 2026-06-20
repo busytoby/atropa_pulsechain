@@ -497,6 +497,54 @@ class CustomHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'success', 'message': 'Browser controller spawned successfully.'}).encode('utf-8'))
             return
+        elif self.path == '/control':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            params = json.loads(post_data.decode('utf-8'))
+            command = params.get('command', '')
+            
+            if command:
+                address_path = 'tmp/wmq_address.txt'
+                if os.path.exists(address_path):
+                    with open(address_path, 'r') as f:
+                        wmq_address = f.read().strip()
+                    
+                    try:
+                        cmd_bytes = command.encode('utf-8')
+                        if len(cmd_bytes) < 32:
+                            cmd_bytes = cmd_bytes + b'\x00' * (32 - len(cmd_bytes))
+                        else:
+                            cmd_bytes = cmd_bytes[:32]
+                        tx_data = "0xccb077a0" + cmd_bytes.hex()
+                        
+                        payload = {
+                            "jsonrpc": "2.0",
+                            "method": "eth_sendTransaction",
+                            "params": [{
+                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                "to": wmq_address,
+                                "data": tx_data,
+                                "gas": "0xF4240"
+                            }],
+                            "id": 1
+                        }
+                        import urllib.request
+                        req = urllib.request.Request(
+                            "http://127.0.0.1:8545",
+                            data=json.dumps(payload).encode('utf-8'),
+                            headers={'content-type': 'application/json'}
+                        )
+                        with urllib.request.urlopen(req, timeout=2) as response:
+                            res_data = json.loads(response.read().decode('utf-8'))
+                            print(f"[Server] Dispatched input command via WMQ transaction: {command}")
+                    except Exception as tx_err:
+                        print(f"[Server] Failed to dispatch transaction to WMQ: {tx_err}")
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
+            return
         else:
             super().do_POST()
 
