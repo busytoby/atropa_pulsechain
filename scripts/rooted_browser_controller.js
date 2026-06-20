@@ -256,6 +256,7 @@ async function main() {
     let controlDown = false;
     let lastClickTime = 0;
     let clickCount = 1;
+    let resizeTimeout = null;
     async function handleInputCommand(line) {
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
@@ -339,8 +340,17 @@ async function main() {
             } else if (cmd === 'WINDOW_RESIZE') {
                 const width = parseInt(parts[1]);
                 const height = parseInt(parts[2]);
-                console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
-                await page.setViewport({ width, height });
+                if (resizeTimeout) {
+                    clearTimeout(resizeTimeout);
+                }
+                resizeTimeout = setTimeout(async () => {
+                    console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
+                    try {
+                        await page.setViewport({ width, height });
+                    } catch (viewportErr) {
+                        // ignore viewport errors
+                    }
+                }, 100);
             } else if (line.startsWith('search ')) {
                 const queryText = line.substring(7).trim();
                 console.log(`[PUPPETEER] Received search command for query: "${queryText}"`);
