@@ -51,6 +51,13 @@ static uint32_t pointer_id = 0;
 static uint32_t keyboard_id = 0;
 static uint32_t xdg_wm_base_id = 0;
 
+#define MAX_W 1920
+#define MAX_H 1080
+static int g_w = 800;
+static int g_h = 600;
+static uint32_t pid_val = 0;
+static uint32_t bid_val = 0;
+
 int pack_string(uint32_t *buf, const char *s) {
     uint32_t len = strlen(s) + 1;
     buf[0] = len; memcpy(&buf[1], s, len);
@@ -171,13 +178,25 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
         if (op == 1) {
             printf("WINDOW_CLOSE\n");
             fflush(stdout);
+            usleep(500000); // Wait 500ms for node controller to mute & close chrome
             exit(0);
         } else if (op == 0) { // configure resize
             int32_t width = p[0];
             int32_t height = p[1];
             if (width > 0 && height > 0) {
-                printf("WINDOW_RESIZE %d %d\n", width, height);
-                fflush(stdout);
+                if (width <= MAX_W && height <= MAX_H) {
+                    g_w = width;
+                    g_h = height;
+                    // Destroy old buffer
+                    send_msg(fd, bid_val, 0, NULL, 0, -1); // wl_buffer.destroy is op 0
+                    
+                    // Create new buffer with new width/height from the same pool
+                    uint32_t bf_args[] = {bid_val, 0, g_w, g_h, g_w * 4, 1}; // 1 = XRGB8888
+                    send_msg(fd, pid_val, 0, bf_args, 24, -1); // wl_shm_pool.create_buffer is op 0
+                    
+                    printf("WINDOW_RESIZE %d %d\n", width, height);
+                    fflush(stdout);
+                }
             }
         }
     } else if (pointer_id && obj == pointer_id) {
@@ -300,23 +319,23 @@ int main() {
     send_msg(fd, top, 3, title_buf, app_off * 4, -1); // 3 = set_app_id
     free(title_buf);
 
-    int w = 800, h = 600, str = w * 4; size_t sz = str * h;
+    int str = g_w * 4; size_t sz = MAX_W * MAX_H * 4;
     int mfd = memfd_create("tsfi_scanout", MFD_CLOEXEC);
     if (mfd < 0 || ftruncate(mfd, sz) < 0) return 1;
     uint32_t *scanout_px = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, mfd, 0);
-    for (int i = 0; i < w * h; i++) {
+    for (int i = 0; i < MAX_W * MAX_H; i++) {
         scanout_px[i] = 0xFF0B0214; // Brand purple
     }
     
-    uint32_t pid = next_id++, bid = next_id++;
-    uint32_t p_args[] = {pid, (uint32_t)sz}; send_msg(fd, sid, WL_SHM_CREATE_POOL, p_args, 8, mfd);
-    uint32_t bf_args[] = {bid, 0, w, h, str, 1}; send_msg(fd, pid, WL_SHM_POOL_CREATE_BUFFER, bf_args, 24, -1); // 1 = XRGB8888
+    pid_val = next_id++; bid_val = next_id++;
+    uint32_t p_args[] = {pid_val, (uint32_t)sz}; send_msg(fd, sid, WL_SHM_CREATE_POOL, p_args, 8, mfd);
+    uint32_t bf_args[] = {bid_val, 0, g_w, g_h, str, 1}; send_msg(fd, pid_val, WL_SHM_POOL_CREATE_BUFFER, bf_args, 24, -1); // 1 = XRGB8888
     
     // Initial commit must NOT have a buffer attached per XDG shell spec
     send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
 
     // --- 3. Link Firmware ZMM to Wayland Scanout ---
-    ptsfi_zmm_set_scanout_buffer(scanout_px, w, h);
+    ptsfi_zmm_set_scanout_buffer(scanout_px, g_w, g_h);
     ptsfi_drmModeAddPlane(72, sz);
     uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
 
@@ -330,7 +349,7 @@ int main() {
         process_events(fd, xsurf, &initial_configured);
         if (initial_configured) {
             // Attach buffer and commit now that configure has been acknowledged
-            uint32_t a_args[] = {bid, 0, 0};
+            uint32_t a_args[] = {bid_val, 0, 0};
             send_msg(fd, surf, WL_SURFACE_ATTACH, a_args, 12, -1);
             send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
             break;
@@ -401,13 +420,13 @@ int main() {
                         target_len = jpeg_len;
                         total_read = 0;
                     } else {
-                        if (decode_jpeg(input_buf, jpeg_len, p72, w, h)) {
+                        if (decode_jpeg(input_buf, jpeg_len, p72, g_w, g_h)) {
                             pvkQueuePresentKHR(queue, &presentInfo);
 
-                            uint32_t attach_args[] = {bid, 0, 0};
+                            uint32_t attach_args[] = {bid_val, 0, 0};
                             send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
 
-                            uint32_t damage[] = {0, 0, w, h};
+                            uint32_t damage[] = {0, 0, g_w, g_h};
                             send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
                             send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
                         }
