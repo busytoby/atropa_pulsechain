@@ -364,38 +364,42 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
-                // Orbiting Electron rings
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                // Cybernetic brackets at corners
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
                 ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(0, 0, 24, 0, Math.PI * 2);
-                ctx.stroke();
+                // Top-left corner
+                ctx.beginPath(); ctx.moveTo(-28, -20); ctx.lineTo(-28, -28); ctx.lineTo(-20, -28); ctx.stroke();
+                // Top-right corner
+                ctx.beginPath(); ctx.moveTo(20, -28); ctx.lineTo(28, -28); ctx.lineTo(28, -20); ctx.stroke();
+                // Bottom-left corner
+                ctx.beginPath(); ctx.moveTo(-28, 20); ctx.lineTo(-28, 28); ctx.lineTo(-20, 28); ctx.stroke();
+                // Bottom-right corner
+                ctx.beginPath(); ctx.moveTo(20, 28); ctx.lineTo(28, 28); ctx.lineTo(28, 20); ctx.stroke();
 
-                ctx.strokeStyle = stage.color;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.arc(0, 0, 24, time * 2, time * 2 + Math.PI / 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(0, 0, 24, time * 2 + Math.PI, time * 2 + Math.PI * 1.5);
-                ctx.stroke();
-
-                // Active ALU wave visualizer inside the square
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                for (let sx = -18; sx <= 18; sx++) {
-                    let sy = Math.sin(time * 5 + sx * 0.25) * 5;
-                    if (sx === -18) ctx.moveTo(sx, sy);
-                    else ctx.lineTo(sx, sy);
+                // Live dynamic ALU load bars
+                ctx.fillStyle = stage.color;
+                for (let b = 0; b < 4; b++) {
+                    const barH = 14 + Math.sin(time * 4 + idx * 3 + b * 1.8) * 8;
+                    ctx.fillRect(-22 + b * 11, 22 - barH, 7, barH);
                 }
-                ctx.stroke();
 
-                // Floating Register Address inside
-                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-                ctx.font = "8px 'Share Tech Mono'";
-                ctx.textAlign = "center";
-                ctx.fillText(`0x${(Math.floor(time * 3 + idx * 47) % 256).toString(16).toUpperCase()}`, 0, 16);
+                // Rolling Shader/GPU instructions
+                ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.font = "6.5px 'Share Tech Mono'";
+                ctx.textAlign = "left";
+                
+                const instructions = ["v_add_f32", "s_waitcnt", "v_mul_f32", "v_mov_b32", "s_nop", "v_sin_f32", "v_mac_f32"];
+                const inst1 = instructions[(Math.floor(time * 1.5 + idx * 2) % instructions.length)];
+                const inst2 = instructions[(Math.floor(time * 1.5 + idx * 2 + 1) % instructions.length)];
+                
+                ctx.fillText(inst1, -24, -18);
+                ctx.fillText(inst2, -24, -9);
+
+                // Active status marker
+                ctx.fillStyle = stage.color;
+                ctx.font = "6px 'Share Tech Mono'";
+                ctx.textAlign = "right";
+                ctx.fillText("ALU_OK", 24, 25);
 
                 ctx.restore();
 
