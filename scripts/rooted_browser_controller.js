@@ -54,6 +54,8 @@ async function main() {
     // Define helper function to route input events to Puppeteer
     let page = null;
     let controlDown = false;
+    let lastClickTime = 0;
+    let clickCount = 1;
     async function handleInputCommand(line) {
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
@@ -73,11 +75,18 @@ async function main() {
             } else if (cmd === 'MOUSE_DOWN') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
-                await page.mouse.down({ button });
+                const now = Date.now();
+                if (now - lastClickTime < 300) {
+                    clickCount++;
+                } else {
+                    clickCount = 1;
+                }
+                lastClickTime = now;
+                await page.mouse.down({ button, clickCount });
             } else if (cmd === 'MOUSE_UP') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
-                await page.mouse.up({ button });
+                await page.mouse.up({ button, clickCount });
             } else if (cmd === 'KEY_DOWN') {
                 const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
                 const keyName = linuxKeyMap[key];
