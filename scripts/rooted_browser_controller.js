@@ -376,12 +376,14 @@ async function main() {
         executablePath: "/usr/bin/google-chrome",
         headless: true,
         dumpio: true,
+        ignoreDefaultArgs: ['--mute-audio'],
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-gpu",
             "--window-size=800,600",
             "--disable-dev-shm-usage",
+            "--autoplay-policy=no-user-gesture-required",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
@@ -496,7 +498,10 @@ async function main() {
                 if (isYouTube || frameCount % 30 === 0) {
                     try {
                         const fs = require('fs');
-                        fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                        const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
+                        const targetPath = path.join(__dirname, "../frontend/latest_frame.jpg");
+                        fs.writeFileSync(tmpPath, jpegBuffer);
+                        fs.renameSync(tmpPath, targetPath);
                     } catch (writeErr) {
                         // ignore write errors
                     }
