@@ -539,6 +539,58 @@ async function main() {
     }
 
     let frameCount = 0;
+    async function startScreencast() {
+        try {
+            const client = await page.target().createCDPSession();
+            await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
+            client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
+                try {
+                    if (!active) {
+                        await client.send('Page.screencastFrameAck', { sessionId });
+                        return;
+                    }
+                    const jpegBuffer = Buffer.from(data, 'base64');
+                    frameCount++;
+                    if (isYouTube || frameCount % 30 === 0) {
+                        try {
+                            const fs = require('fs');
+                            const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
+                            const targetPath = path.join(__dirname, "../frontend/latest_frame.jpg");
+                            fs.writeFileSync(tmpPath, jpegBuffer);
+                            fs.renameSync(tmpPath, targetPath);
+                        } catch (writeErr) {
+                            // ignore write errors
+                        }
+                    }
+
+                    if (presenter && active && presenter.stdin.writable) {
+                        const lenBuf = Buffer.alloc(4);
+                        lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+
+                        let ok = presenter.stdin.write(lenBuf);
+                        if (ok) {
+                            ok = presenter.stdin.write(jpegBuffer);
+                        }
+                        if (!ok) {
+                            await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                        }
+                        if (frameCount % 180 === 0) {
+                            console.log(`[STREAM] Sent ${frameCount} screencast frames.`);
+                        }
+                    }
+                    await client.send('Page.screencastFrameAck', { sessionId });
+                } catch (err) {
+                    try {
+                        await client.send('Page.screencastFrameAck', { sessionId });
+                    } catch (ackErr) {}
+                }
+            });
+        } catch (screencastErr) {
+            console.error("[PUPPETEER] Screencast setup failed: " + screencastErr.message);
+            screenshotLoop();
+        }
+    }
+
     async function screenshotLoop() {
         while (active) {
             try {
@@ -552,24 +604,18 @@ async function main() {
                         const targetPath = path.join(__dirname, "../frontend/latest_frame.jpg");
                         fs.writeFileSync(tmpPath, jpegBuffer);
                         fs.renameSync(tmpPath, targetPath);
-                    } catch (writeErr) {
-                        // ignore write errors
-                    }
+                    } catch (writeErr) {}
                 }
 
                 if (presenter && active && presenter.stdin.writable) {
                     const lenBuf = Buffer.alloc(4);
                     lenBuf.writeUInt32LE(jpegBuffer.length, 0);
-
                     let ok = presenter.stdin.write(lenBuf);
                     if (ok) {
                         ok = presenter.stdin.write(jpegBuffer);
                     }
                     if (!ok) {
                         await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                    }
-                    if (frameCount % 90 === 0) {
-                        console.log(`[STREAM] Sent ${frameCount} screenshot frames.`);
                     }
                 }
                 const elapsed = Date.now() - startTime;
@@ -580,7 +626,7 @@ async function main() {
             }
         }
     }
-    screenshotLoop();
+    startScreencast();
 
     if (url.includes("youtube.com")) {
         try {
