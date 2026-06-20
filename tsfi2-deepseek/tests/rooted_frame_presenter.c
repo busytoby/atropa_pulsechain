@@ -292,7 +292,6 @@ int main() {
     ptsfi_zmm_set_scanout_buffer(scanout_px, w, h);
     ptsfi_drmModeAddPlane(72, sz);
     uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
-    (void)p72;
 
     VkSwapchainKHR mock_swapchain = (VkSwapchainKHR)0xB000;
     uint32_t imageIndex = 0;
@@ -375,7 +374,7 @@ int main() {
                         target_len = jpeg_len;
                         total_read = 0;
                     } else {
-                        if (decode_jpeg(input_buf, jpeg_len, scanout_px, w, h)) {
+                        if (decode_jpeg(input_buf, jpeg_len, p72, w, h)) {
                             pvkQueuePresentKHR(queue, &presentInfo);
 
                             uint32_t attach_args[] = {bid, 0, 0};

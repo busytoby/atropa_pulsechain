@@ -9,11 +9,13 @@ async function runTest() {
     const browser = await puppeteer.launch({
         executablePath: "/usr/bin/google-chrome",
         headless: true,
+        dumpio: true,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-gpu",
-            "--window-size=800,600"
+            "--window-size=800,600",
+            "--disable-dev-shm-usage"
         ]
     });
 
