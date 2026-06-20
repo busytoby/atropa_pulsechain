@@ -121,6 +121,15 @@ async function main() {
             } else if (cmd === 'WINDOW_CLOSE') {
                 console.log("[PUPPETEER] Wayland close event requested. Shutting down browser...");
                 active = false;
+                try {
+                    await page.setMuted(true);
+                    await page.evaluate(() => {
+                        document.querySelectorAll('video, audio').forEach(el => {
+                            el.pause();
+                            el.src = "";
+                        });
+                    });
+                } catch (e) {}
                 await browser.close();
                 process.exit(0);
             } else if (cmd === 'WINDOW_RESIZE') {
@@ -250,14 +259,6 @@ async function main() {
     // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
         try {
-            try {
-                const screenshotBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
-                const fs = require('fs');
-                fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), screenshotBuffer);
-            } catch (screenshotErr) {
-                // ignore screenshot errors
-            }
-
             const status = await page.evaluate(() => {
                 // 1. Auto unmute
                 const muteBtn = document.querySelector('.ytp-mute-button');
