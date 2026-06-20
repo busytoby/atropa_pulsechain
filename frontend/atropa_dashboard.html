@@ -591,12 +591,12 @@
 
         streamSvg.addEventListener("mousedown", (e) => {
             const { x, y } = getCoords(e);
-            sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            sendControlCommand("MOUSE_DOWN 272");
+            sendControlCommand(`MOUSE_DOWN 272 ${x} ${y}`);
         });
 
         streamSvg.addEventListener("mouseup", (e) => {
-            sendControlCommand("MOUSE_UP 272");
+            const { x, y } = getCoords(e);
+            sendControlCommand(`MOUSE_UP 272 ${x} ${y}`);
         });
 
         streamSvg.addEventListener("wheel", (e) => {
