@@ -465,12 +465,20 @@
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
+            const { x, y } = getCoords(e);
+            sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
             sendControlCommand("MOUSE_DOWN 272");
         });
 
         streamSvg.addEventListener("mouseup", (e) => {
             sendControlCommand("MOUSE_UP 272");
         });
+
+        streamSvg.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const value = Math.round(e.deltaY / 10) || (e.deltaY > 0 ? 1 : -1);
+            sendControlCommand(`MOUSE_SCROLL 0 ${value}`);
+        }, { passive: false });
 
         // --- 4. Action Trigger ---
         const btnOpenBrowser = document.getElementById("btnOpenBrowser");
