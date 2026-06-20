@@ -236,10 +236,11 @@ async function main() {
     });
     rl.on('line', handleInputCommand);
 
-    // 2. Set up external named pipe (FIFO) at /tmp/auncient_browser_input.fifo to capture Yul hardware/vulkan key inputs
+    // 2. Set up external named pipe (FIFO) to capture Yul hardware/vulkan key inputs
     const fs = require('fs');
     const { execSync } = require('child_process');
-    const fifoPath = '/tmp/auncient_browser_input.fifo';
+    const fifoSuffix = process.argv[3] ? `_${process.argv[3]}` : '';
+    const fifoPath = `/tmp/auncient_browser_input${fifoSuffix}.fifo`;
     
     try {
         if (!fs.existsSync(fifoPath)) {
