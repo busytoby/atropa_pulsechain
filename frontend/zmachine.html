@@ -1760,7 +1760,7 @@ Connect your wallet to retrieve the active story ROM.</div>
                 pipThrottle = null;
                 const { x, y } = getPipCoords(e);
                 sendPipControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            }, 150);
+            }, 20);
         });
 
         pipFrame.addEventListener("mousedown", (e) => {

@@ -462,7 +462,7 @@
                 throttleTimeout = null;
                 const { x, y } = getCoords(e);
                 sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            }, 150);
+            }, 20);
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
