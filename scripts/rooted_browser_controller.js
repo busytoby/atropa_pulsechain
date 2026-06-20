@@ -241,6 +241,14 @@ async function main() {
                         await new Promise(resolve => presenter.stdin.once('drain', resolve));
                     }
                     frameCount++;
+                    if (frameCount % 30 === 0) {
+                        try {
+                            const fs = require('fs');
+                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                        } catch (writeErr) {
+                            // ignore write errors
+                        }
+                    }
                     if (frameCount % 90 === 0) {
                         console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
                     }
