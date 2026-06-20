@@ -106,7 +106,36 @@ async function main() {
             const wmqFactory = new ethers.ContractFactory([], wmqBytecode, signer);
             wmqContract = await wmqFactory.deploy();
             await wmqContract.waitForDeployment();
-            console.log(`[WMQ] WinchesterMQ successfully deployed at: ${await wmqContract.getAddress()}`);
+            const wmqAddress = await wmqContract.getAddress();
+            console.log(`[WMQ] WinchesterMQ successfully deployed at: ${wmqAddress}`);
+
+            // Set up a listener for LogPut event from WinchesterMQ
+            provider.on({
+                address: wmqAddress,
+                topics: ["0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045"]
+            }, async (log) => {
+                try {
+                    const data = ethers.getBytes(log.data);
+                    const blockIdBytes = data.slice(32, 64);
+                    const blockId = ethers.toBigInt(blockIdBytes);
+
+                    let blockBytes = [];
+                    const baseKey = ethers.keccak256(ethers.zeroPadValue(ethers.toBeHex(BigInt(0x1000) + blockId), 32));
+                    for (let i = 0; i < 8; i++) {
+                        const slotKey = ethers.toBeHex(BigInt(baseKey) + BigInt(i), 32);
+                        const slotVal = await provider.getStorage(wmqAddress, slotKey);
+                        blockBytes.push(...ethers.getBytes(slotVal));
+                    }
+                    const fullStr = Buffer.from(blockBytes).toString('utf8');
+                    const commandStr = fullStr.split('\0')[0].trim();
+                    if (commandStr) {
+                        console.log(`[WinchesterMQ Event Log] Routed input: ${commandStr}`);
+                        await handleInputCommand(commandStr);
+                    }
+                } catch (err) {
+                    console.error("[WMQ Listener ERR] Failed to parse input command block:", err);
+                }
+            });
         }
     } catch (e) {
         console.log("[WMQ] WinchesterMQ not active or unreachable (Anvil offline). Using standard direct routing.");
@@ -236,33 +265,7 @@ async function main() {
     });
     rl.on('line', handleInputCommand);
 
-    // 2. Set up external named pipe (FIFO) to capture Yul hardware/vulkan key inputs
-    const fs = require('fs');
-    const { execSync } = require('child_process');
-    const fifoSuffix = process.argv[3] ? `_${process.argv[3]}` : '';
-    const fifoPath = `/tmp/auncient_browser_input${fifoSuffix}.fifo`;
-    
-    try {
-        if (!fs.existsSync(fifoPath)) {
-            execSync(`mkfifo ${fifoPath}`);
-        }
-    } catch (e) {
-        console.error("[FIFO ERR] Failed to create external input FIFO:", e);
-    }
-    
-    try {
-        const fifoStream = fs.createReadStream(fifoPath, { flags: 'r+' });
-        const fifoRl = readline.createInterface({
-            input: fifoStream,
-            terminal: false
-        });
-        fifoRl.on('line', async (line) => {
-            console.log(`[EXTERNAL INPUT] ${line}`);
-            await handleInputCommand(line);
-        });
-    } catch (e) {
-        console.error("[FIFO ERR] Failed to read from external input FIFO:", e);
-    }
+    // 2. Named pipe setup removed as per WinchesterMQ-only routing rule. All inputs flow through the Auncient VM/WMQ.
 
     console.log("[PRESENTER] Waiting for presenter to initialize...");
     await presenterReady;
