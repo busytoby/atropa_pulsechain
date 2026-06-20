@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Atropa Portal Hub</title>
+    <meta name="description" content="Universal Portal and Gateway to the Auncient Wavelet, Dysnomia VM, and Atropa PulseChain Dashboards.">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-base: #040616;
+            --card-bg: rgba(9, 14, 35, 0.75);
+            --neon-blue: #00f2fe;
+            --neon-purple: #4facfe;
+            --neon-magenta: #ff007f;
+            --neon-green: #39ff14;
+            --neon-amber: #f59e0b;
+            --border-glow: rgba(0, 242, 254, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            font-family: 'Rajdhani', sans-serif;
+            color: #f0f4f8;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 5% 5%, rgba(0, 242, 254, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 95% 95%, rgba(255, 0, 127, 0.12) 0%, transparent 45%),
+                linear-gradient(rgba(0, 242, 254, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 254, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            background-attachment: fixed;
+        }
+
+        .header-glow {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+            padding-bottom: 15px;
+            position: relative;
+        }
+
+        .header-glow h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.8rem;
+            letter-spacing: 3px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple), var(--neon-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4));
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--neon-blue);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .portal-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+            height: calc(100vh - 180px);
+            min-height: 650px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .main-frame-container {
+            display: flex;
+            flex-direction: column;
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        .frame-header {
+            background: rgba(4, 6, 20, 0.85);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .frame-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-weight: 700;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .frame-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-frame-act {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 5px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .btn-frame-act:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
+
+        .iframe-viewport {
+            width: 100%;
+            flex-grow: 1;
+            border: none;
+            background: #010207;
+        }
+
+        .node-map-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .node-map-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-size: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #svgMatrixContainer {
+            width: 100%;
+            height: 280px;
+            background: rgba(3, 5, 15, 0.7);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .hud-details-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .hud-details-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-purple);
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .hud-stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+            padding-bottom: 6px;
+        }
+
+        .hud-stat-label {
+            color: var(--text-secondary);
+        }
+
+        .hud-stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* SVG Node styling */
+        .svg-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .svg-node circle {
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.5));
+        }
+
+        .svg-node:hover circle {
+            r: 10;
+            filter: drop-shadow(0 0 12px var(--neon-blue));
+        }
+
+        .svg-node.active circle {
+            r: 11;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 15px var(--neon-magenta));
+        }
+
+        .svg-line {
+            stroke: rgba(0, 242, 254, 0.15);
+            stroke-width: 1.5;
+            transition: all 0.3s ease;
+        }
+
+        .svg-line.active {
+            stroke: var(--neon-magenta);
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 4px var(--neon-magenta));
+        }
+
+        .svg-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            fill: var(--text-secondary);
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .svg-node:hover + .svg-label, .svg-node.active + .svg-label {
+            fill: #fff;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* WinchesterMQ Terminal Output */
+        .terminal-tray {
+            grid-column: span 2;
+            background: rgba(3, 5, 15, 0.9);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-tray-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .terminal-tray-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-purple);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-tray-body {
+            height: 120px;
+            overflow-y: auto;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .log-line {
+            padding-left: 15px;
+            position: relative;
+            word-break: break-all;
+        }
+
+        .log-line::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--neon-blue);
+        }
+
+        .log-line.info { color: #f0f4f8; }
+        .log-line.success { color: var(--neon-green); }
+        .log-line.error { color: var(--neon-magenta); }
+        .log-line.warning { color: var(--neon-amber); }
+
+        .splash-placeholder {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            gap: 20px;
+            background: radial-gradient(circle, #080c25 0%, #010207 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .splash-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 8px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple), var(--neon-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4)); }
+            100% { filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.7)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container" style="max-width: 100%; margin: 0; padding: 25px;">
+        <header class="header-glow">
+            <h1>Auncient Atropa Portal Hub</h1>
+            <div class="subtitle">UNIVERSAL CONSOLE FRAME & DYSNOMIA VM GATEWAY</div>
+        </header>
+
+        <div class="portal-layout">
+            <!-- Left Side: Interactive SVG Selector and telemetry details -->
+            <div class="sidebar">
+                <div class="node-map-card">
+                    <h2>🌐 Dashboard Topology</h2>
+                    <div id="svgMatrixContainer">
+                        <svg width="100%" height="100%" viewBox="0 0 320 280" id="matrixSvg">
+                            <!-- Definition for glowing effects -->
+                            <defs>
+                                <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="4" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                                <filter id="glowMagenta" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="5" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                            </defs>
+
+                            <!-- Node connecting paths -->
+                            <line x1="160" y1="140" x2="80" y2="70" class="svg-line" id="line-atropa" />
+                            <line x1="160" y1="140" x2="240" y2="70" class="svg-line" id="line-vulkan_synth" />
+                            <line x1="160" y1="140" x2="60" y2="180" class="svg-line" id="line-tts" />
+                            <line x1="160" y1="140" x2="260" y2="180" class="svg-line" id="line-protecto" />
+                            <line x1="160" y1="140" x2="160" y2="40" class="svg-line" id="line-ledger" />
+                            <line x1="160" y1="140" x2="160" y2="240" class="svg-line" id="line-emulation" />
+
+                            <!-- Central Core Hub -->
+                            <g class="svg-node active" id="node-core" onclick="selectNode('core')">
+                                <circle cx="160" cy="140" r="14" fill="#0b0e26" stroke="#ff007f" stroke-width="2.5" filter="url(#glowMagenta)" />
+                                <circle cx="160" cy="140" r="5" fill="#ff007f" />
+                            </g>
+                            <text x="160" y="165" text-anchor="middle" class="svg-label" style="fill: var(--neon-magenta); font-weight: bold;">CORE GATEWAY</text>
+
+                            <!-- Atropa Dashboard Node -->
+                            <g class="svg-node" id="node-atropa" onclick="selectNode('atropa')">
+                                <circle cx="80" cy="70" r="8" fill="#020512" stroke="#00f2fe" stroke-width="1.5" />
+                            </g>
+                            <text x="80" y="55" text-anchor="middle" class="svg-label">ATROPA LIVE</text>
+
+                            <!-- Vulkan Synth Node -->
+                            <g class="svg-node" id="node-vulkan_synth" onclick="selectNode('vulkan_synth')">
+                                <circle cx="240" cy="70" r="8" fill="#020512" stroke="#ff007f" stroke-width="1.5" />
+                            </g>
+                            <text x="240" y="55" text-anchor="middle" class="svg-label">AUNCIENT SYNTH</text>
+
+                            <!-- TTS Node -->
+                            <g class="svg-node" id="node-tts" onclick="selectNode('tts')">
+                                <circle cx="60" cy="180" r="8" fill="#020512" stroke="#00ffcc" stroke-width="1.5" />
+                            </g>
+                            <text x="60" y="200" text-anchor="middle" class="svg-label">TTS AUDIO</text>
+
+                            <!-- Protecto Node -->
+                            <g class="svg-node" id="node-protecto" onclick="selectNode('protecto')">
+                                <circle cx="260" cy="180" r="8" fill="#020512" stroke="#f59e0b" stroke-width="1.5" />
+                            </g>
+                            <text x="260" y="200" text-anchor="middle" class="svg-label">PROTECTO</text>
+
+                            <!-- Ledger Node -->
+                            <g class="svg-node" id="node-ledger" onclick="selectNode('ledger')">
+                                <circle cx="160" cy="40" r="8" fill="#020512" stroke="#4facfe" stroke-width="1.5" />
+                            </g>
+                            <text x="160" y="25" text-anchor="middle" class="svg-label">ALCHEMICAL LEDGER</text>
+
+                            <!-- Emulation Studio Node -->
+                            <g class="svg-node" id="node-emulation" onclick="selectNode('emulation')">
+                                <circle cx="160" cy="240" r="8" fill="#020512" stroke="#39ff14" stroke-width="1.5" />
+                            </g>
+                            <text x="160" y="260" text-anchor="middle" class="svg-label">EMU STUDIO</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="hud-details-card">
+                    <h3 id="hudNodeTitle">Selected: Central Core</h3>
+                    <div style="flex-grow:1; display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                        <div class="hud-stat-row">
+                            <span class="hud-stat-label">Network ID:</span>
+                            <span class="hud-stat-value" id="hudStatNetwork">PulseChain (943)</span>
+                        </div>
+                        <div class="hud-stat-row">
+                            <span class="hud-stat-label">Auncient Status:</span>
+                            <span class="hud-stat-value" id="hudStatStatus" style="color: var(--neon-green);">ACTIVE</span>
+                        </div>
+                        <div class="hud-stat-row">
+                            <span class="hud-stat-label">Host Domain:</span>
+                            <span class="hud-stat-value" id="hudStatDomain">127.0.0.1:8000</span>
+                        </div>
+                        <div class="hud-stat-row">
+                            <span class="hud-stat-label">Yul Interface:</span>
+                            <span class="hud-stat-value" id="hudStatYul" style="font-size:0.75rem;">WinchesterMQ.yul</span>
+                        </div>
+                        <p id="hudDescription" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin-top: 10px;">
+                            The main hub connecting all modular sub-systems and live controllers. Pick a node on the matrix above to view its contents directly in the main console viewport.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: The active viewport framing the selected page -->
+            <div class="main-frame-container">
+                <div class="frame-header">
+                    <div class="frame-title" id="activeFrameTitle">
+                        <span>🌌</span> Central Portal Hub Overview
+                    </div>
+                    <div class="frame-actions">
+                        <button class="btn-frame-act" onclick="refreshViewport()">🔄 Reload</button>
+                        <button class="btn-frame-act" onclick="popoutViewport()">↗️ Popout</button>
+                    </div>
+                </div>
+                <iframe id="portalViewport" class="iframe-viewport" style="display:none;"></iframe>
+                
+                <div id="portalSplash" class="splash-placeholder">
+                    <div class="splash-logo">ATROPA HUB</div>
+                    <p style="color: var(--neon-blue); font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; letter-spacing: 3px;">
+                        AUNCIENT DYSNOMIA SYSTEM MONITOR
+                    </p>
+                    <div style="max-width: 500px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-top: 10px;">
+                        Welcome to the universal control gateway. The nodes in the SVG diagram on the left represent your active hardware interfaces and software dashboards. Selecting a node links it immediately to the frame and roots access.
+                    </div>
+                    <button class="btn btn-primary" onclick="selectNode('atropa')" style="margin-top: 15px;">
+                        Launch Rooted Browser Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- WinchesterMQ Terminal Logs -->
+        <div class="terminal-tray">
+            <div class="terminal-tray-header">
+                <h3>💾 WinchesterMQ System Telemetry Logger</h3>
+                <button id="btnClearLogs" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-size:0.8rem;">Clear Output</button>
+            </div>
+            <div id="termLogs" class="terminal-tray-body">
+                <div class="log-line success">Portal connection established. Listening to WinchesterMQ at 0xccb077a0...</div>
+                <div class="log-line info">Auncient Wavelet clock speed synchronized with Anvil EVM provider (127.0.0.1:8545).</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nodesInfo = {
+            core: {
+                title: "Selected: Central Core",
+                network: "PulseChain (943)",
+                status: "ACTIVE",
+                domain: "127.0.0.1:8000",
+                yul: "WinchesterMQ.yul",
+                desc: "The main hub connecting all modular sub-systems and live controllers. Pick a node on the matrix above to view its contents directly in the main console viewport.",
+                url: ""
+            },
+            atropa: {
+                title: "Atropa Browser Console",
+                network: "PulseChain / Anvil",
+                status: "ONLINE",
+                domain: "localhost:8000",
+                yul: "WinchesterMQ.yul",
+                desc: "Realtime web controller dashboard utilizing WinchesterMQ and fast-path Yul events to navigate the browser and capture remote screencast frames.",
+                url: "/atropa_dashboard.html"
+            },
+            vulkan_synth: {
+                title: "Auncient Vulkan Synth",
+                network: "PulseChain / Anvil",
+                status: "ONLINE",
+                domain: "localhost:8000",
+                yul: "VulkanCore / iDOF",
+                desc: "Hamiltonian Phase Space visualizer and synth interface running a symplectic Euler integrator linked to standard Pitch and Yaw CV note handlers.",
+                url: "/vulkan_synth_dashboard.html"
+            },
+            tts: {
+                title: "Neural Speech & Audio",
+                network: "PulseChain Node",
+                status: "ONLINE",
+                domain: "localhost:8000",
+                yul: "Auncient Wavelet Vocoder",
+                desc: "Speech synthesis, vocoder adjustments, and audio sequence layout dashboard configured for real-time sound generation.",
+                url: "/tts_dashboard.html"
+            },
+            protecto: {
+                title: "Protecto Governance Console",
+                network: "PulseChain Mainnet",
+                status: "SYNCED",
+                domain: "localhost:8000",
+                yul: "ProtectoRegistry.yul",
+                desc: "Dashboard monitoring alchemical security keys, token supply metrics, and registry rules within the network.",
+                url: "/protecto.html"
+            },
+            ledger: {
+                title: "Alchemical Ledger",
+                network: "PulseChain Mainnet",
+                status: "ACTIVE",
+                domain: "localhost:8000",
+                yul: "LedgerRouter.yul",
+                desc: "Asset tracking, token registry distributions, and alchemical wallet ledger details for on-chain audits.",
+                url: "/ledger.html"
+            },
+            emulation: {
+                title: "Emulation Studio",
+                network: "Local VM Instance",
+                status: "STANDBY",
+                domain: "localhost:8000",
+                yul: "Dysnomia CPU 6502",
+                desc: "Studio interface supporting emulator configurations, ROM memory layout inspections, and assembler setups.",
+                url: "/emulation_studio.html"
+            }
+        };
+
+        let selectedNodeId = 'core';
+
+        function selectNode(id) {
+            selectedNodeId = id;
+            const info = nodesInfo[id];
+            
+            // Update labels and HUD
+            document.getElementById("hudNodeTitle").innerText = info.title;
+            document.getElementById("hudStatNetwork").innerText = info.network;
+            document.getElementById("hudStatStatus").innerText = info.status;
+            document.getElementById("hudStatStatus").style.color = (info.status === 'ONLINE' || info.status === 'ACTIVE' || info.status === 'SYNCED') ? 'var(--neon-green)' : 'var(--neon-amber)';
+            document.getElementById("hudStatDomain").innerText = info.domain;
+            document.getElementById("hudStatYul").innerText = info.yul;
+            document.getElementById("hudDescription").innerText = info.desc;
+
+            // Highlight node in SVG
+            document.querySelectorAll('.svg-node').forEach(node => {
+                node.classList.remove('active');
+            });
+            const selectedNodeElement = document.getElementById(`node-${id}`);
+            if (selectedNodeElement) {
+                selectedNodeElement.classList.add('active');
+            }
+
+            // Highlight connecting line
+            document.querySelectorAll('.svg-line').forEach(line => {
+                line.classList.remove('active');
+            });
+            const selectedLineElement = document.getElementById(`line-${id}`);
+            if (selectedLineElement) {
+                selectedLineElement.classList.add('active');
+            }
+
+            // Show or hide iframe viewport
+            const viewport = document.getElementById("portalViewport");
+            const splash = document.getElementById("portalSplash");
+            const frameTitle = document.getElementById("activeFrameTitle");
+
+            if (info.url) {
+                viewport.src = info.url;
+                viewport.style.display = "block";
+                splash.style.display = "none";
+                frameTitle.innerHTML = `<span>🖥️</span> Frame Viewport: ${info.title}`;
+                logToTerminal(`Framed sub-dashboard successfully: ${info.title}`, "success");
+            } else {
+                viewport.style.display = "none";
+                splash.style.display = "flex";
+                frameTitle.innerHTML = `<span>🌌</span> Central Portal Hub Overview`;
+            }
+        }
+
+        function refreshViewport() {
+            const viewport = document.getElementById("portalViewport");
+            if (viewport.style.display !== "none") {
+                const title = nodesInfo[selectedNodeId]?.title || "Viewport";
+                logToTerminal(`Reloading viewport: ${title}...`, "warning");
+                viewport.contentWindow.location.reload();
+            }
+        }
+
+        function popoutViewport() {
+            const info = nodesInfo[selectedNodeId];
+            if (info && info.url) {
+                logToTerminal(`Popping out viewport in a new window: ${info.title}`, "info");
+                window.open(info.url, '_blank');
+            }
+        }
+
+        function logToTerminal(message, type = "info") {
+            const container = document.getElementById("termLogs");
+            const line = document.createElement("div");
+            line.className = `log-line ${type}`;
+            const timeStr = new Date().toLocaleTimeString();
+            line.innerText = `[${timeStr}] ${message}`;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        document.getElementById("btnClearLogs").addEventListener("click", () => {
+            const container = document.getElementById("termLogs");
+            container.innerHTML = "";
+            logToTerminal("Terminal buffer cleared.");
+        });
+
+        // Periodic simulated WinchesterMQ telemetry check
+        setInterval(() => {
+            const eventProbs = [
+                "WinchesterMQ telemetry heart-beat OK.",
+                "EVM transaction verified at block height update.",
+                "Active session sync with Auncient storage slots completed.",
+                "Telemetry packet dispatched to localhost:8545 client.",
+                "Polling cache indices from dynamic registry config."
+            ];
+            const randomMsg = eventProbs[Math.floor(Math.random() * eventProbs.length)];
+            logToTerminal(randomMsg, "info");
+        }, 12000);
+    </script>
+</body>
+</html>
