@@ -508,11 +508,10 @@ static int g_scanout_h = 0;
 
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) { 
     if (g_scanout_buffer && g_scanout_w > 0 && g_scanout_h > 0) {
-        // Zero out the scanout buffer first (black background)
-        size_t sz = g_scanout_w * g_scanout_h * 4;
-        memset(g_scanout_buffer, 0, sz);
-        
         uint32_t *dst = (uint32_t*)g_scanout_buffer;
+        for (int i = 0; i < g_scanout_w * g_scanout_h; i++) {
+            dst[i] = 0xFF0B0214; // Brand purple background
+        }
         
         // Simple alpha blending of virtual planes
         for (int p = 0; p < g_virtual_plane_count; p++) {

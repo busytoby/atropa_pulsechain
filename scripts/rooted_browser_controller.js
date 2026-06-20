@@ -288,18 +288,6 @@ async function main() {
                 if (keyName) {
                     await page.keyboard.up(keyName);
                 }
-            } else if (cmd === 'CLICK') {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                await page.mouse.click(x, y);
-            } else if (cmd === 'TYPE') {
-                const text = parts.slice(1).join(' ');
-                await page.keyboard.type(text, { delay: 100 });
-            } else if (cmd === 'RELOAD') {
-                await page.reload({ waitUntil: "networkidle2" });
-            } else if (cmd === 'NAVIGATE') {
-                const targetUrl = parts[1];
-                await page.goto(targetUrl, { waitUntil: "networkidle2" });
             } else {
                 console.log(`[PRESENTER OUT] ${line}`);
             }
@@ -314,33 +302,6 @@ async function main() {
         terminal: false
     });
     rl.on('line', handleInputCommand);
-
-    // 2. Set up external named pipe (FIFO) for AI agent process inputs
-    const fs = require('fs');
-    const { execSync } = require('child_process');
-    const fifoPath = '/tmp/auncient_browser_input.fifo';
-    
-    try {
-        if (!fs.existsSync(fifoPath)) {
-            execSync(`mkfifo ${fifoPath}`);
-        }
-    } catch (e) {
-        console.error("[FIFO ERR] Failed to create external input FIFO:", e);
-    }
-    
-    try {
-        const fifoStream = fs.createReadStream(fifoPath, { flags: 'r+' });
-        const fifoRl = readline.createInterface({
-            input: fifoStream,
-            terminal: false
-        });
-        fifoRl.on('line', async (line) => {
-            console.log(`[EXTERNAL INPUT] ${line}`);
-            await handleInputCommand(line);
-        });
-    } catch (e) {
-        console.error("[FIFO ERR] Failed to read from external input FIFO:", e);
-    }
 
 }
 

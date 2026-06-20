@@ -280,6 +280,9 @@ int main() {
     int mfd = memfd_create("tsfi_scanout", MFD_CLOEXEC);
     if (mfd < 0 || ftruncate(mfd, sz) < 0) return 1;
     uint32_t *scanout_px = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, mfd, 0);
+    for (int i = 0; i < w * h; i++) {
+        scanout_px[i] = 0xFF0B0214; // Brand purple
+    }
     
     uint32_t pid = next_id++, bid = next_id++;
     uint32_t p_args[] = {pid, (uint32_t)sz}; send_msg(fd, sid, WL_SHM_CREATE_POOL, p_args, 8, mfd);
