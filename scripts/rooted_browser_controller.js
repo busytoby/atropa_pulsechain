@@ -145,51 +145,49 @@ async function main() {
         browser.close();
     });
 
-    // Frame capture loop
-    const frameInterval = 1000 / 30; // 30 FPS target (smooth)
+    // Start Chrome DevTools Protocol Screencast for ultra-high performance streaming
+    const client = await page.createCDPSession();
+    await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
+    
     let frameCount = 0;
+    client.on('Page.screencastFrame', async ({ data, sessionId, metadata }) => {
+        try {
+            const jpegBuffer = Buffer.from(data, 'base64');
+            
+            if (active && presenter.stdin.writable) {
+                const lenBuf = Buffer.alloc(4);
+                lenBuf.writeUInt32LE(jpegBuffer.length, 0);
 
-    async function captureLoop() {
-        while (active) {
-            const startTime = Date.now();
-            try {
-                const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
-
-                if (active && presenter.stdin.writable) {
-                    const lenBuf = Buffer.alloc(4);
-                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
-
-                    let ok = presenter.stdin.write(lenBuf);
-                    if (ok) {
-                        ok = presenter.stdin.write(jpegBuffer);
-                    }
-                    if (!ok) {
-                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                    }
-                    frameCount++;
-                    if (frameCount % 30 === 0) {
-                        try {
-                            const fs = require('fs');
-                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
-                        } catch (writeErr) {
-                            // ignore write errors
-                        }
-                    }
-                    if (frameCount % 90 === 0) {
-                        console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
+                let ok = presenter.stdin.write(lenBuf);
+                if (ok) {
+                    ok = presenter.stdin.write(jpegBuffer);
+                }
+                if (!ok) {
+                    await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                }
+                frameCount++;
+                if (frameCount % 30 === 0) {
+                    try {
+                        const fs = require('fs');
+                        fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                    } catch (writeErr) {
+                        // ignore write errors
                     }
                 }
-            } catch (err) {
-                console.error("[CAPTURE ERR]", err);
+                if (frameCount % 90 === 0) {
+                    console.log(`[STREAM] Sent ${frameCount} screencast frames.`);
+                }
             }
-
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, frameInterval - elapsed);
-            await new Promise(resolve => setTimeout(resolve, delay));
+        } catch (err) {
+            console.error("[STREAM ERR]", err);
+        } finally {
+            try {
+                await client.send('Page.screencastFrameAck', { sessionId });
+            } catch (ackErr) {
+                // ignore ack errors if closed
+            }
         }
-    }
-
-    captureLoop();
+    });
     
     let lastReloadTime = 0;
     // Auto-unmute and auto-recover YouTube video player continuously in the background
