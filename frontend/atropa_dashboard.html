@@ -203,8 +203,53 @@
             <!-- Right Side: Live Browser Stream View -->
             <div class="card">
                 <h2>📺 Rooted Live Stream</h2>
-                <div class="canvas-container">
-                    <img id="browserStreamFrame" src="latest_frame.jpg" alt="Waiting for browser stream..." onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'600\'><rect width=\'100%\' height=\'100%\' fill=\'%23000\'/><text x=\'50%\' y=\'50%\' font-family=\'Orbitron\' font-size=\'20\' fill=\'%2300f2fe\' text-anchor=\'middle\'>WAITING FOR SCREENCAST...</text></svg>'">
+                <div class="canvas-container" style="position: relative; overflow: hidden; border-radius: 8px;">
+                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" height="380" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair;">
+                        <defs>
+                            <!-- Neon Glow Filter -->
+                            <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur" />
+                                <feMerge>
+                                    <feMergeNode in="blur" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- Underlay: The actual browser screencast image frame -->
+                        <image id="browserStreamFrame" href="latest_frame.jpg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice" />
+                        
+                        <!-- SVG Interactive DNA overlay group -->
+                        <g id="dnaOverlay" style="pointer-events: none;">
+                            <!-- Neon Grid Border -->
+                            <rect x="5" y="5" width="790" height="590" fill="none" stroke="rgba(0, 242, 254, 0.25)" stroke-width="2" />
+                            <rect x="15" y="15" width="770" height="570" fill="none" stroke="rgba(255, 0, 127, 0.15)" stroke-width="1" stroke-dasharray="5 5" />
+                            
+                            <!-- Cybernetic Corner Brackets -->
+                            <path d="M 15 35 L 15 15 L 35 15" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            <path d="M 785 35 L 785 15 L 765 15" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            <path d="M 15 565 L 15 585 L 35 585" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            <path d="M 785 565 L 785 585 L 765 585" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            
+                            <!-- Animated DNA Helix paths on Left and Right borders -->
+                            <path id="leftDnaPathA" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.8" filter="url(#neonGlow)" />
+                            <path id="leftDnaPathB" fill="none" stroke="#ff007f" stroke-width="1.5" opacity="0.8" filter="url(#neonGlow)" />
+                            <path id="rightDnaPathA" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.8" filter="url(#neonGlow)" />
+                            <path id="rightDnaPathB" fill="none" stroke="#ff007f" stroke-width="1.5" opacity="0.8" filter="url(#neonGlow)" />
+                            
+                            <!-- DNA Base-pair bridges group -->
+                            <g id="dnaBridges"></g>
+                            
+                            <!-- Live Telemetry Overlay Texts -->
+                            <rect x="25" y="25" width="220" height="40" fill="rgba(3, 5, 20, 0.7)" stroke="#00f2fe" stroke-width="1" />
+                            <text x="35" y="40" font-family="Share Tech Mono" font-size="11" fill="#00f2fe">SYSTEM: AUNCIENT PORTAL</text>
+                            <text x="35" y="55" font-family="Share Tech Mono" font-size="11" fill="#ff007f">DNA SYNTH: <tspan id="telemetryDnaSeq">CGT-AAA-TTG-CGA</tspan></text>
+                            
+                            <rect x="555" y="25" width="220" height="40" fill="rgba(3, 5, 20, 0.7)" stroke="#ff007f" stroke-width="1" />
+                            <text x="565" y="40" font-family="Share Tech Mono" font-size="11" fill="#ff007f">WAYLAND STREAM: ACTIVE</text>
+                            <text x="565" y="55" font-family="Share Tech Mono" font-size="11" fill="#00f2fe">WMQ PORT: 0xccb077a0</text>
+                        </g>
+                    </svg>
                 </div>
                 <button id="btnOpenBrowser" class="btn-action">🚀 Open Browser & Search Atropa</button>
             </div>
@@ -299,12 +344,92 @@
         }
         drawVulkanPipeline();
 
-        // --- 2. Live Screencast Frame Reloader ---
+        // --- 2. Live Screencast Frame Reloader & SVG DNA Animation ---
+        const streamSvg = document.getElementById("browserStreamSvg");
         const streamImg = document.getElementById("browserStreamFrame");
         setInterval(() => {
             // Append timestamp to prevent caching
-            streamImg.src = "latest_frame.jpg?t=" + Date.now();
+            streamImg.setAttribute("href", "latest_frame.jpg?t=" + Date.now());
         }, 300);
+
+        let dnaPhase = 0;
+        function animateSvgDna() {
+            dnaPhase += 0.05;
+            
+            const pointsCount = 30;
+            const startY = 30;
+            const endY = 570;
+            const stepY = (endY - startY) / pointsCount;
+            
+            let leftPathA = "";
+            let leftPathB = "";
+            let rightPathA = "";
+            let rightPathB = "";
+            
+            const bridgesContainer = document.getElementById("dnaBridges");
+            let bridgesHtml = "";
+            
+            for (let i = 0; i <= pointsCount; i++) {
+                const cy = startY + i * stepY;
+                const angle = i * 0.4 + dnaPhase;
+                const sinVal = Math.sin(angle);
+                
+                // Left DNA Strand
+                const lxA = 35 + sinVal * 12;
+                const lxB = 35 - sinVal * 12;
+                
+                if (i === 0) {
+                    leftPathA += `M ${lxA} ${cy}`;
+                    leftPathB += `M ${lxB} ${cy}`;
+                } else {
+                    leftPathA += ` L ${lxA} ${cy}`;
+                    leftPathB += ` L ${lxB} ${cy}`;
+                }
+                
+                // Right DNA Strand
+                const rxA = 765 + sinVal * 12;
+                const rxB = 765 - sinVal * 12;
+                
+                if (i === 0) {
+                    rightPathA += `M ${rxA} ${cy}`;
+                    rightPathB += `M ${rxB} ${cy}`;
+                } else {
+                    rightPathA += ` L ${rxA} ${cy}`;
+                    rightPathB += ` L ${rxB} ${cy}`;
+                }
+                
+                // Draw connecting base pairs (bridges) at intervals
+                if (i % 3 === 0) {
+                    bridgesHtml += `<line x1="${lxA}" y1="${cy}" x2="${lxB}" y2="${cy}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+                    bridgesHtml += `<line x1="${rxA}" y1="${cy}" x2="${rxB}" y2="${cy}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+                    // Colorful nodes at joints
+                    bridgesHtml += `<circle cx="${lxA}" cy="${cy}" r="3" fill="#00f2fe" />`;
+                    bridgesHtml += `<circle cx="${lxB}" cy="${cy}" r="3" fill="#ff007f" />`;
+                    bridgesHtml += `<circle cx="${rxA}" cy="${cy}" r="3" fill="#00f2fe" />`;
+                    bridgesHtml += `<circle cx="${rxB}" cy="${cy}" r="3" fill="#ff007f" />`;
+                }
+            }
+            
+            document.getElementById("leftDnaPathA").setAttribute("d", leftPathA);
+            document.getElementById("leftDnaPathB").setAttribute("d", leftPathB);
+            document.getElementById("rightDnaPathA").setAttribute("d", rightPathA);
+            document.getElementById("rightDnaPathB").setAttribute("d", rightPathB);
+            bridgesContainer.innerHTML = bridgesHtml;
+            
+            // Randomly morph telemetry DNA nucleotides for aesthetic effect
+            if (Math.random() < 0.05) {
+                const nucleo = ["A", "T", "C", "G"];
+                let seq = "";
+                for (let j = 0; j < 4; j++) {
+                    seq += nucleo[Math.floor(Math.random() * 4)] + nucleo[Math.floor(Math.random() * 4)] + nucleo[Math.floor(Math.random() * 4)] + (j < 3 ? "-" : "");
+                }
+                const el = document.getElementById("telemetryDnaSeq");
+                if (el) el.innerText = seq;
+            }
+            
+            requestAnimationFrame(animateSvgDna);
+        }
+        animateSvgDna();
 
         // --- 3. Interactive Web UI Over-EVM Controls ---
         async function sendControlCommand(cmd) {
@@ -321,7 +446,7 @@
         }
 
         function getCoords(e) {
-            const rect = streamImg.getBoundingClientRect();
+            const rect = streamSvg.getBoundingClientRect();
             const scaleX = 800 / rect.width;
             const scaleY = 600 / rect.height;
             const x = Math.round((e.clientX - rect.left) * scaleX);
@@ -330,7 +455,7 @@
         }
 
         let throttleTimeout = null;
-        streamImg.addEventListener("mousemove", (e) => {
+        streamSvg.addEventListener("mousemove", (e) => {
             if (throttleTimeout) return;
             throttleTimeout = setTimeout(() => {
                 throttleTimeout = null;
@@ -339,11 +464,11 @@
             }, 150);
         });
 
-        streamImg.addEventListener("mousedown", (e) => {
+        streamSvg.addEventListener("mousedown", (e) => {
             sendControlCommand("MOUSE_DOWN 272");
         });
 
-        streamImg.addEventListener("mouseup", (e) => {
+        streamSvg.addEventListener("mouseup", (e) => {
             sendControlCommand("MOUSE_UP 272");
         });
 

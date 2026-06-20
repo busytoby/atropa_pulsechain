@@ -89,7 +89,7 @@ async function main() {
 
     // Write room descriptions
     await setRoomDescription(10, "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. Arches lead North, South, and East.");
-    await setRoomDescription(11, "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. A door leads East.");
+    await setRoomDescription(11, "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with Auncient spellbooks. A door leads East.");
     await setRoomDescription(12, "You step into the Royal Garden. Exotic flowers bloom under the sunshine. A path leads back West.");
     await setRoomDescription(13, "You creep into the Cold Dungeon. Chains hang from stone walls, and it smells damp. An exit goes North.");
     await setRoomDescription(14, "You discover the Golden Treasury! Shimmering coins and glowing gems pile high. An archway leads West.");
@@ -163,7 +163,7 @@ async function main() {
     markdown += `| Room ID | Name | Exits Mapping | Custom Description |\n`;
     markdown += `|---|---|---|---|\n`;
     markdown += `| 10 | Grand Lobby | North -> 11, South -> 13, East -> 12 | You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling. |\n`;
-    markdown += `| 11 | Dusty Library | South -> 10, East -> 14 | You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks. |\n`;
+    markdown += `| 11 | Dusty Library | South -> 10, East -> 14 | You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with Auncient spellbooks. |\n`;
     markdown += `| 12 | Royal Garden | West -> 10 | You step into the Royal Garden. Exotic flowers bloom under the sunshine. |\n`;
     markdown += `| 13 | Cold Dungeon | North -> 10 | You creep into the Cold Dungeon. Chains hang from stone walls, and it smells damp. |\n`;
     markdown += `| 14 | Golden Treasury | West -> 11 | You discover the Golden Treasury! Shimmering coins and glowing gems pile high. |\n\n`;

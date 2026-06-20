@@ -59,13 +59,10 @@ function compileYul(yulPath) {
 }
 
 async function main() {
-    let url = process.argv[2] || `file://${path.resolve(__dirname, '../frontend/hub_portal.html')}`;
-    if (url.includes("hub_portal.html") && !url.startsWith("file://")) {
-        url = `file://${path.resolve(__dirname, '../frontend/hub_portal.html')}`;
-    }
+    let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
     
     // Verify local dashboard server is running and spawn if needed
-    if (url.includes("127.0.0.1:8000") || url.includes("localhost:8000")) {
+    if (true) {
         const http = require('http');
         const checkServer = () => new Promise((resolve) => {
             const req = http.get("http://127.0.0.1:8000/atropa_dashboard.html", (res) => {
@@ -106,11 +103,72 @@ async function main() {
         const yulPath = path.join(__dirname, "../solidity/bin/WinchesterMQ.yul");
         if (fs.existsSync(yulPath)) {
             const wmqBytecode = compileYul(yulPath);
-            const wmqFactory = new ethers.ContractFactory([], wmqBytecode, signer);
-            wmqContract = await wmqFactory.deploy();
-            await wmqContract.waitForDeployment();
-            const wmqAddress = await wmqContract.getAddress();
-            console.log(`[WMQ] WinchesterMQ successfully deployed at: ${wmqAddress}`);
+            let wmqAddress = null;
+            let factoryDeployed = false;
+
+            // Attempt to deploy WinchesterMQ using the VerboseImmutableFactory if config is available
+            try {
+                const configPath = path.join(__dirname, "../config/user_config.json");
+                if (fs.existsSync(configPath)) {
+                    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                    const factoryAddress = config.networks.localhost.immutableFactoryAddress;
+                    if (factoryAddress) {
+                        const bytecodeHash = ethers.keccak256(wmqBytecode);
+                        const salt = ethers.id("WinchesterMQ");
+                        const predictedAddress = ethers.getCreate2Address(factoryAddress, salt, bytecodeHash);
+
+                        // Check if factory is running and check code at predicted address
+                        const factoryCode = await provider.getCode(factoryAddress);
+                        if (factoryCode !== "0x") {
+                            const existingCode = await provider.getCode(predictedAddress);
+                            if (existingCode !== "0x") {
+                                console.log(`[WMQ] WinchesterMQ already deployed via factory at: ${predictedAddress}`);
+                                wmqAddress = predictedAddress;
+                                factoryDeployed = true;
+                            } else {
+                                console.log(`[WMQ] Deploying WinchesterMQ via Auncient VerboseImmutableFactory to: ${predictedAddress}`);
+                                const masterKeyWallet = new ethers.Wallet(
+                                    "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+                                ).connect(provider);
+                                const signature = masterKeyWallet.signingKey.sign(bytecodeHash);
+                                const vLeftAligned = ethers.concat([ethers.toBeHex(signature.v), ethers.zeroPadValue("0x", 31)]);
+                                const masterKeyLeftAligned = ethers.concat([masterKeyWallet.address, ethers.zeroPadValue("0x", 12)]);
+
+                                // createAuthorized(bytes32 salt, bytes32 r, bytes32 s, uint8 v, address masterKey) + bytecode
+                                const createCalldata = ethers.concat([
+                                    "0xb5ba0c68",
+                                    salt,
+                                    signature.r,
+                                    signature.s,
+                                    vLeftAligned,
+                                    masterKeyLeftAligned,
+                                    wmqBytecode
+                                ]);
+
+                                const deployTx = await signer.sendTransaction({
+                                    to: factoryAddress,
+                                    data: createCalldata,
+                                    gasLimit: 25000000
+                                });
+                                await deployTx.wait();
+                                console.log(`[WMQ] WinchesterMQ successfully deployed via factory at: ${predictedAddress}`);
+                                wmqAddress = predictedAddress;
+                                factoryDeployed = true;
+                            }
+                        }
+                    }
+                }
+            } catch (factoryErr) {
+                console.log(`[WMQ] Factory deployment attempt failed, falling back to direct deploy: ${factoryErr.message}`);
+            }
+
+            if (!factoryDeployed) {
+                const wmqFactory = new ethers.ContractFactory([], wmqBytecode, signer);
+                wmqContract = await wmqFactory.deploy();
+                await wmqContract.waitForDeployment();
+                wmqAddress = await wmqContract.getAddress();
+                console.log(`[WMQ] WinchesterMQ successfully deployed directly at: ${wmqAddress}`);
+            }
 
             // Write address to file for backend server reference
             try {
@@ -165,24 +223,33 @@ async function main() {
         console.log("[WMQ] WinchesterMQ not active or unreachable (Anvil offline). Using standard direct routing.");
     }
 
-    // 1. Launch presenter process
-    const presenterPath = path.join(__dirname, "../tsfi2-deepseek/tests/rooted_frame_presenter");
-    console.log(`[PRESENTER] Spawning ${presenterPath}`);
-    const presenter = spawn(presenterPath, [], {
-        env: {
-            ...process.env,
-            WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY || "wayland-1"
-        }
-    });
-
-    presenter.stderr.on("data", data => {
-        console.error(`[PRESENTER ERR] ${data.toString().trim()}`);
-    });
-
+    // 1. Launch presenter process if not running in YouTube sub-browser frame-dumper mode
+    const isYouTube = url.includes("youtube.com") || url.includes("youtube");
+    let presenter = null;
     let presenterReadyResolver;
     const presenterReady = new Promise((resolve) => {
         presenterReadyResolver = resolve;
     });
+
+    if (!isYouTube) {
+        const presenterPath = path.join(__dirname, "../tsfi2-deepseek/tests/rooted_frame_presenter");
+        console.log(`[PRESENTER] Spawning ${presenterPath}`);
+        presenter = spawn(presenterPath, [], {
+            env: {
+                ...process.env,
+                WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY || "wayland-1"
+            }
+        });
+
+        presenter.stderr.on("data", data => {
+            console.error(`[PRESENTER ERR] ${data.toString().trim()}`);
+        });
+    } else {
+        // Resolve immediately for headless dumper
+        setTimeout(() => {
+            if (presenterReadyResolver) presenterReadyResolver();
+        }, 100);
+    }
 
     // Define helper function to route input events to Puppeteer
     let page = null;
@@ -274,6 +341,12 @@ async function main() {
                 const height = parseInt(parts[2]);
                 console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
                 await page.setViewport({ width, height });
+            } else if (line.startsWith('search ')) {
+                const queryText = line.substring(7).trim();
+                console.log(`[PUPPETEER] Received search command for query: "${queryText}"`);
+                const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(queryText)}`;
+                await page.goto(searchUrl, { waitUntil: "networkidle2" });
+                console.log(`[PUPPETEER] Navigated to search results for: "${queryText}"`);
             } else {
                 console.log(`[PRESENTER OUT] ${line}`);
             }
@@ -282,12 +355,14 @@ async function main() {
         }
     }
 
-    // 1. Read input events from presenter stdout (hooked early)
-    const rl = readline.createInterface({
-        input: presenter.stdout,
-        terminal: false
-    });
-    rl.on('line', handleInputCommand);
+    // 1. Read input events from presenter stdout (hooked early) if presenter exists
+    if (presenter) {
+        const rl = readline.createInterface({
+            input: presenter.stdout,
+            terminal: false
+        });
+        rl.on('line', handleInputCommand);
+    }
 
     // 2. Named pipe setup removed as per WinchesterMQ-only routing rule. All inputs flow through the Auncient VM/WMQ.
 
@@ -325,11 +400,11 @@ async function main() {
     await page.setViewport({ width: 800, height: 600 });
 
     let active = true;
-    presenter.on("exit", (code, signal) => {
-        console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Stopping stream.`);
-        active = false;
-        browser.close();
-    });
+    if (presenter) {
+        presenter.on("exit", (code, signal) => {
+            console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Presenter window closed, keeping browser active for dashboard.`);
+        });
+    }
 
     // Screenshot streaming loop will be declared and run after page load to prevent early crashes.
     
@@ -417,7 +492,17 @@ async function main() {
             try {
                 const startTime = Date.now();
                 const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
-                if (active && presenter.stdin.writable) {
+                frameCount++;
+                if (isYouTube || frameCount % 30 === 0) {
+                    try {
+                        const fs = require('fs');
+                        fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                    } catch (writeErr) {
+                        // ignore write errors
+                    }
+                }
+
+                if (presenter && active && presenter.stdin.writable) {
                     const lenBuf = Buffer.alloc(4);
                     lenBuf.writeUInt32LE(jpegBuffer.length, 0);
 
@@ -427,15 +512,6 @@ async function main() {
                     }
                     if (!ok) {
                         await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                    }
-                    frameCount++;
-                    if (frameCount % 30 === 0) {
-                        try {
-                            const fs = require('fs');
-                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
-                        } catch (writeErr) {
-                            // ignore write errors
-                        }
                     }
                     if (frameCount % 90 === 0) {
                         console.log(`[STREAM] Sent ${frameCount} screenshot frames.`);

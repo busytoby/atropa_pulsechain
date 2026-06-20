@@ -313,6 +313,7 @@
             </div>
             <div class="header-actions">
                 <a href="/index.html" class="btn btn-secondary">Dashboard</a>
+                <button class="btn btn-secondary" onclick="togglePip()" style="border-color: var(--vaesen-gold); color: var(--vaesen-gold);">📺 Toggle Browser PiP</button>
                 <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
                 <a href="/protecto.html" class="btn btn-secondary" style="border-color: var(--neon-magenta); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-magenta);">Protecto Console</a>
                 <a href="/bgraph.html" class="btn btn-secondary" style="border-color: var(--neon-blue); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-blue);">B/Graph Console</a>
@@ -325,7 +326,7 @@
         <!-- Main Content -->
         <main class="story-layout">
             <!-- Left Side: Terminal Display -->
-            <section class="card" style="display: flex; flex-direction: column; border-color: #ffaa00;">
+            <section class="card" style="display: flex; flex-direction: column; border-color: #ffaa00; position: relative;">
                 <h2><span class="icon">📖</span> Interactive Fiction Terminal</h2>
                 <p class="description">Command Parser linked to on-chain text adventure logic.</p>
                 
@@ -336,6 +337,17 @@ Connect your wallet to retrieve the active story ROM.</div>
                 <div class="terminal-input-row">
                     <span class="terminal-prompt">&gt;</span>
                     <input type="text" id="termInput" class="terminal-input" placeholder="Type command (e.g. 'look', 'take gold', 'go north') and press enter..." disabled>
+                </div>
+
+                <!-- Floating Picture-in-Picture Live Stream -->
+                <div id="pipContainer" style="position: absolute; bottom: 85px; right: 40px; width: 280px; height: 210px; background: #000; border: 2px solid var(--vaesen-gold); border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; z-index: 100;">
+                    <div style="background: var(--vaesen-sepia); border-bottom: 1px solid var(--vaesen-gold-dim); padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-header); font-size: 0.8rem; color: var(--vaesen-gold);">
+                        <span>📺 Rooted Browser PiP</span>
+                        <button onclick="togglePip()" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem;">✕</button>
+                    </div>
+                    <div style="flex-grow: 1; position: relative; cursor: pointer;" onclick="window.open('/atropa_dashboard.html', '_blank')">
+                        <img id="pipBrowserFrame" src="latest_frame.jpg" style="width: 100%; height: 100%; object-fit: contain; background: #000;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'%23000\'/><text x=\'50%\' y=\'50%\' font-family=\'monospace\' font-size=\'12\' fill=\'%23c5a059\' text-anchor=\'middle\'>Awaiting screencast...</text></svg>'">
+                    </div>
                 </div>
             </section>
 
@@ -370,6 +382,7 @@ Connect your wallet to retrieve the active story ROM.</div>
                     <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 0.9rem;">
                         <div><strong>Z-Machine:</strong> <span id="metaZM" style="font-family: monospace;">N/A</span></div>
                         <div><strong>Key System:</strong> <span id="metaKS" style="font-family: monospace;">N/A</span></div>
+                        <div><strong>WinchesterMQ:</strong> <span id="metaWMQ" style="font-family: monospace;">N/A</span></div>
                     </div>
                 </section>
 
@@ -409,7 +422,7 @@ Connect your wallet to retrieve the active story ROM.</div>
 
     <script>
         const PROVIDER_URL = "http://127.0.0.1:8545";
-        let provider, signer, zmAddress, ksAddress;
+        let provider, signer, zmAddress, ksAddress, wmqAddress;
         let zmContract;
 
         const zmABI = [
@@ -504,9 +517,40 @@ Connect your wallet to retrieve the active story ROM.</div>
                 zmAddress = config.networks.localhost.zmachineAddress;
                 ksAddress = config.networks.localhost.keySystemAddress;
 
+                // Resolve WinchesterMQ Address:
+                // 1. Try to compute deterministically via VerboseImmutableFactory if available in config
+                const factoryAddress = config.networks.localhost.immutableFactoryAddress;
+                if (factoryAddress) {
+                    try {
+                        const bytecodeHash = "0x28ef613fe0fe309e678b6b5a541f74d40aa837facbbe8973f9caa46de681fee4";
+                        const salt = ethers.id("WinchesterMQ");
+                        wmqAddress = ethers.getCreate2Address(factoryAddress, salt, bytecodeHash);
+                        console.log(`[WMQ] Predicted WinchesterMQ Address: ${wmqAddress}`);
+                    } catch (e) {
+                        console.error("[WMQ] CREATE2 address calculation failed:", e);
+                    }
+                }
+                
+                // 2. Dynamic fetch fallback if prediction not set/failed
+                if (!wmqAddress) {
+                    try {
+                        const wmqRes = await fetch("/tmp/wmq_address.txt");
+                        if (wmqRes.ok) {
+                            wmqAddress = (await wmqRes.text()).trim();
+                            console.log(`[WMQ] Loaded WinchesterMQ Address from server: ${wmqAddress}`);
+                        }
+                    } catch (e) {
+                        console.error("[WMQ] Failed to fetch WinchesterMQ address from server:", e);
+                    }
+                }
+
                 if (zmAddress) {
                     document.getElementById("metaZM").innerText = zmAddress;
                     document.getElementById("metaKS").innerText = ksAddress || "Not configured";
+                    if (wmqAddress) {
+                        const wmqEl = document.getElementById("metaWMQ");
+                        if (wmqEl) wmqEl.innerText = wmqAddress;
+                    }
                 }
 
                 // If window.ethereum is available, configure connection listeners
@@ -1182,6 +1226,60 @@ Connect your wallet to retrieve the active story ROM.</div>
             const action = parts[0].toLowerCase();
             const arg = parts[1] ? parts[1].toLowerCase() : "";
 
+            // Intercept Z-Machine commands to control browser PiP display
+            if (cmd.toLowerCase() === "use computer" || cmd.toLowerCase() === "turn on computer") {
+                const pip = document.getElementById("pipContainer");
+                if (pip) {
+                    pip.style.display = "flex";
+                    pipVisible = true;
+                    termScreen.innerText += `\n[Z-Machine] The green CRT computer terminal hums to life. A Picture-in-Picture window has opened.\n\n# _`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                }
+                return;
+            }
+
+            // Intercept search queries to control browser navigation via WinchesterMQ
+            if (action === "search" && parts.length > 1) {
+                const queryText = cmdText.substring(action.length).trim();
+                termScreen.innerText += `\n[Browser Command] Routing search request to Auncient WinchesterMQ at ${wmqAddress || "Unknown Address"}...`;
+                termScreen.scrollTop = termScreen.scrollHeight;
+
+                if (!signer) {
+                    termScreen.innerText += `\n[Browser Command Error: Wallet connection required to write to WinchesterMQ.]\n\n# _`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                    return;
+                }
+
+                if (!wmqAddress) {
+                    termScreen.innerText += `\n[Browser Command Error: WinchesterMQ contract address not found.]\n\n# _`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                    return;
+                }
+                
+                try {
+                    const wmqContract = new ethers.Contract(wmqAddress, [
+                        "function postEvent(bytes32 val) external"
+                    ], signer);
+
+                    // Convert cmdText to UTF-8 bytes and pad/truncate to 32 bytes
+                    const rawBytes = ethers.toUtf8Bytes(cmdText);
+                    const paddedBytes = new Uint8Array(32);
+                    paddedBytes.set(rawBytes.slice(0, 32));
+
+                    termScreen.innerText += `\n[On-Chain] Syncing search command to WinchesterMQ...`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+
+                    const tx = await wmqContract.postEvent(paddedBytes, { gasLimit: 1000000 });
+                    await tx.wait();
+
+                    termScreen.innerText += `\n[Browser Command] On-chain transaction verified. Navigation triggered successfully.\n\n# _`;
+                } catch (e) {
+                    termScreen.innerText += `\n[Browser Command Error: ${e.message}]\n\n# _`;
+                }
+                termScreen.scrollTop = termScreen.scrollHeight;
+                return;
+            }
+
             // Intercept ballet director commands
             if (action === "dance" || action === "pose" || action === "director" || action === "orbit" || action === "zoom" || action === "ballet" || action === "poses" || action === "practice" || action === "studio" || (action === "goto" && arg === "studio") || action === "barre") {
                 handleBalletCommand(cmdText);
@@ -1607,6 +1705,23 @@ Connect your wallet to retrieve the active story ROM.</div>
             termScreen.innerText += `\n# _`;
             termScreen.scrollTop = termScreen.scrollHeight;
         }
+
+        let pipVisible = true;
+        function togglePip() {
+            const pip = document.getElementById("pipContainer");
+            pipVisible = !pipVisible;
+            pip.style.display = pipVisible ? "flex" : "none";
+        }
+
+        // Live Screencast PiP Reloader
+        setInterval(() => {
+            if (pipVisible) {
+                const pipImg = document.getElementById("pipBrowserFrame");
+                if (pipImg) {
+                    pipImg.src = "/latest_frame.jpg?t=" + Date.now();
+                }
+            }
+        }, 300);
 
         window.onload = () => {
             init();

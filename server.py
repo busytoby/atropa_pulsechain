@@ -259,6 +259,21 @@ class CustomHandler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
 
+    def do_GET(self):
+        if self.path == '/api/config':
+            config_path = os.path.join(os.getcwd(), 'config/user_config.json')
+            if os.path.exists(config_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                with open(config_path, 'r') as f:
+                    self.wfile.write(f.read().encode('utf-8'))
+            else:
+                self.send_response(404)
+                self.end_headers()
+            return
+        super().do_GET()
+
     def translate_path(self, path):
         import urllib.parse
         # Decode URL-encoded characters
@@ -484,8 +499,8 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'status': 'success', 'frames': frame_urls}).encode('utf-8'))
                 return
         elif self.path == '/open-browser':
-            # Terminate existing node browser controllers to prevent layout/display conflicts
-            subprocess.run(["pkill", "-f", "rooted_browser_controller.js"])
+            # Terminate existing node browser controllers for YouTube to prevent layout/display conflicts
+            subprocess.run(["pkill", "-f", "rooted_browser_controller.js.*youtube"])
             
             # Spawn the new browser controller pointing to YouTube with Atropa "this week" query
             target_url = "https://www.youtube.com/results?search_query=atropa&sp=EgQIAxAB"

@@ -88,7 +88,7 @@ async function main() {
 
     // 4. Set custom room descriptions
     await bindRoomDnaCustom(10, "You stand in the Grand Lobby. Tall marble pillars support a vaulted ceiling.");
-    await bindRoomDnaCustom(11, "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with ancient spellbooks.");
+    await bindRoomDnaCustom(11, "You enter the Dusty Library. Floor-to-ceiling bookshelves are packed with Auncient spellbooks.");
     await bindRoomDnaCustom(12, "You step into the Royal Garden. Exotic flowers bloom under the sunshine.");
     await bindRoomDnaCustom(13, "You creep into the Cold Dungeon. Chains hang from stone walls, and it smells damp.");
     await bindRoomDnaCustom(14, "You discover the Golden Treasury! Shimmering coins and glowing gems pile high.");
