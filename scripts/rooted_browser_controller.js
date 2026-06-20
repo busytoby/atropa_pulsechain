@@ -64,11 +64,66 @@ async function main() {
 
     const page = await browser.newPage();
     await page.setViewport({ width: 800, height: 600 });
+
+    let active = true;
+    presenter.on("exit", (code, signal) => {
+        console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Stopping stream.`);
+        active = false;
+        browser.close();
+    });
+
+    // Frame capture loop
+    const frameInterval = 1000 / 30; // 30 FPS target (smooth)
+    let frameCount = 0;
+
+    async function captureLoop() {
+        while (active) {
+            const startTime = Date.now();
+            try {
+                const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
+
+                if (active && presenter.stdin.writable) {
+                    const lenBuf = Buffer.alloc(4);
+                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+
+                    let ok = presenter.stdin.write(lenBuf);
+                    if (ok) {
+                        ok = presenter.stdin.write(jpegBuffer);
+                    }
+                    if (!ok) {
+                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
+                    }
+                    frameCount++;
+                    if (frameCount % 30 === 0) {
+                        try {
+                            const fs = require('fs');
+                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
+                        } catch (writeErr) {
+                            // ignore write errors
+                        }
+                    }
+                    if (frameCount % 90 === 0) {
+                        console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
+                    }
+                }
+            } catch (err) {
+                console.error("[CAPTURE ERR]", err);
+            }
+
+            const elapsed = Date.now() - startTime;
+            const delay = Math.max(0, frameInterval - elapsed);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+    captureLoop();
     
-    // Auto-unmute YouTube video player continuously in the background
+    let lastReloadTime = 0;
+    // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
         try {
-            await page.evaluate(() => {
+            const hasError = await page.evaluate(() => {
+                // 1. Auto unmute
                 const muteBtn = document.querySelector('.ytp-mute-button');
                 if (muteBtn) {
                     const titleText = (muteBtn.getAttribute('title') || muteBtn.getAttribute('aria-label') || '').toLowerCase();
@@ -77,7 +132,31 @@ async function main() {
                         console.log("[PUPPETEER] Triggered YouTube Player unmute button.");
                     }
                 }
+                
+                // 2. Click retry button if visible (YouTube shows a retry button when playback fails)
+                const retryBtn = document.querySelector('.ytp-error-message-button, .ytp-retry-button, button[aria-label="Retry"]');
+                if (retryBtn) {
+                    retryBtn.click();
+                    console.log("[PUPPETEER] Clicked YouTube retry button.");
+                    return false;
+                }
+
+                // Check if playback error overlay is active
+                const errScreen = document.querySelector('.ytp-error, .ytp-playability-error-supported-renderers, #error-screen');
+                if (errScreen && errScreen.offsetWidth > 0 && errScreen.offsetHeight > 0) {
+                    return true;
+                }
+                return false;
             });
+
+            if (hasError) {
+                const now = Date.now();
+                if (now - lastReloadTime > 15000) {
+                    console.log("[PUPPETEER] YouTube error overlay detected. Reloading page...");
+                    lastReloadTime = now;
+                    await page.reload({ waitUntil: "networkidle2" });
+                }
+            }
         } catch (e) {
             // Suppress errors during page transitions
         }
@@ -170,19 +249,13 @@ async function main() {
         console.log("[PUPPETEER] Automatic search or filter flow failed: " + e.message);
     }
 
-    let active = true;
-    presenter.on("exit", (code, signal) => {
-        console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Stopping stream.`);
-        active = false;
-        browser.close();
-    });
-
     // Read input events from presenter stdout and route them to Puppeteer
     const rl = readline.createInterface({
         input: presenter.stdout,
         terminal: false
     });
 
+    let controlDown = false;
     rl.on('line', async (line) => {
         const parts = line.split(' ');
         const cmd = parts[0];
@@ -202,12 +275,21 @@ async function main() {
             } else if (cmd === 'KEY_DOWN') {
                 const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
                 const keyName = linuxKeyMap[key];
-                if (keyName) {
+                if (keyName === 'Control') {
+                    controlDown = true;
+                }
+                if (keyName === 'r' && controlDown) {
+                    console.log("[PUPPETEER] Control+R detected. Reloading page...");
+                    await page.reload({ waitUntil: "networkidle2" });
+                } else if (keyName) {
                     await page.keyboard.down(keyName);
                 }
             } else if (cmd === 'KEY_UP') {
                 const key = parseInt(parts[1]) + 8; // Adjust Wayland keycode offset (evdev keycode - 8)
                 const keyName = linuxKeyMap[key];
+                if (keyName === 'Control') {
+                    controlDown = false;
+                }
                 if (keyName) {
                     await page.keyboard.up(keyName);
                 }
@@ -219,51 +301,6 @@ async function main() {
         }
     });
 
-    // Frame capture loop
-    const frameInterval = 1000 / 30; // 30 FPS target (smooth)
-    let frameCount = 0;
-
-    async function captureLoop() {
-        while (active) {
-            const startTime = Date.now();
-            try {
-                const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 80 });
-
-                if (active && presenter.stdin.writable) {
-                    const lenBuf = Buffer.alloc(4);
-                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
-
-                    let ok = presenter.stdin.write(lenBuf);
-                    if (ok) {
-                        ok = presenter.stdin.write(jpegBuffer);
-                    }
-                    if (!ok) {
-                        await new Promise(resolve => presenter.stdin.once('drain', resolve));
-                    }
-                    frameCount++;
-                    if (frameCount % 30 === 0) {
-                        try {
-                            const fs = require('fs');
-                            fs.writeFileSync(path.join(__dirname, "../frontend/latest_frame.jpg"), jpegBuffer);
-                        } catch (writeErr) {
-                            // ignore write errors
-                        }
-                    }
-                    if (frameCount % 90 === 0) {
-                        console.log(`[STREAM] Sent ${frameCount} JPEG frames.`);
-                    }
-                }
-            } catch (err) {
-                console.error("[CAPTURE ERR]", err);
-            }
-
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, frameInterval - elapsed);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-
-    captureLoop();
 }
 
 main().catch(err => {
