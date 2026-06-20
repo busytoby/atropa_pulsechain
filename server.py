@@ -261,13 +261,14 @@ class CustomHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path == '/api/video-status':
+        parsed_path = self.path.split('?', 1)[0].split('#', 1)[0].rstrip('/')
+        if parsed_path == '/api/video-status':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(video_status_store).encode('utf-8'))
             return
-        if self.path == '/api/config':
+        if parsed_path == '/api/config':
             config_path = os.path.join(os.getcwd(), 'config/user_config.json')
             if os.path.exists(config_path):
                 self.send_response(200)
@@ -578,7 +579,7 @@ class CustomHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
             return
         else:
-            super().do_POST()
+            self.send_error(405, "Method Not Allowed")
 
 if __name__ == '__main__':
     server = ThreadedHTTPServer(('127.0.0.1', 8000), CustomHandler)

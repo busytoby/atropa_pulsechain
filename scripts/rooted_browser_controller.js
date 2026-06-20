@@ -408,11 +408,17 @@ async function main() {
             "--window-size=800,600",
             "--disable-dev-shm-usage",
             "--autoplay-policy=no-user-gesture-required",
+            "--disable-blink-features=AutomationControlled",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
 
     page = await browser.newPage();
+    await page.evaluateOnNewDocument(() => {
+        try {
+            delete navigator.__proto__.webdriver;
+        } catch (e) {}
+    });
     page.on('pageerror', err => {
         console.error('[PUPPETEER PAGE ERROR]', err.stack || err.message);
     });
@@ -452,6 +458,16 @@ async function main() {
                 const retryBtn = document.querySelector('.ytp-error-message-button, .ytp-retry-button, button[aria-label="Retry"]');
                 if (retryBtn) {
                     retryBtn.click();
+                }
+
+                // 3. Auto skip ads
+                const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button-text, .ytp-ad-skip-button');
+                if (skipBtn) {
+                    skipBtn.click();
+                }
+                const closeAdBtn = document.querySelector('.ytp-ad-overlay-close-button');
+                if (closeAdBtn) {
+                    closeAdBtn.click();
                 }
 
                 // Check if playback error overlay is active
