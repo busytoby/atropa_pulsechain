@@ -364,7 +364,7 @@ async function main() {
                     } catch (viewportErr) {
                         // ignore viewport errors
                     }
-                }, 100);
+                }, 20);
             } else if (line.startsWith('search ')) {
                 const queryText = line.substring(7).trim();
                 console.log(`[PUPPETEER] Received search command for query: "${queryText}"`);
