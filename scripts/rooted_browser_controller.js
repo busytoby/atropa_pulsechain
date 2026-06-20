@@ -279,6 +279,18 @@ async function main() {
                 const y = parseInt(parts[2]);
                 await sendWmqEvent(eventPrefix + 'MOUSE_MOVE', `${x},${y}`);
                 await page.mouse.move(x, y);
+                // Manually trigger mousemove event on YouTube player container to force controls to pop up
+                await page.evaluate(() => {
+                    const player = document.querySelector('.html5-video-player, video');
+                    if (player) {
+                        const event = new MouseEvent('mousemove', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        player.dispatchEvent(event);
+                    }
+                }).catch(() => {});
             } else if (cmd === 'MOUSE_DOWN') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
