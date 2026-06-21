@@ -55,7 +55,7 @@ const COWBELL_SEQUENCE = [
 
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH COWBELL");
+    console.log("GENERATING 303 ACID BASS & AUTHENTIC DETUNED 808 BEAT WAV");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -78,10 +78,10 @@ function main() {
     let lastOpenHhTriggerSample = -999999;
     let lastCowbellTriggerSample = -999999;
 
-    // Highpass Filter State for Hihat Noise
+    // Highpass Filter State for Hihat (centered at 7kHz)
     let hp_in_prev = 0;
     let hp_out_prev = 0;
-    const hp_rc = 1.0 / (2.0 * Math.PI * 7000.0); // 7kHz cutoff
+    const hp_rc = 1.0 / (2.0 * Math.PI * 7000.0);
     const hp_dt = 1.0 / SAMPLE_RATE;
     const hp_alpha = hp_rc / (hp_rc + hp_dt);
 
@@ -102,6 +102,10 @@ function main() {
     // Cowbell Oscillators Phase
     let cb_phase1 = 0;
     let cb_phase2 = 0;
+
+    // 808 Hihat Metallic Sound Source: Six detuned square oscillators
+    const hhFreqs = [205.3, 369.6, 522.0, 565.1, 675.9, 716.9];
+    let hhPhases = [0, 0, 0, 0, 0, 0];
 
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
         const stepIndex = Math.floor(i / stepDurationSamples) % BASS_SEQUENCE.length;
@@ -170,22 +174,32 @@ function main() {
             snareSample = Math.tanh(shell + rattle);
         }
 
-        // C. Synthesize Hihats (Noise Source + HPF Filter + Decay Envelope)
+        // C. Synthesize Hihats (detuned metallic square waves source + HPF)
         let hhSample = 0;
         const closedHhAge = (i - lastClosedHhTriggerSample) / SAMPLE_RATE;
         const openHhAge = (i - lastOpenHhTriggerSample) / SAMPLE_RATE;
 
-        const filteredNoise = hp_alpha * (hp_out_prev + noise - hp_in_prev);
-        hp_in_prev = noise;
-        hp_out_prev = filteredNoise;
+        // Sum detuned square wave oscillators
+        let metallicSource = 0;
+        for (let j = 0; j < 6; j++) {
+            hhPhases[j] += hhFreqs[j] / SAMPLE_RATE;
+            if (hhPhases[j] >= 1.0) hhPhases[j] -= 2.0;
+            metallicSource += hhPhases[j] >= 0.0 ? 1.0 : -1.0;
+        }
+        metallicSource /= 6.0;
+
+        // Run through high-pass filter
+        const filteredHihat = hp_alpha * (hp_out_prev + metallicSource - hp_in_prev);
+        hp_in_prev = metallicSource;
+        hp_out_prev = filteredHihat;
 
         if (closedHhAge >= 0 && closedHhAge < 0.1) {
             const env = Math.exp(-closedHhAge / 0.035); // 35ms decay
-            hhSample += filteredNoise * env * 0.18;
+            hhSample += filteredHihat * env * 0.35;
         }
         if (openHhAge >= 0 && openHhAge < 0.5) {
             const env = Math.exp(-openHhAge / 0.22);  // 220ms decay
-            hhSample += filteredNoise * env * 0.18;
+            hhSample += filteredHihat * env * 0.35;
         }
 
         // D. Synthesize 808 Cowbell (Dual detuned square wave oscillators + BPF)
