@@ -235,6 +235,12 @@ void tsfi_thunk_publish_mq(const char *cmd) {
     }
     *dst = '\0';
     
+    if (strstr(processed, "MM") || strstr(processed, "MD") || strstr(processed, "MU") ||
+        strstr(processed, "MS") || strstr(processed, "KD") || strstr(processed, "KU")) {
+        printf("[THUNK_MQ] I/O Event bypassed RPC publish: %s\n", processed);
+        return;
+    }
+    
     size_t len = strlen(processed);
     uint8_t data_bytes[32] = {0};
     memcpy(data_bytes, processed, len < 32 ? len : 32);

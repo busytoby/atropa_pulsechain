@@ -1843,16 +1843,35 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
         if (target_addr == wmq_addr_u64) {
             printf("[EVM_INTERPRETER] Intercepted WinchesterMQ contract call at address 0x%lx with selector 0x%08x\n", target_addr, selector);
             if (argsSize > 0 && argsOffset < 524288) {
-                char *data_hex = malloc(argsSize * 2 + 3);
-                if (data_hex) {
-                    strcpy(data_hex, "0x");
-                    for (size_t i = 0; i < argsSize; i++) {
-                        sprintf(data_hex + 2 + i * 2, "%02x", ctx->memory[argsOffset + i]);
+                bool is_io = false;
+                if (argsSize >= 36 && selector == 0xccb077a0) {
+                    char cmd_str[33] = {0};
+                    size_t cmd_len = argsSize - 4;
+                    if (cmd_len > 32) cmd_len = 32;
+                    for (size_t i = 0; i < cmd_len; i++) {
+                        cmd_str[i] = (char)ctx->memory[argsOffset + 4 + i];
                     }
-                    extern bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex);
-                    bool rpc_ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, data_hex);
-                    printf("[EVM_INTERPRETER] WinchesterMQ direct transaction sent: %s (status: %s)\n", data_hex, rpc_ok ? "SUCCESS" : "FAILED");
-                    free(data_hex);
+                    if (strstr(cmd_str, "MM") || strstr(cmd_str, "MD") || strstr(cmd_str, "MU") ||
+                        strstr(cmd_str, "MS") || strstr(cmd_str, "KD") || strstr(cmd_str, "KU") ||
+                        strstr(cmd_str, "MOUSE") || strstr(cmd_str, "KEY")) {
+                        is_io = true;
+                    }
+                }
+                
+                if (is_io) {
+                    printf("[EVM_INTERPRETER] WinchesterMQ keyboard/mouse event intercepted. Bypassing EVM RPC transaction.\n");
+                } else {
+                    char *data_hex = malloc(argsSize * 2 + 3);
+                    if (data_hex) {
+                        strcpy(data_hex, "0x");
+                        for (size_t i = 0; i < argsSize; i++) {
+                            sprintf(data_hex + 2 + i * 2, "%02x", ctx->memory[argsOffset + i]);
+                        }
+                        extern bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex);
+                        bool rpc_ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, data_hex);
+                        printf("[EVM_INTERPRETER] WinchesterMQ direct transaction sent: %s (status: %s)\n", data_hex, rpc_ok ? "SUCCESS" : "FAILED");
+                        free(data_hex);
+                    }
                 }
             }
             success_out->d[0] = 1;
