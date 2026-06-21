@@ -53,9 +53,15 @@ const COWBELL_SEQUENCE = [
     0, 1, 0, 0,  0, 0, 1, 0
 ];
 
+// TR-808 Clap Triggers: Syncopated handclaps (Steps 8, 14)
+const CLAP_SEQUENCE = [
+    0, 0, 0, 0,  0, 0, 0, 0,
+    1, 0, 0, 0,  0, 0, 1, 0
+];
+
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING 303 ACID BASS & AUTHENTIC DETUNED 808 BEAT WAV");
+    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH CLAPS");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -77,6 +83,7 @@ function main() {
     let lastClosedHhTriggerSample = -999999;
     let lastOpenHhTriggerSample = -999999;
     let lastCowbellTriggerSample = -999999;
+    let lastClapTriggerSample = -999999;
 
     // Highpass Filter State for Hihat (centered at 7kHz)
     let hp_in_prev = 0;
@@ -98,6 +105,13 @@ function main() {
     const cb_bp_q = 1.5;
     const cb_bp_f = Math.tan(Math.PI * cb_bp_freq / SAMPLE_RATE);
     const cb_bp_r = 1.0 / cb_bp_q;
+
+    // Bandpass Filter State for Clap (centered around 1.0kHz)
+    let cl_bp_p0 = 0, cl_bp_p1 = 0;
+    const cl_bp_freq = 1000.0;
+    const cl_bp_q = 1.0;
+    const cl_bp_f = Math.tan(Math.PI * cl_bp_freq / SAMPLE_RATE);
+    const cl_bp_r = 1.0 / cl_bp_q;
 
     // Cowbell Oscillators Phase
     let cb_phase1 = 0;
@@ -129,6 +143,9 @@ function main() {
             }
             if (COWBELL_SEQUENCE[stepIndex] === 1) {
                 lastCowbellTriggerSample = i;
+            }
+            if (CLAP_SEQUENCE[stepIndex] === 1) {
+                lastClapTriggerSample = i;
             }
         }
 
@@ -188,7 +205,6 @@ function main() {
         }
         metallicSource /= 6.0;
 
-        // Run through high-pass filter
         const filteredHihat = hp_alpha * (hp_out_prev + metallicSource - hp_in_prev);
         hp_in_prev = metallicSource;
         hp_out_prev = filteredHihat;
@@ -206,7 +222,6 @@ function main() {
         let cowbellSample = 0;
         const cowbellAgeSecs = (i - lastCowbellTriggerSample) / SAMPLE_RATE;
 
-        // Two detuned square waves: 540Hz and 800Hz
         cb_phase1 += 540 / SAMPLE_RATE;
         cb_phase2 += 800 / SAMPLE_RATE;
         if (cb_phase1 >= 1.0) cb_phase1 -= 2.0;
@@ -216,7 +231,6 @@ function main() {
         const sq2 = cb_phase2 >= 0.0 ? 1.0 : -1.0;
         const cb_mix = (sq1 * 0.5) + (sq2 * 0.5);
 
-        // Resonant bandpass filter centered around 800Hz
         const cb_bp_high = cb_mix - cb_bp_p0 * cb_bp_r - cb_bp_p1;
         const cb_bp_band = cb_bp_p0 + cb_bp_f * cb_bp_high;
         cb_bp_p0 = cb_bp_band;
@@ -226,6 +240,32 @@ function main() {
         if (cowbellAgeSecs >= 0 && cowbellAgeSecs < 0.4) {
             const env = Math.exp(-cowbellAgeSecs / 0.08); // 80ms decay
             cowbellSample = Math.tanh(filteredCowbell * env * 1.5);
+        }
+
+        // E. Synthesize 808 Clap (3 quick noise pulses + long release decay + BPF)
+        let clapSample = 0;
+        const clapAgeSecs = (i - lastClapTriggerSample) / SAMPLE_RATE;
+
+        // Bandpass filter noise at 1.0kHz
+        const cl_bp_high = noise - cl_bp_p0 * cl_bp_r - cl_bp_p1;
+        const cl_bp_band = cl_bp_p0 + cl_bp_f * cl_bp_high;
+        cl_bp_p0 = cl_bp_band;
+        cl_bp_p1 = cl_bp_p1 + cl_bp_f * cl_bp_band;
+        const clapNoise = cl_bp_band;
+
+        if (clapAgeSecs >= 0 && clapAgeSecs < 0.5) {
+            let clapEnv = 0;
+            // 3 quick 10ms trigger impulses, followed by a 180ms release tail
+            if (clapAgeSecs < 0.010) {
+                clapEnv = Math.exp(-clapAgeSecs / 0.003);
+            } else if (clapAgeSecs >= 0.010 && clapAgeSecs < 0.020) {
+                clapEnv = Math.exp(-(clapAgeSecs - 0.010) / 0.003);
+            } else if (clapAgeSecs >= 0.020 && clapAgeSecs < 0.030) {
+                clapEnv = Math.exp(-(clapAgeSecs - 0.020) / 0.003);
+            } else if (clapAgeSecs >= 0.030) {
+                clapEnv = Math.exp(-(clapAgeSecs - 0.030) / 0.18);
+            }
+            clapSample = Math.tanh(clapNoise * clapEnv * 1.4);
         }
 
         // ----------------------------------------------------
@@ -271,7 +311,7 @@ function main() {
         // ----------------------------------------------------
         // 3. Mix & Clip
         // ----------------------------------------------------
-        const mixed = (kickSample * 0.38) + (snareSample * 0.22) + (bassSample * 0.22) + (hhSample * 0.1) + (cowbellSample * 0.08);
+        const mixed = (kickSample * 0.35) + (snareSample * 0.2) + (bassSample * 0.2) + (hhSample * 0.1) + (cowbellSample * 0.07) + (clapSample * 0.08);
         audioBuffer[i] = Math.tanh(mixed); 
     }
 
