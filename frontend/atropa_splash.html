@@ -216,7 +216,6 @@
             background: linear-gradient(90deg, #b026ff, #ff007f);
             box-shadow: 0 0 15px #b026ff;
             border-radius: 3px;
-            animation: fillLoader 4.0s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
         }
 
         .loader-text {
@@ -619,6 +618,7 @@
             // Loader text updates
             const progressPercent = Math.min(100, Math.floor((frameCount / 240) * 100));
             document.getElementById("loaderText").innerText = `ALIGNING RESONANCE CODES: ${progressPercent}%`;
+            document.querySelector(".loader-bar").style.width = `${progressPercent}%`;
             
             if (frameCount < 240) {
                 requestAnimationFrame(updateSequence);
@@ -626,8 +626,8 @@
                 logToTerminal(`[SYS] INTEGRATION RESONANCE ALIGNED. LAUNCHING MAINLINE BROWSER DISCOVERY.`, "info");
                 document.getElementById("loaderText").innerText = "RESONANCE PROTOCOL SECURED. TRANSITIONING...";
                 setTimeout(() => {
-                    // Redirect to the main Auncient console portal hub
-                    window.location.href = "hub_portal.html";
+                     // Redirect to the main Auncient console portal hub
+                     window.location.href = "hub_portal.html";
                 }, 800);
             }
         }
@@ -636,6 +636,9 @@
         window.addEventListener("load", () => {
             logToTerminal(`[SYS] DETECTING VIRTUAL COMPUTE FABRIC PLANE...`, "info");
             logToTerminal(`[SYS] AUNCIENT DRIVER INITIALIZED AT DRM PLANE 0`, "info");
+            // Render initial states so visualizers are not blank/incoherent on load
+            renderSigil(1.0, false, 2);
+            renderBear(1.0, 0.5, 2);
             setTimeout(updateSequence, 100);
         });
     </script>
