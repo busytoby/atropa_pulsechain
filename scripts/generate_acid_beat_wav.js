@@ -47,9 +47,15 @@ const OPEN_HH_SEQUENCE = [
     0, 0, 1, 0,  0, 0, 1, 0
 ];
 
+// TR-808 Cowbell Triggers: Syncopated accents
+const COWBELL_SEQUENCE = [
+    0, 0, 1, 0,  0, 0, 0, 1,
+    0, 1, 0, 0,  0, 0, 1, 0
+];
+
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH SNARE & HH");
+    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH COWBELL");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -70,6 +76,7 @@ function main() {
     let lastSnareTriggerSample = -999999;
     let lastClosedHhTriggerSample = -999999;
     let lastOpenHhTriggerSample = -999999;
+    let lastCowbellTriggerSample = -999999;
 
     // Highpass Filter State for Hihat Noise
     let hp_in_prev = 0;
@@ -84,9 +91,17 @@ function main() {
     const bp_q = 1.2;
     const bp_f = Math.tan(Math.PI * bp_freq / SAMPLE_RATE);
     const bp_r = 1.0 / bp_q;
-    const bp_a1 = 1.0 / (1.0 + bp_f * bp_r + bp_f * bp_f);
-    const bp_a2 = bp_f * bp_r * bp_a1;
-    const bp_a3 = bp_f * bp_f * bp_a1;
+
+    // Bandpass Filter State for Cowbell (centered around 800Hz)
+    let cb_bp_p0 = 0, cb_bp_p1 = 0;
+    const cb_bp_freq = 800.0;
+    const cb_bp_q = 1.5;
+    const cb_bp_f = Math.tan(Math.PI * cb_bp_freq / SAMPLE_RATE);
+    const cb_bp_r = 1.0 / cb_bp_q;
+
+    // Cowbell Oscillators Phase
+    let cb_phase1 = 0;
+    let cb_phase2 = 0;
 
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
         const stepIndex = Math.floor(i / stepDurationSamples) % BASS_SEQUENCE.length;
@@ -107,6 +122,9 @@ function main() {
             }
             if (OPEN_HH_SEQUENCE[stepIndex] === 1) {
                 lastOpenHhTriggerSample = i;
+            }
+            if (COWBELL_SEQUENCE[stepIndex] === 1) {
+                lastCowbellTriggerSample = i;
             }
         }
 
@@ -141,13 +159,11 @@ function main() {
         const snareNoise = bp_band;
 
         if (snareAgeSecs >= 0 && snareAgeSecs < 0.5) {
-            // Snare Shell Tones (180Hz & 330Hz sine waves)
             const sine1 = Math.sin(2 * Math.PI * 180 * snareAgeSecs);
             const sine2 = Math.sin(2 * Math.PI * 330 * snareAgeSecs);
             const shellEnv = Math.exp(-snareAgeSecs / 0.08);
             const shell = (sine1 * 0.6 + sine2 * 0.4) * shellEnv;
 
-            // Rattle noise envelope (longer decay)
             const rattleEnv = Math.exp(-snareAgeSecs / 0.16);
             const rattle = snareNoise * rattleEnv * 1.1;
 
@@ -170,6 +186,32 @@ function main() {
         if (openHhAge >= 0 && openHhAge < 0.5) {
             const env = Math.exp(-openHhAge / 0.22);  // 220ms decay
             hhSample += filteredNoise * env * 0.18;
+        }
+
+        // D. Synthesize 808 Cowbell (Dual detuned square wave oscillators + BPF)
+        let cowbellSample = 0;
+        const cowbellAgeSecs = (i - lastCowbellTriggerSample) / SAMPLE_RATE;
+
+        // Two detuned square waves: 540Hz and 800Hz
+        cb_phase1 += 540 / SAMPLE_RATE;
+        cb_phase2 += 800 / SAMPLE_RATE;
+        if (cb_phase1 >= 1.0) cb_phase1 -= 2.0;
+        if (cb_phase2 >= 1.0) cb_phase2 -= 2.0;
+
+        const sq1 = cb_phase1 >= 0.0 ? 1.0 : -1.0;
+        const sq2 = cb_phase2 >= 0.0 ? 1.0 : -1.0;
+        const cb_mix = (sq1 * 0.5) + (sq2 * 0.5);
+
+        // Resonant bandpass filter centered around 800Hz
+        const cb_bp_high = cb_mix - cb_bp_p0 * cb_bp_r - cb_bp_p1;
+        const cb_bp_band = cb_bp_p0 + cb_bp_f * cb_bp_high;
+        cb_bp_p0 = cb_bp_band;
+        cb_bp_p1 = cb_bp_p1 + cb_bp_f * cb_bp_band;
+        const filteredCowbell = cb_bp_band;
+
+        if (cowbellAgeSecs >= 0 && cowbellAgeSecs < 0.4) {
+            const env = Math.exp(-cowbellAgeSecs / 0.08); // 80ms decay
+            cowbellSample = Math.tanh(filteredCowbell * env * 1.5);
         }
 
         // ----------------------------------------------------
@@ -215,8 +257,7 @@ function main() {
         // ----------------------------------------------------
         // 3. Mix & Clip
         // ----------------------------------------------------
-        // Blending Kick, Snare, Hihat, and 303 Bassline
-        const mixed = (kickSample * 0.4) + (snareSample * 0.25) + (bassSample * 0.25) + (hhSample * 0.1);
+        const mixed = (kickSample * 0.38) + (snareSample * 0.22) + (bassSample * 0.22) + (hhSample * 0.1) + (cowbellSample * 0.08);
         audioBuffer[i] = Math.tanh(mixed); 
     }
 
