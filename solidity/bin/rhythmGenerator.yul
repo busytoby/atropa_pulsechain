@@ -187,17 +187,17 @@ object "RhythmGenerator" {
                     // Pattern 3: Detroit Techno / Electro Breakbeat
                     switch stepIdx
                     case 0 { triggers := 1 }
-                    case 2 { triggers := 4 }
+                    case 2 { triggers := 8 }
                     case 3 { triggers := 16 }
                     case 4 { triggers := 2 }
-                    case 6 { triggers := 4 }
+                    case 6 { triggers := 8 }
                     case 7 { triggers := 16 }
                     case 8 { triggers := 8 }
-                    case 10 { triggers := 5 }
+                    case 10 { triggers := 9 }
                     case 11 { triggers := 16 }
                     case 12 { triggers := 2 }
                     case 13 { triggers := 16 }
-                    case 14 { triggers := 4 }
+                    case 14 { triggers := 8 }
                 }
                 case 4 {
                     // Pattern 4: Auncient Hip-Hop Boom Bap Beat

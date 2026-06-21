@@ -31,9 +31,19 @@ const KICK_SEQUENCE = [
     1, 0, 0, 0,  1, 0, 0, 0
 ];
 
+// TR-808 Closed & Open Hihat Sequences (featuring off-beat Open Hihats)
+const CLOSED_HH_SEQUENCE = [
+    0, 1, 0, 1,  0, 1, 0, 1,
+    0, 1, 0, 1,  0, 1, 0, 1
+];
+const OPEN_HH_SEQUENCE = [
+    0, 0, 1, 0,  0, 0, 1, 0,
+    0, 0, 1, 0,  0, 0, 1, 0
+];
+
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV");
+    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH HIHATS");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -49,43 +59,72 @@ function main() {
     let phase303 = 0;
     let p0 = 0, p1 = 0, p2 = 0, p3 = 0; // Lowpass poles
 
-    // 808 State (Track sample index of the last kick trigger)
+    // 808 State (Track sample index of the last triggers)
     let lastKickTriggerSample = -999999; 
+    let lastClosedHhTriggerSample = -999999;
+    let lastOpenHhTriggerSample = -999999;
+
+    // Highpass Filter State for Hihat Noise
+    let hp_in_prev = 0;
+    let hp_out_prev = 0;
+    const hp_rc = 1.0 / (2.0 * Math.PI * 7000.0); // 7kHz cutoff
+    const hp_dt = 1.0 / SAMPLE_RATE;
+    const hp_alpha = hp_rc / (hp_rc + hp_dt);
 
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
         const stepIndex = Math.floor(i / stepDurationSamples) % BASS_SEQUENCE.length;
         const sampleInStep = i % stepDurationSamples;
 
         // ----------------------------------------------------
-        // 1. Trigger 808 Kick Drum
+        // 1. Trigger 808 Drums
         // ----------------------------------------------------
-        if (sampleInStep === 0 && KICK_SEQUENCE[stepIndex] === 1) {
-            lastKickTriggerSample = i;
+        if (sampleInStep === 0) {
+            if (KICK_SEQUENCE[stepIndex] === 1) {
+                lastKickTriggerSample = i;
+            }
+            if (CLOSED_HH_SEQUENCE[stepIndex] === 1) {
+                lastClosedHhTriggerSample = i;
+            }
+            if (OPEN_HH_SEQUENCE[stepIndex] === 1) {
+                lastOpenHhTriggerSample = i;
+            }
         }
 
-        // Synthesize 808 Kick
+        // A. Synthesize 808 Kick
         let kickSample = 0;
         const kickAgeSecs = (i - lastKickTriggerSample) / SAMPLE_RATE;
         if (kickAgeSecs >= 0 && kickAgeSecs < 1.0) {
-            // Rapid pitch sweep (from 150Hz down to 48Hz) simulating Twin-T resonator behavior
             const pitchEnv = Math.exp(-kickAgeSecs / 0.038);
             const kickFreq = 48 + 102 * pitchEnv;
-            
-            // Calculate sine wave phase
             const kickPhase = 2 * Math.PI * kickFreq * kickAgeSecs;
             const sine = Math.sin(kickPhase);
             
-            // Click transient (first 3.5ms noise click)
             let click = 0;
             if (kickAgeSecs < 0.0035) {
                 click = (Math.random() * 2 - 1) * 0.16 * (1 - kickAgeSecs / 0.0035);
             }
             
-            // Sub-bass amplitude decay envelope
             const ampEnv = Math.exp(-kickAgeSecs / 0.42);
-            
-            // Warm waveshaper saturation
             kickSample = Math.tanh((sine + click) * ampEnv * 1.6);
+        }
+
+        // B. Synthesize Hihats (Noise Source + HPF Filter + Decay Envelope)
+        let hhSample = 0;
+        const closedHhAge = (i - lastClosedHhTriggerSample) / SAMPLE_RATE;
+        const openHhAge = (i - lastOpenHhTriggerSample) / SAMPLE_RATE;
+
+        const noise = Math.random() * 2 - 1;
+        const filteredNoise = hp_alpha * (hp_out_prev + noise - hp_in_prev);
+        hp_in_prev = noise;
+        hp_out_prev = filteredNoise;
+
+        if (closedHhAge >= 0 && closedHhAge < 0.1) {
+            const env = Math.exp(-closedHhAge / 0.035); // 35ms decay
+            hhSample += filteredNoise * env * 0.18;
+        }
+        if (openHhAge >= 0 && openHhAge < 0.5) {
+            const env = Math.exp(-openHhAge / 0.22);  // 220ms decay
+            hhSample += filteredNoise * env * 0.18;
         }
 
         // ----------------------------------------------------
@@ -95,22 +134,18 @@ function main() {
         const isAccent = BASS_ACCENTS[stepIndex];
         const isSlide = BASS_SLIDES[stepIndex];
 
-        // Slide glide frequency interpolation
         const slideSpeed = isSlide ? 0.08 : 0.005;
         currentFreq += (targetFreq - currentFreq) * slideSpeed;
 
-        // Sawtooth wave oscillator
         phase303 += currentFreq / SAMPLE_RATE;
         if (phase303 >= 1.0) phase303 -= 2.0;
         let oscSample = phase303;
 
-        // Cutoff envelope decay sweep
         const decayTime = isAccent ? envDecay * 1.5 : envDecay;
         const decaySamples = decayTime * SAMPLE_RATE;
         const envVal = Math.exp(-sampleInStep / decaySamples);
         const dynamicCutoff = filterCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal;
 
-        // Diode-ladder 4-Pole Lowpass
         const cutoffCoeff = (2 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
         const input = oscSample - resonance * p3;
         p0 += cutoffCoeff * (input - p0);
@@ -119,11 +154,9 @@ function main() {
         p3 += cutoffCoeff * (p2 - p3);
         let filterOutput = p3;
 
-        // Triode valve saturation waveshaper
         const bassGain = isAccent ? 4.2 : 2.4;
         let bassSample = Math.tanh(filterOutput * bassGain);
 
-        // VCA Gate envelope
         const gateDuration = isSlide ? stepDurationSamples : Math.floor(stepDurationSamples * 0.7);
         let amp = 0;
         if (sampleInStep < gateDuration) {
@@ -137,9 +170,8 @@ function main() {
         // ----------------------------------------------------
         // 3. Mix & Clip
         // ----------------------------------------------------
-        // Blend Kick and Bass (adjusting volume so they mix nicely without clipping)
-        const mixed = (kickSample * 0.6) + (bassSample * 0.4);
-        audioBuffer[i] = Math.tanh(mixed); // Final safety limiter saturation
+        const mixed = (kickSample * 0.5) + (bassSample * 0.35) + (hhSample * 0.15);
+        audioBuffer[i] = Math.tanh(mixed); 
     }
 
     // Write combined WAV file
