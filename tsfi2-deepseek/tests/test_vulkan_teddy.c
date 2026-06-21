@@ -1171,13 +1171,15 @@ static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
             
             float dist_x = warped_x - fx;
             float dist_y = warped_y - fy;
-            float dist = sqrtf(dist_x * dist_x + dist_y * dist_y);
+            float dist_sq = dist_x * dist_x + dist_y * dist_y;
             
             // Tapered radius: hair gets thinner near the tip (larger shell index)
             float base_radius = 0.48f;
             float radius = base_radius * (1.0f - normalized_height * 0.85f);
+            float radius_sq = radius * radius;
             
-            if (dist < radius) {
+            if (dist_sq < radius_sq) {
+                float dist = sqrtf(dist_sq);
                 float val = 1.0f - (dist / radius);
                 if (val > max_val) {
                     max_val = val;
@@ -1554,6 +1556,15 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
     return shadow;
 }
 
+typedef struct {
+    float inv_sx, inv_sy, inv_sz;
+    float r_lx, r_ly, r_lz;
+    float avg_scale;
+    float avg_r;
+} PrecalcSphere;
+
+static PrecalcSphere precalc_spheres[15];
+
 static void calculate_combined_shadow_ao(float px, float py, float pz, float nx, float ny, float nz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx, float *out_shadow, float *out_ao) {
     float shadow = 1.0f;
     float ao = 1.0f;
@@ -1565,18 +1576,15 @@ static void calculate_combined_shadow_ao(float px, float py, float pz, float nx,
         float wdy = body[i].y - py;
         float wdz = body[i].z - pz;
         float wd2 = wdx*wdx + wdy*wdy + wdz*wdz;
-        float wd = sqrtf(wd2);
         
         // --- 1. Ambient Occlusion ---
-        float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
-        float avg_r = body[i].r * avg_scale;
-        if (wd >= avg_r + 0.001f) {
-            float vx = wdx / wd;
-            float vy = wdy / wd;
-            float vz = wdz / wd;
+        float avg_r = precalc_spheres[i].avg_r;
+        float limit_r = avg_r + 0.001f;
+        if (wd2 >= limit_r * limit_r) {
+            float wd = sqrtf(wd2);
             
             // Normal-oriented cosine weighting in world space
-            float ndot = nx * vx + ny * vy + nz * vz;
+            float ndot = (nx * wdx + ny * wdy + nz * wdz) / wd;
             if (ndot < 0.0f) ndot = 0.0f;
             
             // Solid angle approximation of the sphere
@@ -1584,7 +1592,7 @@ static void calculate_combined_shadow_ao(float px, float py, float pz, float nx,
             if (sin_theta2 > 1.0f) sin_theta2 = 1.0f;
             
             // Directional weighting based on light alignment (directional AO)
-            float ldot = vx * lx + vy * ly + vz * lz;
+            float ldot = (lx * wdx + ly * wdy + lz * wdz) / wd;
             float directional_factor = 0.4f + 0.6f * ldot;
             if (directional_factor < 0.0f) directional_factor = 0.0f;
             
@@ -1592,19 +1600,13 @@ static void calculate_combined_shadow_ao(float px, float py, float pz, float nx,
         }
         
         // --- 2. Soft Shadow ---
-        float inv_sx = 1.0f / body[i].sx;
-        float inv_sy = 1.0f / body[i].sy;
-        float inv_sz = 1.0f / body[i].sz;
+        float oc_x = wdx * precalc_spheres[i].inv_sx;
+        float oc_y = wdy * precalc_spheres[i].inv_sy;
+        float oc_z = wdz * precalc_spheres[i].inv_sz;
         
-        float oc_x = wdx * inv_sx;
-        float oc_y = wdy * inv_sy;
-        float oc_z = wdz * inv_sz;
-        
-        float r_lx = lx * inv_sx;
-        float r_ly = ly * inv_sy;
-        float r_lz = lz * inv_sz;
-        float r_len = sqrtf(r_lx*r_lx + r_ly*r_ly + r_lz*r_lz);
-        if (r_len > 0.0001f) { r_lx /= r_len; r_ly /= r_len; r_lz /= r_len; }
+        float r_lx = precalc_spheres[i].r_lx;
+        float r_ly = precalc_spheres[i].r_ly;
+        float r_lz = precalc_spheres[i].r_lz;
         
         float b = oc_x * r_lx + oc_y * r_ly + oc_z * r_lz;
         if (b >= 0.001f) {
@@ -1621,7 +1623,7 @@ static void calculate_combined_shadow_ao(float px, float py, float pz, float nx,
                 float light_spread = 0.12f;
                 float penumbra_radius = b * light_spread + 0.01f;
                 
-                float penumbra = 0.15f + 0.85f * (dist_to_surface * avg_scale) / penumbra_radius;
+                float penumbra = 0.15f + 0.85f * (dist_to_surface * precalc_spheres[i].avg_scale) / penumbra_radius;
                 if (penumbra < shadow) {
                     shadow = penumbra;
                 }
@@ -1892,6 +1894,27 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         float dz = body[i].z;
         body[i].x = pos_x + dx * cos_t - dz * sin_t;
         body[i].z = dx * sin_t + dz * cos_t;
+    }
+
+    // Precalculate projection metrics and light projections once per frame for huge execution speedup
+    for (int i = 0; i < 15; i++) {
+        precalc_spheres[i].inv_sx = 1.0f / body[i].sx;
+        precalc_spheres[i].inv_sy = 1.0f / body[i].sy;
+        precalc_spheres[i].inv_sz = 1.0f / body[i].sz;
+        
+        precalc_spheres[i].r_lx = lx * precalc_spheres[i].inv_sx;
+        precalc_spheres[i].r_ly = ly * precalc_spheres[i].inv_sy;
+        precalc_spheres[i].r_lz = lz * precalc_spheres[i].inv_sz;
+        float r_len = sqrtf(precalc_spheres[i].r_lx*precalc_spheres[i].r_lx + 
+                            precalc_spheres[i].r_ly*precalc_spheres[i].r_ly + 
+                            precalc_spheres[i].r_lz*precalc_spheres[i].r_lz);
+        if (r_len > 0.0001f) {
+            precalc_spheres[i].r_lx /= r_len;
+            precalc_spheres[i].r_ly /= r_len;
+            precalc_spheres[i].r_lz /= r_len;
+        }
+        precalc_spheres[i].avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
+        precalc_spheres[i].avg_r = body[i].r * precalc_spheres[i].avg_scale;
     }
 
     int num_shells = 48;
