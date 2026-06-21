@@ -677,8 +677,10 @@
 
         function getCoords(e) {
             const rect = streamSvg.getBoundingClientRect();
-            const scaleX = 800 / rect.width;
-            const scaleY = 600 / rect.height;
+            const targetW = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterWidth === 'number') ? window.latestVideoStatus.presenterWidth : 800;
+            const targetH = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterHeight === 'number') ? window.latestVideoStatus.presenterHeight : 600;
+            const scaleX = targetW / rect.width;
+            const scaleY = targetH / rect.height;
             const x = Math.round((e.clientX - rect.left) * scaleX);
             const y = Math.round((e.clientY - rect.top) * scaleY);
             return { x, y };
