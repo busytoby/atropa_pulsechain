@@ -502,15 +502,6 @@ async function main() {
                         }
                     }).catch(() => {});
                 } else {
-                    const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
-                                         y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
-                    if (inVideoBounds) {
-                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
-                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
-                        await sendWmqEvent('YOUTUBE:MOUSE_MOVE', `${x_yt},${y_yt}`);
-                    } else {
-                        await sendWmqEvent('MAIN:MOUSE_MOVE', `${x},${y}`);
-                    }
                     await page.mouse.move(x, y);
                 }
             } else if (cmd === 'MOUSE_DOWN') {
@@ -540,9 +531,9 @@ async function main() {
                     if (inVideoBounds) {
                         const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
                         const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
-                        await sendWmqEvent('YOUTUBE:MOUSE_DOWN', `${btn},${x_yt},${y_yt}`);
+                        sendWmqEvent('YOUTUBE:MOUSE_DOWN', `${btn},${x_yt},${y_yt}`).catch(() => {});
                     } else {
-                        await sendWmqEvent('MAIN:MOUSE_DOWN', `${btn},${x},${y}`);
+                        sendWmqEvent('MAIN:MOUSE_DOWN', `${btn},${x},${y}`).catch(() => {});
                     }
                 }
                 
@@ -576,9 +567,9 @@ async function main() {
                     if (inVideoBounds) {
                         const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
                         const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
-                        await sendWmqEvent('YOUTUBE:MOUSE_UP', `${btn},${x_yt},${y_yt}`);
+                        sendWmqEvent('YOUTUBE:MOUSE_UP', `${btn},${x_yt},${y_yt}`).catch(() => {});
                     } else {
-                        await sendWmqEvent('MAIN:MOUSE_UP', `${btn},${x},${y}`);
+                        sendWmqEvent('MAIN:MOUSE_UP', `${btn},${x},${y}`).catch(() => {});
                     }
                 }
                 
@@ -608,9 +599,9 @@ async function main() {
                 } else {
                     console.log(`[INPUT ROUTER] KEY_DOWN: key=${key}, keyName=${keyName}, isFocusedOnYouTube=${isFocusedOnYouTube}`);
                     if (isFocusedOnYouTube) {
-                        await sendWmqEvent('YOUTUBE:KEY_DOWN', `${key}`);
+                        sendWmqEvent('YOUTUBE:KEY_DOWN', `${key}`).catch(() => {});
                     } else {
-                        await sendWmqEvent('MAIN:KEY_DOWN', `${key}`);
+                        sendWmqEvent('MAIN:KEY_DOWN', `${key}`).catch(() => {});
                         if (keyName === 'Control') {
                             controlDown = true;
                         }
@@ -642,9 +633,9 @@ async function main() {
                     }
                 } else {
                     if (isFocusedOnYouTube) {
-                        await sendWmqEvent('YOUTUBE:KEY_UP', `${key}`);
+                        sendWmqEvent('YOUTUBE:KEY_UP', `${key}`).catch(() => {});
                     } else {
-                        await sendWmqEvent('MAIN:KEY_UP', `${key}`);
+                        sendWmqEvent('MAIN:KEY_UP', `${key}`).catch(() => {});
                         if (keyName === 'Control') {
                             controlDown = false;
                         }
@@ -711,9 +702,9 @@ async function main() {
                     if (inVideoBounds) {
                         const x_yt = Math.round(((lastMouseX - videoBounds.x) / videoBounds.width) * 800);
                         const y_yt = Math.round(((lastMouseY - videoBounds.y) / videoBounds.height) * 600);
-                        await sendWmqEvent('YOUTUBE:MOUSE_SCROLL', `${axis},${value},${x_yt},${y_yt}`);
+                        sendWmqEvent('YOUTUBE:MOUSE_SCROLL', `${axis},${value},${x_yt},${y_yt}`).catch(() => {});
                     } else {
-                        await sendWmqEvent('MAIN:MOUSE_SCROLL', `${axis},${value}`);
+                        sendWmqEvent('MAIN:MOUSE_SCROLL', `${axis},${value}`).catch(() => {});
                         try {
                             await page.mouse.wheel({ deltaX, deltaY });
                         } catch (wheelErr) {
