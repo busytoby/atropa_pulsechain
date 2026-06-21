@@ -320,6 +320,24 @@
         const canvas = document.getElementById("vulkanPipelineCanvas");
         const ctx = canvas.getContext("2d");
 
+        let mouseX = -1;
+        let mouseY = -1;
+        let hoveredStageIdx = -1;
+        const latencyHistory = Array(40).fill(16.6); // rolling frame rendering times (ms)
+        let lastDrawTime = Date.now();
+
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+            mouseX = -1;
+            mouseY = -1;
+            hoveredStageIdx = -1;
+        });
+
         function resizeCanvas() {
             const rect = canvas.getBoundingClientRect();
             const w = Math.floor(rect.width);
@@ -335,11 +353,56 @@
         window.addEventListener("resize", resizeCanvas);
 
         const pipelineStages = [
-            { name: "Input Assembly", color: "#4facfe" },
-            { name: "Vertex Shader", color: "#00f2fe" },
-            { name: "Rasterization", color: "#ff007f" },
-            { name: "Fragment Shader", color: "#39ff14" },
-            { name: "Color Blend", color: "#ff7f00" }
+            { 
+                name: "Input Assembly", 
+                color: "#4facfe", 
+                details: [
+                    "Topology: TRIANGLE_LIST",
+                    "Index Buffer: 16/32-bit",
+                    "Primitive Restart: Off",
+                    "Vertex Binding: Slot 0"
+                ] 
+            },
+            { 
+                name: "Vertex Shader", 
+                color: "#00f2fe", 
+                details: [
+                    "SPIR-V Modules: 2 Loaded",
+                    "Input Attributes: 3 Slots",
+                    "Uniforms: Model/View/Proj",
+                    "VRAM Bound: 1.24 MB"
+                ] 
+            },
+            { 
+                name: "Rasterization", 
+                color: "#ff007f", 
+                details: [
+                    "Polygon Mode: FILL (Proc)",
+                    "Front Face: COUNTER_CLK",
+                    "Cull Mode: BACK_FACE",
+                    "Depth Clamp: Enabled"
+                ] 
+            },
+            { 
+                name: "Fragment Shader", 
+                color: "#39ff14", 
+                details: [
+                    "Precision: Float32 (AB4H)",
+                    "Textures: 1 DNA Template",
+                    "Samplers: Anisotropic 16x",
+                    "SSAA Samples: 4x Dynamic"
+                ] 
+            },
+            { 
+                name: "Color Blend", 
+                color: "#ff7f00", 
+                details: [
+                    "Blend Op: ADD (Standard)",
+                    "Src Blend: SRC_ALPHA",
+                    "Dst Blend: ONE_MINUS_SRC",
+                    "Logic Op: Disabled"
+                ] 
+            }
         ];
 
         // Track frame times to calculate actual stream rendering FPS
@@ -356,6 +419,15 @@
 
         let time = 0;
         function drawVulkanPipeline() {
+            // Calculate local rendering latency
+            const now = Date.now();
+            const frameLatency = now - lastDrawTime;
+            lastDrawTime = now;
+            latencyHistory.push(frameLatency);
+            if (latencyHistory.length > 40) {
+                latencyHistory.shift();
+            }
+
             ctx.fillStyle = "#010207";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -426,6 +498,16 @@
             const endX = canvas.width - 60;
             const stepX = (pipelineStages.length > 1) ? (endX - startX) / (pipelineStages.length - 1) : 0;
 
+            // Update hovered index
+            hoveredStageIdx = -1;
+            pipelineStages.forEach((stage, idx) => {
+                const stageX = startX + idx * stepX;
+                const stageY = centerY;
+                if (mouseX >= stageX - 35 && mouseX <= stageX + 35 && mouseY >= stageY - 35 && mouseY <= stageY + 35) {
+                    hoveredStageIdx = idx;
+                }
+            });
+
             // 2. Draw connecting pipeline flow line
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
@@ -451,25 +533,26 @@
             pipelineStages.forEach((stage, idx) => {
                 const stageX = startX + idx * stepX;
                 const stageY = centerY;
-                const scale = 1 + Math.sin(time + stageX * 0.01) * 0.06;
+                const isHovered = (hoveredStageIdx === idx);
+                const scale = (isHovered ? 1.12 : 1.0) + Math.sin(time + stageX * 0.01) * 0.04;
                 
                 ctx.save();
                 ctx.translate(stageX, stageY);
                 ctx.scale(scale, scale);
 
                 // Stage Container Box (Square)
-                ctx.fillStyle = "rgba(8, 12, 30, 0.85)";
+                ctx.fillStyle = isHovered ? "rgba(12, 20, 50, 0.95)" : "rgba(8, 12, 30, 0.85)";
                 ctx.strokeStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = isHovered ? 3 : 2;
                 ctx.beginPath();
                 ctx.rect(-35, -35, 70, 70);
                 ctx.fill();
                 ctx.stroke();
 
                 // Holographic Glowing border
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = isHovered ? 15 : 8;
                 ctx.shadowColor = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.strokeStyle = isHovered ? stage.color : "rgba(255, 255, 255, 0.25)";
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
@@ -522,7 +605,7 @@
                 ctx.restore();
 
                 // Text labels below
-                ctx.fillStyle = "#f0f4f8";
+                ctx.fillStyle = isHovered ? stage.color : "#f0f4f8";
                 ctx.font = "11px 'Share Tech Mono'";
                 ctx.textAlign = "center";
                 ctx.fillText(stage.name, stageX, stageY + 54);
@@ -611,6 +694,73 @@
             const bufWidth = (window.latestVideoStatus && typeof window.latestVideoStatus.bufferedPercent === 'number') ? 
                 Math.min(175, (window.latestVideoStatus.bufferedPercent / 100) * 175) : 0;
             ctx.fillRect(24, ytY + 98, bufWidth, 4);
+
+            // 7. Draw interactive Stage details OR scrolling latency chart in bottom-right
+            const hudX = canvas.width - 210;
+            const hudY = canvas.height - 135;
+            
+            ctx.fillStyle = "rgba(4, 8, 24, 0.65)";
+            ctx.strokeStyle = (hoveredStageIdx !== -1) ? pipelineStages[hoveredStageIdx].color : "rgba(0, 242, 254, 0.25)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(hudX, hudY, 195, 115, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            if (hoveredStageIdx !== -1) {
+                // Draw details card for hovered stage
+                const stage = pipelineStages[hoveredStageIdx];
+                ctx.fillStyle = stage.color;
+                ctx.font = "10px 'Share Tech Mono'";
+                ctx.textAlign = "left";
+                ctx.fillText(`STAGE: ${stage.name.toUpperCase()}`, hudX + 9, hudY + 15);
+                
+                ctx.fillStyle = "#8c9ba5";
+                ctx.font = "9px 'Share Tech Mono'";
+                stage.details.forEach((detail, lineIdx) => {
+                    ctx.fillText(detail, hudX + 9, hudY + 30 + (lineIdx * 12));
+                });
+                
+                // Draw active indicator pulsing dot
+                const pulseDot = (Math.floor(Date.now() / 250) % 2 === 0);
+                ctx.fillStyle = pulseDot ? stage.color : "rgba(8,12,30,0.5)";
+                ctx.beginPath();
+                ctx.arc(hudX + 180, hudY + 12, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Draw live scrolling latency plot
+                ctx.fillStyle = "rgba(0, 242, 254, 0.95)";
+                ctx.font = "10px 'Share Tech Mono'";
+                ctx.textAlign = "left";
+                ctx.fillText("PIPELINE RENDER JITTER", hudX + 9, hudY + 15);
+                
+                // Draw border for chart
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.1)";
+                ctx.strokeRect(hudX + 10, hudY + 25, 175, 75);
+                
+                // Draw line
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.75)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let i = 0; i < latencyHistory.length; i++) {
+                    const lX = hudX + 10 + (i * (175 / (latencyHistory.length - 1)));
+                    // Clamp latency scale to 0-100ms
+                    const normVal = Math.min(1.0, Math.max(0.0, latencyHistory[i] / 100.0));
+                    const lY = hudY + 100 - (normVal * 75);
+                    if (i === 0) {
+                        ctx.moveTo(lX, lY);
+                    } else {
+                        ctx.lineTo(lX, lY);
+                    }
+                }
+                ctx.stroke();
+                ctx.lineWidth = 1;
+                
+                ctx.fillStyle = "#8c9ba5";
+                ctx.font = "8px 'Share Tech Mono'";
+                ctx.fillText("0ms", hudX + 10, hudY + 109);
+                ctx.fillText("100ms", hudX + 160, hudY + 109);
+            }
 
             requestAnimationFrame(drawVulkanPipeline);
         }
