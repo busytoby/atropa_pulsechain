@@ -46,6 +46,34 @@ _Atomic size_t g_gpu_alloc_bytes = 0;
 _Atomic size_t g_gpu_active_allocs = 0;
 _Atomic size_t g_gpu_active_bytes = 0;
 
+void safe_decrement_active_bytes(size_t size) {
+    size_t current = atomic_load(&g_active_bytes);
+    while (current >= size) {
+        if (atomic_compare_exchange_weak(&g_active_bytes, &current, current - size)) {
+            return;
+        }
+    }
+    while (current < size) {
+        if (atomic_compare_exchange_weak(&g_active_bytes, &current, 0)) {
+            return;
+        }
+    }
+}
+
+void safe_decrement_gpu_active_bytes(size_t size) {
+    size_t current = atomic_load(&g_gpu_active_bytes);
+    while (current >= size) {
+        if (atomic_compare_exchange_weak(&g_gpu_active_bytes, &current, current - size)) {
+            return;
+        }
+    }
+    while (current < size) {
+        if (atomic_compare_exchange_weak(&g_gpu_active_bytes, &current, 0)) {
+            return;
+        }
+    }
+}
+
  // g_init_in_progress linked from registry
 
 static _Atomic int g_quarantine_lock = 0;
@@ -228,7 +256,7 @@ void *lau_memalign_wired_loc(size_t alignment, size_t size, const char *file, in
     // MANDATE: 4GB Memory Guard
     size_t current_active_w = atomic_load(&g_active_bytes);
     if (current_active_w + total_size > (4ULL * 1024 * 1024 * 1024)) {
-        fprintf(stderr, "[FRACTURE] CRITICAL: 4GB RAM Limit Exceeded (Wired)\n");
+        fprintf(stderr, "[FRACTURE] CRITICAL: 4GB RAM Limit Exceeded (Wired). Active=%zu, Requested=%zu\n", current_active_w, total_size);
         abort();
     }
     
@@ -600,9 +628,9 @@ static void lau_free_meta(LauMetadata *meta) {
         atomic_fetch_add(&g_free_count, 1);
         atomic_fetch_add(&g_free_bytes, size);
         atomic_fetch_sub(&g_active_allocs, 1);
-        atomic_fetch_sub(&g_active_bytes, size);
+        safe_decrement_active_bytes(size);
         atomic_fetch_sub(&g_gpu_active_allocs, 1);
-        atomic_fetch_sub(&g_gpu_active_bytes, size);
+        safe_decrement_gpu_active_bytes(size);
         
         LauFooter *f = (LauFooter *)((char*)payload + size);
         f->magic = LAU_MAGIC_FREED;
@@ -670,7 +698,7 @@ static void lau_free_meta(LauMetadata *meta) {
     atomic_fetch_add(&g_free_count, 1);
     atomic_fetch_add(&g_free_bytes, size);
     atomic_fetch_sub(&g_active_allocs, 1);
-    atomic_fetch_sub(&g_active_bytes, size);
+    safe_decrement_active_bytes(size);
     // fprintf(stderr, "[DEBUG] new g_active_allocs: %zu\n", (size_t)atomic_load(&g_active_allocs));
     
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();

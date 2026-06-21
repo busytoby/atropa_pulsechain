@@ -19,6 +19,7 @@
 
 extern _Atomic size_t g_active_allocs;
 extern _Atomic size_t g_active_bytes;
+extern void safe_decrement_active_bytes(size_t size);
 
 _Atomic int g_init_in_progress = 0;
 _Atomic int g_teardown_in_progress = 0;
@@ -53,7 +54,7 @@ void lau_registry_init_telemetry(void) {
     if (g_local_manifold) {
         memset(g_local_manifold, 0, sizeof(LauRegistryManifold));
         atomic_fetch_sub(&g_active_allocs, 1);
-        atomic_fetch_sub(&g_active_bytes, sizeof(LauRegistryManifold));
+        safe_decrement_active_bytes(sizeof(LauRegistryManifold));
     }
 
     atomic_store_explicit(&g_init_in_progress, 0, memory_order_relaxed);
@@ -353,7 +354,7 @@ void lau_registry_teardown(void) {
             munmap(ptr, sizeof(LauRegistryManifold));
         }
         atomic_fetch_sub(&g_active_allocs, 1);
-        atomic_fetch_sub(&g_active_bytes, sizeof(LauRegistryManifold));
+        safe_decrement_active_bytes(sizeof(LauRegistryManifold));
     }
 }
 
