@@ -283,6 +283,8 @@ typedef struct {
     float x, y;
     float vx, vy;
     float angle;
+    // TSFI2 Prophecy: Quaternion orientation for 3D rotation representation (6-DOF Spatial Unity)
+    float qw, qx, qy, qz;
     int alive;
     int score;
     int fuel;
@@ -319,6 +321,7 @@ static void init_game() {
     needle.vx = 0.0f;
     needle.vy = -3.5f;
     needle.angle = -3.14159f / 2.0f;
+    needle.qw = 1.0f; needle.qx = 0.0f; needle.qy = 0.0f; needle.qz = 0.0f;
     needle.alive = 1;
     needle.fuel = 1000;
 
@@ -327,6 +330,7 @@ static void init_game() {
     wedge.vx = 0.0f;
     wedge.vy = 3.5f;
     wedge.angle = 3.14159f / 2.0f;
+    wedge.qw = 1.0f; wedge.qx = 0.0f; wedge.qy = 0.0f; wedge.qz = 0.0f;
     wedge.alive = 1;
     wedge.fuel = 1000;
 
@@ -357,7 +361,7 @@ static void key_hook(void *data, uint32_t serial, uint32_t time, uint32_t key, u
     if (key == 1) { // ESC
         exit_requested = 1;
     } 
-    // Player 1 controls (A, D, W, Space/S)
+    // Player 1 controls (A, D, W, S, E for hyperspace)
     else if (key == 30) { // A
         key_p1_left = pressed;
     } else if (key == 32) { // D
@@ -367,8 +371,15 @@ static void key_hook(void *data, uint32_t serial, uint32_t time, uint32_t key, u
         if (pressed && needle.alive && needle.fuel > 0) play_synth_sound("thrust");
     } else if (key == 31 && pressed) { // S (fire)
         fire_missile(&needle, needle_missiles);
+    } else if (key == 18 && pressed && needle.alive && needle.fuel >= 150) { // E (Hyperspace)
+        needle.x = 50.0f + ((float)rand() / RAND_MAX) * 700.0f;
+        needle.y = 50.0f + ((float)rand() / RAND_MAX) * 400.0f;
+        needle.vx = (((float)rand() / RAND_MAX) - 0.5f) * 6.0f;
+        needle.vy = (((float)rand() / RAND_MAX) - 0.5f) * 6.0f;
+        needle.fuel -= 150;
+        play_synth_sound("explode");
     }
-    // Player 2 controls (Left, Right, Up, Down)
+    // Player 2 controls (Left, Right, Up, Down, Keycode 98 / KP_Slash for Hyperspace)
     else if (key == 105) { // Left arrow
         key_p2_left = pressed;
     } else if (key == 106) { // Right arrow
@@ -378,6 +389,13 @@ static void key_hook(void *data, uint32_t serial, uint32_t time, uint32_t key, u
         if (pressed && wedge.alive && wedge.fuel > 0) play_synth_sound("thrust");
     } else if (key == 108 && pressed) { // Down arrow (fire)
         fire_missile(&wedge, wedge_missiles);
+    } else if (key == 98 && pressed && wedge.alive && wedge.fuel >= 150) { // KP_Slash / Hyperspace
+        wedge.x = 50.0f + ((float)rand() / RAND_MAX) * 700.0f;
+        wedge.y = 50.0f + ((float)rand() / RAND_MAX) * 400.0f;
+        wedge.vx = (((float)rand() / RAND_MAX) - 0.5f) * 6.0f;
+        wedge.vy = (((float)rand() / RAND_MAX) - 0.5f) * 6.0f;
+        wedge.fuel -= 150;
+        play_synth_sound("explode");
     } else if (key == 19 && pressed) { // R (restart)
         init_game();
     }
@@ -389,18 +407,32 @@ static void update_ship(Ship *s, bool left, bool right, bool thrust, float W, fl
     if (left) s->angle -= 0.06f;
     if (right) s->angle += 0.06f;
 
+    // TSFI2 Prophecy: Quaternion orientation update reflecting 3D stance (Roll/Pitch/Yaw integration)
+    // Rotate about Z axis with s->angle
+    float cy = cosf(s->angle * 0.5f);
+    float sy = sinf(s->angle * 0.5f);
+    // Add small pitch/roll perturbations depending on thrust and current gravity gradient
+    float pitch_angle = thrust ? 0.4f * sinf(s->x * 0.02f) : 0.2f * sinf(s->x * 0.01f);
+    float cp = cosf(pitch_angle * 0.5f);
+    float sp = sinf(pitch_angle * 0.5f);
+
+    s->qw = cy * cp;
+    s->qx = cy * sp;
+    s->qy = sy * sp;
+    s->qz = sy * cp;
+
     if (thrust && s->fuel > 0) {
-        s->vx += cosf(s->angle) * 0.12f;
-        s->vy += sinf(s->angle) * 0.12f;
+        s->vx += cosf(s->angle) * 0.14f;
+        s->vy += sinf(s->angle) * 0.14f;
         s->fuel--;
     }
 
-    // Apply gravity well
+    // Apply gravity well with TSFI2 Relativistic Frame Dragging (Lense-Thirring approximation)
     float dx = gravity_well_x - s->x;
     float dy = gravity_well_y - s->y;
     float dist2 = dx * dx + dy * dy;
     float dist = sqrtf(dist2);
-    if (dist < 18.0f) {
+    if (dist < 22.0f) {
         // Crash into the sun
         s->alive = 0;
         play_synth_sound("explode");
@@ -411,14 +443,24 @@ static void update_ship(Ship *s, bool left, bool right, bool thrust, float W, fl
     s->vx += (dx / dist) * gravity * 0.1f;
     s->vy += (dy / dist) * gravity * 0.1f;
 
+    // TSFI2 Relativistic Solar Wind push (radiation pressure pushing away from gravity well)
+    float wind_force = 120.0f / (dist2 + 100.0f);
+    s->vx -= (dx / dist) * wind_force * 0.1f;
+    s->vy -= (dy / dist) * wind_force * 0.1f;
+
+    // TSFI2 Lense-Thirring Frame Dragging (orthogonal orbit rotation boost)
+    float drag_strength = 200.0f / (dist2 + 200.0f);
+    s->vx += (-dy / dist) * drag_strength * 0.1f;
+    s->vy += (dx / dist) * drag_strength * 0.1f;
+
     s->x += s->vx;
     s->y += s->vy;
 
-    // Screen wrapping
-    if (s->x < 0) s->x += W;
-    if (s->x >= W) s->x -= W;
-    if (s->y < 0) s->y += H;
-    if (s->y >= H) s->y -= H;
+    // Screen wrapping with velocity dampening on warp bounds
+    if (s->x < 0) { s->x += W; s->vx *= 0.98f; }
+    if (s->x >= W) { s->x -= W; s->vx *= 0.98f; }
+    if (s->y < 0) { s->y += H; s->vy *= 0.98f; }
+    if (s->y >= H) { s->y -= H; s->vy *= 0.98f; }
 }
 
 static void update_missiles(Missile *list, int count, float W, float H) {
@@ -472,35 +514,54 @@ static void check_collisions(Ship *s1, Ship *s2, Missile *m_list, int m_count) {
     }
 }
 
+// Helper to rotate a 3D point using a Quaternion and project to 2D
+static void project_point_3d(Ship *s, float px, float py, float pz, float *rx, float *ry) {
+    // Quaternion rotation matrix columns
+    float r11 = 1.0f - 2.0f * (s->qy * s->qy + s->qz * s->qz);
+    float r12 = 2.0f * (s->qx * s->qy - s->qw * s->qz);
+    // float r13 = 2.0f * (s->qx * s->qz + s->qw * s->qy);
+
+    float r21 = 2.0f * (s->qx * s->qy + s->qw * s->qz);
+    float r22 = 1.0f - 2.0f * (s->qx * s->qx + s->qz * s->qz);
+    // float r23 = 2.0f * (s->qy * s->qz - s->qw * s->qx);
+
+    *rx = s->x + (px * r11 + py * r12);
+    *ry = s->y + (px * r21 + py * r22 + pz * 0.3f); // project some Z depth influence
+}
+
 // Draw the Needle ship (Player 1)
 static void draw_needle(AB4HPixel *pixels, int W, int H, Ship *s, AB4HPixel col) {
     if (!s->alive) return;
-    float head_x = s->x + cosf(s->angle) * 16.0f;
-    float head_y = s->y + sinf(s->angle) * 16.0f;
-    float wing1_x = s->x + cosf(s->angle + 2.5f) * 12.0f;
-    float wing1_y = s->y + sinf(s->angle + 2.5f) * 12.0f;
-    float wing2_x = s->x + cosf(s->angle - 2.5f) * 12.0f;
-    float wing2_y = s->y + sinf(s->angle - 2.5f) * 12.0f;
+    float hx, hy, w1x, w1y, w2x, w2y, cx, cy;
+    project_point_3d(s, 16.0f, 0.0f, 0.0f, &hx, &hy);
+    project_point_3d(s, -10.0f, 8.0f, -4.0f, &w1x, &w1y);
+    project_point_3d(s, -10.0f, -8.0f, -4.0f, &w2x, &w2y);
+    project_point_3d(s, -12.0f, 0.0f, 6.0f, &cx, &cy); // Cockpit ridge
 
-    draw_line_aa(pixels, W, H, head_x, head_y, wing1_x, wing1_y, col, 1.5f);
-    draw_line_aa(pixels, W, H, head_x, head_y, wing2_x, wing2_y, col, 1.5f);
-    draw_line_aa(pixels, W, H, wing1_x, wing1_y, s->x, s->y, col, 1.5f);
-    draw_line_aa(pixels, W, H, wing2_x, wing2_y, s->x, s->y, col, 1.5f);
+    draw_line_aa(pixels, W, H, hx, hy, w1x, w1y, col, 1.5f);
+    draw_line_aa(pixels, W, H, hx, hy, w2x, w2y, col, 1.5f);
+    draw_line_aa(pixels, W, H, w1x, w1y, s->x, s->y, col, 1.5f);
+    draw_line_aa(pixels, W, H, w2x, w2y, s->x, s->y, col, 1.5f);
+    draw_line_aa(pixels, W, H, cx, cy, hx, hy, col, 1.0f);
+    draw_line_aa(pixels, W, H, cx, cy, w1x, w1y, col, 1.0f);
+    draw_line_aa(pixels, W, H, cx, cy, w2x, w2y, col, 1.0f);
 }
 
 // Draw the Wedge ship (Player 2)
 static void draw_wedge(AB4HPixel *pixels, int W, int H, Ship *s, AB4HPixel col) {
     if (!s->alive) return;
-    float head_x = s->x + cosf(s->angle) * 16.0f;
-    float head_y = s->y + sinf(s->angle) * 16.0f;
-    float wing1_x = s->x + cosf(s->angle + 2.3f) * 14.0f;
-    float wing1_y = s->y + sinf(s->angle + 2.3f) * 14.0f;
-    float wing2_x = s->x + cosf(s->angle - 2.3f) * 14.0f;
-    float wing2_y = s->y + sinf(s->angle - 2.3f) * 14.0f;
+    float hx, hy, w1x, w1y, w2x, w2y, cx, cy;
+    project_point_3d(s, 16.0f, 0.0f, 0.0f, &hx, &hy);
+    project_point_3d(s, -12.0f, 10.0f, -6.0f, &w1x, &w1y);
+    project_point_3d(s, -12.0f, -10.0f, -6.0f, &w2x, &w2y);
+    project_point_3d(s, -8.0f, 0.0f, 8.0f, &cx, &cy); // Spine ridge
 
-    draw_line_aa(pixels, W, H, head_x, head_y, wing1_x, wing1_y, col, 1.5f);
-    draw_line_aa(pixels, W, H, head_x, head_y, wing2_x, wing2_y, col, 1.5f);
-    draw_line_aa(pixels, W, H, wing1_x, wing1_y, wing2_x, wing2_y, col, 1.5f);
+    draw_line_aa(pixels, W, H, hx, hy, w1x, w1y, col, 1.5f);
+    draw_line_aa(pixels, W, H, hx, hy, w2x, w2y, col, 1.5f);
+    draw_line_aa(pixels, W, H, w1x, w1y, w2x, w2y, col, 1.5f);
+    draw_line_aa(pixels, W, H, cx, cy, hx, hy, col, 1.0f);
+    draw_line_aa(pixels, W, H, cx, cy, w1x, w1y, col, 1.0f);
+    draw_line_aa(pixels, W, H, cx, cy, w2x, w2y, col, 1.0f);
 }
 
 typedef struct {
@@ -586,11 +647,44 @@ int main() {
         // Clear Screen
         draw_rect_ab4h(pixels, W, H, 0, 0, W, H, bg_space);
 
-        // Render Background stars
-        for (int i = 0; i < 30; i++) {
+        // Render Background stars with Auncient twinkling effects
+        for (int i = 0; i < 45; i++) {
             int sx = (int)(fmodf((float)i * 187.3f, W));
             int sy = (int)(fmodf((float)i * 91.2f, H - 40));
-            draw_rect_ab4h(pixels, W, H, sx, sy, 2, 2, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 0.4f));
+            float twinkle = 0.3f + 0.7f * sinf(frame_counter * 0.05f + (float)i);
+            draw_rect_ab4h(pixels, W, H, sx, sy, 2, 2, make_ab4h_pixel(twinkle, twinkle, twinkle, 0.6f * twinkle));
+        }
+
+        // Particle system for explosions and thrust debris
+        typedef struct {
+            float x, y, vx, vy;
+            float life, max_life;
+            AB4HPixel color;
+            int active;
+        } Particle;
+        #define MAX_PARTICLES 128
+        static Particle particles[MAX_PARTICLES];
+        static int particles_init = 0;
+        if (!particles_init) {
+            memset(particles, 0, sizeof(particles));
+            particles_init = 1;
+        }
+
+        // Update particles
+        for (int i = 0; i < MAX_PARTICLES; i++) {
+            if (particles[i].active) {
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].life -= 1.0f;
+                if (particles[i].life <= 0) {
+                    particles[i].active = 0;
+                } else {
+                    float ratio = particles[i].life / particles[i].max_life;
+                    AB4HPixel col = particles[i].color;
+                    col.a = float_to_half(half_to_float(col.a) * ratio);
+                    draw_rect_ab4h(pixels, W, H, (int)particles[i].x, (int)particles[i].y, 2, 2, col);
+                }
+            }
         }
 
         // Update ships and missiles
@@ -600,25 +694,120 @@ int main() {
         update_missiles(needle_missiles, MAX_MISSILES, W, H - 40);
         update_missiles(wedge_missiles, MAX_MISSILES, W, H - 40);
 
-        // Collisions
+        // Collisions and spawn particles on explosion
+        int needle_was_alive = needle.alive;
+        int wedge_was_alive = wedge.alive;
         check_collisions(&needle, &wedge, wedge_missiles, MAX_MISSILES);
         check_collisions(&wedge, &needle, needle_missiles, MAX_MISSILES);
 
-        // Draw Central Star
-        draw_radial_glow(pixels, W, H, gravity_well_x, gravity_well_y, 45.0f, make_ab4h_pixel(1.5f, 0.8f, 0.1f, 0.4f));
+        if (needle_was_alive && !needle.alive) {
+            for (int k = 0; k < 30; k++) {
+                for (int i = 0; i < MAX_PARTICLES; i++) {
+                    if (!particles[i].active) {
+                        particles[i].active = 1;
+                        particles[i].x = needle.x;
+                        particles[i].y = needle.y;
+                        float p_angle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
+                        float speed = 1.0f + 4.0f * ((float)rand() / RAND_MAX);
+                        particles[i].vx = cosf(p_angle) * speed;
+                        particles[i].vy = sinf(p_angle) * speed;
+                        particles[i].max_life = 30.0f + rand() % 30;
+                        particles[i].life = particles[i].max_life;
+                        particles[i].color = green_needle;
+                        break;
+                    }
+                }
+            }
+        }
+        if (wedge_was_alive && !wedge.alive) {
+            for (int k = 0; k < 30; k++) {
+                for (int i = 0; i < MAX_PARTICLES; i++) {
+                    if (!particles[i].active) {
+                        particles[i].active = 1;
+                        particles[i].x = wedge.x;
+                        particles[i].y = wedge.y;
+                        float p_angle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
+                        float speed = 1.0f + 4.0f * ((float)rand() / RAND_MAX);
+                        particles[i].vx = cosf(p_angle) * speed;
+                        particles[i].vy = sinf(p_angle) * speed;
+                        particles[i].max_life = 30.0f + rand() % 30;
+                        particles[i].life = particles[i].max_life;
+                        particles[i].color = cyan_wedge;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Draw Central Star (with dynamic Coronal Flare)
+        float flare_r = 45.0f + 10.0f * sinf(frame_counter * 0.15f);
+        draw_radial_glow(pixels, W, H, gravity_well_x, gravity_well_y, flare_r, make_ab4h_pixel(1.8f, 0.6f, 0.05f, 0.5f));
+        draw_radial_glow(pixels, W, H, gravity_well_x, gravity_well_y, 25.0f, make_ab4h_pixel(2.0f, 1.2f, 0.1f, 0.8f));
         draw_rect_ab4h(pixels, W, H, (int)gravity_well_x - 6, (int)gravity_well_y - 6, 12, 12, sun_color);
+
+        // Thruster trails & Spawn thrust fire particles
+        if (key_p1_thrust && needle.alive && needle.fuel > 0) {
+            float tx = needle.x - cosf(needle.angle) * 12.0f;
+            float ty = needle.y - sinf(needle.angle) * 12.0f;
+            draw_radial_glow(pixels, W, H, tx, ty, 15.0f, make_ab4h_pixel(0.2f, 1.8f, 0.4f, 0.8f));
+            for (int i = 0; i < MAX_PARTICLES; i++) {
+                if (!particles[i].active) {
+                    particles[i].active = 1;
+                    particles[i].x = tx;
+                    particles[i].y = ty;
+                    float scatter = needle.angle + 3.14159f + (((float)rand() / RAND_MAX) - 0.5f) * 0.6f;
+                    float speed = 1.0f + 2.0f * ((float)rand() / RAND_MAX);
+                    particles[i].vx = cosf(scatter) * speed + needle.vx * 0.5f;
+                    particles[i].vy = sinf(scatter) * speed + needle.vy * 0.5f;
+                    particles[i].max_life = 10.0f + rand() % 10;
+                    particles[i].life = particles[i].max_life;
+                    particles[i].color = make_ab4h_pixel(0.8f, 1.5f, 0.2f, 0.8f);
+                    break;
+                }
+            }
+        }
+        if (key_p2_thrust && wedge.alive && wedge.fuel > 0) {
+            float tx = wedge.x - cosf(wedge.angle) * 12.0f;
+            float ty = wedge.y - sinf(wedge.angle) * 12.0f;
+            draw_radial_glow(pixels, W, H, tx, ty, 15.0f, make_ab4h_pixel(0.1f, 0.8f, 1.8f, 0.8f));
+            for (int i = 0; i < MAX_PARTICLES; i++) {
+                if (!particles[i].active) {
+                    particles[i].active = 1;
+                    particles[i].x = tx;
+                    particles[i].y = ty;
+                    float scatter = wedge.angle + 3.14159f + (((float)rand() / RAND_MAX) - 0.5f) * 0.6f;
+                    float speed = 1.0f + 2.0f * ((float)rand() / RAND_MAX);
+                    particles[i].vx = cosf(scatter) * speed + wedge.vx * 0.5f;
+                    particles[i].vy = sinf(scatter) * speed + wedge.vy * 0.5f;
+                    particles[i].max_life = 10.0f + rand() % 10;
+                    particles[i].life = particles[i].max_life;
+                    particles[i].color = make_ab4h_pixel(0.2f, 0.8f, 1.5f, 0.8f);
+                    break;
+                }
+            }
+        }
 
         // Draw Ships and Missiles
         draw_needle(pixels, W, H, &needle, green_needle);
         draw_wedge(pixels, W, H, &wedge, cyan_wedge);
 
+        // Low Fuel Warning HUD alert pulsing
+        if (needle.alive && needle.fuel < 200 && (frame_counter % 30 < 15)) {
+            draw_radial_glow(pixels, W, H, needle.x, needle.y, 25.0f, make_ab4h_pixel(2.0f, 0.0f, 0.0f, 0.3f));
+        }
+        if (wedge.alive && wedge.fuel < 200 && (frame_counter % 30 < 15)) {
+            draw_radial_glow(pixels, W, H, wedge.x, wedge.y, 25.0f, make_ab4h_pixel(2.0f, 0.0f, 0.0f, 0.3f));
+        }
+
         // Draw Missiles
         for (int i = 0; i < MAX_MISSILES; i++) {
             if (needle_missiles[i].active) {
-                draw_rect_ab4h(pixels, W, H, (int)needle_missiles[i].x - 2, (int)needle_missiles[i].y - 2, 4, 4, orange_laser);
+                draw_radial_glow(pixels, W, H, needle_missiles[i].x, needle_missiles[i].y, 8.0f, orange_laser);
+                draw_rect_ab4h(pixels, W, H, (int)needle_missiles[i].x - 2, (int)needle_missiles[i].y - 2, 4, 4, make_ab4h_pixel(2.0f, 2.0f, 1.0f, 1.0f));
             }
             if (wedge_missiles[i].active) {
-                draw_rect_ab4h(pixels, W, H, (int)wedge_missiles[i].x - 2, (int)wedge_missiles[i].y - 2, 4, 4, orange_laser);
+                draw_radial_glow(pixels, W, H, wedge_missiles[i].x, wedge_missiles[i].y, 8.0f, orange_laser);
+                draw_rect_ab4h(pixels, W, H, (int)wedge_missiles[i].x - 2, (int)wedge_missiles[i].y - 2, 4, 4, make_ab4h_pixel(2.0f, 2.0f, 1.0f, 1.0f));
             }
         }
 
