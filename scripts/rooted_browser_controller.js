@@ -540,9 +540,13 @@ async function main() {
                     playerState = ytPlayer.getPlayerState();
                 }
 
-                if (!video) {
-                    return { found: false, hasError, errorText, errorSubtext, videoError, playerState, ended: false };
-                }
+                // Extra telemetry parameters
+                const adActive = document.querySelector('.ad-showing, .html5-ad-product-override') !== null;
+                const videoQuality = (ytPlayer && typeof ytPlayer.getPlaybackQuality === 'function') ? ytPlayer.getPlaybackQuality() : 'unknown';
+                const volume = video.volume;
+                const playbackRate = video.playbackRate;
+                const bufferedPercent = video.duration > 0 && video.buffered.length > 0 ? 
+                    (video.buffered.end(video.buffered.length - 1) / video.duration) * 100 : 0;
 
                 return {
                     found: true,
@@ -556,7 +560,12 @@ async function main() {
                     errorSubtext,
                     videoError,
                     playerState,
-                    ended: video.ended || playerState === 0
+                    ended: video.ended || playerState === 0,
+                    adActive,
+                    videoQuality,
+                    volume,
+                    playbackRate,
+                    bufferedPercent
                 };
             });
 
@@ -588,7 +597,13 @@ async function main() {
                         wmqEventCount: wmqEventCount,
                         blockNumber: lastBlockNumber,
                         presenterWidth: presenterWidth,
-                        presenterHeight: presenterHeight
+                        presenterHeight: presenterHeight,
+                        title: status.title,
+                        adActive: status.adActive,
+                        videoQuality: status.videoQuality,
+                        volume: status.volume,
+                        playbackRate: status.playbackRate,
+                        bufferedPercent: status.bufferedPercent
                     });
                     const req = http.request({
                         hostname: '127.0.0.1',

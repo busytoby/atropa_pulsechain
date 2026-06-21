@@ -571,6 +571,48 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
+            // 6. Draw futuristic YouTube metrics HUD card in bottom-left
+            const ytY = canvas.height - 135;
+            ctx.fillStyle = "rgba(4, 8, 24, 0.65)";
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.25)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(15, ytY, 195, 115, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(255, 0, 127, 0.95)";
+            ctx.font = "10px 'Share Tech Mono'";
+            ctx.textAlign = "left";
+            ctx.fillText("AUNCIENT YT TELEMETRY", 24, ytY + 15);
+
+            ctx.fillStyle = "#8c9ba5";
+            ctx.font = "9px 'Share Tech Mono'";
+
+            const ytTitle = (window.latestVideoStatus && window.latestVideoStatus.title) ? 
+                (window.latestVideoStatus.title.length > 22 ? window.latestVideoStatus.title.substring(0, 20) + "..." : window.latestVideoStatus.title) : "Waiting...";
+            const ytQuality = (window.latestVideoStatus && window.latestVideoStatus.videoQuality) ? window.latestVideoStatus.videoQuality : "unknown";
+            const ytSpeed = (window.latestVideoStatus && typeof window.latestVideoStatus.playbackRate === 'number') ? window.latestVideoStatus.playbackRate.toFixed(2) + "x" : "1.00x";
+            const ytVolume = (window.latestVideoStatus && typeof window.latestVideoStatus.volume === 'number') ? Math.round(window.latestVideoStatus.volume * 100) + "%" : "100%";
+            const ytMuted = (window.latestVideoStatus && window.latestVideoStatus.muted) ? "MUTED" : "UNMUTED";
+            const ytAd = (window.latestVideoStatus && window.latestVideoStatus.adActive) ? "AD RUNNING" : "AD FREE";
+            const ytBuffered = (window.latestVideoStatus && typeof window.latestVideoStatus.bufferedPercent === 'number') ? window.latestVideoStatus.bufferedPercent.toFixed(1) + "%" : "0.0%";
+
+            ctx.fillText(`TITLE  : ${ytTitle}`, 24, ytY + 30);
+            ctx.fillText(`QUALITY: ${ytQuality}`, 24, ytY + 42);
+            ctx.fillText(`SPEED  : ${ytSpeed}`, 24, ytY + 54);
+            ctx.fillText(`VOLUME : ${ytVolume} (${ytMuted})`, 24, ytY + 66);
+            ctx.fillText(`BUFFER : ${ytBuffered}`, 24, ytY + 78);
+            ctx.fillText(`ADS    : ${ytAd}`, 24, ytY + 90);
+            
+            // Render a mini visual buffer bar
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.fillRect(24, ytY + 98, 175, 4);
+            ctx.fillStyle = "rgba(0, 242, 254, 0.6)";
+            const bufWidth = (window.latestVideoStatus && typeof window.latestVideoStatus.bufferedPercent === 'number') ? 
+                Math.min(175, (window.latestVideoStatus.bufferedPercent / 100) * 175) : 0;
+            ctx.fillRect(24, ytY + 98, bufWidth, 4);
+
             requestAnimationFrame(drawVulkanPipeline);
         }
         drawVulkanPipeline();
