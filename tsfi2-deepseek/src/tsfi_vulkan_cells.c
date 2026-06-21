@@ -2,6 +2,10 @@
 #include "tsfi_wire_firmware.h"
 #include <string.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "lau_memory.h"
 #include "lau_registry.h"
 
@@ -501,6 +505,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkAcquireNextImageKHR(VkDevice device
 #define MAX_VIRTUAL_PLANES 16
 static void* g_virtual_planes[MAX_VIRTUAL_PLANES] = {0};
 static uint32_t g_virtual_plane_ids[MAX_VIRTUAL_PLANES] = {0};
+static size_t g_virtual_plane_sizes[MAX_VIRTUAL_PLANES] = {0};
+static int g_virtual_plane_is_shm[MAX_VIRTUAL_PLANES] = {0};
 static int g_virtual_plane_count = 0;
 static void* g_scanout_buffer = NULL;
 static int g_scanout_w = 0;
@@ -623,11 +629,38 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkGetSemaphoreCounterValue(VkDevice d
 
 static VKAPI_ATTR int VKAPI_CALL tsfi_drmModeAddPlane(uint32_t plane_id, size_t buffer_size) {
     if (g_virtual_plane_count >= MAX_VIRTUAL_PLANES) return -1;
+    
+    char shm_name[64];
+    sprintf(shm_name, "/tsfi_virtual_plane_%u", plane_id);
+    
+    shm_unlink(shm_name);
+    int fd = shm_open(shm_name, O_RDWR | O_CREAT, 0666);
+    if (fd >= 0) {
+        if (ftruncate(fd, buffer_size) >= 0) {
+            void *ptr = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            close(fd);
+            if (ptr != MAP_FAILED) {
+                memset(ptr, 0, buffer_size);
+                g_virtual_planes[g_virtual_plane_count] = ptr;
+                g_virtual_plane_ids[g_virtual_plane_count] = plane_id;
+                g_virtual_plane_sizes[g_virtual_plane_count] = buffer_size;
+                g_virtual_plane_is_shm[g_virtual_plane_count] = 1;
+                g_virtual_plane_count++;
+                return 0;
+            }
+        } else {
+            close(fd);
+        }
+    }
+    
+    // Fallback if shared memory allocation fails
     void *ptr = lau_malloc_wired(buffer_size);
     if (!ptr) return -1;
     memset(ptr, 0, buffer_size);
     g_virtual_planes[g_virtual_plane_count] = ptr;
     g_virtual_plane_ids[g_virtual_plane_count] = plane_id;
+    g_virtual_plane_sizes[g_virtual_plane_count] = buffer_size;
+    g_virtual_plane_is_shm[g_virtual_plane_count] = 0;
     g_virtual_plane_count++;
     return 0;
 }
@@ -650,7 +683,14 @@ static VKAPI_ATTR void VKAPI_CALL tsfi_zmm_set_scanout_buffer(void* ptr, int w, 
 static VKAPI_ATTR void VKAPI_CALL tsfi_drmModeFreeVirtualPlanes(void) {
     for (int i = 0; i < g_virtual_plane_count; i++) {
         if (g_virtual_planes[i]) {
-            lau_free(g_virtual_planes[i]);
+            if (g_virtual_plane_is_shm[i]) {
+                munmap(g_virtual_planes[i], g_virtual_plane_sizes[i]);
+                char shm_name[64];
+                sprintf(shm_name, "/tsfi_virtual_plane_%u", g_virtual_plane_ids[i]);
+                shm_unlink(shm_name);
+            } else {
+                lau_free(g_virtual_planes[i]);
+            }
             g_virtual_planes[i] = NULL;
         }
     }
