@@ -228,9 +228,14 @@
 
         async function fetchLogs() {
             try {
-                const res = await fetch("/api/dilemma-log");
-                const data = await res.json();
-                if (data && data.length !== logs.length) {
+                const res = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code: "wave512.dilemma_log" })
+                });
+                const json = await res.json();
+                const data = json.result;
+                if (data && Array.isArray(data) && data.length !== logs.length) {
                     logs = data;
                     updateLogsUI();
                 }
@@ -247,7 +252,7 @@
             }
             container.innerHTML = "";
             logs.slice().reverse().forEach(log => {
-                const time = new Date(log.timestamp).toLocaleTimeString();
+                const time = new Date(log.timestamp * 1000).toLocaleTimeString();
                 
                 // Determine if we should shift state representation
                 if (log.event === "M:DILEMMA_SWAP_TRAP" || log.event.includes("SWAP")) {
@@ -279,14 +284,11 @@
             const mockTx = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
             const randomVal = (Math.random() * 5000 + 100).toFixed(2);
             try {
-                await fetch("/api/dilemma-log", {
+                const codeStr = `wave512.dilemma_log {"event":"M:DILEMMA_SWAP_TRAP", "source":"Simulated PulseX Trigger", "details":"Tx ${mockTx.substring(0, 10)}... | Simulated Swap: ${randomVal} USDC -> WPLS"}`;
+                await fetch("/api/zmm-exec", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        event: "M:DILEMMA_SWAP_TRAP",
-                        source: "Simulated PulseX Trigger",
-                        details: `Tx ${mockTx.substring(0, 10)}... | Simulated Swap: ${randomVal} USDC -> WPLS`
-                    })
+                    body: JSON.stringify({ code: codeStr })
                 });
                 fetchLogs();
             } catch (e) {

@@ -8,6 +8,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#define MAX_DILEMMA_LOGS 128
+typedef struct {
+    char event[64];
+    char source[64];
+    char details[256];
+    uint64_t timestamp;
+} DilemmaLogEntry;
+
+static DilemmaLogEntry g_dilemma_logs[MAX_DILEMMA_LOGS];
+static int g_dilemma_log_count = 0;
 
 // Helper to extract a string parameter from simple JSON
 static int extract_json_string(const char *json, const char *key, char *out, size_t max) {
@@ -72,6 +84,7 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     char *method_inspect_slots = strstr(p, "manifold.inspect_slots");
     char *method_upload_asset = strstr(p, "manifold.upload_asset");
     char *method_flow_choreography = strstr(p, "flow.trigger_choreography");
+    char *method_dilemma_log = strstr(p, "wave512.dilemma_log");
 
     char *min_ptr = NULL;
     int method_type = 0; 
@@ -95,6 +108,7 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     if (method_inspect_slots && (!min_ptr || method_inspect_slots < min_ptr)) { min_ptr = method_inspect_slots; method_type = 25; }
     if (method_upload_asset && (!min_ptr || method_upload_asset < min_ptr)) { min_ptr = method_upload_asset; method_type = 26; }
     if (method_flow_choreography && (!min_ptr || method_flow_choreography < min_ptr)) { min_ptr = method_flow_choreography; method_type = 27; }
+    if (method_dilemma_log && (!min_ptr || method_dilemma_log < min_ptr)) { min_ptr = method_dilemma_log; method_type = 28; }
 
     if (!min_ptr) return 0;
 
@@ -500,6 +514,45 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Failed to launch choreography matrix.\", \"id\": %d}\n", id);
         }
         return 1;
+    } else if (method_type == 28) { // wave512.dilemma_log
+        char event_str[64];
+        if (extract_json_string(min_ptr, "\"event\"", event_str, sizeof(event_str))) {
+            char src_str[64] = "External";
+            char det_str[256] = "";
+            extract_json_string(min_ptr, "\"source\"", src_str, sizeof(src_str));
+            extract_json_string(min_ptr, "\"details\"", det_str, sizeof(det_str));
+            
+            if (g_dilemma_log_count < MAX_DILEMMA_LOGS) {
+                snprintf(g_dilemma_logs[g_dilemma_log_count].event, 64, "%s", event_str);
+                snprintf(g_dilemma_logs[g_dilemma_log_count].source, 64, "%s", src_str);
+                snprintf(g_dilemma_logs[g_dilemma_log_count].details, 256, "%s", det_str);
+                g_dilemma_logs[g_dilemma_log_count].timestamp = (uint64_t)time(NULL);
+                g_dilemma_log_count++;
+            } else {
+                for (int i = 1; i < MAX_DILEMMA_LOGS; i++) {
+                    g_dilemma_logs[i - 1] = g_dilemma_logs[i];
+                }
+                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].event, 64, "%s", event_str);
+                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].source, 64, "%s", src_str);
+                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].details, 256, "%s", det_str);
+                g_dilemma_logs[MAX_DILEMMA_LOGS - 1].timestamp = (uint64_t)time(NULL);
+            }
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Log registered\", \"id\": %d}\n", id);
+            return 1;
+        } else {
+            int head = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": [");
+            char *optr = output_buf + head;
+            size_t rem = out_max - head - 64;
+            for (int i = 0; i < g_dilemma_log_count; i++) {
+                int n = snprintf(optr, rem, "{\"event\": \"%s\", \"source\": \"%s\", \"details\": \"%s\", \"timestamp\": %lu}%s", 
+                                 g_dilemma_logs[i].event, g_dilemma_logs[i].source, g_dilemma_logs[i].details,
+                                 (unsigned long)g_dilemma_logs[i].timestamp, (i < g_dilemma_log_count - 1 ? ", " : ""));
+                optr += n; rem -= n;
+                if (rem < 128) break;
+            }
+            snprintf(optr, rem, "], \"id\": %d}\n", id);
+            return 1;
+        }
     }
     
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);

@@ -25,6 +25,34 @@ def log_dilemma_event(event, source, details=""):
     except Exception as e:
         pass
 
+def log_to_zmm_mcp(event, source, details=""):
+    port = 10042
+    env_port = os.getenv("TSFI_MCP_PORT")
+    if env_port:
+        try:
+            port = int(env_port)
+        except:
+            pass
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "wave512.dilemma_log",
+        "params": {
+            "event": event,
+            "source": source,
+            "details": details
+        },
+        "id": 1
+    }
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.0)
+        s.connect(("127.0.0.1", port))
+        s.sendall(json.dumps(payload).encode('utf-8'))
+        s.recv(4096)
+        s.close()
+    except Exception as e:
+        pass
+
 def trigger_zmm_vm(cmd):
     port = 10042
     env_port = os.getenv("TSFI_MCP_PORT")
@@ -527,6 +555,11 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         event="M:DILEMMA_SWAP_TRAP",
         source="PulseX Oracle",
         details=f"Tx {tx_hash[:10]}... | Swap in pool {pool_address[:10]}...: {sent_amt:.2f} {sent_token['symbol']} -> {recv_amt:.2f} {recv_token['symbol']}"
+    )
+    log_to_zmm_mcp(
+        event="M:DILEMMA_SWAP_TRAP",
+        source="PulseX Oracle",
+        details=f"Tx {tx_hash[:10]}... | Swap: {sent_amt:.2f} {sent_token['symbol']} -> {recv_amt:.2f} {recv_token['symbol']}"
     )
 
 def monitor_swap_events():
