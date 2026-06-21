@@ -21,9 +21,40 @@ let presenterWidth = 800;
 let presenterHeight = 600;
 
 async function sendWmqEvent(cmd, args) {
+    let fullCmd = `${cmd} ${args}`.trim();
+    const isTargetYouTube = fullCmd.startsWith("YOUTUBE:") || fullCmd.startsWith("Y:");
+    const port = isTargetYouTube ? 18081 : 18080;
+    
+    // Direct TCP routing first for zero-latency
+    let directRouted = false;
+    try {
+        const net = require('net');
+        await new Promise((resolve, reject) => {
+            const socket = net.createConnection({ port, host: '127.0.0.1' }, () => {
+                socket.write(fullCmd + '\n');
+                socket.end();
+                directRouted = true;
+                resolve();
+            });
+            socket.on('error', (err) => {
+                reject(err);
+            });
+            socket.setTimeout(50);
+            socket.on('timeout', () => {
+                socket.destroy();
+                reject(new Error("Timeout"));
+            });
+        });
+    } catch (directErr) {
+        // Direct routing failed (e.g. YouTube sub-controller not started yet)
+    }
+
+    if (directRouted) {
+        return;
+    }
+
     if (!wmqContract || !signer) return;
     try {
-        let fullCmd = `${cmd} ${args}`.trim();
         // Abbreviate command prefix and name to fit 32-byte WinchesterMQ limit
         fullCmd = fullCmd
             .replace("YOUTUBE:", "Y:")
@@ -105,7 +136,15 @@ async function main() {
     const SINGLE_INSTANCE_PORT = isYouTube ? 18081 : 18080;
     
     const isAnotherInstanceRunning = await new Promise((resolve) => {
-        const server = net.createServer();
+        const server = net.createServer((socket) => {
+            const rl = readline.createInterface({
+                input: socket,
+                terminal: false
+            });
+            rl.on('line', (line) => {
+                handleInputCommand(line).catch(() => {});
+            });
+        });
         server.on('error', (err) => {
             if (err.code === 'EADDRINUSE') {
                 resolve(true);
@@ -114,7 +153,6 @@ async function main() {
             }
         });
         server.listen(SINGLE_INSTANCE_PORT, '127.0.0.1', () => {
-            // Keep the server open to hold the port lock
             resolve(false);
         });
     });

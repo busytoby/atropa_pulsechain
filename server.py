@@ -751,38 +751,55 @@ class CustomHandler(SimpleHTTPRequestHandler):
             command = params.get('command', '')
             
             if command:
-                address_path = 'tmp/wmq_address.txt'
-                if os.path.exists(address_path):
-                    with open(address_path, 'r') as f:
-                        wmq_address = f.read().strip()
-                    
-                    try:
-                        # Abbreviate command to fit 32-byte limit
-                        command = command.replace("YOUTUBE:", "Y:").replace("MAIN:", "M:")
-                        command = command.replace("MOUSE_MOVE", "MM").replace("MOUSE_DOWN", "MD").replace("MOUSE_UP", "MU").replace("MOUSE_SCROLL", "MS").replace("KEY_DOWN", "KD").replace("KEY_UP", "KU")
+                # Direct local socket routing for zero latency
+                direct_routed = False
+                try:
+                    is_youtube = command.startswith("YOUTUBE:") or command.startswith("Y:")
+                    port = 18081 if is_youtube else 18080
+                    import socket as py_socket
+                    s = py_socket.socket(py_socket.AF_INET, py_socket.SOCK_STREAM)
+                    s.settimeout(0.1)
+                    s.connect(('127.0.0.1', port))
+                    s.sendall((command + '\n').encode('utf-8'))
+                    s.close()
+                    print(f"[Server] Routed input directly to TCP port {port}: {command}")
+                    direct_routed = True
+                except Exception as direct_err:
+                    print(f"[Server] Direct TCP routing to port {port} failed ({direct_err}). Falling back to local EVM...")
+
+                if not direct_routed:
+                    address_path = 'tmp/wmq_address.txt'
+                    if os.path.exists(address_path):
+                        with open(address_path, 'r') as f:
+                            wmq_address = f.read().strip()
                         
-                        cmd_bytes = command.encode('utf-8')
-                        if len(cmd_bytes) < 32:
-                            cmd_bytes = cmd_bytes + b'\x00' * (32 - len(cmd_bytes))
-                        else:
-                            cmd_bytes = cmd_bytes[:32]
-                        tx_data = "0xccb077a0" + cmd_bytes.hex()
-                        
-                        payload = {
-                            "jsonrpc": "2.0",
-                            "method": "eth_sendTransaction",
-                            "params": [{
-                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                "to": wmq_address,
-                                "data": tx_data,
-                                "gas": "0xF4240"
-                            }],
-                            "id": 1
-                        }
-                        tx_queue.put(payload)
-                        print(f"[Server] Queued input command via WMQ transaction: {command}")
-                    except Exception as tx_err:
-                        print(f"[Server] Failed to queue transaction to WMQ: {tx_err}")
+                        try:
+                            # Abbreviate command to fit 32-byte limit
+                            command = command.replace("YOUTUBE:", "Y:").replace("MAIN:", "M:")
+                            command = command.replace("MOUSE_MOVE", "MM").replace("MOUSE_DOWN", "MD").replace("MOUSE_UP", "MU").replace("MOUSE_SCROLL", "MS").replace("KEY_DOWN", "KD").replace("KEY_UP", "KU")
+                            
+                            cmd_bytes = command.encode('utf-8')
+                            if len(cmd_bytes) < 32:
+                                cmd_bytes = cmd_bytes + b'\x00' * (32 - len(cmd_bytes))
+                            else:
+                                cmd_bytes = cmd_bytes[:32]
+                            tx_data = "0xccb077a0" + cmd_bytes.hex()
+                            
+                            payload = {
+                                "jsonrpc": "2.0",
+                                "method": "eth_sendTransaction",
+                                "params": [{
+                                    "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                    "to": wmq_address,
+                                    "data": tx_data,
+                                    "gas": "0xF4240"
+                                }],
+                                "id": 1
+                            }
+                            tx_queue.put(payload)
+                            print(f"[Server] Queued input command via WMQ transaction: {command}")
+                        except Exception as tx_err:
+                            print(f"[Server] Failed to queue transaction to WMQ: {tx_err}")
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
