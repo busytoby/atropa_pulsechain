@@ -226,15 +226,91 @@ price_cache = {
 }
 
 def get_cached_price(address):
-    entry = price_cache.get(address.lower())
+    addr_lower = address.lower()
+    if addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2, DAI_ADDR, DAI_ADDR2]:
+        return 1.0
+    entry = price_cache.get(addr_lower)
     if entry is None:
         return None
     if isinstance(entry, dict):
-        return entry.get("price")
-    return float(entry)
+        symbol = entry.get("symbol", "")
+        if symbol.upper() in ["USDC", "USDT", "DAI"]:
+            return 1.0
+        p = entry.get("price")
+    else:
+        p = float(entry)
+    if p is None or float(p) <= 0.0:
+        return None
+    return float(p)
+
+def format_price(price):
+    if price is None:
+        return "0.0"
+    p = float(price)
+    if p <= 0.0:
+        return "0.0"
+    if p < 0.0001:
+        return f"{p:.4e}"
+    return f"{p:.8f}"
+
+def perform_volatility_analysis(address, symbol, name, pct, price):
+    addr_lower = address.lower()
+    swaps_count = 0
+    total_volume = 0.0
+    
+    if os.path.exists(RESOLVED_FILE):
+        try:
+            with open(RESOLVED_FILE, "r") as f:
+                swaps = json.load(f)
+                for s in swaps:
+                    t0_addr = s.get("token0", {}).get("address", "").lower()
+                    t1_addr = s.get("token1", {}).get("address", "").lower()
+                    if t0_addr == addr_lower:
+                        swaps_count += 1
+                        total_volume += s.get("amount0", 0.0)
+                    elif t1_addr == addr_lower:
+                        swaps_count += 1
+                        total_volume += s.get("amount1", 0.0)
+        except Exception:
+            pass
+
+    is_treasury = False
+    owner = "Unknown"
+    if os.path.exists(TREASURY_TOKENS_FILE):
+        try:
+            with open(TREASURY_TOKENS_FILE, "r") as f:
+                reg = json.load(f)
+                if addr_lower in reg:
+                    is_treasury = True
+                    owner = reg[addr_lower].get("owner") or "Unknown"
+        except Exception:
+            pass
+
+    details = (
+        f"⚡ VOLATILITY WARNING: {symbol} ({name}) experienced a {pct:+.2f}% price change. "
+        f"Price: ${format_price(price)} | Swaps Count: {swaps_count} | "
+        f"Swapped Volume: {total_volume:.2f} | Treasury Token: {'Yes (Owner: ' + owner + ')' if is_treasury else 'No'}"
+    )
+    
+    print(f"\n[VOLATILITY_ANALYSIS] {details}")
+    log_to_zmm_mcp(
+        event="M:VOLATILITY_ANALYSIS",
+        source="PulseX Oracle",
+        details=details
+    )
 
 def update_price(address, price, symbol, name, is_treasury=False, treasury_owner=None):
-    price_cache[address.lower()] = {
+    if price is None or float(price) <= 0.0:
+        return
+        
+    addr_lower = address.lower()
+    # Pin stablecoin prices to exactly 1.0 USD
+    if symbol.upper() in ["USDC", "USDT", "DAI"] or addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2, DAI_ADDR, DAI_ADDR2]:
+        price = 1.0
+        
+    old_price = get_cached_price(address)
+    
+    price_cache[addr_lower] = {
         "price": float(price),
         "symbol": symbol,
         "name": name,
@@ -242,6 +318,35 @@ def update_price(address, price, symbol, name, is_treasury=False, treasury_owner
         "treasury_owner": treasury_owner
     }
     save_price_cache()
+    
+    classification = "CALM (NEW LISTING)"
+    if old_price is not None and old_price > 0.0:
+        pct = ((float(price) - old_price) / old_price) * 100.0
+        if pct >= 20.0:
+            classification = f"SHAKEN (SURGING +{pct:.2f}%)"
+        elif pct >= 5.0:
+            classification = f"ANGRY (PUMPING +{pct:.2f}%)"
+        elif pct >= 1.0:
+            classification = f"ALERT (RISING +{pct:.2f}%)"
+        elif pct <= -50.0:
+            classification = f"BROKEN (COLLAPSING {pct:.2f}%)"
+        elif pct <= -20.0:
+            classification = f"PANICKED (CRASHING {pct:.2f}%)"
+        elif pct <= -5.0:
+            classification = f"TERRIFIED (CRASHING {pct:.2f}%)"
+        elif pct <= -1.0:
+            classification = f"EXHAUSTED (DUMPING {pct:.2f}%)"
+        else:
+            classification = f"CALM (STABLE {pct:+.2f}%)"
+            
+        if abs(pct) > 10.0:
+            perform_volatility_analysis(address, symbol, name, pct, price)
+            
+    log_to_zmm_mcp(
+        event="M:PRICE_RESOLUTION",
+        source="PulseX Oracle",
+        details=f"Price: {symbol} set to ${format_price(price)} USD [{classification}]"
+    )
 
 def load_price_cache():
     if os.path.exists(PRICE_CACHE_FILE):
@@ -397,18 +502,21 @@ def resolve_retroactive_prices():
             elif p0 is not None:
                 # Resolve token1 price
                 if amt1 > 0:
-                    p1_val = (amt0 * p0) / amt1
-                    update_price(
-                        t1_addr, 
-                        p1_val, 
-                        swap["token1"]["symbol"], 
-                        swap["token1"]["name"],
-                        swap["token1"].get("is_treasury", False),
-                        swap["token1"].get("treasury_owner")
-                    )
                     usd_val = amt0 * p0
-                    print(f"✨ Retroactive Resolution: Calculated {swap['token1']['symbol']} price: ${p1_val:.8f} USD")
-                    print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
+                    p1_old = get_cached_price(t1_addr)
+                    threshold = 20.0 if p1_old is not None else 1.0
+                    if usd_val >= threshold:
+                        p1_val = usd_val / amt1
+                        update_price(
+                            t1_addr, 
+                            p1_val, 
+                            swap["token1"]["symbol"], 
+                            swap["token1"]["name"],
+                            swap["token1"].get("is_treasury", False),
+                            swap["token1"].get("treasury_owner")
+                        )
+                        print(f"✨ Retroactive Resolution: Calculated {swap['token1']['symbol']} price: ${p1_val:.8f} USD")
+                        print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
                     save_resolved({
                         "tx_hash": swap["tx_hash"],
                         "pool_address": swap["pool_address"],
@@ -426,18 +534,21 @@ def resolve_retroactive_prices():
             elif p1 is not None:
                 # Resolve token0 price
                 if amt0 > 0:
-                    p0_val = (amt1 * p1) / amt0
-                    update_price(
-                        t0_addr, 
-                        p0_val, 
-                        swap["token0"]["symbol"], 
-                        swap["token0"]["name"],
-                        swap["token0"].get("is_treasury", False),
-                        swap["token0"].get("treasury_owner")
-                    )
                     usd_val = amt1 * p1
-                    print(f"✨ Retroactive Resolution: Calculated {swap['token0']['symbol']} price: ${p0_val:.8f} USD")
-                    print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
+                    p0_old = get_cached_price(t0_addr)
+                    threshold = 20.0 if p0_old is not None else 1.0
+                    if usd_val >= threshold:
+                        p0_val = usd_val / amt0
+                        update_price(
+                            t0_addr, 
+                            p0_val, 
+                            swap["token0"]["symbol"], 
+                            swap["token0"]["name"],
+                            swap["token0"].get("is_treasury", False),
+                            swap["token0"].get("treasury_owner")
+                        )
+                        print(f"✨ Retroactive Resolution: Calculated {swap['token0']['symbol']} price: ${p0_val:.8f} USD")
+                        print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
                     save_resolved({
                         "tx_hash": swap["tx_hash"],
                         "pool_address": swap["pool_address"],
@@ -474,7 +585,9 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     if p_sent is not None:
         usd_val = sent_amt * p_sent
         # Resolve/Update price of recv_token
-        if recv_amt > 0:
+        p_recv_old = get_cached_price(recv_token["address"])
+        threshold = 20.0 if p_recv_old is not None else 1.0
+        if recv_amt > 0 and usd_val >= threshold:
             update_price(
                 recv_token["address"], 
                 usd_val / recv_amt, 
@@ -483,12 +596,14 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
                 recv_token.get("is_treasury", False),
                 recv_token.get("treasury_owner")
             )
-            print(f"📈 Price update: {recv_token['symbol']} price set to ${get_cached_price(recv_token['address']):.8f} USD")
+            print(f"📈 Price update: {recv_token['symbol']} price set to ${format_price(get_cached_price(recv_token['address']))} USD")
             
     elif p_recv is not None:
         usd_val = recv_amt * p_recv
         # Resolve/Update price of sent_token
-        if sent_amt > 0:
+        p_sent_old = get_cached_price(sent_token["address"])
+        threshold = 20.0 if p_sent_old is not None else 1.0
+        if sent_amt > 0 and usd_val >= threshold:
             update_price(
                 sent_token["address"], 
                 usd_val / sent_amt, 
@@ -497,7 +612,7 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
                 sent_token.get("is_treasury", False),
                 sent_token.get("treasury_owner")
             )
-            print(f"📈 Price update: {sent_token['symbol']} price set to ${get_cached_price(sent_token['address']):.8f} USD")
+            print(f"📈 Price update: {sent_token['symbol']} price set to ${format_price(get_cached_price(sent_token['address']))} USD")
             
     is_nonukes = pool_address.lower() in nonukes_pools
     if is_nonukes:
@@ -551,15 +666,18 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     # Synthesize dilemma event with a swap gait trap
     publish_mq("M:DILEMMA_SWAP_TRAP")
     trigger_zmm_vm("M:DILEMMA_SWAP_TRAP")
+    p_sent_str = f" (${format_price(p_sent)})" if p_sent is not None else ""
+    p_recv_str = f" (${format_price(p_recv)})" if p_recv is not None else ""
+    
     log_dilemma_event(
         event="M:DILEMMA_SWAP_TRAP",
         source="PulseX Oracle",
-        details=f"Tx {tx_hash[:10]}... | Swap in pool {pool_address[:10]}...: {sent_amt:.2f} {sent_token['symbol']} -> {recv_amt:.2f} {recv_token['symbol']}"
+        details=f"Tx {tx_hash[:10]}... | Swap in pool {pool_address[:10]}...: {sent_amt:.2f} {sent_token['symbol']}{p_sent_str} -> {recv_amt:.2f} {recv_token['symbol']}{p_recv_str}"
     )
     log_to_zmm_mcp(
         event="M:DILEMMA_SWAP_TRAP",
         source="PulseX Oracle",
-        details=f"Tx {tx_hash[:10]}... | Swap: {sent_amt:.2f} {sent_token['symbol']} -> {recv_amt:.2f} {recv_token['symbol']}"
+        details=f"Tx {tx_hash[:10]}... | Swap: {sent_amt:.2f} {sent_token['symbol']}{p_sent_str} -> {recv_amt:.2f} {recv_token['symbol']}{p_recv_str}"
     )
 
 def monitor_swap_events():

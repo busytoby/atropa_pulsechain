@@ -488,5 +488,19 @@
         "name": "The Fiery Heat",
         "owner": "0xd36802b68627904594b03f1b7938e283b9708650",
         "ignored": false
+    },
+    "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9": {
+        "address": "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9",
+        "symbol": "FD\u327eC",
+        "name": "Federal Deposit Insurance Contract",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x4becd9ddd5e65b3c14c709fac4b004ab45d918d4": {
+        "address": "0x4becd9ddd5e65b3c14c709fac4b004ab45d918d4",
+        "symbol": "MXDAI",
+        "name": "Matrix Dai",
+        "owner": "0x3ad6c170e7ec137d99c128c1076e861c748beb4b",
+        "ignored": false
     }
 }

@@ -341,24 +341,28 @@
         const tokenAccumulators = {};
 
         function parseSwapLog(details) {
-            // Real Swap: Tx ... | Swap: 9375000.00 WPLS -> 64543.25 OPUS
-            let match = details.match(/Swap:\s+([\d\.]+)\s+(\S+)\s+->\s+([\d\.]+)\s+(\S+)/i);
+            // Real Swap: Tx ... | Swap: 9375000.00 WPLS ($0.00000667) -> 64543.25 OPUS ($0.87957294)
+            let match = details.match(/Swap:\s+([\d\.]+)\s+(\S+)\s*(?:\(\$([\d\.\e\-]+)\))?\s*->\s*([\d\.]+)\s+(\S+)\s*(?:\(\$([\d\.\e\-]+)\))?/i);
             if (match) {
                 return {
                     fromSymbol: match[2],
                     fromAmount: parseFloat(match[1]),
-                    toSymbol: match[4],
-                    toAmount: parseFloat(match[3])
+                    fromPrice: match[3] ? parseFloat(match[3]) : null,
+                    toSymbol: match[5],
+                    toAmount: parseFloat(match[4]),
+                    toPrice: match[6] ? parseFloat(match[6]) : null
                 };
             }
             // Simulated Swap: Tx ... | Simulated Swap: 100 USDC -> WPLS
-            match = details.match(/Simulated Swap:\s+([\d\.]+)\s+(\S+)\s+->\s+(\S+)/i);
+            match = details.match(/Simulated Swap:\s+([\d\.]+)\s+(\S+)\s*(?:\(\$([\d\.\e\-]+)\))?\s*->\s*(\S+)\s*(?:\(\$([\d\.\e\-]+)\))?/i);
             if (match) {
                 return {
                     fromSymbol: match[2],
                     fromAmount: parseFloat(match[1]),
-                    toSymbol: match[3],
-                    toAmount: parseFloat(match[1]) * 1.5
+                    fromPrice: match[3] ? parseFloat(match[3]) : 1.0,
+                    toSymbol: match[4],
+                    toAmount: parseFloat(match[1]) * 1.5,
+                    toPrice: match[5] ? parseFloat(match[5]) : null
                 };
             }
             return null;
@@ -390,12 +394,17 @@
                     classLower === "distributing" ? "#ff4500" :
                     "rgba(255, 255, 255, 0.3)";
 
+                const priceDisplay = token.price ? 
+                    (token.price < 0.0001 ? `$${token.price.toExponential(4)} USD` : `$${token.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})} USD`) :
+                    'Unresolved';
+
                 card.innerHTML = `
                     <div class="token-header">
                         <span class="token-symbol">${token.symbol}</span>
                         <span class="token-classification class-${classLower}">${classification}</span>
                     </div>
                     <div class="token-stats">
+                        <div>Price: ${priceDisplay}</div>
                         <div>Sent: ${token.sent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div>Received: ${token.recv.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div>Swaps: ${token.count}</div>
@@ -433,17 +442,23 @@
                     const swapInfo = parseSwapLog(log.details);
                     if (swapInfo) {
                         if (!tokenAccumulators[swapInfo.fromSymbol]) {
-                            tokenAccumulators[swapInfo.fromSymbol] = { symbol: swapInfo.fromSymbol, sent: 0, recv: 0, count: 0 };
+                            tokenAccumulators[swapInfo.fromSymbol] = { symbol: swapInfo.fromSymbol, sent: 0, recv: 0, count: 0, price: null };
                         }
                         if (!tokenAccumulators[swapInfo.toSymbol]) {
-                            tokenAccumulators[swapInfo.toSymbol] = { symbol: swapInfo.toSymbol, sent: 0, recv: 0, count: 0 };
+                            tokenAccumulators[swapInfo.toSymbol] = { symbol: swapInfo.toSymbol, sent: 0, recv: 0, count: 0, price: null };
                         }
                         
                         tokenAccumulators[swapInfo.fromSymbol].sent += swapInfo.fromAmount;
                         tokenAccumulators[swapInfo.fromSymbol].count += 1;
+                        if (swapInfo.fromPrice) {
+                            tokenAccumulators[swapInfo.fromSymbol].price = swapInfo.fromPrice;
+                        }
                         
                         tokenAccumulators[swapInfo.toSymbol].recv += swapInfo.toAmount;
                         tokenAccumulators[swapInfo.toSymbol].count += 1;
+                        if (swapInfo.toPrice) {
+                            tokenAccumulators[swapInfo.toSymbol].price = swapInfo.toPrice;
+                        }
                     }
                     
                     state = "TRAPPED (SWAP STATE)";
