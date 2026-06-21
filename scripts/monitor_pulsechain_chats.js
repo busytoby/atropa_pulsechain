@@ -1,4 +1,5 @@
 const { ethers } = require("ethers");
+const net = require("net");
 
 const PULSECHAIN_RPC = "https://rpc.pulsechain.com";
 const LOG_EVENT_SIGNATURE = "LogEvent(string,uint64,uint64,string)";
@@ -33,6 +34,31 @@ async function getContractName(provider, address) {
         nameCache[address] = "Unknown QING";
         return "Unknown QING";
     }
+}
+
+function logToZmmMcp(event, source, details) {
+    const payload = {
+        jsonrpc: "2.0",
+        method: "wave512.dilemma_log",
+        params: {
+            event: event,
+            source: source,
+            details: details
+        },
+        id: 1
+    };
+    
+    const client = new net.Socket();
+    client.setTimeout(2000);
+    client.connect(10042, "127.0.0.1", () => {
+        client.write(JSON.stringify(payload));
+    });
+    client.on("data", () => {
+        client.destroy();
+    });
+    client.on("error", () => {
+        client.destroy();
+    });
 }
 
 function formatMessage(username, soul, aura, msg, qingName, timestampText) {
@@ -72,6 +98,10 @@ async function main() {
                     timeStr = `Block ${log.blockNumber}`;
                 }
                 console.log(formatMessage(parsed.args[0], parsed.args[1].toString(), parsed.args[2].toString(), parsed.args[3], qingName, timeStr));
+                
+                const isVoid = qingName.toLowerCase().includes("void");
+                const eventName = isVoid ? "M:VOID_CHAT" : "M:QING_CHAT";
+                logToZmmMcp(eventName, qingName, `${parsed.args[0]} (S:${parsed.args[1]} A:${parsed.args[2]}) | ${parsed.args[3]}`);
             } catch (e) {}
         }
 
@@ -94,6 +124,10 @@ async function main() {
                             const qingName = await getContractName(provider, log.address);
                             const timeStr = new Date().toLocaleTimeString();
                             console.log(formatMessage(parsed.args[0], parsed.args[1].toString(), parsed.args[2].toString(), parsed.args[3], qingName, timeStr));
+                            
+                            const isVoid = qingName.toLowerCase().includes("void");
+                            const eventName = isVoid ? "M:VOID_CHAT" : "M:QING_CHAT";
+                            logToZmmMcp(eventName, qingName, `${parsed.args[0]} (S:${parsed.args[1]} A:${parsed.args[2]}) | ${parsed.args[3]}`);
                         } catch (e) {}
                     }
                     lastCheckedBlock = currentBlock;

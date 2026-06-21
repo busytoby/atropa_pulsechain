@@ -281,11 +281,16 @@
                 </div>
             </div>
 
-            <!-- Middle: Token Accumulators -->
+            <!-- Middle: Token & Chat Accumulators -->
             <div class="accumulators-panel">
                 <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">Token Accumulators</h3>
-                <div id="accumulator-cards" class="cards-container">
+                <div id="accumulator-cards" class="cards-container" style="max-height: 280px; margin-bottom: 20px;">
                     <div class="empty-log">No tokens tracked yet.</div>
+                </div>
+                
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-purple);">Void & QING Accumulators</h3>
+                <div id="chat-accumulator-cards" class="cards-container" style="max-height: 280px;">
+                    <div class="empty-log">No chat metrics tracked yet.</div>
                 </div>
             </div>
 
@@ -339,6 +344,40 @@
         }
 
         const tokenAccumulators = {};
+        const chatAccumulators = {};
+
+        function renderChatAccumulators() {
+            const container = document.getElementById("chat-accumulator-cards");
+            if (Object.keys(chatAccumulators).length === 0) {
+                container.innerHTML = `<div class="empty-log">No chat metrics tracked yet.</div>`;
+                return;
+            }
+            container.innerHTML = "";
+            const sortedChats = Object.values(chatAccumulators).sort((a, b) => b.messages - a.messages);
+            sortedChats.forEach(chat => {
+                const card = document.createElement("div");
+                card.className = `token-card`;
+                card.style.borderLeftColor = chat.name.toLowerCase().includes("void") ? "var(--neon-purple)" : "var(--neon-blue)";
+                
+                card.innerHTML = `
+                    <div class="token-header">
+                        <span class="token-symbol" style="font-size: 0.95rem;">${chat.name}</span>
+                        <span class="token-classification" style="background: rgba(179, 136, 255, 0.15); color: #b388ff; border: 1px solid rgba(179, 136, 255, 0.4);">
+                            ${chat.name.toLowerCase().includes("void") ? "VOID" : "QING"}
+                        </span>
+                    </div>
+                    <div class="token-stats">
+                        <div>Messages: ${chat.messages}</div>
+                        <div>Active Users: ${chat.users.size}</div>
+                        <div>Cumulative Aura: ${chat.totalAura.toLocaleString()}</div>
+                        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; padding-top: 5px; font-style: italic;">
+                            Last from <strong>${chat.lastUser}</strong>: "${chat.lastMsg}"
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
         function parseSwapLog(details) {
             // Real Swap: Tx ... | Swap: 9375000.00 WPLS ($0.00000667) -> 64543.25 OPUS ($0.87957294)
@@ -464,6 +503,35 @@
                     state = "TRAPPED (SWAP STATE)";
                     renderAccumulators();
                     return; // Skip rendering in raw debug logs list
+                }
+                if (log.event === "M:VOID_CHAT" || log.event === "M:QING_CHAT") {
+                    const parts = log.details.split(" | ");
+                    if (parts.length >= 2) {
+                        const userPart = parts[0];
+                        const msgContent = parts.slice(1).join(" | ");
+                        const userMatch = userPart.match(/^(.+?)\s*\(S:\d+\s+A:(\d+)\)/);
+                        const username = userMatch ? userMatch[1] : "Unknown";
+                        const auraVal = userMatch ? parseInt(userMatch[2]) : 0;
+                        const roomName = log.source;
+                        
+                        if (!chatAccumulators[roomName]) {
+                            chatAccumulators[roomName] = {
+                                name: roomName,
+                                messages: 0,
+                                users: new Set(),
+                                totalAura: 0,
+                                lastUser: "",
+                                lastMsg: ""
+                            };
+                        }
+                        
+                        chatAccumulators[roomName].messages += 1;
+                        chatAccumulators[roomName].users.add(username);
+                        chatAccumulators[roomName].totalAura += auraVal;
+                        chatAccumulators[roomName].lastUser = username;
+                        chatAccumulators[roomName].lastMsg = msgContent;
+                    }
+                    renderChatAccumulators();
                 }
 
                 // Determine if we should shift state representation for other events
