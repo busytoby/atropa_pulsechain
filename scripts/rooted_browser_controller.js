@@ -66,6 +66,31 @@ function compileYul(yulPath) {
 }
 
 async function main() {
+    // Single-instance lock to maintain Auncient controller integrity and prevent duplicate chromium instances
+    const net = require('net');
+    const SINGLE_INSTANCE_PORT = 18080;
+    
+    const isAnotherInstanceRunning = await new Promise((resolve) => {
+        const server = net.createServer();
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        });
+        server.listen(SINGLE_INSTANCE_PORT, '127.0.0.1', () => {
+            // Keep the server open to hold the port lock
+            resolve(false);
+        });
+    });
+
+    if (isAnotherInstanceRunning) {
+        console.error("[ERROR] Another instance of rooted_browser_controller.js is already running.");
+        console.error("Please terminate the existing instance before launching a new one.");
+        process.exit(1);
+    }
+
     let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
     
     // Verify local dashboard server is running and spawn if needed
