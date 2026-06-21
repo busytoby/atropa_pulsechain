@@ -58,7 +58,22 @@ int classify_gait(double trap_ratio, double hip_variance, double knee_variance) 
     return 1; // NOMINAL WALKING
 }
 
-void run_gait_simulation(const char *name, double vs_voltage, double rs_resistance, int *out_class) {
+// Decision Trigger Function
+// Returns: 0 = NO_TRIGGER (Dilemma without choice/static), 1 = TRIGGER_NOMINAL, 2 = TRIGGER_RECOVERY, 3 = TRIGGER_RESET (Deadlock)
+int evaluate_trigger(int mode, int transitions_count) {
+    if (transitions_count > 5) {
+        return 3; // TRIGGER_RESET (Deadlock Logic Trap activated due to rapid oscillations)
+    }
+    if (mode == 0) {
+        return 0; // NO_TRIGGER (Static state - dilemma without choice)
+    }
+    if (mode == 2) {
+        return 2; // TRIGGER_RECOVERY (Active stumble corrections)
+    }
+    return 1; // TRIGGER_NOMINAL
+}
+
+void run_gait_simulation(const char *name, double vs_voltage, double rs_resistance, int *out_class, int *out_trigger) {
     printf("\n=== Running Simulation: %s ===\n", name);
     
     TsfiZener zener;
@@ -67,18 +82,45 @@ void run_gait_simulation(const char *name, double vs_voltage, double rs_resistan
     
     GaitState gait = {0};
     double base_omega = 2.0 * M_PI * 1.5;
+    if (rs_resistance >= 1.0e9) {
+        base_omega = 0.0; // Freeze movement to simulate zero-entropy / lack of choice
+    }
     double dt = 1.0 / sample_rate;
     
+    int last_mode = -1;
+    int transitions_count = 0;
+    
+    double noise_power = 0.0;
+    
+    // Simulate 2000 ticks (2.0s)
     for (int t = 0; t < 2000; t++) {
         double noise = 0.0;
-        tsfi_zener_tick(&zener, vs_voltage, rs_resistance, &noise);
         
-        if (fabs(noise) > 0.015) {
+        // If simulating a jittery transition state, artificially pulse voltage to force rapid state changes
+        double active_vs = vs_voltage;
+        if (strcmp(name, "Jittery State (Deadlock Logic Trap Active)") == 0) {
+            active_vs = (t % 160 < 80) ? -12.0 : -5.0; 
+        }
+        
+        tsfi_zener_tick(&zener, active_vs, rs_resistance, &noise);
+        
+        // Fast decay filter to catch dynamic transitions
+        noise_power = 0.85 * noise_power + 0.15 * fabs(noise);
+        
+        // Classify tick-to-tick trapped state based on filtered noise power
+        if (noise_power > 0.0005) {
             gait.is_trapped = true;
             gait.trapped_count++;
         } else {
             gait.is_trapped = false;
         }
+        
+        // Track state transitions
+        int current_tick_mode = gait.is_trapped ? 2 : 1;
+        if (last_mode != -1 && current_tick_mode != last_mode) {
+            transitions_count++;
+        }
+        last_mode = current_tick_mode;
         
         double active_omega = base_omega;
         if (gait.is_trapped) {
@@ -100,12 +142,6 @@ void run_gait_simulation(const char *name, double vs_voltage, double rs_resistan
         gait.hip_sum_sq += gait.hip_angle * gait.hip_angle;
         gait.knee_sum += gait.knee_angle;
         gait.knee_sum_sq += gait.knee_angle * gait.knee_angle;
-        
-        if (t % 500 == 0) {
-            printf("  |- t=%.1fs: Hip=%.2f, Knee=%.2f, Noise=%.6fv, Status=%s\n",
-                   (double)t * dt, gait.hip_angle, gait.knee_angle, noise,
-                   gait.is_trapped ? "TRAPPED" : "NOMINAL");
-        }
     }
     
     double trap_ratio = (double)gait.trapped_count / 2000.0;
@@ -115,27 +151,40 @@ void run_gait_simulation(const char *name, double vs_voltage, double rs_resistan
     double knee_variance = (gait.knee_sum_sq / 2000.0) - (knee_mean * knee_mean);
     
     *out_class = classify_gait(trap_ratio, hip_variance, knee_variance);
+    *out_trigger = evaluate_trigger(*out_class, transitions_count);
     
-    printf("  |- Results -> TrapRatio: %.2f%%, HipVar: %.2f, KneeVar: %.2f\n",
-           trap_ratio * 100.0, hip_variance, knee_variance);
+    printf("  |- Results -> TrapRatio: %.2f%%, Transitions: %d, HipVar: %.2f, KneeVar: %.2f\n",
+           trap_ratio * 100.0, transitions_count, hip_variance, knee_variance);
     printf("  |- Classifier Mode: %d (%s)\n", *out_class,
            (*out_class == 0) ? "STATIC" : ((*out_class == 1) ? "NOMINAL" : "TRAPPED/STUMBLING"));
+    printf("  |- Trigger Result:   %d (%s)\n", *out_trigger,
+           (*out_trigger == 0) ? "NO_TRIGGER" : ((*out_trigger == 1) ? "TRIGGER_NOMINAL" : ((*out_trigger == 2) ? "TRIGGER_RECOVERY" : "TRIGGER_RESET")));
 }
 
 int main() {
-    printf("=== Auncient Zener-Gait Mode Classification Suite ===\n");
+    printf("=== Auncient Zener-Gait Mode Classification & Logic Traps Suite ===\n");
     
-    int class_breakdown = -1;
-    int class_forward = -1;
+    int class_val = -1, trigger_val = -1;
     
-    // 1. Simulation under reverse breakdown (chaotic noise, traps active)
-    run_gait_simulation("Reverse Avalanche Breakdown (Traps Active)", -12.0, 50.0, &class_breakdown);
-    assert(class_breakdown == 2);
+    // 1. Simulation under reverse breakdown (chaotic noise, recovery trigger)
+    run_gait_simulation("Reverse Avalanche Breakdown (Traps Active)", -12.0, 50.0, &class_val, &trigger_val);
+    assert(class_val == 2);
+    assert(trigger_val == 2); // TRIGGER_RECOVERY (Transitions must stay under 5 due to low-pass filter)
     
-    // 2. Simulation under forward bias (no avalanche noise, standard smooth gate)
-    run_gait_simulation("Forward Bias Conduction (Smooth Walk)", 5.0, 1000.0, &class_forward);
-    assert(class_forward == 1);
+    // 2. Simulation under forward bias (no noise, standard walk trigger)
+    run_gait_simulation("Forward Bias Conduction (Smooth Walk)", 5.0, 1000.0, &class_val, &trigger_val);
+    assert(class_val == 1);
+    assert(trigger_val == 1); // TRIGGER_NOMINAL
     
-    printf("\n=== [SUCCESS] Classifier validation completed successfully! ===\n");
+    // 3. Simulation under zero-entropy static inputs (dilemma without choice, no trigger)
+    run_gait_simulation("Zero-Entropy Static Input (FROZEN state)", 0.0, 1.0e9, &class_val, &trigger_val);
+    assert(class_val == 0);
+    assert(trigger_val == 0); // NO_TRIGGER (Dilemma without choice logic)
+    
+    // 4. Jittery state simulation (Deadlock Logic Trap active)
+    run_gait_simulation("Jittery State (Deadlock Logic Trap Active)", -12.0, 50.0, &class_val, &trigger_val);
+    assert(trigger_val == 3); // TRIGGER_RESET (Deadlock Logic Trap successfully caught oscillation)
+    
+    printf("\n=== [SUCCESS] Classifier and Logic Traps validation completed successfully! ===\n");
     return 0;
 }
