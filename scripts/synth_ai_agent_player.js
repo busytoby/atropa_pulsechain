@@ -49,8 +49,12 @@ const performanceInterval = setInterval(() => {
         dynamicQ = 9.0; // High resonant Q
     }
 
+    // Play actual audio note on the synth feed
+    const targetFreq = 220.0 * currentPitch;
+    playNote(targetFreq, 400);
+
     console.log(`\n[AI PLAYER] Step ${stepCount}:`);
-    console.log(`  |- Target Pitch (Stasheff Chord): ${currentPitch.toFixed(3)}x`);
+    console.log(`  |- Target Pitch (Stasheff Chord): ${currentPitch.toFixed(3)}x (${targetFreq.toFixed(1)} Hz)`);
     console.log(`  |- Bessel TUN parameter: ${currentTunnelParam.toFixed(3)}`);
     console.log(`  |- Dynamic Q-damping: ${dynamicQ.toFixed(1)}`);
 
@@ -96,3 +100,48 @@ const performanceInterval = setInterval(() => {
         console.log("\n[AI PLAYER] Performance improvisation set finished.");
     }
 }, TICK_INTERVAL_MS);
+
+function playNote(frequency, durationMs) {
+    const payload = JSON.stringify({
+        type: 'synth_poke',
+        note: "AI",
+        freq: frequency,
+        control: 1 // Gate On
+    });
+
+    const reqOptions = {
+        hostname: "127.0.0.1",
+        port: STUDIO_PORT,
+        path: "/api/synth-feed?sessionId=global",
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload)
+        }
+    };
+
+    const req = http.request(reqOptions, () => {});
+    req.on("error", () => {});
+    req.write(payload);
+    req.end();
+
+    setTimeout(() => {
+        const offPayload = JSON.stringify({
+            type: 'synth_poke',
+            note: "AI",
+            freq: frequency,
+            control: 0 // Gate Off
+        });
+
+        const offReq = http.request({
+            ...reqOptions,
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(offPayload)
+            }
+        }, () => {});
+        offReq.on("error", () => {});
+        offReq.write(offPayload);
+        offReq.end();
+    }, durationMs);
+}
