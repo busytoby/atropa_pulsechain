@@ -397,35 +397,50 @@ async function main() {
         if (!page) return;
         lastBoundsUpdateTime = Date.now();
         try {
-            const rect = await page.evaluate(() => {
-                // First search top-level document
-                let el = document.getElementById('browserStreamSvg');
-                let offsetX = 0;
-                let offsetY = 0;
-                
-                if (!el) {
-                    // Scan any same-origin iframes
-                    const iframes = document.getElementsByTagName('iframe');
-                    for (let iframe of iframes) {
-                        try {
-                            const doc = iframe.contentDocument || iframe.contentWindow.document;
-                            el = doc.getElementById('browserStreamSvg');
-                            if (el) {
-                                const iframeRect = iframe.getBoundingClientRect();
-                                offsetX = iframeRect.x;
-                                offsetY = iframeRect.y;
-                                break;
+            for (const frame of page.frames()) {
+                try {
+                    const rect = await frame.evaluate(() => {
+                        const el = document.getElementById('browserStreamSvg');
+                        if (!el) return null;
+                        const r = el.getBoundingClientRect();
+                        return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+                    });
+                    
+                    if (rect && rect.width > 0 && rect.height > 0) {
+                        let offsetX = 0;
+                        let offsetY = 0;
+                        
+                        if (frame !== page.mainFrame()) {
+                            const parentFrame = frame.parentFrame();
+                            if (parentFrame) {
+                                const frameUrl = frame.url();
+                                const offset = await parentFrame.evaluate((url) => {
+                                    const iframes = document.getElementsByTagName('iframe');
+                                    for (const iframe of iframes) {
+                                        if (iframe.src.includes(url) || (iframe.contentWindow && iframe.contentWindow.location.href.includes(url))) {
+                                            const r = iframe.getBoundingClientRect();
+                                            return { x: Math.round(r.x), y: Math.round(r.y) };
+                                        }
+                                    }
+                                    return null;
+                                }, frameUrl);
+                                
+                                if (offset) {
+                                    offsetX = offset.x;
+                                    offsetY = offset.y;
+                                }
                             }
-                        } catch (e) {}
+                        }
+                        
+                        videoBounds = {
+                            x: rect.x + offsetX,
+                            y: rect.y + offsetY,
+                            width: rect.width,
+                            height: rect.height
+                        };
+                        return; // Found and updated bounds successfully
                     }
-                }
-                
-                if (!el) return null;
-                const r = el.getBoundingClientRect();
-                return { x: Math.round(r.x + offsetX), y: Math.round(r.y + offsetY), width: Math.round(r.width), height: Math.round(r.height) };
-            });
-            if (rect && rect.width > 0 && rect.height > 0) {
-                videoBounds = rect;
+                } catch (frameErr) {}
             }
         } catch (err) {}
     }
