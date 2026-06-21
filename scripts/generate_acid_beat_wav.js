@@ -31,6 +31,12 @@ const KICK_SEQUENCE = [
     1, 0, 0, 0,  1, 0, 0, 0
 ];
 
+// TR-808 Snare Triggers: Classic backbeat on steps 4 and 12
+const SNARE_SEQUENCE = [
+    0, 0, 0, 0,  1, 0, 0, 0,
+    0, 0, 0, 0,  1, 0, 0, 0
+];
+
 // TR-808 Closed & Open Hihat Sequences (featuring off-beat Open Hihats)
 const CLOSED_HH_SEQUENCE = [
     0, 1, 0, 1,  0, 1, 0, 1,
@@ -43,7 +49,7 @@ const OPEN_HH_SEQUENCE = [
 
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH HIHATS");
+    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH SNARE & HH");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -61,6 +67,7 @@ function main() {
 
     // 808 State (Track sample index of the last triggers)
     let lastKickTriggerSample = -999999; 
+    let lastSnareTriggerSample = -999999;
     let lastClosedHhTriggerSample = -999999;
     let lastOpenHhTriggerSample = -999999;
 
@@ -70,6 +77,16 @@ function main() {
     const hp_rc = 1.0 / (2.0 * Math.PI * 7000.0); // 7kHz cutoff
     const hp_dt = 1.0 / SAMPLE_RATE;
     const hp_alpha = hp_rc / (hp_rc + hp_dt);
+
+    // Bandpass Filter State for Snare Noise (centered around 1.5kHz)
+    let bp_p0 = 0, bp_p1 = 0;
+    const bp_freq = 1500.0;
+    const bp_q = 1.2;
+    const bp_f = Math.tan(Math.PI * bp_freq / SAMPLE_RATE);
+    const bp_r = 1.0 / bp_q;
+    const bp_a1 = 1.0 / (1.0 + bp_f * bp_r + bp_f * bp_f);
+    const bp_a2 = bp_f * bp_r * bp_a1;
+    const bp_a3 = bp_f * bp_f * bp_a1;
 
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
         const stepIndex = Math.floor(i / stepDurationSamples) % BASS_SEQUENCE.length;
@@ -81,6 +98,9 @@ function main() {
         if (sampleInStep === 0) {
             if (KICK_SEQUENCE[stepIndex] === 1) {
                 lastKickTriggerSample = i;
+            }
+            if (SNARE_SEQUENCE[stepIndex] === 1) {
+                lastSnareTriggerSample = i;
             }
             if (CLOSED_HH_SEQUENCE[stepIndex] === 1) {
                 lastClosedHhTriggerSample = i;
@@ -108,12 +128,37 @@ function main() {
             kickSample = Math.tanh((sine + click) * ampEnv * 1.6);
         }
 
-        // B. Synthesize Hihats (Noise Source + HPF Filter + Decay Envelope)
+        // B. Synthesize 808 Snare (Sine Resonators + Bandpass Noise)
+        let snareSample = 0;
+        const snareAgeSecs = (i - lastSnareTriggerSample) / SAMPLE_RATE;
+        const noise = Math.random() * 2 - 1;
+
+        // 2-pole resonant bandpass filter on noise for snare rattle
+        const bp_high = noise - bp_p0 * bp_r - bp_p1;
+        const bp_band = bp_p0 + bp_f * bp_high;
+        bp_p0 = bp_band;
+        bp_p1 = bp_p1 + bp_f * bp_band;
+        const snareNoise = bp_band;
+
+        if (snareAgeSecs >= 0 && snareAgeSecs < 0.5) {
+            // Snare Shell Tones (180Hz & 330Hz sine waves)
+            const sine1 = Math.sin(2 * Math.PI * 180 * snareAgeSecs);
+            const sine2 = Math.sin(2 * Math.PI * 330 * snareAgeSecs);
+            const shellEnv = Math.exp(-snareAgeSecs / 0.08);
+            const shell = (sine1 * 0.6 + sine2 * 0.4) * shellEnv;
+
+            // Rattle noise envelope (longer decay)
+            const rattleEnv = Math.exp(-snareAgeSecs / 0.16);
+            const rattle = snareNoise * rattleEnv * 1.1;
+
+            snareSample = Math.tanh(shell + rattle);
+        }
+
+        // C. Synthesize Hihats (Noise Source + HPF Filter + Decay Envelope)
         let hhSample = 0;
         const closedHhAge = (i - lastClosedHhTriggerSample) / SAMPLE_RATE;
         const openHhAge = (i - lastOpenHhTriggerSample) / SAMPLE_RATE;
 
-        const noise = Math.random() * 2 - 1;
         const filteredNoise = hp_alpha * (hp_out_prev + noise - hp_in_prev);
         hp_in_prev = noise;
         hp_out_prev = filteredNoise;
@@ -170,7 +215,8 @@ function main() {
         // ----------------------------------------------------
         // 3. Mix & Clip
         // ----------------------------------------------------
-        const mixed = (kickSample * 0.5) + (bassSample * 0.35) + (hhSample * 0.15);
+        // Blending Kick, Snare, Hihat, and 303 Bassline
+        const mixed = (kickSample * 0.4) + (snareSample * 0.25) + (bassSample * 0.25) + (hhSample * 0.1);
         audioBuffer[i] = Math.tanh(mixed); 
     }
 
