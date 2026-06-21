@@ -364,22 +364,23 @@
                 card.className = `token-card`;
                 card.style.borderLeftColor = chat.name.toLowerCase().includes("void") ? "var(--neon-purple)" : "var(--neon-blue)";
                 
-                card.innerHTML = `
-                    <div class="token-header">
-                        <span class="token-symbol" style="font-size: 0.95rem;">${chat.name}</span>
-                        <span class="token-classification" style="background: rgba(179, 136, 255, 0.15); color: #b388ff; border: 1px solid rgba(179, 136, 255, 0.4);">
-                            ${chat.name.toLowerCase().includes("void") ? "VOID" : "QING"}
-                        </span>
-                    </div>
-                    <div class="token-stats">
-                        <div>Messages: ${chat.messages}</div>
-                        <div>Active Users: ${chat.users.size}</div>
-                        <div>Cumulative Aura: ${chat.totalAura.toLocaleString()}</div>
-                        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; padding-top: 5px; font-style: italic;">
-                            Last from <strong>${chat.lastUser}</strong>: "${chat.lastMsg}"
-                        </div>
-                    </div>
-                `;
+                 const truncatedMsg = chat.lastMsg.length > 50 ? chat.lastMsg.slice(0, 50) + "..." : chat.lastMsg;
+                 card.innerHTML = `
+                     <div class="token-header">
+                         <span class="token-symbol" style="font-size: 0.95rem;">${chat.name}</span>
+                         <span class="token-classification" style="background: rgba(179, 136, 255, 0.15); color: #b388ff; border: 1px solid rgba(179, 136, 255, 0.4);">
+                             ${chat.name.toLowerCase().includes("void") ? "VOID" : "QING"}
+                         </span>
+                     </div>
+                     <div class="token-stats">
+                         <div>Messages: ${chat.messages}</div>
+                         <div>Active Users: ${chat.users.size}</div>
+                         <div>Cumulative Aura: ${chat.totalAura.toLocaleString()}</div>
+                         <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; padding-top: 5px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; max-width: 100%;" title="${chat.lastUser}: ${chat.lastMsg.replace(/"/g, '&quot;')}">
+                             Last: <strong>${chat.lastUser}</strong>: ${truncatedMsg}
+                         </div>
+                     </div>
+                 `;
                 container.appendChild(card);
             });
         }
