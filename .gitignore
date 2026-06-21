@@ -93,3 +93,7 @@ assets/**/*.png
 assets/*.png
 found_addresses.txt
 
+# Root tests binaries
+/tests/rooted_frame_presenter
+
+
