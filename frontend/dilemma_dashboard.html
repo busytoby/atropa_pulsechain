@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Dilemma & Swap Trap Dashboard</title>
+    <meta name="description" content="Real-time monitoring and debugging console for WinchesterMQ events, ZMM VM registers, and PulseX oracle swap traps.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+        }
+        @media(max-width: 1024px) {
+            .grid-3 { grid-template-columns: 1fr; }
+        }
+        .status-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(13, 17, 38, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 25px;
+            margin-bottom: 10px;
+        }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            color: var(--neon-blue);
+        }
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--neon-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-blue);
+            animation: pulse-glow-dot 1.5s infinite alternate;
+        }
+        @keyframes pulse-glow-dot {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+        .log-box {
+            background: rgba(5, 7, 18, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .log-entries {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 5px;
+        }
+        .log-entry {
+            background: rgba(15, 22, 50, 0.5);
+            border-left: 4px solid var(--neon-purple);
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            animation: slide-in 0.3s ease-out;
+            transition: all 0.2s ease;
+        }
+        .log-entry:hover {
+            background: rgba(15, 22, 50, 0.8);
+            border-left-color: var(--neon-blue);
+        }
+        @keyframes slide-in {
+            from { transform: translateX(-15px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .entry-main {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .entry-title {
+            color: var(--text-primary);
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        .entry-meta {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .entry-time {
+            color: var(--neon-blue);
+            font-size: 0.8rem;
+        }
+        .gait-viz-panel {
+            background: rgba(13, 17, 38, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .gait-canvas-container {
+            width: 100%;
+            height: 250px;
+            background: rgba(5, 7, 18, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .grid-line {
+            stroke: rgba(0, 242, 254, 0.05);
+            stroke-width: 1;
+        }
+        .state-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            text-align: center;
+            font-weight: 900;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
+        .btn-glow {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
+            text-transform: uppercase;
+        }
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+        }
+        .empty-log {
+            color: var(--text-secondary);
+            font-family: 'Rajdhani', sans-serif;
+            text-align: center;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA DILEMMA</span>
+                <span class="subtitle">WinchesterMQ & ZMM VM Telemetry</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn-glow" onclick="triggerMockSwap()">Simulate Swap Event</button>
+                <div class="network-badge connected">
+                    <span class="pulse-dot"></span>
+                    LIVE MONITORING
+                </div>
+            </div>
+        </header>
+
+        <div class="status-container">
+            <div class="status-pill">
+                <strong>WinchesterMQ Broker:</strong> Active (127.0.0.1:8545)
+            </div>
+            <div class="status-pill">
+                <strong>ZMM VM MCP:</strong> Port 10042
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <!-- Left Side: Live Debug Logs -->
+            <div class="log-box">
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">WinchesterMQ Event Log (Debug Messages)</h3>
+                <div class="log-entries" id="log-entries">
+                    <div class="empty-log">Listening for events... Try simulating a swap.</div>
+                </div>
+            </div>
+
+            <!-- Right Side: State Visualization -->
+            <div class="gait-viz-panel">
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-purple); text-align: center;">Gait Trapping State</h3>
+                <div class="state-text" id="gait-state-text">NOMINAL WALKING</div>
+                <div class="gait-canvas-container">
+                    <svg width="100%" height="100%" id="gait-svg" style="background:#050712;">
+                        <!-- Vertical Grid -->
+                        <line x1="25%" y1="0" x2="25%" y2="100%" class="grid-line"></line>
+                        <line x1="50%" y1="0" x2="50%" y2="100%" class="grid-line"></line>
+                        <line x1="75%" y1="0" x2="75%" y2="100%" class="grid-line"></line>
+                        <!-- Horizontal Grid -->
+                        <line x1="0" y1="25%" x2="100%" y2="25%" class="grid-line"></line>
+                        <line x1="0" y1="50%" x2="100%" y2="50%" class="grid-line"></line>
+                        <line x1="0" y1="75%" x2="100%" y2="75%" class="grid-line"></line>
+                        
+                        <!-- Joint trajectory representation -->
+                        <path d="" id="gait-path" fill="none" stroke="#00f2fe" stroke-width="3" style="filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.6));"></path>
+                    </svg>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.4;">
+                    <strong>Trapping Mechanics:</strong> Active swap traps directly modulate the phase of the Bessel J0 function. High-value PulseX swaps shift the walking trajectories dynamically, allowing recovery or locking based on pool depth metrics.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        let state = "NOMINAL WALKING";
+        let phase = 0;
+
+        async function fetchLogs() {
+            try {
+                const res = await fetch("/api/dilemma-log");
+                const data = await res.json();
+                if (data && data.length !== logs.length) {
+                    logs = data;
+                    updateLogsUI();
+                }
+            } catch (e) {
+                console.error("Error fetching logs:", e);
+            }
+        }
+
+        function updateLogsUI() {
+            const container = document.getElementById("log-entries");
+            if (logs.length === 0) {
+                container.innerHTML = `<div class="empty-log">Listening for events... Try simulating a swap.</div>`;
+                return;
+            }
+            container.innerHTML = "";
+            logs.slice().reverse().forEach(log => {
+                const time = new Date(log.timestamp).toLocaleTimeString();
+                
+                // Determine if we should shift state representation
+                if (log.event === "M:DILEMMA_SWAP_TRAP" || log.event.includes("SWAP")) {
+                    state = "TRAPPED (SWAP STATE)";
+                } else if (log.event === "M:DILEMMA_NULL_LOCK") {
+                    state = "NULL STATE (LOCKED)";
+                } else if (log.event === "M:GAIT_TRAPPED") {
+                    state = "TRAPPED (STUMBLING)";
+                } else if (log.event.includes("RECOVERY")) {
+                    state = "NOMINAL WALKING";
+                }
+                
+                const entry = document.createElement("div");
+                entry.className = "log-entry";
+                entry.innerHTML = `
+                    <div class="entry-main">
+                        <div class="entry-title">${log.event}</div>
+                        <div class="entry-meta">Source: ${log.source}</div>
+                        <div style="color: var(--text-secondary); margin-top: 5px;">${log.details}</div>
+                    </div>
+                    <div class="entry-time">${time}</div>
+                `;
+                container.appendChild(entry);
+            });
+            document.getElementById("gait-state-text").innerText = state;
+        }
+
+        async function triggerMockSwap() {
+            const mockTx = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
+            const randomVal = (Math.random() * 5000 + 100).toFixed(2);
+            try {
+                await fetch("/api/dilemma-log", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        event: "M:DILEMMA_SWAP_TRAP",
+                        source: "Simulated PulseX Trigger",
+                        details: `Tx ${mockTx.substring(0, 10)}... | Simulated Swap: ${randomVal} USDC -> WPLS`
+                    })
+                });
+                fetchLogs();
+            } catch (e) {
+                console.error("Failed to post simulated event:", e);
+            }
+        }
+
+        // Animate simulated gait curve
+        function animateGait() {
+            const path = document.getElementById("gait-path");
+            let points = [];
+            let strokeColor = "#00f2fe";
+            
+            if (state === "NOMINAL WALKING") {
+                phase += 0.05;
+                strokeColor = "#00f2fe";
+            } else if (state.includes("TRAPPED")) {
+                phase += 0.01; // slower
+                strokeColor = "#4facfe";
+            } else if (state.includes("LOCKED")) {
+                // stationary decay
+                strokeColor = "#ff007f";
+            }
+
+            for (let i = 0; i <= 100; i++) {
+                let x = (i / 100) * 350;
+                let angle = phase + (i / 100) * Math.PI * 4;
+                let y = 125;
+                if (state !== "NULL STATE (LOCKED)") {
+                    y += Math.sin(angle) * 50 * (state.includes("TRAPPED") ? 0.3 : 1.0);
+                }
+                points.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`);
+            }
+            path.setAttribute("d", points.join(" "));
+            path.setAttribute("stroke", strokeColor);
+            requestAnimationFrame(animateGait);
+        }
+
+        // Poll for logs every 2 seconds
+        setInterval(fetchLogs, 2000);
+        fetchLogs();
+        animateGait();
+    </script>
+</body>
+</html>

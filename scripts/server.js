@@ -5,6 +5,7 @@ const { spawn } = require("child_process");
 
 const PORT = 3000;
 const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
+let dilemmaLog = [];
 
 // Spawn the native ZMM VM MCP server process at startup
 const mcpBinary = path.join(__dirname, "../tsfi2-deepseek/bin/tsfi_mcp_server");
@@ -878,6 +879,41 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     }
+    // GET/POST API endpoints for dilemma logging
+    if (req.url === "/api/dilemma-log" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", () => {
+            try {
+                const data = JSON.parse(body);
+                dilemmaLog.push({
+                    timestamp: new Date().toISOString(),
+                    event: data.event,
+                    source: data.source,
+                    details: data.details || ""
+                });
+                if (dilemmaLog.length > 500) dilemmaLog.shift();
+                res.writeHead(200, { 
+                    "Content-Type": "application/json", 
+                    "Access-Control-Allow-Origin": "*" 
+                });
+                res.end(JSON.stringify({ status: "ok" }));
+            } catch (e) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: e.message }));
+            }
+        });
+        return;
+    }
+    if (req.url === "/api/dilemma-log" && req.method === "GET") {
+        res.writeHead(200, { 
+            "Content-Type": "application/json", 
+            "Access-Control-Allow-Origin": "*" 
+        });
+        res.end(JSON.stringify(dilemmaLog));
+        return;
+    }
+
     // POST API endpoint to run a command or YULEXEC on the ZMM VM MCP server
     if (req.url === "/api/zmm-exec" && req.method === "POST") {
         let body = "";

@@ -8,6 +8,23 @@ import socket
 from web3 import Web3
 from eth_abi import abi
 
+def log_dilemma_event(event, source, details=""):
+    payload = {
+        "event": event,
+        "source": source,
+        "details": details
+    }
+    req = urllib.request.Request(
+        "http://127.0.0.1:3000/api/dilemma-log",
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json'}
+    )
+    try:
+        with urllib.request.urlopen(req) as res:
+            res.read()
+    except Exception as e:
+        pass
+
 def trigger_zmm_vm(cmd):
     port = 10042
     env_port = os.getenv("TSFI_MCP_PORT")
@@ -506,6 +523,11 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     # Synthesize dilemma event with a swap gait trap
     publish_mq("M:DILEMMA_SWAP_TRAP")
     trigger_zmm_vm("M:DILEMMA_SWAP_TRAP")
+    log_dilemma_event(
+        event="M:DILEMMA_SWAP_TRAP",
+        source="PulseX Oracle",
+        details=f"Tx {tx_hash[:10]}... | Swap in pool {pool_address[:10]}...: {sent_amt:.2f} {sent_token['symbol']} -> {recv_amt:.2f} {recv_token['symbol']}"
+    )
 
 def monitor_swap_events():
     load_price_cache()
