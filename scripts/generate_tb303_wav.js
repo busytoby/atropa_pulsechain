@@ -64,18 +64,20 @@ function main() {
         if (phase >= 1.0) phase -= 2.0; // wrap around -1.0 to 1.0
         let oscSample = phase; // raw sawtooth
 
-        // 3. Cutoff decay envelope sweep (VCF & VCA envelope)
+        // 3. Cutoff decay envelope sweep with slow LFO modulation over time
+        const lfo = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.25 * (i / SAMPLE_RATE));
+        const modulatedCutoff = filterCutoff + 250 * lfo;
         const decayTime = isAccent ? envDecay * 1.5 : envDecay;
         const decaySamples = decayTime * SAMPLE_RATE;
         const envVal = Math.exp(-sampleInStep / decaySamples);
-        const dynamicCutoff = filterCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal;
+        const dynamicCutoff = modulatedCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal;
 
         // 4. DSP 4-Pole Lowpass Diode-Ladder simulation
-        // Calculate filter coefficient based on cutoff frequency
         const cutoffCoeff = (2 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
         
-        // Feed forward with feedback resonance
-        const input = oscSample - resonance * p3;
+        // Feed forward with feedback resonance (accented steps get extra squelch)
+        const dynamicResonance = isAccent ? 0.92 : resonance;
+        const input = oscSample - dynamicResonance * p3;
         p0 += cutoffCoeff * (input - p0);
         p1 += cutoffCoeff * (p0 - p1);
         p2 += cutoffCoeff * (p1 - p2);
@@ -83,7 +85,6 @@ function main() {
         let filterOutput = p3;
 
         // 5. Triode Valve Overdrive / Non-linear tanhf Saturation
-        // Amplifies the signal and shapes it non-linearly to clip the resonance peaks
         const gain = isAccent ? 4.5 : 2.5;
         let saturated = filterOutput * gain;
         let outputSample = Math.tanh(saturated);
@@ -94,7 +95,6 @@ function main() {
         if (sampleInStep < gateDuration) {
             amp = isAccent ? 0.45 : 0.3;
         } else {
-            // fast release decay
             const releaseSamples = 0.02 * SAMPLE_RATE;
             amp = (isAccent ? 0.45 : 0.3) * Math.exp(-(sampleInStep - gateDuration) / releaseSamples);
         }
