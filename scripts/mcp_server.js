@@ -34,6 +34,19 @@ const tools = [
             },
             required: ["prompt"]
         }
+    },
+    {
+        name: "get_chats",
+        description: "Retrieve all monitored Void and QING chat history from the PulseChain event stream.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                limit: {
+                    type: "number",
+                    description: "Limit the number of recent chat messages returned (default: all)"
+                }
+            }
+        }
     }
 ];
 
@@ -99,31 +112,67 @@ async function handleRequest(req) {
             break;
             
         case "tools/call":
-            if (!params || params.name !== "render_card") {
-                sendError(id, -32601, "Method not found: " + (params ? params.name : ""));
+            if (!params) {
+                sendError(id, -32602, "Invalid params");
                 break;
             }
-            try {
-                const args = params.arguments || {};
-                const result = await triggerRender(args);
-                sendResponse(id, {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Card generated successfully!\nArtifact Path: ${result.url}\n\n=== Render Logs ===\n${result.logs}`
-                        }
-                    ]
-                });
-            } catch (err) {
-                sendResponse(id, {
-                    isError: true,
-                    content: [
-                        {
-                            type: "text",
-                            text: `Failed to render card: ${err.message}`
-                        }
-                    ]
-                });
+            if (params.name === "render_card") {
+                try {
+                    const args = params.arguments || {};
+                    const result = await triggerRender(args);
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Card generated successfully!\nArtifact Path: ${result.url}\n\n=== Render Logs ===\n${result.logs}`
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to render card: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "get_chats") {
+                try {
+                    const args = params.arguments || {};
+                    const limit = args.limit;
+                    const chats = await fetchChatsFromZmm();
+                    let formatted = chats.map(chat => {
+                        const time = new Date(chat.timestamp * 1000).toISOString();
+                        const type = chat.event === "M:VOID_CHAT" ? "VOID" : "QING";
+                        return `[${time}] [${type}] ${chat.source}: ${chat.details}`;
+                    });
+                    if (limit) {
+                        formatted = formatted.slice(-limit);
+                    }
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: formatted.length > 0 ? formatted.join("\n") : "No chat history available."
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to retrieve chats: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else {
+                sendError(id, -32601, "Method not found: " + params.name);
             }
             break;
             
@@ -200,5 +249,50 @@ function triggerRender(args) {
 
         req.write(payload);
         req.end();
+    });
+}
+
+function fetchChatsFromZmm() {
+    return new Promise((resolve, reject) => {
+        const client = new net.Socket();
+        client.setTimeout(3000);
+        let data = "";
+        
+        client.connect(10042, "127.0.0.1", () => {
+            client.write(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "wave512.dilemma_log",
+                params: {},
+                id: 1
+            }));
+        });
+        
+        client.on("data", chunk => {
+            data += chunk.toString();
+        });
+        
+        client.on("end", () => {
+            try {
+                const response = JSON.parse(data);
+                if (response.error) {
+                    reject(new Error(response.error.message));
+                } else {
+                    const logs = response.result || [];
+                    const chatLogs = logs.filter(log => log.event === "M:VOID_CHAT" || log.event === "M:QING_CHAT");
+                    resolve(chatLogs);
+                }
+            } catch (err) {
+                reject(new Error("Failed to parse ZMM response: " + err.message));
+            }
+        });
+        
+        client.on("timeout", () => {
+            client.destroy();
+            reject(new Error("ZMM log query timed out"));
+        });
+        
+        client.on("error", err => {
+            reject(new Error("ZMM connection error: " + err.message));
+        });
     });
 }
