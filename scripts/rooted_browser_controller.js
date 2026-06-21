@@ -8,6 +8,12 @@ const { ethers } = require('ethers');
 
 let wmqContract = null;
 let signer = null;
+let provider = null;
+let wmqAddressStr = "Not Deployed";
+let wmqEventCount = 0;
+let lastBlockNumber = 0;
+let presenterWidth = 800;
+let presenterHeight = 600;
 
 async function sendWmqEvent(cmd, args) {
     if (!wmqContract || !signer) return;
@@ -94,7 +100,7 @@ async function main() {
 
     // Initialize WinchesterMQ connection if anvil is running
     try {
-        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+        provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
         // Quick check to see if provider is online
         await provider.getNetwork();
         signer = await provider.getSigner(0);
@@ -171,6 +177,8 @@ async function main() {
                 console.log(`[WMQ] WinchesterMQ successfully deployed directly at: ${wmqAddress}`);
             }
 
+            wmqAddressStr = wmqAddress;
+
             // Write address to file for backend server reference
             try {
                 fs.writeFileSync(path.join(__dirname, "../tmp/wmq_address.txt"), wmqAddress);
@@ -197,6 +205,7 @@ async function main() {
                     const commandStr = fullStr.split('\0')[0].trim();
                     const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
                     if (commandStr && commandStr.startsWith(targetPrefix)) {
+                        wmqEventCount++;
                         const actualCmd = commandStr.substring(targetPrefix.length);
                         console.log(`[WinchesterMQ Event Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
                         await handleInputCommand(actualCmd);
@@ -215,6 +224,7 @@ async function main() {
                     const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
                     const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
                     if (commandStr && commandStr.startsWith(targetPrefix)) {
+                        wmqEventCount++;
                         const actualCmd = commandStr.substring(targetPrefix.length);
                         console.log(`[WinchesterMQ Fast Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
                         await handleInputCommand(actualCmd);
@@ -367,6 +377,8 @@ async function main() {
             } else if (cmd === 'WINDOW_RESIZE') {
                 const width = parseInt(parts[1]);
                 const height = parseInt(parts[2]);
+                presenterWidth = width;
+                presenterHeight = height;
                 if (resizeTimeout) {
                     clearTimeout(resizeTimeout);
                 }
@@ -537,6 +549,12 @@ async function main() {
                 };
             });
 
+            if (provider) {
+                try {
+                    lastBlockNumber = await provider.getBlockNumber();
+                } catch (bErr) {}
+            }
+
             if (status.found) {
                 const cur = (typeof status.currentTime === 'number') ? status.currentTime.toFixed(1) : '0';
                 const dur = (typeof status.duration === 'number') ? status.duration.toFixed(1) : '0';
@@ -553,7 +571,12 @@ async function main() {
                         hasError: status.hasError || !!status.videoError,
                         errorText: status.errorText || (status.videoError ? status.videoError.message : ""),
                         errorSubtext: status.errorSubtext || "",
-                        playerState: status.playerState
+                        playerState: status.playerState,
+                        wmqAddress: wmqAddressStr,
+                        wmqEventCount: wmqEventCount,
+                        blockNumber: lastBlockNumber,
+                        presenterWidth: presenterWidth,
+                        presenterHeight: presenterHeight
                     });
                     const req = http.request({
                         hostname: '127.0.0.1',

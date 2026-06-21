@@ -526,20 +526,32 @@
             ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.roundRect(15, 15, 160, 75, 6);
+            ctx.roundRect(15, 15, 195, 115, 6);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = "rgba(0, 242, 254, 0.95)";
             ctx.font = "10px 'Share Tech Mono'";
             ctx.textAlign = "left";
-            ctx.fillText("VULKAN DEVICE METRICS", 24, 30);
+            ctx.fillText("AUNCIENT SYSTEM TELEMETRY", 24, 30);
             
             ctx.fillStyle = "#8c9ba5";
             ctx.font = "9px 'Share Tech Mono'";
-            ctx.fillText(`STREAM FPS: ${realFps.toFixed(2)}`, 24, 45);
-            ctx.fillText(`VIDEO TIME: ${(window.latestVideoStatus && typeof window.latestVideoStatus.currentTime === 'number' && typeof window.latestVideoStatus.duration === 'number') ? window.latestVideoStatus.currentTime.toFixed(1) + 's / ' + window.latestVideoStatus.duration.toFixed(1) + 's' : '0.0s / 0.0s'}`, 24, 57);
-            ctx.fillText(`STATE: ${pipelineState}`, 24, 69);
+            
+            const wmqAddr = (window.latestVideoStatus && window.latestVideoStatus.wmqAddress && window.latestVideoStatus.wmqAddress !== "Not Deployed") ? 
+                window.latestVideoStatus.wmqAddress.substring(0, 8) + "..." + window.latestVideoStatus.wmqAddress.substring(36) : "Offline";
+            const blockNum = (window.latestVideoStatus && typeof window.latestVideoStatus.blockNumber === 'number') ? window.latestVideoStatus.blockNumber : 0;
+            const wmqEvents = (window.latestVideoStatus && typeof window.latestVideoStatus.wmqEventCount === 'number') ? window.latestVideoStatus.wmqEventCount : 0;
+            const viewW = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterWidth === 'number') ? window.latestVideoStatus.presenterWidth : 800;
+            const viewH = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterHeight === 'number') ? window.latestVideoStatus.presenterHeight : 600;
+
+            ctx.fillText(`STREAM FPS  : ${realFps.toFixed(2)}`, 24, 45);
+            ctx.fillText(`VIDEO TIME  : ${(window.latestVideoStatus && typeof window.latestVideoStatus.currentTime === 'number' && typeof window.latestVideoStatus.duration === 'number') ? window.latestVideoStatus.currentTime.toFixed(1) + 's / ' + window.latestVideoStatus.duration.toFixed(1) + 's' : '0.0s / 0.0s'}`, 24, 57);
+            ctx.fillText(`EVM BLOCK   : ${blockNum}`, 24, 69);
+            ctx.fillText(`WMQ ADDR    : ${wmqAddr}`, 24, 81);
+            ctx.fillText(`WMQ EVENTS  : ${wmqEvents}`, 24, 93);
+            ctx.fillText(`VIEWPORT    : ${viewW}x${viewH}`, 24, 105);
+            ctx.fillText(`STATE       : ${pipelineState}`, 24, 117);
             
             // Pulsing status LED
             const pulse = (Math.floor(Date.now() / 400) % 2 === 0);
@@ -547,7 +559,7 @@
             ctx.shadowBlur = pulse ? 6 : 0;
             ctx.shadowColor = ledColor;
             ctx.beginPath();
-            ctx.arc(158, 27, 3, 0, Math.PI * 2);
+            ctx.arc(198, 27, 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
