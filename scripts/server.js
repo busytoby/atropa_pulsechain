@@ -7,6 +7,113 @@ const PORT = 3000;
 const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 let dilemmaLog = [];
 
+class AlsaSynth {
+    constructor() {
+        this.sampleRate = 22050;
+        this.activeNotes = new Map();
+        this.aplay = null;
+        this.interval = null;
+        this.initAplay();
+        this.startLoop();
+    }
+
+    initAplay() {
+        try {
+            this.aplay = spawn("aplay", ["-t", "raw", "-r", "22050", "-f", "S16_LE", "-c", "1", "-"]);
+            this.aplay.on("error", (err) => {
+                console.error("[ALSA SYNTH] aplay process error:", err);
+                this.aplay = null;
+            });
+            if (this.aplay.stdin) {
+                this.aplay.stdin.on("error", (err) => {
+                    this.aplay = null;
+                });
+            }
+        } catch (e) {
+            console.error("[ALSA SYNTH] Failed to spawn aplay:", e);
+        }
+    }
+
+    noteOn(freq) {
+        if (!this.activeNotes.has(freq)) {
+            this.activeNotes.set(freq, {
+                phase: 0,
+                amplitude: 0.0,
+                targetAmplitude: 0.15
+            });
+        } else {
+            this.activeNotes.get(freq).targetAmplitude = 0.15;
+        }
+    }
+
+    noteOff(freq) {
+        const note = this.activeNotes.get(freq);
+        if (note) {
+            note.targetAmplitude = 0.0;
+        }
+    }
+
+    reset() {
+        this.activeNotes.clear();
+    }
+
+    startLoop() {
+        const blockSize = Math.round(this.sampleRate * 0.02);
+        const sampleBuffer = Buffer.alloc(blockSize * 2);
+
+        this.interval = setInterval(() => {
+            if (!this.aplay) {
+                this.initAplay();
+                if (!this.aplay) return;
+            }
+
+            for (let i = 0; i < blockSize; i++) {
+                let mixedSample = 0.0;
+                
+                for (const [freq, note] of this.activeNotes.entries()) {
+                    note.amplitude += (note.targetAmplitude - note.amplitude) * 0.08;
+                    note.phase += (2 * Math.PI * freq) / this.sampleRate;
+                    if (note.phase > 2 * Math.PI) {
+                        note.phase -= 2 * Math.PI;
+                    }
+                    
+                    const normalizedPhase = note.phase / (2 * Math.PI);
+                    let shape = 0.0;
+                    if (normalizedPhase < 0.25) {
+                        shape = normalizedPhase * 4.0;
+                    } else if (normalizedPhase < 0.75) {
+                        shape = 2.0 - normalizedPhase * 4.0;
+                    } else {
+                        shape = normalizedPhase * 4.0 - 4.0;
+                    }
+                    
+                    mixedSample += shape * note.amplitude;
+
+                    if (note.targetAmplitude === 0.0 && note.amplitude < 0.001) {
+                        this.activeNotes.delete(freq);
+                    }
+                }
+
+                if (mixedSample > 0.9) mixedSample = 0.9;
+                if (mixedSample < -0.9) mixedSample = -0.9;
+
+                const intSample = Math.round(mixedSample * 32767);
+                sampleBuffer.writeInt16LE(intSample, i * 2);
+            }
+
+            try {
+                if (this.aplay && this.aplay.stdin) {
+                    this.aplay.stdin.write(sampleBuffer);
+                }
+            } catch (e) {
+                this.aplay = null;
+            }
+        }, 20);
+    }
+}
+
+global.alsaSynthInstance = new AlsaSynth();
+
 // Spawn the native ZMM VM MCP server process at startup
 const mcpBinary = path.join(__dirname, "../tsfi2-deepseek/bin/tsfi_mcp_server");
 const mcpCwd = path.join(__dirname, "../tsfi2-deepseek");
@@ -519,18 +626,37 @@ const server = http.createServer(async (req, res) => {
         let body = "";
         req.on("data", chunk => body += chunk.toString());
         req.on("end", () => {
-            try {
-                const data = JSON.parse(body);
-                let clientCount = 0;
-                if (global.synthSessions && global.synthSessions[sessionId]) {
-                    clientCount = global.synthSessions[sessionId].length;
-                    global.synthSessions[sessionId].forEach(client => {
-                        client.write(`data: ${JSON.stringify(data)}\n\n`);
-                    });
-                }
-                console.log(`[SERVER] POST /api/synth-feed?sessionId=${sessionId} - Broadcasted to ${clientCount} clients`);
-                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-                res.end(JSON.stringify({ success: true }));
+             try {
+                 const data = JSON.parse(body);
+                 
+                 // Route to CPU-level ALSA synthesizer
+                 if (data.type === 'synth_poke') {
+                     const freq = parseFloat(data.freq);
+                     const control = parseInt(data.control);
+                     const gateOn = control & 1;
+                     if (global.alsaSynthInstance && !isNaN(freq)) {
+                         if (gateOn) {
+                             global.alsaSynthInstance.noteOn(freq);
+                         } else {
+                             global.alsaSynthInstance.noteOff(freq);
+                         }
+                     }
+                 } else if (data.type === 'synth_reset') {
+                     if (global.alsaSynthInstance) {
+                         global.alsaSynthInstance.reset();
+                     }
+                 }
+
+                 let clientCount = 0;
+                 if (global.synthSessions && global.synthSessions[sessionId]) {
+                     clientCount = global.synthSessions[sessionId].length;
+                     global.synthSessions[sessionId].forEach(client => {
+                         client.write(`data: ${JSON.stringify(data)}\n\n`);
+                     });
+                 }
+                 console.log(`[SERVER] POST /api/synth-feed?sessionId=${sessionId} - Broadcasted to ${clientCount} clients`);
+                 res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                 res.end(JSON.stringify({ success: true }));
             } catch (err) {
                 console.error(`[SERVER] Error in POST /api/synth-feed: ${err.message}`);
                 res.writeHead(500, { "Content-Type": "application/json" });
