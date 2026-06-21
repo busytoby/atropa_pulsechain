@@ -4,8 +4,38 @@ import sys
 import json
 import os
 import urllib.request
+import socket
 from web3 import Web3
 from eth_abi import abi
+
+def trigger_zmm_vm(cmd):
+    port = 10042
+    env_port = os.getenv("TSFI_MCP_PORT")
+    if env_port:
+        try:
+            port = int(env_port)
+        except:
+            pass
+            
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "wave512.run",
+        "params": {
+            "code": f"YULEXEC \"zmachine\", \"{cmd}\""
+        },
+        "id": 1
+    }
+    
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.0)
+        s.connect(("127.0.0.1", port))
+        s.sendall(json.dumps(payload).encode('utf-8'))
+        response = s.recv(4096)
+        s.close()
+        print(f"[ZMM_VM] Dilemma event triggered to ZMM VM: {response.decode('utf-8')}")
+    except Exception as e:
+        print(f"[ZMM_VM] Failed to send dilemma event to ZMM VM: {e}")
 
 def publish_mq(cmd):
     wmq_addr = ""
@@ -475,6 +505,7 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     
     # Synthesize dilemma event with a swap gait trap
     publish_mq("M:DILEMMA_SWAP_TRAP")
+    trigger_zmm_vm("M:DILEMMA_SWAP_TRAP")
 
 def monitor_swap_events():
     load_price_cache()
