@@ -263,7 +263,7 @@
                         </defs>
                         
                         <!-- Underlay: The actual browser screencast image frame -->
-                        <image id="browserStreamFrame" href="latest_frame.jpg" x="0" y="0" width="800" height="600" preserveAspectRatio="none" />
+                        <image id="browserStreamFrame" href="/stream.mjpeg" x="0" y="0" width="800" height="600" preserveAspectRatio="none" />
                         
                         <!-- SVG Interactive DNA overlay group -->
                         <g id="dnaOverlay" style="pointer-events: none;">
@@ -577,10 +577,6 @@
 
         // --- 2. Live Screencast Frame Reloader & SVG DNA Animation ---
         const streamSvg = document.getElementById("browserStreamSvg");
-        setInterval(() => {
-            // Append timestamp to prevent caching
-            streamImg.setAttribute("href", "latest_frame.jpg?t=" + Date.now());
-        }, 80);
 
         let dnaPhase = 0;
         function animateSvgDna() {

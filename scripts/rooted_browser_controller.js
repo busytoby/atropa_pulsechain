@@ -638,6 +638,29 @@ async function main() {
         console.log("[PUPPETEER] Initial navigation finished or timed out: " + navErr.message);
     }
 
+    async function uploadFrame(jpegBuffer) {
+        if (!isYouTube) return;
+        return new Promise((resolve) => {
+            const http = require('http');
+            const req = http.request({
+                hostname: '127.0.0.1',
+                port: 8000,
+                path: '/upload-frame',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'image/jpeg',
+                    'Content-Length': jpegBuffer.length
+                }
+            }, (res) => {
+                res.resume();
+                resolve();
+            });
+            req.on('error', () => resolve());
+            req.write(jpegBuffer);
+            req.end();
+        });
+    }
+
     let frameCount = 0;
     async function startScreencast() {
         try {
@@ -652,6 +675,7 @@ async function main() {
                     const jpegBuffer = Buffer.from(data, 'base64');
                     frameCount++;
                     if (isYouTube) {
+                        uploadFrame(jpegBuffer);
                         try {
                             const fs = require('fs');
                             const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
@@ -698,6 +722,7 @@ async function main() {
                 const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
                 frameCount++;
                 if (isYouTube) {
+                    uploadFrame(jpegBuffer);
                     try {
                         const fs = require('fs');
                         const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");

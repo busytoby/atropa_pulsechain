@@ -241,9 +241,13 @@ def update_guidance(m, depth=0.8, pose=0.0, cfg=7.5, steps=4):
     m[12:16] = bytearray(ctypes.c_float(cfg))
     m[16:20] = (int(steps)).to_bytes(4, 'little')
 
+import queue
 import threading
 
 sd_lock = threading.Lock()
+mjpeg_clients = []
+mjpeg_lock = threading.Lock()
+
 video_status_store = {"currentTime": 0.0, "duration": 0.0, "paused": True, "muted": True}
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -261,6 +265,34 @@ class CustomHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        parsed_path = self.path.split('?', 1)[0].split('#', 1)[0].rstrip('/')
+        if parsed_path == '/stream.mjpeg':
+            self.send_response(200)
+            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=frame')
+            self.send_header('Connection', 'close')
+            self.send_header('Pragma', 'no-cache')
+            self.send_header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-age=0')
+            self.end_headers()
+            
+            q = queue.Queue(maxsize=3)
+            with mjpeg_lock:
+                mjpeg_clients.append(q)
+                
+            try:
+                while True:
+                    frame = q.get()
+                    self.wfile.write(b"--frame\r\n")
+                    self.wfile.write(b"Content-Type: image/jpeg\r\n")
+                    self.wfile.write(f"Content-Length: {len(frame)}\r\n\r\n".encode('utf-8'))
+                    self.wfile.write(frame)
+                    self.wfile.write(b"\r\n")
+            except Exception as e:
+                pass
+            finally:
+                with mjpeg_lock:
+                    if q in mjpeg_clients:
+                        mjpeg_clients.remove(q)
+            return
         parsed_path = self.path.split('?', 1)[0].split('#', 1)[0].rstrip('/')
         if parsed_path == '/api/video-status':
             self.send_response(200)
@@ -322,6 +354,27 @@ class CustomHandler(SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def do_POST(self):
+        if self.path == '/upload-frame':
+            content_length = int(self.headers['Content-Length'])
+            frame_data = self.rfile.read(content_length)
+            
+            with mjpeg_lock:
+                for q in mjpeg_clients:
+                    if q.full():
+                        try:
+                            q.get_nowait()
+                        except queue.Empty:
+                            pass
+                    try:
+                        q.put_nowait(frame_data)
+                    except queue.Full:
+                        pass
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
+            return
         if self.path == '/update-video-status':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
