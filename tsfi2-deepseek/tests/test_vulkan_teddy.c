@@ -1116,7 +1116,7 @@ static float smooth_noise_2d_deriv(float x, float y, float *dx_out, float *dy_ou
     return val;
 }
 
-static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
+__attribute__((unused)) static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
     float density = 36.0f; // Fine hair strands
     float gravity_y = 0.10f; // combing downwards offset per shell
     
@@ -1285,22 +1285,41 @@ static float smin_cubic(float a, float b, float k) {
 static float evaluate_d_blend(float cx, float cy, SphereGeometry *body) {
     float d = 1e10f;
     for (int i = 0; i < 8; i++) {
-        float dx = (cx - body[i].x) / body[i].sx;
-        float dy = (cy - body[i].y) / body[i].sy;
-        float dist = (sqrtf(dx*dx + dy*dy) - body[i].r) * fminf(body[i].sx, body[i].sy);
+        float sx = body[i].sx;
+        float sy = body[i].sy;
+        float max_s = (sx > sy) ? sx : sy;
+        float min_s = (sx < sy) ? sx : sy;
+        
+        float dx = cx - body[i].x;
+        float dy = cy - body[i].y;
+        
+        // Auncient pruning check to bypass costly square root calculation:
+        // dist >= d + 0.08f is guaranteed if dx*dx + dy*dy >= [ max_s * (r + (d + 0.08f)/min_s) ]^2
+        if (d < 1e9f) {
+            float r_min_dist = max_s * (body[i].r + (d + 0.08f) / min_s);
+            if (r_min_dist > 0.0f) {
+                if (dx*dx + dy*dy >= r_min_dist * r_min_dist) {
+                    continue;
+                }
+            }
+        }
+        
+        float dx_scaled = dx / sx;
+        float dy_scaled = dy / sy;
+        float dist = (sqrtf(dx_scaled*dx_scaled + dy_scaled*dy_scaled) - body[i].r) * min_s;
         
         // Apply cupped/hollowed ear subtraction in 2D
         if (i == 2) { // Left ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / body[i].sx;
-            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
-            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / sy;
+            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * min_s;
             dist = fmaxf(dist, -inner_dist);
         } else if (i == 3) { // Right ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / body[i].sx;
-            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
-            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / sy;
+            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * min_s;
             dist = fmaxf(dist, -inner_dist);
         }
         
@@ -1320,43 +1339,60 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
     float b_acc = 0.0f;
     
     for (int i = 0; i < 8; i++) {
-        float dx = (cx - body[i].x) / body[i].sx;
-        float dy = (cy - body[i].y) / body[i].sy;
-        float len = sqrtf(dx*dx + dy*dy);
-        float dist = (len - body[i].r) * fminf(body[i].sx, body[i].sy);
-        float nx = len > 0.0001f ? (dx / len) / body[i].sx : 0.0f;
-        float ny = len > 0.0001f ? (dy / len) / body[i].sy : 0.0f;
+        float sx = body[i].sx;
+        float sy = body[i].sy;
+        float dx = cx - body[i].x;
+        float dy = cy - body[i].y;
+        
+        float max_s = (sx > sy) ? sx : sy;
+        float min_s = (sx < sy) ? sx : sy;
+        
+        // Auncient pruning check: if sphere is too far to contribute to blend (dist >= 0.24f)
+        float r_max_dist = max_s * (body[i].r + 0.24f / min_s);
+        if (dx*dx + dy*dy >= r_max_dist * r_max_dist) {
+            dists[i] = 1e10f;
+            nxs[i] = 0.0f;
+            nys[i] = 0.0f;
+            continue;
+        }
+        
+        float dx_scaled = dx / sx;
+        float dy_scaled = dy / sy;
+        float len = sqrtf(dx_scaled*dx_scaled + dy_scaled*dy_scaled);
+        float dist = (len - body[i].r) * min_s;
+        float nx = len > 0.0001f ? (dx_scaled / len) / sx : 0.0f;
+        float ny = len > 0.0001f ? (dy_scaled / len) / sy : 0.0f;
         float nlen = sqrtf(nx*nx + ny*ny);
         if (nlen > 0.0001f) { nx /= nlen; ny /= nlen; }
         
         // Apply cupped/hollowed ear subtraction in 2D
         if (i == 2) { // Left ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / body[i].sx;
-            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / sy;
             float inner_len = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy);
-            float inner_dist = (inner_len - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            float inner_dist = (inner_len - body[i].r * 0.70f) * min_s;
             if (dist > -inner_dist) {
                 // Outer ear is closer
             } else {
                 dist = -inner_dist;
-                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / body[i].sx : 0.0f;
-                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / body[i].sy : 0.0f;
+                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / sx : 0.0f;
+                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / sy : 0.0f;
                 float nlen2 = sqrtf(nx*nx + ny*ny);
                 if (nlen2 > 0.0001f) { nx /= nlen2; ny /= nlen2; }
             }
         } else if (i == 3) { // Right ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / body[i].sx;
-            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / sy;
             float inner_len = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy);
-            float inner_dist = (inner_len - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            float inner_dist = (inner_len - body[i].r * 0.70f) * min_s;
             if (dist > -inner_dist) {
                 // Outer ear is closer
             } else {
                 dist = -inner_dist;
-                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / body[i].sx : 0.0f;
-                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / body[i].sy : 0.0f;
+                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / sx : 0.0f;
+                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / sy : 0.0f;
                 float nlen2 = sqrtf(nx*nx + ny*ny);
                 if (nlen2 > 0.0001f) { nx /= nlen2; ny /= nlen2; }
             }
@@ -1928,20 +1964,65 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         frame_jitter_y = haptic_rumble_amplitude * sinf(angle) * 0.1f;
     }
 
-    #pragma omp parallel for collapse(2) shared(frame_jitter_x, frame_jitter_y)
+    float bear_min_x = 1e10f;
+    float bear_max_x = -1e10f;
+    float bear_min_y = 1e10f;
+    float bear_max_y = -1e10f;
+    for (int i = 0; i < 15; i++) {
+        float half_w, half_h;
+        if (i < 8) {
+            float margin = (fur_length + 0.15f) / fminf(body[i].sx, body[i].sy);
+            half_w = body[i].sx * (body[i].r + margin);
+            half_h = body[i].sy * (body[i].r + margin);
+        } else {
+            half_w = body[i].r + 0.05f;
+            half_h = body[i].r + 0.05f;
+        }
+        float min_x = body[i].x - half_w;
+        float max_x = body[i].x + half_w;
+        float min_y = body[i].y - half_h;
+        float max_y = body[i].y + half_h;
+        if (min_x < bear_min_x) bear_min_x = min_x;
+        if (max_x > bear_max_x) bear_max_x = max_x;
+        if (min_y < bear_min_y) bear_min_y = min_y;
+        if (max_y > bear_max_y) bear_max_y = max_y;
+    }
+
+    float blend_min_x = 1e10f;
+    float blend_max_x = -1e10f;
+    float blend_min_y = 1e10f;
+    float blend_max_y = -1e10f;
+    for (int i = 0; i < 8; i++) {
+        float margin = fur_length / fminf(body[i].sx, body[i].sy);
+        float half_w = body[i].sx * (body[i].r + margin);
+        float half_h = body[i].sy * (body[i].r + margin);
+        float min_x = body[i].x - half_w;
+        float max_x = body[i].x + half_w;
+        float min_y = body[i].y - half_h;
+        float max_y = body[i].y + half_h;
+        if (min_x < blend_min_x) blend_min_x = min_x;
+        if (max_x > blend_max_x) blend_max_x = max_x;
+        if (min_y < blend_min_y) blend_min_y = min_y;
+        if (max_y > blend_max_y) blend_max_y = max_y;
+    }
+
+    #pragma omp parallel for collapse(2) shared(frame_jitter_x, frame_jitter_y, bear_min_x, bear_max_x, bear_min_y, bear_max_y, blend_min_x, blend_max_x, blend_min_y, blend_max_y)
     for (int y = 0; y < 720; y++) {
         for (int x = 0; x < 800; x++) {
             if (boost_active && ((x % 2 != 0) || (y % 2 != 0))) {
                 continue;
             }
             // Quick bounding check for optimization (spatial pruning)
-            float cx_center = ((float)x / 800.0f) * 2.4f - 1.2f + frame_jitter_x;
-            float cy_center = ((float)y / 720.0f) * 2.16f - 1.08f + frame_jitter_y;
+            float cx_center_no_jitter = ((float)x / 800.0f) * 2.4f - 1.2f;
+            float cy_center_no_jitter = ((float)y / 720.0f) * 2.16f - 1.08f;
+            float cx_center = cx_center_no_jitter + frame_jitter_x;
+            float cy_center = cy_center_no_jitter + frame_jitter_y;
             
             bool skip_shading = true;
             if (display_synthesized_image) {
                 skip_shading = false;
-            } else {
+            } else if (cx_center_no_jitter >= bear_min_x && cx_center_no_jitter <= bear_max_x &&
+                       cy_center_no_jitter >= bear_min_y && cy_center_no_jitter <= bear_max_y) {
                 float d_center = evaluate_d_blend(cx_center, cy_center, body);
                 if (d_center < fur_length + 0.15f) {
                     skip_shading = false;
@@ -2167,12 +2248,19 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     }
 
                     if (!hit_bear) {
+                        float d_blend = 1e10f;
+                        float nx_blend = 0.0f;
+                        float ny_blend = 0.0f;
                         float base_r = dna_fur_r + 0.08f * track_trigger_env[0];
                         float base_g = dna_fur_g + 0.05f * track_trigger_env[0];
                         float base_b = dna_fur_b + 0.03f * track_trigger_env[0];
-                        float nx_blend = 0.0f;
-                        float ny_blend = 0.0f;
-                        float d_blend = evaluate_d_blend_all(cx, cy, body, &nx_blend, &ny_blend, &base_r, &base_g, &base_b);
+                        
+                        float cx_no_jitter = (sx / 800.0f) * 2.4f - 1.2f;
+                        float cy_no_jitter = (sy / 720.0f) * 2.16f - 1.08f;
+                        if (cx_no_jitter >= blend_min_x && cx_no_jitter <= blend_max_x &&
+                            cy_no_jitter >= blend_min_y && cy_no_jitter <= blend_max_y) {
+                            d_blend = evaluate_d_blend_all(cx, cy, body, &nx_blend, &ny_blend, &base_r, &base_g, &base_b);
+                        }
                         
                         if (dl_game_active) {
                             if (d_blend < 0.0f) {
@@ -2227,11 +2315,82 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                             float dx_closest = cx - body[closest_idx].x;
                             float dy_closest = cy - body[closest_idx].y;
 
+                            // Auncient cellular hair/fur coordinate precalculation hoisted out of the shell loop
+                            float w_dx_base = 0.0f, w_dy_base = 0.0f;
+                            float density = 36.0f;
+                            float scale = 0.08f;
+                            float warp_strength = 0.6f + sickness_intensity * 2.0f;
+                            
+                            float input_x = fabsf(sx) * density;
+                            float input_y = sy * density;
+                            
+                            float wx = smooth_noise_2d_deriv(input_x * scale, input_y * scale, &w_dx_base, &w_dy_base);
+                            float wy = smooth_noise_2d(input_x * scale + 13.7f, input_y * scale + 27.3f);
+                            
+                            float warped_x = input_x + (wx - 0.5f) * warp_strength;
+                            float warped_y = input_y + (wy - 0.5f) * warp_strength;
+                            
+                            int ix = (int)floorf(warped_x);
+                            int iy = (int)floorf(warped_y);
+                            
+                            float fx_base[9];
+                            float fy_base[9];
+                            int cell_idx = 0;
+                            for (int dy = -1; dy <= 1; dy++) {
+                                for (int dx = -1; dx <= 1; dx++) {
+                                    int cx_cell = ix + dx;
+                                    int cy_cell = iy + dy;
+                                    uint32_t hash = (uint32_t)cx_cell * 73856093 ^ (uint32_t)cy_cell * 19349663;
+                                    hash = (hash ^ 61) ^ (hash >> 16);
+                                    hash += hash << 3;
+                                    hash ^= hash >> 4;
+                                    hash *= 0x27d4eb2d;
+                                    hash ^= hash >> 15;
+                                    float jx = (float)(hash & 0xFF) / 255.0f;
+                                    float jy = (float)((hash >> 8) & 0xFF) / 255.0f;
+                                    fx_base[cell_idx] = (float)cx_cell + 0.5f + (jx - 0.5f) * 0.7f;
+                                    fy_base[cell_idx] = (float)cy_cell + 0.5f + (jy - 0.5f) * 0.7f;
+                                    cell_idx++;
+                                }
+                            }
+
+                            float gravity_y = 0.10f;
+
                             for (int shell = num_shells - 1; shell >= 0; shell--) {
                                 float shell_offset = ((float)shell / num_shells) * fur_length;
                                 if (d_blend < shell_offset) {
-                                    float w_dx = 0.0f, w_dy = 0.0f;
-                                    float noise_val = fur_noise(sx, sy, shell, &w_dx, &w_dy);
+                                    float normalized_height = (float)shell / 48.0f;
+                                    float comb_y = normalized_height * gravity_y;
+                                    float comb_x = (sx >= 0.0f ? 1.0f : -1.0f) * sinf(normalized_height * 4.0f) * 0.03f;
+                                    
+                                    float wind_offset_x = (normalized_height * dynamic_wind_dx) / (fur_stiffness + 0.01f);
+                                    float wind_offset_y = (normalized_height * dynamic_wind_dy) / (fur_stiffness + 0.01f);
+                                    
+                                    float base_radius = 0.48f;
+                                    float radius = base_radius * (1.0f - normalized_height * 0.85f);
+                                    float radius_sq = radius * radius;
+                                    
+                                    float max_val = 0.0f;
+                                    float offset_x = (fabsf(comb_x) + wind_offset_x) * density;
+                                    float offset_y = (comb_y + wind_offset_y) * density;
+                                    
+                                    for (int i = 0; i < 9; i++) {
+                                        float fx = fx_base[i] - offset_x;
+                                        float fy = fy_base[i] - offset_y;
+                                        float dist_x = warped_x - fx;
+                                        float dist_y = warped_y - fy;
+                                        float dist_sq = dist_x * dist_x + dist_y * dist_y;
+                                        
+                                        if (dist_sq < radius_sq) {
+                                            float dist = sqrtf(dist_sq);
+                                            float val = 1.0f - (dist / radius);
+                                            if (val > max_val) {
+                                                max_val = val;
+                                            }
+                                        }
+                                    }
+                                    
+                                    float noise_val = max_val;
                                     float threshold = (float)shell / num_shells;
 
                                     if (noise_val > threshold || shell == 0) {
@@ -2249,8 +2408,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         ny *= nxy_scale;
 
                                         float bump_strength = 0.15f;
-                                        nx += w_dx * bump_strength;
-                                        ny += w_dy * bump_strength;
+                                        nx += w_dx_base * bump_strength;
+                                        ny += w_dy_base * bump_strength;
                                         float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
                                         if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
 
