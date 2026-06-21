@@ -437,18 +437,32 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 shutil.rmtree(temp_dir)
             return
 
-        if parsed_path == '/api/config':
-            config_path = os.path.join(os.getcwd(), 'config/user_config.json')
-            if os.path.exists(config_path):
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
+        if parsed_path.startswith('/api/'):
+            # Proxy /api/ requests to scripts/server.js (port 3000)
+            import urllib.request
+            import urllib.error
+            try:
+                target_url = f"http://127.0.0.1:3000{self.path}"
+                req = urllib.request.Request(target_url, method='GET')
+                for key, val in self.headers.items():
+                    if key.lower() not in ['host', 'connection']:
+                        req.add_header(key, val)
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    self.send_response(response.status)
+                    for key, val in response.headers.items():
+                        self.send_header(key, val)
+                    self.end_headers()
+                    self.wfile.write(response.read())
+            except urllib.error.HTTPError as he:
+                self.send_response(he.code)
+                for key, val in he.headers.items():
+                    self.send_header(key, val)
                 self.end_headers()
-                with open(config_path, 'r') as f:
-                    self.wfile.write(f.read().encode('utf-8'))
-            else:
-                self.send_response(404)
-                self.end_headers()
+                self.wfile.write(he.read())
+            except Exception as ex:
+                self.send_error(502, f"Bad Gateway: {ex}")
             return
+
         super().do_GET()
 
     def translate_path(self, path):
@@ -491,6 +505,34 @@ class CustomHandler(SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def do_POST(self):
+        if self.path.startswith('/api/'):
+            # Proxy POST /api/ requests to scripts/server.js (port 3000)
+            import urllib.request
+            import urllib.error
+            try:
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                target_url = f"http://127.0.0.1:3000{self.path}"
+                req = urllib.request.Request(target_url, data=post_data, method='POST')
+                for key, val in self.headers.items():
+                    if key.lower() not in ['host', 'connection', 'content-length']:
+                        req.add_header(key, val)
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    self.send_response(response.status)
+                    for key, val in response.headers.items():
+                        self.send_header(key, val)
+                    self.end_headers()
+                    self.wfile.write(response.read())
+            except urllib.error.HTTPError as he:
+                self.send_response(he.code)
+                for key, val in he.headers.items():
+                    self.send_header(key, val)
+                self.end_headers()
+                self.wfile.write(he.read())
+            except Exception as ex:
+                self.send_error(502, f"Bad Gateway: {ex}")
+            return
+
         if self.path == '/upload-frame':
             content_length = int(self.headers['Content-Length'])
             frame_data = self.rfile.read(content_length)

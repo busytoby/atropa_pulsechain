@@ -1812,6 +1812,43 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
                    ((uint32_t)ctx->memory[argsOffset + 3]);
     }
 
+    // Intercept call to Auncient WinchesterMQ contract
+    char wmq_addr_str[128] = {0};
+    FILE *wmq_file = fopen("../tmp/wmq_address.txt", "r");
+    if (!wmq_file) wmq_file = fopen("tmp/wmq_address.txt", "r");
+    if (!wmq_file) wmq_file = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tmp/wmq_address.txt", "r");
+    if (wmq_file) {
+        if (fgets(wmq_addr_str, sizeof(wmq_addr_str), wmq_file)) {
+            size_t l = strlen(wmq_addr_str);
+            while (l > 0 && (wmq_addr_str[l-1] == '\n' || wmq_addr_str[l-1] == '\r')) {
+                wmq_addr_str[l-1] = '\0';
+                l--;
+            }
+        }
+        fclose(wmq_file);
+    }
+    if (strlen(wmq_addr_str) > 0) {
+        uint64_t wmq_addr_u64 = parse_hex64(wmq_addr_str);
+        if (target_addr == wmq_addr_u64) {
+            printf("[EVM_INTERPRETER] Intercepted WinchesterMQ contract call at address 0x%lx with selector 0x%08x\n", target_addr, selector);
+            if (argsSize > 0 && argsOffset < 524288) {
+                char *data_hex = malloc(argsSize * 2 + 3);
+                if (data_hex) {
+                    strcpy(data_hex, "0x");
+                    for (size_t i = 0; i < argsSize; i++) {
+                        sprintf(data_hex + 2 + i * 2, "%02x", ctx->memory[argsOffset + i]);
+                    }
+                    extern bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex);
+                    bool rpc_ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, data_hex);
+                    printf("[EVM_INTERPRETER] WinchesterMQ direct transaction sent: %s (status: %s)\n", data_hex, rpc_ok ? "SUCCESS" : "FAILED");
+                    free(data_hex);
+                }
+            }
+            success_out->d[0] = 1;
+            return true;
+        }
+    }
+
     if (selector == 0x6872fc3c) { // Cho()
         printf("[EVM_INTERPRETER] Hooked Cho() call, returning cho address 0x%lx\n", get_contract_address("cho"));
         u256_t mock_ret = {{ get_contract_address("cho"), 0, 0, 0 }};

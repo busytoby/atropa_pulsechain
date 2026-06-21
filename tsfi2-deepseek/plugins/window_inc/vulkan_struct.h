@@ -238,6 +238,8 @@ typedef struct VulkanContext {
     VkQueryPool query_pool_ray;
     VkDeviceAddress query_manifold_address; // ReBAR BDA for query direct write
     VkFormat swapchainFormat;
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_memory;
 } VulkanContext;
 
 #endif

@@ -313,7 +313,6 @@
             </div>
             <div class="header-actions">
                 <a href="/index.html" class="btn btn-secondary">Dashboard</a>
-                <button class="btn btn-secondary" onclick="togglePip()" style="border-color: var(--vaesen-gold); color: var(--vaesen-gold);">📺 Toggle Browser PiP</button>
                 <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
                 <a href="/protecto.html" class="btn btn-secondary" style="border-color: var(--neon-magenta); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-magenta);">Protecto Console</a>
                 <a href="/bgraph.html" class="btn btn-secondary" style="border-color: var(--neon-blue); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-blue);">B/Graph Console</a>
@@ -339,19 +338,6 @@ Connect your wallet to retrieve the active story ROM.</div>
                     <input type="text" id="termInput" class="terminal-input" placeholder="Type command (e.g. 'look', 'take gold', 'go north') and press enter..." disabled>
                 </div>
 
-                <!-- Floating Picture-in-Picture Live Stream -->
-                <div id="pipContainer" style="position: absolute; bottom: 85px; right: 40px; width: 280px; height: 210px; background: #000; border: 2px solid var(--vaesen-gold); border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; z-index: 100;">
-                    <div style="background: var(--vaesen-sepia); border-bottom: 1px solid var(--vaesen-gold-dim); padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-header); font-size: 0.8rem; color: var(--vaesen-gold);">
-                        <span>📺 Rooted Browser PiP</span>
-                        <div>
-                            <button onclick="window.open('/atropa_dashboard.html', '_blank')" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem; margin-right: 5px;" title="Open Full Dashboard">🔗</button>
-                            <button onclick="togglePip()" style="background: none; border: none; color: var(--vaesen-cream); cursor: pointer; font-size: 0.8rem;">✕</button>
-                        </div>
-                    </div>
-                    <div style="flex-grow: 1; position: relative; cursor: crosshair;">
-                        <img id="pipBrowserFrame" src="latest_frame.jpg" style="width: 100%; height: 100%; object-fit: contain; background: #000;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'%23000\'/><text x=\'50%\' y=\'50%\' font-family=\'monospace\' font-size=\'12\' fill=\'%23c5a059\' text-anchor=\'middle\'>Awaiting screencast...</text></svg>'">
-                    </div>
-                </div>
             </section>
 
             <!-- Right Side: Invisiclues & Story Upload -->
@@ -1229,15 +1215,10 @@ Connect your wallet to retrieve the active story ROM.</div>
             const action = parts[0].toLowerCase();
             const arg = parts[1] ? parts[1].toLowerCase() : "";
 
-            // Intercept Z-Machine commands to control browser PiP display
+            // Intercept Z-Machine commands to control browser
             if (cmd.toLowerCase() === "use computer" || cmd.toLowerCase() === "turn on computer") {
-                const pip = document.getElementById("pipContainer");
-                if (pip) {
-                    pip.style.display = "flex";
-                    pipVisible = true;
-                    termScreen.innerText += `\n[Z-Machine] The green CRT computer terminal hums to life. A Picture-in-Picture window has opened.\n\n# _`;
-                    termScreen.scrollTop = termScreen.scrollHeight;
-                }
+                termScreen.innerText += `\n[Z-Machine] The green CRT computer terminal hums to life. Select the 'Atropa Live' tab in the main Portal navigation to control it.\n\n# _`;
+                termScreen.scrollTop = termScreen.scrollHeight;
                 return;
             }
 
@@ -1709,75 +1690,7 @@ Connect your wallet to retrieve the active story ROM.</div>
             termScreen.scrollTop = termScreen.scrollHeight;
         }
 
-        let pipVisible = true;
-        function togglePip() {
-            const pip = document.getElementById("pipContainer");
-            pipVisible = !pipVisible;
-            pip.style.display = pipVisible ? "flex" : "none";
-        }
-
-        // Live Screencast PiP Reloader
-        setInterval(() => {
-            if (pipVisible) {
-                const pipImg = document.getElementById("pipBrowserFrame");
-                if (pipImg) {
-                    pipImg.src = "/latest_frame.jpg?t=" + Date.now();
-                }
-            }
-        }, 300);
-
-        // Click-through mapping for floating PiP sub-browser
-        async function sendPipControlCommand(cmd) {
-            try {
-                await fetch("/control", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ command: cmd })
-                });
-            } catch (err) {
-                console.error("Failed to dispatch PiP control event:", err);
-            }
-        }
-
-        const pipFrame = document.getElementById("pipBrowserFrame");
-        
-        function getPipCoords(e) {
-            const rect = pipFrame.getBoundingClientRect();
-            const scaleX = 800 / rect.width;
-            const scaleY = 600 / rect.height;
-            const x = Math.round((e.clientX - rect.left) * scaleX);
-            const y = Math.round((e.clientY - rect.top) * scaleY);
-            return { 
-                x: Math.max(0, Math.min(800, x)), 
-                y: Math.max(0, Math.min(600, y)) 
-            };
-        }
-
-        let pipThrottle = null;
-        pipFrame.addEventListener("mousemove", (e) => {
-            if (pipThrottle) return;
-            pipThrottle = setTimeout(() => {
-                pipThrottle = null;
-                const { x, y } = getPipCoords(e);
-                sendPipControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            }, 20);
-        });
-
-        pipFrame.addEventListener("mousedown", (e) => {
-            const { x, y } = getPipCoords(e);
-            sendPipControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            sendPipControlCommand("MOUSE_DOWN 272");
-        });
-
-        pipFrame.addEventListener("mouseup", (e) => {
-            sendPipControlCommand("MOUSE_UP 272");
-        });
-
-        pipFrame.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            const value = Math.round(e.deltaY / 10) || (e.deltaY > 0 ? 1 : -1);
-            sendPipControlCommand(`MOUSE_SCROLL 0 ${value}`);
-        }, { passive: false });
+        // PiP browser code removed - can be viewed directly in 'Atropa Live' tab
 
         window.onload = () => {
             init();

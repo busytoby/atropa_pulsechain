@@ -127,3 +127,131 @@ bool tsfi_pulse_rpc_send_raw_transaction(const char *signed_tx_hex, char *out_tx
     return result;
 }
 
+bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex) {
+    char payload[2048];
+    snprintf(payload, sizeof(payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"%s\","
+             "\"gas\":\"0xF4240\""
+             "}],\"id\":1}",
+             to_address, data_hex);
+             
+    char out_hex[512];
+    return exec_raw_http_rpc(payload, out_hex, sizeof(out_hex));
+}
+
+static uint64_t parse_hex64(const char *hex) {
+    if (hex[0] == '0' && (hex[1] == 'x' || hex[1] == 'X')) {
+        hex += 2;
+    }
+    size_t len = strlen(hex);
+    if (len > 16) {
+        hex += (len - 16);
+    }
+    return strtoull(hex, NULL, 16);
+}
+
+static uint64_t get_wmq_address_u64(char *out_addr_str) {
+    FILE *f = fopen("../tmp/wmq_address.txt", "r");
+    if (!f) {
+        f = fopen("tmp/wmq_address.txt", "r");
+    }
+    if (!f) {
+        f = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tmp/wmq_address.txt", "r");
+    }
+    char buf[128] = {0};
+    if (f) {
+        if (fgets(buf, sizeof(buf), f)) {
+            size_t l = strlen(buf);
+            while (l > 0 && (buf[l-1] == '\n' || buf[l-1] == '\r')) {
+                buf[l-1] = '\0';
+                l--;
+            }
+        }
+        fclose(f);
+    }
+    if (out_addr_str) {
+        strcpy(out_addr_str, buf);
+    }
+    if (strlen(buf) > 0) {
+        return parse_hex64(buf);
+    }
+    return 0;
+}
+
+void tsfi_thunk_publish_mq(const char *cmd) {
+    char wmq_addr_str[128] = {0};
+    uint64_t wmq_addr_u64 = get_wmq_address_u64(wmq_addr_str);
+    if (wmq_addr_u64 == 0) {
+        printf("[THUNK_MQ] Error: Auncient WinchesterMQ address not found in tmp/wmq_address.txt\n");
+        return;
+    }
+    
+    char cmd_buf[128];
+    strncpy(cmd_buf, cmd, sizeof(cmd_buf) - 1);
+    cmd_buf[sizeof(cmd_buf) - 1] = '\0';
+    
+    char processed[128] = {0};
+    char *src = cmd_buf;
+    char *dst = processed;
+    while (*src && (dst - processed) < 120) {
+        if (strncmp(src, "YOUTUBE:", 8) == 0) {
+            strcpy(dst, "Y:");
+            dst += 2;
+            src += 8;
+        } else if (strncmp(src, "MAIN:", 5) == 0) {
+            strcpy(dst, "M:");
+            dst += 2;
+            src += 5;
+        } else if (strncmp(src, "MOUSE_MOVE", 10) == 0) {
+            strcpy(dst, "MM");
+            dst += 2;
+            src += 10;
+        } else if (strncmp(src, "MOUSE_DOWN", 10) == 0) {
+            strcpy(dst, "MD");
+            dst += 2;
+            src += 10;
+        } else if (strncmp(src, "MOUSE_UP", 8) == 0) {
+            strcpy(dst, "MU");
+            dst += 2;
+            src += 8;
+        } else if (strncmp(src, "MOUSE_SCROLL", 12) == 0) {
+            strcpy(dst, "MS");
+            dst += 2;
+            src += 12;
+        } else if (strncmp(src, "KEY_DOWN", 8) == 0) {
+            strcpy(dst, "KD");
+            dst += 2;
+            src += 8;
+        } else if (strncmp(src, "KEY_UP", 6) == 0) {
+            strcpy(dst, "KU");
+            dst += 2;
+            src += 6;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst = '\0';
+    
+    size_t len = strlen(processed);
+    uint8_t data_bytes[32] = {0};
+    memcpy(data_bytes, processed, len < 32 ? len : 32);
+    
+    char tx_data[128];
+    strcpy(tx_data, "0xccb077a0");
+    for (int i = 0; i < 32; i++) {
+        sprintf(tx_data + 10 + i * 2, "%02x", data_bytes[i]);
+    }
+    
+    bool ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, tx_data);
+    printf("[THUNK_MQ] Event published to Auncient WinchesterMQ: %s (status: %s)\n", processed, ok ? "SUCCESS" : "FAILED");
+}
+
+bool tsfi_pulse_rpc_exec_raw(const char *json_payload, char *out_buffer, size_t out_max_len) {
+    return exec_raw_http_rpc(json_payload, out_buffer, out_max_len);
+}
+
+
+

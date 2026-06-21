@@ -73,7 +73,7 @@ class GitSandbox:
             cwd = self.repo_dir
         if env is None:
             env = self.get_clean_env()
-        res = subprocess.run(["git"] + args, cwd=cwd, env=env, capture_output=True, text=True)
+        res = subprocess.run(["git"] + args, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         return res
 
     def get_clean_env(self, extra=None):

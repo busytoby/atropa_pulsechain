@@ -17,8 +17,8 @@ let wmqAddressStr = "Not Deployed";
 let nextNonce = null;
 let wmqEventCount = 0;
 let lastBlockNumber = 0;
-let presenterWidth = 800;
-let presenterHeight = 600;
+let presenterWidth = 1024;
+let presenterHeight = 768;
 
 async function sendWmqEvent(cmd, args) {
     let fullCmd = `${cmd} ${args}`.trim();
@@ -130,6 +130,8 @@ function compileYul(yulPath) {
 async function main() {
     let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
     const isYouTube = url.includes("youtube.com") || url.includes("youtube");
+    const inputQueue = [];
+    let processingQueue = false;
     
     // Single-instance lock to maintain Auncient controller integrity and prevent duplicate chromium instances
     const net = require('net');
@@ -142,7 +144,13 @@ async function main() {
                 terminal: false
             });
             rl.on('line', (line) => {
-                handleInputCommand(line).catch(() => {});
+                if (line.trim() === 'PING') {
+                    handleInputCommand(line, () => {
+                        socket.write('PONG\n');
+                    });
+                } else {
+                    handleInputCommand(line);
+                }
             });
         });
         server.on('error', (err) => {
@@ -497,7 +505,43 @@ async function main() {
     let lastMouseDownY = 0;
     let lastMouseDownTime = 0;
     let isFocusedOnYouTube = false;
-    async function handleInputCommand(line) {
+
+    const timingTelemetry = {
+        MOUSE_MOVE: { count: 0, totalMs: 0, maxMs: 0 },
+        MOUSE_DOWN: { count: 0, totalMs: 0, maxMs: 0 },
+        MOUSE_UP: { count: 0, totalMs: 0, maxMs: 0 },
+        MOUSE_SCROLL: { count: 0, totalMs: 0, maxMs: 0 },
+        KEY_DOWN: { count: 0, totalMs: 0, maxMs: 0 },
+        KEY_UP: { count: 0, totalMs: 0, maxMs: 0 },
+        WINDOW_RESIZE: { count: 0, totalMs: 0, maxMs: 0 }
+    };
+
+    async function processQueue() {
+        if (processingQueue || inputQueue.length === 0) return;
+        processingQueue = true;
+        while (inputQueue.length > 0) {
+            const item = inputQueue.shift();
+            try {
+                if (item.line.trim() === 'PING') {
+                    if (item.callback) item.callback();
+                } else {
+                    await executeInputCommand(item.line);
+                    if (item.callback) item.callback();
+                }
+            } catch (err) {
+                console.error("[INPUT QUEUE ERR] Error executing input command:", item.line, err);
+            }
+        }
+        processingQueue = false;
+    }
+
+    function handleInputCommand(line, callback) {
+        inputQueue.push({ line, callback });
+        processQueue().catch(() => {});
+    }
+
+    async function executeInputCommand(line) {
+        const startHrTime = process.hrtime.bigint();
         line = line.replace(/,/g, ' ');
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
@@ -510,13 +554,6 @@ async function main() {
         const parts = line.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
         if (parts.length === 0) return;
         const cmd = parts[0];
-        
-        // Auncient dynamic bounds check: refresh video bounds in the background if they might be stale
-        if (!isYouTube && (cmd === 'MOUSE_MOVE' || cmd === 'MOUSE_DOWN' || cmd === 'MOUSE_UP' || cmd === 'MOUSE_SCROLL')) {
-            if (Date.now() - lastBoundsUpdateTime > 500) {
-                updateVideoBounds().catch(() => {});
-            }
-        }
         
         try {
             if (cmd === 'MOUSE_MOVE') {
@@ -561,7 +598,6 @@ async function main() {
                 if (isYouTube) {
                     // Executed directly on sub-browser page
                 } else {
-                    await updateVideoBounds();
                     const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
                                          y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
                     isFocusedOnYouTube = inVideoBounds;
@@ -570,8 +606,6 @@ async function main() {
                         const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
                         const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
                         sendWmqEvent('YOUTUBE:MOUSE_DOWN', `${btn},${x_yt},${y_yt}`).catch(() => {});
-                    } else {
-                        sendWmqEvent('MAIN:MOUSE_DOWN', `${btn},${x},${y}`).catch(() => {});
                     }
                 }
                 
@@ -599,15 +633,12 @@ async function main() {
                 if (isYouTube) {
                     // Executed directly on sub-browser page
                 } else {
-                    await updateVideoBounds();
                     const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
                                          y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
                     if (inVideoBounds) {
                         const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
                         const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
                         sendWmqEvent('YOUTUBE:MOUSE_UP', `${btn},${x_yt},${y_yt}`).catch(() => {});
-                    } else {
-                        sendWmqEvent('MAIN:MOUSE_UP', `${btn},${x},${y}`).catch(() => {});
                     }
                 }
                 
@@ -639,7 +670,6 @@ async function main() {
                     if (isFocusedOnYouTube) {
                         sendWmqEvent('YOUTUBE:KEY_DOWN', `${key}`).catch(() => {});
                     } else {
-                        sendWmqEvent('MAIN:KEY_DOWN', `${key}`).catch(() => {});
                         if (keyName === 'Control') {
                             controlDown = true;
                         }
@@ -673,7 +703,6 @@ async function main() {
                     if (isFocusedOnYouTube) {
                         sendWmqEvent('YOUTUBE:KEY_UP', `${key}`).catch(() => {});
                     } else {
-                        sendWmqEvent('MAIN:KEY_UP', `${key}`).catch(() => {});
                         if (keyName === 'Control') {
                             controlDown = false;
                         }
@@ -742,7 +771,6 @@ async function main() {
                         const y_yt = Math.round(((lastMouseY - videoBounds.y) / videoBounds.height) * 600);
                         sendWmqEvent('YOUTUBE:MOUSE_SCROLL', `${axis},${value},${x_yt},${y_yt}`).catch(() => {});
                     } else {
-                        sendWmqEvent('MAIN:MOUSE_SCROLL', `${axis},${value}`).catch(() => {});
                         try {
                             await page.mouse.wheel({ deltaX, deltaY });
                         } catch (wheelErr) {
@@ -820,7 +848,7 @@ async function main() {
                         isResizing = false;
                         // ignore viewport errors
                     }
-                }, 20);
+                }, 150);
             } else if (line.startsWith('search ')) {
                 const queryText = line.substring(7).trim();
                 console.log(`[PUPPETEER] Received search command for query: "${queryText}"`);
@@ -832,6 +860,30 @@ async function main() {
             }
         } catch (err) {
             // Suppress error if Puppeteer is closed or navigating
+        }
+
+        // Record timing telemetry for input command execution
+        const endHrTime = process.hrtime.bigint();
+        const durationMs = Number(endHrTime - startHrTime) / 1e6;
+        if (timingTelemetry[cmd]) {
+            const data = timingTelemetry[cmd];
+            data.count++;
+            data.totalMs += durationMs;
+            if (durationMs > data.maxMs) {
+                data.maxMs = durationMs;
+            }
+
+            const totalEvents = Object.values(timingTelemetry).reduce((sum, item) => sum + item.count, 0);
+            if (totalEvents % 50 === 0) {
+                console.log("=== Auncient Input Command Processing Timing Telemetry ===");
+                for (const [evt, item] of Object.entries(timingTelemetry)) {
+                    if (item.count > 0) {
+                        const avg = (item.totalMs / item.count).toFixed(3);
+                        console.log(`  |- [TELEMETRY] ${evt}: count=${item.count}, avg=${avg}ms, max=${item.maxMs.toFixed(3)}ms`);
+                    }
+                }
+                console.log("==========================================================");
+            }
         }
     }
 
@@ -903,7 +955,7 @@ async function main() {
         }
     });
     await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
-    await page.setViewport({ width: 800, height: 600 });
+    await page.setViewport({ width: 1024, height: 768 });
 
     let active = true;
     if (presenter) {
@@ -1168,15 +1220,18 @@ async function main() {
                     frameCount++;
                     if (isYouTube) {
                         uploadFrame(jpegBuffer);
-                        try {
-                            const fs = require('fs');
-                            const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
-                            const targetPath = "/dev/shm/atropa_latest_frame.jpg";
-                            fs.writeFileSync(tmpPath, jpegBuffer);
-                            fs.renameSync(tmpPath, targetPath);
-                        } catch (writeErr) {
-                            // ignore write errors
+                    }
+                    try {
+                        const fs = require('fs');
+                        const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
+                        const targetPath = "/dev/shm/atropa_latest_frame.jpg";
+                        fs.writeFileSync(tmpPath, jpegBuffer);
+                        fs.renameSync(tmpPath, targetPath);
+                        if (!isYouTube) {
+                            sendWmqEvent("M:FRAME", jpegBuffer.length);
                         }
+                    } catch (writeErr) {
+                        // ignore write errors
                     }
 
                     if (presenter && active && presenter.stdin.writable) {
@@ -1225,14 +1280,17 @@ async function main() {
                 frameCount++;
                 if (isYouTube) {
                     uploadFrame(jpegBuffer);
-                    try {
-                        const fs = require('fs');
-                        const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
-                        const targetPath = "/dev/shm/atropa_latest_frame.jpg";
-                        fs.writeFileSync(tmpPath, jpegBuffer);
-                        fs.renameSync(tmpPath, targetPath);
-                    } catch (writeErr) {}
                 }
+                try {
+                    const fs = require('fs');
+                    const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
+                    const targetPath = "/dev/shm/atropa_latest_frame.jpg";
+                    fs.writeFileSync(tmpPath, jpegBuffer);
+                    fs.renameSync(tmpPath, targetPath);
+                    if (!isYouTube) {
+                        sendWmqEvent("M:FRAME", jpegBuffer.length);
+                    }
+                } catch (writeErr) {}
 
                 if (presenter && active && presenter.stdin.writable) {
                     const headerBuf = Buffer.alloc(20);

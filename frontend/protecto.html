@@ -1328,7 +1328,10 @@
                     const selectEl2 = document.getElementById("selectLedgerToken");
                     const selectedOpt2 = selectEl2 ? selectEl2.options[selectEl2.selectedIndex] : null;
                     const symbol2 = selectedOpt2 ? selectedOpt2.dataset.symbol : "TOKEN";
-                    document.getElementById("ledgerAcc2200").innerText = taxDue + " " + symbol2;
+                    const ledgerAccEl = document.getElementById("ledgerAcc2200");
+                    if (ledgerAccEl) {
+                        ledgerAccEl.innerText = taxDue + " " + symbol2;
+                    }
 
                 } catch (err) {
                     console.error("B128 telemetry error:", err);

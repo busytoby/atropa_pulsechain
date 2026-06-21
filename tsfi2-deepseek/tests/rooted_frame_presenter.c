@@ -53,8 +53,8 @@ static uint32_t xdg_wm_base_id = 0;
 
 #define MAX_W 3840
 #define MAX_H 2160
-static int g_w = 800;
-static int g_h = 600;
+static int g_w = 1024;
+static int g_h = 768;
 static uint32_t pid_val = 0;
 static uint32_t bid_val = 0;
 static uint32_t *g_scanout_px = NULL;
@@ -353,10 +353,23 @@ void commit_wayland_surface(int fd_wl, uint32_t surf, uint32_t bid) {
     send_msg(fd_wl, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
 }
 
+static bool check_wmq_frame_event(void) {
+    // Auncient WinchesterMQ check bypassed on main thread to prevent synchronous JSON-RPC blocking latency.
+    return false;
+}
+
 bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redraw) {
     struct stat st;
     bool new_youtube = false;
     
+    // Check if Auncient WinchesterMQ triggered a new frame event!
+    static bool wmq_triggered = false;
+    static uint32_t tick = 0;
+    tick++;
+    if (tick % 5 == 0) {
+        wmq_triggered = check_wmq_frame_event();
+    }
+
     int fd_img = open("/dev/shm/atropa_latest_frame.jpg", O_RDONLY);
     if (fd_img >= 0) {
         if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
@@ -367,8 +380,9 @@ bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redra
             time_t cur_mtime = st.st_mtim.tv_sec;
             long cur_mtime_nsec = st.st_mtim.tv_nsec;
             #endif
-            if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec) {
+            if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec || wmq_triggered) {
                 new_youtube = true;
+                wmq_triggered = false;
             }
         }
         close(fd_img);

@@ -901,57 +901,15 @@
         window.addEventListener("resize", handleSvgResize);
         setTimeout(handleSvgResize, 500);
 
-        let latestMouseMove = null;
-        let isMouseMoveSending = false;
-        let mouseMoveTimeout = null;
-
-        async function processMouseMoveQueue() {
-            if (isMouseMoveSending || !latestMouseMove) return;
-            
-            const { x, y } = latestMouseMove;
-            latestMouseMove = null;
-            isMouseMoveSending = true;
-            
-            try {
-                await sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            } catch (err) {}
-            
-            isMouseMoveSending = false;
-            // If mouse moved again during transaction roundtrip, catch up immediately
-            if (latestMouseMove) {
-                processMouseMoveQueue();
-            }
-        }
-
         let lastUiMouseX = 0;
         let lastUiMouseY = 0;
-        let lastSentMouseMoveX = 0;
-        let lastSentMouseMoveY = 0;
-        let lastSentMouseMoveTime = 0;
         let isMouseDown = false;
 
         streamSvg.addEventListener("mousemove", (e) => {
             const coords = getCoords(e);
             lastUiMouseX = coords.x;
             lastUiMouseY = coords.y;
-            
-            const now = Date.now();
-            const timeElapsed = now - lastSentMouseMoveTime;
-            const dist = Math.sqrt(Math.pow(coords.x - lastSentMouseMoveX, 2) + Math.pow(coords.y - lastSentMouseMoveY, 2));
-            
-            if (isMouseDown || (timeElapsed > 150 && dist > 30)) {
-                latestMouseMove = coords;
-                lastSentMouseMoveX = coords.x;
-                lastSentMouseMoveY = coords.y;
-                lastSentMouseMoveTime = now;
-                
-                if (!mouseMoveTimeout) {
-                    mouseMoveTimeout = setTimeout(() => {
-                        mouseMoveTimeout = null;
-                        processMouseMoveQueue();
-                    }, isMouseDown ? 40 : 100);
-                }
-            }
+            // Network MOUSE_MOVE calls bypassed to optimize performance and prevent redundant network traffic
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
@@ -1033,7 +991,7 @@
                 if (["Space", "Enter", "Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
                     e.preventDefault();
                 }
-                sendControlCommand(`KEY_DOWN ${scancode}`);
+                // Keyboard network events bypassed as they are natively routed via Wayland
             }
         });
 
@@ -1043,7 +1001,7 @@
                 if (["Space", "Enter", "Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
                     e.preventDefault();
                 }
-                sendControlCommand(`KEY_UP ${scancode}`);
+                // Keyboard network events bypassed as they are natively routed via Wayland
             }
         });
 

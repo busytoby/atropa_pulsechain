@@ -25,6 +25,15 @@ bool tsfi_pulse_rpc_get_storage_at(const char *address, const char *slot_hex, ch
 // out_tx_hash should be at least 67 bytes to hold the resulting transaction hash
 bool tsfi_pulse_rpc_send_raw_transaction(const char *signed_tx_hex, char *out_tx_hash, size_t out_max_len);
 
+// Send an unsigned transaction to WinchesterMQ (target) directly
+bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex);
+
+// Publish a formatted cross-system input command message to WinchesterMQ
+void tsfi_thunk_publish_mq(const char *cmd);
+
+// Execute a raw JSON-RPC call to the local EVM/Anvil node
+bool tsfi_pulse_rpc_exec_raw(const char *json_payload, char *out_buffer, size_t out_max_len);
+
 #ifdef __cplusplus
 }
 #endif

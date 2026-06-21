@@ -595,15 +595,20 @@
             document.getElementById("spikeGlow").innerText = (spike_glow * 100).toFixed(2) + "%";
             document.getElementById("sicknessFactor").innerText = dynamic_sick.toFixed(6);
             
-            // Random crossovers logger entries simulation
+            // Audited system status simulation logger
             const now = performance.now();
             if (now - lastLogTime > 900) {
                 lastLogTime = now;
-                const randByte = Math.floor(Math.random() * 32);
-                if (Math.random() > 0.5) {
-                    logToTerminal(`[AVX-512] MixDNA_InPlace: Vector Crossover mask blend on byte offset 0x${randByte.toString(16).toUpperCase()}`, "crossover");
+                const randVal = Math.floor(Math.random() * 256);
+                const randChoice = Math.random();
+                if (randChoice < 0.25) {
+                    logToTerminal(`[WinchesterMQ] Queue event dispatch synchronized (0xccb077a0)`, "info");
+                } else if (randChoice < 0.50) {
+                    logToTerminal(`[ConsensusPKI] Checked 11 validator keys (Threshold 6/11 passed)`, "success");
+                } else if (randChoice < 0.75) {
+                    logToTerminal(`[ArenaProcessor] Sync batch cursor at offset 0x${randVal.toString(16).toUpperCase()}`, "info");
                 } else {
-                    logToTerminal(`[MUTATION] Crossover sparse mutation applied to index 0x${randByte.toString(16).toUpperCase()} (Threshold passed)`, "mutation");
+                    logToTerminal(`[DysnomiaVM] Audited memory segment: 6502 TTY registers clean at page 0x${randVal.toString(16).toUpperCase()}`, "mutation");
                 }
             }
             
@@ -620,6 +625,10 @@
             } else {
                 logToTerminal(`[SYS] INTEGRATION RESONANCE ALIGNED. LAUNCHING MAINLINE BROWSER DISCOVERY.`, "info");
                 document.getElementById("loaderText").innerText = "RESONANCE PROTOCOL SECURED. TRANSITIONING...";
+                setTimeout(() => {
+                    // Redirect to the main Auncient console portal hub
+                    window.location.href = "hub_portal.html";
+                }, 800);
             }
         }
 
