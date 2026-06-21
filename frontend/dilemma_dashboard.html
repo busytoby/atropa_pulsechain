@@ -10,11 +10,97 @@
     <style>
         .grid-3 {
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
+            grid-template-columns: 1.1fr 1fr 0.9fr;
+            gap: 20px;
         }
-        @media(max-width: 1024px) {
+        @media(max-width: 1200px) {
             .grid-3 { grid-template-columns: 1fr; }
+        }
+        .accumulators-panel {
+            background: rgba(13, 17, 38, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 400px;
+        }
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            max-height: 500px;
+            padding-right: 5px;
+        }
+        .token-card {
+            background: rgba(15, 22, 50, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-left: 4px solid var(--neon-blue);
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: all 0.25s ease;
+        }
+        .token-card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+            background: rgba(15, 22, 50, 0.85);
+        }
+        .token-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .token-symbol {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+        }
+        .token-classification {
+            font-size: 0.75rem;
+            font-family: 'Orbitron', sans-serif;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .class-accumulating {
+            background: rgba(0, 255, 127, 0.1);
+            color: #00ff7f;
+            border: 1px solid rgba(0, 255, 127, 0.4);
+        }
+        .class-distributing {
+            background: rgba(255, 69, 0, 0.1);
+            color: #ff4500;
+            border: 1px solid rgba(255, 69, 0, 0.4);
+        }
+        .class-draining {
+            background: rgba(255, 0, 127, 0.1);
+            color: #ff007f;
+            border: 1px solid rgba(255, 0, 127, 0.4);
+        }
+        .class-flooding {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--neon-blue);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+        }
+        .class-nominal {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .token-stats {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-family: monospace;
         }
         .status-container {
             display: flex;
@@ -75,16 +161,16 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            animation: slide-in 0.3s ease-out;
+            animation: fade-in 0.25s ease-out;
             transition: all 0.2s ease;
         }
         .log-entry:hover {
             background: rgba(15, 22, 50, 0.8);
             border-left-color: var(--neon-blue);
         }
-        @keyframes slide-in {
-            from { transform: translateX(-15px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .entry-main {
             display: flex;
@@ -195,6 +281,14 @@
                 </div>
             </div>
 
+            <!-- Middle: Token Accumulators -->
+            <div class="accumulators-panel">
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">Token Accumulators</h3>
+                <div id="accumulator-cards" class="cards-container">
+                    <div class="empty-log">No tokens tracked yet.</div>
+                </div>
+            </div>
+
             <!-- Right Side: State Visualization -->
             <div class="gait-viz-panel">
                 <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-purple); text-align: center;">Gait Trapping State</h3>
@@ -235,7 +329,7 @@
                 });
                 const json = await res.json();
                 const data = json.result;
-                if (data && Array.isArray(data) && data.length !== logs.length) {
+                if (data && Array.isArray(data)) {
                     logs = data;
                     updateLogsUI();
                 }
@@ -244,20 +338,121 @@
             }
         }
 
+        const tokenAccumulators = {};
+
+        function parseSwapLog(details) {
+            // Real Swap: Tx ... | Swap: 9375000.00 WPLS -> 64543.25 OPUS
+            let match = details.match(/Swap:\s+([\d\.]+)\s+(\S+)\s+->\s+([\d\.]+)\s+(\S+)/i);
+            if (match) {
+                return {
+                    fromSymbol: match[2],
+                    fromAmount: parseFloat(match[1]),
+                    toSymbol: match[4],
+                    toAmount: parseFloat(match[3])
+                };
+            }
+            // Simulated Swap: Tx ... | Simulated Swap: 100 USDC -> WPLS
+            match = details.match(/Simulated Swap:\s+([\d\.]+)\s+(\S+)\s+->\s+(\S+)/i);
+            if (match) {
+                return {
+                    fromSymbol: match[2],
+                    fromAmount: parseFloat(match[1]),
+                    toSymbol: match[3],
+                    toAmount: parseFloat(match[1]) * 1.5
+                };
+            }
+            return null;
+        }
+
+        function getClassification(token) {
+            const net = token.recv - token.sent;
+            if (net > 0) return "ACCUMULATING";
+            if (net < 0) return "DISTRIBUTING";
+            return "NOMINAL";
+        }
+
+        function renderAccumulators() {
+            const container = document.getElementById("accumulator-cards");
+            if (Object.keys(tokenAccumulators).length === 0) {
+                container.innerHTML = `<div class="empty-log">No tokens tracked yet.</div>`;
+                return;
+            }
+            container.innerHTML = "";
+            const sortedTokens = Object.values(tokenAccumulators).sort((a, b) => b.count - a.count);
+            sortedTokens.forEach(token => {
+                const classification = getClassification(token);
+                const classLower = classification.toLowerCase();
+                
+                const card = document.createElement("div");
+                card.className = `token-card`;
+                card.style.borderLeftColor = 
+                    classLower === "accumulating" ? "#00ff7f" :
+                    classLower === "distributing" ? "#ff4500" :
+                    "rgba(255, 255, 255, 0.3)";
+
+                card.innerHTML = `
+                    <div class="token-header">
+                        <span class="token-symbol">${token.symbol}</span>
+                        <span class="token-classification class-${classLower}">${classification}</span>
+                    </div>
+                    <div class="token-stats">
+                        <div>Sent: ${token.sent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div>Received: ${token.recv.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div>Swaps: ${token.count}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        const renderedKeys = new Set();
+
         function updateLogsUI() {
             const container = document.getElementById("log-entries");
             if (logs.length === 0) {
                 container.innerHTML = `<div class="empty-log">Listening for events... Try simulating a swap.</div>`;
+                renderedKeys.clear();
                 return;
             }
-            container.innerHTML = "";
-            logs.slice().reverse().forEach(log => {
-                const time = new Date(log.timestamp * 1000).toLocaleTimeString();
-                
-                // Determine if we should shift state representation
+            
+            const emptyLog = container.querySelector(".empty-log");
+            if (emptyLog) {
+                emptyLog.remove();
+            }
+
+            // Iterate in chronological order so prepending them puts the newest at the top
+            logs.forEach(log => {
+                const key = log.timestamp + "_" + log.event + "_" + log.details;
+                if (renderedKeys.has(key)) {
+                    return;
+                }
+                renderedKeys.add(key);
+
+                // Handle accumulation and bypass display for swap traps
                 if (log.event === "M:DILEMMA_SWAP_TRAP" || log.event.includes("SWAP")) {
+                    const swapInfo = parseSwapLog(log.details);
+                    if (swapInfo) {
+                        if (!tokenAccumulators[swapInfo.fromSymbol]) {
+                            tokenAccumulators[swapInfo.fromSymbol] = { symbol: swapInfo.fromSymbol, sent: 0, recv: 0, count: 0 };
+                        }
+                        if (!tokenAccumulators[swapInfo.toSymbol]) {
+                            tokenAccumulators[swapInfo.toSymbol] = { symbol: swapInfo.toSymbol, sent: 0, recv: 0, count: 0 };
+                        }
+                        
+                        tokenAccumulators[swapInfo.fromSymbol].sent += swapInfo.fromAmount;
+                        tokenAccumulators[swapInfo.fromSymbol].count += 1;
+                        
+                        tokenAccumulators[swapInfo.toSymbol].recv += swapInfo.toAmount;
+                        tokenAccumulators[swapInfo.toSymbol].count += 1;
+                    }
+                    
                     state = "TRAPPED (SWAP STATE)";
-                } else if (log.event === "M:DILEMMA_NULL_LOCK") {
+                    renderAccumulators();
+                    return; // Skip rendering in raw debug logs list
+                }
+
+                // Determine if we should shift state representation for other events
+                if (log.event === "M:DILEMMA_NULL_LOCK") {
                     state = "NULL STATE (LOCKED)";
                 } else if (log.event === "M:GAIT_TRAPPED") {
                     state = "TRAPPED (STUMBLING)";
@@ -265,8 +460,10 @@
                     state = "NOMINAL WALKING";
                 }
                 
+                const time = new Date(log.timestamp * 1000).toLocaleTimeString();
                 const entry = document.createElement("div");
                 entry.className = "log-entry";
+                entry.setAttribute("data-key", key);
                 entry.innerHTML = `
                     <div class="entry-main">
                         <div class="entry-title">${log.event}</div>
@@ -275,8 +472,21 @@
                     </div>
                     <div class="entry-time">${time}</div>
                 `;
-                container.appendChild(entry);
+                container.insertBefore(entry, container.firstChild);
             });
+
+            // Prune old DOM entries
+            while (container.children.length > 100) {
+                const lastChild = container.lastChild;
+                if (lastChild) {
+                    const key = lastChild.getAttribute("data-key");
+                    if (key) {
+                        renderedKeys.delete(key);
+                    }
+                    lastChild.remove();
+                }
+            }
+
             document.getElementById("gait-state-text").innerText = state;
         }
 

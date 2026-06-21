@@ -935,12 +935,32 @@ const server = http.createServer(async (req, res) => {
 
                 const net = require("net");
                 const socket = net.createConnection({ port: 10042 }, () => {
-                    socket.write(JSON.stringify({
-                        jsonrpc: "2.0",
-                        method: "wave512.run",
-                        params: { code: code },
-                        id: 1
-                    }));
+                    let rpcPayload;
+                    if (code.startsWith("wave512.dilemma_log")) {
+                        const jsonPart = code.substring("wave512.dilemma_log".length).trim();
+                        let params = {};
+                        if (jsonPart) {
+                            try {
+                                params = JSON.parse(jsonPart);
+                            } catch (e) {
+                                console.error("[SERVER] Failed to parse wave512.dilemma_log JSON part:", e);
+                            }
+                        }
+                        rpcPayload = {
+                            jsonrpc: "2.0",
+                            method: "wave512.dilemma_log",
+                            params: params,
+                            id: 1
+                        };
+                    } else {
+                        rpcPayload = {
+                            jsonrpc: "2.0",
+                            method: "wave512.run",
+                            params: { code: code },
+                            id: 1
+                        };
+                    }
+                    socket.write(JSON.stringify(rpcPayload));
                 });
 
                 let responseData = "";

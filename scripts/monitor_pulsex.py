@@ -129,7 +129,7 @@ def publish_mq(cmd):
 RPC_URL = "https://rpc.pulsechain.com"
 
 # Swap event signature hashes
-SWAP_V2_HASH = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657ff88e4e6fcfd5c1c1404c"
+SWAP_V2_HASH = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
 SWAP_V3_HASH = "0xc42079f94a1634158ef986f500127bce9d5102910f196ce1c272a85db00336ad"
 
 # ABIs
