@@ -345,6 +345,18 @@
             });
         }
 
+        let audioCtx = null;
+        const activeOscillators = {};
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
         // Listen for BroadcastChannel notes and window messages
         const handleNoteEvent = (data) => {
             if (!toggle.checked) return;
@@ -355,6 +367,7 @@
                 const gateOn = control & 1;
                 
                 if (gateOn) {
+                    initAudio();
                     // Excite corresponding harmonic index
                     let targetMode = Math.floor(((freq - 60) / 1200) * waveM);
                     exciteSpectralMode(targetMode, 6.5);
@@ -367,6 +380,41 @@
                         activeNoteEl.innerText = "---";
                         activeNoteEl.style.color = "";
                     }, 800);
+
+                    // Polyphonic note trigger
+                    if (audioCtx) {
+                        if (activeOscillators[freq]) {
+                            try { activeOscillators[freq].osc.stop(); } catch(e) {}
+                        }
+                        const osc = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        
+                        gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.04);
+                        
+                        osc.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        osc.start();
+                        
+                        activeOscillators[freq] = { osc, gainNode };
+                    }
+                } else {
+                    const voice = activeOscillators[freq];
+                    if (voice && audioCtx) {
+                        const now = audioCtx.currentTime;
+                        voice.gainNode.gain.cancelScheduledValues(now);
+                        voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
+                        voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                        
+                        const oscToStop = voice.osc;
+                        setTimeout(() => {
+                            try { oscToStop.stop(); } catch(e) {}
+                        }, 150);
+                        delete activeOscillators[freq];
+                    }
                 }
             } else if (data.type === 'synth_reset') {
                 waveQ.fill(0);
@@ -382,6 +430,12 @@
                     activeNoteEl.innerText = "---";
                     activeNoteEl.style.color = "";
                 }, 1000);
+
+                // Stop all audio voices
+                Object.keys(activeOscillators).forEach(f => {
+                    try { activeOscillators[f].osc.stop(); } catch(e) {}
+                    delete activeOscillators[f];
+                });
             }
         };
 
@@ -663,6 +717,7 @@
 
         // Toggle Switch event listener
         toggle.addEventListener("change", () => {
+            initAudio();
             if (toggle.checked) {
                 statusPill.innerText = "Online";
                 statusPill.classList.add("active");
@@ -675,6 +730,7 @@
         // Autoplay Score Trigger
         const btnPlayScore = document.getElementById("btnPlayScore");
         btnPlayScore.addEventListener("click", () => {
+            initAudio();
             if (!toggle.checked) {
                 toggle.checked = true;
                 statusPill.innerText = "Online";
@@ -712,6 +768,11 @@
                     });
                 }, step.delay + 220);
             });
+        });
+
+        // Unlock audio context on body click
+        document.body.addEventListener("click", () => {
+            initAudio();
         });
 
         // Initialize animation loop
