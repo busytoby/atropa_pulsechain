@@ -442,10 +442,7 @@ async function main() {
             "--window-size=800,600",
             "--autoplay-policy=no-user-gesture-required",
             "--disable-blink-features=AutomationControlled",
-            "--disable-gpu",
-            "--use-gl=swiftshader",
             "--disable-accelerated-video-decode",
-            "--disable-gpu-rasterization",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
