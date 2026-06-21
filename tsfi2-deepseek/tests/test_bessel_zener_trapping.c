@@ -10,6 +10,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#include "tsfi_pulsechain_rpc.h"
+#include "tsfi_wire_firmware.h"
+
 // Numerical approximation of Bessel Function of first kind J_n(x)
 double bessel_j(int n, double x) {
     int steps = 100;
@@ -114,6 +117,7 @@ void simulate_bessel_zener_gait(const char *name, int profile, double vs_voltage
     int last_mode = -1;
     int transitions_count = 0;
     double noise_power = 0.0;
+    bool gait_trapped_mq_published = false;
     
     // Simulate 2000 steps (2.0s)
     for (int t = 0; t < 2000; t++) {
@@ -135,6 +139,10 @@ void simulate_bessel_zener_gait(const char *name, int profile, double vs_voltage
         if (noise_power > 0.0005) {
             gait.is_trapped = true;
             gait.trapped_count++;
+            if (!gait_trapped_mq_published) {
+                tsfi_thunk_publish_mq("M:GAIT_TRAPPED");
+                gait_trapped_mq_published = true;
+            }
         } else {
             gait.is_trapped = false;
         }
@@ -203,6 +211,16 @@ void simulate_bessel_zener_gait(const char *name, int profile, double vs_voltage
     *out_class = classify_gait_state(trap_ratio, hip_variance, knee_variance, gait.is_locked);
     *out_trigger = evaluate_gait_trigger(*out_class, transitions_count);
     
+    if (*out_trigger == 1) {
+        tsfi_thunk_publish_mq("M:TRIGGER_NOMINAL");
+    } else if (*out_trigger == 2) {
+        tsfi_thunk_publish_mq("M:TRIGGER_RECOVERY");
+    } else if (*out_trigger == 3) {
+        tsfi_thunk_publish_mq("M:TRIGGER_RESET");
+    } else if (*out_trigger == 0) {
+        tsfi_thunk_publish_mq("M:NO_TRIGGER");
+    }
+    
     printf("  |- Results -> TrapRatio: %.2f%%, Transitions: %d, HipVar: %.2f, KneeVar: %.2f\n",
            trap_ratio * 100.0, transitions_count, hip_variance, knee_variance);
     printf("  |- Classifier Mode: %d (%s)\n", *out_class,
@@ -213,6 +231,7 @@ void simulate_bessel_zener_gait(const char *name, int profile, double vs_voltage
 
 int main() {
     printf("=== Auncient Hybrid Bessel-Zener Gait Trapping Suite ===\n");
+    tsfi_wire_firmware_init();
     
     int class_val = -1, trigger_val = -1;
     
