@@ -580,28 +580,79 @@ Status: Awaiting user to start music.</div>
             ctx.stroke();
         }
 
-        // 3D Lighting and Volumetric Primitives
+        // Caching systems for volumetric rendering to dramatically boost speed
+        const sphereCache = {};
+        function getCachedSphere(baseColor) {
+            if (sphereCache[baseColor]) {
+                return sphereCache[baseColor];
+            }
+            const size = 256;
+            const canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            const tempCtx = canvas.getContext("2d");
+            const center = size / 2;
+            const radius = size / 2;
+            const highlightX = center - radius * 0.25;
+            const highlightY = center - radius * 0.25;
+            const grad = tempCtx.createRadialGradient(highlightX, highlightY, radius * 0.05, center, center, radius);
+            grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+            tempCtx.fillStyle = grad;
+            tempCtx.beginPath();
+            tempCtx.arc(center, center, radius, 0, Math.PI * 2);
+            tempCtx.fill();
+            sphereCache[baseColor] = canvas;
+            return canvas;
+        }
+
+        const capsuleCache = {};
+        function getCachedCapsule(baseColor) {
+            if (capsuleCache[baseColor]) {
+                return capsuleCache[baseColor];
+            }
+            const width = 512;
+            const height = 128;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const tempCtx = canvas.getContext("2d");
+            const grad = tempCtx.createLinearGradient(0, 0, 0, height);
+            grad.addColorStop(0, "rgba(4, 6, 15, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(0.55, "rgba(255, 255, 255, 0.8)");
+            grad.addColorStop(0.75, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+            tempCtx.strokeStyle = grad;
+            tempCtx.lineWidth = height;
+            tempCtx.lineCap = "round";
+            tempCtx.beginPath();
+            tempCtx.moveTo(height / 2, height / 2);
+            tempCtx.lineTo(width - height / 2, height / 2);
+            tempCtx.stroke();
+            capsuleCache[baseColor] = canvas;
+            return canvas;
+        }
+
+        // Shaded 3D Sphere Helper (Pre-rendered for high quality and speed)
         function drawVolumetricSphere(p3d, radius, baseColor) {
             let proj = project(p3d);
             if (!proj) return;
             let screenRadius = radius * (camera.fov / proj.depth);
             if (screenRadius <= 1) return;
 
-            ctx.save();
-            let highlightX = proj.x - screenRadius * 0.25;
-            let highlightY = proj.y - screenRadius * 0.25;
-            let grad = ctx.createRadialGradient(highlightX, highlightY, screenRadius * 0.05, proj.x, proj.y, screenRadius);
-            grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-            grad.addColorStop(0.3, baseColor);
-            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
-
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+            let sphereSprite = getCachedSphere(baseColor);
+            ctx.drawImage(
+                sphereSprite,
+                proj.x - screenRadius,
+                proj.y - screenRadius,
+                screenRadius * 2,
+                screenRadius * 2
+            );
         }
 
+        // Shaded 3D Capsule Helper (Limbs & Torso) (Pre-rendered for speed)
         function drawVolumetricCapsule(p1, p2, radius, baseColor) {
             let sc1 = project(p1);
             let sc2 = project(p2);
@@ -616,25 +667,19 @@ Status: Awaiting user to start music.</div>
             let len = Math.sqrt(dx*dx + dy*dy);
             if (len < 1) return;
 
-            let nx = -dy / len;
-            let ny = dx / len;
+            let angle = Math.atan2(dy, dx);
+            let capsuleSprite = getCachedCapsule(baseColor);
 
             ctx.save();
-            let grad = ctx.createLinearGradient(sc1.x - nx * avgRadius, sc1.y - ny * avgRadius, sc1.x + nx * avgRadius, sc1.y + ny * avgRadius);
-            grad.addColorStop(0, "rgba(4, 6, 15, 0.95)");
-            grad.addColorStop(0.3, baseColor);
-            grad.addColorStop(0.55, "rgba(255, 255, 255, 0.8)");
-            grad.addColorStop(0.75, baseColor);
-            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
-
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = avgRadius * 2;
-            ctx.lineCap = "round";
-
-            ctx.beginPath();
-            ctx.moveTo(sc1.x, sc1.y);
-            ctx.lineTo(sc2.x, sc2.y);
-            ctx.stroke();
+            ctx.translate(sc1.x, sc1.y);
+            ctx.rotate(angle);
+            ctx.drawImage(
+                capsuleSprite,
+                -avgRadius,
+                -avgRadius,
+                len + avgRadius * 2,
+                avgRadius * 2
+            );
             ctx.restore();
         }
 

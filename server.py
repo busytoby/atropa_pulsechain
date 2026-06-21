@@ -249,6 +249,29 @@ mjpeg_clients = []
 mjpeg_lock = threading.Lock()
 
 video_status_store = {"currentTime": 0.0, "duration": 0.0, "paused": True, "muted": True}
+youtube_process = None
+youtube_process_lock = threading.Lock()
+
+tx_queue = queue.Queue()
+
+def tx_worker():
+    import urllib.request
+    while True:
+        payload = tx_queue.get()
+        try:
+            req = urllib.request.Request(
+                "http://127.0.0.1:8545",
+                data=json.dumps(payload).encode('utf-8'),
+                headers={'content-type': 'application/json'}
+            )
+            with urllib.request.urlopen(req, timeout=2) as response:
+                response.read()
+        except Exception as e:
+            pass
+        finally:
+            tx_queue.task_done()
+
+threading.Thread(target=tx_worker, daemon=True).start()
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     pass
@@ -300,6 +323,111 @@ class CustomHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(video_status_store).encode('utf-8'))
             return
+        if parsed_path == '/api/capture-clip':
+            import urllib.parse
+            import time
+            query = urllib.parse.urlparse(self.path).query
+            query_params = urllib.parse.parse_qs(query)
+            
+            duration_str = query_params.get('duration', ['3'])[0]
+            try:
+                duration = min(5.0, max(1.0, float(duration_str)))
+            except ValueError:
+                duration = 3.0
+                
+            print(f"[Server] Starting capture of {duration}s clip...")
+            
+            # Create a queue to capture incoming frames
+            q = queue.Queue()
+            with mjpeg_lock:
+                mjpeg_clients.append(q)
+                
+            frames = []
+            start_time = time.time()
+            end_time = start_time + duration
+            
+            try:
+                while time.time() < end_time:
+                    remaining = end_time - time.time()
+                    if remaining <= 0:
+                        break
+                    try:
+                        # Wait for a frame with a timeout
+                        frame = q.get(timeout=min(0.2, remaining))
+                        frames.append(frame)
+                    except queue.Empty:
+                        continue
+            finally:
+                with mjpeg_lock:
+                    if q in mjpeg_clients:
+                        mjpeg_clients.remove(q)
+            
+            if not frames:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'error', 'message': 'No frames captured'}).encode('utf-8'))
+                return
+                
+            # Compile frames to MP4 using ffmpeg
+            import tempfile
+            import shutil
+            
+            temp_dir = tempfile.mkdtemp()
+            try:
+                for idx, frame in enumerate(frames):
+                    frame_path = os.path.join(temp_dir, f"frame_{idx:05d}.jpg")
+                    with open(frame_path, 'wb') as f:
+                        f.write(frame)
+                        
+                # Determine output path in the conversation artifacts directory
+                artifact_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/57150854-0857-4cb4-80d1-21c45c1c292a"
+                os.makedirs(artifact_dir, exist_ok=True)
+                
+                timestamp = int(time.time())
+                output_filename = f"capture_{timestamp}.mp4"
+                output_path = os.path.join(artifact_dir, output_filename)
+                
+                # Estimate FPS
+                fps = max(1, int(len(frames) / duration))
+                
+                # Run ffmpeg
+                ffmpeg_cmd = [
+                    "ffmpeg", "-y",
+                    "-framerate", str(fps),
+                    "-i", os.path.join(temp_dir, "frame_%05d.jpg"),
+                    "-c:v", "libx264",
+                    "-pix_fmt", "yuv420p",
+                    "-preset", "ultrafast",
+                    output_path
+                ]
+                
+                res = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+                if res.returncode == 0:
+                    print(f"[Server] Captured {len(frames)} frames into {output_path}")
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'success',
+                        'file': output_path,
+                        'frames': len(frames),
+                        'fps': fps
+                    }).encode('utf-8'))
+                else:
+                    print(f"[Server] ffmpeg compilation failed: {res.stderr}")
+                    self.send_response(500)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'ffmpeg compilation failed',
+                        'details': res.stderr
+                    }).encode('utf-8'))
+            finally:
+                shutil.rmtree(temp_dir)
+            return
+
         if parsed_path == '/api/config':
             config_path = os.path.join(os.getcwd(), 'config/user_config.json')
             if os.path.exists(config_path):
@@ -570,13 +698,37 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'status': 'success', 'frames': frame_urls}).encode('utf-8'))
                 return
         elif self.path == '/open-browser':
-            # Terminate existing node browser controllers for YouTube to prevent layout/display conflicts
-            subprocess.run(["pkill", "-f", "rooted_browser_controller.js.*youtube"])
-            
-            # Spawn the new browser controller pointing to YouTube with Atropa "this week" query
-            target_url = "https://www.youtube.com/results?search_query=atropa&sp=EgQIAxAB"
-            print(f"[Server] Spawning Auncient rooted browser controller for URL: {target_url}")
-            subprocess.Popen(["node", "scripts/rooted_browser_controller.js", target_url])
+            global youtube_process
+            with youtube_process_lock:
+                if youtube_process is not None:
+                    print(f"[Server] Terminating existing YouTube process PID {youtube_process.pid}...")
+                    try:
+                        youtube_process.terminate()
+                        youtube_process.wait(timeout=3)
+                    except Exception as err:
+                        print(f"[Server] Error terminating process: {err}")
+                        try:
+                            youtube_process.kill()
+                        except:
+                            pass
+                    youtube_process = None
+
+                # Additional fallback to clean up any untracked or orphaned controllers
+                subprocess.run(["pkill", "-f", "rooted_browser_controller.js.*youtube"])
+                
+                # Reap defunct children to prevent zombie processes
+                try:
+                    while True:
+                        pid, status = os.waitpid(-1, os.WNOHANG)
+                        if pid == 0:
+                            break
+                except ChildProcessError:
+                    pass
+
+                # Spawn the new browser controller pointing to YouTube with Atropa "this week" query
+                target_url = "https://www.youtube.com/results?search_query=atropa&sp=EgQIAxAB"
+                print(f"[Server] Spawning Auncient rooted browser controller for URL: {target_url}")
+                youtube_process = subprocess.Popen(["node", "scripts/rooted_browser_controller.js", target_url])
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -614,17 +766,10 @@ class CustomHandler(SimpleHTTPRequestHandler):
                             }],
                             "id": 1
                         }
-                        import urllib.request
-                        req = urllib.request.Request(
-                            "http://127.0.0.1:8545",
-                            data=json.dumps(payload).encode('utf-8'),
-                            headers={'content-type': 'application/json'}
-                        )
-                        with urllib.request.urlopen(req, timeout=2) as response:
-                            res_data = json.loads(response.read().decode('utf-8'))
-                            print(f"[Server] Dispatched input command via WMQ transaction: {command}")
+                        tx_queue.put(payload)
+                        print(f"[Server] Queued input command via WMQ transaction: {command}")
                     except Exception as tx_err:
-                        print(f"[Server] Failed to dispatch transaction to WMQ: {tx_err}")
+                        print(f"[Server] Failed to queue transaction to WMQ: {tx_err}")
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')

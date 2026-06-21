@@ -269,10 +269,27 @@ async function main() {
 
     // Define helper function to route input events to Puppeteer
     let page = null;
+    let videoBounds = { x: 427, y: 221, width: 341, height: 145 };
+    async function updateVideoBounds() {
+        if (!page) return;
+        try {
+            const rect = await page.evaluate(() => {
+                const el = document.getElementById('browserStreamSvg');
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+            });
+            if (rect && rect.width > 0 && rect.height > 0) {
+                videoBounds = rect;
+            }
+        } catch (err) {}
+    }
     let controlDown = false;
     let lastClickTime = 0;
     let clickCount = 1;
     let resizeTimeout = null;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
     async function handleInputCommand(line) {
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
@@ -288,6 +305,8 @@ async function main() {
             if (cmd === 'MOUSE_MOVE') {
                 const x = parseInt(parts[1]);
                 const y = parseInt(parts[2]);
+                lastMouseX = x;
+                lastMouseY = y;
                 await sendWmqEvent(eventPrefix + 'MOUSE_MOVE', `${x},${y}`);
                 await page.mouse.move(x, y);
                 // Manually trigger mousemove event on YouTube player container to force controls to pop up
@@ -308,6 +327,8 @@ async function main() {
                 if (parts[2] !== undefined && parts[3] !== undefined) {
                     const x = parseInt(parts[2]);
                     const y = parseInt(parts[3]);
+                    lastMouseX = x;
+                    lastMouseY = y;
                     await page.mouse.move(x, y);
                 }
                 await sendWmqEvent(eventPrefix + 'MOUSE_DOWN', `${btn}`);
@@ -325,6 +346,8 @@ async function main() {
                 if (parts[2] !== undefined && parts[3] !== undefined) {
                     const x = parseInt(parts[2]);
                     const y = parseInt(parts[3]);
+                    lastMouseX = x;
+                    lastMouseY = y;
                     await page.mouse.move(x, y);
                 }
                 await page.mouse.up({ button, clickCount });
@@ -356,20 +379,31 @@ async function main() {
                 }
             } else if (cmd === 'MOUSE_SCROLL') {
                 const axis = parseInt(parts[1]); // 0 for vertical scroll, 1 for horizontal
-                const value = parseInt(parts[2]);
+                const value = parseFloat(parts[2]);
+                console.log(`[INPUT ROUTER] Processed MOUSE_SCROLL event: axis=${axis}, value=${value}, target=${isYouTube ? 'YouTube' : 'Main'}`);
                 await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
-                const deltaY = (axis === 0) ? value * 10 : 0;
-                const deltaX = (axis === 1) ? value * 10 : 0;
                 
-                // Rely primarily on smooth DOM scrolling for a fluid frame presentation
-                await page.evaluate((dx, dy) => {
-                    const scrollOptions = { left: dx, top: dy, behavior: 'smooth' };
-                    window.scrollBy(scrollOptions);
-                    const container = document.querySelector('#content, #page-manager, ytd-app, #primary');
-                    if (container && typeof container.scrollBy === 'function') {
-                        container.scrollBy(scrollOptions);
-                    }
-                }, deltaX, deltaY).catch(() => {});
+                const deltaY = (axis === 0) ? value * 8 : 0;
+                const deltaX = (axis === 1) ? value * 8 : 0;
+                try {
+                    // Dispatch native chromium wheel events at current cursor location
+                    await page.mouse.wheel({ deltaX, deltaY });
+                } catch (wheelErr) {
+                    // Fallback: programmatically dispatch DOM WheelEvent to correct element under cursor
+                    await page.evaluate((x, y, dx, dy) => {
+                        const el = document.elementFromPoint(x, y) || document.body;
+                        const ev = new WheelEvent('wheel', {
+                            bubbles: true,
+                            cancelable: true,
+                            clientX: x,
+                            clientY: y,
+                            deltaX: dx,
+                            deltaY: dy,
+                            deltaMode: 0
+                        });
+                        el.dispatchEvent(ev);
+                    }, lastMouseX, lastMouseY, deltaX, deltaY).catch(() => {});
+                }
             } else if (cmd === 'WINDOW_CLOSE') {
                 console.log("[PUPPETEER] Wayland close event requested. Shutting down browser...");
                 active = false;
@@ -396,6 +430,7 @@ async function main() {
                     console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
                     try {
                         await page.setViewport({ width, height });
+                        await updateVideoBounds();
                     } catch (viewportErr) {
                         // ignore viewport errors
                     }
@@ -446,6 +481,17 @@ async function main() {
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
+    
+    async function cleanup() {
+        console.log("[PUPPETEER] SIGINT/SIGTERM received. Cleaning up and closing browser...");
+        active = false;
+        try {
+            await browser.close();
+        } catch (err) {}
+        process.exit(0);
+    }
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
 
     page = await browser.newPage();
     await page.evaluateOnNewDocument(() => {
@@ -487,7 +533,7 @@ async function main() {
     setInterval(async () => {
         try {
             if (!isYouTube) {
-                const isLoaded = await page.evaluate(() => !!document.getElementById("btnOpenBrowser")).catch(() => false);
+                const isLoaded = await page.evaluate(() => !!document.getElementById("vulkanPipelineCanvas")).catch(() => false);
                 if (!isLoaded) {
                     console.log("[PUPPETEER] Dashboard UI not detected. Reconnecting to " + url + "...");
                     await page.goto(url, { waitUntil: "networkidle2" }).catch(() => {});
@@ -549,6 +595,11 @@ async function main() {
                 const bufferedPercent = video.duration > 0 && video.buffered.length > 0 ? 
                     (video.buffered.end(video.buffered.length - 1) / video.duration) * 100 : 0;
 
+                // Get page scroll position
+                const scrollY = window.scrollY || document.documentElement.scrollTop;
+                const container = document.querySelector('#content, #page-manager, ytd-app, #primary');
+                const containerScrollTop = container ? container.scrollTop : 0;
+
                 return {
                     found: true,
                     currentTime: video.currentTime,
@@ -566,7 +617,9 @@ async function main() {
                     videoQuality,
                     volume,
                     playbackRate,
-                    bufferedPercent
+                    bufferedPercent,
+                    scrollY,
+                    containerScrollTop
                 };
             });
 
@@ -579,7 +632,7 @@ async function main() {
             if (status.found) {
                 const cur = (typeof status.currentTime === 'number') ? status.currentTime.toFixed(1) : '0';
                 const dur = (typeof status.duration === 'number') ? status.duration.toFixed(1) : '0';
-                console.log(`[VIDEO STATUS] Time: ${cur}s / ${dur}s, Paused: ${status.paused}, Muted: ${status.muted}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
+                console.log(`[VIDEO STATUS] Time: ${cur}s / ${dur}s, Paused: ${status.paused}, Muted: ${status.muted}, ScrollY: ${status.scrollY}, ContainerScrollTop: ${status.containerScrollTop}, Error: ${status.hasError} (${status.errorText}), Title: "${status.title}"`);
                 await sendWmqEvent("VIDEO_STATUS", `${cur},${dur},${status.paused},${status.muted}`);
                 
                 try {
@@ -678,14 +731,29 @@ async function main() {
     }
 
     let frameCount = 0;
+    let client = null;
     async function startScreencast() {
+        console.log("[PUPPETEER] startScreencast() triggered. Target ID:", page.target()._targetId);
         try {
-            const client = await page.target().createCDPSession();
+            if (client) {
+                try {
+                    console.log("[PUPPETEER] Detaching existing CDPSession client...");
+                    await client.detach();
+                } catch (detachErr) {
+                    console.log("[PUPPETEER] Detach warning:", detachErr.message);
+                }
+                client = null;
+            }
+            client = await page.target().createCDPSession();
+            console.log("[PUPPETEER] Created CDPSession client.");
             await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
+            console.log("[PUPPETEER] Page.startScreencast sent successfully.");
             client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
                 try {
                     if (!active) {
-                        await client.send('Page.screencastFrameAck', { sessionId });
+                        try {
+                            await client.send('Page.screencastFrameAck', { sessionId });
+                        } catch (e) {}
                         return;
                     }
                     const jpegBuffer = Buffer.from(data, 'base64');
@@ -704,10 +772,14 @@ async function main() {
                     }
 
                     if (presenter && active && presenter.stdin.writable) {
-                        const lenBuf = Buffer.alloc(4);
-                        lenBuf.writeUInt32LE(jpegBuffer.length, 0);
+                        const headerBuf = Buffer.alloc(20);
+                        headerBuf.writeUInt32LE(jpegBuffer.length, 0);
+                        headerBuf.writeInt32LE(videoBounds.x, 4);
+                        headerBuf.writeInt32LE(videoBounds.y, 8);
+                        headerBuf.writeInt32LE(videoBounds.width, 12);
+                        headerBuf.writeInt32LE(videoBounds.height, 16);
 
-                        let ok = presenter.stdin.write(lenBuf);
+                        let ok = presenter.stdin.write(headerBuf);
                         if (ok) {
                             ok = presenter.stdin.write(jpegBuffer);
                         }
@@ -718,7 +790,9 @@ async function main() {
                             console.log(`[STREAM] Sent ${frameCount} screencast frames.`);
                         }
                     }
-                    await client.send('Page.screencastFrameAck', { sessionId });
+                    try {
+                        await client.send('Page.screencastFrameAck', { sessionId });
+                    } catch (e) {}
                 } catch (err) {
                     try {
                         await client.send('Page.screencastFrameAck', { sessionId });
@@ -726,7 +800,7 @@ async function main() {
                 }
             });
         } catch (screencastErr) {
-            console.error("[PUPPETEER] Screencast setup failed: " + screencastErr.message);
+            console.error("[PUPPETEER] Screencast setup failed:", screencastErr);
             screenshotLoop();
         }
     }
@@ -749,9 +823,13 @@ async function main() {
                 }
 
                 if (presenter && active && presenter.stdin.writable) {
-                    const lenBuf = Buffer.alloc(4);
-                    lenBuf.writeUInt32LE(jpegBuffer.length, 0);
-                    let ok = presenter.stdin.write(lenBuf);
+                    const headerBuf = Buffer.alloc(20);
+                    headerBuf.writeUInt32LE(jpegBuffer.length, 0);
+                    headerBuf.writeInt32LE(videoBounds.x, 4);
+                    headerBuf.writeInt32LE(videoBounds.y, 8);
+                    headerBuf.writeInt32LE(videoBounds.width, 12);
+                    headerBuf.writeInt32LE(videoBounds.height, 16);
+                    let ok = presenter.stdin.write(headerBuf);
                     if (ok) {
                         ok = presenter.stdin.write(jpegBuffer);
                     }
@@ -767,7 +845,28 @@ async function main() {
             }
         }
     }
-    startScreencast();
+
+    if (!isYouTube) {
+        page.on('load', async () => {
+            await updateVideoBounds();
+            await startScreencast();
+        });
+        page.on('domcontentloaded', async () => {
+            console.log("[PUPPETEER EVENT] DOMContentLoaded fired.");
+            await updateVideoBounds();
+        });
+        setInterval(async () => {
+            await updateVideoBounds();
+        }, 2000);
+        
+        // Initial setup
+        (async () => {
+            await updateVideoBounds();
+            await startScreencast();
+        })();
+    } else {
+        screenshotLoop();
+    }
 
     if (url.includes("youtube.com")) {
         try {
@@ -785,12 +884,16 @@ async function main() {
             console.log("[PUPPETEER] Identifying search input box...");
             const searchInputSelector = 'input[name="search_query"], input#search';
             await page.waitForSelector(searchInputSelector, { timeout: 10000 });
-            console.log("[PUPPETEER] Search input identified. Clearing and typing 'Atropa'...");
-            await page.focus(searchInputSelector);
-            // Select all text in the search input and clear it
-            await page.click(searchInputSelector, { clickCount: 3 });
-            await page.keyboard.press('Backspace');
-            await page.type(searchInputSelector, "Atropa", { delay: 150 });
+            const existingText = await page.$eval(searchInputSelector, el => el.value).catch(() => "");
+            console.log(`[PUPPETEER] Existing search query text: "${existingText}"`);
+            if (existingText.trim().toLowerCase() !== "atropa") {
+                console.log("[PUPPETEER] Clearing search input and typing 'Atropa'...");
+                await page.$eval(searchInputSelector, el => el.value = '');
+                await page.focus(searchInputSelector);
+                await page.type(searchInputSelector, "Atropa", { delay: 150 });
+            } else {
+                console.log("[PUPPETEER] Search input already contains 'Atropa'. Skipping typing.");
+            }
             console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
             // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
             const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";

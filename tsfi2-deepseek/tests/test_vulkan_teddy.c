@@ -1968,6 +1968,22 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     offsets_y[0] = 0.0f;
                 }
 
+                // Pre-calculate background shadow once at pixel center for massive speedup
+                float bg_shadow = calculate_shadow(cx_center, cy_center, -0.4f, lx, ly, lz, body, -1);
+
+                // Hoist closest-joint search out of the sub-sample loop since offsets are sub-pixel
+                int closest_idx = 0;
+                float min_d = 1e10f;
+                for (int i = 0; i < 8; i++) {
+                    float dx = cx_center - body[i].x;
+                    float dy = cy_center - body[i].y;
+                    float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+                    if (dist < min_d) {
+                        min_d = dist;
+                        closest_idx = i;
+                    }
+                }
+
                 for (int sub = 0; sub < num_samples; sub++) {
                     float sx = (float)x + offsets_x[sub];
                     float sy = (float)y + offsets_y[sub];
@@ -1981,7 +1997,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     float sub_bg_factor = 1.0f - sub_rad * 0.6f;
                     if (sub_bg_factor < 0.0f) sub_bg_factor = 0.0f;
                     
-                    float sub_bg_shadow = calculate_shadow(cx, cy, -0.4f, lx, ly, lz, body, -1);
+                    float sub_bg_shadow = bg_shadow;
                     
                     float sub_r = (0.10f * sub_bg_factor + 0.02f) * (0.35f + 0.65f * sub_bg_shadow);
                     float sub_g = (0.14f * sub_bg_factor + 0.01f) * (0.35f + 0.65f * sub_bg_shadow);
@@ -2150,18 +2166,6 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     nx *= nxy_scale;
                                     ny *= nxy_scale;
 
-                                    int closest_idx = 0;
-                                    float min_d = 1e10f;
-                                    for (int i = 0; i < 8; i++) {
-                                        float dx = cx - body[i].x;
-                                        float dy = cy - body[i].y;
-                                        float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
-                                        if (dist < min_d) {
-                                            min_d = dist;
-                                            closest_idx = i;
-                                        }
-                                    }
-
                                     float radius_with_shell = body[closest_idx].r;
                                     float dx_closest = cx - body[closest_idx].x;
                                     float dy_closest = cy - body[closest_idx].y;
@@ -2197,6 +2201,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                             float accum_b = 0.0f;
                             float accum_a = 0.0f;
 
+                            float dx_closest = cx - body[closest_idx].x;
+                            float dy_closest = cy - body[closest_idx].y;
+
                             for (int shell = num_shells - 1; shell >= 0; shell--) {
                                 float shell_offset = ((float)shell / num_shells) * fur_length;
                                 if (d_blend < shell_offset) {
@@ -2224,21 +2231,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
                                         if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
 
-                                        int closest_idx = 0;
-                                        float min_d = 1e10f;
-                                        for (int i = 0; i < 8; i++) {
-                                            float dx = cx - body[i].x;
-                                            float dy = cy - body[i].y;
-                                            float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
-                                            if (dist < min_d) {
-                                                min_d = dist;
-                                                closest_idx = i;
-                                            }
-                                        }
-
                                         float radius_with_shell = body[closest_idx].r + shell_offset;
-                                        float dx_closest = cx - body[closest_idx].x;
-                                        float dy_closest = cy - body[closest_idx].y;
                                         float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
                                         float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
                                         float shadow_val = 1.0f;

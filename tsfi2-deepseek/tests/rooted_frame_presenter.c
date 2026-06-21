@@ -103,10 +103,7 @@ static void my_error_exit(j_common_ptr cinfo) {
     longjmp(myerr->setjmp_buffer, 1);
 }
 
-bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
-    for (int i = 0; i < width * height; i++) {
-        scanout_px[i] = 0xFF0B0214;
-    }
+bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -145,6 +142,204 @@ bool decode_jpeg(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, 
     jpeg_destroy_decompress(&cinfo);
     return true;
 }
+
+static int g_dest_x = 410;
+static int g_dest_y = 80;
+static int g_dest_w = 380;
+static int g_dest_h = 380;
+
+bool decode_jpeg_subrect(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    struct jpeg_decompress_struct cinfo;
+    struct my_error_mgr jerr;
+    cinfo.err = jpeg_std_error(&jerr.pub);
+    jerr.pub.error_exit = my_error_exit;
+    if (setjmp(jerr.setjmp_buffer)) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+    jpeg_create_decompress(&cinfo);
+    jpeg_mem_src(&cinfo, jpeg_buf, jpeg_sz);
+    if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+    cinfo.out_color_space = JCS_RGB;
+    if (!jpeg_start_decompress(&cinfo)) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+
+    // Reserved sub-rectangle for the YouTube stream in the Auncient dashboard layout
+    int dest_x = g_dest_x;
+    int dest_y = g_dest_y;
+    int dest_w = g_dest_w;
+    int dest_h = g_dest_h;
+
+    if (dest_x < 0) dest_x = 0;
+    if (dest_y < 0) dest_y = 0;
+    if (dest_x >= width) dest_x = width - 1;
+    if (dest_y >= height) dest_y = height - 1;
+    if (dest_w <= 0) dest_w = 1;
+    if (dest_h <= 0) dest_h = 1;
+    if (dest_x + dest_w > width) dest_w = width - dest_x;
+    if (dest_y + dest_h > height) dest_h = height - dest_y;
+
+    int row_stride = cinfo.output_width * cinfo.output_components;
+    JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
+
+    int current_src_y = -1;
+
+    for (int dy = 0; dy < dest_h; dy++) {
+        int target_src_y = dy * (int)cinfo.output_height / dest_h;
+        if (target_src_y >= (int)cinfo.output_height) {
+            target_src_y = (int)cinfo.output_height - 1;
+        }
+
+        while (current_src_y < target_src_y) {
+            jpeg_read_scanlines(&cinfo, buffer, 1);
+            current_src_y++;
+        }
+
+        uint8_t *src_row = buffer[0];
+        uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
+
+        for (int dx = 0; dx < dest_w; dx++) {
+            int src_x = dx * (int)cinfo.output_width / dest_w;
+            if (src_x >= (int)cinfo.output_width) {
+                src_x = (int)cinfo.output_width - 1;
+            }
+
+            uint8_t r = src_row[src_x * 3];
+            uint8_t g = src_row[src_x * 3 + 1];
+            uint8_t b = src_row[src_x * 3 + 2];
+            
+            // Chroma key: check existing pixel to avoid overwriting HUD / DNA elements
+            uint32_t cur_val = dst_row[dx];
+            uint8_t cur_r = (cur_val >> 16) & 0xFF;
+            uint8_t cur_g = (cur_val >> 8) & 0xFF;
+            uint8_t cur_b = cur_val & 0xFF;
+            
+            if (cur_r < 25 && cur_g < 25 && cur_b < 35) {
+                dst_row[dx] = (0xFF000000) | (r << 16) | (g << 8) | b;
+            }
+        }
+    }
+
+    while (cinfo.output_scanline < cinfo.output_height) {
+        jpeg_read_scanlines(&cinfo, buffer, 1);
+    }
+
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
+    return true;
+}
+
+#include <sys/stat.h>
+
+static time_t last_youtube_mtime = 0;
+static long last_youtube_mtime_nsec = 0;
+static uint32_t *youtube_cache_px = NULL;
+static int youtube_cache_w = 0;
+static int youtube_cache_h = 0;
+static int youtube_cache_dest_w = 0;
+static int youtube_cache_dest_h = 0;
+
+void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
+    int dest_x = g_dest_x;
+    int dest_y = g_dest_y;
+    int dest_w = g_dest_w;
+    int dest_h = g_dest_h;
+
+    if (dest_x < 0) dest_x = 0;
+    if (dest_y < 0) dest_y = 0;
+    if (dest_x >= width) dest_x = width - 1;
+    if (dest_y >= height) dest_y = height - 1;
+    if (dest_w <= 0) dest_w = 1;
+    if (dest_h <= 0) dest_h = 1;
+    if (dest_x + dest_w > width) dest_w = width - dest_x;
+    if (dest_y + dest_h > height) dest_h = height - dest_y;
+
+    int required_sz = dest_w * dest_h;
+    if (!youtube_cache_px || youtube_cache_w != width || youtube_cache_h != height || youtube_cache_dest_w != dest_w || youtube_cache_dest_h != dest_h) {
+        youtube_cache_px = (uint32_t *)realloc(youtube_cache_px, required_sz * sizeof(uint32_t));
+        youtube_cache_w = width;
+        youtube_cache_h = height;
+        youtube_cache_dest_w = dest_w;
+        youtube_cache_dest_h = dest_h;
+        if (youtube_cache_px) {
+            memset(youtube_cache_px, 0, required_sz * sizeof(uint32_t));
+        }
+        last_youtube_mtime = 0;
+        last_youtube_mtime_nsec = 0;
+    }
+
+    struct stat st;
+    bool need_blit = true;
+    int fd_img = open("frontend/latest_frame.jpg", O_RDONLY);
+    if (fd_img >= 0) {
+        if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
+            #ifdef __APPLE__
+            time_t cur_mtime = st.st_mtimespec.tv_sec;
+            long cur_mtime_nsec = st.st_mtimespec.tv_nsec;
+            #else
+            time_t cur_mtime = st.st_mtim.tv_sec;
+            long cur_mtime_nsec = st.st_mtim.tv_nsec;
+            #endif
+            if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec) {
+                uint8_t *buf = (uint8_t *)malloc(st.st_size);
+                if (buf) {
+                    ssize_t r = read(fd_img, buf, st.st_size);
+                    if (r == st.st_size) {
+                        // Decode directly onto the scanout_px first
+                        if (decode_jpeg_subrect(buf, st.st_size, scanout_px, width, height)) {
+                            last_youtube_mtime = cur_mtime;
+                            last_youtube_mtime_nsec = cur_mtime_nsec;
+                            // Copy decoded subrect pixels from scanout_px to cache
+                            if (youtube_cache_px) {
+                                for (int dy = 0; dy < dest_h; dy++) {
+                                    uint32_t *src_row = scanout_px + (dest_y + dy) * width + dest_x;
+                                    uint32_t *dst_row = youtube_cache_px + dy * dest_w;
+                                    memcpy(dst_row, src_row, dest_w * sizeof(uint32_t));
+                                }
+                            }
+                            need_blit = false; // Already decoded directly to scanout
+                        }
+                    }
+                    free(buf);
+                }
+            }
+        }
+        close(fd_img);
+    }
+
+    // If we didn't decode a new frame this call, copy from our cache onto the scanout buffer
+    if (need_blit && youtube_cache_px) {
+        for (int dy = 0; dy < dest_h; dy++) {
+            uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
+            uint32_t *src_row = youtube_cache_px + dy * dest_w;
+            for (int dx = 0; dx < dest_w; dx++) {
+                uint32_t cur_val = dst_row[dx];
+                uint8_t cur_r = (cur_val >> 16) & 0xFF;
+                uint8_t cur_g = (cur_val >> 8) & 0xFF;
+                uint8_t cur_b = cur_val & 0xFF;
+                
+                if (cur_r < 25 && cur_g < 25 && cur_b < 35) {
+                    dst_row[dx] = src_row[dx];
+                }
+            }
+        }
+    }
+}
+
+bool decode_jpeg_zero_copy(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    // Preserve Auncient layout mapping: decode dashboard layout and overlay YouTube frame.
+    bool ok = decode_jpeg_full(jpeg_buf, jpeg_sz, scanout_px, width, height);
+    if (ok) {
+        draw_youtube_frame(scanout_px, width, height);
+    }
+    return ok;
+}
+
 
 int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
     uint32_t h[2];
@@ -239,7 +434,7 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
         } else if (op == 4) { // axis
             uint32_t axis = p[1];
             double value = ((int32_t)p[2]) / 256.0;
-            printf("MOUSE_SCROLL %u %d\n", axis, (int)value);
+            printf("MOUSE_SCROLL %u %f\n", axis, value);
             fflush(stdout);
         }
     } else if (keyboard_id && obj == keyboard_id) {
@@ -266,11 +461,12 @@ int main() {
     PFN_vkCreateDevice pvkCreateDevice = (PFN_vkCreateDevice)tsfi_vkGetInstanceProcAddr(NULL, "vkCreateDevice");
     PFN_vkGetDeviceQueue pvkGetDeviceQueue = (PFN_vkGetDeviceQueue)tsfi_vkGetInstanceProcAddr(NULL, "vkGetDeviceQueue");
     PFN_vkQueuePresentKHR pvkQueuePresentKHR = (PFN_vkQueuePresentKHR)tsfi_vkGetInstanceProcAddr(NULL, "vkQueuePresentKHR");
+    (void)pvkQueuePresentKHR;
     
-    PFN_tsfi_drmModeAddPlane ptsfi_drmModeAddPlane = (PFN_tsfi_drmModeAddPlane)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeAddPlane");
-    PFN_tsfi_drmModeGetVirtualPlaneBuffer ptsfi_drmModeGetVirtualPlaneBuffer = (PFN_tsfi_drmModeGetVirtualPlaneBuffer)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeGetVirtualPlaneBuffer");
+    // PFN_tsfi_drmModeAddPlane ptsfi_drmModeAddPlane = (PFN_tsfi_drmModeAddPlane)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeAddPlane");
+    // PFN_tsfi_drmModeGetVirtualPlaneBuffer ptsfi_drmModeGetVirtualPlaneBuffer = (PFN_tsfi_drmModeGetVirtualPlaneBuffer)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeGetVirtualPlaneBuffer");
     PFN_tsfi_zmm_set_scanout_buffer ptsfi_zmm_set_scanout_buffer = (PFN_tsfi_zmm_set_scanout_buffer)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_zmm_set_scanout_buffer");
-    PFN_tsfi_drmModeFreeVirtualPlanes ptsfi_drmModeFreeVirtualPlanes = (PFN_tsfi_drmModeFreeVirtualPlanes)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeFreeVirtualPlanes");
+    // PFN_tsfi_drmModeFreeVirtualPlanes ptsfi_drmModeFreeVirtualPlanes = (PFN_tsfi_drmModeFreeVirtualPlanes)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeFreeVirtualPlanes");
 
     VkInstance instance; VkInstanceCreateInfo inst_info = {0}; pvkCreateInstance(&inst_info, NULL, &instance);
     VkDevice device; VkDeviceCreateInfo dev_info = {0}; pvkCreateDevice((VkPhysicalDevice)0x2000, &dev_info, NULL, &device);
@@ -361,12 +557,13 @@ int main() {
     g_scanout_px = scanout_px;
     g_ptsfi_zmm_set_scanout_buffer = ptsfi_zmm_set_scanout_buffer;
     ptsfi_zmm_set_scanout_buffer(scanout_px, g_w, g_h);
-    ptsfi_drmModeAddPlane(72, sz);
-    uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
+    // ptsfi_drmModeAddPlane(72, sz);
+    // uint32_t* p72 = (uint32_t*)ptsfi_drmModeGetVirtualPlaneBuffer(72);
 
     VkSwapchainKHR mock_swapchain = (VkSwapchainKHR)0xB000;
     uint32_t imageIndex = 0;
     VkPresentInfoKHR presentInfo = { .swapchainCount = 1, .pSwapchains = &mock_swapchain, .pImageIndices = &imageIndex };
+    (void)presentInfo;
 
     printf("[Auncient Presenter] Waiting for initial Wayland configure event...\n");
     bool initial_configured = false;
@@ -399,7 +596,7 @@ int main() {
         STATE_READ_DATA
     } stream_state = STATE_READ_LEN;
 
-    size_t target_len = 4;
+    size_t target_len = 20;
     size_t total_read = 0;
     static uint8_t input_buf[2 * 1024 * 1024]; // 2 MB static buffer
     uint32_t jpeg_len = 0;
@@ -418,9 +615,9 @@ int main() {
             while (process_events(fd, xsurf, &conf) > 0);
             if (conf) {
                 if (last_jpeg_sz > 0) {
-                    decode_jpeg(last_jpeg_buf, last_jpeg_sz, p72, g_w, g_h);
+                    decode_jpeg_zero_copy(last_jpeg_buf, last_jpeg_sz, g_scanout_px, g_w, g_h);
                 }
-                pvkQueuePresentKHR(queue, &presentInfo);
+                // pvkQueuePresentKHR(queue, &presentInfo); // Overwrites scanout buffer with background color
                 uint32_t attach_args[] = {bid_val, 0, 0};
                 send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
                 uint32_t damage[] = {0, 0, g_w, g_h};
@@ -445,6 +642,11 @@ int main() {
                 if (total_read >= target_len) {
                     if (stream_state == STATE_READ_LEN) {
                         memcpy(&jpeg_len, input_buf, 4);
+                        memcpy(&g_dest_x, input_buf + 4, 4);
+                        memcpy(&g_dest_y, input_buf + 8, 4);
+                        memcpy(&g_dest_w, input_buf + 12, 4);
+                        memcpy(&g_dest_h, input_buf + 16, 4);
+
                         if (jpeg_len > sizeof(input_buf)) {
                             fprintf(stderr, "[Auncient Presenter ERR] Frame length %u exceeds buffer size!\n", jpeg_len);
                             goto out;
@@ -453,12 +655,12 @@ int main() {
                         target_len = jpeg_len;
                         total_read = 0;
                     } else {
-                        if (decode_jpeg(input_buf, jpeg_len, p72, g_w, g_h)) {
+                        if (decode_jpeg_zero_copy(input_buf, jpeg_len, g_scanout_px, g_w, g_h)) {
                             if (jpeg_len <= sizeof(last_jpeg_buf)) {
                                 memcpy(last_jpeg_buf, input_buf, jpeg_len);
                                 last_jpeg_sz = jpeg_len;
                             }
-                            pvkQueuePresentKHR(queue, &presentInfo);
+                            // pvkQueuePresentKHR(queue, &presentInfo); // Overwrites scanout buffer with background color
 
                             uint32_t attach_args[] = {bid_val, 0, 0};
                             send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
@@ -468,7 +670,7 @@ int main() {
                             send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
                         }
                         stream_state = STATE_READ_LEN;
-                        target_len = 4;
+                        target_len = 20;
                         total_read = 0;
                     }
                 }
@@ -478,7 +680,7 @@ int main() {
 
 out:
     printf("[Auncient Presenter] Cleaning up virtual planes...\n");
-    ptsfi_drmModeFreeVirtualPlanes();
+    // ptsfi_drmModeFreeVirtualPlanes();
     free(b);
     
     PFN_vkDestroyDevice pvkDestroyDevice = (PFN_vkDestroyDevice)tsfi_vkGetInstanceProcAddr(NULL, "vkDestroyDevice");

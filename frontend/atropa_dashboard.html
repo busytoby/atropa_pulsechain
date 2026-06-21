@@ -78,7 +78,7 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1.1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             flex: 1;
             min-height: 0;
@@ -262,8 +262,8 @@
                             </filter>
                         </defs>
                         
-                        <!-- Underlay: The actual browser screencast image frame -->
-                        <image id="browserStreamFrame" href="/stream.mjpeg" x="0" y="0" width="800" height="600" preserveAspectRatio="none" />
+                        <!-- Underlay: Black placeholder for zero-copy Wayland presenter overlay -->
+                        <rect id="browserStreamFrame" x="0" y="0" width="800" height="600" fill="#000" />
                         
                         <!-- SVG Interactive DNA overlay group -->
                         <g id="dnaOverlay" style="pointer-events: none;">
@@ -297,7 +297,6 @@
                         </g>
                     </svg>
                 </div>
-                <button id="btnOpenBrowser" class="btn-action">🚀 Open Browser & Search Atropa</button>
             </div>
         </div>
 
@@ -760,7 +759,7 @@
                 mouseMoveTimeout = setTimeout(() => {
                     mouseMoveTimeout = null;
                     processMouseMoveQueue();
-                }, 40); // 40ms batching window
+                }, 20); // 20ms batching window (matches EVM polling speed)
             }
         });
 
@@ -780,11 +779,15 @@
 
         async function processScrollQueue() {
             if (isScrollSending) return;
-            const value = Math.round(scrollAccumulator / 10);
+            let value = Math.round(scrollAccumulator / 8);
             if (value === 0) return;
             
-            // Reset the accumulator for next events while we send this chunk
-            scrollAccumulator = 0;
+            // Cap to avoid huge jumps
+            if (value > 3) value = 3;
+            if (value < -3) value = -3;
+            
+            // Subtract only the sent amount from the accumulator
+            scrollAccumulator -= value * 8;
             isScrollSending = true;
             
             try {
@@ -793,7 +796,7 @@
             
             isScrollSending = false;
             // Process any scroll delta that accumulated during the transaction roundtrip
-            if (Math.round(scrollAccumulator / 10) !== 0) {
+            if (Math.round(scrollAccumulator / 8) !== 0) {
                 processScrollQueue();
             }
         }
@@ -805,12 +808,11 @@
                 scrollTimeout = setTimeout(() => {
                     scrollTimeout = null;
                     processScrollQueue();
-                }, 50); // 50ms batching window
+                }, 20); // 20ms batching window (matches EVM polling speed)
             }
         }, { passive: false });
 
         // --- 4. Action Trigger ---
-        const btnOpenBrowser = document.getElementById("btnOpenBrowser");
         const termBody = document.getElementById("terminalBody");
 
         function logToTerminal(message, type = "info") {
@@ -822,23 +824,7 @@
             termBody.scrollTop = termBody.scrollHeight;
         }
 
-        btnOpenBrowser.addEventListener("click", async () => {
-            logToTerminal("Sending POST request to /open-browser...", "warning");
-            try {
-                const response = await fetch("/open-browser", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }
-                });
-                const result = await response.json();
-                if (result.status === "success") {
-                    logToTerminal("Browser controller spawned successfully. Navigating to YouTube filter results for Atropa...", "success");
-                } else {
-                    logToTerminal("Failed to spawn browser: " + result.message, "error");
-                }
-            } catch (err) {
-                logToTerminal("Error sending command to server: " + err.message, "error");
-            }
-        });
+
 
         // --- 5. Poll video status from server ---
         async function pollVideoStatus() {
@@ -850,6 +836,9 @@
         }
         setInterval(pollVideoStatus, 500);
         pollVideoStatus();
+
+        // Auto-initialize the YouTube sub-browser on dashboard load
+        fetch("/open-browser", { method: "POST" }).catch(() => {});
 
         document.getElementById("btnClear").addEventListener("click", () => {
             termBody.innerHTML = "";
