@@ -293,11 +293,12 @@
                     <div class="empty-log">No tokens tracked yet.</div>
                 </div>
                 
-                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-purple);">Void & QING Accumulators</h3>
-                <div id="chat-accumulator-cards" class="cards-container" style="max-height: 280px;">
-                    <div class="empty-log">No chat metrics tracked yet.</div>
-                </div>
-            </div>
+                 <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-purple);">Void & QING Accumulators</h3>
+                 <div id="chat-accumulator-cards" class="cards-container" style="max-height: 280px; margin-bottom: 10px;">
+                     <div class="empty-log">No chat metrics tracked yet.</div>
+                 </div>
+                 <div id="ignored-chats-container" style="font-size: 0.75rem; color: var(--text-secondary); border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 8px;"></div>
+             </div>
 
             <!-- Right Side: State Visualization -->
             <div class="gait-viz-panel">
@@ -348,42 +349,73 @@
             }
         }
 
-        const tokenAccumulators = {};
-        const chatAccumulators = {};
+         const tokenAccumulators = {};
+         const chatAccumulators = {};
+         const ignoredChats = new Set(JSON.parse(localStorage.getItem("ignoredChats") || "[]"));
 
-        function renderChatAccumulators() {
-            const container = document.getElementById("chat-accumulator-cards");
-            if (Object.keys(chatAccumulators).length === 0) {
-                container.innerHTML = `<div class="empty-log">No chat metrics tracked yet.</div>`;
-                return;
-            }
-            container.innerHTML = "";
-            const sortedChats = Object.values(chatAccumulators).sort((a, b) => b.messages - a.messages);
-            sortedChats.forEach(chat => {
-                const card = document.createElement("div");
-                card.className = `token-card`;
-                card.style.borderLeftColor = chat.name.toLowerCase().includes("void") ? "var(--neon-purple)" : "var(--neon-blue)";
-                
-                 const truncatedMsg = chat.lastMsg.length > 50 ? chat.lastMsg.slice(0, 50) + "..." : chat.lastMsg;
-                 card.innerHTML = `
-                     <div class="token-header">
-                         <span class="token-symbol" style="font-size: 0.95rem;">${chat.name}</span>
-                         <span class="token-classification" style="background: rgba(179, 136, 255, 0.15); color: #b388ff; border: 1px solid rgba(179, 136, 255, 0.4);">
-                             ${chat.name.toLowerCase().includes("void") ? "VOID" : "QING"}
-                         </span>
-                     </div>
-                     <div class="token-stats">
-                         <div>Messages: ${chat.messages}</div>
-                         <div>Active Users: ${chat.users.size}</div>
-                         <div>Cumulative Aura: ${chat.totalAura.toLocaleString()}</div>
-                         <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; padding-top: 5px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; max-width: 100%;" title="${chat.lastUser}: ${chat.lastMsg.replace(/"/g, '&quot;')}">
-                             Last: <strong>${chat.lastUser}</strong>: ${truncatedMsg}
+         window.toggleIgnoreChat = function(roomName) {
+             if (ignoredChats.has(roomName)) {
+                 ignoredChats.delete(roomName);
+             } else {
+                 ignoredChats.add(roomName);
+             }
+             localStorage.setItem("ignoredChats", JSON.stringify([...ignoredChats]));
+             renderChatAccumulators();
+         };
+
+         function renderChatAccumulators() {
+             const container = document.getElementById("chat-accumulator-cards");
+             const ignoredContainer = document.getElementById("ignored-chats-container");
+             if (!container) return;
+
+             const activeChats = Object.values(chatAccumulators).filter(chat => !ignoredChats.has(chat.name));
+             if (activeChats.length === 0) {
+                 container.innerHTML = `<div class="empty-log">No active chat metrics tracked.</div>`;
+             } else {
+                 container.innerHTML = "";
+                 const sortedChats = activeChats.sort((a, b) => b.messages - a.messages);
+                 sortedChats.forEach(chat => {
+                     const card = document.createElement("div");
+                     card.className = `token-card`;
+                     card.style.borderLeftColor = chat.name.toLowerCase().includes("void") ? "var(--neon-purple)" : "var(--neon-blue)";
+                     
+                     const truncatedMsg = chat.lastMsg.length > 50 ? chat.lastMsg.slice(0, 50) + "..." : chat.lastMsg;
+                     card.innerHTML = `
+                         <div class="token-header">
+                             <span class="token-symbol" style="font-size: 0.95rem;">${chat.name}</span>
+                             <div style="display: flex; align-items: center; gap: 6px;">
+                                 <span class="token-classification" style="background: rgba(179, 136, 255, 0.15); color: #b388ff; border: 1px solid rgba(179, 136, 255, 0.4);">
+                                     ${chat.name.toLowerCase().includes("void") ? "VOID" : "QING"}
+                                 </span>
+                                 <span class="ignore-btn" onclick="toggleIgnoreChat('${chat.name}')" style="cursor: pointer; font-size: 0.7rem; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); padding: 1px 4px; border-radius: 3px; background: rgba(255, 85, 85, 0.05); font-family: 'Orbitron', sans-serif;">Ignore</span>
+                             </div>
                          </div>
-                     </div>
-                 `;
-                container.appendChild(card);
-            });
-        }
+                         <div class="token-stats">
+                             <div>Messages: ${chat.messages}</div>
+                             <div>Active Users: ${chat.users.size}</div>
+                             <div>Cumulative Aura: ${chat.totalAura.toLocaleString()}</div>
+                             <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; padding-top: 5px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; max-width: 100%;" title="${chat.lastUser}: ${chat.lastMsg.replace(/"/g, '&quot;')}">
+                                 Last: <strong>${chat.lastUser}</strong>: ${truncatedMsg}
+                             </div>
+                         </div>
+                     `;
+                     container.appendChild(card);
+                 });
+             }
+
+             if (ignoredContainer) {
+                 if (ignoredChats.size === 0) {
+                     ignoredContainer.innerHTML = "No chats ignored.";
+                 } else {
+                     let html = "Ignored: ";
+                     [...ignoredChats].forEach((name, idx) => {
+                         if (idx > 0) html += ", ";
+                         html += `<span style="color: #ff5555;">${name}</span> <span onclick="toggleIgnoreChat('${name}')" style="cursor: pointer; text-decoration: underline; color: var(--neon-blue); font-size: 0.7rem; margin-left: 2px;">(Restore)</span>`;
+                     });
+                     ignoredContainer.innerHTML = html;
+                 }
+             }
+         }
 
         function parseSwapLog(details) {
             // Real Swap: Tx ... | Swap: 9375000.00 WPLS ($0.00000667) -> 64543.25 OPUS ($0.87957294)
