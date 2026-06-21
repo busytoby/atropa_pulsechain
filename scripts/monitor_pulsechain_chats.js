@@ -79,11 +79,33 @@ async function main() {
         const fromBlock = Math.max(0, latestBlock - blocksFor5Days);
 
         console.log(`${C.dim}Fetching last 5 days of historical logs...${C.reset}`);
-        const logs = await provider.getLogs({
+        let logs = await provider.getLogs({
             fromBlock: "0x" + fromBlock.toString(16),
             toBlock: "0x" + latestBlock.toString(16),
             topics: [TOPIC_0]
         });
+
+        if (logs.length === 0) {
+            console.log(`${C.yellow}No chat logs found in last 5 days. Scanning back 30 days...${C.reset}`);
+            const blocksFor30Days = 259200;
+            const fromBlock30 = Math.max(0, latestBlock - blocksFor30Days);
+            logs = await provider.getLogs({
+                fromBlock: "0x" + fromBlock30.toString(16),
+                toBlock: "0x" + latestBlock.toString(16),
+                topics: [TOPIC_0]
+            });
+            
+            if (logs.length === 0) {
+                console.log(`${C.yellow}No chat logs found in last 30 days. Scanning back 90 days...${C.reset}`);
+                const blocksFor90Days = 777600;
+                const fromBlock90 = Math.max(0, latestBlock - blocksFor90Days);
+                logs = await provider.getLogs({
+                    fromBlock: "0x" + fromBlock90.toString(16),
+                    toBlock: "0x" + latestBlock.toString(16),
+                    topics: [TOPIC_0]
+                });
+            }
+        }
 
         console.log(`${C.blue}=== Historical Feed (${logs.length} events) ===${C.reset}\n`);
         for (const log of logs) {
