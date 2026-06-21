@@ -267,7 +267,8 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="statusPill" class="status-pill active">Online</div>
+                 <div id="statusPill" class="status-pill active">Online</div>
+                 <div id="audioPill" class="status-pill" style="background: rgba(255, 127, 0, 0.1); border-color: rgba(255, 127, 0, 0.3); color: var(--neon-orange); margin-left: 8px;">Audio: Off</div>
                 
                 <button id="btnPlayScore" style="background: linear-gradient(135deg, var(--neon-magenta) 0%, #a200ff 100%); color: #fff; border: 1px solid rgba(255, 0, 127, 0.4); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; padding: 6px 14px; cursor: pointer; text-shadow: 0 0 5px rgba(255,255,255,0.5); box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); transition: all 0.2s ease;">
                     🎹 Play Score
@@ -296,6 +297,7 @@
         const ctx = canvas.getContext("2d");
         const toggle = document.getElementById("vulkanToggle");
         const statusPill = document.getElementById("statusPill");
+        const audioPill = document.getElementById("audioPill");
 
         const cvPitchEl = document.getElementById("cvPitch");
         const cvYawEl = document.getElementById("cvYaw");
@@ -349,11 +351,34 @@
         const activeOscillators = {};
 
         function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if (audioPill) {
+                    if (audioCtx.state === 'running') {
+                        audioPill.innerText = "Audio: Active";
+                        audioPill.style.background = "rgba(57, 255, 20, 0.1)";
+                        audioPill.style.borderColor = "rgba(57, 255, 20, 0.3)";
+                        audioPill.style.color = "var(--neon-green)";
+                    } else {
+                        audioPill.innerText = "Audio: " + audioCtx.state.toUpperCase();
+                        audioPill.style.background = "rgba(255, 127, 0, 0.1)";
+                        audioPill.style.borderColor = "rgba(255, 127, 0, 0.3)";
+                        audioPill.style.color = "var(--neon-orange)";
+                    }
+                }
+            } catch (err) {
+                console.error("Audio Context Init Failed:", err);
+                if (audioPill) {
+                    audioPill.innerText = "Audio: Blocked";
+                    audioPill.style.background = "rgba(255, 0, 0, 0.1)";
+                    audioPill.style.borderColor = "rgba(255, 0, 0, 0.3)";
+                    audioPill.style.color = "#ff3b30";
+                }
             }
         }
 
