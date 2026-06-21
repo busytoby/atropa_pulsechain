@@ -4,16 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atropa Bessel-Biotika DNA Protocol</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-base: #030208;
+            --purple-glow: rgba(168, 85, 247, 0.35);
+            --cyan-glow: rgba(6, 182, 212, 0.3);
+            --magenta-glow: rgba(236, 72, 153, 0.3);
+            --text-primary: #f3e8ff;
+            --text-muted: #a78bfa;
+            --neon-green: #39ff14;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            background: radial-gradient(circle at center, #0b0214 0%, #020005 100%);
-            color: #ebd1ff;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.12) 0%, transparent 60%);
+            color: var(--text-primary);
             font-family: 'Outfit', sans-serif;
             height: 100vh;
             width: 100vw;
@@ -24,54 +39,65 @@
             position: relative;
         }
         
-        /* Grid overlay */
-        .grid {
+        /* Fine cyber grid */
+        .grid-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-size: 30px 30px;
+            background-size: 40px 40px;
             background-image: 
-                linear-gradient(to right, rgba(147, 51, 234, 0.04) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(147, 51, 234, 0.04) 1px, transparent 1px);
+                linear-gradient(to right, rgba(168, 85, 247, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.03) 1px, transparent 1px);
             z-index: 1;
+            pointer-events: none;
         }
 
-        .container {
+        /* Glassmorphic console container */
+        .console-frame {
             position: relative;
             z-index: 2;
-            width: 900px;
-            background: rgba(11, 4, 20, 0.7);
-            border: 1px solid rgba(176, 38, 255, 0.25);
-            border-radius: 20px;
+            width: 960px;
+            background: rgba(10, 6, 22, 0.65);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(176, 38, 255, 0.08);
-            backdrop-filter: blur(12px);
-            animation: paneFade 1.2s ease-out forwards;
+            box-shadow: 
+                0 30px 70px rgba(0, 0, 0, 0.8),
+                inset 0 0 50px rgba(168, 85, 247, 0.05),
+                0 0 40px rgba(168, 85, 247, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            animation: frameEntry 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
         }
 
-        .header-section {
+        .header-panel {
             text-align: center;
-            margin-bottom: 10px;
+            position: relative;
         }
 
-        h1 {
-            font-size: 34px;
-            font-weight: 800;
-            letter-spacing: 4px;
-            background: linear-gradient(135deg, #ffffff 30%, #d896ff 100%);
+        .header-panel h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            background: linear-gradient(135deg, #ffffff 20%, #d8b4fe 60%, #ec4899 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 5px;
+            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4));
+            margin-bottom: 6px;
+            text-transform: uppercase;
         }
 
-        p.subtitle {
-            font-size: 12px;
-            color: #b392ac;
-            letter-spacing: 6px;
+        .header-panel .subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 5px;
             text-transform: uppercase;
-            font-weight: 600;
+            font-weight: 500;
+            opacity: 0.85;
         }
 
         /* Twin Visualizers Layout */
@@ -79,183 +105,189 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            gap: 20px;
+            gap: 25px;
             margin: 10px 0;
         }
 
         .visualizer-card {
-            background: rgba(5, 2, 10, 0.8);
-            border: 1px solid rgba(176, 38, 255, 0.15);
-            border-radius: 12px;
-            padding: 15px;
+            background: rgba(4, 2, 10, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 16px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 320px;
-            height: 220px;
+            width: 380px;
+            height: 240px;
             justify-content: center;
             position: relative;
-            box-shadow: inset 0 0 20px rgba(176, 38, 255, 0.05);
+            box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.03);
+            overflow: hidden;
         }
 
         .visualizer-label {
             font-family: 'Share Tech Mono', monospace;
             font-size: 11px;
-            color: #c084fc;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
+            letter-spacing: 3px;
             position: absolute;
-            top: 10px;
+            top: 15px;
+            left: 20px;
         }
 
         #emblemContainer {
             width: 150px;
             height: 150px;
-            margin-top: 15px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #bearCanvas {
             width: 150px;
             height: 150px;
-            margin-top: 15px;
+            margin-top: 20px;
+            display: block;
         }
 
-        /* Real-Time Telemetry HUD */
+        /* Telemetry & Status HUD */
         .telemetry-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 25px;
         }
 
-        .metrics-panel {
+        .metrics-board {
             font-family: 'Share Tech Mono', monospace;
-            background: rgba(6, 2, 12, 0.9);
-            border: 1px solid rgba(176, 38, 255, 0.2);
-            border-radius: 10px;
+            background: rgba(5, 2, 12, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 14px;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.02);
         }
 
-        .metric-row {
+        .metric-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 13px;
-            border-bottom: 1px dashed rgba(176, 38, 255, 0.1);
-            padding-bottom: 4px;
+            align-items: center;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.08);
+            padding-bottom: 6px;
         }
 
-        .metric-row:last-child {
-            margin-bottom: 0;
+        .metric-item:last-child {
             border-bottom: none;
             padding-bottom: 0;
         }
 
-        .metric-label {
-            color: #a78bfa;
+        .m-label {
+            color: #93c5fd;
         }
 
-        .metric-value {
-            color: #00ff66;
-            text-shadow: 0 0 5px rgba(0, 255, 102, 0.4);
+        .m-val {
+            color: #22c55e;
+            text-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
         }
 
-        .metric-value.spike-alert {
-            color: #ff007f;
-            text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+        .m-val.alert {
+            color: #ec4899;
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
             font-weight: bold;
         }
 
-        /* Live Terminal Logger */
-        .terminal-panel {
+        /* Log Panel */
+        .log-terminal {
             font-family: 'Share Tech Mono', monospace;
-            background: rgba(0, 0, 0, 0.95);
-            border: 1px solid rgba(255, 0, 127, 0.25);
-            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(236, 72, 153, 0.25);
+            border-radius: 12px;
             padding: 15px;
-            height: 120px;
+            height: 140px;
             overflow-y: auto;
-            color: #ff007f;
+            color: #ec4899;
             font-size: 11px;
-            line-height: 1.4;
-            box-shadow: inset 0 0 15px rgba(255, 0, 127, 0.1);
+            line-height: 1.5;
+            box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.05);
         }
 
-        .terminal-line {
+        .log-line {
             margin-bottom: 4px;
         }
 
-        .terminal-line.info {
-            color: #00f2fe;
+        .log-line.cyan {
+            color: #06b6d4;
         }
 
-        .terminal-line.crossover {
-            color: #d896ff;
+        .log-line.purple {
+            color: #c084fc;
         }
 
-        .terminal-line.mutation {
-            color: #ffd700;
+        .log-line.yellow {
+            color: #fbbf24;
         }
 
-        .loader-container {
+        /* Progress Bar Section */
+        .progress-section {
             margin-top: 10px;
         }
 
-        .loader {
+        .progress-track {
             width: 100%;
-            height: 6px;
-            background: rgba(176, 38, 255, 0.15);
-            border-radius: 3px;
+            height: 8px;
+            background: rgba(168, 85, 247, 0.12);
+            border-radius: 4px;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(168, 85, 247, 0.15);
         }
 
-        .loader-bar {
+        .progress-bar {
             position: absolute;
             top: 0; left: 0; height: 100%; width: 0%;
-            background: linear-gradient(90deg, #b026ff, #ff007f);
-            box-shadow: 0 0 15px #b026ff;
-            border-radius: 3px;
+            background: linear-gradient(90deg, #a855f7, #60a5fa, #ec4899);
+            box-shadow: 0 0 15px #a855f7;
+            border-radius: 4px;
+            transition: width 0.05s linear;
         }
 
-        .loader-text {
+        .progress-lbl {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 10px;
-            color: #8b5cf6;
+            font-size: 11px;
+            color: var(--text-muted);
             text-align: right;
-            margin-top: 5px;
-            letter-spacing: 1px;
+            margin-top: 6px;
+            letter-spacing: 2px;
         }
 
-        /* Screen Flash for Biotika Spike */
-        .spike-flash {
+        /* Screen Flash effect */
+        .flash-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(255, 0, 127, 0.12) 0%, transparent 80%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 80%);
             opacity: 0;
             pointer-events: none;
-            z-index: 1;
-            transition: opacity 0.05s ease-out;
+            z-index: 5;
+            transition: opacity 0.08s ease-out;
         }
 
-        /* Animations */
-        @keyframes paneFade {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fillLoader {
-            to { width: 100%; }
+        @keyframes frameEntry {
+            from { opacity: 0; transform: translateY(40px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
     </style>
 </head>
 <body>
-    <div class="grid"></div>
-    <div class="spike-flash" id="spikeFlash"></div>
+    <div class="grid-overlay"></div>
+    <div class="flash-overlay" id="flashOverlay"></div>
 
-    <div class="container">
-        <div class="header-section">
-            <h1>ATROPA SYSTEM GATEWAY</h1>
+    <div class="console-frame">
+        <div class="header-panel">
+            <h1>Atropa System Gateway</h1>
             <p class="subtitle">Auncient Bessel-Biotika DNA Crossover Protocol</p>
         </div>
 
@@ -271,79 +303,51 @@
             </div>
         </div>
 
-        <!-- Telemetry & Log HUD -->
         <div class="telemetry-grid">
-            <div class="metrics-panel">
-                <div class="metric-row">
-                    <span class="metric-label">VESSEL STATE</span>
-                    <span class="metric-value">SEALED / COMPILATION SUCCESS</span>
+            <!-- Left Side: Status Metrics -->
+            <div class="metrics-board">
+                <div class="metric-item">
+                    <span class="m-label">Vessel Integrity</span>
+                    <span class="m-val">SEALED / COMPILATION ACTIVE</span>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">BESSEL MODULATION J0(x)</span>
-                    <span class="metric-value">ACTIVE (BREATHING SYMMETRY)</span>
+                <div class="metric-item">
+                    <span class="m-label">Bessel J0(x) Sickness</span>
+                    <span class="m-val" id="valBessel">1.000000</span>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">BIOTIKA NEURON KINEMATICS</span>
-                    <span class="metric-value spike-alert">SPIKE GLOW ENV ACTIVE</span>
+                <div class="metric-item">
+                    <span class="m-label">Biotika Potential</span>
+                    <span class="m-val" id="valBiotika">0.000000</span>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">DECAY FACTOR / SICKNESS</span>
-                    <span class="metric-value">0.95 / BIOLOGICAL MUTATION ADAPTED</span>
+                <div class="metric-item">
+                    <span class="m-label">Spike Glow Envelope</span>
+                    <span class="m-val alert" id="valGlow">0.00%</span>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">AVX-512 CROSSOVER</span>
-                    <span class="metric-value" id="crossoverRate">16,062 ops/sec</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">DYNAMIC J0(x) VAL</span>
-                    <span class="metric-value" id="besselVal">1.0000</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">BIOTIKA MEMBRANE Vm</span>
-                    <span class="metric-value" id="biotikaVm">0.0000</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">SPIKE GLOW ENVELOPE</span>
-                    <span class="metric-value" id="spikeGlow">0.00%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">SICKNESS FACTOR</span>
-                    <span class="metric-value" id="sicknessFactor">0.5000</span>
+                <div class="metric-item">
+                    <span class="m-label">AVX-512 Crossover Rate</span>
+                    <span class="m-val" id="valCrossover">16,204 ops/sec</span>
                 </div>
             </div>
 
-            <div class="terminal-panel" id="terminalLog">
-                <div class="terminal-line info">[SYS] INITIALIZING COGNITIVE INTERFACE...</div>
-                <div class="terminal-line info">[SYS] SEEDING AUNCIENT GENOME VECTORS...</div>
+            <!-- Right Side: Logs -->
+            <div class="log-terminal" id="terminalLog">
+                <div class="log-line cyan">[SYS] CONNECTING TO COMPUTE FABRIC PLANE...</div>
+                <div class="log-line cyan">[SYS] MOUNTING DRM COMPOSITOR DRIVERS...</div>
             </div>
         </div>
 
-        <!-- Loading Sequence -->
-        <div class="loader-container">
-            <div class="loader">
-                <div class="loader-bar"></div>
+        <!-- Progress Tracking -->
+        <div class="progress-section">
+            <div class="progress-track">
+                <div class="progress-bar" id="progressBar"></div>
             </div>
-            <div class="loader-text" id="loaderText">ALIGNING RESONANCE CODES: 0%</div>
+            <div class="progress-lbl" id="progressLabel">ALIGNING RESONANCE CODES: 0%</div>
         </div>
     </div>
 
     <script>
-        // Bessel J0 Math implementation
-        function bessel_j0(x) {
-            let val = 0.0;
-            let term = 1.0;
-            for (let k = 0; k < 12; k++) {
-                if (k > 0) {
-                    term *= - (x * x) / (4.0 * k * k);
-                }
-                val += term;
-            }
-            return val;
-        }
-
-        // Web Audio Synthesizer for procedural DNA auditory feedback
+        // Procedural Audio Synthesizer
         let audioCtx = null;
-        function playDnaClick(freq, duration = 0.05, type = "triangle", gainValue = 0.015) {
+        function emitChime(freq, duration = 0.12, type = "triangle", gainValue = 0.015) {
             try {
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -352,62 +356,51 @@
                     audioCtx.resume();
                 }
                 const osc = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
+                const gain = audioCtx.createGain();
                 
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 
-                gainNode.gain.setValueAtTime(gainValue, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                gain.gain.setValueAtTime(gainValue, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
                 
-                osc.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
                 
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
-            } catch (e) {
-                // Ignore audio block/init issues in non-interactive sessions
-            }
+            } catch (e) {}
         }
 
-        // Initialize state variables (derived from compile_dna.py values)
+        // Telemetry state variables
         let frameCount = 0;
-        const totalFrames = 10800;
-        let bionika_vm = 0.0;
-        const leak_factor = 0.95;
-        const base_sick = 0.5;
-        const decay_rate = 0.88;
-        
-        let twitch_x = 0.0;
-        let twitch_y = 0.0;
-        let twitch_stretch = 0.0;
-        let spike_glow = 0.0;
-        
-        // Log logging frequency throttling
-        let lastLogTime = 0;
+        const totalFrames = 240;
+        let biotikaVm = 0.0;
+        let spikeGlow = 0.0;
+        let lastLog = 0;
 
         function logToTerminal(msg, type = "info") {
-            const terminal = document.getElementById("terminalLog");
+            const term = document.getElementById("terminalLog");
             const div = document.createElement("div");
-            div.className = `terminal-line ${type}`;
-            const timeHex = "0x" + Math.floor(performance.now()).toString(16).padStart(4, '0').toUpperCase();
-            div.innerText = `[${timeHex}] ${msg}`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
+            div.className = `log-line ${type}`;
+            const ts = "0x" + Math.floor(performance.now()).toString(16).toUpperCase();
+            div.innerText = `[${ts}] ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
         }
 
         // Render sigil dynamically via SVG
         function renderSigil(pulse, spikeActive, eyeCount) {
-            const huePrimary = Math.floor(180 + pulse * 40 + spike_glow * 30);
-            const hueSecondary = Math.floor(320 - pulse * 20 + spike_glow * 40);
+            const huePrimary = Math.floor(180 + pulse * 40 + spikeGlow * 30);
+            const hueSecondary = Math.floor(320 - pulse * 20 + spikeGlow * 40);
             const colorA = `hsl(${huePrimary}, 90%, 50%)`;
             const colorB = `hsl(${hueSecondary}, 90%, 50%)`;
             
             const sym = 3 + (eyeCount % 4);
             const innerRadius = 15 + (Math.floor(pulse * 5) % 10);
-            const outerRadius = 35 + (Math.floor(spike_glow * 15) % 15);
+            const outerRadius = 35 + (Math.floor(spikeGlow * 15) % 15);
             
-            let svg = `<svg width="150" height="150" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            let svg = `<svg width="140" height="140" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur stdDeviation="2.0" result="blur" />
@@ -454,22 +447,22 @@
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const fur_r = Math.min(255, Math.max(0, Math.floor(91 + 8 * pulse + 20 * spike_glow)));
+            const fur_r = Math.min(255, Math.max(0, Math.floor(91 + 8 * pulse + 20 * spikeGlow)));
             const fur_g = Math.min(255, Math.max(0, Math.floor(63 + 5 * pulse)));
-            const fur_b = Math.min(255, Math.max(0, Math.floor(51 + 4 * pulse + 30 * spike_glow)));
+            const fur_b = Math.min(255, Math.max(0, Math.floor(51 + 4 * pulse + 30 * spikeGlow)));
             const furColor = `rgb(${fur_r}, ${fur_g}, ${fur_b})`;
             
             const innerEarColor = `hsl(300, 70%, ${50 + Math.floor(pulse * 10)}%)`;
             const snoutColor = "rgb(230, 210, 220)";
             
-            const eye_r = Math.min(255, Math.max(0, Math.floor(120 * dynamicSick * (1.0 + spike_glow))));
-            const eye_g = Math.min(255, Math.max(0, Math.floor(180 + 40 * pulse + 75 * spike_glow)));
-            const eye_b = Math.min(255, Math.max(0, Math.floor(50 * spike_glow)));
+            const eye_r = Math.min(255, Math.max(0, Math.floor(120 * dynamicSick * (1.0 + spikeGlow))));
+            const eye_g = Math.min(255, Math.max(0, Math.floor(180 + 40 * pulse + 75 * spikeGlow))));
+            const eye_b = Math.min(255, Math.max(0, Math.floor(50 * spikeGlow)));
             const eyeColor = `rgb(${eye_r}, ${eye_g}, ${eye_b})`;
             
-            const earScale = 0.8 + (frameCount % 5) * 0.05 + twitch_stretch * 0.2;
-            const noseScale = 0.8 + twitch_stretch * 0.1;
-            const mouthGrumpiness = (dynamicSick - 0.5) * 10 + twitch_y * 15;
+            const earScale = 0.8 + (frameCount % 5) * 0.05;
+            const noseScale = 0.8;
+            const mouthGrumpiness = (dynamicSick - 0.5) * 10;
             
             ctx.save();
             ctx.translate(75, 75);
@@ -477,14 +470,14 @@
             // Ears
             ctx.fillStyle = furColor;
             ctx.beginPath();
-            ctx.arc(-24 + twitch_x * 10, -24 + twitch_y * 10, 16 * earScale, 0, Math.PI * 2);
-            ctx.arc(24 + twitch_x * 10, -24 + twitch_y * 10, 16 * earScale, 0, Math.PI * 2);
+            ctx.arc(-24, -24, 16 * earScale, 0, Math.PI * 2);
+            ctx.arc(24, -24, 16 * earScale, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = innerEarColor;
             ctx.beginPath();
-            ctx.arc(-24 + twitch_x * 10, -24 + twitch_y * 10, 8 * earScale, 0, Math.PI * 2);
-            ctx.arc(24 + twitch_x * 10, -24 + twitch_y * 10, 8 * earScale, 0, Math.PI * 2);
+            ctx.arc(-24, -24, 8 * earScale, 0, Math.PI * 2);
+            ctx.arc(24, -24, 8 * earScale, 0, Math.PI * 2);
             ctx.fill();
             
             // Head
@@ -492,24 +485,23 @@
             ctx.strokeStyle = "rgba(255,255,255,0.15)";
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.arc(twitch_x * 5, twitch_y * 5, 42 + twitch_stretch * 5, 0, Math.PI * 2);
+            ctx.arc(0, 0, 42, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             
             // Eyes
             ctx.fillStyle = eyeColor;
             ctx.shadowColor = eyeColor;
-            ctx.shadowBlur = 8 * (1.0 + spike_glow);
+            ctx.shadowBlur = 8 * (1.0 + spikeGlow);
             
             if (eyeCount >= 2) {
                 ctx.beginPath();
-                ctx.arc(-15 + twitch_x * 5, -8 + twitch_y * 5, 6, 0, Math.PI * 2);
-                ctx.arc(15 + twitch_x * 5, -8 + twitch_y * 5, 6, 0, Math.PI * 2);
+                ctx.arc(-15, -8, 6, 0, Math.PI * 2);
+                ctx.arc(15, -8, 6, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                // Cyclops or single eye mutation
                 ctx.beginPath();
-                ctx.arc(0 + twitch_x * 5, -8 + twitch_y * 5, 8, 0, Math.PI * 2);
+                ctx.arc(0, -8, 8, 0, Math.PI * 2);
                 ctx.fill();
             }
             
@@ -518,130 +510,128 @@
             // Muzzle
             ctx.fillStyle = snoutColor;
             ctx.beginPath();
-            ctx.ellipse(0 + twitch_x * 5, 12 + twitch_y * 5, 18, 14, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 12, 18, 14, 0, 0, Math.PI * 2);
             ctx.fill();
             
             // Nose
             ctx.fillStyle = "#11021c";
             ctx.beginPath();
-            ctx.ellipse(0 + twitch_x * 5, 8 + twitch_y * 5, 8 * noseScale, 5 * noseScale, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 8, 8 * noseScale, 5 * noseScale, 0, 0, Math.PI * 2);
             ctx.fill();
             
             // Mouth
             ctx.strokeStyle = "#0d0117";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(-10 + twitch_x * 5, 16 + twitch_y * 5);
-            ctx.quadraticCurveTo(0 + twitch_x * 5, 16 + mouthGrumpiness + twitch_y * 5, 10 + twitch_x * 5, 16 + twitch_y * 5);
+            ctx.moveTo(-10, 16);
+            ctx.quadraticCurveTo(0, 16 + mouthGrumpiness, 10, 16);
             ctx.stroke();
             
             ctx.restore();
         }
 
-        // Simulating the procedural DNA sequence loop
-        function updateSequence() {
+        // Bessel estimation function
+        function besselJ0(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 0; k < 10; k++) {
+                if (k > 0) {
+                    term *= - (x * x) / (4.0 * k * k);
+                }
+                val += term;
+            }
+            return val;
+        }
+
+        function updateGateway() {
             frameCount++;
-            const macro = frameCount / totalFrames;
-            
-            // Bessel J0 pulse
-            const bessel_arg = (macro * Math.PI * 50.0) % 5.0;
-            const pulse = bessel_j0(bessel_arg);
-            
-            // Biotika Stimulus
-            const stimulus = Math.abs(pulse) * 0.075;
-            bionika_vm = bionika_vm * leak_factor + stimulus;
-            
-            let spike = false;
-            if (bionika_vm >= 1.0) {
-                spike = true;
-                bionika_vm = 0.0;
+            const ratio = frameCount / totalFrames;
+
+            // Bessel oscillation
+            const arg = (ratio * Math.PI * 24.0) % 6.0;
+            const besselVal = besselJ0(arg);
+
+            // Biotika Membrane math
+            const stepVal = Math.abs(besselVal) * 0.085;
+            biotikaVm = biotikaVm * 0.96 + stepVal;
+
+            let triggerSpike = false;
+            if (biotikaVm >= 1.0) {
+                triggerSpike = true;
+                biotikaVm = 0.0;
             }
-            
-            // Twitches and decays
-            if (spike) {
-                twitch_x += 0.04 * bessel_j0(frameCount % 7);
-                twitch_y += 0.02 * Math.sin(frameCount);
-                twitch_stretch += 0.08;
-                spike_glow = 1.0;
-                
-                // Audio spike chime
-                playDnaClick(880 + Math.random() * 440, 0.15, "triangle", 0.025);
-                
-                // Screen flash trigger
-                const flash = document.getElementById("spikeFlash");
+
+            const dynamicSick = 0.5 - (ratio * 0.2) + (triggerSpike ? 0.25 : 0.0);
+            const eyeCount = dynamicSick < 0.6 ? 1 : 2;
+
+            if (triggerSpike) {
+                spikeGlow = 1.0;
+                emitChime(640 + Math.random() * 300, 0.25, "sine", 0.03);
+
+                // Highlight UI flash
+                const flash = document.getElementById("flashOverlay");
                 flash.style.opacity = "1";
-                setTimeout(() => flash.style.opacity = "0", 60);
-                
-                logToTerminal(`[BIOTIKA] MEMBRANE SPIKE: Action Potential 1.0 reached. Injecting muscle twitch.`, "mutation");
+                setTimeout(() => flash.style.opacity = "0", 80);
+
+                logToTerminal(`[BIOTIKA] MEMBRANE SPIKE: Crossover potential hit.`, "yellow");
             } else {
-                twitch_x *= decay_rate;
-                twitch_y *= decay_rate;
-                twitch_stretch *= decay_rate;
-                spike_glow *= 0.90;
+                spikeGlow *= 0.91;
             }
-            
-            const dynamic_sick = base_sick - (macro * 0.2) + (spike ? 0.25 : 0.0);
-            const eyeCount = dynamic_sick < 0.6 ? 1 : 2;
-            
-            // Continuous Bessel sound hum modulation
-            if (frameCount % 6 === 0) {
-                playDnaClick(110 + pulse * 20, 0.08, "sine", 0.008);
+
+            // Continuous sound heartbeat
+            if (frameCount % 8 === 0) {
+                emitChime(150 + besselVal * 30, 0.07, "sine", 0.01);
             }
-            
-            // Update Telemetry Display
-            document.getElementById("besselVal").innerText = pulse.toFixed(6);
-            document.getElementById("biotikaVm").innerText = bionika_vm.toFixed(6);
-            document.getElementById("spikeGlow").innerText = (spike_glow * 100).toFixed(2) + "%";
-            document.getElementById("sicknessFactor").innerText = dynamic_sick.toFixed(6);
-            
-            // Audited system status simulation logger
+
+            // Sync HTML metrics
+            document.getElementById("valBessel").innerText = besselVal.toFixed(6);
+            document.getElementById("valBiotika").innerText = biotikaVm.toFixed(6);
+            document.getElementById("valGlow").innerText = (spikeGlow * 100).toFixed(2) + "%";
+
+            // Update loader bar
+            const percent = Math.min(100, Math.floor(ratio * 100));
+            document.getElementById("progressBar").style.width = `${percent}%`;
+            document.getElementById("progressLabel").innerText = `ALIGNING RESONANCE CODES: ${percent}%`;
+
+            // Draw visualizers
+            renderSigil(besselVal, triggerSpike, eyeCount);
+            renderBear(besselVal, dynamicSick, eyeCount);
+
+            // Log messages
             const now = performance.now();
-            if (now - lastLogTime > 900) {
-                lastLogTime = now;
-                const randVal = Math.floor(Math.random() * 256);
-                const randChoice = Math.random();
-                if (randChoice < 0.25) {
-                    logToTerminal(`[WinchesterMQ] Queue event dispatch synchronized (0xccb077a0)`, "info");
-                } else if (randChoice < 0.50) {
-                    logToTerminal(`[ConsensusPKI] Checked 11 validator keys (Threshold 6/11 passed)`, "success");
-                } else if (randChoice < 0.75) {
-                    logToTerminal(`[ArenaProcessor] Sync batch cursor at offset 0x${randVal.toString(16).toUpperCase()}`, "info");
+            if (now - lastLog > 800) {
+                lastLog = now;
+                const rVal = Math.floor(Math.random() * 256);
+                const roll = Math.random();
+                if (roll < 0.25) {
+                    logToTerminal(`[WinchesterMQ] Queue synced at offset 0x${rVal.toString(16).toUpperCase()}`, "purple");
+                } else if (roll < 0.50) {
+                    logToTerminal(`[ConsensusPKI] Verified 11 validator keys successfully.`, "cyan");
+                } else if (roll < 0.75) {
+                    logToTerminal(`[ArenaProcessor] Active cursors aligned.`, "purple");
                 } else {
-                    logToTerminal(`[DysnomiaVM] Audited memory segment: 6502 TTY registers clean at page 0x${randVal.toString(16).toUpperCase()}`, "mutation");
+                    logToTerminal(`[DysnomiaVM] Audited memory segments clean.`, "yellow");
                 }
             }
-            
-            // Render graphics
-            renderSigil(pulse, spike, eyeCount);
-            renderBear(pulse, dynamic_sick, eyeCount);
-            
-            // Loader text updates
-            const progressPercent = Math.min(100, Math.floor((frameCount / 240) * 100));
-            document.getElementById("loaderText").innerText = `ALIGNING RESONANCE CODES: ${progressPercent}%`;
-            document.querySelector(".loader-bar").style.width = `${progressPercent}%`;
-            
-            if (frameCount < 240) {
-                requestAnimationFrame(updateSequence);
+
+            if (frameCount < totalFrames) {
+                requestAnimationFrame(updateGateway);
             } else {
-                logToTerminal(`[SYS] INTEGRATION RESONANCE ALIGNED. LAUNCHING MAINLINE BROWSER DISCOVERY.`, "info");
-                document.getElementById("loaderText").innerText = "RESONANCE PROTOCOL SECURED. TRANSITIONING...";
+                logToTerminal(`[SYS] INTEGRATION RESONANCE ALIGNED. SECURING HANDSHAKE...`, "cyan");
+                document.getElementById("progressLabel").innerText = "RESONANCE SECURED. LOADING PORTAL...";
                 setTimeout(() => {
-                     // Redirect to the main Auncient console portal hub
-                     window.location.href = "hub_portal.html";
+                    window.location.href = "hub_portal.html";
                 }, 800);
             }
         }
 
-        // Start protocol sequence on load
         window.addEventListener("load", () => {
-            logToTerminal(`[SYS] DETECTING VIRTUAL COMPUTE FABRIC PLANE...`, "info");
-            logToTerminal(`[SYS] AUNCIENT DRIVER INITIALIZED AT DRM PLANE 0`, "info");
-            // Render initial states so visualizers are not blank/incoherent on load
+            logToTerminal(`[SYS] DETECTING VIRTUAL COMPUTE ARCHITECTURE...`, "cyan");
+            logToTerminal(`[SYS] AUNCIENT PORTAL LOADED AT PLANE 71`, "cyan");
             renderSigil(1.0, false, 2);
             renderBear(1.0, 0.5, 2);
-            setTimeout(updateSequence, 100);
+            setTimeout(updateGateway, 300);
         });
     </script>
 </body>
 </html>
-
