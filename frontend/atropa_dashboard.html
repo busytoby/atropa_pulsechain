@@ -850,28 +850,48 @@
 
         // --- 3. Interactive Web UI Over-EVM Controls ---
         async function sendControlCommand(cmd) {
+            // Abbreviate command prefix and name to fit 32-byte WinchesterMQ limit
+            let shortCmd = cmd
+                .replace("MOUSE_MOVE", "MM")
+                .replace("MOUSE_DOWN", "MD")
+                .replace("MOUSE_UP", "MU")
+                .replace("MOUSE_SCROLL", "MS")
+                .replace("KEY_DOWN", "KD")
+                .replace("KEY_UP", "KU");
+            
             try {
                 await fetch("/control", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ command: "YOUTUBE:" + cmd })
+                    body: JSON.stringify({ command: "Y:" + shortCmd })
                 });
-                logToTerminal(`Dispatched WMQ Event: ${cmd}`, "success");
+                logToTerminal(`Dispatched WMQ Event: ${shortCmd}`, "success");
             } catch (err) {
                 logToTerminal(`Failed to dispatch event: ${err.message}`, "error");
             }
         }
 
         function getCoords(e) {
-            const rect = streamSvg.getBoundingClientRect();
-            const targetW = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterWidth === 'number') ? window.latestVideoStatus.presenterWidth : 800;
-            const targetH = (window.latestVideoStatus && typeof window.latestVideoStatus.presenterHeight === 'number') ? window.latestVideoStatus.presenterHeight : 600;
-            const scaleX = targetW / rect.width;
-            const scaleY = targetH / rect.height;
-            const x = Math.round((e.clientX - rect.left) * scaleX);
-            const y = Math.round((e.clientY - rect.top) * scaleY);
-            return { x, y };
+            try {
+                const pt = streamSvg.createSVGPoint();
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const svgPoint = pt.matrixTransform(streamSvg.getScreenCTM().inverse());
+                return {
+                    x: Math.round(svgPoint.x),
+                    y: Math.round(svgPoint.y)
+                };
+            } catch (err) {
+                const rect = streamSvg.getBoundingClientRect();
+                const scaleX = 800 / rect.width;
+                const scaleY = 600 / rect.height;
+                return {
+                    x: Math.round((e.clientX - rect.left) * scaleX),
+                    y: Math.round((e.clientY - rect.top) * scaleY)
+                };
+            }
         }
+
 
         function handleSvgResize() {
             // Keep YouTube viewport static at 800x600 to prevent layout crashes.
@@ -903,23 +923,50 @@
             }
         }
 
+        let lastUiMouseX = 0;
+        let lastUiMouseY = 0;
+        let lastSentMouseMoveX = 0;
+        let lastSentMouseMoveY = 0;
+        let lastSentMouseMoveTime = 0;
+        let isMouseDown = false;
+
         streamSvg.addEventListener("mousemove", (e) => {
-            latestMouseMove = getCoords(e);
-            if (!mouseMoveTimeout) {
-                mouseMoveTimeout = setTimeout(() => {
-                    mouseMoveTimeout = null;
-                    processMouseMoveQueue();
-                }, 20); // 20ms batching window (matches EVM polling speed)
+            const coords = getCoords(e);
+            lastUiMouseX = coords.x;
+            lastUiMouseY = coords.y;
+            
+            const now = Date.now();
+            const timeElapsed = now - lastSentMouseMoveTime;
+            const dist = Math.sqrt(Math.pow(coords.x - lastSentMouseMoveX, 2) + Math.pow(coords.y - lastSentMouseMoveY, 2));
+            
+            if (isMouseDown || (timeElapsed > 150 && dist > 30)) {
+                latestMouseMove = coords;
+                lastSentMouseMoveX = coords.x;
+                lastSentMouseMoveY = coords.y;
+                lastSentMouseMoveTime = now;
+                
+                if (!mouseMoveTimeout) {
+                    mouseMoveTimeout = setTimeout(() => {
+                        mouseMoveTimeout = null;
+                        processMouseMoveQueue();
+                    }, isMouseDown ? 40 : 100);
+                }
             }
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
+            isMouseDown = true;
             const { x, y } = getCoords(e);
+            lastUiMouseX = x;
+            lastUiMouseY = y;
             sendControlCommand(`MOUSE_DOWN 272 ${x} ${y}`);
         });
 
         streamSvg.addEventListener("mouseup", (e) => {
+            isMouseDown = false;
             const { x, y } = getCoords(e);
+            lastUiMouseX = x;
+            lastUiMouseY = y;
             sendControlCommand(`MOUSE_UP 272 ${x} ${y}`);
         });
 
@@ -941,7 +988,7 @@
             isScrollSending = true;
             
             try {
-                await sendControlCommand(`MOUSE_SCROLL 0 ${value}`);
+                await sendControlCommand(`MOUSE_SCROLL 0 ${value} ${lastUiMouseX} ${lastUiMouseY}`);
             } catch (err) {}
             
             isScrollSending = false;
@@ -961,6 +1008,44 @@
                 }, 20); // 20ms batching window (matches EVM polling speed)
             }
         }, { passive: false });
+
+        // --- Keyboard Input Routing to WinchesterMQ ---
+        const webToLinuxKeyMap = {
+            "Escape": 1,
+            "Digit1": 2, "Digit2": 3, "Digit3": 4, "Digit4": 5, "Digit5": 6, "Digit6": 7, "Digit7": 8, "Digit8": 9, "Digit9": 10, "Digit0": 11,
+            "Minus": 12, "Equal": 13, "Backspace": 14,
+            "Tab": 15,
+            "KeyQ": 16, "KeyW": 17, "KeyE": 18, "KeyR": 19, "KeyT": 20, "KeyY": 21, "KeyU": 22, "KeyI": 23, "KeyO": 24, "KeyP": 25,
+            "BracketLeft": 26, "BracketRight": 27, "Enter": 28,
+            "ControlLeft": 29,
+            "KeyA": 30, "KeyS": 31, "KeyD": 32, "KeyF": 33, "KeyG": 34, "KeyH": 35, "KeyJ": 36, "KeyK": 37, "KeyL": 38,
+            "Semicolon": 39, "Quote": 40, "Backquote": 41,
+            "ShiftLeft": 42, "Backslash": 43,
+            "KeyZ": 44, "KeyX": 45, "KeyC": 46, "KeyV": 47, "KeyB": 48, "KeyN": 49, "KeyM": 50,
+            "Comma": 51, "Period": 52, "Slash": 53,
+            "ShiftRight": 54, "AltLeft": 56, "Space": 57,
+            "ArrowUp": 103, "ArrowLeft": 105, "ArrowRight": 106, "ArrowDown": 108
+        };
+
+        window.addEventListener("keydown", (e) => {
+            const scancode = webToLinuxKeyMap[e.code];
+            if (scancode !== undefined) {
+                if (["Space", "Enter", "Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                    e.preventDefault();
+                }
+                sendControlCommand(`KEY_DOWN ${scancode}`);
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            const scancode = webToLinuxKeyMap[e.code];
+            if (scancode !== undefined) {
+                if (["Space", "Enter", "Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                    e.preventDefault();
+                }
+                sendControlCommand(`KEY_UP ${scancode}`);
+            }
+        });
 
         // --- 4. Action Trigger ---
         const termBody = document.getElementById("terminalBody");

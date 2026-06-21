@@ -275,7 +275,7 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
 
     struct stat st;
     bool need_blit = true;
-    int fd_img = open("frontend/latest_frame.jpg", O_RDONLY);
+    int fd_img = open("/dev/shm/atropa_latest_frame.jpg", O_RDONLY);
     if (fd_img >= 0) {
         if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
             #ifdef __APPLE__
@@ -331,13 +331,65 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
     }
 }
 
+static uint32_t *dashboard_cache_px = NULL;
+
 bool decode_jpeg_zero_copy(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
-    // Preserve Auncient layout mapping: decode dashboard layout and overlay YouTube frame.
-    bool ok = decode_jpeg_full(jpeg_buf, jpeg_sz, scanout_px, width, height);
-    if (ok) {
-        draw_youtube_frame(scanout_px, width, height);
+    (void)scanout_px;
+    if (!dashboard_cache_px) {
+        dashboard_cache_px = (uint32_t *)malloc(MAX_W * MAX_H * sizeof(uint32_t));
+        for (int i = 0; i < MAX_W * MAX_H; i++) {
+            dashboard_cache_px[i] = 0xFF0B0214; // default purple
+        }
     }
-    return ok;
+    // Decode dashboard frame into background cache instead of active scanout directly
+    return decode_jpeg_full(jpeg_buf, jpeg_sz, dashboard_cache_px, width, height);
+}
+
+void commit_wayland_surface(int fd_wl, uint32_t surf, uint32_t bid) {
+    uint32_t attach_args[] = {bid, 0, 0};
+    send_msg(fd_wl, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
+    uint32_t damage[] = {0, 0, g_w, g_h};
+    send_msg(fd_wl, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
+    send_msg(fd_wl, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
+}
+
+bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redraw) {
+    struct stat st;
+    bool new_youtube = false;
+    
+    int fd_img = open("/dev/shm/atropa_latest_frame.jpg", O_RDONLY);
+    if (fd_img >= 0) {
+        if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
+            #ifdef __APPLE__
+            time_t cur_mtime = st.st_mtimespec.tv_sec;
+            long cur_mtime_nsec = st.st_mtimespec.tv_nsec;
+            #else
+            time_t cur_mtime = st.st_mtim.tv_sec;
+            long cur_mtime_nsec = st.st_mtim.tv_nsec;
+            #endif
+            if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec) {
+                new_youtube = true;
+            }
+        }
+        close(fd_img);
+    }
+
+    if (force_redraw || new_youtube) {
+        if (g_scanout_px) {
+            if (dashboard_cache_px) {
+                memcpy(g_scanout_px, dashboard_cache_px, g_w * g_h * sizeof(uint32_t));
+            } else {
+                for (int i = 0; i < g_w * g_h; i++) {
+                    g_scanout_px[i] = 0xFF0B0214;
+                }
+            }
+            // Draw latest YouTube frame on top of clean background
+            draw_youtube_frame(g_scanout_px, g_w, g_h);
+            commit_wayland_surface(fd_wl, surf, bid);
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -617,12 +669,7 @@ int main() {
                 if (last_jpeg_sz > 0) {
                     decode_jpeg_zero_copy(last_jpeg_buf, last_jpeg_sz, g_scanout_px, g_w, g_h);
                 }
-                // pvkQueuePresentKHR(queue, &presentInfo); // Overwrites scanout buffer with background color
-                uint32_t attach_args[] = {bid_val, 0, 0};
-                send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
-                uint32_t damage[] = {0, 0, g_w, g_h};
-                send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
-                send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
+                update_and_present(fd, surf, bid_val, true);
             }
         }
 
@@ -660,14 +707,7 @@ int main() {
                                 memcpy(last_jpeg_buf, input_buf, jpeg_len);
                                 last_jpeg_sz = jpeg_len;
                             }
-                            // pvkQueuePresentKHR(queue, &presentInfo); // Overwrites scanout buffer with background color
-
-                            uint32_t attach_args[] = {bid_val, 0, 0};
-                            send_msg(fd, surf, WL_SURFACE_ATTACH, attach_args, 12, -1);
-
-                            uint32_t damage[] = {0, 0, g_w, g_h};
-                            send_msg(fd, surf, WL_SURFACE_DAMAGE, damage, 16, -1);
-                            send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
+                            update_and_present(fd, surf, bid_val, true);
                         }
                         stream_state = STATE_READ_LEN;
                         target_len = 20;
@@ -676,6 +716,8 @@ int main() {
                 }
             }
         }
+        // 3. Asynchronously present new YouTube frames immediately when available in RAM
+        update_and_present(fd, surf, bid_val, false);
     }
 
 out:

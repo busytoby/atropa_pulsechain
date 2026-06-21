@@ -265,9 +265,10 @@ def tx_worker():
                 headers={'content-type': 'application/json'}
             )
             with urllib.request.urlopen(req, timeout=2) as response:
-                response.read()
+                res_body = response.read().decode('utf-8')
+                print(f"[Server] EVM Tx Response: {res_body}")
         except Exception as e:
-            pass
+            print(f"[Server] EVM Tx Error: {e}")
         finally:
             tx_queue.task_done()
 
@@ -315,6 +316,14 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 with mjpeg_lock:
                     if q in mjpeg_clients:
                         mjpeg_clients.remove(q)
+            return
+        if parsed_path == '/api/has-mjpeg-clients':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            with mjpeg_lock:
+                has_clients = len(mjpeg_clients) > 0
+            self.wfile.write(json.dumps({'hasClients': has_clients}).encode('utf-8'))
             return
         parsed_path = self.path.split('?', 1)[0].split('#', 1)[0].rstrip('/')
         if parsed_path == '/api/video-status':
@@ -748,6 +757,10 @@ class CustomHandler(SimpleHTTPRequestHandler):
                         wmq_address = f.read().strip()
                     
                     try:
+                        # Abbreviate command to fit 32-byte limit
+                        command = command.replace("YOUTUBE:", "Y:").replace("MAIN:", "M:")
+                        command = command.replace("MOUSE_MOVE", "MM").replace("MOUSE_DOWN", "MD").replace("MOUSE_UP", "MU").replace("MOUSE_SCROLL", "MS").replace("KEY_DOWN", "KD").replace("KEY_UP", "KU")
+                        
                         cmd_bytes = command.encode('utf-8')
                         if len(cmd_bytes) < 32:
                             cmd_bytes = cmd_bytes + b'\x00' * (32 - len(cmd_bytes))

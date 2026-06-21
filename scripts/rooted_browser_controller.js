@@ -5,11 +5,16 @@ const path = require('path');
 process.env.TMPDIR = path.join(__dirname, "../tmp");
 const readline = require('readline');
 const { ethers } = require('ethers');
+const http = require('http');
+
+const keepAliveAgent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+let hasMjpegClients = false;
 
 let wmqContract = null;
 let signer = null;
 let provider = null;
 let wmqAddressStr = "Not Deployed";
+let nextNonce = null;
 let wmqEventCount = 0;
 let lastBlockNumber = 0;
 let presenterWidth = 800;
@@ -18,15 +23,41 @@ let presenterHeight = 600;
 async function sendWmqEvent(cmd, args) {
     if (!wmqContract || !signer) return;
     try {
-        const cmdHash = ethers.id(`${cmd}:${args}`);
+        let fullCmd = `${cmd} ${args}`.trim();
+        // Abbreviate command prefix and name to fit 32-byte WinchesterMQ limit
+        fullCmd = fullCmd
+            .replace("YOUTUBE:", "Y:")
+            .replace("MAIN:", "M:")
+            .replace("MOUSE_MOVE", "MM")
+            .replace("MOUSE_DOWN", "MD")
+            .replace("MOUSE_UP", "MU")
+            .replace("MOUSE_SCROLL", "MS")
+            .replace("KEY_DOWN", "KD")
+            .replace("KEY_UP", "KU");
+
+        let cmdBytes = ethers.toUtf8Bytes(fullCmd);
+        if (cmdBytes.length < 32) {
+            const padded = new Uint8Array(32);
+            padded.set(cmdBytes);
+            cmdBytes = padded;
+        } else if (cmdBytes.length > 32) {
+            console.warn(`[WMQ WARNING] Command truncated to 32 bytes: ${fullCmd}`);
+            cmdBytes = cmdBytes.slice(0, 32);
+        }
         const txData = ethers.concat([
-            "0x98d400c0", // writeDataPort
-            ethers.zeroPadValue(cmdHash, 32)
+            "0xccb077a0", // postEvent
+            cmdBytes
         ]);
         const wmqAddress = await wmqContract.getAddress();
-        await signer.sendTransaction({ to: wmqAddress, data: txData, gasLimit: 100000 });
+        let nonce;
+        if (nextNonce !== null) {
+            nonce = nextNonce++;
+        } else {
+            nonce = await provider.getTransactionCount(signer.address, "pending");
+        }
+        await signer.sendTransaction({ to: wmqAddress, data: txData, gasLimit: 100000, nonce });
     } catch (e) {
-        // Suppress transaction errors if anvil is shut down dynamically
+        console.error(`[WMQ ERR] Failed to send WinchesterMQ event (${cmd} ${args}): ${e.message}`);
     }
 }
 
@@ -66,9 +97,12 @@ function compileYul(yulPath) {
 }
 
 async function main() {
+    let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
+    const isYouTube = url.includes("youtube.com") || url.includes("youtube");
+    
     // Single-instance lock to maintain Auncient controller integrity and prevent duplicate chromium instances
     const net = require('net');
-    const SINGLE_INSTANCE_PORT = 18080;
+    const SINGLE_INSTANCE_PORT = isYouTube ? 18081 : 18080;
     
     const isAnotherInstanceRunning = await new Promise((resolve) => {
         const server = net.createServer();
@@ -91,8 +125,6 @@ async function main() {
         process.exit(1);
     }
 
-    let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
-    
     // Verify local dashboard server is running and spawn if needed
     if (true) {
         const http = require('http');
@@ -129,8 +161,9 @@ async function main() {
         provider.pollingInterval = 20; // Reduce polling interval from default 4000ms to 20ms for instant input routing
         // Quick check to see if provider is online
         await provider.getNetwork();
-        signer = await provider.getSigner(0);
-        console.log(`[WMQ] Connected to local EVM provider. Signer: ${signer.address}`);
+        signer = await provider.getSigner(isYouTube ? 2 : 1);
+        nextNonce = await provider.getTransactionCount(signer.address, "pending");
+        console.log(`[WMQ] Connected to local EVM provider. Signer index: ${isYouTube ? 2 : 1} | Address: ${signer.address} | Initial Nonce: ${nextNonce}`);
         
         const fs = require('fs');
         const yulPath = path.join(__dirname, "../solidity/bin/WinchesterMQ.yul");
@@ -138,6 +171,21 @@ async function main() {
             const wmqBytecode = compileYul(yulPath);
             let wmqAddress = null;
             let factoryDeployed = false;
+
+            // Reuse existing WinchesterMQ contract if already deployed on Anvil
+            const tempAddressPath = path.join(__dirname, "../tmp/wmq_address.txt");
+            if (fs.existsSync(tempAddressPath)) {
+                const savedAddress = fs.readFileSync(tempAddressPath, "utf8").trim();
+                if (ethers.isAddress(savedAddress)) {
+                    const code = await provider.getCode(savedAddress);
+                    if (code !== "0x") {
+                        console.log(`[WMQ] Reusing existing WinchesterMQ contract at: ${savedAddress}`);
+                        wmqAddress = savedAddress;
+                        wmqContract = new ethers.Contract(wmqAddress, [], signer);
+                        factoryDeployed = true;
+                    }
+                }
+            }
 
             // Attempt to deploy WinchesterMQ using the VerboseImmutableFactory if config is available
             try {
@@ -157,6 +205,7 @@ async function main() {
                             if (existingCode !== "0x") {
                                 console.log(`[WMQ] WinchesterMQ already deployed via factory at: ${predictedAddress}`);
                                 wmqAddress = predictedAddress;
+                                wmqContract = new ethers.Contract(wmqAddress, [], signer);
                                 factoryDeployed = true;
                             } else {
                                 console.log(`[WMQ] Deploying WinchesterMQ via Auncient VerboseImmutableFactory to: ${predictedAddress}`);
@@ -186,6 +235,7 @@ async function main() {
                                 await deployTx.wait();
                                 console.log(`[WMQ] WinchesterMQ successfully deployed via factory at: ${predictedAddress}`);
                                 wmqAddress = predictedAddress;
+                                wmqContract = new ethers.Contract(wmqAddress, [], signer);
                                 factoryDeployed = true;
                             }
                         }
@@ -210,62 +260,108 @@ async function main() {
                 fs.writeFileSync(path.join(__dirname, "../tmp/wmq_address.txt"), wmqAddress);
             } catch (err) {}
 
-            // Set up a listener for LogPut event from WinchesterMQ (handshake mode)
-            provider.on({
-                address: wmqAddress,
-                topics: ["0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045"]
-            }, async (log) => {
-                try {
-                    const data = ethers.getBytes(log.data);
-                    const blockIdBytes = data.slice(32, 64);
-                    const blockId = ethers.toBigInt(blockIdBytes);
+            // Synchronize nonce after deployment transactions
+            nextNonce = await provider.getTransactionCount(signer.address, "pending");
 
-                    let blockBytes = [];
-                    const baseKey = ethers.keccak256(ethers.zeroPadValue(ethers.toBeHex(BigInt(0x1000) + blockId), 32));
-                    for (let i = 0; i < 8; i++) {
-                        const slotKey = ethers.toBeHex(BigInt(baseKey) + BigInt(i), 32);
-                        const slotVal = await provider.getStorage(wmqAddress, slotKey);
-                        blockBytes.push(...ethers.getBytes(slotVal));
-                    }
-                    const fullStr = Buffer.from(blockBytes).toString('utf8');
-                    const commandStr = fullStr.split('\0')[0].trim();
-                    const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
-                    if (commandStr && commandStr.startsWith(targetPrefix)) {
-                        wmqEventCount++;
-                        const actualCmd = commandStr.substring(targetPrefix.length);
-                        console.log(`[WinchesterMQ Event Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
-                        await handleInputCommand(actualCmd);
+            // Auncient high-frequency JSON-RPC block log poller for absolute input reliability
+            let lastPolledBlock = await provider.getBlockNumber();
+            const seenLogs = new Set();
+
+            async function pollLogs() {
+                try {
+                    const latestBlock = await provider.getBlockNumber();
+                    if (latestBlock >= lastPolledBlock) {
+                        const logs = await provider.getLogs({
+                            address: wmqAddress,
+                            fromBlock: lastPolledBlock,
+                            toBlock: latestBlock
+                        });
+
+                        for (const log of logs) {
+                            const logKey = `${log.blockNumber}:${log.transactionHash}:${log.index}`;
+                            if (seenLogs.has(logKey)) continue;
+                            seenLogs.add(logKey);
+
+                            // Bounded cache cleanup to prevent memory leaks
+                            if (seenLogs.size > 2000) {
+                                const iter = seenLogs.values();
+                                for (let k = 0; k < 500; k++) {
+                                    seenLogs.delete(iter.next().value);
+                                }
+                            }
+
+                            if (log.topics[0] === "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045") {
+                                // Handshake Mode: LogPut
+                                try {
+                                    const data = ethers.getBytes(log.data);
+                                    const blockIdBytes = data.slice(32, 64);
+                                    const blockId = ethers.toBigInt(blockIdBytes);
+
+                                    let blockBytes = [];
+                                    const baseKey = ethers.keccak256(ethers.zeroPadValue(ethers.toBeHex(BigInt(0x1000) + blockId), 32));
+                                    for (let i = 0; i < 8; i++) {
+                                        const slotKey = ethers.toBeHex(BigInt(baseKey) + BigInt(i), 32);
+                                        const slotVal = await provider.getStorage(wmqAddress, slotKey);
+                                        blockBytes.push(...ethers.getBytes(slotVal));
+                                    }
+                                    const fullStr = Buffer.from(blockBytes).toString('utf8');
+                                    const commandStr = fullStr.split('\0')[0].trim();
+                                    const targetPrefix = isYouTube ? "Y:" : "M:";
+                                    if (commandStr && commandStr.startsWith(targetPrefix)) {
+                                        wmqEventCount++;
+                                        let actualCmd = commandStr.substring(targetPrefix.length);
+                                        // Expand abbreviated command names back to full names
+                                        actualCmd = actualCmd
+                                            .replace("MM ", "MOUSE_MOVE ")
+                                            .replace("MD ", "MOUSE_DOWN ")
+                                            .replace("MU ", "MOUSE_UP ")
+                                            .replace("MS ", "MOUSE_SCROLL ")
+                                            .replace("KD ", "KEY_DOWN ")
+                                            .replace("KU ", "KEY_UP ");
+                                        console.log(`[WinchesterMQ Event Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
+                                        await handleInputCommand(actualCmd);
+                                    }
+                                } catch (err) {
+                                    console.error("[WMQ Listener ERR] Failed to parse input command block:", err);
+                                }
+                            } else if (log.topics[0] === "0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da") {
+                                // Fast Path Mode: postEvent
+                                try {
+                                    const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
+                                    const targetPrefix = isYouTube ? "Y:" : "M:";
+                                    if (commandStr && commandStr.startsWith(targetPrefix)) {
+                                        wmqEventCount++;
+                                        let actualCmd = commandStr.substring(targetPrefix.length);
+                                        // Expand abbreviated command names back to full names
+                                        actualCmd = actualCmd
+                                            .replace("MM ", "MOUSE_MOVE ")
+                                            .replace("MD ", "MOUSE_DOWN ")
+                                            .replace("MU ", "MOUSE_UP ")
+                                            .replace("MS ", "MOUSE_SCROLL ")
+                                            .replace("KD ", "KEY_DOWN ")
+                                            .replace("KU ", "KEY_UP ");
+                                        console.log(`[WinchesterMQ Fast Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
+                                        await handleInputCommand(actualCmd);
+                                    }
+                                } catch (err) {
+                                    console.error("[WMQ Fast Listener ERR] Failed to parse command:", err);
+                                }
+                            }
+                        }
+                        lastPolledBlock = latestBlock;
                     }
                 } catch (err) {
-                    console.error("[WMQ Listener ERR] Failed to parse input command block:", err);
+                    console.error("[WMQ Poller ERR]", err);
                 }
-            });
-
-            // Set up a listener for postEvent fast-path command logs
-            provider.on({
-                address: wmqAddress,
-                topics: ["0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da"]
-            }, async (log) => {
-                try {
-                    const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
-                    const targetPrefix = isYouTube ? "YOUTUBE:" : "MAIN:";
-                    if (commandStr && commandStr.startsWith(targetPrefix)) {
-                        wmqEventCount++;
-                        const actualCmd = commandStr.substring(targetPrefix.length);
-                        console.log(`[WinchesterMQ Fast Log] Routed input to ${isYouTube ? 'YouTube' : 'Main'}: ${actualCmd}`);
-                        await handleInputCommand(actualCmd);
-                    }
-                } catch (err) {
-                    console.error("[WMQ Fast Listener ERR] Failed to parse command:", err);
-                }
-            });
+                setTimeout(pollLogs, 30);
+            }
+            pollLogs();
         }
     } catch (e) {
         console.log("[WMQ] WinchesterMQ not active or unreachable (Anvil offline). Using standard direct routing.");
     }
 
     // 1. Launch presenter process if not running in YouTube sub-browser frame-dumper mode
-    const isYouTube = url.includes("youtube.com") || url.includes("youtube");
     let presenter = null;
     let presenterReadyResolver;
     const presenterReady = new Promise((resolve) => {
@@ -296,8 +392,10 @@ async function main() {
     let page = null;
     let isResizing = false;
     let videoBounds = { x: 427, y: 221, width: 341, height: 145 };
+    let lastBoundsUpdateTime = 0;
     async function updateVideoBounds() {
         if (!page) return;
+        lastBoundsUpdateTime = Date.now();
         try {
             const rect = await page.evaluate(() => {
                 const el = document.getElementById('browserStreamSvg');
@@ -311,12 +409,22 @@ async function main() {
         } catch (err) {}
     }
     let controlDown = false;
+    let shiftDown = false;
+    const shiftMap = {
+        '1': '!', '2': '@', '3': '#', '4': '$', '5': '%', '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+        '-': '_', '=': '+', '[': '{', ']': '}', ';': ':', "'": '"', '`': '~', '\\': '|', ',': '<', '.': '>', '/': '?'
+    };
     let lastClickTime = 0;
     let clickCount = 1;
     let resizeTimeout = null;
     let lastMouseX = 0;
     let lastMouseY = 0;
+    let lastMouseDownX = 0;
+    let lastMouseDownY = 0;
+    let lastMouseDownTime = 0;
+    let isFocusedOnYouTube = false;
     async function handleInputCommand(line) {
+        line = line.replace(/,/g, ' ');
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
             if (presenterReadyResolver) {
@@ -324,40 +432,84 @@ async function main() {
             }
             return;
         }
-        const eventPrefix = isYouTube ? 'YOUTUBE:' : 'MAIN:';
-        const parts = line.split(' ');
+        // Normalize commas to spaces for Auncient token compatibility, then split by whitespace
+        const parts = line.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return;
         const cmd = parts[0];
+        
+        // Auncient dynamic bounds check: refresh video bounds in the background if they might be stale
+        if (!isYouTube && (cmd === 'MOUSE_MOVE' || cmd === 'MOUSE_DOWN' || cmd === 'MOUSE_UP' || cmd === 'MOUSE_SCROLL')) {
+            if (Date.now() - lastBoundsUpdateTime > 500) {
+                updateVideoBounds().catch(() => {});
+            }
+        }
+        
         try {
             if (cmd === 'MOUSE_MOVE') {
                 const x = parseInt(parts[1]);
                 const y = parseInt(parts[2]);
                 lastMouseX = x;
                 lastMouseY = y;
-                await sendWmqEvent(eventPrefix + 'MOUSE_MOVE', `${x},${y}`);
-                await page.mouse.move(x, y);
-                // Manually trigger mousemove event on YouTube player container to force controls to pop up
-                await page.evaluate(() => {
-                    const player = document.querySelector('.html5-video-player, video');
-                    if (player) {
-                        const event = new MouseEvent('mousemove', {
-                            bubbles: true,
-                            cancelable: true,
-                            view: window
-                        });
-                        player.dispatchEvent(event);
+                
+                if (isYouTube) {
+                    await page.mouse.move(x, y);
+                    // Manually trigger mousemove event on YouTube player container to force controls to pop up
+                    await page.evaluate(() => {
+                        const player = document.querySelector('.html5-video-player, video');
+                        if (player) {
+                            const event = new MouseEvent('mousemove', {
+                                bubbles: true,
+                                cancelable: true,
+                                view: window
+                            });
+                            player.dispatchEvent(event);
+                        }
+                    }).catch(() => {});
+                } else {
+                    const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
+                                         y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
+                    if (inVideoBounds) {
+                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
+                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
+                        await sendWmqEvent('YOUTUBE:MOUSE_MOVE', `${x_yt},${y_yt}`);
+                    } else {
+                        await sendWmqEvent('MAIN:MOUSE_MOVE', `${x},${y}`);
                     }
-                }).catch(() => {});
+                    await page.mouse.move(x, y);
+                }
             } else if (cmd === 'MOUSE_DOWN') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
+                let x = lastMouseX;
+                let y = lastMouseY;
                 if (parts[2] !== undefined && parts[3] !== undefined) {
-                    const x = parseInt(parts[2]);
-                    const y = parseInt(parts[3]);
+                    x = parseInt(parts[2]);
+                    y = parseInt(parts[3]);
                     lastMouseX = x;
                     lastMouseY = y;
                     await page.mouse.move(x, y);
                 }
-                await sendWmqEvent(eventPrefix + 'MOUSE_DOWN', `${btn}`);
+                lastMouseDownX = x;
+                lastMouseDownY = y;
+                lastMouseDownTime = Date.now();
+                
+                if (isYouTube) {
+                    // Executed directly on sub-browser page
+                } else {
+                    await updateVideoBounds();
+                    const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
+                                         y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
+                    isFocusedOnYouTube = inVideoBounds;
+                    console.log(`[INPUT ROUTER] MOUSE_DOWN at (${x}, ${y}). bounds={x:${videoBounds.x}, y:${videoBounds.y}, w:${videoBounds.width}, h:${videoBounds.height}}. inVideoBounds=${inVideoBounds}. isFocusedOnYouTube=${isFocusedOnYouTube}`);
+                    if (inVideoBounds) {
+                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
+                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
+                        await sendWmqEvent('YOUTUBE:MOUSE_DOWN', `${btn},${x_yt},${y_yt}`);
+                    } else {
+                        await sendWmqEvent('MAIN:MOUSE_DOWN', `${btn},${x},${y}`);
+                    }
+                }
+                
                 const now = Date.now();
                 if (now - lastClickTime < 300) {
                     clickCount++;
@@ -369,54 +521,123 @@ async function main() {
             } else if (cmd === 'MOUSE_UP') {
                 const btn = parseInt(parts[1]);
                 const button = linuxButtonMap[btn] || 'left';
+                let x = lastMouseX;
+                let y = lastMouseY;
                 if (parts[2] !== undefined && parts[3] !== undefined) {
-                    const x = parseInt(parts[2]);
-                    const y = parseInt(parts[3]);
+                    x = parseInt(parts[2]);
+                    y = parseInt(parts[3]);
                     lastMouseX = x;
                     lastMouseY = y;
                     await page.mouse.move(x, y);
                 }
+                
+                if (isYouTube) {
+                    // Executed directly on sub-browser page
+                } else {
+                    await updateVideoBounds();
+                    const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
+                                         y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
+                    if (inVideoBounds) {
+                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
+                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
+                        await sendWmqEvent('YOUTUBE:MOUSE_UP', `${btn},${x_yt},${y_yt}`);
+                    } else {
+                        await sendWmqEvent('MAIN:MOUSE_UP', `${btn},${x},${y}`);
+                    }
+                }
+                
+                const isClick = (Date.now() - lastMouseDownTime < 350) &&
+                                (Math.abs(x - lastMouseDownX) < 10) &&
+                                (Math.abs(y - lastMouseDownY) < 10);
+                if (isClick) {
+                    // Snap back to initial down coordinates to guarantee click firing in Puppeteer
+                    await page.mouse.move(lastMouseDownX, lastMouseDownY);
+                }
                 await page.mouse.up({ button, clickCount });
             } else if (cmd === 'KEY_DOWN') {
-                const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
-                await sendWmqEvent(eventPrefix + 'KEY_DOWN', `${key}`);
+                const key = parseInt(parts[1]);
                 const keyName = linuxKeyMap[key];
-                if (keyName === 'Control') {
-                    controlDown = true;
-                }
-                if (keyName === 'r' && controlDown) {
-                    console.log("[PUPPETEER] Control+R detected. Reloading page...");
-                    await page.reload({ waitUntil: "networkidle2" });
-                } else if (keyName) {
-                    if (keyName === 'Enter') {
-                        await page.keyboard.press('Enter');
-                    } else {
+                
+                if (isYouTube) {
+                    console.log(`[YOUTUBE INPUT] KEY_DOWN: key=${key}, keyName=${keyName}`);
+                    if (keyName === 'Shift') {
+                        shiftDown = true;
+                    }
+                    if (keyName === 'Control') {
+                        controlDown = true;
+                    }
+                    if (keyName) {
                         await page.keyboard.down(keyName);
+                    }
+                } else {
+                    console.log(`[INPUT ROUTER] KEY_DOWN: key=${key}, keyName=${keyName}, isFocusedOnYouTube=${isFocusedOnYouTube}`);
+                    if (isFocusedOnYouTube) {
+                        await sendWmqEvent('YOUTUBE:KEY_DOWN', `${key}`);
+                    } else {
+                        await sendWmqEvent('MAIN:KEY_DOWN', `${key}`);
+                        if (keyName === 'Control') {
+                            controlDown = true;
+                        }
+                        if (keyName === 'r' && controlDown) {
+                            console.log("[PUPPETEER] Control+R detected. Reloading page...");
+                            await page.reload({ waitUntil: "networkidle2" });
+                        } else if (keyName) {
+                            if (keyName === 'Enter') {
+                                await page.keyboard.press('Enter');
+                            } else {
+                                await page.keyboard.down(keyName);
+                            }
+                        }
                     }
                 }
             } else if (cmd === 'KEY_UP') {
-                const key = parseInt(parts[1]); // Raw evdev keycode directly from Wayland client
+                const key = parseInt(parts[1]);
                 const keyName = linuxKeyMap[key];
-                if (keyName === 'Control') {
-                    controlDown = false;
-                }
-                if (keyName && keyName !== 'Enter') {
-                    await page.keyboard.up(keyName);
+                
+                if (isYouTube) {
+                    if (keyName === 'Shift') {
+                        shiftDown = false;
+                    }
+                    if (keyName === 'Control') {
+                        controlDown = false;
+                    }
+                    if (keyName) {
+                        await page.keyboard.up(keyName);
+                    }
+                } else {
+                    if (isFocusedOnYouTube) {
+                        await sendWmqEvent('YOUTUBE:KEY_UP', `${key}`);
+                    } else {
+                        await sendWmqEvent('MAIN:KEY_UP', `${key}`);
+                        if (keyName === 'Control') {
+                            controlDown = false;
+                        }
+                        if (keyName && keyName !== 'Enter') {
+                            await page.keyboard.up(keyName);
+                        }
+                    }
                 }
             } else if (cmd === 'MOUSE_SCROLL') {
-                const axis = parseInt(parts[1]); // 0 for vertical scroll, 1 for horizontal
+                const axis = parseInt(parts[1]);
                 const value = parseFloat(parts[2]);
-                console.log(`[INPUT ROUTER] Processed MOUSE_SCROLL event: axis=${axis}, value=${value}, target=${isYouTube ? 'YouTube' : 'Main'}`);
-                await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
+                
+                let x = lastMouseX;
+                let y = lastMouseY;
+                if (isYouTube && parts[3] !== undefined && parts[4] !== undefined) {
+                    x = parseInt(parts[3]);
+                    y = parseInt(parts[4]);
+                    lastMouseX = x;
+                    lastMouseY = y;
+                }
+                
+                console.log(`[INPUT ROUTER] Processed MOUSE_SCROLL event: axis=${axis}, value=${value}, x=${x}, y=${y}, target=${isYouTube ? 'YouTube' : 'Main'}`);
                 
                 const multiplier = isYouTube ? 55 : 25;
                 const deltaY = (axis === 0) ? value * multiplier : 0;
                 const deltaX = (axis === 1) ? value * multiplier : 0;
-                try {
-                    // Dispatch native chromium wheel events at current cursor location
-                    await page.mouse.wheel({ deltaX, deltaY });
-                } catch (wheelErr) {
-                    // Fallback: programmatically dispatch DOM WheelEvent to correct element under cursor
+                
+                if (isYouTube) {
+                    // Auncient direct scroll path for YouTube: highly customized containers cancel/ignore native wheel events
                     await page.evaluate((x, y, dx, dy) => {
                         const el = document.elementFromPoint(x, y) || document.body;
                         const ev = new WheelEvent('wheel', {
@@ -429,21 +650,65 @@ async function main() {
                             deltaMode: 0
                         });
                         el.dispatchEvent(ev);
-                        // Auncient direct scroll fallback: if wheel event is ignored, perform direct element scroll
-                        if (el === document.body || el === document.documentElement || el.id === 'page-manager') {
-                            window.scrollBy(dx, dy);
-                        } else {
-                            let parent = el;
-                            while (parent && parent !== document.body) {
-                                if (parent.scrollHeight > parent.clientHeight || parent.scrollWidth > parent.clientWidth) {
+                        
+                        let parent = el;
+                        let scrolled = false;
+                        while (parent && parent !== document.body && parent !== document.documentElement) {
+                            if (parent.scrollHeight > parent.clientHeight || parent.scrollWidth > parent.clientWidth) {
+                                const style = window.getComputedStyle(parent);
+                                if (style.overflowY === 'auto' || style.overflowY === 'scroll' || style.overflowX === 'auto' || style.overflowX === 'scroll' || parent.id === 'page-manager' || parent.tagName === 'YTD-APP') {
                                     parent.scrollTop += dy;
                                     parent.scrollLeft += dx;
+                                    scrolled = true;
                                     break;
                                 }
-                                parent = parent.parentElement;
                             }
+                            parent = parent.parentElement;
                         }
-                    }, lastMouseX, lastMouseY, deltaX, deltaY).catch(() => {});
+                        if (!scrolled) {
+                            window.scrollBy(dx, dy);
+                        }
+                    }, x, y, deltaX, deltaY).catch(() => {});
+                } else {
+                    const inVideoBounds = lastMouseX >= videoBounds.x && lastMouseX <= videoBounds.x + videoBounds.width &&
+                                         lastMouseY >= videoBounds.y && lastMouseY <= videoBounds.y + videoBounds.height;
+                    if (inVideoBounds) {
+                        const x_yt = Math.round(((lastMouseX - videoBounds.x) / videoBounds.width) * 800);
+                        const y_yt = Math.round(((lastMouseY - videoBounds.y) / videoBounds.height) * 600);
+                        await sendWmqEvent('YOUTUBE:MOUSE_SCROLL', `${axis},${value},${x_yt},${y_yt}`);
+                    } else {
+                        await sendWmqEvent('MAIN:MOUSE_SCROLL', `${axis},${value}`);
+                        try {
+                            await page.mouse.wheel({ deltaX, deltaY });
+                        } catch (wheelErr) {
+                            await page.evaluate((x, y, dx, dy) => {
+                                const el = document.elementFromPoint(x, y) || document.body;
+                                const ev = new WheelEvent('wheel', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    clientX: x,
+                                    clientY: y,
+                                    deltaX: dx,
+                                    deltaY: dy,
+                                    deltaMode: 0
+                                });
+                                el.dispatchEvent(ev);
+                                if (el === document.body || el === document.documentElement || el.id === 'page-manager') {
+                                    window.scrollBy(dx, dy);
+                                } else {
+                                    let parent = el;
+                                    while (parent && parent !== document.body) {
+                                        if (parent.scrollHeight > parent.clientHeight || parent.scrollWidth > parent.clientWidth) {
+                                            parent.scrollTop += dy;
+                                            parent.scrollLeft += dx;
+                                            break;
+                                        }
+                                        parent = parent.parentElement;
+                                    }
+                                }
+                            }, lastMouseX, lastMouseY, deltaX, deltaY).catch(() => {});
+                        }
+                    }
                 }
             } else if (cmd === 'WINDOW_CLOSE') {
                 console.log("[PUPPETEER] Wayland close event requested. Shutting down browser...");
@@ -471,8 +736,20 @@ async function main() {
                     console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
                     try {
                         isResizing = true;
+                        // Auncient synchronization sequence: stop screencast to prevent race condition crashes
+                        if (client) {
+                            try {
+                                await client.send('Page.stopScreencast');
+                            } catch (e) {}
+                        }
                         await page.setViewport({ width, height });
                         await updateVideoBounds();
+                        // Restart screencast now that viewport layout has stabilized
+                        if (client) {
+                            try {
+                                await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
+                            } catch (e) {}
+                        }
                         isResizing = false;
                     } catch (viewportErr) {
                         isResizing = false;
@@ -572,6 +849,28 @@ async function main() {
 
     // Screenshot streaming loop will be declared and run after page load to prevent early crashes.
     
+    if (isYouTube) {
+        setInterval(() => {
+            http.get({
+                hostname: '127.0.0.1',
+                port: 8000,
+                path: '/api/has-mjpeg-clients',
+                agent: keepAliveAgent
+            }, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        hasMjpegClients = !!parsed.hasClients;
+                    } catch (e) {}
+                });
+            }).on('error', () => {
+                hasMjpegClients = false;
+            });
+        }, 2000);
+    }
+
     let lastReloadTime = 0;
     // Auto-unmute and auto-recover YouTube video player continuously in the background
     setInterval(async () => {
@@ -752,14 +1051,14 @@ async function main() {
     }
 
     async function uploadFrame(jpegBuffer) {
-        if (!isYouTube) return;
+        if (!isYouTube || !hasMjpegClients) return;
         return new Promise((resolve) => {
-            const http = require('http');
             const req = http.request({
                 hostname: '127.0.0.1',
                 port: 8000,
                 path: '/upload-frame',
                 method: 'POST',
+                agent: keepAliveAgent,
                 headers: {
                     'Content-Type': 'image/jpeg',
                     'Content-Length': jpegBuffer.length
@@ -806,8 +1105,8 @@ async function main() {
                         uploadFrame(jpegBuffer);
                         try {
                             const fs = require('fs');
-                            const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
-                            const targetPath = path.join(__dirname, "../frontend/latest_frame.jpg");
+                            const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
+                            const targetPath = "/dev/shm/atropa_latest_frame.jpg";
                             fs.writeFileSync(tmpPath, jpegBuffer);
                             fs.renameSync(tmpPath, targetPath);
                         } catch (writeErr) {
@@ -863,8 +1162,8 @@ async function main() {
                     uploadFrame(jpegBuffer);
                     try {
                         const fs = require('fs');
-                        const tmpPath = path.join(__dirname, "../frontend/latest_frame.tmp");
-                        const targetPath = path.join(__dirname, "../frontend/latest_frame.jpg");
+                        const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
+                        const targetPath = "/dev/shm/atropa_latest_frame.jpg";
                         fs.writeFileSync(tmpPath, jpegBuffer);
                         fs.renameSync(tmpPath, targetPath);
                     } catch (writeErr) {}
@@ -894,27 +1193,31 @@ async function main() {
         }
     }
 
+    page.on('load', async () => {
+        if (!isYouTube) {
+            await updateVideoBounds();
+        }
+        await startScreencast();
+    });
+    page.on('domcontentloaded', async () => {
+        console.log("[PUPPETEER EVENT] DOMContentLoaded fired.");
+        if (!isYouTube) {
+            await updateVideoBounds();
+        }
+    });
     if (!isYouTube) {
-        page.on('load', async () => {
-            await updateVideoBounds();
-            await startScreencast();
-        });
-        page.on('domcontentloaded', async () => {
-            console.log("[PUPPETEER EVENT] DOMContentLoaded fired.");
-            await updateVideoBounds();
-        });
         setInterval(async () => {
             await updateVideoBounds();
         }, 2000);
-        
-        // Initial setup
-        (async () => {
-            await updateVideoBounds();
-            await startScreencast();
-        })();
-    } else {
-        screenshotLoop();
     }
+    
+    // Initial setup
+    (async () => {
+        if (!isYouTube) {
+            await updateVideoBounds();
+        }
+        await startScreencast();
+    })();
 
     if (url.includes("youtube.com")) {
         try {
@@ -929,25 +1232,29 @@ async function main() {
         }
 
         try {
-            console.log("[PUPPETEER] Identifying search input box...");
-            const searchInputSelector = 'input[name="search_query"], input#search';
-            await page.waitForSelector(searchInputSelector, { timeout: 10000 });
-            const existingText = await page.$eval(searchInputSelector, el => el.value).catch(() => "");
-            console.log(`[PUPPETEER] Existing search query text: "${existingText}"`);
-            if (existingText.trim().toLowerCase() !== "atropa") {
-                console.log("[PUPPETEER] Clearing search input and typing 'Atropa'...");
-                await page.$eval(searchInputSelector, el => el.value = '');
-                await page.focus(searchInputSelector);
-                await page.type(searchInputSelector, "Atropa", { delay: 150 });
+            if (!url.includes("search_query=")) {
+                console.log("[PUPPETEER] Identifying search input box...");
+                const searchInputSelector = 'input[name="search_query"], input#search';
+                await page.waitForSelector(searchInputSelector, { timeout: 10000 });
+                const existingText = await page.$eval(searchInputSelector, el => el.value).catch(() => "");
+                console.log(`[PUPPETEER] Existing search query text: "${existingText}"`);
+                if (existingText.trim().toLowerCase() !== "atropa") {
+                    console.log("[PUPPETEER] Clearing search input and typing 'Atropa'...");
+                    await page.$eval(searchInputSelector, el => el.value = '');
+                    await page.focus(searchInputSelector);
+                    await page.type(searchInputSelector, "Atropa", { delay: 150 });
+                } else {
+                    console.log("[PUPPETEER] Search input already contains 'Atropa'. Skipping typing.");
+                }
+                console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
+                // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
+                const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
+                await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
+                console.log("[PUPPETEER] Jumped directly to filtered search results.");
+                await new Promise(resolve => setTimeout(resolve, 5000));
             } else {
-                console.log("[PUPPETEER] Search input already contains 'Atropa'. Skipping typing.");
+                console.log("[PUPPETEER] Custom query URL detected. Bypassing automatic Atropa search flow.");
             }
-            console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
-            // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
-            const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
-            await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
-            console.log("[PUPPETEER] Jumped directly to filtered search results.");
-            await new Promise(resolve => setTimeout(resolve, 5000));
         } catch (e) {
             console.log("[PUPPETEER] Auncient search flow or direct navigation failed: " + e.message);
         }
