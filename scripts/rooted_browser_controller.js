@@ -398,10 +398,31 @@ async function main() {
         lastBoundsUpdateTime = Date.now();
         try {
             const rect = await page.evaluate(() => {
-                const el = document.getElementById('browserStreamSvg');
+                // First search top-level document
+                let el = document.getElementById('browserStreamSvg');
+                let offsetX = 0;
+                let offsetY = 0;
+                
+                if (!el) {
+                    // Scan any same-origin iframes
+                    const iframes = document.getElementsByTagName('iframe');
+                    for (let iframe of iframes) {
+                        try {
+                            const doc = iframe.contentDocument || iframe.contentWindow.document;
+                            el = doc.getElementById('browserStreamSvg');
+                            if (el) {
+                                const iframeRect = iframe.getBoundingClientRect();
+                                offsetX = iframeRect.x;
+                                offsetY = iframeRect.y;
+                                break;
+                            }
+                        } catch (e) {}
+                    }
+                }
+                
                 if (!el) return null;
                 const r = el.getBoundingClientRect();
-                return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+                return { x: Math.round(r.x + offsetX), y: Math.round(r.y + offsetY), width: Math.round(r.width), height: Math.round(r.height) };
             });
             if (rect && rect.width > 0 && rect.height > 0) {
                 videoBounds = rect;
@@ -876,7 +897,7 @@ async function main() {
     setInterval(async () => {
         try {
             if (!isYouTube) {
-                const isLoaded = await page.evaluate(() => !!document.getElementById("vulkanPipelineCanvas")).catch(() => false);
+                const isLoaded = await page.evaluate(() => !!document.getElementById("vulkanPipelineCanvas") || !!document.getElementById("matrixCanvas")).catch(() => false);
                 if (!isLoaded) {
                     console.log("[PUPPETEER] Dashboard UI not detected. Reconnecting to " + url + "...");
                     await page.goto(url, { waitUntil: "networkidle2" }).catch(() => {});
