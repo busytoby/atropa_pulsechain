@@ -3,8 +3,52 @@ import time
 import sys
 import json
 import os
+import urllib.request
 from web3 import Web3
 from eth_abi import abi
+
+def publish_mq(cmd):
+    wmq_addr = ""
+    for path in ["tmp/wmq_address.txt", "../tmp/wmq_address.txt", "/home/mariarahel/src/tsfi2/atropa_pulsechain/tmp/wmq_address.txt"]:
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    wmq_addr = f.read().strip()
+                if wmq_addr:
+                    break
+            except Exception:
+                pass
+    if not wmq_addr:
+        return
+    processed = cmd
+    if processed.startswith("MAIN:"):
+        processed = "M:" + processed[5:]
+    elif processed.startswith("YOUTUBE:"):
+        processed = "Y:" + processed[8:]
+    data_bytes = processed.encode('utf-8')[:32]
+    data_bytes = data_bytes + b'\x00' * (32 - len(data_bytes))
+    data_hex = "0xccb077a0" + "".join(f"{b:02x}" for b in data_bytes)
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "eth_sendTransaction",
+        "params": [{
+            "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "to": wmq_addr,
+            "data": data_hex,
+            "gas": "0xF4240"
+        }],
+        "id": 1
+    }
+    req = urllib.request.Request(
+        "http://127.0.0.1:8545",
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json'}
+    )
+    try:
+        with urllib.request.urlopen(req) as res:
+            res.read()
+    except Exception as e:
+        print(f"[MONITOR_MQ] Failed to publish to WinchesterMQ: {e}")
 
 # PulseChain RPC Endpoint
 RPC_URL = "https://rpc.pulsechain.com"
@@ -428,6 +472,9 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         unresolved.append(swap_obj)
         save_unresolved(unresolved)
         print(f"💾 Swap stored in {UNRESOLVED_FILE} for future resolution.")
+    
+    # Synthesize dilemma event with a swap gait trap
+    publish_mq("M:DILEMMA_SWAP_TRAP")
 
 def monitor_swap_events():
     load_price_cache()
