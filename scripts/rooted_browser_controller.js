@@ -101,6 +101,7 @@ async function main() {
     // Initialize WinchesterMQ connection if anvil is running
     try {
         provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+        provider.pollingInterval = 20; // Reduce polling interval from default 4000ms to 20ms for instant input routing
         // Quick check to see if provider is online
         await provider.getNetwork();
         signer = await provider.getSigner(0);
@@ -359,14 +360,14 @@ async function main() {
                 await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
                 const deltaY = (axis === 0) ? value * 10 : 0;
                 const deltaX = (axis === 1) ? value * 10 : 0;
-                try {
-                    await page.mouse.wheel({ deltaX, deltaY });
-                } catch (wheelErr) {}
+                
+                // Rely primarily on smooth DOM scrolling for a fluid frame presentation
                 await page.evaluate((dx, dy) => {
-                    window.scrollBy(dx, dy);
-                    const container = document.querySelector('#content, #page-manager, ytd-app');
+                    const scrollOptions = { left: dx, top: dy, behavior: 'smooth' };
+                    window.scrollBy(scrollOptions);
+                    const container = document.querySelector('#content, #page-manager, ytd-app, #primary');
                     if (container && typeof container.scrollBy === 'function') {
-                        container.scrollBy(dx, dy);
+                        container.scrollBy(scrollOptions);
                     }
                 }, deltaX, deltaY).catch(() => {});
             } else if (cmd === 'WINDOW_CLOSE') {

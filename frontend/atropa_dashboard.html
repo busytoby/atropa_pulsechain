@@ -694,14 +694,36 @@
         window.addEventListener("resize", handleSvgResize);
         setTimeout(handleSvgResize, 500);
 
-        let throttleTimeout = null;
+        let latestMouseMove = null;
+        let isMouseMoveSending = false;
+        let mouseMoveTimeout = null;
+
+        async function processMouseMoveQueue() {
+            if (isMouseMoveSending || !latestMouseMove) return;
+            
+            const { x, y } = latestMouseMove;
+            latestMouseMove = null;
+            isMouseMoveSending = true;
+            
+            try {
+                await sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
+            } catch (err) {}
+            
+            isMouseMoveSending = false;
+            // If mouse moved again during transaction roundtrip, catch up immediately
+            if (latestMouseMove) {
+                processMouseMoveQueue();
+            }
+        }
+
         streamSvg.addEventListener("mousemove", (e) => {
-            if (throttleTimeout) return;
-            throttleTimeout = setTimeout(() => {
-                throttleTimeout = null;
-                const { x, y } = getCoords(e);
-                sendControlCommand(`MOUSE_MOVE ${x} ${y}`);
-            }, 80); // Throttled to 80ms to prevent WinchesterMQ congestion
+            latestMouseMove = getCoords(e);
+            if (!mouseMoveTimeout) {
+                mouseMoveTimeout = setTimeout(() => {
+                    mouseMoveTimeout = null;
+                    processMouseMoveQueue();
+                }, 40); // 40ms batching window
+            }
         });
 
         streamSvg.addEventListener("mousedown", (e) => {
@@ -714,10 +736,39 @@
             sendControlCommand(`MOUSE_UP 272 ${x} ${y}`);
         });
 
+        let scrollAccumulator = 0;
+        let isScrollSending = false;
+        let scrollTimeout = null;
+
+        async function processScrollQueue() {
+            if (isScrollSending) return;
+            const value = Math.round(scrollAccumulator / 10);
+            if (value === 0) return;
+            
+            // Reset the accumulator for next events while we send this chunk
+            scrollAccumulator = 0;
+            isScrollSending = true;
+            
+            try {
+                await sendControlCommand(`MOUSE_SCROLL 0 ${value}`);
+            } catch (err) {}
+            
+            isScrollSending = false;
+            // Process any scroll delta that accumulated during the transaction roundtrip
+            if (Math.round(scrollAccumulator / 10) !== 0) {
+                processScrollQueue();
+            }
+        }
+
         streamSvg.addEventListener("wheel", (e) => {
             e.preventDefault();
-            const value = Math.round(e.deltaY / 10) || (e.deltaY > 0 ? 1 : -1);
-            sendControlCommand(`MOUSE_SCROLL 0 ${value}`);
+            scrollAccumulator += e.deltaY;
+            if (!scrollTimeout) {
+                scrollTimeout = setTimeout(() => {
+                    scrollTimeout = null;
+                    processScrollQueue();
+                }, 50); // 50ms batching window
+            }
         }, { passive: false });
 
         // --- 4. Action Trigger ---
