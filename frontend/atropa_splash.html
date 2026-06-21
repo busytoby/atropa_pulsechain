@@ -7,13 +7,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #030208;
-            --purple-glow: rgba(168, 85, 247, 0.35);
-            --cyan-glow: rgba(6, 182, 212, 0.3);
-            --magenta-glow: rgba(236, 72, 153, 0.3);
+            --bg-base: #020106;
+            --purple-glow: rgba(168, 85, 247, 0.4);
+            --cyan-glow: rgba(6, 182, 212, 0.35);
+            --magenta-glow: rgba(236, 72, 153, 0.35);
             --text-primary: #f3e8ff;
             --text-muted: #a78bfa;
-            --neon-green: #39ff14;
+            --border-glow: rgba(168, 85, 247, 0.3);
         }
 
         * {
@@ -25,9 +25,9 @@
         body {
             background-color: var(--bg-base);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.12) 0%, transparent 60%);
+                radial-gradient(circle at 5% 10%, rgba(168, 85, 247, 0.18) 0%, transparent 60%),
+                radial-gradient(circle at 95% 90%, rgba(236, 72, 153, 0.12) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
             color: var(--text-primary);
             font-family: 'Outfit', sans-serif;
             height: 100vh;
@@ -39,37 +39,52 @@
             position: relative;
         }
         
-        /* Fine cyber grid */
+        /* Scrolling grid pattern */
         .grid-overlay {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-size: 40px 40px;
+            top: -100px; left: -100px; right: -100px; bottom: -100px;
+            background-size: 50px 50px;
             background-image: 
-                linear-gradient(to right, rgba(168, 85, 247, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(168, 85, 247, 0.03) 1px, transparent 1px);
+                linear-gradient(to right, rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.04) 1px, transparent 1px);
             z-index: 1;
             pointer-events: none;
+            animation: gridScroll 20s linear infinite;
+            will-change: transform;
         }
 
-        /* Glassmorphic console container */
+        /* Scanning overlay laser line */
+        .scanner-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(to bottom, transparent, rgba(6, 182, 212, 0.4), transparent);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.6);
+            z-index: 3;
+            pointer-events: none;
+            animation: scanMove 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: top;
+        }
+
+        /* Glassmorphic console frame */
         .console-frame {
             position: relative;
             z-index: 2;
             width: 960px;
-            background: rgba(10, 6, 22, 0.65);
-            border: 1px solid rgba(168, 85, 247, 0.35);
-            border-radius: 24px;
+            background: rgba(8, 4, 18, 0.7);
+            border: 1px solid var(--border-glow);
+            border-radius: 28px;
             padding: 40px;
             box-shadow: 
-                0 30px 70px rgba(0, 0, 0, 0.8),
-                inset 0 0 50px rgba(168, 85, 247, 0.05),
-                0 0 40px rgba(168, 85, 247, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+                0 35px 80px rgba(0, 0, 0, 0.85),
+                inset 0 0 60px rgba(168, 85, 247, 0.06),
+                0 0 50px rgba(168, 85, 247, 0.2);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             animation: frameEntry 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             display: flex;
             flex-direction: column;
             gap: 25px;
+            overflow: hidden;
         }
 
         .header-panel {
@@ -79,13 +94,13 @@
 
         .header-panel h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 36px;
+            font-size: 38px;
             font-weight: 900;
-            letter-spacing: 6px;
-            background: linear-gradient(135deg, #ffffff 20%, #d8b4fe 60%, #ec4899 100%);
+            letter-spacing: 8px;
+            background: linear-gradient(135deg, #ffffff 10%, #d8b4fe 50%, #ec4899 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4));
+            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.55));
             margin-bottom: 6px;
             text-transform: uppercase;
         }
@@ -94,10 +109,11 @@
             font-family: 'Share Tech Mono', monospace;
             font-size: 13px;
             color: var(--text-muted);
-            letter-spacing: 5px;
+            letter-spacing: 6px;
             text-transform: uppercase;
             font-weight: 500;
             opacity: 0.85;
+            text-shadow: 0 0 10px rgba(167, 139, 250, 0.3);
         }
 
         /* Twin Visualizers Layout */
@@ -110,9 +126,9 @@
         }
 
         .visualizer-card {
-            background: rgba(4, 2, 10, 0.7);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            border-radius: 16px;
+            background: rgba(3, 1, 8, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 18px;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -121,8 +137,30 @@
             height: 240px;
             justify-content: center;
             position: relative;
-            box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.03);
+            box-shadow: 
+                inset 0 0 35px rgba(168, 85, 247, 0.05),
+                0 4px 20px rgba(0,0,0,0.5);
             overflow: hidden;
+        }
+
+        /* Sci-fi corners for visualizer cards */
+        .visualizer-card::before, .visualizer-card::after {
+            content: '';
+            position: absolute;
+            width: 15px; height: 15px;
+            border-color: rgba(6, 182, 212, 0.5);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .visualizer-card::before {
+            top: 10px; left: 10px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .visualizer-card::after {
+            bottom: 10px; right: 10px;
+            border-width: 0 1px 1px 0;
         }
 
         .visualizer-label {
@@ -155,20 +193,22 @@
         /* Telemetry & Status HUD */
         .telemetry-grid {
             display: grid;
-            grid-template-columns: 1.1fr 1fr;
+            grid-template-columns: 1.15fr 1fr;
             gap: 25px;
         }
 
         .metrics-board {
             font-family: 'Share Tech Mono', monospace;
-            background: rgba(5, 2, 12, 0.8);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            border-radius: 14px;
+            background: rgba(4, 2, 10, 0.85);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 16px;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.02);
+            box-shadow: 
+                inset 0 0 25px rgba(6, 182, 212, 0.03),
+                0 4px 15px rgba(0,0,0,0.4);
         }
 
         .metric-item {
@@ -176,7 +216,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
-            border-bottom: 1px solid rgba(168, 85, 247, 0.08);
+            border-bottom: 1px solid rgba(168, 85, 247, 0.1);
             padding-bottom: 6px;
         }
 
@@ -187,48 +227,72 @@
 
         .m-label {
             color: #93c5fd;
+            letter-spacing: 1px;
         }
 
         .m-val {
             color: #22c55e;
-            text-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
+            font-weight: bold;
         }
 
         .m-val.alert {
             color: #ec4899;
-            text-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.65);
             font-weight: bold;
         }
 
         /* Log Panel */
         .log-terminal {
             font-family: 'Share Tech Mono', monospace;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid rgba(236, 72, 153, 0.25);
-            border-radius: 12px;
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(236, 72, 153, 0.35);
+            border-radius: 14px;
+            padding: 18px;
             height: 140px;
             overflow-y: auto;
             color: #ec4899;
             font-size: 11px;
-            line-height: 1.5;
-            box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.05);
+            line-height: 1.6;
+            box-shadow: 
+                inset 0 0 25px rgba(236, 72, 153, 0.06),
+                0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .log-terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+        .log-terminal::-webkit-scrollbar-track {
+            background: rgba(168, 85, 247, 0.05);
+            border-radius: 3px;
+        }
+        .log-terminal::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 3px;
+            border: 1px solid rgba(168, 85, 247, 0.1);
+        }
+        .log-terminal::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.5);
         }
 
         .log-line {
             margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
 
         .log-line.cyan {
             color: #06b6d4;
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.2);
         }
 
         .log-line.purple {
             color: #c084fc;
+            text-shadow: 0 0 5px rgba(192, 132, 252, 0.2);
         }
 
         .log-line.yellow {
             color: #fbbf24;
+            text-shadow: 0 0 5px rgba(251, 191, 36, 0.2);
         }
 
         /* Progress Bar Section */
@@ -243,7 +307,7 @@
             border-radius: 4px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.2);
         }
 
         .progress-bar {
@@ -268,11 +332,24 @@
         .flash-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 80%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, transparent 80%);
             opacity: 0;
             pointer-events: none;
             z-index: 5;
             transition: opacity 0.08s ease-out;
+        }
+
+        /* Grid Scroll Animation */
+        @keyframes gridScroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Laser Sweep Animation */
+        @keyframes scanMove {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
         }
 
         @keyframes frameEntry {
@@ -283,6 +360,7 @@
 </head>
 <body>
     <div class="grid-overlay"></div>
+    <div class="scanner-line"></div>
     <div class="flash-overlay" id="flashOverlay"></div>
 
     <div class="console-frame">
@@ -447,6 +525,16 @@
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Draw holographic scanning overlay grid on canvas
+            ctx.strokeStyle = "rgba(168, 85, 247, 0.08)";
+            ctx.lineWidth = 1;
+            for(let gridX = 10; gridX < canvas.width; gridX += 15) {
+                ctx.beginPath(); ctx.moveTo(gridX, 0); ctx.lineTo(gridX, canvas.height); ctx.stroke();
+            }
+            for(let gridY = 10; gridY < canvas.height; gridY += 15) {
+                ctx.beginPath(); ctx.moveTo(0, gridY); ctx.lineTo(canvas.width, gridY); ctx.stroke();
+            }
+
             const fur_r = Math.min(255, Math.max(0, Math.floor(91 + 8 * pulse + 20 * spikeGlow)));
             const fur_g = Math.min(255, Math.max(0, Math.floor(63 + 5 * pulse)));
             const fur_b = Math.min(255, Math.max(0, Math.floor(51 + 4 * pulse + 30 * spikeGlow)));
@@ -456,7 +544,7 @@
             const snoutColor = "rgb(230, 210, 220)";
             
             const eye_r = Math.min(255, Math.max(0, Math.floor(120 * dynamicSick * (1.0 + spikeGlow))));
-            const eye_g = Math.min(255, Math.max(0, Math.floor(180 + 40 * pulse + 75 * spikeGlow))));
+            const eye_g = Math.min(255, Math.max(0, Math.floor(180 + 40 * pulse + 75 * spikeGlow)));
             const eye_b = Math.min(255, Math.max(0, Math.floor(50 * spikeGlow)));
             const eyeColor = `rgb(${eye_r}, ${eye_g}, ${eye_b})`;
             
@@ -528,6 +616,18 @@
             ctx.stroke();
             
             ctx.restore();
+
+            // Holographic overlay diagnostic lines & reticle
+            ctx.strokeStyle = "rgba(6, 182, 212, 0.4)";
+            ctx.lineWidth = 1;
+            // Center reticle crosshair
+            ctx.beginPath(); ctx.moveTo(75, 10); ctx.lineTo(75, 20); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(75, 130); ctx.lineTo(75, 140); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(10, 75); ctx.lineTo(20, 75); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(130, 75); ctx.lineTo(140, 75); ctx.stroke();
+            
+            // Framing bounds
+            ctx.strokeRect(8, 8, 134, 134);
         }
 
         // Bessel estimation function
@@ -625,11 +725,13 @@
             }
         }
 
+        // Render initial frames immediately on script parse
+        logToTerminal(`[SYS] DETECTING VIRTUAL COMPUTE ARCHITECTURE...`, "cyan");
+        logToTerminal(`[SYS] AUNCIENT PORTAL LOADED AT PLANE 71`, "cyan");
+        renderSigil(1.0, false, 2);
+        renderBear(1.0, 0.5, 2);
+
         window.addEventListener("load", () => {
-            logToTerminal(`[SYS] DETECTING VIRTUAL COMPUTE ARCHITECTURE...`, "cyan");
-            logToTerminal(`[SYS] AUNCIENT PORTAL LOADED AT PLANE 71`, "cyan");
-            renderSigil(1.0, false, 2);
-            renderBear(1.0, 0.5, 2);
             setTimeout(updateGateway, 300);
         });
     </script>

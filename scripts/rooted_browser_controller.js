@@ -53,6 +53,11 @@ async function sendWmqEvent(cmd, args) {
         return;
     }
 
+    const isIoEvent = cmd.includes("MOUSE") || cmd.includes("KEY") || cmd.includes("MM") || cmd.includes("MD") || cmd.includes("MU") || cmd.includes("MS") || cmd.includes("KD") || cmd.includes("KU");
+    if (isIoEvent) {
+        return;
+    }
+
     if (!wmqContract || !signer) return;
     try {
         // Abbreviate command prefix and name to fit 32-byte WinchesterMQ limit
@@ -118,12 +123,15 @@ const linuxButtonMap = {
 function compileYul(yulPath) {
     const absolutePath = path.resolve(__dirname, yulPath);
     const { execSync } = require('child_process');
+    const start = performance.now();
     const output = execSync(`solc --strict-assembly --evm-version shanghai "${absolutePath}" --bin`, { encoding: "utf8" });
+    const elapsed = performance.now() - start;
     const lines = output.split("\n");
     const binIndex = lines.findIndex(line => line.includes("Binary representation:"));
     if (binIndex === -1) {
         throw new Error(`Could not find binary representation for ${yulPath}`);
     }
+    console.log(`[DIAGNOSTIC] Compiled Yul contract ${path.basename(yulPath)} (took ${elapsed.toFixed(3)} ms)`);
     return "0x" + lines[binIndex + 1].trim();
 }
 
@@ -203,13 +211,21 @@ async function main() {
 
     // Initialize WinchesterMQ connection if anvil is running
     try {
+        const evmStart = performance.now();
         provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
         provider.pollingInterval = 20; // Reduce polling interval from default 4000ms to 20ms for instant input routing
         // Quick check to see if provider is online
         await provider.getNetwork();
         signer = await provider.getSigner(isYouTube ? 2 : 1);
         nextNonce = await provider.getTransactionCount(signer.address, "pending");
-        console.log(`[WMQ] Connected to local EVM provider. Signer index: ${isYouTube ? 2 : 1} | Address: ${signer.address} | Initial Nonce: ${nextNonce}`);
+        const connTime = performance.now() - evmStart;
+        console.log(`[WMQ] Connected to local EVM provider. Signer index: ${isYouTube ? 2 : 1} | Address: ${signer.address} | Initial Nonce: ${nextNonce} (took ${connTime.toFixed(3)} ms)`);
+        
+        // EVM diagnostics check
+        const balStart = performance.now();
+        const balance = await provider.getBalance(signer.address);
+        const balTime = performance.now() - balStart;
+        console.log(`[DIAGNOSTIC] Local EVM online. Signer Balance: ${ethers.formatEther(balance)} ETH (took ${balTime.toFixed(3)} ms)`);
         
         const fs = require('fs');
         const yulPath = path.join(__dirname, "../solidity/bin/WinchesterMQ.yul");
@@ -520,7 +536,13 @@ async function main() {
         if (processingQueue || inputQueue.length === 0) return;
         processingQueue = true;
         while (inputQueue.length > 0) {
-            const item = inputQueue.shift();
+            let item = inputQueue.shift();
+            if (item.line.startsWith('MOUSE_MOVE')) {
+                while (inputQueue.length > 0 && inputQueue[0].line.startsWith('MOUSE_MOVE')) {
+                    if (item.callback) item.callback();
+                    item = inputQueue.shift();
+                }
+            }
             try {
                 if (item.line.trim() === 'PING') {
                     if (item.callback) item.callback();
@@ -993,9 +1015,18 @@ async function main() {
     setInterval(async () => {
         try {
             if (!isYouTube) {
-                const isLoaded = await page.evaluate(() => !!document.getElementById("vulkanPipelineCanvas") || !!document.getElementById("matrixCanvas")).catch(() => false);
+                const currentUrl = page.url();
+                const isLoaded = await page.evaluate((currUrl) => {
+                    if (currUrl.includes("atropa_splash.html")) {
+                        return !!document.getElementById("bearCanvas") || !!document.getElementById("emblemContainer");
+                    }
+                    if (currUrl.includes("hub_portal.html")) {
+                        return !!document.querySelector(".portal-layout") || !!document.querySelector(".portal-tabs");
+                    }
+                    return !!document.getElementById("vulkanPipelineCanvas") || !!document.getElementById("matrixCanvas");
+                }, currentUrl).catch(() => false);
                 if (!isLoaded) {
-                    console.log("[PUPPETEER] Dashboard UI not detected. Reconnecting to " + url + "...");
+                    console.log("[PUPPETEER] Dashboard UI or Splash not detected. Reconnecting to " + url + "...");
                     await page.goto(url, { waitUntil: "networkidle2" }).catch(() => {});
                 }
                 return;
@@ -1223,8 +1254,8 @@ async function main() {
                     }
                     try {
                         const fs = require('fs');
-                        const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
-                        const targetPath = "/dev/shm/atropa_latest_frame.jpg";
+                        const tmpPath = isYouTube ? "/dev/shm/atropa_youtube_frame.tmp" : "/dev/shm/atropa_latest_frame.tmp";
+                        const targetPath = isYouTube ? "/dev/shm/atropa_youtube_frame.jpg" : "/dev/shm/atropa_latest_frame.jpg";
                         fs.writeFileSync(tmpPath, jpegBuffer);
                         fs.renameSync(tmpPath, targetPath);
                         if (!isYouTube) {
@@ -1283,8 +1314,8 @@ async function main() {
                 }
                 try {
                     const fs = require('fs');
-                    const tmpPath = "/dev/shm/atropa_latest_frame.tmp";
-                    const targetPath = "/dev/shm/atropa_latest_frame.jpg";
+                    const tmpPath = isYouTube ? "/dev/shm/atropa_youtube_frame.tmp" : "/dev/shm/atropa_latest_frame.tmp";
+                    const targetPath = isYouTube ? "/dev/shm/atropa_youtube_frame.jpg" : "/dev/shm/atropa_latest_frame.jpg";
                     fs.writeFileSync(tmpPath, jpegBuffer);
                     fs.renameSync(tmpPath, targetPath);
                     if (!isYouTube) {

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX_CACHED_CONTRACTS 64
 
@@ -195,24 +196,34 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
         return false;
     }
 
-    bool is_solidity = (strstr(yul_path, ".sol") != NULL);
+    char resolved_path[512];
+    strncpy(resolved_path, yul_path, sizeof(resolved_path) - 1);
+    resolved_path[sizeof(resolved_path) - 1] = '\0';
+
+    if (access(resolved_path, F_OK) != 0) {
+        if (strncmp(resolved_path, "../solidity", 11) == 0) {
+            snprintf(resolved_path, sizeof(resolved_path), "%s", yul_path + 3);
+        }
+    }
+
+    bool is_solidity = (strstr(resolved_path, ".sol") != NULL);
     bool is_library = false;
 
     if (is_solidity) {
-        printf("[YUL_THUNK] Compiling Solidity contract %s from %s...\n", name, yul_path);
+        printf("[YUL_THUNK] Compiling Solidity contract %s from %s...\n", name, resolved_path);
     } else {
-        printf("[YUL_THUNK] Compiling Yul contract %s from %s...\n", name, yul_path);
+        printf("[YUL_THUNK] Compiling Yul contract %s from %s...\n", name, resolved_path);
     }
 
-    char cmd[512];
+    char cmd[1024];
     if (is_solidity) {
         if (is_library) {
-            snprintf(cmd, sizeof(cmd), "solc --optimize --bin-runtime --allow-paths .. \"%s\" 2>/dev/null", yul_path);
+            snprintf(cmd, sizeof(cmd), "solc --optimize --bin-runtime --allow-paths .. \"%s\" 2>/dev/null", resolved_path);
         } else {
-            snprintf(cmd, sizeof(cmd), "solc --optimize --bin --allow-paths .. \"%s\" 2>/dev/null", yul_path);
+            snprintf(cmd, sizeof(cmd), "solc --optimize --bin --allow-paths .. \"%s\" 2>/dev/null", resolved_path);
         }
     } else {
-        snprintf(cmd, sizeof(cmd), "solc --strict-assembly --allow-paths .. \"%s\" 2>/dev/null", yul_path);
+        snprintf(cmd, sizeof(cmd), "solc --strict-assembly --bin --allow-paths .. \"%s\" 2>/dev/null", resolved_path);
     }
     FILE *fp = popen(cmd, "r");
     if (!fp) {

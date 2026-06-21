@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <inttypes.h>
+#include <time.h>
 
 typedef struct {
     char name[64];
@@ -137,6 +138,33 @@ void tsfi_zmm_vm_init(TsfiZmmVmState *state) {
     memset(state, 0, sizeof(TsfiZmmVmState));
     state->output_pos = 0;
     state->telem = NULL;
+    
+    struct timespec start, end;
+    
+    printf("[ZMM VM INIT] Running dual diagnostics: initializing Dysnomia structures...\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    struct Fa* fa_diag = allocFa();
+    if (fa_diag) {
+        fa_diag->Base = tsfi_bn_alloc();
+        if (fa_diag->Base) {
+            tsfi_bn_set_u64(fa_diag->Base, 43456);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            double ms = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+            printf("[ZMM VM INIT] Dysnomia Fa allocation verified: Base=%p (took %.3f ms)\n", (void*)fa_diag->Base, ms);
+        }
+        freeFa(fa_diag);
+    } else {
+        printf("[ZMM VM INIT WARNING] Dysnomia Fa allocation failed!\n");
+    }
+
+    printf("[ZMM VM INIT] Initializing Yul virtual machine compilers...\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    lau_yul_thunk_init("graphicsSystem", "../solidity/bin/graphicsSystem.yul", 0x2);
+    lau_yul_thunk_init("musicMaker", "../solidity/bin/musicMaker.yul", 0x3);
+    lau_yul_thunk_init("diskSystem", "../solidity/bin/diskSystem.yul", 0x4);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double yul_ms = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+    printf("[ZMM VM INIT] Yul compilers initialization completed (took %.3f ms)\n", yul_ms);
     
     state->manifest = (TsfiZmmManifest*)lau_memalign_wired(512, sizeof(TsfiZmmManifest));
     if (state->manifest) {

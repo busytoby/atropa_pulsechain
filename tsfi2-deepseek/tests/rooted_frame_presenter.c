@@ -18,6 +18,7 @@
 #include "lau_memory.h"
 #include "tsfi_raw.h"
 #include "window_inc/vulkan_struct.h"
+#include "tsfi_zmm_vm.h"
 
 extern PFN_vkVoidFunction tsfi_vkGetInstanceProcAddr(VkInstance instance, const char* pName);
 
@@ -275,7 +276,7 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
 
     struct stat st;
     bool need_blit = true;
-    int fd_img = open("/dev/shm/atropa_latest_frame.jpg", O_RDONLY);
+    int fd_img = open("/dev/shm/atropa_youtube_frame.jpg", O_RDONLY);
     if (fd_img >= 0) {
         if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
             #ifdef __APPLE__
@@ -313,7 +314,7 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
     }
 
     // If we didn't decode a new frame this call, copy from our cache onto the scanout buffer
-    if (need_blit && youtube_cache_px) {
+    if (need_blit && youtube_cache_px && last_youtube_mtime != 0) {
         for (int dy = 0; dy < dest_h; dy++) {
             uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
             uint32_t *src_row = youtube_cache_px + dy * dest_w;
@@ -370,7 +371,7 @@ bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redra
         wmq_triggered = check_wmq_frame_event();
     }
 
-    int fd_img = open("/dev/shm/atropa_latest_frame.jpg", O_RDONLY);
+    int fd_img = open("/dev/shm/atropa_youtube_frame.jpg", O_RDONLY);
     if (fd_img >= 0) {
         if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
             #ifdef __APPLE__
@@ -521,6 +522,15 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
 
 int main() {
     printf("[Auncient Presenter] Initializing Vulkan and Wayland loops...\n");
+
+    // Run ZMM VM diagnostics on launch
+    printf("[Auncient Presenter] Running ZMM VM diagnostics...\n");
+    fflush(stdout);
+    TsfiZmmVmState zmm_diag_state;
+    tsfi_zmm_vm_init(&zmm_diag_state);
+    tsfi_zmm_vm_destroy(&zmm_diag_state);
+    printf("[Auncient Presenter] ZMM VM diagnostics completed.\n");
+    fflush(stdout);
 
     // --- 1. Load Firmware ZMM ---
     PFN_vkCreateInstance pvkCreateInstance = (PFN_vkCreateInstance)tsfi_vkGetInstanceProcAddr(NULL, "vkCreateInstance");
