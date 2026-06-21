@@ -209,11 +209,7 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
     bool is_solidity = (strstr(resolved_path, ".sol") != NULL);
     bool is_library = false;
 
-    if (is_solidity) {
-        printf("[YUL_THUNK] Compiling Solidity contract %s from %s...\n", name, resolved_path);
-    } else {
-        printf("[YUL_THUNK] Compiling Yul contract %s from %s...\n", name, resolved_path);
-    }
+
 
     char cmd[1024];
     if (is_solidity) {
@@ -445,7 +441,7 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
 
     persist_reconciliation_data();
 
-    printf("[YUL_THUNK] Registered Yul thunk: %s (%zu bytes) at virtual addr 0x%lx\n", name, runtime_len, virtual_address);
+    printf("[YUL_THUNK] Compiled and registered %s thunk: %s (%zu bytes) at virtual addr 0x%lx\n", is_solidity ? "Solidity" : "Yul", name, runtime_len, virtual_address);
     return true;
 }
 

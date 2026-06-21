@@ -105,52 +105,99 @@ static void my_error_exit(j_common_ptr cinfo) {
     longjmp(myerr->setjmp_buffer, 1);
 }
 
+static int g_main_img_w = 1024;
+static int g_main_img_h = 768;
+
 bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
     jerr.pub.error_exit = my_error_exit;
     if (setjmp(jerr.setjmp_buffer)) {
+        fprintf(stderr, "[Auncient Presenter ERR] JPEG decompression error in decode_jpeg_full!\n");
         jpeg_destroy_decompress(&cinfo);
         return false;
     }
     jpeg_create_decompress(&cinfo);
     jpeg_mem_src(&cinfo, jpeg_buf, jpeg_sz);
     if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
+        fprintf(stderr, "[Auncient Presenter ERR] JPEG read header failed!\n");
         jpeg_destroy_decompress(&cinfo);
         return false;
     }
     cinfo.out_color_space = JCS_RGB;
     if (!jpeg_start_decompress(&cinfo)) {
+        fprintf(stderr, "[Auncient Presenter ERR] JPEG start decompress failed!\n");
         jpeg_destroy_decompress(&cinfo);
         return false;
     }
-    int row_stride = cinfo.output_width * cinfo.output_components;
+
+    int img_w = cinfo.output_width;
+    int img_h = cinfo.output_height;
+    uint8_t *src_rgb = (uint8_t *)malloc(img_w * img_h * 3);
+    if (!src_rgb) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+
+    int row_stride = img_w * cinfo.output_components;
     JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
     while (cinfo.output_scanline < cinfo.output_height) {
         int y = cinfo.output_scanline;
         jpeg_read_scanlines(&cinfo, buffer, 1);
-        if (y >= height) continue;
-        uint8_t *src = buffer[0];
-        uint32_t *dst = scanout_px + y * width;
-        for (int x = 0; x < width && x < (int)cinfo.output_width; x++) {
-            uint8_t r = src[x * 3];
-            uint8_t g = src[x * 3 + 1];
-            uint8_t b = src[x * 3 + 2];
-            dst[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
-        }
+        memcpy(src_rgb + y * img_w * 3, buffer[0], img_w * 3);
     }
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
+
+    // Bilinear scale the full dashboard frame to fit the active presenter window
+    for (int dy = 0; dy < height; dy++) {
+        float sy = (float)dy * (float)img_h / (float)height;
+        int y0 = (int)sy;
+        int y1 = (y0 + 1 < img_h) ? y0 + 1 : y0;
+        float ty = sy - (float)y0;
+
+        uint32_t *dst_row = scanout_px + dy * width;
+
+        for (int dx = 0; dx < width; dx++) {
+            float sx = (float)dx * (float)img_w / (float)width;
+            int x0 = (int)sx;
+            int x1 = (x0 + 1 < img_w) ? x0 + 1 : x0;
+            float tx = sx - (float)x0;
+
+            int idx00 = (y0 * img_w + x0) * 3;
+            int idx10 = (y0 * img_w + x1) * 3;
+            int idx01 = (y1 * img_w + x0) * 3;
+            int idx11 = (y1 * img_w + x1) * 3;
+
+            float w00 = (1.0f - tx) * (1.0f - ty);
+            float w10 = tx * (1.0f - ty);
+            float w01 = (1.0f - tx) * ty;
+            float w11 = tx * ty;
+
+            uint8_t r = (uint8_t)(src_rgb[idx00] * w00 + src_rgb[idx10] * w10 + src_rgb[idx01] * w01 + src_rgb[idx11] * w11);
+            uint8_t g = (uint8_t)(src_rgb[idx00+1] * w00 + src_rgb[idx10+1] * w10 + src_rgb[idx01+1] * w01 + src_rgb[idx11+1] * w11);
+            uint8_t b = (uint8_t)(src_rgb[idx00+2] * w00 + src_rgb[idx10+2] * w10 + src_rgb[idx01+2] * w01 + src_rgb[idx11+2] * w11);
+
+            dst_row[dx] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+
+    g_main_img_w = img_w;
+    g_main_img_h = img_h;
+    free(src_rgb);
     return true;
 }
 
 static int g_dest_x = 410;
 static int g_dest_y = 80;
-static int g_dest_w = 380;
-static int g_dest_h = 380;
+static int g_dest_w = 0;
+static int g_dest_h = 0;
 
 bool decode_jpeg_subrect(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    if (last_jpeg_sz == 0 || g_dest_w <= 0 || g_dest_h <= 0) {
+        return true;
+    }
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -171,11 +218,36 @@ bool decode_jpeg_subrect(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scan
         return false;
     }
 
+    int img_w = cinfo.output_width;
+    int img_h = cinfo.output_height;
+    uint8_t *src_rgb = (uint8_t *)malloc(img_w * img_h * 3);
+    if (!src_rgb) {
+        jpeg_destroy_decompress(&cinfo);
+        return false;
+    }
+
+    int row_stride = img_w * cinfo.output_components;
+    JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
+
+    while (cinfo.output_scanline < cinfo.output_height) {
+        int y = cinfo.output_scanline;
+        jpeg_read_scanlines(&cinfo, buffer, 1);
+        memcpy(src_rgb + y * img_w * 3, buffer[0], img_w * 3);
+    }
+
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
+
     // Reserved sub-rectangle for the YouTube stream in the Auncient dashboard layout
-    int dest_x = g_dest_x;
-    int dest_y = g_dest_y;
-    int dest_w = g_dest_w;
-    int dest_h = g_dest_h;
+    float rx = (float)g_dest_x / (float)g_main_img_w;
+    float ry = (float)g_dest_y / (float)g_main_img_h;
+    float rw = (float)g_dest_w / (float)g_main_img_w;
+    float rh = (float)g_dest_h / (float)g_main_img_h;
+
+    int dest_x = (int)(rx * width);
+    int dest_y = (int)(ry * height);
+    int dest_w = (int)(rw * width);
+    int dest_h = (int)(rh * height);
 
     if (dest_x < 0) dest_x = 0;
     if (dest_y < 0) dest_y = 0;
@@ -186,53 +258,48 @@ bool decode_jpeg_subrect(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scan
     if (dest_x + dest_w > width) dest_w = width - dest_x;
     if (dest_y + dest_h > height) dest_h = height - dest_y;
 
-    int row_stride = cinfo.output_width * cinfo.output_components;
-    JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-
-    int current_src_y = -1;
-
+    // Bilinear downscaling for visual font anti-aliasing quality
     for (int dy = 0; dy < dest_h; dy++) {
-        int target_src_y = dy * (int)cinfo.output_height / dest_h;
-        if (target_src_y >= (int)cinfo.output_height) {
-            target_src_y = (int)cinfo.output_height - 1;
-        }
+        float sy = (float)dy * (float)img_h / (float)dest_h;
+        int y0 = (int)sy;
+        int y1 = (y0 + 1 < img_h) ? y0 + 1 : y0;
+        float ty = sy - (float)y0;
 
-        while (current_src_y < target_src_y) {
-            jpeg_read_scanlines(&cinfo, buffer, 1);
-            current_src_y++;
-        }
-
-        uint8_t *src_row = buffer[0];
         uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
 
         for (int dx = 0; dx < dest_w; dx++) {
-            int src_x = dx * (int)cinfo.output_width / dest_w;
-            if (src_x >= (int)cinfo.output_width) {
-                src_x = (int)cinfo.output_width - 1;
-            }
+            float sx = (float)dx * (float)img_w / (float)dest_w;
+            int x0 = (int)sx;
+            int x1 = (x0 + 1 < img_w) ? x0 + 1 : x0;
+            float tx = sx - (float)x0;
 
-            uint8_t r = src_row[src_x * 3];
-            uint8_t g = src_row[src_x * 3 + 1];
-            uint8_t b = src_row[src_x * 3 + 2];
-            
+            int idx00 = (y0 * img_w + x0) * 3;
+            int idx10 = (y0 * img_w + x1) * 3;
+            int idx01 = (y1 * img_w + x0) * 3;
+            int idx11 = (y1 * img_w + x1) * 3;
+
+            float w00 = (1.0f - tx) * (1.0f - ty);
+            float w10 = tx * (1.0f - ty);
+            float w01 = (1.0f - tx) * ty;
+            float w11 = tx * ty;
+
+            uint8_t r = (uint8_t)(src_rgb[idx00] * w00 + src_rgb[idx10] * w10 + src_rgb[idx01] * w01 + src_rgb[idx11] * w11);
+            uint8_t g = (uint8_t)(src_rgb[idx00+1] * w00 + src_rgb[idx10+1] * w10 + src_rgb[idx01+1] * w01 + src_rgb[idx11+1] * w11);
+            uint8_t b = (uint8_t)(src_rgb[idx00+2] * w00 + src_rgb[idx10+2] * w10 + src_rgb[idx01+2] * w01 + src_rgb[idx11+2] * w11);
+
             // Chroma key: check existing pixel to avoid overwriting HUD / DNA elements
             uint32_t cur_val = dst_row[dx];
             uint8_t cur_r = (cur_val >> 16) & 0xFF;
             uint8_t cur_g = (cur_val >> 8) & 0xFF;
             uint8_t cur_b = cur_val & 0xFF;
-            
+
             if (cur_r < 25 && cur_g < 25 && cur_b < 35) {
                 dst_row[dx] = (0xFF000000) | (r << 16) | (g << 8) | b;
             }
         }
     }
 
-    while (cinfo.output_scanline < cinfo.output_height) {
-        jpeg_read_scanlines(&cinfo, buffer, 1);
-    }
-
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
+    free(src_rgb);
     return true;
 }
 
@@ -247,10 +314,18 @@ static int youtube_cache_dest_w = 0;
 static int youtube_cache_dest_h = 0;
 
 void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
-    int dest_x = g_dest_x;
-    int dest_y = g_dest_y;
-    int dest_w = g_dest_w;
-    int dest_h = g_dest_h;
+    if (last_jpeg_sz == 0 || g_dest_w <= 0 || g_dest_h <= 0) {
+        return;
+    }
+    float rx = (float)g_dest_x / (float)g_main_img_w;
+    float ry = (float)g_dest_y / (float)g_main_img_h;
+    float rw = (float)g_dest_w / (float)g_main_img_w;
+    float rh = (float)g_dest_h / (float)g_main_img_h;
+
+    int dest_x = (int)(rx * width);
+    int dest_y = (int)(ry * height);
+    int dest_w = (int)(rw * width);
+    int dest_h = (int)(rh * height);
 
     if (dest_x < 0) dest_x = 0;
     if (dest_y < 0) dest_y = 0;
@@ -476,7 +551,6 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
                         if (g_ptsfi_zmm_set_scanout_buffer && g_scanout_px) {
                             g_ptsfi_zmm_set_scanout_buffer(g_scanout_px, g_w, g_h);
                         }
-                        
                         
                         printf("WINDOW_RESIZE %d %d\n", width, height);
                         fflush(stdout);

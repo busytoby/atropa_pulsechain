@@ -514,6 +514,10 @@ async function main() {
     let page = null;
     let isResizing = false;
     let videoBounds = { x: 427, y: 221, width: 341, height: 145 };
+    let lastRatioX = 427 / 1024;
+    let lastRatioY = 221 / 768;
+    let lastRatioW = 341 / 1024;
+    let lastRatioH = 145 / 768;
     let lastBoundsUpdateTime = 0;
     async function updateVideoBounds() {
         if (!page) return;
@@ -560,6 +564,12 @@ async function main() {
                             width: rect.width,
                             height: rect.height
                         };
+                        if (presenterWidth > 0 && presenterHeight > 0) {
+                            lastRatioX = videoBounds.x / presenterWidth;
+                            lastRatioY = videoBounds.y / presenterHeight;
+                            lastRatioW = videoBounds.width / presenterWidth;
+                            lastRatioH = videoBounds.height / presenterHeight;
+                        }
                         return; // Found and updated bounds successfully
                     }
                 } catch (frameErr) {}
@@ -574,7 +584,48 @@ async function main() {
     };
     let lastClickTime = 0;
     let clickCount = 1;
+    let isSettingViewport = false;
+    let pendingViewport = null;
     let resizeTimeout = null;
+    let lastViewportTime = 0;
+    const THROTTLE_MS = 40; // Limit viewport reallocations to at most once per 40ms (~25 FPS)
+
+    async function applyViewport(width, height) {
+        const now = Date.now();
+
+        if (isSettingViewport) {
+            pendingViewport = { width, height };
+            return;
+        }
+
+        const elapsed = now - lastViewportTime;
+        if (elapsed < THROTTLE_MS) {
+            pendingViewport = { width, height };
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(async () => {
+                if (pendingViewport) {
+                    const next = pendingViewport;
+                    pendingViewport = null;
+                    await applyViewport(next.width, next.height);
+                }
+            }, THROTTLE_MS - elapsed);
+            return;
+        }
+
+        isSettingViewport = true;
+        lastViewportTime = Date.now();
+        try {
+            await page.setViewport({ width, height });
+            await updateVideoBounds();
+        } catch (e) {}
+        isSettingViewport = false;
+
+        if (pendingViewport) {
+            const next = pendingViewport;
+            pendingViewport = null;
+            await applyViewport(next.width, next.height);
+        }
+    }
     let lastMouseX = 0;
     let lastMouseY = 0;
     let lastMouseDownX = 0;
@@ -692,8 +743,8 @@ async function main() {
                     isFocusedOnYouTube = inVideoBounds;
                     console.log(`[INPUT ROUTER] MOUSE_DOWN at (${x}, ${y}). bounds={x:${videoBounds.x}, y:${videoBounds.y}, w:${videoBounds.width}, h:${videoBounds.height}}. inVideoBounds=${inVideoBounds}. isFocusedOnYouTube=${isFocusedOnYouTube}`);
                     if (inVideoBounds) {
-                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
-                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
+                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 1024);
+                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 576);
                         sendWmqEvent('YOUTUBE:MOUSE_DOWN', `${btn},${x_yt},${y_yt}`).catch(() => {});
                     }
                 }
@@ -725,8 +776,8 @@ async function main() {
                     const inVideoBounds = x >= videoBounds.x && x <= videoBounds.x + videoBounds.width &&
                                          y >= videoBounds.y && y <= videoBounds.y + videoBounds.height;
                     if (inVideoBounds) {
-                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 800);
-                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 600);
+                        const x_yt = Math.round(((x - videoBounds.x) / videoBounds.width) * 1024);
+                        const y_yt = Math.round(((y - videoBounds.y) / videoBounds.height) * 576);
                         sendWmqEvent('YOUTUBE:MOUSE_UP', `${btn},${x_yt},${y_yt}`).catch(() => {});
                     }
                 }
@@ -856,8 +907,8 @@ async function main() {
                     const inVideoBounds = lastMouseX >= videoBounds.x && lastMouseX <= videoBounds.x + videoBounds.width &&
                                          lastMouseY >= videoBounds.y && lastMouseY <= videoBounds.y + videoBounds.height;
                     if (inVideoBounds) {
-                        const x_yt = Math.round(((lastMouseX - videoBounds.x) / videoBounds.width) * 800);
-                        const y_yt = Math.round(((lastMouseY - videoBounds.y) / videoBounds.height) * 600);
+                        const x_yt = Math.round(((lastMouseX - videoBounds.x) / videoBounds.width) * 1024);
+                        const y_yt = Math.round(((lastMouseY - videoBounds.y) / videoBounds.height) * 576);
                         sendWmqEvent('YOUTUBE:MOUSE_SCROLL', `${axis},${value},${x_yt},${y_yt}`).catch(() => {});
                     } else {
                         try {
@@ -909,35 +960,17 @@ async function main() {
             } else if (cmd === 'WINDOW_RESIZE') {
                 const width = parseInt(parts[1]);
                 const height = parseInt(parts[2]);
-                presenterWidth = width;
-                presenterHeight = height;
-                if (resizeTimeout) {
-                    clearTimeout(resizeTimeout);
-                }
-                resizeTimeout = setTimeout(async () => {
-                    console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
-                    try {
-                        isResizing = true;
-                        // Auncient synchronization sequence: stop screencast to prevent race condition crashes
-                        if (client) {
-                            try {
-                                await client.send('Page.stopScreencast');
-                            } catch (e) {}
-                        }
-                        await page.setViewport({ width, height });
-                        await updateVideoBounds();
-                        // Restart screencast now that viewport layout has stabilized
-                        if (client) {
-                            try {
-                                await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
-                            } catch (e) {}
-                        }
-                        isResizing = false;
-                    } catch (viewportErr) {
-                        isResizing = false;
-                        // ignore viewport errors
+                if (width > 0 && height > 0) {
+                    if (lastRatioX !== null && presenterWidth > 0 && presenterHeight > 0) {
+                        videoBounds.x = Math.round(lastRatioX * width);
+                        videoBounds.y = Math.round(lastRatioY * height);
+                        videoBounds.width = Math.round(lastRatioW * width);
+                        videoBounds.height = Math.round(lastRatioH * height);
                     }
-                }, 150);
+                    presenterWidth = width;
+                    presenterHeight = height;
+                    applyViewport(width, height);
+                }
             } else if (line.startsWith('search ')) {
                 const queryText = line.substring(7).trim();
                 console.log(`[PUPPETEER] Received search command for query: "${queryText}"`);
@@ -1011,12 +1044,15 @@ async function main() {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--window-size=800,600",
+            `--window-size=${isYouTube ? "1024,576" : "800,600"}`,
             "--autoplay-policy=no-user-gesture-required",
             "--disable-blink-features=AutomationControlled",
             "--disable-accelerated-video-decode",
             "--class=AtropaRootedBrowser",
             "--app=about:blank",
+            "--enable-font-antialiasing",
+            "--font-render-hinting=medium",
+            "--force-color-profile=srgb",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
@@ -1108,7 +1144,7 @@ async function main() {
     });
     await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
     if (isYouTube) {
-        await page.setViewport({ width: 800, height: 600 });
+        await page.setViewport({ width: 1024, height: 576 });
     } else {
         await page.setViewport({ width: 1024, height: 768 });
     }
@@ -1342,6 +1378,7 @@ async function main() {
     } catch (navErr) {
         console.log("[PUPPETEER] Initial navigation finished or timed out: " + navErr.message);
     }
+    await startScreencast();
 
     async function uploadFrame(jpegBuffer) {
         if (!isYouTube || !hasMjpegClients) return;
@@ -1369,24 +1406,19 @@ async function main() {
     let frameCount = 0;
     let client = null;
     async function startScreencast() {
+        if (client) {
+            console.log("[PUPPETEER] startScreencast() called but client is already active. Skipping.");
+            return;
+        }
         console.log("[PUPPETEER] startScreencast() triggered. Target ID:", page.target()._targetId);
         try {
-            if (client) {
-                try {
-                    console.log("[PUPPETEER] Detaching existing CDPSession client...");
-                    await client.detach();
-                } catch (detachErr) {
-                    console.log("[PUPPETEER] Detach warning:", detachErr.message);
-                }
-                client = null;
-            }
             client = await page.target().createCDPSession();
             console.log("[PUPPETEER] Created CDPSession client.");
             await client.send('Page.startScreencast', { format: 'jpeg', quality: 80 });
             console.log("[PUPPETEER] Page.startScreencast sent successfully.");
             client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
                 try {
-                    if (!active || isResizing) {
+                    if (!active) {
                         try {
                             await client.send('Page.screencastFrameAck', { sessionId });
                         } catch (e) {}
@@ -1413,10 +1445,11 @@ async function main() {
                     if (presenter && active && presenter.stdin.writable) {
                         const headerBuf = Buffer.alloc(20);
                         headerBuf.writeUInt32LE(jpegBuffer.length, 0);
-                        headerBuf.writeInt32LE(videoBounds.x, 4);
-                        headerBuf.writeInt32LE(videoBounds.y, 8);
-                        headerBuf.writeInt32LE(videoBounds.width, 12);
-                        headerBuf.writeInt32LE(videoBounds.height, 16);
+                        const isDashboard = page ? page.url().includes("atropa_dashboard.html") : false;
+                        headerBuf.writeInt32LE(isDashboard ? videoBounds.x : 0, 4);
+                        headerBuf.writeInt32LE(isDashboard ? videoBounds.y : 0, 8);
+                        headerBuf.writeInt32LE(isDashboard ? videoBounds.width : 0, 12);
+                        headerBuf.writeInt32LE(isDashboard ? videoBounds.height : 0, 16);
 
                         let ok = presenter.stdin.write(headerBuf);
                         if (ok) {
@@ -1433,6 +1466,7 @@ async function main() {
                         await client.send('Page.screencastFrameAck', { sessionId });
                     } catch (e) {}
                 } catch (err) {
+                    console.error("[STREAM ERR] Exception in screencastFrame handler:", err);
                     try {
                         await client.send('Page.screencastFrameAck', { sessionId });
                     } catch (ackErr) {}
@@ -1446,10 +1480,6 @@ async function main() {
 
     async function screenshotLoop() {
         while (active) {
-            if (isResizing) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-                continue;
-            }
             try {
                 const startTime = Date.now();
                 const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
@@ -1496,7 +1526,6 @@ async function main() {
         if (!isYouTube) {
             await updateVideoBounds();
         }
-        await startScreencast();
     });
     page.on('domcontentloaded', async () => {
         console.log("[PUPPETEER EVENT] DOMContentLoaded fired.");
@@ -1515,7 +1544,6 @@ async function main() {
         if (!isYouTube) {
             await updateVideoBounds();
         }
-        await startScreencast();
     })();
 
     if (url.includes("youtube.com")) {

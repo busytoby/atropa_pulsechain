@@ -132,8 +132,11 @@
         }
 
         #browserStreamSvg {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            aspect-ratio: 16 / 9;
             background: #000;
             cursor: crosshair;
             display: block;
@@ -250,7 +253,7 @@
             <div class="card">
                 <h2>📺 Rooted Live Stream</h2>
                 <div class="canvas-container" style="position: relative; overflow: hidden; border-radius: 8px;">
-                    <svg id="browserStreamSvg" viewBox="0 0 800 600" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair;">
+                    <svg id="browserStreamSvg" viewBox="0 0 800 450" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background: #000; cursor: crosshair;">
                         <defs>
                             <!-- Neon Glow Filter -->
                             <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -263,19 +266,19 @@
                         </defs>
                         
                         <!-- Underlay: Black placeholder for zero-copy Wayland presenter overlay -->
-                        <rect id="browserStreamFrame" x="0" y="0" width="800" height="600" fill="#000" />
+                        <rect id="browserStreamFrame" x="0" y="0" width="800" height="450" fill="#000" />
                         
                         <!-- SVG Interactive DNA overlay group -->
                         <g id="dnaOverlay" style="pointer-events: none;">
                             <!-- Neon Grid Border -->
-                            <rect x="5" y="5" width="790" height="590" fill="none" stroke="rgba(0, 242, 254, 0.25)" stroke-width="2" />
-                            <rect x="15" y="15" width="770" height="570" fill="none" stroke="rgba(255, 0, 127, 0.15)" stroke-width="1" stroke-dasharray="5 5" />
+                            <rect x="5" y="5" width="790" height="440" fill="none" stroke="rgba(0, 242, 254, 0.25)" stroke-width="2" />
+                            <rect x="15" y="15" width="770" height="420" fill="none" stroke="rgba(255, 0, 127, 0.15)" stroke-width="1" stroke-dasharray="5 5" />
                             
                             <!-- Cybernetic Corner Brackets -->
                             <path d="M 15 35 L 15 15 L 35 15" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
                             <path d="M 785 35 L 785 15 L 765 15" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
-                            <path d="M 15 565 L 15 585 L 35 585" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
-                            <path d="M 785 565 L 785 585 L 765 585" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            <path d="M 15 415 L 15 435 L 35 435" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
+                            <path d="M 785 415 L 785 435 L 765 435" fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#neonGlow)" />
                             
                             <!-- Animated DNA Helix paths on Left and Right borders -->
                             <path id="leftDnaPathA" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.8" filter="url(#neonGlow)" />
@@ -775,7 +778,7 @@
             
             const pointsCount = 30;
             const startY = 30;
-            const endY = 570;
+            const endY = 420;
             const stepY = (endY - startY) / pointsCount;
             
             let leftPathA = "";
