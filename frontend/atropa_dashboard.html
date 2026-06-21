@@ -343,10 +343,59 @@
             { name: "Color Blend", color: "#ff7f00" }
         ];
 
+        // Track frame times to calculate actual stream rendering FPS
+        const frameTimes = [];
+        const streamImg = document.getElementById("browserStreamFrame");
+        if (streamImg) {
+            streamImg.addEventListener("load", () => {
+                frameTimes.push(Date.now());
+                if (frameTimes.length > 20) {
+                    frameTimes.shift();
+                }
+            });
+        }
+
         let time = 0;
         function drawVulkanPipeline() {
             ctx.fillStyle = "#010207";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Determine dynamic state and colors from live video status
+            let realFps = 0.00;
+            if (frameTimes.length > 1) {
+                const elapsed = frameTimes[frameTimes.length - 1] - frameTimes[0];
+                if (elapsed > 0) {
+                    realFps = ((frameTimes.length - 1) * 1000) / elapsed;
+                }
+            }
+
+            let pipelineState = "OFFLINE";
+            let statusColor = "#8c9ba5";
+            let ledColor = "#ff7f00"; // orange for offline/idle
+            let packetColor = "#00f2fe";
+            let speedMultiplier = 1.0;
+
+            if (window.latestVideoStatus) {
+                if (window.latestVideoStatus.hasError) {
+                    pipelineState = "PIPELINE_ERROR";
+                    statusColor = "#ff007f";
+                    ledColor = "#ff007f";
+                    packetColor = "#ff007f";
+                    speedMultiplier = 0.0; // Flow frozen on error
+                } else if (window.latestVideoStatus.paused) {
+                    pipelineState = "PAUSED";
+                    statusColor = "#ffeb3b";
+                    ledColor = "#fbc02d";
+                    packetColor = "#ffe082";
+                    speedMultiplier = 0.2; // Very slow flow when paused
+                } else {
+                    pipelineState = "ACTIVE_PLAYBACK";
+                    statusColor = "#39ff14";
+                    ledColor = "#39ff14";
+                    packetColor = "#00f2fe";
+                    speedMultiplier = 1.5; // Fast flow during play
+                }
+            }
 
             // 1. Draw dynamic background scrolling grid
             ctx.strokeStyle = "rgba(0, 242, 254, 0.02)";
@@ -381,16 +430,16 @@
             ctx.stroke();
 
             // 3. Draw flowing data packets
-            time += 0.05;
+            time += 0.05 * speedMultiplier;
             for (let i = 0; i < 6; i++) {
                 let packetX = (time * 40 + i * 110) % (endX - startX) + startX;
-                ctx.fillStyle = "#00f2fe";
+                ctx.fillStyle = packetColor;
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = "#00f2fe";
+                ctx.shadowColor = packetColor;
                 ctx.beginPath();
                 ctx.arc(packetX, centerY, 4, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.shadowBlur = 0; // Reset shadow glow
+                ctx.shadowBlur = 0;
             }
 
             // 4. Draw Vulkan pipeline stage boxes (squares) and sub-elements
@@ -405,7 +454,7 @@
 
                 // Stage Container Box (Square)
                 ctx.fillStyle = "rgba(8, 12, 30, 0.85)";
-                ctx.strokeStyle = stage.color;
+                ctx.strokeStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.rect(-35, -35, 70, 70);
@@ -414,13 +463,13 @@
 
                 // Holographic Glowing border
                 ctx.shadowBlur = 8;
-                ctx.shadowColor = stage.color;
+                ctx.shadowColor = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
                 // Cybernetic brackets at corners
-                ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+                ctx.strokeStyle = (pipelineState === "PIPELINE_ERROR") ? "rgba(255, 0, 127, 0.4)" : "rgba(0, 242, 254, 0.4)";
                 ctx.lineWidth = 1;
                 // Top-left corner
                 ctx.beginPath(); ctx.moveTo(-28, -20); ctx.lineTo(-28, -28); ctx.lineTo(-20, -28); ctx.stroke();
@@ -432,12 +481,15 @@
                 ctx.beginPath(); ctx.moveTo(20, 28); ctx.lineTo(28, 28); ctx.lineTo(28, 20); ctx.stroke();
 
                 // Live dynamic ALU load bars
-                ctx.fillStyle = stage.color;
-                const isPlaying = window.latestVideoStatus && !window.latestVideoStatus.paused;
+                ctx.fillStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
                 for (let b = 0; b < 4; b++) {
                     let barH = 6;
-                    if (isPlaying) {
+                    if (pipelineState === "ACTIVE_PLAYBACK") {
                         barH = 14 + Math.sin(time * 4 + idx * 3 + b * 1.8) * 8;
+                    } else if (pipelineState === "PIPELINE_ERROR") {
+                        barH = 2; // Flatlined state on error
+                    } else if (pipelineState === "PAUSED") {
+                        barH = 6 + Math.sin(time * 2 + idx + b) * 2.5; // Idle heartbeat
                     }
                     ctx.fillRect(-22 + b * 11, 22 - barH, 7, barH);
                 }
@@ -455,10 +507,10 @@
                 ctx.fillText(inst2, -24, -9);
 
                 // Active status marker
-                ctx.fillStyle = stage.color;
+                ctx.fillStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
                 ctx.font = "6px 'Share Tech Mono'";
                 ctx.textAlign = "right";
-                ctx.fillText("ALU_OK", 24, 25);
+                ctx.fillText((pipelineState === "PIPELINE_ERROR") ? "ALU_ERR" : "ALU_OK", 24, 25);
 
                 ctx.restore();
 
@@ -474,7 +526,7 @@
             ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.roundRect(15, 15, 150, 75, 6);
+            ctx.roundRect(15, 15, 160, 75, 6);
             ctx.fill();
             ctx.stroke();
 
@@ -485,16 +537,17 @@
             
             ctx.fillStyle = "#8c9ba5";
             ctx.font = "9px 'Share Tech Mono'";
-            ctx.fillText(`FPS: ${(8.2 + Math.sin(time)*0.1).toFixed(2)}`, 24, 45);
-            ctx.fillText("VRAM: 1.28 GB / 8.00 GB", 24, 57);
-            ctx.fillText("STATE: PIPELINE_STABLE", 24, 69);
+            ctx.fillText(`STREAM FPS: ${realFps.toFixed(2)}`, 24, 45);
+            ctx.fillText(`VIDEO TIME: ${(window.latestVideoStatus && typeof window.latestVideoStatus.currentTime === 'number' && typeof window.latestVideoStatus.duration === 'number') ? window.latestVideoStatus.currentTime.toFixed(1) + 's / ' + window.latestVideoStatus.duration.toFixed(1) + 's' : '0.0s / 0.0s'}`, 24, 57);
+            ctx.fillText(`STATE: ${pipelineState}`, 24, 69);
             
             // Pulsing status LED
-            ctx.fillStyle = (Math.floor(time * 2) % 2 === 0) ? "#39ff14" : "#1b7f0a";
-            ctx.shadowBlur = (Math.floor(time * 2) % 2 === 0) ? 6 : 0;
-            ctx.shadowColor = "#39ff14";
+            const pulse = (Math.floor(Date.now() / 400) % 2 === 0);
+            ctx.fillStyle = pulse ? ledColor : "rgba(8, 12, 30, 0.5)";
+            ctx.shadowBlur = pulse ? 6 : 0;
+            ctx.shadowColor = ledColor;
             ctx.beginPath();
-            ctx.arc(142, 27, 3, 0, Math.PI * 2);
+            ctx.arc(158, 27, 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
@@ -504,7 +557,6 @@
 
         // --- 2. Live Screencast Frame Reloader & SVG DNA Animation ---
         const streamSvg = document.getElementById("browserStreamSvg");
-        const streamImg = document.getElementById("browserStreamFrame");
         setInterval(() => {
             // Append timestamp to prevent caching
             streamImg.setAttribute("href", "latest_frame.jpg?t=" + Date.now());

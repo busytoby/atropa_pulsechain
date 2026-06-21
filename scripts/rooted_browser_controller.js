@@ -549,7 +549,11 @@ async function main() {
                         currentTime: parseFloat(cur),
                         duration: parseFloat(dur),
                         paused: status.paused,
-                        muted: status.muted
+                        muted: status.muted,
+                        hasError: status.hasError || !!status.videoError,
+                        errorText: status.errorText || (status.videoError ? status.videoError.message : ""),
+                        errorSubtext: status.errorSubtext || "",
+                        playerState: status.playerState
                     });
                     const req = http.request({
                         hostname: '127.0.0.1',
