@@ -66,7 +66,8 @@ state.json
 *.tar.gz
 
 # Ignore compiled binaries and solidity binary builds
-/solidity/bin/
+/solidity/bin/*
+!/solidity/bin/**/*.yul
 *.bin
 
 # Ignore compiled binaries inside tsfi2-deepseek/tests/ (allow source files and scripts)

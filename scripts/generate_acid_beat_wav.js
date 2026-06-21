@@ -53,15 +53,28 @@ const COWBELL_SEQUENCE = [
     0, 1, 0, 0,  0, 0, 1, 0
 ];
 
-// TR-808 Clap Triggers: Syncopated handclaps (Steps 8, 14, 15 double clap)
+// TR-808 Clap Triggers: Syncopated handclaps (1 = single, 2 = double/flam)
 const CLAP_SEQUENCE = [
     0, 0, 0, 0,  0, 0, 0, 0,
-    1, 0, 0, 0,  0, 0, 1, 1
+    1, 0, 0, 0,  0, 0, 2, 1
 ];
+
+function getSingleClapEnvelope(age) {
+    if (age < 0) return 0;
+    if (age < 0.010) {
+        return Math.exp(-age / 0.003);
+    } else if (age >= 0.010 && age < 0.020) {
+        return Math.exp(-(age - 0.010) / 0.003);
+    } else if (age >= 0.020 && age < 0.030) {
+        return Math.exp(-(age - 0.020) / 0.003);
+    } else {
+        return Math.exp(-(age - 0.030) / 0.08);
+    }
+}
 
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH CLAPS");
+    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH DOUBLE CLAPS");
     console.log("===============================================================");
 
     const audioBuffer = new Float32Array(TOTAL_SAMPLES);
@@ -84,7 +97,8 @@ function main() {
     let lastOpenHhTriggerSample = -999999;
     let lastCowbellTriggerSample = -999999;
     let lastClapTriggerSample = -999999;
-
+    let lastClapType = 0; // 1 = single, 2 = double (flam)
+    
     // Highpass Filter State for Hihat (centered at 7kHz)
     let hp_in_prev = 0;
     let hp_out_prev = 0;
@@ -144,8 +158,9 @@ function main() {
             if (COWBELL_SEQUENCE[stepIndex] === 1) {
                 lastCowbellTriggerSample = i;
             }
-            if (CLAP_SEQUENCE[stepIndex] === 1) {
+            if (CLAP_SEQUENCE[stepIndex] > 0) {
                 lastClapTriggerSample = i;
+                lastClapType = CLAP_SEQUENCE[stepIndex];
             }
         }
 
@@ -222,6 +237,7 @@ function main() {
         let cowbellSample = 0;
         const cowbellAgeSecs = (i - lastCowbellTriggerSample) / SAMPLE_RATE;
 
+        // Two detuned square waves: 540Hz and 800Hz
         cb_phase1 += 540 / SAMPLE_RATE;
         cb_phase2 += 800 / SAMPLE_RATE;
         if (cb_phase1 >= 1.0) cb_phase1 -= 2.0;
@@ -242,7 +258,7 @@ function main() {
             cowbellSample = Math.tanh(filteredCowbell * env * 1.5);
         }
 
-        // E. Synthesize 808 Clap (3 quick noise pulses + long release decay + BPF)
+        // E. Synthesize 808 Clap (Double-clap / Flam engine spaced by 35ms)
         let clapSample = 0;
         const clapAgeSecs = (i - lastClapTriggerSample) / SAMPLE_RATE;
 
@@ -254,17 +270,16 @@ function main() {
         const clapNoise = cl_bp_band;
 
         if (clapAgeSecs >= 0 && clapAgeSecs < 0.5) {
-            let clapEnv = 0;
-            // 3 quick 10ms trigger impulses, followed by a 180ms release tail
-            if (clapAgeSecs < 0.010) {
-                clapEnv = Math.exp(-clapAgeSecs / 0.003);
-            } else if (clapAgeSecs >= 0.010 && clapAgeSecs < 0.020) {
-                clapEnv = Math.exp(-(clapAgeSecs - 0.010) / 0.003);
-            } else if (clapAgeSecs >= 0.020 && clapAgeSecs < 0.030) {
-                clapEnv = Math.exp(-(clapAgeSecs - 0.020) / 0.003);
-            } else if (clapAgeSecs >= 0.030) {
-                clapEnv = Math.exp(-(clapAgeSecs - 0.030) / 0.18);
+            // First Clap (starts at 0ms)
+            const env1 = getSingleClapEnvelope(clapAgeSecs);
+
+            // Second Clap (starts at 70ms for double clap) - two of the exact same single claps
+            let env2 = 0;
+            if (lastClapType === 2) {
+                env2 = getSingleClapEnvelope(clapAgeSecs - 0.070);
             }
+
+            const clapEnv = Math.max(env1, env2);
             clapSample = Math.tanh(clapNoise * clapEnv * 1.4);
         }
 
