@@ -294,6 +294,7 @@ async function main() {
 
     // Define helper function to route input events to Puppeteer
     let page = null;
+    let isResizing = false;
     let videoBounds = { x: 427, y: 221, width: 341, height: 145 };
     async function updateVideoBounds() {
         if (!page) return;
@@ -408,8 +409,9 @@ async function main() {
                 console.log(`[INPUT ROUTER] Processed MOUSE_SCROLL event: axis=${axis}, value=${value}, target=${isYouTube ? 'YouTube' : 'Main'}`);
                 await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
                 
-                const deltaY = (axis === 0) ? value * 8 : 0;
-                const deltaX = (axis === 1) ? value * 8 : 0;
+                const multiplier = isYouTube ? 55 : 25;
+                const deltaY = (axis === 0) ? value * multiplier : 0;
+                const deltaX = (axis === 1) ? value * multiplier : 0;
                 try {
                     // Dispatch native chromium wheel events at current cursor location
                     await page.mouse.wheel({ deltaX, deltaY });
@@ -427,6 +429,20 @@ async function main() {
                             deltaMode: 0
                         });
                         el.dispatchEvent(ev);
+                        // Auncient direct scroll fallback: if wheel event is ignored, perform direct element scroll
+                        if (el === document.body || el === document.documentElement || el.id === 'page-manager') {
+                            window.scrollBy(dx, dy);
+                        } else {
+                            let parent = el;
+                            while (parent && parent !== document.body) {
+                                if (parent.scrollHeight > parent.clientHeight || parent.scrollWidth > parent.clientWidth) {
+                                    parent.scrollTop += dy;
+                                    parent.scrollLeft += dx;
+                                    break;
+                                }
+                                parent = parent.parentElement;
+                            }
+                        }
                     }, lastMouseX, lastMouseY, deltaX, deltaY).catch(() => {});
                 }
             } else if (cmd === 'WINDOW_CLOSE') {
@@ -454,9 +470,12 @@ async function main() {
                 resizeTimeout = setTimeout(async () => {
                     console.log(`[PUPPETEER] Resizing viewport to ${width}x${height}`);
                     try {
+                        isResizing = true;
                         await page.setViewport({ width, height });
                         await updateVideoBounds();
+                        isResizing = false;
                     } catch (viewportErr) {
+                        isResizing = false;
                         // ignore viewport errors
                     }
                 }, 20);
@@ -775,7 +794,7 @@ async function main() {
             console.log("[PUPPETEER] Page.startScreencast sent successfully.");
             client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
                 try {
-                    if (!active) {
+                    if (!active || isResizing) {
                         try {
                             await client.send('Page.screencastFrameAck', { sessionId });
                         } catch (e) {}
@@ -832,6 +851,10 @@ async function main() {
 
     async function screenshotLoop() {
         while (active) {
+            if (isResizing) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                continue;
+            }
             try {
                 const startTime = Date.now();
                 const jpegBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
