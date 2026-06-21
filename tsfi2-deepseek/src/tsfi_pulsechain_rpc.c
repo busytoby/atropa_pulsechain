@@ -181,6 +181,31 @@ static uint64_t get_wmq_address_u64(char *out_addr_str) {
     return 0;
 }
 
+static void forward_to_mcp_server(const char *cmd) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) return;
+    
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(10042);
+    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0) {
+        char payload[1024];
+        snprintf(payload, sizeof(payload), 
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"wave512.dilemma_log\",\"params\":{"
+                 "\"event\":\"%s\",\"source\":\"WinchesterMQ Bridge\",\"details\":\"Forwarded from C Thunk Broker\""
+                 "},\"id\":1}", cmd);
+        ssize_t nw = write(sockfd, payload, strlen(payload));
+        (void)nw;
+        char dummy[128];
+        ssize_t nr = read(sockfd, dummy, sizeof(dummy));
+        (void)nr;
+    }
+    close(sockfd);
+}
+
 void tsfi_thunk_publish_mq(const char *cmd) {
     char wmq_addr_str[128] = {0};
     uint64_t wmq_addr_u64 = get_wmq_address_u64(wmq_addr_str);
@@ -254,6 +279,7 @@ void tsfi_thunk_publish_mq(const char *cmd) {
     
     bool ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, tx_data);
     printf("[THUNK_MQ] Event published to Auncient WinchesterMQ: %s (status: %s)\n", processed, ok ? "SUCCESS" : "FAILED");
+    forward_to_mcp_server(processed);
 }
 
 bool tsfi_pulse_rpc_exec_raw(const char *json_payload, char *out_buffer, size_t out_max_len) {
