@@ -53,10 +53,10 @@ const COWBELL_SEQUENCE = [
     0, 1, 0, 0,  0, 0, 1, 0
 ];
 
-// TR-808 Clap Triggers: Syncopated handclaps (Steps 8, 14)
+// TR-808 Clap Triggers: Syncopated handclaps (Steps 8, 14, 15 double clap)
 const CLAP_SEQUENCE = [
     0, 0, 0, 0,  0, 0, 0, 0,
-    1, 0, 0, 0,  0, 0, 1, 0
+    1, 0, 0, 0,  0, 0, 1, 1
 ];
 
 function main() {
