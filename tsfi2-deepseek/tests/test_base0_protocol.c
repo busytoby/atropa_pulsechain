@@ -12,6 +12,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#include "tsfi_pulsechain_rpc.h"
+#include "tsfi_wire_firmware.h"
+
 // Simple gait state representation
 typedef struct {
     double phase;
@@ -42,8 +45,8 @@ void run_base0_pulsex_oracle(bool run_for_real) {
     printf("[Base 0 Protocol] Oracle execution triggered.\n");
     if (run_for_real) {
         printf("[Base 0 Protocol] Spawned monitor_pulsex.py subprocess to keep up with USD price table...\n");
-        // We simulate running or checking status
-        system("python3 scripts/monitor_pulsex.py --help > /dev/null");
+        int ret = system("python3 scripts/monitor_pulsex.py --help > /dev/null");
+        (void)ret;
     } else {
         printf("[Base 0 Protocol] Mocking PulseX swap scans. USD price cache is up to date.\n");
     }
@@ -51,6 +54,7 @@ void run_base0_pulsex_oracle(bool run_for_real) {
 
 int main() {
     printf("=== Auncient Base 0 Protocol Coordinator ===\n");
+    tsfi_wire_firmware_init();
 
     // Initialize transient null-state gait
     GaitState gait = { .phase = 0.0, .is_locked = false };
@@ -81,6 +85,9 @@ int main() {
                 printf("[Auncient Coordinator] Suspending active kinematics loops.\n");
                 printf("[Auncient Coordinator] Executing Base 0 Protocol transition...\n");
                 
+                // Dispatch event to WinchesterMQ to notify system of the dilemma state
+                tsfi_thunk_publish_mq("M:DILEMMA_NULL_LOCK");
+
                 run_base0_pulsex_oracle(false);
                 oracle_running = true;
             }

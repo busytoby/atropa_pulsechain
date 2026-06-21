@@ -9,6 +9,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#include "tsfi_pulsechain_rpc.h"
+#include "tsfi_wire_firmware.h"
+
 // Numerical approximation of Bessel Function of first kind J_n(x) using trapezoidal rule
 double bessel_j(int n, double x) {
     int steps = 100;
@@ -76,6 +79,7 @@ void synthesize_bessel_gait(DilemmaGait *gait, double t, double dt) {
 
 int main() {
     printf("=== Auncient Bessel Dilemma Synthesizer Suite ===\n");
+    tsfi_wire_firmware_init();
     
     DilemmaGait nominal_gait = { .profile_type = 0, .phase = 0.0, .is_locked = false };
     DilemmaGait frozen_gait = { .profile_type = 1, .phase = 0.0, .is_locked = false };
@@ -92,6 +96,7 @@ int main() {
     
     double last_hip_frozen = 0.0;
     int frozen_ticks = 0;
+    bool wmq_published = false;
 
     for (int i = 0; i < steps; i++) {
         double t = i * dt;
@@ -100,6 +105,12 @@ int main() {
         synthesize_bessel_gait(&frozen_gait, t, dt);
         synthesize_bessel_gait(&chaotic_gait, t, dt);
         
+        if (frozen_gait.is_locked && !wmq_published) {
+            printf("\n[Auncient Coordinator] Dilemma lock detected! Publishing to WinchesterMQ...\n");
+            tsfi_thunk_publish_mq("M:DILEMMA_NULL_LOCK");
+            wmq_published = true;
+        }
+
         // Track frozen status in the second half of simulation
         if (i > 150) { 
             if (fabs(frozen_gait.hip_angle - last_hip_frozen) < 1.0e-5) {
