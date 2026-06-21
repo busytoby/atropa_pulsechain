@@ -359,7 +359,16 @@ async function main() {
                 await sendWmqEvent(eventPrefix + 'MOUSE_SCROLL', `${axis},${value}`);
                 const deltaY = (axis === 0) ? value * 10 : 0;
                 const deltaX = (axis === 1) ? value * 10 : 0;
-                await page.mouse.wheel({ deltaX, deltaY });
+                try {
+                    await page.mouse.wheel({ deltaX, deltaY });
+                } catch (wheelErr) {}
+                await page.evaluate((dx, dy) => {
+                    window.scrollBy(dx, dy);
+                    const container = document.querySelector('#content, #page-manager, ytd-app');
+                    if (container && typeof container.scrollBy === 'function') {
+                        container.scrollBy(dx, dy);
+                    }
+                }, deltaX, deltaY).catch(() => {});
             } else if (cmd === 'WINDOW_CLOSE') {
                 console.log("[PUPPETEER] Wayland close event requested. Shutting down browser...");
                 active = false;
