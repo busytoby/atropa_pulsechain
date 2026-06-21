@@ -382,6 +382,12 @@
                     ledColor = "#ff007f";
                     packetColor = "#ff007f";
                     speedMultiplier = 0.0; // Flow frozen on error
+                } else if (window.latestVideoStatus.ended) {
+                    pipelineState = "COMPLETED";
+                    statusColor = "#00f2fe";
+                    ledColor = "#00f2fe";
+                    packetColor = "#00f2fe";
+                    speedMultiplier = 0.0; // Flow stopped on completion
                 } else if (window.latestVideoStatus.paused) {
                     pipelineState = "PAUSED";
                     statusColor = "#ffeb3b";
@@ -481,13 +487,15 @@
                 ctx.beginPath(); ctx.moveTo(20, 28); ctx.lineTo(28, 28); ctx.lineTo(28, 20); ctx.stroke();
 
                 // Live dynamic ALU load bars
-                ctx.fillStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : stage.color;
+                ctx.fillStyle = (pipelineState === "PIPELINE_ERROR") ? "#ff007f" : ((pipelineState === "COMPLETED") ? "#00f2fe" : stage.color);
                 for (let b = 0; b < 4; b++) {
                     let barH = 6;
                     if (pipelineState === "ACTIVE_PLAYBACK") {
                         barH = 14 + Math.sin(time * 4 + idx * 3 + b * 1.8) * 8;
                     } else if (pipelineState === "PIPELINE_ERROR") {
                         barH = 2; // Flatlined state on error
+                    } else if (pipelineState === "COMPLETED") {
+                        barH = 22; // Full load on completion
                     } else if (pipelineState === "PAUSED") {
                         barH = 6 + Math.sin(time * 2 + idx + b) * 2.5; // Idle heartbeat
                     }

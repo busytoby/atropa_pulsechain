@@ -531,7 +531,7 @@ async function main() {
                 }
 
                 if (!video) {
-                    return { found: false, hasError, errorText, errorSubtext, videoError, playerState };
+                    return { found: false, hasError, errorText, errorSubtext, videoError, playerState, ended: false };
                 }
 
                 return {
@@ -545,7 +545,8 @@ async function main() {
                     errorText,
                     errorSubtext,
                     videoError,
-                    playerState
+                    playerState,
+                    ended: video.ended || playerState === 0
                 };
             });
 
@@ -572,6 +573,7 @@ async function main() {
                         errorText: status.errorText || (status.videoError ? status.videoError.message : ""),
                         errorSubtext: status.errorSubtext || "",
                         playerState: status.playerState,
+                        ended: status.ended,
                         wmqAddress: wmqAddressStr,
                         wmqEventCount: wmqEventCount,
                         blockNumber: lastBlockNumber,
