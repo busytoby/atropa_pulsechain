@@ -31,6 +31,7 @@ static const DysnomiaContract g_dysnomia_system[] = {
     { "lau",          "../solidity/dysnomia/11_lau.sol",                  "0xBC366E9E93FcF0C741377Db15D938e9cAe96B18e" },
     { "cho",          "../solidity/dysnomia/domain/dan/01_cho.sol",      "0xB98E414af1fC02d6B5a6bF1CD08B844864B87d4f" },
     { "map",          "../solidity/dysnomia/domain/map.sol",             "0x60C7215A1C325Fc5fc91cd301DD94642142Baf80" },
+    { "qing",         "../solidity/dysnomia/domain/dan/03_qing.sol",     "0xccb077a0" },
     { "qi",           "../solidity/dysnomia/domain/soeng/01_qi.sol",     "0x91F3ca10050862eccdbb7b265cc6fB49EeDD802C" },
     { "mai",          "../solidity/dysnomia/domain/soeng/02_mai.sol",     "0x2cc7e492a98cb211287A1506A55245dBa200E52a" },
     { "xia",          "../solidity/dysnomia/domain/soeng/03_xia.sol",     "0x6f7D105670842d39ACc32B5AeF0C5238AA0B9F3D" },

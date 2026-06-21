@@ -97,4 +97,5 @@ found_addresses.txt
 # Root tests binaries
 /tests/rooted_frame_presenter
 
-
+__pycache__/
+*.pyc

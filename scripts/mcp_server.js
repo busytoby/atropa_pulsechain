@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
+const net = require("net");
 
 // Simple JSON-RPC 2.0 stdio-based MCP Server
 const serverInfo = {
@@ -44,6 +45,19 @@ const tools = [
                 limit: {
                     type: "number",
                     description: "Limit the number of recent chat messages returned (default: all)"
+                }
+            }
+        }
+    },
+    {
+        name: "get_qings",
+        description: "Retrieve all registered QING contracts on PulseChain with their symbols and contract addresses.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                symbol: {
+                    type: "string",
+                    description: "Optional symbol filter to find a specific QING"
                 }
             }
         }
@@ -167,6 +181,42 @@ async function handleRequest(req) {
                             {
                                 type: "text",
                                 text: `Failed to retrieve chats: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "get_qings") {
+                try {
+                    const args = params.arguments || {};
+                    const symbolFilter = args.symbol ? args.symbol.toLowerCase() : null;
+                    const statusPath = path.join(__dirname, "../config/nonukes_qings_status.json");
+                    if (!fs.existsSync(statusPath)) {
+                        throw new Error("QING status configuration file not found");
+                    }
+                    const qingsData = JSON.parse(fs.readFileSync(statusPath, "utf8"));
+                    const qings = qingsData.filter(item => item.exists && item.qing);
+                    
+                    let filtered = qings;
+                    if (symbolFilter) {
+                        filtered = qings.filter(item => item.symbol.toLowerCase().includes(symbolFilter));
+                    }
+                    
+                    const resultText = filtered.map(item => `${item.symbol}: ${item.qing}`).join("\n");
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: resultText || "No matching QING contracts found."
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to retrieve QINGs: ${err.message}`
                             }
                         ]
                     });

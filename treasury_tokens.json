@@ -502,5 +502,19 @@
         "name": "Matrix Dai",
         "owner": "0x3ad6c170e7ec137d99c128c1076e861c748beb4b",
         "ignored": false
+    },
+    "0x251b0cbf09191d52f234a1a2cc8c5a6ba0c170e2": {
+        "address": "0x251b0cbf09191d52f234a1a2cc8c5a6ba0c170e2",
+        "symbol": "Aardvark \u327e",
+        "name": "Official Aardvark Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x1237f01db295736fd7a42fa1b70948a4db35d81d": {
+        "address": "0x1237f01db295736fd7a42fa1b70948a4db35d81d",
+        "symbol": "Bear \u327e",
+        "name": "Official Bear Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
     }
 }

@@ -3351,5 +3351,12 @@
         "symbol": "\ud83d\udc00\ud83d\udc51",
         "name": "RatKing",
         "other_addr": "0x1f45433da3d6388602598438532d269dcc18c74f"
+    },
+    "0x965b0d74591bf30327075a247c47dbf487dcff08": {
+        "target_group": "NoNukes",
+        "version": "V1",
+        "symbol": "VOID",
+        "name": "CHATLOG Void",
+        "other_addr": "0x965b0d74591bf30327075a247c47dbf487dcff08"
     }
 }

@@ -5,6 +5,10 @@ const PULSECHAIN_RPC = "https://rpc.pulsechain.com";
 const LOG_EVENT_SIGNATURE = "LogEvent(string,uint64,uint64,string)";
 const TOPIC_0 = ethers.id(LOG_EVENT_SIGNATURE);
 
+const NEW_QING_SIGNATURE = "NewQing(address,address,uint256)";
+const TOPIC_NEW_QING = ethers.id(NEW_QING_SIGNATURE);
+const MAP_ADDRESS = "0xD3a7A95012Edd46Ea115c693B74c5e524b3DdA75";
+
 const C = {
     reset: "\x1b[0m",
     bright: "\x1b[1m",
@@ -19,6 +23,10 @@ const C = {
 
 const iface = new ethers.Interface([
     `event ${LOG_EVENT_SIGNATURE}`
+]);
+
+const mapIface = new ethers.Interface([
+    `event ${NEW_QING_SIGNATURE}`
 ]);
 
 const nameCache = {};
@@ -74,37 +82,49 @@ async function main() {
         const latestBlock = await provider.getBlockNumber();
         console.log(`${C.green}Connected! Current Block: ${latestBlock}${C.reset}\n`);
 
-        // Get 5 days of history
-        const blocksFor5Days = 43200;
-        const fromBlock = Math.max(0, latestBlock - blocksFor5Days);
+        const scanWindows = [
+            { label: "5 days", blocks: 43200 },
+            { label: "30 days", blocks: 259200 },
+            { label: "90 days", blocks: 777600 },
+            { label: "180 days", blocks: 1555200 },
+            { label: "360 days", blocks: 3110400 },
+            { label: "500 days", blocks: 4320000 }
+        ];
 
-        console.log(`${C.dim}Fetching last 5 days of historical logs...${C.reset}`);
-        let logs = await provider.getLogs({
-            fromBlock: "0x" + fromBlock.toString(16),
-            toBlock: "0x" + latestBlock.toString(16),
-            topics: [TOPIC_0]
-        });
-
-        if (logs.length === 0) {
-            console.log(`${C.yellow}No chat logs found in last 5 days. Scanning back 30 days...${C.reset}`);
-            const blocksFor30Days = 259200;
-            const fromBlock30 = Math.max(0, latestBlock - blocksFor30Days);
-            logs = await provider.getLogs({
-                fromBlock: "0x" + fromBlock30.toString(16),
-                toBlock: "0x" + latestBlock.toString(16),
-                topics: [TOPIC_0]
-            });
-            
-            if (logs.length === 0) {
-                console.log(`${C.yellow}No chat logs found in last 30 days. Scanning back 90 days...${C.reset}`);
-                const blocksFor90Days = 777600;
-                const fromBlock90 = Math.max(0, latestBlock - blocksFor90Days);
+        let logs = [];
+        let qingLogs = [];
+        let chosenFromBlock = 0;
+        for (const window of scanWindows) {
+            console.log(`${C.dim}Scanning back ${window.label}...${C.reset}`);
+            const fromBlock = Math.max(0, latestBlock - window.blocks);
+            try {
                 logs = await provider.getLogs({
-                    fromBlock: "0x" + fromBlock90.toString(16),
+                    fromBlock: "0x" + fromBlock.toString(16),
                     toBlock: "0x" + latestBlock.toString(16),
                     topics: [TOPIC_0]
                 });
+                if (logs.length > 0) {
+                    chosenFromBlock = fromBlock;
+                    console.log(`${C.green}Found ${logs.length} logs in ${window.label} window.${C.reset}`);
+                    break;
+                }
+            } catch (err) {
+                console.error(`Failed to fetch logs for ${window.label}: ${err.message}`);
             }
+        }
+
+        try {
+            const maxQingBlocks = 4320000; // 500 days
+            const qingFromBlock = Math.max(0, latestBlock - maxQingBlocks);
+            qingLogs = await provider.getLogs({
+                fromBlock: "0x" + qingFromBlock.toString(16),
+                toBlock: "0x" + latestBlock.toString(16),
+                address: MAP_ADDRESS,
+                topics: [TOPIC_NEW_QING]
+            });
+            console.log(`${C.green}Found ${qingLogs.length} NewQing logs in the 500-day window.${C.reset}`);
+        } catch (err) {
+            console.error(`Failed to fetch NewQing logs: ${err.message}`);
         }
 
         console.log(`${C.blue}=== Historical Feed (${logs.length} events) ===${C.reset}\n`);
@@ -124,6 +144,25 @@ async function main() {
                 const isVoid = qingName.toLowerCase().includes("void");
                 const eventName = isVoid ? "M:VOID_CHAT" : "M:QING_CHAT";
                 logToZmmMcp(eventName, qingName, `${parsed.args[0]} (S:${parsed.args[1]} A:${parsed.args[2]}) | ${parsed.args[3]}`);
+            } catch (e) {}
+        }
+
+        console.log(`${C.yellow}=== Historical QING Creations (${qingLogs.length} events) ===${C.reset}\n`);
+        for (const log of qingLogs) {
+            try {
+                const parsed = mapIface.parseLog(log);
+                const qingAddr = parsed.args[0];
+                const integrative = parsed.args[1];
+                const waat = parsed.args[2].toString();
+                let timeStr = "";
+                try {
+                    const block = await provider.getBlock(log.blockNumber);
+                    timeStr = new Date(block.timestamp * 1000).toLocaleTimeString();
+                } catch {
+                    timeStr = `Block ${log.blockNumber}`;
+                }
+                console.log(`${C.dim}[${timeStr}]${C.reset} ${C.yellow}${C.bright}New QING Created:${C.reset} ${qingAddr} | Integrative: ${integrative} | Waat: ${waat}`);
+                logToZmmMcp("M:NEW_QING", "MAP", `Qing: ${qingAddr} | Integrative: ${integrative} | Waat: ${waat}`);
             } catch (e) {}
         }
 
@@ -152,6 +191,26 @@ async function main() {
                             logToZmmMcp(eventName, qingName, `${parsed.args[0]} (S:${parsed.args[1]} A:${parsed.args[2]}) | ${parsed.args[3]}`);
                         } catch (e) {}
                     }
+
+                    const freshQingLogs = await provider.getLogs({
+                        fromBlock: "0x" + (lastCheckedBlock + 1).toString(16),
+                        toBlock: "0x" + currentBlock.toString(16),
+                        address: MAP_ADDRESS,
+                        topics: [TOPIC_NEW_QING]
+                    });
+
+                    for (const log of freshQingLogs) {
+                        try {
+                            const parsed = mapIface.parseLog(log);
+                            const qingAddr = parsed.args[0];
+                            const integrative = parsed.args[1];
+                            const waat = parsed.args[2].toString();
+                            const timeStr = new Date().toLocaleTimeString();
+                            console.log(`[${timeStr}] ${C.yellow}${C.bright}New QING Created:${C.reset} ${qingAddr} | Integrative: ${integrative} | Waat: ${waat}`);
+                            logToZmmMcp("M:NEW_QING", "MAP", `Qing: ${qingAddr} | Integrative: ${integrative} | Waat: ${waat}`);
+                        } catch (e) {}
+                    }
+
                     lastCheckedBlock = currentBlock;
                 }
             } catch (err) {

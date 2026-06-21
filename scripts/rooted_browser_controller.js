@@ -376,6 +376,54 @@ async function main() {
             // Synchronize nonce after deployment transactions
             nextNonce = await provider.getTransactionCount(signer.address, "pending");
 
+            // Initialize wmqEventCount from historical logs
+            try {
+                const currentBlock = await provider.getBlockNumber();
+                const startBlock = Math.max(0, currentBlock - 5000);
+                const histLogs = await provider.getLogs({
+                    fromBlock: "0x" + startBlock.toString(16),
+                    toBlock: "0x" + currentBlock.toString(16),
+                    address: wmqAddress,
+                    topics: [[
+                        "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045",
+                        "0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da"
+                    ]]
+                });
+                
+                const targetPrefix = isYouTube ? "Y:" : "M:";
+                for (const log of histLogs) {
+                    if (log.topics[0] === "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29a1bee1dae9af77dac73aa045") {
+                        try {
+                            const data = ethers.getBytes(log.data);
+                            const blockIdBytes = data.slice(32, 64);
+                            const blockId = ethers.toBigInt(blockIdBytes);
+                            let blockBytes = [];
+                            const baseKey = ethers.keccak256(ethers.zeroPadValue(ethers.toBeHex(BigInt(0x1000) + blockId), 32));
+                            for (let i = 0; i < 8; i++) {
+                                const slotKey = ethers.toBeHex(BigInt(baseKey) + BigInt(i), 32);
+                                const slotVal = await provider.getStorage(wmqAddress, slotKey);
+                                blockBytes.push(...ethers.getBytes(slotVal));
+                            }
+                            const fullStr = Buffer.from(blockBytes).toString('utf8');
+                            const commandStr = fullStr.split('\0')[0].trim();
+                            if (commandStr && commandStr.startsWith(targetPrefix)) {
+                                wmqEventCount++;
+                            }
+                        } catch (err) {}
+                    } else if (log.topics[0] === "0xe1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1dae1da") {
+                        try {
+                            const commandStr = Buffer.from(ethers.getBytes(log.data)).toString('utf8').replace(/\0/g, '').trim();
+                            if (commandStr && commandStr.startsWith(targetPrefix)) {
+                                wmqEventCount++;
+                            }
+                        } catch (err) {}
+                    }
+                }
+                console.log(`[WMQ] Initialized wmqEventCount to ${wmqEventCount} from ${histLogs.length} historical logs.`);
+            } catch (histErr) {
+                console.error("[WMQ] Failed to fetch historical logs:", histErr);
+            }
+
             // Auncient high-frequency JSON-RPC block log poller for absolute input reliability
             let lastPolledBlock = await provider.getBlockNumber();
             const seenLogs = new Set();

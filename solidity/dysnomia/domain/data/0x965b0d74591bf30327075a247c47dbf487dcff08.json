@@ -1,0 +1,9 @@
+{
+  "name": "VOID",
+  "symbol": "VOID",
+  "address": "0x965b0d74591bf30327075a247c47dbf487dcff08",
+  "type": "Token",
+  "size": "16x16x16 voxels",
+  "desc": "Defined relative to the Void QING, where the Void QING is defined relative only to the Void and to Dysnomia.",
+  "color": "#a02be2"
+}

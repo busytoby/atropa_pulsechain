@@ -81,37 +81,65 @@ def start_qing_chat_poller():
                     current_block = int(resp['result'], 16)
                 
                 if last_block == 0:
-                    start_block = current_block - 15000
+                    logs = []
+                    scan_sizes = [15000, 100000, 500000, 2000000, 5000000]
+                    for size in scan_sizes:
+                        start_block = max(0, current_block - size)
+                        req_logs = urllib.request.Request(
+                            RPC_URL,
+                            data=json.dumps({
+                                "jsonrpc": "2.0",
+                                "method": "eth_getLogs",
+                                "params": [{
+                                    "fromBlock": hex(start_block),
+                                    "toBlock": hex(current_block),
+                                    "address": QING_ADDR,
+                                    "topics": [TOPIC_0]
+                                }],
+                                "id": 2
+                            }).encode('utf-8'),
+                            headers={"Content-Type": "application/json"}
+                        )
+                        try:
+                            with urllib.request.urlopen(req_logs, timeout=8) as res:
+                                resp = json.loads(res.read().decode('utf-8'))
+                                logs = resp.get('result', [])
+                            if logs:
+                                break
+                        except Exception:
+                            pass
                 else:
                     start_block = last_block + 1
+                    logs = []
                 
-                if start_block <= current_block:
-                    req_logs = urllib.request.Request(
-                        RPC_URL,
-                        data=json.dumps({
-                            "jsonrpc": "2.0",
-                            "method": "eth_getLogs",
-                            "params": [{
-                                "fromBlock": hex(start_block),
-                                "toBlock": hex(current_block),
-                                "address": QING_ADDR,
-                                "topics": [TOPIC_0]
-                            }],
-                            "id": 2
-                        }).encode('utf-8'),
-                        headers={"Content-Type": "application/json"}
-                    )
-                    with urllib.request.urlopen(req_logs, timeout=8) as res:
-                        resp = json.loads(res.read().decode('utf-8'))
-                        logs = resp.get('result', [])
+                if (last_block > 0 and start_block <= current_block) or (last_block == 0 and logs):
+                    if last_block > 0:
+                        req_logs = urllib.request.Request(
+                            RPC_URL,
+                            data=json.dumps({
+                                "jsonrpc": "2.0",
+                                "method": "eth_getLogs",
+                                "params": [{
+                                    "fromBlock": hex(start_block),
+                                    "toBlock": hex(current_block),
+                                    "address": QING_ADDR,
+                                    "topics": [TOPIC_0]
+                                }],
+                                "id": 2
+                            }).encode('utf-8'),
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req_logs, timeout=8) as res:
+                            resp = json.loads(res.read().decode('utf-8'))
+                            logs = resp.get('result', [])
                         
-                        new_chats = []
-                        for log in logs:
-                            decoded = decode_abi_log_event(log.get('data', ''))
-                            if decoded:
-                                decoded["block"] = int(log.get("blockNumber", "0"), 16)
-                                decoded["tx"] = log.get("transactionHash", "")
-                                new_chats.append(decoded)
+                    new_chats = []
+                    for log in logs:
+                        decoded = decode_abi_log_event(log.get('data', ''))
+                        if decoded:
+                            decoded["block"] = int(log.get("blockNumber", "0"), 16)
+                            decoded["tx"] = log.get("transactionHash", "")
+                            new_chats.append(decoded)
                         
                         if new_chats:
                             # Use lock to update safely
@@ -197,38 +225,61 @@ def fetch_logs_for_qing(qing_address):
             resp = json.loads(res.read().decode('utf-8'))
             current_block = int(resp['result'], 16)
         
-        start_block = current_block - 20000
-        
-        req_logs = urllib.request.Request(
-            RPC_URL,
-            data=json.dumps({
-                "jsonrpc": "2.0",
-                "method": "eth_getLogs",
-                "params": [{
-                    "fromBlock": hex(start_block),
-                    "toBlock": hex(current_block),
-                    "address": qing_address,
-                    "topics": [TOPIC_0]
-                }],
-                "id": 2
-            }).encode('utf-8'),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req_logs, timeout=8) as res:
-            resp = json.loads(res.read().decode('utf-8'))
-            logs = resp.get('result', [])
+        logs = []
+        scan_sizes = [20000, 100000, 500000, 2000000, 5000000]
+        for size in scan_sizes:
+            start_block = max(0, current_block - size)
+            req_logs = urllib.request.Request(
+                RPC_URL,
+                data=json.dumps({
+                    "jsonrpc": "2.0",
+                    "method": "eth_getLogs",
+                    "params": [{
+                        "fromBlock": hex(start_block),
+                        "toBlock": hex(current_block),
+                        "address": qing_address,
+                        "topics": [TOPIC_0]
+                    }],
+                    "id": 2
+                }).encode('utf-8'),
+                headers={"Content-Type": "application/json"}
+            )
+            try:
+                with urllib.request.urlopen(req_logs, timeout=8) as res:
+                    resp = json.loads(res.read().decode('utf-8'))
+                    logs = resp.get('result', [])
+                if logs:
+                    break
+            except Exception:
+                pass
             
-            chats = []
-            for log in logs:
-                decoded = decode_abi_log_event(log.get('data', ''))
-                if decoded:
-                    decoded["block"] = int(log.get("blockNumber", "0"), 16)
-                    decoded["tx"] = log.get("transactionHash", "")
-                    chats.append(decoded)
-            return chats
+        chats = []
+        for log in logs:
+            decoded = decode_abi_log_event(log.get('data', ''))
+            if decoded:
+                decoded["block"] = int(log.get("blockNumber", "0"), 16)
+                decoded["tx"] = log.get("transactionHash", "")
+                chats.append(decoded)
+        if not chats:
+            chats = [{
+                "username": "Auncient Advisor",
+                "soul": 9,
+                "aura": 9,
+                "message": f"Welcome to the Auncient VM telemetry stream for QING {qing_address}. Communication channel initialized.",
+                "block": 0,
+                "tx": ""
+            }]
+        return chats
     except Exception as e:
         print(f"Error fetching logs for dynamic QING {qing_address}: {e}")
-        return []
+        return [{
+            "username": "Auncient Advisor",
+            "soul": 0,
+            "aura": 0,
+            "message": f"Welcome to the Auncient VM telemetry stream for QING {qing_address}. Communication channel initialized.",
+            "block": 0,
+            "tx": ""
+        }]
 
 
 def get_price(prices, addr):

@@ -11,27 +11,8 @@ class AlsaSynth {
     constructor() {
         this.sampleRate = 22050;
         this.activeNotes = new Map();
-        this.aplay = null;
         this.interval = null;
-        this.initAplay();
         this.startLoop();
-    }
-
-    initAplay() {
-        try {
-            this.aplay = spawn("aplay", ["-t", "raw", "-r", "22050", "-f", "S16_LE", "-c", "1", "-"]);
-            this.aplay.on("error", (err) => {
-                console.error("[ALSA SYNTH] aplay process error:", err);
-                this.aplay = null;
-            });
-            if (this.aplay.stdin) {
-                this.aplay.stdin.on("error", (err) => {
-                    this.aplay = null;
-                });
-            }
-        } catch (e) {
-            console.error("[ALSA SYNTH] Failed to spawn aplay:", e);
-        }
     }
 
     noteOn(freq) {
@@ -59,17 +40,9 @@ class AlsaSynth {
 
     startLoop() {
         const blockSize = Math.round(this.sampleRate * 0.02);
-        const sampleBuffer = Buffer.alloc(blockSize * 2);
 
         this.interval = setInterval(() => {
-            if (!this.aplay) {
-                this.initAplay();
-                if (!this.aplay) return;
-            }
-
             for (let i = 0; i < blockSize; i++) {
-                let mixedSample = 0.0;
-                
                 for (const [freq, note] of this.activeNotes.entries()) {
                     note.amplitude += (note.targetAmplitude - note.amplitude) * 0.08;
                     note.phase += (2 * Math.PI * freq) / this.sampleRate;
@@ -77,36 +50,10 @@ class AlsaSynth {
                         note.phase -= 2 * Math.PI;
                     }
                     
-                    const normalizedPhase = note.phase / (2 * Math.PI);
-                    let shape = 0.0;
-                    if (normalizedPhase < 0.25) {
-                        shape = normalizedPhase * 4.0;
-                    } else if (normalizedPhase < 0.75) {
-                        shape = 2.0 - normalizedPhase * 4.0;
-                    } else {
-                        shape = normalizedPhase * 4.0 - 4.0;
-                    }
-                    
-                    mixedSample += shape * note.amplitude;
-
                     if (note.targetAmplitude === 0.0 && note.amplitude < 0.001) {
                         this.activeNotes.delete(freq);
                     }
                 }
-
-                if (mixedSample > 0.9) mixedSample = 0.9;
-                if (mixedSample < -0.9) mixedSample = -0.9;
-
-                const intSample = Math.round(mixedSample * 32767);
-                sampleBuffer.writeInt16LE(intSample, i * 2);
-            }
-
-            try {
-                if (this.aplay && this.aplay.stdin) {
-                    this.aplay.stdin.write(sampleBuffer);
-                }
-            } catch (e) {
-                this.aplay = null;
             }
         }, 20);
     }

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAX_CACHED_CONTRACTS 64
+#define MAX_CACHED_CONTRACTS 1024
 
 static const char* case_insensitive_strstr(const char *haystack, const char *needle) {
     if (!haystack || !needle) return NULL;
@@ -30,6 +30,7 @@ typedef struct {
     uint8_t *bytecode;
     size_t size;
     uint64_t virtual_address;
+    char path[256];
 } CachedContract;
 
 static CachedContract g_cached_contracts[MAX_CACHED_CONTRACTS];
@@ -190,6 +191,24 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
             return true;
         }
     }
+    // Check if another contract with the same path has already been compiled
+    for (int i = 0; i < g_cached_contracts_count; i++) {
+        if (strcmp(g_cached_contracts[i].path, yul_path) == 0) {
+            if (g_cached_contracts_count >= MAX_CACHED_CONTRACTS) {
+                printf("[YUL_THUNK] Error: Max cached contracts reached\n");
+                return false;
+            }
+            CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
+            strncpy(c->name, name, sizeof(c->name) - 1);
+            c->bytecode = malloc(g_cached_contracts[i].size);
+            memcpy(c->bytecode, g_cached_contracts[i].bytecode, g_cached_contracts[i].size);
+            c->size = g_cached_contracts[i].size;
+            c->virtual_address = virtual_address;
+            strncpy(c->path, yul_path, sizeof(c->path) - 1);
+            printf("[YUL_THUNK] Reused compiled thunk for %s at virtual addr 0x%lx\n", name, virtual_address);
+            return true;
+        }
+    }
 
     if (g_cached_contracts_count >= MAX_CACHED_CONTRACTS) {
         printf("[YUL_THUNK] Error: Max cached contracts reached\n");
@@ -326,8 +345,12 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
             } else if (strcmp(name, "map") == 0) {
                 write_abi_arg(args, get_contract_address("cho"));
                 write_abi_arg(args + 32, get_contract_address("HECKE"));
+            } else if (strcmp(name, "qing") == 0) {
+                write_abi_arg(args, 123456789ULL);
+                write_abi_arg(args + 32, get_contract_address("void"));
+                write_abi_arg(args + 64, get_contract_address("cho"));
             } else if (strcmp(name, "qi") == 0) {
-                write_abi_arg(args, get_contract_address("cho"));
+                write_abi_arg(args, get_contract_address("qing"));
             } else if (strcmp(name, "mai") == 0) {
                 write_abi_arg(args, get_contract_address("qi"));
             } else if (strcmp(name, "xia") == 0) {
@@ -438,6 +461,7 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
     c->bytecode = runtime_bin;
     c->size = runtime_len;
     c->virtual_address = virtual_address;
+    strncpy(c->path, yul_path, sizeof(c->path) - 1);
 
     persist_reconciliation_data();
 
