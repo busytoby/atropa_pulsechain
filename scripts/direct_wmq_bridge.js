@@ -17,7 +17,7 @@ const linuxKeyMap = {
     44: 'z', 45: 'x', 46: 'c', 47: 'v', 48: 'b', 49: 'n', 50: 'm',
     51: ',', 52: '.', 53: '/',
     54: 'Shift', 56: 'Alt', 57: ' ',
-    103: 'ArrowUp', 105: 'ArrowLeft', 106: 'ArrowRight', 108: 'ArrowDown'
+    102: 'Home', 103: 'ArrowUp', 104: 'PageUp', 105: 'ArrowLeft', 106: 'ArrowRight', 107: 'End', 108: 'ArrowDown', 109: 'PageDown'
 };
 
 async function connectToBrowser(port) {
@@ -59,9 +59,12 @@ async function startBridge() {
             if (keyName) {
                 console.log(`[Auncient Bridge TCP] Routing event to ${isYouTube ? 'YouTube' : 'Main'}: ${cmd} ${keyName}`);
                 try {
-                    // Focus query bar first
-                    const searchInputSelector = 'input[name="search_query"], input#search, input.query-bar';
-                    await conn.page.focus(searchInputSelector).catch(() => {});
+                    // Only focus search/query bar if it is NOT a navigation key
+                    const isNavigationKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(keyName);
+                    if (!isNavigationKey) {
+                        const searchInputSelector = 'input[name="search_query"], input#search, input.query-bar';
+                        await conn.page.focus(searchInputSelector).catch(() => {});
+                    }
                     
                     if (cmd === 'KEY_DOWN') {
                         await conn.page.keyboard.down(keyName);
@@ -71,6 +74,20 @@ async function startBridge() {
                 } catch (err) {
                     console.error("[Auncient Bridge Routing ERR]", err.message);
                 }
+            }
+        } else if (cmd === 'MOUSE_SCROLL') {
+            const axis = parseInt(parts[1]); // 0 = Y, 1 = X
+            const value = parseInt(parts[2]);
+            const multiplier = isYouTube ? 55 : 25;
+            const deltaY = (axis === 0) ? value * multiplier : 0;
+            const deltaX = (axis === 1) ? value * multiplier : 0;
+            console.log(`[Auncient Bridge TCP] Routing scroll event to ${isYouTube ? 'YouTube' : 'Main'}: deltaX=${deltaX}, deltaY=${deltaY}`);
+            try {
+                await conn.page.evaluate((dx, dy) => {
+                    window.scrollBy(dx, dy);
+                }, deltaX, deltaY).catch(() => {});
+            } catch (err) {
+                console.error("[Auncient Bridge Scroll ERR]", err.message);
             }
         }
     }
