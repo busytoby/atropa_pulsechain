@@ -14,6 +14,7 @@
 #include <time.h>
 
 static int handle_default_command(WaveSystem *ws, double new_i, const char *new_d) {
+    fprintf(stderr, "[CLI_DEBUG] Entering handle_default_command (new_d=\"%s\")\n", new_d);
     lau_unseal_object(ws);
     ws->current_intensity = new_i; 
     
@@ -23,7 +24,9 @@ static int handle_default_command(WaveSystem *ws, double new_i, const char *new_
     }
     ws->current_directive = lau_strdup(new_d);
     lau_seal_object(ws);
+    fprintf(stderr, "[CLI_DEBUG] Calling HELMHOLTZ_RESONANCE_LIST...\n");
     HELMHOLTZ_RESONANCE_LIST(STEP, ws, ws->current_intensity);
+    fprintf(stderr, "[CLI_DEBUG] HELMHOLTZ_RESONANCE_LIST finished.\n");
     tsfi_io_printf(stdout, "[AUDIT] %s\n", *ws->resonance_as_status);
     return 0;
 }
@@ -203,16 +206,20 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     (void)ws;
 
     input[strcspn(input, "\n")] = 0;
+    fprintf(stderr, "[CLI_DEBUG] Processing line: \"%s\"\n", input);
     double new_i;
     char new_d[256];
     char param[256];
     
     // Parse LOAD command
     if (sscanf(input, "LOAD %255s", param) == 1) {
+        fprintf(stderr, "[CLI_DEBUG] Matched LOAD: \"%s\"\n", param);
         return handle_load_command(ws, param);
     }
 
-    if (sscanf(input, "%lf %[^\n]", &new_i, new_d) == 2) {
+    int parsed = sscanf(input, "%lf %[^\n]", &new_i, new_d);
+    fprintf(stderr, "[CLI_DEBUG] sscanf returned %d (new_i=%f, new_d=\"%s\")\n", parsed, (float)new_i, parsed == 2 ? new_d : "");
+    if (parsed == 2) {
         if (strcmp(new_d, "EXIT") == 0) { 
             return handle_exit_command(ws); 
         }

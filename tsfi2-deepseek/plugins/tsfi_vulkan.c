@@ -1,7 +1,7 @@
 // TSFi Vulkan Plugin - Unity Build Wrapper
 // This file aggregates all modular components into a single compilation unit
 // for the hotloader, ensuring all symbols are resolved and logic is unified.
-
+#include "vulkan/vulkan_logic.h"
 #include "tsfi_staging.c"
 #include "vulkan_init.c"
 

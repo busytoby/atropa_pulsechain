@@ -681,9 +681,11 @@ void draw_frame(VulkanSystem *s) {
 
     uint32_t imageIndex;
     VkResult res = vk->vkAcquireNextImageKHR(vk->device, vk->swapchain, UINT64_MAX, vk->imageAvailableSemaphores[vk->currentFrame], VK_NULL_HANDLE, &imageIndex);
-    
-    if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-        recreate_swapchain(s);
+    if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+        printf("[VULKAN] vkAcquireNextImageKHR failed with status: %d\n", res);
+        if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreate_swapchain(s);
+        }
         return;
     }
 
@@ -928,7 +930,13 @@ void draw_frame(VulkanSystem *s) {
         fflush(stdout);
     } else {
         // Mode A: Standard Wayland Window
-        vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+        VkResult res_present = vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+        if (res_present != VK_SUCCESS) {
+            printf("[VULKAN] vkQueuePresentKHR returned status: %d\n", res_present);
+            if (res_present == VK_ERROR_OUT_OF_DATE_KHR || res_present == VK_SUBOPTIMAL_KHR) {
+                recreate_swapchain(s);
+            }
+        }
     }
 
     vk->currentFrame = (vk->currentFrame + 1) % 3;

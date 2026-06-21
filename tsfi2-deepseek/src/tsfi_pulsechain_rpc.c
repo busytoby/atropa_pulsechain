@@ -236,7 +236,8 @@ void tsfi_thunk_publish_mq(const char *cmd) {
     *dst = '\0';
     
     if (strstr(processed, "MM") || strstr(processed, "MD") || strstr(processed, "MU") ||
-        strstr(processed, "MS") || strstr(processed, "KD") || strstr(processed, "KU")) {
+        strstr(processed, "MS") || strstr(processed, "KD") || strstr(processed, "KU") ||
+        strstr(processed, "MO")) {
         printf("[THUNK_MQ] I/O Event bypassed RPC publish: %s\n", processed);
         return;
     }

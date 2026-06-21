@@ -12,6 +12,8 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
+    setvbuf(stdin, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
     bool auto_gemini = true;
     for(int i=1; i<argc; i++) if(strcmp(argv[i], "--cli") == 0) auto_gemini = false;
 

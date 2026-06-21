@@ -4,7 +4,7 @@
 
 extern const VkAllocationCallbacks tsfi_alloc_callbacks;
 
-static void init_staging_vk_buffer(VulkanContext *vk) {
+static void init_staging_vk_buffer_dmabuf(VulkanContext *vk) {
     if (!vk || !vk->device) return;
     printf("[VULKAN] Initializing Staging Buffer (TSFi Zhong)... Auncient memory pipeline setup\n");
 

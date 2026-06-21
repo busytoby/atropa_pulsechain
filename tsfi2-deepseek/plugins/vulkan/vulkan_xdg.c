@@ -1,6 +1,7 @@
 #include "vulkan_xdg.h"
 #include "vulkan_input.h"
 #include "tsfi_broadcaster.h"
+#include "lau_memory.h"
 #include <stdio.h>
 
 // Forward decl for dispatcher if not in header
@@ -17,8 +18,12 @@ const struct xdg_wm_base_listener xdg_wm_base_listener = {
 };
 
 static void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
-    (void)data;
+    VulkanSystem *s = (VulkanSystem *)data;
+    printf("[TSFI_VULKAN] xdg_surface_configure called (serial: %u)\n", serial); fflush(stdout);
     xdg_surface_ack_configure(xdg_surface, serial);
+    if (s && s->surface) {
+        wl_surface_commit(s->surface);
+    }
 }
 
 const struct xdg_surface_listener xdg_surface_listener = {
@@ -29,8 +34,16 @@ static void xdg_toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel
     VulkanSystem *s = (VulkanSystem *)data;
     (void)xdg_toplevel;
     
+    extern LauMetadata* lau_registry_find(void *ptr);
+    LauMetadata *m = lau_registry_find(s);
+    bool was_sealed = (m && (m->alloc_size & (1ULL << 55)));
+
+    if (was_sealed) {
+        lau_unseal_object(s);
+    }
+
     if (width > 0 && height > 0) {
-        printf("[TSFI_VULKAN] XDG Toplevel Configure: %dx%d\n", width, height);
+        printf("[TSFI_VULKAN] XDG Toplevel Configure: %dx%d\n", width, height); fflush(stdout);
         s->width = width;
         s->height = height;
     }
@@ -48,17 +61,42 @@ static void xdg_toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel
     }
 
     tsfi_input_dispatch_resize(s, s->width, s->height);
+
+    if (was_sealed) {
+        lau_seal_object(s);
+    }
 }
 
 static void xdg_toplevel_close(void *data, struct xdg_toplevel *xdg_toplevel) {
     VulkanSystem *s = (VulkanSystem *)data;
     (void)xdg_toplevel;
     printf("[TSFI_VULKAN] Window Close Requested.\n");
+    
+    extern LauMetadata* lau_registry_find(void *ptr);
+    LauMetadata *m = lau_registry_find(s);
+    bool was_sealed = (m && (m->alloc_size & (1ULL << 55)));
+
+    if (was_sealed) {
+        lau_unseal_object(s);
+    }
     s->running = false;
+    if (was_sealed) {
+        lau_seal_object(s);
+    }
     
     extern LauBroadcaster* get_active_broadcaster(void);
     LauBroadcaster *lb = get_active_broadcaster();
-    if (lb) lb->stream_active = false;
+    if (lb) {
+        LauMetadata *lm = lau_registry_find(lb);
+        bool lb_sealed = (lm && (lm->alloc_size & (1ULL << 55)));
+        if (lb_sealed) {
+            lau_unseal_object(lb);
+        }
+        lb->stream_active = false;
+        if (lb_sealed) {
+            lau_seal_object(lb);
+        }
+    }
 }
 
 static void xdg_toplevel_configure_bounds(void *data, struct xdg_toplevel *xdg_toplevel, int32_t width, int32_t height) {

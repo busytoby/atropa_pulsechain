@@ -5,7 +5,7 @@
 
 extern const VkAllocationCallbacks tsfi_alloc_callbacks;
 
-static void init_staging_vk_buffer(VulkanContext *vk);
+static void init_staging_vk_buffer_dmabuf(VulkanContext *vk);
 
 // --- DMABUF Feedback REMOVED (Source of Historical Hangs) ---
 
@@ -14,7 +14,7 @@ struct wl_buffer* create_dma_buffer(VulkanSystem *s, int width, int height) {
     if (!vk || !vk->vkGetMemoryFdKHR || !s->dmabuf) return NULL;
 
     if (!vk->staging_buffer) {
-        init_staging_vk_buffer(vk);
+        init_staging_vk_buffer_dmabuf(vk);
     }
 
     VkExternalMemoryImageCreateInfo extInfo = {

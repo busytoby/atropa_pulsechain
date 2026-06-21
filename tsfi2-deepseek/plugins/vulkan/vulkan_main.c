@@ -19,8 +19,7 @@
 #include <sys/mman.h>
 #include "drm-lease-v1-client-protocol.h"
 
-extern void set_vulkan_system(VulkanSystem *s);
-extern VulkanSystem* get_vulkan_system();
+#include "vulkan_logic.h"
 
 static void main_noop() {}
 
@@ -106,7 +105,11 @@ VulkanSystem* create_vulkan_system() {
 
 
     s->display = wl_display_connect(NULL);
-    if (!s->display) { lau_free(s); return NULL; }
+    if (!s->display) {
+        fprintf(stderr, "[TSFI_VULKAN] wl_display_connect failed\n");
+        lau_free(s);
+        return NULL;
+    }
     s->registry = wl_display_get_registry(s->display);
     wl_registry_add_listener(s->registry, &registry_listener, s);
     wl_display_roundtrip(s->display);
@@ -114,7 +117,12 @@ VulkanSystem* create_vulkan_system() {
 
     extern VulkanContext* init_vulkan(int);
     s->vk = init_vulkan(s->lease_active ? s->leased_fd : -1);
-    if (!s->vk) { wl_display_disconnect(s->display); lau_free(s); return NULL; }
+    if (!s->vk) {
+        fprintf(stderr, "[TSFI_VULKAN] init_vulkan failed\n");
+        wl_display_disconnect(s->display);
+        lau_free(s);
+        return NULL;
+    }
 
     tsfi_wire_firmware_init();
     LauWireFirmware *fw = tsfi_wire_firmware_get();
@@ -150,10 +158,21 @@ VulkanSystem* create_vulkan_system() {
         xdg_toplevel_add_listener(s->xdg_toplevel, &xdg_toplevel_listener, s);
         xdg_toplevel_set_title(s->xdg_toplevel, TSFI_WINDOW_TITLE);
         wl_surface_commit(s->surface);
+        int r1 = wl_display_roundtrip(s->display);
+        int r2 = wl_display_roundtrip(s->display);
+        int wl_err = wl_display_get_error(s->display);
+        printf("[TSFI_VULKAN] wl_display_roundtrip results: %d, %d. Connection error state: %d\n", r1, r2, wl_err); fflush(stdout);
         extern const VkAllocationCallbacks tsfi_alloc_callbacks;
         VkWaylandSurfaceCreateInfoKHR createInfo = { .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, .display = s->display, .surface = s->surface };
-        PFN_vkCreateWaylandSurfaceKHR createFunc = (PFN_vkCreateWaylandSurfaceKHR)s->vk->vkGetInstanceProcAddr(s->vk->instance, "vkCreateWaylandSurfaceKHR");
-        if (createFunc) createFunc(s->vk->instance, &createInfo, &tsfi_alloc_callbacks, &s->vk->surface);
+        if (s->vk->vkCreateWaylandSurfaceKHR) {
+            VkResult res = s->vk->vkCreateWaylandSurfaceKHR(s->vk->instance, &createInfo, &tsfi_alloc_callbacks, &s->vk->surface);
+            printf("[TSFI_VULKAN] vkCreateWaylandSurfaceKHR status: %d, surface ptr: %p\n", res, (void*)s->vk->surface);
+        } else {
+            printf("[TSFI_VULKAN] ERROR: vkCreateWaylandSurfaceKHR function pointer is NULL\n");
+        }
+        extern bool init_swapchain(VulkanSystem *s);
+        bool swap_ok = init_swapchain(s);
+        printf("[TSFI_VULKAN] init_swapchain status: %s, swapchain ptr: %p\n", swap_ok ? "SUCCESS" : "FAILED", (void*)s->vk->swapchain);
     }
 
     s->running = true;

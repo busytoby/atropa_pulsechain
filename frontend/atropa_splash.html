@@ -236,10 +236,84 @@
             font-weight: bold;
         }
 
-        .m-val.alert {
+        /* Timing Comparison Panel */
+        .timing-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .timing-card {
+            background: rgba(3, 1, 8, 0.85);
+            border-radius: 16px;
+            padding: 15px 20px;
+            position: relative;
+            box-shadow: inset 0 0 25px rgba(168, 85, 247, 0.05);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .timing-card.evm {
+            border: 1px solid rgba(6, 182, 212, 0.35); /* Cyan border */
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+
+        .timing-card.zmm {
+            border: 1px solid rgba(168, 85, 247, 0.35); /* Purple border */
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+
+        .timing-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .timing-card.evm h3 {
+            color: #06b6d4;
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+        }
+
+        .timing-card.zmm h3 {
+            color: #a855f7;
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+        }
+
+        .timing-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 6px 0;
+        }
+
+        .timing-row:last-child {
+            border-bottom: none;
+        }
+
+        .timing-label {
+            color: #93c5fd;
+        }
+
+        .timing-val {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: #22c55e;
+            text-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+        }
+
+        .timing-val.warning {
             color: #ec4899;
-            text-shadow: 0 0 10px rgba(236, 72, 153, 0.65);
-            font-weight: bold;
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
+            animation: pulse-warn 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-warn {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; text-shadow: 0 0 12px rgba(236, 72, 153, 0.9); }
         }
 
         /* Log Panel */
@@ -410,6 +484,36 @@
             <div class="log-terminal" id="terminalLog">
                 <div class="log-line cyan">[SYS] CONNECTING TO COMPUTE FABRIC PLANE...</div>
                 <div class="log-line cyan">[SYS] MOUNTING DRM COMPOSITOR DRIVERS...</div>
+            </div>
+        </div>
+
+        <!-- Timing Comparison Panel -->
+        <div class="timing-container">
+            <div class="timing-card evm">
+                <h3>EVM Execution Diagnostics</h3>
+                <div class="timing-row">
+                    <span class="timing-label">EVM connection time</span>
+                    <span class="timing-val" id="timeEvmConn">OFFLINE</span>
+                </div>
+                <div class="timing-row">
+                    <span class="timing-label">EVM balance query time</span>
+                    <span class="timing-val" id="timeEvmBal">OFFLINE</span>
+                </div>
+                <div class="timing-row">
+                    <span class="timing-label">EVM Yul compilation time</span>
+                    <span class="timing-val" id="timeEvmYul">OFFLINE</span>
+                </div>
+            </div>
+            <div class="timing-card zmm">
+                <h3>ZMM VM Diagnostics</h3>
+                <div class="timing-row">
+                    <span class="timing-label">ZMM Dysnomia init time</span>
+                    <span class="timing-val" id="timeZmmDys">OFFLINE</span>
+                </div>
+                <div class="timing-row">
+                    <span class="timing-label">ZMM Yul compilation time</span>
+                    <span class="timing-val" id="timeZmmYul">OFFLINE</span>
+                </div>
             </div>
         </div>
 
@@ -732,6 +836,32 @@
         renderBear(1.0, 0.5, 2);
 
         window.addEventListener("load", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const evmConn = urlParams.get('evmConn');
+            const evmBal = urlParams.get('evmBal');
+            const evmYul = urlParams.get('evmYul');
+            const zmmDys = urlParams.get('zmmDys');
+            const zmmYul = urlParams.get('zmmYul');
+
+            const setTimeVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (val && !isNaN(val)) {
+                        el.innerText = parseFloat(val).toFixed(3) + " ms";
+                        el.classList.remove("warning");
+                    } else {
+                        el.innerText = "OFFLINE";
+                        el.classList.add("warning");
+                    }
+                }
+            };
+
+            setTimeVal("timeEvmConn", evmConn);
+            setTimeVal("timeEvmBal", evmBal);
+            setTimeVal("timeEvmYul", evmYul);
+            setTimeVal("timeZmmDys", zmmDys);
+            setTimeVal("timeZmmYul", zmmYul);
+
             setTimeout(updateGateway, 300);
         });
     </script>

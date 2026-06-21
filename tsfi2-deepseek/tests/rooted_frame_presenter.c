@@ -21,6 +21,7 @@
 #include "tsfi_zmm_vm.h"
 
 extern PFN_vkVoidFunction tsfi_vkGetInstanceProcAddr(VkInstance instance, const char* pName);
+extern void tsfi_wire_firmware_init(void);
 
 typedef int (VKAPI_CALL *PFN_tsfi_drmModeAddPlane)(uint32_t plane_id, size_t buffer_size);
 typedef void* (VKAPI_CALL *PFN_tsfi_drmModeGetVirtualPlaneBuffer)(uint32_t plane_id);
@@ -523,6 +524,9 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
 int main() {
     printf("[Auncient Presenter] Initializing Vulkan and Wayland loops...\n");
 
+    // Initialize dependencies and global hardware structures (wired allocation table)
+    tsfi_wire_firmware_init();
+
     // Run ZMM VM diagnostics on launch
     printf("[Auncient Presenter] Running ZMM VM diagnostics...\n");
     fflush(stdout);
@@ -539,10 +543,12 @@ int main() {
     PFN_vkQueuePresentKHR pvkQueuePresentKHR = (PFN_vkQueuePresentKHR)tsfi_vkGetInstanceProcAddr(NULL, "vkQueuePresentKHR");
     (void)pvkQueuePresentKHR;
     
-    // PFN_tsfi_drmModeAddPlane ptsfi_drmModeAddPlane = (PFN_tsfi_drmModeAddPlane)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeAddPlane");
-    // PFN_tsfi_drmModeGetVirtualPlaneBuffer ptsfi_drmModeGetVirtualPlaneBuffer = (PFN_tsfi_drmModeGetVirtualPlaneBuffer)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeGetVirtualPlaneBuffer");
     PFN_tsfi_zmm_set_scanout_buffer ptsfi_zmm_set_scanout_buffer = (PFN_tsfi_zmm_set_scanout_buffer)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_zmm_set_scanout_buffer");
-    // PFN_tsfi_drmModeFreeVirtualPlanes ptsfi_drmModeFreeVirtualPlanes = (PFN_tsfi_drmModeFreeVirtualPlanes)tsfi_vkGetInstanceProcAddr(NULL, "tsfi_drmModeFreeVirtualPlanes");
+
+    if (!pvkCreateInstance || !pvkCreateDevice || !pvkGetDeviceQueue || !ptsfi_zmm_set_scanout_buffer) {
+        fprintf(stderr, "[Auncient Presenter ERR] Failed to resolve critical Vulkan/ZMM function pointers!\n");
+        return 1;
+    }
 
     VkInstance instance; VkInstanceCreateInfo inst_info = {0}; pvkCreateInstance(&inst_info, NULL, &instance);
     VkDevice device; VkDeviceCreateInfo dev_info = {0}; pvkCreateDevice((VkPhysicalDevice)0x2000, &dev_info, NULL, &device);

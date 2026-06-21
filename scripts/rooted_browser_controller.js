@@ -20,37 +20,47 @@ let lastBlockNumber = 0;
 let presenterWidth = 1024;
 let presenterHeight = 768;
 
+let evmConnectionTime = null;
+let evmBalanceTime = null;
+let evmYulCompileTime = null;
+let zmmDysnomiaTime = null;
+let zmmYulCompileTime = null;
+
+let youtubeClientSocket = null;
+
+function sendYoutubeSocket(fullCmd) {
+    if (!youtubeClientSocket || youtubeClientSocket.destroyed) {
+        const net = require('net');
+        youtubeClientSocket = net.createConnection({ port: 18081, host: '127.0.0.1' });
+        youtubeClientSocket.on('error', () => {
+            if (youtubeClientSocket) youtubeClientSocket.destroy();
+            youtubeClientSocket = null;
+        });
+        youtubeClientSocket.on('close', () => {
+            youtubeClientSocket = null;
+        });
+        youtubeClientSocket.on('end', () => {
+            youtubeClientSocket = null;
+        });
+        youtubeClientSocket.unref(); // Don't keep event loop open just for this connection
+    }
+    try {
+        youtubeClientSocket.write(fullCmd + '\n');
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 async function sendWmqEvent(cmd, args) {
     let fullCmd = `${cmd} ${args}`.trim();
     const isTargetYouTube = fullCmd.startsWith("YOUTUBE:") || fullCmd.startsWith("Y:");
-    const port = isTargetYouTube ? 18081 : 18080;
     
-    // Direct TCP routing first for zero-latency
-    let directRouted = false;
-    try {
-        const net = require('net');
-        await new Promise((resolve, reject) => {
-            const socket = net.createConnection({ port, host: '127.0.0.1' }, () => {
-                socket.write(fullCmd + '\n');
-                socket.end();
-                directRouted = true;
-                resolve();
-            });
-            socket.on('error', (err) => {
-                reject(err);
-            });
-            socket.setTimeout(50);
-            socket.on('timeout', () => {
-                socket.destroy();
-                reject(new Error("Timeout"));
-            });
-        });
-    } catch (directErr) {
-        // Direct routing failed (e.g. YouTube sub-controller not started yet)
-    }
-
-    if (directRouted) {
-        return;
+    // Direct low-latency TCP routing
+    if (isTargetYouTube) {
+        if (sendYoutubeSocket(fullCmd)) {
+            return;
+        }
     }
 
     const isIoEvent = cmd.includes("MOUSE") || cmd.includes("KEY") || cmd.includes("MM") || cmd.includes("MD") || cmd.includes("MU") || cmd.includes("MS") || cmd.includes("KD") || cmd.includes("KU");
@@ -131,13 +141,52 @@ function compileYul(yulPath) {
     if (binIndex === -1) {
         throw new Error(`Could not find binary representation for ${yulPath}`);
     }
+    evmYulCompileTime = elapsed.toFixed(3);
     console.log(`[DIAGNOSTIC] Compiled Yul contract ${path.basename(yulPath)} (took ${elapsed.toFixed(3)} ms)`);
     return "0x" + lines[binIndex + 1].trim();
+}
+
+const fs = require('fs');
+
+function trackPid(pid, desc) {
+    const filePath = path.join(__dirname, "../tmp/tracked_processes.json");
+    let data = {};
+    try {
+        if (fs.existsSync(filePath)) {
+            data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        }
+    } catch (e) {}
+    data[pid] = {
+        desc,
+        time: new Date().toISOString()
+    };
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+        console.log(`[TRACKER] Registered PID ${pid} (${desc})`);
+    } catch (e) {}
+}
+
+function untrackPid(pid) {
+    const filePath = path.join(__dirname, "../tmp/tracked_processes.json");
+    let data = {};
+    try {
+        if (fs.existsSync(filePath)) {
+            data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        }
+    } catch (e) {}
+    if (data[pid]) {
+        delete data[pid];
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+            console.log(`[TRACKER] Unregistered PID ${pid}`);
+        } catch (e) {}
+    }
 }
 
 async function main() {
     let url = process.argv[2] || "http://127.0.0.1:8000/zmachine.html";
     const isYouTube = url.includes("youtube.com") || url.includes("youtube");
+    trackPid(process.pid, `rooted_browser_controller: ${url}`);
     const inputQueue = [];
     let processingQueue = false;
     
@@ -219,12 +268,14 @@ async function main() {
         signer = await provider.getSigner(isYouTube ? 2 : 1);
         nextNonce = await provider.getTransactionCount(signer.address, "pending");
         const connTime = performance.now() - evmStart;
+        evmConnectionTime = connTime.toFixed(3);
         console.log(`[WMQ] Connected to local EVM provider. Signer index: ${isYouTube ? 2 : 1} | Address: ${signer.address} | Initial Nonce: ${nextNonce} (took ${connTime.toFixed(3)} ms)`);
         
         // EVM diagnostics check
         const balStart = performance.now();
         const balance = await provider.getBalance(signer.address);
         const balTime = performance.now() - balStart;
+        evmBalanceTime = balTime.toFixed(3);
         console.log(`[DIAGNOSTIC] Local EVM online. Signer Balance: ${ethers.formatEther(balance)} ETH (took ${balTime.toFixed(3)} ms)`);
         
         const fs = require('fs');
@@ -439,6 +490,15 @@ async function main() {
                 WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY || "wayland-1"
             }
         });
+        trackPid(presenter.pid, "rooted_frame_presenter");
+
+        presenter.on("exit", (code, signal) => {
+            console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Presenter window closed.`);
+            untrackPid(presenter.pid);
+            if (presenterReadyResolver) {
+                presenterReadyResolver(); // Resolve to avoid hanging the boot loop
+            }
+        });
 
         presenter.stderr.on("data", data => {
             console.error(`[PRESENTER ERR] ${data.toString().trim()}`);
@@ -565,6 +625,13 @@ async function main() {
     async function executeInputCommand(line) {
         const startHrTime = process.hrtime.bigint();
         line = line.replace(/,/g, ' ');
+        
+        // Strip target prefixes if present for network routing compatibility
+        if (line.startsWith("YOUTUBE:")) line = line.substring(8);
+        else if (line.startsWith("Y:")) line = line.substring(2);
+        else if (line.startsWith("MAIN:")) line = line.substring(5);
+        else if (line.startsWith("M:")) line = line.substring(2);
+
         if (line.includes("Streaming starting...")) {
             console.log(`[PRESENTER OUT] ${line}`);
             if (presenterReadyResolver) {
@@ -915,7 +982,17 @@ async function main() {
             input: presenter.stdout,
             terminal: false
         });
-        rl.on('line', handleInputCommand);
+        rl.on('line', (line) => {
+            if (line.includes("Dysnomia Fa allocation verified")) {
+                const match = line.match(/took (\d+\.\d+) ms/);
+                if (match) zmmDysnomiaTime = match[1];
+            }
+            if (line.includes("Yul compilers initialization completed")) {
+                const match = line.match(/took (\d+\.\d+) ms/);
+                if (match) zmmYulCompileTime = match[1];
+            }
+            handleInputCommand(line);
+        });
     }
 
     // 2. Named pipe setup removed as per WinchesterMQ-only routing rule. All inputs flow through the Auncient VM/WMQ.
@@ -928,7 +1005,7 @@ async function main() {
     console.log("[PUPPETEER] Launching system Google Chrome...");
     const browser = await puppeteer.launch({
         executablePath: "/usr/bin/google-chrome",
-        headless: true,
+        headless: "new",
         dumpio: true,
         ignoreDefaultArgs: ['--mute-audio'],
         args: [
@@ -938,26 +1015,74 @@ async function main() {
             "--autoplay-policy=no-user-gesture-required",
             "--disable-blink-features=AutomationControlled",
             "--disable-accelerated-video-decode",
+            "--class=AtropaRootedBrowser",
+            "--app=about:blank",
             `--user-data-dir=${path.join(__dirname, "../tmp/puppeteer_chrome_profile_" + Date.now())}`
         ]
     });
+    trackPid(browser.process().pid, "chrome: " + (isYouTube ? "youtube" : "dashboard"));
     
     async function cleanup() {
         console.log("[PUPPETEER] SIGINT/SIGTERM received. Cleaning up and closing browser...");
         active = false;
         try {
+            untrackPid(browser.process().pid);
             await browser.close();
         } catch (err) {}
+        untrackPid(process.pid);
         process.exit(0);
     }
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
 
-    page = await browser.newPage();
+    const pages = await browser.pages();
+    console.log(`[PUPPETEER] Total pages found: ${pages.length}`);
+    for (let i = 0; i < pages.length; i++) {
+        console.log(`[PUPPETEER] page[${i}]: URL=${pages[i].url()}`);
+    }
+    const targets = browser.targets();
+    for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        console.log(`[PUPPETEER] target[${i}]: type=${t.type()} url=${t.url()}`);
+    }
+    
+    // We want to keep the app mode window and close the other.
+    // Let's close the standard browser tab (which is usually the first default page created by puppeteer, pages[0])
+    // and keep the app mode page (pages[1] or the page representing the target).
+    if (pages.length > 1) {
+        console.log("[PUPPETEER] Multiple pages detected. Closing pages[0] and keeping pages[1]");
+        await pages[0].close().catch(() => {});
+        page = pages[1];
+    } else {
+        page = pages[0] || (await browser.newPage());
+    }
+
+    // Expose clipboard syncing function to headless browser context
+    await page.exposeFunction('syncHostClipboard', (text) => {
+        console.log("[PUPPETEER] Syncing clipboard text to host:", text);
+        const { spawn } = require('child_process');
+        const py = spawn("python3", [path.join(__dirname, "set_clipboard.py")], {
+            env: {
+                ...process.env,
+                WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY || "wayland-1"
+            }
+        });
+        py.stdin.write(text);
+        py.stdin.end();
+    }).catch(() => {});
+
     await page.evaluateOnNewDocument(() => {
         try {
             delete navigator.__proto__.webdriver;
         } catch (e) {}
+
+        // Listen for selection copies inside the headless context and sync to host
+        document.addEventListener('copy', () => {
+            const selectedText = window.getSelection().toString();
+            if (selectedText) {
+                window.syncHostClipboard(selectedText);
+            }
+        });
     });
     page.on('pageerror', err => {
         console.error('[PUPPETEER PAGE ERROR]', err.stack || err.message);
@@ -976,15 +1101,20 @@ async function main() {
             console.error(`[PUPPETEER REQUEST FAILED] Type: ${type} | URL: ${request.url()} | Error: ${errorText}`);
         }
     });
+    page.on('response', response => {
+        if (response.status() === 404) {
+            console.error(`[PUPPETEER 404 ERROR] URL: ${response.url()}`);
+        }
+    });
     await page.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 ROOTED Browser/1.0");
-    await page.setViewport({ width: 1024, height: 768 });
+    if (isYouTube) {
+        await page.setViewport({ width: 800, height: 600 });
+    } else {
+        await page.setViewport({ width: 1024, height: 768 });
+    }
 
     let active = true;
-    if (presenter) {
-        presenter.on("exit", (code, signal) => {
-            console.log(`[PRESENTER] Exited with code=${code}, signal=${signal}. Presenter window closed, keeping browser active for dashboard.`);
-        });
-    }
+
 
     // Screenshot streaming loop will be declared and run after page load to prevent early crashes.
     
@@ -1016,6 +1146,9 @@ async function main() {
         try {
             if (!isYouTube) {
                 const currentUrl = page.url();
+                if (currentUrl === 'about:blank' || !currentUrl) {
+                    return; // Skip check if we haven't navigated yet
+                }
                 const isLoaded = await page.evaluate((currUrl) => {
                     if (currUrl.includes("atropa_splash.html")) {
                         return !!document.getElementById("bearCanvas") || !!document.getElementById("emblemContainer");
@@ -1188,9 +1321,21 @@ async function main() {
                 }
             }
         }
-    }, 1000);
+    }, 8000);
     
     try {
+        if (url.includes("atropa_splash.html")) {
+            const params = [];
+            if (evmConnectionTime !== null) params.push(`evmConn=${evmConnectionTime}`);
+            if (evmBalanceTime !== null) params.push(`evmBal=${evmBalanceTime}`);
+            if (evmYulCompileTime !== null) params.push(`evmYul=${evmYulCompileTime}`);
+            if (zmmDysnomiaTime !== null) params.push(`zmmDys=${zmmDysnomiaTime}`);
+            if (zmmYulCompileTime !== null) params.push(`zmmYul=${zmmYulCompileTime}`);
+            if (params.length > 0) {
+                const separator = url.includes("?") ? "&" : "?";
+                url = `${url}${separator}${params.join("&")}`;
+            }
+        }
         console.log(`[PUPPETEER] Navigating directly to target URL: ${url}...`);
         await page.goto(url, { waitUntil: "networkidle2" });
         console.log("[PUPPETEER] Navigation complete.");
@@ -1392,20 +1537,15 @@ async function main() {
                 await page.waitForSelector(searchInputSelector, { timeout: 10000 });
                 const existingText = await page.$eval(searchInputSelector, el => el.value).catch(() => "");
                 console.log(`[PUPPETEER] Existing search query text: "${existingText}"`);
-                if (existingText.trim().toLowerCase() !== "atropa") {
-                    console.log("[PUPPETEER] Clearing search input and typing 'Atropa'...");
+                if (existingText.trim().toLowerCase() !== "dysnomia") {
+                    console.log("[PUPPETEER] Clearing search input and typing 'Dysnomia'...");
                     await page.$eval(searchInputSelector, el => el.value = '');
                     await page.focus(searchInputSelector);
-                    await page.type(searchInputSelector, "Atropa", { delay: 150 });
+                    await page.type(searchInputSelector, "Dysnomia", { delay: 150 });
                 } else {
-                    console.log("[PUPPETEER] Search input already contains 'Atropa'. Skipping typing.");
+                    console.log("[PUPPETEER] Search input already contains 'Dysnomia'. Skipping typing.");
                 }
-                console.log("[PUPPETEER] Performing search by direct navigation to filtered results...");
-                // Directly navigate to the pre-filtered results page to load faster, bypassing filters dropdown
-                const filteredSearchUrl = "https://www.youtube.com/results?search_query=Atropa&sp=EgIIAw%253D%253D";
-                await page.goto(filteredSearchUrl, { waitUntil: "networkidle2" });
-                console.log("[PUPPETEER] Jumped directly to filtered search results.");
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.log("[PUPPETEER] Search text replaced. Bypassing search query navigation as requested.");
             } else {
                 console.log("[PUPPETEER] Custom query URL detected. Bypassing automatic Atropa search flow.");
             }

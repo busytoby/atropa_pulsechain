@@ -17,6 +17,10 @@
 #include <linux/input.h>
 #include <time.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <poll.h>
 
 static char g_graphics_address[43] = "0xfeF51EAFacaB42889221438E87E228aABBd9E7d8"; // Default deployed graphicsSystem
 static char g_music_address[43]    = "0x8F1ACB68fF904244322E5ecCa636F8Db4C635Db6";
@@ -85,61 +89,55 @@ static void load_dynamic_config_addresses(void) {
 }
 
 static uint64_t get_register_val(const char *contract_addr, uint64_t register_addr) {
-    if (contract_addr && g_cpu_address[0] != '\0' && strcmp(contract_addr, g_cpu_address) == 0) {
-        char data_hex[128];
-        snprintf(data_hex, sizeof(data_hex), "0x7861d269%064lx", register_addr);
-        char out_hex[512];
-        const char *from_address = g_caller_address;
-        if (tsfi_pulse_rpc_call_from(contract_addr, from_address, data_hex, out_hex, sizeof(out_hex))) {
-            return strtoull(out_hex, NULL, 16);
-        }
-    } else {
-        char slot_hex[64];
-        snprintf(slot_hex, sizeof(slot_hex), "0x%lx", register_addr);
-        char out_hex[128];
-        if (tsfi_pulse_rpc_get_storage_at(contract_addr, slot_hex, out_hex, sizeof(out_hex))) {
-            return strtoull(out_hex, NULL, 16);
-        }
-    }
-    // Fallback to internal Yul thunk memory
+    (void)contract_addr;
     return lau_yul_thunk_sload(register_addr);
 }
 
 static bool get_register_range(const char *contract_addr, uint64_t start_addr, uint64_t length, uint64_t *out_vals) {
-    if (contract_addr && g_cpu_address[0] != '\0' && strcmp(contract_addr, g_cpu_address) == 0) {
-        char data_hex[256];
-        // peekRange selector is 0xedf34927
-        snprintf(data_hex, sizeof(data_hex), "0xedf34927%064lx%064lx", start_addr, length);
-        
-        // Output buffer size calculation: 64 bytes header + length * 32 bytes elements
-        size_t hex_size = (64 + length * 32) * 2 + 3;
-        char *out_hex = malloc(hex_size);
-        if (!out_hex) return false;
-        
-        const char *from_address = g_caller_address;
-        bool success = tsfi_pulse_rpc_call_from(contract_addr, from_address, data_hex, out_hex, hex_size);
-        if (success) {
-            // Hex string starts with 0x. Array elements start at index 2 + 64 (offset) + 64 (length) = 130
-            char *ptr = out_hex + 130;
-            for (uint64_t i = 0; i < length; i++) {
-                char temp[65];
-                memcpy(temp, ptr + i * 64, 64);
-                temp[64] = '\0';
-                out_vals[i] = strtoull(temp, NULL, 16);
-            }
-            free(out_hex);
-            return true;
-        }
-        free(out_hex);
-    }
-    // Fallback: loop and read individually
+    (void)contract_addr;
     for (uint64_t i = 0; i < length; i++) {
-        out_vals[i] = get_register_val(contract_addr, start_addr + i);
+        out_vals[i] = lau_yul_thunk_sload(start_addr + i);
     }
     return true;
 }
 
 static void blit_doodle_canvas(StagingBuffer *sb, const char *addr_src) {
+    int start_x = 40;
+    int start_y = 60;
+
+    // Direct memory-mapped raw frame integration
+    static int raw_fd = -1;
+    static uint8_t *raw_map = NULL;
+    static bool raw_checked = false;
+    if (!raw_checked) {
+        raw_fd = open("/dev/shm/atropa_raw_frame.bin", O_RDONLY);
+        if (raw_fd != -1) {
+            struct stat st;
+            if (fstat(raw_fd, &st) == 0 && st.st_size >= 256000) {
+                raw_map = mmap(NULL, 256000, PROT_READ, MAP_SHARED, raw_fd, 0);
+            }
+        }
+        raw_checked = true;
+    }
+    if (raw_map && raw_map != MAP_FAILED) {
+        uint32_t *px = (uint32_t *)sb->data;
+        for (int y = 0; y < 200; y++) {
+            for (int x = 0; x < 320; x++) {
+                int src_idx = (y * 320 + x) * 4;
+                int dst_x = start_x + x;
+                int dst_y = start_y + y;
+                if (dst_x >= 0 && dst_x < (int)sb->width && dst_y >= 0 && dst_y < (int)sb->height) {
+                    uint8_t r = raw_map[src_idx];
+                    uint8_t g = raw_map[src_idx + 1];
+                    uint8_t b = raw_map[src_idx + 2];
+                    uint8_t a = raw_map[src_idx + 3];
+                    px[dst_y * sb->width + dst_x] = (a << 24) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+        return; // Skip normal doodle blitting
+    }
+
     uint64_t d011 = get_register_val(g_graphics_address, 53265);
     uint64_t d016 = get_register_val(g_graphics_address, 53270);
     bool bmm = (d011 & 0x20) != 0;
@@ -151,9 +149,6 @@ static void blit_doodle_canvas(StagingBuffer *sb, const char *addr_src) {
         0xFFDD8800, 0xFF664400, 0xFFFF7777, 0xFF333333,
         0xFF777777, 0xFFa0ffa0, 0xFF0088FF, 0xFFbbbbbb
     };
-
-    int start_x = 40;
-    int start_y = 60;
 
     // Default screen colors
     uint32_t border_color = c64_palette[get_register_val(g_graphics_address, 53280) & 0xF];
@@ -239,11 +234,14 @@ static void blit_doodle_canvas(StagingBuffer *sb, const char *addr_src) {
 static VulkanSystem *logic_sys = NULL;
 
 void set_vulkan_system(VulkanSystem *s) {
+    fprintf(stderr, "[DEBUG_VULKAN] set_vulkan_system(%p) called. Function addr: %p, Variable addr: %p\n", (void*)s, (void*)set_vulkan_system, (void*)&logic_sys);
     logic_sys = s;
 }
 
 VulkanSystem* get_vulkan_system(void) {
-    return logic_sys;
+    VulkanSystem *res = logic_sys;
+    fprintf(stderr, "[DEBUG_VULKAN] get_vulkan_system() -> %p. Function addr: %p, Variable addr: %p\n", (void*)res, (void*)get_vulkan_system, (void*)&logic_sys);
+    return res;
 }
 
 // --- Logic Implementation ---
@@ -261,6 +259,7 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
         lau_yul_thunk_init("graphicsSystem", "../solidity/bin/graphicsSystem.yul", 0x2);
         lau_yul_thunk_init("musicMaker", "../solidity/bin/musicMaker.yul", 0x3);
         lau_yul_thunk_init("diskSystem", "../solidity/bin/diskSystem.yul", 0x4);
+        lau_yul_thunk_init("MicroUI", "../solidity/bin/microui.yul", 0x100);
         yul_thunk_initialized = true;
 
         // Initialize Sprite positions in local EVM storage
@@ -501,6 +500,89 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
     draw_debug_text(sb, 172, 158, reg_str, 0xFFFFFFFF, true);
     snprintf(reg_str, sizeof(reg_str), "SR:%02X SP:%02X JIFS:%lu", sr_reg, sp_reg, (unsigned long)jiffies);
     draw_debug_text(sb, 172, 170, reg_str, 0xFFFFFFFF, true);
+
+    // --- Embedded MicroUI (Immediate Mode GUI Engine in EVM/Yul) Execution ---
+    // 1. Update Input State
+    uint8_t cd_input[100] = {0};
+    cd_input[0] = 0x8b; cd_input[1] = 0x5c; cd_input[2] = 0x90; cd_input[3] = 0xd2; // selector
+    uint16_t mx = s->mouse_x;
+    cd_input[34] = (mx >> 8) & 0xFF;
+    cd_input[35] = mx & 0xFF;
+    uint16_t my = s->mouse_y;
+    cd_input[66] = (my >> 8) & 0xFF;
+    cd_input[67] = my & 0xFF;
+    uint8_t btn_state = s->mouse_down ? 1 : 0;
+    cd_input[99] = btn_state;
+
+    uint8_t ret_input[32] = {0};
+    size_t ret_input_len = sizeof(ret_input);
+    lau_yul_thunk_execute("MicroUI", cd_input, sizeof(cd_input), ret_input, &ret_input_len);
+
+    // 2. Clear Button
+    uint8_t cd_btn1[132] = {0};
+    cd_btn1[0] = 0xb5; cd_btn1[1] = 0xba; cd_btn1[2] = 0x0c; cd_btn1[3] = 0x68; // selector
+    cd_btn1[35] = 10; // X=10
+    cd_btn1[66] = 0x01; cd_btn1[67] = 0x04; // Y=260
+    cd_btn1[99] = 80; // W=80
+    cd_btn1[131] = 25; // H=25
+
+    uint8_t ret_btn1[32] = {0};
+    size_t ret_btn1_len = sizeof(ret_btn1);
+    lau_yul_thunk_execute("MicroUI", cd_btn1, sizeof(cd_btn1), ret_btn1, &ret_btn1_len);
+    bool btn1_clicked = (ret_btn1[31] != 0);
+
+    // 3. Invert Button
+    uint8_t cd_btn2[132] = {0};
+    cd_btn2[0] = 0xb5; cd_btn2[1] = 0xba; cd_btn2[2] = 0x0c; cd_btn2[3] = 0x68; // selector
+    cd_btn2[35] = 100; // X=100
+    cd_btn2[66] = 0x01; cd_btn2[67] = 0x04; // Y=260
+    cd_btn2[99] = 80; // W=80
+    cd_btn2[131] = 25; // H=25
+
+    uint8_t ret_btn2[32] = {0};
+    size_t ret_btn2_len = sizeof(ret_btn2);
+    lau_yul_thunk_execute("MicroUI", cd_btn2, sizeof(cd_btn2), ret_btn2, &ret_btn2_len);
+    bool btn2_clicked = (ret_btn2[31] != 0);
+
+    // 4. Ingest draw calls from Yul log events
+    int ui_logs = lau_yul_thunk_get_log_count();
+    for (int k = 0; k < ui_logs; k++) {
+        uint64_t log_addr = 0;
+        int num_topics = 0;
+        u256_t topics[4] = {0};
+        uint8_t log_data[2048] = {0};
+        size_t log_data_size = sizeof(log_data);
+        if (lau_yul_thunk_get_log(k, &log_addr, &num_topics, topics, log_data, &log_data_size)) {
+            if (num_topics > 0 && topics[0].d[3] == 0x9e7a02c89e7a02c8ULL && topics[0].d[2] == 0x9e7a02c89e7a02c8ULL) {
+                uint16_t rx = (log_data[30] << 8) | log_data[31];
+                uint16_t ry = (log_data[62] << 8) | log_data[63];
+                uint16_t rw = (log_data[94] << 8) | log_data[95];
+                uint16_t rh = (log_data[126] << 8) | log_data[127];
+                uint32_t rcol = (log_data[156] << 24) | (log_data[157] << 16) | (log_data[158] << 8) | log_data[159];
+                if ((rcol & 0xFF000000) == 0) rcol |= 0xFF000000;
+                draw_rounded_rect(sb, rx, ry, rw, rh, 2, rcol);
+            }
+        }
+    }
+
+    // 5. Draw button label texts on top
+    draw_debug_text(sb, 25, 267, "CLEAR", 0xFFFFFFFF, true);
+    draw_debug_text(sb, 112, 267, "INVERT", 0xFFFFFFFF, true);
+
+    // 6. Action handlers
+    if (btn1_clicked) {
+        fprintf(stderr, "[MicroUI] Clear button clicked! Clearing Doodle canvas...\n");
+        for (int k = 0; k < 8192; k++) {
+            lau_yul_thunk_sstore(8192 + k, 0);
+        }
+    }
+    if (btn2_clicked) {
+        fprintf(stderr, "[MicroUI] Invert button clicked! Inverting Doodle canvas...\n");
+        for (int k = 0; k < 8192; k++) {
+            uint64_t current = lau_yul_thunk_sload(8192 + k);
+            lau_yul_thunk_sstore(8192 + k, (~current) & 0xFF);
+        }
+    }
 }
 
 void vulkan_logic_epoch(int *ver) {
@@ -529,8 +611,19 @@ void vulkan_logic_epoch(int *ver) {
     }
     
     if (logic_sys->display) {
+        struct pollfd fds[1] = {
+            { wl_display_get_fd(logic_sys->display), POLLIN, 0 }
+        };
+
+        lau_unseal_object(logic_sys);
+
         wl_display_dispatch_pending(logic_sys->display);
         wl_display_flush(logic_sys->display);
+        if (poll(fds, 1, 0) > 0) {
+            wl_display_dispatch(logic_sys->display);
+        }
+
+        lau_seal_object(logic_sys);
     }
     
     if (logic_sys->vk && (logic_sys->vk->swapchain || logic_sys->dma_image)) {
@@ -563,6 +656,7 @@ bool vulkan_logic_state(void *obj) {
 
 void vulkan_logic_directive(int *cnt, char *dir) { 
     (void)cnt; 
+    printf("[TSFI_VULKAN_DIRECTIVE] Received: \"%s\"\n", dir ? dir : "NULL"); fflush(stdout);
 
     if (dir && strcmp(dir, "TIME") == 0) {
         struct timespec ts;
@@ -750,20 +844,20 @@ void vulkan_logic_directive(int *cnt, char *dir) {
             if (sscanf(dir + 16, "%d %d", &x, &y) == 2) {
                 logic_sys->mouse_x = x;
                 logic_sys->mouse_y = y;
-                printf("[TSFI_VULKAN] Injecting Mouse Move: %d, %d\n", x, y);
+                printf("[TSFI_VULKAN] Injecting Mouse Move: %d, %d\n", x, y); fflush(stdout);
             }
         }
     }
     else if (dir && strcmp(dir, "TEST_MOUSE_CLICK") == 0) {
         if (logic_sys) {
             logic_sys->mouse_down = true;
-            printf("[TSFI_VULKAN] Injecting Mouse Click (Down)\n");
+            printf("[TSFI_VULKAN] Injecting Mouse Click (Down)\n"); fflush(stdout);
         }
     }
     else if (dir && strcmp(dir, "TEST_MOUSE_RELEASE") == 0) {
         if (logic_sys) {
             logic_sys->mouse_down = false;
-            printf("[TSFI_VULKAN] Injecting Mouse Click (Up)\n");
+            printf("[TSFI_VULKAN] Injecting Mouse Click (Up)\n"); fflush(stdout);
         }
     }
     else {

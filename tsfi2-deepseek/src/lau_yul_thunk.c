@@ -832,10 +832,34 @@ static bool is_jumpdest(const uint8_t *bytecode, size_t size, uint64_t pc) {
 
 static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+static void sync_raw_frame_to_yul_memory(uint8_t *memory) {
+    static int raw_fd = -1;
+    static uint8_t *raw_map = NULL;
+    static bool raw_checked = false;
+    if (!raw_checked) {
+        raw_fd = open("/dev/shm/atropa_raw_frame.bin", O_RDONLY);
+        if (raw_fd != -1) {
+            struct stat st;
+            if (fstat(raw_fd, &st) == 0 && st.st_size >= 256000) {
+                raw_map = mmap(NULL, 256000, PROT_READ, MAP_SHARED, raw_fd, 0);
+            }
+        }
+        raw_checked = true;
+    }
+    if (raw_map && raw_map != MAP_FAILED) {
+        memcpy(memory + 131072, raw_map, 256000);
+    }
+}
+
 // Simulated execution of EVM bytecode
 static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, const char *name) {
     ctx->stack_ptr = 0;
     memset(ctx->memory, 0, sizeof(ctx->memory));
+    sync_raw_frame_to_yul_memory(ctx->memory);
     ctx->reverted = false;
     ctx->return_size = 0;
     static int trace_enabled = -1;
@@ -1853,7 +1877,7 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
                     }
                     if (strstr(cmd_str, "MM") || strstr(cmd_str, "MD") || strstr(cmd_str, "MU") ||
                         strstr(cmd_str, "MS") || strstr(cmd_str, "KD") || strstr(cmd_str, "KU") ||
-                        strstr(cmd_str, "MOUSE") || strstr(cmd_str, "KEY")) {
+                        strstr(cmd_str, "MO") || strstr(cmd_str, "MOUSE") || strstr(cmd_str, "KEY")) {
                         is_io = true;
                     }
                 }

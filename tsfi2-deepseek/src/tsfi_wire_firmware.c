@@ -122,8 +122,22 @@ static void cell_mem_reclaim_impl(void *ptr, size_t size) {
 static int cell_hardware_poll_impl(int timeout_ms, char *buf, size_t max) {
     struct pollfd pfd = { STDIN_FILENO, POLLIN, 0 };
     int ret = poll(&pfd, 1, timeout_ms);
-    if (ret > 0 && (pfd.revents & POLLIN)) {
-        if (fgets(buf, (int)max, stdin)) return 0;
+    if (ret < 0) {
+        if (errno != EINTR) {
+            fprintf(stderr, "[POLL_DEBUG] poll error: %d (errno=%d: %s)\n", ret, errno, strerror(errno));
+        }
+    } else if (ret > 0) {
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            fprintf(stderr, "[POLL_DEBUG] poll socket state: revents=0x%x\n", pfd.revents);
+        }
+        if (pfd.revents & POLLIN) {
+            if (fgets(buf, (int)max, stdin)) {
+                fprintf(stderr, "[POLL_DEBUG] Read stdin: \"%s\"\n", buf);
+                return 0;
+            } else {
+                fprintf(stderr, "[POLL_DEBUG] fgets returned NULL. feof=%d ferror=%d\n", feof(stdin), ferror(stdin));
+            }
+        }
     }
     return -1;
 }
