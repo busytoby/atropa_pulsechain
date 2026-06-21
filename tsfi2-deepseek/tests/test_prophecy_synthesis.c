@@ -5,9 +5,12 @@
 #include <time.h>
 #include "tsfi_prophecy.h"
 #include "tsfi_elektuur_issue25.h"
+#include "tsfi_pulsechain_rpc.h"
+#include "tsfi_wire_firmware.h"
 
 int main() {
     printf("=== TSFi2 Inverse Prophecy Synthesis Verification ===\n");
+    tsfi_wire_firmware_init();
 
     const char *db_path = "prophecy_response.bin";
     
@@ -79,6 +82,7 @@ int main() {
     assert(trans_max > trans_min); // ensures the output is modulated/dynamic
 
     printf("[SUCCESS] Inverse Prophecy Synthesis verified successfully!\n");
+    tsfi_thunk_publish_mq("M:PROPHECY_SYNTH_COMPLETE");
     return 0;
 }
 
