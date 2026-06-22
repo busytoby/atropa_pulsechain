@@ -509,6 +509,48 @@
                 </div>
             </div>
 
+            <!-- Synthesizer Painting Tools -->
+            <div class="control-panel-card">
+                <span class="panel-title">Visual Synth Painter</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Brush Style</span>
+                    </div>
+                    <select id="brushStyle" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none; margin-bottom: 10px;">
+                        <option value="glow">Holographic Glow</option>
+                        <option value="spray">Attractor Particle Spray</option>
+                        <option value="ribbon">3D Quaternion Ribbon</option>
+                    </select>
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Brush Color</span>
+                    </div>
+                    <select id="brushColor" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none; margin-bottom: 10px;">
+                        <option value="gold">Vintage Gold</option>
+                        <option value="cyan">Electric Cyan</option>
+                        <option value="magenta">Acid Magenta</option>
+                    </select>
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Brush Width</span>
+                        <span id="valBrushWidth" class="slider-val">4px</span>
+                    </div>
+                    <input type="range" id="sliderBrushWidth" min="1" max="25" step="1" value="4" class="param-slider" style="margin-bottom: 10px;">
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Sound Mapping</span>
+                    </div>
+                    <select id="soundMapping" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none;">
+                        <option value="pitch">X: Pitch | Y: Cutoff</option>
+                        <option value="excite">Y: Mode Exciter (M1-M12)</option>
+                        <option value="mute">Muted</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Manual Exciters -->
             <div class="control-panel-card">
                 <span class="panel-title">Manual Spectral Exciters</span>
@@ -1355,6 +1397,113 @@
                 ctx.shadowBlur = 0;
             }
 
+            // --- DRAW & UPDATE VISUAL SYNTH PAINT STROKES ---
+            ctx.save();
+            
+            // 1. Draw painted stroke paths
+            paintStrokes.forEach((stroke) => {
+                stroke.age++;
+                if (stroke.points.length === 0) return;
+
+                const opacity = 1.0 - (stroke.age / stroke.maxAge);
+                if (opacity <= 0) return;
+
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                
+                if (stroke.type === "glow") {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = stroke.color;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                if (stroke.type === "ribbon") {
+                    // 3D Quaternion Ribbon style: rotated dynamically by current unit quaternion
+                    ctx.beginPath();
+                    stroke.points.forEach((pt, ptIdx) => {
+                        const offX = pt.ox - cx0;
+                        const offY = cy0 - pt.oy;
+                        const offZ = Math.sqrt(Math.max(0, R_sphere*R_sphere - offX*offX - offY*offY));
+                        
+                        const projX = r00 * offX + r01 * offY + r02 * offZ;
+                        const projY = r10 * offX + r11 * offY + r12 * offZ;
+                        
+                        const sx = cx0 + projX;
+                        const sy = cy0 - projY;
+
+                        if (ptIdx === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    });
+                    
+                    if (stroke.color === "#d4af37") ctx.strokeStyle = `rgba(212, 175, 55, ${opacity * 0.75})`;
+                    else if (stroke.color === "#00f2fe") ctx.strokeStyle = `rgba(0, 242, 254, ${opacity * 0.75})`;
+                    else if (stroke.color === "#ff007f") ctx.strokeStyle = `rgba(255, 0, 127, ${opacity * 0.75})`;
+                    
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    stroke.points.forEach((pt, ptIdx) => {
+                        if (ptIdx === 0) ctx.moveTo(pt.x, pt.y);
+                        else ctx.lineTo(pt.x, pt.y);
+                    });
+                    
+                    if (stroke.color === "#d4af37") ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
+                    else if (stroke.color === "#00f2fe") ctx.strokeStyle = `rgba(0, 242, 254, ${opacity})`;
+                    else if (stroke.color === "#ff007f") ctx.strokeStyle = `rgba(255, 0, 127, ${opacity})`;
+                    
+                    ctx.stroke();
+                }
+            });
+
+            // Filter out old strokes
+            for (let i = paintStrokes.length - 1; i >= 0; i--) {
+                if (paintStrokes[i].age >= paintStrokes[i].maxAge) {
+                    paintStrokes.splice(i, 1);
+                }
+            }
+
+            // 2. Draw and update attractor spray particles
+            paintParticles.forEach((p) => {
+                p.age++;
+                
+                const dx = cx0 - p.x;
+                const dy = cy0 - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist > 10) {
+                    const gravity = (0.22 + Math.abs(waveQ[2]) * 0.5);
+                    p.vx += (dx / dist) * gravity;
+                    p.vy += (dy / dist) * gravity;
+                }
+                
+                p.vx *= 0.97;
+                p.vy *= 0.97;
+                p.x += p.vx;
+                p.y += p.vy;
+
+                const opacity = 1.0 - (p.age / p.maxAge);
+                
+                if (p.color === "#d4af37") ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
+                else if (p.color === "#00f2fe") ctx.fillStyle = `rgba(0, 242, 254, ${opacity})`;
+                else if (p.color === "#ff007f") ctx.fillStyle = `rgba(255, 0, 127, ${opacity})`;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Filter out old particles
+            for (let i = paintParticles.length - 1; i >= 0; i--) {
+                if (paintParticles[i].age >= paintParticles[i].maxAge || paintParticles[i].x < sidebarWidth) {
+                    paintParticles.splice(i, 1);
+                }
+            }
+
+            ctx.restore();
+
             // Overlay textual HUD quaternion outputs
             ctx.save();
             ctx.fillStyle = "#d4af37";
@@ -1460,6 +1609,220 @@
                 }, step.delay + 220);
             });
         });
+
+        // Painting variables
+        let isPainting = false;
+        let paintColor = "#d4af37";
+        let paintWidth = 4;
+        let activePaintVoice = null;
+        const paintStrokes = [];
+        const paintParticles = [];
+
+        // Slider and selectors listener for painting tools
+        const brushStyleEl = document.getElementById("brushStyle");
+        const brushColorEl = document.getElementById("brushColor");
+        const sliderBrushWidth = document.getElementById("sliderBrushWidth");
+        const valBrushWidth = document.getElementById("valBrushWidth");
+        const soundMappingEl = document.getElementById("soundMapping");
+
+        sliderBrushWidth.addEventListener("input", (e) => {
+            paintWidth = parseInt(e.target.value);
+            valBrushWidth.innerText = paintWidth + "px";
+        });
+
+        function getBrushColorHex() {
+            const val = brushColorEl.value;
+            if (val === "gold") return "#d4af37";
+            if (val === "cyan") return "#00f2fe";
+            if (val === "magenta") return "#ff007f";
+            return "#d4af37";
+        }
+
+        // Pointer event listeners on canvas for visual/audio painting
+        canvas.addEventListener("pointerdown", (e) => {
+            if (!toggle.checked) return;
+            initAudio();
+            isPainting = true;
+            
+            const rect = canvas.getBoundingClientRect();
+            const px = (e.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
+            const py = (e.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
+
+            if (px < sidebarWidth) return;
+
+            const colorHex = getBrushColorHex();
+            const brushType = brushStyleEl.value;
+
+            paintStrokes.push({
+                points: [{ x: px, y: py, ox: px, oy: py }],
+                color: colorHex,
+                width: paintWidth,
+                type: brushType,
+                age: 0,
+                maxAge: brushType === "ribbon" ? 180 : 90
+            });
+
+            triggerPaintSound(px, py);
+        });
+
+        canvas.addEventListener("pointermove", (e) => {
+            if (!isPainting || !toggle.checked) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const px = (e.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
+            const py = (e.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
+
+            if (px < sidebarWidth) {
+                stopPaintSound();
+                return;
+            }
+
+            const currentStroke = paintStrokes[paintStrokes.length - 1];
+            if (currentStroke) {
+                if (currentStroke.points.length < 150) {
+                    currentStroke.points.push({ x: px, y: py, ox: px, oy: py });
+                }
+            }
+
+            // Excite particle spray brush
+            if (brushStyleEl.value === "spray") {
+                const colorHex = getBrushColorHex();
+                for (let i = 0; i < 4; i++) {
+                    paintParticles.push({
+                        x: px,
+                        y: py,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        color: colorHex,
+                        alpha: 1.0,
+                        size: Math.random() * paintWidth + 1,
+                        age: 0,
+                        maxAge: 40 + Math.random() * 30
+                    });
+                }
+            }
+
+            updatePaintSound(px, py);
+        });
+
+        canvas.addEventListener("pointerup", () => {
+            isPainting = false;
+            stopPaintSound();
+        });
+
+        canvas.addEventListener("pointercancel", () => {
+            isPainting = false;
+            stopPaintSound();
+        });
+
+        function triggerPaintSound(px, py) {
+            const mapping = soundMappingEl.value;
+            if (mapping === "mute") return;
+
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const normalizedX = Math.min(1.0, Math.max(0.0, (px - sidebarWidth) / viewportW));
+            const normalizedY = Math.min(1.0, Math.max(0.0, py / (canvas.height / window.devicePixelRatio)));
+
+            if (mapping === "pitch") {
+                const freq = 110 + normalizedX * 936;
+                filterCutoffVal = 200 + (1.0 - normalizedY) * 4300;
+                
+                document.getElementById("sliderCutoff").value = Math.round(filterCutoffVal);
+                document.getElementById("valCutoff").innerText = Math.round(filterCutoffVal) + " Hz";
+                if (mainFilter) {
+                    mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
+                }
+
+                if (audioCtx) {
+                    stopPaintSound();
+                    
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    osc1.type = "triangle";
+                    osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    osc2.type = "sawtooth";
+                    const detuneFactor = Math.pow(2, detuneCents / 1200);
+                    osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+
+                    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.05);
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    if (mainFilter) {
+                        gainNode.connect(mainFilter);
+                    } else {
+                        gainNode.connect(audioCtx.destination);
+                    }
+
+                    osc1.start();
+                    osc2.start();
+
+                    activePaintVoice = { osc1, osc2, gainNode, freq };
+                }
+            } else if (mapping === "excite") {
+                const modeIdx = Math.floor(normalizedY * waveM);
+                exciteSpectralMode(modeIdx, 8.0);
+                
+                const modeFreqs = [
+                    130.81, 146.83, 164.81, 196.00, 220.00, 261.63,
+                    293.66, 329.63, 392.00, 440.00, 523.25, 587.33
+                ];
+                const modeNames = ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5"];
+                playLocalAndBroadcastNote(modeFreqs[modeIdx], modeNames[modeIdx]);
+            }
+        }
+
+        function updatePaintSound(px, py) {
+            const mapping = soundMappingEl.value;
+            if (mapping === "mute" || !activePaintVoice) {
+                if (mapping === "excite") {
+                    const viewportH = canvas.height / window.devicePixelRatio;
+                    const normalizedY = Math.min(1.0, Math.max(0.0, py / viewportH));
+                    const modeIdx = Math.floor(normalizedY * waveM);
+                    exciteSpectralMode(modeIdx, 1.5);
+                }
+                return;
+            }
+
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const normalizedX = Math.min(1.0, Math.max(0.0, (px - sidebarWidth) / viewportW));
+            const normalizedY = Math.min(1.0, Math.max(0.0, py / (canvas.height / window.devicePixelRatio)));
+
+            if (mapping === "pitch" && activePaintVoice) {
+                const freq = 110 + normalizedX * 936;
+                activePaintVoice.osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                const detuneFactor = Math.pow(2, detuneCents / 1200);
+                activePaintVoice.osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+                
+                filterCutoffVal = 200 + (1.0 - normalizedY) * 4300;
+                if (mainFilter) {
+                    mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
+                }
+            }
+        }
+
+        function stopPaintSound() {
+            if (activePaintVoice) {
+                try {
+                    const voice = activePaintVoice;
+                    const now = audioCtx.currentTime;
+                    voice.gainNode.gain.cancelScheduledValues(now);
+                    voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
+                    voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    
+                    setTimeout(() => {
+                        try { voice.osc1.stop(); } catch(e) {}
+                        try { voice.osc2.stop(); } catch(e) {}
+                    }, 180);
+                } catch (e) {}
+                activePaintVoice = null;
+            }
+        }
 
         // Unlock audio context on body click
         document.body.addEventListener("click", () => {
