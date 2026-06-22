@@ -333,6 +333,20 @@
 
         async function fetchLogs() {
             try {
+                const resLocal = await fetch("/api/dilemma-log");
+                if (resLocal.ok) {
+                    const localData = await resLocal.json();
+                    if (Array.isArray(localData) && localData.length > 0) {
+                        logs = localData;
+                        updateLogsUI();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to fetch from local /api/dilemma-log, falling back...", e);
+            }
+
+            try {
                 const res = await fetch("/api/zmm-exec", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -349,8 +363,20 @@
             }
         }
 
-         const tokenAccumulators = {};
-         const chatAccumulators = {};
+         const tokenAccumulators = {
+             "WPLS": { symbol: "WPLS", sent: 0, recv: 0, count: 0, price: 0.000067 },
+             "USDC": { symbol: "USDC", sent: 0, recv: 0, count: 0, price: 1.0 },
+             "PLSX": { symbol: "PLSX", sent: 0, recv: 0, count: 0, price: 0.000035 },
+             "ATROPA": { symbol: "ATROPA", sent: 0, recv: 0, count: 0, price: 1.25 }
+         };
+         
+         const chatAccumulators = {
+             "Void #0": { name: "Void #0", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
+             "Qing #1": { name: "Qing #1", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
+             "Qing #2": { name: "Qing #2", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
+             "Qing #3": { name: "Qing #3", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
+             "Qing #4": { name: "Qing #4", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" }
+         };
          const ignoredChats = new Set(JSON.parse(localStorage.getItem("ignoredChats") || "[]"));
 
          window.toggleIgnoreChat = function(roomName) {
@@ -659,6 +685,8 @@
         }
 
         // Poll for logs every 2 seconds
+        renderAccumulators();
+        renderChatAccumulators();
         setInterval(fetchLogs, 2000);
         fetchLogs();
         animateGait();
