@@ -141,6 +141,28 @@ object "WinchesterMQ" {
                 return(0, 0)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD 9: readTransient(uint256 index) -> uint256
+            // Selector: 0xe9d601b0
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe9d601b0) {
+                let index := calldataload(4)
+                let val := loadTransient(index)
+                mstore(0x00, val)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 10: writeTransient(uint256 index, uint256 val) -> void
+            // Selector: 0x19a402c0
+            // ----------------------------------------------------------------
+            if eq(selector, 0x19a402c0) {
+                let index := calldataload(4)
+                let val := calldataload(36)
+                storeTransient(index, val)
+                return(0, 0)
+            }
+
             revert(0, 0)
 
             // ================================================================

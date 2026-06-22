@@ -47,6 +47,45 @@ void wmq_write_data(TsfiZmmVmState *vm, uint8_t val) {
     tsfi_zmm_vm_exec(vm, cmd);
 }
 
+uint8_t wmq_read_data_port(TsfiZmmVmState *vm) {
+    vm->output_pos = 0;
+    memset(vm->output_buffer, 0, sizeof(vm->output_buffer));
+    tsfi_zmm_vm_exec(vm, "YULEXEC \"WinchesterMQ\", \"52d400d0\"");
+    
+    unsigned int val = 0;
+    if (strlen(vm->output_buffer) >= 64) {
+        sscanf(vm->output_buffer + 62, "%02x", &val);
+    }
+    return (uint8_t)val;
+}
+
+uint64_t wmq_read_transient(TsfiZmmVmState *vm, uint64_t index) {
+    char cmd[512];
+    char hex_idx[65];
+    wmq_fill_hex_uint256(hex_idx, index);
+    snprintf(cmd, sizeof(cmd), "YULEXEC \"WinchesterMQ\", \"e9d601b0%s\"", hex_idx);
+    
+    vm->output_pos = 0;
+    memset(vm->output_buffer, 0, sizeof(vm->output_buffer));
+    tsfi_zmm_vm_exec(vm, cmd);
+    
+    uint64_t val = 0;
+    if (strlen(vm->output_buffer) >= 64) {
+        sscanf(vm->output_buffer + 48, "%16lx", &val);
+    }
+    return val;
+}
+
+void wmq_write_transient(TsfiZmmVmState *vm, uint64_t index, uint64_t val) {
+    char cmd[512];
+    char hex_idx[65];
+    char hex_val[65];
+    wmq_fill_hex_uint256(hex_idx, index);
+    wmq_fill_hex_uint256(hex_val, val);
+    snprintf(cmd, sizeof(cmd), "YULEXEC \"WinchesterMQ\", \"19a402c0%s%s\"", hex_idx, hex_val);
+    tsfi_zmm_vm_exec(vm, cmd);
+}
+
 void send_scsi_command(TsfiZmmVmState *vm, const char *event_str) {
     // Reset WinchesterMQ state
     wmq_write_signals(vm, 0x02); // RST = 1
@@ -93,28 +132,42 @@ int main() {
     tsfi_zmm_vm_exec(&vm, "YULINIT \"WinchesterMQ\", \"../solidity/bin/WinchesterMQ.yul\", 512");
 
     // Verify keycode 30 (A) and keycode 32 (D) routing directly on the simulated hardware state map
-    printf("[WMQ TEST] Verifying keycode registers directly (A=30, D=32)...\n");
+    printf("[WMQ TEST] Verifying keycode data port latching directly (A=30, D=32)...\n");
     
-    // Simulate keyboard event path
+    // Simulate keyboard event path and verify data port
+    wmq_write_data(&vm, 30);
+    uint8_t data_port_val = wmq_read_data_port(&vm);
+    printf("  -> Data port read verification: %d (expected 30)\n", data_port_val);
+    assert(data_port_val == 30);
+
+    wmq_write_data(&vm, 32);
+    data_port_val = wmq_read_data_port(&vm);
+    printf("  -> Data port read verification: %d (expected 32)\n", data_port_val);
+    assert(data_port_val == 32);
+
     send_scsi_command(&vm, "KEY_DOWN 30"); // 'a'/'A' keypress
-    printf("  -> Verified: KEY_DOWN 30 (A) transaction complete.\n");
+    printf("  -> SCSI: KEY_DOWN 30 (A) transaction complete.\n");
 
     send_scsi_command(&vm, "KEY_DOWN 32"); // 'd'/'D' keypress
-    printf("  -> Verified: KEY_DOWN 32 (D) transaction complete.\n");
+    printf("  -> SCSI: KEY_DOWN 32 (D) transaction complete.\n");
 
-    // Simulate collision transient sabotage parameters on WinchesterMQ registers
+    // Simulate and verify collision transient sabotage parameters on WinchesterMQ registers
     // divisor at 103 -> 160 (damping / hyper-spin)
     // focal depth at 104 -> 1350 (deflate)
-    printf("[WMQ TEST] Simulating Auncient collision transient sabotage registers...\n");
-    send_scsi_command(&vm, "COLLISION_SABOTAGE DAMPING 160 FOCAL 1350");
+    printf("[WMQ TEST] Simulating and verifying Auncient collision transient sabotage registers...\n");
     
-    // Direct verification of registers from the simulated hardware state map
-    int divisor_val = 160;
-    int focal_val = 1350;
+    // Write transient registers directly and read them back
+    wmq_write_transient(&vm, 103, 160);
+    wmq_write_transient(&vm, 104, 1350);
+
+    uint64_t divisor_val = wmq_read_transient(&vm, 103);
+    uint64_t focal_val = wmq_read_transient(&vm, 104);
+    
+    printf("  -> Read Divisor transient register: %lu (expected 160)\n", divisor_val);
+    printf("  -> Read Focal Depth transient register: %lu (expected 1350)\n", focal_val);
+    
     assert(divisor_val == 160);
     assert(focal_val == 1350);
-    printf("  -> Verified: Damping divisor register = %d\n", divisor_val);
-    printf("  -> Verified: Focal depth register = %d\n", focal_val);
 
     printf("[SUCCESS] All Auncient keycode and collision register verifications passed.\n");
     printf("=========================================================\n");
