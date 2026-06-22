@@ -62,7 +62,7 @@ During active combat, joints continuously monitor the SCSI interface for incomin
 Once a collision/strike event finishes, the post-combat cycle handles the graceful return of the joints:
 * **Elastic Recovery Envelope**: An asynchronous thread or Javascript timeout schedules register restoration. Damping and focal variables are gradually lerped or reset back to their baseline states (`1000` and `2300` respectively) over a `450ms` cooling curve.
 * **SCSI Latch Release**: The SCSI status registers are set back to `0` (IDLE), clearing the bus for the next transaction.
-* **State Persistence**: The cumulative damage transaction count (`yulStorage[105]`) is compiled and packaged alongside the battle ZIL card parameters, saving the post-combat DNA mutation values into the persistent local storage for historical log auditing.
+* **State Persistence**: The cumulative damage transaction count (`yulStorage[105]`) is compiled and packaged alongside the battle ZIL tesseract parameters, saving the post-combat DNA mutation values into the persistent local storage for historical log auditing.
 
 ```mermaid
 graph TD
