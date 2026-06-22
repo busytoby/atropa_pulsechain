@@ -543,7 +543,7 @@
                 }
                 renderedKeys.add(key);
 
-                // Handle accumulation and bypass display for swap traps
+                // Handle accumulation and display for swap traps
                 if (log.event === "M:DILEMMA_SWAP_TRAP" || log.event.includes("SWAP")) {
                     const swapInfo = parseSwapLog(log.details);
                     if (swapInfo) {
@@ -569,7 +569,6 @@
                     
                     state = "TRAPPED (SWAP STATE)";
                     renderAccumulators();
-                    return; // Skip rendering in raw debug logs list
                 }
                 if (log.event === "M:VOID_CHAT" || log.event === "M:QING_CHAT") {
                     const parts = log.details.split(" | ");
