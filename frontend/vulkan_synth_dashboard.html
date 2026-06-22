@@ -7,13 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #020308;
-            --card-bg: rgba(6, 10, 26, 0.65);
+            --bg-color: #010207;
+            --card-bg: rgba(7, 9, 21, 0.72);
             --neon-cyan: #00f2fe;
             --neon-magenta: #ff007f;
             --neon-green: #39ff14;
             --neon-orange: #ff7f00;
-            --border-color: rgba(0, 242, 254, 0.15);
+            --vintage-gold: #d4af37;
+            --border-color: rgba(212, 175, 55, 0.18);
             --text-color: #e2e8f0;
         }
 
@@ -32,11 +33,11 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background-image: radial-gradient(circle at center, #070d24 0%, #020308 100%);
+            background-image: radial-gradient(circle at center, #070d24 0%, #010207 100%);
         }
 
         header {
-            margin: 30px 0 15px 0;
+            margin: 30px 0 20px 0;
             text-align: center;
             z-index: 10;
         }
@@ -47,28 +48,47 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             color: #fff;
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.6), 0 0 20px rgba(0, 242, 254, 0.3);
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
             margin-bottom: 5px;
         }
 
         .subtitle {
             font-size: 0.9rem;
-            color: var(--neon-cyan);
+            color: var(--vintage-gold);
             letter-spacing: 1px;
             font-family: 'Share Tech Mono', monospace;
             opacity: 0.85;
-            text-shadow: 0 0 5px rgba(0, 242, 254, 0.3);
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
         }
 
-        .dashboard-container {
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 20px 40px 20px;
+            z-index: 10;
+        }
+
+        @media (max-width: 960px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .visualizer-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 15px;
             width: 100%;
-            max-width: 900px;
-            padding: 0 20px;
-            gap: 20px;
-            z-index: 10;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
         }
 
         .display-card {
@@ -77,7 +97,7 @@
             border-radius: 12px;
             padding: 10px;
             width: 100%;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
             backdrop-filter: blur(10px);
             position: relative;
         }
@@ -87,7 +107,7 @@
             position: absolute;
             top: -1px; left: -1px; right: -1px; bottom: -1px;
             border-radius: 12px;
-            background: linear-gradient(135deg, var(--neon-cyan), transparent, var(--neon-magenta));
+            background: linear-gradient(135deg, var(--vintage-gold), transparent, var(--neon-magenta));
             z-index: -1;
             opacity: 0.15;
             pointer-events: none;
@@ -96,30 +116,163 @@
         canvas {
             display: block;
             width: 100%;
-            height: 480px;
+            height: 540px;
             background-color: #010206;
             border-radius: 8px;
-            border: 1px solid rgba(255, 0, 127, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.08);
         }
 
-        .controls-card {
+        .control-panel-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            width: 100%;
+            padding: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .control-panel-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--vintage-gold), transparent, var(--neon-magenta));
+            z-index: -1;
+            opacity: 0.12;
+            pointer-events: none;
+        }
+
+        .panel-title {
+            display: block;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--vintage-gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+            padding-bottom: 4px;
+        }
+
+        .panel-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            backdrop-filter: blur(10px);
+            width: 100%;
         }
 
-        .control-group {
+        .slider-control {
+            margin-bottom: 10px;
+        }
+
+        .slider-control:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label-row {
             display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .slider-val {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .param-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #0d1326;
+            outline: none;
+            border: 1px solid rgba(212, 175, 55, 0.15);
+        }
+
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--vintage-gold);
+            cursor: pointer;
+            box-shadow: 0 0 6px var(--vintage-gold);
+            transition: transform 0.1s;
+        }
+
+        .param-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .exciters-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            justify-items: center;
+            align-items: end;
+            height: 90px;
+            padding-top: 5px;
+        }
+
+        .exciter-slider-wrapper {
+            display: flex;
+            flex-direction: column;
             align-items: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .exciter-slider {
+            -webkit-appearance: slider-vertical;
+            width: 12px;
+            height: 60px;
+            background: #0d1326;
+            cursor: pointer;
+        }
+
+        .exciter-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .quick-hud {
+            display: flex;
             gap: 15px;
+            width: 100%;
+        }
+
+        .hud-item {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            border-left: 3px solid var(--vintage-gold);
+        }
+
+        .hud-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .hud-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.15rem;
+            color: #fff;
+            margin-top: 2px;
         }
 
         .switch-container {
@@ -130,18 +283,17 @@
 
         .switch-label {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #fff;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Neon Toggle Switch */
         .switch {
             position: relative;
             display: inline-block;
-            width: 60px;
-            height: 30px;
+            width: 50px;
+            height: 24px;
         }
 
         .switch input {
@@ -156,18 +308,18 @@
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: #0d1326;
             transition: .4s;
-            border-radius: 30px;
-            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 24px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
             background-color: #4b5563;
             transition: .4s;
             border-radius: 50%;
@@ -175,21 +327,21 @@
         }
 
         input:checked + .slider {
-            background-color: rgba(0, 242, 254, 0.1);
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+            background-color: rgba(212, 175, 55, 0.1);
+            border-color: var(--vintage-gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
         }
 
         input:checked + .slider:before {
-            transform: translateX(30px);
-            background-color: var(--neon-cyan);
-            box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+            transform: translateX(26px);
+            background-color: var(--vintage-gold);
+            box-shadow: 0 0 10px var(--vintage-gold), 0 0 20px var(--vintage-gold);
         }
 
         .status-pill {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.85rem;
-            padding: 5px 12px;
+            font-size: 0.8rem;
+            padding: 4px 10px;
             border-radius: 20px;
             background: rgba(255, 0, 127, 0.1);
             border: 1px solid rgba(255, 0, 127, 0.3);
@@ -206,38 +358,12 @@
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
         }
 
-        .cv-stats {
-            display: flex;
-            gap: 20px;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.9rem;
-        }
-
-        .stat-box {
-            display: flex;
-            flex-direction: column;
-            border-left: 2px solid var(--neon-magenta);
-            padding-left: 8px;
-        }
-
-        .stat-label {
-            color: #64748b;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-
-        .stat-value {
-            color: #fff;
-            font-size: 1.05rem;
-        }
-
-        /* Subtle matrix grid background */
         .matrix-glow {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background-image: 
-                linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+                linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
             z-index: 1;
@@ -251,43 +377,135 @@
         <div class="subtitle">iDOF PHASE SPACE VISUALIZER & SYNTH INTERFACE</div>
     </header>
 
-    <div class="dashboard-container">
-        <!-- Main Vulkan Canvas Display -->
-        <div class="display-card">
-            <canvas id="vulkanCanvas"></canvas>
+    <div class="dashboard-layout">
+        <!-- Left Column: Visualizer Canvas -->
+        <div class="visualizer-container">
+            <div class="display-card">
+                <canvas id="vulkanCanvas"></canvas>
+            </div>
+            
+            <!-- Quick HUD stats -->
+            <div class="quick-hud">
+                <div class="hud-item">
+                    <span class="hud-label">Pitch CV Mode</span>
+                    <span id="cvPitch" class="hud-value">0.00 V</span>
+                </div>
+                <div class="hud-item" style="border-left-color: var(--neon-cyan);">
+                    <span class="hud-label">Yaw CV Mode</span>
+                    <span id="cvYaw" class="hud-value">0.00 V</span>
+                </div>
+                <div class="hud-item" style="border-left-color: var(--neon-green);">
+                    <span class="hud-label">Active Note</span>
+                    <span id="activeNote" class="hud-value">---</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Controls Dashboard -->
-        <div class="controls-card">
-            <div class="control-group">
-                <div class="switch-container">
-                    <span class="switch-label">Vulkan Core</span>
-                    <label class="switch">
-                        <input type="checkbox" id="vulkanToggle" checked>
-                        <span class="slider"></span>
-                    </label>
+        <!-- Right Column: Control Panels -->
+        <div class="controls-sidebar">
+            <!-- Core status -->
+            <div class="control-panel-card">
+                <span class="panel-title">System Status</span>
+                <div class="panel-row">
+                    <div class="switch-container">
+                        <span class="switch-label">Vulkan Core</span>
+                        <label class="switch">
+                            <input type="checkbox" id="vulkanToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="statusPill" class="status-pill active">Online</div>
                 </div>
-                 <div id="statusPill" class="status-pill active">Online</div>
-                 <div id="audioPill" class="status-pill" style="background: rgba(255, 127, 0, 0.1); border-color: rgba(255, 127, 0, 0.3); color: var(--neon-orange); margin-left: 8px;">Audio: Off</div>
-                
-                <button id="btnPlayScore" style="background: linear-gradient(135deg, var(--neon-magenta) 0%, #a200ff 100%); color: #fff; border: 1px solid rgba(255, 0, 127, 0.4); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; padding: 6px 14px; cursor: pointer; text-shadow: 0 0 5px rgba(255,255,255,0.5); box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); transition: all 0.2s ease;">
-                    🎹 Play Score
-                </button>
+                <div class="panel-row" style="margin-top: 10px;">
+                    <div id="audioPill" class="status-pill" style="background: rgba(255, 127, 0, 0.1); border-color: rgba(255, 127, 0, 0.3); color: var(--neon-orange); width: 100%; text-align: center;">Audio: Off</div>
+                </div>
             </div>
 
-            <div class="cv-stats">
-                <div class="stat-box">
-                    <span class="stat-label">Pitch CV Mode</span>
-                    <span id="cvPitch" class="stat-value">0.00 V</span>
+            <!-- Hamiltonian Physics Parameters -->
+            <div class="control-panel-card">
+                <span class="panel-title">Hamiltonian Dynamics</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Damping Coeff</span>
+                        <span id="valDamping" class="slider-val">0.985</span>
+                    </div>
+                    <input type="range" id="sliderDamping" min="0.900" max="0.999" step="0.001" value="0.985" class="param-slider">
                 </div>
-                <div class="stat-box" style="border-left-color: var(--neon-cyan)">
-                    <span class="stat-label">Yaw CV Mode</span>
-                    <span id="cvYaw" class="stat-value">0.00 V</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Time Step (dt)</span>
+                        <span id="valDt" class="slider-val">0.50</span>
+                    </div>
+                    <input type="range" id="sliderDt" min="0.10" max="1.50" step="0.05" value="0.50" class="param-slider">
                 </div>
-                <div class="stat-box" style="border-left-color: var(--neon-green)">
-                    <span class="stat-label">Active Note</span>
-                    <span id="activeNote" class="stat-value">---</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Base Frequency</span>
+                        <span id="valBaseOmega" class="slider-val">0.045</span>
+                    </div>
+                    <input type="range" id="sliderBaseOmega" min="0.010" max="0.100" step="0.005" value="0.045" class="param-slider">
                 </div>
+            </div>
+
+            <!-- Audio Synthesizer Parameters -->
+            <div class="control-panel-card">
+                <span class="panel-title">Resonant Lowpass Filter</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Cutoff Freq</span>
+                        <span id="valCutoff" class="slider-val">1200 Hz</span>
+                    </div>
+                    <input type="range" id="sliderCutoff" min="100" max="5000" step="20" value="1200" class="param-slider">
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Resonance (Q)</span>
+                        <span id="valQ" class="slider-val">3.0</span>
+                    </div>
+                    <input type="range" id="sliderQ" min="0.5" max="15.0" step="0.5" value="3.0" class="param-slider">
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Osc Detune</span>
+                        <span id="valDetune" class="slider-val">7 ¢</span>
+                    </div>
+                    <input type="range" id="sliderDetune" min="0" max="30" step="1" value="7" class="param-slider">
+                </div>
+            </div>
+
+            <!-- Space FX Delay -->
+            <div class="control-panel-card">
+                <span class="panel-title">Analog Delay FX</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Delay Time</span>
+                        <span id="valDelayTime" class="slider-val">0.25s</span>
+                    </div>
+                    <input type="range" id="sliderDelayTime" min="0.05" max="0.80" step="0.05" value="0.25" class="param-slider">
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Delay Feedback</span>
+                        <span id="valDelayFeedback" class="slider-val">40%</span>
+                    </div>
+                    <input type="range" id="sliderDelayFeedback" min="0.00" max="0.80" step="0.05" value="0.40" class="param-slider">
+                </div>
+            </div>
+
+            <!-- Manual Exciters -->
+            <div class="control-panel-card">
+                <span class="panel-title">Manual Spectral Exciters</span>
+                <div class="exciters-grid" id="excitersGrid"></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="panel-row" style="gap: 10px;">
+                <button id="btnPlayScore" style="flex: 1; background: linear-gradient(135deg, var(--vintage-gold) 0%, #a07810 100%); color: #010207; font-weight: bold; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; padding: 10px; cursor: pointer; text-shadow: 0 0 2px rgba(255,255,255,0.4); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); transition: all 0.2s ease;">
+                    🎹 Play Score
+                </button>
+                <button id="btnReset" style="background: rgba(255, 0, 127, 0.1); border: 1px solid rgba(255, 0, 127, 0.3); color: var(--neon-magenta); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;">
+                    Reset
+                </button>
             </div>
         </div>
     </div>
@@ -318,9 +536,11 @@
         const waveQ = new Float32Array(waveM);
         const waveP = new Float32Array(waveM);
         const waveOmega = new Float32Array(waveM);
-        const waveBaseOmega = 0.045;
-        const waveDamping = 0.985;
-        const waveDt = 0.5;
+        
+        // Physics variables linked to UI sliders
+        let waveBaseOmega = 0.045;
+        let waveDamping = 0.985;
+        let waveDt = 0.5;
 
         for (let k = 0; k < waveM; k++) {
             waveOmega[k] = (k + 1) * waveBaseOmega;
@@ -339,7 +559,7 @@
 
         // Space Stars background representation
         const stars = [];
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 120; i++) {
             stars.push({
                 x: (Math.random() - 0.5) * 400,
                 y: (Math.random() - 0.5) * 400,
@@ -347,13 +567,55 @@
             });
         }
 
+        // Audio synthesizer routing variables
         let audioCtx = null;
+        let analyser = null;
+        let mainFilter = null;
+        let delayNode = null;
+        let feedbackGain = null;
         const activeOscillators = {};
+
+        // Audio parameters linked to UI sliders
+        let filterCutoffVal = 1200;
+        let filterQVal = 3.0;
+        let detuneCents = 7;
+        let delayTimeVal = 0.25;
+        let delayFeedbackVal = 0.4;
 
         function initAudio() {
             try {
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Create Analyser
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 256;
+                    
+                    // Create Main Lowpass Filter
+                    mainFilter = audioCtx.createBiquadFilter();
+                    mainFilter.type = 'lowpass';
+                    mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
+                    mainFilter.Q.setValueAtTime(filterQVal, audioCtx.currentTime);
+                    
+                    // Create Delay Line
+                    delayNode = audioCtx.createDelay();
+                    delayNode.delayTime.setValueAtTime(delayTimeVal, audioCtx.currentTime);
+                    feedbackGain = audioCtx.createGain();
+                    feedbackGain.gain.setValueAtTime(delayFeedbackVal, audioCtx.currentTime);
+                    
+                    // Connect Delay Loop
+                    delayNode.connect(feedbackGain);
+                    feedbackGain.connect(delayNode);
+                    
+                    // Connect Main Filter to Analyser
+                    mainFilter.connect(analyser);
+                    
+                    // Route sound: dry to output, wet delay to output
+                    analyser.connect(audioCtx.destination);
+                    delayNode.connect(audioCtx.destination);
+                    
+                    // Send filtered audio into the delay line
+                    mainFilter.connect(delayNode);
                 }
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
@@ -382,13 +644,140 @@
             }
         }
 
-        // Listen for BroadcastChannel notes and window messages
+        // Dynamics parameters slider listeners
+        document.getElementById("sliderDamping").addEventListener("input", (e) => {
+            waveDamping = parseFloat(e.target.value);
+            document.getElementById("valDamping").innerText = waveDamping.toFixed(3);
+        });
+        document.getElementById("sliderDt").addEventListener("input", (e) => {
+            waveDt = parseFloat(e.target.value);
+            document.getElementById("valDt").innerText = waveDt.toFixed(2);
+        });
+        document.getElementById("sliderBaseOmega").addEventListener("input", (e) => {
+            waveBaseOmega = parseFloat(e.target.value);
+            document.getElementById("valBaseOmega").innerText = waveBaseOmega.toFixed(3);
+            for (let k = 0; k < waveM; k++) {
+                waveOmega[k] = (k + 1) * waveBaseOmega;
+            }
+        });
+
+        // Filter and FX slider listeners
+        document.getElementById("sliderCutoff").addEventListener("input", (e) => {
+            filterCutoffVal = parseFloat(e.target.value);
+            document.getElementById("valCutoff").innerText = filterCutoffVal + " Hz";
+            if (mainFilter) {
+                mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
+            }
+        });
+        document.getElementById("sliderQ").addEventListener("input", (e) => {
+            filterQVal = parseFloat(e.target.value);
+            document.getElementById("valQ").innerText = filterQVal.toFixed(1);
+            if (mainFilter) {
+                mainFilter.Q.setValueAtTime(filterQVal, audioCtx.currentTime);
+            }
+        });
+        document.getElementById("sliderDetune").addEventListener("input", (e) => {
+            detuneCents = parseFloat(e.target.value);
+            document.getElementById("valDetune").innerText = detuneCents + " ¢";
+        });
+        document.getElementById("sliderDelayTime").addEventListener("input", (e) => {
+            delayTimeVal = parseFloat(e.target.value);
+            document.getElementById("valDelayTime").innerText = delayTimeVal.toFixed(2) + "s";
+            if (delayNode) {
+                delayNode.delayTime.setValueAtTime(delayTimeVal, audioCtx.currentTime);
+            }
+        });
+        document.getElementById("sliderDelayFeedback").addEventListener("input", (e) => {
+            delayFeedbackVal = parseFloat(e.target.value);
+            document.getElementById("valDelayFeedback").innerText = Math.round(delayFeedbackVal * 100) + "%";
+            if (feedbackGain) {
+                feedbackGain.gain.setValueAtTime(delayFeedbackVal, audioCtx.currentTime);
+            }
+        });
+
+        // Generate manual mode exciters dynamically
+        const excitersGrid = document.getElementById("excitersGrid");
+        const modeFreqs = [
+            130.81, 146.83, 164.81, 196.00, 220.00, 261.63,
+            293.66, 329.63, 392.00, 440.00, 523.25, 587.33
+        ];
+        const modeNames = ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5"];
+
+        for (let k = 0; k < waveM; k++) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "exciter-slider-wrapper";
+            
+            const slider = document.createElement("input");
+            slider.type = "range";
+            slider.min = "0";
+            slider.max = "10";
+            slider.step = "0.5";
+            slider.value = "0";
+            slider.className = "exciter-slider";
+            slider.setAttribute("orient", "vertical");
+            
+            const label = document.createElement("span");
+            label.className = "exciter-label";
+            label.innerText = modeNames[k];
+            
+            slider.addEventListener("input", (e) => {
+                const val = parseFloat(e.target.value);
+                if (val > 0) {
+                    initAudio();
+                    exciteSpectralMode(k, val * 1.5);
+                    playLocalAndBroadcastNote(modeFreqs[k], modeNames[k]);
+                    
+                    // Spring-loaded auto-reset
+                    setTimeout(() => {
+                        slider.value = 0;
+                    }, 180);
+                }
+            });
+            
+            wrapper.appendChild(slider);
+            wrapper.appendChild(label);
+            excitersGrid.appendChild(wrapper);
+        }
+
+        function playLocalAndBroadcastNote(freq, noteName) {
+            if (!toggle.checked) return;
+            const data = {
+                type: 'synth_poke',
+                note: noteName,
+                freq: freq,
+                control: 1 // Gate On
+            };
+            handleNoteEvent(data);
+            
+            try {
+                const bc = new BroadcastChannel('elektuur_synth');
+                bc.postMessage(data);
+            } catch (err) {}
+            
+            setTimeout(() => {
+                const offData = {
+                    type: 'synth_poke',
+                    note: noteName,
+                    freq: freq,
+                    control: 0 // Gate Off
+                };
+                handleNoteEvent(offData);
+                try {
+                    const bc = new BroadcastChannel('elektuur_synth');
+                    bc.postMessage(offData);
+                } catch (err) {}
+            }, 250);
+        }
+
+        let noteTimeout;
+
+        // Route incoming events to dual-oscillator synthesizer and mode excitation
         const handleNoteEvent = (data) => {
             if (!toggle.checked) return;
             if (data.type === 'synth_poke') {
-                const freq = data.freq;
+                const freq = parseFloat(data.freq);
                 const note = data.note;
-                const control = data.control;
+                const control = parseInt(data.control);
                 const gateOn = control & 1;
                 
                 if (gateOn) {
@@ -398,33 +787,62 @@
                     exciteSpectralMode(targetMode, 6.5);
 
                     activeNoteEl.innerText = note;
-                    activeNoteEl.style.color = "var(--neon-green)";
+                    activeNoteEl.style.color = "var(--vintage-gold)";
+                    activeNoteEl.style.textShadow = "0 0 10px var(--vintage-gold)";
                     
                     clearTimeout(noteTimeout);
                     noteTimeout = setTimeout(() => {
                         activeNoteEl.innerText = "---";
                         activeNoteEl.style.color = "";
+                        activeNoteEl.style.textShadow = "";
                     }, 800);
 
-                    // Polyphonic note trigger
+                    // Web Audio Synth Polyphony
                     if (audioCtx) {
                         if (activeOscillators[freq]) {
-                            try { activeOscillators[freq].osc.stop(); } catch(e) {}
+                            try { activeOscillators[freq].osc1.stop(); } catch(e) {}
+                            try { activeOscillators[freq].osc2.stop(); } catch(e) {}
                         }
-                        const osc = audioCtx.createOscillator();
+                        
+                        const osc1 = audioCtx.createOscillator();
+                        const osc2 = audioCtx.createOscillator();
                         const gainNode = audioCtx.createGain();
                         
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        // Triangle primary wave
+                        osc1.type = 'triangle';
+                        osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
                         
+                        // Detuned Saw secondary wave
+                        osc2.type = 'sawtooth';
+                        const detuneFactor = Math.pow(2, detuneCents / 1200);
+                        osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+                        
+                        // Gain Envelope
                         gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-                        gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.04);
+                        gainNode.gain.linearRampToValueAtTime(0.14, audioCtx.currentTime + 0.04);
                         
-                        osc.connect(gainNode);
-                        gainNode.connect(audioCtx.destination);
-                        osc.start();
+                        osc1.connect(gainNode);
+                        osc2.connect(gainNode);
                         
-                        activeOscillators[freq] = { osc, gainNode };
+                        if (mainFilter) {
+                            gainNode.connect(mainFilter);
+                        } else {
+                            gainNode.connect(audioCtx.destination);
+                        }
+                        
+                        // Resonant lowpass sweep modulation
+                        if (mainFilter) {
+                            mainFilter.Q.setValueAtTime(filterQVal, audioCtx.currentTime);
+                            mainFilter.frequency.cancelScheduledValues(audioCtx.currentTime);
+                            mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
+                            mainFilter.frequency.exponentialRampToValueAtTime(Math.min(20000, filterCutoffVal * 3.5), audioCtx.currentTime + 0.05);
+                            mainFilter.frequency.exponentialRampToValueAtTime(filterCutoffVal, audioCtx.currentTime + 0.45);
+                        }
+                        
+                        osc1.start();
+                        osc2.start();
+                        
+                        activeOscillators[freq] = { osc1, osc2, gainNode };
                     }
                 } else {
                     const voice = activeOscillators[freq];
@@ -432,37 +850,44 @@
                         const now = audioCtx.currentTime;
                         voice.gainNode.gain.cancelScheduledValues(now);
                         voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
-                        voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                        voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                         
-                        const oscToStop = voice.osc;
+                        const o1 = voice.osc1;
+                        const o2 = voice.osc2;
                         setTimeout(() => {
-                            try { oscToStop.stop(); } catch(e) {}
-                        }, 150);
+                            try { o1.stop(); } catch(e) {}
+                            try { o2.stop(); } catch(e) {}
+                        }, 180);
                         delete activeOscillators[freq];
                     }
                 }
             } else if (data.type === 'synth_reset') {
-                waveQ.fill(0);
-                waveP.fill(0);
-                qw = 1.0;
-                qx = 0.0;
-                qy = 0.0;
-                qz = 0.0;
-                activeNoteEl.innerText = "RESET";
-                activeNoteEl.style.color = "var(--neon-magenta)";
-                clearTimeout(noteTimeout);
-                noteTimeout = setTimeout(() => {
-                    activeNoteEl.innerText = "---";
-                    activeNoteEl.style.color = "";
-                }, 1000);
-
-                // Stop all audio voices
-                Object.keys(activeOscillators).forEach(f => {
-                    try { activeOscillators[f].osc.stop(); } catch(e) {}
-                    delete activeOscillators[f];
-                });
+                resetEngine();
             }
         };
+
+        function resetEngine() {
+            waveQ.fill(0);
+            waveP.fill(0);
+            qw = 1.0;
+            qx = 0.0;
+            qy = 0.0;
+            qz = 0.0;
+            activeNoteEl.innerText = "RESET";
+            activeNoteEl.style.color = "var(--neon-magenta)";
+            clearTimeout(noteTimeout);
+            noteTimeout = setTimeout(() => {
+                activeNoteEl.innerText = "---";
+                activeNoteEl.style.color = "";
+            }, 1000);
+
+            // Stop all audio voices
+            Object.keys(activeOscillators).forEach(f => {
+                try { activeOscillators[f].osc1.stop(); } catch(e) {}
+                try { activeOscillators[f].osc2.stop(); } catch(e) {}
+                delete activeOscillators[f];
+            });
+        }
 
         try {
             const synthChannel = new BroadcastChannel('elektuur_synth');
@@ -495,7 +920,15 @@
             console.error("Failed to initialize SSE EventSource:", sseErr);
         }
 
-        // Autoplay on load has been removed as requested. We now await external process note inputs.
+        // Reset button listener
+        document.getElementById("btnReset").addEventListener("click", () => {
+            const resetData = { type: 'synth_reset' };
+            handleNoteEvent(resetData);
+            try {
+                const bc = new BroadcastChannel('elektuur_synth');
+                bc.postMessage(resetData);
+            } catch(e) {}
+        });
 
         // Render Frame
         function draw(time) {
@@ -507,7 +940,7 @@
 
             if (!toggle.checked) {
                 // Standby mode
-                ctx.fillStyle = "rgba(255, 0, 127, 0.4)";
+                ctx.fillStyle = "rgba(212, 175, 55, 0.4)";
                 ctx.font = "bold 18px 'Share Tech Mono', monospace";
                 ctx.textAlign = "center";
                 ctx.fillText("VULKAN CORE: STANDBY", w / 2, h / 2);
@@ -545,38 +978,104 @@
             if (alphaVal < 0.05) alphaVal = 0.05;
             if (alphaVal > 0.85) alphaVal = 0.85;
 
-            // Draw animated space dust moving matching mode coordinates
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + Math.abs(waveQ[0]) * 0.4})`;
+            // Define visualizer viewport coordinates (reserving left column for phase portraits)
+            const sidebarWidth = 130;
+            const viewportW = w - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = h / 2;
+
+            // DRAW 12 PHASE PORTRAITS SIDEBAR (q_k vs p_k phase space orbits)
+            ctx.fillStyle = "rgba(4, 6, 15, 0.78)";
+            ctx.fillRect(0, 0, sidebarWidth, h);
+            ctx.strokeStyle = "rgba(212, 175, 55, 0.22)";
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.moveTo(sidebarWidth, 0);
+            ctx.lineTo(sidebarWidth, h);
+            ctx.stroke();
+
+            const stepY = h / 12;
+            for (let k = 0; k < waveM; k++) {
+                const cy = stepY * k + stepY / 2;
+                const cx = sidebarWidth / 2 + 10;
+                const r = 16;
+
+                // Draw background circle
+                ctx.strokeStyle = "rgba(212, 175, 55, 0.08)";
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw crosshair
+                ctx.strokeStyle = "rgba(212, 175, 55, 0.04)";
+                ctx.beginPath();
+                ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
+                ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
+                ctx.stroke();
+
+                // Draw current vector coordinate
+                const scaleQ = waveQ[k] * 22.0;
+                const scaleP = waveP[k] * 22.0;
+
+                let dotX = cx + scaleQ;
+                let dotY = cy - scaleP;
+                const dist = Math.sqrt((dotX - cx) * (dotX - cx) + (dotY - cy) * (dotY - cy));
+                if (dist > r) {
+                    dotX = cx + (scaleQ / dist) * r;
+                    dotY = cy - (scaleP / dist) * r;
+                }
+
+                ctx.strokeStyle = "rgba(212, 175, 55, 0.7)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(dotX, dotY);
+                ctx.stroke();
+
+                ctx.fillStyle = "var(--vintage-gold)";
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = "rgba(212, 175, 55, 0.65)";
+                ctx.font = "bold 9px 'Share Tech Mono', monospace";
+                ctx.textAlign = "left";
+                ctx.fillText(`M${k+1}`, 8, cy + 3);
+            }
+
+            // Draw animated space dust moving matching mode coordinates (confined to viewport)
+            ctx.fillStyle = `rgba(212, 175, 55, ${0.15 + Math.abs(waveQ[0]) * 0.4})`;
             stars.forEach(s => {
                 s.z -= 1.5 + Math.abs(waveQ[1]) * 4.0;
                 if (s.z <= 0) s.z = 400;
 
-                let sx = (s.x * 200) / s.z + w / 2;
-                let sy = (s.y * 200) / s.z + h / 2;
+                let sx = (s.x * 200) / s.z + cx0;
+                let sy = (s.y * 200) / s.z + cy0;
 
-                if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+                if (sx >= sidebarWidth && sx < w && sy >= 0 && sy < h) {
                     ctx.beginPath();
                     ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
 
-            // Render dynamic Vulkan grids controlled entirely by the synth
-            ctx.strokeStyle = `rgba(0, 242, 254, ${alphaVal})`;
-            ctx.lineWidth = 1.0 + Math.abs(waveQ[4]) * 3.0;
+            // Render dynamic Vulkan grids distorted by Hamiltonian harmonic amplitudes
+            ctx.strokeStyle = `rgba(0, 242, 254, ${alphaVal * 0.75})`;
+            ctx.lineWidth = 1.0 + Math.abs(waveQ[4]) * 2.0;
 
-            const gridLines = 14;
-            const gridSpacing = w / gridLines;
+            const gridLines = 10;
+            const gridSpacing = viewportW / gridLines;
 
-            // Render vertical grids distorted by Hamiltonian harmonic amplitudes
+            // Render vertical grids
             for (let i = 0; i <= gridLines; i++) {
                 ctx.beginPath();
-                for (let y = 0; y < h; y += 10) {
+                for (let y = 0; y < h; y += 15) {
                     let offset = 0;
                     for (let k = 0; k < 6; k++) {
                         offset += waveQ[k] * 12.0 * Math.sin((k + 1) * Math.PI * (y / h));
                     }
-                    let x = i * gridSpacing + offset;
+                    let x = sidebarWidth + i * gridSpacing + offset;
                     if (y === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
@@ -584,24 +1083,23 @@
             }
 
             // Render horizontal grids
-            const hLines = 10;
+            const hLines = 8;
             const hSpacing = h / hLines;
             for (let j = 0; j <= hLines; j++) {
                 ctx.beginPath();
-                for (let x = 0; x < w; x += 10) {
+                for (let x = sidebarWidth; x <= w; x += 15) {
                     let offset = 0;
                     for (let k = 0; k < 6; k++) {
-                        offset += waveQ[k] * 12.0 * Math.sin((k + 1) * Math.PI * (x / w));
+                        offset += waveQ[k] * 12.0 * Math.sin((k + 1) * Math.PI * ((x - sidebarWidth) / viewportW));
                     }
                     let y = j * hSpacing + offset;
-                    if (x === 0) ctx.moveTo(x, y);
+                    if (x === sidebarWidth) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
                 ctx.stroke();
             }
 
             // --- Integrate & Render Dynamic Quaternion 3D Coordinate Axis ---
-            // Integrate angular rates modulated by low, mid, and high synthesizer harmonics
             let velRoll = (waveQ[0] - waveQ[1]) * 0.08;
             let velPitch = (waveQ[2] - waveQ[3]) * 0.08;
             let velYaw = (waveQ[4] - waveQ[5]) * 0.08;
@@ -618,14 +1116,12 @@
                 qy * qDeltaX[0] + qz * qDeltaX[1],
                 qz * qDeltaX[0] - qy * qDeltaX[1]
             ];
-            // Multiply by deltaY
             let qTemp2 = [
                 qTemp[0] * qDeltaY[0] - qTemp[2] * qDeltaY[2],
                 qTemp[1] * qDeltaY[0] + qTemp[3] * qDeltaY[2],
                 qTemp[0] * qDeltaY[2] + qTemp[2] * qDeltaY[0],
                 qTemp[3] * qDeltaY[0] - qTemp[1] * qDeltaY[2]
             ];
-            // Multiply by deltaZ
             let qTemp3 = [
                 qTemp2[0] * qDeltaZ[0] - qTemp2[3] * qDeltaZ[3],
                 qTemp2[1] * qDeltaZ[0] - qTemp2[2] * qDeltaZ[3],
@@ -655,54 +1151,143 @@
             const r12 = 2 * (qy * qz - qx * qw);
             const r22 = 1 - 2 * (qx * qx + qy * qy);
 
-            // Draw projected 3D coordinate frames at the center
-            const cx0 = w / 2;
-            const cy0 = h / 2;
-            const size = 65 + (waveQ[0] - waveQ[1]) * 10; // modulated base size
+            // Draw holographic rotating sphere representing S2 boundary
+            const R_sphere = 75;
+            ctx.lineWidth = 1.0;
 
-            // Projected 3D vertices
+            function getProjectedPoint(x, y, z) {
+                const rx = r00 * x + r01 * y + r02 * z;
+                const ry = r10 * x + r11 * y + r12 * z;
+                const rz = r20 * x + r21 * y + r22 * z;
+                return {
+                    x: cx0 + rx,
+                    y: cy0 - ry,
+                    z: rz
+                };
+            }
+
+            // Draw longitudes
+            const numLongitudes = 8;
+            const ptsPerRing = 32;
+            for (let i = 0; i < numLongitudes; i++) {
+                const theta = (i / numLongitudes) * Math.PI;
+                ctx.beginPath();
+                for (let j = 0; j <= ptsPerRing; j++) {
+                    const phi = (j / ptsPerRing) * 2 * Math.PI;
+                    const x = R_sphere * Math.cos(theta) * Math.sin(phi);
+                    const y = R_sphere * Math.sin(theta) * Math.sin(phi);
+                    const z = R_sphere * Math.cos(phi);
+                    
+                    const proj = getProjectedPoint(x, y, z);
+                    const opacity = proj.z > 0 ? 0.35 : 0.12;
+                    ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
+                    
+                    if (j === 0) ctx.moveTo(proj.x, proj.y);
+                    else ctx.lineTo(proj.x, proj.y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw latitudes
+            const numLatitudes = 6;
+            for (let i = 1; i < numLatitudes; i++) {
+                const phi = (i / numLatitudes) * Math.PI;
+                ctx.beginPath();
+                for (let j = 0; j <= ptsPerRing; j++) {
+                    const theta = (j / ptsPerRing) * 2 * Math.PI;
+                    const x = R_sphere * Math.sin(phi) * Math.cos(theta);
+                    const y = R_sphere * Math.sin(phi) * Math.sin(theta);
+                    const z = R_sphere * Math.cos(phi);
+                    
+                    const proj = getProjectedPoint(x, y, z);
+                    const opacity = proj.z > 0 ? 0.35 : 0.12;
+                    ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
+                    
+                    if (j === 0) ctx.moveTo(proj.x, proj.y);
+                    else ctx.lineTo(proj.x, proj.y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw projected 3D coordinate frames at the center
+            const size = 95 + (waveQ[0] - waveQ[1]) * 10;
             const pRight = { x: cx0 + r00 * size, y: cy0 - r10 * size };
             const pUp = { x: cx0 + r01 * size, y: cy0 - r11 * size };
             const pForward = { x: cx0 + r02 * size, y: cy0 - r12 * size };
 
-            // Draw Right Axis (Red X)
-            ctx.strokeStyle = "#ff3b30";
-            ctx.lineWidth = 3.5;
+            // Draw Right Axis (Gold X)
+            ctx.strokeStyle = "#d4af37";
+            ctx.lineWidth = 3.0;
             ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pRight.x, pRight.y); ctx.stroke();
-            ctx.fillStyle = "#ff3b30"; ctx.font = "bold 11px 'Share Tech Mono'";
+            ctx.fillStyle = "#d4af37"; ctx.font = "bold 11px 'Share Tech Mono'";
             ctx.fillText("X (Pitch)", pRight.x + 5, pRight.y + 4);
 
-            // Draw Up Axis (Green Y)
-            ctx.strokeStyle = "#34c759";
-            ctx.lineWidth = 3.5;
+            // Draw Up Axis (Electric Cyan Y)
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 3.0;
             ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pUp.x, pUp.y); ctx.stroke();
-            ctx.fillStyle = "#34c759";
+            ctx.fillStyle = "#00f2fe";
             ctx.fillText("Y (Yaw)", pUp.x + 5, pUp.y - 4);
 
-            // Draw Forward Axis (Blue Z)
-            ctx.strokeStyle = "#00f2fe";
-            ctx.lineWidth = 4;
+            // Draw Forward Axis (Hot Magenta Z)
+            ctx.strokeStyle = "#ff007f";
+            ctx.lineWidth = 3.0;
             ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(pForward.x, pForward.y); ctx.stroke();
-            ctx.fillStyle = "#00f2fe";
+            ctx.fillStyle = "#ff007f";
             ctx.fillText("Z (Roll)", pForward.x + 5, pForward.y + 4);
+
+            // Radial FFT Frequency Visualizer Corona
+            if (analyser) {
+                const bufferLength = analyser.frequencyBinCount;
+                const freqData = new Uint8Array(bufferLength);
+                analyser.getByteFrequencyData(freqData);
+
+                const numSpikes = 64;
+                const startRadius = R_sphere + 8;
+                
+                for (let i = 0; i < numSpikes; i++) {
+                    const binIdx = Math.floor((i / numSpikes) * (bufferLength * 0.6));
+                    const amplitude = freqData[binIdx] / 255.0;
+                    if (amplitude <= 0) continue;
+
+                    const theta = (i / numSpikes) * 2 * Math.PI + (time * 0.0001);
+                    const spikeLen = amplitude * 50;
+
+                    const xStart = cx0 + Math.cos(theta) * startRadius;
+                    const yStart = cy0 + Math.sin(theta) * startRadius;
+                    const xEnd = cx0 + Math.cos(theta) * (startRadius + spikeLen);
+                    const yEnd = cy0 + Math.sin(theta) * (startRadius + spikeLen);
+
+                    const grad = ctx.createLinearGradient(xStart, yStart, xEnd, yEnd);
+                    grad.addColorStop(0, "rgba(212, 175, 55, 0.85)");
+                    grad.addColorStop(1, "rgba(255, 0, 127, 0.2)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = 2.0;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, yStart);
+                    ctx.lineTo(xEnd, yEnd);
+                    ctx.stroke();
+                }
+            }
 
             // Render holographic wave-phase orbit overlay at core center
             ctx.save();
             ctx.strokeStyle = "var(--neon-magenta)";
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 10;
             ctx.shadowColor = "var(--neon-magenta)";
-            ctx.lineWidth = 2.0;
+            ctx.lineWidth = 1.8;
             ctx.beginPath();
             
-            const steps = 180;
+            const steps = 120;
             for (let i = 0; i <= steps; i++) {
                 const theta = (i / steps) * Math.PI * 2;
-                let radius = 60;
+                let radius = R_sphere - 15;
                 for (let k = 0; k < waveM; k++) {
-                    radius += waveQ[k] * 8.0 * Math.sin((k + 1) * theta);
+                    radius += waveQ[k] * 6.0 * Math.sin((k + 1) * theta + time * 0.002);
                 }
-                const cx = w / 2 + Math.cos(theta) * radius;
-                const cy = h / 2 + Math.sin(theta) * radius;
+                const cx = cx0 + Math.cos(theta) * radius;
+                const cy = cy0 + Math.sin(theta) * radius;
                 if (i === 0) ctx.moveTo(cx, cy);
                 else ctx.lineTo(cx, cy);
             }
@@ -710,30 +1295,51 @@
             ctx.stroke();
             ctx.restore();
 
+            // Render real-time oscilloscope wave along the bottom
+            if (analyser) {
+                const bufferLength = analyser.fftSize;
+                const timeData = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(timeData);
+
+                ctx.strokeStyle = "rgba(212, 175, 55, 0.72)";
+                ctx.lineWidth = 2.0;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = "#d4af37";
+                ctx.beginPath();
+
+                const drawWidth = w - sidebarWidth;
+                for (let i = 0; i < drawWidth; i += 2) {
+                    const dataIdx = Math.floor((i / drawWidth) * bufferLength);
+                    const v = timeData[dataIdx] / 128.0;
+                    const yOffset = (v - 1.0) * 35;
+                    const xPos = sidebarWidth + i;
+                    const yPos = h - 40 + yOffset;
+
+                    if (i === 0) ctx.moveTo(xPos, yPos);
+                    else ctx.lineTo(xPos, yPos);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
             // Overlay textual HUD quaternion outputs
             ctx.save();
-            ctx.fillStyle = "var(--neon-cyan)";
-            ctx.font = "bold 15px 'Share Tech Mono', monospace";
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "var(--neon-cyan)";
-            ctx.fillText("ACTIVE ATTITUDE QUACK QUATERNION (S³):", 20, 35);
-
-            ctx.fillStyle = "#fff";
+            ctx.fillStyle = "#d4af37";
             ctx.font = "bold 13px 'Share Tech Mono', monospace";
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = "#fff";
-            ctx.fillText(`W: ${qw.toFixed(4)}`, 25, 60);
-            ctx.fillText(`X: ${qx.toFixed(4)}`, 25, 80);
-            ctx.fillText(`Y: ${qy.toFixed(4)}`, 25, 100);
-            ctx.fillText(`Z: ${qz.toFixed(4)}`, 25, 120);
+            ctx.fillText("ACTIVE ATTITUDE QUATERNION (S³):", sidebarWidth + 20, 35);
 
-            // Draw bounding sphere projection of S3 manifold (Unit Sphere limit)
-            ctx.strokeStyle = "rgba(255, 0, 127, 0.25)";
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "var(--neon-magenta)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.font = "bold 11px 'Share Tech Mono', monospace";
+            ctx.fillText(`W: ${qw.toFixed(4)}`, sidebarWidth + 25, 55);
+            ctx.fillText(`X: ${qx.toFixed(4)}`, sidebarWidth + 25, 70);
+            ctx.fillText(`Y: ${qy.toFixed(4)}`, sidebarWidth + 25, 85);
+            ctx.fillText(`Z: ${qz.toFixed(4)}`, sidebarWidth + 25, 100);
+
+            // Bounding sphere limit
+            ctx.strokeStyle = "rgba(212, 175, 55, 0.22)";
+            ctx.lineWidth = 1.0;
             ctx.beginPath();
-            ctx.arc(cx0, cy0, size + 10, 0, Math.PI * 2);
+            ctx.arc(cx0, cy0, R_sphere + 10, 0, Math.PI * 2);
             ctx.stroke();
             ctx.restore();
 
@@ -762,7 +1368,7 @@
                 statusPill.classList.add("active");
             }
             
-            // Programmatically post note messages to self and BroadcastChannel
+            // Programmatically post note messages to BroadcastChannel
             const score = [
                 { note: "C4", freq: 261.63, delay: 0 },
                 { note: "E4", freq: 329.63, delay: 300 },
@@ -780,7 +1386,13 @@
                         type: 'synth_poke',
                         note: step.note,
                         freq: step.freq,
-                        control: 1 // Gate On
+                        control: 1
+                    });
+                    handleNoteEvent({
+                        type: 'synth_poke',
+                        note: step.note,
+                        freq: step.freq,
+                        control: 1
                     });
                 }, step.delay);
 
@@ -789,7 +1401,13 @@
                         type: 'synth_poke',
                         note: step.note,
                         freq: step.freq,
-                        control: 0 // Gate Off
+                        control: 0
+                    });
+                    handleNoteEvent({
+                        type: 'synth_poke',
+                        note: step.note,
+                        freq: step.freq,
+                        control: 0
                     });
                 }, step.delay + 220);
             });
