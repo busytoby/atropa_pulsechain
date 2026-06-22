@@ -358,6 +358,13 @@
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
         }
 
+        .status-pill.spray {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: var(--vintage-gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
         .matrix-glow {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -415,6 +422,16 @@
                         </label>
                     </div>
                     <div id="statusPill" class="status-pill active">Online</div>
+                </div>
+                <div class="panel-row" style="margin-top: 10px;">
+                    <div class="switch-container">
+                        <span class="switch-label">Accumulator</span>
+                        <label class="switch">
+                            <input type="checkbox" id="accumulatorToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="accumulatorStatus" class="status-pill active" style="font-size: 0.75rem; padding: 3px 8px;">Clear</div>
                 </div>
                 <div class="panel-row" style="margin-top: 10px;">
                     <div id="audioPill" class="status-pill" style="background: rgba(255, 127, 0, 0.1); border-color: rgba(255, 127, 0, 0.3); color: var(--neon-orange); width: 100%; text-align: center;">Audio: Off</div>
@@ -935,11 +952,18 @@
             const w = canvas.width / window.devicePixelRatio;
             const h = canvas.height / window.devicePixelRatio;
 
-            ctx.fillStyle = "#010207";
-            ctx.fillRect(0, 0, w, h);
+            const sidebarWidth = 130;
+            const viewportW = w - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = h / 2;
+
+            const accum = document.getElementById("accumulatorToggle");
+            const isAccumulated = accum ? accum.checked : true;
 
             if (!toggle.checked) {
                 // Standby mode
+                ctx.fillStyle = "#010207";
+                ctx.fillRect(0, 0, w, h);
                 ctx.fillStyle = "rgba(212, 175, 55, 0.4)";
                 ctx.font = "bold 18px 'Share Tech Mono', monospace";
                 ctx.textAlign = "center";
@@ -951,6 +975,19 @@
                 
                 animationFrameId = requestAnimationFrame(draw);
                 return;
+            }
+
+            if (isAccumulated) {
+                ctx.fillStyle = "#010207";
+                ctx.fillRect(0, 0, w, h);
+            } else {
+                // Spray mode: clear only the sidebar to keep phase portraits clean,
+                // and apply high-decay transparency to visualizer viewport to create glowing spray trails
+                ctx.fillStyle = "#010207";
+                ctx.fillRect(0, 0, sidebarWidth, h);
+                
+                ctx.fillStyle = "rgba(1, 2, 7, 0.045)";
+                ctx.fillRect(sidebarWidth, 0, viewportW, h);
             }
 
             // Symplectic Euler Integration for iDOF Hamiltonian Phase Space
@@ -978,11 +1015,7 @@
             if (alphaVal < 0.05) alphaVal = 0.05;
             if (alphaVal > 0.85) alphaVal = 0.85;
 
-            // Define visualizer viewport coordinates (reserving left column for phase portraits)
-            const sidebarWidth = 130;
-            const viewportW = w - sidebarWidth;
-            const cx0 = sidebarWidth + viewportW / 2;
-            const cy0 = h / 2;
+
 
             // DRAW 12 PHASE PORTRAITS SIDEBAR (q_k vs p_k phase space orbits)
             ctx.fillStyle = "rgba(4, 6, 15, 0.78)";
@@ -1355,6 +1388,21 @@
             } else {
                 statusPill.innerText = "Offline";
                 statusPill.classList.remove("active");
+            }
+        });
+
+        // Accumulator Switch event listener
+        const accumulatorToggle = document.getElementById("accumulatorToggle");
+        const accumulatorStatus = document.getElementById("accumulatorStatus");
+        accumulatorToggle.addEventListener("change", () => {
+            if (accumulatorToggle.checked) {
+                accumulatorStatus.innerText = "Clear";
+                accumulatorStatus.classList.remove("spray");
+                accumulatorStatus.classList.add("active");
+            } else {
+                accumulatorStatus.innerText = "Spray";
+                accumulatorStatus.classList.remove("active");
+                accumulatorStatus.classList.add("spray");
             }
         });
 
