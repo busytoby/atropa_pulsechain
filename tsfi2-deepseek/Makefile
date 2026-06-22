@@ -77,7 +77,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
                      $(OBJ_DIR)/xdg-shell-protocol.o $(OBJ_DIR)/linux-dmabuf-v1-protocol.o \
                      $(OBJ_DIR)/wlr-layer-shell-unstable-v1-protocol.o
 
-.PHONY: all clean
+.PHONY: all clean test
 
 all: tsfi2 bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/test_active_window_ocr bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_space_war tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_zmm_mystery_house tests/test_shadow_registers tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve tests/test_speech_c_controller bin/benchmark_neuro_backprop bin/benchmark_neuro_activation bin/test_wave512_asm bin/test_walsh bin/test_walsh_audio bin/test_steiner_evi bin/test_nebula bin/test_divider bin/test_serge_usg bin/test_dtl_core bin/test_delay_line bin/test_rtl_latch bin/test_shaft_encoder bin/test_core_plane bin/test_tunnel_latch bin/test_thin_film bin/test_integrated_circuit bin/test_core_rope bin/test_ttl_gate bin/test_parametron bin/test_slt bin/test_cla bin/test_plated_wire bin/test_mema bin/test_sar_adc bin/test_schmitt bin/test_diode_matrix bin/test_byte_issue21 bin/test_byte_issue22 bin/test_byte_issue23 bin/test_byte_issue24 bin/test_oregon_trail bin/test_elektuur_issue25 bin/test_prophecy_synthesis bin/test_yang_synthesis tests/test_rooted_browser_zmm tests/test_rooted_browser_wmq tests/test_rooted_browser_wmq_collision tests/test_base0_protocol tests/test_dilemma_synthesizer tests/test_bessel_zener_trapping
 
@@ -470,5 +470,9 @@ clean:
 .PHONY: generate_artifacts
 generate_artifacts: bin/test_vulkan_teddy
 	bin/test_vulkan_teddy --render-once
-	convert /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/photorealistic_teddy_bear.ppm /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/photorealistic_bear_final.png
+	convert /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/photorealistic_bear_final.png
+
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision
+	bin/test_vulkan_teddy --test
+	./tests/test_rooted_browser_wmq_collision
 

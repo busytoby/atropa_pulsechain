@@ -176,7 +176,7 @@ def run_optimization_loop(target_query, vlm_engine="moondream", generator_profil
             subprocess.run(vulkan_cmd, cwd=sd_worker_cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
             # Copy/convert PPM output to the final png target
-            ppm_path = "/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/photorealistic_teddy_bear.ppm"
+            ppm_path = "/home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm"
             if os.path.exists(ppm_path):
                 from PIL import Image
                 img = Image.open(ppm_path).convert('RGB')
@@ -414,7 +414,7 @@ def run_optimization_loop(target_query, vlm_engine="moondream", generator_profil
             print(f"[Feedback Loop] Increasing fur shagginess. Length: {genes['fur_length']}")
             
     # Copy final best render to artifacts
-    subprocess.run(["cp", base_dir + "assets/photorealistic_bear_final.png", "/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/photorealistic_bear_final.png"])
+    subprocess.run(["cp", base_dir + "assets/photorealistic_bear_final.png", "/home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/photorealistic_bear_final.png"])
     print("=== Optimization Loop Completed ===")
 
 if __name__ == "__main__":

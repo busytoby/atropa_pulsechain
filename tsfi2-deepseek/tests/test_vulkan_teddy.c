@@ -864,6 +864,7 @@ static float dna_fur_b = 0.22f;
 static float dna_eye_r = 0.0f;
 static float dna_eye_g = 1.0f;
 static float dna_eye_b = 0.0f;
+static int neural_consensus_flag = 1;
 
 // Dynamic Fur Physics parameters
 static float wind_velocity = 0.8f;
@@ -1386,7 +1387,14 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
         float dx_scaled = dx / sx;
         float dy_scaled = dy / sy;
         float len = sqrtf(dx_scaled*dx_scaled + dy_scaled*dy_scaled);
-        float dist = (len - body[i].r) * min_s;
+        
+        float r_val = body[i].r;
+        if (i == 0) {
+            float stomach_bump = 0.05f * expf(-12.0f * (dx_scaled*dx_scaled + dy_scaled*dy_scaled));
+            r_val += stomach_bump;
+        }
+        
+        float dist = (len - r_val) * min_s;
         float nx = len > 0.0001f ? (dx_scaled / len) / sx : 0.0f;
         float ny = len > 0.0001f ? (dy_scaled / len) / sy : 0.0f;
         float nlen = sqrtf(nx*nx + ny*ny);
@@ -1607,6 +1615,9 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
             
             // Light source size/spread coefficient for contact-hardening penumbra width
             float light_spread = 0.12f;
+            if (i < 6) {
+                light_spread = 0.8f;
+            }
             float penumbra_radius = b * light_spread + 0.01f;
             
             float penumbra = 0.15f + 0.85f * (dist_to_surface * avg_scale) / penumbra_radius;
@@ -1618,6 +1629,25 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
     }
     if (shadow < 0.15f) shadow = 0.15f;
     return shadow;
+}
+
+static float calculate_floor_shadow(float cx, float cy, float cx_no_jitter, float cy_no_jitter, float lx, float ly, float lz, SphereGeometry *body) {
+    float bg_shadow = 1.0f;
+    if (cx_no_jitter >= -1.2f && cx_no_jitter <= 1.2f &&
+        cy_no_jitter >= -0.05f && cy_no_jitter <= 0.14f) {
+        bg_shadow = calculate_shadow(cx, cy, -0.4f, lx, ly, lz, body, -1);
+        float fade = 1.0f;
+        if (cy_no_jitter < -0.0432f) {
+            fade = 1.0f - ((cy_no_jitter - -0.0432f) / (-0.05f - -0.0432f));
+        } else if (cy_no_jitter > 0.1296f) {
+            fade = 1.0f - ((cy_no_jitter - 0.1296f) / (0.14f - 0.1296f));
+        }
+        if (fade < 0.0f) fade = 0.0f;
+        if (fade > 1.0f) fade = 1.0f;
+        float smooth_fade = fade * fade * (3.0f - 2.0f * fade);
+        bg_shadow = 1.0f - (1.0f - bg_shadow) * smooth_fade;
+    }
+    return bg_shadow;
 }
 
 typedef struct {
@@ -1786,6 +1816,7 @@ static Ab4hPixel evaluate_palette(float t) {
 
 // Complete Viewport rendering (left: rotating teddy bear, right: tool palette)
 void render_frame(TsfiAb4hMat *canvas, int frame) {
+    if (!neural_consensus_flag) return;
     if (is_benchmark_active) {
         // Auncient fast path: only process audio drum sequencer steps so latency logs remain authentic, bypassing CPU raymarching entirely
         for (int t = 0; t < 7; t++) {
@@ -2168,15 +2199,24 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 float bg_factor = 1.0f - rad * 0.6f;
                 if (bg_factor < 0.0f) bg_factor = 0.0f;
                 
-                float bg_shadow = 1.0f;
-                if (cx_center_no_jitter >= shadow_min_x && cx_center_no_jitter <= shadow_max_x &&
-                    cy_center_no_jitter >= shadow_min_y && cy_center_no_jitter <= shadow_max_y) {
-                    bg_shadow = calculate_shadow(cx_center, cy_center, -0.4f, lx, ly, lz, body, -1);
+                float bg_shadow = calculate_floor_shadow(cx_center, cy_center, cx_center_no_jitter, cy_center_no_jitter, lx, ly, lz, body);
+                
+                float grid_factor = 1.0f;
+                float grid_x = (cx_center + 1.2f) * 5.0f;
+                float grid_y = (cy_center + 1.08f) * 5.0f;
+                float fx = grid_x - floorf(grid_x);
+                float fy = grid_y - floorf(grid_y);
+                float rx = (cx_center + 1.2f) * 2.5f;
+                float ry = (cy_center + 1.08f) * 7.5f;
+                float frx = rx - floorf(rx);
+                float fry = ry - floorf(ry);
+                if (fx < 0.025f || fy < 0.025f || frx < 0.015f || fry < 0.015f) {
+                    grid_factor = 0.65f;
                 }
                 
-                acc_r = (0.10f * bg_factor + 0.02f) * (0.35f + 0.65f * bg_shadow);
-                acc_g = (0.14f * bg_factor + 0.01f) * (0.35f + 0.65f * bg_shadow);
-                acc_b = (0.22f * bg_factor + 0.03f) * (0.35f + 0.65f * bg_shadow);
+                acc_r = (0.10f * bg_factor + 0.02f) * (0.35f + 0.65f * bg_shadow) * grid_factor;
+                acc_g = (0.14f * bg_factor + 0.01f) * (0.35f + 0.65f * bg_shadow) * grid_factor;
+                acc_b = (0.22f * bg_factor + 0.03f) * (0.35f + 0.65f * bg_shadow) * grid_factor;
                 acc_a = 1.0f;
             } else {
                 // Perform dynamic Super-Sampling Anti-Aliasing (SSAA)
@@ -2184,7 +2224,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 float sum_g = 0.0f;
                 float sum_b = 0.0f;
                 float sum_a = 0.0f;
-
+ 
                 bool near_edge = false;
                 if (opt_ssaa) {
                     // Auncient edge-only SSAA detection to avoid costly sub-sampling on flat surfaces
@@ -2202,7 +2242,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                         }
                     }
                 }
-
+ 
                 int num_samples = near_edge ? 4 : 1;
                 float offsets_x[4] = { -0.25f, 0.25f, -0.25f, 0.25f };
                 float offsets_y[4] = { -0.25f, -0.25f, 0.25f, 0.25f };
@@ -2210,13 +2250,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     offsets_x[0] = 0.0f;
                     offsets_y[0] = 0.0f;
                 }
-
+ 
                 // Pre-calculate background shadow once at pixel center for massive speedup (Auncient shadow bound check)
-                float bg_shadow = 1.0f;
-                if (cx_center_no_jitter >= shadow_min_x && cx_center_no_jitter <= shadow_max_x &&
-                    cy_center_no_jitter >= shadow_min_y && cy_center_no_jitter <= shadow_max_y) {
-                    bg_shadow = calculate_shadow(cx_center, cy_center, -0.4f, lx, ly, lz, body, -1);
-                }
+                float bg_shadow = calculate_floor_shadow(cx_center, cy_center, cx_center_no_jitter, cy_center_no_jitter, lx, ly, lz, body);
 
                 // Auncient closest non-blended joint lookup to avoid testing 7 spheres in sub-samples
                 int closest_nonblend_idx = 8;
@@ -2259,9 +2295,23 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     
                     float sub_bg_shadow = bg_shadow;
                     
-                    float sub_r = (0.10f * sub_bg_factor + 0.02f) * (0.35f + 0.65f * sub_bg_shadow);
-                    float sub_g = (0.14f * sub_bg_factor + 0.01f) * (0.35f + 0.65f * sub_bg_shadow);
-                    float sub_b = (0.22f * sub_bg_factor + 0.03f) * (0.35f + 0.65f * sub_bg_shadow);
+                    // Dim geometric patterned grid background (combination of squares and rectangles)
+                    float grid_factor = 1.0f;
+                    float grid_x = (cx + 1.2f) * 5.0f;
+                    float grid_y = (cy + 1.08f) * 5.0f;
+                    float fx = grid_x - floorf(grid_x);
+                    float fy = grid_y - floorf(grid_y);
+                    float rx = (cx + 1.2f) * 2.5f;
+                    float ry = (cy + 1.08f) * 7.5f;
+                    float frx = rx - floorf(rx);
+                    float fry = ry - floorf(ry);
+                    if (fx < 0.025f || fy < 0.025f || frx < 0.015f || fry < 0.015f) {
+                        grid_factor = 0.65f;
+                    }
+
+                    float sub_r = (0.10f * sub_bg_factor + 0.02f) * (0.35f + 0.65f * sub_bg_shadow) * grid_factor;
+                    float sub_g = (0.14f * sub_bg_factor + 0.01f) * (0.35f + 0.65f * sub_bg_shadow) * grid_factor;
+                    float sub_b = (0.22f * sub_bg_factor + 0.03f) * (0.35f + 0.65f * sub_bg_shadow) * grid_factor;
                     float sub_a = 1.0f;
 
                     bool hit_bear = false;
@@ -2330,7 +2380,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                             sub_g = 0.05f * cel_diff;
                                             sub_b = 0.05f * cel_diff;
                                         } else if (i == 10 || i == 11) {
-                                            if (dist2 < r2 * 0.20f) {
+                                            if (i == 11 && sickness_intensity > 0.5f) {
+                                                sub_r = 0.02f * cel_diff;
+                                                sub_g = 0.02f * cel_diff;
+                                                sub_b = 0.02f * cel_diff;
+                                            } else if (dist2 < r2 * 0.20f) {
                                                 sub_r = 0.0f; sub_g = 0.0f; sub_b = 0.0f;
                                             } else {
                                                 sub_r = 0.10f * cel_diff;
@@ -2371,29 +2425,35 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                          sub_g = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
                                          sub_b = 0.06f * (diffuse * 0.8f + 0.2f) + spec + fresnel * 0.15f;
                                     } else if (i == 10 || i == 11) { // Eyes with specular highlights
-                                         float hx = lx;
-                                         float hy = ly;
-                                         float hz = lz + 1.0f;
-                                         float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                                         hx /= hlen; hy /= hlen; hz /= hlen;
-                                         float spec = nx*hx + ny*hy + nz*hz;
-                                         if (spec < 0.0f) spec = 0.0f;
-                                          float spec2 = spec * spec;
-                                          float spec4 = spec2 * spec2;
-                                          float spec8 = spec4 * spec4;
-                                          float spec16 = spec8 * spec8;
-                                          float spec32 = spec16 * spec16;
-                                          float spec64 = spec32 * spec32;
-                                          float spec_base = (spec32) * 0.6f;
-                                          float spec_coat = (spec64 * spec64) * 1.5f; // Sharp clear-coat glass highlight
-                                         float eye_reflection = (ny * 0.4f + 0.6f) * fresnel * 0.8f; // Glossy reflections
+                                          if (i == 11 && sickness_intensity > 0.5f) {
+                                              sub_r = 0.02f * (diffuse * 0.4f + 0.1f);
+                                              sub_g = 0.02f * (diffuse * 0.4f + 0.1f);
+                                              sub_b = 0.02f * (diffuse * 0.4f + 0.1f);
+                                          } else {
+                                              float hx = lx;
+                                              float hy = ly;
+                                              float hz = lz + 1.0f;
+                                              float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                              hx /= hlen; hy /= hlen; hz /= hlen;
+                                              float spec = nx*hx + ny*hy + nz*hz;
+                                              if (spec < 0.0f) spec = 0.0f;
+                                               float spec2 = spec * spec;
+                                               float spec4 = spec2 * spec2;
+                                               float spec8 = spec4 * spec4;
+                                               float spec16 = spec8 * spec8;
+                                               float spec32 = spec16 * spec16;
+                                               float spec64 = spec32 * spec32;
+                                               float spec_base = (spec32) * 0.6f;
+                                               float spec_coat = (spec64 * spec64) * 1.5f; // Sharp clear-coat glass highlight
+                                              float eye_reflection = (ny * 0.4f + 0.6f) * fresnel * 0.8f; // Glossy reflections
 
-                                         // Dynamic beat-responsive glow on the eyes synchronized with the kick drum and TB-303 env
-                                         float kick_glow = track_trigger_env[0] * 0.4f;
-                                         float acid_glow = tb303_vca_env * (0.2f + 0.6f * tb303_accent_intensity);
-                                         sub_r = dna_eye_r * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + kick_glow + acid_glow * 0.1f;
-                                         sub_g = dna_eye_g * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.7f;
-                                         sub_b = dna_eye_b * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.4f;
+                                              // Dynamic beat-responsive glow on the eyes synchronized with the kick drum and TB-303 env
+                                              float kick_glow = track_trigger_env[0] * 0.4f;
+                                              float acid_glow = tb303_vca_env * (0.2f + 0.6f * tb303_accent_intensity);
+                                              sub_r = dna_eye_r * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + kick_glow + acid_glow * 0.1f;
+                                              sub_g = dna_eye_g * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.7f;
+                                              sub_b = dna_eye_b * (diffuse * 0.6f + 0.2f) + spec_base + spec_coat + eye_reflection + (kick_glow * 0.2f) + acid_glow * 0.4f;
+                                          }
                                     } else { // Red Bow Tie (Indices 12, 13, 14)
                                         float hx = lx;
                                         float hy = ly;
@@ -2424,6 +2484,24 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                         float base_r = dna_fur_r + 0.08f * track_trigger_env[0];
                         float base_g = dna_fur_g + 0.05f * track_trigger_env[0];
                         float base_b = dna_fur_b + 0.03f * track_trigger_env[0];
+                        
+                        if (sickness_intensity > 0.5f) {
+                            float sick_r = 51.0f / 255.0f;
+                            float sick_g = 65.0f / 255.0f;
+                            float sick_b = 0.0f / 255.0f;
+                            float noise_pos = cx * 12.3f + cy * 7.9f;
+                            float h_noise = sinf(noise_pos * 100.0f) * 43758.5453123f;
+                            h_noise = h_noise - floorf(h_noise);
+                            if (h_noise > 0.8f) {
+                                sick_r = 0.1f;
+                                sick_g = 0.9f;
+                                sick_b = 0.1f;
+                            }
+                            float blend_factor = sickness_intensity * 0.7f;
+                            base_r = base_r * (1.0f - blend_factor) + sick_r * blend_factor;
+                            base_g = base_g * (1.0f - blend_factor) + sick_g * blend_factor;
+                            base_b = base_b * (1.0f - blend_factor) + sick_b * blend_factor;
+                        }
                         
                         float cx_no_jitter = (sx / 800.0f) * 2.4f - 1.2f;
                         float cy_no_jitter = (sy / 720.0f) * 2.16f - 1.08f;
@@ -2540,6 +2618,20 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     float shell_g = current_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
                                     float shell_b = current_b * (diffuse * 0.8f + 0.2f) + fresnel * 0.65f + fur_spec * 0.5f;
 
+                                    if (closest_idx == 1) {
+                                        float dot_light = -nx * 0.707f + ny * 0.707f;
+                                        if (dot_light > 0.0f) {
+                                            float stand_intensity = 1.0f;
+                                            if (body[1].y > 0.24f) {
+                                                stand_intensity += (body[1].y - 0.24f) * 3.0f;
+                                            }
+                                            float spec_cool = powf(dot_light, 16.0f) * 0.25f * stand_intensity;
+                                            shell_r += spec_cool * 0.2f;
+                                            shell_g += spec_cool * 0.6f;
+                                            shell_b += spec_cool * 1.0f;
+                                        }
+                                    }
+
                                     float sh = 1.0f - fmaxf(nx*lx + ny*ly + nz*lz, 0.0f);
                                     float sheen = (sh * sh * sh) * (nz * nz) * 0.15f;
                                     shell_r += sheen * 0.75f;
@@ -2558,7 +2650,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     accum_r = shell_r;
                                     accum_g = shell_g;
                                     accum_b = shell_b;
-                                    accum_a = 1.0f;
+                                    float edge_a = 1.0f;
+                                    if (d_blend > -0.02f) {
+                                        float edge_fade = 1.0f - ((d_blend + 0.02f) / 0.02f);
+                                        if (edge_fade < 0.0f) edge_fade = 0.0f;
+                                        if (edge_fade > 1.0f) edge_fade = 1.0f;
+                                        edge_a = edge_fade * edge_fade * (3.0f - 2.0f * edge_fade);
+                                    }
+                                    accum_a = edge_a;
                                 }
                             } else {
 
@@ -2716,6 +2815,20 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float shell_g = current_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
                                         float shell_b = current_b * (diffuse * 0.8f + 0.2f) + fresnel * 0.65f + fur_spec * 0.5f;
 
+                                        if (closest_idx == 1) {
+                                            float dot_light = -nx * 0.707f + ny * 0.707f;
+                                            if (dot_light > 0.0f) {
+                                                float stand_intensity = 1.0f;
+                                                if (body[1].y > 0.24f) {
+                                                    stand_intensity += (body[1].y - 0.24f) * 3.0f;
+                                                }
+                                                float spec_cool = powf(dot_light, 16.0f) * 0.25f * stand_intensity;
+                                                shell_r += spec_cool * 0.2f;
+                                                shell_g += spec_cool * 0.6f;
+                                                shell_b += spec_cool * 1.0f;
+                                            }
+                                        }
+
                                          float sh = 1.0f - fmaxf(nx*lx + ny*ly + nz*lz, 0.0f);
                                          float sheen = (sh * sh * sh) * (nz * nz) * 0.15f;
                                         shell_r += sheen * 0.75f;
@@ -2736,6 +2849,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         float shell_a = (shell == 0) ? 1.0f : (noise_val - threshold) * 2.5f;
                                         if (shell_a < 0.0f) shell_a = 0.0f;
                                         if (shell_a > 1.0f) shell_a = 1.0f;
+
+                                        if (d_blend > -0.02f) {
+                                            float edge_fade = 1.0f - ((d_blend + 0.02f) / 0.02f);
+                                            if (edge_fade < 0.0f) edge_fade = 0.0f;
+                                            if (edge_fade > 1.0f) edge_fade = 1.0f;
+                                            float smooth_fade = edge_fade * edge_fade * (3.0f - 2.0f * edge_fade);
+                                            shell_a *= smooth_fade;
+                                        }
 
                                         accum_r += (1.0f - accum_a) * shell_r * shell_a;
                                         accum_g += (1.0f - accum_a) * shell_g * shell_a;
@@ -3259,7 +3380,7 @@ void present_ab4h_to_argb(TsfiAb4hMat *canvas, uint32_t *dest_argb) {
 }
 
 static void export_ppm_real(TsfiAb4hMat *canvas) {
-    const char *out_path = "/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/photorealistic_teddy_bear.ppm";
+    const char *out_path = "/home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm";
     FILE *fp = fopen(out_path, "wb");
     if (fp) {
         fprintf(fp, "P6\n%d %d\n255\n", 1280, 720);
@@ -4008,6 +4129,101 @@ static void run_ui_self_tests(TsfiAb4hMat *canvas) {
     // 10. Run render frame to verify everything displays correctly under tested state
     printf("[Test] Exercising render frame layout...\n");
     render_frame(canvas, 0);
+
+    // 11. Test Sickness Mutation Eye Suppression
+    printf("[Test] Testing Sickness Mutation Eye Suppression...\n");
+    sickness_intensity = 0.0f;
+    twitch_intensity = 0.0f;
+    breathing_freq = 0.0f;
+    scale_val = 1.0f;
+    params.identity_pole = 20;
+    dna_eye_g = 1.0f;
+    render_frame(canvas, 0);
+    
+    // Calculate right eye center position under scale=1.0 and neck tilt=-0.2 rad
+    float eye_cx = 0.11f * cosf(-0.2f) - 0.14f * sinf(-0.2f);
+    float eye_cy = 0.20f + 0.11f * sinf(-0.2f) + 0.14f * cosf(-0.2f);
+    int rx_pix = (int)((eye_cx + 1.2f) / 2.4f * 800.0f);
+    int ry_pix = (int)((eye_cy + 1.08f) / 2.16f * 720.0f);
+    
+    float max_green_normal = 0.0f;
+    for (int dy_off = -15; dy_off <= 15; dy_off++) {
+        for (int dx_off = -15; dx_off <= 15; dx_off++) {
+            int px = rx_pix + dx_off;
+            int py = ry_pix + dy_off;
+            if (px >= 0 && px < canvas->cols && py >= 0 && py < canvas->rows) {
+                Ab4hPixel p = canvas->data[py * canvas->cols + px];
+                float g_val = half_to_float(p.g);
+                if (g_val > max_green_normal) max_green_normal = g_val;
+            }
+        }
+    }
+    
+    sickness_intensity = 0.6f;
+    render_frame(canvas, 0);
+    
+    float max_green_sick = 0.0f;
+    for (int dy_off = -15; dy_off <= 15; dy_off++) {
+        for (int dx_off = -15; dx_off <= 15; dx_off++) {
+            int px = rx_pix + dx_off;
+            int py = ry_pix + dy_off;
+            if (px >= 0 && px < canvas->cols && py >= 0 && py < canvas->rows) {
+                Ab4hPixel p = canvas->data[py * canvas->cols + px];
+                float g_val = half_to_float(p.g);
+                if (g_val > max_green_sick) max_green_sick = g_val;
+            }
+        }
+    }
+    
+    printf("  -> Normal right eye max green intensity in neighborhood: %.3f\n", max_green_normal);
+    printf("  -> Sick right eye max green intensity in neighborhood: %.3f\n", max_green_sick);
+    assert(max_green_normal > 0.2f && "Normal right eye should have green content");
+    assert(max_green_sick < 0.15f && "Sick right eye should have suppressed green content (dark sunken shadow cavity)");
+    sickness_intensity = 0.0f;
+
+    // 12. Test Cranial Specularity Stand Scaling
+    printf("[Test] Testing Cranial Specularity (Cool Blue Highlight)...\n");
+    int clx_pix = (int)((-0.10f + 1.2f) / 2.4f * 800.0f);
+    int crx_pix = (int)((0.10f + 1.2f) / 2.4f * 800.0f);
+    int c_y_pix = (int)((0.45f + 1.08f) / 2.16f * 720.0f);
+    render_frame(canvas, 0);
+    Ab4hPixel head_left = canvas->data[c_y_pix * canvas->cols + clx_pix];
+    Ab4hPixel head_right = canvas->data[c_y_pix * canvas->cols + crx_pix];
+    float head_left_b = half_to_float(head_left.b);
+    float head_right_b = half_to_float(head_right.b);
+    printf("  -> Head left blue: %.3f (with cool specular)\n", head_left_b);
+    printf("  -> Head right blue: %.3f (without cool specular)\n", head_right_b);
+    assert(head_left_b > head_right_b && "Cranial cool blue highlight should increase blue on top-left");
+
+    // 13. Test Consensus Flag Bypass
+    printf("[Test] Testing Consensus Flag Bypass...\n");
+    Ab4hPixel red = make_ab4h_pixel(1.0f, 0.0f, 0.0f, 1.0f);
+    draw_rect_ab4h(canvas, 0, 0, canvas->cols, canvas->rows, red);
+    neural_consensus_flag = 0;
+    render_frame(canvas, 0);
+    Ab4hPixel test_pixel = canvas->data[360 * canvas->cols + 400];
+    float test_pixel_r = half_to_float(test_pixel.r);
+    printf("  -> Pixel color with consensus=0: R=%.3f\n", test_pixel_r);
+    assert(test_pixel_r == 1.0f && "Consensus flag=0 must bypass rendering");
+    neural_consensus_flag = 1;
+
+    // 14. Test Floor Shadow Bounding Box Constraints
+    printf("[Test] Testing Floor Shadow Bounds...\n");
+    render_frame(canvas, 0);
+    int sx_pix = (int)((0.0f + 1.2f) / 2.4f * 800.0f);
+    int sy_in_pix = (int)((0.0f + 1.08f) / 2.16f * 720.0f);
+    int sy_out_pix = (int)((-0.08f + 1.08f) / 2.16f * 720.0f);
+    Ab4hPixel shadow_in = canvas->data[sy_in_pix * canvas->cols + sx_pix];
+    Ab4hPixel shadow_out = canvas->data[sy_out_pix * canvas->cols + sx_pix];
+    float shadow_in_r = half_to_float(shadow_in.r);
+    float shadow_in_g = half_to_float(shadow_in.g);
+    float shadow_in_b = half_to_float(shadow_in.b);
+    float shadow_out_r = half_to_float(shadow_out.r);
+    float shadow_out_g = half_to_float(shadow_out.g);
+    float shadow_out_b = half_to_float(shadow_out.b);
+    printf("  -> Inside shadow (cy=0.0): R=%.3f, G=%.3f, B=%.3f\n", shadow_in_r, shadow_in_g, shadow_in_b);
+    printf("  -> Outside shadow (cy=-0.08): R=%.3f, G=%.3f, B=%.3f\n", shadow_out_r, shadow_out_g, shadow_out_b);
+    assert(shadow_out_b > shadow_in_b && "Shadow should be bounded and faded outside normalized Y-bounds");
 
     force_procedural_rendering = false;
 

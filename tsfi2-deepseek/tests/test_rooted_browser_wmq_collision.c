@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <poll.h>
 #include "tsfi_zmm_vm.h"
 #include "tsfi_wire_firmware.h"
 #include "lau_yul_thunk.h"
@@ -204,6 +205,12 @@ void* wmq_loopback_server(void* arg) {
     
     // Accept up to two connections (for KEY_DOWN 30 and KEY_DOWN 32 checks)
     for (int k = 0; k < 2; k++) {
+        struct pollfd fds[1];
+        fds[0].fd = listen_fd;
+        fds[0].events = POLLIN;
+        int poll_res = poll(fds, 1, 5000); // 5 seconds timeout
+        assert(poll_res > 0 && "Timeout waiting for client connection on loopback socket!");
+        
         int client_fd = accept(listen_fd, NULL, NULL);
         if (client_fd >= 0) {
             char buffer[256];
@@ -320,9 +327,9 @@ int main() {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(g_server_port);
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
-    if (connect(client_fd_a, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) >= 0) {
-        send(client_fd_a, "KEY_DOWN 30\n", 12, 0);
-    }
+    int conn_res_a = connect(client_fd_a, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+    assert(conn_res_a >= 0);
+    send(client_fd_a, "KEY_DOWN 30\n", 12, 0);
     close(client_fd_a);
 
     // Process Keycode D (32)
@@ -337,9 +344,9 @@ int main() {
     // Connect and bridge to loopback socket for D
     int client_fd_d = socket(AF_INET, SOCK_STREAM, 0);
     assert(client_fd_d >= 0);
-    if (connect(client_fd_d, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) >= 0) {
-        send(client_fd_d, "KEY_DOWN 32\n", 12, 0);
-    }
+    int conn_res_d = connect(client_fd_d, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+    assert(conn_res_d >= 0);
+    send(client_fd_d, "KEY_DOWN 32\n", 12, 0);
     close(client_fd_d);
 
     // Join the thread to ensure server completed checks
