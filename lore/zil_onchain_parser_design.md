@@ -47,6 +47,14 @@ Once a Verb and Noun are successfully matched:
 
 ---
 
+## 4. ZIL & WinchesterMQ Integration for 4D DNA Assets
+
+ZIL commands compile directly into state mutation transactions that govern 4D DNA assets. By mapping packed Z-encoded noun properties to WinchesterMQ register offsets:
+1. **DNA Codification**: Tesseract collection cards store their 4D vertices and rotation vectors in the ZIL object property table.
+2. **MQ Interaction Routing**: Command verbs (e.g., `sabotage`, `spin`) write payload data directly to WinchesterMQ register interfaces (such as `yulStorage[100]` for SCSI phases), initiating low-level hardware state-machine changes and visual deformation feedback loops.
+
+---
+
 ## Next Steps
 1.  **Implement `parseCommand` in `zmachine.yul`**: Add string parsing and dictionary matching loops.
 2.  **Build Integration Test**: Verify inputs like "take coin" on-chain and watch ERC-20 balances update dynamically.
