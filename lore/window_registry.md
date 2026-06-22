@@ -8,3 +8,4 @@ This registry tracks the active windows initiated by the system and their respec
 | Lore Editor Browser | Headless Native Browser | **Headless** (Hidden) | Renders `lore_editor.html` in the background and pipes frames to the Vulkan presenter. |
 | Dashboard Browser | Headless Native Browser | **Headless** (Hidden) | Renders `atropa_dashboard.html` in the background and pipes frames to the Vulkan presenter. |
 | YouTube Sub-Browser | Headless Native Browser | **Headless** (Hidden) | Loads and controls YouTube videos dynamically inside the dashboard frame. |
+| Hexensabbat Emulation Console | Vulkan/Wayland Window | **Headed** (Visible) | Runs the B128 console with the Hexensabbat game visualizer loop in the native Firefox/Wayland browser. |
