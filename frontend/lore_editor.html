@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auncient Lore Editor & Annotator</title>
+  <!-- Google Fonts for Premium Visual Aesthetics -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0a0c;
+      --bg-panel: #111115;
+      --border-color: #d4af37;
+      --border-color-dim: rgba(212, 175, 55, 0.25);
+      --text-main: #ebdcb9;
+      --text-highlight: #f8f1df;
+      --accent-crimson: #801818;
+      --accent-crimson-dim: rgba(128, 24, 24, 0.4);
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid var(--border-color);
+    }
+
+    /* Top Navigation bar */
+    header {
+      background: linear-gradient(180deg, #1b1b22 0%, #111115 100%);
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--border-color);
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .header-info {
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      opacity: 0.8;
+    }
+
+    /* Main Split Container */
+    .workspace {
+      display: flex;
+      flex-direction: row;
+      flex-grow: 1;
+      overflow: hidden;
+    }
+
+    /* Left pane: File List */
+    .sidebar-left {
+      width: 280px;
+      background-color: var(--bg-panel);
+      border-right: 1px solid var(--border-color-dim);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .search-box {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color-dim);
+    }
+
+    .search-box input {
+      width: 100%;
+      background-color: #17171d;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 4px;
+      color: var(--text-highlight);
+      padding: 8px 12px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--border-color);
+    }
+
+    .file-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .file-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.05);
+      transition: background-color 0.2s, border-left 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .file-item:hover {
+      background-color: rgba(212, 175, 55, 0.05);
+    }
+
+    .file-item.reviewed-item {
+      opacity: 0.45;
+    }
+
+    .file-item.active {
+      background-color: rgba(212, 175, 55, 0.1);
+      border-left-color: var(--border-color);
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: var(--text-highlight);
+      font-size: 0.92rem;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      opacity: 0.6;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Center Pane: Editor Workspace */
+    .editor-pane {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-base);
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .current-doc-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: var(--text-highlight);
+      border-bottom: 1px solid var(--border-color-dim);
+      padding-bottom: 4px;
+      flex-grow: 1;
+      margin-right: 16px;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--border-color);
+      transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      background-color: var(--border-color);
+      color: var(--bg-base);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .btn-crimson {
+      border-color: var(--accent-crimson);
+      color: var(--text-highlight);
+      background-color: var(--accent-crimson-dim);
+    }
+
+    .btn-crimson:hover {
+      background-color: var(--accent-crimson);
+      color: var(--text-highlight);
+      box-shadow: 0 0 10px rgba(128, 24, 24, 0.6);
+    }
+
+    .editor-container {
+      display: flex;
+      flex-direction: row;
+      flex-grow: 1;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .textarea-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .markdown-textarea {
+      width: 100%;
+      height: 100%;
+      background-color: #0e0e12;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 6px;
+      color: var(--text-highlight);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      padding: 16px;
+      resize: none;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .markdown-textarea:focus {
+      border-color: var(--border-color);
+    }
+
+    .tab-group {
+      display: inline-flex;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-right: 12px;
+    }
+
+    .tab-group .btn {
+      border: none;
+      border-radius: 0;
+      padding: 8px 16px;
+      margin: 0;
+      background: transparent;
+      color: var(--text-main);
+    }
+
+    .tab-group .btn.active-tab {
+      background-color: var(--border-color);
+      color: var(--bg-base);
+    }
+
+    .markdown-preview {
+      width: 100%;
+      height: 100%;
+      background-color: #0e0e12;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 24px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .markdown-preview h1 {
+      font-family: var(--font-display);
+      color: var(--border-color);
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color-dim);
+      padding-bottom: 6px;
+    }
+
+    .markdown-preview h2 {
+      font-family: var(--font-display);
+      color: var(--border-color);
+      font-size: 1.3rem;
+      margin-top: 20px;
+      margin-bottom: 12px;
+    }
+
+    .markdown-preview h3 {
+      font-family: var(--font-display);
+      color: var(--text-highlight);
+      font-size: 1.1rem;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .markdown-preview p {
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+    }
+
+    .markdown-preview blockquote {
+      border-left: 3px solid var(--accent-crimson);
+      background-color: #17171d;
+      padding: 10px 16px;
+      margin: 16px 0;
+      font-style: italic;
+    }
+
+    .markdown-preview code {
+      font-family: var(--font-mono);
+      background-color: #1c1c22;
+      color: var(--border-color);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+
+    .markdown-preview ul, .markdown-preview ol {
+      margin-left: 24px;
+      margin-bottom: 14px;
+    }
+
+    .markdown-preview li {
+      margin-bottom: 6px;
+    }
+
+    /* Selection Overlay or popup */
+    .selection-tooltip {
+      position: absolute;
+      background-color: #1a1a24;
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      z-index: 100;
+      color: var(--text-highlight);
+    }
+
+    /* Right pane: Annotations Drawer */
+    .sidebar-right {
+      width: 320px;
+      background-color: var(--bg-panel);
+      border-left: 1px solid var(--border-color-dim);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-right-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--border-color);
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color-dim);
+      letter-spacing: 1px;
+    }
+
+    .annotations-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .annotation-card {
+      background-color: #17171d;
+      border: 1px solid var(--border-color-dim);
+      border-left: 4px solid var(--accent-crimson);
+      border-radius: 4px;
+      padding: 12px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .annotation-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-color);
+    }
+
+    .annotation-range {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      opacity: 0.5;
+      margin-bottom: 6px;
+    }
+
+    .annotation-quote {
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--text-highlight);
+      background-color: rgba(255,255,255,0.03);
+      padding: 4px 8px;
+      border-left: 2px solid var(--border-color-dim);
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .annotation-text {
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .annotation-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .annotation-delete-btn {
+      background: transparent;
+      border: none;
+      color: #ff5555;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .no-annotations {
+      text-align: center;
+      opacity: 0.5;
+      font-size: 0.9rem;
+      margin-top: 40px;
+    }
+
+    /* Modal dialog */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background-color: var(--bg-panel);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      width: 450px;
+      padding: 24px;
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    }
+
+    .modal h3 {
+      font-family: var(--font-display);
+      color: var(--border-color);
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+    }
+
+    .modal-quote {
+      font-style: italic;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      background-color: #17171d;
+      border-left: 3px solid var(--accent-crimson);
+      margin-bottom: 16px;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    .modal textarea {
+      width: 100%;
+      height: 100px;
+      background-color: #17171d;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 4px;
+      color: var(--text-highlight);
+      font-family: var(--font-body);
+      padding: 10px;
+      resize: none;
+      outline: none;
+      margin-bottom: 18px;
+    }
+
+    .modal textarea:focus {
+      border-color: var(--border-color);
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .status-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: #111115;
+      border: 1px solid var(--border-color);
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--text-highlight);
+      transform: translateY(100px);
+      transition: transform 0.3s;
+      z-index: 10000;
+    }
+
+    .status-toast.show {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Auncient Lore Workspace</h1>
+    <div class="header-info">Host Display Engine: Wayland/Vulkan compositor</div>
+  </header>
+
+  <div class="workspace">
+    <!-- Sidebar: Directory listing -->
+    <div class="sidebar-left">
+      <div class="search-box" style="display:flex; flex-direction:column; gap:8px;">
+        <input type="text" id="search-input" placeholder="Search files...">
+        <button class="btn" id="sort-toggle" onclick="toggleSortMode()" style="width:100%; text-align:center; font-size:0.75rem; padding:6px;">Sort: Priority</button>
+      </div>
+      <div class="file-list" id="file-list-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Center: Content Editor -->
+    <div class="editor-pane">
+      <div class="editor-header">
+        <div class="current-doc-title" id="doc-title-display">Select a document to edit...</div>
+        <div class="editor-actions">
+          <div class="tab-group" id="view-mode-tabs" style="display:none;">
+            <button class="btn active-tab" id="tab-preview" onclick="setViewMode('preview')">Preview</button>
+            <button class="btn" id="tab-edit" onclick="setViewMode('edit')">Edit</button>
+          </div>
+          <button class="btn" id="review-btn" style="display:none;" onclick="toggleReviewedStatus()">Mark Reviewed</button>
+          <button class="btn btn-crimson" id="save-btn" style="display:none;" onclick="saveDocument()">Save Document</button>
+        </div>
+      </div>
+      <div class="editor-container">
+        <div class="textarea-wrapper">
+          <textarea class="markdown-textarea" id="editor-textarea" style="display:none;" onmouseup="handleTextSelection()" onkeyup="handleTextSelection()"></textarea>
+          <div class="markdown-preview" id="editor-preview" style="display:none;" onmouseup="handlePreviewSelection()"></div>
+          <div class="selection-tooltip" id="selection-tooltip" onclick="openAnnotationModal()">📝 Annotate Selection</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Right: Comments drawer -->
+    <div class="sidebar-right">
+      <div class="sidebar-right-title">Annotations</div>
+      <div class="annotations-list" id="annotations-container">
+        <div class="no-annotations">No document selected.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation Modal Dialog -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3>Add Annotation</h3>
+      <div class="modal-quote" id="modal-quote-text"></div>
+      <textarea id="annotation-input" placeholder="Enter comment/annotation metadata..."></textarea>
+      <div class="modal-buttons">
+        <button class="btn" onclick="closeAnnotationModal()">Cancel</button>
+        <button class="btn btn-crimson" onclick="submitAnnotation()">Add Annotation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-toast" id="toast">File saved successfully.</div>
+
+  <script>
+    let files = [];
+    let currentFile = null;
+    let fileContent = "";
+    let annotations = [];
+    let selectedRange = null;
+    let selectedText = "";
+    let currentFileReviewed = false;
+    let currentSortMode = 'priority';
+
+    // Fetch lists on load
+    window.onload = function() {
+      fetchFileList();
+      
+      document.getElementById('search-input').addEventListener('input', function(e) {
+        renderFileList(e.target.value);
+      });
+    };
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    async function fetchFileList() {
+      try {
+        const res = await fetch('/api/lore/list');
+        files = await res.json();
+        renderFileList();
+        if (!currentFile && files.length > 0) {
+          const sorted = [...files];
+          const getPriority = (f) => {
+            let score = 0;
+            if (f.gitStatus === 'untracked') score += 200000;
+            if (f.gitStatus === 'modified') score += 100000;
+            const name = f.name.toLowerCase();
+            if (name.includes('daily_lore')) score += 10000;
+            if (name.includes('review')) score += 5000;
+            if (name.includes('analysis')) score += 2000;
+            if (f.reviewed) score -= 500000;
+            return score;
+          };
+          sorted.sort((a, b) => {
+            const prioA = getPriority(a);
+            const prioB = getPriority(b);
+            if (prioA !== prioB) return prioB - prioA;
+            return b.modified - a.modified;
+          });
+          const targetDoc = sorted.find(f => f.name === 'tessarant_combat_physics.md');
+          if (targetDoc) {
+            loadFile(targetDoc.name);
+          } else if (sorted[0]) {
+            loadFile(sorted[0].name);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load lore list:", err);
+      }
+    }
+
+    function toggleSortMode() {
+      currentSortMode = currentSortMode === 'priority' ? 'gaps' : 'priority';
+      document.getElementById('sort-toggle').innerText = currentSortMode === 'priority' ? 'Sort: Priority' : 'Sort: Gaps';
+      renderFileList(document.getElementById('search-input').value);
+    }
+
+    function renderFileList(filter = '') {
+      const container = document.getElementById('file-list-container');
+      container.innerHTML = '';
+      
+      const filtered = files.filter(f => f.name.toLowerCase().includes(filter.toLowerCase()));
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.5;">No files found</div>';
+        return;
+      }
+
+      // Sort files: prioritize gitStatus (drafts/revisions) first, then daily_lore, review, analysis, and finally by modification date descending. Penalize reviewed files.
+      filtered.sort((a, b) => {
+        if (currentSortMode === 'gaps') {
+          // Gaps Mode: Sort by louScore descending, reviewed items still Demoted to bottom
+          const scoreA = (a.louScore || 0) - (a.reviewed ? 1000000 : 0);
+          const scoreB = (b.louScore || 0) - (b.reviewed ? 1000000 : 0);
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA;
+          }
+        } else {
+          // Priority Mode
+          const getPriority = (f) => {
+            let score = 0;
+            if (f.gitStatus === 'untracked') score += 200000;
+            if (f.gitStatus === 'modified') score += 100000;
+            const name = f.name.toLowerCase();
+            if (name.includes('daily_lore')) score += 10000;
+            if (name.includes('review')) score += 5000;
+            if (name.includes('analysis')) score += 2000;
+            if (f.reviewed) score -= 500000; // Penalize reviewed files heavily to float them down
+            return score;
+          };
+
+          const prioA = getPriority(a);
+          const prioB = getPriority(b);
+
+          if (prioA !== prioB) {
+            return prioB - prioA;
+          }
+        }
+        return b.modified - a.modified;
+      });
+
+      filtered.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'file-item' + (currentFile === file.name ? ' active' : '') + (file.reviewed ? ' reviewed-item' : '');
+        div.onclick = () => loadFile(file.name);
+        
+        // Format size
+        const sizeStr = (file.sizeBytes / 1024).toFixed(1) + ' KB';
+        const dateStr = new Date(file.modified).toLocaleDateString();
+
+        // Badge detection
+        let badgeHtml = '';
+        if (file.reviewed) {
+          badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(0,200,0,0.15); border:1px solid #00aa00; color:#00cc00; padding:1px 4px; border-radius:3px; flex-shrink:0;">✔ REVIEWED</span>';
+        } else if (file.gitStatus === 'untracked') {
+          badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:var(--accent-crimson); border:1px solid var(--accent-crimson); color:var(--text-highlight); padding:1px 4px; border-radius:3px; flex-shrink:0; box-shadow: 0 0 5px var(--accent-crimson);">UNTRACKED DRAFT</span>';
+        } else if (file.gitStatus === 'modified') {
+          badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(212,175,55,0.3); border:1px solid var(--border-color); color:var(--border-color); padding:1px 4px; border-radius:3px; flex-shrink:0;">ACTIVE REVISION</span>';
+        } else if (currentSortMode === 'gaps' && file.louScore > 0) {
+          const reasonsTitle = file.louReasons ? file.louReasons.join('\n') : '';
+          badgeHtml = `<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(212,175,55,0.15); border:1px solid var(--border-color); color:var(--border-color); padding:1px 4px; border-radius:3px; flex-shrink:0;" title="${reasonsTitle}">GAP: ${file.louScore}</span>`;
+        } else {
+          const nameLower = file.name.toLowerCase();
+          if (nameLower.includes('daily_lore')) {
+            badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:var(--accent-crimson-dim); border:1px solid var(--accent-crimson); color:var(--text-highlight); padding:1px 4px; border-radius:3px; flex-shrink:0;">LORE LOG</span>';
+          } else if (nameLower.includes('review')) {
+            badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(212,175,55,0.15); border:1px solid var(--border-color); color:var(--border-color); padding:1px 4px; border-radius:3px; flex-shrink:0;">REVIEW</span>';
+          } else if (nameLower.includes('analysis')) {
+            badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:var(--text-main); padding:1px 4px; border-radius:3px; flex-shrink:0;">ANALYSIS</span>';
+          }
+        }
+
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+            <div class="file-name" title="${file.name}" style="margin-bottom:0;">${file.name}</div>
+            ${badgeHtml}
+          </div>
+          <div class="file-meta">
+            <span>${sizeStr}</span>
+            <span>${dateStr}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    let currentViewMode = 'preview';
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      
+      const previewTab = document.getElementById('tab-preview');
+      const editTab = document.getElementById('tab-edit');
+      const previewPane = document.getElementById('editor-preview');
+      const editPane = document.getElementById('editor-textarea');
+      
+      if (mode === 'preview') {
+        fileContent = editPane.value;
+        previewPane.innerHTML = renderMarkdown(fileContent);
+        
+        previewPane.style.display = 'block';
+        editPane.style.display = 'none';
+        
+        previewTab.classList.add('active-tab');
+        editTab.classList.remove('active-tab');
+      } else {
+        editPane.value = fileContent;
+        
+        previewPane.style.display = 'none';
+        editPane.style.display = 'block';
+        
+        previewTab.classList.remove('active-tab');
+        editTab.classList.add('active-tab');
+      }
+      
+      document.getElementById('selection-tooltip').style.display = 'none';
+    }
+
+    function renderMarkdown(md) {
+      if (!md) return '';
+      let html = md;
+      
+      // Escape HTML to prevent layout breakage
+      html = html
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+          
+      // Code blocks (triple backticks)
+      html = html.replace(/```(\w*)\n([\s\S]*?)\n```/g, function(match, lang, code) {
+          return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+      });
+
+      // Headers
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+      html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+      html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+
+      // Horizontal rules
+      html = html.replace(/^---$/gim, '<hr>');
+
+      // Tables
+      html = html.replace(/(?:^|\n)(\|[^\n]+\|\r?\n\|[ \t]*:?-+:?[ \t]*\|[^\n]*\r?\n(?:\|[^\n]+\|\r?\n?)+)/g, function(match, tableContent) {
+          const lines = tableContent.trim().split('\n');
+          let tableHtml = '<table style="width:100%; border-collapse:collapse; margin:15px 0;"><thead><tr>';
+          const headers = lines[0].split('|').slice(1, -1);
+          headers.forEach(h => {
+              tableHtml += `<th style="border:1px solid var(--border-color); padding:8px; text-align:left; background-color:rgba(255,255,255,0.05);">${h.trim()}</th>`;
+          });
+          tableHtml += '</tr></thead><tbody>';
+          for (let i = 2; i < lines.length; i++) {
+              tableHtml += '<tr>';
+              const cells = lines[i].split('|').slice(1, -1);
+              cells.forEach(c => {
+                  tableHtml += `<td style="border:1px solid var(--border-color); padding:8px;">${c.trim()}</td>`;
+              });
+              tableHtml += '</tr>';
+          }
+          tableHtml += '</tbody></table>';
+          return tableHtml;
+      });
+      
+      // Bold & Italic
+      html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/___(.*?)___/g, '<strong><em>$1</em></strong>');
+      html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+      html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+      
+      // Inline code
+      html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+      
+      // Links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+      // Blockquotes
+      html = html.replace(/^\>\s+(.*$)/gim, '<blockquote>$1</blockquote>');
+      
+      // Unordered lists
+      html = html.replace(/^\s*[\-\*]\s+(.*$)/gim, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\s*<ul>/g, '');
+      
+      // Ordered lists
+      html = html.replace(/^\s*\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
+      html = html.replace(/<\/ol>\s*<ol>/g, '');
+      
+      // Paragraphs
+      const lines = html.split(/\n{2,}/);
+      html = lines.map(line => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('<h') || 
+              trimmed.startsWith('<ul') || 
+              trimmed.startsWith('<ol') || 
+              trimmed.startsWith('<blockquote') ||
+              trimmed.startsWith('<pre') ||
+              trimmed.startsWith('<table') ||
+              trimmed.startsWith('<hr')) {
+              return line;
+          }
+          return `<p>${line.replace(/\n/g, '<br>')}</p>`;
+      }).join('\n');
+      
+      return html;
+    }
+
+    async function loadFile(filename) {
+      currentFile = filename;
+      renderFileList(document.getElementById('search-input').value);
+      
+      document.getElementById('doc-title-display').innerText = filename;
+      
+      const textarea = document.getElementById('editor-textarea');
+      const preview = document.getElementById('editor-preview');
+      
+      document.getElementById('view-mode-tabs').style.display = 'inline-flex';
+      document.getElementById('save-btn').style.display = 'block';
+      
+      textarea.style.display = 'none';
+      preview.style.display = 'block';
+      preview.innerHTML = "<div style='text-align:center; padding: 40px; opacity:0.6;'>Loading document content...</div>";
+
+      try {
+        const res = await fetch(`/api/lore/content?file=${encodeURIComponent(filename)}`);
+        const text = await res.text();
+        
+        parseFileContent(text);
+      } catch (err) {
+        preview.innerHTML = "<div style='color:var(--accent-crimson); text-align:center; padding:40px;'>Error loading document.</div>";
+        console.error("Load file err:", err);
+      }
+    }
+
+    function updateReviewButtonUI() {
+      const btn = document.getElementById('review-btn');
+      if (!currentFile) {
+        btn.style.display = 'none';
+        return;
+      }
+      btn.style.display = 'inline-block';
+      if (currentFileReviewed) {
+        btn.innerText = 'Reviewed ✔';
+        btn.style.backgroundColor = 'rgba(0, 200, 0, 0.15)';
+        btn.style.borderColor = '#00aa00';
+        btn.style.color = '#00cc00';
+      } else {
+        btn.innerText = 'Mark Reviewed';
+        btn.style.backgroundColor = 'transparent';
+        btn.style.borderColor = 'var(--border-color)';
+        btn.style.color = 'var(--border-color)';
+      }
+    }
+
+    async function toggleReviewedStatus() {
+      if (!currentFile) return;
+      currentFileReviewed = !currentFileReviewed;
+      updateReviewButtonUI();
+      
+      // Update local state in files array
+      const fileObj = files.find(f => f.name === currentFile);
+      if (fileObj) {
+        fileObj.reviewed = currentFileReviewed;
+      }
+      
+      await saveDocument();
+      renderFileList(document.getElementById('search-input').value);
+    }
+
+    function parseFileContent(text) {
+      // 1. Detect reviewed status
+      const reviewRegex = /<!--\s*AUNCIENT_STATUS:\s*REVIEWED\s*-->/;
+      if (reviewRegex.test(text)) {
+        currentFileReviewed = true;
+        text = text.replace(reviewRegex, "").trim();
+      } else {
+        currentFileReviewed = false;
+      }
+      updateReviewButtonUI();
+
+      // 2. Detect annotations
+      const regex = /<!--\s*AUNCIENT_ANNOTATIONS_START\s*([\s\S]*?)\s*AUNCIENT_ANNOTATIONS_END\s*-->/;
+      const match = text.match(regex);
+      
+      if (match) {
+        try {
+          annotations = JSON.parse(match[1].trim());
+        } catch (e) {
+          console.error("Failed to parse annotations:", e);
+          annotations = [];
+        }
+        fileContent = text.replace(regex, "").trim();
+      } else {
+        annotations = [];
+        fileContent = text.trim();
+      }
+
+      document.getElementById('editor-textarea').value = fileContent;
+      renderAnnotations();
+      setViewMode(currentViewMode);
+    }
+
+    function renderAnnotations() {
+      const container = document.getElementById('annotations-container');
+      container.innerHTML = '';
+
+      if (annotations.length === 0) {
+        container.innerHTML = '<div class="no-annotations">No annotations on this document yet. Select text in editor to annotate.</div>';
+        return;
+      }
+
+      annotations.sort((a, b) => a.range[0] - b.range[0]);
+
+      annotations.forEach((ann, idx) => {
+        const card = document.createElement('div');
+        card.className = 'annotation-card';
+        
+        const quote = fileContent.substring(ann.range[0], ann.range[1]);
+
+        let repliesHtml = '';
+        if (ann.replies && ann.replies.length > 0) {
+          repliesHtml = '<div class="annotation-replies" style="margin-top:8px; padding-left:12px; border-left:2px solid var(--accent-gold); font-size:0.75rem;">';
+          ann.replies.forEach(rep => {
+            const dateStr = new Date(rep.timestamp).toLocaleTimeString();
+            repliesHtml += `
+              <div style="margin-bottom:6px;">
+                <span style="font-weight:bold; color:var(--accent-gold);">${rep.author || 'AI'}:</span>
+                <span style="color:var(--text-main);">${rep.comment}</span>
+                <span style="font-size:0.6rem; opacity:0.5; margin-left:4px;">${dateStr}</span>
+              </div>
+            `;
+          });
+          repliesHtml += '</div>';
+        }
+
+        const authorBadge = ann.author ? `<span style="font-family:var(--font-mono); font-size:0.6rem; background-color:rgba(212,175,55,0.15); border:1px solid var(--border-color); color:var(--border-color); padding:1px 4px; border-radius:3px; float:right;">${ann.author}</span>` : '';
+
+        card.innerHTML = `
+          <div style="margin-bottom:6px; overflow:hidden;">
+            ${authorBadge}
+            <div class="annotation-range" style="margin-bottom:0; font-family:var(--font-mono); font-size:0.65rem; color:var(--accent-gold); opacity:0.8;">ANNOTATION</div>
+          </div>
+          <div class="annotation-quote">"${quote || 'Context text missing'}"</div>
+          <div class="annotation-text">${ann.comment}</div>
+          ${repliesHtml}
+          <div class="annotation-actions">
+            <button class="annotation-delete-btn" onclick="deleteAnnotation(${idx})">Delete</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function handleTextSelection() {
+      const textarea = document.getElementById('editor-textarea');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      
+      if (start !== end) {
+        selectedText = textarea.value.substring(start, end);
+        selectedRange = [start, end];
+        
+        const tooltip = document.getElementById('selection-tooltip');
+        tooltip.style.display = 'block';
+        tooltip.style.left = '20px';
+        tooltip.style.bottom = '20px';
+      } else {
+        document.getElementById('selection-tooltip').style.display = 'none';
+        selectedRange = null;
+        selectedText = "";
+      }
+    }
+
+    function handlePreviewSelection() {
+      const selection = window.getSelection();
+      const selectedStr = selection.toString().trim();
+      
+      if (selectedStr.length > 0) {
+        selectedText = selectedStr;
+        const start = fileContent.indexOf(selectedText);
+        if (start !== -1) {
+          selectedRange = [start, start + selectedText.length];
+          
+          const tooltip = document.getElementById('selection-tooltip');
+          tooltip.style.display = 'block';
+          tooltip.style.left = '20px';
+          tooltip.style.bottom = '20px';
+          return;
+        }
+      }
+      
+      document.getElementById('selection-tooltip').style.display = 'none';
+      selectedRange = null;
+      selectedText = "";
+    }
+
+    function openAnnotationModal() {
+      if (!selectedRange) return;
+      document.getElementById('modal-quote-text').innerText = `"${selectedText}"`;
+      document.getElementById('annotation-input').value = '';
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function closeAnnotationModal() {
+      document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    function submitAnnotation() {
+      const comment = document.getElementById('annotation-input').value.trim();
+      if (!comment) return;
+
+      annotations.push({
+        range: selectedRange,
+        comment: comment,
+        timestamp: Date.now(),
+        author: 'User',
+        replies: []
+      });
+
+      closeAnnotationModal();
+      document.getElementById('selection-tooltip').style.display = 'none';
+      
+      // Clear selection
+      const textarea = document.getElementById('editor-textarea');
+      textarea.selectionStart = textarea.selectionEnd;
+      window.getSelection().removeAllRanges();
+      selectedRange = null;
+      selectedText = "";
+
+      renderAnnotations();
+    }
+
+    function deleteAnnotation(index) {
+      annotations.splice(index, 1);
+      renderAnnotations();
+    }
+
+    async function saveDocument() {
+      if (!currentFile) return;
+
+      // Sync active textarea changes before saving if in edit mode
+      if (currentViewMode === 'edit') {
+        fileContent = document.getElementById('editor-textarea').value;
+      }
+
+      let finalContent = fileContent;
+      if (annotations.length > 0) {
+        finalContent += `\n\n<!-- AUNCIENT_ANNOTATIONS_START\n${JSON.stringify(annotations, null, 2)}\nAUNCIENT_ANNOTATIONS_END -->`;
+      }
+      if (currentFileReviewed) {
+        finalContent += `\n\n<!-- AUNCIENT_STATUS: REVIEWED -->`;
+      }
+
+      try {
+        const res = await fetch('/api/lore/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            file: currentFile,
+            content: finalContent
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('Document saved successfully.');
+          if (result.content) {
+            parseFileContent(result.content);
+          } else {
+            renderAnnotations();
+          }
+        } else {
+          showToast('Failed to save document.');
+        }
+      } catch (err) {
+        console.error("Save file err:", err);
+        showToast('Save request failed.');
+      }
+    }
+  </script>
+</body>
+</html>

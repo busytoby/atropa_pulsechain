@@ -6,26 +6,30 @@ This document details the mechanics, physics equations, and low-level **Auncient
 
 ## 1. Mathematical Foundation of Tessarant Physics
 
-A tessarant is represented as a 4D hyper-volume defined by 16 vertices in $\mathbb{R}^4$:
+A tessarant is represented as a 4D hyper-volume defined by 16 vertices in 4D Space (R^4):
 
-$$V = \left\{ (x, y, z, w) \mid x, y, z, w \in \{-1, 1\} \right\}$$
+* **V = { (x, y, z, w) | x, y, z, w in {-1, 1} }**
 
 ### 4D Rotational Kinematics
-Movement and deformation are driven by six independent planes of rotation ($XY, XZ, XW, YZ, YW, ZW$). Under nominal conditions, rotation angles evolve smoothly over time $t$:
+Movement and deformation are driven by six independent planes of rotation (XY, XZ, XW, YZ, YW, ZW). Under nominal conditions, rotation angles (theta) evolve smoothly over time t:
 
-$$\theta_{ij}(t) = \omega_{ij} \cdot t + \phi_{ij}$$
+* **theta_ij(t) = omega_ij * t + phi_ij**
 
 Where:
-* $\omega_{ij}$ is the angular velocity in the $IJ$ plane.
-* $\phi_{ij}$ is the phase offset mapped from the **Auncient** DNA sequence.
+* **omega_ij** is the angular velocity in the IJ plane.
+* **phi_ij** is the phase offset mapped from the **Auncient** DNA sequence.
 
 ### Perspective Projection Pipeline
 The 4D coordinates project to the 3D viewport using a dual-perspective camera model:
 1. **4D to 3D Hyper-Projection**:
-   $$x' = \frac{x}{d - w}, \quad y' = \frac{y}{d - w}, \quad z' = \frac{z}{d - w}$$
-   Where $d$ is the hyper-perspective focal distance register (stored in `yulStorage[104]`).
+   * x' = x / (d - w)
+   * y' = y / (d - w)
+   * z' = z / (d - w)
+   
+   Where **d** is the hyper-perspective focal distance register (stored in `yulStorage[104]`).
 2. **3D to 2D Screen Projection**:
-   $$X_{scr} = X_{off} + \frac{x' \cdot f}{z'}, \quad Y_{scr} = Y_{off} + \frac{y' \cdot f}{z'}$$
+   * X_scr = X_off + (x' * f) / z'
+   * Y_scr = Y_off + (y' * f) / z'
 
 ---
 
@@ -33,12 +37,12 @@ The 4D coordinates project to the 3D viewport using a dual-perspective camera mo
 
 Tessarant deformation is controlled dynamically by the low-level **Auncient** WinchesterMQ bus registers. Each physical joint (Head, Ears, Paws, Feet) maps to a dedicated 10-byte segment in the emulated Yul memory map:
 
-$$\text{Base Register Offset} = \text{JointIndex} \times 10$$
+* **Base Register Offset = JointIndex * 10**
 
 | Register Address | Function | Nominal Value | Combat Sabotage Value |
 | :--- | :--- | :--- | :--- |
 | `103 + Offset` | Clock Divisor (Damping) | `1000` | `160` (Hyper-spin) |
-| `104 + Offset` | Focal Distance ($d$) | `2300` | `1350` (Warp/Deflate) |
+| `104 + Offset` | Focal Distance (d) | `2300` | `1350` (Warp/Deflate) |
 
 ### 2.1 Before Combat: Configuration & Calibration
 Before combat matches begin, the **Auncient** WinchesterMQ message broker coordinates the baseline initialization sequence of each individual tessarant joint:
@@ -72,21 +76,21 @@ graph TD
 
 ---
 
-## 3. Collision Resolution in $\mathbb{R}^4$
+## 3. Collision Resolution in 4D Space (R^4)
 
 Collisions are not merely calculated in 3D screen space; they are verified at the 4D hyper-frustum boundaries.
 
 ### Hyper-Sphere Bounding Volumes
 Every joint is enveloped in a 4D hyper-sphere defined by:
 
-$$(x - x_c)^2 + (y - y_c)^2 + (z - z_c)^2 + (w - w_c)^2 \le R^2$$
+* **(x - x_c)^2 + (y - y_c)^2 + (z - z_c)^2 + (w - w_c)^2 <= R^2**
 
 ### Collision Detection Algorithm
-1. Retrieve the position vectors $P_1, P_2 \in \mathbb{R}^4$ of two interacting joints.
+1. Retrieve the 4D position vectors P1, P2 of two interacting joints.
 2. Calculate the 4D Euclidean distance:
-   $$D_{4D} = \sqrt{\sum_{i \in \{x,y,z,w\}} (P_{1,i} - P_{2,i})^2}$$
-3. If $D_{4D} < R_1 + R_2$, a collision is triggered.
-4. The overlap magnitude $\Delta = (R_1 + R_2) - D_{4D}$ is written back into the ZMM register bank to calculate kinetic energy transfer and health damage.
+   * **D_4D = sqrt( (P1.x - P2.x)^2 + (P1.y - P2.y)^2 + (P1.z - P2.z)^2 + (P1.w - P2.w)^2 )**
+3. If **D_4D < R1 + R2**, a collision is triggered.
+4. The overlap magnitude **Delta = (R1 + R2) - D_4D** is written back into the ZMM register bank to calculate kinetic energy transfer and health damage.
 
 ---
 

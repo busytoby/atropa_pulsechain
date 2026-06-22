@@ -4,8 +4,8 @@ This registry tracks the active windows initiated by the system and their respec
 
 | Process / Window Name | Window Type | Visual State | Purpose |
 | :--- | :--- | :--- | :--- |
-| `rooted_frame_presenter` | Vulkan/Wayland Window | **Headed** (Visible) | The main Auncient Vulkan compositing container. Renders the unified console workspace on the host display. |
-| Lore Editor Browser | Headless Native Browser | **Headless** (Hidden) | Renders `lore_editor.html` in the background and pipes frames to the Vulkan presenter. |
+| `tsfi2` | Vulkan/Wayland Window | **Headed** (Visible) | The Auncient Vulkan compositing container displaying on socket `wayland-tsfi`. |
+| Lore Editor Browser (Firefox) | Headed Native Browser | **Headed** (Visible) | Renders `lore_editor.html` displaying the Tessarant MQ document (`tessarant_combat_physics.md`). |
 | Dashboard Browser | Headless Native Browser | **Headless** (Hidden) | Renders `atropa_dashboard.html` in the background and pipes frames to the Vulkan presenter. |
 | YouTube Sub-Browser | Headless Native Browser | **Headless** (Hidden) | Loads and controls YouTube videos dynamically inside the dashboard frame. |
-| Hexensabbat Emulation Console | Vulkan/Wayland Window | **Headed** (Visible) | Runs the B128 console with the Hexensabbat game visualizer loop in the native Firefox/Wayland browser. |
+| Witches' Sabbath Emulation Console (Vaesen) | Vulkan/Wayland Window | **Headed** (Visible) | Runs the B128 console with the Witches' Sabbath (Vaesen) game visualizer loop in the native Firefox/Wayland browser. |
