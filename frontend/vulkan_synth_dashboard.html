@@ -509,6 +509,35 @@
                 </div>
             </div>
 
+            <!-- LFO Modulator -->
+            <div class="control-panel-card">
+                <span class="panel-title">Auncient LFO Modulator</span>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>LFO Rate</span>
+                        <span id="valLfoRate" class="slider-val">1.0 Hz</span>
+                    </div>
+                    <input type="range" id="sliderLfoRate" min="0.1" max="15.0" step="0.1" value="1.0" class="param-slider">
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>LFO Depth</span>
+                        <span id="valLfoDepth" class="slider-val">30%</span>
+                    </div>
+                    <input type="range" id="sliderLfoDepth" min="0.0" max="1.0" step="0.05" value="0.30" class="param-slider">
+                </div>
+                <div class="slider-control" style="margin-top: 10px;">
+                    <div class="slider-label-row">
+                        <span>Destination</span>
+                    </div>
+                    <select id="lfoDest" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none;">
+                        <option value="cutoff">Filter Cutoff Sweep</option>
+                        <option value="delay">Delay Modulation (Chorus)</option>
+                        <option value="none">Disabled (Muted)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Synthesizer Painting Tools -->
             <div class="control-panel-card">
                 <span class="panel-title">Visual Synth Painter</span>
@@ -520,16 +549,32 @@
                         <option value="glow">Holographic Glow</option>
                         <option value="spray">Attractor Particle Spray</option>
                         <option value="ribbon">3D Quaternion Ribbon</option>
+                        <option value="mandala">Symmetric Mandala Mirror</option>
+                        <option value="wave_friction">Frictional Particle Sweep</option>
+                        <option value="orbit_attractor">Gravity Well Orbiters</option>
                     </select>
                 </div>
                 <div class="slider-control">
                     <div class="slider-label-row">
-                        <span>Brush Color</span>
+                        <span>Brush Timbre (Color)</span>
                     </div>
                     <select id="brushColor" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none; margin-bottom: 10px;">
-                        <option value="gold">Vintage Gold</option>
-                        <option value="cyan">Electric Cyan</option>
-                        <option value="magenta">Acid Magenta</option>
+                        <option value="gold">Vintage Gold (Saw+Triangle Pad)</option>
+                        <option value="cyan">Electric Cyan (Resonant Bell)</option>
+                        <option value="magenta">Acid Magenta (Acid Square Pluck)</option>
+                        <option value="gold_fm">Auncient FM Brass (Modulated Sine)</option>
+                        <option value="green_karplus">Auncient Jade String (Karplus Pluck)</option>
+                    </select>
+                </div>
+                <div class="slider-control">
+                    <div class="slider-label-row">
+                        <span>Radial Symmetry</span>
+                    </div>
+                    <select id="brushSymmetry" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none; margin-bottom: 10px;">
+                        <option value="1">1: Off (Single Stroke)</option>
+                        <option value="2">2: 2-Fold Mirroring</option>
+                        <option value="4">4: 4-Fold Radial Chord</option>
+                        <option value="8">8: 8-Fold Kaleidoscope Chord</option>
                     </select>
                 </div>
                 <div class="slider-control">
@@ -539,15 +584,29 @@
                     </div>
                     <input type="range" id="sliderBrushWidth" min="1" max="25" step="1" value="4" class="param-slider" style="margin-bottom: 10px;">
                 </div>
-                <div class="slider-control">
+                <div class="slider-control" style="margin-bottom: 12px;">
                     <div class="slider-label-row">
                         <span>Sound Mapping</span>
                     </div>
-                    <select id="soundMapping" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none;">
+                    <select id="soundMapping" style="width: 100%; background: #0d1326; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; outline: none; margin-bottom: 12px;">
                         <option value="pitch">X: Pitch | Y: Cutoff</option>
                         <option value="excite">Y: Mode Exciter (M1-M12)</option>
                         <option value="mute">Muted</option>
                     </select>
+                </div>
+                <!-- Geometric preset triggers -->
+                <div class="panel-row" style="gap: 8px; border-top: 1px dashed rgba(212, 175, 55, 0.15); padding-top: 10px;">
+                    <button id="btnPresetHelix" style="flex: 1; background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.3); color: var(--neon-cyan); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; padding: 5px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        🧬 Helix Arp
+                    </button>
+                    <button id="btnPresetLissajous" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid rgba(255, 0, 127, 0.3); color: var(--neon-magenta); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; padding: 5px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        🌀 Lissajous
+                    </button>
+                </div>
+                <div class="panel-row" style="gap: 8px; margin-top: 8px;">
+                    <button id="btnPresetMandala" style="flex: 1; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); color: var(--vintage-gold); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; padding: 5px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        ☸️ Mandala Arp
+                    </button>
                 </div>
             </div>
 
@@ -626,6 +685,13 @@
             });
         }
 
+        // Gravity Wells for Orbit Attractor brush
+        const gravityWells = [];
+        
+        // Pointer tracking for speed calculation
+        let lastPx = null;
+        let lastPy = null;
+
         // Audio synthesizer routing variables
         let audioCtx = null;
         let analyser = null;
@@ -640,6 +706,125 @@
         let detuneCents = 7;
         let delayTimeVal = 0.25;
         let delayFeedbackVal = 0.4;
+
+        // LFO Variables
+        let lfoNode = null;
+        let lfoGain = null;
+        let lfoRateVal = 1.0;
+        let lfoDepthVal = 0.3;
+        let lfoDestination = "cutoff";
+
+        function connectLFO() {
+            if (!lfoGain || !audioCtx) return;
+            try {
+                lfoGain.disconnect();
+            } catch(e) {}
+            
+            if (lfoDestination === "cutoff" && mainFilter) {
+                const range = filterCutoffVal * 0.75 * lfoDepthVal;
+                lfoGain.gain.setValueAtTime(range, audioCtx.currentTime);
+                lfoGain.connect(mainFilter.frequency);
+            } else if (lfoDestination === "delay" && delayNode) {
+                const range = 0.15 * lfoDepthVal; // max 150ms swing
+                lfoGain.gain.setValueAtTime(range, audioCtx.currentTime);
+                lfoGain.connect(delayNode.delayTime);
+            } else {
+                lfoGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
+        }
+
+        // FM Synthesizer Voice Generator
+        function createFMVoice(freq, gainValue) {
+            const carrier = audioCtx.createOscillator();
+            const modulator = audioCtx.createOscillator();
+            const modGain = audioCtx.createGain();
+            const mainGain = audioCtx.createGain();
+
+            carrier.type = "sine";
+            modulator.type = "sine";
+
+            const ratio = 2.0;
+            modulator.frequency.setValueAtTime(freq * ratio, audioCtx.currentTime);
+            carrier.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            const modDepth = freq * 3.5;
+            modGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            modGain.gain.linearRampToValueAtTime(modDepth, audioCtx.currentTime + 0.05);
+            modGain.gain.exponentialRampToValueAtTime(modDepth * 0.1, audioCtx.currentTime + 0.4);
+
+            modulator.connect(modGain);
+            modGain.connect(carrier.frequency);
+
+            mainGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            mainGain.gain.linearRampToValueAtTime(gainValue * 1.2, audioCtx.currentTime + 0.04);
+
+            carrier.connect(mainGain);
+            if (mainFilter) {
+                mainGain.connect(mainFilter);
+            } else {
+                mainGain.connect(audioCtx.destination);
+            }
+
+            modulator.start();
+            carrier.start();
+
+            return {
+                osc1: carrier,
+                osc2: modulator,
+                gainNode: mainGain
+            };
+        }
+
+        // Karplus-Strong Physical Modeling String Synth Voice Generator
+        function createKarplusStrongVoice(freq, gainValue) {
+            const bufferSize = audioCtx.sampleRate * 0.02; // 20ms noise burst
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const outputData = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                outputData[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = noiseBuffer;
+
+            const delayNodeKS = audioCtx.createDelay(1.0);
+            const delayTime = 1.0 / freq;
+            delayNodeKS.delayTime.setValueAtTime(delayTime, audioCtx.currentTime);
+
+            const feedbackGainKS = audioCtx.createGain();
+            feedbackGainKS.gain.setValueAtTime(0.99, audioCtx.currentTime);
+
+            const dampingFilter = audioCtx.createBiquadFilter();
+            dampingFilter.type = "lowpass";
+            dampingFilter.frequency.setValueAtTime(4000, audioCtx.currentTime);
+
+            noiseNode.connect(delayNodeKS);
+            delayNodeKS.connect(dampingFilter);
+            dampingFilter.connect(feedbackGainKS);
+            feedbackGainKS.connect(delayNodeKS);
+
+            const voiceGain = audioCtx.createGain();
+            voiceGain.gain.setValueAtTime(gainValue * 2.5, audioCtx.currentTime);
+            dampingFilter.connect(voiceGain);
+
+            if (mainFilter) {
+                voiceGain.connect(mainFilter);
+            } else {
+                voiceGain.connect(audioCtx.destination);
+            }
+
+            noiseNode.start();
+
+            return {
+                osc1: noiseNode,
+                osc2: {
+                    stop: () => {
+                        feedbackGainKS.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    }
+                },
+                gainNode: voiceGain
+            };
+        }
 
         function initAudio() {
             try {
@@ -675,6 +860,15 @@
                     
                     // Send filtered audio into the delay line
                     mainFilter.connect(delayNode);
+
+                    // Create LFO
+                    lfoNode = audioCtx.createOscillator();
+                    lfoNode.frequency.setValueAtTime(lfoRateVal, audioCtx.currentTime);
+                    lfoNode.type = 'sine';
+                    lfoGain = audioCtx.createGain();
+                    lfoNode.connect(lfoGain);
+                    lfoNode.start();
+                    connectLFO();
                 }
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
@@ -863,31 +1057,7 @@
                             try { activeOscillators[freq].osc2.stop(); } catch(e) {}
                         }
                         
-                        const osc1 = audioCtx.createOscillator();
-                        const osc2 = audioCtx.createOscillator();
-                        const gainNode = audioCtx.createGain();
-                        
-                        // Triangle primary wave
-                        osc1.type = 'triangle';
-                        osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                        
-                        // Detuned Saw secondary wave
-                        osc2.type = 'sawtooth';
-                        const detuneFactor = Math.pow(2, detuneCents / 1200);
-                        osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
-                        
-                        // Gain Envelope
-                        gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-                        gainNode.gain.linearRampToValueAtTime(0.14, audioCtx.currentTime + 0.04);
-                        
-                        osc1.connect(gainNode);
-                        osc2.connect(gainNode);
-                        
-                        if (mainFilter) {
-                            gainNode.connect(mainFilter);
-                        } else {
-                            gainNode.connect(audioCtx.destination);
-                        }
+                        const voice = createOscillatorsForFreq(freq, 0.14);
                         
                         // Resonant lowpass sweep modulation
                         if (mainFilter) {
@@ -898,10 +1068,7 @@
                             mainFilter.frequency.exponentialRampToValueAtTime(filterCutoffVal, audioCtx.currentTime + 0.45);
                         }
                         
-                        osc1.start();
-                        osc2.start();
-                        
-                        activeOscillators[freq] = { osc1, osc2, gainNode };
+                        activeOscillators[freq] = voice;
                     }
                 } else {
                     const voice = activeOscillators[freq];
@@ -1413,7 +1580,7 @@
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 
-                if (stroke.type === "glow") {
+                if (stroke.type === "glow" || stroke.type === "mandala" || stroke.type === "wave_friction") {
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = stroke.color;
                 } else {
@@ -1441,6 +1608,8 @@
                     if (stroke.color === "#d4af37") ctx.strokeStyle = `rgba(212, 175, 55, ${opacity * 0.75})`;
                     else if (stroke.color === "#00f2fe") ctx.strokeStyle = `rgba(0, 242, 254, ${opacity * 0.75})`;
                     else if (stroke.color === "#ff007f") ctx.strokeStyle = `rgba(255, 0, 127, ${opacity * 0.75})`;
+                    else if (stroke.color === "#e5c158") ctx.strokeStyle = `rgba(229, 193, 88, ${opacity * 0.75})`;
+                    else if (stroke.color === "#39ff14") ctx.strokeStyle = `rgba(57, 255, 20, ${opacity * 0.75})`;
                     
                     ctx.stroke();
                 } else {
@@ -1453,6 +1622,8 @@
                     if (stroke.color === "#d4af37") ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
                     else if (stroke.color === "#00f2fe") ctx.strokeStyle = `rgba(0, 242, 254, ${opacity})`;
                     else if (stroke.color === "#ff007f") ctx.strokeStyle = `rgba(255, 0, 127, ${opacity})`;
+                    else if (stroke.color === "#e5c158") ctx.strokeStyle = `rgba(229, 193, 88, ${opacity})`;
+                    else if (stroke.color === "#39ff14") ctx.strokeStyle = `rgba(57, 255, 20, ${opacity})`;
                     
                     ctx.stroke();
                 }
@@ -1465,19 +1636,68 @@
                 }
             }
 
+            // Draw gravity wells
+            gravityWells.forEach((well) => {
+                well.age++;
+                const opacity = 1.0 - (well.age / well.maxAge);
+                ctx.strokeStyle = `rgba(212, 175, 55, ${opacity * 0.65})`;
+                ctx.lineWidth = 1.5;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#d4af37";
+                ctx.beginPath();
+                ctx.arc(well.x, well.y, 6 + Math.sin(time * 0.01) * 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                ctx.strokeStyle = `rgba(0, 242, 254, ${opacity * 0.45})`;
+                ctx.beginPath();
+                ctx.moveTo(well.x - 4, well.y); ctx.lineTo(well.x + 4, well.y);
+                ctx.moveTo(well.x, well.y - 4); ctx.lineTo(well.x, well.y + 4);
+                ctx.stroke();
+            });
+
+            // Clean up old gravity wells
+            for (let i = gravityWells.length - 1; i >= 0; i--) {
+                if (gravityWells[i].age >= gravityWells[i].maxAge || gravityWells[i].x < sidebarWidth) {
+                    gravityWells.splice(i, 1);
+                }
+            }
+
+            // Space delay loop feedback modulation by gravity wells count
+            if (gravityWells.length > 0 && feedbackGain) {
+                const targetFeedback = Math.min(0.85, delayFeedbackVal + gravityWells.length * 0.05);
+                feedbackGain.gain.setValueAtTime(targetFeedback, audioCtx.currentTime);
+                document.getElementById("valDelayFeedback").innerText = Math.round(targetFeedback * 100) + "% (Well Mod)";
+            } else if (feedbackGain) {
+                feedbackGain.gain.setValueAtTime(delayFeedbackVal, audioCtx.currentTime);
+                document.getElementById("valDelayFeedback").innerText = Math.round(delayFeedbackVal * 100) + "%";
+            }
+
             // 2. Draw and update attractor spray particles
             paintParticles.forEach((p) => {
                 p.age++;
                 
-                const dx = cx0 - p.x;
-                const dy = cy0 - p.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
+                let dx = cx0 - p.x;
+                let dy = cy0 - p.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
                 
                 if (dist > 10) {
                     const gravity = (0.22 + Math.abs(waveQ[2]) * 0.5);
                     p.vx += (dx / dist) * gravity;
                     p.vy += (dy / dist) * gravity;
                 }
+
+                // Attraction to gravity wells
+                gravityWells.forEach((well) => {
+                    const wdx = well.x - p.x;
+                    const wdy = well.y - p.y;
+                    const wdist = Math.sqrt(wdx*wdx + wdy*wdy);
+                    if (wdist > 5) {
+                        const pull = well.mass / (wdist * 0.15 + 1.0);
+                        p.vx += (wdx / wdist) * pull;
+                        p.vy += (wdy / wdist) * pull;
+                    }
+                });
                 
                 p.vx *= 0.97;
                 p.vy *= 0.97;
@@ -1489,6 +1709,8 @@
                 if (p.color === "#d4af37") ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
                 else if (p.color === "#00f2fe") ctx.fillStyle = `rgba(0, 242, 254, ${opacity})`;
                 else if (p.color === "#ff007f") ctx.fillStyle = `rgba(255, 0, 127, ${opacity})`;
+                else if (p.color === "#e5c158") ctx.fillStyle = `rgba(229, 193, 88, ${opacity})`;
+                else if (p.color === "#39ff14") ctx.fillStyle = `rgba(57, 255, 20, ${opacity})`;
 
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -1615,12 +1837,14 @@
         let paintColor = "#d4af37";
         let paintWidth = 4;
         let activePaintVoice = null;
+        let activeStrokeIndices = [];
         const paintStrokes = [];
         const paintParticles = [];
 
         // Slider and selectors listener for painting tools
         const brushStyleEl = document.getElementById("brushStyle");
         const brushColorEl = document.getElementById("brushColor");
+        const brushSymmetryEl = document.getElementById("brushSymmetry");
         const sliderBrushWidth = document.getElementById("sliderBrushWidth");
         const valBrushWidth = document.getElementById("valBrushWidth");
         const soundMappingEl = document.getElementById("soundMapping");
@@ -1630,12 +1854,84 @@
             valBrushWidth.innerText = paintWidth + "px";
         });
 
+        // LFO listeners
+        document.getElementById("sliderLfoRate").addEventListener("input", (e) => {
+            lfoRateVal = parseFloat(e.target.value);
+            document.getElementById("valLfoRate").innerText = lfoRateVal.toFixed(1) + " Hz";
+            if (lfoNode) {
+                lfoNode.frequency.setValueAtTime(lfoRateVal, audioCtx.currentTime);
+            }
+        });
+        document.getElementById("sliderLfoDepth").addEventListener("input", (e) => {
+            lfoDepthVal = parseFloat(e.target.value);
+            document.getElementById("valLfoDepth").innerText = Math.round(lfoDepthVal * 100) + "%";
+            connectLFO();
+        });
+        document.getElementById("lfoDest").addEventListener("change", (e) => {
+            lfoDestination = e.target.value;
+            connectLFO();
+        });
+
         function getBrushColorHex() {
             const val = brushColorEl.value;
             if (val === "gold") return "#d4af37";
             if (val === "cyan") return "#00f2fe";
             if (val === "magenta") return "#ff007f";
+            if (val === "gold_fm") return "#e5c158";
+            if (val === "green_karplus") return "#39ff14";
             return "#d4af37";
+        }
+
+        // Create oscillator configurations based on the selected color-timbre
+        function createOscillatorsForFreq(freq, gainValue) {
+            const color = brushColorEl.value;
+
+            if (color === "green_karplus") {
+                return createKarplusStrongVoice(freq, gainValue);
+            } else if (color === "gold_fm") {
+                return createFMVoice(freq, gainValue);
+            }
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            if (color === "gold") {
+                osc1.type = "triangle";
+                osc2.type = "sawtooth";
+                osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                const detuneFactor = Math.pow(2, detuneCents / 1200);
+                osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(gainValue, audioCtx.currentTime + 0.05);
+            } else if (color === "cyan") {
+                // Resonant bell: Sine + Triangle a fifth up (1.5 ratio)
+                osc1.type = "sine";
+                osc2.type = "triangle";
+                osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc2.frequency.setValueAtTime(freq * 1.5, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(gainValue * 0.85, audioCtx.currentTime + 0.03);
+            } else if (color === "magenta") {
+                // Plucky acid Square + Saw
+                osc1.type = "square";
+                osc2.type = "sawtooth";
+                osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                const detuneFactor = Math.pow(2, (detuneCents + 4) / 1200);
+                osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(gainValue * 0.9, audioCtx.currentTime + 0.02);
+            }
+            
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            if (mainFilter) {
+                gainNode.connect(mainFilter);
+            } else {
+                gainNode.connect(audioCtx.destination);
+            }
+
+            return { osc1, osc2, gainNode };
         }
 
         // Pointer event listeners on canvas for visual/audio painting
@@ -1650,17 +1946,66 @@
 
             if (px < sidebarWidth) return;
 
+            lastPx = px;
+            lastPy = py;
+
+            const symmetry = parseInt(brushSymmetryEl.value);
             const colorHex = getBrushColorHex();
             const brushType = brushStyleEl.value;
 
-            paintStrokes.push({
-                points: [{ x: px, y: py, ox: px, oy: py }],
-                color: colorHex,
-                width: paintWidth,
-                type: brushType,
-                age: 0,
-                maxAge: brushType === "ribbon" ? 180 : 90
-            });
+            // Calculate center
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = (canvas.height / window.devicePixelRatio) / 2;
+
+            const dx = px - cx0;
+            const dy = py - cy0;
+            const r = Math.sqrt(dx*dx + dy*dy);
+            const theta = Math.atan2(dy, dx);
+
+            activeStrokeIndices = [];
+            
+            // Drop gravity well
+            if (brushType === "orbit_attractor") {
+                gravityWells.push({
+                    x: px,
+                    y: py,
+                    mass: 5.0 + Math.random() * 5.0,
+                    age: 0,
+                    maxAge: 400
+                });
+                if (gravityWells.length > 6) {
+                    gravityWells.shift();
+                }
+            }
+
+            // Add mirrored symmetric paths (double symmetry for Mandala)
+            const numSymmetry = (brushType === "mandala") ? symmetry * 2 : symmetry;
+            for (let i = 0; i < numSymmetry; i++) {
+                let angle_i;
+                if (brushType === "mandala") {
+                    if (i % 2 === 0) {
+                        angle_i = theta + (i / 2) * (2 * Math.PI / symmetry);
+                    } else {
+                        angle_i = -theta + ((i - 1) / 2) * (2 * Math.PI / symmetry);
+                    }
+                } else {
+                    angle_i = theta + i * (2 * Math.PI / symmetry);
+                }
+
+                const x_i = cx0 + r * Math.cos(angle_i);
+                const y_i = cy0 + r * Math.sin(angle_i);
+
+                paintStrokes.push({
+                    points: [{ x: x_i, y: y_i, ox: x_i, oy: y_i }],
+                    color: colorHex,
+                    width: paintWidth,
+                    type: brushType,
+                    age: 0,
+                    maxAge: brushType === "ribbon" ? 180 : 90
+                });
+                activeStrokeIndices.push(paintStrokes.length - 1);
+            }
 
             triggerPaintSound(px, py);
         });
@@ -1677,41 +2022,85 @@
                 return;
             }
 
-            const currentStroke = paintStrokes[paintStrokes.length - 1];
-            if (currentStroke) {
-                if (currentStroke.points.length < 150) {
-                    currentStroke.points.push({ x: px, y: py, ox: px, oy: py });
+            // Calculate draw velocity
+            let strokeSpeed = 0;
+            if (lastPx !== null && lastPy !== null) {
+                const dxPointer = px - lastPx;
+                const dyPointer = py - lastPy;
+                strokeSpeed = Math.sqrt(dxPointer * dxPointer + dyPointer * dyPointer);
+            }
+            lastPx = px;
+            lastPy = py;
+
+            const symmetry = parseInt(brushSymmetryEl.value);
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = (canvas.height / window.devicePixelRatio) / 2;
+
+            const dx = px - cx0;
+            const dy = py - cy0;
+            const r = Math.sqrt(dx*dx + dy*dy);
+            const theta = Math.atan2(dy, dx);
+
+            const numSymmetry = (brushStyleEl.value === "mandala") ? symmetry * 2 : symmetry;
+            for (let i = 0; i < numSymmetry; i++) {
+                let angle_i;
+                if (brushStyleEl.value === "mandala") {
+                    if (i % 2 === 0) {
+                        angle_i = theta + (i / 2) * (2 * Math.PI / symmetry);
+                    } else {
+                        angle_i = -theta + ((i - 1) / 2) * (2 * Math.PI / symmetry);
+                    }
+                } else {
+                    angle_i = theta + i * (2 * Math.PI / symmetry);
+                }
+                
+                const x_i = cx0 + r * Math.cos(angle_i);
+                const y_i = cy0 + r * Math.sin(angle_i);
+
+                const strokeIndex = activeStrokeIndices[i];
+                if (strokeIndex !== undefined && paintStrokes[strokeIndex]) {
+                    const stroke = paintStrokes[strokeIndex];
+                    if (stroke.points.length < 150) {
+                        stroke.points.push({ x: x_i, y: y_i, ox: x_i, oy: y_i });
+                    }
+                }
+
+                // Excite particle spray brush or wave friction sparks
+                const isFriction = brushStyleEl.value === "wave_friction";
+                if (brushStyleEl.value === "spray" || isFriction) {
+                    const colorHex = getBrushColorHex();
+                    const count = isFriction ? 3 : 2;
+                    for (let j = 0; j < count; j++) {
+                        paintParticles.push({
+                            x: x_i,
+                            y: y_i,
+                            vx: (Math.random() - 0.5) * (isFriction ? strokeSpeed * 0.75 + 2 : 5),
+                            vy: (Math.random() - 0.5) * (isFriction ? strokeSpeed * 0.75 + 2 : 5),
+                            color: colorHex,
+                            alpha: 1.0,
+                            size: Math.random() * paintWidth + (isFriction ? 1.5 : 1),
+                            age: 0,
+                            maxAge: isFriction ? 15 + Math.random() * 15 : 40 + Math.random() * 30
+                        });
+                    }
                 }
             }
 
-            // Excite particle spray brush
-            if (brushStyleEl.value === "spray") {
-                const colorHex = getBrushColorHex();
-                for (let i = 0; i < 4; i++) {
-                    paintParticles.push({
-                        x: px,
-                        y: py,
-                        vx: (Math.random() - 0.5) * 6,
-                        vy: (Math.random() - 0.5) * 6,
-                        color: colorHex,
-                        alpha: 1.0,
-                        size: Math.random() * paintWidth + 1,
-                        age: 0,
-                        maxAge: 40 + Math.random() * 30
-                    });
-                }
-            }
-
-            updatePaintSound(px, py);
+            updatePaintSound(px, py, strokeSpeed);
         });
 
         canvas.addEventListener("pointerup", () => {
             isPainting = false;
+            lastPx = null;
+            lastPy = null;
             stopPaintSound();
         });
 
         canvas.addEventListener("pointercancel", () => {
             isPainting = false;
+            lastPx = null;
+            lastPy = null;
             stopPaintSound();
         });
 
@@ -1723,8 +2112,10 @@
             const normalizedX = Math.min(1.0, Math.max(0.0, (px - sidebarWidth) / viewportW));
             const normalizedY = Math.min(1.0, Math.max(0.0, py / (canvas.height / window.devicePixelRatio)));
 
+            const symmetry = parseInt(brushSymmetryEl.value);
+
             if (mapping === "pitch") {
-                const freq = 110 + normalizedX * 936;
+                const baseFreq = 110 + normalizedX * 936;
                 filterCutoffVal = 200 + (1.0 - normalizedY) * 4300;
                 
                 document.getElementById("sliderCutoff").value = Math.round(filterCutoffVal);
@@ -1735,33 +2126,18 @@
 
                 if (audioCtx) {
                     stopPaintSound();
-                    
-                    const osc1 = audioCtx.createOscillator();
-                    const osc2 = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
+                    activePaintVoice = [];
 
-                    osc1.type = "triangle";
-                    osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    // Chord scale structure based on symmetry slices
+                    const chordTranspositions = [1.0, 1.5, 2.0, 1.25, 1.68, 1.125, 1.875, 4.0];
+                    const count = Math.min(symmetry, chordTranspositions.length);
+                    const baseGain = 0.14 / Math.sqrt(count);
 
-                    osc2.type = "sawtooth";
-                    const detuneFactor = Math.pow(2, detuneCents / 1200);
-                    osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
-
-                    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.05);
-
-                    osc1.connect(gainNode);
-                    osc2.connect(gainNode);
-                    if (mainFilter) {
-                        gainNode.connect(mainFilter);
-                    } else {
-                        gainNode.connect(audioCtx.destination);
+                    for (let i = 0; i < count; i++) {
+                        const freq_i = baseFreq * chordTranspositions[i];
+                        const voice = createOscillatorsForFreq(freq_i, baseGain);
+                        activePaintVoice.push(voice);
                     }
-
-                    osc1.start();
-                    osc2.start();
-
-                    activePaintVoice = { osc1, osc2, gainNode, freq };
                 }
             } else if (mapping === "excite") {
                 const modeIdx = Math.floor(normalizedY * waveM);
@@ -1772,13 +2148,18 @@
                     293.66, 329.63, 392.00, 440.00, 523.25, 587.33
                 ];
                 const modeNames = ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5"];
-                playLocalAndBroadcastNote(modeFreqs[modeIdx], modeNames[modeIdx]);
+                
+                // Excite chords polyphonically
+                for (let i = 0; i < symmetry; i++) {
+                    const mode_i = (modeIdx + i * 2) % waveM;
+                    playLocalAndBroadcastNote(modeFreqs[mode_i], modeNames[mode_i]);
+                }
             }
         }
 
-        function updatePaintSound(px, py) {
+        function updatePaintSound(px, py, strokeSpeed = 0) {
             const mapping = soundMappingEl.value;
-            if (mapping === "mute" || !activePaintVoice) {
+            if (mapping === "mute" || !activePaintVoice || activePaintVoice.length === 0) {
                 if (mapping === "excite") {
                     const viewportH = canvas.height / window.devicePixelRatio;
                     const normalizedY = Math.min(1.0, Math.max(0.0, py / viewportH));
@@ -1792,14 +2173,36 @@
             const normalizedX = Math.min(1.0, Math.max(0.0, (px - sidebarWidth) / viewportW));
             const normalizedY = Math.min(1.0, Math.max(0.0, py / (canvas.height / window.devicePixelRatio)));
 
-            if (mapping === "pitch" && activePaintVoice) {
-                const freq = 110 + normalizedX * 936;
-                activePaintVoice.osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if (mapping === "pitch" && Array.isArray(activePaintVoice)) {
+                const baseFreq = 110 + normalizedX * 936;
+                const chordTranspositions = [1.0, 1.5, 2.0, 1.25, 1.68, 1.125, 1.875, 4.0];
                 
-                const detuneFactor = Math.pow(2, detuneCents / 1200);
-                activePaintVoice.osc2.frequency.setValueAtTime(freq * detuneFactor, audioCtx.currentTime);
+                // Speed-modulated detune and filter sweep
+                let speedDetuneAdd = 0;
+                if (brushStyleEl.value === "wave_friction") {
+                    speedDetuneAdd = strokeSpeed * 2.0;
+                }
+
+                activePaintVoice.forEach((voice, i) => {
+                    const freq_i = baseFreq * chordTranspositions[i % chordTranspositions.length];
+                    if (voice.osc1 instanceof AudioScheduledSourceNode) {
+                        voice.osc1.frequency.setValueAtTime(freq_i, audioCtx.currentTime);
+                    }
+                    
+                    const color = brushColorEl.value;
+                    let detuneFactor = Math.pow(2, (detuneCents + speedDetuneAdd) / 1200);
+                    if (color === "cyan") {
+                        detuneFactor = 1.5;
+                    } else if (color === "magenta") {
+                        detuneFactor = Math.pow(2, (detuneCents + 4 + speedDetuneAdd) / 1200);
+                    }
+                    if (voice.osc2 instanceof AudioScheduledSourceNode) {
+                        voice.osc2.frequency.setValueAtTime(freq_i * detuneFactor, audioCtx.currentTime);
+                    }
+                });
                 
-                filterCutoffVal = 200 + (1.0 - normalizedY) * 4300;
+                filterCutoffVal = 200 + (1.0 - normalizedY) * 4300 + (brushStyleEl.value === "wave_friction" ? strokeSpeed * 80 : 0);
+                filterCutoffVal = Math.min(18000, Math.max(100, filterCutoffVal));
                 if (mainFilter) {
                     mainFilter.frequency.setValueAtTime(filterCutoffVal, audioCtx.currentTime);
                 }
@@ -1807,22 +2210,179 @@
         }
 
         function stopPaintSound() {
-            if (activePaintVoice) {
-                try {
-                    const voice = activePaintVoice;
-                    const now = audioCtx.currentTime;
-                    voice.gainNode.gain.cancelScheduledValues(now);
-                    voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
-                    voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                    
-                    setTimeout(() => {
-                        try { voice.osc1.stop(); } catch(e) {}
-                        try { voice.osc2.stop(); } catch(e) {}
-                    }, 180);
-                } catch (e) {}
+            if (activePaintVoice && activePaintVoice.length > 0) {
+                activePaintVoice.forEach(voice => {
+                    try {
+                        const now = audioCtx.currentTime;
+                        voice.gainNode.gain.cancelScheduledValues(now);
+                        voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
+                        voice.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                        
+                        setTimeout(() => {
+                            try { voice.osc1.stop(); } catch(e) {}
+                            try { voice.osc2.stop(); } catch(e) {}
+                        }, 180);
+                    } catch (e) {}
+                });
                 activePaintVoice = null;
             }
         }
+
+        // Geometric arpeggiator preset seed: Helix
+        document.getElementById("btnPresetHelix").addEventListener("click", () => {
+            initAudio();
+            resetEngine();
+            
+            const colorHex = getBrushColorHex();
+            const brushType = brushStyleEl.value;
+            
+            const strokeA = { points: [], color: colorHex, width: paintWidth, type: brushType, age: 0, maxAge: 250 };
+            const strokeB = { points: [], color: colorHex === "#d4af37" ? "#00f2fe" : "#d4af37", width: paintWidth, type: brushType, age: 0, maxAge: 250 };
+            
+            paintStrokes.push(strokeA);
+            paintStrokes.push(strokeB);
+
+            // Generate Helix points
+            const steps = 30;
+            const arpeggioNotes = [220.00, 246.94, 277.18, 329.63, 369.99, 440.00, 493.88, 554.37, 659.25, 739.99]; 
+            
+            // Calculate center
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = (canvas.height / window.devicePixelRatio) / 2;
+
+            for (let i = 0; i < steps; i++) {
+                setTimeout(() => {
+                    const t = (i / steps) * Math.PI * 4; 
+                    const yOffset = (i / steps) * 140 - 70;
+                    
+                    const offXa = 45 * Math.cos(t);
+                    const offYa = yOffset;
+                    const offZa = 45 * Math.sin(t);
+                    
+                    const offXb = -45 * Math.cos(t);
+                    const offYb = yOffset;
+                    const offZb = -45 * Math.sin(t);
+
+                    strokeA.points.push({
+                        x: cx0 + offXa,
+                        y: cy0 - offYa,
+                        ox: cx0 + offXa,
+                        oy: cy0 - offYa
+                    });
+                    
+                    strokeB.points.push({
+                        x: cx0 + offXb,
+                        y: cy0 - offYb,
+                        ox: cx0 + offXb,
+                        oy: cy0 - offYb
+                    });
+
+                    if (toggle.checked) {
+                        const noteFreq = arpeggioNotes[i % arpeggioNotes.length];
+                        playLocalAndBroadcastNote(noteFreq, `H${i+1}`);
+                    }
+                }, i * 60);
+            }
+        });
+
+        // Geometric arpeggiator preset seed: Lissajous
+        document.getElementById("btnPresetLissajous").addEventListener("click", () => {
+            initAudio();
+            resetEngine();
+
+            const colorHex = getBrushColorHex();
+            const brushType = brushStyleEl.value;
+
+            const stroke = { points: [], color: colorHex, width: paintWidth, type: brushType, age: 0, maxAge: 250 };
+            paintStrokes.push(stroke);
+
+            const steps = 40;
+            const scale = [146.83, 164.81, 185.00, 220.00, 246.94, 293.66, 329.63, 369.99, 440.00, 493.88];
+
+            // Calculate center
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = (canvas.height / window.devicePixelRatio) / 2;
+
+            for (let i = 0; i <= steps; i++) {
+                setTimeout(() => {
+                    const t = (i / steps) * Math.PI * 2;
+                    const offX = 65 * Math.cos(3 * t);
+                    const offY = 65 * Math.sin(4 * t);
+                    const offZ = 45 * Math.cos(2 * t);
+
+                    stroke.points.push({
+                        x: cx0 + offX,
+                        y: cy0 - offY,
+                        ox: cx0 + offX,
+                        oy: cy0 - offY
+                    });
+
+                    if (toggle.checked) {
+                        const noteFreq = scale[Math.floor(Math.abs(Math.sin(3*t) + Math.cos(4*t)) * 4.5)];
+                        playLocalAndBroadcastNote(noteFreq, `L${i+1}`);
+                    }
+                }, i * 50);
+            }
+        });
+
+        // Geometric arpeggiator preset seed: Mandala Rose
+        document.getElementById("btnPresetMandala").addEventListener("click", () => {
+            initAudio();
+            resetEngine();
+
+            const colorHex = getBrushColorHex();
+            const brushType = brushStyleEl.value;
+
+            const stroke = { points: [], color: colorHex, width: paintWidth, type: brushType, age: 0, maxAge: 300 };
+            paintStrokes.push(stroke);
+
+            const steps = 60;
+            const baseFreqs = [164.81, 196.00, 220.00, 246.94, 293.66, 329.63, 392.00, 440.00, 493.88, 587.33];
+
+            const viewportW = (canvas.width / window.devicePixelRatio) - sidebarWidth;
+            const cx0 = sidebarWidth + viewportW / 2;
+            const cy0 = (canvas.height / window.devicePixelRatio) / 2;
+
+            for (let i = 0; i <= steps; i++) {
+                setTimeout(() => {
+                    const theta = (i / steps) * Math.PI * 4;
+                    const r = 70 * Math.cos(2.5 * theta);
+                    const offX = r * Math.cos(theta);
+                    const offY = r * Math.sin(theta);
+
+                    stroke.points.push({
+                        x: cx0 + offX,
+                        y: cy0 - offY,
+                        ox: cx0 + offX,
+                        oy: cy0 - offY
+                    });
+
+                    if (Math.abs(r) > 60) {
+                        for (let pIdx = 0; pIdx < 3; pIdx++) {
+                            paintParticles.push({
+                                x: cx0 + offX,
+                                y: cy0 - offY,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: (Math.random() - 0.5) * 4,
+                                color: colorHex,
+                                alpha: 1.0,
+                                size: Math.random() * paintWidth + 1,
+                                age: 0,
+                                maxAge: 30
+                            });
+                        }
+                    }
+
+                    if (toggle.checked) {
+                        const noteIndex = Math.floor(Math.abs(r / 70) * baseFreqs.length);
+                        const noteFreq = baseFreqs[Math.min(baseFreqs.length - 1, noteIndex)];
+                        playLocalAndBroadcastNote(noteFreq, `M${i+1}`);
+                    }
+                }, i * 40);
+            }
+        });
 
         // Unlock audio context on body click
         document.body.addEventListener("click", () => {
