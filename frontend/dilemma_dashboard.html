@@ -373,13 +373,7 @@
              "ATROPA": { symbol: "ATROPA", sent: 0, recv: 0, count: 0, price: 1.25 }
          };
          
-         const chatAccumulators = {
-             "Void #0": { name: "Void #0", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
-             "Qing #1": { name: "Qing #1", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
-             "Qing #2": { name: "Qing #2", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
-             "Qing #3": { name: "Qing #3", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" },
-             "Qing #4": { name: "Qing #4", messages: 0, users: new Set(), totalAura: 0, lastUser: "None", lastMsg: "No active transmissions" }
-         };
+         const chatAccumulators = {};
          const ignoredChats = new Set(JSON.parse(localStorage.getItem("ignoredChats") || "[]"));
 
          window.toggleIgnoreChat = function(roomName) {
