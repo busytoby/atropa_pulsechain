@@ -15,13 +15,32 @@
 #include <jpeglib.h>
 #include <setjmp.h>
 
+#include "node_interop.h"
+#include <pthread.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+extern void push_input_event(const char *cmd);
+static void send_input_command(const char *cmd) {
+    push_input_event(cmd);
+}
+
 #include "lau_memory.h"
 #include "tsfi_raw.h"
 #include "window_inc/vulkan_struct.h"
 #include "tsfi_zmm_vm.h"
+#include "../src/lau_yul_thunk.h"
 
 extern PFN_vkVoidFunction tsfi_vkGetInstanceProcAddr(VkInstance instance, const char* pName);
 extern void tsfi_wire_firmware_init(void);
+void tsfi_dl_thunks_teardown(void);
+void lau_registry_teardown(void);
+void lau_free_all_active(void);
+
+extern bool tsfi_mozilla_wmq_bridge_init(const char *so_path);
+extern void tsfi_mozilla_wmq_bridge_tick(TsfiZmmVmState *vm_state);
+extern void tsfi_mozilla_wmq_bridge_destroy(void);
 
 typedef int (VKAPI_CALL *PFN_tsfi_drmModeAddPlane)(uint32_t plane_id, size_t buffer_size);
 typedef void* (VKAPI_CALL *PFN_tsfi_drmModeGetVirtualPlaneBuffer)(uint32_t plane_id);
@@ -47,11 +66,25 @@ typedef void (VKAPI_CALL *PFN_tsfi_drmModeFreeVirtualPlanes)(void);
 
 static uint32_t global_compositor_id = 0, global_shm_id = 0, global_xdg_id = 0, global_seat_name = 0;
 static uint32_t next_id = 3; 
+static bool is_projector = false;
 
 static uint32_t seat_id = 0;
 static uint32_t pointer_id = 0;
 static uint32_t keyboard_id = 0;
 static uint32_t xdg_wm_base_id = 0;
+
+static TsfiZmmVmState g_zmm_vm;
+static uint16_t g_mouse_x = 0;
+static uint16_t g_mouse_y = 0;
+static uint8_t g_click_state = 0;
+
+static void fill_hex_uint256(char *dest, uint64_t val) {
+    memset(dest, '0', 64);
+    char tmp[32];
+    int len = snprintf(tmp, sizeof(tmp), "%lx", val);
+    memcpy(dest + 64 - len, tmp, len);
+    dest[64] = '\0';
+}
 
 #define MAX_W 3840
 #define MAX_H 2160
@@ -110,7 +143,6 @@ static int g_main_img_h = 768;
 
 bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
     if (jpeg_sz < 4 || jpeg_buf[0] != 0xFF || jpeg_buf[1] != 0xD8) {
-        fprintf(stderr, "[Auncient Presenter ERR] Invalid JPEG signature: %02x %02x\n", jpeg_sz > 0 ? jpeg_buf[0] : 0, jpeg_sz > 1 ? jpeg_buf[1] : 0);
         return false;
     }
     struct jpeg_decompress_struct cinfo;
@@ -154,17 +186,24 @@ bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
 
-    // Scale preserving aspect ratio with dark theme background letterboxing/pillarboxing
-    float scale = (float)width / (float)img_w;
-    if ((float)height / (float)img_h < scale) {
-        scale = (float)height / (float)img_h;
+    // Scale preserving aspect ratio with dark theme background letterboxing/pillarboxing if projector is enabled.
+    // Otherwise, stretch to the full screen.
+    int new_w = width;
+    int new_h = height;
+    int pad_x = 0;
+    int pad_y = 0;
+    if (is_projector) {
+        float scale = (float)width / (float)img_w;
+        if ((float)height / (float)img_h < scale) {
+            scale = (float)height / (float)img_h;
+        }
+        new_w = (int)(img_w * scale);
+        new_h = (int)(img_h * scale);
+        if (new_w <= 0) new_w = 1;
+        if (new_h <= 0) new_h = 1;
+        pad_x = (width - new_w) / 2;
+        pad_y = (height - new_h) / 2;
     }
-    int new_w = (int)(img_w * scale);
-    int new_h = (int)(img_h * scale);
-    if (new_w <= 0) new_w = 1;
-    if (new_h <= 0) new_h = 1;
-    int pad_x = (width - new_w) / 2;
-    int pad_y = (height - new_h) / 2;
 
     for (int dy = 0; dy < height; dy++) {
         uint32_t *dst_row = scanout_px + dy * width;
@@ -331,6 +370,26 @@ bool decode_jpeg_subrect(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scan
 
 #include <sys/stat.h>
 
+static const char* get_youtube_frame_path(void) {
+    struct stat st;
+    if (stat("/dev/shm/atropa_latest_frame.jpg", &st) == 0 && st.st_size > 0) {
+        return "/dev/shm/atropa_latest_frame.jpg";
+    }
+    if (stat("/dev/shm/atropa_youtube_frame.jpg", &st) == 0 && st.st_size > 0) {
+        return "/dev/shm/atropa_youtube_frame.jpg";
+    }
+    if (stat("frontend/latest_frame.jpg", &st) == 0 && st.st_size > 0) {
+        return "frontend/latest_frame.jpg";
+    }
+    if (stat("../frontend/latest_frame.jpg", &st) == 0 && st.st_size > 0) {
+        return "../frontend/latest_frame.jpg";
+    }
+    if (stat("/home/mariarahel/src/tsfi2/atropa_pulsechain/frontend/latest_frame.jpg", &st) == 0 && st.st_size > 0) {
+        return "/home/mariarahel/src/tsfi2/atropa_pulsechain/frontend/latest_frame.jpg";
+    }
+    return "/dev/shm/atropa_latest_frame.jpg"; // fallback
+}
+
 static time_t last_youtube_mtime = 0;
 static long last_youtube_mtime_nsec = 0;
 static uint32_t *youtube_cache_px = NULL;
@@ -342,15 +401,23 @@ static int youtube_cache_dest_h = 0;
 void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
     if (g_dest_w <= 0) g_dest_w = width;
     if (g_dest_h <= 0) g_dest_h = height;
-    float rx = (float)g_dest_x / (float)g_main_img_w;
-    float ry = (float)g_dest_y / (float)g_main_img_h;
-    float rw = (float)g_dest_w / (float)g_main_img_w;
-    float rh = (float)g_dest_h / (float)g_main_img_h;
 
-    int dest_x = (int)(rx * width);
-    int dest_y = (int)(ry * height);
-    int dest_w = (int)(rw * width);
-    int dest_h = (int)(rh * height);
+    int dest_x = 0;
+    int dest_y = 0;
+    int dest_w = width;
+    int dest_h = height;
+
+    if (is_projector) {
+        float rx = (float)g_dest_x / (float)g_main_img_w;
+        float ry = (float)g_dest_y / (float)g_main_img_h;
+        float rw = (float)g_dest_w / (float)g_main_img_w;
+        float rh = (float)g_dest_h / (float)g_main_img_h;
+
+        dest_x = (int)(rx * width);
+        dest_y = (int)(ry * height);
+        dest_w = (int)(rw * width);
+        dest_h = (int)(rh * height);
+    }
 
     if (dest_x < 0) dest_x = 0;
     if (dest_y < 0) dest_y = 0;
@@ -377,7 +444,7 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
 
     struct stat st;
     bool need_blit = true;
-    int fd_img = open("/dev/shm/atropa_youtube_frame.jpg", O_RDONLY);
+    int fd_img = open(get_youtube_frame_path(), O_RDONLY);
     if (fd_img >= 0) {
         if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
             #ifdef __APPLE__
@@ -393,17 +460,27 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
                     ssize_t r = read(fd_img, buf, st.st_size);
                     if (r == st.st_size) {
                         // Decode directly onto the scanout_px first
-                        if (decode_jpeg_subrect(buf, st.st_size, scanout_px, width, height)) {
+                        bool success = false;
+                        if (!is_projector) {
+                            success = decode_jpeg_full(buf, st.st_size, scanout_px, width, height);
+                        } else {
+                            success = decode_jpeg_subrect(buf, st.st_size, scanout_px, width, height);
+                        }
+                        if (success) {
                             last_youtube_mtime = cur_mtime;
                             last_youtube_mtime_nsec = cur_mtime_nsec;
                             last_jpeg_sz = st.st_size;
                             need_blit = false; // Already decoded directly to scanout
                             // Copy the decoded subrect into cache
                             if (youtube_cache_px) {
-                                for (int dy = 0; dy < dest_h; dy++) {
-                                    uint32_t *src_row = scanout_px + (dest_y + dy) * width + dest_x;
-                                    uint32_t *dst_row = youtube_cache_px + dy * dest_w;
-                                    memcpy(dst_row, src_row, dest_w * sizeof(uint32_t));
+                                if (!is_projector) {
+                                    memcpy(youtube_cache_px, scanout_px, width * height * sizeof(uint32_t));
+                                } else {
+                                    for (int dy = 0; dy < dest_h; dy++) {
+                                        uint32_t *src_row = scanout_px + (dest_y + dy) * width + dest_x;
+                                        uint32_t *dst_row = youtube_cache_px + dy * dest_w;
+                                        memcpy(dst_row, src_row, dest_w * sizeof(uint32_t));
+                                    }
                                 }
                             }
                         }
@@ -415,19 +492,21 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
         close(fd_img);
     }
 
-    // If we didn't decode a new frame this call, copy from our cache onto the scanout buffer
     if (need_blit && youtube_cache_px && last_youtube_mtime != 0) {
-        for (int dy = 0; dy < dest_h; dy++) {
-            uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
-            uint32_t *src_row = youtube_cache_px + dy * dest_w;
-            for (int dx = 0; dx < dest_w; dx++) {
-                uint32_t cur_val = dst_row[dx];
-                uint8_t cur_r = (cur_val >> 16) & 0xFF;
-                uint8_t cur_g = (cur_val >> 8) & 0xFF;
-                uint8_t cur_b = cur_val & 0xFF;
-                
-                if (cur_r < 25 && cur_g < 25 && cur_b < 35) {
-                    dst_row[dx] = src_row[dx];
+        if (!is_projector) {
+            memcpy(scanout_px, youtube_cache_px, width * height * sizeof(uint32_t));
+        } else {
+            for (int dy = 0; dy < dest_h; dy++) {
+                uint32_t *dst_row = scanout_px + (dest_y + dy) * width + dest_x;
+                uint32_t *src_row = youtube_cache_px + dy * dest_w;
+                for (int dx = 0; dx < dest_w; dx++) {
+                    uint32_t cur_val = dst_row[dx];
+                    uint8_t cur_r = (cur_val >> 16) & 0xFF;
+                    uint8_t cur_g = (cur_val >> 8) & 0xFF;
+                    uint8_t cur_b = cur_val & 0xFF;
+                    if (cur_r < 25 && cur_g < 25 && cur_b < 35) {
+                        dst_row[dx] = src_row[dx];
+                    }
                 }
             }
         }
@@ -456,52 +535,108 @@ void commit_wayland_surface(int fd_wl, uint32_t surf, uint32_t bid) {
     send_msg(fd_wl, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
 }
 
-static bool check_wmq_frame_event(void) {
-    // Auncient WinchesterMQ check bypassed on main thread to prevent synchronous JSON-RPC blocking latency.
-    return false;
-}
+void process_logs(uint32_t *scanout_px, int w, int h) {
+    int ui_logs = lau_yul_thunk_get_log_count();
+    for (int k = 0; k < ui_logs; k++) {
+        uint64_t log_addr = 0;
+        int num_topics = 0;
+        u256_t topics[4] = {0};
+        uint8_t log_data[2048] = {0};
+        size_t log_data_size = sizeof(log_data);
+        if (lau_yul_thunk_get_log(k, &log_addr, &num_topics, topics, log_data, &log_data_size)) {
+            if (num_topics > 0 && topics[0].d[3] == 0x9e7a02c89e7a02c8ULL && topics[0].d[2] == 0x9e7a02c89e7a02c8ULL) {
+                uint16_t rx = (log_data[30] << 8) | log_data[31];
+                uint16_t ry = (log_data[62] << 8) | log_data[63];
+                uint16_t rw = (log_data[94] << 8) | log_data[95];
+                uint16_t rh = (log_data[126] << 8) | log_data[127];
+                uint32_t rcol = (log_data[156] << 24) | (log_data[157] << 16) | (log_data[158] << 8) | log_data[159];
+                if ((rcol & 0xFF000000) == 0) rcol |= 0xFF000000;
 
+                // Scale VM coordinate bounds to headed window dimensions
+                float scale_x = (float)w / 320.0f;
+                float scale_y = (float)h / 300.0f;
+                int start_x = (int)(rx * scale_x);
+                int start_y = (int)(ry * scale_y);
+                int rect_w = (int)(rw * scale_x);
+                int rect_h = (int)(rh * scale_y);
+
+                for (int y = start_y; y < start_y + rect_h && y < h; y++) {
+                    for (int x = start_x; x < start_x + rect_w && x < w; x++) {
+                        scanout_px[y * w + x] = rcol;
+                    }
+                }
+            }
+        }
+    }
+}
+void run_rooted_zmm_tick() {
+    if (!g_scanout_px) return;
+    
+    char cmd[1024];
+    char hex_mx[65], hex_my[65], hex_click[65];
+    
+    // Scale mouse coordinates from screen coordinates back to VM space
+    uint16_t vm_mx = (uint16_t)((float)g_mouse_x * 320.0f / (float)g_w);
+    uint16_t vm_my = (uint16_t)((float)g_mouse_y * 300.0f / (float)g_h);
+    
+    fill_hex_uint256(hex_mx, vm_mx);
+    fill_hex_uint256(hex_my, vm_my);
+    fill_hex_uint256(hex_click, g_click_state);
+
+    snprintf(cmd, sizeof(cmd), "YULEXEC \"MicroUI\", \"8b5c90d2%s%s%s\"", hex_mx, hex_my, hex_click);
+    tsfi_zmm_vm_exec(&g_zmm_vm, cmd);
+}
 bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redraw) {
     struct stat st;
     bool new_youtube = false;
     
-    // Check if Auncient WinchesterMQ triggered a new frame event!
-    static bool wmq_triggered = false;
-    static uint32_t tick = 0;
-    tick++;
-    if (tick % 5 == 0) {
-        wmq_triggered = check_wmq_frame_event();
-    }
+    bool wmq_triggered = false;
 
-    int fd_img = open("/dev/shm/atropa_youtube_frame.jpg", O_RDONLY);
-    if (fd_img >= 0) {
-        if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
-            #ifdef __APPLE__
-            time_t cur_mtime = st.st_mtimespec.tv_sec;
-            long cur_mtime_nsec = st.st_mtimespec.tv_nsec;
-            #else
-            time_t cur_mtime = st.st_mtim.tv_sec;
-            long cur_mtime_nsec = st.st_mtim.tv_nsec;
-            #endif
-            if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec || wmq_triggered) {
-                new_youtube = true;
-                wmq_triggered = false;
+    if (g_dest_w > 0 && g_dest_h > 0) {
+        int fd_img = open(get_youtube_frame_path(), O_RDONLY);
+        if (fd_img >= 0) {
+            if (fstat(fd_img, &st) >= 0 && st.st_size > 0) {
+                #ifdef __APPLE__
+                time_t cur_mtime = st.st_mtimespec.tv_sec;
+                long cur_mtime_nsec = st.st_mtimespec.tv_nsec;
+                #else
+                time_t cur_mtime = st.st_mtim.tv_sec;
+                long cur_mtime_nsec = st.st_mtim.tv_nsec;
+                #endif
+                if (cur_mtime != last_youtube_mtime || cur_mtime_nsec != last_youtube_mtime_nsec || wmq_triggered) {
+                    new_youtube = true;
+                    wmq_triggered = false;
+                }
             }
+            close(fd_img);
         }
-        close(fd_img);
     }
 
     if (force_redraw || new_youtube) {
         if (g_scanout_px) {
-            if (dashboard_cache_px) {
-                memcpy(g_scanout_px, dashboard_cache_px, g_w * g_h * sizeof(uint32_t));
+            if (g_dest_w > 0 && g_dest_h > 0) {
+                if (dashboard_cache_px) {
+                    memcpy(g_scanout_px, dashboard_cache_px, g_w * g_h * sizeof(uint32_t));
+                } else {
+                    for (int i = 0; i < g_w * g_h; i++) {
+                        g_scanout_px[i] = 0xFF0B0214;
+                    }
+                }
+                draw_youtube_frame(g_scanout_px, g_w, g_h);
             } else {
-                for (int i = 0; i < g_w * g_h; i++) {
-                    g_scanout_px[i] = 0xFF0B0214;
+                if (dashboard_cache_px) {
+                    memcpy(g_scanout_px, dashboard_cache_px, g_w * g_h * sizeof(uint32_t));
+                } else {
+                    for (int i = 0; i < g_w * g_h; i++) {
+                        g_scanout_px[i] = 0xFF0A0A0C;
+                    }
                 }
             }
-            // Draw latest YouTube frame on top of clean background
-            draw_youtube_frame(g_scanout_px, g_w, g_h);
+            
+            run_rooted_zmm_tick();
+            process_logs(g_scanout_px, g_w, g_h);
+            tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+            
             commit_wayland_surface(fd_wl, surf, bid);
             return true;
         }
@@ -509,6 +644,107 @@ bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redra
     return false;
 }
 
+
+static void route_event_to_yul_cpu(const char *cmd, int is_move, int vm_x, int vm_y, uint8_t command_byte, uint8_t keycode) {
+    if (is_move) {
+        if (g_zmm_vm.reu_ram && g_zmm_vm.reu_size > 0xF004) {
+            g_zmm_vm.reu_ram[0xF000] = (uint8_t)(vm_x & 0xFF);
+            g_zmm_vm.reu_ram[0xF001] = (uint8_t)(vm_y & 0xFF);
+            g_zmm_vm.reu_ram[0xF003] = (uint8_t)((vm_x >> 8) & 0xFF);
+            g_zmm_vm.reu_ram[0xF004] = (uint8_t)((vm_y >> 8) & 0xFF);
+        }
+    } else {
+        if (g_zmm_vm.reu_ram && g_zmm_vm.reu_size > 0xF002) {
+            g_zmm_vm.reu_ram[0xF002] = keycode;
+        }
+    }
+    
+    // Call writeDataPort(uint8) selector 0x98d400c0
+    uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
+    cd[35] = command_byte;
+    
+    uint8_t ret[32];
+    size_t ret_len = 32;
+    lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
+
+    // Call postEvent(bytes32) selector 0xccb077a0
+    uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
+    char cmd_str[33] = {0};
+    snprintf(cmd_str, sizeof(cmd_str), "Y:%s", cmd);
+    char processed[33] = {0};
+    char *src = cmd_str;
+    char *dst = processed;
+    while (*src && (dst - processed) < 30) {
+        if (strncmp(src, "MOUSE_MOVE", 10) == 0) {
+            strcpy(dst, "MM"); dst += 2; src += 10;
+        } else if (strncmp(src, "MOUSE_DOWN", 10) == 0) {
+            strcpy(dst, "MD"); dst += 2; src += 10;
+        } else if (strncmp(src, "MOUSE_UP", 8) == 0) {
+            strcpy(dst, "MU"); dst += 2; src += 8;
+        } else if (strncmp(src, "MOUSE_SCROLL", 12) == 0) {
+            strcpy(dst, "MS"); dst += 2; src += 12;
+        } else if (strncmp(src, "KEY_DOWN", 8) == 0) {
+            strcpy(dst, "KD"); dst += 2; src += 8;
+        } else if (strncmp(src, "KEY_UP", 6) == 0) {
+            strcpy(dst, "KU"); dst += 2; src += 6;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst = '\0';
+    memcpy(cd_post + 4, processed, 32);
+    
+    lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
+}
+void handle_bridge_command(const char *cmd) {
+    if (strncmp(cmd, "Y:MM ", 5) == 0) {
+        int vm_x = 0, vm_y = 0;
+        if (sscanf(cmd + 5, "%d %d", &vm_x, &vm_y) == 2) {
+            g_mouse_x = (uint16_t)((float)vm_x * (float)g_w / 320.0f);
+            g_mouse_y = (uint16_t)((float)vm_y * (float)g_h / 300.0f);
+            uint8_t cmd_byte = (0x00 << 6) | 0x01;
+            route_event_to_yul_cpu(cmd + 2, 1, vm_x, vm_y, cmd_byte, 0);
+        }
+    } else if (strncmp(cmd, "Y:MD ", 5) == 0) {
+        int btn = 0;
+        if (sscanf(cmd + 5, "%d", &btn) == 1) {
+            if (btn == 272) g_click_state = 1;
+            uint8_t btn_idx = 0;
+            if (btn == 273) btn_idx = 1;
+            if (btn == 274) btn_idx = 2;
+            uint8_t cmd_byte = (0x01 << 6) | 0x04 | (btn_idx & 0x03);
+            route_event_to_yul_cpu(cmd + 2, 0, 0, 0, cmd_byte, 0);
+        }
+    } else if (strncmp(cmd, "Y:MU ", 5) == 0) {
+        int btn = 0;
+        if (sscanf(cmd + 5, "%d", &btn) == 1) {
+            if (btn == 272) g_click_state = 0;
+            uint8_t btn_idx = 0;
+            if (btn == 273) btn_idx = 1;
+            if (btn == 274) btn_idx = 2;
+            uint8_t cmd_byte = (0x01 << 6) | (btn_idx & 0x03);
+            route_event_to_yul_cpu(cmd + 2, 0, 0, 0, cmd_byte, 0);
+        }
+    } else if (strncmp(cmd, "Y:MS ", 5) == 0) {
+        route_event_to_yul_cpu(cmd + 2, 0, 0, 0, 0, 0);
+    } else if (strncmp(cmd, "Y:KD ", 5) == 0) {
+        int key = 0;
+        if (sscanf(cmd + 5, "%d", &key) == 1) {
+            uint8_t cmd_byte = (0x02 << 6) | 0x20 | (key & 0x1F);
+            route_event_to_yul_cpu(cmd + 2, 0, 0, 0, cmd_byte, (uint8_t)key);
+            if (key == 1) {
+                printf("[Auncient Presenter] ESC key via bridge. Exiting.\n");
+                exit(0);
+            }
+        }
+    } else if (strncmp(cmd, "Y:KU ", 5) == 0) {
+        int key = 0;
+        if (sscanf(cmd + 5, "%d", &key) == 1) {
+            uint8_t cmd_byte = (0x02 << 6) | (key & 0x1F);
+            route_event_to_yul_cpu(cmd + 2, 0, 0, 0, cmd_byte, (uint8_t)key);
+        }
+    }
+}
 
 int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
     uint32_t h[2];
@@ -588,58 +824,117 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
         if (op == 2) { // motion
             double x = ((int32_t)p[1]) / 256.0;
             double y = ((int32_t)p[2]) / 256.0;
-            printf("MOUSE_MOVE %d %d\n", (int)x, (int)y);
-            fflush(stdout);
+            fprintf(stderr, "[DEBUG POINTER] Motion: x=%f, y=%f\n", x, y);
+            g_mouse_x = (uint16_t)x;
+            g_mouse_y = (uint16_t)y;
+            
+            uint16_t vm_mx = (uint16_t)((float)x * 320.0f / (float)g_w);
+            uint16_t vm_my = (uint16_t)((float)y * 300.0f / (float)g_h);
+            char cmd_buf[128];
+            snprintf(cmd_buf, sizeof(cmd_buf), "MOUSE_MOVE %d %d", vm_mx, vm_my);
+            send_input_command(cmd_buf);
+            // Handled via the WinchesterMQ in-memory Node.js subscriber
+            // uint16_t vm_mx = (uint16_t)((float)x * 320.0f / (float)g_w);
+            // ...
+            
+            if (p) free(p);
+            return 2; // Signal redraw needed for hover state
         } else if (op == 3) { // button
             uint32_t btn = p[2];
             uint32_t state = p[3];
-            if (state == 1) {
-                printf("MOUSE_DOWN %u\n", btn);
-            } else {
-                printf("MOUSE_UP %u\n", btn);
+            fprintf(stderr, "[DEBUG POINTER] Button: btn=%u, state=%u\n", btn, state);
+            if (btn == 272) { // Left mouse button
+                g_click_state = (state == 1) ? 1 : 0;
             }
-            fflush(stdout);
+            
+            char cmd_buf[128];
+            if (state == 1) {
+                snprintf(cmd_buf, sizeof(cmd_buf), "MOUSE_DOWN %u", btn);
+            } else {
+                snprintf(cmd_buf, sizeof(cmd_buf), "MOUSE_UP %u", btn);
+            }
+            send_input_command(cmd_buf);
+            
+            // Handled via the WinchesterMQ in-memory Node.js subscriber
+            
+            if (p) free(p);
+            return 2; // Signal redraw needed for click state
         } else if (op == 4) { // axis
             uint32_t axis = p[1];
             double value = ((int32_t)p[2]) / 256.0;
-            printf("MOUSE_SCROLL %u %f\n", axis, value);
-            fflush(stdout);
+            fprintf(stderr, "[DEBUG POINTER] Axis: axis=%u, value=%f\n", axis, value);
+            
+            char cmd_buf[128];
+            snprintf(cmd_buf, sizeof(cmd_buf), "MOUSE_SCROLL %u %f", axis, value);
+            send_input_command(cmd_buf);
+            
+            // Handled via the WinchesterMQ in-memory Node.js subscriber
         }
     } else if (keyboard_id && obj == keyboard_id) {
         if (op == 3) { // key
             uint32_t key = p[2];
             uint32_t state = p[3];
+            fprintf(stderr, "[DEBUG KEYBOARD] key=%u, state=%u\n", key, state);
             if (state == 1) {
-                printf("KEY_DOWN %u\n", key);
+                char cmd_buf[128];
+                snprintf(cmd_buf, sizeof(cmd_buf), "KEY_DOWN %u", key + 8);
+                send_input_command(cmd_buf);
+                
+                // Handled via the WinchesterMQ in-memory Node.js subscriber
+                
                 if (key == 1) { // ESC key
                     printf("[Auncient Presenter] ESC pressed. Exiting gracefully.\n");
                     fflush(stdout);
                     exit(0);
                 }
             } else {
-                printf("KEY_UP %u\n", key);
+                char cmd_buf[128];
+                snprintf(cmd_buf, sizeof(cmd_buf), "KEY_UP %u", key + 8);
+                send_input_command(cmd_buf);
+                
+                // Handled via the WinchesterMQ in-memory Node.js subscriber
             }
-            fflush(stdout);
+            if (p) free(p);
+            return 2;
         }
     }
     if (p) free(p);
     return 1;
 }
 
-int main() {
-    printf("[Auncient Presenter] Initializing Vulkan and Wayland loops...\n");
-
+static void* run_presenter_thread(void* arg) {
+    (void)arg;
     // Initialize dependencies and global hardware structures (wired allocation table)
     tsfi_wire_firmware_init();
 
-    // Run ZMM VM diagnostics on launch
-    printf("[Auncient Presenter] Running ZMM VM diagnostics...\n");
+    // Initialize the global ZMM VM
+    printf("[Auncient Presenter] Initializing global ZMM VM...\n");
     fflush(stdout);
-    TsfiZmmVmState zmm_diag_state;
-    tsfi_zmm_vm_init(&zmm_diag_state);
-    tsfi_zmm_vm_destroy(&zmm_diag_state);
-    printf("[Auncient Presenter] ZMM VM diagnostics completed.\n");
+    tsfi_zmm_vm_init(&g_zmm_vm);
+
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"../solidity/bin/microui.yul\", 256");
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"solidity/bin/microui.yul\", 256");
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"../solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"../solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
+    
+    // Invoke LAUFactory.New("ROOTED Browser", "ROOTED") on the VM to deploy and bind the legal username token context
+    // Selector for New(string,string) is 0xc55c7075. Calldata requires string variables padded in EVM format.
+    tsfi_zmm_vm_exec(&g_zmm_vm, "YULEXEC \"laufactory\", \"c55c7075"
+        "0000000000000000000000000000000000000000000000000000000000000040" // Offset of name
+        "0000000000000000000000000000000000000000000000000000000000000080" // Offset of symbol
+        "000000000000000000000000000000000000000000000000000000000000000e" // Length of name "ROOTED Browser" (14 bytes)
+        "524f4f5445442042726f77736572000000000000000000000000000000000000" // Data "ROOTED Browser"
+        "0000000000000000000000000000000000000000000000000000000000000006" // Length of symbol "ROOTED" (6 bytes)
+        "524f4f5445440000000000000000000000000000000000000000000000000000\""); // Data "ROOTED"
+    
+    printf("[Auncient Presenter] ZMM VM diagnostics, WinchesterMQ, and legal immutable LAU ROOTED Browser username setup completed.\n");
     fflush(stdout);
+
+    // Initialize Mozilla Bridge
+    printf("[Auncient Presenter] Initializing Mozilla WMQ bridge...\n");
+    tsfi_mozilla_wmq_bridge_init("./libtsfi2.so");
 
     // --- 1. Load Firmware ZMM ---
     PFN_vkCreateInstance pvkCreateInstance = (PFN_vkCreateInstance)tsfi_vkGetInstanceProcAddr(NULL, "vkCreateInstance");
@@ -652,7 +947,7 @@ int main() {
 
     if (!pvkCreateInstance || !pvkCreateDevice || !pvkGetDeviceQueue || !ptsfi_zmm_set_scanout_buffer) {
         fprintf(stderr, "[Auncient Presenter ERR] Failed to resolve critical Vulkan/ZMM function pointers!\n");
-        return 1;
+        return NULL;
     }
 
     VkInstance instance; VkInstanceCreateInfo inst_info = {0}; pvkCreateInstance(&inst_info, NULL, &instance);
@@ -661,17 +956,17 @@ int main() {
 
     // --- 2. Setup Wayland Connection ---
     const char *run = getenv("XDG_RUNTIME_DIR"), *disp = getenv("WAYLAND_DISPLAY");
-    if (!run) return 1; 
+    if (!run) return NULL; 
     if (!disp) disp = "wayland-0";
     char path[108]; snprintf(path, 108, "%s/%s", run, disp);
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     struct sockaddr_un addr = {0}; addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", path);
-    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) return 1;
+    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) return NULL;
 
     uint32_t reg_args[] = {WL_REGISTRY_ID}; send_msg(fd, WL_DISPLAY_ID, WL_DISPLAY_GET_REGISTRY, reg_args, 4, -1);
     for (int i = 0; i < 100; i++) { process_events(fd, 0, NULL); tsfi_raw_usleep(2000); }
-    if (!global_xdg_id) return 1;
+    if (!global_xdg_id) return NULL;
 
     uint32_t cid = next_id++, sid = next_id++, xid = next_id++;
     xdg_wm_base_id = xid;
@@ -727,15 +1022,15 @@ int main() {
 
     int str = g_w * 4; size_t sz = MAX_W * MAX_H * 4;
     int mfd = memfd_create("tsfi_scanout", MFD_CLOEXEC);
-    if (mfd < 0 || ftruncate(mfd, sz) < 0) return 1;
-    uint32_t *scanout_px = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, mfd, 0);
+    if (mfd < 0 || ftruncate(mfd, sz) < 0) return NULL;
+    uint32_t *scanout_px = (uint32_t*)mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, mfd, 0);
     for (int i = 0; i < MAX_W * MAX_H; i++) {
         scanout_px[i] = 0xFF0B0214; // Brand purple
     }
     
     pid_val = next_id++; bid_val = next_id++;
     uint32_t p_args[] = {pid_val, (uint32_t)sz}; send_msg(fd, sid, WL_SHM_CREATE_POOL, p_args, 8, mfd);
-    uint32_t bf_args[] = {bid_val, 0, g_w, g_h, str, 1}; send_msg(fd, pid_val, WL_SHM_POOL_CREATE_BUFFER, bf_args, 24, -1); // 1 = XRGB8888
+    uint32_t bf_args[] = {bid_val, 0, (uint32_t)g_w, (uint32_t)g_h, (uint32_t)str, 1}; send_msg(fd, pid_val, WL_SHM_POOL_CREATE_BUFFER, bf_args, 24, -1); // 1 = XRGB8888
     
     // Initial commit must NOT have a buffer attached per XDG shell spec
     send_msg(fd, surf, WL_SURFACE_COMMIT, NULL, 0, -1);
@@ -749,9 +1044,12 @@ int main() {
 
     VkSwapchainKHR mock_swapchain = (VkSwapchainKHR)0xB000;
     uint32_t imageIndex = 0;
-    VkPresentInfoKHR presentInfo = { .swapchainCount = 1, .pSwapchains = &mock_swapchain, .pImageIndices = &imageIndex };
+    VkPresentInfoKHR presentInfo = {0};
+    presentInfo.sType = (VkStructureType)8; // VK_STRUCTURE_TYPE_PRESENT_INFO_KHR is 1000001003 or mock val, let's cast or use empty struct
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &mock_swapchain;
+    presentInfo.pImageIndices = &imageIndex;
     (void)presentInfo;
-
     printf("[Auncient Presenter] Waiting for initial Wayland configure event...\n");
     bool initial_configured = false;
     for (int i = 0; i < 100; i++) {
@@ -769,14 +1067,17 @@ int main() {
     printf("[Auncient Presenter] Frame presenter ready. Streaming starting...\n");
     fflush(stdout);
 
-    // Make stdin non-blocking
-    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    // Make stdin non-blocking if running as projector
+    if (is_projector) {
+        int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    }
 
-    struct pollfd fds[2] = {
-        { .fd = fd, .events = POLLIN },
-        { .fd = STDIN_FILENO, .events = POLLIN }
-    };
+    struct pollfd fds[2] = {0};
+    fds[0].fd = fd;
+    fds[0].events = POLLIN;
+    fds[1].fd = is_projector ? STDIN_FILENO : -1;
+    fds[1].events = POLLIN;
 
     enum {
         STATE_READ_LEN,
@@ -790,7 +1091,7 @@ int main() {
     uint32_t jpeg_len = 0;
 
     while (1) {
-        // Poll both file descriptors with a 10ms timeout
+        // Poll two file descriptors with a 10ms timeout
         int ret = poll(fds, 2, 10);
         if (ret < 0) {
             if (errno == EINTR) continue;
@@ -800,8 +1101,14 @@ int main() {
         // 1. Process Wayland connection events immediately (keeps window responsive to ping/inputs)
         if (fds[0].revents & POLLIN) {
             bool conf = false;
-            while (process_events(fd, xsurf, &conf) > 0);
-            if (conf) {
+            bool event_triggered = false;
+            int pev;
+            while ((pev = process_events(fd, xsurf, &conf)) > 0) {
+                if (pev > 0) {
+                    event_triggered = true;
+                }
+            }
+            if (conf || event_triggered) {
                 if (last_jpeg_sz > 0) {
                     decode_jpeg_zero_copy(last_jpeg_buf, last_jpeg_sz, g_scanout_px, g_w, g_h);
                 }
@@ -883,20 +1190,47 @@ int main() {
         // 3. Asynchronously present new YouTube frames immediately when available in RAM
         update_and_present(fd, surf, bid_val, false);
     }
-
 out:
     printf("[Auncient Presenter] Cleaning up virtual planes...\n");
-    // ptsfi_drmModeFreeVirtualPlanes();
     free(b);
-    
     PFN_vkDestroyDevice pvkDestroyDevice = (PFN_vkDestroyDevice)tsfi_vkGetInstanceProcAddr(NULL, "vkDestroyDevice");
     pvkDestroyDevice(device, NULL);
     PFN_vkDestroyInstance pvkDestroyInstance = (PFN_vkDestroyInstance)tsfi_vkGetInstanceProcAddr(NULL, "vkDestroyInstance");
     pvkDestroyInstance(instance, NULL);
 
-    extern void tsfi_dl_thunks_teardown(void); tsfi_dl_thunks_teardown();
-    extern void lau_registry_teardown(void); lau_registry_teardown();
-    extern void lau_free_all_active(void);
+    tsfi_zmm_vm_destroy(&g_zmm_vm);
+    tsfi_dl_thunks_teardown();
+    lau_registry_teardown();
     lau_free_all_active();
+    return NULL;
+}
+
+int main(int argc, char **argv) {
+    is_projector = false;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--projector") == 0) {
+            is_projector = true;
+        }
+    }
+    if (!is_projector) {
+        g_dest_x = 0;
+        g_dest_y = 0;
+        g_dest_w = g_w;
+        g_dest_h = g_h;
+    }
+    printf("[Auncient Presenter] Initializing Vulkan and Wayland loops... (projector=%d)\n", is_projector);
+
+    pthread_t presenter_thread_handle;
+    if (pthread_create(&presenter_thread_handle, NULL, run_presenter_thread, NULL) != 0) {
+        fprintf(stderr, "[Auncient Presenter ERR] Failed to create presenter loop thread!\n");
+        return 1;
+    }
+    pthread_detach(presenter_thread_handle);
+
+    // Run Node.js on the main process thread to satisfy V8 engine threading constraints
+    printf("[Auncient Presenter] Spawning embedded Node.js engine on main thread...\n");
+    char* args[] = { (char*)"node", (char*)"scripts/embedded_browser_controller.js", NULL };
+    start_embedded_node(2, args);
+    printf("[Auncient Presenter] Embedded Node.js engine exited.\n");
     return 0;
 }

@@ -4,7 +4,7 @@ CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc 
            -O3 -g -march=native -flax-vector-conversions -fopenmp \
            -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIC \
            -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
-CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -march=native -fopenmp -fPIC -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
+CXXFLAGS = -Wall -Wextra -Wno-error -std=c++17 -O3 -g -march=native -fopenmp -fPIC -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
 LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound -fopenmp
 
 OBJ_DIR  = obj
@@ -38,7 +38,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_operator.o $(OBJ_DIR)/tsfi_yang.o $(OBJ_DIR)/tsfi_quan.o \
             $(OBJ_DIR)/tsfi_c_math.o $(OBJ_DIR)/firmware/LauWireFirmware_rtl.o \
             $(OBJ_DIR)/tsfi_vision_classify.o $(OBJ_DIR)/tsfi_cli.o $(OBJ_DIR)/tsfi_svdag.o \
-            $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/lau_yul_thunk.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
+            $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/lau_yul_thunk_common.o $(OBJ_DIR)/lau_yul_thunk_compiler.o $(OBJ_DIR)/lau_yul_thunk_interpreter.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
             $(OBJ_DIR)/tsfi_merkle.o $(OBJ_DIR)/tsfi_steiner_evi.o $(OBJ_DIR)/tsfi_nebula.o $(OBJ_DIR)/tsfi_divider.o $(OBJ_DIR)/tsfi_serge_usg.o $(OBJ_DIR)/tsfi_dtl_core.o $(OBJ_DIR)/tsfi_delay_line.o $(OBJ_DIR)/tsfi_rtl_latch.o $(OBJ_DIR)/tsfi_shaft_encoder.o $(OBJ_DIR)/tsfi_core_plane.o $(OBJ_DIR)/tsfi_tunnel_latch.o $(OBJ_DIR)/tsfi_thin_film.o $(OBJ_DIR)/tsfi_integrated_circuit.o $(OBJ_DIR)/tsfi_core_rope.o $(OBJ_DIR)/tsfi_ttl_gate.o $(OBJ_DIR)/tsfi_parametron.o $(OBJ_DIR)/tsfi_slt.o $(OBJ_DIR)/tsfi_cla.o $(OBJ_DIR)/tsfi_plated_wire.o $(OBJ_DIR)/tsfi_mema.o $(OBJ_DIR)/tsfi_sar_adc.o $(OBJ_DIR)/tsfi_schmitt.o $(OBJ_DIR)/tsfi_diode_matrix.o $(OBJ_DIR)/tsfi_byte_issue21.o $(OBJ_DIR)/tsfi_byte_issue22.o $(OBJ_DIR)/tsfi_byte_issue23.o $(OBJ_DIR)/tsfi_byte_issue24.o $(OBJ_DIR)/tsfi_oregon_trail.o $(OBJ_DIR)/tsfi_elektuur_issue25.o $(OBJ_DIR)/tsfi_prophecy.o $(OBJ_DIR)/tsfi_valve.o \
             $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
             $(OBJ_DIR)/tsfi_design_pipeline.o \
@@ -470,8 +470,11 @@ $(OBJ_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-tests/rooted_frame_presenter: tests/rooted_frame_presenter.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+tests/node_interop.o: tests/node_interop.cpp tests/node_interop.h
+	$(CXX) $(CXXFLAGS) -I/usr/include/node -c -o $@ $<
+
+tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/node_interop.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -I/usr/include/node -o $@ $^ $(LDFLAGS) -lnode
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) tsfi2 src/firmware/*_rtl.*
