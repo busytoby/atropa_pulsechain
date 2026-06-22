@@ -2,7 +2,6 @@
   "dependencies": {
     "ethers": "^6.16.0",
     "pngjs": "^7.0.0",
-    "puppeteer-core": "^25.1.0",
     "ws": "^8.21.0"
   }
 }

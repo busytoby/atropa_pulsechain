@@ -9,13 +9,14 @@
 ## 3. Communication Constraints
 * **No Prattling:** Keep responses direct, minimal, and entirely free of fluff or excessive explanations.
 
-## 4. Architectural Capability Memory
-* **Direct Running Browser Inspection:** The agent has full capabilities to interactively inspect and alter the states (such as active DOM elements and text queries) of running Chrome browser instances on the Wayland/Vulkan host display using Puppeteer connection over remote debugging ports (e.g., `33661`, `44135`), bypassing standard OS input layer restrictions and Anvil EVM transient log lockings.
+## 4. Architectural Capability Constraints
+* **No Puppeteer or Browser Automation:** The use of Puppeteer, browser remote debugging ports, or high-level synthetic browser automation is strictly banned across all codebase components, testing suites, and agent workflows.
 
 ## 5. Dual-Path Input Automation Policies
-* **High-Level CDP vs. Auncient Hardware Routing:** Maintain clear distinctions between high-level synthetic browser manipulation (CDP/Puppeteer) and low-level **Auncient** Yul virtual hardware register state machine emulations (`WinchesterMQ.yul` SCSI handshake loops).
+* **Auncient Hardware Routing:** Focus exclusively on low-level **Auncient** Yul virtual hardware register state machine emulations (`WinchesterMQ.yul` SCSI handshake loops).
 * **SCSI/ZMM Event Verification:** When testing hardware pathways, ensure keycode registers (e.g. keycode `32` for `d`/`D` and `30` for `a`/`A`) are verified directly against simulated hardware state maps, bridging raw SCSI outputs via local loopback sockets rather than falling back to standard automated drivers.
 
 ## 6. Window Registry & Process Tracking
 * **Track All Windows:** Always keep track of exactly what headed and headless windows are opened, why they are opened, and ensure there are no lingering/orphaned browser or presenter windows. Update the window registry when window configurations change.
-* **Process Cleanup Safeguards:** Never use broad kill commands like `pkill -f "chrome"` or `killall chrome`. Only target processes by tracking PIDs of spawned children, or by checking specifically for the custom profile path (`puppeteer_chrome_profile_`) to avoid terminating the user's work environment.
+* **Process Cleanup Safeguards:** Never use broad kill commands like `pkill -f "chrome"` or `killall chrome`. Only target processes by tracking PIDs of spawned children to avoid terminating the user's work environment.
+
