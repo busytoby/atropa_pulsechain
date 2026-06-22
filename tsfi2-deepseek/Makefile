@@ -319,6 +319,15 @@ tests/test_rooted_browser_wmq: tests/test_rooted_browser_wmq.c $(CORE_OBJS) $(OB
 tests/test_rooted_browser_wmq_collision: tests/test_rooted_browser_wmq_collision.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_zmm_epibar_hypobar: tests/test_zmm_epibar_hypobar.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_zmm_yue_contracts: tests/test_zmm_yue_contracts.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_zmm_lau_proof: tests/test_zmm_lau_proof.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_base0_protocol: tests/test_base0_protocol.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

@@ -2058,6 +2058,33 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         body[i].z = dx * sin_t + dz * cos_t;
     }
 
+    // --- Dynamic Multi-Segment Obstacle Constraints (#3 Integration) ---
+    // Emulating platform/environmental collision boundaries in the 3D space
+    static struct {
+        float cx, cy, cz;
+        float radius;
+    } env_obstacles[2] = {
+        { 0.35f, 0.1f, 0.0f, 0.22f },   // Right obstacle sphere
+        { -0.35f, -0.2f, 0.05f, 0.18f } // Left obstacle sphere
+    };
+
+    for (int i = 0; i < 15; i++) {
+        float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
+        for (int j = 0; j < 2; j++) {
+            float dx = body[i].x - env_obstacles[j].cx;
+            float dy = body[i].y - env_obstacles[j].cy;
+            float dz = body[i].z - env_obstacles[j].cz;
+            float dist = sqrtf(dx*dx + dy*dy + dz*dz);
+            float min_dist = env_obstacles[j].radius + body[i].r * avg_scale;
+            if (dist < min_dist && dist > 0.0f) {
+                float push = min_dist - dist;
+                body[i].x += (dx / dist) * push;
+                body[i].y += (dy / dist) * push;
+                body[i].z += (dz / dist) * push;
+            }
+        }
+    }
+
     // Precalculate projection metrics and light projections once per frame for huge execution speedup
     for (int i = 0; i < 15; i++) {
         precalc_spheres[i].inv_sx = 1.0f / body[i].sx;

@@ -109,6 +109,10 @@ static int g_main_img_w = 1024;
 static int g_main_img_h = 768;
 
 bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout_px, int width, int height) {
+    if (jpeg_sz < 4 || jpeg_buf[0] != 0xFF || jpeg_buf[1] != 0xD8) {
+        fprintf(stderr, "[Auncient Presenter ERR] Invalid JPEG signature: %02x %02x\n", jpeg_sz > 0 ? jpeg_buf[0] : 0, jpeg_sz > 1 ? jpeg_buf[1] : 0);
+        return false;
+    }
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -150,17 +154,39 @@ bool decode_jpeg_full(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanout
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
 
-    // Bilinear scale the full dashboard frame to fit the active presenter window
+    // Scale preserving aspect ratio with dark theme background letterboxing/pillarboxing
+    float scale = (float)width / (float)img_w;
+    if ((float)height / (float)img_h < scale) {
+        scale = (float)height / (float)img_h;
+    }
+    int new_w = (int)(img_w * scale);
+    int new_h = (int)(img_h * scale);
+    if (new_w <= 0) new_w = 1;
+    if (new_h <= 0) new_h = 1;
+    int pad_x = (width - new_w) / 2;
+    int pad_y = (height - new_h) / 2;
+
     for (int dy = 0; dy < height; dy++) {
-        float sy = (float)dy * (float)img_h / (float)height;
+        uint32_t *dst_row = scanout_px + dy * width;
+        if (dy < pad_y || dy >= pad_y + new_h) {
+            for (int dx = 0; dx < width; dx++) {
+                dst_row[dx] = 0xFF0A0A0C; // Auncient base dark background color
+            }
+            continue;
+        }
+
+        float sy = (float)(dy - pad_y) * (float)img_h / (float)new_h;
         int y0 = (int)sy;
         int y1 = (y0 + 1 < img_h) ? y0 + 1 : y0;
         float ty = sy - (float)y0;
 
-        uint32_t *dst_row = scanout_px + dy * width;
-
         for (int dx = 0; dx < width; dx++) {
-            float sx = (float)dx * (float)img_w / (float)width;
+            if (dx < pad_x || dx >= pad_x + new_w) {
+                dst_row[dx] = 0xFF0A0A0C;
+                continue;
+            }
+
+            float sx = (float)(dx - pad_x) * (float)img_w / (float)new_w;
             int x0 = (int)sx;
             int x1 = (x0 + 1 < img_w) ? x0 + 1 : x0;
             float tx = sx - (float)x0;
@@ -314,9 +340,8 @@ static int youtube_cache_dest_w = 0;
 static int youtube_cache_dest_h = 0;
 
 void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
-    if (last_jpeg_sz == 0 || g_dest_w <= 0 || g_dest_h <= 0) {
-        return;
-    }
+    if (g_dest_w <= 0) g_dest_w = width;
+    if (g_dest_h <= 0) g_dest_h = height;
     float rx = (float)g_dest_x / (float)g_main_img_w;
     float ry = (float)g_dest_y / (float)g_main_img_h;
     float rw = (float)g_dest_w / (float)g_main_img_w;
@@ -371,7 +396,9 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
                         if (decode_jpeg_subrect(buf, st.st_size, scanout_px, width, height)) {
                             last_youtube_mtime = cur_mtime;
                             last_youtube_mtime_nsec = cur_mtime_nsec;
-                            // Copy decoded subrect pixels from scanout_px to cache
+                            last_jpeg_sz = st.st_size;
+                            need_blit = false; // Already decoded directly to scanout
+                            // Copy the decoded subrect into cache
                             if (youtube_cache_px) {
                                 for (int dy = 0; dy < dest_h; dy++) {
                                     uint32_t *src_row = scanout_px + (dest_y + dy) * width + dest_x;
@@ -379,7 +406,6 @@ void draw_youtube_frame(uint32_t *scanout_px, int width, int height) {
                                     memcpy(dst_row, src_row, dest_w * sizeof(uint32_t));
                                 }
                             }
-                            need_blit = false; // Already decoded directly to scanout
                         }
                     }
                     free(buf);
@@ -585,6 +611,11 @@ int process_events(int fd, uint32_t xdg_s_id, bool *out_configure) {
             uint32_t state = p[3];
             if (state == 1) {
                 printf("KEY_DOWN %u\n", key);
+                if (key == 1) { // ESC key
+                    printf("[Auncient Presenter] ESC pressed. Exiting gracefully.\n");
+                    fflush(stdout);
+                    exit(0);
+                }
             } else {
                 printf("KEY_UP %u\n", key);
             }
@@ -749,7 +780,8 @@ int main() {
 
     enum {
         STATE_READ_LEN,
-        STATE_READ_DATA
+        STATE_READ_DATA,
+        STATE_READ_CMD
     } stream_state = STATE_READ_LEN;
 
     size_t target_len = 20;
@@ -798,20 +830,48 @@ int main() {
                         memcpy(&g_dest_w, input_buf + 12, 4);
                         memcpy(&g_dest_h, input_buf + 16, 4);
 
-                        if (jpeg_len > sizeof(input_buf)) {
-                            fprintf(stderr, "[Auncient Presenter ERR] Frame length %u exceeds buffer size!\n", jpeg_len);
-                            goto out;
+                        if (jpeg_len & 0x80000000) {
+                            uint32_t payload_len = jpeg_len & 0x7FFFFFFF;
+                            if (payload_len > sizeof(input_buf)) {
+                                fprintf(stderr, "[Auncient Presenter ERR] Command payload length %u exceeds buffer size!\n", payload_len);
+                                goto out;
+                            }
+                            stream_state = STATE_READ_CMD;
+                            target_len = payload_len;
+                            total_read = 0;
+                        } else {
+                            if (jpeg_len > sizeof(input_buf)) {
+                                fprintf(stderr, "[Auncient Presenter ERR] Frame length %u exceeds buffer size!\n", jpeg_len);
+                                goto out;
+                            }
+                            stream_state = STATE_READ_DATA;
+                            target_len = jpeg_len;
+                            total_read = 0;
                         }
-                        stream_state = STATE_READ_DATA;
-                        target_len = jpeg_len;
-                        total_read = 0;
-                    } else {
+                    } else if (stream_state == STATE_READ_DATA) {
                         if (decode_jpeg_zero_copy(input_buf, jpeg_len, g_scanout_px, g_w, g_h)) {
                             if (jpeg_len <= sizeof(last_jpeg_buf)) {
                                 memcpy(last_jpeg_buf, input_buf, jpeg_len);
                                 last_jpeg_sz = jpeg_len;
                             }
                             update_and_present(fd, surf, bid_val, true);
+                        }
+                        stream_state = STATE_READ_LEN;
+                        target_len = 20;
+                        total_read = 0;
+                    } else if (stream_state == STATE_READ_CMD) {
+                        if (target_len < sizeof(input_buf)) {
+                            input_buf[target_len] = '\0';
+                        } else {
+                            input_buf[sizeof(input_buf) - 1] = '\0';
+                        }
+                        // Execute the clipboard command directly on the Wayland side!
+                        // Since this is spawned from the active headed Wayland window process,
+                        // it can set the clipboard natively.
+                        FILE *py_proc = popen("python3 scripts/set_clipboard.py", "w");
+                        if (py_proc) {
+                            fwrite(input_buf, 1, target_len, py_proc);
+                            pclose(py_proc);
                         }
                         stream_state = STATE_READ_LEN;
                         target_len = 20;
