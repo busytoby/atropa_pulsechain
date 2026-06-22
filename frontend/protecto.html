@@ -103,13 +103,81 @@
 
         <!-- Main Workspace -->
         <div class="retro-grid">
-            <!-- Left Side: 80x25 CRTC Text Screen -->
-            <div class="canvas-container">
-                <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue);">MOS 6545 80-COLUMN TEXT SCREEN</h3>
-                <canvas id="crtScreen" width="640" height="200"></canvas>
-                <div style="margin-top: 15px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
-                    Emulating 80x25 line graphics, Zero-Page data segments, and Protecto Enterprises transactions.
+            <!-- Left Side: 80x25 CRTC Text Screen & Utility Desk -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="canvas-container">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue);">MOS 6545 80-COLUMN TEXT SCREEN</h3>
+                    <canvas id="crtScreen" width="640" height="200"></canvas>
+                    <div style="margin-top: 15px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                        Emulating 80x25 line graphics, Zero-Page data segments, and Protecto Enterprises transactions.
+                    </div>
                 </div>
+
+                <!-- Auncient Memory Utility Desk (Uni-Load & PC-Print) -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
+                    <h2><span class="icon">🛠️</span> Auncient Memory Utility Desk (Uni-Load & PC-Print)</h2>
+                    <p class="description">Access low-level memory image dumps and spool text with custom layout processing.</p>
+                    
+                    <!-- Tabs for Uni-Load and PC-Print -->
+                    <div style="display: flex; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 15px;">
+                        <button class="btn" id="btnTabUniLoad" style="flex: 1; border-color: var(--neon-blue); background: rgba(0, 242, 254, 0.15); color: #fff; font-size: 0.85rem;">Uni-Load (Dumper)</button>
+                        <button class="btn btn-secondary" id="btnTabPCPrint" style="flex: 1; font-size: 0.85rem;">PC Print (Spooler)</button>
+                    </div>
+
+                    <!-- Uni-Load Panel -->
+                    <div id="panelUniLoad" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="flex: 1;">
+                                <label class="reg-label" style="font-size: 0.7rem;">START ADDR (HEX):</label>
+                                <input type="text" id="uniLoadStart" class="input-glow" style="width: 90%; background: #000; color: #fff; border: 1px solid var(--neon-blue); padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="0000" value="0000">
+                            </div>
+                            <div style="flex: 1;">
+                                <label class="reg-label" style="font-size: 0.7rem;">END ADDR (HEX):</label>
+                                <input type="text" id="uniLoadEnd" class="input-glow" style="width: 90%; background: #000; color: #fff; border: 1px solid var(--neon-blue); padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="007F" value="007F">
+                            </div>
+                            <button class="btn" id="btnUniLoadDump" style="border-color: var(--neon-blue); color: #fff; font-family: 'Orbitron', sans-serif; align-self: flex-end; padding: 4px 10px; font-size: 0.85rem;">Dump</button>
+                        </div>
+                        
+                        <!-- Memory Dump Viewer -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.78rem; color: #00ffcc; height: 180px; overflow-y: auto; white-space: pre;" id="uniLoadDumpOutput">--- Click 'Dump' to display memory ---</div>
+
+                        <!-- Load (Poke) raw values -->
+                        <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px;">
+                            <span class="reg-label" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 6px;">Poke Memory Register</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="uniLoadPokeAddr" class="input-glow" style="width: 30%; background: #000; color: #fff; border: 1px solid var(--neon-magenta); padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="Addr (HEX)" value="0080">
+                                <input type="text" id="uniLoadPokeVal" class="input-glow" style="width: 30%; background: #000; color: #fff; border: 1px solid var(--neon-magenta); padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="Val (HEX)" value="FF">
+                                <button class="btn" id="btnUniLoadPoke" style="flex: 1; border-color: var(--neon-magenta); color: #fff; font-family: 'Orbitron', sans-serif; padding: 4px; font-size: 0.8rem;">Poke Register</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PC Print Panel (Spooler) -->
+                    <div id="panelPCPrint" style="display: none; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label class="reg-label" style="font-size: 0.7rem;">PRINTER LAYOUT MARGINS:</label>
+                            <select id="pcPrintWidth" class="input-glow" style="width: 100%; padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid #00ffcc; margin-top: 4px;">
+                                <option value="40">CBM 40-Column Margin</option>
+                                <option value="80">CBM 80-Column Margin</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="reg-label" style="font-size: 0.7rem;">INPUT SCRIPT / DOCUMENT TEXT:</label>
+                            <textarea id="pcPrintInput" class="input-glow" style="width: 95%; height: 80px; background: #000; color: #fff; border: 1px solid #00ffcc; border-radius: 4px; padding: 6px; font-family: monospace; font-size: 0.8rem; margin-top: 4px; resize: none;" placeholder="Type text here to print to the spooler panel..."></textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn" id="btnPCPrintSpool" style="flex: 1; border-color: #00ffcc; color: #fff; font-family: 'Orbitron', sans-serif;">Spool to Terminal</button>
+                            <button class="btn btn-secondary" id="btnPCPrintClear" style="width: 30%;">Clear</button>
+                        </div>
+
+                        <!-- Virtual Printer Output -->
+                        <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                            <span class="reg-label" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 6px;">CBM Virtual Printer Spool Output</span>
+                            <div style="background: #111; border: 2px solid #222; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; color: #ffaa00; height: 120px; overflow-y: auto; white-space: pre-wrap; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);" id="pcPrintOutput">--- Printer Spool Offline ---</div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- Right Side: CPU Registers, Ledger, & Order Desk -->
@@ -351,6 +419,8 @@
                                 <option value="4">Centronics Parallel Cable</option>
                                 <option value="5">Crush, Crumble and Chomp! (Epyx)</option>
                                 <option value="6">The Temple of Apshai (Epyx)</option>
+                                <option value="7">Hexensabbat (Game)</option>
+                                <option value="8">Scary Monsters (Game)</option>
                             </select>
                         </div>
 
@@ -691,7 +761,9 @@
             "3": { retail: "$499.00", price: 6, name: "1902 Monitor", stock: 37 },
             "4": { retail: "$49.00", price: 1, name: "Centronics Cable", stock: 250 },
             "5": { retail: "$29.95", price: 2, name: "Crush, Crumble & Chomp!", stock: 120 },
-            "6": { retail: "$39.95", price: 3, name: "Temple of Apshai", stock: 95 }
+            "6": { retail: "$39.95", price: 3, name: "Temple of Apshai", stock: 95 },
+            "7": { retail: "$34.95", price: 4, name: "Hexensabbat", stock: 64 },
+            "8": { retail: "$24.95", price: 3, name: "Scary Monsters", stock: 110 }
         };
 
         const cpuABI = [
@@ -869,6 +941,7 @@
             setupCatalogUI();
             updateSpecialOpsUI();
             setupDeFiOperations();
+            setupMemoryUtilityDesk();
             startSimulationLoop();
         }
 
@@ -1096,6 +1169,261 @@
                 ctx.font = "bold 8px monospace";
                 ctx.fillText("EPYX INC. 1980 - DUNGEONS OF APSHAI", 15, 175);
                 ctx.fillText(`PLAYER COORDS: X=$${Math.round(playerX).toString(16).toUpperCase()} Y=$${Math.round(playerY).toString(16).toUpperCase()} | HEALTH: 92%`, 15, 188);
+
+            } else if (itemId === "7") {
+                // Hexensabbat: Bubbling cauldron (green particles) & flying broomstick witch
+                ctx.fillStyle = "#12001c"; // Dark purple background
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw background stars/dust
+                ctx.fillStyle = "rgba(186, 85, 211, 0.3)";
+                for (let i = 0; i < 15; i++) {
+                    let starX = (i * 47) % canvas.width;
+                    let starY = (i * 31) % (canvas.height - 40);
+                    ctx.fillRect(starX, starY, 2, 2);
+                }
+
+                // Bubbling cauldron at center bottom
+                const cx = canvas.width / 2;
+                const cy = 135;
+                
+                // Draw cauldron legs/feet
+                ctx.strokeStyle = "#333333";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(cx - 20, cy + 15);
+                ctx.lineTo(cx - 30, cy + 30);
+                ctx.moveTo(cx + 20, cy + 15);
+                ctx.lineTo(cx + 30, cy + 30);
+                ctx.stroke();
+
+                // Draw cauldron body (ellipse/arc)
+                ctx.fillStyle = "#1e1e1e";
+                ctx.strokeStyle = "#444444";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy + 5, 25, 0, Math.PI, false);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Cauldron rim
+                ctx.fillStyle = "#2d2d2d";
+                ctx.fillRect(cx - 28, cy - 3, 56, 8);
+
+                // Bubbling liquid top
+                ctx.fillStyle = "#00ff66";
+                ctx.fillRect(cx - 25, cy - 1, 50, 4);
+
+                // Generate and animate green bubbles rising
+                ctx.fillStyle = "#00ffcc";
+                for (let i = 0; i < 12; i++) {
+                    let bubbleOffset = (demoFrame * 1.5 + i * 25) % 100;
+                    let bubbleY = cy - 2 - bubbleOffset;
+                    let bubbleX = cx + Math.sin(demoFrame * 0.05 + i) * 18;
+                    let bubbleSize = Math.max(1, 4 - (bubbleOffset * 0.03));
+                    if (bubbleY > 20) {
+                        ctx.beginPath();
+                        ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // Flying witch on broomstick
+                let witchX = (demoFrame * 2) % (canvas.width + 100) - 50;
+                let witchY = 45 + Math.sin(demoFrame * 0.08) * 15;
+
+                // Broomstick
+                ctx.strokeStyle = "#8b5a2b";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(witchX - 25, witchY + 8);
+                ctx.lineTo(witchX + 15, witchY + 2);
+                ctx.stroke();
+
+                // Broom bristles
+                ctx.strokeStyle = "#ffcc00";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(witchX - 25, witchY + 8);
+                ctx.lineTo(witchX - 32, witchY + 11);
+                ctx.stroke();
+
+                // Witch body / robe (purple triangle)
+                ctx.fillStyle = "#8a2be2";
+                ctx.beginPath();
+                ctx.moveTo(witchX - 10, witchY + 5);
+                ctx.lineTo(witchX + 5, witchY + 5);
+                ctx.lineTo(witchX - 3, witchY - 12);
+                ctx.closePath();
+                ctx.fill();
+
+                // Witch hat (black cone)
+                ctx.fillStyle = "#000000";
+                ctx.beginPath();
+                ctx.moveTo(witchX - 8, witchY - 12);
+                ctx.lineTo(witchX + 2, witchY - 12);
+                ctx.lineTo(witchX - 3, witchY - 25);
+                ctx.closePath();
+                ctx.fill();
+                // Hat brim
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(witchX - 12, witchY - 12);
+                ctx.lineTo(witchX + 6, witchY - 12);
+                ctx.stroke();
+
+                // Witch face (green)
+                ctx.fillStyle = "#00ff33";
+                ctx.beginPath();
+                ctx.arc(witchX - 3, witchY - 9, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // HUD text at bottom
+                ctx.fillStyle = "#00ff66";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("MAGIC DISK 64 1988 - HEXENSABBAT ADVENTURE", 15, 175);
+                ctx.fillText(`WITCH COORDS: X=$${Math.round(witchX).toString(16).toUpperCase()} Y=$${Math.round(witchY).toString(16).toUpperCase()} | CAULDRON TEMP: 285C`, 15, 188);
+
+            } else if (itemId === "8") {
+                // Scary Monsters: 2D platform/ladder layout, climbing player, hot pink spider
+                ctx.fillStyle = "#0a0a14"; // Deep dark background
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw platforms
+                ctx.strokeStyle = "#00f2fe"; // Neon cyan platforms
+                ctx.lineWidth = 3;
+                
+                // Platform 1 (bottom)
+                ctx.beginPath();
+                ctx.moveTo(10, 150);
+                ctx.lineTo(630, 150);
+                ctx.stroke();
+
+                // Platform 2 (middle)
+                ctx.beginPath();
+                ctx.moveTo(10, 100);
+                ctx.lineTo(630, 100);
+                ctx.stroke();
+
+                // Platform 3 (top)
+                ctx.beginPath();
+                ctx.moveTo(10, 50);
+                ctx.lineTo(630, 50);
+                ctx.stroke();
+
+                // Draw ladders
+                ctx.strokeStyle = "#777777";
+                ctx.lineWidth = 1;
+                
+                const drawLadder = (lx, yStart, yEnd) => {
+                    ctx.beginPath();
+                    ctx.moveTo(lx - 6, yStart); ctx.lineTo(lx - 6, yEnd);
+                    ctx.moveTo(lx + 6, yStart); ctx.lineTo(lx + 6, yEnd);
+                    ctx.stroke();
+                    for (let ly = yStart + 5; ly < yEnd; ly += 8) {
+                        ctx.beginPath();
+                        ctx.moveTo(lx - 6, ly); ctx.lineTo(lx + 6, ly);
+                        ctx.stroke();
+                    }
+                };
+
+                // Ladder left: bottom to middle
+                drawLadder(150, 100, 150);
+                // Ladder right: middle to top
+                drawLadder(490, 50, 100);
+
+                // Calculate animated positions
+                let cycle = demoFrame % 400;
+                let playerX = 80;
+                let playerY = 150;
+                let playerState = "RUNNING";
+
+                if (cycle < 100) {
+                    playerX = 80 + (cycle / 100) * 70;
+                    playerY = 150;
+                    playerState = "RUNNING";
+                } else if (cycle < 200) {
+                    playerX = 150;
+                    playerY = 150 - ((cycle - 100) / 100) * 50;
+                    playerState = "CLIMBING";
+                } else if (cycle < 300) {
+                    playerX = 150 + ((cycle - 200) / 100) * 340;
+                    playerY = 100;
+                    playerState = "RUNNING";
+                } else {
+                    playerX = 490;
+                    playerY = 100 - ((cycle - 300) / 100) * 50;
+                    playerState = "CLIMBING";
+                }
+
+                // Draw Player Sprite (Neon green adventurer)
+                ctx.fillStyle = "#39ff14";
+                if (playerState === "RUNNING") {
+                    ctx.beginPath();
+                    ctx.arc(playerX, playerY - 12, 3, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillRect(playerX - 2, playerY - 9, 4, 7);
+                    
+                    let legOffset = (demoFrame % 10 < 5) ? 3 : -3;
+                    ctx.strokeStyle = "#39ff14";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(playerX - 1, playerY - 2);
+                    ctx.lineTo(playerX - 1 + legOffset, playerY);
+                    ctx.moveTo(playerX + 1, playerY - 2);
+                    ctx.lineTo(playerX + 1 - legOffset, playerY);
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(playerX, playerY - 12, 3, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillRect(playerX - 3, playerY - 9, 6, 7);
+                    
+                    ctx.strokeStyle = "#39ff14";
+                    ctx.lineWidth = 2;
+                    let limbOffset = (demoFrame % 10 < 5) ? 2 : -2;
+                    ctx.beginPath();
+                    ctx.moveTo(playerX - 3, playerY - 7);
+                    ctx.lineTo(playerX - 5, playerY - 7 - limbOffset);
+                    ctx.moveTo(playerX + 3, playerY - 7);
+                    ctx.lineTo(playerX + 5, playerY - 7 + limbOffset);
+                    ctx.stroke();
+                }
+
+                // Draw Hot Pink Spider Monster (patrolling platform)
+                let spiderX = 300 + Math.sin(demoFrame * 0.04) * 120;
+                let spiderY = 93;
+                
+                ctx.strokeStyle = "#ff007f";
+                ctx.lineWidth = 1.5;
+                for (let leg = 0; leg < 4; leg++) {
+                    let legAngle = 0.2 + leg * 0.4;
+                    let legExtend = 8 + Math.sin(demoFrame * 0.2 + leg) * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(spiderX, spiderY);
+                    ctx.lineTo(spiderX - Math.cos(legAngle) * legExtend, spiderY - Math.sin(legAngle) * legExtend);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(spiderX, spiderY);
+                    ctx.lineTo(spiderX + Math.cos(legAngle) * legExtend, spiderY - Math.sin(legAngle) * legExtend);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = "#ff007f";
+                ctx.beginPath();
+                ctx.arc(spiderX, spiderY, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(spiderX - 2, spiderY - 2, 1, 1);
+                ctx.fillRect(spiderX + 1, spiderY - 2, 1, 1);
+
+                // HUD text
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("MAGIC DISK 64 1988 - SCARY MONSTERS ARCADE", 15, 175);
+                ctx.fillText(`PLAYER: X=$${Math.round(playerX).toString(16).toUpperCase()} Y=$${Math.round(playerY).toString(16).toUpperCase()} | SPIDER: X=$${Math.round(spiderX).toString(16).toUpperCase()} | LIVES: 03`, 15, 188);
 
             } else {
                 // Classic CBM-II 80-Column Screen
@@ -1587,6 +1915,185 @@
 
             document.getElementById("btnFinOptInTrue").addEventListener("click", handleOptIn(true));
             document.getElementById("btnFinOptInFalse").addEventListener("click", handleOptIn(false));
+        }
+
+        function setupMemoryUtilityDesk() {
+            // Tab switching for Utility Desk
+            const tabUniLoad = document.getElementById("btnTabUniLoad");
+            const tabPCPrint = document.getElementById("btnTabPCPrint");
+            const panelUniLoad = document.getElementById("panelUniLoad");
+            const panelPCPrint = document.getElementById("panelPCPrint");
+
+            if (tabUniLoad && tabPCPrint) {
+                tabUniLoad.addEventListener("click", () => {
+                    panelUniLoad.style.display = "flex";
+                    panelPCPrint.style.display = "none";
+                    tabUniLoad.style.background = "rgba(0, 242, 254, 0.15)";
+                    tabUniLoad.style.borderColor = "var(--neon-blue)";
+                    tabPCPrint.style.background = "";
+                    tabPCPrint.style.borderColor = "";
+                });
+
+                tabPCPrint.addEventListener("click", () => {
+                    panelUniLoad.style.display = "none";
+                    panelPCPrint.style.display = "flex";
+                    tabPCPrint.style.background = "rgba(0, 255, 204, 0.15)";
+                    tabPCPrint.style.borderColor = "#00ffcc";
+                    tabUniLoad.style.background = "";
+                    tabUniLoad.style.borderColor = "";
+                });
+            }
+
+            const btnDump = document.getElementById("btnUniLoadDump");
+            if (btnDump) {
+                btnDump.addEventListener("click", async () => {
+                    if (!cpuContract) return;
+                    btnDump.disabled = true;
+                    btnDump.innerText = "Dumping...";
+                    
+                    try {
+                        const startStr = document.getElementById("uniLoadStart").value.trim();
+                        const endStr = document.getElementById("uniLoadEnd").value.trim();
+                        const start = parseInt(startStr, 16);
+                        const end = parseInt(endStr, 16);
+                        
+                        if (isNaN(start) || isNaN(end) || start < 0 || end > 65535 || start > end) {
+                            alert("Invalid address range! Must be 0000 - FFFF hex and Start <= End.");
+                            return;
+                        }
+                        
+                        if (end - start > 1024) {
+                            alert("Range too large! Maximum dump range is 1024 bytes (0x400).");
+                            return;
+                        }
+                        
+                        let vmUserAddr = "0x0000000000000000000000000000000000000000";
+                        const promises = [];
+                        for (let addr = start; addr <= end; addr++) {
+                            promises.push(cpuContract.peekUser(vmUserAddr, addr));
+                        }
+                        
+                        const values = await Promise.all(promises);
+                        
+                        // Format hex dump: 8 bytes per line
+                        let hexLines = [];
+                        for (let i = 0; i < values.length; i += 8) {
+                            let chunk = values.slice(i, i + 8);
+                            let lineAddr = (start + i).toString(16).toUpperCase().padStart(4, '0');
+                            
+                            // Hex representations
+                            let hexParts = chunk.map(v => Number(v).toString(16).toUpperCase().padStart(2, '0'));
+                            while (hexParts.length < 8) {
+                                hexParts.push("  ");
+                            }
+                            
+                            // ASCII representations
+                            let asciiParts = chunk.map(v => {
+                                let c = Number(v);
+                                return (c >= 32 && c <= 126) ? String.fromCharCode(c) : ".";
+                            }).join("");
+                            
+                            hexLines.push(`$${lineAddr}: ${hexParts.join(" ")}  | ${asciiParts}`);
+                        }
+                        
+                        document.getElementById("uniLoadDumpOutput").innerText = hexLines.join("\n");
+                    } catch (err) {
+                        console.error("Uni-Load dump failed:", err);
+                        document.getElementById("uniLoadDumpOutput").innerText = "Error: " + err.message;
+                    } finally {
+                        btnDump.disabled = false;
+                        btnDump.innerText = "Dump";
+                    }
+                });
+            }
+
+            const btnPoke = document.getElementById("btnUniLoadPoke");
+            if (btnPoke) {
+                btnPoke.addEventListener("click", async () => {
+                    if (!cpuContract) return;
+                    btnPoke.disabled = true;
+                    
+                    try {
+                        const addrStr = document.getElementById("uniLoadPokeAddr").value.trim();
+                        const valStr = document.getElementById("uniLoadPokeVal").value.trim();
+                        const addr = parseInt(addrStr, 16);
+                        const val = parseInt(valStr, 16);
+                        
+                        if (isNaN(addr) || isNaN(val) || addr < 0 || addr > 65535 || val < 0 || val > 255) {
+                            alert("Invalid address or value! Address must be 0000 - FFFF and Value must be 00 - FF.");
+                            return;
+                        }
+                        
+                        if (isSimulated) {
+                            await cpuContract.poke(addr, val);
+                        } else {
+                            const activeSigner = await getWriteSigner();
+                            const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                            await (await writeCpu.poke(addr, val)).wait();
+                        }
+                        
+                        alert(`Successfully poked $${val.toString(16).toUpperCase().padStart(2, '0')} to address $${addr.toString(16).toUpperCase().padStart(4, '0')}!`);
+                    } catch (err) {
+                        console.error("Uni-Load poke failed:", err);
+                        alert("Poke failed: " + err.message);
+                    } finally {
+                        btnPoke.disabled = false;
+                    }
+                });
+            }
+
+            const btnSpool = document.getElementById("btnPCPrintSpool");
+            if (btnSpool) {
+                btnSpool.addEventListener("click", () => {
+                    const text = document.getElementById("pcPrintInput").value;
+                    const width = parseInt(document.getElementById("pcPrintWidth").value);
+                    const outputEl = document.getElementById("pcPrintOutput");
+                    
+                    if (!text.trim()) {
+                        alert("Please enter some text to print!");
+                        return;
+                    }
+                    
+                    // Simple word wrap logic
+                    const wrapText = (str, limit) => {
+                        let result = [];
+                        let lines = str.split("\n");
+                        
+                        for (let line of lines) {
+                            if (line.length <= limit) {
+                                result.push(line);
+                            } else {
+                                let words = line.split(" ");
+                                let currentLine = "";
+                                for (let word of words) {
+                                    if ((currentLine + word).length <= limit) {
+                                        currentLine += (currentLine ? " " : "") + word;
+                                    } else {
+                                        result.push(currentLine);
+                                        currentLine = word;
+                                    }
+                                }
+                                if (currentLine) {
+                                    result.push(currentLine);
+                                }
+                            }
+                        }
+                        return result.join("\n");
+                    };
+                    
+                    const spooledText = wrapText(text, width);
+                    const borderLine = "-".repeat(width);
+                    outputEl.innerText = `=== CBM SPARK PRINTER SPOOLER ONLINE ===\n${borderLine}\n${spooledText}\n${borderLine}\n[EOF - PC-PRINT SYSTEM ACTIVE]`;
+                });
+            }
+
+            const btnClearSpool = document.getElementById("btnPCPrintClear");
+            if (btnClearSpool) {
+                btnClearSpool.addEventListener("click", () => {
+                    document.getElementById("pcPrintInput").value = "";
+                    document.getElementById("pcPrintOutput").innerText = "--- Printer Spool Offline ---";
+                });
+            }
         }
 
         // Wallet link binding
