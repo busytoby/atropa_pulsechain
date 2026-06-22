@@ -2853,11 +2853,26 @@ Ready to initiate tournament match.</div>
                     let dmg = Math.round(12 + attacker.spike * 10 - defender.sick * 4);
                     defender.hp = Math.max(0, defender.hp - dmg);
                     
+                    // Select a random joint to receive WinchesterMQ register damage mapping
+                    // 1=lEar, 2=rEar, 3=head, 4=snout, 5=lPaw, 6=rPaw, 7=lFoot, 8=rFoot
+                    let targetJointIndex = Math.floor(Math.random() * 8) + 1;
+                    let targetOffset = targetJointIndex * 10;
+                    
+                    // Sabotage the specific tesseract joint register via WinchesterMQ
+                    yulStorage[103 + targetOffset] = 160; // Temporarily spin wildly (low damping)
+                    yulStorage[104 + targetOffset] = 1350; // Warp focal depth (deflate joint)
+                    
+                    // Schedule restoration of the joint registers after 450ms
+                    setTimeout(() => {
+                        yulStorage[103 + targetOffset] = 1000;
+                        yulStorage[104 + targetOffset] = 2300;
+                    }, 450);
+
                     // Trigger Audio & Visual Sparks
                     playHitSound(1.0 + attacker.spike * 0.5);
                     createExplosion(defender.pos, attacker.color.head);
 
-                    logEvent(`💥 ${attacker.name} triggers a ${attacker.type} pulse strike! Deals ${dmg} dmg to ${defender.name}.`);
+                    logEvent(`💥 ${attacker.name} triggers a ${attacker.type} pulse strike! Deals ${dmg} dmg to ${defender.name}. Joint ${targetJointIndex} warped.`);
 
                     // Check win condition
                     if (defender.hp <= 0) {
