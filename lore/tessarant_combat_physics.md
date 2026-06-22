@@ -40,22 +40,34 @@ $$\text{Base Register Offset} = \text{JointIndex} \times 10$$
 | `103 + Offset` | Clock Divisor (Damping) | `1000` | `160` (Hyper-spin) |
 | `104 + Offset` | Focal Distance ($d$) | `2300` | `1350` (Warp/Deflate) |
 
-### Damage Propagation Flow
-When a combat hit is registered in the arena:
-1. A collision payload is latched to SCSI Data Register `yulStorage[101]`.
-2. The state machine transitions to Phase `1` (REQ), executing the loopback handshake.
-3. The targeted joint offset is mutated instantly, forcing the corresponding tessarant to spin wildly and collapse inward.
-4. The register values gradually recover back to nominal state via an envelope decay function, simulating material elasticity.
+### 2.1 Before Combat: Configuration & Calibration
+Before combat matches begin, the **Auncient** WinchesterMQ message broker coordinates the baseline initialization sequence of each individual tessarant joint:
+* **Pre-flight Sync**: A handshake loop is initialized via SCSI registers where `yulStorage[100]` (SCSI Phase) is set to `0` (IDLE).
+* **Clock Damping Calibration**: The baseline rotation speed divisor (stored at `103 + Offset`) is calibrated according to the bear's active DNA metadata. Typically, this is set to a default value of `1000` to prevent early kinetic drift or instability.
+* **Hyper-frustum Clamping**: The focal projection distance registry (stored at `104 + Offset`) is initialized to `2300` to ensure optimal spatial geometry layout before joints interact.
+* **Liveness Heartbeats**: Loopback transaction registers (e.g. `yulStorage[105]`) are zeroed out and verified by running a mock SCSI echo pulse.
+
+### 2.2 During Combat: Latching, Interrupts & Sabotage
+During active combat, joints continuously monitor the SCSI interface for incoming collision packets:
+* **Data Latching**: Upon impact, a collision event latches the target scancode to the SCSI Data latch register `yulStorage[101]`.
+* **State Interruption**: The SCSI phase register `yulStorage[100]` immediately switches to `1` (REQ) to trigger a fast-path Yul hardware interrupt bypass.
+* **Transient Sabotage**: The message broker routes the collision offset to the targeted joint's registers. The damping divisor `103 + Offset` is sabotaged down to `160`, inducing extreme hyper-spin. Concurrently, the focal depth register `104 + Offset` drops to `1350`, causing a structural deflation of the 4D hypercube vertices.
+* **Visual Warping**: The frame presenter receives the warped registers and draws the deformed joints dynamically, providing high-fidelity visual indicator feedback of the impact.
+
+### 2.3 After Combat: Recovery, Cooling & State Persistence
+Once a collision/strike event finishes, the post-combat cycle handles the graceful return of the joints:
+* **Elastic Recovery Envelope**: An asynchronous thread or Javascript timeout schedules register restoration. Damping and focal variables are gradually lerped or reset back to their baseline states (`1000` and `2300` respectively) over a `450ms` cooling curve.
+* **SCSI Latch Release**: The SCSI status registers are set back to `0` (IDLE), clearing the bus for the next transaction.
+* **State Persistence**: The cumulative damage transaction count (`yulStorage[105]`) is compiled and packaged alongside the battle ZIL card parameters, saving the post-combat DNA mutation values into the persistent local storage for historical log auditing.
 
 ```mermaid
 graph TD
-    A[Combat Strike Event] --> B[Latch SCSI Keycode to Port 101]
-    B --> C[Set SCSI Phase to REQ]
-    C --> D[SCSI Loopback Acknowledge ACK]
-    D --> E[Sabotage targeted Joint Registers]
-    E --> F[Hyper-spin & Warp Tessarant Projection]
-    F --> G[Elastic Recovery Envelope decay]
-    G --> H[Return to Nominal Values]
+    A[Before Combat: Init & Sync baseline registers] --> B[During Combat: Collision latched & Phase set to REQ]
+    B --> C[Sabotage targeted Joint Registers via WinchesterMQ]
+    C --> D[Visual Hyper-spin & Focal Deflation]
+    D --> E[After Combat: Asynchronous 450ms Damping & Depth Recovery]
+    E --> F[SCSI Latch released back to IDLE]
+    F --> G[Log telemetry to persistent EVM ledger]
 ```
 
 ---
