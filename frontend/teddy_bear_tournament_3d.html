@@ -2158,6 +2158,9 @@ Ready to initiate tournament match.</div>
 
         // Draw 3D wireframe bear
         function drawBear3D(offset3D, scale, angles, pulse, sickness, palette) {
+            let projBear = project(offset3D);
+            let depth = projBear ? projBear.depth : 1000;
+
             // Read active genome traits from DNA Synthesis Suite
             const headScale = parseFloat(document.getElementById("synth-head")?.value || 1.0);
             const torsoWidth = parseFloat(document.getElementById("synth-torso")?.value || 1.0);
@@ -2172,10 +2175,95 @@ Ready to initiate tournament match.</div>
             const baseCol = palette.head || "rgba(0, 240, 255, 0.85)";
             const webCol = palette.web || "rgba(255, 0, 127, 0.4)";
 
-            // 0. Draw floor shadows under the bear
+            // LOD 2: Low Detail (Far away)
+            // Render a highly simplified 2D/3D flat skeleton with direct fills, bypassing shadows, halos, volumetric logic, and fur
+            if (depth >= 1800) {
+                const drawSimpleLimb = (p1, p2, width) => {
+                    let sc1 = project(p1);
+                    let sc2 = project(p2);
+                    if (!sc1 || !sc2) return;
+                    ctx.beginPath();
+                    ctx.moveTo(sc1.x, sc1.y);
+                    ctx.lineTo(sc2.x, sc2.y);
+                    ctx.strokeStyle = baseCol;
+                    ctx.lineWidth = width * scale * (camera.fov / ((sc1.depth + sc2.depth)/2));
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+                };
+
+                const drawSimpleJoint = (p3d, radius, col = baseCol) => {
+                    let proj = project(p3d);
+                    if (!proj) return;
+                    let size = radius * scale * (camera.fov / proj.depth);
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = col;
+                    ctx.fill();
+                };
+
+                // Draw simple lines for limbs
+                drawSimpleLimb(joints.neck, joints.lShoulder, 14 * armWidth);
+                drawSimpleLimb(joints.lShoulder, joints.lPaw, 12 * armWidth);
+                drawSimpleLimb(joints.neck, joints.rShoulder, 14 * armWidth);
+                drawSimpleLimb(joints.rShoulder, joints.rPaw, 12 * armWidth);
+                drawSimpleLimb(joints.midHip, joints.lFoot, 13 * legWidth);
+                drawSimpleLimb(joints.midHip, joints.rFoot, 13 * legWidth);
+                drawSimpleLimb(joints.neck, joints.midHip, 40 * torsoWidth);
+
+                // Draw simple circles for head components
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawSimpleJoint(lEar, 15 * earScale);
+                drawSimpleJoint(rEar, 15 * earScale);
+                drawSimpleJoint(joints.head, 38 * headScale);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawSimpleJoint(snout, 12 * muzzleScale, "rgba(255, 255, 255, 0.95)");
+
+                // Draw simple circles for paws
+                drawSimpleJoint(joints.lPaw, 14 * armWidth);
+                drawSimpleJoint(joints.rPaw, 14 * armWidth);
+                drawSimpleJoint(joints.lFoot, 16 * legWidth);
+                drawSimpleJoint(joints.rFoot, 16 * legWidth);
+                return;
+            }
+
+            // LOD 1: Medium Detail (Medium distance)
+            // Render volumetric solid shading, standard shadows, standard capsules, but skip fur fluffiness and glows
+            if (depth >= 1200) {
+                // 1. Draw floor shadows (simplified)
+                drawFloorShadows(offset3D, joints, scale * 0.8);
+
+                // 2. Draw Limbs (Capsules)
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, baseCol);
+
+                // 3. Draw Torso
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
+
+                // 4. Draw Ears, Head, Snout & Paws via drawTesseractJoint (LOD 1 / 2 handles them dynamically)
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawTesseractJoint(lEar, 15 * scale * earScale, baseCol, time, 1, sickness);
+                drawTesseractJoint(rEar, 15 * scale * earScale, baseCol, time, 2, sickness);
+                drawTesseractJoint(joints.head, 38 * scale * headScale, baseCol, time, 3, sickness);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness);
+
+                drawTesseractJoint(joints.lPaw, 14 * scale * armWidth, baseCol, time, 5, sickness);
+                drawTesseractJoint(joints.rPaw, 14 * scale * armWidth, baseCol, time, 6, sickness);
+                drawTesseractJoint(joints.lFoot, 16 * scale * legWidth, baseCol, time, 7, sickness);
+                drawTesseractJoint(joints.rFoot, 16 * scale * legWidth, baseCol, time, 8, sickness);
+                return;
+            }
+
+            // LOD 0: High Detail (Close distance)
+            // Render shadows, halos, capsules, highlight overlay, and fur textures
             drawFloorShadows(offset3D, joints, scale);
 
-            // 0.5. Draw soft glowing alchemical rim light halo behind body parts
             ctx.save();
             ctx.shadowBlur = 24;
             ctx.shadowColor = baseCol.replace("0.85", "1.0");
@@ -2188,19 +2276,13 @@ Ready to initiate tournament match.</div>
 
             if (useSD) {
                 // Draw rigged photorealistic segments on top of active 3D joints
-                // 1. Draw Torso segment
                 drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale * torsoWidth);
-
-                // 2. Draw Limbs segments
                 drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale * armWidth);
                 drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale * armWidth);
                 drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale * legWidth);
                 drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale * legWidth);
-
-                // 3. Draw Head segment
                 drawSegmentAtJoint(joints.head, segments.head, scale, headScale);
 
-                // 4. Add Volumetric Shading Layer (Multiply Pass)
                 ctx.save();
                 ctx.globalCompositeOperation = "multiply";
                 const shadingColor = "rgba(180, 170, 160, 0.65)";
@@ -2219,7 +2301,6 @@ Ready to initiate tournament match.</div>
                 drawVolumetricSphere(joints.head, 38 * scale * headScale, shadingColor);
                 ctx.restore();
 
-                // 5. Add Volumetric Highlight Layer (Overlay Pass)
                 ctx.save();
                 ctx.globalCompositeOperation = "overlay";
                 const highlightColor = "rgba(255, 230, 200, 0.4)";
@@ -2227,8 +2308,6 @@ Ready to initiate tournament match.</div>
                 drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, highlightColor);
                 ctx.restore();
             } else {
-                // Fallback to geometric volumetric solid shading
-                // 1. Draw Limbs (Capsules)
                 drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, baseCol);
                 drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, baseCol);
                 drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, baseCol);
@@ -2236,30 +2315,22 @@ Ready to initiate tournament match.</div>
                 drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, baseCol);
                 drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, baseCol);
 
-                // 2. Draw Torso (Body capsule)
                 drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
 
-                // 3. Draw Ears (Tesseracts offset relative to head)
                 let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
                 let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
                 drawTesseractJoint(lEar, 15 * scale * earScale, baseCol, time, 1, sickness);
                 drawTesseractJoint(rEar, 15 * scale * earScale, baseCol, time, 2, sickness);
-
-                // 4. Draw Head
                 drawTesseractJoint(joints.head, 38 * scale * headScale, baseCol, time, 3, sickness);
-
-                // 5. Draw Snout & Eyes
                 let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
-                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness); 
+                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness);
 
-                // 6. Draw Paws & Feet
                 drawTesseractJoint(joints.lPaw, 14 * scale * armWidth, baseCol, time, 5, sickness);
                 drawTesseractJoint(joints.rPaw, 14 * scale * armWidth, baseCol, time, 6, sickness);
                 drawTesseractJoint(joints.lFoot, 16 * scale * legWidth, baseCol, time, 7, sickness);
                 drawTesseractJoint(joints.rFoot, 16 * scale * legWidth, baseCol, time, 8, sickness);
             }
 
-            // Draw procedural fur fluffiness overlay
             drawFurTexture(ctx, joints, scale * furLen);
 
             // Draw connecting cobwebs under sickness decay
