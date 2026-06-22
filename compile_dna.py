@@ -62,7 +62,24 @@ def compile_dna():
             
             # Bessel Morphing: Calculate breathing pulse using J0(x)
             bessel_arg = (macro * math.pi * 50.0) % 5.0  # Modulo to stay in highly accurate Taylor convergence domain
-            pulse = bessel_j0(bessel_arg)
+            base_pulse = bessel_j0(bessel_arg)
+            
+            # Auncient 4D Tessarant rotation projections to inject multi-dimensional nuance into the DNA shape coordinates
+            t_angle = macro * math.pi * 8.0
+            tx = math.cos(t_angle)
+            ty = math.sin(t_angle)
+            tz = math.cos(t_angle * 1.5)
+            tw = math.sin(t_angle * 1.5)
+            
+            # Simple XW-plane rotation trace
+            xw_cos = math.cos(t_angle * 0.25)
+            xw_sin = math.sin(t_angle * 0.25)
+            rot_x = tx * xw_cos - tw * xw_sin
+            rot_w = tx * xw_sin + tw * xw_cos
+            
+            # Combine the Auncient 4D projection trace with the Bessel breathing pulse
+            tessarant_nuance = (rot_x + ty + tz + rot_w) * 0.12
+            pulse = base_pulse + tessarant_nuance
             
             # Biotika Spiking Simulation
             # Stimulus is mapped from absolute pulse amplitude velocity
