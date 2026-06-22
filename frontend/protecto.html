@@ -419,7 +419,7 @@
                                 <option value="4">Centronics Parallel Cable</option>
                                 <option value="5">Crush, Crumble and Chomp! (Epyx)</option>
                                 <option value="6">The Temple of Apshai (Epyx)</option>
-                                <option value="7">Hexensabbat (Game)</option>
+                                <option value="7">Witches' Sabbath (Vaesen Game)</option>
                                 <option value="8">Scary Monsters (Game)</option>
                             </select>
                         </div>
@@ -433,6 +433,110 @@
                         <button class="btn btn-primary" id="btnPlaceOrder" style="border-color: var(--neon-magenta); color: var(--text-primary); font-family: 'Orbitron', sans-serif;"><span class="icon">🛒</span> Place Order</button>
                     </div>
                 </section>
+
+                <!-- Vaesen Source Code Workbench -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(186, 85, 211, 0.15); border-color: #ba55d3; margin-top: 10px;">
+                    <h2><span class="icon">🛠️</span> Vaesen Source Code Workbench</h2>
+                    <p class="description">Compile and run the English-translated C64 BASIC source code for Witches' Sabbath (Vaesen).</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <textarea id="vaesenSourceCode" class="input-glow" style="width: 95%; height: 180px; background: #000; color: #39ff14; border: 1px solid #ba55d3; border-radius: 4px; padding: 6px; font-family: 'Fira Code', monospace; font-size: 0.72rem; resize: vertical; line-height: 1.4;" readonly>
+10 REM *** WITCHES' SABBATH (VAESEN) ***
+20 REM *** TRANSLATED TO ENGLISH FOR MYTHIC NORTH ***
+30 REM *** RE-CREATING THE AUNCIENT 1988 IMPERATOR GAME ***
+40 PRINT CHR$(147); : REM CLEAR SCREEN
+50 PRINT "----------------------------------------"
+60 PRINT "      WITCHES' SABBATH (VAESEN)         "
+70 PRINT "   GOTHIC MYTHIC NORTH EDITION 1988    "
+80 PRINT "----------------------------------------"
+90 PRINT "YOU CONTROL THE VAESEN WITCH FLYING OVER"
+100 PRINT "THE TEAL FOREST NIGHT. GATHER INGREDIENTS"
+110 PRINT "AND BRING THEM TO THE BUBBLING CAULDRON"
+120 PRINT "TO BREW THE AUNCIENT POTION OF LIGHT."
+130 PRINT "AVOID CROW ATTACKS AND FOREST SPIRITS!"
+140 PRINT
+150 PRINT "CONTROLS: WASD TO FLY"
+160 PRINT "PRESS ANY KEY TO CONJURE THE INITIATION..."
+170 GET K$: IF K$="" THEN 170
+180 REM INITIALIZE VARIABLES
+190 X = 20: Y = 10: REM WITCH COORDS
+200 CX = 20: CY = 18: REM CAULDRON COORDS
+210 CT = 285: REM CAULDRON TEMP
+220 SC = 0: REM SCORE
+230 EG = 100: REM ENERGY
+240 IX = INT(RND(1)*38)+1: IY = INT(RND(1)*12)+2
+250 IT$ = "MISTLETOE"
+260 REM CHOOSE RANDOM VAESEN INGREDIENT
+270 R = INT(RND(1)*4)
+280 IF R=0 THEN IT$ = "TROLL FLOWER"
+290 IF R=1 THEN IT$ = "NIGHTSHADE"
+300 IF R=2 THEN IT$ = "WRAITH FLOWER"
+310 IF R=3 THEN IT$ = "AUNCIENT RUNESTONE"
+320 REM MAIN GAME LOOP
+330 PRINT CHR$(147);
+340 REM DRAW SKY AND TREES
+350 FOR I=1 TO 24: POKE 1024+I*40, 160: REM BORDER
+360 NEXT
+370 REM DRAW CAULDRON AT BOTTOM
+380 PRINT CHR$(19);
+390 FOR L=1 TO Y: PRINT: NEXT
+400 PRINT TAB(X); "W";
+410 PRINT CHR$(19);
+420 FOR L=1 TO IY: PRINT: NEXT
+430 PRINT TAB(IX); "*";
+440 PRINT CHR$(19);
+450 FOR L=1 TO CY: PRINT: NEXT
+460 PRINT TAB(CX-2); "\\___/";
+470 PRINT TAB(CX-1); "U";
+480 REM DRAW HUD AT THE BOTTOM
+490 PRINT CHR$(19);
+500 FOR L=1 TO 21: PRINT: NEXT
+510 PRINT "----------------------------------------"
+520 PRINT "VAESEN COORDS: X="; X; " Y="; Y; " SCORE="; SC
+530 PRINT "CAULDRON TEMP:"; CT; "C ENERGY:"; EG; "%"
+540 PRINT "CURRENT TARGET: "; IT$
+550 REM GET USER INPUT
+560 GET A$: IF A$="" THEN 630
+570 IF A$="W" AND Y>1 THEN Y=Y-1
+580 IF A$="S" AND Y<17 THEN Y=Y+1
+590 IF A$="A" AND X>1 THEN X=X-1
+600 IF A$="D" AND X<38 THEN X=X+1
+610 REM COLLISION WITH INGREDIENT
+620 IF ABS(X-IX)<2 AND ABS(Y-IY)<2 THEN GOSUB 750
+630 REM SIMULATE DYNAMIC OBSTACLES AND WIND
+640 IF INT(RND(1)*10)<2 THEN CT = CT + INT(RND(1)*5)-2
+650 IF CT<250 OR CT>320 THEN EG = EG - 2
+660 REM SHADOW CROW PATROL
+670 BX = INT(RND(1)*40)
+680 IF INT(RND(1)*8)=0 AND ABS(X-BX)<3 THEN EG = EG - 5: PRINT "ATTACKED BY SHADOW CROW!": FOR T=1 TO 200: NEXT
+700 IF EG<=0 THEN GOTO 840
+710 IF SC>=500 THEN GOTO 890
+720 GOTO 330
+730 REM --- SUBROUTINES ---
+740 REM COLLECT INGREDIENT
+750 PRINT "COLLECTED "; IT$; "!"
+760 SC = SC + 100
+770 REM BRING TO CAULDRON TRIGGER
+780 FOR T=1 TO 300: NEXT
+790 IX = INT(RND(1)*38)+1: IY = INT(RND(1)*12)+2
+800 R = INT(RND(1)*4)
+810 IF R=0 THEN IT$ = "TROLL FLOWER"
+820 IF R=1 THEN IT$ = "NIGHTSHADE"
+830 IF R=2 THEN IT$ = "WRAITH FLOWER"
+840 IF R=3 THEN IT$ = "AUNCIENT RUNESTONE"
+850 RETURN
+860 REM GAME OVER
+870 PRINT "YOUR ENERGY DEPLETED IN THE DARK FOREST!"
+880 PRINT "THE VAESEN SPIRITS CLAIMED YOUR SOUL."
+890 END
+900 REM VICTORY
+910 PRINT "THE POTION OF THE MYTHIC NORTH IS BREWED!"
+920 PRINT "THE DARKNESS HAS BEEN BANISHED FROM VAESEN."
+930 END</textarea>
+                        
+                        <button class="btn btn-primary" id="btnCompileRun" style="border-color: #39ff14; color: #fff; background: rgba(57, 255, 20, 0.1); font-family: 'Orbitron', sans-serif;"><span class="icon">⚡</span> Compile & Run Source</button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -441,6 +545,34 @@
     <script>
         let provider, signer, cpuContract, tokenContract;
         let readProvider, writeSigner;
+
+        // Interactive Vaesen Game State Variables
+        window.vaesenWitchX = 160;
+        window.vaesenWitchY = 80;
+        window.vaesenScore = 0;
+        window.vaesenEnergy = 100;
+        window.vaesenTemp = 285;
+        window.vaesenIngX = 300;
+        window.vaesenIngY = 50;
+        window.vaesenIngType = "AUNCIENT RUNESTONE";
+        window.vaesenHasIngredient = false;
+        window.vaesenIngredients = ["TROLL FLOWER", "NIGHTSHADE", "WRAITH FLOWER", "AUNCIENT RUNESTONE"];
+        window.isInteractiveVaesen = false;
+
+        document.addEventListener("keydown", (e) => {
+            if (!window.isInteractiveVaesen) return;
+            const key = e.key.toLowerCase();
+            const step = 8;
+            if (key === "w" && window.vaesenWitchY > 20) window.vaesenWitchY -= step;
+            if (key === "s" && window.vaesenWitchY < 140) window.vaesenWitchY += step;
+            if (key === "a" && window.vaesenWitchX > 20) window.vaesenWitchX -= step;
+            if (key === "d" && window.vaesenWitchX < 600) window.vaesenWitchX += step;
+            
+            // Prevent browser scrolling during gameplay
+            if (["w","s","a","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)) {
+                e.preventDefault();
+            }
+        });
         let config = {};
         let isSimulated = false;
         const cbmPalette = [
@@ -762,7 +894,7 @@
             "4": { retail: "$49.00", price: 1, name: "Centronics Cable", stock: 250 },
             "5": { retail: "$29.95", price: 2, name: "Crush, Crumble & Chomp!", stock: 120 },
             "6": { retail: "$39.95", price: 3, name: "Temple of Apshai", stock: 95 },
-            "7": { retail: "$34.95", price: 4, name: "Hexensabbat", stock: 64 },
+            "7": { retail: "$34.95", price: 4, name: "Witches' Sabbath (Vaesen)", stock: 64 },
             "8": { retail: "$24.95", price: 3, name: "Scary Monsters", stock: 110 }
         };
 
@@ -1007,6 +1139,41 @@
                 }
             });
 
+            const btnCompile = document.getElementById("btnCompileRun");
+            if (btnCompile) {
+                btnCompile.addEventListener("click", () => {
+                    window.isInteractiveVaesen = true;
+                    window.vaesenWitchX = 160;
+                    window.vaesenWitchY = 80;
+                    window.vaesenScore = 0;
+                    window.vaesenEnergy = 100;
+                    window.vaesenTemp = 285;
+                    window.vaesenIngX = Math.random() * 400 + 100;
+                    window.vaesenIngY = Math.random() * 70 + 30;
+                    window.vaesenIngType = window.vaesenIngredients[Math.floor(Math.random() * window.vaesenIngredients.length)];
+                    window.vaesenHasIngredient = false;
+                    
+                    // Switch Select dropdown to "7"
+                    const selectEl = document.getElementById("selectCatalogItem");
+                    if (selectEl) {
+                        selectEl.value = "7";
+                        selectEl.dispatchEvent(new Event("change"));
+                    }
+                    
+                    // Log to console output in the visualizer page
+                    const dumpOut = document.getElementById("uniLoadDumpOutput");
+                    if (dumpOut) {
+                        dumpOut.innerText = "=== VAESEN BASIC COMPILER ONLINE ===\n" +
+                            "PARSING: witches_sabbath.bas...\n" +
+                            "LEXER: 930 tokens resolved.\n" +
+                            "RESOLVING SYMBOLS: Auncient symbols verified.\n" +
+                            "LINKING: targeting virtual memory banks...\n" +
+                            "STATUS: LNK-OK. Executing from Code Bank 15.\n" +
+                            "READY. RUN\n";
+                    }
+                });
+            }
+
             document.getElementById("selectCpuMode").addEventListener("change", async (e) => {
                 if (!cpuContract) return;
                 const modeVal = parseInt(e.target.value);
@@ -1171,120 +1338,302 @@
                 ctx.fillText(`PLAYER COORDS: X=$${Math.round(playerX).toString(16).toUpperCase()} Y=$${Math.round(playerY).toString(16).toUpperCase()} | HEALTH: 92%`, 15, 188);
 
             } else if (itemId === "7") {
-                // Hexensabbat: Bubbling cauldron (green particles) & flying broomstick witch
-                ctx.fillStyle = "#12001c"; // Dark purple background
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (window.isInteractiveVaesen) {
+                    // Spooky Mythic North forest (dark teal/green)
+                    ctx.fillStyle = "#071318";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw background stars/dust
-                ctx.fillStyle = "rgba(186, 85, 211, 0.3)";
-                for (let i = 0; i < 15; i++) {
-                    let starX = (i * 47) % canvas.width;
-                    let starY = (i * 31) % (canvas.height - 40);
-                    ctx.fillRect(starX, starY, 2, 2);
-                }
+                    // Draw glowing willow-the-wisps/sparks drifting
+                    ctx.fillStyle = "rgba(180, 240, 150, 0.3)";
+                    for (let i = 0; i < 15; i++) {
+                        let starX = (i * 47) % canvas.width;
+                        let starY = (i * 31) % (canvas.height - 40);
+                        ctx.fillRect(starX, starY, 2, 2);
+                    }
 
-                // Bubbling cauldron at center bottom
-                const cx = canvas.width / 2;
-                const cy = 135;
-                
-                // Draw cauldron legs/feet
-                ctx.strokeStyle = "#333333";
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(cx - 20, cy + 15);
-                ctx.lineTo(cx - 30, cy + 30);
-                ctx.moveTo(cx + 20, cy + 15);
-                ctx.lineTo(cx + 30, cy + 30);
-                ctx.stroke();
+                    // Bubbling cauldron at center bottom
+                    const cx = canvas.width / 2;
+                    const cy = 135;
+                    
+                    // Draw cauldron legs/feet
+                    ctx.strokeStyle = "#333333";
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 20, cy + 15);
+                    ctx.lineTo(cx - 30, cy + 30);
+                    ctx.moveTo(cx + 20, cy + 15);
+                    ctx.lineTo(cx + 30, cy + 30);
+                    ctx.stroke();
 
-                // Draw cauldron body (ellipse/arc)
-                ctx.fillStyle = "#1e1e1e";
-                ctx.strokeStyle = "#444444";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(cx, cy + 5, 25, 0, Math.PI, false);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+                    // Draw cauldron body (ellipse/arc)
+                    ctx.fillStyle = "#1e1e1e";
+                    ctx.strokeStyle = "#444444";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 5, 25, 0, Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
 
-                // Cauldron rim
-                ctx.fillStyle = "#2d2d2d";
-                ctx.fillRect(cx - 28, cy - 3, 56, 8);
+                    // Cauldron rim & Bubbling liquid top
+                    ctx.fillStyle = "#2d2d2d";
+                    ctx.fillRect(cx - 28, cy - 3, 56, 8);
+                    ctx.fillStyle = "#00ff66";
+                    ctx.fillRect(cx - 25, cy - 1, 50, 4);
 
-                // Bubbling liquid top
-                ctx.fillStyle = "#00ff66";
-                ctx.fillRect(cx - 25, cy - 1, 50, 4);
+                    // Green bubbles rising
+                    ctx.fillStyle = "#00ffcc";
+                    for (let i = 0; i < 6; i++) {
+                        let bubbleOffset = (demoFrame * 2 + i * 40) % 80;
+                        let bubbleY = cy - 2 - bubbleOffset;
+                        let bubbleX = cx + Math.sin(demoFrame * 0.1 + i) * 15;
+                        if (bubbleY > 20) {
+                            ctx.beginPath();
+                            ctx.arc(bubbleX, bubbleY, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
 
-                // Generate and animate green bubbles rising
-                ctx.fillStyle = "#00ffcc";
-                for (let i = 0; i < 12; i++) {
-                    let bubbleOffset = (demoFrame * 1.5 + i * 25) % 100;
-                    let bubbleY = cy - 2 - bubbleOffset;
-                    let bubbleX = cx + Math.sin(demoFrame * 0.05 + i) * 18;
-                    let bubbleSize = Math.max(1, 4 - (bubbleOffset * 0.03));
-                    if (bubbleY > 20) {
+                    // Target ingredient
+                    if (!window.vaesenHasIngredient) {
+                        ctx.fillStyle = "#ffcc00";
                         ctx.beginPath();
-                        ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                        ctx.arc(window.vaesenIngX, window.vaesenIngY, 4, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.font = "bold 6px monospace";
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillText(window.vaesenIngType, window.vaesenIngX - 25, window.vaesenIngY - 8);
+                    } else {
+                        // Witch carries the ingredient, draw it next to her
+                        ctx.fillStyle = "#ffcc00";
+                        ctx.beginPath();
+                        ctx.arc(window.vaesenWitchX + 10, window.vaesenWitchY - 5, 3, 0, Math.PI*2);
                         ctx.fill();
                     }
+
+                    // Flying witch on broomstick
+                    let witchX = window.vaesenWitchX;
+                    let witchY = window.vaesenWitchY;
+
+                    // Broomstick
+                    ctx.strokeStyle = "#8b5a2b";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 25, witchY + 8);
+                    ctx.lineTo(witchX + 15, witchY + 2);
+                    ctx.stroke();
+
+                    // Broom bristles
+                    ctx.strokeStyle = "#ffcc00";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 25, witchY + 8);
+                    ctx.lineTo(witchX - 32, witchY + 11);
+                    ctx.stroke();
+
+                    // Witch body / robe (purple triangle)
+                    ctx.fillStyle = "#8a2be2";
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 10, witchY + 5);
+                    ctx.lineTo(witchX + 5, witchY + 5);
+                    ctx.lineTo(witchX - 3, witchY - 12);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Witch hat (black cone)
+                    ctx.fillStyle = "#000000";
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 8, witchY - 12);
+                    ctx.lineTo(witchX + 2, witchY - 12);
+                    ctx.lineTo(witchX - 3, witchY - 25);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Hat brim
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 12, witchY - 12);
+                    ctx.lineTo(witchX + 6, witchY - 12);
+                    ctx.stroke();
+
+                    // Witch face (green)
+                    ctx.fillStyle = "#00ff33";
+                    ctx.beginPath();
+                    ctx.arc(witchX - 3, witchY - 9, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Collisions
+                    if (!window.vaesenHasIngredient) {
+                        let dx = witchX - window.vaesenIngX;
+                        let dy = witchY - window.vaesenIngY;
+                        if (Math.hypot(dx, dy) < 20) {
+                            window.vaesenHasIngredient = true;
+                        }
+                    } else {
+                        // Drop in cauldron
+                        let dx = witchX - cx;
+                        let dy = witchY - cy;
+                        if (Math.hypot(dx, dy) < 25) {
+                            window.vaesenHasIngredient = false;
+                            window.vaesenScore += 100;
+                            // Reset ingredient
+                            window.vaesenIngX = Math.random() * 400 + 100;
+                            window.vaesenIngY = Math.random() * 70 + 30;
+                            window.vaesenIngType = window.vaesenIngredients[Math.floor(Math.random() * window.vaesenIngredients.length)];
+                            window.vaesenTemp = 285;
+                        }
+                    }
+
+                    // Fluctuate cauldron temp
+                    if (Math.random() < 0.1) {
+                        window.vaesenTemp += Math.floor(Math.random() * 7) - 3;
+                    }
+                    if (window.vaesenTemp < 260 || window.vaesenTemp > 310) {
+                        window.vaesenEnergy -= 0.5; // bad temperature drains energy
+                    }
+
+                    // HUD text at bottom
+                    ctx.fillStyle = "#39ff14";
+                    ctx.font = "bold 8px monospace";
+                    ctx.fillText("VAESEN COMPILED SOURCE - INTERACTIVE RUNTIME", 15, 175);
+                    ctx.fillText(`VAESEN COORDS: X=$${Math.round(witchX).toString(16).toUpperCase()} Y=$${Math.round(witchY).toString(16).toUpperCase()} | ENERGY: ${Math.round(window.vaesenEnergy)}% | TEMP: ${window.vaesenTemp}C | SCORE: ${window.vaesenScore}`, 15, 188);
+
+                    // Win/Loss check screen overlays
+                    if (window.vaesenEnergy <= 0) {
+                        ctx.fillStyle = "rgba(0,0,0,0.85)";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.fillStyle = "#ff0055";
+                        ctx.font = "bold 14px monospace";
+                        ctx.fillText("GAME OVER", canvas.width / 2 - 40, canvas.height / 2 - 10);
+                        ctx.font = "bold 8px monospace";
+                        ctx.fillText("THE SPIRITS OF VAESEN CLAIMED YOUR SOUL.", canvas.width / 2 - 110, canvas.height / 2 + 10);
+                        ctx.fillText("PRESS 'COMPILE & RUN' TO RESTART.", canvas.width / 2 - 90, canvas.height / 2 + 25);
+                    } else if (window.vaesenScore >= 500) {
+                        ctx.fillStyle = "rgba(0,0,0,0.85)";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.fillStyle = "#39ff14";
+                        ctx.font = "bold 14px monospace";
+                        ctx.fillText("VICTORY!", canvas.width / 2 - 35, canvas.height / 2 - 10);
+                        ctx.font = "bold 8px monospace";
+                        ctx.fillText("THE AUNCIENT ELIXIR OF THE NORTH IS BREWED.", canvas.width / 2 - 125, canvas.height / 2 + 10);
+                        ctx.fillText("THE DARKNESS HAS BEEN BANISHED.", canvas.width / 2 - 80, canvas.height / 2 + 25);
+                    }
+                } else {
+                    // Witches' Sabbath: Spooky Mythic North forest (dark teal/green) & flying Vaesen witch (Demo Mode)
+                    ctx.fillStyle = "#071318";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw glowing willow-the-wisps/sparks drifting
+                    ctx.fillStyle = "rgba(180, 240, 150, 0.3)";
+                    for (let i = 0; i < 15; i++) {
+                        let starX = (i * 47) % canvas.width;
+                        let starY = (i * 31) % (canvas.height - 40);
+                        ctx.fillRect(starX, starY, 2, 2);
+                    }
+
+                    // Bubbling cauldron at center bottom
+                    const cx = canvas.width / 2;
+                    const cy = 135;
+                    
+                    // Draw cauldron legs/feet
+                    ctx.strokeStyle = "#333333";
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 20, cy + 15);
+                    ctx.lineTo(cx - 30, cy + 30);
+                    ctx.moveTo(cx + 20, cy + 15);
+                    ctx.lineTo(cx + 30, cy + 30);
+                    ctx.stroke();
+
+                    // Draw cauldron body (ellipse/arc)
+                    ctx.fillStyle = "#1e1e1e";
+                    ctx.strokeStyle = "#444444";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 5, 25, 0, Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Cauldron rim
+                    ctx.fillStyle = "#2d2d2d";
+                    ctx.fillRect(cx - 28, cy - 3, 56, 8);
+
+                    // Bubbling liquid top
+                    ctx.fillStyle = "#00ff66";
+                    ctx.fillRect(cx - 25, cy - 1, 50, 4);
+
+                    // Generate and animate green bubbles rising
+                    ctx.fillStyle = "#00ffcc";
+                    for (let i = 0; i < 12; i++) {
+                        let bubbleOffset = (demoFrame * 1.5 + i * 25) % 100;
+                        let bubbleY = cy - 2 - bubbleOffset;
+                        let bubbleX = cx + Math.sin(demoFrame * 0.05 + i) * 18;
+                        let bubbleSize = Math.max(1, 4 - (bubbleOffset * 0.03));
+                        if (bubbleY > 20) {
+                            ctx.beginPath();
+                            ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+
+                    // Flying witch on broomstick
+                    let witchX = (demoFrame * 2) % (canvas.width + 100) - 50;
+                    let witchY = 45 + Math.sin(demoFrame * 0.08) * 15;
+
+                    // Broomstick
+                    ctx.strokeStyle = "#8b5a2b";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 25, witchY + 8);
+                    ctx.lineTo(witchX + 15, witchY + 2);
+                    ctx.stroke();
+
+                    // Broom bristles
+                    ctx.strokeStyle = "#ffcc00";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 25, witchY + 8);
+                    ctx.lineTo(witchX - 32, witchY + 11);
+                    ctx.stroke();
+
+                    // Witch body / robe (purple triangle)
+                    ctx.fillStyle = "#8a2be2";
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 10, witchY + 5);
+                    ctx.lineTo(witchX + 5, witchY + 5);
+                    ctx.lineTo(witchX - 3, witchY - 12);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Witch hat (black cone)
+                    ctx.fillStyle = "#000000";
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 8, witchY - 12);
+                    ctx.lineTo(witchX + 2, witchY - 12);
+                    ctx.lineTo(witchX - 3, witchY - 25);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Hat brim
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(witchX - 12, witchY - 12);
+                    ctx.lineTo(witchX + 6, witchY - 12);
+                    ctx.stroke();
+
+                    // Witch face (green)
+                    ctx.fillStyle = "#00ff33";
+                    ctx.beginPath();
+                    ctx.arc(witchX - 3, witchY - 9, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // HUD text at bottom
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 8px monospace";
+                    ctx.fillText("MAGIC DISK 64 1988 - WITCHES' SABBATH (VAESEN)", 15, 175);
+                    ctx.fillText(`VAESEN COORDS: X=$${Math.round(witchX).toString(16).toUpperCase()} Y=$${Math.round(witchY).toString(16).toUpperCase()} | CAULDRON TEMP: 285C`, 15, 188);
                 }
-
-                // Flying witch on broomstick
-                let witchX = (demoFrame * 2) % (canvas.width + 100) - 50;
-                let witchY = 45 + Math.sin(demoFrame * 0.08) * 15;
-
-                // Broomstick
-                ctx.strokeStyle = "#8b5a2b";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(witchX - 25, witchY + 8);
-                ctx.lineTo(witchX + 15, witchY + 2);
-                ctx.stroke();
-
-                // Broom bristles
-                ctx.strokeStyle = "#ffcc00";
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(witchX - 25, witchY + 8);
-                ctx.lineTo(witchX - 32, witchY + 11);
-                ctx.stroke();
-
-                // Witch body / robe (purple triangle)
-                ctx.fillStyle = "#8a2be2";
-                ctx.beginPath();
-                ctx.moveTo(witchX - 10, witchY + 5);
-                ctx.lineTo(witchX + 5, witchY + 5);
-                ctx.lineTo(witchX - 3, witchY - 12);
-                ctx.closePath();
-                ctx.fill();
-
-                // Witch hat (black cone)
-                ctx.fillStyle = "#000000";
-                ctx.beginPath();
-                ctx.moveTo(witchX - 8, witchY - 12);
-                ctx.lineTo(witchX + 2, witchY - 12);
-                ctx.lineTo(witchX - 3, witchY - 25);
-                ctx.closePath();
-                ctx.fill();
-                // Hat brim
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(witchX - 12, witchY - 12);
-                ctx.lineTo(witchX + 6, witchY - 12);
-                ctx.stroke();
-
-                // Witch face (green)
-                ctx.fillStyle = "#00ff33";
-                ctx.beginPath();
-                ctx.arc(witchX - 3, witchY - 9, 3, 0, Math.PI * 2);
-                ctx.fill();
-
-                // HUD text at bottom
-                ctx.fillStyle = "#00ff66";
-                ctx.font = "bold 8px monospace";
-                ctx.fillText("MAGIC DISK 64 1988 - HEXENSABBAT ADVENTURE", 15, 175);
-                ctx.fillText(`WITCH COORDS: X=$${Math.round(witchX).toString(16).toUpperCase()} Y=$${Math.round(witchY).toString(16).toUpperCase()} | CAULDRON TEMP: 285C`, 15, 188);
 
             } else if (itemId === "8") {
                 // Scary Monsters: 2D platform/ladder layout, climbing player, hot pink spider

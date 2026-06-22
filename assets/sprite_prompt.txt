@@ -1,0 +1,13 @@
+A 2D retro pixel art sprite sheet grid for a gothic Nordic folklore game. The sprite sheet contains a clean grid of animation frames for three distinct characters:
+
+1. 1. Dark Crow (Mystical Companion/Hazard)
+- **Aesthetic**: Deep obsidian feathers with a subtle crimson/neon red ambient aura and glowing red eyes.
+- **Frames**: Idle standing, head tilt, wing span, slow flapping, gliding, and perch states.
+2. 2. Small Blue Forest Troll (Vaesen Smurf)
+- **Aesthetic**: Grumpy, wild, textured blue skin with a pointed nose, wearing a worn, floppy, pointed white witch-like felt hat and tattered leather trousers.
+- **Frames**: Stand, walk cycle, panic shield, run cycle, and brandishing a forest stick.
+3. 3. Alchemist (Gargamel Folklore Adaptation)
+- **Aesthetic**: A sinister hunched figure wearing a tattered dark hood and robe, carrying potion vials and a staff crowned with a glowing gem.
+- **Frames**: Brewing/holding flasks, dark casting, creeping movement, staff raising, and a collapsed/defeated frame.
+
+Clean aligned grid layout, 8-bit retro gaming assets, vibrant pixel color palette with deep shadow contrast, transparent black background.

@@ -1,0 +1,1 @@
+# Initialization Explorer metadata folder

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Press Release - ROOTED Browser</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --dark-bg: #0b0c10;
+  --parchment: #f4edd2;
+  --muted-gold: #aa8c2c;
+  --crimson: #8b0000;
+  --glow: 0 0 15px rgba(212, 175, 55, 0.2);
+}
+body {
+  font-family: 'Outfit', sans-serif;
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: var(--dark-bg);
+  color: #c5c6c7;
+  line-height: 1.8;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 12px;
+  box-shadow: var(--glow), inset 0 0 40px rgba(0,0,0,0.8);
+  position: relative;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1px solid rgba(212, 175, 55, 0.05);
+  margin: 5px;
+  pointer-events: none;
+  border-radius: 8px;
+}
+h1, h2, h3 {
+  font-family: 'Cinzel', serif;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+  margin-top: 0;
+  letter-spacing: 2px;
+}
+h1 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 1.8rem;
+  line-height: 1.3;
+  color: #ffffff;
+}
+p, li {
+  font-size: 1.05rem;
+  color: #d1d2d3;
+}
+strong {
+  color: var(--gold);
+}
+ul {
+  list-style-type: square;
+  padding-left: 20px;
+}
+li::marker {
+  color: var(--gold);
+}
+pre {
+  background-color: #15161d;
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+code {
+  font-family: 'Share Tech Mono', monospace;
+  color: #00f0ff;
+}
+.note {
+  background-color: rgba(139, 0, 0, 0.1);
+  border-left: 4px solid var(--crimson);
+  padding: 20px;
+  margin: 30px 0;
+  border-radius: 0 8px 8px 0;
+}
+.note strong {
+  color: #ff4d4d;
+}
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+  margin: 40px 0;
+}
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+.btn-copy {
+  font-family: 'Outfit', sans-serif;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+}
+.btn-copy:hover {
+  background: var(--gold);
+  color: var(--dark-bg);
+  box-shadow: 0 0 10px var(--gold);
+}
+</style>
+</head>
+<body>
+<div class="action-bar">
+  <button class="btn-copy" onclick="copyPressRelease()">Copy Text</button>
+</div>
+
+<h1>FOR IMMEDIATE RELEASE</h1>
+<h2>Auncient Vaesen Technology Unveils ROOTED: The Zero-Copy Web Browser for Decentralized Compositors</h2>
+<p><strong>PULSECHAIN NODE H2-2026</strong> — Auncient Vaesen Technology today announced the official release of <strong>ROOTED</strong>, a zero-copy headless web browser architecture designed to bypass traditional operating system display servers and compositors. By piping raw hardware viewport frames directly into shared memory interfaces, ROOTED facilitates the projection of real-time web assets, high-definition video, and interactive DApps directly onto Wayland and Vulkan 3D surface layers with microsecond input latencies.</p>
+
+<h3>Architectural Breakthroughs</h3>
+<ul>
+  <li><strong>Zero-Copy Frame Buffer Bridge</strong>: Bypassing standard CPU-copy rendering paths, ROOTED streams raw RGBA buffers directly through high-speed shared memory channels (<code>/dev/shm</code>). This allows host compositors to read and render active web textures with minimal CPU overhead.</li>
+  <li><strong>WinchesterMQ Hardware Event Bridge</strong>: Utilizing SCSI register state emulation and low-level loopback sockets (<code>WinchesterMQ.yul</code>), ROOTED routes hardware inputs directly to running virtual browser displays, bypassing traditional OS input drivers.</li>
+  <li><strong>Direct DOM Telemetry Inspection</strong>: Connected directly to PulseChain Anvil EVM backends, the browser's remote debugging architecture inspects active DOM structures programmatically, avoiding standard EVM transient logging blocks.</li>
+  <li><strong>Vulkan compositor Integration</strong>: Headless Chrome sessions are fully sandbox-isolated, rendering to custom viewports suited for nested 3D simulations.</li>
+</ul>
+
+<div class="note">
+  <strong>NOTE</strong>: The ROOTED browser is built to preserve the integrity of Auncient Yul virtual hardware lore and high-frequency trading displays on the PulseChain network.
+</div>
+
+<hr>
+<h3>Media Contact</h3>
+<p>
+  <strong>Auncient Vaesen Technology PR Team</strong><br>
+  Ecosystem Node: <code>0x965b0d74591bf30327075a247c47dbf487dcff08</code><br>
+  Network: PulseChain Core
+</p>
+
+<script>
+function copyPressRelease() {
+  const plainText = `FOR IMMEDIATE RELEASE
+
+Auncient Vaesen Technology Unveils ROOTED: The Zero-Copy Web Browser for Decentralized Compositors
+
+PULSECHAIN NODE H2-2026 — Auncient Vaesen Technology today announced the official release of ROOTED, a zero-copy headless web browser architecture designed to bypass traditional operating system display servers and compositors. By piping raw hardware viewport frames directly into shared memory interfaces, ROOTED facilitates the projection of real-time web assets, high-definition video, and interactive DApps directly onto Wayland and Vulkan 3D surface layers with microsecond input latencies.
+
+Architectural Breakthroughs:
+- Zero-Copy Frame Buffer Bridge: Bypassing standard CPU-copy rendering paths, ROOTED streams raw RGBA buffers directly through high-speed shared memory channels (/dev/shm). This allows host compositors to read and render active web textures with minimal CPU overhead.
+- WinchesterMQ Hardware Event Bridge: Utilizing SCSI register state emulation and low-level loopback sockets (WinchesterMQ.yul), ROOTED routes hardware inputs directly to running virtual browser displays, bypassing traditional OS input drivers.
+- Direct DOM Telemetry Inspection: Connected directly to PulseChain Anvil EVM backends, the browser's remote debugging architecture inspects active DOM structures programmatically, avoiding standard EVM transient logging blocks.
+- Vulkan compositor Integration: Headless Chrome sessions are fully sandbox-isolated, rendering to custom viewports suited for nested 3D simulations.
+
+NOTE: The ROOTED browser is built to preserve the integrity of Auncient Yul virtual hardware lore and high-frequency trading displays on the PulseChain network.
+
+Media Contact:
+Auncient Vaesen Technology PR Team
+Ecosystem Node: 0x965b0d74591bf30327075a247c47dbf487dcff08
+Network: PulseChain Core`;
+
+  if (window.syncHostClipboard) {
+    window.syncHostClipboard(plainText).catch(() => {});
+  }
+
+  fetch('/api/nonukes/set-clipboard', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text: plainText })
+  }).catch(() => {});
+
+  navigator.clipboard.writeText(plainText).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.innerText = 'Copied!';
+    setTimeout(() => {
+      btn.innerText = 'Copy Text';
+    }, 2000);
+  }).catch(err => {
+    // Fallback if browser clipboard fails (e.g. headless iframe blocks it)
+    const btn = document.querySelector('.btn-copy');
+    btn.innerText = 'Copied (Sync)!';
+    setTimeout(() => {
+      btn.innerText = 'Copy Text';
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

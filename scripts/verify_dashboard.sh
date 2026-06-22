@@ -18,12 +18,14 @@ else
     sleep 1
 fi
 
-# 2. Launch the general browser controller without arguments
-echo "[2/4] Spawning general browser controller (should auto-start the server)..."
-node scripts/rooted_browser_controller.js &
-CONTROLLER_PID=$!
+# 2. Launch the server and headed presenter directly
+echo "[2/4] Spawning python3 server.py and presenter..."
+python3 server.py &
+SERVER_PID=$!
+LD_LIBRARY_PATH=. ./tests/rooted_frame_presenter &
+PRESENTER_PID=$!
 
-# Give the controller and auto-spawn process some time to boot
+# Give the server and presenter some time to boot
 echo "  -> Waiting 6 seconds for initialization..."
 sleep 6
 
@@ -39,7 +41,7 @@ fi
 
 # 4. Clean up test processes
 echo "[4/4] Tearing down test processes..."
-kill $CONTROLLER_PID 2>/dev/null
+kill $PRESENTER_PID 2>/dev/null
+kill $SERVER_PID 2>/dev/null
 pkill -f server.py 2>/dev/null
-pkill -f rooted_browser_controller.js 2>/dev/null
 echo "=== Verification Complete ==="

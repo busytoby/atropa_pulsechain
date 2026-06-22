@@ -5,6 +5,21 @@
   <title>Auncient Lore Editor & Annotator</title>
   <!-- Google Fonts for Premium Visual Aesthetics -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="mermaid.min.js?v=9"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      gantt: {
+        sectionPercent: 45,
+        barHeight: 25,
+        barGap: 5,
+        topPadding: 50,
+        sidePadding: 50,
+        titlePadding: 15
+      }
+    });
+  </script>
   <style>
     :root {
       --bg-base: #0a0a0c;
@@ -340,6 +355,53 @@
       margin-bottom: 6px;
     }
 
+    .mermaid {
+      line-height: normal !important;
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .mermaid svg {
+      background: #050508 !important;
+      border: 2px solid var(--accent-crimson) !important;
+      border-radius: 4px;
+      box-shadow: 0 0 20px rgba(128, 24, 24, 0.45) !important;
+      padding: 10px;
+    }
+
+    .mermaid rect.task {
+      fill: var(--accent-crimson) !important;
+      stroke: var(--border-color) !important;
+      stroke-width: 1px !important;
+      rx: 2px;
+      ry: 2px;
+    }
+
+    .mermaid rect.taskActive {
+      fill: var(--border-color) !important;
+      stroke: var(--text-highlight) !important;
+      stroke-width: 1px !important;
+      rx: 2px;
+      ry: 2px;
+    }
+
+    .mermaid text, .mermaid .titleText {
+      fill: var(--text-main) !important;
+      font-family: "trebuchet ms", verdana, arial, sans-serif !important;
+      font-size: 11px !important;
+    }
+
+    .mermaid .grid line {
+      stroke: rgba(212, 175, 55, 0.15) !important;
+      stroke-dasharray: 2, 2 !important;
+    }
+
+    .mermaid .today {
+      stroke: var(--accent-crimson) !important;
+      stroke-width: 2px !important;
+    }
+
     /* Selection Overlay or popup */
     .selection-tooltip {
       position: absolute;
@@ -602,6 +664,19 @@
   <div class="status-toast" id="toast">File saved successfully.</div>
 
   <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      fetch('/api/dilemma-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'JS Error',
+          source: 'lore_editor',
+          details: `${message} at ${source}:${lineno}:${colno}. Stack: ${error ? error.stack : ''}`
+        })
+      }).catch(() => {});
+      return false;
+    };
+
     let files = [];
     let currentFile = null;
     let fileContent = "";
@@ -634,7 +709,13 @@
         const res = await fetch('/api/lore/list');
         files = await res.json();
         renderFileList();
-        if (!currentFile && files.length > 0) {
+        // Parse URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlFile = urlParams.get('file');
+        
+        if (urlFile) {
+          loadFile(urlFile);
+        } else if (!currentFile && files.length > 0) {
           const sorted = [...files];
           const getPriority = (f) => {
             let score = 0;
@@ -772,6 +853,24 @@
       if (mode === 'preview') {
         fileContent = editPane.value;
         previewPane.innerHTML = renderMarkdown(fileContent);
+        if (window.mermaid) {
+          setTimeout(() => {
+            try {
+              mermaid.init(undefined, '.mermaid');
+            } catch (err) {
+              console.error("Mermaid run error:", err);
+              fetch('/api/dilemma-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  event: 'Mermaid Error',
+                  source: 'lore_editor',
+                  details: err.message + '\n' + err.stack
+                })
+              }).catch(() => {});
+            }
+          }, 50);
+        }
         
         previewPane.style.display = 'block';
         editPane.style.display = 'none';
@@ -801,9 +900,19 @@
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
           
-      // Code blocks (triple backticks)
-      html = html.replace(/```(\w*)\n([\s\S]*?)\n```/g, function(match, lang, code) {
-          return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+      // Code blocks (triple backticks) - protected using placeholders
+      const codeBlocks = [];
+      html = html.replace(/```(\w*)\r?\n([\s\S]*?)\r?\n```/g, function(match, lang, code) {
+          const index = codeBlocks.length;
+          let blockContent = '';
+          if (lang === 'mermaid') {
+              const cleanCode = code.trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+              blockContent = `<div class="mermaid">${cleanCode}</div>`;
+          } else {
+              blockContent = `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+          }
+          codeBlocks.push(blockContent);
+          return `\n\n===CODEBLOCK_${index}===\n\n`;
       });
 
       // Headers
@@ -864,9 +973,12 @@
       html = html.replace(/<\/ol>\s*<ol>/g, '');
       
       // Paragraphs
-      const lines = html.split(/\n{2,}/);
+      const lines = html.split(/(?:\r?\n){2,}/);
       html = lines.map(line => {
           const trimmed = line.trim();
+          if (trimmed.startsWith('===CODEBLOCK_')) {
+              return line;
+          }
           if (trimmed.startsWith('<h') || 
               trimmed.startsWith('<ul') || 
               trimmed.startsWith('<ol') || 
@@ -876,8 +988,13 @@
               trimmed.startsWith('<hr')) {
               return line;
           }
-          return `<p>${line.replace(/\n/g, '<br>')}</p>`;
+          return `<p>${line.replace(/\r?\n/g, '<br>')}</p>`;
       }).join('\n');
+      
+      // Replace placeholders back
+      codeBlocks.forEach((block, index) => {
+          html = html.replace(`===CODEBLOCK_${index}===`, block);
+      });
       
       return html;
     }

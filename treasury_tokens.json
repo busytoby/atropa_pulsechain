@@ -516,5 +516,159 @@
         "name": "Official Bear Coin",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
         "ignored": false
+    },
+    "0x62af282f8a318a22f4f069f945cdb3936bf1816b": {
+        "address": "0x62af282f8a318a22f4f069f945cdb3936bf1816b",
+        "symbol": "\u2cae\u03ec",
+        "name": "\u2cae\u2c9f\u03eb\u2c9f\u2c8b",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xa45b87333e9f5d1964b943370db35b2527066f18": {
+        "address": "0xa45b87333e9f5d1964b943370db35b2527066f18",
+        "symbol": "",
+        "name": "TEH IRRONCLAD\u0000\u0000\u0000\u0000\u0000",
+        "owner": "0xce28607bb80a69c73173a933a25519e745b03ce9",
+        "ignored": false
+    },
+    "0xd9f3f5674523eaec7a011322d10135021ba699ab": {
+        "address": "0xd9f3f5674523eaec7a011322d10135021ba699ab",
+        "symbol": "CYCLE",
+        "name": "Cycle",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0x1efbabeb16d60e9e012c6bf7b999069efcdf7c9e": {
+        "address": "0x1efbabeb16d60e9e012c6bf7b999069efcdf7c9e",
+        "symbol": "ni",
+        "name": "bithe",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x15cc06cb371065dd214cfe0d0cb6f7a2534a8e0b": {
+        "address": "0x15cc06cb371065dd214cfe0d0cb6f7a2534a8e0b",
+        "symbol": "\u0397 \u327e",
+        "name": "ETA",
+        "owner": "0xd36802b68627904594b03f1b7938e283b9708650",
+        "ignored": false
+    },
+    "0xf3e25435160597bba9f66304d4fa2b6807a1fe8b": {
+        "address": "0xf3e25435160597bba9f66304d4fa2b6807a1fe8b",
+        "symbol": "\u0f68\u0fb8\u0f7e",
+        "name": "\u0f5d\u0f74\u0f5d\u0f74",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xc90843a793e714fa3cbbfd84a60ccb9ba069dea0": {
+        "address": "0xc90843a793e714fa3cbbfd84a60ccb9ba069dea0",
+        "symbol": "BLOSM",
+        "name": "Blossom",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0x31374ccd67d2bc06f169b197850226f58cb5a577": {
+        "address": "0x31374ccd67d2bc06f169b197850226f58cb5a577",
+        "symbol": "\u03a3\u03a6\u0394",
+        "name": "\u03a3\u03bf\u03c6\u03b9\u03b1\u03b4 \u327e",
+        "owner": "0x01e78ad5e7f5cfdf7a0bb8aef5217dea6332ad09",
+        "ignored": false
+    },
+    "0xcd84c9e2e8d31c3ca1ba16c0dd6a1bff0b7dbab9": {
+        "address": "0xcd84c9e2e8d31c3ca1ba16c0dd6a1bff0b7dbab9",
+        "symbol": "W\u0391\u327e\u03b4",
+        "name": "Wrapped \u0391\u03b5\u03af\u327e\u03b4\u03c9",
+        "owner": "0xaebd88430387b3ca9ee75a1f5139202428b63ec4",
+        "ignored": false
+    },
+    "0x95fa0b022d2876b11617ac0e93a293d5287a0b87": {
+        "address": "0x95fa0b022d2876b11617ac0e93a293d5287a0b87",
+        "symbol": "CHRIST\u327ePHER C\u327eLUMBUS \u327e",
+        "name": "Commonwealth of The Bahamas \u327e",
+        "owner": "0xd36802b68627904594b03f1b7938e283b9708650",
+        "ignored": false
+    },
+    "0xa1066c3c303d0846818c8193243bef6d6f72aa0f": {
+        "address": "0xa1066c3c303d0846818c8193243bef6d6f72aa0f",
+        "symbol": "shu",
+        "name": "jing",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xf0996054b32c458241f8b6d8b0f47f8c6bbf4296": {
+        "address": "0xf0996054b32c458241f8b6d8b0f47f8c6bbf4296",
+        "symbol": "MXPC",
+        "name": "Matrix Peacock",
+        "owner": "0x3ad6c170e7ec137d99c128c1076e861c748beb4b",
+        "ignored": false
+    },
+    "0x8097e28c2f7b2ad018607461d0b9d95a83afffc2": {
+        "address": "0x8097e28c2f7b2ad018607461d0b9d95a83afffc2",
+        "symbol": "DISMISSED \u327e",
+        "name": "Motion To Dismiss",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xa121b732fb8c6f7cb76f27bd1b65ba155ff0ec3d": {
+        "address": "0xa121b732fb8c6f7cb76f27bd1b65ba155ff0ec3d",
+        "symbol": "SAFETY \u327e",
+        "name": "Like Only You Can Count On",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x71a5606df1702d1a7d48c76a70a1887c972c0399": {
+        "address": "0x71a5606df1702d1a7d48c76a70a1887c972c0399",
+        "symbol": "\u0e40\u0e2b\u0e36",
+        "name": "\u0e40\u0e2b\u0e36\u0e25\u0e2d\u0e07",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x5c32264fcd4eba4ef0bcbc4231e8c17f70ff62ed": {
+        "address": "0x5c32264fcd4eba4ef0bcbc4231e8c17f70ff62ed",
+        "symbol": "GGB",
+        "name": "Grass Gumbo",
+        "owner": "0xc1a964c41c216455bee3d5d222212ce0c2d86f41",
+        "ignored": false
+    },
+    "0x700b8bc2d999d9216368749e303b96b0b0816a2e": {
+        "address": "0x700b8bc2d999d9216368749e303b96b0b0816a2e",
+        "symbol": "BLUE \u327e",
+        "name": "Blue Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x8f8c9b1e269f07578115f8067b6d95c51d178e6f": {
+        "address": "0x8f8c9b1e269f07578115f8067b6d95c51d178e6f",
+        "symbol": "RANCHO\u26bf",
+        "name": "HotelElRancho\u26bf",
+        "owner": "0x369df3d8cdd8de53fd67a1016f1d060701b0441e",
+        "ignored": false
+    },
+    "0x2afcc3a86e83397c07c99c29b43683ea2dc0f1a2": {
+        "address": "0x2afcc3a86e83397c07c99c29b43683ea2dc0f1a2",
+        "symbol": "SWALLOW\u26bf",
+        "name": "BlueSwallowMotel\u26bf",
+        "owner": "0x369df3d8cdd8de53fd67a1016f1d060701b0441e",
+        "ignored": false
+    },
+    "0x71852acd19a475aeb458020d119eedf503d82943": {
+        "address": "0x71852acd19a475aeb458020d119eedf503d82943",
+        "symbol": "SHARE",
+        "name": "Share \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x8e0a2473af13d2101d3b66bc03c7bf4a05ee12b6": {
+        "address": "0x8e0a2473af13d2101d3b66bc03c7bf4a05ee12b6",
+        "symbol": "TR\u03d8P",
+        "name": "TR\u03d8PPER",
+        "owner": "0x14df2e2dfbca0405f8853f0eee0c70809ec3b023",
+        "ignored": false
+    },
+    "0x192e0ba3f6f1c5bb7db95dca505683fced48deb9": {
+        "address": "0x192e0ba3f6f1c5bb7db95dca505683fced48deb9",
+        "symbol": "B\u327eEING",
+        "name": "BoEeNg",
+        "owner": "0xce28607bb80a69c73173a933a25519e745b03ce9",
+        "ignored": false
     }
 }

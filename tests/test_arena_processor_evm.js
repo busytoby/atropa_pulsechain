@@ -112,14 +112,13 @@ async function main() {
     await (await arenaContract.systemEquipQing(4, 0x70, 0, 95)).wait(); // Width: 95 (Expected Winner)
     console.log("✓ Registered and equipped all 5 players.");
 
-    // Helper to print storage state
     async function logState(label) {
-        const targetQing = BigInt(await provider.getStorage(arenaAddr, 0x100));
-        const cursor = BigInt(await provider.getStorage(arenaAddr, 0x101));
-        const leader = BigInt(await provider.getStorage(arenaAddr, 0x102));
-        const maxW = BigInt(await provider.getStorage(arenaAddr, 0x103));
-        const completed = BigInt(await provider.getStorage(arenaAddr, 0x104));
-        const total = BigInt(await provider.getStorage(arenaAddr, 0x200));
+        const targetQing = BigInt(await provider.getStorage(arenaAddr, "0x100"));
+        const cursor = BigInt(await provider.getStorage(arenaAddr, "0x101"));
+        const leader = BigInt(await provider.getStorage(arenaAddr, "0x102"));
+        const maxW = BigInt(await provider.getStorage(arenaAddr, "0x103"));
+        const completed = BigInt(await provider.getStorage(arenaAddr, "0x104"));
+        const total = BigInt(await provider.getStorage(arenaAddr, "0x200"));
         console.log(`[STATE ${label}] Target Qing: ${targetQing}, Cursor: ${cursor}, Leader: ${leader}, Max Width: ${maxW}, Completed: ${completed}, Total Players: ${total}`);
     }
 
@@ -127,17 +126,17 @@ async function main() {
     // Let's call processBatch to ensure winner is computed correctly in batches of 2
     
     await logState("BEFORE BATCH 1");
-    const txBatch1 = await arenaContract.processBatch(2);
+    const txBatch1 = await arenaContract.processBatch(2, { gasLimit: 300000 });
     const rc1 = await txBatch1.wait();
     console.log(`✓ Batch 1 receipt status: ${rc1.status}, gasUsed: ${rc1.gasUsed}`);
     
     await logState("BEFORE BATCH 2");
-    const txBatch2 = await arenaContract.processBatch(2);
+    const txBatch2 = await arenaContract.processBatch(2, { gasLimit: 300000 });
     const rc2 = await txBatch2.wait();
     console.log(`✓ Batch 2 receipt status: ${rc2.status}, gasUsed: ${rc2.gasUsed}`);
     
     await logState("BEFORE BATCH 3");
-    const txBatch3 = await arenaContract.processBatch(2);
+    const txBatch3 = await arenaContract.processBatch(2, { gasLimit: 300000 });
     const rc3 = await txBatch3.wait();
     console.log(`✓ Batch 3 receipt status: ${rc3.status}, gasUsed: ${rc3.gasUsed}`);
     console.log("✓ Ran processBatch in 3 batches.");

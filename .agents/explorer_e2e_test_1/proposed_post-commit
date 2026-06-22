@@ -1,0 +1,93 @@
+#!/bin/bash
+# -------------------------------------------------------------
+# Git Post-Commit Hook - Atropa PulseChain CI Pipeline
+# -------------------------------------------------------------
+
+# 1. Scrub Git environment variables to prevent leakage to downstream build/git commands
+unset GIT_DIR
+unset GIT_WORK_TREE
+unset GIT_INDEX_FILE
+
+# 2. Resolve the repository root and project workspace
+# We allow WORKSPACE_DIR override from environment for isolated testing
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -z "${REPO_ROOT}" ]; then
+    REPO_ROOT=$(pwd)
+fi
+WORKSPACE_DIR="${WORKSPACE_DIR:-$REPO_ROOT/tsfi2-deepseek}"
+
+PROFILER_DIR="${WORKSPACE_DIR}/benchmarks/profiler_suite"
+RUN_BENCHMARKS="${PROFILER_DIR}/run_benchmarks.sh"
+GENERATE_REPORT="${PROFILER_DIR}/generate_report.py"
+BENCHMARK_RESULTS="${PROFILER_DIR}/benchmark_results.json"
+
+echo "========================================================="
+echo "[CI Pipeline] Post-commit hook triggered."
+echo "========================================================="
+
+# 3. Compile and execute benchmarks
+if [ -f "${RUN_BENCHMARKS}" ]; then
+    echo "[CI Pipeline] Running benchmarks..."
+    # Execute run_benchmarks.sh (compiles and runs benchmark to produce JSON)
+    # We do NOT let benchmark failure block the commit (graceful handling)
+    bash "${RUN_BENCHMARKS}"
+    BENCHMARK_STATUS=$?
+else
+    echo "[WARNING] run_benchmarks.sh not found at ${RUN_BENCHMARKS}"
+    BENCHMARK_STATUS=1
+fi
+
+# 4. Generate HTML Visual Report
+if [ -f "${GENERATE_REPORT}" ]; then
+    echo "[CI Pipeline] Generating HTML report..."
+    python3 "${GENERATE_REPORT}"
+    REPORT_STATUS=$?
+else
+    echo "[WARNING] generate_report.py not found at ${GENERATE_REPORT}"
+    REPORT_STATUS=1
+fi
+
+# 5. Output ASCII Metrics Table on stdout on success
+if [ -f "${BENCHMARK_RESULTS}" ]; then
+    python3 -c '
+import json, sys, os
+results_path = "'"${BENCHMARK_RESULTS}"'"
+try:
+    with open(results_path) as f:
+        data = json.load(f)
+    s = data.get("summary", {})
+    aud = data.get("audio_latency_records", [])
+    if aud:
+        avg_sw = sum(r["software_queue_delay_seconds"] for r in aud) / len(aud) * 1000
+        avg_hw = sum(r["hardware_buffer_delay_seconds"] for r in aud) / len(aud) * 1000
+        avg_tot = sum(r["total_latency_seconds"] for r in aud) / len(aud) * 1000
+    else:
+        avg_sw = avg_hw = avg_tot = 0.0
+
+    print("+-----------------------------------------------------------+")
+    print("|             ATROPA PulseChain Benchmark Summary           |")
+    print("+-----------------------------------------------------------+")
+    print(f"| Render Performance : {s.get(\"average_fps\", 0.0):.2f} FPS                        |")
+    print(f"| Avg Frame Render   : {s.get(\"average_frame_render_time_seconds\", 0.0)*1000:.3f} ms                       |")
+    print("+-----------------------------------------------------------+")
+    print(f"| Audio Latency (Avg): {avg_tot:.3f} ms                                   |")
+    print(f"|   - SW Queue       : {avg_sw:.3f} ms                                   |")
+    print(f"|   - HW ALSA Buffer : {avg_hw:.3f} ms                                   |")
+    print("+-----------------------------------------------------------+")
+    print(f"| Total Frames       : {s.get(\"total_frames\", 0):<5}                             |")
+    print(f"| Elapsed Time       : {s.get(\"elapsed_time_seconds\", 0.0):.2f} s                          |")
+    print("+-----------------------------------------------------------+")
+except Exception as e:
+    print(f"[WARNING] Could not parse benchmark results for stdout summary: {e}", file=sys.stderr)
+'
+else
+    echo "[WARNING] benchmark_results.json not found. Printing fallback metrics."
+    echo "+-----------------------------------------------------------+"
+    echo "|       WARNING: Live Benchmark Results Not Found           |"
+    echo "+-----------------------------------------------------------+"
+fi
+
+echo "========================================================="
+echo "[CI Pipeline] Post-commit hook execution completed."
+echo "========================================================="
+exit 0

@@ -24,11 +24,8 @@ async function main() {
 
     console.log("=== Running 6502 Opcode Isolation Tests ===");
 
-    let nonce = await provider.getTransactionCount(deployer.address, "pending");
-
     async function sendTx(promise) {
         const tx = await promise;
-        nonce++;
         return tx.wait();
     }
 
@@ -40,11 +37,11 @@ async function main() {
         await sendTx(cpu.batchPoke(
             [0x80, 0x81, 0x82, 0x83, 0x84, 0x85],
             [0, 0, 0, 0xFF, 0x20, 8192], // 0x83 is SP (0xFF), 0x84 is SR (0x20), 0x85 is PC (8192)
-            { nonce }
+            { gasLimit: 5000000 }
         ));
 
         // Poke bytes atomically
-        await sendTx(cpu.pokeBytes(8192, ethers.getBytes(new Uint8Array(bytes)), { nonce }));
+        await sendTx(cpu.pokeBytes(8192, ethers.getBytes(new Uint8Array(bytes)), { gasLimit: 5000000 }));
 
         // Custom setup
         if (setupFunc) {
@@ -53,7 +50,7 @@ async function main() {
 
         // Run steps
         const steps = maxSteps || bytes.length;
-        await sendTx(cpu.runSteps(steps, { nonce }));
+        await sendTx(cpu.runSteps(steps, { gasLimit: 5000000 }));
 
         // Get and verify state
         const state = await cpu.getCPUState();
@@ -83,7 +80,7 @@ async function main() {
             0x00        // BRK
         ],
         async (cpu) => {
-            await sendTx(cpu.batchPoke([0x10, 0x20], [42, 0], { nonce }));
+            await sendTx(cpu.batchPoke([0x10, 0x20], [42, 0], { gasLimit: 5000000 }));
         },
         async (state, cpu) => {
             if (state.A !== 42) throw new Error(`Expected A to be 42, got ${state.A}`);
@@ -124,7 +121,7 @@ async function main() {
             0x00              // BRK
         ],
         async (cpu) => {
-            await sendTx(cpu.poke(0x3000, 100, { nonce }));
+            await sendTx(cpu.poke(0x3000, 100, { gasLimit: 5000000 }));
         },
         async (state, cpu) => {
             const val = Number(await cpu.peek(0x3000));

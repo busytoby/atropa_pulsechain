@@ -1,0 +1,1 @@
+# Worker Installation metadata folder

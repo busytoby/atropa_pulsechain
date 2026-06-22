@@ -65,6 +65,12 @@ void tsfi_mozilla_wmq_bridge_tick(TsfiZmmVmState *vm_state) {
     uint8_t command_byte = wmq_retval[31];
     if (command_byte == 0) return; // No pending events on the WinchesterMQ port
 
+    // Clear the data port register immediately to prevent duplicate event loops
+    uint8_t clear_selector[36] = {0x98, 0xd4, 0x00, 0xc0};
+    uint8_t clear_retval[32] = {0};
+    size_t clear_ret_len = 32;
+    lau_yul_thunk_execute("WinchesterMQ", clear_selector, 36, clear_retval, &clear_ret_len);
+
     // Process event bytes from WinchesterMQ and construct MozillaEventPacket
     MozillaEventPacket packet = {0};
     
@@ -73,20 +79,21 @@ void tsfi_mozilla_wmq_bridge_tick(TsfiZmmVmState *vm_state) {
     switch (cmd_type) {
         case 0: // MOUSE_MOVE
             packet.type = 0;
-            // Decode coordinates packed into the remaining 6 bits + transient register banks
-            packet.param1 = (int32_t)vm_state->reu_ram[0xF000]; // Mapped X register in ZMM VM RAM
-            packet.param2 = (int32_t)vm_state->reu_ram[0xF001]; // Mapped Y register in ZMM VM RAM
+            // Decode 16-bit coordinates from REU RAM
+            packet.param1 = (int32_t)(vm_state->reu_ram[0xF000] | (vm_state->reu_ram[0xF003] << 8)); // Mapped X
+            packet.param2 = (int32_t)(vm_state->reu_ram[0xF001] | (vm_state->reu_ram[0xF004] << 8)); // Mapped Y
             break;
 
         case 1: // MOUSE_BUTTON
             packet.type = 1;
-            packet.param1 = (command_byte & 0x04) ? 1 : 0; // State (Down/Up)
-            packet.param2 = (command_byte & 0x03);          // Button index (0: Left, 1: Right, 2: Middle)
+            packet.param1 = (int32_t)(vm_state->reu_ram[0xF000] | (vm_state->reu_ram[0xF003] << 8)); // Mapped X
+            packet.param2 = (int32_t)(vm_state->reu_ram[0xF001] | (vm_state->reu_ram[0xF004] << 8)); // Mapped Y
+            packet.param3 = ((command_byte & 0x04) ? 1 : 0) | ((command_byte & 0x03) << 8);          // State and Button index
             break;
 
         case 2: // KEYBOARD
             packet.type = 2;
-            packet.param1 = (command_byte & 0x1F);          // Keycode offset mapped in WinchesterMQ map
+            packet.param1 = vm_state->reu_ram[0xF002];      // Full 8-bit keycode mapped in REU RAM
             packet.param2 = (command_byte & 0x20) ? 1 : 0; // State (Down/Up)
             break;
 

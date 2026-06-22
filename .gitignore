@@ -73,6 +73,7 @@ state.json
 # Ignore compiled binaries inside tsfi2-deepseek/tests/ (allow source files and scripts)
 /tsfi2-deepseek/tests/*
 !/tsfi2-deepseek/tests/**/*.c
+!/tsfi2-deepseek/tests/**/*.cpp
 !/tsfi2-deepseek/tests/**/*.h
 !/tsfi2-deepseek/tests/**/*.py
 !/tsfi2-deepseek/tests/**/*.sh
@@ -99,3 +100,4 @@ found_addresses.txt
 
 __pycache__/
 *.pyc
+*.node

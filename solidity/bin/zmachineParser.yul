@@ -184,7 +184,7 @@ object "ZMachineParser" {
                             resultPtr := add(resultPtr, 45)
                         }
                         if eq(enemyType, 3) {
-                            mstore(resultPtr, 0x546865204576696c2050726965737420626c6f636b7320796f752066726f6d20) // "The Evil Priest blocks you from "
+                            mstore(resultPtr, 0x54686520536c75676361742050726965737420626c6f636b732066726f6d2020) // "The Slugcat Priest blocks from  "
                             mstore(add(resultPtr, 32), 0x74616b696e672074686520456e65726779205061636b2e000000000000000000) // "taking the Energy Pack."
                             resultPtr := add(resultPtr, 56)
                         }
@@ -553,8 +553,8 @@ object "ZMachineParser" {
                                 resultPtr := add(resultPtr, 23)
                             }
                             if eq(enemyType, 3) {
-                                mstore(resultPtr, 0x20416e204576696c2050726965737420284865616c74683a2000000000000000) // " An Evil Priest (Health: "
-                                resultPtr := add(resultPtr, 25)
+                                mstore(resultPtr, 0x204120536c75676361742050726965737420284865616c74683a200000000000) // " A Slugcat Priest (Health: "
+                                resultPtr := add(resultPtr, 27)
                                 resultPtr := appendNumberStr(resultPtr, enemyHealth)
                                 mstore(resultPtr, 0x29207374616e64732062792074686520616c7461722e00000000000000000000) // ") stands by the altar."
                                 resultPtr := add(resultPtr, 22)

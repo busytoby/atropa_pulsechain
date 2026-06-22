@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dysnomia Tripartite Client Association Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #020306;
+            --glass-bg: rgba(8, 12, 26, 0.65);
+            --glass-border: rgba(0, 240, 255, 0.15);
+            --glow-cyan: #00f0ff;
+            --glow-green: #39ff14;
+            --glow-magenta: #ff007f;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-cyan-glow: rgba(0, 240, 255, 0.25);
+            --accent-magenta-glow: rgba(255, 0, 127, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(8, 12, 26, 0.5) 0%, transparent 100%);
+            overflow-x: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(4, 6, 12, 0.85);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-symbol {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--glow-cyan), var(--glow-magenta));
+            box-shadow: 0 0 15px var(--glow-cyan);
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { box-shadow: 0 0 10px var(--glow-cyan); }
+            to { box-shadow: 0 0 20px var(--glow-magenta); }
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-cyan), #fff, var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid var(--glow-green);
+            color: var(--glow-green);
+            text-shadow: 0 0 5px var(--glow-green);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            padding: 32px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (min-width: 1200px) {
+            main {
+                grid-template-columns: 1.25fr 1fr;
+            }
+        }
+
+        .dashboard-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .dashboard-section:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--glow-cyan);
+            box-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: rgba(16, 24, 48, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            font-family: 'Share Tech Mono', monospace;
+            background: linear-gradient(90deg, #fff, var(--glow-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .pulse-chain-panel {
+            grid-column: 1 / -1;
+        }
+
+        .address-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(16, 24, 48, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+        }
+
+        .addr-lbl {
+            color: var(--text-secondary);
+        }
+
+        .addr-val {
+            color: var(--glow-cyan);
+            text-shadow: 0 0 4px rgba(0, 240, 255, 0.3);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 14px;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
+        }
+
+        .mono-text {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .connection-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .connection-indicator.online {
+            background: var(--glow-green);
+            box-shadow: 0 0 8px var(--glow-green);
+        }
+
+        .connection-indicator.offline {
+            background: var(--glow-magenta);
+            box-shadow: 0 0 8px var(--glow-magenta);
+        }
+
+        .custom-button {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            align-self: flex-start;
+        }
+
+        .custom-button:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 3, 6, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo-symbol"></div>
+            <div class="logo-text">Dysnomia Association</div>
+        </div>
+        <div id="connection-status" class="status-badge">
+            <span class="connection-indicator online"></span> ANVIL LOCALHOST
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-section pulse-chain-panel">
+            <div class="section-title">Tripartite Client Association Mappings</div>
+            <div class="grid-3col">
+                <div class="stat-card">
+                    <div class="stat-label">Local ZMM VM state</div>
+                    <div class="stat-value">25 Contracts</div>
+                    <div class="stat-sub">Virtual Memory Tier Integration</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Local EVM Anvil</div>
+                    <div class="stat-value" id="anvil-block-num">Fetching...</div>
+                    <div class="stat-sub">PulseX Liquidity Pools</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">PulseChain Slot 9</div>
+                    <div class="stat-value" id="slot9-value">444:4:4 Domains</div>
+                    <div class="stat-sub">Default Client Wallet: 0x...4CC</div>
+                </div>
+            </div>
+            
+            <div class="address-row">
+                <span class="addr-lbl">Tripartite Default Wallet Address (4:4:4 color domain):</span>
+                <span class="addr-val">0x00000000000000000000000000000000000004CC</span>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-title">Local ZMM VM Memory Layout</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Contract</th>
+                            <th>Virtual Address</th>
+                            <th>Tier / Type</th>
+                            <th>ZMM State</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zmm-tbody">
+                        <!-- Filled by script -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="custom-button" onclick="refreshZmmState()">Refresh ZMM Registry</button>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-title">Local EVM & PulseX Pools ($INCOGNITO)</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pool Address</th>
+                            <th>Symbol</th>
+                            <th>Pool Version</th>
+                            <th>Counterparty Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pools-tbody">
+                        <!-- Filled by script -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="custom-button" onclick="loadPools()">Scan Pools</button>
+        </div>
+    </main>
+
+    <footer>
+        Dysnomia tripartite C socket RPC association. Provenance key: SIG_2026_USLM_AFFIRMED
+    </footer>
+
+    <script>
+        const zmmContracts = [
+            { name: "vmreq", addr: "0x0000...0010", type: "VMREQ / Rng", state: "Active" },
+            { name: "shafactory", addr: "0x0000...0011", type: "SHAFactory", state: "Active" },
+            { name: "shiofactory", addr: "0x0000...0012", type: "SHIOFactory", state: "Active" },
+            { name: "yi", addr: "0x83a9...1d91", type: "YI Tier 4", state: "Active" },
+            { name: "zheng", addr: "0x0000...0014", type: "ZHENG Tier 5", state: "Active" },
+            { name: "zhou", addr: "0xe5d3...5f11", type: "ZHOU Tier 6", state: "Active" },
+            { name: "yau", addr: "0xb9A4...4189", type: "YAU Tier 7", state: "Active" },
+            { name: "yang", addr: "0xFE9b...Cb61", type: "YANG Tier 8", state: "Active" },
+            { name: "siu", addr: "0xb4C1...2b10", type: "SIU Tier 9", state: "Active" },
+            { name: "void", addr: "0xCd19...8E25", type: "VOID Tier 10", state: "Active" },
+            { name: "laufactory", addr: "0x0EB4...B4b3", type: "LAUFactory", state: "Active" },
+            { name: "lau", addr: "0x8dAF...719d", type: "LAU Token", state: "Active" }
+        ];
+
+        function refreshZmmState() {
+            const tbody = document.getElementById("zmm-tbody");
+            tbody.innerHTML = "";
+            zmmContracts.forEach(c => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="mono-text" style="color: var(--glow-cyan);">${c.name}</td>
+                    <td class="mono-text">${c.addr}</td>
+                    <td>${c.type}</td>
+                    <td><span style="color: var(--glow-green);">${c.state}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadPools() {
+            try {
+                const response = await fetch('../nonukes_pools.json');
+                const pools = await response.json();
+                const tbody = document.getElementById("pools-tbody");
+                tbody.innerHTML = "";
+                let count = 0;
+                for (const [key, value] of Object.entries(pools)) {
+                    if (count++ >= 8) break; // Display first 8 pools for presentation
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td class="mono-text" style="font-size:12px;">${key.slice(0, 10)}...${key.slice(-8)}</td>
+                        <td class="mono-text" style="color: var(--glow-magenta);">${value.symbol}</td>
+                        <td><span class="tag v1">${value.version}</span></td>
+                        <td class="mono-text" style="font-size:12px; color: var(--text-secondary);">${value.other_addr.slice(0, 12)}...</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            } catch (e) {
+                console.error("Failed to load nonukes_pools.json", e);
+            }
+        }
+
+        async function initWeb3() {
+            try {
+                const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+                const blockNum = await provider.getBlockNumber();
+                document.getElementById("anvil-block-num").innerText = `Block #${blockNum}`;
+                document.getElementById("connection-status").innerHTML = `<span class="connection-indicator online"></span> ANVIL LOCALHOST ONLINE`;
+            } catch (e) {
+                document.getElementById("anvil-block-num").innerText = "Offline (Anvil)";
+                document.getElementById("connection-status").innerHTML = `<span class="connection-indicator offline"></span> ANVIL OFFLINE`;
+            }
+        }
+
+        window.onload = () => {
+            refreshZmmState();
+            loadPools();
+            initWeb3();
+            setInterval(initWeb3, 5000);
+        };
+    </script>
+</body>
+</html>

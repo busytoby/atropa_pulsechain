@@ -299,10 +299,13 @@ def perform_volatility_analysis(address, symbol, name, pct, price):
         details=details
     )
 
-def update_price(address, price, symbol, name, is_treasury=False, treasury_owner=None):
+def update_price(address, price, symbol, name, is_treasury=False, treasury_owner=None, usd_value=None):
     if price is None or float(price) <= 0.0:
         return
         
+    if usd_value is not None and float(usd_value) < 20.0:
+        return
+
     addr_lower = address.lower()
     # Pin stablecoin prices to exactly 1.0 USD
     if symbol.upper() in ["USDC", "USDT", "DAI"] or addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2, DAI_ADDR, DAI_ADDR2]:
@@ -497,7 +500,8 @@ def resolve_retroactive_prices():
             if p0 is not None and p1 is not None:
                 # Both known, just clean up
                 usd_val = amt0 * p0
-                print(f"✨ Retroactive Resolution: Tx {swap['tx_hash']} swap of {swap['token0']['symbol']}/{swap['token1']['symbol']} valued at ${usd_val:.2f} USD")
+                if usd_val >= 20.0:
+                    print(f"✨ Retroactive Resolution: Tx {swap['tx_hash']} swap of {swap['token0']['symbol']}/{swap['token1']['symbol']} valued at ${usd_val:.2f} USD")
                 save_resolved({
                     "tx_hash": swap["tx_hash"],
                     "pool_address": swap["pool_address"],
@@ -526,7 +530,8 @@ def resolve_retroactive_prices():
                             swap["token1"]["symbol"], 
                             swap["token1"]["name"],
                             swap["token1"].get("is_treasury", False),
-                            swap["token1"].get("treasury_owner")
+                            swap["token1"].get("treasury_owner"),
+                            usd_value=usd_val
                         )
                         print(f"✨ Retroactive Resolution: Calculated {swap['token1']['symbol']} price: ${p1_val:.8f} USD")
                         print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
@@ -558,7 +563,8 @@ def resolve_retroactive_prices():
                             swap["token0"]["symbol"], 
                             swap["token0"]["name"],
                             swap["token0"].get("is_treasury", False),
-                            swap["token0"].get("treasury_owner")
+                            swap["token0"].get("treasury_owner"),
+                            usd_value=usd_val
                         )
                         print(f"✨ Retroactive Resolution: Calculated {swap['token0']['symbol']} price: ${p0_val:.8f} USD")
                         print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
@@ -607,7 +613,8 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
                 recv_token["symbol"], 
                 recv_token["name"],
                 recv_token.get("is_treasury", False),
-                recv_token.get("treasury_owner")
+                recv_token.get("treasury_owner"),
+                usd_value=usd_val
             )
             print(f"📈 Price update: {recv_token['symbol']} price set to ${format_price(get_cached_price(recv_token['address']))} USD")
             
@@ -623,7 +630,8 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
                 sent_token["symbol"], 
                 sent_token["name"],
                 sent_token.get("is_treasury", False),
-                sent_token.get("treasury_owner")
+                sent_token.get("treasury_owner"),
+                usd_value=usd_val
             )
             print(f"📈 Price update: {sent_token['symbol']} price set to ${format_price(get_cached_price(sent_token['address']))} USD")
             

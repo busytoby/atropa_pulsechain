@@ -608,7 +608,18 @@
                     state = "NOMINAL WALKING";
                 }
                 
-                const time = new Date(log.timestamp * 1000).toLocaleTimeString();
+                let parsedDate;
+                if (log.timestamp) {
+                    const num = Number(log.timestamp);
+                    if (!isNaN(num)) {
+                        parsedDate = new Date(num < 10000000000 ? num * 1000 : num);
+                    } else {
+                        parsedDate = new Date(log.timestamp);
+                    }
+                } else {
+                    parsedDate = new Date();
+                }
+                const time = isNaN(parsedDate.getTime()) ? "00:00:00" : parsedDate.toLocaleTimeString();
                 const entry = document.createElement("div");
                 entry.className = "log-entry";
                 entry.setAttribute("data-key", key);

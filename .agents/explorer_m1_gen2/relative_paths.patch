@@ -1,0 +1,47 @@
+diff --git a/teddy_bear_tournament_3d.html b/teddy_bear_tournament_3d.html
+--- a/teddy_bear_tournament_3d.html
++++ b/teddy_bear_tournament_3d.html
+@@ -705,5 +705,5 @@
+             </div>
+             <div class="diagnostics-iframe-container">
+                 <div class="diagnostics-iframe-header">PROFILER DETAILED REPORT</div>
+-                <iframe id="diagnostics-iframe" src="../tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
++                <iframe id="diagnostics-iframe" src="tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
+             </div>
+         </div>
+diff --git a/tsfi2-deepseek/teddy_bear_tournament_3d.html b/tsfi2-deepseek/teddy_bear_tournament_3d.html
+--- a/tsfi2-deepseek/teddy_bear_tournament_3d.html
++++ b/tsfi2-deepseek/teddy_bear_tournament_3d.html
+@@ -705,5 +705,5 @@
+             </div>
+             <div class="diagnostics-iframe-container">
+                 <div class="diagnostics-iframe-header">PROFILER DETAILED REPORT</div>
+-                <iframe id="diagnostics-iframe" src="../tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
++                <iframe id="diagnostics-iframe" src="benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
+             </div>
+         </div>
+diff --git a/tsfi2-deepseek/frontend/teddy_bear_tournament_3d.html b/tsfi2-deepseek/frontend/teddy_bear_tournament_3d.html
+--- a/tsfi2-deepseek/frontend/teddy_bear_tournament_3d.html
++++ b/tsfi2-deepseek/frontend/teddy_bear_tournament_3d.html
+@@ -705,5 +705,5 @@
+             </div>
+             <div class="diagnostics-iframe-container">
+                 <div class="diagnostics-iframe-header">PROFILER DETAILED REPORT</div>
+-                <iframe id="diagnostics-iframe" src="../tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
++                <iframe id="diagnostics-iframe" src="../benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
+             </div>
+         </div>
+diff --git a/tests/e2e/test_dashboard_container.py b/tests/e2e/test_dashboard_container.py
+--- a/tests/e2e/test_dashboard_container.py
++++ b/tests/e2e/test_dashboard_container.py
+@@ -34,6 +34,10 @@
+             
+             # Assert presence of iframe and correct src
+             self.assertIn('id="diagnostics-iframe"', content, f"Missing diagnostics-iframe in {filepath}")
+-            self.assertIn('src="../tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html"', content, f"Incorrect iframe src in {filepath}")
++            # Compute the expected relative path dynamically from the file's location
++            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
++            report_abs_path = os.path.join(project_root, "tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html")
++            expected_rel_path = os.path.relpath(report_abs_path, os.path.dirname(filepath))
++            self.assertIn(f'src="{expected_rel_path}"', content, f"Incorrect iframe src in {filepath}")
+             self.assertIn('onload="onDiagnosticsIframeLoad()"', content, f"Missing onload callback on iframe in {filepath}")

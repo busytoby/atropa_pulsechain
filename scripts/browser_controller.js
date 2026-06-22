@@ -1,8 +1,11 @@
 const { spawn } = require("child_process");
 const path = require("path");
 
+const fs = require("fs");
 const COMPOSITOR_SOCKET = "wayland-tsfi";
-const BROWSER_PATH = "/home/mariarahel/src/mozilla/obj-tsfi/dist/bin/firefox";
+const BROWSER_PATH = fs.existsSync("/home/mariarahel/src/mozilla/obj-tsfi/dist/bin/firefox")
+    ? "/home/mariarahel/src/mozilla/obj-tsfi/dist/bin/firefox"
+    : "/usr/bin/firefox";
 const DEFAULT_URL = process.argv[2] || `file://${path.resolve(__dirname, '../frontend/hub_portal.html')}`;
 
 console.log("=== Auncient TSFi2 Browser Controller ===");
@@ -29,7 +32,13 @@ compositor.stderr.on("data", data => {
 setTimeout(() => {
     console.log(`[BROWSER] Launching browser engine on Vulkan/Wayland: ${DEFAULT_URL}`);
     
-    const browser = spawn(BROWSER_PATH, ["--new-window", DEFAULT_URL], {
+    const args = [];
+    if (fs.existsSync("/home/mariarahel/src/mozilla/tsfi_profile")) {
+        args.push("-profile", "/home/mariarahel/src/mozilla/tsfi_profile");
+    }
+    args.push("-no-remote", "--new-window", DEFAULT_URL);
+
+    const browser = spawn(BROWSER_PATH, args, {
         env: {
             ...process.env,
             WAYLAND_DISPLAY: COMPOSITOR_SOCKET,

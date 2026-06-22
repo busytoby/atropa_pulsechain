@@ -776,10 +776,12 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 except ChildProcessError:
                     pass
 
-                # Spawn the new browser controller pointing to YouTube with Atropa "this week" query
-                target_url = "https://www.youtube.com/results?search_query=atropa&sp=EgQIAxAB"
-                print(f"[Server] Spawning Auncient rooted browser controller for URL: {target_url}")
-                youtube_process = subprocess.Popen(["node", "scripts/rooted_browser_controller.js", target_url])
+                # Spawn the single rooted browser presenter binary directly (headed mode) without Chrome
+                print("[Server] Spawning headed Auncient rooted browser binary...")
+                env = os.environ.copy()
+                env["WAYLAND_DISPLAY"] = env.get("WAYLAND_DISPLAY", "wayland-1")
+                env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":.:./tsfi2-deepseek"
+                youtube_process = subprocess.Popen(["./tests/rooted_frame_presenter"], env=env)
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')

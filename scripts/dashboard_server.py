@@ -1299,7 +1299,32 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "File not found")
 
     def do_POST(self):
-        if self.path == '/api/nonukes/chat':
+        if self.path == '/api/nonukes/set-clipboard':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(post_data)
+                text = data.get("text", "")
+            except Exception:
+                text = post_data
+            
+            import subprocess
+            try:
+                p = subprocess.Popen(["python3", "scripts/set_clipboard.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = p.communicate(input=text.encode('utf-8'))
+                success = p.returncode == 0
+                error_msg = stderr.decode('utf-8') if not success else ""
+            except Exception as e:
+                success = False
+                error_msg = str(e)
+                
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": success, "error": error_msg}).encode('utf-8'))
+            return
+        elif self.path == '/api/nonukes/chat':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length).decode('utf-8')
             try:
