@@ -355,9 +355,22 @@ def load_price_cache():
                 loaded = json.load(f)
                 for k, v in loaded.items():
                     if isinstance(v, dict):
+                        symbol = v.get("symbol", "").upper()
+                        price = float(v.get("price", 0.0))
+                        if symbol == "WPLS" and price > 0.0002:
+                            v["price"] = 0.000067
+                        elif symbol == "PLSX" and price > 0.0001:
+                            v["price"] = 0.000035
+                        elif symbol == "ATROPA" and price > 100.0:
+                            v["price"] = 1.25
+                        elif symbol == "WBTC" and price > 200000.0:
+                            v["price"] = 60000.0
+                        elif symbol in ["USDC", "USDT", "DAI"] and price != 1.0:
+                            v["price"] = 1.0
                         price_cache[k.lower()] = v
                     else:
                         price_cache[k.lower()] = {"price": float(v), "symbol": "UNKNOWN", "name": "Unknown Token"}
+            save_price_cache()
             print(f"Loaded {len(price_cache)} price cache entries from {PRICE_CACHE_FILE}")
         except Exception as e:
             print(f"Error loading price cache: {e}")
@@ -504,7 +517,7 @@ def resolve_retroactive_prices():
                 if amt1 > 0:
                     usd_val = amt0 * p0
                     p1_old = get_cached_price(t1_addr)
-                    threshold = 20.0 if p1_old is not None else 1.0
+                    threshold = 20.0
                     if usd_val >= threshold:
                         p1_val = usd_val / amt1
                         update_price(
@@ -536,7 +549,7 @@ def resolve_retroactive_prices():
                 if amt0 > 0:
                     usd_val = amt1 * p1
                     p0_old = get_cached_price(t0_addr)
-                    threshold = 20.0 if p0_old is not None else 1.0
+                    threshold = 20.0
                     if usd_val >= threshold:
                         p0_val = usd_val / amt0
                         update_price(
@@ -586,7 +599,7 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         usd_val = sent_amt * p_sent
         # Resolve/Update price of recv_token
         p_recv_old = get_cached_price(recv_token["address"])
-        threshold = 20.0 if p_recv_old is not None else 1.0
+        threshold = 20.0
         if recv_amt > 0 and usd_val >= threshold:
             update_price(
                 recv_token["address"], 
@@ -602,7 +615,7 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         usd_val = recv_amt * p_recv
         # Resolve/Update price of sent_token
         p_sent_old = get_cached_price(sent_token["address"])
-        threshold = 20.0 if p_sent_old is not None else 1.0
+        threshold = 20.0
         if sent_amt > 0 and usd_val >= threshold:
             update_price(
                 sent_token["address"], 
