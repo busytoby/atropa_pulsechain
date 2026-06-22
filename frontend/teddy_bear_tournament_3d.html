@@ -609,6 +609,19 @@
             <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
                 <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🧬 DNA & AUDIO SYNTHESIS SUITE</div>
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Modify active fighter genome traits & audio synthesizer parameters:</div>
+                <div style="display: flex; gap: 4px; margin-bottom: 8px; font-family: 'Share Tech Mono', monospace; font-size: 11px;">
+                    <span style="color: #94a3b8; align-self: center;">Preset:</span>
+                    <select id="preset-select" style="flex: 1; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 2px;">
+                        <option value="none">-- Custom / Manual --</option>
+                        <option value="fuzzby_mcd">Fuzzby MCD (Fuzzion)</option>
+                        <option value="fuzzby_savage">Fuzzby Savage (Fuzzion)</option>
+                        <option value="fuzzby_dsk">Fuzzby DSK (Fuzzion)</option>
+                        <option value="wilby_spock">Wilby Spock (Wild Bits)</option>
+                        <option value="wilby_spock2">Wilby #2 Spock (RLE/VGA)</option>
+                        <option value="wilby_spock3">Wilby #3 Spock (SMC/FPU)</option>
+                        <option value="wilby_ritz">Wilby #4 Ritz (Tesseract)</option>
+                    </select>
+                </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
                     <div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
@@ -669,6 +682,7 @@
                                 <option value="sawtooth">Strings (Saw/Tri)</option>
                                 <option value="triangle">Brass (Saw/Pulse)</option>
                                 <option value="square">Organ (Square Mix)</option>
+                                <option value="pc_speaker">PC Speaker (PIT 8253)</option>
                             </select>
                         </div>
                         <div>
@@ -851,6 +865,24 @@ Ready to initiate tournament match.</div>
 
     <script>
         // Custom 3D Projection Engine
+        window.addEventListener("error", (e) => {
+            const errorMsg = `❌ CLIENT JS ERROR: ${e.message} at ${e.filename}:${e.lineno}`;
+            if (typeof logEvent === "function") {
+                logEvent(errorMsg);
+            } else {
+                console.error(errorMsg);
+                fetch('/api/dilemma-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: 'CLIENT_LOG', source: 'BrowserEarly', details: errorMsg })
+                }).catch(() => {});
+            }
+        });
+
+        let matchActive = false;
+        let fighter1 = null;
+        let fighter2 = null;
+
         const canvas = document.getElementById("canvas3d");
         const ctx = canvas.getContext("2d");
 
@@ -880,6 +912,334 @@ Ready to initiate tournament match.</div>
                 this.x = x;
                 this.y = y;
                 this.z = z;
+            }
+        }
+
+        // Emulate low-level Auncient Yul virtual hardware register state machine (WinchesterMQ.yul & MusicMaker.yul)
+        const yulStorage = {
+            97: 0,   // MusicMaker: Port $61 PIT speaker audio envelope sample latch
+            100: 0,  // WinchesterMQ: SCSI Status/Handshake Phase (0=IDLE, 1=REQ, 2=ACK, 3=DATA_IN, 4=DATA_OUT)
+            101: 0,  // WinchesterMQ: SCSI Data latch register
+            102: 0,  // WinchesterMQ: AT keyboard keycode register (e.g. 30 for 'a', 32 for 'd')
+            103: 1000, // WinchesterMQ: Clock divisor/Tesseract rotation damping factor (higher = slower)
+            104: 2300, // WinchesterMQ: Hyper-perspective projection focal distance (e.g. 2300 / 1000 = 2.3)
+            105: 0   // WinchesterMQ: Local loopback transaction counter
+        };
+
+        // Keycode emulation routing for Auncient SCSI WinchesterMQ loopback handshake
+        document.addEventListener("keydown", (e) => {
+            let scanCode = 0;
+            if (e.key === "a" || e.key === "A") {
+                scanCode = 30; // AT Scancode for A
+            } else if (e.key === "d" || e.key === "D") {
+                scanCode = 32; // AT Scancode for D
+            }
+            if (scanCode > 0) {
+                yulStorage[102] = scanCode;
+                runSCSIHandshakeLoop(scanCode);
+            }
+        });
+
+        function runSCSIHandshakeLoop(scanCode) {
+            yulStorage[100] = 1; // REQ: Request phase initiated
+            yulStorage[101] = scanCode; // Latch keycode data into SCSI bus buffer
+
+            // Simulate local loopback bridging raw SCSI outputs for WinchesterMQ state verification
+            if (yulStorage[100] === 1 && yulStorage[101] === scanCode) {
+                yulStorage[100] = 2; // ACK: Acknowledge handshake response
+
+                // Verify register maps & process command
+                if (scanCode === 30) {
+                    // Keycode 30 (A): Increase rotation speed by decreasing damping divisor
+                    yulStorage[103] = Math.max(200, yulStorage[103] - 100);
+                    // Pulsate hyper-perspective depth
+                    yulStorage[104] = Math.max(1500, yulStorage[104] - 100);
+                    logEvent(`SCSI WinchesterMQ loopback ACK: Keycode 30 mapped. Storage[103]=${yulStorage[103]}, Storage[104]=${yulStorage[104]}`);
+                } else if (scanCode === 32) {
+                    // Keycode 32 (D): Decrease rotation speed by increasing damping divisor
+                    yulStorage[103] = Math.min(3000, yulStorage[103] + 100);
+                    // Push hyper-perspective depth outward
+                    yulStorage[104] = Math.min(4000, yulStorage[104] + 100);
+                    logEvent(`SCSI WinchesterMQ loopback ACK: Keycode 32 mapped. Storage[103]=${yulStorage[103]}, Storage[104]=${yulStorage[104]}`);
+                }
+                
+                yulStorage[105]++; // Increment SCSI transaction loopback count
+                yulStorage[100] = 0; // Return to IDLE
+            }
+        }
+
+        // 4D Tesseract Geometry Setup (Wilby #4 Ritz-inspired visual projection demo)
+        const tesseractVertices = [];
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    for (let w of [-1, 1]) {
+                        tesseractVertices.push({ x, y, z, w });
+                    }
+                }
+            }
+        }
+
+        const tesseractEdges = [];
+        for (let i = 0; i < 16; i++) {
+            for (let j = i + 1; j < 16; j++) {
+                let diff = 0;
+                if (tesseractVertices[i].x !== tesseractVertices[j].x) diff++;
+                if (tesseractVertices[i].y !== tesseractVertices[j].y) diff++;
+                if (tesseractVertices[i].z !== tesseractVertices[j].z) diff++;
+                if (tesseractVertices[i].w !== tesseractVertices[j].w) diff++;
+                if (diff === 1) {
+                    tesseractEdges.push([i, j]);
+                }
+            }
+        }
+
+        // Generate 24 Square Faces of the Tesseract in cyclic order
+        const tesseractFaces = [];
+        const cycle = [
+            [-1, -1],
+            [1, -1],
+            [1, 1],
+            [-1, 1]
+        ];
+        for (let i = 0; i < 4; i++) {
+            for (let j = i + 1; j < 4; j++) {
+                const fixedDims = [];
+                for (let k = 0; k < 4; k++) {
+                    if (k !== i && k !== j) fixedDims.push(k);
+                }
+                for (let val1 of [-1, 1]) {
+                    for (let val2 of [-1, 1]) {
+                        const faceVertices = [];
+                        for (let step = 0; step < 4; step++) {
+                            const v = { x: 0, y: 0, z: 0, w: 0 };
+                            const dims = ['x', 'y', 'z', 'w'];
+                            v[dims[i]] = cycle[step][0];
+                            v[dims[j]] = cycle[step][1];
+                            v[dims[fixedDims[0]]] = val1;
+                            v[dims[fixedDims[1]]] = val2;
+
+                            const idx = tesseractVertices.findIndex(tv => 
+                                Math.abs(tv.x - v.x) < 0.01 && 
+                                Math.abs(tv.y - v.y) < 0.01 && 
+                                Math.abs(tv.z - v.z) < 0.01 && 
+                                Math.abs(tv.w - v.w) < 0.01
+                            );
+                            faceVertices.push(idx);
+                        }
+                        tesseractFaces.push(faceVertices);
+                    }
+                }
+            }
+        }
+
+        // Pre-computed Sine/Cosine Lookup Tables (LUTs) for high-speed Auncient 4D rotation math (Hugi #16)
+        const LUT_SIZE = 262144;
+        const LUT_MASK = 262143;
+        const sinLUT = new Float64Array(LUT_SIZE);
+        const cosLUT = new Float64Array(LUT_SIZE);
+        const LUT_FACTOR = LUT_SIZE / (2 * Math.PI);
+
+        for (let i = 0; i < LUT_SIZE; i++) {
+            const angle = (i * 2 * Math.PI) / LUT_SIZE;
+            sinLUT[i] = Math.sin(angle);
+            cosLUT[i] = Math.cos(angle);
+        }
+
+        function lutSin(a) {
+            const val = a * LUT_FACTOR;
+            const idx1 = Math.floor(val);
+            const fract = val - idx1;
+            const idx2 = idx1 + 1;
+            
+            const s1 = sinLUT[idx1 & LUT_MASK];
+            const s2 = sinLUT[idx2 & LUT_MASK];
+            return s1 + fract * (s2 - s1);
+        }
+
+        function lutCos(a) {
+            const val = a * LUT_FACTOR;
+            const idx1 = Math.floor(val);
+            const fract = val - idx1;
+            const idx2 = idx1 + 1;
+            
+            const c1 = cosLUT[idx1 & LUT_MASK];
+            const c2 = cosLUT[idx2 & LUT_MASK];
+            return c1 + fract * (c2 - c1);
+        }
+
+        // 3D Cube Geometry Setup for Medium Level of Detail (LOD 1) (Hugi #13)
+        const cubeVertices = [];
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    cubeVertices.push({ x, y, z });
+                }
+            }
+        }
+        const cubeFaces = [
+            [0, 1, 3, 2],
+            [4, 5, 7, 6],
+            [0, 1, 5, 4],
+            [2, 3, 7, 6],
+            [0, 2, 6, 4],
+            [1, 3, 7, 5]
+        ];
+
+        function rotate3D(p, aXY, aXZ, aYZ) {
+            let x = p.x;
+            let y = p.y;
+            let z = p.z;
+
+            if (aXY !== 0) {
+                let cos = lutCos(aXY), sin = lutSin(aXY);
+                let xNew = x * cos - y * sin;
+                let yNew = x * sin + y * cos;
+                x = xNew; y = yNew;
+            }
+            if (aXZ !== 0) {
+                let cos = lutCos(aXZ), sin = lutSin(aXZ);
+                let xNew = x * cos - z * sin;
+                let zNew = x * sin + z * cos;
+                x = xNew; z = zNew;
+            }
+            if (aYZ !== 0) {
+                let cos = lutCos(aYZ), sin = lutSin(aYZ);
+                let yNew = y * cos - z * sin;
+                let zNew = y * sin + z * cos;
+                y = yNew; z = zNew;
+            }
+
+            return { x, y, z };
+        }
+
+        function rotate4D(p, aXY, aXZ, aXW, aYZ, aYW, aZW) {
+            let x = p.x;
+            let y = p.y;
+            let z = p.z;
+            let w = p.w;
+
+            if (aXY !== 0) {
+                let cos = lutCos(aXY), sin = lutSin(aXY);
+                let xNew = x * cos - y * sin;
+                let yNew = x * sin + y * cos;
+                x = xNew; y = yNew;
+            }
+            if (aXZ !== 0) {
+                let cos = lutCos(aXZ), sin = lutSin(aXZ);
+                let xNew = x * cos - z * sin;
+                let zNew = x * sin + z * cos;
+                x = xNew; z = zNew;
+            }
+            if (aXW !== 0) {
+                let cos = lutCos(aXW), sin = lutSin(aXW);
+                let xNew = x * cos - w * sin;
+                let wNew = x * sin + w * cos;
+                x = xNew; w = wNew;
+            }
+            if (aYZ !== 0) {
+                let cos = lutCos(aYZ), sin = lutSin(aYZ);
+                let yNew = y * cos - z * sin;
+                let zNew = y * sin + z * cos;
+                y = yNew; z = zNew;
+            }
+            if (aYW !== 0) {
+                let cos = lutCos(aYW), sin = lutSin(aYW);
+                let yNew = y * cos - w * sin;
+                let wNew = y * sin + w * cos;
+                y = yNew; w = wNew;
+            }
+            if (aZW !== 0) {
+                let cos = lutCos(aZW), sin = lutSin(aZW);
+                let zNew = z * cos - w * sin;
+                let wNew = z * sin + w * cos;
+                z = zNew; w = wNew;
+            }
+
+            return { x, y, z, w };
+        }
+
+        function project4D(p, distance4D = 2.0) {
+            let denom = distance4D - p.w;
+            if (denom < 0.05) denom = 0.05; // Z-Clipping / Hyper-frustum near plane clipping (Hugi #12)
+            let factor = 1 / denom;
+            return {
+                x: p.x * factor,
+                y: p.y * factor,
+                z: p.z * factor
+            };
+        }
+
+        function drawTesseract4D(time) {
+            let speedMult = 1000 / (yulStorage[103] || 1000);
+            let angleXY = time * 0.00015 * speedMult;
+            let angleXZ = time * 0.00025 * speedMult;
+            let angleXW = time * 0.0006 * speedMult;
+            let angleYZ = time * 0.00035 * speedMult;
+            let angleYW = time * 0.00045 * speedMult;
+            let angleZW = time * 0.0005 * speedMult;
+
+            let fDepth = (yulStorage[104] || 2300) / 1000.0;
+            let audioMod = 0;
+            if (analyser) {
+                let dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                audioMod = sum / dataArray.length / 255.0;
+            }
+            let speakerVol = yulStorage[97] / 63.0;
+            let currentDepth4D = fDepth - speakerVol * 0.3 - audioMod * 0.2;
+            let sizeScale = 250 + speakerVol * 50 + audioMod * 30;
+
+            let projectedPts = [];
+            for (let i = 0; i < 16; i++) {
+                let rotated = rotate4D(tesseractVertices[i], angleXY, angleXZ, angleXW, angleYZ, angleYW, angleZW);
+                let p3d = project4D(rotated, currentDepth4D);
+                let p2d = project({
+                    x: p3d.x * sizeScale,
+                    y: p3d.y * sizeScale + 200, // Float above the grid floor
+                    z: p3d.z * sizeScale
+                });
+                projectedPts.push(p2d);
+            }
+
+            // Depth sorting the 24 square faces for correct painter's algorithm rendering
+            let validFaces = [];
+            for (let i = 0; i < tesseractFaces.length; i++) {
+                let face = tesseractFaces[i];
+                let p1 = projectedPts[face[0]];
+                let p2 = projectedPts[face[1]];
+                let p3 = projectedPts[face[2]];
+                let p4 = projectedPts[face[3]];
+                if (p1 && p2 && p3 && p4) {
+                    let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                    validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                }
+            }
+            validFaces.sort((a, b) => b.depth - a.depth);
+
+            for (let f of validFaces) {
+                let hue = (time * 0.02 + f.index * 15) % 360;
+                let alpha = Math.max(0.02, Math.min(0.20, 800 / f.depth));
+                
+                // Draw filled polygon face
+                ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw edge outlines with glow mapping to depth
+                let strokeAlpha = Math.max(0.1, Math.min(0.7, 1000 / f.depth));
+                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 70%, ${strokeAlpha})`;
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
             }
         }
 
@@ -929,6 +1289,13 @@ Ready to initiate tournament match.</div>
 
             let now = audioCtx.currentTime;
             
+            // Emulate Sound Blaster DMA buffer injection (Scenial #2) by intercepting the background drone
+            if (ambientOsc) {
+                ambientOsc.frequency.setValueAtTime(55, now);
+                ambientOsc.frequency.linearRampToValueAtTime(110 * strength, now + 0.05); // Sabotage frequency/pitch spike
+                ambientOsc.frequency.exponentialRampToValueAtTime(55, now + 0.40); // Smooth recovery
+            }
+
             // Read active synthesizer parameters
             const attack = parseFloat(document.getElementById("synth-attack")?.value || 0.02);
             const decay = parseFloat(document.getElementById("synth-decay")?.value || 0.30);
@@ -938,39 +1305,66 @@ Ready to initiate tournament match.</div>
 
             const totalDuration = attack + decay + release + 0.1;
 
-            // Sub-bass sine wave boom
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-            
-            gain.gain.setValueAtTime(0.5 * strength, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            
-            osc.connect(gain);
-            gain.connect(analyser);
-            osc.start();
-            osc.stop(now + 0.35);
+            if (activeTimbre === "pc_speaker") {
+                // Emulate low-level Auncient Yul virtual hardware register state machine (MusicMaker.yul)
+                // playRealSoundSample(sampleVal) -> sstore(97, and(val, 0x3F))
+                const yulPlayRealSoundSample = (val) => { yulStorage[97] = val & 0x3F; };
+                // peek(97) -> sload(97)
+                const yulPeekSpeaker = () => yulStorage[97];
 
-            // Synthesized timbre sweep based on envelope values
-            let fmOsc = audioCtx.createOscillator();
-            let fmGain = audioCtx.createGain();
-            fmOsc.type = activeTimbre;
-            fmOsc.frequency.setValueAtTime(800 * strength, now);
-            fmOsc.frequency.exponentialRampToValueAtTime(150 * strength, now + attack + decay);
-            
-            // Apply ADSR Envelope
-            fmGain.gain.setValueAtTime(0, now);
-            fmGain.gain.linearRampToValueAtTime(0.25 * strength, now + attack);
-            fmGain.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay);
-            fmGain.gain.setValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay + 0.1);
-            fmGain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay + 0.1 + release);
-            
-            fmOsc.connect(fmGain);
-            fmGain.connect(analyser);
-            fmOsc.start();
-            fmOsc.stop(now + totalDuration);
+                // Write and read speaker state through virtual Yul storage
+                yulPlayRealSoundSample(Math.round(45 * strength));
+                const volume = yulPeekSpeaker() / 63.0;
+
+                // Harsh gated square wave emulation for Auncient PIT 8253 chip
+                let fmOsc = audioCtx.createOscillator();
+                let fmGain = audioCtx.createGain();
+                fmOsc.type = "square";
+                fmOsc.frequency.setValueAtTime(800 * strength, now);
+                
+                fmGain.gain.setValueAtTime(0.25 * volume, now);
+                fmGain.gain.setValueAtTime(0.25 * volume, now + attack + decay + release);
+                fmGain.gain.setValueAtTime(0, now + attack + decay + release + 0.01);
+                
+                fmOsc.connect(fmGain);
+                fmGain.connect(analyser);
+                fmOsc.start();
+                fmOsc.stop(now + attack + decay + release + 0.02);
+            } else {
+                // Sub-bass sine wave boom
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+                
+                gain.gain.setValueAtTime(0.5 * strength, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(analyser);
+                osc.start();
+                osc.stop(now + 0.35);
+
+                // Synthesized timbre sweep based on envelope values
+                let fmOsc = audioCtx.createOscillator();
+                let fmGain = audioCtx.createGain();
+                fmOsc.type = activeTimbre;
+                fmOsc.frequency.setValueAtTime(800 * strength, now);
+                fmOsc.frequency.exponentialRampToValueAtTime(150 * strength, now + attack + decay);
+                
+                // Apply ADSR Envelope
+                fmGain.gain.setValueAtTime(0, now);
+                fmGain.gain.linearRampToValueAtTime(0.25 * strength, now + attack);
+                fmGain.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay);
+                fmGain.gain.setValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay + 0.1);
+                fmGain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay + 0.1 + release);
+                
+                fmOsc.connect(fmGain);
+                fmGain.connect(analyser);
+                fmOsc.start();
+                fmOsc.stop(now + totalDuration);
+            }
         }
 
         // Oscilloscope drawing
@@ -1254,6 +1648,31 @@ Ready to initiate tournament match.</div>
         }
 
         // Bear model definition (3D skeleton nodes)
+        // Quaternion math helper for stable 3D rotation math (Hugi #12)
+        function rotateVectorByQuaternion(v, axis, angle) {
+            let halfAngle = angle / 2;
+            let sin = lutSin(halfAngle);
+            let cos = lutCos(halfAngle);
+            
+            let qx = axis.x * sin;
+            let qy = axis.y * sin;
+            let qz = axis.z * sin;
+            let qw = cos;
+            
+            let vx = v.x, vy = v.y, vz = v.z;
+            
+            let tx = 2 * (qy * vz - qz * vy);
+            let ty = 2 * (qz * vx - qx * vz);
+            let tz = 2 * (qx * vy - qy * vx);
+            
+            let rx = vx + qw * tx + (qy * tz - qz * ty);
+            let ry = vy + qw * ty + (qz * tx - qx * tz);
+            let rz = vz + qw * tz + (qx * ty - qy * tx);
+            
+            return { x: rx, y: ry, z: rz };
+        }
+
+        // Bear model definition (3D skeleton nodes using Quaternion limb rotations)
         function getBearSkeleton(offset3D, scale, angles, pulse, sickness) {
             const { leftArm, rightArm, leftLeg, rightLeg } = angles;
             
@@ -1263,28 +1682,40 @@ Ready to initiate tournament match.</div>
             let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
             let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
 
-            // Arm paw rotations
+            // Arm paw rotations via Quaternions to prevent gimbal lock
+            let armOffsetL = { x: 0, y: -90 * scale, z: 0 };
+            armOffsetL = rotateVectorByQuaternion(armOffsetL, { x: 0, y: 0, z: 1 }, leftArm);
+            armOffsetL = rotateVectorByQuaternion(armOffsetL, { x: 1, y: 0, z: 0 }, Math.sin(pulse * 0.5) * 0.22);
             let lPaw = new Point3D(
-                lShoulder.x + Math.sin(leftArm) * 90 * scale,
-                lShoulder.y - Math.cos(leftArm) * 90 * scale,
-                lShoulder.z + Math.sin(pulse * 0.5) * 20 * scale
-            );
-            let rPaw = new Point3D(
-                rShoulder.x - Math.sin(rightArm) * 90 * scale,
-                rShoulder.y - Math.cos(rightArm) * 90 * scale,
-                rShoulder.z - Math.sin(pulse * 0.5) * 20 * scale
+                lShoulder.x + armOffsetL.x,
+                lShoulder.y + armOffsetL.y,
+                lShoulder.z + armOffsetL.z
             );
 
-            // Leg foot rotations
-            let lFoot = new Point3D(
-                offset3D.x - 50 * scale + Math.sin(leftLeg) * 80 * scale,
-                midHip.y - Math.cos(leftLeg) * 80 * scale,
-                offset3D.z + 10 * scale
+            let armOffsetR = { x: 0, y: -90 * scale, z: 0 };
+            armOffsetR = rotateVectorByQuaternion(armOffsetR, { x: 0, y: 0, z: 1 }, -rightArm);
+            armOffsetR = rotateVectorByQuaternion(armOffsetR, { x: 1, y: 0, z: 0 }, -Math.sin(pulse * 0.5) * 0.22);
+            let rPaw = new Point3D(
+                rShoulder.x + armOffsetR.x,
+                rShoulder.y + armOffsetR.y,
+                rShoulder.z + armOffsetR.z
             );
+
+            // Leg foot rotations via Quaternions
+            let legOffsetL = { x: 0, y: -80 * scale, z: 10 * scale };
+            legOffsetL = rotateVectorByQuaternion(legOffsetL, { x: 0, y: 0, z: 1 }, leftLeg);
+            let lFoot = new Point3D(
+                offset3D.x - 50 * scale + legOffsetL.x,
+                midHip.y + legOffsetL.y,
+                offset3D.z + legOffsetL.z
+            );
+
+            let legOffsetR = { x: 0, y: -80 * scale, z: -10 * scale };
+            legOffsetR = rotateVectorByQuaternion(legOffsetR, { x: 0, y: 0, z: 1 }, -rightLeg);
             let rFoot = new Point3D(
-                offset3D.x + 50 * scale - Math.sin(rightLeg) * 80 * scale,
-                midHip.y - Math.cos(rightLeg) * 80 * scale,
-                offset3D.z - 10 * scale
+                offset3D.x + 50 * scale + legOffsetR.x,
+                midHip.y + legOffsetR.y,
+                offset3D.z + legOffsetR.z
             );
 
             return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
@@ -1312,6 +1743,174 @@ Ready to initiate tournament match.</div>
             ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
+        }
+
+        // Render a localized 4D Tesseract joint representing a genetic node
+        // Render a localized 4D Tesseract joint representing a genetic node (LOD optimized)
+        function drawTesseractJoint(p3d, radius, baseColor, time, jointIndex, sickness = 0) {
+            let projCenter = project(p3d);
+            if (!projCenter) return; // Behind camera clipping
+            
+            let depth = projCenter.depth;
+            
+            // LOD 2: Low Detail (Far away)
+            // Render a single simple volumetric circle, bypassing all 3D/4D calculations
+            if (depth >= 2200) {
+                let size = (radius * camera.fov) / depth;
+                if (size < 0.5) return; // Too small to render
+                
+                let dx = 0, dy = 0;
+                if (sickness > 0.05) {
+                    let jitterScale = size * 0.3 * sickness;
+                    dx = Math.sin(time * 0.05 + jointIndex) * jitterScale;
+                    dy = Math.cos(time * 0.04 + jointIndex) * jitterScale;
+                }
+                
+                ctx.beginPath();
+                ctx.arc(projCenter.x + dx, projCenter.y + dy, size * (1 - sickness * 0.2), 0, Math.PI * 2);
+                
+                let alpha = Math.max(0.01, Math.min(0.12, 800 / depth));
+                ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                ctx.fill();
+                
+                let strokeAlpha = Math.max(0.05, Math.min(0.4, 800 / depth));
+                ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+                return;
+            }
+
+            // WinchesterMQ port mapping per tesseract joint index (bypassing global memory sharing)
+            let baseRegisterOffset = jointIndex * 10;
+            let speedDamping = yulStorage[103 + baseRegisterOffset] || yulStorage[103] || 1000;
+            let speedMult = 1000 / speedDamping;
+            let angleXY = time * 0.00015 * speedMult + jointIndex * 0.25;
+            let angleXZ = time * 0.00025 * speedMult + jointIndex * 0.15;
+            let angleYZ = time * 0.00035 * speedMult;
+
+            // LOD 1: Medium Detail (Medium distance)
+            // Render a simplified 3D cube (8 vertices, 6 faces)
+            if (depth >= 1200) {
+                let projectedPts = [];
+                for (let i = 0; i < 8; i++) {
+                    let v = cubeVertices[i];
+                    let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65 };
+                    if (sickness > 0.05) {
+                        let jitterScale = radius * 0.12 * sickness;
+                        localV.x += Math.sin(time * 0.05 + i) * jitterScale;
+                        localV.y += Math.cos(time * 0.04 + i) * jitterScale;
+                        localV.z += Math.sin(time * 0.03 - i) * jitterScale;
+                    }
+                    let rotated = rotate3D(localV, angleXY, angleXZ, angleYZ);
+                    let final3D = {
+                        x: p3d.x + rotated.x,
+                        y: p3d.y + rotated.y,
+                        z: p3d.z + rotated.z
+                    };
+                    projectedPts.push(project(final3D));
+                }
+
+                let validFaces = [];
+                for (let i = 0; i < cubeFaces.length; i++) {
+                    let face = cubeFaces[i];
+                    let p1 = projectedPts[face[0]];
+                    let p2 = projectedPts[face[1]];
+                    let p3 = projectedPts[face[2]];
+                    let p4 = projectedPts[face[3]];
+                    if (p1 && p2 && p3 && p4) {
+                        let cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                        if (cp < 0) continue; // Back-face culling (Hugi #15)
+                        let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                        validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                    }
+                }
+                validFaces.sort((a, b) => b.depth - a.depth);
+
+                for (let f of validFaces) {
+                    let alpha = Math.max(0.01, Math.min(0.15, 800 / f.depth));
+                    ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                    ctx.beginPath();
+                    ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                    ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                    ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                    ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    let strokeAlpha = Math.max(0.05, Math.min(0.5, 800 / f.depth));
+                    ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            // LOD 0: High Detail (Close distance)
+            // Render the full 4D tesseract (16 vertices, 24 faces)
+            let angleXW = time * 0.0006 * speedMult;
+            let angleYW = time * 0.00045 * speedMult + jointIndex * 0.1;
+            let angleZW = time * 0.0005 * speedMult;
+
+            let projectedPts = [];
+            for (let i = 0; i < 16; i++) {
+                let v = tesseractVertices[i];
+                let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65, w: v.w * radius * 0.65 };
+                if (sickness > 0.05) {
+                    let jitterScale = radius * 0.12 * sickness;
+                    localV.x += Math.sin(time * 0.05 + i) * jitterScale;
+                    localV.y += Math.cos(time * 0.04 + i) * jitterScale;
+                    localV.z += Math.sin(time * 0.03 - i) * jitterScale;
+                    localV.w += Math.cos(time * 0.02 + i) * jitterScale;
+                }
+                let rotated = rotate4D(localV, angleXY, angleXZ, angleXW, angleYZ, angleYW, angleZW);
+                
+                // Focal depth control per tesseract joint via WinchesterMQ segment offsets
+                let focalDepthVal = yulStorage[104 + baseRegisterOffset] || yulStorage[104] || 2300;
+                let denom = (focalDepthVal / 1000.0) - rotated.w / (radius * 0.65 + 0.01);
+                if (denom < 0.05) denom = 0.05; // Z-Clipping / Hyper-frustum near plane clipping (Hugi #12)
+                let factor = 1 / denom;
+                let p3dLocal = { x: rotated.x * factor, y: rotated.y * factor, z: rotated.z * factor };
+                
+                let final3D = {
+                    x: p3d.x + p3dLocal.x,
+                    y: p3d.y + p3dLocal.y,
+                    z: p3d.z + p3dLocal.z
+                };
+                projectedPts.push(project(final3D));
+            }
+
+            let validFaces = [];
+            for (let i = 0; i < tesseractFaces.length; i++) {
+                let face = tesseractFaces[i];
+                let p1 = projectedPts[face[0]];
+                let p2 = projectedPts[face[1]];
+                let p3 = projectedPts[face[2]];
+                let p4 = projectedPts[face[3]];
+                if (p1 && p2 && p3 && p4) {
+                    let cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                    if (cp < 0) continue; // Back-face culling (Hugi #15)
+                    let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                    validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                }
+            }
+            validFaces.sort((a, b) => b.depth - a.depth);
+
+            for (let f of validFaces) {
+                let alpha = Math.max(0.01, Math.min(0.15, 800 / f.depth));
+                ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                ctx.beginPath();
+                ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                ctx.closePath();
+                ctx.fill();
+
+                let strokeAlpha = Math.max(0.05, Math.min(0.5, 800 / f.depth));
+                ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+            }
         }
 
         // Shaded 3D Capsule Helper (Limbs & Torso)
@@ -1575,24 +2174,24 @@ Ready to initiate tournament match.</div>
                 // 2. Draw Torso (Body capsule)
                 drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
 
-                // 3. Draw Ears (Spheres offset relative to head)
+                // 3. Draw Ears (Tesseracts offset relative to head)
                 let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
                 let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
-                drawVolumetricSphere(lEar, 15 * scale * earScale, baseCol);
-                drawVolumetricSphere(rEar, 15 * scale * earScale, baseCol);
+                drawTesseractJoint(lEar, 15 * scale * earScale, baseCol, time, 1, sickness);
+                drawTesseractJoint(rEar, 15 * scale * earScale, baseCol, time, 2, sickness);
 
                 // 4. Draw Head
-                drawVolumetricSphere(joints.head, 38 * scale * headScale, baseCol);
+                drawTesseractJoint(joints.head, 38 * scale * headScale, baseCol, time, 3, sickness);
 
                 // 5. Draw Snout & Eyes
                 let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
-                drawVolumetricSphere(snout, 12 * scale * muzzleScale, "rgba(255,255,255,0.95)"); 
+                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness); 
 
                 // 6. Draw Paws & Feet
-                drawVolumetricSphere(joints.lPaw, 14 * scale * armWidth, baseCol);
-                drawVolumetricSphere(joints.rPaw, 14 * scale * armWidth, baseCol);
-                drawVolumetricSphere(joints.lFoot, 16 * scale * legWidth, baseCol);
-                drawVolumetricSphere(joints.rFoot, 16 * scale * legWidth, baseCol);
+                drawTesseractJoint(joints.lPaw, 14 * scale * armWidth, baseCol, time, 5, sickness);
+                drawTesseractJoint(joints.rPaw, 14 * scale * armWidth, baseCol, time, 6, sickness);
+                drawTesseractJoint(joints.lFoot, 16 * scale * legWidth, baseCol, time, 7, sickness);
+                drawTesseractJoint(joints.rFoot, 16 * scale * legWidth, baseCol, time, 8, sickness);
             }
 
             // Draw procedural fur fluffiness overlay
@@ -1625,11 +2224,14 @@ Ready to initiate tournament match.</div>
             // Calculate parasitic ammeter load damping from ammeterState
             const ammeter_damping = 1.0 / (1.0 + (ammeterState ? ammeterState.theta : 0.0) * 1.5);
             
+            // VGA Color-Cycling Palette Fade Simulation (Auncient Fuzzby #0 VGA port rasterbar cycle)
+            let hue = (timeMs * 0.05) % 360;
+            
             // Draw grid lines modulated by Bessel gravity wave
             for (let i = -gridLimit; i <= gridLimit; i += step) {
                 // Parallel to Z-axis
-                ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
-                ctx.shadowColor = "rgba(0, 240, 255, 0.3)";
+                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.25)`;
+                ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.3)`;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 for (let j = -gridLimit; j <= gridLimit; j += 40) {
@@ -1687,9 +2289,9 @@ Ready to initiate tournament match.</div>
             { id: "b4", name: "Atropa Kr0wZ", type: "MUTATION", hp: 100, spike: 0.95, phase: 1.95, sick: 0.75, pos: new Point3D(280, 0, 0), color: { head: "rgba(255, 234, 0, 0.85)", bone: "#fff", web: "rgba(255, 234, 0, 0.3)" } }
         ];
 
-        let fighter1 = participants[0];
-        let fighter2 = participants[1];
-        let matchActive = false;
+        fighter1 = participants[0];
+        fighter2 = participants[1];
+        matchActive = false;
         let time = 0;
         let sdImage = null;
 
@@ -1888,6 +2490,11 @@ Ready to initiate tournament match.</div>
             const timestamp = new Date().toLocaleTimeString();
             consoleBox.innerHTML += `\n[${timestamp}] ${msg}`;
             consoleBox.scrollTop = consoleBox.scrollHeight;
+            fetch('/api/dilemma-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event: 'CLIENT_LOG', source: 'Browser', details: msg })
+            }).catch(() => {});
         }
 
         // Camera control event bindings
@@ -2130,6 +2737,9 @@ Ready to initiate tournament match.</div>
 
             // Render 3D combat particles
             updateAndDrawParticles();
+
+            // Render 4D Tesseract (Hypercube) using Auncient perspective projection
+            drawTesseract4D(time);
 
             updateUI();
             requestAnimationFrame(loop);
@@ -2426,6 +3036,45 @@ Ready to initiate tournament match.</div>
         });
         document.getElementById("synth-release").addEventListener("input", (e) => {
             document.getElementById("val-release").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        
+        // Preset select handler mapping Fuzzby #0 & Wilby #1 codes directly into scales & ADSR
+        document.getElementById("preset-select").addEventListener("change", (e) => {
+            const preset = e.target.value;
+            let traits = null;
+            let audioTraits = null;
+            if (preset === "fuzzby_mcd") {
+                traits = { head: 1.40, torso: 1.30, ears: 1.00, muzzle: 1.00, arms: 1.00, legs: 1.00, fur: 1.20 };
+                audioTraits = { attack: 0.10, decay: 0.80, sustain: 0.50, release: 0.60, timbre: "sawtooth" };
+                logEvent("🧬 Preset: Loaded MCD Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "fuzzby_savage") {
+                traits = { head: 1.00, torso: 1.00, ears: 1.50, muzzle: 1.20, arms: 0.90, legs: 0.90, fur: 0.80 };
+                audioTraits = { attack: 0.02, decay: 0.15, sustain: 0.20, release: 0.10, timbre: "square" };
+                logEvent("🧬 Preset: Loaded Savage Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "fuzzby_dsk") {
+                traits = { head: 1.00, torso: 1.00, ears: 1.00, muzzle: 1.00, arms: 1.40, legs: 1.40, fur: 1.50 };
+                audioTraits = { attack: 0.40, decay: 1.00, sustain: 0.80, release: 0.80, timbre: "sine" };
+                logEvent("🧬 Preset: Loaded DSK Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "wilby_spock") {
+                traits = { head: 0.70, torso: 0.80, ears: 0.60, muzzle: 0.70, arms: 0.75, legs: 0.75, fur: 0.50 };
+                audioTraits = { attack: 0.005, decay: 0.05, sustain: 0.00, release: 0.05, timbre: "square" };
+                logEvent("🧬 Preset: Loaded Spock Wild Bits (Wilby #1) 4k characteristics.");
+            } else if (preset === "wilby_spock2") {
+                traits = { head: 0.85, torso: 0.90, ears: 0.80, muzzle: 0.75, arms: 0.85, legs: 0.85, fur: 0.70 };
+                audioTraits = { attack: 0.01, decay: 0.10, sustain: 0.30, release: 0.08, timbre: "triangle" };
+                logEvent("🧬 Preset: Loaded Spock RLE/VGA (Wilby #2) size-coding characteristics.");
+            } else if (preset === "wilby_spock3") {
+                traits = { head: 1.10, torso: 1.00, ears: 0.90, muzzle: 0.95, arms: 1.10, legs: 1.10, fur: 1.00 };
+                audioTraits = { attack: 0.20, decay: 0.40, sustain: 0.60, release: 0.30, timbre: "sine" };
+                logEvent("🧬 Preset: Loaded Spock SMC/FPU (Wilby #3) procedural math sweeps.");
+            } else if (preset === "wilby_ritz") {
+                traits = { head: 1.25, torso: 1.15, ears: 1.10, muzzle: 1.05, arms: 1.20, legs: 1.20, fur: 0.60 };
+                audioTraits = { attack: 0.05, decay: 0.25, sustain: 0.40, release: 0.20, timbre: "sawtooth" };
+                logEvent("🧬 Preset: Loaded Ritz (Wilby #4) Auncient 4D Tesseract projection characteristics.");
+            }
+            if (traits) {
+                restoreDnaTraits(traits, audioTraits);
+            }
         });
 
         // Performance Diagnostics Drawer Logic
