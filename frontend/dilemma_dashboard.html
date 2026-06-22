@@ -488,7 +488,12 @@
                 return;
             }
             container.innerHTML = "";
-            const sortedTokens = Object.values(tokenAccumulators).sort((a, b) => b.count - a.count);
+            const sortedTokens = Object.values(tokenAccumulators).sort((a, b) => {
+                if (b.count !== a.count) {
+                    return b.count - a.count;
+                }
+                return (b.recv + b.sent) - (a.recv + a.sent);
+            });
             sortedTokens.forEach(token => {
                 const classification = getClassification(token);
                 const classLower = classification.toLowerCase();
@@ -705,6 +710,47 @@
             }
         }
 
+        async function fetchQingsAndPrices() {
+            try {
+                const res = await fetch("/api/nonukes-cards");
+                if (res.ok) {
+                    const cards = await res.json();
+                    
+                    cards.forEach(card => {
+                        const symbol = card.symbol.toUpperCase();
+                        const price = parseFloat(card.market.priceUsd);
+                        
+                        // Update dynamic price info
+                        if (tokenAccumulators[symbol]) {
+                            if (price > 0) tokenAccumulators[symbol].price = price;
+                        } else if (price > 0) {
+                            tokenAccumulators[symbol] = { symbol: symbol, sent: 0, recv: 0, count: 0, price: price };
+                        }
+                        
+                        // Populate actual Qing assets
+                        if (card.qingExists && card.qingAddress) {
+                            const qingName = card.name;
+                            if (!chatAccumulators[qingName] || chatAccumulators[qingName].lastUser === "None") {
+                                chatAccumulators[qingName] = {
+                                    name: qingName,
+                                    messages: 0,
+                                    users: new Set(),
+                                    totalAura: card.market.liquidityUsd ? Math.round(card.market.liquidityUsd) : 0,
+                                    lastUser: "System",
+                                    lastMsg: `Active at ${card.qingAddress.substring(0, 10)}...`
+                                };
+                            }
+                        }
+                    });
+                    
+                    renderAccumulators();
+                    renderChatAccumulators();
+                }
+            } catch (e) {
+                console.error("Error fetching cards and prices:", e);
+            }
+        }
+
         // Poll for logs every 2 seconds
         renderAccumulators();
         renderChatAccumulators();
@@ -714,6 +760,10 @@
         // Poll hypervisor status every 5 seconds
         updateHypervisorStatus();
         setInterval(updateHypervisorStatus, 5000);
+
+        // Fetch real-time prices & Qings every 10 seconds
+        fetchQingsAndPrices();
+        setInterval(fetchQingsAndPrices, 10000);
 
         animateGait();
     </script>
