@@ -10,3 +10,4 @@ This registry tracks the active windows initiated by the system and their respec
 | YouTube Sub-Browser | Google Chrome (Puppeteer) | **Headless** (Hidden) | Loads and controls YouTube videos dynamically inside the dashboard frame. |
 | `tsfi2` Compositor | Vulkan/Wayland Window | **Headed** (Visible) | Custom display compositor socket `wayland-tsfi` for rendering experimental visual demos. |
 | Demoscene Firefox | Firefox-ESR (Wayland client) | **Headed** (Visible) | Renders `teddy_bear_tournament_3d.html` showing the complex 4D Tesseract and 3D fighter bears. |
+
