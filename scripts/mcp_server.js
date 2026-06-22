@@ -61,6 +61,45 @@ const tools = [
                 }
             }
         }
+    },
+    {
+        name: "get_prices",
+        description: "Retrieve stable and regular price data for PulseChain tokens from the local price cache.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                symbol: {
+                    type: "string",
+                    description: "Optional symbol filter to find a specific token's price (e.g. 'WPLS')"
+                }
+            }
+        }
+    },
+    {
+        name: "log_youtube_telemetry",
+        description: "Log played YouTube video telemetry (video ID and title) to the persistent record.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                videoId: {
+                    type: "string",
+                    description: "The YouTube video ID (the v= parameter value)"
+                },
+                title: {
+                    type: "string",
+                    description: "The title of the YouTube video"
+                }
+            },
+            required: ["videoId", "title"]
+        }
+    },
+    {
+        name: "get_youtube_telemetry",
+        description: "Retrieve the list of logged YouTube video playback records.",
+        inputSchema: {
+            type: "object",
+            properties: {}
+        }
     }
 ];
 
@@ -217,6 +256,146 @@ async function handleRequest(req) {
                             {
                                 type: "text",
                                 text: `Failed to retrieve QINGs: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "get_prices") {
+                try {
+                    const args = params.arguments || {};
+                    const symbolFilter = args.symbol ? args.symbol.toUpperCase() : null;
+                    const cachePath = path.join(__dirname, "../price_cache.json");
+                    const prices = [];
+                    
+                    if (fs.existsSync(cachePath)) {
+                        const cacheData = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+                        for (const [addr, info] of Object.entries(cacheData)) {
+                            if (info && typeof info === "object" && info.symbol) {
+                                if (!symbolFilter || info.symbol.toUpperCase().includes(symbolFilter)) {
+                                    prices.push({
+                                        address: addr,
+                                        symbol: info.symbol,
+                                        name: info.name || "Unknown",
+                                        priceUsd: info.price,
+                                        source: "oracle_cache"
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    const marketPath = path.join(__dirname, "../tmp/market_cache.json");
+                    if (fs.existsSync(marketPath)) {
+                        const marketData = JSON.parse(fs.readFileSync(marketPath, "utf8"));
+                        if (marketData && marketData.data) {
+                            for (const [addr, info] of Object.entries(marketData.data)) {
+                                let symbol = "UNKNOWN";
+                                let name = "Unknown";
+                                const cardPath = path.join(__dirname, `../solidity/dysnomia/domain/data/${addr}.json`);
+                                if (fs.existsSync(cardPath)) {
+                                    try {
+                                        const card = JSON.parse(fs.readFileSync(cardPath, "utf8"));
+                                        symbol = card.symbol || symbol;
+                                        name = card.name || name;
+                                    } catch (e) {}
+                                }
+                                if (!symbolFilter || symbol.toUpperCase().includes(symbolFilter)) {
+                                    prices.push({
+                                        address: addr,
+                                        symbol: symbol,
+                                        name: name,
+                                        priceUsd: parseFloat(info.priceUsd || "0"),
+                                        liquidityUsd: info.liquidityUsd || 0,
+                                        source: "market_reserves"
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(prices, null, 2)
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to retrieve prices: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "log_youtube_telemetry") {
+                try {
+                    const args = params.arguments || {};
+                    const { videoId, title } = args;
+                    if (!videoId || !title) {
+                        throw new Error("Missing videoId or title parameter");
+                    }
+                    const recordPath = path.join(__dirname, "../tmp/youtube_telemetry.json");
+                    let records = [];
+                    if (fs.existsSync(recordPath)) {
+                        try {
+                            records = JSON.parse(fs.readFileSync(recordPath, "utf8"));
+                        } catch (e) {
+                            records = [];
+                        }
+                    }
+                    records.push({
+                        timestamp: Date.now(),
+                        videoId,
+                        title
+                    });
+                    fs.mkdirSync(path.dirname(recordPath), { recursive: true });
+                    fs.writeFileSync(recordPath, JSON.stringify(records, null, 2), "utf8");
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Successfully logged YouTube video: "${title}" (v=${videoId})`
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to log YouTube video: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "get_youtube_telemetry") {
+                try {
+                    const recordPath = path.join(__dirname, "../tmp/youtube_telemetry.json");
+                    let records = [];
+                    if (fs.existsSync(recordPath)) {
+                        records = JSON.parse(fs.readFileSync(recordPath, "utf8"));
+                    }
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(records, null, 2)
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to retrieve YouTube telemetry: ${err.message}`
                             }
                         ]
                     });

@@ -363,7 +363,7 @@ async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd)
                     }
                 }
                 
-                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62";
+                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
                 if (fileToken0 === nonukesAddr) {
                     reserveNoNukes = fileR0;
                     reservePartner = fileR1 * Math.pow(10, 18 - partnerDecimals);
@@ -696,7 +696,7 @@ const server = http.createServer(async (req, res) => {
 
     // Proxy NoNukes dashboard requests to python server on port 8080
     if (
-        req.url.startsWith("/api/nonukes") || 
+        req.url.startsWith("/api/nonukes/") || 
         req.url.startsWith("/api/data") || 
         req.url.startsWith("/api/pools") || 
         req.url.startsWith("/api/ignore")
@@ -1197,6 +1197,17 @@ function processAnnotationReplies(content, file) {
                 try {
                     performLoreAnalysis();
                 } catch (e) {}
+
+                // Auto-commit saved lore file safely without staging any binaries
+                try {
+                    const { execSync } = require("child_process");
+                    execSync(`git add lore/${cleanName}`, { cwd: path.join(__dirname, "..") });
+                    execSync(`git commit -m "Auto-commit lore: ${cleanName}"`, { cwd: path.join(__dirname, "..") });
+                    console.log(`[SERVER] Auto-committed lore/${cleanName}`);
+                } catch (gitErr) {
+                    console.error("[SERVER] Failed to auto-commit lore file:", gitErr.message);
+                }
+
                 res.writeHead(200, {
                     "Content-Type": "application/json",
                     "Access-Control-Allow-Origin": "*"
@@ -1369,6 +1380,44 @@ function processAnnotationReplies(content, file) {
                     details: data.details || ""
                 });
                 if (dilemmaLog.length > 500) dilemmaLog.shift();
+
+                // Automatically capture YouTube telemetry if logged
+                let isYoutube = false;
+                let videoId = "";
+                let title = "";
+                
+                if (data.event && data.event.startsWith("YOUTUBE:")) {
+                    isYoutube = true;
+                    videoId = data.event.substring(8).trim();
+                    title = data.details || "Unknown YouTube Video";
+                } else if (data.details && (data.details.includes("youtube.com/watch") || data.details.includes("youtu.be/"))) {
+                    isYoutube = true;
+                    const url = data.details;
+                    const match = url.match(/(?:v=|\/)([\w-]{11})(?:\?|&|$)/);
+                    videoId = match ? match[1] : "unknown";
+                    title = data.event || "YouTube Playback";
+                }
+                
+                if (isYoutube && videoId) {
+                    const recordPath = path.join(__dirname, "../tmp/youtube_telemetry.json");
+                    let records = [];
+                    if (fs.existsSync(recordPath)) {
+                        try {
+                            records = JSON.parse(fs.readFileSync(recordPath, "utf8"));
+                        } catch (e) {
+                            records = [];
+                        }
+                    }
+                    records.push({
+                        timestamp: Date.now(),
+                        videoId,
+                        title
+                    });
+                    fs.mkdirSync(path.dirname(recordPath), { recursive: true });
+                    fs.writeFileSync(recordPath, JSON.stringify(records, null, 2), "utf8");
+                    console.log(`[SERVER] Telemetry logged: YouTube video "${title}" (v=${videoId})`);
+                }
+
                 res.writeHead(200, { 
                     "Content-Type": "application/json", 
                     "Access-Control-Allow-Origin": "*" 
