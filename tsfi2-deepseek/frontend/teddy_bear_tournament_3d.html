@@ -1312,24 +1312,89 @@ Ready to initiate tournament match.</div>
                 // peek(97) -> sload(97)
                 const yulPeekSpeaker = () => yulStorage[97];
 
-                // Write and read speaker state through virtual Yul storage
-                yulPlayRealSoundSample(Math.round(45 * strength));
+                // Procedural Sound Clip generator from musicMaker.yul (Clip 1 & Clip 3)
+                // Use Clip 3 ("Ouch!" speech indicator) for harder hits, Clip 1 ("Tee Hit") for normal hits
+                const clipId = strength > 1.25 ? 3 : 1;
+                
+                const generateAssemblySample = (id) => {
+                    let samples = [];
+                    if (id === 1) {
+                        let seed = 0xABCDEF12;
+                        for (let i = 0; i < 800; i++) {
+                            let sample = 0;
+                            if (i < 80) {
+                                let p = i % 2;
+                                let vol = Math.floor(((80 - i) * 63) / 80);
+                                if (p) sample = vol;
+                                seed = (Math.imul(seed, 1103515245) + 12345) | 0;
+                                let click = Math.floor((seed & 0x3F) / 4);
+                                sample += click;
+                                if (sample > 63) sample = 63;
+                            } else if (i < 400) {
+                                let p = Math.floor(i / 2) % 2;
+                                let vol = Math.floor(((400 - i) * 35) / 320);
+                                if (p) sample = vol;
+                            } else if (i < 800) {
+                                let p = Math.floor(i / 4) % 2;
+                                let vol = Math.floor(((800 - i) * 15) / 400);
+                                if (p) sample = vol;
+                            }
+                            samples.push(sample);
+                        }
+                    } else if (id === 3) {
+                        let seed = 0x99887766;
+                        for (let i = 0; i < 1600; i++) {
+                            let sample = 0;
+                            if (i < 600) {
+                                let period = 4 + Math.floor((i * 3) / 600);
+                                let p = Math.floor(i / period) % 2;
+                                if (p) sample = 45;
+                            } else if (i < 1100) {
+                                let p = Math.floor(i / 7) % 2;
+                                if (p) sample = 30;
+                            } else if (i < 1600) {
+                                seed = (Math.imul(seed, 1103515245) + 12345) | 0;
+                                sample = seed & 0x27;
+                            }
+                            samples.push(sample);
+                        }
+                    }
+                    return samples;
+                };
+
+                const rawSamples = generateAssemblySample(clipId);
+
+                // Emulate low-level sequential write/read speaker state register update loop
+                let sampleIndex = 0;
+                const updateInterval = setInterval(() => {
+                    if (sampleIndex < rawSamples.length) {
+                        yulPlayRealSoundSample(rawSamples[sampleIndex]);
+                        sampleIndex++;
+                    } else {
+                        clearInterval(updateInterval);
+                    }
+                }, 1);
+
                 const volume = yulPeekSpeaker() / 63.0;
 
-                // Harsh gated square wave emulation for Auncient PIT 8253 chip
-                let fmOsc = audioCtx.createOscillator();
-                let fmGain = audioCtx.createGain();
-                fmOsc.type = "square";
-                fmOsc.frequency.setValueAtTime(800 * strength, now);
-                
-                fmGain.gain.setValueAtTime(0.25 * volume, now);
-                fmGain.gain.setValueAtTime(0.25 * volume, now + attack + decay + release);
-                fmGain.gain.setValueAtTime(0, now + attack + decay + release + 0.01);
-                
-                fmOsc.connect(fmGain);
-                fmGain.connect(analyser);
-                fmOsc.start();
-                fmOsc.stop(now + attack + decay + release + 0.02);
+                // Procedural audio node playback via Web Audio API using AudioBuffer
+                const sampleRate = 11025; // standard retro speech/audio sample rate
+                const buffer = audioCtx.createBuffer(1, rawSamples.length, sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < rawSamples.length; i++) {
+                    data[i] = ((rawSamples[i] / 31.5) - 1.0) * 0.45 * volume * strength;
+                }
+
+                let source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(3200, now); // Emulate low-level PC speaker frequency limits
+
+                source.connect(filter);
+                filter.connect(analyser);
+                source.start(now);
             } else {
                 // Sub-bass sine wave boom
                 let osc = audioCtx.createOscillator();
@@ -1795,10 +1860,11 @@ Ready to initiate tournament match.</div>
                     let v = cubeVertices[i];
                     let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65 };
                     if (sickness > 0.05) {
-                        let jitterScale = radius * 0.12 * sickness;
-                        localV.x += Math.sin(time * 0.05 + i) * jitterScale;
-                        localV.y += Math.cos(time * 0.04 + i) * jitterScale;
-                        localV.z += Math.sin(time * 0.03 - i) * jitterScale;
+                        let shiverTime = time * (0.05 + sickness * 0.15);
+                        let jitterScale = radius * 0.14 * sickness;
+                        localV.x += Math.sin(shiverTime + i) * jitterScale;
+                        localV.y += Math.cos(shiverTime * 0.8 + i) * jitterScale;
+                        localV.z += Math.sin(shiverTime * 0.6 - i) * jitterScale;
                     }
                     let rotated = rotate3D(localV, angleXY, angleXZ, angleYZ);
                     let final3D = {
@@ -1855,11 +1921,12 @@ Ready to initiate tournament match.</div>
                 let v = tesseractVertices[i];
                 let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65, w: v.w * radius * 0.65 };
                 if (sickness > 0.05) {
-                    let jitterScale = radius * 0.12 * sickness;
-                    localV.x += Math.sin(time * 0.05 + i) * jitterScale;
-                    localV.y += Math.cos(time * 0.04 + i) * jitterScale;
-                    localV.z += Math.sin(time * 0.03 - i) * jitterScale;
-                    localV.w += Math.cos(time * 0.02 + i) * jitterScale;
+                    let shiverTime = time * (0.05 + sickness * 0.15);
+                    let jitterScale = radius * 0.14 * sickness;
+                    localV.x += Math.sin(shiverTime + i) * jitterScale;
+                    localV.y += Math.cos(shiverTime * 0.8 + i) * jitterScale;
+                    localV.z += Math.sin(shiverTime * 0.6 - i) * jitterScale;
+                    localV.w = (localV.w * (1 - sickness * 0.35)) + Math.cos(shiverTime * 0.4 + i) * jitterScale;
                 }
                 let rotated = rotate4D(localV, angleXY, angleXZ, angleXW, angleYZ, angleYW, angleZW);
                 
