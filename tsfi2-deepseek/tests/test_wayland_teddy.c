@@ -299,8 +299,10 @@ void render_sick_teddy_bear(uint32_t *px, int w, int h, int frame) {
         particles[i].pw = temp_w;
     }
     
-    // --- Constraint & Collision Resolution (8 iterations) ---
+    // --- Constraint & Collision Resolution (Adaptive iterations up to 8) ---
     for (int iter = 0; iter < 8; iter++) {
+        float max_error = 0.0f;
+
         // Resolve Stick-to-Obstacle Collisions across all loaded obstacles
         for (int i = 0; i < NUM_CONSTRAINTS; i++) {
             for (int j = 0; j < NUM_OBSTACLES; j++) {
@@ -320,6 +322,10 @@ void render_sick_teddy_bear(uint32_t *px, int w, int h, int frame) {
             if (dist == 0.0f) continue;
             
             float diff = c.target_dist - dist;
+            float abs_diff = fabsf(diff);
+            if (abs_diff > max_error) {
+                max_error = abs_diff;
+            }
             
             // Mass ratios: Bone (0, 1) has infinite mass relative to cloth (>= 2)
             float factor_p1 = 0.5f;
@@ -351,6 +357,11 @@ void render_sick_teddy_bear(uint32_t *px, int w, int h, int frame) {
         float cy = (particles[0].y + particles[1].y) * 0.5f;
         particles[0].x -= cx; particles[0].y -= cy;
         particles[1].x -= cx; particles[1].y -= cy;
+
+        // Adaptive early exit if error decays below threshold (Jakobsen 2001)
+        if (max_error < 0.005f) {
+            break;
+        }
     }
     
     // --- 5. Draw Morphing Terrain Line ---
