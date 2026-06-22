@@ -269,11 +269,14 @@
         </header>
 
         <div class="status-container">
-            <div class="status-pill">
-                <strong>WinchesterMQ Broker:</strong> Active (127.0.0.1:8545)
+            <div class="status-pill" id="status-dapp">
+                <strong>HTTP DApp:</strong> <span style="color: #ff5555;">Offline</span>
             </div>
-            <div class="status-pill">
-                <strong>ZMM VM MCP:</strong> Port 10042
+            <div class="status-pill" id="status-mcp">
+                <strong>ZMM VM MCP:</strong> <span style="color: #ff5555;">Offline</span>
+            </div>
+            <div class="status-pill" id="status-scanner">
+                <strong>PulseX Scanner:</strong> <span style="color: #ff5555;">Offline</span>
             </div>
         </div>
 
@@ -684,11 +687,35 @@
             requestAnimationFrame(animateGait);
         }
 
+        async function updateHypervisorStatus() {
+            try {
+                const res = await fetch("/api/hypervisor-status");
+                if (res.ok) {
+                    const data = await res.json();
+                    const s = data.services;
+                    
+                    document.getElementById("status-dapp").innerHTML = `<strong>HTTP DApp:</strong> <span style="color: ${s.dapp_server ? '#00ff7f' : '#ff5555'};">${s.dapp_server ? 'Online' : 'Offline'}</span>`;
+                    document.getElementById("status-mcp").innerHTML = `<strong>ZMM VM MCP:</strong> <span style="color: ${s.zmm_mcp_server ? '#00ff7f' : '#ff5555'};">${s.zmm_mcp_server ? 'Online' : 'Offline'}</span>`;
+                    document.getElementById("status-scanner").innerHTML = `<strong>PulseX Scanner:</strong> <span style="color: ${s.pulsex_scan_daemon ? '#00ff7f' : '#ff5555'};">${s.pulsex_scan_daemon ? 'Online' : 'Offline'}</span>`;
+                }
+            } catch (e) {
+                console.error("Error fetching hypervisor status:", e);
+                document.getElementById("status-dapp").innerHTML = `<strong>HTTP DApp:</strong> <span style="color: #ff5555;">Offline</span>`;
+                document.getElementById("status-mcp").innerHTML = `<strong>ZMM VM MCP:</strong> <span style="color: #ff5555;">Offline</span>`;
+                document.getElementById("status-scanner").innerHTML = `<strong>PulseX Scanner:</strong> <span style="color: #ff5555;">Offline</span>`;
+            }
+        }
+
         // Poll for logs every 2 seconds
         renderAccumulators();
         renderChatAccumulators();
         setInterval(fetchLogs, 2000);
         fetchLogs();
+        
+        // Poll hypervisor status every 5 seconds
+        updateHypervisorStatus();
+        setInterval(updateHypervisorStatus, 5000);
+
         animateGait();
     </script>
 </body>

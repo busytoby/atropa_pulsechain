@@ -490,6 +490,197 @@ const MIME_TYPES = {
     ".svg": "image/svg+xml"
 };
 
+let loreAnalysisCache = {};
+
+function performLoreAnalysis() {
+    const loreDir = path.join(__dirname, "../lore");
+    if (!fs.existsSync(loreDir)) return;
+    const files = fs.readdirSync(loreDir).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
+    
+    // Normalize defined concepts to a map and set
+    const conceptMap = {};
+    files.forEach(f => {
+        const base = path.basename(f, path.extname(f)).toLowerCase().replace(/_/g, ' ');
+        conceptMap[base] = f;
+    });
+    const definedConcepts = new Set(Object.keys(conceptMap));
+    
+    const rawData = {};
+    
+    // PHASE 1 & PHASE 2: Structural and Lexical analysis pass
+    files.forEach(file => {
+        const fullPath = path.join(loreDir, file);
+        try {
+            const text = fs.readFileSync(fullPath, "utf8");
+            
+            const annotationsRegex = /<!--\s*AUNCIENT_ANNOTATIONS_START\s*([\s\S]*?)\s*AUNCIENT_ANNOTATIONS_END\s*-->/;
+            const cleanText = text.replace(annotationsRegex, "");
+            
+            // Phase 1: Structural analysis
+            const words = cleanText.split(/\s+/).filter(Boolean);
+            const wordCount = words.length;
+            
+            const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const sentenceCount = sentences.length;
+            
+            let questionCount = 0;
+            const match = text.match(annotationsRegex);
+            if (match) {
+                try {
+                    const annotations = JSON.parse(match[1].trim());
+                    annotations.forEach(ann => {
+                        if (ann.comment && ann.comment.includes('?')) {
+                            questionCount++;
+                        }
+                    });
+                } catch (e) {}
+            }
+            
+            const contentQuestions = (cleanText.match(/\?/g) || []).length;
+            const codeBlockCount = (cleanText.match(/```/g) || []).length / 2;
+            const headerCount = (cleanText.match(/^#{1,6}\s+/gm) || []).length;
+            
+            // Phase 2: Lexical Analysis & Jargon Extraction
+            const jargonMatches = cleanText.match(/\b[A-Z][a-zA-Z0-9_]{2,}\b/g) || [];
+            const uniqueJargon = [...new Set(jargonMatches)];
+            const undefinedJargon = [];
+            
+            uniqueJargon.forEach(term => {
+                const normalized = term.toLowerCase();
+                if (!definedConcepts.has(normalized) && 
+                    !['the', 'and', 'for', 'this', 'that', 'with', 'evm', 'pki', 'gdk', 'gtk', 'xml', 'api', 'rpc', 'sdk', 'url', 'uri', 'web', 'dom', 'cdp', 'cli', 'pid', 'sigint', 'sigterm', 'json', 'html', 'css', 'git', 'vcs', 'mjpeg', 'vulkan', 'wayland'].includes(normalized)) {
+                    undefinedJargon.push(term);
+                }
+            });
+            
+            const todoMatches = cleanText.match(/\b(TODO|FIXME|TBD|PLACEHOLDER|UNRESOLVED|INVESTIGATE|DRAFT)\b/gi) || [];
+            const todoCount = todoMatches.length;
+
+            rawData[file] = {
+                file,
+                text: cleanText.toLowerCase(),
+                wordCount,
+                sentenceCount,
+                questionCount: questionCount + contentQuestions,
+                codeBlockCount,
+                headerCount,
+                undefinedJargon,
+                todoCount,
+                referencedConcepts: []
+            };
+        } catch (e) {}
+    });
+
+    // PHASE 3: Relationship Mapping and Concept Reference Graph
+    Object.keys(rawData).forEach(file => {
+        const data = rawData[file];
+        definedConcepts.forEach(concept => {
+            const conceptFile = conceptMap[concept];
+            if (conceptFile === file) return;
+            
+            const regex = new RegExp(`\\b${concept}\\b`, 'i');
+            if (regex.test(data.text)) {
+                data.referencedConcepts.push(conceptFile);
+            }
+        });
+    });
+
+    // PHASE 4: Score Aggregation and Weight Synthesis
+    const baseAnalysis = {};
+    Object.keys(rawData).forEach(file => {
+        const data = rawData[file];
+        let score = 0;
+        const reasons = [];
+
+        if (data.wordCount < 150) {
+            score += 100;
+            reasons.push(`Sparse content (${data.wordCount} words)`);
+        } else if (data.wordCount < 400) {
+            score += 30;
+            reasons.push(`Short document (${data.wordCount} words)`);
+        }
+        
+        if (data.headerCount === 0) {
+            score += 25;
+            reasons.push(`Lacks proper Markdown headers`);
+        }
+
+        if (data.questionCount > 0) {
+            score += data.questionCount * 40;
+            reasons.push(`Contains ${data.questionCount} unresolved question(s)`);
+        }
+
+        if (data.undefinedJargon.length > 0) {
+            const added = Math.min(5, data.undefinedJargon.length) * 15;
+            score += added;
+            reasons.push(`Undefined terms: ${data.undefinedJargon.slice(0, 3).join(', ')}`);
+        }
+
+        if (data.referencedConcepts.length === 0) {
+            score += 40;
+            reasons.push(`Isolated node (references no other Auncient concepts)`);
+        } else {
+            const linkDensity = data.referencedConcepts.length / (data.wordCount / 100);
+            if (linkDensity < 0.5) {
+                score += 20;
+                reasons.push(`Low linkage density to other concepts`);
+            }
+        }
+
+        if (data.todoCount > 0) {
+            score += Math.min(4, data.todoCount) * 25;
+            reasons.push(`Contains ${data.todoCount} draft/TODO marker(s)`);
+        }
+
+        baseAnalysis[file] = {
+            score,
+            reasons,
+            wordCount: data.wordCount,
+            undefinedJargon: data.undefinedJargon,
+            referencedConcepts: data.referencedConcepts
+        };
+    });
+
+    // Pass 2: Propagate weights through concept references to penalize dependency gaps
+    const finalAnalysis = {};
+    Object.keys(baseAnalysis).forEach(file => {
+        const item = baseAnalysis[file];
+        let score = item.score;
+        const reasons = [...item.reasons];
+        
+        const weakReferences = [];
+        item.referencedConcepts.forEach(refFile => {
+            const refItem = baseAnalysis[refFile];
+            if (refItem && refItem.score >= 100) {
+                weakReferences.push(refFile);
+            }
+        });
+
+        if (weakReferences.length > 0) {
+            const added = Math.min(4, weakReferences.length) * 15;
+            score += added;
+            const names = weakReferences.slice(0, 2).map(f => path.basename(f, '.md'));
+            reasons.push(`Depends on poorly understood concepts: ${names.join(', ')}`);
+        }
+
+        finalAnalysis[file] = {
+            score,
+            reasons,
+            wordCount: item.wordCount,
+            undefinedJargon: item.undefinedJargon,
+            referencedConcepts: item.referencedConcepts
+        };
+    });
+    
+    loreAnalysisCache = finalAnalysis;
+}
+
+try {
+    performLoreAnalysis();
+} catch (e) {
+    console.error("[SERVER] Failed to run initial lore analysis:", e);
+}
+
 const server = http.createServer(async (req, res) => {
     // Enable CORS for all requests
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -807,6 +998,218 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // API endpoint to list lore documentation files
+    if (req.url === "/api/lore/list") {
+        const loreDir = path.join(__dirname, "../lore");
+        try {
+            if (fs.existsSync(loreDir)) {
+                // Execute git status to check for untracked or modified files under lore/
+                let gitStatusMap = {};
+                try {
+                    const { execSync } = require("child_process");
+                    const gitOut = execSync("git status --porcelain lore", { encoding: "utf8" });
+                    gitOut.split("\n").forEach(line => {
+                        if (line.trim()) {
+                            const code = line.substring(0, 2);
+                            const filePath = line.substring(3).trim();
+                            const fileName = path.basename(filePath);
+                            if (code.includes("??")) {
+                                gitStatusMap[fileName] = "untracked";
+                            } else {
+                                gitStatusMap[fileName] = "modified";
+                            }
+                        }
+                    });
+                } catch (gitErr) {
+                    // Fail silently if not a git repository
+                }
+
+                const files = fs.readdirSync(loreDir);
+                const results = files
+                    .filter(file => file.endsWith(".md") || file.endsWith(".lore"))
+                    .map(file => {
+                        const fullPath = path.join(loreDir, file);
+                        const stat = fs.statSync(fullPath);
+                        let isReviewed = false;
+                        try {
+                            if (stat.size > 0) {
+                                const fd = fs.openSync(fullPath, 'r');
+                                const buffer = Buffer.alloc(200);
+                                const position = Math.max(0, stat.size - 200);
+                                const bytesRead = fs.readSync(fd, buffer, 0, 200, position);
+                                const lastBytes = buffer.toString('utf8', 0, bytesRead);
+                                fs.closeSync(fd);
+                                if (lastBytes.includes('AUNCIENT_STATUS: REVIEWED')) {
+                                    isReviewed = true;
+                                }
+                            }
+                        } catch (readErr) {
+                            // Ignore read errors
+                        }
+
+                        return {
+                            name: file,
+                            sizeBytes: stat.size,
+                            modified: Math.round(stat.mtimeMs),
+                            gitStatus: gitStatusMap[file] || null,
+                            reviewed: isReviewed,
+                            louScore: (loreAnalysisCache[file] ? loreAnalysisCache[file].score : 0),
+                            louReasons: (loreAnalysisCache[file] ? loreAnalysisCache[file].reasons : [])
+                        };
+                    });
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify(results));
+            } else {
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Lore directory not found" }));
+            }
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
+
+    // API endpoint to read a specific lore file content
+    if (req.url.startsWith("/api/lore/content") && req.method === "GET") {
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const fileName = urlObj.searchParams.get("file");
+        if (!fileName) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "File parameter missing" }));
+            return;
+        }
+        const cleanName = path.basename(fileName);
+        const filePath = path.join(__dirname, "../lore", cleanName);
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, "utf8");
+            res.writeHead(200, {
+                "Content-Type": "text/plain; charset=utf-8",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(data);
+        } else {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Lore file not found" }));
+        }
+        return;
+    }
+
+function processAnnotationReplies(content, file) {
+    const regex = /<!--\s*AUNCIENT_ANNOTATIONS_START\s*([\s\S]*?)\s*AUNCIENT_ANNOTATIONS_END\s*-->/;
+    const match = content.match(regex);
+    if (!match) return content;
+    
+    try {
+        const annotations = JSON.parse(match[1].trim());
+        console.log(`[ANN DEB] file: ${file}, annotations length: ${annotations.length}`);
+        let updated = false;
+        
+        const loreDir = path.join(__dirname, "../lore");
+        const files = fs.readdirSync(loreDir).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
+        const concepts = files.map(f => ({
+            file: f,
+            name: path.basename(f, path.extname(f)).toLowerCase().replace(/_/g, ' ')
+        }));
+
+        annotations.forEach((ann, idx) => {
+            const isQuestion = ann.comment && ann.comment.includes('?');
+            const hasNoReplies = !ann.replies || ann.replies.length === 0;
+            console.log(`[ANN DEB][${idx}] author: ${ann.author}, comment: "${ann.comment}", isQuestion: ${isQuestion}, hasNoReplies: ${hasNoReplies}`);
+            
+            if (ann.author === 'User' && isQuestion && hasNoReplies) {
+                if (!ann.replies) ann.replies = [];
+                
+                let replyText = "";
+                const textToSearch = (ann.comment + " " + (ann.range ? content.substring(ann.range[0], ann.range[1]) : "")).toLowerCase();
+                const cleanSearch = textToSearch.replace(/[\s_-]/g, '');
+                console.log(`[ANN DEB][${idx}] cleanSearch: "${cleanSearch}"`);
+                
+                const matchingConcept = concepts.find(c => {
+                    const cleanConcept = c.name
+                        .replace(/\b(lore|spec|analysis|integration|roadmap|proposal|deep\s+dive|guide|blueprint|report)\b/g, '')
+                        .trim()
+                        .replace(/[\s_-]/g, '');
+                    if (!cleanConcept) return false;
+                    return cleanSearch.includes(cleanConcept);
+                });
+                console.log(`[ANN DEB][${idx}] matchingConcept:`, matchingConcept ? matchingConcept.file : "none");
+
+                if (matchingConcept) {
+                    try {
+                        const targetPath = path.join(loreDir, matchingConcept.file);
+                        const targetText = fs.readFileSync(targetPath, "utf8");
+                        const cleanTarget = targetText.replace(/<!--[\s\S]*?-->/g, "").trim();
+                        const paragraph = cleanTarget.split("\n\n")[0] || cleanTarget;
+                        const sentences = paragraph.split(/[.!?]+/).slice(0, 2).join(". ");
+                        replyText = `Based on Auncient lore in ${matchingConcept.file}: "${sentences.trim()}."`;
+                    } catch (e) {
+                        replyText = `Found reference to ${matchingConcept.file}, but could not load definition.`;
+                    }
+                } else {
+                    replyText = `I detected a question about this reference, but I do not have a defined Auncient concept for it. This remains a knowledge gap.`;
+                }
+                
+                ann.replies.push({
+                    author: "AI",
+                    comment: replyText,
+                    timestamp: Date.now()
+                });
+                updated = true;
+            }
+        });
+        
+        if (updated) {
+            const newBlock = `<!-- AUNCIENT_ANNOTATIONS_START\n${JSON.stringify(annotations, null, 2)}\nAUNCIENT_ANNOTATIONS_END -->`;
+            return content.replace(regex, newBlock);
+        }
+    } catch (err) {
+        console.error("[SERVER] Failed to process annotation replies:", err);
+    }
+    return content;
+}
+
+    // API endpoint to write/save a lore file content
+    if (req.url === "/api/lore/save" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                const payload = JSON.parse(body);
+                const { file, content } = payload;
+                if (!file || content === undefined) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Invalid payload parameters" }));
+                    return;
+                }
+                const cleanName = path.basename(file);
+                const filePath = path.join(__dirname, "../lore", cleanName);
+                
+                // Process automated replies to annotations
+                const processedContent = processAnnotationReplies(content, cleanName);
+                
+                fs.writeFileSync(filePath, processedContent, "utf8");
+                try {
+                    performLoreAnalysis();
+                } catch (e) {}
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify({ success: true, content: processedContent }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
     // API endpoint to serve the Markdown documentation
     if (req.url.startsWith("/api/docs")) {
         const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -984,6 +1387,46 @@ const server = http.createServer(async (req, res) => {
             "Access-Control-Allow-Origin": "*" 
         });
         res.end(JSON.stringify(dilemmaLog));
+        return;
+    }
+    if (req.url === "/api/hypervisor-status" && req.method === "GET") {
+        const net = require("net");
+        const exec = require("child_process").exec;
+        
+        const checkMcp = new Promise((resolve) => {
+            const socket = net.createConnection({ port: 10042 }, () => {
+                socket.end();
+                resolve(true);
+            });
+            socket.on("error", () => {
+                resolve(false);
+            });
+        });
+
+        const checkScan = new Promise((resolve) => {
+            exec("pgrep -f monitor_pulsex.py", (err, stdout) => {
+                if (err || !stdout.trim()) {
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+
+        Promise.all([checkMcp, checkScan]).then(([mcpOnline, scanOnline]) => {
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                status: "ok",
+                services: {
+                    dapp_server: true,
+                    zmm_mcp_server: mcpOnline,
+                    pulsex_scan_daemon: scanOnline
+                }
+            }));
+        });
         return;
     }
 
