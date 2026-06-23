@@ -44,13 +44,26 @@ function runTests() {
         assert.ok(hasSpec, "Linked documents list should contain a zmachine-related doc");
         console.log(`   ✓ Found docs for tag '${targetTag}' (sample):`, docs.slice(0, 5));
 
-        console.log("5. Testing case normalization and constraint bounds...");
+        console.log("5. Validating specific QING-to-documents relationships...");
+        assert.ok(db.documentToQings, "Database must contain 'documentToQings' mapping");
+        assert.ok(db.qingToDocuments, "Database must contain 'qingToDocuments' mapping");
+        assert.ok(db.meta.totalUniqueQingsMapped > 0, "Total mapped QINGs should be greater than zero");
+
+        // Locate any mapped QING address (e.g. from the keys)
+        const qingAddresses = Object.keys(db.qingToDocuments);
+        assert.ok(qingAddresses.length > 0, "Should have mapped at least one QING address");
+        const sampleQing = qingAddresses[0];
+        const linkedDocs = db.qingToDocuments[sampleQing];
+        assert.ok(linkedDocs.length > 0, `QING ${sampleQing} should link to at least one document`);
+        console.log(`   ✓ Sample QING ${sampleQing} links to:`, linkedDocs);
+
+        console.log("6. Testing case normalization and constraint bounds...");
         // Ensure no "ancient" keys are present (must be normalized to "auncient")
         assert.strictEqual(db.tagToDocuments["ancient"], undefined, "The tag 'ancient' must not exist (normalized to auncient)");
         console.log("   ✓ Verified strict 'Auncient' terminology compliance.");
 
         console.log("\n=============================================================");
-        console.log("ALL LORE RELATIONAL TAG TESTS PASSED");
+        console.log("ALL LORE & QING RELATIONAL TAG TESTS PASSED");
         console.log("=============================================================");
     } catch (err) {
         console.error("\nTEST RUN FAILURE:", err.message);

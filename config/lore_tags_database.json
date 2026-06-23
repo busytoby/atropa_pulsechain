@@ -1,9 +1,10 @@
 {
   "meta": {
-    "generatedAt": "2026-06-23T18:45:16.911Z",
+    "generatedAt": "2026-06-23T18:47:38.887Z",
     "totalDocuments": 504,
     "totalUniqueTags": 764,
-    "description": "Auncient Relational Lore Tag Dataset mapping lore documentation files to concepts."
+    "totalUniqueQingsMapped": 91,
+    "description": "Auncient Relational Lore Tag & QING Dataset mapping lore documentation files to concepts and smart contracts."
   },
   "documentToTags": {
     "02_Daily_Lore_2026_03_01.md": [
@@ -7915,6 +7916,3952 @@
       "zmm_evm_rpc_specification.md",
       "zmm_room_refactoring_plan.md",
       "zmm_zengine_rag_integration.md"
+    ]
+  },
+  "documentToQings": {
+    "02_Daily_Lore_2026_03_01.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "3d_rendering_advancements_deepseek.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "73_magazine_issue_1_analysis.md": [
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660",
+      "0xb6b83367fa8bd49e369b70615030f28a095fe0d8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698",
+      "0xf8b9487137ac32c9f68c044b29b06705a4a6b836"
+    ],
+    "DYSNOMIA_VM_LORE.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "MATERNAL_AI.md": [
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "SPEECH_OPTIMIZATION_PLAN.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ZMACHINE_SPEC.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "abrash_mode_x_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "access_software_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "accumulator_vector_fields.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "advanced_infocom_technologies_blueprint.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "agentic_vector_field_cpu_testing.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "agentic_vector_fields.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_interrupt_music_maker.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_12_page_48_49_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_18_code_listings_review.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_20_game_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_33_last_ninja_review.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_6_gameplay_improvements.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_6_page_63_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_6_pages_38_40_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_7_code_listings_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_issue_7_gameplay_improvements.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_10_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_11_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_12_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_13_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_14_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_15_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_16_review.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_17_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_18_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_19_review.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_20_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_21_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_22_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_23_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_24_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_25_review.md": [
+      "0x776fded4e2fedfa01cde2930bf703d2fe48baae2",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_26_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_27_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_28_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_29_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_30_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_31_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_32_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_6_review.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_7_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_8_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_issue_9_review.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ahoy_magazine_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ai_debugger_input_methods.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "air_assault_bob_lloret_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "alchemical_platform_expansion_plan.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "analog_assembly_animation.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "analog_compatibility_roadmap.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "antic_ab4h_vulkan_colors.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "antic_cpu_terminal_improvements.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "antic_hardware_scrolling.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "antic_wayland_level_renderer.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "antic_zmm_terminal_benefits.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "arena_state_sharing.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "associahedron_lore.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "async_behavior_analysis.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "asynchronous_timeout_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "atari_incorporated_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "atari_unified_system.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "atropa_unified_instruction_set.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "auto_attenuation_debugging_concept.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "autodyne_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "automation_system_design.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "bayesian_arpeggiator_control.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "bbs_chat_integration.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "bessel_jnikny_dug_dus.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "bessel_jnikny_tunneling_operator.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "bessel_riders_and_harmonics.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "biotika_neural_feedback_loop.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "biotika_neuron_motzkin_vertex_firing.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "blockchain_secure_kermit.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "broderbund_software_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_12_analysis.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_13_analysis.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_14_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_15_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_16_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_17_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_21_analysis.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_22_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_23_analysis.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_24_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_25_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_26_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issue_27_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "byte_issues_18_20_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "c64_1541_emulation_support.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_folklore_escrow_spec.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_peek_poke_security.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_reconciliation_framework.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_security_recommendations.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_tcg_interactions.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cabs_token_exchange_spec.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cannonball_blitz_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cardco_peripheral_interfaces.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "carlson_chrget_to_emacs.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "chattts_integration_design.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cia_timers_and_gas_taxation.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cimarron_insta_investment_combo_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "comm_data_review.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "commodore_1541_iec_serial_bus.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "commodore_hardware_tricks.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "commodore_kernal_io_redirection.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "commodore_sid_audio_engine.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "commodore_software_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "compuserve_integration.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "compuserve_integration_blueprint.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "compuserve_protocols_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_10_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_11_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_12_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_13_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_14_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_15_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_16_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_17_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_18_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_19_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_1_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_2_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_3_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_4_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_5_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_6_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_7_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_8_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "computer_design_issue_9_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "comstar_printer_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "concurrency_pipeline_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "conjecture_topological_motzkin_primes.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "content.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "control_generation_architecture.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "control_systems_peripheral_emulation.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "conversion_plan.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "coprocessor_designs_analysis.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "counter_bin_specification.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cpu_banking_and_timer_upgrades.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "cpu_test_improvements.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_2026_02_25.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660",
+      "0xb6b83367fa8bd49e369b70615030f28a095fe0d8",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8b9487137ac32c9f68c044b29b06705a4a6b836"
+    ],
+    "daily_lore_2026_02_26.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "daily_lore_2026_02_28.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_2026_03_02.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_2026_03_07.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_2026_03_07_joseon_cebu.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_2026_03_14.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "daily_lore_base_secret.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_chen_jurchen.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "daily_lore_operation_mariner.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daily_lore_vulkan_vision.md": [
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "daskmig_magazine_issue_1_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daskmig_magazine_issue_2_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "daskmig_magazine_issue_3_review.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "datamost_milestones.md": [
+      "0xa3bfdb59e9d4167f56b47424531ddb31992afc57",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "datamost_support_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "datamost_totl_protecto_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "datasoft_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_bresenham_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_bsp_tree_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_dithering_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_fft_spectrum_analyzer.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_fractal_lsystem.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_game_of_life_synthesis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_graphics_synthesis_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ddj_raycasting_audio_maze.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "decentralized_os_yul_architecture.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "deep_rendering_background.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "disc_triangulation_space_stashas.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dj.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dna_3d_standards_proposal.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dna_bear_improvements.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "dr_dobbs_3d_graphics_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_1_analysis.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_2_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_3_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_4_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_5_analysis.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dr_dobbs_issue_6_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dynamic_async_integration.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dysnomia_combat_resonance_rules.md": [
+      "0x7155dd05a4a9cb58c471448cf875e1c7f302947f",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "dysnomia_exploration.md": [
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dysnomia_math_verification.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x20ef620ec63318a84eb5fe6010f6bb2a4f61ade1",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660",
+      "0xb6b83367fa8bd49e369b70615030f28a095fe0d8",
+      "0xcbfca49631570387cb04577b82d55be67b316c74",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf8b9487137ac32c9f68c044b29b06705a4a6b836"
+    ],
+    "dysnomia_prime_issue_1.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dysnomia_recombination_operator.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "dysnomia_system_integration_map.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660",
+      "0xb6b83367fa8bd49e369b70615030f28a095fe0d8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf8b9487137ac32c9f68c044b29b06705a4a6b836"
+    ],
+    "dysnomia_vertex_trigonometric_projection.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "easychain64_terminal_design.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_10_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_11_in_depth.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_12_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_13_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_14_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_15_in_depth.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_16_in_depth.md": [
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_17_in_depth.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_18_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "elektor_issue_19_in_depth.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_1_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_1_synthesis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_2_in_depth.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_3_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_4_in_depth.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_5_in_depth.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_6_in_depth.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_7_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_8_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektor_issue_9_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektuur_early_issues_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elektuur_issue_25_analysis.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "elm_debugger_advanced_usecases.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "emulator_integration_paths.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "entech_software_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "epyx_support_report.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "evm_arena_integration_summary.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "evm_memory_constraints.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "evm_vs_zmm_vm_interfaces.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "filtered_fdn_improvisational_decisions.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "folklore_cpu_design.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "fractional_synthesis_llm_rag.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "frobenius_manifold_capacitor.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "fuzzby_magazine_issue_0_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "fylstra_sweets_byte_magazine.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "game_archetypes_spec.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "gameplay_mechanics_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "gan_speech_synthesis_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "gauntlet_jit_vae_spec.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "gauntlet_pmg_support.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "general_2d_character_synthesizer.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "geos_operating_system_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "germanium_zero_crossing_ssr_equivalence.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "graeffe_process_root_squaring.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "graphics_display_technologies.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "graphics_improvements_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "gtia_collision_registers.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hardball_rendering_system.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hardware_improvements_plan.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "heathkit_synthesizer_monitor.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "homeword_integration.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_4d_graphics_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_11_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_12_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_13_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_14_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_15_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_16_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_17_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_18_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_19_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_magazine_issue_20_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hugi_special_edition_1_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hurwood_generator_expansion.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "hurwood_improvements.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "image_computer_products_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xd127839b83cbf537c29b7d268c135f745a0da2e8"
+    ],
+    "impedance_reactor_cards.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "improved_rigging_supports.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "improvise_bionika.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "insta_software_analysis.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "interpolation_as_a_synthesis_unified_theory.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "interrupt_standards.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "interview.lore": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "kilobaud_issue_1_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_1_z80_refresh.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_2_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_3_cassette_storage.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_4_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_5_in_depth.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_6_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kilobaud_issue_7_in_depth.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "kinematic_rigging_phase.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ktel_international_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "langchain_blueprint.md": [
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "learning_source_hometax_integration.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "live_math_results.md": [
+      "0x1213094216a8726bb8d27a1a8d50078c5234a4f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "local_deployment_guide.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x06b2bb1d1ffcd92b70462b32e5878a0b88ee9897",
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x46fd470d0aded2bb93e913843797d99855f90d8d",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x6c49021d0aeac563c0a16de1c3f70ae5f87ca768",
+      "0x7206172b419354dfd25fb9ae732f936c2c5c01fb",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf8f8af1f48152e1f0c93f38fa783783530ffff40"
+    ],
+    "lore_2026_03_03.md": [
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "lucas_plush_blueprint.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "magic_disk_64_issue_1_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "magic_disk_64_issue_2_review.md": [
+      "0x4b3e90c711c4a6cb98bc742a9acd7f75793a02d6",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "magic_disk_64_issue_3_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mariner_system3_qualification.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "master_memory_map_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "math_integrity_report.md": [
+      "0x1213094216a8726bb8d27a1a8d50078c5234a4f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "memory_injector_security.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mercenary_pipeline_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mercenary_room_objects_world_hollow.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "micro_issue_26_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "micro_issue_27_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "micro_world_printer_integration.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "microkernel_upgrade_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "microprose_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "midwest_micro_superterm_integration.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mmu_mappings.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "motzkin_apogee_apex_primes.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "motzkin_paths_and_bessel_fractions.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "motzkin_prime_synthesis_sequencing.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "motzkin_primes_rigor_limitations.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "motzkin_topological_basis_vertex.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mozilla_integration_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "msd_cbm_disk_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "msd_super_disk_integration.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "msd_tax_and_security_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_10_graeffe_power_series.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_11_mathieu_functions.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_12_punched_cards.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_13_mathieu_matrices.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_14_duodecimal_tuning.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_14_mersenne_uhler.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_1_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_1_tables_and_interpolation.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_2_non_sexagesimal_trig.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_3_baas_bessel_fm.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_4_structural_dynamics.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_5_lehmer_modified_bessel.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_6_punched_card_tables.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_7_bessel_guide.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_8_gear_ratios_fractional_n.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mtac_issue_9_bessel_zeros_solvers.md": [
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "multi_network_zmm_evm_inventory.md": [
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "multi_user_coprocessor_sharing.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "multi_user_shared_cpu_architecture.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "multiview_rag_loop_spec.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "muse_software_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "mystery_house_zengine_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "nebula_biotika_plan.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "necessity_of_leakage_modeling.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "next_gen_emulator_architecture.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "nonukes_pulsex_liquidity.md": [
+      "0x04482c949f99177e53befe42bbc20e09ba317428",
+      "0x0972c7cae9857107200397ae1e20f21b59da69c1",
+      "0x12891b0b9fac8b5f68fef751e1201c10c72fc422",
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x39e9e8edf016524757a8202856e366b1d25e0a12",
+      "0x3a3f249db68a0df584a18098ececc5f6f0ca3944",
+      "0x4611f357caf4293269c0c4f00233c921ffe6cc26",
+      "0x59bfa4b54bbdfa0e55640c52a9fa4eb69891e7a4",
+      "0x59f6e35871a21c7cb0f23b04ba05700309b79637",
+      "0x5ae65a18c06011daab861106983cf72c153ad1fe",
+      "0x626337c72c8940b965ad48d503c3a7ae6abd1a9d",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x6c92dcd185bb2633ea333da02fc78106c7217926",
+      "0x7155dd05a4a9cb58c471448cf875e1c7f302947f",
+      "0x8157a5ac755d70218683232b06d6062253104918",
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0x85e14bb47b22cf82a805b424ce605ea025ca751e",
+      "0x875360521d23456af5cf561bd0b1c1fdbf47c4cb",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x9f533369e5090c4da895ce9cee28d955096f1215",
+      "0xa1ddbbcab4f62e7968cc4adbe8ca0634ee509956",
+      "0xa3bfdb59e9d4167f56b47424531ddb31992afc57",
+      "0xa846857cad1153bc9ce3ad7391dc7f1d060d2d75",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xe0230d9803bd212c71177a2e9a8bafa54dc70671",
+      "0xe9f5ef3994fe76d83b0faab75062e86457ff96b9",
+      "0xeb818b831dfdfee90e3a036456dfeaa012fce9ef",
+      "0xeed783edc584aa1e796f28e3a2b3e37e8c3393c7",
+      "0xf2c4087a18781d5347d4905e86b087b1b9d6ba51",
+      "0xf628ddf33e97cfe53826e839241200e148394b16",
+      "0xfb1d79843b4be8c9fc244f54ee965d051261bb4b"
+    ],
+    "nonukes_pulsex_pairs.md": [
+      "0x008d99c30628d0b94be2076eb62c1e1d8a092048",
+      "0x015a15727d5b21f58b5ab56a86959a3b32849ba9",
+      "0x04482c949f99177e53befe42bbc20e09ba317428",
+      "0x0972c7cae9857107200397ae1e20f21b59da69c1",
+      "0x12891b0b9fac8b5f68fef751e1201c10c72fc422",
+      "0x1299bbac80f7038c19c20843f80608bd80c14a74",
+      "0x158f8e909d1eb4f7c165807899f1face6b76c12e",
+      "0x186dff4a427cf5eb82e087d9605c4e156266b851",
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x20ef620ec63318a84eb5fe6010f6bb2a4f61ade1",
+      "0x2245e41d46f6ebd511bc09e5330dda30fc19ea18",
+      "0x2554a08e8467701f826708095fbd968989fc1da8",
+      "0x2cd4e92c567604337e09eb3b6265bae7bba9a2ef",
+      "0x33f84d5f754c6bcdc55cab4c712fff405895352b",
+      "0x38f7bbbb1eb74de568c907aa47f3de199c6cefd5",
+      "0x3990e20d1a23f7e1bd7cc1956b32e38ea1649b74",
+      "0x39e9e8edf016524757a8202856e366b1d25e0a12",
+      "0x3a3f249db68a0df584a18098ececc5f6f0ca3944",
+      "0x42a239df6f5a82cbc579acb653be347176d6b3e7",
+      "0x4611f357caf4293269c0c4f00233c921ffe6cc26",
+      "0x49b63324b5288908989fcbe613a6fa5b988fd9ad",
+      "0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20",
+      "0x4eb11dcd373c3857e9544a0e6de956c65409f733",
+      "0x59bfa4b54bbdfa0e55640c52a9fa4eb69891e7a4",
+      "0x59f6e35871a21c7cb0f23b04ba05700309b79637",
+      "0x5ae65a18c06011daab861106983cf72c153ad1fe",
+      "0x5de6076d5d5ea616f0d03a7f3bbce0ea324dd69e",
+      "0x606bfffb10a3a562a96c0e82408d0704e69dfe08",
+      "0x626337c72c8940b965ad48d503c3a7ae6abd1a9d",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x6c92dcd185bb2633ea333da02fc78106c7217926",
+      "0x6e43215f456627d7216e4c88cfcf126e733b4ece",
+      "0x7155dd05a4a9cb58c471448cf875e1c7f302947f",
+      "0x73f2a2193abe85ba1290e08b04dce1d64e91827b",
+      "0x8157a5ac755d70218683232b06d6062253104918",
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0x85e14bb47b22cf82a805b424ce605ea025ca751e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x875360521d23456af5cf561bd0b1c1fdbf47c4cb",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x9f533369e5090c4da895ce9cee28d955096f1215",
+      "0xa1ddbbcab4f62e7968cc4adbe8ca0634ee509956",
+      "0xa3bfdb59e9d4167f56b47424531ddb31992afc57",
+      "0xa67effbfa307c6c9c6ea63e39654b97a6d8a334b",
+      "0xa846857cad1153bc9ce3ad7391dc7f1d060d2d75",
+      "0xac97aff0c05ef3840c991d9205f53be80ef8f1f2",
+      "0xb0ba7d36b7f0505879179ece7401f24eb653c6e1",
+      "0xb33523015f92835b3d7d63ccc51fa0bb90507a96",
+      "0xb45bd2d8728ff0cf320684fbce79c27bca036396",
+      "0xbaae0ab51ff6c0ea1ed3cc64f981b662f6a8113f",
+      "0xcaea70828578ed9dc2d68d0aa1f3755edc153385",
+      "0xcebcf3d363d6272b18f8708c9844e3c329c002c5",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xe0230d9803bd212c71177a2e9a8bafa54dc70671",
+      "0xe4169cf239e2fdc6e6e4a3a6fa0a703058ce400b",
+      "0xe9f5ef3994fe76d83b0faab75062e86457ff96b9",
+      "0xeb818b831dfdfee90e3a036456dfeaa012fce9ef",
+      "0xeed783edc584aa1e796f28e3a2b3e37e8c3393c7",
+      "0xf2c4087a18781d5347d4905e86b087b1b9d6ba51",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698",
+      "0xf628ddf33e97cfe53826e839241200e148394b16",
+      "0xf9d9f7cd9d14c03a00410df7f4be042ae8dfd70a",
+      "0xfb1d79843b4be8c9fc244f54ee965d051261bb4b"
+    ],
+    "nonukes_qings_status.md": [
+      "0x008d99c30628d0b94be2076eb62c1e1d8a092048",
+      "0x015a15727d5b21f58b5ab56a86959a3b32849ba9",
+      "0x04482c949f99177e53befe42bbc20e09ba317428",
+      "0x0972c7cae9857107200397ae1e20f21b59da69c1",
+      "0x12891b0b9fac8b5f68fef751e1201c10c72fc422",
+      "0x1299bbac80f7038c19c20843f80608bd80c14a74",
+      "0x158f8e909d1eb4f7c165807899f1face6b76c12e",
+      "0x186dff4a427cf5eb82e087d9605c4e156266b851",
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x20ef620ec63318a84eb5fe6010f6bb2a4f61ade1",
+      "0x2245e41d46f6ebd511bc09e5330dda30fc19ea18",
+      "0x2554a08e8467701f826708095fbd968989fc1da8",
+      "0x2cd4e92c567604337e09eb3b6265bae7bba9a2ef",
+      "0x33f84d5f754c6bcdc55cab4c712fff405895352b",
+      "0x38f7bbbb1eb74de568c907aa47f3de199c6cefd5",
+      "0x3990e20d1a23f7e1bd7cc1956b32e38ea1649b74",
+      "0x39e9e8edf016524757a8202856e366b1d25e0a12",
+      "0x3a3f249db68a0df584a18098ececc5f6f0ca3944",
+      "0x42a239df6f5a82cbc579acb653be347176d6b3e7",
+      "0x4611f357caf4293269c0c4f00233c921ffe6cc26",
+      "0x49b63324b5288908989fcbe613a6fa5b988fd9ad",
+      "0x4eb11dcd373c3857e9544a0e6de956c65409f733",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x59bfa4b54bbdfa0e55640c52a9fa4eb69891e7a4",
+      "0x59f6e35871a21c7cb0f23b04ba05700309b79637",
+      "0x606bfffb10a3a562a96c0e82408d0704e69dfe08",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x6c92dcd185bb2633ea333da02fc78106c7217926",
+      "0x6e43215f456627d7216e4c88cfcf126e733b4ece",
+      "0x7155dd05a4a9cb58c471448cf875e1c7f302947f",
+      "0x73f2a2193abe85ba1290e08b04dce1d64e91827b",
+      "0x8157a5ac755d70218683232b06d6062253104918",
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0x85e14bb47b22cf82a805b424ce605ea025ca751e",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x9f533369e5090c4da895ce9cee28d955096f1215",
+      "0xa1ddbbcab4f62e7968cc4adbe8ca0634ee509956",
+      "0xa67effbfa307c6c9c6ea63e39654b97a6d8a334b",
+      "0xa846857cad1153bc9ce3ad7391dc7f1d060d2d75",
+      "0xac97aff0c05ef3840c991d9205f53be80ef8f1f2",
+      "0xb0ba7d36b7f0505879179ece7401f24eb653c6e1",
+      "0xb33523015f92835b3d7d63ccc51fa0bb90507a96",
+      "0xb45bd2d8728ff0cf320684fbce79c27bca036396",
+      "0xbaae0ab51ff6c0ea1ed3cc64f981b662f6a8113f",
+      "0xcaea70828578ed9dc2d68d0aa1f3755edc153385",
+      "0xcebcf3d363d6272b18f8708c9844e3c329c002c5",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xe0230d9803bd212c71177a2e9a8bafa54dc70671",
+      "0xe4169cf239e2fdc6e6e4a3a6fa0a703058ce400b",
+      "0xe9f5ef3994fe76d83b0faab75062e86457ff96b9",
+      "0xeed783edc584aa1e796f28e3a2b3e37e8c3393c7",
+      "0xf2c4087a18781d5347d4905e86b087b1b9d6ba51",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698",
+      "0xf628ddf33e97cfe53826e839241200e148394b16",
+      "0xf9d9f7cd9d14c03a00410df7f4be042ae8dfd70a",
+      "0xfb1d79843b4be8c9fc244f54ee965d051261bb4b"
+    ],
+    "npc_exhaustive_test_report.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "omnitronix_interface_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "on_chain_neural_speech.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "onchain_database_manager.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "optimum_interval_timer_scheduling.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "pathway_analysis.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "phase_space_formulation.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "photorealistic_rendering_analysis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "platform_display_model.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "pokey_audio_synthesis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "pong_diyat_tax.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "portal_hub_showcase.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "press_release_rooted_browser.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "price_liquidity_integration_plan.md": [
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0x8157a5ac755d70218683232b06d6062253104918",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "priority_voting_board.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "procedural_integration_report.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "progressive_rag_pipeline.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prompt_draft.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prophecy_inverse_synthesis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prophecy_of_the_quaternion.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prophecy_philosophical_synthesis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prophecy_synthesis_and_control.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x6c49021d0aeac563c0a16de1c3f70ae5f87ca768",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "prophecy_synthesis_and_control_public.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x6c49021d0aeac563c0a16de1c3f70ae5f87ca768",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "protecto_enterprises_deep_dive.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xd127839b83cbf537c29b7d268c135f745a0da2e8"
+    ],
+    "protecto_epyx_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "pulsex_swap_trap_scenario.md": [
+      "0x8157a5ac755d70218683232b06d6062253104918",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_10_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_11_analysis.md": [
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_12_analysis.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_13_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_14_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_14_genetic_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_14_rls_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_14_tdoa_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_4_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_5_analysis.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_6_analysis.md": [
+      "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_7_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_8_analysis.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issue_9_analysis.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "qst_issues_1_4_hardware_concepts.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "quantum_cylindrical_tunneling_bessel.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "quantum_tunneling_breakdown_synthesis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "quartz_crystals_radio_synthesis.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "quicksilva_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "rag_antic_comovement_analysis.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "rag_visual_telemetry.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "razor_protocol_integration.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "reengineering_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "renegade_yul_architecture.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "resize_verification.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ring_eta_comparison.md": [
+      "0x1213094216a8726bb8d27a1a8d50078c5234a4f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8f8af1f48152e1f0c93f38fa783783530ffff40"
+    ],
+    "rooted_browser_build_report.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "rooted_minimal_c_renderer_plan.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "ruleburst_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "rupert_report_cursor.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sally_larsen_graphics_simulation.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "scenial_magazine_issue_1_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "scenial_magazine_issue_2_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sd_subprocesses_profile.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sector_card_mapping.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_dreamcast_powervr2.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_genesis_dual_cpu.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_hardware_innovations.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_saturn_vdp1.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_vdp_scrolling.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sega_vdp_vsram_priority.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sierra_agi_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "softlaw_corporation_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "software_to_go_library.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "spectral_analysis_report.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x7155dd05a4a9cb58c471448cf875e1c7f302947f",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "speech_synthesis_advancements.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "spinnaker_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sprint_plan.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "ssr_terminology_compatibility.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "stabilization_operator_feedback_loop.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "stabilization_runbook.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "standun_controls_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "star_castle_ai_evolution.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "star_castle_autopilot_model.md": [
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "storybook_dna_animations.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "storybook_integrations.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "structural_dynamics_synthesis_control.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "studio_architecture_guide.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "stuffed_animals_evolution.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "sunrise_software_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synapse_issue_2_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synapse_issue_3_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synapse_issue_4_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synapse_software_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "synthesis_card_render_profile.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesis_debug_session_equivalence.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesis_latency_trace.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesis_profile_report.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesis_profiler_suite.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesizer_lore.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "synthesizer_scurry_tutorial.md": [
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "system0_sabbatical.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "targ_mercenary_improvements.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "tcg_combat_rewards_mechanics.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8f8af1f48152e1f0c93f38fa783783530ffff40"
+    ],
+    "tcg_flexible_game_rules.md": [
+      "0x1213094216a8726bb8d27a1a8d50078c5234a4f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "tcg_onchain_math_integration.md": [
+      "0x1213094216a8726bb8d27a1a8d50078c5234a4f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "teddy303_synthesis_notes.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "teddy_bear_visualization.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "tessarant_combat_physics.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "thirty_six_motzkin_primes_cardinalities.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "threading_scalability_profile.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "thunks_vs_bloom_filters.md": [
+      "0x6c49021d0aeac563c0a16de1c3f70ae5f87ca768",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "timing_accuracy_standard.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "topological_ordinance_bessel_vs_motzkin.md": [
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "total_games_manifest.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "trading_cards_game_analysis.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660",
+      "0xb6b83367fa8bd49e369b70615030f28a095fe0d8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8b9487137ac32c9f68c044b29b06705a4a6b836"
+    ],
+    "transcendent_control_framework.md": [
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "triangulation_space_quest_for_vertex.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "tsfi2_mozilla_efficiency_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "tts_dashboard_improvements_roadmap.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "tup_tun_dug_dus_bessel_tunneling.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "unit_testing_report.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "unix_v1_folklore_cpu.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "unreal_vaesen_mystery_house_6502_rocm.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ],
+    "upgrade_proposals.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_character_sheets_report.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_emotion_mathieu_feedback.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_folklore_synthesis.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_improvisational_agency.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_integration_review.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "vaesen_silicon_bestiary.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vaesen_sprite_graphics.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "vaesen_verification.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vector_field_query_tokenization.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vic20_yul_upgrades.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vic_ii_advanced_concepts.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf398c7aedd6af9f357325d6e402503cbc45ee698"
+    ],
+    "vision_suite_analysis.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "visual_verification.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vulkan_datamost_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x77c14dd7ab31a4c223deb8ef182d372a7cfae5c7",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vulkan_epyx_exploration.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x77c14dd7ab31a4c223deb8ef182d372a7cfae5c7",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vulkan_lore_editor_architecture.md": [
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vulkan_multicolor_plotting.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0x903aaa437d8dd3122b362b5f339cd27a53865d2c",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "vulkan_wireframe_integration.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "wayland_ab4h_rendering.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "wilby_magazine_issue_1_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "wilby_magazine_issue_2_review.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "wilby_magazine_issue_3_review.md": [
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "wilby_magazine_issue_4_review.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "window_registry.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "xonox_analysis.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yamaha_ym2612_fm_synthesis.md": [
+      "0x870bce7fa25de214841fe37a2cd11f78334ce9c8",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yi_mechanical_transducer.md": [
+      "0x170259c2640e221772b94c8037b24da766b3bcfc",
+      "0x644aabeacd96938a7ea5910f0c5240d289b64cd1",
+      "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yul_accounting_and_matrix_coprocessors.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yul_device_access.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yul_hardware_hardening_analysis.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "yul_vm_isolation_audit.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "z_machine_ledger_inventory_design.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xa3263c6d3f76979f7078345ae528dce928bdfd38",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "z_machine_onchain_design.md": [
+      "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zener_discovery_ai_analogy.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zeners_in_llm_architectures.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zi_spin_comparison.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
+      "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8f8af1f48152e1f0c93f38fa783783530ffff40"
+    ],
+    "zil_onchain_parser_design.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmachine_erc20_integration.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmachine_erc20_rewards_and_payments.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmachine_implementation_log.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmachine_locus_diyat.md": [
+      "0x895b912698cf8dd3b7a19635cd7fa850772cee94",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xf8f8af1f48152e1f0c93f38fa783783530ffff40"
+    ],
+    "zmachine_onchain_composition.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmm_evm_rpc_specification.md": [
+      "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c",
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmm_room_refactoring_plan.md": [
+      "0x58065d1351972d9358665602c967ea58c13dc744",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "zmm_zengine_rag_integration.md": [
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be",
+      "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c"
+    ]
+  },
+  "qingToDocuments": {
+    "0x008d99c30628d0b94be2076eb62c1e1d8a092048": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x012b805d8fb0bb53c4e9189328006b9c6d56a44c": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "cabs_folklore_escrow_spec.md",
+      "dj.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "local_deployment_guide.md",
+      "trading_cards_game_analysis.md",
+      "zi_spin_comparison.md",
+      "zmm_evm_rpc_specification.md"
+    ],
+    "0x015a15727d5b21f58b5ab56a86959a3b32849ba9": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x04482c949f99177e53befe42bbc20e09ba317428": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x06b2bb1d1ffcd92b70462b32e5878a0b88ee9897": [
+      "local_deployment_guide.md"
+    ],
+    "0x0972c7cae9857107200397ae1e20f21b59da69c1": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x1213094216a8726bb8d27a1a8d50078c5234a4f3": [
+      "live_math_results.md",
+      "math_integrity_report.md",
+      "ring_eta_comparison.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md"
+    ],
+    "0x12891b0b9fac8b5f68fef751e1201c10c72fc422": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x1299bbac80f7038c19c20843f80608bd80c14a74": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x158f8e909d1eb4f7c165807899f1face6b76c12e": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x170259c2640e221772b94c8037b24da766b3bcfc": [
+      "associahedron_lore.md",
+      "bayesian_arpeggiator_control.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_chen_jurchen.md",
+      "local_deployment_guide.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "spectral_analysis_report.md",
+      "yi_mechanical_transducer.md"
+    ],
+    "0x186dff4a427cf5eb82e087d9605c4e156266b851": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x1e57aede4afb1faad4c6ad3da711fb26e7a44d00": [
+      "access_software_analysis.md",
+      "byte_issue_24_analysis.md",
+      "cardco_peripheral_interfaces.md",
+      "carlson_chrget_to_emacs.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "datasoft_analysis.md",
+      "image_computer_products_analysis.md",
+      "learning_source_hometax_integration.md",
+      "microprose_analysis.md",
+      "midwest_micro_superterm_integration.md",
+      "msd_super_disk_integration.md",
+      "nebula_biotika_plan.md",
+      "next_gen_emulator_architecture.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "prophecy_inverse_synthesis.md",
+      "quicksilva_analysis.md",
+      "razor_protocol_integration.md",
+      "sunrise_software_analysis.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "xonox_analysis.md",
+      "z_machine_onchain_design.md"
+    ],
+    "0x20ef620ec63318a84eb5fe6010f6bb2a4f61ade1": [
+      "dysnomia_math_verification.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x2245e41d46f6ebd511bc09e5330dda30fc19ea18": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x2554a08e8467701f826708095fbd968989fc1da8": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x2cd4e92c567604337e09eb3b6265bae7bba9a2ef": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x33f84d5f754c6bcdc55cab4c712fff405895352b": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x38f7bbbb1eb74de568c907aa47f3de199c6cefd5": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x3990e20d1a23f7e1bd7cc1956b32e38ea1649b74": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x39e9e8edf016524757a8202856e366b1d25e0a12": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x3a3f249db68a0df584a18098ececc5f6f0ca3944": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x42a239df6f5a82cbc579acb653be347176d6b3e7": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x4611f357caf4293269c0c4f00233c921ffe6cc26": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x46fd470d0aded2bb93e913843797d99855f90d8d": [
+      "local_deployment_guide.md"
+    ],
+    "0x49b63324b5288908989fcbe613a6fa5b988fd9ad": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x4b3e90c711c4a6cb98bc742a9acd7f75793a02d6": [
+      "magic_disk_64_issue_2_review.md"
+    ],
+    "0x4dd0371c02631bfd17ad10ab7c0e35a047ff2d20": [
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0x4eb11dcd373c3857e9544a0e6de956c65409f733": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x55fd3be287ec145c791539ff1257b7536d8a390e": [
+      "3d_rendering_advancements_deepseek.md",
+      "abrash_mode_x_analysis.md",
+      "accumulator_vector_fields.md",
+      "agentic_vector_field_cpu_testing.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_33_last_ninja_review.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "analog_assembly_animation.md",
+      "antic_cpu_terminal_improvements.md",
+      "antic_hardware_scrolling.md",
+      "atropa_unified_instruction_set.md",
+      "automation_system_design.md",
+      "bayesian_arpeggiator_control.md",
+      "biotika_neural_feedback_loop.md",
+      "blockchain_secure_kermit.md",
+      "broderbund_software_integration.md",
+      "byte_issue_15_analysis.md",
+      "cabs_token_exchange_spec.md",
+      "cannonball_blitz_integration.md",
+      "cardco_peripheral_interfaces.md",
+      "carlson_chrget_to_emacs.md",
+      "comm_data_review.md",
+      "commodore_hardware_tricks.md",
+      "commodore_software_analysis.md",
+      "compuserve_protocols_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "control_systems_peripheral_emulation.md",
+      "counter_bin_specification.md",
+      "datamost_support_analysis.md",
+      "datasoft_analysis.md",
+      "ddj_bresenham_integration.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_dithering_integration.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dysnomia_prime_issue_1.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "elm_debugger_advanced_usecases.md",
+      "game_archetypes_spec.md",
+      "gameplay_mechanics_analysis.md",
+      "gauntlet_jit_vae_spec.md",
+      "graeffe_process_root_squaring.md",
+      "graphics_display_technologies.md",
+      "hardware_improvements_plan.md",
+      "hugi_4d_graphics_integration.md",
+      "hurwood_improvements.md",
+      "kinematic_rigging_phase.md",
+      "mariner_system3_qualification.md",
+      "mercenary_pipeline_integration.md",
+      "mercenary_room_objects_world_hollow.md",
+      "micro_issue_27_analysis.md",
+      "microprose_analysis.md",
+      "mmu_mappings.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_4_structural_dynamics.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "multiview_rag_loop_spec.md",
+      "mystery_house_zengine_integration.md",
+      "optimum_interval_timer_scheduling.md",
+      "phase_space_formulation.md",
+      "platform_display_model.md",
+      "progressive_rag_pipeline.md",
+      "prophecy_inverse_synthesis.md",
+      "qst_issue_14_analysis.md",
+      "qst_issue_14_genetic_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_4_analysis.md",
+      "quicksilva_analysis.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "rupert_report_cursor.md",
+      "sally_larsen_graphics_simulation.md",
+      "sega_saturn_vdp1.md",
+      "sega_vdp_scrolling.md",
+      "sierra_agi_integration.md",
+      "spinnaker_analysis.md",
+      "stuffed_animals_evolution.md",
+      "sunrise_software_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "targ_mercenary_improvements.md",
+      "teddy_bear_visualization.md",
+      "tessarant_combat_physics.md",
+      "upgrade_proposals.md",
+      "vaesen_emotion_mathieu_feedback.md",
+      "vaesen_improvisational_agency.md",
+      "vector_field_query_tokenization.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_multicolor_plotting.md",
+      "vulkan_wireframe_integration.md",
+      "xonox_analysis.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "0x58065d1351972d9358665602c967ea58c13dc744": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "DYSNOMIA_VM_LORE.md",
+      "ZMACHINE_SPEC.md",
+      "abrash_mode_x_analysis.md",
+      "accumulator_vector_fields.md",
+      "agentic_vector_field_cpu_testing.md",
+      "agentic_vector_fields.md",
+      "ahoy_interrupt_music_maker.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_review.md",
+      "ai_debugger_input_methods.md",
+      "antic_hardware_scrolling.md",
+      "antic_zmm_terminal_benefits.md",
+      "associahedron_lore.md",
+      "automation_system_design.md",
+      "bessel_jnikny_dug_dus.md",
+      "broderbund_software_integration.md",
+      "byte_issue_14_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "cabs_folklore_escrow_spec.md",
+      "cabs_peek_poke_security.md",
+      "cabs_reconciliation_framework.md",
+      "cannonball_blitz_integration.md",
+      "cardco_peripheral_interfaces.md",
+      "comm_data_review.md",
+      "commodore_hardware_tricks.md",
+      "commodore_sid_audio_engine.md",
+      "commodore_software_analysis.md",
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "concurrency_pipeline_analysis.md",
+      "counter_bin_specification.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "daily_lore_2026_02_26.md",
+      "datasoft_analysis.md",
+      "ddj_fft_spectrum_analyzer.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_raycasting_audio_maze.md",
+      "decentralized_os_yul_architecture.md",
+      "dna_3d_standards_proposal.md",
+      "dysnomia_system_integration_map.md",
+      "elektor_issue_6_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "emulator_integration_paths.md",
+      "folklore_cpu_design.md",
+      "gan_speech_synthesis_analysis.md",
+      "graphics_display_technologies.md",
+      "graphics_improvements_plan.md",
+      "homeword_integration.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_special_edition_1_review.md",
+      "image_computer_products_analysis.md",
+      "impedance_reactor_cards.md",
+      "interrupt_standards.md",
+      "learning_source_hometax_integration.md",
+      "local_deployment_guide.md",
+      "magic_disk_64_issue_2_review.md",
+      "master_memory_map_review.md",
+      "mercenary_room_objects_world_hollow.md",
+      "micro_issue_26_analysis.md",
+      "micro_world_printer_integration.md",
+      "microkernel_upgrade_plan.md",
+      "microprose_analysis.md",
+      "midwest_micro_superterm_integration.md",
+      "mozilla_integration_plan.md",
+      "msd_super_disk_integration.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_7_bessel_guide.md",
+      "multi_user_shared_cpu_architecture.md",
+      "next_gen_emulator_architecture.md",
+      "nonukes_qings_status.md",
+      "npc_exhaustive_test_report.md",
+      "omnitronix_interface_analysis.md",
+      "phase_space_formulation.md",
+      "photorealistic_rendering_analysis.md",
+      "platform_display_model.md",
+      "protecto_enterprises_deep_dive.md",
+      "razor_protocol_integration.md",
+      "reengineering_plan.md",
+      "scenial_magazine_issue_2_review.md",
+      "sector_card_mapping.md",
+      "sierra_agi_integration.md",
+      "software_to_go_library.md",
+      "spinnaker_analysis.md",
+      "standun_controls_review.md",
+      "sunrise_software_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "synthesis_latency_trace.md",
+      "synthesizer_lore.md",
+      "targ_mercenary_improvements.md",
+      "teddy_bear_visualization.md",
+      "tessarant_combat_physics.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "tts_dashboard_improvements_roadmap.md",
+      "unit_testing_report.md",
+      "unix_v1_folklore_cpu.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vaesen_folklore_synthesis.md",
+      "vaesen_integration_review.md",
+      "vector_field_query_tokenization.md",
+      "vic20_yul_upgrades.md",
+      "vulkan_epyx_exploration.md",
+      "vulkan_wireframe_integration.md",
+      "wayland_ab4h_rendering.md",
+      "xonox_analysis.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "yul_device_access.md",
+      "yul_vm_isolation_audit.md",
+      "z_machine_ledger_inventory_design.md",
+      "z_machine_onchain_design.md",
+      "zmachine_erc20_integration.md",
+      "zmm_evm_rpc_specification.md",
+      "zmm_room_refactoring_plan.md"
+    ],
+    "0x59bfa4b54bbdfa0e55640c52a9fa4eb69891e7a4": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x59f6e35871a21c7cb0f23b04ba05700309b79637": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x5ae65a18c06011daab861106983cf72c153ad1fe": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0x5de6076d5d5ea616f0d03a7f3bbce0ea324dd69e": [
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0x60231492ea7a40f72119da9e6c8bf738961679f3": [
+      "ahoy_magazine_issue_6_review.md",
+      "arena_state_sharing.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "concurrency_pipeline_analysis.md",
+      "control_generation_architecture.md",
+      "control_systems_peripheral_emulation.md",
+      "ddj_bresenham_integration.md",
+      "dna_bear_improvements.md",
+      "elektor_issue_15_in_depth.md",
+      "elektuur_issue_25_analysis.md",
+      "fractional_synthesis_llm_rag.md",
+      "gameplay_mechanics_analysis.md",
+      "graphics_display_technologies.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "phase_space_formulation.md",
+      "platform_display_model.md",
+      "procedural_integration_report.md",
+      "qst_issue_12_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_8_analysis.md",
+      "spectral_analysis_report.md",
+      "stabilization_operator_feedback_loop.md",
+      "star_castle_autopilot_model.md",
+      "synapse_issue_3_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "tessarant_combat_physics.md",
+      "xonox_analysis.md",
+      "yul_accounting_and_matrix_coprocessors.md"
+    ],
+    "0x606bfffb10a3a562a96c0e82408d0704e69dfe08": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x626337c72c8940b965ad48d503c3a7ae6abd1a9d": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0x644aabeacd96938a7ea5910f0c5240d289b64cd1": [
+      "DYSNOMIA_VM_LORE.md",
+      "MATERNAL_AI.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_chen_jurchen.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "price_liquidity_integration_plan.md",
+      "yi_mechanical_transducer.md"
+    ],
+    "0x693424a8a747823c4f682d9bd2aa59d3c1cfee6a": [
+      "DYSNOMIA_VM_LORE.md",
+      "MATERNAL_AI.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_chen_jurchen.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "price_liquidity_integration_plan.md",
+      "yi_mechanical_transducer.md"
+    ],
+    "0x6bfd5a5416c30ec99be17d4f7426542b9eb32bba": [
+      "ahoy_magazine_integration.md",
+      "asynchronous_timeout_analysis.md",
+      "atari_incorporated_analysis.md",
+      "byte_issue_16_analysis.md",
+      "carlson_chrget_to_emacs.md",
+      "commodore_1541_iec_serial_bus.md",
+      "computer_design_issue_18_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_prime_issue_1.md",
+      "fylstra_sweets_byte_magazine.md",
+      "geos_operating_system_analysis.md",
+      "kilobaud_issue_5_in_depth.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "muse_software_analysis.md",
+      "qst_issue_6_analysis.md"
+    ],
+    "0x6c49021d0aeac563c0a16de1c3f70ae5f87ca768": [
+      "local_deployment_guide.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "thunks_vs_bloom_filters.md"
+    ],
+    "0x6c92dcd185bb2633ea333da02fc78106c7217926": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x6e43215f456627d7216e4c88cfcf126e733b4ece": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x7155dd05a4a9cb58c471448cf875e1c7f302947f": [
+      "dysnomia_combat_resonance_rules.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "spectral_analysis_report.md"
+    ],
+    "0x7206172b419354dfd25fb9ae732f936c2c5c01fb": [
+      "local_deployment_guide.md"
+    ],
+    "0x73f2a2193abe85ba1290e08b04dce1d64e91827b": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x776fded4e2fedfa01cde2930bf703d2fe48baae2": [
+      "ahoy_magazine_issue_25_review.md"
+    ],
+    "0x77c14dd7ab31a4c223deb8ef182d372a7cfae5c7": [
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md"
+    ],
+    "0x8157a5ac755d70218683232b06d6062253104918": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "price_liquidity_integration_plan.md",
+      "pulsex_swap_trap_scenario.md"
+    ],
+    "0x83ec6acdfd04c7fdc98403937f8a18f7a8cd8399": [
+      "73_magazine_issue_1_analysis.md",
+      "lore_2026_03_03.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "qst_issue_11_analysis.md",
+      "synapse_issue_2_analysis.md"
+    ],
+    "0x85e14bb47b22cf82a805b424ce605ea025ca751e": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0x870bce7fa25de214841fe37a2cd11f78334ce9c8": [
+      "commodore_sid_audio_engine.md",
+      "computer_design_issue_4_analysis.md",
+      "elektor_issue_16_in_depth.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_9_bessel_zeros_solvers.md",
+      "yamaha_ym2612_fm_synthesis.md"
+    ],
+    "0x872739df73cad8ec87418bc0b00eb9925bbf6971": [
+      "3d_rendering_advancements_deepseek.md",
+      "access_software_analysis.md",
+      "accumulator_vector_fields.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "bessel_jnikny_tunneling_operator.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "broderbund_software_integration.md",
+      "byte_issue_13_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "cabs_token_exchange_spec.md",
+      "coprocessor_designs_analysis.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_chen_jurchen.md",
+      "ddj_bresenham_integration.md",
+      "ddj_dithering_integration.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dysnomia_math_verification.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "elm_debugger_advanced_usecases.md",
+      "folklore_cpu_design.md",
+      "gameplay_mechanics_analysis.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md",
+      "impedance_reactor_cards.md",
+      "improved_rigging_supports.md",
+      "live_math_results.md",
+      "mariner_system3_qualification.md",
+      "math_integrity_report.md",
+      "mercenary_room_objects_world_hollow.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "microprose_analysis.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "multi_user_coprocessor_sharing.md",
+      "muse_software_analysis.md",
+      "nonukes_pulsex_pairs.md",
+      "pathway_analysis.md",
+      "photorealistic_rendering_analysis.md",
+      "platform_display_model.md",
+      "prophecy_inverse_synthesis.md",
+      "ring_eta_comparison.md",
+      "targ_mercenary_improvements.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md",
+      "teddy_bear_visualization.md",
+      "tessarant_combat_physics.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "unit_testing_report.md",
+      "vector_field_query_tokenization.md",
+      "vic_ii_advanced_concepts.md",
+      "wilby_magazine_issue_3_review.md",
+      "xonox_analysis.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "zi_spin_comparison.md"
+    ],
+    "0x875360521d23456af5cf561bd0b1c1fdbf47c4cb": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0x895b912698cf8dd3b7a19635cd7fa850772cee94": [
+      "73_magazine_issue_1_analysis.md",
+      "access_software_analysis.md",
+      "agentic_vector_field_cpu_testing.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "ahoy_magazine_review.md",
+      "alchemical_platform_expansion_plan.md",
+      "analog_assembly_animation.md",
+      "analog_compatibility_roadmap.md",
+      "broderbund_software_integration.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_21_analysis.md",
+      "comm_data_review.md",
+      "commodore_hardware_tricks.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "cpu_test_improvements.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_chen_jurchen.md",
+      "daskmig_magazine_issue_3_review.md",
+      "datasoft_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "elektuur_early_issues_analysis.md",
+      "elektuur_issue_25_analysis.md",
+      "evm_arena_integration_summary.md",
+      "fylstra_sweets_byte_magazine.md",
+      "graphics_improvements_plan.md",
+      "interview.lore",
+      "local_deployment_guide.md",
+      "mariner_system3_qualification.md",
+      "math_integrity_report.md",
+      "midwest_micro_superterm_integration.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_14_mersenne_uhler.md",
+      "multi_user_shared_cpu_architecture.md",
+      "nebula_biotika_plan.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "npc_exhaustive_test_report.md",
+      "priority_voting_board.md",
+      "prophecy_of_the_quaternion.md",
+      "prophecy_synthesis_and_control.md",
+      "qst_issue_5_analysis.md",
+      "sega_dreamcast_powervr2.md",
+      "star_castle_ai_evolution.md",
+      "star_castle_autopilot_model.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "synthesis_profiler_suite.md",
+      "total_games_manifest.md",
+      "unit_testing_report.md",
+      "vulkan_epyx_exploration.md",
+      "wilby_magazine_issue_2_review.md",
+      "z_machine_onchain_design.md",
+      "zil_onchain_parser_design.md",
+      "zmachine_locus_diyat.md"
+    ],
+    "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a": [
+      "ZMACHINE_SPEC.md",
+      "accumulator_vector_fields.md",
+      "agentic_vector_field_cpu_testing.md",
+      "cannonball_blitz_integration.md",
+      "counter_bin_specification.md",
+      "daily_lore_vulkan_vision.md",
+      "datamost_support_analysis.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "elm_debugger_advanced_usecases.md",
+      "homeword_integration.md",
+      "langchain_blueprint.md",
+      "learning_source_hometax_integration.md",
+      "master_memory_map_review.md",
+      "multi_network_zmm_evm_inventory.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "protecto_enterprises_deep_dive.md",
+      "rupert_report_cursor.md",
+      "sierra_agi_integration.md",
+      "teddy_bear_visualization.md",
+      "transcendent_control_framework.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vector_field_query_tokenization.md",
+      "vulkan_multicolor_plotting.md",
+      "vulkan_wireframe_integration.md",
+      "zmm_evm_rpc_specification.md"
+    ],
+    "0x903aaa437d8dd3122b362b5f339cd27a53865d2c": [
+      "DYSNOMIA_VM_LORE.md",
+      "antic_ab4h_vulkan_colors.md",
+      "antic_wayland_level_renderer.md",
+      "arena_state_sharing.md",
+      "async_behavior_analysis.md",
+      "bbs_chat_integration.md",
+      "byte_issue_15_analysis.md",
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "compuserve_protocols_analysis.md",
+      "control_systems_peripheral_emulation.md",
+      "daily_lore_2026_02_26.md",
+      "datamost_support_analysis.md",
+      "ddj_bresenham_integration.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dynamic_async_integration.md",
+      "easychain64_terminal_design.md",
+      "game_archetypes_spec.md",
+      "hurwood_improvements.md",
+      "memory_injector_security.md",
+      "micro_issue_26_analysis.md",
+      "mmu_mappings.md",
+      "pathway_analysis.md",
+      "platform_display_model.md",
+      "press_release_rooted_browser.md",
+      "rag_antic_comovement_analysis.md",
+      "razor_protocol_integration.md",
+      "rooted_browser_build_report.md",
+      "sector_card_mapping.md",
+      "stabilization_runbook.md",
+      "system0_sabbatical.md",
+      "timing_accuracy_standard.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vic20_yul_upgrades.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md",
+      "vulkan_lore_editor_architecture.md",
+      "vulkan_multicolor_plotting.md"
+    ],
+    "0x9f533369e5090c4da895ce9cee28d955096f1215": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xa1ddbbcab4f62e7968cc4adbe8ca0634ee509956": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xa3263c6d3f76979f7078345ae528dce928bdfd38": [
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "automation_system_design.md",
+      "cia_timers_and_gas_taxation.md",
+      "commodore_1541_iec_serial_bus.md",
+      "compuserve_integration_blueprint.md",
+      "content.md",
+      "dysnomia_system_integration_map.md",
+      "elektuur_early_issues_analysis.md",
+      "fylstra_sweets_byte_magazine.md",
+      "insta_software_analysis.md",
+      "multi_network_zmm_evm_inventory.md",
+      "qst_issue_9_analysis.md",
+      "rag_antic_comovement_analysis.md",
+      "studio_architecture_guide.md",
+      "synthesizer_scurry_tutorial.md",
+      "total_games_manifest.md",
+      "trading_cards_game_analysis.md",
+      "vaesen_folklore_synthesis.md",
+      "z_machine_ledger_inventory_design.md"
+    ],
+    "0xa3bfdb59e9d4167f56b47424531ddb31992afc57": [
+      "datamost_milestones.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0xa67effbfa307c6c9c6ea63e39654b97a6d8a334b": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xa846857cad1153bc9ce3ad7391dc7f1d060d2d75": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xac97aff0c05ef3840c991d9205f53be80ef8f1f2": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xadf5bec5c4b8469bd9fbdd4e51077736d857a660": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "daily_lore_2026_02_25.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "trading_cards_game_analysis.md"
+    ],
+    "0xb0ba7d36b7f0505879179ece7401f24eb653c6e1": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xb33523015f92835b3d7d63ccc51fa0bb90507a96": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xb45bd2d8728ff0cf320684fbce79c27bca036396": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xb6b83367fa8bd49e369b70615030f28a095fe0d8": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "daily_lore_2026_02_25.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "trading_cards_game_analysis.md"
+    ],
+    "0xbaae0ab51ff6c0ea1ed3cc64f981b662f6a8113f": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xc70a1047e7b9ac9f0ad74000dab1ab471b49c154": [
+      "carlson_chrget_to_emacs.md",
+      "dysnomia_exploration.md",
+      "live_math_results.md",
+      "lore_2026_03_03.md",
+      "math_integrity_report.md",
+      "ring_eta_comparison.md",
+      "rooted_browser_build_report.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md"
+    ],
+    "0xc9083d2a55536ac0c96b5235d585a4d5638b90f3": [
+      "02_Daily_Lore_2026_03_01.md",
+      "DYSNOMIA_VM_LORE.md",
+      "agentic_vector_fields.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "commodore_sid_audio_engine.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "dysnomia_exploration.md",
+      "dysnomia_prime_issue_1.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "live_math_results.md",
+      "lucas_plush_blueprint.md",
+      "math_integrity_report.md",
+      "msd_tax_and_security_analysis.md",
+      "multi_user_coprocessor_sharing.md",
+      "omnitronix_interface_analysis.md",
+      "quartz_crystals_radio_synthesis.md",
+      "ring_eta_comparison.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "star_castle_ai_evolution.md",
+      "synthesizer_lore.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md",
+      "topological_ordinance_bessel_vs_motzkin.md",
+      "zi_spin_comparison.md"
+    ],
+    "0xcaea70828578ed9dc2d68d0aa1f3755edc153385": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xcbfca49631570387cb04577b82d55be67b316c74": [
+      "dysnomia_math_verification.md"
+    ],
+    "0xcebcf3d363d6272b18f8708c9844e3c329c002c5": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xd0eabe17031f975fbad155ae435d0708ed8572be": [
+      "02_Daily_Lore_2026_03_01.md",
+      "3d_rendering_advancements_deepseek.md",
+      "73_magazine_issue_1_analysis.md",
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "DYSNOMIA_VM_LORE.md",
+      "MATERNAL_AI.md",
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "ZMACHINE_SPEC.md",
+      "abrash_mode_x_analysis.md",
+      "access_software_analysis.md",
+      "accumulator_vector_fields.md",
+      "advanced_infocom_technologies_blueprint.md",
+      "agentic_vector_field_cpu_testing.md",
+      "agentic_vector_fields.md",
+      "ahoy_interrupt_music_maker.md",
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_20_game_review.md",
+      "ahoy_issue_33_last_ninja_review.md",
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_6_page_63_review.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_12_review.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_14_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_18_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_25_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "ahoy_magazine_review.md",
+      "ai_debugger_input_methods.md",
+      "air_assault_bob_lloret_review.md",
+      "alchemical_platform_expansion_plan.md",
+      "analog_assembly_animation.md",
+      "analog_compatibility_roadmap.md",
+      "antic_ab4h_vulkan_colors.md",
+      "antic_cpu_terminal_improvements.md",
+      "antic_hardware_scrolling.md",
+      "antic_wayland_level_renderer.md",
+      "antic_zmm_terminal_benefits.md",
+      "arena_state_sharing.md",
+      "associahedron_lore.md",
+      "async_behavior_analysis.md",
+      "asynchronous_timeout_analysis.md",
+      "atari_incorporated_analysis.md",
+      "atari_unified_system.md",
+      "atropa_unified_instruction_set.md",
+      "auto_attenuation_debugging_concept.md",
+      "autodyne_analysis.md",
+      "automation_system_design.md",
+      "bayesian_arpeggiator_control.md",
+      "bbs_chat_integration.md",
+      "bessel_jnikny_dug_dus.md",
+      "bessel_jnikny_tunneling_operator.md",
+      "bessel_riders_and_harmonics.md",
+      "biotika_neural_feedback_loop.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "blockchain_secure_kermit.md",
+      "broderbund_software_integration.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_13_analysis.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_15_analysis.md",
+      "byte_issue_16_analysis.md",
+      "byte_issue_17_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_22_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issue_27_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "c64_1541_emulation_support.md",
+      "cabs_folklore_escrow_spec.md",
+      "cabs_peek_poke_security.md",
+      "cabs_reconciliation_framework.md",
+      "cabs_security_recommendations.md",
+      "cabs_tcg_interactions.md",
+      "cabs_token_exchange_spec.md",
+      "cannonball_blitz_integration.md",
+      "cardco_peripheral_interfaces.md",
+      "carlson_chrget_to_emacs.md",
+      "chattts_integration_design.md",
+      "cia_timers_and_gas_taxation.md",
+      "cimarron_insta_investment_combo_analysis.md",
+      "comm_data_review.md",
+      "commodore_1541_iec_serial_bus.md",
+      "commodore_hardware_tricks.md",
+      "commodore_kernal_io_redirection.md",
+      "commodore_sid_audio_engine.md",
+      "commodore_software_analysis.md",
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "compuserve_protocols_analysis.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "comstar_printer_integration.md",
+      "concurrency_pipeline_analysis.md",
+      "conjecture_topological_motzkin_primes.md",
+      "content.md",
+      "control_generation_architecture.md",
+      "control_systems_peripheral_emulation.md",
+      "conversion_plan.md",
+      "coprocessor_designs_analysis.md",
+      "counter_bin_specification.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "cpu_test_improvements.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_2026_03_02.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_base_secret.md",
+      "daily_lore_chen_jurchen.md",
+      "daily_lore_operation_mariner.md",
+      "daily_lore_vulkan_vision.md",
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "daskmig_magazine_issue_3_review.md",
+      "datamost_milestones.md",
+      "datamost_support_analysis.md",
+      "datamost_totl_protecto_integration.md",
+      "datasoft_analysis.md",
+      "ddj_bresenham_integration.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_dithering_integration.md",
+      "ddj_fft_spectrum_analyzer.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md",
+      "decentralized_os_yul_architecture.md",
+      "deep_rendering_background.md",
+      "disc_triangulation_space_stashas.md",
+      "dj.md",
+      "dna_3d_standards_proposal.md",
+      "dna_bear_improvements.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "dynamic_async_integration.md",
+      "dysnomia_combat_resonance_rules.md",
+      "dysnomia_exploration.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_prime_issue_1.md",
+      "dysnomia_recombination_operator.md",
+      "dysnomia_system_integration_map.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "easychain64_terminal_design.md",
+      "elektor_issue_10_in_depth.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_12_in_depth.md",
+      "elektor_issue_13_in_depth.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_15_in_depth.md",
+      "elektor_issue_16_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_1_synthesis.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_3_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_6_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_8_in_depth.md",
+      "elektor_issue_9_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "elektuur_issue_25_analysis.md",
+      "elm_debugger_advanced_usecases.md",
+      "emulator_integration_paths.md",
+      "entech_software_analysis.md",
+      "epyx_support_report.md",
+      "evm_arena_integration_summary.md",
+      "evm_memory_constraints.md",
+      "evm_vs_zmm_vm_interfaces.md",
+      "filtered_fdn_improvisational_decisions.md",
+      "folklore_cpu_design.md",
+      "fractional_synthesis_llm_rag.md",
+      "frobenius_manifold_capacitor.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "fylstra_sweets_byte_magazine.md",
+      "game_archetypes_spec.md",
+      "gameplay_mechanics_analysis.md",
+      "gan_speech_synthesis_analysis.md",
+      "gauntlet_jit_vae_spec.md",
+      "gauntlet_pmg_support.md",
+      "general_2d_character_synthesizer.md",
+      "geos_operating_system_analysis.md",
+      "germanium_zero_crossing_ssr_equivalence.md",
+      "graeffe_process_root_squaring.md",
+      "graphics_display_technologies.md",
+      "graphics_improvements_plan.md",
+      "gtia_collision_registers.md",
+      "hardball_rendering_system.md",
+      "hardware_improvements_plan.md",
+      "heathkit_synthesizer_monitor.md",
+      "homeword_integration.md",
+      "hugi_4d_graphics_integration.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md",
+      "hurwood_generator_expansion.md",
+      "hurwood_improvements.md",
+      "image_computer_products_analysis.md",
+      "impedance_reactor_cards.md",
+      "improved_rigging_supports.md",
+      "improvise_bionika.md",
+      "insta_software_analysis.md",
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "interrupt_standards.md",
+      "interview.lore",
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_3_cassette_storage.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "kilobaud_issue_7_in_depth.md",
+      "kinematic_rigging_phase.md",
+      "ktel_international_analysis.md",
+      "langchain_blueprint.md",
+      "learning_source_hometax_integration.md",
+      "live_math_results.md",
+      "local_deployment_guide.md",
+      "lore_2026_03_03.md",
+      "lucas_plush_blueprint.md",
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "mariner_system3_qualification.md",
+      "master_memory_map_review.md",
+      "math_integrity_report.md",
+      "memory_injector_security.md",
+      "mercenary_pipeline_integration.md",
+      "mercenary_room_objects_world_hollow.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "micro_world_printer_integration.md",
+      "microkernel_upgrade_plan.md",
+      "microprose_analysis.md",
+      "midwest_micro_superterm_integration.md",
+      "mmu_mappings.md",
+      "motzkin_apogee_apex_primes.md",
+      "motzkin_paths_and_bessel_fractions.md",
+      "motzkin_prime_synthesis_sequencing.md",
+      "motzkin_primes_rigor_limitations.md",
+      "motzkin_topological_basis_vertex.md",
+      "mozilla_integration_plan.md",
+      "msd_cbm_disk_review.md",
+      "msd_super_disk_integration.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_10_graeffe_power_series.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "mtac_issue_14_mersenne_uhler.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_2_non_sexagesimal_trig.md",
+      "mtac_issue_3_baas_bessel_fm.md",
+      "mtac_issue_4_structural_dynamics.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md",
+      "mtac_issue_9_bessel_zeros_solvers.md",
+      "multi_network_zmm_evm_inventory.md",
+      "multi_user_coprocessor_sharing.md",
+      "multi_user_shared_cpu_architecture.md",
+      "multiview_rag_loop_spec.md",
+      "muse_software_analysis.md",
+      "mystery_house_zengine_integration.md",
+      "nebula_biotika_plan.md",
+      "necessity_of_leakage_modeling.md",
+      "next_gen_emulator_architecture.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "npc_exhaustive_test_report.md",
+      "omnitronix_interface_analysis.md",
+      "on_chain_neural_speech.md",
+      "onchain_database_manager.md",
+      "optimum_interval_timer_scheduling.md",
+      "pathway_analysis.md",
+      "phase_space_formulation.md",
+      "photorealistic_rendering_analysis.md",
+      "platform_display_model.md",
+      "pokey_audio_synthesis.md",
+      "pong_diyat_tax.md",
+      "portal_hub_showcase.md",
+      "press_release_rooted_browser.md",
+      "price_liquidity_integration_plan.md",
+      "priority_voting_board.md",
+      "procedural_integration_report.md",
+      "progressive_rag_pipeline.md",
+      "prompt_draft.md",
+      "prophecy_inverse_synthesis.md",
+      "prophecy_of_the_quaternion.md",
+      "prophecy_philosophical_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "protecto_enterprises_deep_dive.md",
+      "protecto_epyx_integration.md",
+      "pulsex_swap_trap_scenario.md",
+      "qst_issue_10_analysis.md",
+      "qst_issue_11_analysis.md",
+      "qst_issue_12_analysis.md",
+      "qst_issue_13_analysis.md",
+      "qst_issue_14_analysis.md",
+      "qst_issue_14_genetic_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_5_analysis.md",
+      "qst_issue_6_analysis.md",
+      "qst_issue_7_analysis.md",
+      "qst_issue_8_analysis.md",
+      "qst_issue_9_analysis.md",
+      "qst_issues_1_4_hardware_concepts.md",
+      "quantum_cylindrical_tunneling_bessel.md",
+      "quantum_tunneling_breakdown_synthesis.md",
+      "quartz_crystals_radio_synthesis.md",
+      "quicksilva_analysis.md",
+      "rag_antic_comovement_analysis.md",
+      "rag_visual_telemetry.md",
+      "razor_protocol_integration.md",
+      "reengineering_plan.md",
+      "renegade_yul_architecture.md",
+      "resize_verification.md",
+      "ring_eta_comparison.md",
+      "rooted_browser_build_report.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "ruleburst_integration.md",
+      "rupert_report_cursor.md",
+      "sally_larsen_graphics_simulation.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "sd_subprocesses_profile.md",
+      "sector_card_mapping.md",
+      "sega_dreamcast_powervr2.md",
+      "sega_genesis_dual_cpu.md",
+      "sega_hardware_innovations.md",
+      "sega_saturn_vdp1.md",
+      "sega_vdp_scrolling.md",
+      "sega_vdp_vsram_priority.md",
+      "sierra_agi_integration.md",
+      "softlaw_corporation_integration.md",
+      "software_to_go_library.md",
+      "spectral_analysis_report.md",
+      "speech_synthesis_advancements.md",
+      "spinnaker_analysis.md",
+      "sprint_plan.md",
+      "ssr_terminology_compatibility.md",
+      "stabilization_operator_feedback_loop.md",
+      "stabilization_runbook.md",
+      "standun_controls_review.md",
+      "star_castle_ai_evolution.md",
+      "star_castle_autopilot_model.md",
+      "storybook_dna_animations.md",
+      "storybook_integrations.md",
+      "structural_dynamics_synthesis_control.md",
+      "studio_architecture_guide.md",
+      "stuffed_animals_evolution.md",
+      "sunrise_software_analysis.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_card_render_profile.md",
+      "synthesis_debug_session_equivalence.md",
+      "synthesis_latency_trace.md",
+      "synthesis_profile_report.md",
+      "synthesis_profiler_suite.md",
+      "synthesizer_lore.md",
+      "synthesizer_scurry_tutorial.md",
+      "system0_sabbatical.md",
+      "targ_mercenary_improvements.md",
+      "tcg_combat_rewards_mechanics.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md",
+      "teddy303_synthesis_notes.md",
+      "teddy_bear_visualization.md",
+      "tessarant_combat_physics.md",
+      "thirty_six_motzkin_primes_cardinalities.md",
+      "threading_scalability_profile.md",
+      "thunks_vs_bloom_filters.md",
+      "timing_accuracy_standard.md",
+      "topological_ordinance_bessel_vs_motzkin.md",
+      "total_games_manifest.md",
+      "trading_cards_game_analysis.md",
+      "transcendent_control_framework.md",
+      "triangulation_space_quest_for_vertex.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "tts_dashboard_improvements_roadmap.md",
+      "tup_tun_dug_dus_bessel_tunneling.md",
+      "unit_testing_report.md",
+      "unix_v1_folklore_cpu.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "upgrade_proposals.md",
+      "vaesen_character_sheets_report.md",
+      "vaesen_emotion_mathieu_feedback.md",
+      "vaesen_folklore_synthesis.md",
+      "vaesen_improvisational_agency.md",
+      "vaesen_integration_review.md",
+      "vaesen_silicon_bestiary.md",
+      "vaesen_sprite_graphics.md",
+      "vaesen_verification.md",
+      "vector_field_query_tokenization.md",
+      "vic20_yul_upgrades.md",
+      "vic_ii_advanced_concepts.md",
+      "vision_suite_analysis.md",
+      "visual_verification.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md",
+      "vulkan_lore_editor_architecture.md",
+      "vulkan_multicolor_plotting.md",
+      "vulkan_wireframe_integration.md",
+      "wayland_ab4h_rendering.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md",
+      "window_registry.md",
+      "xonox_analysis.md",
+      "yamaha_ym2612_fm_synthesis.md",
+      "yi_mechanical_transducer.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "yul_device_access.md",
+      "yul_hardware_hardening_analysis.md",
+      "yul_vm_isolation_audit.md",
+      "z_machine_ledger_inventory_design.md",
+      "z_machine_onchain_design.md",
+      "zener_discovery_ai_analogy.md",
+      "zeners_in_llm_architectures.md",
+      "zi_spin_comparison.md",
+      "zil_onchain_parser_design.md",
+      "zmachine_erc20_integration.md",
+      "zmachine_erc20_rewards_and_payments.md",
+      "zmachine_implementation_log.md",
+      "zmachine_locus_diyat.md",
+      "zmachine_onchain_composition.md",
+      "zmm_evm_rpc_specification.md",
+      "zmm_room_refactoring_plan.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "0xd127839b83cbf537c29b7d268c135f745a0da2e8": [
+      "image_computer_products_analysis.md",
+      "protecto_enterprises_deep_dive.md"
+    ],
+    "0xe0230d9803bd212c71177a2e9a8bafa54dc70671": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xe4169cf239e2fdc6e6e4a3a6fa0a703058ce400b": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xe9f5ef3994fe76d83b0faab75062e86457ff96b9": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xeb818b831dfdfee90e3a036456dfeaa012fce9ef": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md"
+    ],
+    "0xeccdfd5fa13b40ec76b9c45a5d20463b47de6c9c": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "ZMACHINE_SPEC.md",
+      "antic_ab4h_vulkan_colors.md",
+      "antic_wayland_level_renderer.md",
+      "automation_system_design.md",
+      "bbs_chat_integration.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_chen_jurchen.md",
+      "dysnomia_combat_resonance_rules.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "gauntlet_jit_vae_spec.md",
+      "general_2d_character_synthesizer.md",
+      "interview.lore",
+      "local_deployment_guide.md",
+      "lore_2026_03_03.md",
+      "platform_display_model.md",
+      "press_release_rooted_browser.md",
+      "rag_antic_comovement_analysis.md",
+      "rooted_browser_build_report.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "synthesizer_scurry_tutorial.md",
+      "tcg_flexible_game_rules.md",
+      "teddy_bear_visualization.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vaesen_integration_review.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "0xeed783edc584aa1e796f28e3a2b3e37e8c3393c7": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xf2c4087a18781d5347d4905e86b087b1b9d6ba51": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xf398c7aedd6af9f357325d6e402503cbc45ee698": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "analog_assembly_animation.md",
+      "antic_ab4h_vulkan_colors.md",
+      "daily_lore_vulkan_vision.md",
+      "dna_bear_improvements.md",
+      "dysnomia_combat_resonance_rules.md",
+      "elektor_issue_18_in_depth.md",
+      "gauntlet_pmg_support.md",
+      "general_2d_character_synthesizer.md",
+      "mercenary_room_objects_world_hollow.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md",
+      "price_liquidity_integration_plan.md",
+      "storybook_dna_animations.md",
+      "synapse_software_analysis.md",
+      "synthesizer_scurry_tutorial.md",
+      "vaesen_integration_review.md",
+      "vaesen_sprite_graphics.md",
+      "vic_ii_advanced_concepts.md"
+    ],
+    "0xf628ddf33e97cfe53826e839241200e148394b16": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xf8b9487137ac32c9f68c044b29b06705a4a6b836": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "daily_lore_2026_02_25.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "trading_cards_game_analysis.md"
+    ],
+    "0xf8f8af1f48152e1f0c93f38fa783783530ffff40": [
+      "local_deployment_guide.md",
+      "ring_eta_comparison.md",
+      "tcg_combat_rewards_mechanics.md",
+      "zi_spin_comparison.md",
+      "zmachine_locus_diyat.md"
+    ],
+    "0xf9d9f7cd9d14c03a00410df7f4be042ae8dfd70a": [
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "0xfb1d79843b4be8c9fc244f54ee965d051261bb4b": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
     ]
   }
 }

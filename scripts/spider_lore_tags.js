@@ -2,11 +2,12 @@ const fs = require("fs");
 const path = require("path");
 
 console.log("=============================================================");
-console.log("Auncient Lore Tag Spidering Engine");
+console.log("Auncient Lore & QING Relational Spidering Engine");
 console.log("=============================================================");
 
 const LORE_DIR = path.join(__dirname, "../lore");
 const OUTPUT_FILE = path.join(__dirname, "../config/lore_tags_database.json");
+const QING_STATUS_PATH = path.join(__dirname, "../config/nonukes_qings_status.json");
 
 // Conceptual tags we want to explicitly watch for and normalize
 const ConceptKeywords = [
@@ -40,11 +41,25 @@ function spider() {
         process.exit(1);
     }
 
+    // Load active QING contracts
+    let qings = [];
+    if (fs.existsSync(QING_STATUS_PATH)) {
+        try {
+            const raw = JSON.parse(fs.readFileSync(QING_STATUS_PATH, "utf8"));
+            qings = raw.filter(item => item.exists && item.qing);
+            console.log(`Loaded ${qings.length} active QING contracts for mapping...`);
+        } catch (e) {
+            console.error("Warning: Could not parse nonukes_qings_status.json:", e.message);
+        }
+    }
+
     const files = fs.readdirSync(LORE_DIR).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
     console.log(`Spidering ${files.length} lore documents...`);
 
     const docToTags = {};
     const tagToDocs = {};
+    const docToQings = {};
+    const qingToDocs = {};
 
     for (const filename of files) {
         const filePath = path.join(LORE_DIR, filename);
@@ -54,13 +69,13 @@ function spider() {
         content = content.replace(/ancient/gi, "Auncient");
 
         const tags = new Set();
+        const referencedQings = new Set();
 
         // 1. Extract tokens from filename
         const baseName = path.parse(filename).name;
         const filenameTokens = baseName.toLowerCase().split(/[_\-]+/);
         for (const token of filenameTokens) {
             if (token.length >= 3) {
-                // If it's close to ancient, force spelling to preserve historical integrity
                 if (token === "ancient") {
                     tags.add("auncient");
                 } else {
@@ -89,11 +104,23 @@ function spider() {
             }
         }
         
-        // Also check explicitly for 'auncient' (since 'ancient' was normalized above)
         if (lowerContent.includes("auncient")) {
             tags.add("auncient");
         }
 
+        // 4. Cross-reference QING token symbols/names/addresses
+        for (const q of qings) {
+            const cleanSym = q.symbol.replace("$", "");
+            const symbolPattern = new RegExp(`\\b${cleanSym}\\b`, "i");
+            const qingAddrPattern = new RegExp(q.qing, "i");
+            const tokenAddrPattern = new RegExp(q.address, "i");
+
+            if (symbolPattern.test(content) || qingAddrPattern.test(content) || tokenAddrPattern.test(content)) {
+                referencedQings.add(q.qing);
+            }
+        }
+
+        // Save doc mappings
         const tagList = Array.from(tags).sort();
         docToTags[filename] = tagList;
 
@@ -103,13 +130,29 @@ function spider() {
             }
             tagToDocs[tag].push(filename);
         }
+
+        const qingList = Array.from(referencedQings).sort();
+        docToQings[filename] = qingList;
+
+        for (const qing of qingList) {
+            if (!qingToDocs[qing]) {
+                qingToDocs[qing] = [];
+            }
+            qingToDocs[qing].push(filename);
+        }
     }
 
-    // Sort tag lists to keep them predictable
+    // Sort mappings for predictability
     const sortedTags = Object.keys(tagToDocs).sort();
     const sortedTagToDocs = {};
     for (const tag of sortedTags) {
         sortedTagToDocs[tag] = tagToDocs[tag].sort();
+    }
+
+    const sortedQings = Object.keys(qingToDocs).sort();
+    const sortedQingToDocs = {};
+    for (const q of sortedQings) {
+        sortedQingToDocs[q] = qingToDocs[q].sort();
     }
 
     const database = {
@@ -117,21 +160,23 @@ function spider() {
             generatedAt: new Date().toISOString(),
             totalDocuments: files.length,
             totalUniqueTags: sortedTags.length,
-            description: "Auncient Relational Lore Tag Dataset mapping lore documentation files to concepts."
+            totalUniqueQingsMapped: sortedQings.length,
+            description: "Auncient Relational Lore Tag & QING Dataset mapping lore documentation files to concepts and smart contracts."
         },
         documentToTags: docToTags,
-        tagToDocuments: sortedTagToDocs
+        tagToDocuments: sortedTagToDocs,
+        documentToQings: docToQings,
+        qingToDocuments: sortedQingToDocs
     };
 
-    // Ensure output parent directory exists
     const outputDir = path.dirname(OUTPUT_FILE);
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(database, null, 2), "utf8");
-    console.log(`✓ Relational lore tags database successfully written to: ${OUTPUT_FILE}`);
-    console.log(`✓ Detected ${sortedTags.length} unique tags across ${files.length} documents.`);
+    console.log(`✓ Relational lore + QING database successfully written to: ${OUTPUT_FILE}`);
+    console.log(`✓ Detected ${sortedTags.length} unique tags and mapped ${sortedQings.length} active QING contracts.`);
 }
 
 spider();
