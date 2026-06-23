@@ -73,21 +73,57 @@ function buildGlossary() {
     }
 
     // Sort and limit output
-    const topUnigrams = Object.entries(unigrams)
+    const rawTopUnigrams = Object.entries(unigrams)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 150)
-        .map(([word, count]) => ({ word, count }));
+        .slice(0, 150);
 
-    const topMultiWords = Object.entries(multiWords)
+    const rawTopMultiWords = Object.entries(multiWords)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 150)
-        .map(([sequence, count]) => ({ sequence, count }));
+        .slice(0, 150);
+
+    // Build rich snippets helper
+    function getTermSnippets(term) {
+        const snippets = [];
+        const regex = new RegExp(`([^.!?\\n\\r]*?\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.!?\\n\\r]*)`, "i");
+        
+        for (const filename of files) {
+            const filePath = path.join(LORE_DIR, filename);
+            const content = fs.readFileSync(filePath, "utf8").replace(/ancient/gi, "Auncient");
+            
+            // Split into lines/sentences
+            const lines = content.split(/\r?\n/);
+            for (const line of lines) {
+                if (regex.test(line)) {
+                    const cleanLine = line.replace(/[#\*_\-\>\|]/g, " ").trim();
+                    if (cleanLine.length > term.length + 5 && !snippets.includes(cleanLine)) {
+                        snippets.push(`${cleanLine} [${filename}]`);
+                        if (snippets.length >= 3) break;
+                    }
+                }
+            }
+            if (snippets.length >= 3) break;
+        }
+        return snippets;
+    }
+
+    console.log("Extracting context snippets for top terms...");
+    const topUnigrams = rawTopUnigrams.map(([word, count]) => ({
+        word,
+        count,
+        snippets: getTermSnippets(word)
+    }));
+
+    const topMultiWords = rawTopMultiWords.map(([sequence, count]) => ({
+        sequence,
+        count,
+        snippets: getTermSnippets(sequence)
+    }));
 
     const glossary = {
         meta: {
             generatedAt: new Date().toISOString(),
             totalDocumentsAnalyzed: files.length,
-            description: "Auncient Lore Glossary index tracking the most frequent unigrams and automatically discovered multi-word terms (length 2-4)."
+            description: "Auncient Lore Glossary index tracking the most frequent unigrams and automatically discovered multi-word terms (length 2-4) with context snippets."
         },
         topWords: topUnigrams,
         topMultiWordTerms: topMultiWords
