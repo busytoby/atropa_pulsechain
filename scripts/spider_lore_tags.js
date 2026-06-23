@@ -179,4 +179,8 @@ function spider() {
     console.log(`✓ Detected ${sortedTags.length} unique tags and mapped ${sortedQings.length} active QING contracts.`);
 }
 
-spider();
+if (require.main === module) {
+    spider();
+}
+
+module.exports = { spider };

@@ -7,57 +7,11 @@ const PORT = 3000;
 const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 let dilemmaLog = [];
 
-class AlsaSynth {
-    constructor() {
-        this.sampleRate = 22050;
-        this.activeNotes = new Map();
-        this.interval = null;
-        this.startLoop();
-    }
-
-    noteOn(freq) {
-        if (!this.activeNotes.has(freq)) {
-            this.activeNotes.set(freq, {
-                phase: 0,
-                amplitude: 0.0,
-                targetAmplitude: 0.15
-            });
-        } else {
-            this.activeNotes.get(freq).targetAmplitude = 0.15;
-        }
-    }
-
-    noteOff(freq) {
-        const note = this.activeNotes.get(freq);
-        if (note) {
-            note.targetAmplitude = 0.0;
-        }
-    }
-
-    reset() {
-        this.activeNotes.clear();
-    }
-
-    startLoop() {
-        const blockSize = Math.round(this.sampleRate * 0.02);
-
-        this.interval = setInterval(() => {
-            for (let i = 0; i < blockSize; i++) {
-                for (const [freq, note] of this.activeNotes.entries()) {
-                    note.amplitude += (note.targetAmplitude - note.amplitude) * 0.08;
-                    note.phase += (2 * Math.PI * freq) / this.sampleRate;
-                    if (note.phase > 2 * Math.PI) {
-                        note.phase -= 2 * Math.PI;
-                    }
-                    
-                    if (note.targetAmplitude === 0.0 && note.amplitude < 0.001) {
-                        this.activeNotes.delete(freq);
-                    }
-                }
-            }
-        }, 20);
-    }
-}
+const AlsaSynth = require("./alsa_synth");
+const { loreAnalysisCache, performLoreAnalysis, processAnnotationReplies } = require("./lore_analyzer");
+const { spider } = require("./spider_lore_tags");
+const marketCache = require("./market_cache");
+const { fetchMarketData, MARKET_CACHE_PATH } = marketCache;
 
 global.alsaSynthInstance = new AlsaSynth();
 
@@ -202,321 +156,6 @@ function processRenderQueue() {
     pythonDaemon.stdin.write(JSON.stringify(task.payload) + "\n");
 }
 
-const https = require("https");
-const MARKET_CACHE_PATH = path.join(__dirname, "../tmp/market_cache.json");
-let marketFetchInProgress = false;
-let currentNoNukesPriceUsd = 1.74;
-
-const decimalsCache = {
-    "0x174a0ad99c60c20d9b3d94c3095bc1fb9defd62": 18
-};
-
-function pulseRpcCall(to, data) {
-    return new Promise((resolve) => {
-        const postData = JSON.stringify({
-            jsonrpc: "2.0",
-            method: "eth_call",
-            params: [
-                {
-                    to: to,
-                    data: data
-                },
-                "latest"
-            ],
-            id: 1
-        });
-
-        const options = {
-            hostname: "rpc.pulsechain.com",
-            port: 443,
-            path: "/",
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Content-Length": postData.length
-            },
-            timeout: 5000
-        };
-
-        const req = https.request(options, (res) => {
-            let body = "";
-            res.on("data", chunk => body += chunk);
-            res.on("end", () => {
-                try {
-                    const parsed = JSON.parse(body);
-                    if (parsed.error) {
-                        resolve(null);
-                    } else {
-                        resolve(parsed.result);
-                    }
-                } catch (e) {
-                    resolve(null);
-                }
-            });
-        });
-
-        req.on("error", () => resolve(null));
-        req.write(postData);
-        req.end();
-    });
-}
-
-async function getTokenDecimals(tokenAddress) {
-    const addr = tokenAddress.toLowerCase();
-    if (decimalsCache[addr] !== undefined) {
-        return decimalsCache[addr];
-    }
-    let decimals = 18;
-    try {
-        const result = await pulseRpcCall(tokenAddress, "0x313ce567");
-        if (result && result !== "0x") {
-            const parsed = parseInt(result, 16);
-            if (!isNaN(parsed)) {
-                decimals = parsed;
-            }
-        }
-    } catch (e) {
-        // Fallback
-    }
-    decimalsCache[addr] = decimals;
-    return decimals;
-}
-
-async function queryTokenMarketData(partnerAddr, poolAddresses, nonukesPriceUsd) {
-    try {
-        let totalReservePartner = 0;
-        let totalReserveNoNukes = 0;
-        
-        const nonukesDecimals = 18;
-
-        // Try to load local scratch reserves file as a fallback
-        let reservesFile = {};
-        const glob = require("glob");
-        const os = require("os");
-        const fs = require("fs");
-        const path = require("path");
-        try {
-            const reservesFiles = glob.sync(os.homedir() + "/.gemini/antigravity-cli/brain/*/scratch/nonukes_pulsex_reserves.json");
-            const resPath = reservesFiles[0] || "nonukes_pulsex_reserves.json";
-            if (fs.existsSync(resPath)) {
-                reservesFile = JSON.parse(fs.readFileSync(resPath, "utf8"));
-            }
-        } catch (err) {
-            // Ignore
-        }
-        
-        let partnerDecimals = 18;
-        let decimalsFetched = false;
-        
-        // Try to get decimals from RPC
-        try {
-            const result = await pulseRpcCall(partnerAddr, "0x313ce567");
-            if (result && result !== "0x") {
-                const parsed = parseInt(result, 16);
-                if (!isNaN(parsed)) {
-                    partnerDecimals = parsed;
-                    decimalsFetched = true;
-                }
-            }
-        } catch (e) {
-            // Ignore
-        }
-        
-        // If RPC failed to fetch decimals, try to derive it from the reserves file
-        if (!decimalsFetched) {
-            for (const poolAddr of poolAddresses) {
-                const poolKey = poolAddr.toLowerCase();
-                if (reservesFile[poolKey]) {
-                    const resRecord = reservesFile[poolKey];
-                    let rawR = 0n;
-                    let adjR = 0;
-                    
-                    const fileToken0 = (resRecord.token0 || "").toLowerCase();
-                    const fileToken1 = (resRecord.token1 || "").toLowerCase();
-                    if (fileToken0 === partnerAddr.toLowerCase()) {
-                        rawR = BigInt(resRecord.raw_reserve0 || "0");
-                        adjR = Number(resRecord.reserve0 || 0);
-                    } else if (fileToken1 === partnerAddr.toLowerCase()) {
-                        rawR = BigInt(resRecord.raw_reserve1 || "0");
-                        adjR = Number(resRecord.reserve1 || 0);
-                    }
-                    
-                    if (rawR > 0n && adjR > 0) {
-                        const ratio = Number(rawR) / adjR;
-                        const derivedDec = Math.round(Math.log10(ratio));
-                        if (derivedDec >= 0 && derivedDec <= 36) {
-                            partnerDecimals = derivedDec;
-                            decimalsFetched = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        
-        for (const poolAddr of poolAddresses) {
-            const poolKey = poolAddr.toLowerCase();
-            let r0 = 0n;
-            let r1 = 0n;
-            let fetched = false;
-
-            const reservesResult = await pulseRpcCall(poolAddr, "0x0902f1ac");
-            if (reservesResult && reservesResult !== "0x") {
-                const clean = reservesResult.startsWith("0x") ? reservesResult.slice(2) : reservesResult;
-                if (clean.length >= 128) {
-                    const r0Hex = clean.slice(0, 64);
-                    const r1Hex = clean.slice(64, 128);
-                    r0 = BigInt("0x" + r0Hex);
-                    r1 = BigInt("0x" + r1Hex);
-                    fetched = true;
-                }
-            }
-
-            let reservePartner = 0;
-            let reserveNoNukes = 0;
-
-            if (fetched) {
-                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
-                const isPartner0 = partnerAddr.toLowerCase() < nonukesAddr.toLowerCase();
-                
-                const rawReservePartner = isPartner0 ? r0 : r1;
-                const rawReserveNoNukes = isPartner0 ? r1 : r0;
-                
-                reservePartner = Number(rawReservePartner) / Math.pow(10, partnerDecimals);
-                reserveNoNukes = Number(rawReserveNoNukes) / Math.pow(10, nonukesDecimals);
-            } else if (reservesFile[poolKey]) {
-                const resRecord = reservesFile[poolKey];
-                const fileR0 = Number(resRecord.reserve0 || 0);
-                const fileR1 = Number(resRecord.reserve1 || 0);
-                
-                let fileToken0 = (resRecord.token0 || "").toLowerCase();
-                let fileToken1 = (resRecord.token1 || "").toLowerCase();
-                if (!fileToken0 || !fileToken1) {
-                    if (partnerAddr.toLowerCase() < "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62") {
-                        fileToken0 = partnerAddr.toLowerCase();
-                        fileToken1 = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
-                    } else {
-                        fileToken0 = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
-                        fileToken1 = partnerAddr.toLowerCase();
-                    }
-                }
-                
-                const nonukesAddr = "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62";
-                if (fileToken0 === nonukesAddr) {
-                    reserveNoNukes = fileR0;
-                    reservePartner = fileR1 * Math.pow(10, 18 - partnerDecimals);
-                } else {
-                    reserveNoNukes = fileR1;
-                    reservePartner = fileR0 * Math.pow(10, 18 - partnerDecimals);
-                }
-            }
-            
-            totalReservePartner += reservePartner;
-            totalReserveNoNukes += reserveNoNukes;
-        }
-        
-        let priceUsd = "0";
-        if (totalReservePartner > 0) {
-            const priceInNoNukes = totalReserveNoNukes / totalReservePartner;
-            priceUsd = (priceInNoNukes * nonukesPriceUsd).toFixed(6);
-        }
-        
-        const liquidityUsd = Math.round(totalReserveNoNukes * nonukesPriceUsd * 2);
-        
-        return {
-            priceUsd,
-            liquidityUsd
-        };
-    } catch (e) {
-        console.error(`[MARKET CACHE] Error querying live data for ${partnerAddr}:`, e.message);
-        return { priceUsd: "0", liquidityUsd: 0 };
-    }
-}
-
-function fetchMarketData(addresses) {
-    if (marketFetchInProgress || !addresses || addresses.length === 0) return;
-    marketFetchInProgress = true;
-    console.log(`[MARKET CACHE] Starting update using PulseX V1 & V2 on-chain reserves for ${addresses.length} tokens...`);
-
-    const nonukesPriceUsd = 1.74;
-    console.log(`[MARKET CACHE] Current NoNukes USD price: ${nonukesPriceUsd}`);
-    currentNoNukesPriceUsd = nonukesPriceUsd;
-
-    // Immediately execute reserves updates using the known price
-    (async () => {
-        try {
-
-            let poolsMap = {};
-            const poolsPath = path.join(__dirname, "../nonukes_pools.json");
-            if (fs.existsSync(poolsPath)) {
-                try {
-                    poolsMap = JSON.parse(fs.readFileSync(poolsPath, "utf8"));
-                } catch (e) {
-                    console.error("[MARKET CACHE] Failed to read nonukes_pools.json:", e.message);
-                }
-            }
-
-            const partnerToPools = {};
-            for (const [poolAddr, poolInfo] of Object.entries(poolsMap)) {
-                if (poolInfo.other_addr) {
-                    const partnerAddr = poolInfo.other_addr.toLowerCase();
-                    if (!partnerToPools[partnerAddr]) {
-                        partnerToPools[partnerAddr] = [];
-                    }
-                    partnerToPools[partnerAddr].push(poolAddr.toLowerCase());
-                }
-            }
-
-            const marketData = {};
-            const batchSize = 10;
-            
-            try {
-                for (let i = 0; i < addresses.length; i += batchSize) {
-                    const batch = addresses.slice(i, i + batchSize);
-                    await Promise.all(batch.map(async (addr) => {
-                        const addrKey = addr.toLowerCase();
-                        const poolsList = partnerToPools[addrKey];
-                        
-                        if (poolsList && poolsList.length > 0) {
-                            const metrics = await queryTokenMarketData(addr, poolsList, nonukesPriceUsd);
-                            marketData[addrKey] = {
-                                priceUsd: metrics.priceUsd,
-                                priceChange24h: 0,
-                                liquidityUsd: metrics.liquidityUsd,
-                                dexId: "pulsex",
-                                quoteSymbol: "NONUKES"
-                            };
-                        } else {
-                            marketData[addrKey] = {
-                                priceUsd: "0",
-                                priceChange24h: 0,
-                                liquidityUsd: 0,
-                                dexId: "unknown",
-                                quoteSymbol: "NONUKES"
-                            };
-                        }
-                    }));
-                }
-
-                fs.mkdirSync(path.dirname(MARKET_CACHE_PATH), { recursive: true });
-                fs.writeFileSync(MARKET_CACHE_PATH, JSON.stringify({
-                    timestamp: Date.now(),
-                    data: marketData
-                }, null, 2), "utf8");
-                console.log(`[MARKET CACHE] Calculated and saved ${Object.keys(marketData).length} token price records directly from PulseX.`);
-            } catch (err) {
-                console.error("[MARKET CACHE] Failed to fetch or write live cache data:", err);
-            }
-            marketFetchInProgress = false;
-        } catch (outerErr) {
-            console.error("[MARKET CACHE] Unexpected error during market data fetch:", outerErr);
-            marketFetchInProgress = false;
-        }
-    })();
-}
-
-
-
 const MIME_TYPES = {
     ".html": "text/html",
     ".css": "text/css",
@@ -527,191 +166,6 @@ const MIME_TYPES = {
     ".gif": "image/gif",
     ".svg": "image/svg+xml"
 };
-
-let loreAnalysisCache = {};
-
-function performLoreAnalysis() {
-    const loreDir = path.join(__dirname, "../lore");
-    if (!fs.existsSync(loreDir)) return;
-    const files = fs.readdirSync(loreDir).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
-    
-    // Normalize defined concepts to a map and set
-    const conceptMap = {};
-    files.forEach(f => {
-        const base = path.basename(f, path.extname(f)).toLowerCase().replace(/_/g, ' ');
-        conceptMap[base] = f;
-    });
-    const definedConcepts = new Set(Object.keys(conceptMap));
-    
-    const rawData = {};
-    
-    // PHASE 1 & PHASE 2: Structural and Lexical analysis pass
-    files.forEach(file => {
-        const fullPath = path.join(loreDir, file);
-        try {
-            const text = fs.readFileSync(fullPath, "utf8");
-            
-            const annotationsRegex = /<!--\s*AUNCIENT_ANNOTATIONS_START\s*([\s\S]*?)\s*AUNCIENT_ANNOTATIONS_END\s*-->/;
-            const cleanText = text.replace(annotationsRegex, "");
-            
-            // Phase 1: Structural analysis
-            const words = cleanText.split(/\s+/).filter(Boolean);
-            const wordCount = words.length;
-            
-            const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            const sentenceCount = sentences.length;
-            
-            let questionCount = 0;
-            const match = text.match(annotationsRegex);
-            if (match) {
-                try {
-                    const annotations = JSON.parse(match[1].trim());
-                    annotations.forEach(ann => {
-                        if (ann.comment && ann.comment.includes('?')) {
-                            questionCount++;
-                        }
-                    });
-                } catch (e) {}
-            }
-            
-            const contentQuestions = (cleanText.match(/\?/g) || []).length;
-            const codeBlockCount = (cleanText.match(/```/g) || []).length / 2;
-            const headerCount = (cleanText.match(/^#{1,6}\s+/gm) || []).length;
-            
-            // Phase 2: Lexical Analysis & Jargon Extraction
-            const jargonMatches = cleanText.match(/\b[A-Z][a-zA-Z0-9_]{2,}\b/g) || [];
-            const uniqueJargon = [...new Set(jargonMatches)];
-            const undefinedJargon = [];
-            
-            uniqueJargon.forEach(term => {
-                const normalized = term.toLowerCase();
-                if (!definedConcepts.has(normalized) && 
-                    !['the', 'and', 'for', 'this', 'that', 'with', 'evm', 'pki', 'gdk', 'gtk', 'xml', 'api', 'rpc', 'sdk', 'url', 'uri', 'web', 'dom', 'cdp', 'cli', 'pid', 'sigint', 'sigterm', 'json', 'html', 'css', 'git', 'vcs', 'mjpeg', 'vulkan', 'wayland'].includes(normalized)) {
-                    undefinedJargon.push(term);
-                }
-            });
-            
-            const todoMatches = cleanText.match(/\b(TODO|FIXME|TBD|PLACEHOLDER|UNRESOLVED|INVESTIGATE|DRAFT)\b/gi) || [];
-            const todoCount = todoMatches.length;
-
-            rawData[file] = {
-                file,
-                text: cleanText.toLowerCase(),
-                wordCount,
-                sentenceCount,
-                questionCount: questionCount + contentQuestions,
-                codeBlockCount,
-                headerCount,
-                undefinedJargon,
-                todoCount,
-                referencedConcepts: []
-            };
-        } catch (e) {}
-    });
-
-    // PHASE 3: Relationship Mapping and Concept Reference Graph
-    Object.keys(rawData).forEach(file => {
-        const data = rawData[file];
-        definedConcepts.forEach(concept => {
-            const conceptFile = conceptMap[concept];
-            if (conceptFile === file) return;
-            
-            const regex = new RegExp(`\\b${concept}\\b`, 'i');
-            if (regex.test(data.text)) {
-                data.referencedConcepts.push(conceptFile);
-            }
-        });
-    });
-
-    // PHASE 4: Score Aggregation and Weight Synthesis
-    const baseAnalysis = {};
-    Object.keys(rawData).forEach(file => {
-        const data = rawData[file];
-        let score = 0;
-        const reasons = [];
-
-        if (data.wordCount < 150) {
-            score += 100;
-            reasons.push(`Sparse content (${data.wordCount} words)`);
-        } else if (data.wordCount < 400) {
-            score += 30;
-            reasons.push(`Short document (${data.wordCount} words)`);
-        }
-        
-        if (data.headerCount === 0) {
-            score += 25;
-            reasons.push(`Lacks proper Markdown headers`);
-        }
-
-        if (data.questionCount > 0) {
-            score += data.questionCount * 40;
-            reasons.push(`Contains ${data.questionCount} unresolved question(s)`);
-        }
-
-        if (data.undefinedJargon.length > 0) {
-            const added = Math.min(5, data.undefinedJargon.length) * 15;
-            score += added;
-            reasons.push(`Undefined terms: ${data.undefinedJargon.slice(0, 3).join(', ')}`);
-        }
-
-        if (data.referencedConcepts.length === 0) {
-            score += 40;
-            reasons.push(`Isolated node (references no other Auncient concepts)`);
-        } else {
-            const linkDensity = data.referencedConcepts.length / (data.wordCount / 100);
-            if (linkDensity < 0.5) {
-                score += 20;
-                reasons.push(`Low linkage density to other concepts`);
-            }
-        }
-
-        if (data.todoCount > 0) {
-            score += Math.min(4, data.todoCount) * 25;
-            reasons.push(`Contains ${data.todoCount} draft/TODO marker(s)`);
-        }
-
-        baseAnalysis[file] = {
-            score,
-            reasons,
-            wordCount: data.wordCount,
-            undefinedJargon: data.undefinedJargon,
-            referencedConcepts: data.referencedConcepts
-        };
-    });
-
-    // Pass 2: Propagate weights through concept references to penalize dependency gaps
-    const finalAnalysis = {};
-    Object.keys(baseAnalysis).forEach(file => {
-        const item = baseAnalysis[file];
-        let score = item.score;
-        const reasons = [...item.reasons];
-        
-        const weakReferences = [];
-        item.referencedConcepts.forEach(refFile => {
-            const refItem = baseAnalysis[refFile];
-            if (refItem && refItem.score >= 100) {
-                weakReferences.push(refFile);
-            }
-        });
-
-        if (weakReferences.length > 0) {
-            const added = Math.min(4, weakReferences.length) * 15;
-            score += added;
-            const names = weakReferences.slice(0, 2).map(f => path.basename(f, '.md'));
-            reasons.push(`Depends on poorly understood concepts: ${names.join(', ')}`);
-        }
-
-        finalAnalysis[file] = {
-            score,
-            reasons,
-            wordCount: item.wordCount,
-            undefinedJargon: item.undefinedJargon,
-            referencedConcepts: item.referencedConcepts
-        };
-    });
-    
-    loreAnalysisCache = finalAnalysis;
-}
 
 try {
     performLoreAnalysis();
@@ -803,36 +257,36 @@ const server = http.createServer(async (req, res) => {
         req.on("data", chunk => body += chunk.toString());
         req.on("end", () => {
              try {
-                 const data = JSON.parse(body);
-                 
-                 // Route to CPU-level ALSA synthesizer
-                 if (data.type === 'synth_poke') {
-                     const freq = parseFloat(data.freq);
-                     const control = parseInt(data.control);
-                     const gateOn = control & 1;
-                     if (global.alsaSynthInstance && !isNaN(freq)) {
-                         if (gateOn) {
-                             global.alsaSynthInstance.noteOn(freq);
-                         } else {
-                             global.alsaSynthInstance.noteOff(freq);
-                         }
-                     }
-                 } else if (data.type === 'synth_reset') {
-                     if (global.alsaSynthInstance) {
-                         global.alsaSynthInstance.reset();
-                     }
-                 }
+                  const data = JSON.parse(body);
+                  
+                  // Route to CPU-level ALSA synthesizer
+                  if (data.type === 'synth_poke') {
+                      const freq = parseFloat(data.freq);
+                      const control = parseInt(data.control);
+                      const gateOn = control & 1;
+                      if (global.alsaSynthInstance && !isNaN(freq)) {
+                          if (gateOn) {
+                              global.alsaSynthInstance.noteOn(freq);
+                          } else {
+                              global.alsaSynthInstance.noteOff(freq);
+                          }
+                      }
+                  } else if (data.type === 'synth_reset') {
+                      if (global.alsaSynthInstance) {
+                          global.alsaSynthInstance.reset();
+                      }
+                  }
 
-                 let clientCount = 0;
-                 if (global.synthSessions && global.synthSessions[sessionId]) {
-                     clientCount = global.synthSessions[sessionId].length;
-                     global.synthSessions[sessionId].forEach(client => {
-                         client.write(`data: ${JSON.stringify(data)}\n\n`);
-                     });
-                 }
-                 console.log(`[SERVER] POST /api/synth-feed?sessionId=${sessionId} - Broadcasted to ${clientCount} clients`);
-                 res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-                 res.end(JSON.stringify({ success: true }));
+                  let clientCount = 0;
+                  if (global.synthSessions && global.synthSessions[sessionId]) {
+                      clientCount = global.synthSessions[sessionId].length;
+                      global.synthSessions[sessionId].forEach(client => {
+                          client.write(`data: ${JSON.stringify(data)}\n\n`);
+                      });
+                  }
+                  console.log(`[SERVER] POST /api/synth-feed?sessionId=${sessionId} - Broadcasted to ${clientCount} clients`);
+                  res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                  res.end(JSON.stringify({ success: true }));
             } catch (err) {
                 console.error(`[SERVER] Error in POST /api/synth-feed: ${err.message}`);
                 res.writeHead(500, { "Content-Type": "application/json" });
@@ -881,7 +335,7 @@ const server = http.createServer(async (req, res) => {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
         });
-        res.end(JSON.stringify({ priceUsd: currentNoNukesPriceUsd }));
+        res.end(JSON.stringify({ priceUsd: marketCache.currentNoNukesPriceUsd }));
         return;
     }
 
@@ -907,10 +361,10 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            let marketCache = { timestamp: 0, data: {} };
+            let marketCacheData = { timestamp: 0, data: {} };
             if (fs.existsSync(MARKET_CACHE_PATH)) {
                 try {
-                    marketCache = JSON.parse(fs.readFileSync(MARKET_CACHE_PATH, "utf8"));
+                    marketCacheData = JSON.parse(fs.readFileSync(MARKET_CACHE_PATH, "utf8"));
                 } catch (e) {
                     console.error("Failed to read market cache:", e);
                 }
@@ -935,8 +389,8 @@ const server = http.createServer(async (req, res) => {
                         }
 
                         // Attach market metrics
-                        if (marketCache.data[addrKey]) {
-                            card.market = marketCache.data[addrKey];
+                        if (marketCacheData.data[addrKey]) {
+                            card.market = marketCacheData.data[addrKey];
                         } else {
                             card.market = {
                                 priceUsd: "0",
@@ -953,7 +407,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             // Check cache age and trigger background update if expired (> 5 minutes)
-            const cacheAge = Date.now() - marketCache.timestamp;
+            const cacheAge = Date.now() - marketCacheData.timestamp;
             if (cacheAge > 5 * 60 * 1000 && addresses.length > 0) {
                 fetchMarketData(addresses);
             }
@@ -1135,80 +589,6 @@ const server = http.createServer(async (req, res) => {
         }
         return;
     }
-
-function processAnnotationReplies(content, file) {
-    const regex = /<!--\s*AUNCIENT_ANNOTATIONS_START\s*([\s\S]*?)\s*AUNCIENT_ANNOTATIONS_END\s*-->/;
-    const match = content.match(regex);
-    if (!match) return content;
-    
-    try {
-        const annotations = JSON.parse(match[1].trim());
-        console.log(`[ANN DEB] file: ${file}, annotations length: ${annotations.length}`);
-        let updated = false;
-        
-        const loreDir = path.join(__dirname, "../lore");
-        const files = fs.readdirSync(loreDir).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
-        const concepts = files.map(f => ({
-            file: f,
-            name: path.basename(f, path.extname(f)).toLowerCase().replace(/_/g, ' ')
-        }));
-
-        annotations.forEach((ann, idx) => {
-            const isQuestion = ann.comment && ann.comment.includes('?');
-            const hasNoReplies = !ann.replies || ann.replies.length === 0;
-            console.log(`[ANN DEB][${idx}] author: ${ann.author}, comment: "${ann.comment}", isQuestion: ${isQuestion}, hasNoReplies: ${hasNoReplies}`);
-            
-            if (ann.author === 'User' && isQuestion && hasNoReplies) {
-                if (!ann.replies) ann.replies = [];
-                
-                let replyText = "";
-                const textToSearch = (ann.comment + " " + (ann.range ? content.substring(ann.range[0], ann.range[1]) : "")).toLowerCase();
-                const cleanSearch = textToSearch.replace(/[\s_-]/g, '');
-                console.log(`[ANN DEB][${idx}] cleanSearch: "${cleanSearch}"`);
-                
-                const matchingConcept = concepts.find(c => {
-                    const cleanConcept = c.name
-                        .replace(/\b(lore|spec|analysis|integration|roadmap|proposal|deep\s+dive|guide|blueprint|report)\b/g, '')
-                        .trim()
-                        .replace(/[\s_-]/g, '');
-                    if (!cleanConcept) return false;
-                    return cleanSearch.includes(cleanConcept);
-                });
-                console.log(`[ANN DEB][${idx}] matchingConcept:`, matchingConcept ? matchingConcept.file : "none");
-
-                if (matchingConcept) {
-                    try {
-                        const targetPath = path.join(loreDir, matchingConcept.file);
-                        const targetText = fs.readFileSync(targetPath, "utf8");
-                        const cleanTarget = targetText.replace(/<!--[\s\S]*?-->/g, "").trim();
-                        const paragraph = cleanTarget.split("\n\n")[0] || cleanTarget;
-                        const sentences = paragraph.split(/[.!?]+/).slice(0, 2).join(". ");
-                        replyText = `Based on Auncient lore in ${matchingConcept.file}: "${sentences.trim()}."`;
-                    } catch (e) {
-                        replyText = `Found reference to ${matchingConcept.file}, but could not load definition.`;
-                    }
-                } else {
-                    replyText = `I detected a question about this reference, but I do not have a defined Auncient concept for it. This remains a knowledge gap.`;
-                }
-                
-                ann.replies.push({
-                    author: "AI",
-                    comment: replyText,
-                    timestamp: Date.now()
-                });
-                updated = true;
-            }
-        });
-        
-        if (updated) {
-            const newBlock = `<!-- AUNCIENT_ANNOTATIONS_START\n${JSON.stringify(annotations, null, 2)}\nAUNCIENT_ANNOTATIONS_END -->`;
-            return content.replace(regex, newBlock);
-        }
-    } catch (err) {
-        console.error("[SERVER] Failed to process annotation replies:", err);
-    }
-    return content;
-}
 
     // API endpoint to write/save a lore file content
     if (req.url === "/api/lore/save" && req.method === "POST") {
@@ -2089,6 +1469,25 @@ function processAnnotationReplies(content, file) {
         }
     });
 });
+
+// Setup automatic relationship spidering when any lore file is modified, added, or deleted
+let spiderTimeout = null;
+const lorePath = path.join(__dirname, "../lore");
+if (fs.existsSync(lorePath)) {
+    fs.watch(lorePath, (eventType, filename) => {
+        if (filename && (filename.endsWith(".md") || filename.endsWith(".lore"))) {
+            clearTimeout(spiderTimeout);
+            spiderTimeout = setTimeout(() => {
+                try {
+                    console.log(`[SERVER] Auto-spidering changes in lore/${filename}...`);
+                    spider();
+                } catch (err) {
+                    console.error("[SERVER] Auto-spidering error:", err.message);
+                }
+            }, 500);
+        }
+    });
+}
 
 server.listen(PORT, "127.0.0.1", () => {
     console.log(`==================================================`);
