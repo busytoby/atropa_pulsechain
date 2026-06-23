@@ -34,7 +34,9 @@ async function main() {
         "function registerPlayerYue(uint256 yueCardId) external",
         "function systemEquipQing(uint256 cardId, uint256 pageIdx, uint256 u1, uint256 u2) external",
         "function approveAccessorForCard(uint256 cardId, address accessor, uint256 approved) external",
-        "function processBatch(uint256 batchSize) external"
+        "function processBatch(uint256 batchSize) external",
+        "function tag(address qingA, address qingB) external",
+        "function tags(address qing) external view returns (address[])"
     ], deployer);
 
     // 3. Clear owner slots, player count & round variables using anvil cheatcodes to ensure fresh test state
@@ -153,6 +155,27 @@ async function main() {
     // Slot 0x301 (Max Bar Width)
     const maxWidth = BigInt(await provider.getStorage(arenaAddr, 0x301));
     assert.strictEqual(maxWidth, 95n, "Max bar width should be 95");
+
+    // 9. Test tag and tags relational query logic on-chain
+    const urgentQing = "0x00000000000000000000000000000000000003e7"; // 999
+    
+    // Address representations matching cardIds 1, 2, 3, 4 padded to 20 bytes
+    const card1Addr = "0x0000000000000000000000000000000000000001";
+    const card2Addr = "0x0000000000000000000000000000000000000002";
+    const card3Addr = "0x0000000000000000000000000000000000000003";
+    const card4Addr = "0x0000000000000000000000000000000000000004";
+
+    await (await arenaContract.tag(urgentQing, card1Addr)).wait(); // Card 1: width 40
+    await (await arenaContract.tag(urgentQing, card2Addr)).wait(); // Card 2: width 80
+    await (await arenaContract.tag(urgentQing, card3Addr)).wait(); // Card 3: width 10
+    await (await arenaContract.tag(urgentQing, card4Addr)).wait(); // Card 4: width 95
+    
+    const sortedTags = await arenaContract.tags(urgentQing);
+    console.log("On-chain sorted tags:", sortedTags);
+    
+    // Expected sorted order by width: 4 (95), 2 (80), 1 (40), 3 (10)
+    assert.deepStrictEqual(Array.from(sortedTags), [card4Addr, card2Addr, card1Addr, card3Addr], "On-chain tags should be sorted descending by bar width");
+    console.log("✓ Step 9: Verified on-chain tag and tags relational mapping sorted by highest bars");
 
     console.log("★★★ ALL EVM ARENA INTEGRATION TESTS PASSED ★★★");
 }

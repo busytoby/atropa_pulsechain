@@ -217,7 +217,112 @@ object "ArenaProcessor" {
                 mstore(add(ptr, 32), nextBoundary)      // current cursor position
                 mstore(add(ptr, 64), completed)         // completed flag
                 return(ptr, 96)
-            }
+             }
+
+             // ----------------------------------------------------------------
+             // METHOD 7: tag(address qingA, address qingB) -> void
+             // Selector: 0xb901e242
+             // ----------------------------------------------------------------
+             if eq(selector, 0xb901e242) {
+                 let qingA := calldataload(4)
+                 let qingB := calldataload(36)
+                 
+                 // Link key check: check if already linked to prevent duplicate entries
+                 mstore(0x00, qingA)
+                 mstore(0x20, qingB)
+                 let linkSlot := keccak256(0x00, 0x40)
+                 let exists := sload(linkSlot)
+                 
+                 if iszero(exists) {
+                     // Get current linked count for qingA
+                     mstore(0x00, qingA)
+                     mstore(0x20, 0)
+                     let countSlot := keccak256(0x00, 0x40)
+                     let count := sload(countSlot)
+                     
+                     // Store link status
+                     sstore(linkSlot, 1)
+                     
+                     // Store linked QING address in list
+                     mstore(0x00, qingA)
+                     mstore(0x20, add(count, 1))
+                     let indexSlot := keccak256(0x00, 0x40)
+                     sstore(indexSlot, qingB)
+                     
+                     // Update total count
+                     sstore(countSlot, add(count, 1))
+                 }
+                 return(0, 0)
+             }
+
+             // ----------------------------------------------------------------
+             // METHOD 8: tags(address qing) -> address[]
+             // Selector: 0x58b8f842
+             // ----------------------------------------------------------------
+             if eq(selector, 0x58b8f842) {
+                 let qing := calldataload(4)
+                 
+                 // Load count
+                 mstore(0x00, qing)
+                 mstore(0x20, 0)
+                 let countSlot := keccak256(0x00, 0x40)
+                 let count := sload(countSlot)
+                 
+                 let ptr := mload(0x40)
+                 let addrPtr := add(ptr, 64) // Leave space for array offset and length
+                 let weightPtr := add(addrPtr, mul(count, 32))
+                 
+                 // Load linked QINGs and calculate their weights
+                 let pageIdx := 0x70
+                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                     mstore(0x00, qing)
+                     mstore(0x20, add(i, 1))
+                     let indexSlot := keccak256(0x00, 0x40)
+                     let linkedQing := sload(indexSlot)
+                     mstore(add(addrPtr, mul(i, 32)), linkedQing)
+                     
+                     // Calculate weight: u2 - u1 from Page 0x70
+                     let destOffset := add(0x8000, mul(linkedQing, 0x1000))
+                     let pageOffset := add(destOffset, mul(pageIdx, 256))
+                     let u1 := sload(pageOffset)
+                     let u2 := sload(add(pageOffset, 32))
+                     let width := 0
+                     if gt(u2, u1) {
+                         width := sub(u2, u1)
+                     }
+                     mstore(add(weightPtr, mul(i, 32)), width)
+                 }
+                 
+                 // Selection sort descending
+                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                     let maxIdx := i
+                     let maxWeight := mload(add(weightPtr, mul(maxIdx, 32)))
+                     for { let j := add(i, 1) } lt(j, count) { j := add(j, 1) } {
+                         let w := mload(add(weightPtr, mul(j, 32)))
+                         if gt(w, maxWeight) {
+                             maxIdx := j
+                             maxWeight := w
+                         }
+                     }
+                     if iszero(eq(maxIdx, i)) {
+                         // Swap weights
+                         let tempW := mload(add(weightPtr, mul(i, 32)))
+                         mstore(add(weightPtr, mul(i, 32)), maxWeight)
+                         mstore(add(weightPtr, mul(maxIdx, 32)), tempW)
+                         // Swap addresses
+                         let tempAddr := mload(add(addrPtr, mul(i, 32)))
+                         mstore(add(addrPtr, mul(i, 32)), mload(add(addrPtr, mul(maxIdx, 32))))
+                         mstore(add(addrPtr, mul(maxIdx, 32)), tempAddr)
+                     }
+                 }
+                 
+                 // Encode ABI response
+                 mstore(ptr, 32)        // Array offset
+                 mstore(add(ptr, 32), count) // Array length
+                 
+                 let totalReturnSize := add(64, mul(count, 32))
+                 return(ptr, totalReturnSize)
+             }
 
             revert(0, 0)
             

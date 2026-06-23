@@ -60,6 +60,36 @@ class MockArenaProcessor {
         this.storage.set(0x200, 0);          // Total registered players count
     }
 
+    tag(qingA, qingB) {
+        const linkKey = `link_${qingA}_${qingB}`;
+        const exists = this.storage.get(linkKey) === 1;
+        if (!exists) {
+            this.storage.set(linkKey, 1);
+            const countKey = `count_${qingA}`;
+            const count = this.storage.get(countKey) || 0;
+            this.storage.set(`index_${qingA}_${count + 1}`, qingB);
+            this.storage.set(countKey, count + 1);
+        }
+    }
+
+    tags(qing) {
+        const countKey = `count_${qing}`;
+        const count = this.storage.get(countKey) || 0;
+        const result = [];
+        const pageIdx = 0x70;
+        for (let i = 0; i < count; i++) {
+            const linkedQing = this.storage.get(`index_${qing}_${i + 1}`);
+            const pageOffset = 0x8000 + (linkedQing * 0x1000) + (pageIdx * 256);
+            const u1 = this.storage.get(pageOffset) || 0;
+            const u2 = this.storage.get(pageOffset + 32) || 0;
+            const width = u2 > u1 ? u2 - u1 : 0;
+            result.push({ qing: linkedQing, width });
+        }
+        // Sort descending by bar width
+        result.sort((a, b) => b.width - a.width);
+        return result.map(item => item.qing);
+    }
+
     // METHOD 1: setTargetQingViaPKI
     setTargetQingViaPKI(qingId, msgHash, signatures) {
         const { passed } = this.pkiContract.proposeInput11(msgHash, signatures);
@@ -258,6 +288,18 @@ function runArenaTests() {
     assert.strictEqual(arena.storage.get(0x301), 90, "Winning bar width in slot 0x301 should be 90");
     console.log("✓ Step 4.3: Batch 3 processed (5/5 players). Round completed.");
     console.log("✓ Step 5: Verified final winner outcomes written to shared Arena State slots");
+
+    // 7. Verify tag and tags relational mapping sorted by highest bars
+    const urgentQing = 999;
+    arena.tag(urgentQing, 1); // Card 1: width 40
+    arena.tag(urgentQing, 2); // Card 2: width 75
+    arena.tag(urgentQing, 3); // Card 3: width 10
+    arena.tag(urgentQing, 4); // Card 4: width 90
+    
+    const sortedTags = arena.tags(urgentQing);
+    // Expected sorted order by width: 4 (90), 2 (75), 1 (40), 3 (10)
+    assert.deepStrictEqual(sortedTags, [4, 2, 1, 3], "Tags should be sorted descending by bar width");
+    console.log("✓ Step 6: Verified tag and tags relational mapping sorted by highest bars");
 
     console.log("★★★ ALL BATCH ARENA INTEGRATION TESTS PASSED ★★★");
 }
