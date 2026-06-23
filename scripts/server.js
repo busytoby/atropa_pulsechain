@@ -10,6 +10,7 @@ let dilemmaLog = [];
 const AlsaSynth = require("./alsa_synth");
 const { loreAnalysisCache, performLoreAnalysis, processAnnotationReplies } = require("./lore_analyzer");
 const { spider } = require("./spider_lore_tags");
+const { buildGlossary } = require("./build_lore_glossary");
 const marketCache = require("./market_cache");
 const { fetchMarketData, MARKET_CACHE_PATH } = marketCache;
 
@@ -1481,6 +1482,7 @@ if (fs.existsSync(lorePath)) {
                 try {
                     console.log(`[SERVER] Auto-spidering changes in lore/${filename}...`);
                     spider();
+                    buildGlossary();
                 } catch (err) {
                     console.error("[SERVER] Auto-spidering error:", err.message);
                 }
