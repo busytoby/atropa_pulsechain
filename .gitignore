@@ -97,6 +97,7 @@ found_addresses.txt
 
 # Root tests binaries
 /tests/rooted_frame_presenter
+/tests/validate_youtube_layout
 /tsfi2-deepseek/tests/rooted_vulkan_presenter
 /tsfi2-deepseek/tests/rooted_frame_presenter
 
