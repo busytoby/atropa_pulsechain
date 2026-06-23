@@ -50,13 +50,22 @@ int main(int argc, char *argv[]) {
     TsfiZmmVmState vm;
     tsfi_zmm_vm_init(&vm);
 
-    // Compile YueReactSimulator Yul contract on ZMM VM
-    printf("[VM INIT] Compiling yue_react_simulator.yul onto ZMM VM...\n");
-    tsfi_zmm_vm_exec(&vm, "YULINIT \"YueReactSimulator\", \"tests/yue_react_simulator.yul\", 768");
-    if (strlen(vm.output_buffer) > 0 && strstr(vm.output_buffer, "ERROR")) {
-        // Fallback path
-        tsfi_zmm_vm_exec(&vm, "YULINIT \"YueReactSimulator\", \"../tests/yue_react_simulator.yul\", 768");
+    const char *yue_path = "tests/yue_react_simulator.yul";
+    FILE *f_yue = fopen(yue_path, "r");
+    if (f_yue) {
+        fclose(f_yue);
+    } else {
+        yue_path = "tsfi2-deepseek/tests/yue_react_simulator.yul";
+        f_yue = fopen(yue_path, "r");
+        if (f_yue) {
+            fclose(f_yue);
+        } else {
+            yue_path = "../tests/yue_react_simulator.yul";
+        }
     }
+    char yue_cmd[256];
+    snprintf(yue_cmd, sizeof(yue_cmd), "YULINIT \"YueReactSimulator\", \"%s\", 768", yue_path);
+    tsfi_zmm_vm_exec(&vm, yue_cmd);
 
     // 1. Set ERC-20 balances for Fomalhaute and Fornax on target contract to satisfy dynamic preconditions
     // setBalance(address account, uint256 amount, uint256 slot_id)
@@ -187,12 +196,22 @@ int main(int argc, char *argv[]) {
 
     printf("[SUCCESS] Verified YUE dynamic react logic, bar accumulation, and width calculations stably.\n");
 
-    // 5. Compile CrowsRank contract and validate leaderboard updates
-    printf("[VM INIT] Compiling crows_rank.yul onto ZMM VM...\n");
-    tsfi_zmm_vm_exec(&vm, "YULINIT \"crows_rank\", \"tests/crows_rank.yul\", 1024");
-    if (strlen(vm.output_buffer) > 0 && strstr(vm.output_buffer, "ERROR")) {
-        tsfi_zmm_vm_exec(&vm, "YULINIT \"crows_rank\", \"../tests/crows_rank.yul\", 1024");
+    const char *crows_path = "tests/crows_rank.yul";
+    FILE *f_crows = fopen(crows_path, "r");
+    if (f_crows) {
+        fclose(f_crows);
+    } else {
+        crows_path = "tsfi2-deepseek/tests/crows_rank.yul";
+        f_crows = fopen(crows_path, "r");
+        if (f_crows) {
+            fclose(f_crows);
+        } else {
+            crows_path = "../tests/crows_rank.yul";
+        }
     }
+    char crows_cmd[256];
+    snprintf(crows_cmd, sizeof(crows_cmd), "YULINIT \"crows_rank\", \"%s\", 1024", crows_path);
+    tsfi_zmm_vm_exec(&vm, crows_cmd);
 
     // Attempt to call updateAndGetRankings when player is not opted in -> must revert
     printf("[ZMM TEST] Calling updateAndGetRankings(YueReactSimulator, CROWS) before opt-in (should revert)...\n");
