@@ -610,6 +610,9 @@
     <div class="sidebar-left">
       <div class="search-box" style="display:flex; flex-direction:column; gap:8px;">
         <input type="text" id="search-input" placeholder="Search files...">
+        <select id="tag-filter" onchange="filterByTag()" style="width:100%; background:#17171d; border:1px solid var(--border-color-dim); color:var(--text-highlight); padding:8px; border-radius:4px; font-family:var(--font-body); font-size:0.9rem; outline:none; margin-bottom:0;">
+          <option value="">All Tags</option>
+        </select>
         <button class="btn" id="sort-toggle" onclick="toggleSortMode()" style="width:100%; text-align:center; font-size:0.75rem; padding:6px;">Sort: Priority</button>
       </div>
       <div class="file-list" id="file-list-container">
@@ -620,7 +623,10 @@
     <!-- Center: Content Editor -->
     <div class="editor-pane">
       <div class="editor-header">
-        <div class="current-doc-title" id="doc-title-display">Select a document to edit...</div>
+        <div style="display:flex; flex-direction:column;">
+          <div class="current-doc-title" id="doc-title-display">Select a document to edit...</div>
+          <div id="active-doc-tags" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"></div>
+        </div>
         <div class="editor-actions">
           <div class="tab-group" id="view-mode-tabs" style="display:none;">
             <button class="btn active-tab" id="tab-preview" onclick="setViewMode('preview')">Preview</button>
@@ -685,15 +691,47 @@
     let selectedText = "";
     let currentFileReviewed = false;
     let currentSortMode = 'priority';
+    let loreTagsDb = null;
+    let selectedTag = "";
 
     // Fetch lists on load
     window.onload = function() {
       fetchFileList();
+      loadTagsDatabase();
       
       document.getElementById('search-input').addEventListener('input', function(e) {
         renderFileList(e.target.value);
       });
     };
+
+    async function loadTagsDatabase() {
+      try {
+        const res = await fetch('/config/lore_tags_database.json');
+        loreTagsDb = await res.json();
+        populateTagFilter();
+      } catch (e) {
+        console.error("Error loading tags database:", e);
+      }
+    }
+
+    function populateTagFilter() {
+      const select = document.getElementById('tag-filter');
+      if (!loreTagsDb || !loreTagsDb.tagToDocuments) return;
+      const tags = Object.keys(loreTagsDb.tagToDocuments).sort();
+      select.innerHTML = '<option value="">All Tags</option>';
+      for (const tag of tags) {
+        const count = loreTagsDb.tagToDocuments[tag].length;
+        const opt = document.createElement('option');
+        opt.value = tag;
+        opt.innerText = `${tag} (${count})`;
+        select.appendChild(opt);
+      }
+    }
+
+    function filterByTag() {
+      selectedTag = document.getElementById('tag-filter').value;
+      renderFileList(document.getElementById('search-input').value);
+    }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -756,9 +794,13 @@
       const container = document.getElementById('file-list-container');
       container.innerHTML = '';
       
-      const filtered = files.filter(f => f.name.toLowerCase().includes(filter.toLowerCase()));
+      let filtered = files.filter(f => f.name.toLowerCase().includes(filter.toLowerCase()));
+      if (selectedTag && loreTagsDb && loreTagsDb.tagToDocuments[selectedTag]) {
+        const docsWithTag = loreTagsDb.tagToDocuments[selectedTag];
+        filtered = filtered.filter(f => docsWithTag.includes(f.name));
+      }
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.5;">No files found</div>';
+        container.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.5;">No files match tag filter</div>';
         return;
       }
 
@@ -1004,6 +1046,28 @@
       renderFileList(document.getElementById('search-input').value);
       
       document.getElementById('doc-title-display').innerText = filename;
+      
+      // Load and display tags for this file
+      const tagsContainer = document.getElementById('active-doc-tags');
+      tagsContainer.innerHTML = '';
+      if (loreTagsDb && loreTagsDb.documentToTags[filename]) {
+        const tags = loreTagsDb.documentToTags[filename];
+        for (const tag of tags) {
+          const badge = document.createElement('span');
+          badge.className = 'type-badge';
+          badge.style.cursor = 'pointer';
+          badge.style.borderColor = 'var(--border-color)';
+          badge.style.color = 'var(--border-color)';
+          badge.style.marginRight = '4px';
+          badge.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
+          badge.innerText = `[${tag}]`;
+          badge.onclick = () => {
+            document.getElementById('tag-filter').value = tag;
+            filterByTag();
+          };
+          tagsContainer.appendChild(badge);
+        }
+      }
       
       const textarea = document.getElementById('editor-textarea');
       const preview = document.getElementById('editor-preview');
