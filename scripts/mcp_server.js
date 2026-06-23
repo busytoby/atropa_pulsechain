@@ -117,6 +117,20 @@ const tools = [
             type: "object",
             properties: {}
         }
+    },
+    {
+        name: "search_lore_context",
+        description: "Search for a specific word or multi-word term across all lore documents and retrieve matching line context/snippets.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                term: {
+                    type: "string",
+                    description: "The term or sequence to search for (e.g. 'zmm vm')"
+                }
+            },
+            required: ["term"]
+        }
     }
 ];
 
@@ -456,6 +470,53 @@ async function handleRequest(req) {
                             {
                                 type: "text",
                                 text: `Failed to retrieve YouTube telemetry: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "search_lore_context") {
+                try {
+                    const args = params.arguments || {};
+                    const term = args.term;
+                    if (!term) {
+                        throw new Error("Missing search term");
+                    }
+                    const loreDir = path.join(__dirname, "../lore");
+                    if (!fs.existsSync(loreDir)) {
+                        throw new Error("Lore directory not found");
+                    }
+                    const files = fs.readdirSync(loreDir).filter(f => f.endsWith(".md") || f.endsWith(".lore"));
+                    const matches = [];
+                    const searchRegex = new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), "i");
+
+                    for (const filename of files) {
+                        const filePath = path.join(loreDir, filename);
+                        const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+                        for (let i = 0; i < lines.length; i++) {
+                            if (searchRegex.test(lines[i])) {
+                                const start = Math.max(0, i - 1);
+                                const end = Math.min(lines.length - 1, i + 1);
+                                const context = lines.slice(start, end + 1).map((l, idx) => `  L${start + idx + 1}: ${l}`).join("\n");
+                                matches.push(`[${filename}]\n${context}`);
+                            }
+                        }
+                    }
+
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: matches.length > 0 ? matches.join("\n\n") : `No matches found for term "${term}".`
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to search lore context: ${err.message}`
                             }
                         ]
                     });
