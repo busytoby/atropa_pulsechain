@@ -205,6 +205,121 @@
                     <div class="console-output" id="consoleLogs">Telemetry system ready. Click "Run Validation Suite" to execute live handshake.</div>
                 </div>
             </div>
+
+            <!-- Lore & SHIO Diagnostics Section -->
+            <div class="report-section" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
+                <!-- ZMM Manifold Visualizer -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>Auncient Manifold Registers (Dysnomia Spec)</span>
+                        <span class="pulse-badge">GFX1201 Locality</span>
+                    </div>
+                    <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5;">
+                        The 512-byte manifold resolves deterministically inside wavefront register banks at absolute speed-of-light zero CPU instruction overhead.
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: 'Rajdhani', sans-serif;">
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--neon-blue); margin-bottom: 8px;">The Rod (Dielectric Apex)</div>
+                            <div style="font-size: 0.8rem; color: #8c9ba5; line-height: 1.4;">
+                                • Words 0-13: Fa Core (Stochastic)<br>
+                                • Word 14: Beta (NAND Saturation)<br>
+                                • Word 15: Rho (NOR Saturation)<br>
+                                • Word 16: Eta (XNOR Saturation)<br>
+                                • Word 17: Xi (Unified Input)<br>
+                                • Word 18: Barn (Magnetization)<br>
+                                • Word 19: Manifold (Dielectric)<br>
+                                • Word 20: Ring (Harmonic Circuit)<br>
+                                • Word 21: Monopole (Global Identity)<br>
+                                • Word 30: LOCK (Sentinel: 100/200)<br>
+                                • Word 31: Ichidai (Rod Endpoint)
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--neon-magenta); margin-bottom: 8px;">The Cone (Diejective Apogee)</div>
+                            <div style="font-size: 0.8rem; color: #8c9ba5; line-height: 1.4;">
+                                • Words 32-45: Fa Core (Mirrored)<br>
+                                • Words 46-48: B/R/E (Cone Bases)<br>
+                                • Word 49: Xi (Mirrored Input)<br>
+                                • Word 50: Zeta (Symmetric Product)<br>
+                                • Word 51: Iota (Symmetric Product)<br>
+                                • Word 52: Heta (Symmetric Product)<br>
+                                • Word 53: Monopole (Mirrored ID)<br>
+                                • Word 62: Pi (Reaction Seed - Lock)<br>
+                                • Word 63: Daiichi (Cone Endpoint)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active SHIO Registry -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>Active SHIO Token Registry</span>
+                        <span class="pulse-badge" style="background: rgba(255, 0, 127, 0.08); border-color: var(--neon-magenta); color: var(--neon-magenta);">Entropy Vectors</span>
+                    </div>
+                    <table class="data-table" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>SHIO Entity</th>
+                                <th>Derivation Path</th>
+                                <th>Target Address</th>
+                                <th>Resolution State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Psi Primary SHIO</strong></td>
+                                <td>YI Constructor Execution</td>
+                                <td class="addr-cell" id="shio-psi-addr">-</td>
+                                <td class="status-pass">Resolved</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Theta ZHOU SHIO</strong></td>
+                                <td>ZHOU Constructor React</td>
+                                <td class="addr-cell" id="shio-theta-addr">-</td>
+                                <td class="status-pass">Resolved</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Lai YANG SHIO</strong></td>
+                                <td>YANG Constructor React</td>
+                                <td class="addr-cell" id="shio-lai-addr">-</td>
+                                <td class="status-pass">Resolved</td>
+                            </tr>
+                            <tr>
+                                <td><strong>User LAU SHIO</strong></td>
+                                <td>SIU.Miu / VOID.Enter</td>
+                                <td class="addr-cell" id="shio-user-addr">-</td>
+                                <td class="status-pass">Resolved</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Loaded Yul Thunks Discovery -->
+            <div class="card" style="overflow-x: auto;">
+                <div class="panel-title">
+                    <span>Lau Yul Thunk Objects Discovery Registry</span>
+                    <button class="btn btn-connect" style="font-size: 0.8rem; padding: 4px 10px;" onclick="loadThunkObjects()">🔄 Refresh Inventory</button>
+                </div>
+                <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 12px;">
+                    Dynamically compiled and cached ZMM machine registers and VM environment bytecodes loaded via Lau/LauFactory thunks.
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table class="data-table" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>Thunk Object Name</th>
+                                <th>Cached Code Length (Bytes)</th>
+                                <th>Compilation Locality Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="thunkObjectsTableBody">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Click Refresh to discover active thunks.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <footer>
@@ -216,6 +331,7 @@
             </div>
         </footer>
     </div>
+
 
     <script>
         const logsDiv = document.getElementById("consoleLogs");
@@ -242,7 +358,14 @@
             { name: 'CHOA', type: 'Token', zmmName: 'choa' },
             { name: 'CHEON', type: 'Token', zmmName: 'cheon' },
             { name: 'mariarahelLau', type: 'Token', zmmName: 'lau' },
-            { name: 'oregonTrailToken', type: 'Token', zmmName: 'oregonTrailToken' }
+            { name: 'oregonTrailToken', type: 'Token', zmmName: 'oregonTrailToken' },
+            { name: 'ERIS', type: 'Token', zmmName: 'eris', dynamicResolver: { parent: 'QI', selector: '0x05d3d596' } },
+            { name: 'FOMALHAUTE', type: 'Token', zmmName: 'fomalhaute', dynamicResolver: { parent: 'XIA', selector: '0xfff3be7d' } },
+            { name: 'FORNAX', type: 'Token', zmmName: 'fornax', dynamicResolver: { parent: 'XIE', selector: '0xa60d57c8' } },
+            { name: 'Psi_SHIO', type: 'Token', zmmName: 'psi_shio', dynamicResolver: { parent: 'YI', selector: '0x76fade90' } },
+            { name: 'Theta_SHIO', type: 'Token', zmmName: 'theta_shio', dynamicResolver: { parent: 'YAU', selector: '0x3b297416', wordIndex: 4 } },
+            { name: 'Lai_SHIO', type: 'Token', zmmName: 'lai_shio', dynamicResolver: { parent: 'YANG', selector: '0xa4566950', wordIndex: 12 } },
+            { name: 'User_SHIO', type: 'Token', zmmName: 'user_shio', dynamicResolver: { parent: 'mariarahelLau', selector: '0x85bcb519', wordIndex: 4 } }
         ];
 
         const yulSystems = [
@@ -277,10 +400,10 @@
                         <td id="tag-${item.name}"><span class="type-badge" style="background: rgba(0, 242, 254, 0.1); color: var(--neon-blue); border-color: rgba(0, 242, 254, 0.2); font-family: 'Orbitron', sans-serif;">[${item.zmmName}]</span></td>
                         <td id="qing-addr-${item.name}" class="addr-cell">-</td>
                         <td>
-                            <div style="background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; width: 100px; height: 8px; border: 1px solid rgba(255,255,255,0.1); display: inline-block; vertical-align: middle;">
-                                <div id="bar-${item.name}" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00f2fe, #7928ca); transition: width 0.5s ease;"></div>
-                            </div>
-                            <span id="bar-val-${item.name}" style="font-size: 0.8rem; margin-left: 5px; color: #8c9ba5; font-family: 'Orbitron', sans-serif;">0%</span>
+                             <div style="background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; width: 100px; height: 8px; border: 1px solid rgba(255,255,255,0.1); display: inline-block; vertical-align: middle;">
+                                 <div id="bar-${item.name}" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00f2fe, #7928ca); transition: width 0.5s ease;"></div>
+                             </div>
+                             <span id="bar-val-${item.name}" style="font-size: 0.8rem; margin-left: 5px; color: #8c9ba5; font-family: 'Orbitron', sans-serif;">0%</span>
                         </td>
                         <td id="evm-addr-${item.name}" class="addr-cell">-</td>
                         <td id="evm-status-${item.name}">-</td>
@@ -294,6 +417,9 @@
         }
 
         function getEVMAddress(item) {
+            if (item.dynamicResolver) {
+                return item.resolvedEVMAddress || null;
+            }
             if (!userConfig) return null;
             const loc = userConfig.networks.localhost;
             if (!loc) return null;
@@ -353,7 +479,77 @@
                     }
                 }
             }
+
+            // Resolve and populate SHIO Registry
+            const yiAddr = getEVMAddress(allContracts.find(c => c.name === 'YI'));
+            const yauAddr = getEVMAddress(allContracts.find(c => c.name === 'YAU'));
+            const yangAddr = getEVMAddress(allContracts.find(c => c.name === 'YANG'));
+            const lauAddr = getEVMAddress(allContracts.find(c => c.name === 'mariarahelLau'));
+
+            if (yiAddr) {
+                queryGetter(yiAddr, "0x76fade90").then(addr => {
+                    if (addr) document.getElementById("shio-psi-addr").innerText = addr;
+                });
+            }
+            if (yauAddr) {
+                queryStructGetter(yauAddr, "0x3b297416", 4).then(addr => {
+                    if (addr) document.getElementById("shio-theta-addr").innerText = addr;
+                });
+            }
+            if (yangAddr) {
+                queryStructGetter(yangAddr, "0xa4566950", 12).then(addr => {
+                    if (addr) document.getElementById("shio-lai-addr").innerText = addr;
+                });
+            }
+            if (lauAddr) {
+                queryStructGetter(lauAddr, "0x85bcb519", 4).then(addr => {
+                    if (addr) document.getElementById("shio-user-addr").innerText = addr;
+                });
+            }
         }
+
+        async function queryGetter(toAddr, selector) {
+            try {
+                const res = await fetch("http://127.0.0.1:8545", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "eth_call",
+                        params: [{ to: toAddr, data: selector }, "latest"],
+                        id: 100
+                    })
+                }).then(r => r.json());
+                if (res && res.result && res.result !== "0x" && res.result !== "") {
+                    return "0x" + res.result.substring(res.result.length - 40);
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        async function queryStructGetter(toAddr, selector, wordIndex = 0) {
+            try {
+                const res = await fetch("http://127.0.0.1:8545", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "eth_call",
+                        params: [{ to: toAddr, data: selector }, "latest"],
+                        id: 100
+                    })
+                }).then(r => r.json());
+                if (res && res.result && res.result !== "0x" && res.result !== "") {
+                    const hex = res.result.replace("0x", "");
+                    const offset = wordIndex * 64;
+                    if (hex.length >= offset + 64) {
+                        return "0x" + hex.substring(offset + 24, offset + 64);
+                    }
+                }
+            } catch (e) {}
+            return null;
+        }
+
 
         async function triggerValidation() {
             document.getElementById("btnRunValidation").disabled = true;
@@ -376,6 +572,79 @@
             let anvilDeployedCount = 0;
             let zmmDeployedCount = 0;
             let passedChecks = 0;
+
+            // First, dynamically resolve addresses for ERIS, FOMALHAUTE, FORNAX and SHIO tokens
+            for (const item of allContracts) {
+                if (item.dynamicResolver) {
+                    const parentAddr = getEVMAddress(allContracts.find(c => c.name === item.dynamicResolver.parent));
+                    if (parentAddr) {
+                        try {
+                            appendLog(`[EVM] Resolving dynamic address for ${item.name} from parent ${item.dynamicResolver.parent}...`, "var(--neon-purple)");
+                            const res = await fetch(anvilUrl, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    jsonrpc: "2.0",
+                                    method: "eth_call",
+                                    params: [{
+                                        to: parentAddr,
+                                        data: item.dynamicResolver.selector
+                                    }, "latest"],
+                                    id: 99
+                                })
+                            }).then(r => r.json());
+                            if (res && res.result && res.result !== "0x" && res.result !== "") {
+                                if (item.dynamicResolver.wordIndex !== undefined) {
+                                    const hex = res.result.replace("0x", "");
+                                    const offset = item.dynamicResolver.wordIndex * 64;
+                                    if (hex.length >= offset + 64) {
+                                        item.resolvedEVMAddress = "0x" + hex.substring(offset + 24, offset + 64);
+                                    } else {
+                                        item.resolvedEVMAddress = "0x" + res.result.substring(res.result.length - 40);
+                                    }
+                                } else {
+                                    item.resolvedEVMAddress = "0x" + res.result.substring(res.result.length - 40);
+                                }
+                                appendLog(` -> Resolved ${item.name} EVM address: ${item.resolvedEVMAddress}`, "#00ff7f");
+                                document.getElementById(`evm-addr-${item.name}`).innerText = item.resolvedEVMAddress;
+                            }
+                        } catch (e) {
+                            appendLog(`[EVM] Error resolving ${item.name}: ${e.message}`, "var(--neon-magenta)");
+                        }
+                    }
+                    try {
+                        const parentContract = allContracts.find(c => c.name === item.dynamicResolver.parent);
+                        const parentZmmName = parentContract ? parentContract.zmmName : item.dynamicResolver.parent.toLowerCase();
+                        appendLog(`[ZMM] Resolving dynamic address for ${item.name} via ${parentZmmName}...`, "var(--neon-blue)");
+                        const zmmRes = await fetch(zmmUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                name: parentZmmName,
+                                calldata: item.dynamicResolver.selector.replace("0x", "")
+                            })
+                        }).then(r => r.json());
+                        if (zmmRes && !zmmRes.error && zmmRes.result && zmmRes.result.output) {
+                            const output = zmmRes.result.output;
+                            if (item.dynamicResolver.wordIndex !== undefined) {
+                                const offset = item.dynamicResolver.wordIndex * 64;
+                                if (output.length >= offset + 64) {
+                                    item.resolvedZMMAddress = "0x" + output.substring(offset + 24, offset + 64);
+                                } else {
+                                    item.resolvedZMMAddress = "0x" + output.substring(output.length - 40);
+                                }
+                            } else {
+                                item.resolvedZMMAddress = "0x" + output.substring(output.length - 40);
+                            }
+                            appendLog(` -> Resolved ${item.name} ZMM address: ${item.resolvedZMMAddress}`, "#00ff7f");
+                            item.zmmName = `dynamic_${item.resolvedZMMAddress.replace("0x", "").toLowerCase()}`;
+                            document.getElementById(`zmm-name-${item.name}`).innerText = `${item.name.toLowerCase()} (${item.zmmName.substring(0, 16)}...)`;
+                        }
+                    } catch (e) {
+                        appendLog(`[ZMM] Error resolving ${item.name}: ${e.message}`, "var(--neon-magenta)");
+                    }
+                }
+            }
 
             for (const item of allContracts) {
                 const evmAddr = getEVMAddress(item);
@@ -546,10 +815,39 @@
             document.getElementById("btnRunValidation").disabled = false;
         }
 
+        async function loadThunkObjects() {
+            const tbody = document.getElementById("thunkObjectsTableBody");
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--neon-blue);">Interrogating ZMM thunk registers...</td></tr>`;
+            try {
+                const res = await fetch("/api/zmm-objects");
+                const objects = await res.json();
+                tbody.innerHTML = "";
+                if (objects && objects.length > 0) {
+                    // Sort by name case-insensitively
+                    objects.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                    objects.forEach(obj => {
+                        const dateStr = new Date(obj.modified).toLocaleString();
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong style="color: var(--neon-blue); font-family: monospace;">${obj.name}</strong></td>
+                                <td>${obj.sizeBytes.toLocaleString()} B</td>
+                                <td style="color: #8c9ba5;">${dateStr}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No thunk objects found.</td></tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--neon-magenta);">Failed to interrogate thunks: ${e.message}</td></tr>`;
+            }
+        }
+
         // On Load
         window.addEventListener("DOMContentLoaded", async () => {
             initTable();
             await loadConfig();
+            await loadThunkObjects();
         });
     </script>
 </body>
