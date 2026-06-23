@@ -24,3 +24,6 @@
 * **No Mocking Permitted:** The implementation of mock components, functions, or libraries is strictly forbidden. Always implement full, thread-safe dynamic interfaces and coordinate registries labeled as **interop** (e.g. `libmozilla_interop.c`). Mocks restrict testing scalability and must not be created. Dynamic components built under **interop** can and should be extended as integration requirements evolve.
 ## 8. Source File Size Constraints
 * **68KB File Limit:** Ensure all source files (`.c`, `.cpp`, `.h`, etc.) remain strictly under 68,000 bytes. Proactively split files into modular subcomponents as they approach this limit to preserve system design structure and modularity.
+
+## 9. Dynamic Contract ZMM Resolution
+* **Address-Based Resolution:** Always use contract addresses (e.g., `dynamic_<address>`) to resolve and query dynamic contract states on the ZMM VM, rather than relying on contract names or string transformations of names.
