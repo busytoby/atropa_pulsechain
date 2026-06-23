@@ -1,0 +1,7920 @@
+{
+  "meta": {
+    "generatedAt": "2026-06-23T18:45:16.911Z",
+    "totalDocuments": 504,
+    "totalUniqueTags": 764,
+    "description": "Auncient Relational Lore Tag Dataset mapping lore documentation files to concepts."
+  },
+  "documentToTags": {
+    "02_Daily_Lore_2026_03_01.md": [
+      "2026",
+      "daily",
+      "lore"
+    ],
+    "3d_rendering_advancements_deepseek.md": [
+      "advancements",
+      "deepseek",
+      "rendering",
+      "synth",
+      "vector"
+    ],
+    "73_magazine_issue_1_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "magazine"
+    ],
+    "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md": [
+      "dysnomia",
+      "integration",
+      "map",
+      "qing",
+      "system"
+    ],
+    "DYSNOMIA_VM_LORE.md": [
+      "auncient",
+      "dysnomia",
+      "lore",
+      "motzkin"
+    ],
+    "MATERNAL_AI.md": [
+      "auncient",
+      "dysnomia",
+      "maternal"
+    ],
+    "SPEECH_OPTIMIZATION_PLAN.md": [
+      "audio",
+      "optimization",
+      "plan",
+      "speech",
+      "synth",
+      "vector"
+    ],
+    "ZMACHINE_SPEC.md": [
+      "item",
+      "msg",
+      "npc",
+      "qing",
+      "spec",
+      "synth",
+      "timbre",
+      "winchestermq",
+      "zmachine"
+    ],
+    "abrash_mode_x_analysis.md": [
+      "abrash",
+      "analysis",
+      "mode"
+    ],
+    "access_software_analysis.md": [
+      "access",
+      "analysis",
+      "audio",
+      "commodore",
+      "software",
+      "speech",
+      "synth",
+      "vector",
+      "vulkan"
+    ],
+    "accumulator_vector_fields.md": [
+      "accumulator",
+      "fields",
+      "vector"
+    ],
+    "advanced_infocom_technologies_blueprint.md": [
+      "advanced",
+      "audio",
+      "blueprint",
+      "infocom",
+      "synth",
+      "technologies"
+    ],
+    "agentic_vector_field_cpu_testing.md": [
+      "accumulator",
+      "agentic",
+      "cpu",
+      "field",
+      "testing",
+      "vector"
+    ],
+    "agentic_vector_fields.md": [
+      "agentic",
+      "fields",
+      "vector"
+    ],
+    "ahoy_interrupt_music_maker.md": [
+      "ahoy",
+      "commodore",
+      "interrupt",
+      "maker",
+      "music",
+      "vector"
+    ],
+    "ahoy_issue_12_page_48_49_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "page",
+      "review"
+    ],
+    "ahoy_issue_18_code_listings_review.md": [
+      "accumulator",
+      "ahoy",
+      "code",
+      "issue",
+      "listings",
+      "review"
+    ],
+    "ahoy_issue_20_game_review.md": [
+      "ahoy",
+      "commodore",
+      "game",
+      "issue",
+      "review"
+    ],
+    "ahoy_issue_33_last_ninja_review.md": [
+      "ahoy",
+      "issue",
+      "last",
+      "ninja",
+      "review"
+    ],
+    "ahoy_issue_6_gameplay_improvements.md": [
+      "ahoy",
+      "audio",
+      "gameplay",
+      "improvements",
+      "issue",
+      "vector"
+    ],
+    "ahoy_issue_6_page_63_review.md": [
+      "ahoy",
+      "issue",
+      "page",
+      "review"
+    ],
+    "ahoy_issue_6_pages_38_40_review.md": [
+      "ahoy",
+      "audio",
+      "issue",
+      "pages",
+      "review",
+      "synth"
+    ],
+    "ahoy_issue_7_code_listings_review.md": [
+      "64",
+      "ahoy",
+      "code",
+      "commodore",
+      "issue",
+      "listings",
+      "review"
+    ],
+    "ahoy_issue_7_gameplay_improvements.md": [
+      "ahoy",
+      "g_panic_player_y",
+      "gameplay",
+      "improvements",
+      "issue",
+      "target_x",
+      "vector"
+    ],
+    "ahoy_magazine_integration.md": [
+      "ahoy",
+      "audio",
+      "commodore",
+      "integration",
+      "magazine",
+      "synth",
+      "vector"
+    ],
+    "ahoy_magazine_issue_10_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_11_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "ahoy_magazine_issue_12_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_13_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_14_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_15_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_16_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_17_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ahoy_magazine_issue_18_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_19_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_20_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_21_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ahoy_magazine_issue_22_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "ahoy_magazine_issue_23_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "ahoy_magazine_issue_24_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "speech",
+      "synth",
+      "vector"
+    ],
+    "ahoy_magazine_issue_25_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_26_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_27_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_28_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_29_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ahoy_magazine_issue_30_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ahoy_magazine_issue_31_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ahoy_magazine_issue_32_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "ahoy_magazine_issue_6_review.md": [
+      "ahoy",
+      "audio",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_7_review.md": [
+      "ahoy",
+      "audio",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_8_review.md": [
+      "ahoy",
+      "commodore",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "ahoy_magazine_issue_9_review.md": [
+      "ahoy",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "ahoy_magazine_review.md": [
+      "ahoy",
+      "audio",
+      "commodore",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "ai_debugger_input_methods.md": [
+      "accumulator",
+      "debugger",
+      "input",
+      "methods",
+      "vector"
+    ],
+    "air_assault_bob_lloret_review.md": [
+      "air",
+      "assault",
+      "bob",
+      "lloret",
+      "review"
+    ],
+    "alchemical_platform_expansion_plan.md": [
+      "alchemical",
+      "expansion",
+      "plan",
+      "platform"
+    ],
+    "analog_assembly_animation.md": [
+      "analog",
+      "animation",
+      "assembly",
+      "atari",
+      "line"
+    ],
+    "analog_compatibility_roadmap.md": [
+      "analog",
+      "atari",
+      "audio",
+      "compatibility",
+      "roadmap",
+      "synth",
+      "vector"
+    ],
+    "antic_ab4h_vulkan_colors.md": [
+      "256",
+      "ab4h",
+      "antic",
+      "atari",
+      "colorindex",
+      "colors",
+      "vulkan"
+    ],
+    "antic_cpu_terminal_improvements.md": [
+      "antic",
+      "cpu",
+      "improvements",
+      "terminal"
+    ],
+    "antic_hardware_scrolling.md": [
+      "antic",
+      "atari",
+      "hardware",
+      "scrolling"
+    ],
+    "antic_wayland_level_renderer.md": [
+      "antic",
+      "level",
+      "pc",
+      "renderer",
+      "vulkan",
+      "wayland"
+    ],
+    "antic_zmm_terminal_benefits.md": [
+      "antic",
+      "benefits",
+      "terminal",
+      "vector",
+      "zmm"
+    ],
+    "arena_state_sharing.md": [
+      "arena",
+      "qing",
+      "sharing",
+      "state",
+      "winchestermq"
+    ],
+    "associahedron_lore.md": [
+      "associahedron",
+      "auncient",
+      "bessel",
+      "biotika",
+      "dysnomia",
+      "lore",
+      "motzkin",
+      "synth",
+      "vector",
+      "winchestermq"
+    ],
+    "async_behavior_analysis.md": [
+      "analysis",
+      "async",
+      "behavior",
+      "vector",
+      "winchestermq"
+    ],
+    "asynchronous_timeout_analysis.md": [
+      "analysis",
+      "asynchronous",
+      "timeout"
+    ],
+    "atari_incorporated_analysis.md": [
+      "analysis",
+      "atari",
+      "commodore",
+      "incorporated"
+    ],
+    "atari_unified_system.md": [
+      "atari",
+      "audio",
+      "system",
+      "unified"
+    ],
+    "atropa_unified_instruction_set.md": [
+      "accumulator",
+      "atropa",
+      "audio",
+      "instruction",
+      "set",
+      "synth",
+      "unified",
+      "zmachine"
+    ],
+    "auto_attenuation_debugging_concept.md": [
+      "attenuation",
+      "auto",
+      "concept",
+      "debugging",
+      "synth"
+    ],
+    "autodyne_analysis.md": [
+      "analysis",
+      "audio",
+      "autodyne",
+      "synth",
+      "vector"
+    ],
+    "automation_system_design.md": [
+      "auncient",
+      "automation",
+      "design",
+      "system",
+      "vulkan"
+    ],
+    "bayesian_arpeggiator_control.md": [
+      "arpeggiator",
+      "bayesian",
+      "biotika",
+      "control",
+      "synth",
+      "vector"
+    ],
+    "bbs_chat_integration.md": [
+      "bbs",
+      "chat",
+      "commodore",
+      "gwat",
+      "integration",
+      "qing"
+    ],
+    "bessel_jnikny_dug_dus.md": [
+      "bessel",
+      "dug",
+      "dus",
+      "jnikny",
+      "synth"
+    ],
+    "bessel_jnikny_tunneling_operator.md": [
+      "bessel",
+      "jnikny",
+      "operator",
+      "synth",
+      "tunneling"
+    ],
+    "bessel_riders_and_harmonics.md": [
+      "and",
+      "bessel",
+      "harmonics",
+      "riders",
+      "synth"
+    ],
+    "biotika_neural_feedback_loop.md": [
+      "bessel",
+      "bionika",
+      "biotika",
+      "feedback",
+      "loop",
+      "neural",
+      "synth",
+      "vaesen"
+    ],
+    "biotika_neuron_motzkin_vertex_firing.md": [
+      "biotika",
+      "dysnomia",
+      "firing",
+      "motzkin",
+      "neuron",
+      "synth",
+      "vertex"
+    ],
+    "blockchain_secure_kermit.md": [
+      "blockchain",
+      "kermit",
+      "secure"
+    ],
+    "broderbund_software_integration.md": [
+      "broderbund",
+      "integration",
+      "software"
+    ],
+    "byte_issue_12_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "speech",
+      "synth"
+    ],
+    "byte_issue_13_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "zmachine"
+    ],
+    "byte_issue_14_analysis.md": [
+      "accumulator",
+      "analysis",
+      "audio",
+      "byte",
+      "issue"
+    ],
+    "byte_issue_15_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "vector"
+    ],
+    "byte_issue_16_analysis.md": [
+      "analysis",
+      "byte",
+      "issue"
+    ],
+    "byte_issue_17_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "vector"
+    ],
+    "byte_issue_21_analysis.md": [
+      "analysis",
+      "audio",
+      "biotika",
+      "byte",
+      "issue",
+      "synth",
+      "vulkan"
+    ],
+    "byte_issue_22_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "thunkproxy_emit_backprop_avx512",
+      "vector"
+    ],
+    "byte_issue_23_analysis.md": [
+      "analysis",
+      "audio",
+      "byte",
+      "issue",
+      "speech",
+      "synth",
+      "vector"
+    ],
+    "byte_issue_24_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "thunkproxy_emit_timeline_guard",
+      "vector"
+    ],
+    "byte_issue_25_analysis.md": [
+      "analysis",
+      "byte",
+      "issue",
+      "synth",
+      "vector"
+    ],
+    "byte_issue_26_analysis.md": [
+      "analysis",
+      "audio",
+      "byte",
+      "issue",
+      "synth",
+      "vector"
+    ],
+    "byte_issue_27_analysis.md": [
+      "accumulator",
+      "analysis",
+      "byte",
+      "issue",
+      "vector"
+    ],
+    "byte_issues_18_20_analysis.md": [
+      "analysis",
+      "audio",
+      "byte",
+      "issues",
+      "synth",
+      "thunkproxy_emit_backprop_avx512"
+    ],
+    "c64_1541_emulation_support.md": [
+      "1541",
+      "c64",
+      "commodore",
+      "emulation",
+      "support",
+      "via"
+    ],
+    "cabs_folklore_escrow_spec.md": [
+      "cabs",
+      "diyat",
+      "escrow",
+      "folklore",
+      "spec"
+    ],
+    "cabs_peek_poke_security.md": [
+      "cabs",
+      "peek",
+      "poke",
+      "security",
+      "zmachine"
+    ],
+    "cabs_reconciliation_framework.md": [
+      "1200",
+      "cabs",
+      "diyat",
+      "framework",
+      "reconciliation",
+      "zmachine"
+    ],
+    "cabs_security_recommendations.md": [
+      "cabs",
+      "crows",
+      "diyat",
+      "recommendations",
+      "security",
+      "zmachine"
+    ],
+    "cabs_tcg_interactions.md": [
+      "1200",
+      "cabs",
+      "diyat",
+      "interactions",
+      "tcg"
+    ],
+    "cabs_token_exchange_spec.md": [
+      "cabs",
+      "diyat",
+      "exchange",
+      "spec",
+      "token"
+    ],
+    "cannonball_blitz_integration.md": [
+      "accumulator",
+      "blitz",
+      "cannonball",
+      "diyat",
+      "integration"
+    ],
+    "cardco_peripheral_interfaces.md": [
+      "cardco",
+      "commodore",
+      "interfaces",
+      "peripheral"
+    ],
+    "carlson_chrget_to_emacs.md": [
+      "carlson",
+      "chrget",
+      "emacs"
+    ],
+    "chattts_integration_design.md": [
+      "audio",
+      "chattts",
+      "design",
+      "integration",
+      "laugh_2",
+      "laughter",
+      "oral_2",
+      "sigh",
+      "speech",
+      "synth",
+      "uv_break"
+    ],
+    "cia_timers_and_gas_taxation.md": [
+      "and",
+      "cia",
+      "commodore",
+      "diyat",
+      "gas",
+      "taxation",
+      "timers",
+      "vector"
+    ],
+    "cimarron_insta_investment_combo_analysis.md": [
+      "analysis",
+      "cimarron",
+      "combo",
+      "commodore",
+      "insta",
+      "investment"
+    ],
+    "comm_data_review.md": [
+      "29",
+      "35",
+      "comm",
+      "data",
+      "review",
+      "vector"
+    ],
+    "commodore_1541_iec_serial_bus.md": [
+      "1541",
+      "bus",
+      "c64",
+      "commodore",
+      "iec",
+      "serial"
+    ],
+    "commodore_hardware_tricks.md": [
+      "commodore",
+      "hardware",
+      "tricks"
+    ],
+    "commodore_kernal_io_redirection.md": [
+      "accumulator",
+      "commodore",
+      "disk",
+      "kernal",
+      "printer",
+      "redirection",
+      "screen",
+      "vector"
+    ],
+    "commodore_sid_audio_engine.md": [
+      "0x04",
+      "0x08",
+      "0x0c",
+      "0x0f",
+      "audio",
+      "commodore",
+      "engine",
+      "sid",
+      "speech",
+      "synth"
+    ],
+    "commodore_software_analysis.md": [
+      "analysis",
+      "audio",
+      "commodore",
+      "software",
+      "vector"
+    ],
+    "compuserve_integration.md": [
+      "compuserve",
+      "integration",
+      "vector"
+    ],
+    "compuserve_integration_blueprint.md": [
+      "atari",
+      "blueprint",
+      "commodore",
+      "compuserve",
+      "integration",
+      "vector"
+    ],
+    "compuserve_protocols_analysis.md": [
+      "analysis",
+      "compuserve",
+      "protocols",
+      "vector"
+    ],
+    "computer_design_issue_10_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_11_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_12_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_13_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_14_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_15_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue",
+      "vector"
+    ],
+    "computer_design_issue_16_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_17_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_18_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_19_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_1_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue",
+      "r_base",
+      "rd"
+    ],
+    "computer_design_issue_2_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_3_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue",
+      "q1",
+      "q2",
+      "rc1",
+      "rc2"
+    ],
+    "computer_design_issue_4_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_5_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_6_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_7_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "computer_design_issue_8_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue",
+      "vector"
+    ],
+    "computer_design_issue_9_analysis.md": [
+      "analysis",
+      "computer",
+      "design",
+      "issue"
+    ],
+    "comstar_printer_integration.md": [
+      "commodore",
+      "comstar",
+      "integration",
+      "printer"
+    ],
+    "concurrency_pipeline_analysis.md": [
+      "analysis",
+      "concurrency",
+      "pipeline",
+      "vulkan"
+    ],
+    "conjecture_topological_motzkin_primes.md": [
+      "bessel",
+      "conjecture",
+      "dysnomia",
+      "motzkin",
+      "primes",
+      "synth",
+      "topological"
+    ],
+    "content.md": [
+      "1980-06",
+      "6502-micro-journal",
+      "about",
+      "apk",
+      "apple",
+      "audio",
+      "basic",
+      "blog",
+      "chrome",
+      "computer",
+      "computermagazines",
+      "contact",
+      "content",
+      "data",
+      "donate",
+      "edge",
+      "english",
+      "events",
+      "fcaa",
+      "firefox",
+      "folkscanomy",
+      "genealogy",
+      "help",
+      "jobs",
+      "jsr",
+      "lda",
+      "magazine_rack",
+      "micro",
+      "movies",
+      "ms-dos",
+      "netlabels",
+      "podcasts",
+      "program",
+      "projects",
+      "safari",
+      "speech",
+      "sta",
+      "television",
+      "vlogs",
+      "volunteer"
+    ],
+    "control_generation_architecture.md": [
+      "accumulator",
+      "architecture",
+      "audio",
+      "bionika",
+      "control",
+      "generation",
+      "synth"
+    ],
+    "control_systems_peripheral_emulation.md": [
+      "accumulator",
+      "control",
+      "emulation",
+      "peripheral",
+      "systems"
+    ],
+    "conversion_plan.md": [
+      "conversion",
+      "plan"
+    ],
+    "coprocessor_designs_analysis.md": [
+      "analysis",
+      "audio",
+      "commodore",
+      "coprocessor",
+      "designs",
+      "diyat",
+      "speech",
+      "synth"
+    ],
+    "counter_bin_specification.md": [
+      "accumulator",
+      "bin",
+      "counter",
+      "specification"
+    ],
+    "cpu_banking_and_timer_upgrades.md": [
+      "accumulator",
+      "and",
+      "audio",
+      "banking",
+      "cpu",
+      "timer",
+      "upgrades"
+    ],
+    "cpu_test_improvements.md": [
+      "accumulator",
+      "cpu",
+      "improvements",
+      "test"
+    ],
+    "daily_lore_2026_02_25.md": [
+      "2026",
+      "daily",
+      "dysnomia",
+      "lore",
+      "synth"
+    ],
+    "daily_lore_2026_02_26.md": [
+      "2026",
+      "daily",
+      "dysnomia",
+      "lore",
+      "motzkin",
+      "synth",
+      "vector",
+      "vulkan"
+    ],
+    "daily_lore_2026_02_28.md": [
+      "2026",
+      "56",
+      "daily",
+      "lore",
+      "vector"
+    ],
+    "daily_lore_2026_03_02.md": [
+      "2026",
+      "daily",
+      "lore",
+      "qing",
+      "vector"
+    ],
+    "daily_lore_2026_03_07.md": [
+      "2026",
+      "daily",
+      "lore",
+      "synth",
+      "today",
+      "vector"
+    ],
+    "daily_lore_2026_03_07_joseon_cebu.md": [
+      "2026",
+      "cebu",
+      "daily",
+      "joseon",
+      "lore",
+      "synth",
+      "vector"
+    ],
+    "daily_lore_2026_03_14.md": [
+      "2026",
+      "daily",
+      "lore",
+      "vector"
+    ],
+    "daily_lore_base_secret.md": [
+      "base",
+      "daily",
+      "dysnomia",
+      "lore",
+      "secret"
+    ],
+    "daily_lore_chen_jurchen.md": [
+      "chen",
+      "daily",
+      "jurchen",
+      "lore",
+      "vector"
+    ],
+    "daily_lore_operation_mariner.md": [
+      "daily",
+      "lore",
+      "mariner",
+      "operation"
+    ],
+    "daily_lore_vulkan_vision.md": [
+      "daily",
+      "lore",
+      "vision",
+      "vulkan"
+    ],
+    "daskmig_magazine_issue_1_review.md": [
+      "audio",
+      "auncient",
+      "daskmig",
+      "issue",
+      "magazine",
+      "review",
+      "winchestermq"
+    ],
+    "daskmig_magazine_issue_2_review.md": [
+      "audio",
+      "daskmig",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "daskmig_magazine_issue_3_review.md": [
+      "daskmig",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "datamost_milestones.md": [
+      "commodore",
+      "completed",
+      "datamost",
+      "milestones",
+      "synth",
+      "vulkan"
+    ],
+    "datamost_support_analysis.md": [
+      "accumulator",
+      "analysis",
+      "audio",
+      "commodore",
+      "datamost",
+      "support",
+      "synth",
+      "vulkan"
+    ],
+    "datamost_totl_protecto_integration.md": [
+      "datamost",
+      "integration",
+      "protecto",
+      "totl"
+    ],
+    "datasoft_analysis.md": [
+      "analysis",
+      "atari",
+      "commodore",
+      "datasoft",
+      "vector",
+      "vulkan"
+    ],
+    "ddj_bresenham_integration.md": [
+      "bresenham",
+      "ddj",
+      "integration",
+      "vector"
+    ],
+    "ddj_bsp_tree_integration.md": [
+      "bsp",
+      "ddj",
+      "integration",
+      "nodeid",
+      "synth",
+      "tree",
+      "vector"
+    ],
+    "ddj_dithering_integration.md": [
+      "atari",
+      "commodore",
+      "ddj",
+      "dithering",
+      "integration",
+      "vector"
+    ],
+    "ddj_fft_spectrum_analyzer.md": [
+      "analyzer",
+      "audio",
+      "ddj",
+      "fft",
+      "spectrum",
+      "synth"
+    ],
+    "ddj_fractal_lsystem.md": [
+      "audio",
+      "ddj",
+      "fractal",
+      "lsystem",
+      "synth"
+    ],
+    "ddj_game_of_life_synthesis.md": [
+      "audio",
+      "ddj",
+      "game",
+      "life",
+      "synth",
+      "synthesis"
+    ],
+    "ddj_graphics_synthesis_integration.md": [
+      "audio",
+      "ddj",
+      "envelopedetector",
+      "formantfilter",
+      "graphics",
+      "integration",
+      "speech",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "ddj_raycasting_audio_maze.md": [
+      "audio",
+      "ddj",
+      "maze",
+      "raycasting",
+      "synth",
+      "vector"
+    ],
+    "decentralized_os_yul_architecture.md": [
+      "architecture",
+      "audio",
+      "commodore",
+      "decentralized",
+      "vector",
+      "yul"
+    ],
+    "deep_rendering_background.md": [
+      "background",
+      "deep",
+      "rendering",
+      "synth",
+      "vector"
+    ],
+    "disc_triangulation_space_stashas.md": [
+      "disc",
+      "motzkin",
+      "space",
+      "stashas",
+      "synth",
+      "triangulation"
+    ],
+    "dj.md": [
+      "audio",
+      "biotika",
+      "dysnomia",
+      "synth"
+    ],
+    "dna_3d_standards_proposal.md": [
+      "dna",
+      "proposal",
+      "standards",
+      "vector",
+      "vulkan"
+    ],
+    "dna_bear_improvements.md": [
+      "bear",
+      "bessel",
+      "biotika",
+      "dna",
+      "improvements",
+      "synth",
+      "vulkan"
+    ],
+    "dr_dobbs_3d_graphics_analysis.md": [
+      "analysis",
+      "dobbs",
+      "graphics",
+      "synth",
+      "vector"
+    ],
+    "dr_dobbs_issue_1_analysis.md": [
+      "analysis",
+      "dobbs",
+      "issue"
+    ],
+    "dr_dobbs_issue_2_analysis.md": [
+      "analysis",
+      "audio",
+      "dobbs",
+      "issue",
+      "synth"
+    ],
+    "dr_dobbs_issue_3_analysis.md": [
+      "accumulator",
+      "analysis",
+      "dobbs",
+      "issue",
+      "synth",
+      "vector"
+    ],
+    "dr_dobbs_issue_4_analysis.md": [
+      "analysis",
+      "audio",
+      "dobbs",
+      "issue",
+      "speech",
+      "synth"
+    ],
+    "dr_dobbs_issue_5_analysis.md": [
+      "analysis",
+      "dobbs",
+      "issue",
+      "synth"
+    ],
+    "dr_dobbs_issue_6_analysis.md": [
+      "accumulator",
+      "analysis",
+      "dobbs",
+      "issue",
+      "synth",
+      "vector"
+    ],
+    "dynamic_async_integration.md": [
+      "async",
+      "dynamic",
+      "integration",
+      "winchestermq"
+    ],
+    "dysnomia_combat_resonance_rules.md": [
+      "audio",
+      "combat",
+      "dysnomia",
+      "qing",
+      "resonance",
+      "rules"
+    ],
+    "dysnomia_exploration.md": [
+      "dysnomia",
+      "exploration"
+    ],
+    "dysnomia_math_verification.md": [
+      "dysnomia",
+      "math",
+      "qing",
+      "verification"
+    ],
+    "dysnomia_prime_issue_1.md": [
+      "bionika",
+      "biotika",
+      "dysnomia",
+      "issue",
+      "motzkin",
+      "prime",
+      "synth",
+      "vaesen"
+    ],
+    "dysnomia_recombination_operator.md": [
+      "dysnomia",
+      "motzkin",
+      "operator",
+      "recombination"
+    ],
+    "dysnomia_system_integration_map.md": [
+      "dysnomia",
+      "integration",
+      "map",
+      "qing",
+      "system"
+    ],
+    "dysnomia_vertex_trigonometric_projection.md": [
+      "dysnomia",
+      "motzkin",
+      "projection",
+      "trigonometric",
+      "vector",
+      "vertex"
+    ],
+    "easychain64_terminal_design.md": [
+      "commodore",
+      "design",
+      "easychain64",
+      "gwat",
+      "qing",
+      "terminal"
+    ],
+    "elektor_issue_10_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_11_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_12_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_13_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_14_in_depth.md": [
+      "bionika",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_15_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_16_in_depth.md": [
+      "accumulator",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_17_in_depth.md": [
+      "bionika",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_18_in_depth.md": [
+      "audio",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_19_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_1_in_depth.md": [
+      "audio",
+      "bionika",
+      "depth",
+      "elektor",
+      "issue",
+      "speech",
+      "synth"
+    ],
+    "elektor_issue_1_synthesis.md": [
+      "audio",
+      "elektor",
+      "issue",
+      "synth",
+      "synthesis"
+    ],
+    "elektor_issue_2_in_depth.md": [
+      "bionika",
+      "depth",
+      "elektor",
+      "issue",
+      "n-1",
+      "n-2",
+      "speech",
+      "synth"
+    ],
+    "elektor_issue_3_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_4_in_depth.md": [
+      "audio",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_5_in_depth.md": [
+      "audio",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_6_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_7_in_depth.md": [
+      "audio",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_8_in_depth.md": [
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektor_issue_9_in_depth.md": [
+      "audio",
+      "depth",
+      "elektor",
+      "issue",
+      "synth"
+    ],
+    "elektuur_early_issues_analysis.md": [
+      "accumulator",
+      "analysis",
+      "audio",
+      "bionika",
+      "early",
+      "elektuur",
+      "issues",
+      "n-1",
+      "n-2",
+      "synth",
+      "vector"
+    ],
+    "elektuur_issue_25_analysis.md": [
+      "analysis",
+      "audio",
+      "c1",
+      "elektuur",
+      "issue",
+      "output",
+      "r1",
+      "r2"
+    ],
+    "elm_debugger_advanced_usecases.md": [
+      "advanced",
+      "debugger",
+      "elm",
+      "usecases"
+    ],
+    "emulator_integration_paths.md": [
+      "audio",
+      "commodore",
+      "emulator",
+      "integration",
+      "paths",
+      "synth",
+      "vector"
+    ],
+    "entech_software_analysis.md": [
+      "analysis",
+      "commodore",
+      "entech",
+      "software",
+      "synth"
+    ],
+    "epyx_support_report.md": [
+      "audio",
+      "epyx",
+      "report",
+      "support",
+      "synth",
+      "vulkan"
+    ],
+    "evm_arena_integration_summary.md": [
+      "arena",
+      "auncient",
+      "evm",
+      "integration",
+      "qing",
+      "summary"
+    ],
+    "evm_memory_constraints.md": [
+      "commodore",
+      "constraints",
+      "evm",
+      "memory"
+    ],
+    "evm_vs_zmm_vm_interfaces.md": [
+      "evm",
+      "interfaces",
+      "zmm"
+    ],
+    "filtered_fdn_improvisational_decisions.md": [
+      "audio",
+      "biotika",
+      "decisions",
+      "fdn",
+      "filtered",
+      "improvisational",
+      "synth",
+      "vector"
+    ],
+    "folklore_cpu_design.md": [
+      "cpu",
+      "design",
+      "folklore",
+      "vaesen",
+      "vector"
+    ],
+    "fractional_synthesis_llm_rag.md": [
+      "accumulator",
+      "bessel",
+      "fractional",
+      "llm",
+      "rag",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "frobenius_manifold_capacitor.md": [
+      "capacitor",
+      "frobenius",
+      "manifold",
+      "synth",
+      "vector"
+    ],
+    "fuzzby_magazine_issue_0_review.md": [
+      "audio",
+      "auncient",
+      "fuzzby",
+      "issue",
+      "magazine",
+      "review",
+      "synth",
+      "vector"
+    ],
+    "fylstra_sweets_byte_magazine.md": [
+      "byte",
+      "fylstra",
+      "magazine",
+      "sweets"
+    ],
+    "game_archetypes_spec.md": [
+      "archetypes",
+      "game",
+      "spec",
+      "vector",
+      "vulkan"
+    ],
+    "gameplay_mechanics_analysis.md": [
+      "analysis",
+      "atari",
+      "gameplay",
+      "mechanics",
+      "vector",
+      "vulkan"
+    ],
+    "gan_speech_synthesis_analysis.md": [
+      "analysis",
+      "audio",
+      "gan",
+      "speech",
+      "synth",
+      "synthesis"
+    ],
+    "gauntlet_jit_vae_spec.md": [
+      "accumulator",
+      "gauntlet",
+      "jit",
+      "spec",
+      "vae",
+      "vector",
+      "vulkan"
+    ],
+    "gauntlet_pmg_support.md": [
+      "atari",
+      "gauntlet",
+      "pmg",
+      "support"
+    ],
+    "general_2d_character_synthesizer.md": [
+      "512",
+      "character",
+      "general",
+      "synth",
+      "synthesizer",
+      "vulkan"
+    ],
+    "geos_operating_system_analysis.md": [
+      "analysis",
+      "commodore",
+      "geos",
+      "operating",
+      "system",
+      "vector"
+    ],
+    "germanium_zero_crossing_ssr_equivalence.md": [
+      "crossing",
+      "equivalence",
+      "germanium",
+      "ssr",
+      "zero"
+    ],
+    "graeffe_process_root_squaring.md": [
+      "graeffe",
+      "process",
+      "root",
+      "squaring",
+      "synth"
+    ],
+    "graphics_display_technologies.md": [
+      "commodore",
+      "display",
+      "graphics",
+      "technologies"
+    ],
+    "graphics_improvements_plan.md": [
+      "graphics",
+      "improvements",
+      "plan",
+      "vulkan"
+    ],
+    "gtia_collision_registers.md": [
+      "atari",
+      "collision",
+      "commodore",
+      "gtia",
+      "registers"
+    ],
+    "hardball_rendering_system.md": [
+      "hardball",
+      "rendering",
+      "system",
+      "vector",
+      "vulkan"
+    ],
+    "hardware_improvements_plan.md": [
+      "audio",
+      "hardware",
+      "improvements",
+      "plan",
+      "vector"
+    ],
+    "heathkit_synthesizer_monitor.md": [
+      "0-5v",
+      "audio",
+      "heathkit",
+      "monitor",
+      "synth",
+      "synthesizer",
+      "vector",
+      "vulkan"
+    ],
+    "homeword_integration.md": [
+      "diyat",
+      "homeword",
+      "integration"
+    ],
+    "hugi_4d_graphics_integration.md": [
+      "auncient",
+      "graphics",
+      "hugi",
+      "integration"
+    ],
+    "hugi_magazine_issue_11_review.md": [
+      "audio",
+      "auncient",
+      "dysnomia",
+      "hugi",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "hugi_magazine_issue_12_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "hugi_magazine_issue_13_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "hugi_magazine_issue_14_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review",
+      "synth"
+    ],
+    "hugi_magazine_issue_15_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "hugi_magazine_issue_16_review.md": [
+      "audio",
+      "auncient",
+      "dysnomia",
+      "hugi",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "hugi_magazine_issue_17_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "hugi_magazine_issue_18_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "hugi_magazine_issue_19_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review"
+    ],
+    "hugi_magazine_issue_20_review.md": [
+      "auncient",
+      "hugi",
+      "issue",
+      "magazine",
+      "review",
+      "vector"
+    ],
+    "hugi_special_edition_1_review.md": [
+      "audio",
+      "auncient",
+      "edition",
+      "hugi",
+      "review",
+      "special",
+      "synth",
+      "vector"
+    ],
+    "hurwood_generator_expansion.md": [
+      "audio",
+      "commodore",
+      "expansion",
+      "generator",
+      "hurwood",
+      "schema"
+    ],
+    "hurwood_improvements.md": [
+      "audio",
+      "commodore",
+      "esc",
+      "f1",
+      "f3",
+      "hurwood",
+      "improvements",
+      "sawtooth",
+      "schema",
+      "sound",
+      "synth"
+    ],
+    "image_computer_products_analysis.md": [
+      "analysis",
+      "atari",
+      "commodore",
+      "computer",
+      "image",
+      "products",
+      "vector"
+    ],
+    "impedance_reactor_cards.md": [
+      "audio",
+      "cards",
+      "impedance",
+      "reactor",
+      "synth",
+      "vaesen"
+    ],
+    "improved_rigging_supports.md": [
+      "foot",
+      "improved",
+      "rigging",
+      "supports",
+      "torso",
+      "vector"
+    ],
+    "improvise_bionika.md": [
+      "audio",
+      "bionika",
+      "improvise",
+      "synth"
+    ],
+    "insta_software_analysis.md": [
+      "analysis",
+      "commodore",
+      "insta",
+      "software"
+    ],
+    "interpolation_as_a_synthesis_unified_theory.md": [
+      "audio",
+      "bessel",
+      "interpolation",
+      "synth",
+      "synthesis",
+      "theory",
+      "unified"
+    ],
+    "interrupt_standards.md": [
+      "audio",
+      "interrupt",
+      "standards",
+      "synth",
+      "vector"
+    ],
+    "interview.lore": [
+      "interview",
+      "test",
+      "vulkan"
+    ],
+    "kilobaud_issue_1_in_depth.md": [
+      "audio",
+      "depth",
+      "issue",
+      "kilobaud",
+      "synth"
+    ],
+    "kilobaud_issue_1_z80_refresh.md": [
+      "bionika",
+      "issue",
+      "kilobaud",
+      "refresh",
+      "synth",
+      "z80"
+    ],
+    "kilobaud_issue_2_in_depth.md": [
+      "audio",
+      "bionika",
+      "depth",
+      "issue",
+      "kilobaud",
+      "synth"
+    ],
+    "kilobaud_issue_3_cassette_storage.md": [
+      "audio",
+      "cassette",
+      "issue",
+      "kilobaud",
+      "storage",
+      "synth"
+    ],
+    "kilobaud_issue_4_in_depth.md": [
+      "audio",
+      "bionika",
+      "depth",
+      "issue",
+      "kilobaud",
+      "synth"
+    ],
+    "kilobaud_issue_5_in_depth.md": [
+      "audio",
+      "depth",
+      "issue",
+      "kilobaud",
+      "synth"
+    ],
+    "kilobaud_issue_6_in_depth.md": [
+      "bionika",
+      "depth",
+      "issue",
+      "kilobaud",
+      "synth",
+      "vector"
+    ],
+    "kilobaud_issue_7_in_depth.md": [
+      "depth",
+      "issue",
+      "kilobaud",
+      "vector"
+    ],
+    "kinematic_rigging_phase.md": [
+      "kinematic",
+      "phase",
+      "rigging"
+    ],
+    "ktel_international_analysis.md": [
+      "analysis",
+      "atari",
+      "international",
+      "ktel"
+    ],
+    "langchain_blueprint.md": [
+      "address",
+      "blueprint",
+      "dysnomia",
+      "item",
+      "langchain"
+    ],
+    "learning_source_hometax_integration.md": [
+      "commodore",
+      "diyat",
+      "hometax",
+      "integration",
+      "learning",
+      "source"
+    ],
+    "live_math_results.md": [
+      "dysnomia",
+      "live",
+      "math",
+      "results"
+    ],
+    "local_deployment_guide.md": [
+      "deployment",
+      "dysnomia",
+      "guide",
+      "local",
+      "qing"
+    ],
+    "lore_2026_03_03.md": [
+      "2026",
+      "dysnomia",
+      "lore",
+      "vulkan"
+    ],
+    "lucas_plush_blueprint.md": [
+      "blueprint",
+      "lucas",
+      "plush"
+    ],
+    "magic_disk_64_issue_1_review.md": [
+      "auncient",
+      "disk",
+      "issue",
+      "magic",
+      "review",
+      "vector"
+    ],
+    "magic_disk_64_issue_2_review.md": [
+      "auncient",
+      "commodore",
+      "disk",
+      "issue",
+      "magic",
+      "review",
+      "synth"
+    ],
+    "magic_disk_64_issue_3_review.md": [
+      "auncient",
+      "commodore",
+      "disk",
+      "issue",
+      "magic",
+      "review"
+    ],
+    "mariner_system3_qualification.md": [
+      "mariner",
+      "qualification",
+      "system3"
+    ],
+    "master_memory_map_review.md": [
+      "audio",
+      "commodore",
+      "diyat",
+      "map",
+      "master",
+      "memory",
+      "review",
+      "speech",
+      "synth"
+    ],
+    "math_integrity_report.md": [
+      "dysnomia",
+      "integrity",
+      "math",
+      "qing",
+      "report"
+    ],
+    "memory_injector_security.md": [
+      "injector",
+      "memory",
+      "security",
+      "vector"
+    ],
+    "mercenary_pipeline_integration.md": [
+      "integration",
+      "mercenary",
+      "pipeline",
+      "vector"
+    ],
+    "mercenary_room_objects_world_hollow.md": [
+      "hollow",
+      "mercenary",
+      "objects",
+      "room",
+      "world"
+    ],
+    "micro_issue_26_analysis.md": [
+      "accumulator",
+      "analysis",
+      "commodore",
+      "issue",
+      "micro",
+      "vector"
+    ],
+    "micro_issue_27_analysis.md": [
+      "accumulator",
+      "analysis",
+      "issue",
+      "micro"
+    ],
+    "micro_world_printer_integration.md": [
+      "commodore",
+      "diyat",
+      "integration",
+      "micro",
+      "printer",
+      "world"
+    ],
+    "microkernel_upgrade_plan.md": [
+      "microkernel",
+      "plan",
+      "upgrade"
+    ],
+    "microprose_analysis.md": [
+      "analysis",
+      "atari",
+      "commodore",
+      "microprose",
+      "vector"
+    ],
+    "midwest_micro_superterm_integration.md": [
+      "integration",
+      "micro",
+      "midwest",
+      "superterm"
+    ],
+    "mmu_mappings.md": [
+      "256",
+      "mappings",
+      "mmu",
+      "page_idx"
+    ],
+    "motzkin_apogee_apex_primes.md": [
+      "apex",
+      "apogee",
+      "dysnomia",
+      "motzkin",
+      "primes"
+    ],
+    "motzkin_paths_and_bessel_fractions.md": [
+      "and",
+      "bessel",
+      "fractions",
+      "motzkin",
+      "paths"
+    ],
+    "motzkin_prime_synthesis_sequencing.md": [
+      "motzkin",
+      "prime",
+      "sequencing",
+      "synth",
+      "synthesis"
+    ],
+    "motzkin_primes_rigor_limitations.md": [
+      "limitations",
+      "motzkin",
+      "primes",
+      "rigor"
+    ],
+    "motzkin_topological_basis_vertex.md": [
+      "basis",
+      "dysnomia",
+      "motzkin",
+      "topological",
+      "vector",
+      "vertex"
+    ],
+    "mozilla_integration_plan.md": [
+      "auncient",
+      "integration",
+      "mozilla",
+      "plan",
+      "vector",
+      "vulkan"
+    ],
+    "msd_cbm_disk_review.md": [
+      "cbm",
+      "commodore",
+      "disk",
+      "msd",
+      "review"
+    ],
+    "msd_super_disk_integration.md": [
+      "commodore",
+      "disk",
+      "integration",
+      "msd",
+      "super",
+      "vector"
+    ],
+    "msd_tax_and_security_analysis.md": [
+      "analysis",
+      "and",
+      "diyat",
+      "msd",
+      "security",
+      "tax",
+      "vector"
+    ],
+    "mtac_issue_10_graeffe_power_series.md": [
+      "bessel",
+      "graeffe",
+      "issue",
+      "mtac",
+      "power",
+      "series",
+      "synth"
+    ],
+    "mtac_issue_11_mathieu_functions.md": [
+      "bessel",
+      "functions",
+      "issue",
+      "mathieu",
+      "mtac",
+      "synth"
+    ],
+    "mtac_issue_12_punched_cards.md": [
+      "bessel",
+      "cards",
+      "issue",
+      "mtac",
+      "punched",
+      "synth"
+    ],
+    "mtac_issue_13_mathieu_matrices.md": [
+      "audio",
+      "issue",
+      "mathieu",
+      "matrices",
+      "mtac",
+      "synth",
+      "vector"
+    ],
+    "mtac_issue_14_duodecimal_tuning.md": [
+      "duodecimal",
+      "issue",
+      "mtac",
+      "synth",
+      "tuning"
+    ],
+    "mtac_issue_14_mersenne_uhler.md": [
+      "issue",
+      "mersenne",
+      "mtac",
+      "uhler"
+    ],
+    "mtac_issue_1_analysis.md": [
+      "analysis",
+      "issue",
+      "mtac",
+      "synth"
+    ],
+    "mtac_issue_1_tables_and_interpolation.md": [
+      "and",
+      "bessel",
+      "interpolation",
+      "issue",
+      "mtac",
+      "synth",
+      "tables"
+    ],
+    "mtac_issue_2_non_sexagesimal_trig.md": [
+      "issue",
+      "mtac",
+      "non",
+      "sexagesimal",
+      "synth",
+      "trig"
+    ],
+    "mtac_issue_3_baas_bessel_fm.md": [
+      "baas",
+      "bessel",
+      "issue",
+      "mtac",
+      "synth"
+    ],
+    "mtac_issue_4_structural_dynamics.md": [
+      "dynamics",
+      "issue",
+      "mtac",
+      "structural",
+      "synth"
+    ],
+    "mtac_issue_5_lehmer_modified_bessel.md": [
+      "bessel",
+      "issue",
+      "lehmer",
+      "modified",
+      "mtac",
+      "synth"
+    ],
+    "mtac_issue_6_punched_card_tables.md": [
+      "audio",
+      "card",
+      "issue",
+      "mtac",
+      "punched",
+      "synth",
+      "tables"
+    ],
+    "mtac_issue_7_bessel_guide.md": [
+      "bessel",
+      "guide",
+      "issue",
+      "mtac",
+      "synth"
+    ],
+    "mtac_issue_8_gear_ratios_fractional_n.md": [
+      "accumulator",
+      "fractional",
+      "gear",
+      "issue",
+      "mtac",
+      "ratios",
+      "synth"
+    ],
+    "mtac_issue_9_bessel_zeros_solvers.md": [
+      "bessel",
+      "issue",
+      "mtac",
+      "solvers",
+      "synth",
+      "zeros"
+    ],
+    "multi_network_zmm_evm_inventory.md": [
+      "atropa",
+      "evm",
+      "hex",
+      "inventory",
+      "key",
+      "multi",
+      "network",
+      "pb",
+      "pls",
+      "wagon",
+      "zal",
+      "zmm"
+    ],
+    "multi_user_coprocessor_sharing.md": [
+      "audio",
+      "coprocessor",
+      "multi",
+      "sharing",
+      "speech",
+      "synth",
+      "user"
+    ],
+    "multi_user_shared_cpu_architecture.md": [
+      "architecture",
+      "cpu",
+      "multi",
+      "shared",
+      "user"
+    ],
+    "multiview_rag_loop_spec.md": [
+      "loop",
+      "multiview",
+      "rag",
+      "spec",
+      "synth"
+    ],
+    "muse_software_analysis.md": [
+      "analysis",
+      "atari",
+      "audio",
+      "commodore",
+      "muse",
+      "software",
+      "speech",
+      "synth"
+    ],
+    "mystery_house_zengine_integration.md": [
+      "house",
+      "integration",
+      "mystery",
+      "vector",
+      "vulkan",
+      "zengine",
+      "zmachine"
+    ],
+    "nebula_biotika_plan.md": [
+      "audio",
+      "biotika",
+      "nebula",
+      "plan",
+      "synth"
+    ],
+    "necessity_of_leakage_modeling.md": [
+      "audio",
+      "bionika",
+      "leakage",
+      "modeling",
+      "necessity",
+      "synth"
+    ],
+    "next_gen_emulator_architecture.md": [
+      "architecture",
+      "emulator",
+      "gen",
+      "next"
+    ],
+    "nonukes_pulsex_liquidity.md": [
+      "crows",
+      "liquidity",
+      "nonukes",
+      "pulsex",
+      "synth"
+    ],
+    "nonukes_pulsex_pairs.md": [
+      "crows",
+      "dysnomia",
+      "nonukes",
+      "pairs",
+      "pulsex",
+      "synth"
+    ],
+    "nonukes_qings_status.md": [
+      "nonukes",
+      "qing",
+      "qings",
+      "status"
+    ],
+    "npc_exhaustive_test_report.md": [
+      "auncient",
+      "exhaustive",
+      "npc",
+      "report",
+      "test",
+      "zmm"
+    ],
+    "omnitronix_interface_analysis.md": [
+      "analysis",
+      "commodore",
+      "interface",
+      "omnitronix"
+    ],
+    "on_chain_neural_speech.md": [
+      "audio",
+      "chain",
+      "neural",
+      "speech",
+      "synth",
+      "vector"
+    ],
+    "onchain_database_manager.md": [
+      "commodore",
+      "database",
+      "manager",
+      "onchain"
+    ],
+    "optimum_interval_timer_scheduling.md": [
+      "interval",
+      "optimum",
+      "scheduling",
+      "synth",
+      "timer"
+    ],
+    "pathway_analysis.md": [
+      "analysis",
+      "pathway",
+      "vector",
+      "vulkan"
+    ],
+    "phase_space_formulation.md": [
+      "auncient",
+      "formulation",
+      "phase",
+      "space"
+    ],
+    "photorealistic_rendering_analysis.md": [
+      "analysis",
+      "photorealistic",
+      "rendering",
+      "synth"
+    ],
+    "platform_display_model.md": [
+      "display",
+      "model",
+      "platform",
+      "vector",
+      "vulkan"
+    ],
+    "pokey_audio_synthesis.md": [
+      "atari",
+      "audio",
+      "pokey",
+      "synth",
+      "synthesis"
+    ],
+    "pong_diyat_tax.md": [
+      "audio",
+      "diyat",
+      "pong",
+      "speech",
+      "synth",
+      "tax"
+    ],
+    "portal_hub_showcase.md": [
+      "auncient",
+      "hub",
+      "portal",
+      "showcase",
+      "winchestermq"
+    ],
+    "press_release_rooted_browser.md": [
+      "auncient",
+      "browser",
+      "press",
+      "release",
+      "rooted",
+      "vaesen",
+      "vulkan",
+      "winchestermq"
+    ],
+    "price_liquidity_integration_plan.md": [
+      "integration",
+      "liquidity",
+      "plan",
+      "price"
+    ],
+    "priority_voting_board.md": [
+      "audio",
+      "board",
+      "priority",
+      "synth",
+      "voting"
+    ],
+    "procedural_integration_report.md": [
+      "audio",
+      "auncient",
+      "integration",
+      "procedural",
+      "report",
+      "synth",
+      "vector"
+    ],
+    "progressive_rag_pipeline.md": [
+      "accumulator",
+      "pipeline",
+      "progressive",
+      "rag",
+      "vector"
+    ],
+    "prompt_draft.md": [
+      "draft",
+      "prompt"
+    ],
+    "prophecy_inverse_synthesis.md": [
+      "biotika",
+      "inverse",
+      "prophecy",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "prophecy_of_the_quaternion.md": [
+      "prophecy",
+      "quaternion",
+      "the"
+    ],
+    "prophecy_philosophical_synthesis.md": [
+      "philosophical",
+      "prophecy",
+      "synth",
+      "synthesis",
+      "vaesen"
+    ],
+    "prophecy_synthesis_and_control.md": [
+      "and",
+      "biotika",
+      "control",
+      "dysnomia",
+      "n-k",
+      "prophecy",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "prophecy_synthesis_and_control_public.md": [
+      "and",
+      "biotika",
+      "control",
+      "dysnomia",
+      "n-k",
+      "prophecy",
+      "public",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "protecto_enterprises_deep_dive.md": [
+      "commodore",
+      "deep",
+      "dive",
+      "enterprises",
+      "protecto"
+    ],
+    "protecto_epyx_integration.md": [
+      "epyx",
+      "integration",
+      "protecto"
+    ],
+    "pulsex_swap_trap_scenario.md": [
+      "auncient",
+      "bessel",
+      "dysnomia",
+      "pulsex",
+      "scenario",
+      "swap",
+      "trap",
+      "winchestermq"
+    ],
+    "qst_issue_10_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_11_analysis.md": [
+      "analysis",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_12_analysis.md": [
+      "analysis",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_13_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_14_analysis.md": [
+      "analysis",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_14_genetic_analysis.md": [
+      "analysis",
+      "genetic",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_14_rls_analysis.md": [
+      "analysis",
+      "issue",
+      "n-1",
+      "qst",
+      "rls",
+      "vector"
+    ],
+    "qst_issue_14_tdoa_analysis.md": [
+      "analysis",
+      "issue",
+      "qst",
+      "tdoa"
+    ],
+    "qst_issue_4_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst",
+      "synth",
+      "vector"
+    ],
+    "qst_issue_5_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_6_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst"
+    ],
+    "qst_issue_7_analysis.md": [
+      "analysis",
+      "issue",
+      "qst",
+      "synth"
+    ],
+    "qst_issue_8_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "n-1",
+      "qst"
+    ],
+    "qst_issue_9_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "qst"
+    ],
+    "qst_issues_1_4_hardware_concepts.md": [
+      "audio",
+      "concepts",
+      "hardware",
+      "issues",
+      "qst",
+      "synth",
+      "vulkan"
+    ],
+    "quantum_cylindrical_tunneling_bessel.md": [
+      "bessel",
+      "cylindrical",
+      "quantum",
+      "synth",
+      "tunneling"
+    ],
+    "quantum_tunneling_breakdown_synthesis.md": [
+      "breakdown",
+      "quantum",
+      "synthesis",
+      "tunneling"
+    ],
+    "quartz_crystals_radio_synthesis.md": [
+      "crystals",
+      "quartz",
+      "radio",
+      "synth",
+      "synthesis"
+    ],
+    "quicksilva_analysis.md": [
+      "analysis",
+      "atari",
+      "commodore",
+      "quicksilva"
+    ],
+    "rag_antic_comovement_analysis.md": [
+      "analysis",
+      "antic",
+      "comovement",
+      "rag",
+      "vector",
+      "vulkan"
+    ],
+    "rag_visual_telemetry.md": [
+      "rag",
+      "telemetry",
+      "vector",
+      "visual"
+    ],
+    "razor_protocol_integration.md": [
+      "integration",
+      "protocol",
+      "razor"
+    ],
+    "reengineering_plan.md": [
+      "auncient",
+      "plan",
+      "reengineering",
+      "vaesen",
+      "vulkan",
+      "winchestermq"
+    ],
+    "renegade_yul_architecture.md": [
+      "architecture",
+      "renegade",
+      "yul"
+    ],
+    "resize_verification.md": [
+      "resize",
+      "verification"
+    ],
+    "ring_eta_comparison.md": [
+      "comparison",
+      "dysnomia",
+      "eta",
+      "ring"
+    ],
+    "rooted_browser_build_report.md": [
+      "auncient",
+      "browser",
+      "build",
+      "report",
+      "rooted",
+      "synth",
+      "vulkan"
+    ],
+    "rooted_minimal_c_renderer_plan.md": [
+      "auncient",
+      "minimal",
+      "plan",
+      "renderer",
+      "rooted",
+      "vector",
+      "vulkan"
+    ],
+    "ruleburst_integration.md": [
+      "attr1",
+      "attr2",
+      "attribute",
+      "integration",
+      "ruleburst",
+      "val"
+    ],
+    "rupert_report_cursor.md": [
+      "commodore",
+      "cursor",
+      "report",
+      "rupert"
+    ],
+    "sally_larsen_graphics_simulation.md": [
+      "commodore",
+      "graphics",
+      "larsen",
+      "sally",
+      "simulation"
+    ],
+    "scenial_magazine_issue_1_review.md": [
+      "97",
+      "audio",
+      "auncient",
+      "dysnomia",
+      "issue",
+      "magazine",
+      "review",
+      "scenial",
+      "speech",
+      "synth",
+      "vector"
+    ],
+    "scenial_magazine_issue_2_review.md": [
+      "audio",
+      "auncient",
+      "issue",
+      "magazine",
+      "review",
+      "scenial",
+      "winchestermq"
+    ],
+    "sd_subprocesses_profile.md": [
+      "profile",
+      "subprocesses",
+      "vulkan"
+    ],
+    "sector_card_mapping.md": [
+      "card",
+      "mapping",
+      "sector",
+      "winchestermq"
+    ],
+    "sega_dreamcast_powervr2.md": [
+      "dreamcast",
+      "powervr2",
+      "sega",
+      "synth"
+    ],
+    "sega_genesis_dual_cpu.md": [
+      "audio",
+      "cpu",
+      "dual",
+      "genesis",
+      "resumes",
+      "sega"
+    ],
+    "sega_hardware_innovations.md": [
+      "audio",
+      "hardware",
+      "innovations",
+      "sega",
+      "speech",
+      "synth"
+    ],
+    "sega_saturn_vdp1.md": [
+      "saturn",
+      "sega",
+      "vdp1"
+    ],
+    "sega_vdp_scrolling.md": [
+      "scrolling",
+      "sega",
+      "vdp"
+    ],
+    "sega_vdp_vsram_priority.md": [
+      "priority",
+      "sega",
+      "vdp",
+      "vsram"
+    ],
+    "sierra_agi_integration.md": [
+      "agi",
+      "diyat",
+      "integration",
+      "sierra"
+    ],
+    "softlaw_corporation_integration.md": [
+      "0x1000",
+      "0x1004",
+      "commodore",
+      "corporation",
+      "integration",
+      "softlaw",
+      "vector"
+    ],
+    "software_to_go_library.md": [
+      "commodore",
+      "diyat",
+      "library",
+      "software"
+    ],
+    "spectral_analysis_report.md": [
+      "analysis",
+      "audio",
+      "report",
+      "spectral",
+      "synth"
+    ],
+    "speech_synthesis_advancements.md": [
+      "advancements",
+      "audio",
+      "speech",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "spinnaker_analysis.md": [
+      "analysis",
+      "atari",
+      "battery",
+      "buoyancy",
+      "commodore",
+      "damage",
+      "propulsn",
+      "spinnaker",
+      "vector"
+    ],
+    "sprint_plan.md": [
+      "auncient",
+      "plan",
+      "sprint",
+      "winchestermq"
+    ],
+    "ssr_terminology_compatibility.md": [
+      "bionika",
+      "compatibility",
+      "ssr",
+      "synth",
+      "terminology"
+    ],
+    "stabilization_operator_feedback_loop.md": [
+      "feedback",
+      "loop",
+      "operator",
+      "stabilization"
+    ],
+    "stabilization_runbook.md": [
+      "auncient",
+      "runbook",
+      "stabilization",
+      "vulkan",
+      "winchestermq"
+    ],
+    "standun_controls_review.md": [
+      "commodore",
+      "controls",
+      "review",
+      "standun"
+    ],
+    "star_castle_ai_evolution.md": [
+      "castle",
+      "evolution",
+      "star",
+      "vector"
+    ],
+    "star_castle_autopilot_model.md": [
+      "auncient",
+      "autopilot",
+      "castle",
+      "dysnomia",
+      "model",
+      "star"
+    ],
+    "storybook_dna_animations.md": [
+      "animations",
+      "bessel",
+      "dna",
+      "storybook",
+      "synth",
+      "vulkan"
+    ],
+    "storybook_integrations.md": [
+      "integrations",
+      "speech",
+      "storybook"
+    ],
+    "structural_dynamics_synthesis_control.md": [
+      "control",
+      "dynamics",
+      "structural",
+      "synth",
+      "synthesis"
+    ],
+    "studio_architecture_guide.md": [
+      "architecture",
+      "audio",
+      "guide",
+      "studio",
+      "synth"
+    ],
+    "stuffed_animals_evolution.md": [
+      "animals",
+      "evolution",
+      "stuffed"
+    ],
+    "sunrise_software_analysis.md": [
+      "analysis",
+      "commodore",
+      "software",
+      "speech",
+      "sunrise",
+      "synth",
+      "vector"
+    ],
+    "synapse_issue_2_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "synapse",
+      "synth"
+    ],
+    "synapse_issue_3_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "synapse",
+      "synth"
+    ],
+    "synapse_issue_4_analysis.md": [
+      "analysis",
+      "audio",
+      "issue",
+      "synapse"
+    ],
+    "synapse_software_analysis.md": [
+      "analysis",
+      "atari",
+      "audio",
+      "commodore",
+      "software",
+      "synapse",
+      "synth",
+      "vector"
+    ],
+    "synthesis_card_render_profile.md": [
+      "card",
+      "profile",
+      "render",
+      "synthesis",
+      "vulkan"
+    ],
+    "synthesis_debug_session_equivalence.md": [
+      "audio",
+      "debug",
+      "equivalence",
+      "session",
+      "synth",
+      "synthesis",
+      "vector"
+    ],
+    "synthesis_latency_trace.md": [
+      "latency",
+      "synthesis",
+      "trace",
+      "vulkan"
+    ],
+    "synthesis_profile_report.md": [
+      "profile",
+      "report",
+      "synth",
+      "synthesis",
+      "vulkan"
+    ],
+    "synthesis_profiler_suite.md": [
+      "profiler",
+      "suite",
+      "synth",
+      "synthesis",
+      "vulkan"
+    ],
+    "synthesizer_lore.md": [
+      "lore",
+      "synth",
+      "synthesizer",
+      "vector",
+      "vulkan"
+    ],
+    "synthesizer_scurry_tutorial.md": [
+      "pressedkey",
+      "scurry",
+      "synth",
+      "synthesizer",
+      "tutorial"
+    ],
+    "system0_sabbatical.md": [
+      "auncient",
+      "dysnomia",
+      "sabbatical",
+      "system0",
+      "vector",
+      "winchestermq"
+    ],
+    "targ_mercenary_improvements.md": [
+      "improvements",
+      "mercenary",
+      "synth",
+      "targ"
+    ],
+    "tcg_combat_rewards_mechanics.md": [
+      "combat",
+      "dysnomia",
+      "mechanics",
+      "qing",
+      "rewards",
+      "tcg",
+      "zmachine"
+    ],
+    "tcg_flexible_game_rules.md": [
+      "flexible",
+      "game",
+      "qing",
+      "rules",
+      "tcg"
+    ],
+    "tcg_onchain_math_integration.md": [
+      "dysnomia",
+      "integration",
+      "math",
+      "onchain",
+      "qing",
+      "tcg"
+    ],
+    "teddy303_synthesis_notes.md": [
+      "audio",
+      "notes",
+      "synth",
+      "synthesis",
+      "teddy303"
+    ],
+    "teddy_bear_visualization.md": [
+      "bear",
+      "teddy",
+      "vector",
+      "visualization"
+    ],
+    "tessarant_combat_physics.md": [
+      "101",
+      "104",
+      "auncient",
+      "combat",
+      "physics",
+      "tessarant",
+      "vector",
+      "winchestermq"
+    ],
+    "thirty_six_motzkin_primes_cardinalities.md": [
+      "accumulator",
+      "biotika",
+      "cardinalities",
+      "dysnomia",
+      "motzkin",
+      "primes",
+      "six",
+      "thirty"
+    ],
+    "threading_scalability_profile.md": [
+      "profile",
+      "scalability",
+      "threading",
+      "vulkan"
+    ],
+    "thunks_vs_bloom_filters.md": [
+      "bloom",
+      "dysnomia",
+      "filters",
+      "thunks",
+      "vector"
+    ],
+    "timing_accuracy_standard.md": [
+      "accuracy",
+      "audio",
+      "standard",
+      "synth",
+      "timing",
+      "vector"
+    ],
+    "topological_ordinance_bessel_vs_motzkin.md": [
+      "bessel",
+      "dysnomia",
+      "motzkin",
+      "ordinance",
+      "topological"
+    ],
+    "total_games_manifest.md": [
+      "audio",
+      "diyat",
+      "games",
+      "manifest",
+      "synth",
+      "total",
+      "vaesen",
+      "vector",
+      "zmachine"
+    ],
+    "trading_cards_game_analysis.md": [
+      "analysis",
+      "cards",
+      "dysnomia",
+      "game",
+      "qing",
+      "synth",
+      "trading"
+    ],
+    "transcendent_control_framework.md": [
+      "auncient",
+      "control",
+      "framework",
+      "transcendent",
+      "vulkan",
+      "winchestermq"
+    ],
+    "triangulation_space_quest_for_vertex.md": [
+      "dysnomia",
+      "for",
+      "motzkin",
+      "quest",
+      "space",
+      "triangulation",
+      "vertex"
+    ],
+    "tsfi2_mozilla_efficiency_plan.md": [
+      "auncient",
+      "efficiency",
+      "mozilla",
+      "plan",
+      "tsfi2",
+      "vector",
+      "vulkan"
+    ],
+    "tts_dashboard_improvements_roadmap.md": [
+      "audio",
+      "dashboard",
+      "improvements",
+      "roadmap",
+      "speech",
+      "synth",
+      "tts"
+    ],
+    "tup_tun_dug_dus_bessel_tunneling.md": [
+      "bessel",
+      "dug",
+      "dus",
+      "synth",
+      "tun",
+      "tunneling",
+      "tup"
+    ],
+    "unit_testing_report.md": [
+      "atari",
+      "audio",
+      "report",
+      "sega",
+      "synth",
+      "testing",
+      "unit"
+    ],
+    "unix_v1_folklore_cpu.md": [
+      "cpu",
+      "folklore",
+      "unix"
+    ],
+    "unreal_vaesen_mystery_house_6502_rocm.md": [
+      "6502",
+      "house",
+      "mystery",
+      "node_idx",
+      "rocm",
+      "unreal",
+      "vaesen",
+      "vector",
+      "vulkan"
+    ],
+    "upgrade_proposals.md": [
+      "proposals",
+      "upgrade"
+    ],
+    "vaesen_character_sheets_report.md": [
+      "character",
+      "report",
+      "sheets",
+      "synth",
+      "vaesen"
+    ],
+    "vaesen_emotion_mathieu_feedback.md": [
+      "emotion",
+      "feedback",
+      "mathieu",
+      "synth",
+      "vaesen"
+    ],
+    "vaesen_folklore_synthesis.md": [
+      "audio",
+      "folklore",
+      "synth",
+      "synthesis",
+      "vaesen",
+      "vector"
+    ],
+    "vaesen_improvisational_agency.md": [
+      "agency",
+      "bessel",
+      "bionika",
+      "improvisational",
+      "vaesen",
+      "vector"
+    ],
+    "vaesen_integration_review.md": [
+      "integration",
+      "review",
+      "vaesen",
+      "zmachine"
+    ],
+    "vaesen_silicon_bestiary.md": [
+      "bestiary",
+      "makefile",
+      "silicon",
+      "vaesen"
+    ],
+    "vaesen_sprite_graphics.md": [
+      "graphics",
+      "sprite",
+      "vaesen"
+    ],
+    "vaesen_verification.md": [
+      "crows",
+      "vaesen",
+      "verification"
+    ],
+    "vector_field_query_tokenization.md": [
+      "accumulator",
+      "field",
+      "query",
+      "tokenization",
+      "vector"
+    ],
+    "vic20_yul_upgrades.md": [
+      "commodore",
+      "upgrades",
+      "vector",
+      "vic20",
+      "yul"
+    ],
+    "vic_ii_advanced_concepts.md": [
+      "advanced",
+      "commodore",
+      "concepts",
+      "vic"
+    ],
+    "vision_suite_analysis.md": [
+      "analysis",
+      "pass",
+      "success",
+      "suite",
+      "vision",
+      "vulkan"
+    ],
+    "visual_verification.md": [
+      "vector",
+      "verification",
+      "visual"
+    ],
+    "vulkan_datamost_integration.md": [
+      "audio",
+      "datamost",
+      "integration",
+      "synth",
+      "vulkan"
+    ],
+    "vulkan_epyx_exploration.md": [
+      "audio",
+      "epyx",
+      "exploration",
+      "synth",
+      "vulkan"
+    ],
+    "vulkan_lore_editor_architecture.md": [
+      "architecture",
+      "auncient",
+      "dysnomia",
+      "editor",
+      "lore",
+      "vaesen",
+      "vulkan"
+    ],
+    "vulkan_multicolor_plotting.md": [
+      "commodore",
+      "multicolor",
+      "plotting",
+      "vector",
+      "vulkan"
+    ],
+    "vulkan_wireframe_integration.md": [
+      "integration",
+      "vulkan",
+      "wireframe"
+    ],
+    "wayland_ab4h_rendering.md": [
+      "ab4h",
+      "rendering",
+      "vulkan",
+      "wayland"
+    ],
+    "wilby_magazine_issue_1_review.md": [
+      "auncient",
+      "issue",
+      "magazine",
+      "review",
+      "vector",
+      "wilby"
+    ],
+    "wilby_magazine_issue_2_review.md": [
+      "auncient",
+      "issue",
+      "magazine",
+      "review",
+      "wilby"
+    ],
+    "wilby_magazine_issue_3_review.md": [
+      "auncient",
+      "issue",
+      "magazine",
+      "review",
+      "synth",
+      "vector",
+      "wilby"
+    ],
+    "wilby_magazine_issue_4_review.md": [
+      "auncient",
+      "issue",
+      "magazine",
+      "review",
+      "wilby"
+    ],
+    "window_registry.md": [
+      "auncient",
+      "registry",
+      "vulkan",
+      "window"
+    ],
+    "xonox_analysis.md": [
+      "analysis",
+      "atari",
+      "vector",
+      "xonox"
+    ],
+    "yamaha_ym2612_fm_synthesis.md": [
+      "audio",
+      "sega",
+      "synth",
+      "synthesis",
+      "yamaha",
+      "ym2612"
+    ],
+    "yi_mechanical_transducer.md": [
+      "audio",
+      "biotika",
+      "dysnomia",
+      "mechanical",
+      "synth",
+      "transducer",
+      "tsfibiotikadna"
+    ],
+    "yul_accounting_and_matrix_coprocessors.md": [
+      "accounting",
+      "and",
+      "coprocessors",
+      "matrix",
+      "yul"
+    ],
+    "yul_device_access.md": [
+      "access",
+      "audio",
+      "device",
+      "yul"
+    ],
+    "yul_hardware_hardening_analysis.md": [
+      "analysis",
+      "auncient",
+      "commodore",
+      "hardening",
+      "hardware",
+      "yul"
+    ],
+    "yul_vm_isolation_audit.md": [
+      "audit",
+      "isolation",
+      "yul",
+      "zmachine"
+    ],
+    "z_machine_ledger_inventory_design.md": [
+      "design",
+      "inventory",
+      "ledger",
+      "machine"
+    ],
+    "z_machine_onchain_design.md": [
+      "design",
+      "machine",
+      "onchain"
+    ],
+    "zener_discovery_ai_analogy.md": [
+      "analogy",
+      "discovery",
+      "zener"
+    ],
+    "zeners_in_llm_architectures.md": [
+      "architectures",
+      "llm",
+      "zeners"
+    ],
+    "zi_spin_comparison.md": [
+      "comparison",
+      "dysnomia",
+      "qing",
+      "spin"
+    ],
+    "zil_onchain_parser_design.md": [
+      "100",
+      "design",
+      "onchain",
+      "parser",
+      "vector",
+      "winchestermq",
+      "zil",
+      "zmachine"
+    ],
+    "zmachine_erc20_integration.md": [
+      "erc20",
+      "integration",
+      "zmachine"
+    ],
+    "zmachine_erc20_rewards_and_payments.md": [
+      "and",
+      "erc20",
+      "payments",
+      "rewards",
+      "zmachine"
+    ],
+    "zmachine_implementation_log.md": [
+      "audio",
+      "implementation",
+      "log",
+      "synth",
+      "zmachine"
+    ],
+    "zmachine_locus_diyat.md": [
+      "diyat",
+      "dysnomia",
+      "locus",
+      "minter",
+      "name",
+      "qing",
+      "sym",
+      "zmachine"
+    ],
+    "zmachine_onchain_composition.md": [
+      "composition",
+      "onchain",
+      "zmachine"
+    ],
+    "zmm_evm_rpc_specification.md": [
+      "evm",
+      "rpc",
+      "specification",
+      "zmm"
+    ],
+    "zmm_room_refactoring_plan.md": [
+      "plan",
+      "refactoring",
+      "room",
+      "zmachine",
+      "zmm"
+    ],
+    "zmm_zengine_rag_integration.md": [
+      "integration",
+      "rag",
+      "vector",
+      "vulkan",
+      "zengine",
+      "zmm"
+    ]
+  },
+  "tagToDocuments": {
+    "29": [
+      "comm_data_review.md"
+    ],
+    "35": [
+      "comm_data_review.md"
+    ],
+    "56": [
+      "daily_lore_2026_02_28.md"
+    ],
+    "64": [
+      "ahoy_issue_7_code_listings_review.md"
+    ],
+    "97": [
+      "scenial_magazine_issue_1_review.md"
+    ],
+    "100": [
+      "zil_onchain_parser_design.md"
+    ],
+    "101": [
+      "tessarant_combat_physics.md"
+    ],
+    "104": [
+      "tessarant_combat_physics.md"
+    ],
+    "256": [
+      "antic_ab4h_vulkan_colors.md",
+      "mmu_mappings.md"
+    ],
+    "512": [
+      "general_2d_character_synthesizer.md"
+    ],
+    "1200": [
+      "cabs_reconciliation_framework.md",
+      "cabs_tcg_interactions.md"
+    ],
+    "1541": [
+      "c64_1541_emulation_support.md",
+      "commodore_1541_iec_serial_bus.md"
+    ],
+    "2026": [
+      "02_Daily_Lore_2026_03_01.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_2026_03_02.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daily_lore_2026_03_14.md",
+      "lore_2026_03_03.md"
+    ],
+    "6502": [
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "0-5v": [
+      "heathkit_synthesizer_monitor.md"
+    ],
+    "0x04": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "0x08": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "0x0c": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "0x0f": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "0x1000": [
+      "softlaw_corporation_integration.md"
+    ],
+    "0x1004": [
+      "softlaw_corporation_integration.md"
+    ],
+    "1980-06": [
+      "content.md"
+    ],
+    "6502-micro-journal": [
+      "content.md"
+    ],
+    "ab4h": [
+      "antic_ab4h_vulkan_colors.md",
+      "wayland_ab4h_rendering.md"
+    ],
+    "about": [
+      "content.md"
+    ],
+    "abrash": [
+      "abrash_mode_x_analysis.md"
+    ],
+    "access": [
+      "access_software_analysis.md",
+      "yul_device_access.md"
+    ],
+    "accounting": [
+      "yul_accounting_and_matrix_coprocessors.md"
+    ],
+    "accumulator": [
+      "accumulator_vector_fields.md",
+      "agentic_vector_field_cpu_testing.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ai_debugger_input_methods.md",
+      "atropa_unified_instruction_set.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_27_analysis.md",
+      "cannonball_blitz_integration.md",
+      "commodore_kernal_io_redirection.md",
+      "control_generation_architecture.md",
+      "control_systems_peripheral_emulation.md",
+      "counter_bin_specification.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "cpu_test_improvements.md",
+      "datamost_support_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "elektor_issue_16_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "fractional_synthesis_llm_rag.md",
+      "gauntlet_jit_vae_spec.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md",
+      "progressive_rag_pipeline.md",
+      "thirty_six_motzkin_primes_cardinalities.md",
+      "vector_field_query_tokenization.md"
+    ],
+    "accuracy": [
+      "timing_accuracy_standard.md"
+    ],
+    "address": [
+      "langchain_blueprint.md"
+    ],
+    "advanced": [
+      "advanced_infocom_technologies_blueprint.md",
+      "elm_debugger_advanced_usecases.md",
+      "vic_ii_advanced_concepts.md"
+    ],
+    "advancements": [
+      "3d_rendering_advancements_deepseek.md",
+      "speech_synthesis_advancements.md"
+    ],
+    "agency": [
+      "vaesen_improvisational_agency.md"
+    ],
+    "agentic": [
+      "agentic_vector_field_cpu_testing.md",
+      "agentic_vector_fields.md"
+    ],
+    "agi": [
+      "sierra_agi_integration.md"
+    ],
+    "ahoy": [
+      "ahoy_interrupt_music_maker.md",
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_20_game_review.md",
+      "ahoy_issue_33_last_ninja_review.md",
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_6_page_63_review.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_12_review.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_14_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_18_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_25_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "ahoy_magazine_review.md"
+    ],
+    "air": [
+      "air_assault_bob_lloret_review.md"
+    ],
+    "alchemical": [
+      "alchemical_platform_expansion_plan.md"
+    ],
+    "analog": [
+      "analog_assembly_animation.md",
+      "analog_compatibility_roadmap.md"
+    ],
+    "analogy": [
+      "zener_discovery_ai_analogy.md"
+    ],
+    "analysis": [
+      "73_magazine_issue_1_analysis.md",
+      "abrash_mode_x_analysis.md",
+      "access_software_analysis.md",
+      "async_behavior_analysis.md",
+      "asynchronous_timeout_analysis.md",
+      "atari_incorporated_analysis.md",
+      "autodyne_analysis.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_13_analysis.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_15_analysis.md",
+      "byte_issue_16_analysis.md",
+      "byte_issue_17_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_22_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issue_27_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "cimarron_insta_investment_combo_analysis.md",
+      "commodore_software_analysis.md",
+      "compuserve_protocols_analysis.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "concurrency_pipeline_analysis.md",
+      "coprocessor_designs_analysis.md",
+      "datamost_support_analysis.md",
+      "datasoft_analysis.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "elektuur_early_issues_analysis.md",
+      "elektuur_issue_25_analysis.md",
+      "entech_software_analysis.md",
+      "gameplay_mechanics_analysis.md",
+      "gan_speech_synthesis_analysis.md",
+      "geos_operating_system_analysis.md",
+      "image_computer_products_analysis.md",
+      "insta_software_analysis.md",
+      "ktel_international_analysis.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "microprose_analysis.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_1_analysis.md",
+      "muse_software_analysis.md",
+      "omnitronix_interface_analysis.md",
+      "pathway_analysis.md",
+      "photorealistic_rendering_analysis.md",
+      "qst_issue_10_analysis.md",
+      "qst_issue_11_analysis.md",
+      "qst_issue_12_analysis.md",
+      "qst_issue_13_analysis.md",
+      "qst_issue_14_analysis.md",
+      "qst_issue_14_genetic_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_5_analysis.md",
+      "qst_issue_6_analysis.md",
+      "qst_issue_7_analysis.md",
+      "qst_issue_8_analysis.md",
+      "qst_issue_9_analysis.md",
+      "quicksilva_analysis.md",
+      "rag_antic_comovement_analysis.md",
+      "spectral_analysis_report.md",
+      "spinnaker_analysis.md",
+      "sunrise_software_analysis.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "synapse_software_analysis.md",
+      "trading_cards_game_analysis.md",
+      "vision_suite_analysis.md",
+      "xonox_analysis.md",
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "analyzer": [
+      "ddj_fft_spectrum_analyzer.md"
+    ],
+    "and": [
+      "bessel_riders_and_harmonics.md",
+      "cia_timers_and_gas_taxation.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "motzkin_paths_and_bessel_fractions.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "zmachine_erc20_rewards_and_payments.md"
+    ],
+    "animals": [
+      "stuffed_animals_evolution.md"
+    ],
+    "animation": [
+      "analog_assembly_animation.md"
+    ],
+    "animations": [
+      "storybook_dna_animations.md"
+    ],
+    "antic": [
+      "antic_ab4h_vulkan_colors.md",
+      "antic_cpu_terminal_improvements.md",
+      "antic_hardware_scrolling.md",
+      "antic_wayland_level_renderer.md",
+      "antic_zmm_terminal_benefits.md",
+      "rag_antic_comovement_analysis.md"
+    ],
+    "apex": [
+      "motzkin_apogee_apex_primes.md"
+    ],
+    "apk": [
+      "content.md"
+    ],
+    "apogee": [
+      "motzkin_apogee_apex_primes.md"
+    ],
+    "apple": [
+      "content.md"
+    ],
+    "archetypes": [
+      "game_archetypes_spec.md"
+    ],
+    "architecture": [
+      "control_generation_architecture.md",
+      "decentralized_os_yul_architecture.md",
+      "multi_user_shared_cpu_architecture.md",
+      "next_gen_emulator_architecture.md",
+      "renegade_yul_architecture.md",
+      "studio_architecture_guide.md",
+      "vulkan_lore_editor_architecture.md"
+    ],
+    "architectures": [
+      "zeners_in_llm_architectures.md"
+    ],
+    "arena": [
+      "arena_state_sharing.md",
+      "evm_arena_integration_summary.md"
+    ],
+    "arpeggiator": [
+      "bayesian_arpeggiator_control.md"
+    ],
+    "assault": [
+      "air_assault_bob_lloret_review.md"
+    ],
+    "assembly": [
+      "analog_assembly_animation.md"
+    ],
+    "associahedron": [
+      "associahedron_lore.md"
+    ],
+    "async": [
+      "async_behavior_analysis.md",
+      "dynamic_async_integration.md"
+    ],
+    "asynchronous": [
+      "asynchronous_timeout_analysis.md"
+    ],
+    "atari": [
+      "analog_assembly_animation.md",
+      "analog_compatibility_roadmap.md",
+      "antic_ab4h_vulkan_colors.md",
+      "antic_hardware_scrolling.md",
+      "atari_incorporated_analysis.md",
+      "atari_unified_system.md",
+      "compuserve_integration_blueprint.md",
+      "datasoft_analysis.md",
+      "ddj_dithering_integration.md",
+      "gameplay_mechanics_analysis.md",
+      "gauntlet_pmg_support.md",
+      "gtia_collision_registers.md",
+      "image_computer_products_analysis.md",
+      "ktel_international_analysis.md",
+      "microprose_analysis.md",
+      "muse_software_analysis.md",
+      "pokey_audio_synthesis.md",
+      "quicksilva_analysis.md",
+      "spinnaker_analysis.md",
+      "synapse_software_analysis.md",
+      "unit_testing_report.md",
+      "xonox_analysis.md"
+    ],
+    "atropa": [
+      "atropa_unified_instruction_set.md",
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "attenuation": [
+      "auto_attenuation_debugging_concept.md"
+    ],
+    "attr1": [
+      "ruleburst_integration.md"
+    ],
+    "attr2": [
+      "ruleburst_integration.md"
+    ],
+    "attribute": [
+      "ruleburst_integration.md"
+    ],
+    "audio": [
+      "73_magazine_issue_1_analysis.md",
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "access_software_analysis.md",
+      "advanced_infocom_technologies_blueprint.md",
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_review.md",
+      "analog_compatibility_roadmap.md",
+      "atari_unified_system.md",
+      "atropa_unified_instruction_set.md",
+      "autodyne_analysis.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "chattts_integration_design.md",
+      "commodore_sid_audio_engine.md",
+      "commodore_software_analysis.md",
+      "content.md",
+      "control_generation_architecture.md",
+      "coprocessor_designs_analysis.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "datamost_support_analysis.md",
+      "ddj_fft_spectrum_analyzer.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md",
+      "decentralized_os_yul_architecture.md",
+      "dj.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dysnomia_combat_resonance_rules.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_1_synthesis.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_9_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "elektuur_issue_25_analysis.md",
+      "emulator_integration_paths.md",
+      "epyx_support_report.md",
+      "filtered_fdn_improvisational_decisions.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "gan_speech_synthesis_analysis.md",
+      "hardware_improvements_plan.md",
+      "heathkit_synthesizer_monitor.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_special_edition_1_review.md",
+      "hurwood_generator_expansion.md",
+      "hurwood_improvements.md",
+      "impedance_reactor_cards.md",
+      "improvise_bionika.md",
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "interrupt_standards.md",
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_3_cassette_storage.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "master_memory_map_review.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "multi_user_coprocessor_sharing.md",
+      "muse_software_analysis.md",
+      "nebula_biotika_plan.md",
+      "necessity_of_leakage_modeling.md",
+      "on_chain_neural_speech.md",
+      "pokey_audio_synthesis.md",
+      "pong_diyat_tax.md",
+      "priority_voting_board.md",
+      "procedural_integration_report.md",
+      "qst_issue_10_analysis.md",
+      "qst_issue_13_analysis.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_5_analysis.md",
+      "qst_issue_6_analysis.md",
+      "qst_issue_8_analysis.md",
+      "qst_issue_9_analysis.md",
+      "qst_issues_1_4_hardware_concepts.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "sega_genesis_dual_cpu.md",
+      "sega_hardware_innovations.md",
+      "spectral_analysis_report.md",
+      "speech_synthesis_advancements.md",
+      "studio_architecture_guide.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "teddy303_synthesis_notes.md",
+      "timing_accuracy_standard.md",
+      "total_games_manifest.md",
+      "tts_dashboard_improvements_roadmap.md",
+      "unit_testing_report.md",
+      "vaesen_folklore_synthesis.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md",
+      "yamaha_ym2612_fm_synthesis.md",
+      "yi_mechanical_transducer.md",
+      "yul_device_access.md",
+      "zmachine_implementation_log.md"
+    ],
+    "audit": [
+      "yul_vm_isolation_audit.md"
+    ],
+    "auncient": [
+      "DYSNOMIA_VM_LORE.md",
+      "MATERNAL_AI.md",
+      "associahedron_lore.md",
+      "automation_system_design.md",
+      "daskmig_magazine_issue_1_review.md",
+      "evm_arena_integration_summary.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "hugi_4d_graphics_integration.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md",
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "mozilla_integration_plan.md",
+      "npc_exhaustive_test_report.md",
+      "phase_space_formulation.md",
+      "portal_hub_showcase.md",
+      "press_release_rooted_browser.md",
+      "procedural_integration_report.md",
+      "pulsex_swap_trap_scenario.md",
+      "reengineering_plan.md",
+      "rooted_browser_build_report.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "sprint_plan.md",
+      "stabilization_runbook.md",
+      "star_castle_autopilot_model.md",
+      "system0_sabbatical.md",
+      "tessarant_combat_physics.md",
+      "transcendent_control_framework.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "vulkan_lore_editor_architecture.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md",
+      "window_registry.md",
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "auto": [
+      "auto_attenuation_debugging_concept.md"
+    ],
+    "autodyne": [
+      "autodyne_analysis.md"
+    ],
+    "automation": [
+      "automation_system_design.md"
+    ],
+    "autopilot": [
+      "star_castle_autopilot_model.md"
+    ],
+    "baas": [
+      "mtac_issue_3_baas_bessel_fm.md"
+    ],
+    "background": [
+      "deep_rendering_background.md"
+    ],
+    "banking": [
+      "cpu_banking_and_timer_upgrades.md"
+    ],
+    "base": [
+      "daily_lore_base_secret.md"
+    ],
+    "basic": [
+      "content.md"
+    ],
+    "basis": [
+      "motzkin_topological_basis_vertex.md"
+    ],
+    "battery": [
+      "spinnaker_analysis.md"
+    ],
+    "bayesian": [
+      "bayesian_arpeggiator_control.md"
+    ],
+    "bbs": [
+      "bbs_chat_integration.md"
+    ],
+    "bear": [
+      "dna_bear_improvements.md",
+      "teddy_bear_visualization.md"
+    ],
+    "behavior": [
+      "async_behavior_analysis.md"
+    ],
+    "benefits": [
+      "antic_zmm_terminal_benefits.md"
+    ],
+    "bessel": [
+      "associahedron_lore.md",
+      "bessel_jnikny_dug_dus.md",
+      "bessel_jnikny_tunneling_operator.md",
+      "bessel_riders_and_harmonics.md",
+      "biotika_neural_feedback_loop.md",
+      "conjecture_topological_motzkin_primes.md",
+      "dna_bear_improvements.md",
+      "fractional_synthesis_llm_rag.md",
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "motzkin_paths_and_bessel_fractions.md",
+      "mtac_issue_10_graeffe_power_series.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_3_baas_bessel_fm.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_9_bessel_zeros_solvers.md",
+      "pulsex_swap_trap_scenario.md",
+      "quantum_cylindrical_tunneling_bessel.md",
+      "storybook_dna_animations.md",
+      "topological_ordinance_bessel_vs_motzkin.md",
+      "tup_tun_dug_dus_bessel_tunneling.md",
+      "vaesen_improvisational_agency.md"
+    ],
+    "bestiary": [
+      "vaesen_silicon_bestiary.md"
+    ],
+    "bin": [
+      "counter_bin_specification.md"
+    ],
+    "bionika": [
+      "biotika_neural_feedback_loop.md",
+      "control_generation_architecture.md",
+      "dysnomia_prime_issue_1.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_2_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "improvise_bionika.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "necessity_of_leakage_modeling.md",
+      "ssr_terminology_compatibility.md",
+      "vaesen_improvisational_agency.md"
+    ],
+    "biotika": [
+      "associahedron_lore.md",
+      "bayesian_arpeggiator_control.md",
+      "biotika_neural_feedback_loop.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "byte_issue_21_analysis.md",
+      "dj.md",
+      "dna_bear_improvements.md",
+      "dysnomia_prime_issue_1.md",
+      "filtered_fdn_improvisational_decisions.md",
+      "nebula_biotika_plan.md",
+      "prophecy_inverse_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "thirty_six_motzkin_primes_cardinalities.md",
+      "yi_mechanical_transducer.md"
+    ],
+    "blitz": [
+      "cannonball_blitz_integration.md"
+    ],
+    "blockchain": [
+      "blockchain_secure_kermit.md"
+    ],
+    "blog": [
+      "content.md"
+    ],
+    "bloom": [
+      "thunks_vs_bloom_filters.md"
+    ],
+    "blueprint": [
+      "advanced_infocom_technologies_blueprint.md",
+      "compuserve_integration_blueprint.md",
+      "langchain_blueprint.md",
+      "lucas_plush_blueprint.md"
+    ],
+    "board": [
+      "priority_voting_board.md"
+    ],
+    "bob": [
+      "air_assault_bob_lloret_review.md"
+    ],
+    "breakdown": [
+      "quantum_tunneling_breakdown_synthesis.md"
+    ],
+    "bresenham": [
+      "ddj_bresenham_integration.md"
+    ],
+    "broderbund": [
+      "broderbund_software_integration.md"
+    ],
+    "browser": [
+      "press_release_rooted_browser.md",
+      "rooted_browser_build_report.md"
+    ],
+    "bsp": [
+      "ddj_bsp_tree_integration.md"
+    ],
+    "build": [
+      "rooted_browser_build_report.md"
+    ],
+    "buoyancy": [
+      "spinnaker_analysis.md"
+    ],
+    "bus": [
+      "commodore_1541_iec_serial_bus.md"
+    ],
+    "byte": [
+      "byte_issue_12_analysis.md",
+      "byte_issue_13_analysis.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_15_analysis.md",
+      "byte_issue_16_analysis.md",
+      "byte_issue_17_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_22_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issue_27_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "fylstra_sweets_byte_magazine.md"
+    ],
+    "c1": [
+      "elektuur_issue_25_analysis.md"
+    ],
+    "c64": [
+      "c64_1541_emulation_support.md",
+      "commodore_1541_iec_serial_bus.md"
+    ],
+    "cabs": [
+      "cabs_folklore_escrow_spec.md",
+      "cabs_peek_poke_security.md",
+      "cabs_reconciliation_framework.md",
+      "cabs_security_recommendations.md",
+      "cabs_tcg_interactions.md",
+      "cabs_token_exchange_spec.md"
+    ],
+    "cannonball": [
+      "cannonball_blitz_integration.md"
+    ],
+    "capacitor": [
+      "frobenius_manifold_capacitor.md"
+    ],
+    "card": [
+      "mtac_issue_6_punched_card_tables.md",
+      "sector_card_mapping.md",
+      "synthesis_card_render_profile.md"
+    ],
+    "cardco": [
+      "cardco_peripheral_interfaces.md"
+    ],
+    "cardinalities": [
+      "thirty_six_motzkin_primes_cardinalities.md"
+    ],
+    "cards": [
+      "impedance_reactor_cards.md",
+      "mtac_issue_12_punched_cards.md",
+      "trading_cards_game_analysis.md"
+    ],
+    "carlson": [
+      "carlson_chrget_to_emacs.md"
+    ],
+    "cassette": [
+      "kilobaud_issue_3_cassette_storage.md"
+    ],
+    "castle": [
+      "star_castle_ai_evolution.md",
+      "star_castle_autopilot_model.md"
+    ],
+    "cbm": [
+      "msd_cbm_disk_review.md"
+    ],
+    "cebu": [
+      "daily_lore_2026_03_07_joseon_cebu.md"
+    ],
+    "chain": [
+      "on_chain_neural_speech.md"
+    ],
+    "character": [
+      "general_2d_character_synthesizer.md",
+      "vaesen_character_sheets_report.md"
+    ],
+    "chat": [
+      "bbs_chat_integration.md"
+    ],
+    "chattts": [
+      "chattts_integration_design.md"
+    ],
+    "chen": [
+      "daily_lore_chen_jurchen.md"
+    ],
+    "chrget": [
+      "carlson_chrget_to_emacs.md"
+    ],
+    "chrome": [
+      "content.md"
+    ],
+    "cia": [
+      "cia_timers_and_gas_taxation.md"
+    ],
+    "cimarron": [
+      "cimarron_insta_investment_combo_analysis.md"
+    ],
+    "code": [
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_7_code_listings_review.md"
+    ],
+    "collision": [
+      "gtia_collision_registers.md"
+    ],
+    "colorindex": [
+      "antic_ab4h_vulkan_colors.md"
+    ],
+    "colors": [
+      "antic_ab4h_vulkan_colors.md"
+    ],
+    "combat": [
+      "dysnomia_combat_resonance_rules.md",
+      "tcg_combat_rewards_mechanics.md",
+      "tessarant_combat_physics.md"
+    ],
+    "combo": [
+      "cimarron_insta_investment_combo_analysis.md"
+    ],
+    "comm": [
+      "comm_data_review.md"
+    ],
+    "commodore": [
+      "access_software_analysis.md",
+      "ahoy_interrupt_music_maker.md",
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_20_game_review.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_review.md",
+      "atari_incorporated_analysis.md",
+      "bbs_chat_integration.md",
+      "c64_1541_emulation_support.md",
+      "cardco_peripheral_interfaces.md",
+      "cia_timers_and_gas_taxation.md",
+      "cimarron_insta_investment_combo_analysis.md",
+      "commodore_1541_iec_serial_bus.md",
+      "commodore_hardware_tricks.md",
+      "commodore_kernal_io_redirection.md",
+      "commodore_sid_audio_engine.md",
+      "commodore_software_analysis.md",
+      "compuserve_integration_blueprint.md",
+      "comstar_printer_integration.md",
+      "coprocessor_designs_analysis.md",
+      "datamost_milestones.md",
+      "datamost_support_analysis.md",
+      "datasoft_analysis.md",
+      "ddj_dithering_integration.md",
+      "decentralized_os_yul_architecture.md",
+      "easychain64_terminal_design.md",
+      "emulator_integration_paths.md",
+      "entech_software_analysis.md",
+      "evm_memory_constraints.md",
+      "geos_operating_system_analysis.md",
+      "graphics_display_technologies.md",
+      "gtia_collision_registers.md",
+      "hurwood_generator_expansion.md",
+      "hurwood_improvements.md",
+      "image_computer_products_analysis.md",
+      "insta_software_analysis.md",
+      "learning_source_hometax_integration.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "master_memory_map_review.md",
+      "micro_issue_26_analysis.md",
+      "micro_world_printer_integration.md",
+      "microprose_analysis.md",
+      "msd_cbm_disk_review.md",
+      "msd_super_disk_integration.md",
+      "muse_software_analysis.md",
+      "omnitronix_interface_analysis.md",
+      "onchain_database_manager.md",
+      "protecto_enterprises_deep_dive.md",
+      "quicksilva_analysis.md",
+      "rupert_report_cursor.md",
+      "sally_larsen_graphics_simulation.md",
+      "softlaw_corporation_integration.md",
+      "software_to_go_library.md",
+      "spinnaker_analysis.md",
+      "standun_controls_review.md",
+      "sunrise_software_analysis.md",
+      "synapse_software_analysis.md",
+      "vic20_yul_upgrades.md",
+      "vic_ii_advanced_concepts.md",
+      "vulkan_multicolor_plotting.md",
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "comovement": [
+      "rag_antic_comovement_analysis.md"
+    ],
+    "comparison": [
+      "ring_eta_comparison.md",
+      "zi_spin_comparison.md"
+    ],
+    "compatibility": [
+      "analog_compatibility_roadmap.md",
+      "ssr_terminology_compatibility.md"
+    ],
+    "completed": [
+      "datamost_milestones.md"
+    ],
+    "composition": [
+      "zmachine_onchain_composition.md"
+    ],
+    "compuserve": [
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "compuserve_protocols_analysis.md"
+    ],
+    "computer": [
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "content.md",
+      "image_computer_products_analysis.md"
+    ],
+    "computermagazines": [
+      "content.md"
+    ],
+    "comstar": [
+      "comstar_printer_integration.md"
+    ],
+    "concept": [
+      "auto_attenuation_debugging_concept.md"
+    ],
+    "concepts": [
+      "qst_issues_1_4_hardware_concepts.md",
+      "vic_ii_advanced_concepts.md"
+    ],
+    "concurrency": [
+      "concurrency_pipeline_analysis.md"
+    ],
+    "conjecture": [
+      "conjecture_topological_motzkin_primes.md"
+    ],
+    "constraints": [
+      "evm_memory_constraints.md"
+    ],
+    "contact": [
+      "content.md"
+    ],
+    "content": [
+      "content.md"
+    ],
+    "control": [
+      "bayesian_arpeggiator_control.md",
+      "control_generation_architecture.md",
+      "control_systems_peripheral_emulation.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "structural_dynamics_synthesis_control.md",
+      "transcendent_control_framework.md"
+    ],
+    "controls": [
+      "standun_controls_review.md"
+    ],
+    "conversion": [
+      "conversion_plan.md"
+    ],
+    "coprocessor": [
+      "coprocessor_designs_analysis.md",
+      "multi_user_coprocessor_sharing.md"
+    ],
+    "coprocessors": [
+      "yul_accounting_and_matrix_coprocessors.md"
+    ],
+    "corporation": [
+      "softlaw_corporation_integration.md"
+    ],
+    "counter": [
+      "counter_bin_specification.md"
+    ],
+    "cpu": [
+      "agentic_vector_field_cpu_testing.md",
+      "antic_cpu_terminal_improvements.md",
+      "cpu_banking_and_timer_upgrades.md",
+      "cpu_test_improvements.md",
+      "folklore_cpu_design.md",
+      "multi_user_shared_cpu_architecture.md",
+      "sega_genesis_dual_cpu.md",
+      "unix_v1_folklore_cpu.md"
+    ],
+    "crossing": [
+      "germanium_zero_crossing_ssr_equivalence.md"
+    ],
+    "crows": [
+      "cabs_security_recommendations.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "vaesen_verification.md"
+    ],
+    "crystals": [
+      "quartz_crystals_radio_synthesis.md"
+    ],
+    "cursor": [
+      "rupert_report_cursor.md"
+    ],
+    "cylindrical": [
+      "quantum_cylindrical_tunneling_bessel.md"
+    ],
+    "daily": [
+      "02_Daily_Lore_2026_03_01.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_2026_03_02.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_base_secret.md",
+      "daily_lore_chen_jurchen.md",
+      "daily_lore_operation_mariner.md",
+      "daily_lore_vulkan_vision.md"
+    ],
+    "damage": [
+      "spinnaker_analysis.md"
+    ],
+    "dashboard": [
+      "tts_dashboard_improvements_roadmap.md"
+    ],
+    "daskmig": [
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "daskmig_magazine_issue_3_review.md"
+    ],
+    "data": [
+      "comm_data_review.md",
+      "content.md"
+    ],
+    "database": [
+      "onchain_database_manager.md"
+    ],
+    "datamost": [
+      "datamost_milestones.md",
+      "datamost_support_analysis.md",
+      "datamost_totl_protecto_integration.md",
+      "vulkan_datamost_integration.md"
+    ],
+    "datasoft": [
+      "datasoft_analysis.md"
+    ],
+    "ddj": [
+      "ddj_bresenham_integration.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_dithering_integration.md",
+      "ddj_fft_spectrum_analyzer.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md"
+    ],
+    "debug": [
+      "synthesis_debug_session_equivalence.md"
+    ],
+    "debugger": [
+      "ai_debugger_input_methods.md",
+      "elm_debugger_advanced_usecases.md"
+    ],
+    "debugging": [
+      "auto_attenuation_debugging_concept.md"
+    ],
+    "decentralized": [
+      "decentralized_os_yul_architecture.md"
+    ],
+    "decisions": [
+      "filtered_fdn_improvisational_decisions.md"
+    ],
+    "deep": [
+      "deep_rendering_background.md",
+      "protecto_enterprises_deep_dive.md"
+    ],
+    "deepseek": [
+      "3d_rendering_advancements_deepseek.md"
+    ],
+    "deployment": [
+      "local_deployment_guide.md"
+    ],
+    "depth": [
+      "elektor_issue_10_in_depth.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_12_in_depth.md",
+      "elektor_issue_13_in_depth.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_15_in_depth.md",
+      "elektor_issue_16_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_3_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_6_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_8_in_depth.md",
+      "elektor_issue_9_in_depth.md",
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "kilobaud_issue_7_in_depth.md"
+    ],
+    "design": [
+      "automation_system_design.md",
+      "chattts_integration_design.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "easychain64_terminal_design.md",
+      "folklore_cpu_design.md",
+      "z_machine_ledger_inventory_design.md",
+      "z_machine_onchain_design.md",
+      "zil_onchain_parser_design.md"
+    ],
+    "designs": [
+      "coprocessor_designs_analysis.md"
+    ],
+    "device": [
+      "yul_device_access.md"
+    ],
+    "disc": [
+      "disc_triangulation_space_stashas.md"
+    ],
+    "discovery": [
+      "zener_discovery_ai_analogy.md"
+    ],
+    "disk": [
+      "commodore_kernal_io_redirection.md",
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "msd_cbm_disk_review.md",
+      "msd_super_disk_integration.md"
+    ],
+    "display": [
+      "graphics_display_technologies.md",
+      "platform_display_model.md"
+    ],
+    "dithering": [
+      "ddj_dithering_integration.md"
+    ],
+    "dive": [
+      "protecto_enterprises_deep_dive.md"
+    ],
+    "diyat": [
+      "cabs_folklore_escrow_spec.md",
+      "cabs_reconciliation_framework.md",
+      "cabs_security_recommendations.md",
+      "cabs_tcg_interactions.md",
+      "cabs_token_exchange_spec.md",
+      "cannonball_blitz_integration.md",
+      "cia_timers_and_gas_taxation.md",
+      "coprocessor_designs_analysis.md",
+      "homeword_integration.md",
+      "learning_source_hometax_integration.md",
+      "master_memory_map_review.md",
+      "micro_world_printer_integration.md",
+      "msd_tax_and_security_analysis.md",
+      "pong_diyat_tax.md",
+      "sierra_agi_integration.md",
+      "software_to_go_library.md",
+      "total_games_manifest.md",
+      "zmachine_locus_diyat.md"
+    ],
+    "dna": [
+      "dna_3d_standards_proposal.md",
+      "dna_bear_improvements.md",
+      "storybook_dna_animations.md"
+    ],
+    "dobbs": [
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md"
+    ],
+    "donate": [
+      "content.md"
+    ],
+    "draft": [
+      "prompt_draft.md"
+    ],
+    "dreamcast": [
+      "sega_dreamcast_powervr2.md"
+    ],
+    "dual": [
+      "sega_genesis_dual_cpu.md"
+    ],
+    "dug": [
+      "bessel_jnikny_dug_dus.md",
+      "tup_tun_dug_dus_bessel_tunneling.md"
+    ],
+    "duodecimal": [
+      "mtac_issue_14_duodecimal_tuning.md"
+    ],
+    "dus": [
+      "bessel_jnikny_dug_dus.md",
+      "tup_tun_dug_dus_bessel_tunneling.md"
+    ],
+    "dynamic": [
+      "dynamic_async_integration.md"
+    ],
+    "dynamics": [
+      "mtac_issue_4_structural_dynamics.md",
+      "structural_dynamics_synthesis_control.md"
+    ],
+    "dysnomia": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "DYSNOMIA_VM_LORE.md",
+      "MATERNAL_AI.md",
+      "associahedron_lore.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "conjecture_topological_motzkin_primes.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_base_secret.md",
+      "dj.md",
+      "dysnomia_combat_resonance_rules.md",
+      "dysnomia_exploration.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_prime_issue_1.md",
+      "dysnomia_recombination_operator.md",
+      "dysnomia_system_integration_map.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "langchain_blueprint.md",
+      "live_math_results.md",
+      "local_deployment_guide.md",
+      "lore_2026_03_03.md",
+      "math_integrity_report.md",
+      "motzkin_apogee_apex_primes.md",
+      "motzkin_topological_basis_vertex.md",
+      "nonukes_pulsex_pairs.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "pulsex_swap_trap_scenario.md",
+      "ring_eta_comparison.md",
+      "scenial_magazine_issue_1_review.md",
+      "star_castle_autopilot_model.md",
+      "system0_sabbatical.md",
+      "tcg_combat_rewards_mechanics.md",
+      "tcg_onchain_math_integration.md",
+      "thirty_six_motzkin_primes_cardinalities.md",
+      "thunks_vs_bloom_filters.md",
+      "topological_ordinance_bessel_vs_motzkin.md",
+      "trading_cards_game_analysis.md",
+      "triangulation_space_quest_for_vertex.md",
+      "vulkan_lore_editor_architecture.md",
+      "yi_mechanical_transducer.md",
+      "zi_spin_comparison.md",
+      "zmachine_locus_diyat.md"
+    ],
+    "early": [
+      "elektuur_early_issues_analysis.md"
+    ],
+    "easychain64": [
+      "easychain64_terminal_design.md"
+    ],
+    "edge": [
+      "content.md"
+    ],
+    "edition": [
+      "hugi_special_edition_1_review.md"
+    ],
+    "editor": [
+      "vulkan_lore_editor_architecture.md"
+    ],
+    "efficiency": [
+      "tsfi2_mozilla_efficiency_plan.md"
+    ],
+    "elektor": [
+      "elektor_issue_10_in_depth.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_12_in_depth.md",
+      "elektor_issue_13_in_depth.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_15_in_depth.md",
+      "elektor_issue_16_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_1_synthesis.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_3_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_6_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_8_in_depth.md",
+      "elektor_issue_9_in_depth.md"
+    ],
+    "elektuur": [
+      "elektuur_early_issues_analysis.md",
+      "elektuur_issue_25_analysis.md"
+    ],
+    "elm": [
+      "elm_debugger_advanced_usecases.md"
+    ],
+    "emacs": [
+      "carlson_chrget_to_emacs.md"
+    ],
+    "emotion": [
+      "vaesen_emotion_mathieu_feedback.md"
+    ],
+    "emulation": [
+      "c64_1541_emulation_support.md",
+      "control_systems_peripheral_emulation.md"
+    ],
+    "emulator": [
+      "emulator_integration_paths.md",
+      "next_gen_emulator_architecture.md"
+    ],
+    "engine": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "english": [
+      "content.md"
+    ],
+    "entech": [
+      "entech_software_analysis.md"
+    ],
+    "enterprises": [
+      "protecto_enterprises_deep_dive.md"
+    ],
+    "envelopedetector": [
+      "ddj_graphics_synthesis_integration.md"
+    ],
+    "epyx": [
+      "epyx_support_report.md",
+      "protecto_epyx_integration.md",
+      "vulkan_epyx_exploration.md"
+    ],
+    "equivalence": [
+      "germanium_zero_crossing_ssr_equivalence.md",
+      "synthesis_debug_session_equivalence.md"
+    ],
+    "erc20": [
+      "zmachine_erc20_integration.md",
+      "zmachine_erc20_rewards_and_payments.md"
+    ],
+    "esc": [
+      "hurwood_improvements.md"
+    ],
+    "escrow": [
+      "cabs_folklore_escrow_spec.md"
+    ],
+    "eta": [
+      "ring_eta_comparison.md"
+    ],
+    "events": [
+      "content.md"
+    ],
+    "evm": [
+      "evm_arena_integration_summary.md",
+      "evm_memory_constraints.md",
+      "evm_vs_zmm_vm_interfaces.md",
+      "multi_network_zmm_evm_inventory.md",
+      "zmm_evm_rpc_specification.md"
+    ],
+    "evolution": [
+      "star_castle_ai_evolution.md",
+      "stuffed_animals_evolution.md"
+    ],
+    "exchange": [
+      "cabs_token_exchange_spec.md"
+    ],
+    "exhaustive": [
+      "npc_exhaustive_test_report.md"
+    ],
+    "expansion": [
+      "alchemical_platform_expansion_plan.md",
+      "hurwood_generator_expansion.md"
+    ],
+    "exploration": [
+      "dysnomia_exploration.md",
+      "vulkan_epyx_exploration.md"
+    ],
+    "f1": [
+      "hurwood_improvements.md"
+    ],
+    "f3": [
+      "hurwood_improvements.md"
+    ],
+    "fcaa": [
+      "content.md"
+    ],
+    "fdn": [
+      "filtered_fdn_improvisational_decisions.md"
+    ],
+    "feedback": [
+      "biotika_neural_feedback_loop.md",
+      "stabilization_operator_feedback_loop.md",
+      "vaesen_emotion_mathieu_feedback.md"
+    ],
+    "fft": [
+      "ddj_fft_spectrum_analyzer.md"
+    ],
+    "field": [
+      "agentic_vector_field_cpu_testing.md",
+      "vector_field_query_tokenization.md"
+    ],
+    "fields": [
+      "accumulator_vector_fields.md",
+      "agentic_vector_fields.md"
+    ],
+    "filtered": [
+      "filtered_fdn_improvisational_decisions.md"
+    ],
+    "filters": [
+      "thunks_vs_bloom_filters.md"
+    ],
+    "firefox": [
+      "content.md"
+    ],
+    "firing": [
+      "biotika_neuron_motzkin_vertex_firing.md"
+    ],
+    "flexible": [
+      "tcg_flexible_game_rules.md"
+    ],
+    "folklore": [
+      "cabs_folklore_escrow_spec.md",
+      "folklore_cpu_design.md",
+      "unix_v1_folklore_cpu.md",
+      "vaesen_folklore_synthesis.md"
+    ],
+    "folkscanomy": [
+      "content.md"
+    ],
+    "foot": [
+      "improved_rigging_supports.md"
+    ],
+    "for": [
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "formantfilter": [
+      "ddj_graphics_synthesis_integration.md"
+    ],
+    "formulation": [
+      "phase_space_formulation.md"
+    ],
+    "fractal": [
+      "ddj_fractal_lsystem.md"
+    ],
+    "fractional": [
+      "fractional_synthesis_llm_rag.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md"
+    ],
+    "fractions": [
+      "motzkin_paths_and_bessel_fractions.md"
+    ],
+    "framework": [
+      "cabs_reconciliation_framework.md",
+      "transcendent_control_framework.md"
+    ],
+    "frobenius": [
+      "frobenius_manifold_capacitor.md"
+    ],
+    "functions": [
+      "mtac_issue_11_mathieu_functions.md"
+    ],
+    "fuzzby": [
+      "fuzzby_magazine_issue_0_review.md"
+    ],
+    "fylstra": [
+      "fylstra_sweets_byte_magazine.md"
+    ],
+    "g_panic_player_y": [
+      "ahoy_issue_7_gameplay_improvements.md"
+    ],
+    "game": [
+      "ahoy_issue_20_game_review.md",
+      "ddj_game_of_life_synthesis.md",
+      "game_archetypes_spec.md",
+      "tcg_flexible_game_rules.md",
+      "trading_cards_game_analysis.md"
+    ],
+    "gameplay": [
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "gameplay_mechanics_analysis.md"
+    ],
+    "games": [
+      "total_games_manifest.md"
+    ],
+    "gan": [
+      "gan_speech_synthesis_analysis.md"
+    ],
+    "gas": [
+      "cia_timers_and_gas_taxation.md"
+    ],
+    "gauntlet": [
+      "gauntlet_jit_vae_spec.md",
+      "gauntlet_pmg_support.md"
+    ],
+    "gear": [
+      "mtac_issue_8_gear_ratios_fractional_n.md"
+    ],
+    "gen": [
+      "next_gen_emulator_architecture.md"
+    ],
+    "genealogy": [
+      "content.md"
+    ],
+    "general": [
+      "general_2d_character_synthesizer.md"
+    ],
+    "generation": [
+      "control_generation_architecture.md"
+    ],
+    "generator": [
+      "hurwood_generator_expansion.md"
+    ],
+    "genesis": [
+      "sega_genesis_dual_cpu.md"
+    ],
+    "genetic": [
+      "qst_issue_14_genetic_analysis.md"
+    ],
+    "geos": [
+      "geos_operating_system_analysis.md"
+    ],
+    "germanium": [
+      "germanium_zero_crossing_ssr_equivalence.md"
+    ],
+    "graeffe": [
+      "graeffe_process_root_squaring.md",
+      "mtac_issue_10_graeffe_power_series.md"
+    ],
+    "graphics": [
+      "ddj_graphics_synthesis_integration.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "graphics_display_technologies.md",
+      "graphics_improvements_plan.md",
+      "hugi_4d_graphics_integration.md",
+      "sally_larsen_graphics_simulation.md",
+      "vaesen_sprite_graphics.md"
+    ],
+    "gtia": [
+      "gtia_collision_registers.md"
+    ],
+    "guide": [
+      "local_deployment_guide.md",
+      "mtac_issue_7_bessel_guide.md",
+      "studio_architecture_guide.md"
+    ],
+    "gwat": [
+      "bbs_chat_integration.md",
+      "easychain64_terminal_design.md"
+    ],
+    "hardball": [
+      "hardball_rendering_system.md"
+    ],
+    "hardening": [
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "hardware": [
+      "antic_hardware_scrolling.md",
+      "commodore_hardware_tricks.md",
+      "hardware_improvements_plan.md",
+      "qst_issues_1_4_hardware_concepts.md",
+      "sega_hardware_innovations.md",
+      "yul_hardware_hardening_analysis.md"
+    ],
+    "harmonics": [
+      "bessel_riders_and_harmonics.md"
+    ],
+    "heathkit": [
+      "heathkit_synthesizer_monitor.md"
+    ],
+    "help": [
+      "content.md"
+    ],
+    "hex": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "hollow": [
+      "mercenary_room_objects_world_hollow.md"
+    ],
+    "hometax": [
+      "learning_source_hometax_integration.md"
+    ],
+    "homeword": [
+      "homeword_integration.md"
+    ],
+    "house": [
+      "mystery_house_zengine_integration.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "hub": [
+      "portal_hub_showcase.md"
+    ],
+    "hugi": [
+      "hugi_4d_graphics_integration.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md"
+    ],
+    "hurwood": [
+      "hurwood_generator_expansion.md",
+      "hurwood_improvements.md"
+    ],
+    "iec": [
+      "commodore_1541_iec_serial_bus.md"
+    ],
+    "image": [
+      "image_computer_products_analysis.md"
+    ],
+    "impedance": [
+      "impedance_reactor_cards.md"
+    ],
+    "implementation": [
+      "zmachine_implementation_log.md"
+    ],
+    "improved": [
+      "improved_rigging_supports.md"
+    ],
+    "improvements": [
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "antic_cpu_terminal_improvements.md",
+      "cpu_test_improvements.md",
+      "dna_bear_improvements.md",
+      "graphics_improvements_plan.md",
+      "hardware_improvements_plan.md",
+      "hurwood_improvements.md",
+      "targ_mercenary_improvements.md",
+      "tts_dashboard_improvements_roadmap.md"
+    ],
+    "improvisational": [
+      "filtered_fdn_improvisational_decisions.md",
+      "vaesen_improvisational_agency.md"
+    ],
+    "improvise": [
+      "improvise_bionika.md"
+    ],
+    "incorporated": [
+      "atari_incorporated_analysis.md"
+    ],
+    "infocom": [
+      "advanced_infocom_technologies_blueprint.md"
+    ],
+    "injector": [
+      "memory_injector_security.md"
+    ],
+    "innovations": [
+      "sega_hardware_innovations.md"
+    ],
+    "input": [
+      "ai_debugger_input_methods.md"
+    ],
+    "insta": [
+      "cimarron_insta_investment_combo_analysis.md",
+      "insta_software_analysis.md"
+    ],
+    "instruction": [
+      "atropa_unified_instruction_set.md"
+    ],
+    "integration": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "ahoy_magazine_integration.md",
+      "bbs_chat_integration.md",
+      "broderbund_software_integration.md",
+      "cannonball_blitz_integration.md",
+      "chattts_integration_design.md",
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "comstar_printer_integration.md",
+      "datamost_totl_protecto_integration.md",
+      "ddj_bresenham_integration.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_dithering_integration.md",
+      "ddj_graphics_synthesis_integration.md",
+      "dynamic_async_integration.md",
+      "dysnomia_system_integration_map.md",
+      "emulator_integration_paths.md",
+      "evm_arena_integration_summary.md",
+      "homeword_integration.md",
+      "hugi_4d_graphics_integration.md",
+      "learning_source_hometax_integration.md",
+      "mercenary_pipeline_integration.md",
+      "micro_world_printer_integration.md",
+      "midwest_micro_superterm_integration.md",
+      "mozilla_integration_plan.md",
+      "msd_super_disk_integration.md",
+      "mystery_house_zengine_integration.md",
+      "price_liquidity_integration_plan.md",
+      "procedural_integration_report.md",
+      "protecto_epyx_integration.md",
+      "razor_protocol_integration.md",
+      "ruleburst_integration.md",
+      "sierra_agi_integration.md",
+      "softlaw_corporation_integration.md",
+      "tcg_onchain_math_integration.md",
+      "vaesen_integration_review.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_wireframe_integration.md",
+      "zmachine_erc20_integration.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "integrations": [
+      "storybook_integrations.md"
+    ],
+    "integrity": [
+      "math_integrity_report.md"
+    ],
+    "interactions": [
+      "cabs_tcg_interactions.md"
+    ],
+    "interface": [
+      "omnitronix_interface_analysis.md"
+    ],
+    "interfaces": [
+      "cardco_peripheral_interfaces.md",
+      "evm_vs_zmm_vm_interfaces.md"
+    ],
+    "international": [
+      "ktel_international_analysis.md"
+    ],
+    "interpolation": [
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "mtac_issue_1_tables_and_interpolation.md"
+    ],
+    "interrupt": [
+      "ahoy_interrupt_music_maker.md",
+      "interrupt_standards.md"
+    ],
+    "interval": [
+      "optimum_interval_timer_scheduling.md"
+    ],
+    "interview": [
+      "interview.lore"
+    ],
+    "inventory": [
+      "multi_network_zmm_evm_inventory.md",
+      "z_machine_ledger_inventory_design.md"
+    ],
+    "inverse": [
+      "prophecy_inverse_synthesis.md"
+    ],
+    "investment": [
+      "cimarron_insta_investment_combo_analysis.md"
+    ],
+    "isolation": [
+      "yul_vm_isolation_audit.md"
+    ],
+    "issue": [
+      "73_magazine_issue_1_analysis.md",
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_20_game_review.md",
+      "ahoy_issue_33_last_ninja_review.md",
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_6_page_63_review.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_12_review.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_14_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_18_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_25_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_13_analysis.md",
+      "byte_issue_14_analysis.md",
+      "byte_issue_15_analysis.md",
+      "byte_issue_16_analysis.md",
+      "byte_issue_17_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_22_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issue_27_analysis.md",
+      "computer_design_issue_10_analysis.md",
+      "computer_design_issue_11_analysis.md",
+      "computer_design_issue_12_analysis.md",
+      "computer_design_issue_13_analysis.md",
+      "computer_design_issue_14_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_16_analysis.md",
+      "computer_design_issue_17_analysis.md",
+      "computer_design_issue_18_analysis.md",
+      "computer_design_issue_19_analysis.md",
+      "computer_design_issue_1_analysis.md",
+      "computer_design_issue_2_analysis.md",
+      "computer_design_issue_3_analysis.md",
+      "computer_design_issue_4_analysis.md",
+      "computer_design_issue_5_analysis.md",
+      "computer_design_issue_6_analysis.md",
+      "computer_design_issue_7_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "computer_design_issue_9_analysis.md",
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "daskmig_magazine_issue_3_review.md",
+      "dr_dobbs_issue_1_analysis.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "dysnomia_prime_issue_1.md",
+      "elektor_issue_10_in_depth.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_12_in_depth.md",
+      "elektor_issue_13_in_depth.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_15_in_depth.md",
+      "elektor_issue_16_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_1_synthesis.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_3_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_6_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_8_in_depth.md",
+      "elektor_issue_9_in_depth.md",
+      "elektuur_issue_25_analysis.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_3_cassette_storage.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "kilobaud_issue_7_in_depth.md",
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "mtac_issue_10_graeffe_power_series.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "mtac_issue_14_mersenne_uhler.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_2_non_sexagesimal_trig.md",
+      "mtac_issue_3_baas_bessel_fm.md",
+      "mtac_issue_4_structural_dynamics.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md",
+      "mtac_issue_9_bessel_zeros_solvers.md",
+      "qst_issue_10_analysis.md",
+      "qst_issue_11_analysis.md",
+      "qst_issue_12_analysis.md",
+      "qst_issue_13_analysis.md",
+      "qst_issue_14_analysis.md",
+      "qst_issue_14_genetic_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_5_analysis.md",
+      "qst_issue_6_analysis.md",
+      "qst_issue_7_analysis.md",
+      "qst_issue_8_analysis.md",
+      "qst_issue_9_analysis.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md"
+    ],
+    "issues": [
+      "byte_issues_18_20_analysis.md",
+      "elektuur_early_issues_analysis.md",
+      "qst_issues_1_4_hardware_concepts.md"
+    ],
+    "item": [
+      "ZMACHINE_SPEC.md",
+      "langchain_blueprint.md"
+    ],
+    "jit": [
+      "gauntlet_jit_vae_spec.md"
+    ],
+    "jnikny": [
+      "bessel_jnikny_dug_dus.md",
+      "bessel_jnikny_tunneling_operator.md"
+    ],
+    "jobs": [
+      "content.md"
+    ],
+    "joseon": [
+      "daily_lore_2026_03_07_joseon_cebu.md"
+    ],
+    "jsr": [
+      "content.md"
+    ],
+    "jurchen": [
+      "daily_lore_chen_jurchen.md"
+    ],
+    "kermit": [
+      "blockchain_secure_kermit.md"
+    ],
+    "kernal": [
+      "commodore_kernal_io_redirection.md"
+    ],
+    "key": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "kilobaud": [
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_3_cassette_storage.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "kilobaud_issue_7_in_depth.md"
+    ],
+    "kinematic": [
+      "kinematic_rigging_phase.md"
+    ],
+    "ktel": [
+      "ktel_international_analysis.md"
+    ],
+    "langchain": [
+      "langchain_blueprint.md"
+    ],
+    "larsen": [
+      "sally_larsen_graphics_simulation.md"
+    ],
+    "last": [
+      "ahoy_issue_33_last_ninja_review.md"
+    ],
+    "latency": [
+      "synthesis_latency_trace.md"
+    ],
+    "laugh_2": [
+      "chattts_integration_design.md"
+    ],
+    "laughter": [
+      "chattts_integration_design.md"
+    ],
+    "lda": [
+      "content.md"
+    ],
+    "leakage": [
+      "necessity_of_leakage_modeling.md"
+    ],
+    "learning": [
+      "learning_source_hometax_integration.md"
+    ],
+    "ledger": [
+      "z_machine_ledger_inventory_design.md"
+    ],
+    "lehmer": [
+      "mtac_issue_5_lehmer_modified_bessel.md"
+    ],
+    "level": [
+      "antic_wayland_level_renderer.md"
+    ],
+    "library": [
+      "software_to_go_library.md"
+    ],
+    "life": [
+      "ddj_game_of_life_synthesis.md"
+    ],
+    "limitations": [
+      "motzkin_primes_rigor_limitations.md"
+    ],
+    "line": [
+      "analog_assembly_animation.md"
+    ],
+    "liquidity": [
+      "nonukes_pulsex_liquidity.md",
+      "price_liquidity_integration_plan.md"
+    ],
+    "listings": [
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_7_code_listings_review.md"
+    ],
+    "live": [
+      "live_math_results.md"
+    ],
+    "llm": [
+      "fractional_synthesis_llm_rag.md",
+      "zeners_in_llm_architectures.md"
+    ],
+    "lloret": [
+      "air_assault_bob_lloret_review.md"
+    ],
+    "local": [
+      "local_deployment_guide.md"
+    ],
+    "locus": [
+      "zmachine_locus_diyat.md"
+    ],
+    "log": [
+      "zmachine_implementation_log.md"
+    ],
+    "loop": [
+      "biotika_neural_feedback_loop.md",
+      "multiview_rag_loop_spec.md",
+      "stabilization_operator_feedback_loop.md"
+    ],
+    "lore": [
+      "02_Daily_Lore_2026_03_01.md",
+      "DYSNOMIA_VM_LORE.md",
+      "associahedron_lore.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_2026_03_02.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_base_secret.md",
+      "daily_lore_chen_jurchen.md",
+      "daily_lore_operation_mariner.md",
+      "daily_lore_vulkan_vision.md",
+      "lore_2026_03_03.md",
+      "synthesizer_lore.md",
+      "vulkan_lore_editor_architecture.md"
+    ],
+    "lsystem": [
+      "ddj_fractal_lsystem.md"
+    ],
+    "lucas": [
+      "lucas_plush_blueprint.md"
+    ],
+    "machine": [
+      "z_machine_ledger_inventory_design.md",
+      "z_machine_onchain_design.md"
+    ],
+    "magazine": [
+      "73_magazine_issue_1_analysis.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_12_review.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_14_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_18_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_25_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "ahoy_magazine_review.md",
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "daskmig_magazine_issue_3_review.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "fylstra_sweets_byte_magazine.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md"
+    ],
+    "magazine_rack": [
+      "content.md"
+    ],
+    "magic": [
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md"
+    ],
+    "makefile": [
+      "vaesen_silicon_bestiary.md"
+    ],
+    "maker": [
+      "ahoy_interrupt_music_maker.md"
+    ],
+    "manager": [
+      "onchain_database_manager.md"
+    ],
+    "manifest": [
+      "total_games_manifest.md"
+    ],
+    "manifold": [
+      "frobenius_manifold_capacitor.md"
+    ],
+    "map": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "dysnomia_system_integration_map.md",
+      "master_memory_map_review.md"
+    ],
+    "mapping": [
+      "sector_card_mapping.md"
+    ],
+    "mappings": [
+      "mmu_mappings.md"
+    ],
+    "mariner": [
+      "daily_lore_operation_mariner.md",
+      "mariner_system3_qualification.md"
+    ],
+    "master": [
+      "master_memory_map_review.md"
+    ],
+    "maternal": [
+      "MATERNAL_AI.md"
+    ],
+    "math": [
+      "dysnomia_math_verification.md",
+      "live_math_results.md",
+      "math_integrity_report.md",
+      "tcg_onchain_math_integration.md"
+    ],
+    "mathieu": [
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "vaesen_emotion_mathieu_feedback.md"
+    ],
+    "matrices": [
+      "mtac_issue_13_mathieu_matrices.md"
+    ],
+    "matrix": [
+      "yul_accounting_and_matrix_coprocessors.md"
+    ],
+    "maze": [
+      "ddj_raycasting_audio_maze.md"
+    ],
+    "mechanical": [
+      "yi_mechanical_transducer.md"
+    ],
+    "mechanics": [
+      "gameplay_mechanics_analysis.md",
+      "tcg_combat_rewards_mechanics.md"
+    ],
+    "memory": [
+      "evm_memory_constraints.md",
+      "master_memory_map_review.md",
+      "memory_injector_security.md"
+    ],
+    "mercenary": [
+      "mercenary_pipeline_integration.md",
+      "mercenary_room_objects_world_hollow.md",
+      "targ_mercenary_improvements.md"
+    ],
+    "mersenne": [
+      "mtac_issue_14_mersenne_uhler.md"
+    ],
+    "methods": [
+      "ai_debugger_input_methods.md"
+    ],
+    "micro": [
+      "content.md",
+      "micro_issue_26_analysis.md",
+      "micro_issue_27_analysis.md",
+      "micro_world_printer_integration.md",
+      "midwest_micro_superterm_integration.md"
+    ],
+    "microkernel": [
+      "microkernel_upgrade_plan.md"
+    ],
+    "microprose": [
+      "microprose_analysis.md"
+    ],
+    "midwest": [
+      "midwest_micro_superterm_integration.md"
+    ],
+    "milestones": [
+      "datamost_milestones.md"
+    ],
+    "minimal": [
+      "rooted_minimal_c_renderer_plan.md"
+    ],
+    "minter": [
+      "zmachine_locus_diyat.md"
+    ],
+    "mmu": [
+      "mmu_mappings.md"
+    ],
+    "mode": [
+      "abrash_mode_x_analysis.md"
+    ],
+    "model": [
+      "platform_display_model.md",
+      "star_castle_autopilot_model.md"
+    ],
+    "modeling": [
+      "necessity_of_leakage_modeling.md"
+    ],
+    "modified": [
+      "mtac_issue_5_lehmer_modified_bessel.md"
+    ],
+    "monitor": [
+      "heathkit_synthesizer_monitor.md"
+    ],
+    "motzkin": [
+      "DYSNOMIA_VM_LORE.md",
+      "associahedron_lore.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "conjecture_topological_motzkin_primes.md",
+      "daily_lore_2026_02_26.md",
+      "disc_triangulation_space_stashas.md",
+      "dysnomia_prime_issue_1.md",
+      "dysnomia_recombination_operator.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "motzkin_apogee_apex_primes.md",
+      "motzkin_paths_and_bessel_fractions.md",
+      "motzkin_prime_synthesis_sequencing.md",
+      "motzkin_primes_rigor_limitations.md",
+      "motzkin_topological_basis_vertex.md",
+      "thirty_six_motzkin_primes_cardinalities.md",
+      "topological_ordinance_bessel_vs_motzkin.md",
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "movies": [
+      "content.md"
+    ],
+    "mozilla": [
+      "mozilla_integration_plan.md",
+      "tsfi2_mozilla_efficiency_plan.md"
+    ],
+    "ms-dos": [
+      "content.md"
+    ],
+    "msd": [
+      "msd_cbm_disk_review.md",
+      "msd_super_disk_integration.md",
+      "msd_tax_and_security_analysis.md"
+    ],
+    "msg": [
+      "ZMACHINE_SPEC.md"
+    ],
+    "mtac": [
+      "mtac_issue_10_graeffe_power_series.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "mtac_issue_14_mersenne_uhler.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_2_non_sexagesimal_trig.md",
+      "mtac_issue_3_baas_bessel_fm.md",
+      "mtac_issue_4_structural_dynamics.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md",
+      "mtac_issue_9_bessel_zeros_solvers.md"
+    ],
+    "multi": [
+      "multi_network_zmm_evm_inventory.md",
+      "multi_user_coprocessor_sharing.md",
+      "multi_user_shared_cpu_architecture.md"
+    ],
+    "multicolor": [
+      "vulkan_multicolor_plotting.md"
+    ],
+    "multiview": [
+      "multiview_rag_loop_spec.md"
+    ],
+    "muse": [
+      "muse_software_analysis.md"
+    ],
+    "music": [
+      "ahoy_interrupt_music_maker.md"
+    ],
+    "mystery": [
+      "mystery_house_zengine_integration.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "n-1": [
+      "elektor_issue_2_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_8_analysis.md"
+    ],
+    "n-2": [
+      "elektor_issue_2_in_depth.md",
+      "elektuur_early_issues_analysis.md"
+    ],
+    "n-k": [
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md"
+    ],
+    "name": [
+      "zmachine_locus_diyat.md"
+    ],
+    "nebula": [
+      "nebula_biotika_plan.md"
+    ],
+    "necessity": [
+      "necessity_of_leakage_modeling.md"
+    ],
+    "netlabels": [
+      "content.md"
+    ],
+    "network": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "neural": [
+      "biotika_neural_feedback_loop.md",
+      "on_chain_neural_speech.md"
+    ],
+    "neuron": [
+      "biotika_neuron_motzkin_vertex_firing.md"
+    ],
+    "next": [
+      "next_gen_emulator_architecture.md"
+    ],
+    "ninja": [
+      "ahoy_issue_33_last_ninja_review.md"
+    ],
+    "node_idx": [
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "nodeid": [
+      "ddj_bsp_tree_integration.md"
+    ],
+    "non": [
+      "mtac_issue_2_non_sexagesimal_trig.md"
+    ],
+    "nonukes": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "nonukes_qings_status.md"
+    ],
+    "notes": [
+      "teddy303_synthesis_notes.md"
+    ],
+    "npc": [
+      "ZMACHINE_SPEC.md",
+      "npc_exhaustive_test_report.md"
+    ],
+    "objects": [
+      "mercenary_room_objects_world_hollow.md"
+    ],
+    "omnitronix": [
+      "omnitronix_interface_analysis.md"
+    ],
+    "onchain": [
+      "onchain_database_manager.md",
+      "tcg_onchain_math_integration.md",
+      "z_machine_onchain_design.md",
+      "zil_onchain_parser_design.md",
+      "zmachine_onchain_composition.md"
+    ],
+    "operating": [
+      "geos_operating_system_analysis.md"
+    ],
+    "operation": [
+      "daily_lore_operation_mariner.md"
+    ],
+    "operator": [
+      "bessel_jnikny_tunneling_operator.md",
+      "dysnomia_recombination_operator.md",
+      "stabilization_operator_feedback_loop.md"
+    ],
+    "optimization": [
+      "SPEECH_OPTIMIZATION_PLAN.md"
+    ],
+    "optimum": [
+      "optimum_interval_timer_scheduling.md"
+    ],
+    "oral_2": [
+      "chattts_integration_design.md"
+    ],
+    "ordinance": [
+      "topological_ordinance_bessel_vs_motzkin.md"
+    ],
+    "output": [
+      "elektuur_issue_25_analysis.md"
+    ],
+    "page": [
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_6_page_63_review.md"
+    ],
+    "page_idx": [
+      "mmu_mappings.md"
+    ],
+    "pages": [
+      "ahoy_issue_6_pages_38_40_review.md"
+    ],
+    "pairs": [
+      "nonukes_pulsex_pairs.md"
+    ],
+    "parser": [
+      "zil_onchain_parser_design.md"
+    ],
+    "pass": [
+      "vision_suite_analysis.md"
+    ],
+    "paths": [
+      "emulator_integration_paths.md",
+      "motzkin_paths_and_bessel_fractions.md"
+    ],
+    "pathway": [
+      "pathway_analysis.md"
+    ],
+    "payments": [
+      "zmachine_erc20_rewards_and_payments.md"
+    ],
+    "pb": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "pc": [
+      "antic_wayland_level_renderer.md"
+    ],
+    "peek": [
+      "cabs_peek_poke_security.md"
+    ],
+    "peripheral": [
+      "cardco_peripheral_interfaces.md",
+      "control_systems_peripheral_emulation.md"
+    ],
+    "phase": [
+      "kinematic_rigging_phase.md",
+      "phase_space_formulation.md"
+    ],
+    "philosophical": [
+      "prophecy_philosophical_synthesis.md"
+    ],
+    "photorealistic": [
+      "photorealistic_rendering_analysis.md"
+    ],
+    "physics": [
+      "tessarant_combat_physics.md"
+    ],
+    "pipeline": [
+      "concurrency_pipeline_analysis.md",
+      "mercenary_pipeline_integration.md",
+      "progressive_rag_pipeline.md"
+    ],
+    "plan": [
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "alchemical_platform_expansion_plan.md",
+      "conversion_plan.md",
+      "graphics_improvements_plan.md",
+      "hardware_improvements_plan.md",
+      "microkernel_upgrade_plan.md",
+      "mozilla_integration_plan.md",
+      "nebula_biotika_plan.md",
+      "price_liquidity_integration_plan.md",
+      "reengineering_plan.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "sprint_plan.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "zmm_room_refactoring_plan.md"
+    ],
+    "platform": [
+      "alchemical_platform_expansion_plan.md",
+      "platform_display_model.md"
+    ],
+    "plotting": [
+      "vulkan_multicolor_plotting.md"
+    ],
+    "pls": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "plush": [
+      "lucas_plush_blueprint.md"
+    ],
+    "pmg": [
+      "gauntlet_pmg_support.md"
+    ],
+    "podcasts": [
+      "content.md"
+    ],
+    "poke": [
+      "cabs_peek_poke_security.md"
+    ],
+    "pokey": [
+      "pokey_audio_synthesis.md"
+    ],
+    "pong": [
+      "pong_diyat_tax.md"
+    ],
+    "portal": [
+      "portal_hub_showcase.md"
+    ],
+    "power": [
+      "mtac_issue_10_graeffe_power_series.md"
+    ],
+    "powervr2": [
+      "sega_dreamcast_powervr2.md"
+    ],
+    "press": [
+      "press_release_rooted_browser.md"
+    ],
+    "pressedkey": [
+      "synthesizer_scurry_tutorial.md"
+    ],
+    "price": [
+      "price_liquidity_integration_plan.md"
+    ],
+    "prime": [
+      "dysnomia_prime_issue_1.md",
+      "motzkin_prime_synthesis_sequencing.md"
+    ],
+    "primes": [
+      "conjecture_topological_motzkin_primes.md",
+      "motzkin_apogee_apex_primes.md",
+      "motzkin_primes_rigor_limitations.md",
+      "thirty_six_motzkin_primes_cardinalities.md"
+    ],
+    "printer": [
+      "commodore_kernal_io_redirection.md",
+      "comstar_printer_integration.md",
+      "micro_world_printer_integration.md"
+    ],
+    "priority": [
+      "priority_voting_board.md",
+      "sega_vdp_vsram_priority.md"
+    ],
+    "procedural": [
+      "procedural_integration_report.md"
+    ],
+    "process": [
+      "graeffe_process_root_squaring.md"
+    ],
+    "products": [
+      "image_computer_products_analysis.md"
+    ],
+    "profile": [
+      "sd_subprocesses_profile.md",
+      "synthesis_card_render_profile.md",
+      "synthesis_profile_report.md",
+      "threading_scalability_profile.md"
+    ],
+    "profiler": [
+      "synthesis_profiler_suite.md"
+    ],
+    "program": [
+      "content.md"
+    ],
+    "progressive": [
+      "progressive_rag_pipeline.md"
+    ],
+    "projection": [
+      "dysnomia_vertex_trigonometric_projection.md"
+    ],
+    "projects": [
+      "content.md"
+    ],
+    "prompt": [
+      "prompt_draft.md"
+    ],
+    "prophecy": [
+      "prophecy_inverse_synthesis.md",
+      "prophecy_of_the_quaternion.md",
+      "prophecy_philosophical_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md"
+    ],
+    "proposal": [
+      "dna_3d_standards_proposal.md"
+    ],
+    "proposals": [
+      "upgrade_proposals.md"
+    ],
+    "propulsn": [
+      "spinnaker_analysis.md"
+    ],
+    "protecto": [
+      "datamost_totl_protecto_integration.md",
+      "protecto_enterprises_deep_dive.md",
+      "protecto_epyx_integration.md"
+    ],
+    "protocol": [
+      "razor_protocol_integration.md"
+    ],
+    "protocols": [
+      "compuserve_protocols_analysis.md"
+    ],
+    "public": [
+      "prophecy_synthesis_and_control_public.md"
+    ],
+    "pulsex": [
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "pulsex_swap_trap_scenario.md"
+    ],
+    "punched": [
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_6_punched_card_tables.md"
+    ],
+    "q1": [
+      "computer_design_issue_3_analysis.md"
+    ],
+    "q2": [
+      "computer_design_issue_3_analysis.md"
+    ],
+    "qing": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "ZMACHINE_SPEC.md",
+      "arena_state_sharing.md",
+      "bbs_chat_integration.md",
+      "daily_lore_2026_03_02.md",
+      "dysnomia_combat_resonance_rules.md",
+      "dysnomia_math_verification.md",
+      "dysnomia_system_integration_map.md",
+      "easychain64_terminal_design.md",
+      "evm_arena_integration_summary.md",
+      "local_deployment_guide.md",
+      "math_integrity_report.md",
+      "nonukes_qings_status.md",
+      "tcg_combat_rewards_mechanics.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md",
+      "trading_cards_game_analysis.md",
+      "zi_spin_comparison.md",
+      "zmachine_locus_diyat.md"
+    ],
+    "qings": [
+      "nonukes_qings_status.md"
+    ],
+    "qst": [
+      "qst_issue_10_analysis.md",
+      "qst_issue_11_analysis.md",
+      "qst_issue_12_analysis.md",
+      "qst_issue_13_analysis.md",
+      "qst_issue_14_analysis.md",
+      "qst_issue_14_genetic_analysis.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_14_tdoa_analysis.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_5_analysis.md",
+      "qst_issue_6_analysis.md",
+      "qst_issue_7_analysis.md",
+      "qst_issue_8_analysis.md",
+      "qst_issue_9_analysis.md",
+      "qst_issues_1_4_hardware_concepts.md"
+    ],
+    "qualification": [
+      "mariner_system3_qualification.md"
+    ],
+    "quantum": [
+      "quantum_cylindrical_tunneling_bessel.md",
+      "quantum_tunneling_breakdown_synthesis.md"
+    ],
+    "quartz": [
+      "quartz_crystals_radio_synthesis.md"
+    ],
+    "quaternion": [
+      "prophecy_of_the_quaternion.md"
+    ],
+    "query": [
+      "vector_field_query_tokenization.md"
+    ],
+    "quest": [
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "quicksilva": [
+      "quicksilva_analysis.md"
+    ],
+    "r1": [
+      "elektuur_issue_25_analysis.md"
+    ],
+    "r2": [
+      "elektuur_issue_25_analysis.md"
+    ],
+    "r_base": [
+      "computer_design_issue_1_analysis.md"
+    ],
+    "radio": [
+      "quartz_crystals_radio_synthesis.md"
+    ],
+    "rag": [
+      "fractional_synthesis_llm_rag.md",
+      "multiview_rag_loop_spec.md",
+      "progressive_rag_pipeline.md",
+      "rag_antic_comovement_analysis.md",
+      "rag_visual_telemetry.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "ratios": [
+      "mtac_issue_8_gear_ratios_fractional_n.md"
+    ],
+    "raycasting": [
+      "ddj_raycasting_audio_maze.md"
+    ],
+    "razor": [
+      "razor_protocol_integration.md"
+    ],
+    "rc1": [
+      "computer_design_issue_3_analysis.md"
+    ],
+    "rc2": [
+      "computer_design_issue_3_analysis.md"
+    ],
+    "rd": [
+      "computer_design_issue_1_analysis.md"
+    ],
+    "reactor": [
+      "impedance_reactor_cards.md"
+    ],
+    "recombination": [
+      "dysnomia_recombination_operator.md"
+    ],
+    "recommendations": [
+      "cabs_security_recommendations.md"
+    ],
+    "reconciliation": [
+      "cabs_reconciliation_framework.md"
+    ],
+    "redirection": [
+      "commodore_kernal_io_redirection.md"
+    ],
+    "reengineering": [
+      "reengineering_plan.md"
+    ],
+    "refactoring": [
+      "zmm_room_refactoring_plan.md"
+    ],
+    "refresh": [
+      "kilobaud_issue_1_z80_refresh.md"
+    ],
+    "registers": [
+      "gtia_collision_registers.md"
+    ],
+    "registry": [
+      "window_registry.md"
+    ],
+    "release": [
+      "press_release_rooted_browser.md"
+    ],
+    "render": [
+      "synthesis_card_render_profile.md"
+    ],
+    "renderer": [
+      "antic_wayland_level_renderer.md",
+      "rooted_minimal_c_renderer_plan.md"
+    ],
+    "rendering": [
+      "3d_rendering_advancements_deepseek.md",
+      "deep_rendering_background.md",
+      "hardball_rendering_system.md",
+      "photorealistic_rendering_analysis.md",
+      "wayland_ab4h_rendering.md"
+    ],
+    "renegade": [
+      "renegade_yul_architecture.md"
+    ],
+    "report": [
+      "epyx_support_report.md",
+      "math_integrity_report.md",
+      "npc_exhaustive_test_report.md",
+      "procedural_integration_report.md",
+      "rooted_browser_build_report.md",
+      "rupert_report_cursor.md",
+      "spectral_analysis_report.md",
+      "synthesis_profile_report.md",
+      "unit_testing_report.md",
+      "vaesen_character_sheets_report.md"
+    ],
+    "resize": [
+      "resize_verification.md"
+    ],
+    "resonance": [
+      "dysnomia_combat_resonance_rules.md"
+    ],
+    "results": [
+      "live_math_results.md"
+    ],
+    "resumes": [
+      "sega_genesis_dual_cpu.md"
+    ],
+    "review": [
+      "ahoy_issue_12_page_48_49_review.md",
+      "ahoy_issue_18_code_listings_review.md",
+      "ahoy_issue_20_game_review.md",
+      "ahoy_issue_33_last_ninja_review.md",
+      "ahoy_issue_6_page_63_review.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_issue_7_code_listings_review.md",
+      "ahoy_magazine_issue_10_review.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_12_review.md",
+      "ahoy_magazine_issue_13_review.md",
+      "ahoy_magazine_issue_14_review.md",
+      "ahoy_magazine_issue_15_review.md",
+      "ahoy_magazine_issue_16_review.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_18_review.md",
+      "ahoy_magazine_issue_19_review.md",
+      "ahoy_magazine_issue_20_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_25_review.md",
+      "ahoy_magazine_issue_26_review.md",
+      "ahoy_magazine_issue_27_review.md",
+      "ahoy_magazine_issue_28_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_6_review.md",
+      "ahoy_magazine_issue_7_review.md",
+      "ahoy_magazine_issue_8_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "ahoy_magazine_review.md",
+      "air_assault_bob_lloret_review.md",
+      "comm_data_review.md",
+      "daskmig_magazine_issue_1_review.md",
+      "daskmig_magazine_issue_2_review.md",
+      "daskmig_magazine_issue_3_review.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_12_review.md",
+      "hugi_magazine_issue_13_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_16_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_18_review.md",
+      "hugi_magazine_issue_19_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md",
+      "magic_disk_64_issue_1_review.md",
+      "magic_disk_64_issue_2_review.md",
+      "magic_disk_64_issue_3_review.md",
+      "master_memory_map_review.md",
+      "msd_cbm_disk_review.md",
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md",
+      "standun_controls_review.md",
+      "vaesen_integration_review.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md"
+    ],
+    "rewards": [
+      "tcg_combat_rewards_mechanics.md",
+      "zmachine_erc20_rewards_and_payments.md"
+    ],
+    "riders": [
+      "bessel_riders_and_harmonics.md"
+    ],
+    "rigging": [
+      "improved_rigging_supports.md",
+      "kinematic_rigging_phase.md"
+    ],
+    "rigor": [
+      "motzkin_primes_rigor_limitations.md"
+    ],
+    "ring": [
+      "ring_eta_comparison.md"
+    ],
+    "rls": [
+      "qst_issue_14_rls_analysis.md"
+    ],
+    "roadmap": [
+      "analog_compatibility_roadmap.md",
+      "tts_dashboard_improvements_roadmap.md"
+    ],
+    "rocm": [
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "room": [
+      "mercenary_room_objects_world_hollow.md",
+      "zmm_room_refactoring_plan.md"
+    ],
+    "root": [
+      "graeffe_process_root_squaring.md"
+    ],
+    "rooted": [
+      "press_release_rooted_browser.md",
+      "rooted_browser_build_report.md",
+      "rooted_minimal_c_renderer_plan.md"
+    ],
+    "rpc": [
+      "zmm_evm_rpc_specification.md"
+    ],
+    "ruleburst": [
+      "ruleburst_integration.md"
+    ],
+    "rules": [
+      "dysnomia_combat_resonance_rules.md",
+      "tcg_flexible_game_rules.md"
+    ],
+    "runbook": [
+      "stabilization_runbook.md"
+    ],
+    "rupert": [
+      "rupert_report_cursor.md"
+    ],
+    "sabbatical": [
+      "system0_sabbatical.md"
+    ],
+    "safari": [
+      "content.md"
+    ],
+    "sally": [
+      "sally_larsen_graphics_simulation.md"
+    ],
+    "saturn": [
+      "sega_saturn_vdp1.md"
+    ],
+    "sawtooth": [
+      "hurwood_improvements.md"
+    ],
+    "scalability": [
+      "threading_scalability_profile.md"
+    ],
+    "scenario": [
+      "pulsex_swap_trap_scenario.md"
+    ],
+    "scenial": [
+      "scenial_magazine_issue_1_review.md",
+      "scenial_magazine_issue_2_review.md"
+    ],
+    "scheduling": [
+      "optimum_interval_timer_scheduling.md"
+    ],
+    "schema": [
+      "hurwood_generator_expansion.md",
+      "hurwood_improvements.md"
+    ],
+    "screen": [
+      "commodore_kernal_io_redirection.md"
+    ],
+    "scrolling": [
+      "antic_hardware_scrolling.md",
+      "sega_vdp_scrolling.md"
+    ],
+    "scurry": [
+      "synthesizer_scurry_tutorial.md"
+    ],
+    "secret": [
+      "daily_lore_base_secret.md"
+    ],
+    "sector": [
+      "sector_card_mapping.md"
+    ],
+    "secure": [
+      "blockchain_secure_kermit.md"
+    ],
+    "security": [
+      "cabs_peek_poke_security.md",
+      "cabs_security_recommendations.md",
+      "memory_injector_security.md",
+      "msd_tax_and_security_analysis.md"
+    ],
+    "sega": [
+      "sega_dreamcast_powervr2.md",
+      "sega_genesis_dual_cpu.md",
+      "sega_hardware_innovations.md",
+      "sega_saturn_vdp1.md",
+      "sega_vdp_scrolling.md",
+      "sega_vdp_vsram_priority.md",
+      "unit_testing_report.md",
+      "yamaha_ym2612_fm_synthesis.md"
+    ],
+    "sequencing": [
+      "motzkin_prime_synthesis_sequencing.md"
+    ],
+    "serial": [
+      "commodore_1541_iec_serial_bus.md"
+    ],
+    "series": [
+      "mtac_issue_10_graeffe_power_series.md"
+    ],
+    "session": [
+      "synthesis_debug_session_equivalence.md"
+    ],
+    "set": [
+      "atropa_unified_instruction_set.md"
+    ],
+    "sexagesimal": [
+      "mtac_issue_2_non_sexagesimal_trig.md"
+    ],
+    "shared": [
+      "multi_user_shared_cpu_architecture.md"
+    ],
+    "sharing": [
+      "arena_state_sharing.md",
+      "multi_user_coprocessor_sharing.md"
+    ],
+    "sheets": [
+      "vaesen_character_sheets_report.md"
+    ],
+    "showcase": [
+      "portal_hub_showcase.md"
+    ],
+    "sid": [
+      "commodore_sid_audio_engine.md"
+    ],
+    "sierra": [
+      "sierra_agi_integration.md"
+    ],
+    "sigh": [
+      "chattts_integration_design.md"
+    ],
+    "silicon": [
+      "vaesen_silicon_bestiary.md"
+    ],
+    "simulation": [
+      "sally_larsen_graphics_simulation.md"
+    ],
+    "six": [
+      "thirty_six_motzkin_primes_cardinalities.md"
+    ],
+    "softlaw": [
+      "softlaw_corporation_integration.md"
+    ],
+    "software": [
+      "access_software_analysis.md",
+      "broderbund_software_integration.md",
+      "commodore_software_analysis.md",
+      "entech_software_analysis.md",
+      "insta_software_analysis.md",
+      "muse_software_analysis.md",
+      "software_to_go_library.md",
+      "sunrise_software_analysis.md",
+      "synapse_software_analysis.md"
+    ],
+    "solvers": [
+      "mtac_issue_9_bessel_zeros_solvers.md"
+    ],
+    "sound": [
+      "hurwood_improvements.md"
+    ],
+    "source": [
+      "learning_source_hometax_integration.md"
+    ],
+    "space": [
+      "disc_triangulation_space_stashas.md",
+      "phase_space_formulation.md",
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "spec": [
+      "ZMACHINE_SPEC.md",
+      "cabs_folklore_escrow_spec.md",
+      "cabs_token_exchange_spec.md",
+      "game_archetypes_spec.md",
+      "gauntlet_jit_vae_spec.md",
+      "multiview_rag_loop_spec.md"
+    ],
+    "special": [
+      "hugi_special_edition_1_review.md"
+    ],
+    "specification": [
+      "counter_bin_specification.md",
+      "zmm_evm_rpc_specification.md"
+    ],
+    "spectral": [
+      "spectral_analysis_report.md"
+    ],
+    "spectrum": [
+      "ddj_fft_spectrum_analyzer.md"
+    ],
+    "speech": [
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "access_software_analysis.md",
+      "ahoy_magazine_issue_24_review.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_23_analysis.md",
+      "chattts_integration_design.md",
+      "commodore_sid_audio_engine.md",
+      "content.md",
+      "coprocessor_designs_analysis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_2_in_depth.md",
+      "gan_speech_synthesis_analysis.md",
+      "master_memory_map_review.md",
+      "multi_user_coprocessor_sharing.md",
+      "muse_software_analysis.md",
+      "on_chain_neural_speech.md",
+      "pong_diyat_tax.md",
+      "scenial_magazine_issue_1_review.md",
+      "sega_hardware_innovations.md",
+      "speech_synthesis_advancements.md",
+      "storybook_integrations.md",
+      "sunrise_software_analysis.md",
+      "tts_dashboard_improvements_roadmap.md"
+    ],
+    "spin": [
+      "zi_spin_comparison.md"
+    ],
+    "spinnaker": [
+      "spinnaker_analysis.md"
+    ],
+    "sprint": [
+      "sprint_plan.md"
+    ],
+    "sprite": [
+      "vaesen_sprite_graphics.md"
+    ],
+    "squaring": [
+      "graeffe_process_root_squaring.md"
+    ],
+    "ssr": [
+      "germanium_zero_crossing_ssr_equivalence.md",
+      "ssr_terminology_compatibility.md"
+    ],
+    "sta": [
+      "content.md"
+    ],
+    "stabilization": [
+      "stabilization_operator_feedback_loop.md",
+      "stabilization_runbook.md"
+    ],
+    "standard": [
+      "timing_accuracy_standard.md"
+    ],
+    "standards": [
+      "dna_3d_standards_proposal.md",
+      "interrupt_standards.md"
+    ],
+    "standun": [
+      "standun_controls_review.md"
+    ],
+    "star": [
+      "star_castle_ai_evolution.md",
+      "star_castle_autopilot_model.md"
+    ],
+    "stashas": [
+      "disc_triangulation_space_stashas.md"
+    ],
+    "state": [
+      "arena_state_sharing.md"
+    ],
+    "status": [
+      "nonukes_qings_status.md"
+    ],
+    "storage": [
+      "kilobaud_issue_3_cassette_storage.md"
+    ],
+    "storybook": [
+      "storybook_dna_animations.md",
+      "storybook_integrations.md"
+    ],
+    "structural": [
+      "mtac_issue_4_structural_dynamics.md",
+      "structural_dynamics_synthesis_control.md"
+    ],
+    "studio": [
+      "studio_architecture_guide.md"
+    ],
+    "stuffed": [
+      "stuffed_animals_evolution.md"
+    ],
+    "subprocesses": [
+      "sd_subprocesses_profile.md"
+    ],
+    "success": [
+      "vision_suite_analysis.md"
+    ],
+    "suite": [
+      "synthesis_profiler_suite.md",
+      "vision_suite_analysis.md"
+    ],
+    "summary": [
+      "evm_arena_integration_summary.md"
+    ],
+    "sunrise": [
+      "sunrise_software_analysis.md"
+    ],
+    "super": [
+      "msd_super_disk_integration.md"
+    ],
+    "superterm": [
+      "midwest_micro_superterm_integration.md"
+    ],
+    "support": [
+      "c64_1541_emulation_support.md",
+      "datamost_support_analysis.md",
+      "epyx_support_report.md",
+      "gauntlet_pmg_support.md"
+    ],
+    "supports": [
+      "improved_rigging_supports.md"
+    ],
+    "swap": [
+      "pulsex_swap_trap_scenario.md"
+    ],
+    "sweets": [
+      "fylstra_sweets_byte_magazine.md"
+    ],
+    "sym": [
+      "zmachine_locus_diyat.md"
+    ],
+    "synapse": [
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_issue_4_analysis.md",
+      "synapse_software_analysis.md"
+    ],
+    "synth": [
+      "3d_rendering_advancements_deepseek.md",
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "ZMACHINE_SPEC.md",
+      "access_software_analysis.md",
+      "advanced_infocom_technologies_blueprint.md",
+      "ahoy_issue_6_pages_38_40_review.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_11_review.md",
+      "ahoy_magazine_issue_22_review.md",
+      "ahoy_magazine_issue_23_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_32_review.md",
+      "ahoy_magazine_issue_9_review.md",
+      "analog_compatibility_roadmap.md",
+      "associahedron_lore.md",
+      "atropa_unified_instruction_set.md",
+      "auto_attenuation_debugging_concept.md",
+      "autodyne_analysis.md",
+      "bayesian_arpeggiator_control.md",
+      "bessel_jnikny_dug_dus.md",
+      "bessel_jnikny_tunneling_operator.md",
+      "bessel_riders_and_harmonics.md",
+      "biotika_neural_feedback_loop.md",
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "byte_issue_12_analysis.md",
+      "byte_issue_21_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issues_18_20_analysis.md",
+      "chattts_integration_design.md",
+      "commodore_sid_audio_engine.md",
+      "conjecture_topological_motzkin_primes.md",
+      "control_generation_architecture.md",
+      "coprocessor_designs_analysis.md",
+      "daily_lore_2026_02_25.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daskmig_magazine_issue_2_review.md",
+      "datamost_milestones.md",
+      "datamost_support_analysis.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_fft_spectrum_analyzer.md",
+      "ddj_fractal_lsystem.md",
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md",
+      "deep_rendering_background.md",
+      "disc_triangulation_space_stashas.md",
+      "dj.md",
+      "dna_bear_improvements.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_2_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_4_analysis.md",
+      "dr_dobbs_issue_5_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "dysnomia_prime_issue_1.md",
+      "elektor_issue_10_in_depth.md",
+      "elektor_issue_11_in_depth.md",
+      "elektor_issue_12_in_depth.md",
+      "elektor_issue_13_in_depth.md",
+      "elektor_issue_14_in_depth.md",
+      "elektor_issue_15_in_depth.md",
+      "elektor_issue_16_in_depth.md",
+      "elektor_issue_17_in_depth.md",
+      "elektor_issue_18_in_depth.md",
+      "elektor_issue_19_in_depth.md",
+      "elektor_issue_1_in_depth.md",
+      "elektor_issue_1_synthesis.md",
+      "elektor_issue_2_in_depth.md",
+      "elektor_issue_3_in_depth.md",
+      "elektor_issue_4_in_depth.md",
+      "elektor_issue_5_in_depth.md",
+      "elektor_issue_6_in_depth.md",
+      "elektor_issue_7_in_depth.md",
+      "elektor_issue_8_in_depth.md",
+      "elektor_issue_9_in_depth.md",
+      "elektuur_early_issues_analysis.md",
+      "emulator_integration_paths.md",
+      "entech_software_analysis.md",
+      "epyx_support_report.md",
+      "filtered_fdn_improvisational_decisions.md",
+      "fractional_synthesis_llm_rag.md",
+      "frobenius_manifold_capacitor.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "gan_speech_synthesis_analysis.md",
+      "general_2d_character_synthesizer.md",
+      "graeffe_process_root_squaring.md",
+      "heathkit_synthesizer_monitor.md",
+      "hugi_magazine_issue_11_review.md",
+      "hugi_magazine_issue_14_review.md",
+      "hugi_special_edition_1_review.md",
+      "hurwood_improvements.md",
+      "impedance_reactor_cards.md",
+      "improvise_bionika.md",
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "interrupt_standards.md",
+      "kilobaud_issue_1_in_depth.md",
+      "kilobaud_issue_1_z80_refresh.md",
+      "kilobaud_issue_2_in_depth.md",
+      "kilobaud_issue_3_cassette_storage.md",
+      "kilobaud_issue_4_in_depth.md",
+      "kilobaud_issue_5_in_depth.md",
+      "kilobaud_issue_6_in_depth.md",
+      "magic_disk_64_issue_2_review.md",
+      "master_memory_map_review.md",
+      "motzkin_prime_synthesis_sequencing.md",
+      "mtac_issue_10_graeffe_power_series.md",
+      "mtac_issue_11_mathieu_functions.md",
+      "mtac_issue_12_punched_cards.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mtac_issue_14_duodecimal_tuning.md",
+      "mtac_issue_1_analysis.md",
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_2_non_sexagesimal_trig.md",
+      "mtac_issue_3_baas_bessel_fm.md",
+      "mtac_issue_4_structural_dynamics.md",
+      "mtac_issue_5_lehmer_modified_bessel.md",
+      "mtac_issue_6_punched_card_tables.md",
+      "mtac_issue_7_bessel_guide.md",
+      "mtac_issue_8_gear_ratios_fractional_n.md",
+      "mtac_issue_9_bessel_zeros_solvers.md",
+      "multi_user_coprocessor_sharing.md",
+      "multiview_rag_loop_spec.md",
+      "muse_software_analysis.md",
+      "nebula_biotika_plan.md",
+      "necessity_of_leakage_modeling.md",
+      "nonukes_pulsex_liquidity.md",
+      "nonukes_pulsex_pairs.md",
+      "on_chain_neural_speech.md",
+      "optimum_interval_timer_scheduling.md",
+      "photorealistic_rendering_analysis.md",
+      "pokey_audio_synthesis.md",
+      "pong_diyat_tax.md",
+      "priority_voting_board.md",
+      "procedural_integration_report.md",
+      "prophecy_inverse_synthesis.md",
+      "prophecy_philosophical_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "qst_issue_4_analysis.md",
+      "qst_issue_7_analysis.md",
+      "qst_issues_1_4_hardware_concepts.md",
+      "quantum_cylindrical_tunneling_bessel.md",
+      "quartz_crystals_radio_synthesis.md",
+      "rooted_browser_build_report.md",
+      "scenial_magazine_issue_1_review.md",
+      "sega_dreamcast_powervr2.md",
+      "sega_hardware_innovations.md",
+      "spectral_analysis_report.md",
+      "speech_synthesis_advancements.md",
+      "ssr_terminology_compatibility.md",
+      "storybook_dna_animations.md",
+      "structural_dynamics_synthesis_control.md",
+      "studio_architecture_guide.md",
+      "sunrise_software_analysis.md",
+      "synapse_issue_2_analysis.md",
+      "synapse_issue_3_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "synthesis_profile_report.md",
+      "synthesis_profiler_suite.md",
+      "synthesizer_lore.md",
+      "synthesizer_scurry_tutorial.md",
+      "targ_mercenary_improvements.md",
+      "teddy303_synthesis_notes.md",
+      "timing_accuracy_standard.md",
+      "total_games_manifest.md",
+      "trading_cards_game_analysis.md",
+      "tts_dashboard_improvements_roadmap.md",
+      "tup_tun_dug_dus_bessel_tunneling.md",
+      "unit_testing_report.md",
+      "vaesen_character_sheets_report.md",
+      "vaesen_emotion_mathieu_feedback.md",
+      "vaesen_folklore_synthesis.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md",
+      "wilby_magazine_issue_3_review.md",
+      "yamaha_ym2612_fm_synthesis.md",
+      "yi_mechanical_transducer.md",
+      "zmachine_implementation_log.md"
+    ],
+    "synthesis": [
+      "ddj_game_of_life_synthesis.md",
+      "ddj_graphics_synthesis_integration.md",
+      "elektor_issue_1_synthesis.md",
+      "fractional_synthesis_llm_rag.md",
+      "gan_speech_synthesis_analysis.md",
+      "interpolation_as_a_synthesis_unified_theory.md",
+      "motzkin_prime_synthesis_sequencing.md",
+      "pokey_audio_synthesis.md",
+      "prophecy_inverse_synthesis.md",
+      "prophecy_philosophical_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "quantum_tunneling_breakdown_synthesis.md",
+      "quartz_crystals_radio_synthesis.md",
+      "speech_synthesis_advancements.md",
+      "structural_dynamics_synthesis_control.md",
+      "synthesis_card_render_profile.md",
+      "synthesis_debug_session_equivalence.md",
+      "synthesis_latency_trace.md",
+      "synthesis_profile_report.md",
+      "synthesis_profiler_suite.md",
+      "teddy303_synthesis_notes.md",
+      "vaesen_folklore_synthesis.md",
+      "yamaha_ym2612_fm_synthesis.md"
+    ],
+    "synthesizer": [
+      "general_2d_character_synthesizer.md",
+      "heathkit_synthesizer_monitor.md",
+      "synthesizer_lore.md",
+      "synthesizer_scurry_tutorial.md"
+    ],
+    "system": [
+      "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
+      "atari_unified_system.md",
+      "automation_system_design.md",
+      "dysnomia_system_integration_map.md",
+      "geos_operating_system_analysis.md",
+      "hardball_rendering_system.md"
+    ],
+    "system0": [
+      "system0_sabbatical.md"
+    ],
+    "system3": [
+      "mariner_system3_qualification.md"
+    ],
+    "systems": [
+      "control_systems_peripheral_emulation.md"
+    ],
+    "tables": [
+      "mtac_issue_1_tables_and_interpolation.md",
+      "mtac_issue_6_punched_card_tables.md"
+    ],
+    "targ": [
+      "targ_mercenary_improvements.md"
+    ],
+    "target_x": [
+      "ahoy_issue_7_gameplay_improvements.md"
+    ],
+    "tax": [
+      "msd_tax_and_security_analysis.md",
+      "pong_diyat_tax.md"
+    ],
+    "taxation": [
+      "cia_timers_and_gas_taxation.md"
+    ],
+    "tcg": [
+      "cabs_tcg_interactions.md",
+      "tcg_combat_rewards_mechanics.md",
+      "tcg_flexible_game_rules.md",
+      "tcg_onchain_math_integration.md"
+    ],
+    "tdoa": [
+      "qst_issue_14_tdoa_analysis.md"
+    ],
+    "technologies": [
+      "advanced_infocom_technologies_blueprint.md",
+      "graphics_display_technologies.md"
+    ],
+    "teddy": [
+      "teddy_bear_visualization.md"
+    ],
+    "teddy303": [
+      "teddy303_synthesis_notes.md"
+    ],
+    "telemetry": [
+      "rag_visual_telemetry.md"
+    ],
+    "television": [
+      "content.md"
+    ],
+    "terminal": [
+      "antic_cpu_terminal_improvements.md",
+      "antic_zmm_terminal_benefits.md",
+      "easychain64_terminal_design.md"
+    ],
+    "terminology": [
+      "ssr_terminology_compatibility.md"
+    ],
+    "tessarant": [
+      "tessarant_combat_physics.md"
+    ],
+    "test": [
+      "cpu_test_improvements.md",
+      "interview.lore",
+      "npc_exhaustive_test_report.md"
+    ],
+    "testing": [
+      "agentic_vector_field_cpu_testing.md",
+      "unit_testing_report.md"
+    ],
+    "the": [
+      "prophecy_of_the_quaternion.md"
+    ],
+    "theory": [
+      "interpolation_as_a_synthesis_unified_theory.md"
+    ],
+    "thirty": [
+      "thirty_six_motzkin_primes_cardinalities.md"
+    ],
+    "threading": [
+      "threading_scalability_profile.md"
+    ],
+    "thunkproxy_emit_backprop_avx512": [
+      "byte_issue_22_analysis.md",
+      "byte_issues_18_20_analysis.md"
+    ],
+    "thunkproxy_emit_timeline_guard": [
+      "byte_issue_24_analysis.md"
+    ],
+    "thunks": [
+      "thunks_vs_bloom_filters.md"
+    ],
+    "timbre": [
+      "ZMACHINE_SPEC.md"
+    ],
+    "timeout": [
+      "asynchronous_timeout_analysis.md"
+    ],
+    "timer": [
+      "cpu_banking_and_timer_upgrades.md",
+      "optimum_interval_timer_scheduling.md"
+    ],
+    "timers": [
+      "cia_timers_and_gas_taxation.md"
+    ],
+    "timing": [
+      "timing_accuracy_standard.md"
+    ],
+    "today": [
+      "daily_lore_2026_03_07.md"
+    ],
+    "token": [
+      "cabs_token_exchange_spec.md"
+    ],
+    "tokenization": [
+      "vector_field_query_tokenization.md"
+    ],
+    "topological": [
+      "conjecture_topological_motzkin_primes.md",
+      "motzkin_topological_basis_vertex.md",
+      "topological_ordinance_bessel_vs_motzkin.md"
+    ],
+    "torso": [
+      "improved_rigging_supports.md"
+    ],
+    "total": [
+      "total_games_manifest.md"
+    ],
+    "totl": [
+      "datamost_totl_protecto_integration.md"
+    ],
+    "trace": [
+      "synthesis_latency_trace.md"
+    ],
+    "trading": [
+      "trading_cards_game_analysis.md"
+    ],
+    "transcendent": [
+      "transcendent_control_framework.md"
+    ],
+    "transducer": [
+      "yi_mechanical_transducer.md"
+    ],
+    "trap": [
+      "pulsex_swap_trap_scenario.md"
+    ],
+    "tree": [
+      "ddj_bsp_tree_integration.md"
+    ],
+    "triangulation": [
+      "disc_triangulation_space_stashas.md",
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "tricks": [
+      "commodore_hardware_tricks.md"
+    ],
+    "trig": [
+      "mtac_issue_2_non_sexagesimal_trig.md"
+    ],
+    "trigonometric": [
+      "dysnomia_vertex_trigonometric_projection.md"
+    ],
+    "tsfi2": [
+      "tsfi2_mozilla_efficiency_plan.md"
+    ],
+    "tsfibiotikadna": [
+      "yi_mechanical_transducer.md"
+    ],
+    "tts": [
+      "tts_dashboard_improvements_roadmap.md"
+    ],
+    "tun": [
+      "tup_tun_dug_dus_bessel_tunneling.md"
+    ],
+    "tuning": [
+      "mtac_issue_14_duodecimal_tuning.md"
+    ],
+    "tunneling": [
+      "bessel_jnikny_tunneling_operator.md",
+      "quantum_cylindrical_tunneling_bessel.md",
+      "quantum_tunneling_breakdown_synthesis.md",
+      "tup_tun_dug_dus_bessel_tunneling.md"
+    ],
+    "tup": [
+      "tup_tun_dug_dus_bessel_tunneling.md"
+    ],
+    "tutorial": [
+      "synthesizer_scurry_tutorial.md"
+    ],
+    "uhler": [
+      "mtac_issue_14_mersenne_uhler.md"
+    ],
+    "unified": [
+      "atari_unified_system.md",
+      "atropa_unified_instruction_set.md",
+      "interpolation_as_a_synthesis_unified_theory.md"
+    ],
+    "unit": [
+      "unit_testing_report.md"
+    ],
+    "unix": [
+      "unix_v1_folklore_cpu.md"
+    ],
+    "unreal": [
+      "unreal_vaesen_mystery_house_6502_rocm.md"
+    ],
+    "upgrade": [
+      "microkernel_upgrade_plan.md",
+      "upgrade_proposals.md"
+    ],
+    "upgrades": [
+      "cpu_banking_and_timer_upgrades.md",
+      "vic20_yul_upgrades.md"
+    ],
+    "usecases": [
+      "elm_debugger_advanced_usecases.md"
+    ],
+    "user": [
+      "multi_user_coprocessor_sharing.md",
+      "multi_user_shared_cpu_architecture.md"
+    ],
+    "uv_break": [
+      "chattts_integration_design.md"
+    ],
+    "vae": [
+      "gauntlet_jit_vae_spec.md"
+    ],
+    "vaesen": [
+      "biotika_neural_feedback_loop.md",
+      "dysnomia_prime_issue_1.md",
+      "folklore_cpu_design.md",
+      "impedance_reactor_cards.md",
+      "press_release_rooted_browser.md",
+      "prophecy_philosophical_synthesis.md",
+      "reengineering_plan.md",
+      "total_games_manifest.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vaesen_character_sheets_report.md",
+      "vaesen_emotion_mathieu_feedback.md",
+      "vaesen_folklore_synthesis.md",
+      "vaesen_improvisational_agency.md",
+      "vaesen_integration_review.md",
+      "vaesen_silicon_bestiary.md",
+      "vaesen_sprite_graphics.md",
+      "vaesen_verification.md",
+      "vulkan_lore_editor_architecture.md"
+    ],
+    "val": [
+      "ruleburst_integration.md"
+    ],
+    "vdp": [
+      "sega_vdp_scrolling.md",
+      "sega_vdp_vsram_priority.md"
+    ],
+    "vdp1": [
+      "sega_saturn_vdp1.md"
+    ],
+    "vector": [
+      "3d_rendering_advancements_deepseek.md",
+      "SPEECH_OPTIMIZATION_PLAN.md",
+      "access_software_analysis.md",
+      "accumulator_vector_fields.md",
+      "agentic_vector_field_cpu_testing.md",
+      "agentic_vector_fields.md",
+      "ahoy_interrupt_music_maker.md",
+      "ahoy_issue_6_gameplay_improvements.md",
+      "ahoy_issue_7_gameplay_improvements.md",
+      "ahoy_magazine_integration.md",
+      "ahoy_magazine_issue_17_review.md",
+      "ahoy_magazine_issue_21_review.md",
+      "ahoy_magazine_issue_24_review.md",
+      "ahoy_magazine_issue_29_review.md",
+      "ahoy_magazine_issue_30_review.md",
+      "ahoy_magazine_issue_31_review.md",
+      "ahoy_magazine_review.md",
+      "ai_debugger_input_methods.md",
+      "analog_compatibility_roadmap.md",
+      "antic_zmm_terminal_benefits.md",
+      "associahedron_lore.md",
+      "async_behavior_analysis.md",
+      "autodyne_analysis.md",
+      "bayesian_arpeggiator_control.md",
+      "byte_issue_15_analysis.md",
+      "byte_issue_17_analysis.md",
+      "byte_issue_22_analysis.md",
+      "byte_issue_23_analysis.md",
+      "byte_issue_24_analysis.md",
+      "byte_issue_25_analysis.md",
+      "byte_issue_26_analysis.md",
+      "byte_issue_27_analysis.md",
+      "cia_timers_and_gas_taxation.md",
+      "comm_data_review.md",
+      "commodore_kernal_io_redirection.md",
+      "commodore_software_analysis.md",
+      "compuserve_integration.md",
+      "compuserve_integration_blueprint.md",
+      "compuserve_protocols_analysis.md",
+      "computer_design_issue_15_analysis.md",
+      "computer_design_issue_8_analysis.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_2026_02_28.md",
+      "daily_lore_2026_03_02.md",
+      "daily_lore_2026_03_07.md",
+      "daily_lore_2026_03_07_joseon_cebu.md",
+      "daily_lore_2026_03_14.md",
+      "daily_lore_chen_jurchen.md",
+      "daskmig_magazine_issue_3_review.md",
+      "datasoft_analysis.md",
+      "ddj_bresenham_integration.md",
+      "ddj_bsp_tree_integration.md",
+      "ddj_dithering_integration.md",
+      "ddj_graphics_synthesis_integration.md",
+      "ddj_raycasting_audio_maze.md",
+      "decentralized_os_yul_architecture.md",
+      "deep_rendering_background.md",
+      "dna_3d_standards_proposal.md",
+      "dr_dobbs_3d_graphics_analysis.md",
+      "dr_dobbs_issue_3_analysis.md",
+      "dr_dobbs_issue_6_analysis.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "elektuur_early_issues_analysis.md",
+      "emulator_integration_paths.md",
+      "filtered_fdn_improvisational_decisions.md",
+      "folklore_cpu_design.md",
+      "fractional_synthesis_llm_rag.md",
+      "frobenius_manifold_capacitor.md",
+      "fuzzby_magazine_issue_0_review.md",
+      "game_archetypes_spec.md",
+      "gameplay_mechanics_analysis.md",
+      "gauntlet_jit_vae_spec.md",
+      "geos_operating_system_analysis.md",
+      "hardball_rendering_system.md",
+      "hardware_improvements_plan.md",
+      "heathkit_synthesizer_monitor.md",
+      "hugi_magazine_issue_15_review.md",
+      "hugi_magazine_issue_17_review.md",
+      "hugi_magazine_issue_20_review.md",
+      "hugi_special_edition_1_review.md",
+      "image_computer_products_analysis.md",
+      "improved_rigging_supports.md",
+      "interrupt_standards.md",
+      "kilobaud_issue_6_in_depth.md",
+      "kilobaud_issue_7_in_depth.md",
+      "magic_disk_64_issue_1_review.md",
+      "memory_injector_security.md",
+      "mercenary_pipeline_integration.md",
+      "micro_issue_26_analysis.md",
+      "microprose_analysis.md",
+      "motzkin_topological_basis_vertex.md",
+      "mozilla_integration_plan.md",
+      "msd_super_disk_integration.md",
+      "msd_tax_and_security_analysis.md",
+      "mtac_issue_13_mathieu_matrices.md",
+      "mystery_house_zengine_integration.md",
+      "on_chain_neural_speech.md",
+      "pathway_analysis.md",
+      "platform_display_model.md",
+      "procedural_integration_report.md",
+      "progressive_rag_pipeline.md",
+      "prophecy_inverse_synthesis.md",
+      "prophecy_synthesis_and_control.md",
+      "prophecy_synthesis_and_control_public.md",
+      "qst_issue_14_rls_analysis.md",
+      "qst_issue_4_analysis.md",
+      "rag_antic_comovement_analysis.md",
+      "rag_visual_telemetry.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "scenial_magazine_issue_1_review.md",
+      "softlaw_corporation_integration.md",
+      "speech_synthesis_advancements.md",
+      "spinnaker_analysis.md",
+      "star_castle_ai_evolution.md",
+      "sunrise_software_analysis.md",
+      "synapse_software_analysis.md",
+      "synthesis_debug_session_equivalence.md",
+      "synthesizer_lore.md",
+      "system0_sabbatical.md",
+      "teddy_bear_visualization.md",
+      "tessarant_combat_physics.md",
+      "thunks_vs_bloom_filters.md",
+      "timing_accuracy_standard.md",
+      "total_games_manifest.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vaesen_folklore_synthesis.md",
+      "vaesen_improvisational_agency.md",
+      "vector_field_query_tokenization.md",
+      "vic20_yul_upgrades.md",
+      "visual_verification.md",
+      "vulkan_multicolor_plotting.md",
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "xonox_analysis.md",
+      "zil_onchain_parser_design.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "verification": [
+      "dysnomia_math_verification.md",
+      "resize_verification.md",
+      "vaesen_verification.md",
+      "visual_verification.md"
+    ],
+    "vertex": [
+      "biotika_neuron_motzkin_vertex_firing.md",
+      "dysnomia_vertex_trigonometric_projection.md",
+      "motzkin_topological_basis_vertex.md",
+      "triangulation_space_quest_for_vertex.md"
+    ],
+    "via": [
+      "c64_1541_emulation_support.md"
+    ],
+    "vic": [
+      "vic_ii_advanced_concepts.md"
+    ],
+    "vic20": [
+      "vic20_yul_upgrades.md"
+    ],
+    "vision": [
+      "daily_lore_vulkan_vision.md",
+      "vision_suite_analysis.md"
+    ],
+    "visual": [
+      "rag_visual_telemetry.md",
+      "visual_verification.md"
+    ],
+    "visualization": [
+      "teddy_bear_visualization.md"
+    ],
+    "vlogs": [
+      "content.md"
+    ],
+    "volunteer": [
+      "content.md"
+    ],
+    "voting": [
+      "priority_voting_board.md"
+    ],
+    "vsram": [
+      "sega_vdp_vsram_priority.md"
+    ],
+    "vulkan": [
+      "access_software_analysis.md",
+      "antic_ab4h_vulkan_colors.md",
+      "antic_wayland_level_renderer.md",
+      "automation_system_design.md",
+      "byte_issue_21_analysis.md",
+      "concurrency_pipeline_analysis.md",
+      "daily_lore_2026_02_26.md",
+      "daily_lore_vulkan_vision.md",
+      "datamost_milestones.md",
+      "datamost_support_analysis.md",
+      "datasoft_analysis.md",
+      "dna_3d_standards_proposal.md",
+      "dna_bear_improvements.md",
+      "epyx_support_report.md",
+      "game_archetypes_spec.md",
+      "gameplay_mechanics_analysis.md",
+      "gauntlet_jit_vae_spec.md",
+      "general_2d_character_synthesizer.md",
+      "graphics_improvements_plan.md",
+      "hardball_rendering_system.md",
+      "heathkit_synthesizer_monitor.md",
+      "interview.lore",
+      "lore_2026_03_03.md",
+      "mozilla_integration_plan.md",
+      "mystery_house_zengine_integration.md",
+      "pathway_analysis.md",
+      "platform_display_model.md",
+      "press_release_rooted_browser.md",
+      "qst_issues_1_4_hardware_concepts.md",
+      "rag_antic_comovement_analysis.md",
+      "reengineering_plan.md",
+      "rooted_browser_build_report.md",
+      "rooted_minimal_c_renderer_plan.md",
+      "sd_subprocesses_profile.md",
+      "stabilization_runbook.md",
+      "storybook_dna_animations.md",
+      "synthesis_card_render_profile.md",
+      "synthesis_latency_trace.md",
+      "synthesis_profile_report.md",
+      "synthesis_profiler_suite.md",
+      "synthesizer_lore.md",
+      "threading_scalability_profile.md",
+      "transcendent_control_framework.md",
+      "tsfi2_mozilla_efficiency_plan.md",
+      "unreal_vaesen_mystery_house_6502_rocm.md",
+      "vision_suite_analysis.md",
+      "vulkan_datamost_integration.md",
+      "vulkan_epyx_exploration.md",
+      "vulkan_lore_editor_architecture.md",
+      "vulkan_multicolor_plotting.md",
+      "vulkan_wireframe_integration.md",
+      "wayland_ab4h_rendering.md",
+      "window_registry.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "wagon": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "wayland": [
+      "antic_wayland_level_renderer.md",
+      "wayland_ab4h_rendering.md"
+    ],
+    "wilby": [
+      "wilby_magazine_issue_1_review.md",
+      "wilby_magazine_issue_2_review.md",
+      "wilby_magazine_issue_3_review.md",
+      "wilby_magazine_issue_4_review.md"
+    ],
+    "winchestermq": [
+      "ZMACHINE_SPEC.md",
+      "arena_state_sharing.md",
+      "associahedron_lore.md",
+      "async_behavior_analysis.md",
+      "daskmig_magazine_issue_1_review.md",
+      "dynamic_async_integration.md",
+      "portal_hub_showcase.md",
+      "press_release_rooted_browser.md",
+      "pulsex_swap_trap_scenario.md",
+      "reengineering_plan.md",
+      "scenial_magazine_issue_2_review.md",
+      "sector_card_mapping.md",
+      "sprint_plan.md",
+      "stabilization_runbook.md",
+      "system0_sabbatical.md",
+      "tessarant_combat_physics.md",
+      "transcendent_control_framework.md",
+      "zil_onchain_parser_design.md"
+    ],
+    "window": [
+      "window_registry.md"
+    ],
+    "wireframe": [
+      "vulkan_wireframe_integration.md"
+    ],
+    "world": [
+      "mercenary_room_objects_world_hollow.md",
+      "micro_world_printer_integration.md"
+    ],
+    "xonox": [
+      "xonox_analysis.md"
+    ],
+    "yamaha": [
+      "yamaha_ym2612_fm_synthesis.md"
+    ],
+    "ym2612": [
+      "yamaha_ym2612_fm_synthesis.md"
+    ],
+    "yul": [
+      "decentralized_os_yul_architecture.md",
+      "renegade_yul_architecture.md",
+      "vic20_yul_upgrades.md",
+      "yul_accounting_and_matrix_coprocessors.md",
+      "yul_device_access.md",
+      "yul_hardware_hardening_analysis.md",
+      "yul_vm_isolation_audit.md"
+    ],
+    "z80": [
+      "kilobaud_issue_1_z80_refresh.md"
+    ],
+    "zal": [
+      "multi_network_zmm_evm_inventory.md"
+    ],
+    "zener": [
+      "zener_discovery_ai_analogy.md"
+    ],
+    "zeners": [
+      "zeners_in_llm_architectures.md"
+    ],
+    "zengine": [
+      "mystery_house_zengine_integration.md",
+      "zmm_zengine_rag_integration.md"
+    ],
+    "zero": [
+      "germanium_zero_crossing_ssr_equivalence.md"
+    ],
+    "zeros": [
+      "mtac_issue_9_bessel_zeros_solvers.md"
+    ],
+    "zil": [
+      "zil_onchain_parser_design.md"
+    ],
+    "zmachine": [
+      "ZMACHINE_SPEC.md",
+      "atropa_unified_instruction_set.md",
+      "byte_issue_13_analysis.md",
+      "cabs_peek_poke_security.md",
+      "cabs_reconciliation_framework.md",
+      "cabs_security_recommendations.md",
+      "mystery_house_zengine_integration.md",
+      "tcg_combat_rewards_mechanics.md",
+      "total_games_manifest.md",
+      "vaesen_integration_review.md",
+      "yul_vm_isolation_audit.md",
+      "zil_onchain_parser_design.md",
+      "zmachine_erc20_integration.md",
+      "zmachine_erc20_rewards_and_payments.md",
+      "zmachine_implementation_log.md",
+      "zmachine_locus_diyat.md",
+      "zmachine_onchain_composition.md",
+      "zmm_room_refactoring_plan.md"
+    ],
+    "zmm": [
+      "antic_zmm_terminal_benefits.md",
+      "evm_vs_zmm_vm_interfaces.md",
+      "multi_network_zmm_evm_inventory.md",
+      "npc_exhaustive_test_report.md",
+      "zmm_evm_rpc_specification.md",
+      "zmm_room_refactoring_plan.md",
+      "zmm_zengine_rag_integration.md"
+    ]
+  }
+}

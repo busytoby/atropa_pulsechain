@@ -76,6 +76,23 @@ const tools = [
         }
     },
     {
+        name: "query_lore",
+        description: "Query the relational lore database. Search for documents matching a specific tag, or find tags linked to a specific document.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                tag: {
+                    type: "string",
+                    description: "Optional: Find all documents associated with this tag."
+                },
+                document: {
+                    type: "string",
+                    description: "Optional: Find all tags associated with this document."
+                }
+            }
+        }
+    },
+    {
         name: "log_youtube_telemetry",
         description: "Log played YouTube video telemetry (video ID and title) to the persistent record.",
         inputSchema: {
@@ -328,6 +345,49 @@ async function handleRequest(req) {
                             {
                                 type: "text",
                                 text: `Failed to retrieve prices: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "query_lore") {
+                try {
+                    const args = params.arguments || {};
+                    const tagQuery = args.tag ? args.tag.toLowerCase() : null;
+                    const docQuery = args.document ? args.document.toLowerCase() : null;
+                    const dbPath = path.join(__dirname, "../config/lore_tags_database.json");
+                    if (!fs.existsSync(dbPath)) {
+                        throw new Error("Lore tag database not found. Please run scripts/spider_lore_tags.js first.");
+                    }
+                    const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+                    let result = null;
+
+                    if (tagQuery) {
+                        result = db.tagToDocuments[tagQuery] || [];
+                    } else if (docQuery) {
+                        const matchedKey = Object.keys(db.documentToTags).find(k => k.toLowerCase() === docQuery || k.toLowerCase().includes(docQuery));
+                        result = matchedKey ? { document: matchedKey, tags: db.documentToTags[matchedKey] } : null;
+                    } else {
+                        result = {
+                            meta: db.meta,
+                            availableTagsSample: Object.keys(db.tagToDocuments).slice(0, 50)
+                        };
+                    }
+
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(result, null, 2)
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to query lore database: ${err.message}`
                             }
                         ]
                     });
