@@ -110,6 +110,15 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     if (method_flow_choreography && (!min_ptr || method_flow_choreography < min_ptr)) { min_ptr = method_flow_choreography; method_type = 27; }
     if (method_dilemma_log && (!min_ptr || method_dilemma_log < min_ptr)) { min_ptr = method_dilemma_log; method_type = 28; }
 
+    char *method_mouse_move = strstr(p, "input.mouse_move");
+    char *method_mouse_button = strstr(p, "input.mouse_button");
+    char *method_keyboard = strstr(p, "input.keyboard");
+
+    if (method_mouse_move && (!min_ptr || method_mouse_move < min_ptr)) { min_ptr = method_mouse_move; method_type = 30; }
+    if (method_mouse_button && (!min_ptr || method_mouse_button < min_ptr)) { min_ptr = method_mouse_button; method_type = 31; }
+    if (method_keyboard && (!min_ptr || method_keyboard < min_ptr)) { min_ptr = method_keyboard; method_type = 32; }
+
+
     if (!min_ptr) return 0;
 
     int id = 1;
@@ -553,7 +562,99 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(optr, rem, "], \"id\": %d}\n", id);
             return 1;
         }
+    } else if (method_type == 30) { // input.mouse_move
+        int x = extract_json_int(min_ptr, "\"x\"", 0);
+        int y = extract_json_int(min_ptr, "\"y\"", 0);
+        if (!state->reu_ram) {
+            state->reu_size = 0x10000;
+            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
+        }
+        if (state->reu_ram && state->reu_size > 0xF004) {
+            state->reu_ram[0xF000] = (uint8_t)(x & 0xFF);
+            state->reu_ram[0xF001] = (uint8_t)(y & 0xFF);
+            state->reu_ram[0xF003] = (uint8_t)((x >> 8) & 0xFF);
+            state->reu_ram[0xF004] = (uint8_t)((y >> 8) & 0xFF);
+        }
+        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+        uint8_t command_byte = (0x00 << 6) | 0x01;
+        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
+        cd[35] = command_byte;
+        uint8_t ret[32];
+        size_t ret_len = 32;
+        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
+
+        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
+        char cmd_str[32] = {0};
+        snprintf(cmd_str, sizeof(cmd_str), "MM %d %d", x, y);
+        memcpy(cd_post + 4, cmd_str, 32);
+        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
+
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mouse move OK\", \"id\": %d}\n", id);
+        return 1;
+    } else if (method_type == 31) { // input.mouse_button
+        int button = extract_json_int(min_ptr, "\"button\"", 272);
+        int btn_state = extract_json_int(min_ptr, "\"state\"", 0);
+        int x = extract_json_int(min_ptr, "\"x\"", -1);
+        int y = extract_json_int(min_ptr, "\"y\"", -1);
+        if (!state->reu_ram) {
+            state->reu_size = 0x10000;
+            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
+        }
+        if (state->reu_ram && state->reu_size > 0xF004 && x >= 0 && y >= 0) {
+            state->reu_ram[0xF000] = (uint8_t)(x & 0xFF);
+            state->reu_ram[0xF001] = (uint8_t)(y & 0xFF);
+            state->reu_ram[0xF003] = (uint8_t)((x >> 8) & 0xFF);
+            state->reu_ram[0xF004] = (uint8_t)((y >> 8) & 0xFF);
+        }
+        uint8_t btn_idx = 0;
+        if (button == 273) btn_idx = 1;
+        if (button == 274) btn_idx = 2;
+        uint8_t command_byte = (0x01 << 6) | (btn_state ? 0x04 : 0x00) | (btn_idx & 0x03);
+
+        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
+        cd[35] = command_byte;
+        uint8_t ret[32];
+        size_t ret_len = 32;
+        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
+
+        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
+        char cmd_str[32] = {0};
+        snprintf(cmd_str, sizeof(cmd_str), "%s %d", btn_state ? "MD" : "MU", button);
+        memcpy(cd_post + 4, cmd_str, 32);
+        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
+
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mouse button OK\", \"id\": %d}\n", id);
+        return 1;
+    } else if (method_type == 32) { // input.keyboard
+        int keycode = extract_json_int(min_ptr, "\"keycode\"", 0);
+        int key_state = extract_json_int(min_ptr, "\"state\"", 0);
+        if (!state->reu_ram) {
+            state->reu_size = 0x10000;
+            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
+        }
+        if (state->reu_ram && state->reu_size > 0xF002) {
+            state->reu_ram[0xF002] = (uint8_t)keycode;
+        }
+        uint8_t command_byte = (0x02 << 6) | (key_state ? 0x20 : 0x00) | (keycode & 0x1F);
+
+        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
+        cd[35] = command_byte;
+        uint8_t ret[32];
+        size_t ret_len = 32;
+        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
+
+        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
+        char cmd_str[32] = {0};
+        snprintf(cmd_str, sizeof(cmd_str), "%s %d", key_state ? "KD" : "KU", keycode);
+        memcpy(cd_post + 4, cmd_str, 32);
+        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
+
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Keyboard event OK\", \"id\": %d}\n", id);
+        return 1;
     }
+
     
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;

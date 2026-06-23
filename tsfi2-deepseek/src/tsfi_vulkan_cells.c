@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "lau_memory.h"
 #include "lau_registry.h"
+#include <pthread.h>
 
 // ---------------------------------------------------------
 // TSFi VULKAN COMPATIBILITY CELLS (FIRMWARE NATIVE)
@@ -512,6 +513,21 @@ static void* g_scanout_buffer = NULL;
 static int g_scanout_w = 0;
 static int g_scanout_h = 0;
 
+static uint8_t *g_zmm_reu_ram_shm = NULL;
+static size_t g_zmm_reu_ram_size = 8 * 1024 * 1024;
+
+static void init_zmm_reu_ram_shm(void) {
+    if (g_zmm_reu_ram_shm) return;
+    int fd = shm_open("/tsfi_zmm_reu_ram", O_RDWR, 0666);
+    if (fd != -1) {
+        g_zmm_reu_ram_shm = (uint8_t*)mmap(NULL, g_zmm_reu_ram_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        if (g_zmm_reu_ram_shm == MAP_FAILED) {
+            g_zmm_reu_ram_shm = NULL;
+        }
+        close(fd);
+    }
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) { 
     if (g_scanout_buffer && g_scanout_w > 0 && g_scanout_h > 0) {
         uint32_t *dst = (uint32_t*)g_scanout_buffer;
@@ -526,6 +542,47 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkQueuePresentKHR(VkQueue queue, cons
             for (int i = 0; i < g_scanout_w * g_scanout_h; i++) {
                 uint32_t s_color = src[i];
                 if (s_color == 0) continue; // Skip pure transparent pixels (optimization)
+                
+                uint32_t d_color = dst[i];
+                uint8_t sa = (s_color >> 24) & 0xFF;
+                uint8_t sr = (s_color >> 16) & 0xFF;
+                uint8_t sg = (s_color >> 8) & 0xFF;
+                uint8_t sb = s_color & 0xFF;
+                
+                if (sa == 255) {
+                    dst[i] = s_color;
+                } else if (sa > 0) {
+                    uint8_t dr = (d_color >> 16) & 0xFF;
+                    uint8_t dg = (d_color >> 8) & 0xFF;
+                    uint8_t db = d_color & 0xFF;
+                    
+                    uint8_t r = (sr * sa + dr * (255 - sa)) / 255;
+                    uint8_t g = (sg * sa + dg * (255 - sa)) / 255;
+                    uint8_t b = (sb * sa + db * (255 - sa)) / 255;
+                    
+                    dst[i] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
+
+    // Blend directly to shared memory ZMM framebuffer so the presenter process sees it in real time
+    static pthread_once_t shm_once = PTHREAD_ONCE_INIT;
+    pthread_once(&shm_once, init_zmm_reu_ram_shm);
+    if (g_zmm_reu_ram_shm) {
+        int w = g_scanout_w > 0 ? g_scanout_w : 1024;
+        int h = g_scanout_h > 0 ? g_scanout_h : 768;
+        uint32_t *dst = (uint32_t*)(g_zmm_reu_ram_shm + 0x10000);
+        for (int i = 0; i < w * h; i++) {
+            dst[i] = 0xFF0B0214; // purple background
+        }
+        
+        for (int p = 0; p < g_virtual_plane_count; p++) {
+            if (!g_virtual_planes[p]) continue;
+            uint32_t *src = (uint32_t*)g_virtual_planes[p];
+            for (int i = 0; i < w * h; i++) {
+                uint32_t s_color = src[i];
+                if (s_color == 0) continue;
                 
                 uint32_t d_color = dst[i];
                 uint8_t sa = (s_color >> 24) & 0xFF;

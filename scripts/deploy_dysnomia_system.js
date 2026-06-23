@@ -82,17 +82,6 @@ async function main() {
     // 13. STRINGLIB
     await deploy("stringlib.sol", "STRINGLIB", [deployedAddresses["VOID"]]);
 
-    // 14. Deploy Mocks (for Hecke)
-    console.log("Deploying MockHecke...");
-    const mocksArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, "../Wallet/bin/Contracts/Mocks.sol.json"), "utf8"));
-    const mockHeckeContract = mocksArtifact.contracts["dysnomia/Mocks.sol:MockHecke"];
-    const mockHeckeFactory = new ethers.ContractFactory(mockHeckeContract.abi, mockHeckeContract.bin, deployer);
-    const mockHecke = await mockHeckeFactory.deploy();
-    await mockHecke.waitForDeployment();
-    const mockHeckeAddress = await mockHecke.getAddress();
-    deployedAddresses["HECKE"] = mockHeckeAddress;
-    console.log(` -> MockHecke deployed at: ${mockHeckeAddress}`);
-
     // 15. COREREACTIONSLIB
     await deploy("reactions_core.sol", "COREREACTIONSLIB", [deployedAddresses["VOID"]]);
 
@@ -105,6 +94,16 @@ async function main() {
     const txRegister = await corereactions.RegisterChoForTalk(deployedAddresses["CHO"]);
     await txRegister.wait();
     console.log("CHO Registered.");
+
+    // 14. Deploy Hecke (Real Contract, No Mocks)
+    console.log("Deploying Hecke...");
+    const heckeArtifact = getContractArtifact("heckemeridians.sol", "Hecke");
+    const heckeFactory = new ethers.ContractFactory(heckeArtifact.abi, heckeArtifact.bin, deployer);
+    const hecke = await heckeFactory.deploy(deployedAddresses["CHO"]);
+    await hecke.waitForDeployment();
+    const heckeAddress = await hecke.getAddress();
+    deployedAddresses["HECKE"] = heckeAddress;
+    console.log(` -> Hecke deployed at: ${heckeAddress}`);
 
     // 18. Deploy MAP (Requires ChoAddress, HeckeAddress)
     const map = await deploy("map.sol", "MAP", [deployedAddresses["CHO"], deployedAddresses["HECKE"]]);

@@ -44,10 +44,10 @@ int main() {
     vm_state.reu_ram = calloc(1, vm_state.reu_size);
     assert(vm_state.reu_ram != NULL);
 
-    // Initialize bridge with mock Mozilla shared library
-    bool init_success = tsfi_mozilla_wmq_bridge_init("./libmozilla_mock.so");
+    // Initialize bridge with interop Mozilla shared library
+    bool init_success = tsfi_mozilla_wmq_bridge_init("./libmozilla_interop.so");
     if (!init_success) {
-        fprintf(stderr, "Failed to initialize bridge with ./libmozilla_mock.so\n");
+        fprintf(stderr, "Failed to initialize bridge with ./libmozilla_interop.so\n");
         free(vm_state.reu_ram);
         return 1;
     }

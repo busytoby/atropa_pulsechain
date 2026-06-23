@@ -17,23 +17,8 @@ extern "C" {
 typedef struct {
     int state;
     int socket_fd;
-    uint8_t read_buffer[8192];
-    size_t read_len;
-    size_t read_pos;
-    
-    // Cryptographic State
-    uint8_t client_random[32];
-    uint8_t server_random[32];
-    uint8_t session_hash[48]; // SHA-384
-    
-    uint8_t client_write_key[32]; // AES-256
-    uint8_t client_write_iv[12];  // GCM IV
-    uint8_t server_write_key[32]; // AES-256
-    uint8_t server_write_iv[12];  // GCM IV
-    
-    uint64_t client_sequence_num;
-    uint64_t server_sequence_num;
-
+    void *ssl_ctx; // OpenSSL SSL_CTX*
+    void *ssl;     // OpenSSL SSL*
 } TsfiTlsContext;
 
 // Initialize the TLS context around a connected raw POSIX TCP socket

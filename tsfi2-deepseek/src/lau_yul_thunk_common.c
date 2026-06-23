@@ -355,7 +355,10 @@ uint64_t parse_hex64(const char *hex) {
 }
 
 void persist_reconciliation_data(void) {
-    FILE *fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+    FILE *fp = fopen("evm_storage.json", "w");
+    if (!fp) {
+        fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+    }
     if (!fp) return;
     fprintf(fp, "{\n  \"storage\": [\n");
     for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
@@ -380,32 +383,32 @@ uint64_t get_contract_address(const char *name) {
             return g_cached_contracts[i].virtual_address;
         }
     }
-    // Fallback constants if not loaded/registered yet
+    // Fallback constants mapped to match standard initcode deployment
     if (strcasecmp(name, "HECKE") == 0) return parse_hex64("0x24F0154C1dCe548aDf15da2098fDd8B8a3b8151D");
-    if (strcasecmp(name, "VMREQ") == 0) return 0x10;
-    if (strcasecmp(name, "SHAFactory") == 0) return 0x11;
-    if (strcasecmp(name, "SHIOFactory") == 0) return 0x12;
-    if (strcasecmp(name, "yi") == 0) return parse_hex64("0x83a918056aB9316837Dc48a216119D679D561d91");
-    if (strcasecmp(name, "zheng") == 0) return 0x14;
-    if (strcasecmp(name, "zhou") == 0) return parse_hex64("0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11");
-    if (strcasecmp(name, "yau") == 0) return parse_hex64("0xb9A44De20f26a027e467CB6c2F98766F01904189");
-    if (strcasecmp(name, "yang") == 0) return parse_hex64("0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61");
-    if (strcasecmp(name, "siu") == 0) return parse_hex64("0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10");
-    if (strcasecmp(name, "void") == 0) return parse_hex64("0xCd19062a6d3019b02A676D72e51D8de7A398dE25");
-    if (strcasecmp(name, "laufactory") == 0) return parse_hex64("0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
-    if (strcasecmp(name, "strings") == 0) return parse_hex64("0x8dAF17A20c9DBA35f005b6324F493785D2397191");
-    if (strcasecmp(name, "libattribute") == 0) return parse_hex64("0x8dAF17A20c9DBA35f005b6324F493785D2397192");
-    if (strcasecmp(name, "corereactions") == 0) return parse_hex64("0x8dAF17A20c9DBA35f005b6324F493785D2397193");
-    if (strcasecmp(name, "cho") == 0) return 0x1b;
-    if (strcasecmp(name, "map") == 0) return 0x1c;
-    if (strcasecmp(name, "qi") == 0) return parse_hex64("0xb7ca7ea9b810d9ee");
-    if (strcasecmp(name, "mai") == 0) return parse_hex64("0xf69e9f943674027Cedf05564A8D5A01041d07c62");
-    if (strcasecmp(name, "xia") == 0) return parse_hex64("0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89");
-    if (strcasecmp(name, "xie") == 0) return parse_hex64("0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD");
-    if (strcasecmp(name, "chan") == 0) return parse_hex64("0x7674516ad438dd67A057fBc1119168d9A7d2a9B1");
-    if (strcasecmp(name, "sei") == 0) return parse_hex64("0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d");
-    if (strcasecmp(name, "choa") == 0) return parse_hex64("0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D");
-    if (strcasecmp(name, "cheon") == 0) return parse_hex64("0x840CBD20A70774BECAc4e932Fff6fb1f5417997F");
+    if (strcasecmp(name, "VMREQ") == 0) return parse_hex64("0x9766a8d4fCe69F8b5544b99C13D1dA85bBBE762D");
+    if (strcasecmp(name, "SHAFactory") == 0) return parse_hex64("0xA865c31c6333CA7C1CBBF87F3D854D420797994F");
+    if (strcasecmp(name, "SHIOFactory") == 0) return parse_hex64("0x737Df6B1d40A5f52fC5203a4E245A23725731769");
+    if (strcasecmp(name, "yi") == 0) return parse_hex64("0xff2A5Cc6f6c07d71933fccD5a09b893CD44F4Db7");
+    if (strcasecmp(name, "zheng") == 0) return parse_hex64("0x707389622103f0C5fC438FFd217f90663fFbdF12");
+    if (strcasecmp(name, "zhou") == 0) return parse_hex64("0x8dD417c945DA2a6E282237bbB0D1A55c2b95b467");
+    if (strcasecmp(name, "yau") == 0) return parse_hex64("0x40055f13377cfe5017e8F34167D0e404e050f06E");
+    if (strcasecmp(name, "yang") == 0) return parse_hex64("0xe6B7baF9A4e09bb1D956Bb1b4af9Bd13539DC24f");
+    if (strcasecmp(name, "siu") == 0) return parse_hex64("0xab55A1628d908e9Ae55fdf5dd2cb0dDC043920Fc");
+    if (strcasecmp(name, "void") == 0) return parse_hex64("0xf65a7EF723B8a91755080bd8C1c70779dB77bBb5");
+    if (strcasecmp(name, "laufactory") == 0) return parse_hex64("0x4D05Cc16B140347fb67c427456791F67df6CAb39");
+    if (strcasecmp(name, "strings") == 0) return parse_hex64("0xf7a3B55128ebA848D4DdeAB28DfcebfE6D1FDA10");
+    if (strcasecmp(name, "libattribute") == 0) return parse_hex64("0xa30a7a10ED34722453c30da1083407a790f1D874");
+    if (strcasecmp(name, "corereactions") == 0) return parse_hex64("0xFEC485Ad87db95099110C47FCCc8eB691A6FCf7c");
+    if (strcasecmp(name, "cho") == 0) return parse_hex64("0xB98E414af1fC02d6B5a6bF1CD08B844864B87d4f");
+    if (strcasecmp(name, "map") == 0) return parse_hex64("0x60C7215A1C325Fc5fc91cd301DD94642142Baf80");
+    if (strcasecmp(name, "qi") == 0) return parse_hex64("0x91F3ca10050862eccdbb7b265cc6fB49EeDD802C");
+    if (strcasecmp(name, "mai") == 0) return parse_hex64("0x2cc7e492a98cb211287A1506A55245dBa200E52a");
+    if (strcasecmp(name, "xia") == 0) return parse_hex64("0x6f7D105670842d39ACc32B5AeF0C5238AA0B9F3D");
+    if (strcasecmp(name, "xie") == 0) return parse_hex64("0xfa242E3A4FBAa0773559560B49bDeA35C975cBaf");
+    if (strcasecmp(name, "chan") == 0) return parse_hex64("0xCb39Cc1afd2CEe8E8C82F9A330aBF37F4933d850");
+    if (strcasecmp(name, "sei") == 0) return parse_hex64("0x8f4798DfDA3BC507954d768Bc33f3c456A407F30");
+    if (strcasecmp(name, "choa") == 0) return parse_hex64("0xd8949704cc5acAf1600D908a2607AbeB668fAc6b");
+    if (strcasecmp(name, "cheon") == 0) return parse_hex64("0xcF54035Be7F6eC2664FEeaAcfbA4470BbB23E0A0");
     return 0;
 }
 

@@ -5,7 +5,7 @@ CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc 
            -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIC \
            -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
 CXXFLAGS = -Wall -Wextra -Wno-error -std=c++17 -O3 -g -march=native -fopenmp -fPIC -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
-LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound -fopenmp
+LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound -fopenmp -lssl -lcrypto
 
 OBJ_DIR  = obj
 BIN_DIR  = bin
@@ -473,8 +473,33 @@ $(BIN_DIR):
 tests/node_interop.o: tests/node_interop.cpp tests/node_interop.h
 	$(CXX) $(CXXFLAGS) -I/usr/include/node -c -o $@ $<
 
-tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/node_interop.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
-	$(CC) $(CFLAGS) -I/usr/include/node -o $@ $^ $(LDFLAGS) -lnode
+tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
+
+tests/rooted_vulkan_presenter: tests/rooted_vulkan_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
+
+tests/test_fetch_launcher: tests/test_fetch_launcher.cpp tests/node_interop.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CXX) $(CXXFLAGS) -I/usr/include/node -o $@ $^ $(LDFLAGS) -lnode
+
+tests/capture_states: tests/capture_states.c src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_phase6: tests/test_phase6.cpp tests/node_interop.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CXX) $(CXXFLAGS) -I/usr/include/node -o $@ $^ $(LDFLAGS) -lnode
+
+$(OBJ_DIR)/tsfi_media_decode.o: src/tsfi_media_decode.c inc/tsfi_media_decode.h | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -c -o $@ $<
+
+tests/test_media_stream: tests/test_media_stream.cpp $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CXX) $(CXXFLAGS) -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
+
+tests/test_layout_paint: tests/test_layout_paint.c src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/validate_youtube_layout: tests/validate_youtube_layout.c $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
+
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) tsfi2 src/firmware/*_rtl.*

@@ -92,6 +92,8 @@ tmp/
 # Ignore compiled executables in tests/ (exclude source code, scripts, and docs)
 tsfi2-deepseek/tests/*
 !tsfi2-deepseek/tests/*.c
+!tsfi2-deepseek/tests/*.cpp
+!tsfi2-deepseek/tests/*.js
 !tsfi2-deepseek/tests/*.h
 !tsfi2-deepseek/tests/*.py
 !tsfi2-deepseek/tests/*.sh

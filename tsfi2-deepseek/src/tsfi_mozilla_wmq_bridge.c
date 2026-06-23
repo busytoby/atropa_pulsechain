@@ -36,7 +36,10 @@ bool tsfi_mozilla_wmq_bridge_init(const char *so_path) {
 
     g_mozilla_push_event_fn = (PFN_mozilla_push_event)dlsym(g_mozilla_so_handle, "mozilla_web_render_push_event");
     if (!g_mozilla_push_event_fn) {
-        fprintf(stderr, "[Auncient Bridge ERR] Symbol mozilla_web_render_push_event not found in shared library\n");
+        g_mozilla_push_event_fn = (PFN_mozilla_push_event)dlsym(RTLD_DEFAULT, "mozilla_web_render_push_event");
+    }
+    if (!g_mozilla_push_event_fn) {
+        fprintf(stderr, "[Auncient Bridge ERR] Symbol mozilla_web_render_push_event not found in shared library or main process\n");
         dlclose(g_mozilla_so_handle);
         g_mozilla_so_handle = NULL;
         return false;
@@ -95,6 +98,13 @@ void tsfi_mozilla_wmq_bridge_tick(TsfiZmmVmState *vm_state) {
             packet.type = 2;
             packet.param1 = vm_state->reu_ram[0xF002];      // Full 8-bit keycode mapped in REU RAM
             packet.param2 = (command_byte & 0x20) ? 1 : 0; // State (Down/Up)
+            break;
+
+        case 3: // MOUSE_SCROLL
+            packet.type = 3;                                // Scroll type
+            packet.param1 = (command_byte & 0x20) ? 1 : 0; // Axis (0 = vertical, 1 = horizontal)
+            packet.param2 = (command_byte & 0x10) ? -((int32_t)(command_byte & 0x0F)) : (int32_t)(command_byte & 0x0F); // Delta value
+            packet.param3 = 0;
             break;
 
         default:

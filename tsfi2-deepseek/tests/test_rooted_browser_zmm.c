@@ -78,7 +78,7 @@ bool decode_jpeg_to_fb(const uint8_t *jpeg_buf, size_t jpeg_sz, uint32_t *scanou
     return true;
 }
 
-// Mock C-Embedding interface for Node.js
+// Interop C-Embedding interface for Node.js
 void node_embed_init(NodeEmbedContext *ctx, uint16_t w, uint16_t h) {
     ctx->viewport_w = w;
     ctx->viewport_h = h;

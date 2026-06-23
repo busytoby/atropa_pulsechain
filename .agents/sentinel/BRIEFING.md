@@ -1,36 +1,38 @@
-# BRIEFING — 2026-06-14T16:28:38Z
+# BRIEFING — 2026-06-23T18:04:50Z
 
 ## Mission
-Coordinate the development, testing, and deployment of the automated Git post-commit hook pipeline script.
+Coordinate the development of an interactive hypervisor dashboard comparing native ZMM VM holdings and Anvil EVM holdings for deployed ERC20 tokens and Yul systems.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: /home/mariarahel/src/tsfi2/atropa_pulsechain/.agents/sentinel
-- Orchestrator: 84bf8997-d9d8-4d49-acdc-d27b8cac2ae4
-- Victory Auditor: 75e054b6-7e87-491e-a446-7f0c469c3780
+- Orchestrator: 6c92fcc9-2ceb-4c86-8a9e-3533c4353f19
+- Victory Auditor: TBD
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
+- Terminology Constraints: Auncient Spelling ("Auncient")
+- Git Commit Safeguards: No Binaries in Git
+- Communication Constraints: No Prattling
+- Architectural Capability Constraints: No Puppeteer or Browser Automation
+- Dual-Path Input Automation Policies: Auncient Hardware Routing, SCSI/ZMM Event Verification
+- Window Registry & Process Tracking: Track All Windows, Process Cleanup Safeguards
+- Mocking vs. Interoperability Constraints: No Mocking Permitted, dynamic components built under interop
+- Source File Size Constraints: 68KB File Limit
 
 ## User Context
-- **Last user request**: Implement an automated Git post-commit hook pipeline script that compiles the project, executes the performance profiling suite, updates the benchmark dashboard report, and prints a terminal diagnostic metrics summary after every commit.
+- **Last user request**: An interactive hypervisor dashboard comparing native ZMM VM holdings and Anvil EVM holdings for deployed ERC20 tokens and Yul systems, showing full balances and listing deployed contracts without any mock placeholders.
 - **Pending clarifications**: none
-- **Delivered results**:
-  - Git post-commit hook pipeline script installed and verified.
-  - Python report generator and ASCII terminal summary table fully functional.
-  - Test suite with 49 E2E test cases created.
-  - Victory audit complete and VERDICT: VICTORY CONFIRMED.
+- **Delivered results**: none
 
 ## Project Status
-- **Phase**: complete
+- **Phase**: in progress
 
 ## Victory Audit Status
-- **Triggered**: yes
-- **Verdict**: VICTORY CONFIRMED
+- **Triggered**: no
+- **Verdict**: pending
 - **Retry count**: 0
 
 ## Artifact Index
 - /home/mariarahel/src/tsfi2/atropa_pulsechain/.agents/ORIGINAL_REQUEST.md — Verbatim user request recording
-- /home/mariarahel/src/tsfi2/atropa_pulsechain/.git/hooks/post-commit — Installed post-commit Git hook script
-- /home/mariarahel/src/tsfi2/atropa_pulsechain/tests/e2e/run_e2e_tests.py — Python E2E verification test suite

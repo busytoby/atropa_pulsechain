@@ -8,6 +8,8 @@
 
 _Thread_local YulEvmContext g_yul_evm_context;
 
+static uint64_t g_dyn_addr_counter = 0x9000000000000000ULL;
+
 static pthread_mutex_t g_thunk_execute_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
@@ -68,6 +70,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
     (void)name;
     uint64_t pc = 0;
     ctx->reverted = false;
+    ctx->stack_ptr = 0;
     sync_raw_frame_to_yul_memory(ctx->memory);
 
     while (pc < size) {
@@ -330,11 +333,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 break;
             }
             case 0x32: { // ORIGIN
-                u256_t r = {{0}};
-                r.d[0] = 0x827279cffFb92266ULL;
-                r.d[1] = 0x1aad88F6F4ce6aB8ULL;
-                r.d[2] = 0xf39Fd6e5ULL;
-                r.d[3] = 0;
+                u256_t r = {{ 0x4cc, 0, 0, 0 }};
                 if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at ORIGIN\n"); return false; }
                 ctx->stack[ctx->stack_ptr++] = r;
                 break;
@@ -373,6 +372,33 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                     uint64_t dest_idx = dest_offset.d[0] + i;
                     if (dest_idx < 524288) {
                         ctx->memory[dest_idx] = (src_idx < ctx->calldatasize) ? ctx->calldata[src_idx] : 0;
+                    }
+                }
+                break;
+            }
+            case 0x38: { // CODESIZE
+                u256_t r = {{size, 0, 0, 0}};
+                if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at CODESIZE\n"); return false; }
+                ctx->stack[ctx->stack_ptr++] = r;
+                break;
+            }
+            case 0x39: { // CODECOPY
+                if (ctx->stack_ptr < 3) { printf("[DEBUG_EVM] Stack underflow at CODECOPY\n"); return false; }
+                u256_t destOffset = ctx->stack[--ctx->stack_ptr];
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t len = ctx->stack[--ctx->stack_ptr];
+                
+                uint64_t doff = destOffset.d[0];
+                uint64_t src_off = offset.d[0];
+                uint64_t l = len.d[0];
+                
+                for (uint64_t i = 0; i < l; i++) {
+                    uint8_t val = 0;
+                    if (src_off + i < size) {
+                        val = bytecode[src_off + i];
+                    }
+                    if (doff + i < 524288) {
+                        ctx->memory[doff + i] = val;
                     }
                 }
                 break;
@@ -561,6 +587,166 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 ctx->stack[ctx->stack_ptr++] = success_out;
                 break;
             }
+            case 0x3b: { // EXTCODESIZE
+                if (ctx->stack_ptr < 1) { printf("[DEBUG_EVM] Stack underflow at EXTCODESIZE\n"); return false; }
+                u256_t addr_val = ctx->stack[--ctx->stack_ptr];
+                uint64_t search_addr = addr_val.d[0];
+                size_t code_sz = 0;
+                for (int i = 0; i < g_cached_contracts_count; i++) {
+                    if (g_cached_contracts[i].virtual_address == search_addr) {
+                        code_sz = g_cached_contracts[i].size;
+                        break;
+                    }
+                }
+                u256_t sz_val = {{ code_sz, 0, 0, 0 }};
+                ctx->stack[ctx->stack_ptr++] = sz_val;
+                break;
+            }
+            case 0x5a: { // GAS
+                u256_t gas_val = {{ 1000000000ULL, 0, 0, 0 }};
+                if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at GAS\n"); return false; }
+                ctx->stack[ctx->stack_ptr++] = gas_val;
+                break;
+            }
+            case 0xf0: { // CREATE
+                if (ctx->stack_ptr < 3) { printf("[DEBUG_EVM] Stack underflow at CREATE\n"); return false; }
+                u256_t value = ctx->stack[--ctx->stack_ptr];
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t length = ctx->stack[--ctx->stack_ptr];
+                (void)value;
+
+                uint8_t *initcode = NULL;
+                size_t initcode_len = length.d[0];
+                if (initcode_len > 0) {
+                    initcode = malloc(initcode_len);
+                    if (initcode) {
+                        for (size_t i = 0; i < initcode_len; i++) {
+                            uint64_t src = offset.d[0] + i;
+                            initcode[i] = (src < 524288) ? ctx->memory[src] : 0;
+                        }
+                    }
+                }
+
+                uint64_t new_address = ++g_dyn_addr_counter;
+
+                u256_t ret_addr = {{0}};
+                if (initcode && initcode_len > 0) {
+                    YulEvmContext *nested_ctx = calloc(1, sizeof(YulEvmContext));
+                    if (nested_ctx) {
+                        nested_ctx->self_address = new_address;
+                        nested_ctx->caller_address.d[0] = ctx->self_address;
+                        nested_ctx->storage_count = ctx->storage_count;
+                        memcpy(nested_ctx->storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
+                        memcpy(nested_ctx->storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+
+                        bool success = run_yul_bytecode(nested_ctx, initcode, initcode_len, "dynamic");
+                        if (success && !nested_ctx->reverted && nested_ctx->return_size > 0) {
+                            if (g_cached_contracts_count < MAX_CACHED_CONTRACTS) {
+                                CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
+                                snprintf(c->name, sizeof(c->name), "dynamic_%lx", new_address);
+                                c->bytecode = malloc(nested_ctx->return_size);
+                                memcpy(c->bytecode, nested_ctx->return_data, nested_ctx->return_size);
+                                c->size = nested_ctx->return_size;
+                                c->virtual_address = new_address;
+                                snprintf(c->path, sizeof(c->path), "dynamic");
+                                ret_addr.d[0] = new_address;
+
+                                for (int i = 0; i < nested_ctx->storage_count; i++) {
+                                    u256_t raw_key = nested_ctx->storage_keys[i];
+                                    bool found = false;
+                                    for (int j = 0; j < ctx->storage_count; j++) {
+                                        if (u256_eq(ctx->storage_keys[j], raw_key)) {
+                                            ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found && ctx->storage_count < 4096) {
+                                        ctx->storage_keys[ctx->storage_count] = raw_key;
+                                        ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                                        ctx->storage_count++;
+                                    }
+                                }
+                            }
+                        }
+                        free(nested_ctx);
+                    }
+                    free(initcode);
+                }
+
+                ctx->stack[ctx->stack_ptr++] = ret_addr;
+                break;
+            }
+            case 0xf5: { // CREATE2
+                if (ctx->stack_ptr < 4) { printf("[DEBUG_EVM] Stack underflow at CREATE2\n"); return false; }
+                u256_t value = ctx->stack[--ctx->stack_ptr];
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t length = ctx->stack[--ctx->stack_ptr];
+                u256_t salt = ctx->stack[--ctx->stack_ptr];
+                (void)value; (void)salt;
+
+                uint8_t *initcode = NULL;
+                size_t initcode_len = length.d[0];
+                if (initcode_len > 0) {
+                    initcode = malloc(initcode_len);
+                    if (initcode) {
+                        for (size_t i = 0; i < initcode_len; i++) {
+                            uint64_t src = offset.d[0] + i;
+                            initcode[i] = (src < 524288) ? ctx->memory[src] : 0;
+                        }
+                    }
+                }
+
+                uint64_t new_address = ++g_dyn_addr_counter;
+
+                u256_t ret_addr = {{0}};
+                if (initcode && initcode_len > 0) {
+                    YulEvmContext *nested_ctx = calloc(1, sizeof(YulEvmContext));
+                    if (nested_ctx) {
+                        nested_ctx->self_address = new_address;
+                        nested_ctx->caller_address.d[0] = ctx->self_address;
+                        nested_ctx->storage_count = ctx->storage_count;
+                        memcpy(nested_ctx->storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
+                        memcpy(nested_ctx->storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+
+                        bool success = run_yul_bytecode(nested_ctx, initcode, initcode_len, "dynamic");
+                        if (success && !nested_ctx->reverted && nested_ctx->return_size > 0) {
+                            if (g_cached_contracts_count < MAX_CACHED_CONTRACTS) {
+                                CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
+                                snprintf(c->name, sizeof(c->name), "dynamic_%lx", new_address);
+                                c->bytecode = malloc(nested_ctx->return_size);
+                                memcpy(c->bytecode, nested_ctx->return_data, nested_ctx->return_size);
+                                c->size = nested_ctx->return_size;
+                                c->virtual_address = new_address;
+                                snprintf(c->path, sizeof(c->path), "dynamic");
+                                ret_addr.d[0] = new_address;
+
+                                for (int i = 0; i < nested_ctx->storage_count; i++) {
+                                    u256_t raw_key = nested_ctx->storage_keys[i];
+                                    bool found = false;
+                                    for (int j = 0; j < ctx->storage_count; j++) {
+                                        if (u256_eq(ctx->storage_keys[j], raw_key)) {
+                                            ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found && ctx->storage_count < 4096) {
+                                        ctx->storage_keys[ctx->storage_count] = raw_key;
+                                        ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                                        ctx->storage_count++;
+                                    }
+                                }
+                            }
+                        }
+                        free(nested_ctx);
+                    }
+                    free(initcode);
+                }
+
+                ctx->stack[ctx->stack_ptr++] = ret_addr;
+                break;
+            }
             default:
                 printf("[DEBUG_EVM] Unsupported opcode: 0x%02X at PC %zu\n", op, pc);
                 return false;
@@ -615,6 +801,10 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     g_yul_evm_context.calldatasize = size_to_copy;
 
     g_yul_evm_context.self_address = c->virtual_address;
+    g_yul_evm_context.caller_address.d[0] = 0x4cc;
+    g_yul_evm_context.caller_address.d[1] = 0;
+    g_yul_evm_context.caller_address.d[2] = 0;
+    g_yul_evm_context.caller_address.d[3] = 0;
     bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size, name);
 
     if (success) {
@@ -681,7 +871,9 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
             printf("[EVM_INTERPRETER] Intercepted WinchesterMQ contract call at address 0x%lx with selector 0x%08x\n", target_addr, selector);
             if (argsSize > 0 && argsOffset < 524288) {
                 bool is_io = false;
-                if (argsSize >= 36 && selector == 0xccb077a0) {
+                if (selector == 0x98d400c0) {
+                    is_io = true;
+                } else if (argsSize >= 36 && selector == 0xccb077a0) {
                     char cmd_str[33] = {0};
                     size_t cmd_len = argsSize - 4;
                     if (cmd_len > 32) cmd_len = 32;
@@ -757,7 +949,7 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
     }
 
     if (selector == 0x6fb7329c) { // Xiao()
-        u256_t mock_ret = {{ 0x11, 0, 0, 0 }};
+        u256_t mock_ret = {{ get_contract_address("vmreq"), 0, 0, 0 }};
         if (retOffset < 524288 && retSize > 0) {
             uint8_t temp_buf[32] = {0};
             write_u256_be(temp_buf, mock_ret);
@@ -777,24 +969,27 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
     }
 
     if (selector == 0x604a6fa9) { // Random()
-        uint64_t rand_val = 50000 + (rand() % 50000);
-        u256_t mock_ret = {{ rand_val, 0, 0, 0 }};
-        if (retOffset < 524288 && retSize > 0) {
-            uint8_t temp_buf[32] = {0};
-            write_u256_be(temp_buf, mock_ret);
-            size_t src_offset = (retSize < 32) ? (32 - retSize) : 0;
-            size_t copy_len = (retSize < 32) ? retSize : 32;
-            for (size_t i = 0; i < copy_len; i++) {
-                uint64_t dest = retOffset + i;
-                if (dest < 524288) ctx->memory[dest] = temp_buf[src_offset + i];
+        uint64_t vmreq_addr = get_contract_address("vmreq");
+        if (target_addr != vmreq_addr) {
+            uint64_t rand_val = 50000 + (rand() % 50000);
+            u256_t mock_ret = {{ rand_val, 0, 0, 0 }};
+            if (retOffset < 524288 && retSize > 0) {
+                uint8_t temp_buf[32] = {0};
+                write_u256_be(temp_buf, mock_ret);
+                size_t src_offset = (retSize < 32) ? (32 - retSize) : 0;
+                size_t copy_len = (retSize < 32) ? retSize : 32;
+                for (size_t i = 0; i < copy_len; i++) {
+                    uint64_t dest = retOffset + i;
+                    if (dest < 524288) ctx->memory[dest] = temp_buf[src_offset + i];
+                }
+                ctx->return_size = retSize;
+                memset(ctx->return_data, 0, sizeof(ctx->return_data));
+                size_t to_copy = retSize > 524288 ? 524288 : retSize;
+                memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
             }
-            ctx->return_size = retSize;
-            memset(ctx->return_data, 0, sizeof(ctx->return_data));
-            size_t to_copy = retSize > 524288 ? 524288 : retSize;
-            memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
+            success_out->d[0] = 1;
+            return true;
         }
-        success_out->d[0] = 1;
-        return true;
     }
 
     if (selector == 0xd9270a5a) { // GetLibraryAddress(string)
@@ -847,6 +1042,7 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
         u256_t exp = read_u256_be(temp_calldata + 128);
         u256_t mod = read_u256_be(temp_calldata + 160);
         u256_t res = u256_mod_pow(base, exp, mod);
+        printf("[DEBUG_MATH] BigModExp: base=%lu exp=%lu mod=%lu res=%lu\n", base.d[0], exp.d[0], mod.d[0], res.d[0]);
 
         uint8_t res_bytes[32];
         write_u256_be(res_bytes, res);
@@ -860,6 +1056,7 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
         }
         ctx->return_size = 32;
         memcpy(ctx->return_data, res_bytes, 32);
+        success_out->d[0] = 1;
         return true;
     }
 
@@ -935,29 +1132,46 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
                 }
             }
             
-            ctx->storage_count = nested_ctx->storage_count;
-            memcpy(ctx->storage_keys, nested_ctx->storage_keys, sizeof(ctx->storage_keys));
-            memcpy(ctx->storage_vals, nested_ctx->storage_vals, sizeof(ctx->storage_vals));
+            for (int i = 0; i < nested_ctx->storage_count; i++) {
+                u256_t raw_key = nested_ctx->storage_keys[i];
+                bool found = false;
+                for (int j = 0; j < ctx->storage_count; j++) {
+                    if (u256_eq(ctx->storage_keys[j], raw_key)) {
+                        ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && ctx->storage_count < 4096) {
+                    ctx->storage_keys[ctx->storage_count] = raw_key;
+                    ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                    ctx->storage_count++;
+                }
+            }
             
             ctx->return_size = nested_ctx->return_size;
             if (ctx->return_size > 524288) ctx->return_size = 524288;
             memcpy(ctx->return_data, nested_ctx->return_data, ctx->return_size);
         } else {
-            success_out->d[0] = 1;
-            u256_t mock_ret = {{ 0x1000, 0, 0, 0 }};
-            if (retOffset < 524288 && retSize > 0) {
-                uint8_t temp_buf[32] = {0};
-                write_u256_be(temp_buf, mock_ret);
-                size_t src_offset = (retSize < 32) ? (32 - retSize) : 0;
-                size_t copy_len = (retSize < 32) ? retSize : 32;
-                for (size_t i = 0; i < copy_len; i++) {
-                    uint64_t dest = retOffset + i;
-                    if (dest < 524288) ctx->memory[dest] = temp_buf[src_offset + i];
+            printf("[DEBUG_EVM] Nested call to %s reverted/failed. run_ok=%d reverted=%d return_size=%zu\n", target->name, run_ok, nested_ctx->reverted, nested_ctx->return_size);
+            if (nested_ctx->return_size > 0) {
+                printf("  Revert data hex: ");
+                for (size_t i = 0; i < nested_ctx->return_size && i < 128; i++) {
+                    printf("%02x", nested_ctx->return_data[i]);
                 }
-                ctx->return_size = retSize;
-                memset(ctx->return_data, 0, sizeof(ctx->return_data));
-                size_t to_copy = retSize > 524288 ? 524288 : retSize;
-                memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
+                printf("\n");
+            }
+            success_out->d[0] = 0;
+            if (retOffset < 524288 && retSize > 0 && nested_ctx->return_size > 0) {
+                size_t copy_size = retSize < nested_ctx->return_size ? retSize : nested_ctx->return_size;
+                for (size_t i = 0; i < copy_size; i++) {
+                    uint64_t dest = retOffset + i;
+                    if (dest < 524288) ctx->memory[dest] = nested_ctx->return_data[i];
+                }
+                ctx->return_size = nested_ctx->return_size;
+                memcpy(ctx->return_data, nested_ctx->return_data, ctx->return_size);
+            } else {
+                ctx->return_size = 0;
             }
         }
         free(nested_ctx);

@@ -1634,13 +1634,13 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
 static float calculate_floor_shadow(float cx, float cy, float cx_no_jitter, float cy_no_jitter, float lx, float ly, float lz, SphereGeometry *body) {
     float bg_shadow = 1.0f;
     if (cx_no_jitter >= -1.2f && cx_no_jitter <= 1.2f &&
-        cy_no_jitter >= -0.05f && cy_no_jitter <= 0.14f) {
+        cy_no_jitter >= -0.12f && cy_no_jitter <= 0.18f) {
         bg_shadow = calculate_shadow(cx, cy, -0.4f, lx, ly, lz, body, -1);
         float fade = 1.0f;
-        if (cy_no_jitter < -0.0432f) {
-            fade = 1.0f - ((cy_no_jitter - -0.0432f) / (-0.05f - -0.0432f));
-        } else if (cy_no_jitter > 0.1296f) {
-            fade = 1.0f - ((cy_no_jitter - 0.1296f) / (0.14f - 0.1296f));
+        if (cy_no_jitter < -0.05f) {
+            fade = 1.0f - ((cy_no_jitter - -0.05f) / (-0.12f - -0.05f));
+        } else if (cy_no_jitter > 0.12f) {
+            fade = 1.0f - ((cy_no_jitter - 0.12f) / (0.18f - 0.12f));
         }
         if (fade < 0.0f) fade = 0.0f;
         if (fade > 1.0f) fade = 1.0f;
@@ -4237,9 +4237,9 @@ static void run_ui_self_tests(TsfiAb4hMat *canvas) {
     // 14. Test Floor Shadow Bounding Box Constraints
     printf("[Test] Testing Floor Shadow Bounds...\n");
     render_frame(canvas, 0);
-    int sx_pix = (int)((0.0f + 1.2f) / 2.4f * 800.0f);
+    int sx_pix = (int)((0.5f + 1.2f) / 2.4f * 800.0f);
     int sy_in_pix = (int)((0.0f + 1.08f) / 2.16f * 720.0f);
-    int sy_out_pix = (int)((-0.08f + 1.08f) / 2.16f * 720.0f);
+    int sy_out_pix = (int)((-0.15f + 1.08f) / 2.16f * 720.0f);
     Ab4hPixel shadow_in = canvas->data[sy_in_pix * canvas->cols + sx_pix];
     Ab4hPixel shadow_out = canvas->data[sy_out_pix * canvas->cols + sx_pix];
     float shadow_in_r = half_to_float(shadow_in.r);
@@ -4249,7 +4249,7 @@ static void run_ui_self_tests(TsfiAb4hMat *canvas) {
     float shadow_out_g = half_to_float(shadow_out.g);
     float shadow_out_b = half_to_float(shadow_out.b);
     printf("  -> Inside shadow (cy=0.0): R=%.3f, G=%.3f, B=%.3f\n", shadow_in_r, shadow_in_g, shadow_in_b);
-    printf("  -> Outside shadow (cy=-0.08): R=%.3f, G=%.3f, B=%.3f\n", shadow_out_r, shadow_out_g, shadow_out_b);
+    printf("  -> Outside shadow (cy=-0.15): R=%.3f, G=%.3f, B=%.3f\n", shadow_out_r, shadow_out_g, shadow_out_b);
     assert(shadow_out_b > shadow_in_b && "Shadow should be bounded and faded outside normalized Y-bounds");
 
     force_procedural_rendering = false;

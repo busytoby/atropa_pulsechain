@@ -20,3 +20,7 @@
 * **Track All Windows:** Always keep track of exactly what headed and headless windows are opened, why they are opened, and ensure there are no lingering/orphaned browser or presenter windows. Update the window registry when window configurations change.
 * **Process Cleanup Safeguards:** Never use broad kill commands like `pkill -f "chrome"` or `killall chrome`. Only target processes by tracking PIDs of spawned children to avoid terminating the user's work environment.
 
+## 7. Mocking vs. Interoperability Constraints
+* **No Mocking Permitted:** The implementation of mock components, functions, or libraries is strictly forbidden. Always implement full, thread-safe dynamic interfaces and coordinate registries labeled as **interop** (e.g. `libmozilla_interop.c`). Mocks restrict testing scalability and must not be created. Dynamic components built under **interop** can and should be extended as integration requirements evolve.
+## 8. Source File Size Constraints
+* **68KB File Limit:** Ensure all source files (`.c`, `.cpp`, `.h`, etc.) remain strictly under 68,000 bytes. Proactively split files into modular subcomponents as they approach this limit to preserve system design structure and modularity.

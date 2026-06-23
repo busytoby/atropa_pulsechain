@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <time.h>
 #include "tsfi_zmm_vm.h"
 #include "lau_memory.h"
 #include "tsfi_zmm_rpc.h"
@@ -22,20 +23,23 @@ typedef struct {
 } DysnomiaContract;
 
 static const DysnomiaContract g_dysnomia_system[] = {
-    { "vmreq",        "../solidity/dysnomia/00b_vmreq.sol",              "0x10" },
-    { "shafactory",   "../solidity/dysnomia/02c_shafactory.sol",          "0x11" },
-    { "shiofactory",  "../solidity/dysnomia/03c_shiofactory.sol",         "0x12" },
-    { "yi",           "../solidity/dysnomia/04_yi.sol",                  "0x83a918056aB9316837Dc48a216119D679D561d91" },
-    { "zheng",        "../solidity/dysnomia/05_zheng.sol",               "0x14" },
-    { "zhou",         "../solidity/dysnomia/06_zhou.sol",                "0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11" },
-    { "yau",          "../solidity/dysnomia/07_yau.sol",                 "0xb9A44De20f26a027e467CB6c2F98766F01904189" },
-    { "yang",         "../solidity/dysnomia/08_yang.sol",                "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61" },
-    { "siu",          "../solidity/dysnomia/09_siu.sol",                 "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10" },
-    { "void",         "../solidity/dysnomia/10_void.sol",                "0xCd19062a6d3019b02A676D72e51D8de7A398dE25" },
-    { "laufactory",   "../solidity/dysnomia/11c_laufactory.sol",         "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3" },
-    { "lau",          "../solidity/dysnomia/11_lau.sol",                  "0x25" },
-    { "cho",          "../solidity/dysnomia/domain/dan/01_cho.sol",      "0x1b" },
-    { "map",          "../solidity/dysnomia/domain/map.sol",             "0x1c" },
+    { "vmreq",        "../solidity/dysnomia/00b_vmreq.sol",              "0x9766a8d4fCe69F8b5544b99C13D1dA85bBBE762D" },
+    { "shafactory",   "../solidity/dysnomia/02c_shafactory.sol",          "0xA865c31c6333CA7C1CBBF87F3D854D420797994F" },
+    { "shiofactory",  "../solidity/dysnomia/03c_shiofactory.sol",         "0x737Df6B1d40A5f52fC5203a4E245A23725731769" },
+    { "yi",           "../solidity/dysnomia/04_yi.sol",                  "0xff2A5Cc6f6c07d71933fccD5a09b893CD44F4Db7" },
+    { "zheng",        "../solidity/dysnomia/05_zheng.sol",               "0x707389622103f0C5fC438FFd217f90663fFbdF12" },
+    { "zhou",         "../solidity/dysnomia/06_zhou.sol",                "0x8dD417c945DA2a6E282237bbB0D1A55c2b95b467" },
+    { "yau",          "../solidity/dysnomia/07_yau.sol",                 "0x40055f13377cfe5017e8F34167D0e404e050f06E" },
+    { "yang",         "../solidity/dysnomia/08_yang.sol",                "0xe6B7baF9A4e09bb1D956Bb1b4af9Bd13539DC24f" },
+    { "siu",          "../solidity/dysnomia/09_siu.sol",                 "0xab55A1628d908e9Ae55fdf5dd2cb0dDC043920Fc" },
+    { "void",         "../solidity/dysnomia/10_void.sol",                "0xf65a7EF723B8a91755080bd8C1c70779dB77bBb5" },
+    { "strings",      "../solidity/dysnomia/lib/stringlib.sol",          "0xf7a3B55128ebA848D4DdeAB28DfcebfE6D1FDA10" },
+    { "libattribute", "../solidity/dysnomia/lib/attribute.sol",          "0xa30a7a10ED34722453c30da1083407a790f1D874" },
+    { "corereactions","../solidity/dysnomia/lib/reactions_core.sol",      "0xFEC485Ad87db95099110C47FCCc8eB691A6FCf7c" },
+    { "laufactory",   "../solidity/dysnomia/11c_laufactory.sol",         "0x4D05Cc16B140347fb67c427456791F67df6CAb39" },
+    { "lau",          "../solidity/dysnomia/11_lau.sol",                  "0xBC366E9E93FcF0C741377Db15D938e9cAe96B18e" },
+    { "cho",          "../solidity/dysnomia/domain/dan/01_cho.sol",      "0xB98E414af1fC02d6B5a6bF1CD08B844864B87d4f" },
+    { "map",          "../solidity/dysnomia/domain/map.sol",             "0x60C7215A1C325Fc5fc91cd301DD94642142Baf80" },
     { "qing_2cc_0xe9f5ef3994fe76d83b0faab75062e86457ff96b9", "../solidity/dysnomia/domain/dan/03_qing.sol", "0xe9f5ef3994fe76d83b0faab75062e86457ff96b9" },
     { "qing_bar_0x38f7bbbb1eb74de568c907aa47f3de199c6cefd5", "../solidity/dysnomia/domain/dan/03_qing.sol", "0x38f7bbbb1eb74de568c907aa47f3de199c6cefd5" },
     { "qing_bullion_0x158f8e909d1eb4f7c165807899f1face6b76c12e", "../solidity/dysnomia/domain/dan/03_qing.sol", "0x158f8e909d1eb4f7c165807899f1face6b76c12e" },
@@ -389,14 +393,14 @@ static const DysnomiaContract g_dysnomia_system[] = {
     { "qing_qing_7392a8_0x7392a8c55f93749b4b4182da70e79141041c31e0", "../solidity/dysnomia/domain/dan/03_qing.sol", "0x7392a8c55f93749b4b4182da70e79141041c31e0" },
     { "qing_qing_04add0_0x04add092a0315cfb66ef2dbffa603d5fe55fc1d8", "../solidity/dysnomia/domain/dan/03_qing.sol", "0x04add092a0315cfb66ef2dbffa603d5fe55fc1d8" },
     { "qing_qing_50da29_0x50da29cffe5a124ee05287b4af95c80b417a1607", "../solidity/dysnomia/domain/dan/03_qing.sol", "0x50da29cffe5a124ee05287b4af95c80b417a1607" },
-    { "qi",           "../solidity/dysnomia/domain/soeng/01_qi.sol",     "0x1b8F9E19360D1dc94295D984b7Ca7eA9b810D9ee" },
-    { "mai",          "../solidity/dysnomia/domain/soeng/02_mai.sol",     "0xf69e9f943674027Cedf05564A8D5A01041d07c62" },
-    { "xia",          "../solidity/dysnomia/domain/soeng/03_xia.sol",     "0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89" },
-    { "xie",          "../solidity/dysnomia/domain/soeng/04_xie.sol",     "0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD" },
-    { "chan",         "../solidity/dysnomia/domain/sky/01_chan.sol",     "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1" },
-    { "sei",          "../solidity/dysnomia/domain/tang/01_sei.sol",     "0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d" },
-    { "choa",         "../solidity/dysnomia/domain/sky/02_choa.sol",     "0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D" },
-    { "cheon",        "../solidity/dysnomia/domain/tang/02_cheon.sol",    "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F" },
+    { "qi",           "../solidity/dysnomia/domain/soeng/01_qi.sol",     "0x91F3ca10050862eccdbb7b265cc6fB49EeDD802C" },
+    { "mai",          "../solidity/dysnomia/domain/soeng/02_mai.sol",     "0x2cc7e492a98cb211287A1506A55245dBa200E52a" },
+    { "xia",          "../solidity/dysnomia/domain/soeng/03_xia.sol",     "0x6f7D105670842d39ACc32B5AeF0C5238AA0B9F3D" },
+    { "xie",          "../solidity/dysnomia/domain/soeng/04_xie.sol",     "0xfa242E3A4FBAa0773559560B49bDeA35C975cBaf" },
+    { "chan",         "../solidity/dysnomia/domain/sky/01_chan.sol",     "0xCb39Cc1afd2CEe8E8C82F9A330aBF37F4933d850" },
+    { "sei",          "../solidity/dysnomia/domain/tang/01_sei.sol",     "0x8f4798DfDA3BC507954d768Bc33f3c456A407F30" },
+    { "choa",         "../solidity/dysnomia/domain/sky/02_choa.sol",     "0xd8949704cc5acAf1600D908a2607AbeB668fAc6b" },
+    { "cheon",        "../solidity/dysnomia/domain/tang/02_cheon.sol",    "0xcF54035Be7F6eC2664FEeaAcfbA4470BbB23E0A0" },
     { "cabsMarketMachine", "../solidity/dysnomia/domain/sky/CABSMarketMachine.sol", "0x74ef2B06A1D2035C33244A4a263FF00B84504865" },
     { "zmachine",       "../solidity/bin/zmachine.yul",             "5" },
     { "zmachineParser", "../solidity/bin/zmachineParser.yul",       "6" }
@@ -405,6 +409,7 @@ static const DysnomiaContract g_dysnomia_system[] = {
 int main() {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stdin, NULL, _IONBF, 0);
+    srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
     
     extern void tsfi_wire_firmware_init(void);
     tsfi_wire_firmware_init();
@@ -430,6 +435,11 @@ int main() {
             sscanf(addr_str + len - 16, "%lx", &addr64);
         } else {
             sscanf(addr_str, "%lx", &addr64);
+        }
+        if (strcmp(g_dysnomia_system[i].name, "shafactory") == 0) {
+            for (int r = 0; r < 5; r++) {
+                tsfi_zmm_vm_exec(&state, "YULEXEC \"vmreq\", \"604a6fa9\"");
+            }
         }
         snprintf(cmd, sizeof(cmd), "YULINIT \"%s\", \"%s\", %lu", 
                  g_dysnomia_system[i].name, 

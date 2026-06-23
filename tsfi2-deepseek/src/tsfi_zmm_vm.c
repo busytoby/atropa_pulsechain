@@ -162,6 +162,7 @@ void tsfi_zmm_vm_init(TsfiZmmVmState *state) {
     lau_yul_thunk_init("graphicsSystem", "../solidity/bin/graphicsSystem.yul", 0x2);
     lau_yul_thunk_init("musicMaker", "../solidity/bin/musicMaker.yul", 0x3);
     lau_yul_thunk_init("diskSystem", "../solidity/bin/diskSystem.yul", 0x4);
+    lau_yul_thunk_init("WinchesterMQ", "../solidity/bin/WinchesterMQ.yul", 512);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double yul_ms = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
     printf("[ZMM VM INIT] Yul compilers initialization completed (took %.3f ms)\n", yul_ms);
@@ -176,11 +177,25 @@ void tsfi_zmm_vm_init(TsfiZmmVmState *state) {
         state->manifest->active_mask = 0; 
     }
     
-    // Allocate 512KB Virtual REU
-    state->reu_size = 512 * 1024;
-    state->reu_ram = (uint8_t*)malloc(state->reu_size);
-    if (state->reu_ram) {
-        memset(state->reu_ram, 0, state->reu_size);
+    // Allocate 8MB Virtual REU in Shared Memory to bridge processes (presenter and browser) without sockets
+    state->reu_size = 8 * 1024 * 1024;
+    int shm_fd = shm_open("/tsfi_zmm_reu_ram", O_RDWR | O_CREAT, 0666);
+    if (shm_fd != -1) {
+        if (ftruncate(shm_fd, state->reu_size) == 0) {
+            state->reu_ram = (uint8_t*)mmap(NULL, state->reu_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+            if (state->reu_ram == MAP_FAILED) {
+                state->reu_ram = NULL;
+            }
+        }
+        close(shm_fd);
+    }
+    
+    // Fallback to malloc if shm_open/mmap failed
+    if (!state->reu_ram) {
+        state->reu_ram = (uint8_t*)malloc(state->reu_size);
+        if (state->reu_ram) {
+            memset(state->reu_ram, 0, state->reu_size);
+        }
     }
 }
 
@@ -224,7 +239,9 @@ void tsfi_zmm_vm_destroy(TsfiZmmVmState *state) {
         state->checkpoints = NULL;
     }
     if (state->reu_ram) {
-        free(state->reu_ram);
+        if (munmap(state->reu_ram, state->reu_size) != 0) {
+            free(state->reu_ram);
+        }
         state->reu_ram = NULL;
     }
     

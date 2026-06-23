@@ -85,13 +85,51 @@ try {
     console.error("[SERVER] Failed to load default PKI key from config:", e.message);
 }
 
+// Reset ZMM VM storage context for a fresh newly-generated execution run
+const evmStoragePath = path.join(__dirname, "../tsfi2-deepseek/evm_storage.json");
+try {
+    if (fs.existsSync(evmStoragePath)) {
+        fs.unlinkSync(evmStoragePath);
+        console.log("[SERVER] Cleaned old ZMM VM storage state.");
+    }
+} catch (err) {
+    console.error("[SERVER] Failed to clean ZMM VM storage state:", err.message);
+}
+
 console.log(`[SERVER] Spawning native ZMM VM MCP server: ${mcpBinary}`);
 const mcpProcess = spawn(mcpBinary, [], {
     cwd: mcpCwd,
-    stdio: "inherit",
+    stdio: ["pipe", "pipe", "inherit"],
     env: {
         ...process.env,
         TSFI_DEFAULT_PKI_KEY: defaultPkiKey
+    }
+});
+
+const pendingRequests = new Map();
+const readline = require("readline");
+const mcpInterface = readline.createInterface({
+    input: mcpProcess.stdout,
+    terminal: false
+});
+
+mcpInterface.on("line", line => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("{")) {
+        try {
+            const response = JSON.parse(trimmed);
+            if (response && response.id !== undefined) {
+                const cb = pendingRequests.get(response.id);
+                if (cb) {
+                    pendingRequests.delete(response.id);
+                    cb(null, response);
+                }
+            }
+        } catch (e) {
+            console.error("[SERVER] Failed to parse JSON line from ZMM VM MCP stdout:", line, e);
+        }
+    } else if (trimmed) {
+        console.log("[ZMM VM MCP STDOUT]", trimmed);
     }
 });
 
@@ -1488,19 +1526,21 @@ function processAnnotationReplies(content, file) {
         req.on("end", () => {
             try {
                 const payload = JSON.parse(body);
-                let code = payload.code;
-                if (!code && payload.name && payload.calldata) {
-                    code = `YULEXEC "${payload.name}", "${payload.calldata}"`;
-                }
-                if (!code) {
-                    res.writeHead(400, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ error: "Missing 'code' or 'name' and 'calldata' parameter" }));
-                    return;
-                }
+                let rpcPayload = null;
 
-                const net = require("net");
-                const socket = net.createConnection({ port: 10042 }, () => {
-                    let rpcPayload;
+                if (payload.jsonrpc && payload.method) {
+                    rpcPayload = payload;
+                } else {
+                    let code = payload.code;
+                    if (!code && payload.name && payload.calldata) {
+                        code = `YULEXEC "${payload.name}", "${payload.calldata}"`;
+                    }
+                    if (!code) {
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: "Missing 'code' or 'name' and 'calldata' parameter or 'jsonrpc' payload" }));
+                        return;
+                    }
+
                     if (code.startsWith("wave512.dilemma_log")) {
                         const jsonPart = code.substring("wave512.dilemma_log".length).trim();
                         let params = {};
@@ -1525,32 +1565,36 @@ function processAnnotationReplies(content, file) {
                             id: 1
                         };
                     }
-                    socket.write(JSON.stringify(rpcPayload));
-                });
+                }
 
-                let responseData = "";
-                socket.on("data", chunk => {
-                    responseData += chunk.toString();
-                });
+                if (rpcPayload.id === undefined || rpcPayload.id === null) {
+                    rpcPayload.id = Math.floor(Math.random() * 1000000);
+                }
 
-                socket.on("end", () => {
-                    try {
-                        const parsed = JSON.parse(responseData);
+                const reqId = rpcPayload.id;
+                const timeoutId = setTimeout(() => {
+                    if (pendingRequests.has(reqId)) {
+                        pendingRequests.delete(reqId);
+                        res.writeHead(504, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: "ZMM VM execution timed out" }));
+                    }
+                }, 5000);
+
+                pendingRequests.set(reqId, (err, response) => {
+                    clearTimeout(timeoutId);
+                    if (err) {
+                        res.writeHead(500, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: err.message }));
+                    } else {
                         res.writeHead(200, { 
                             "Content-Type": "application/json",
                             "Access-Control-Allow-Origin": "*"
                         });
-                        res.end(JSON.stringify(parsed));
-                    } catch (e) {
-                        res.writeHead(500, { "Content-Type": "application/json" });
-                        res.end(JSON.stringify({ error: "Failed to parse ZMM VM response: " + e.message, raw: responseData }));
+                        res.end(JSON.stringify(response));
                     }
                 });
 
-                socket.on("error", err => {
-                    res.writeHead(500, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ error: "ZMM VM socket error: " + err.message }));
-                });
+                mcpProcess.stdin.write(JSON.stringify(rpcPayload) + "\n");
             } catch (err) {
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ error: err.message }));
@@ -2008,6 +2052,8 @@ function processAnnotationReplies(content, file) {
         absolutePath = path.join(__dirname, "..", filePath);
     } else if (parsedUrl.pathname === "/config/user_config.json") {
         absolutePath = CONFIG_PATH;
+    } else if (parsedUrl.pathname === "/scripts/deployed_addresses_localhost.json") {
+        absolutePath = path.join(__dirname, "../scripts/deployed_addresses_localhost.json");
     } else if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {
         res.writeHead(403, { "Content-Type": "text/plain" });
         res.end("Forbidden");

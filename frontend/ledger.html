@@ -220,6 +220,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                        <h4 style="font-family: 'Orbitron', sans-serif; color: #00f2fe; font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase;">CROWS Leaderboard (Top 10)</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; flex: 1;" onclick="optInCrows()">Opt In</button>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; flex: 1;" onclick="updateCrowsRankings()">Update/View</button>
+                        </div>
+                        <div id="crowsRankingsList" style="display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto;">
+                            <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 5px;">No rankings loaded.</div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ZMM VM Tab Panel -->
@@ -1277,12 +1288,108 @@ Loading ZMM VM inventory coordinates and items...
             }
         }
 
+        async function optInCrows() {
+            if (currentEnv !== "zmm" && !signer) {
+                alert("Please connect your wallet first.");
+                return;
+            }
+            log("Opting in to CROWS Leaderboard...", "info");
+            try {
+                const crowsRankAddr = config.networks.localhost.crowsRankAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+                const crowsRankABI = ["function optIn(address) external returns (uint256)"];
+                const targetPlayer = signer ? await signer.getAddress() : "0x000000000000000000000000000000000000044C";
+
+                if (currentEnv === "zmm") {
+                    log("[ZMM VM] Registering opt-in natively in-memory...", "info");
+                    const crowsInterface = new ethers.Interface(crowsRankABI);
+                    const calldata = crowsInterface.encodeFunctionData("optIn", [targetPlayer]);
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "crows_rank", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    log("[ZMM VM] Opt-in completed successfully!", "success");
+                } else {
+                    const rankContract = new ethers.Contract(crowsRankAddr, crowsRankABI, signer);
+                    const tx = await rankContract.optIn(targetPlayer);
+                    log(`Opt-in transaction sent. Hash: ${tx.hash}`, "info");
+                    await tx.wait();
+                    log("Opt-in confirmed on Anvil!", "success");
+                }
+            } catch (err) {
+                log(`Opt-in failed: ${err.message}`, "error");
+                alert(`Opt-in failed: ${err.message}`);
+            }
+        }
+
+        async function updateCrowsRankings() {
+            const listContainer = document.getElementById("crowsRankingsList");
+            listContainer.innerHTML = `<div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 5px;">Updating rankings...</div>`;
+            try {
+                const crowsRankAddr = config.networks.localhost.crowsRankAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+                const targetPlayer = signer ? await signer.getAddress() : "0x000000000000000000000000000000000000044C";
+                const playerYue = config.networks.localhost.mariarahelLau || "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B";
+                const crowsQing = config.networks.localhost.CHO || "0x0B306BF915C4d645ff596e518fAf3F9669b97016";
+
+                const crowsRankABI = ["function updateAndGetRankings(address,address,address) external view returns (address[10] memory, uint256[10] memory)"];
+
+                let rawResult;
+                if (currentEnv === "zmm") {
+                    const crowsInterface = new ethers.Interface(crowsRankABI);
+                    const calldata = crowsInterface.encodeFunctionData("updateAndGetRankings", [targetPlayer, playerYue, crowsQing]);
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "crows_rank", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    rawResult = crowsInterface.decodeFunctionResult("updateAndGetRankings", "0x" + resJson.result.output);
+                } else {
+                    const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                    const rankContract = new ethers.Contract(crowsRankAddr, crowsRankABI, activeProvider);
+                    rawResult = await rankContract.updateAndGetRankings(targetPlayer, playerYue, crowsQing);
+                }
+
+                const addresses = rawResult[0];
+                const scores = rawResult[1];
+
+                let html = "";
+                let count = 0;
+                for (let i = 0; i < 10; i++) {
+                    const addr = addresses[i];
+                    const score = scores[i];
+                    if (addr && addr !== ethers.ZeroAddress) {
+                        count++;
+                        html += `
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 4px 0;">
+                                <span style="color: var(--neon-blue);">${i + 1}. ${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}</span>
+                                <span style="color: var(--neon-magenta); font-weight: bold;">${score} CROWS</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (count === 0) {
+                    listContainer.innerHTML = `<div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 5px;">No active ranking members.</div>`;
+                } else {
+                    listContainer.innerHTML = html;
+                }
+            } catch (err) {
+                log(`Failed to load CROWS rankings: ${err.message}`, "error");
+                listContainer.innerHTML = `<div style="color: var(--danger); font-style: italic; text-align: center; padding: 5px;">Error loading rankings.</div>`;
+            }
+        }
+
         async function autoUpdate() {
             try {
                 const address = signer ? await signer.getAddress() : null;
                 await updateBalances(address);
                 await updateCabsEscrows();
                 await updateVanityStorefront();
+                await updateCrowsRankings();
             } catch (err) {
                 console.error("Auto-update failed:", err);
             }
@@ -1293,6 +1400,8 @@ Loading ZMM VM inventory coordinates and items...
         window.refundCabsEscrow = refundCabsEscrow;
         window.buyVanityKey = buyVanityKey;
         window.updateVanityStorefront = updateVanityStorefront;
+        window.optInCrows = optInCrows;
+        window.updateCrowsRankings = updateCrowsRankings;
 
         btnConnect.addEventListener("click", connectWallet);
         btnTransmute.addEventListener("click", transmute);
