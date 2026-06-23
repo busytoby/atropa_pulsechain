@@ -520,8 +520,13 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                      if (ctx->return_size > avail) ctx->return_size = avail;
                      memcpy(ctx->return_data, ctx->memory + offset.d[0], ctx->return_size);
                 } else {
-                    ctx->return_size = 0;
+                     ctx->return_size = 0;
                 }
+                printf("[DEBUG_EVM] REVERT triggered. Data (len %zu): ", ctx->return_size);
+                for (size_t i = 0; i < (ctx->return_size < 64 ? ctx->return_size : 64); i++) {
+                     printf("%02x", ctx->return_data[i]);
+                }
+                printf("\n");
                 ctx->reverted = true;
                 return false;
             }
@@ -638,6 +643,8 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                         nested_ctx->storage_count = ctx->storage_count;
                         memcpy(nested_ctx->storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
                         memcpy(nested_ctx->storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+                        memcpy(nested_ctx->storage_addrs, ctx->storage_addrs, sizeof(ctx->storage_addrs));
+                        nested_ctx->is_initcode = true;
 
                         bool success = run_yul_bytecode(nested_ctx, initcode, initcode_len, "dynamic");
                         if (success && !nested_ctx->reverted && nested_ctx->return_size > 0) {
@@ -657,13 +664,15 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                     for (int j = 0; j < ctx->storage_count; j++) {
                                         if (u256_eq(ctx->storage_keys[j], raw_key)) {
                                             ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                                            ctx->storage_addrs[j] = nested_ctx->storage_addrs[i];
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if (!found && ctx->storage_count < 4096) {
+                                    if (!found && ctx->storage_count < 32768) {
                                         ctx->storage_keys[ctx->storage_count] = raw_key;
                                         ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                                        ctx->storage_addrs[ctx->storage_count] = nested_ctx->storage_addrs[i];
                                         ctx->storage_count++;
                                     }
                                 }
@@ -708,6 +717,8 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                         nested_ctx->storage_count = ctx->storage_count;
                         memcpy(nested_ctx->storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
                         memcpy(nested_ctx->storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+                        memcpy(nested_ctx->storage_addrs, ctx->storage_addrs, sizeof(ctx->storage_addrs));
+                        nested_ctx->is_initcode = true;
 
                         bool success = run_yul_bytecode(nested_ctx, initcode, initcode_len, "dynamic");
                         if (success && !nested_ctx->reverted && nested_ctx->return_size > 0) {
@@ -727,13 +738,15 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                     for (int j = 0; j < ctx->storage_count; j++) {
                                         if (u256_eq(ctx->storage_keys[j], raw_key)) {
                                             ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                                            ctx->storage_addrs[j] = nested_ctx->storage_addrs[i];
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if (!found && ctx->storage_count < 4096) {
+                                    if (!found && ctx->storage_count < 32768) {
                                         ctx->storage_keys[ctx->storage_count] = raw_key;
                                         ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                                        ctx->storage_addrs[ctx->storage_count] = nested_ctx->storage_addrs[i];
                                         ctx->storage_count++;
                                     }
                                 }
@@ -1138,13 +1151,15 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
                 for (int j = 0; j < ctx->storage_count; j++) {
                     if (u256_eq(ctx->storage_keys[j], raw_key)) {
                         ctx->storage_vals[j] = nested_ctx->storage_vals[i];
+                        ctx->storage_addrs[j] = nested_ctx->storage_addrs[i];
                         found = true;
                         break;
                     }
                 }
-                if (!found && ctx->storage_count < 4096) {
+                if (!found && ctx->storage_count < 32768) {
                     ctx->storage_keys[ctx->storage_count] = raw_key;
                     ctx->storage_vals[ctx->storage_count] = nested_ctx->storage_vals[i];
+                    ctx->storage_addrs[ctx->storage_count] = nested_ctx->storage_addrs[i];
                     ctx->storage_count++;
                 }
             }

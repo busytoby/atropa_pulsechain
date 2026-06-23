@@ -63,29 +63,49 @@ static uint8_t* hex_to_bytes(const char *hex, size_t *out_len) {
 }
 
 static void load_reconciliation_data(void) {
-    FILE *fp = fopen("evm_storage.json", "r");
+    const char *path = "evm_storage.json";
+    FILE *fp = fopen(path, "r");
     if (!fp) {
-        fp = fopen("tsfi2-deepseek/evm_storage.json", "r");
+        path = "tsfi2-deepseek/evm_storage.json";
+        fp = fopen(path, "r");
     }
-    if (!fp) return;
+    if (!fp) {
+        printf("[YUL_THUNK] evm_storage.json not found!\n");
+        return;
+    }
+    printf("[YUL_THUNK] Loading reconciliation data from %s...\n", path);
     char line[512];
+    int loaded = 0;
     while (fgets(line, sizeof(line), fp)) {
         char key_str[128] = {0};
         char val_str[128] = {0};
-        if (sscanf(line, " { \"key\": \"%[^\"]\", \"val\": \"%[^\"]\" }", key_str, val_str) == 2) {
+        char addr_str[128] = {0};
+        int parsed = sscanf(line, " { \"key\": \"%[^\"]\", \"val\": \"%[^\"]\", \"addr\": \"%[^\"]\" }", key_str, val_str, addr_str);
+        if (parsed < 2) {
+            parsed = sscanf(line, " { \"key\": \"%[^\"]\", \"val\": \"%[^\"]\" }", key_str, val_str);
+            addr_str[0] = '\0';
+        }
+        if (parsed >= 2) {
             u256_t key = {{0}};
             u256_t val = {{0}};
+            uint64_t addr = 0;
             if (strlen(key_str) == 64 && strlen(val_str) == 64) {
                 sscanf(key_str, "%16lx%16lx%16lx%16lx", &key.d[3], &key.d[2], &key.d[1], &key.d[0]);
                 sscanf(val_str, "%16lx%16lx%16lx%16lx", &val.d[3], &val.d[2], &val.d[1], &val.d[0]);
-                if (g_yul_evm_context.storage_count < 4096) {
+                if (addr_str[0] != '\0') {
+                    sscanf(addr_str, "%lx", &addr);
+                }
+                if (g_yul_evm_context.storage_count < 32768) {
                     g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = key;
                     g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = val;
+                    g_yul_evm_context.storage_addrs[g_yul_evm_context.storage_count] = addr;
                     g_yul_evm_context.storage_count++;
+                    loaded++;
                 }
             }
         }
     }
+    printf("[YUL_THUNK] Loaded %d keys from %s. Total global: %d\n", loaded, path, g_yul_evm_context.storage_count);
     fclose(fp);
 }
 
@@ -379,13 +399,25 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
         }
         init_ctx->self_address = virtual_address;
         init_ctx->caller_address.d[0] = 0x4cc;
-        init_ctx->storage_count = g_yul_evm_context.storage_count;
-        memcpy(init_ctx->storage_keys, g_yul_evm_context.storage_keys, sizeof(g_yul_evm_context.storage_keys));
-        memcpy(init_ctx->storage_vals, g_yul_evm_context.storage_vals, sizeof(g_yul_evm_context.storage_vals));
+        init_ctx->is_initcode = true;
+
+        // Copy only storage keys that do NOT belong to this virtual_address
+        init_ctx->storage_count = 0;
+        for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
+            if (g_yul_evm_context.storage_addrs[i] != virtual_address) {
+                init_ctx->storage_keys[init_ctx->storage_count] = g_yul_evm_context.storage_keys[i];
+                init_ctx->storage_vals[init_ctx->storage_count] = g_yul_evm_context.storage_vals[i];
+                init_ctx->storage_addrs[init_ctx->storage_count] = g_yul_evm_context.storage_addrs[i];
+                init_ctx->storage_count++;
+            }
+        }
+
+        g_initcode_running = true;
         bool init_success = run_yul_bytecode(init_ctx, padded_bin, padded_len, name);
+        g_initcode_running = false;
         if (padded_bin != raw_bin) free(padded_bin);
         if (!init_success || init_ctx->reverted || init_ctx->return_size == 0) {
-            printf("[YUL_THUNK] Error: Initcode execution failed for %s.\n", name);
+            printf("[YUL_THUNK] Error: Initcode execution failed for %s. init_success=%d reverted=%d return_size=%zu\n", name, init_success, init_ctx->reverted, init_ctx->return_size);
             free(raw_bin);
             free(init_ctx);
             return false;
@@ -401,22 +433,27 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
         runtime_len = init_ctx->return_size;
         free(raw_bin);
 
+        // Copy storage mutations back to g_yul_evm_context
         for (int i = 0; i < init_ctx->storage_count; i++) {
             u256_t raw_key = init_ctx->storage_keys[i];
             bool found = false;
             for (int j = 0; j < g_yul_evm_context.storage_count; j++) {
                 if (u256_eq(g_yul_evm_context.storage_keys[j], raw_key)) {
                     g_yul_evm_context.storage_vals[j] = init_ctx->storage_vals[i];
+                    g_yul_evm_context.storage_addrs[j] = init_ctx->storage_addrs[i];
                     found = true;
                     break;
                 }
             }
-            if (!found && g_yul_evm_context.storage_count < 4096) {
+            if (!found && g_yul_evm_context.storage_count < 32768) {
                 g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = raw_key;
                 g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = init_ctx->storage_vals[i];
+                g_yul_evm_context.storage_addrs[g_yul_evm_context.storage_count] = init_ctx->storage_addrs[i];
                 g_yul_evm_context.storage_count++;
+                g_storage_dirty = true;
             }
         }
+        printf("[YUL_THUNK] Copied %d storage keys from constructor of %s back to global context. Total global storage: %d\n", init_ctx->storage_count, name, g_yul_evm_context.storage_count);
         free(init_ctx);
     }
 

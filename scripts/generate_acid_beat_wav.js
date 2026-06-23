@@ -81,6 +81,20 @@ function main() {
     const tempoBPM = 120;
     const stepDurationSamples = Math.floor(SAMPLE_RATE * (60 / tempoBPM) / 4); // 16th note step length
 
+    // Pre-calculate step start samples with 32% swing (heavy shuffle)
+    const swingAmount = 0.32;
+    const stepStartSamples = [];
+    let accumSample = 0;
+    const totalStepsInTrack = Math.ceil(TOTAL_SAMPLES / stepDurationSamples) + 2;
+    for (let step = 0; step < totalStepsInTrack; step++) {
+        stepStartSamples.push(accumSample);
+        const isEven = (step % 2 === 0);
+        const stepLen = isEven 
+            ? Math.floor(stepDurationSamples * (1 + swingAmount))
+            : Math.floor(stepDurationSamples * (1 - swingAmount));
+        accumSample += stepLen;
+    }
+
     // 303 State
     let currentFreq = BASS_SEQUENCE[0];
     let filterCutoff = 320; 
@@ -135,9 +149,19 @@ function main() {
     const hhFreqs = [205.3, 369.6, 522.0, 565.1, 675.9, 716.9];
     let hhPhases = [0, 0, 0, 0, 0, 0];
 
+    let currentStep = 0;
+
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
-        const stepIndex = Math.floor(i / stepDurationSamples) % BASS_SEQUENCE.length;
-        const sampleInStep = i % stepDurationSamples;
+        // Track the current step index based on boundaries
+        while (currentStep < stepStartSamples.length - 1 && i >= stepStartSamples[currentStep + 1]) {
+            currentStep++;
+        }
+
+        const stepIndex = currentStep % BASS_SEQUENCE.length;
+        const sampleInStep = i - stepStartSamples[currentStep];
+
+        // 3:5 Polyrhythmic index for cowbell (loops every 5 steps instead of 16)
+        const cowbellStepIndex = currentStep % 5;
 
         // ----------------------------------------------------
         // 1. Trigger 808 Drums
@@ -155,7 +179,8 @@ function main() {
             if (OPEN_HH_SEQUENCE[stepIndex] === 1) {
                 lastOpenHhTriggerSample = i;
             }
-            if (COWBELL_SEQUENCE[stepIndex] === 1) {
+            // Trigger cowbell polyrhythmically (step 2 & 4 of the 5-step cycle)
+            if (cowbellStepIndex === 2 || cowbellStepIndex === 4) {
                 lastCowbellTriggerSample = i;
             }
             if (CLAP_SEQUENCE[stepIndex] > 0) {
@@ -313,7 +338,8 @@ function main() {
         const bassGain = isAccent ? 4.2 : 2.4;
         let bassSample = Math.tanh(filterOutput * bassGain);
 
-        const gateDuration = isSlide ? stepDurationSamples : Math.floor(stepDurationSamples * 0.7);
+        const actualStepDuration = stepStartSamples[currentStep + 1] - stepStartSamples[currentStep];
+        const gateDuration = isSlide ? actualStepDuration : Math.floor(actualStepDuration * 0.7);
         let amp = 0;
         if (sampleInStep < gateDuration) {
             amp = isAccent ? 0.4 : 0.26;

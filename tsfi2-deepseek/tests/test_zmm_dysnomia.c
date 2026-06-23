@@ -66,16 +66,15 @@ static uint64_t decode_uint256_scaled_by_1e18(const uint8_t *bytes) {
 int main() {
     srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
     printf("=== TSFi ZMM VM Full Dysnomia Systems Integration Test ===\n");
-    FILE *clear_fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+    remove("evm_storage.json");
+    remove("tsfi2-deepseek/evm_storage.json");
+    FILE *clear_fp = fopen("evm_storage.json", "w");
     if (clear_fp) {
-        fprintf(clear_fp, "{\n  \"storage\": []\n}\n");
         fclose(clear_fp);
-    } else {
-        clear_fp = fopen("evm_storage.json", "w");
-        if (clear_fp) {
-            fprintf(clear_fp, "{\n  \"storage\": []\n}\n");
-            fclose(clear_fp);
-        }
+    }
+    clear_fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+    if (clear_fp) {
+        fclose(clear_fp);
     }
     tsfi_wire_firmware_init();
 

@@ -362,7 +362,7 @@ void persist_reconciliation_data(void) {
     if (!fp) return;
     fprintf(fp, "{\n  \"storage\": [\n");
     for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
-        fprintf(fp, "    { \"key\": \"%016lx%016lx%016lx%016lx\", \"val\": \"%016lx%016lx%016lx%016lx\" }%s\n",
+        fprintf(fp, "    { \"key\": \"%016lx%016lx%016lx%016lx\", \"val\": \"%016lx%016lx%016lx%016lx\", \"addr\": \"%lx\" }%s\n",
                 g_yul_evm_context.storage_keys[i].d[3],
                 g_yul_evm_context.storage_keys[i].d[2],
                 g_yul_evm_context.storage_keys[i].d[1],
@@ -371,6 +371,7 @@ void persist_reconciliation_data(void) {
                 g_yul_evm_context.storage_vals[i].d[2],
                 g_yul_evm_context.storage_vals[i].d[1],
                 g_yul_evm_context.storage_vals[i].d[0],
+                g_yul_evm_context.storage_addrs[i],
                 (i == g_yul_evm_context.storage_count - 1) ? "" : ",");
     }
     fprintf(fp, "  ]\n}\n");
@@ -451,6 +452,8 @@ static u256_t get_namespaced_key(uint64_t self_addr, u256_t key) {
     return ns_key;
 }
 
+bool g_initcode_running = false;
+
 u256_t context_sload(YulEvmContext *ctx, u256_t key) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     for (int i = 0; i < ctx->storage_count; i++) {
@@ -468,8 +471,10 @@ u256_t context_sload(YulEvmContext *ctx, u256_t key) {
 
 void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
+    printf("[DEBUG_SSTORE] Contract 0x%lx writing key 0x%lx to val 0x%lx. storage_count before: %d\n", ctx->self_address, key.d[0], val.d[0], ctx->storage_count);
     for (int i = 0; i < ctx->storage_count; i++) {
         if (u256_eq_internal(ctx->storage_keys[i], ns_key)) {
+            ctx->storage_addrs[i] = ctx->self_address;
             if (!u256_eq_internal(ctx->storage_vals[i], val)) {
                 ctx->storage_vals[i] = val;
                 g_storage_dirty = true;
@@ -477,9 +482,10 @@ void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
             return;
         }
     }
-    if (ctx->storage_count < 4096) {
+    if (ctx->storage_count < 32768) {
         ctx->storage_keys[ctx->storage_count] = ns_key;
         ctx->storage_vals[ctx->storage_count] = val;
+        ctx->storage_addrs[ctx->storage_count] = ctx->self_address;
         ctx->storage_count++;
         g_storage_dirty = true;
     }

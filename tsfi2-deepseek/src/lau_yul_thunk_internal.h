@@ -17,6 +17,7 @@ typedef struct {
 extern CachedContract g_cached_contracts[MAX_CACHED_CONTRACTS];
 extern int g_cached_contracts_count;
 extern bool g_storage_dirty;
+extern bool g_initcode_running;
 
 extern _Thread_local uint64_t g_transaction_diyat_tax_total;
 

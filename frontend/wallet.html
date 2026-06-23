@@ -167,6 +167,51 @@
                             // Contract is not an ERC20 or not fully initialized yet
                         }
                     }
+
+                    // Query dynamic EVM tokens (ERIS, FOMALHAUTE, FORNAX)
+                    const dynamicTokens = [
+                        { name: 'ERIS', parent: 'QI', selector: '0x05d3d596' },
+                        { name: 'FOMALHAUTE', parent: 'XIA', selector: '0xfff3be7d' },
+                        { name: 'FORNAX', parent: 'XIE', selector: '0xa60d57c8' }
+                    ];
+                    for (const item of dynamicTokens) {
+                        const parentVal = localhostContracts[item.parent];
+                        if (parentVal) {
+                            try {
+                                const resolvedAddrHex = await provider.call({
+                                    to: parentVal,
+                                    data: item.selector
+                                });
+                                if (resolvedAddrHex && resolvedAddrHex !== "0x" && resolvedAddrHex !== "") {
+                                    const resolvedAddr = "0x" + resolvedAddrHex.substring(resolvedAddrHex.length - 40);
+                                    if (ethers.isAddress(resolvedAddr) && resolvedAddr !== ethers.ZeroAddress) {
+                                        const contract = new ethers.Contract(resolvedAddr, erc20Abi, provider);
+                                        const symbol = await contract.symbol().catch(() => "DYS");
+                                        
+                                        const depBal = await contract.balanceOf(deployerAddr);
+                                        deployerBalances.push({
+                                            name: `${item.name} (${symbol})`,
+                                            value: parseFloat(ethers.formatEther(depBal)).toFixed(2),
+                                            address: resolvedAddr,
+                                            tokenName: item.name
+                                        });
+
+                                        if (userAddress) {
+                                            const usrBal = await contract.balanceOf(userAddress);
+                                            userBalances.push({
+                                                name: `${item.name} (${symbol})`,
+                                                value: parseFloat(ethers.formatEther(usrBal)).toFixed(2),
+                                                address: resolvedAddr,
+                                                tokenName: item.name
+                                            });
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                log(`Failed to resolve dynamic EVM token ${item.name}: ${e.message}`, "error");
+                            }
+                        }
+                    }
                 }
 
                 // Render Deployer list

@@ -42,11 +42,12 @@ try {
 
 // Reset ZMM VM storage context for a fresh newly-generated execution run
 const evmStoragePath = path.join(__dirname, "../tsfi2-deepseek/evm_storage.json");
+const rootStoragePath = path.join(__dirname, "../evm_storage.json");
 try {
-    if (fs.existsSync(evmStoragePath)) {
-        fs.unlinkSync(evmStoragePath);
-        console.log("[SERVER] Cleaned old ZMM VM storage state.");
-    }
+    const emptyStorage = JSON.stringify({ storage: [] }, null, 2);
+    fs.writeFileSync(evmStoragePath, emptyStorage, "utf8");
+    fs.writeFileSync(rootStoragePath, emptyStorage, "utf8");
+    console.log("[SERVER] Storage cleared on startup to allow clean contract initialization.");
 } catch (err) {
     console.error("[SERVER] Failed to clean ZMM VM storage state:", err.message);
 }
@@ -91,6 +92,31 @@ mcpInterface.on("line", line => {
 mcpProcess.on("error", err => {
     console.error("[SERVER] Failed to start native ZMM VM MCP server:", err);
 });
+
+const initializedContracts = new Set();
+function runZmmCommand(code) {
+    return new Promise((resolve, reject) => {
+        const id = Math.floor(Math.random() * 1000000);
+        const rpcPayload = {
+            jsonrpc: "2.0",
+            method: "wave512.run",
+            params: { code: code },
+            id: id
+        };
+        const timeoutId = setTimeout(() => {
+            if (pendingRequests.has(id)) {
+                pendingRequests.delete(id);
+                reject(new Error("ZMM VM execution timed out"));
+            }
+        }, 5000);
+        pendingRequests.set(id, (err, response) => {
+            clearTimeout(timeoutId);
+            if (err) reject(err);
+            else resolve(response);
+        });
+        mcpProcess.stdin.write(JSON.stringify(rpcPayload) + "\n");
+    });
+}
 
 // Spawn the resident VLM Synthesizer Python daemon at startup
 const pythonDaemon = spawn("python3", ["-u", "scripts/render_vlm_synthesizer.py", "--daemon"], {
@@ -441,6 +467,35 @@ const server = http.createServer(async (req, res) => {
                 "Access-Control-Allow-Origin": "*"
             });
             res.end(JSON.stringify({ storage: [] }));
+        }
+        return;
+    }
+
+    // API endpoint to list all loaded ZMM Yul objects/contracts
+    if (req.url === "/api/zmm-objects") {
+        const cacheDir = path.join(__dirname, "../tsfi2-deepseek/.yul_cache");
+        try {
+            if (fs.existsSync(cacheDir)) {
+                const files = fs.readdirSync(cacheDir);
+                const objects = files
+                    .filter(f => f.endsWith(".hex"))
+                    .map(f => {
+                        const stat = fs.statSync(path.join(cacheDir, f));
+                        return {
+                            name: f.slice(0, -4),
+                            sizeBytes: stat.size,
+                            modified: Math.round(stat.mtimeMs)
+                        };
+                    });
+                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify(objects));
+            } else {
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Cache directory not found" }));
+            }
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
         }
         return;
     }
@@ -904,9 +959,30 @@ const server = http.createServer(async (req, res) => {
         req.on("data", chunk => {
             body += chunk.toString();
         });
-        req.on("end", () => {
+        req.on("end", async () => {
             try {
                 const payload = JSON.parse(body);
+                
+                let nameToInit = payload.name;
+                if (!nameToInit && payload.code) {
+                    const m = payload.code.match(/YULEXEC\s+"(dynamic_[0-9a-fA-F]+)"/);
+                    if (m) nameToInit = m[1];
+                }
+                if (nameToInit && nameToInit.startsWith("dynamic_")) {
+                    const name = nameToInit;
+                    if (!initializedContracts.has(name)) {
+                        try {
+                            const addrHex = name.replace("dynamic_", "");
+                            const addrBigInt = BigInt("0x" + addrHex);
+                            console.log(`[SERVER] Auto-initializing dynamic contract: ${name} at addr ${addrBigInt}`);
+                            await runZmmCommand(`YULINIT "${name}", "dynamic", ${addrBigInt.toString()}`);
+                            initializedContracts.add(name);
+                        } catch (err) {
+                            console.error(`[SERVER] Failed to auto-initialize dynamic contract ${name}:`, err.message);
+                        }
+                    }
+                }
+
                 let rpcPayload = null;
 
                 if (payload.jsonrpc && payload.method) {

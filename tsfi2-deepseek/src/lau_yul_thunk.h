@@ -26,8 +26,9 @@ typedef struct {
     uint8_t return_data[524288];
     size_t return_size;
     
-    u256_t storage_keys[4096];
-    u256_t storage_vals[4096];
+    u256_t storage_keys[32768];
+    u256_t storage_vals[32768];
+    uint64_t storage_addrs[32768];
     int storage_count;
     bool reverted;
     uint64_t self_address;
@@ -35,6 +36,7 @@ typedef struct {
     
     YulEventLog logs[64];
     int log_count;
+    bool is_initcode;
 } YulEvmContext;
 
 extern _Thread_local YulEvmContext g_yul_evm_context;

@@ -77,7 +77,7 @@ const tools = [
     },
     {
         name: "query_lore",
-        description: "Query the relational lore database. Search for documents matching a specific tag, or find tags linked to a specific document.",
+        description: "Query the relational lore database. Search for documents matching a specific tag, find tags linked to a specific document, or query on-chain Yul QING relationships.",
         inputSchema: {
             type: "object",
             properties: {
@@ -88,6 +88,10 @@ const tools = [
                 document: {
                     type: "string",
                     description: "Optional: Find all tags associated with this document."
+                },
+                qingAddress: {
+                    type: "string",
+                    description: "Optional: Query live on-chain tags mapped to this contract address from the Yul Arena CPU."
                 }
             }
         }
@@ -368,6 +372,7 @@ async function handleRequest(req) {
                     const args = params.arguments || {};
                     const tagQuery = args.tag ? args.tag.toLowerCase() : null;
                     const docQuery = args.document ? args.document.toLowerCase() : null;
+                    const qingAddress = args.qingAddress ? args.qingAddress.toLowerCase() : null;
                     const dbPath = path.join(__dirname, "../config/lore_tags_database.json");
                     if (!fs.existsSync(dbPath)) {
                         throw new Error("Lore tag database not found. Please run scripts/spider_lore_tags.js first.");
@@ -375,7 +380,41 @@ async function handleRequest(req) {
                     const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
                     let result = null;
 
-                    if (tagQuery) {
+                    if (qingAddress) {
+                        const { ethers } = require("ethers");
+                        const configPath = path.join(__dirname, "../config/user_config.json");
+                        if (!fs.existsSync(configPath)) {
+                            throw new Error("User configuration file not found");
+                        }
+                        const configData = JSON.parse(fs.readFileSync(configPath, "utf8"));
+                        const arenaAddr = configData.networks.localhost.arenaProcessorAddress;
+                        if (!arenaAddr) {
+                            throw new Error("ArenaProcessor address not found in config");
+                        }
+
+                        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                        const arenaContract = new ethers.Contract(arenaAddr, [
+                            "function tags(address qing) external view returns (address[])"
+                        ], provider);
+
+                        const taggedAddresses = await arenaContract.tags(qingAddress);
+                        
+                        // Map each address back to documents using the relational database
+                        const mappedDocs = [];
+                        if (taggedAddresses) {
+                            for (const addr of taggedAddresses) {
+                                const cleanAddr = addr.toLowerCase();
+                                const matchedQing = Object.keys(db.qingToDocuments).find(k => k.toLowerCase() === cleanAddr);
+                                const docs = matchedQing ? db.qingToDocuments[matchedQing] : [];
+                                mappedDocs.push({ address: addr, documents: docs });
+                            }
+                        }
+                        result = {
+                            qing: qingAddress,
+                            onChainTags: taggedAddresses,
+                            mappedDocuments: mappedDocs
+                        };
+                    } else if (tagQuery) {
                         result = db.tagToDocuments[tagQuery] || [];
                     } else if (docQuery) {
                         const matchedKey = Object.keys(db.documentToTags).find(k => k.toLowerCase() === docQuery || k.toLowerCase().includes(docQuery));
