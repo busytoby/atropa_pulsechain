@@ -645,11 +645,18 @@
       </div>
     </div>
 
-    <!-- Sidebar Right: Comments drawer -->
+    <!-- Sidebar Right: Info/Annotations/Glossary drawer -->
     <div class="sidebar-right">
-      <div class="sidebar-right-title">Annotations</div>
+      <div style="display:flex; border-bottom:1px solid var(--border-color-dim); flex-shrink:0;">
+        <button class="btn active-tab" id="tab-annotations" onclick="setRightTab('annotations')" style="flex:1; border:none; border-radius:0; padding:10px 0; margin:0; font-size:0.75rem;">Annotations</button>
+        <button class="btn" id="tab-glossary" onclick="setRightTab('glossary')" style="flex:1; border:none; border-radius:0; padding:10px 0; margin:0; font-size:0.75rem;">Glossary</button>
+      </div>
       <div class="annotations-list" id="annotations-container">
         <div class="no-annotations">No document selected.</div>
+      </div>
+      <div class="annotations-list" id="glossary-container" style="display:none; flex-direction:column; gap:12px; height:100%; overflow-y:auto; padding:16px;">
+        <input type="text" id="glossary-search" placeholder="Search glossary..." oninput="renderGlossaryList()" style="width:100%; background:#17171d; border:1px solid var(--border-color-dim); color:var(--text-highlight); padding:8px; border-radius:4px; font-family:var(--font-body); font-size:0.85rem; outline:none; margin-bottom:12px; flex-shrink:0;">
+        <div id="glossary-items-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex-grow:1;"></div>
       </div>
     </div>
   </div>
@@ -693,6 +700,87 @@
     let currentSortMode = 'priority';
     let loreTagsDb = null;
     let selectedTag = "";
+    let loreGlossary = null;
+    let currentRightTab = 'annotations';
+
+    function setRightTab(tab) {
+      currentRightTab = tab;
+      const annTab = document.getElementById('tab-annotations');
+      const gloTab = document.getElementById('tab-glossary');
+      const annContainer = document.getElementById('annotations-container');
+      const gloContainer = document.getElementById('glossary-container');
+      
+      if (tab === 'annotations') {
+        annTab.classList.add('active-tab');
+        gloTab.classList.remove('active-tab');
+        annContainer.style.display = 'flex';
+        gloContainer.style.display = 'none';
+      } else {
+        annTab.classList.remove('active-tab');
+        gloTab.classList.add('active-tab');
+        annContainer.style.display = 'none';
+        gloContainer.style.display = 'flex';
+        loadGlossary();
+      }
+    }
+
+    async function loadGlossary() {
+      if (loreGlossary) return;
+      try {
+        const res = await fetch('/config/lore_glossary.json');
+        loreGlossary = await res.json();
+        renderGlossaryList();
+      } catch (e) {
+        console.error("Error loading glossary:", e);
+      }
+    }
+
+    function renderGlossaryList() {
+      const listContainer = document.getElementById('glossary-items-list');
+      listContainer.innerHTML = '';
+      if (!loreGlossary) return;
+      
+      const filter = document.getElementById('glossary-search').value.toLowerCase();
+      
+      // Combine words and multi-word terms for display
+      const terms = [];
+      if (loreGlossary.topWords) {
+        loreGlossary.topWords.forEach(w => terms.push({ name: w.word, count: w.count, snippets: w.snippets || [], type: 'word' }));
+      }
+      if (loreGlossary.topMultiWordTerms) {
+        loreGlossary.topMultiWordTerms.forEach(t => terms.push({ name: t.sequence, count: t.count, snippets: t.snippets || [], type: 'sequence' }));
+      }
+      
+      // Filter
+      const filtered = terms.filter(t => t.name.toLowerCase().includes(filter));
+      
+      filtered.forEach(term => {
+        const card = document.createElement('div');
+        card.className = 'annotation-card';
+        card.style.borderLeftColor = term.type === 'sequence' ? 'var(--border-color)' : 'var(--accent-crimson)';
+        
+        let snippetsHtml = '';
+        if (term.snippets && term.snippets.length > 0) {
+          snippetsHtml = term.snippets.map(s => {
+            // Find filename in snippet (matches [filename.md])
+            const fileMatch = s.match(/\[([^\]]+)\]$/);
+            const filename = fileMatch ? fileMatch[1] : '';
+            const cleanSnippet = s.replace(/\[[^\]]+\]$/, '').trim();
+            const linkHtml = filename ? `<span style="color:var(--border-color); text-decoration:underline; font-size:0.75rem; cursor:pointer;" onclick="loadFile('${filename}')">${filename}</span>` : '';
+            return `<div class="annotation-quote" style="font-size:0.8rem; margin-top:6px; margin-bottom:6px;">"${cleanSnippet}" ${linkHtml}</div>`;
+          }).join('');
+        }
+        
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:var(--text-highlight); font-size:0.9rem;">${term.name}</strong>
+            <span style="font-family:var(--font-mono); font-size:0.75rem; opacity:0.6;">${term.count} hits</span>
+          </div>
+          ${snippetsHtml}
+        `;
+        listContainer.appendChild(card);
+      });
+    }
 
     // Fetch lists on load
     window.onload = function() {
