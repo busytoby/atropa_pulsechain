@@ -26,7 +26,7 @@ function buildGlossary() {
     console.log(`Analyzing word frequencies across ${files.length} lore documents...`);
 
     const unigrams = {};
-    const bigrams = {};
+    const multiWords = {}; // To store n-grams of size 2, 3, and 4
 
     for (const filename of files) {
         const filePath = path.join(LORE_DIR, filename);
@@ -54,12 +54,19 @@ function buildGlossary() {
                 unigrams[w1] = (unigrams[w1] || 0) + 1;
             }
 
-            // Record bigram frequency (word sequence of length 2)
-            if (i < words.length - 1) {
-                const w2 = words[i + 1];
-                if (!StopWords.has(w1) && !StopWords.has(w2)) {
-                    const bigram = `${w1} ${w2}`;
-                    bigrams[bigram] = (bigrams[bigram] || 0) + 1;
+            // Extract multi-word sequences of lengths 2, 3, and 4
+            for (let n = 2; n <= 4; n++) {
+                if (i <= words.length - n) {
+                    const sequence = words.slice(i, i + n);
+                    const firstWord = sequence[0];
+                    const lastWord = sequence[sequence.length - 1];
+
+                    // Multi-word phrase discovery heuristic:
+                    // Must not start or end with a stop word to ensure semantic integrity
+                    if (!StopWords.has(firstWord) && !StopWords.has(lastWord)) {
+                        const phrase = sequence.join(" ");
+                        multiWords[phrase] = (multiWords[phrase] || 0) + 1;
+                    }
                 }
             }
         }
@@ -71,7 +78,7 @@ function buildGlossary() {
         .slice(0, 150)
         .map(([word, count]) => ({ word, count }));
 
-    const topBigrams = Object.entries(bigrams)
+    const topMultiWords = Object.entries(multiWords)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 150)
         .map(([sequence, count]) => ({ sequence, count }));
@@ -80,10 +87,10 @@ function buildGlossary() {
         meta: {
             generatedAt: new Date().toISOString(),
             totalDocumentsAnalyzed: files.length,
-            description: "Auncient Lore Glossary index tracking the most frequent unigrams and bigram word sequences."
+            description: "Auncient Lore Glossary index tracking the most frequent unigrams and automatically discovered multi-word terms (length 2-4)."
         },
         topWords: topUnigrams,
-        topSequences: topBigrams
+        topMultiWordTerms: topMultiWords
     };
 
     const outputDir = path.dirname(GLOSSARY_FILE);
@@ -93,7 +100,7 @@ function buildGlossary() {
 
     fs.writeFileSync(GLOSSARY_FILE, JSON.stringify(glossary, null, 2), "utf8");
     console.log(`✓ Glossary successfully generated and written to: ${GLOSSARY_FILE}`);
-    console.log(`✓ Extracted top ${topUnigrams.length} words and top ${topBigrams.length} word sequences.`);
+    console.log(`✓ Extracted top ${topUnigrams.length} words and top ${topMultiWords.length} word sequences.`);
 }
 
 buildGlossary();
