@@ -4791,11 +4791,17 @@
                     gain.connect(audioCtx.destination);
                     noise.start(now);
                     noise.stop(now + duration);
-                } else {
+                    // Integrate dynamic quaternion traveler panning/pitch modulation if spatial orientation parameters exist
+                    const qX = typeof playerX !== 'undefined' ? playerX / 300.0 : 0.0;
+                    const qZ = typeof playerZ !== 'undefined' ? playerZ / 300.0 : 0.0;
+                    
                     const osc = audioCtx.createOscillator();
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(basePitch, now);
-
+                    
+                    // Modulate pitch based on x-quaternion offset
+                    const pitchMod = 1.0 + (qX * 0.3);
+                    osc.frequency.setValueAtTime(basePitch * pitchMod, now);
+ 
                     const formant = audioCtx.createBiquadFilter();
                     formant.type = "bandpass";
                     let centerFreq = 800;
@@ -4809,15 +4815,31 @@
                         centerFreq = 900;
                     }
                     
-                    formant.frequency.setValueAtTime(centerFreq, now);
+                    // Shift formant filters dynamically along the Z traveller trajectory
+                    const formantMod = 1.0 + (qZ * 0.2);
+                    formant.frequency.setValueAtTime(centerFreq * formantMod, now);
                     formant.Q.setValueAtTime(6, now);
-
+ 
+                    // Create Stereo Panner Node to pan travelers dynamically across space
+                    let pannerNode = null;
+                    if (typeof audioCtx.createStereoPanner === 'function') {
+                        pannerNode = audioCtx.createStereoPanner();
+                        // Pan coordinate maps directly to spatial x-position of traveller
+                        const panVal = Math.max(-1.0, Math.min(1.0, qX));
+                        pannerNode.pan.setValueAtTime(panVal, now);
+                    }
+ 
                     const gain = audioCtx.createGain();
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
+ 
                     osc.connect(formant);
-                    formant.connect(gain);
+                    if (pannerNode) {
+                        formant.connect(pannerNode);
+                        pannerNode.connect(gain);
+                    } else {
+                        formant.connect(gain);
+                    }
                     gain.connect(audioCtx.destination);
                     osc.start(now);
                     osc.stop(now + duration);
