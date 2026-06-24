@@ -376,6 +376,7 @@
         let activeLessonIdx = 0;
         let isAudioPlaying = false;
         let isHearingTarget = false;
+        let calibratedLessons = {};
 
         const LESSONS = [
             {
@@ -589,9 +590,42 @@
             if (accuracy >= 92) {
                 document.getElementById("teacher-instructions").innerText = "Match Confirmed! Calibrated successfully. " + target.instruction;
                 document.getElementById("match-pct").style.color = "var(--glow-green)";
+                
+                if (!calibratedLessons[activeLessonIdx]) {
+                    calibratedLessons[activeLessonIdx] = true;
+                    saveCalibrationToZmm(target.title, accuracy, pitch, lfoFreq, lfoDepth, cutoff, shape);
+                }
             } else {
                 document.getElementById("teacher-instructions").innerText = target.instruction;
                 document.getElementById("match-pct").style.color = "var(--glow-cyan)";
+            }
+        }
+
+        async function saveCalibrationToZmm(lessonTitle, accuracy, pitch, lfoFreq, lfoDepth, cutoff, shape) {
+            const shapes = ["triangle", "sawtooth", "sine"];
+            const detailsStr = `Lesson: ${lessonTitle}, accuracy: ${accuracy}%, pitch: ${pitch}Hz, lfoFreq: ${lfoFreq}Hz, lfoDepth: ${lfoDepth}Hz, cutoff: ${cutoff}Hz, shape: ${shapes[shape]}`;
+            
+            try {
+                const response = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        code: `wave512.dilemma_log ${JSON.stringify({
+                            event: "GROWL_CALIBRATION_SAVED",
+                            source: "Auncient Growl Teacher",
+                            details: detailsStr
+                        })}`
+                    })
+                });
+                const result = await response.json();
+                console.log("[ZMM LOG] Calibration saved successfully:", result);
+                
+                const instEl = document.getElementById("teacher-instructions");
+                instEl.innerText += " (⚡ Saved to ZMM VM Memory Logs)";
+            } catch (err) {
+                console.error("[ZMM LOG] Failed to save calibration to ZMM VM:", err);
             }
         }
 
