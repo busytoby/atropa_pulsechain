@@ -264,21 +264,31 @@
                     Greetings, Calibrator. Select a lesson below to begin matching growl frequencies. Adjust parameters to align the matching index.
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;" id="lessons-list">
                     <!-- Lesson 1 -->
                     <div class="lesson-card active" onclick="loadLesson(0)" id="lesson-0">
-                        <div class="lesson-title">1. Auncient Purr</div>
-                        <div class="lesson-desc">A low-frequency resonant rumble representing resting biorhythms. Pitch: 55Hz, LFO: 8Hz.</div>
+                        <div class="lesson-title">1. Auncient Purr Calibration</div>
+                        <div class="lesson-desc">Low-frequency resting biorhythm pattern. Pitch: 55Hz, LFO: 8Hz.</div>
                     </div>
                     <!-- Lesson 2 -->
                     <div class="lesson-card" onclick="loadLesson(1)" id="lesson-1">
-                        <div class="lesson-title">2. Interceptor Snarl</div>
-                        <div class="lesson-desc">A sharp, aggressive tracking growl utilizing sawtooth harmonics. Pitch: 88Hz, LFO: 14Hz.</div>
+                        <div class="lesson-title">2. WinchesterMQ SCSI Handshake</div>
+                        <div class="lesson-desc">Modulated register cycles on local SCSI handshake lines. Pitch: 66Hz, LFO: 4Hz.</div>
                     </div>
                     <!-- Lesson 3 -->
                     <div class="lesson-card" onclick="loadLesson(2)" id="lesson-2">
-                        <div class="lesson-title">3. Tummy Rumble Gravity Path</div>
-                        <div class="lesson-desc">A deep, shaking sub-oscillator rumble with heavy modulation. Pitch: 42Hz, LFO: 6Hz.</div>
+                        <div class="lesson-title">3. Interceptor Snarl Threat Pattern</div>
+                        <div class="lesson-desc">Sharp, aggressive tracking snarl using sawtooth harmonics. Pitch: 88Hz, LFO: 14Hz.</div>
+                    </div>
+                    <!-- Lesson 4 -->
+                    <div class="lesson-card" onclick="loadLesson(3)" id="lesson-3">
+                        <div class="lesson-title">4. ZMM Contract Resolution</div>
+                        <div class="lesson-desc">Lookup loop parameters for ZMM dynamic contract spaces. Pitch: 110Hz, LFO: 10Hz.</div>
+                    </div>
+                    <!-- Lesson 5 -->
+                    <div class="lesson-card" onclick="loadLesson(4)" id="lesson-4">
+                        <div class="lesson-title">5. Auncient Wavelet Decapitation</div>
+                        <div class="lesson-desc">Highly distorted sub-bass rumble mimicking trace-cut waves. Pitch: 35Hz, LFO: 22Hz.</div>
                     </div>
                 </div>
 
@@ -369,31 +379,49 @@
 
         const LESSONS = [
             {
-                title: "1. Auncient Purr",
+                title: "1. Auncient Purr Calibration",
                 pitch: 55,
                 lfoFreq: 8,
                 lfoDepth: 12,
                 cutoff: 140,
                 shape: 0, // triangle
-                instruction: "Excellent for meditative calibration. Keep LFO depth minimal and frequency under 10Hz to mimic breathing rhythm."
+                instruction: "Aligning LFO oscillation parameters to emulate a resting Auncient Wavelet purr. Keep the carrier filter cutoff below 150Hz."
             },
             {
-                title: "2. Interceptor Snarl",
+                title: "2. WinchesterMQ SCSI Handshake",
+                pitch: 66,
+                lfoFreq: 4,
+                lfoDepth: 15,
+                cutoff: 200,
+                shape: 2, // sine
+                instruction: "Modulating carriers to match the SCSI handshake pulse frequency of the WinchesterMQ. Keep LFO sweep restricted for cycle stability."
+            },
+            {
+                title: "3. Interceptor Snarl Threat Pattern",
                 pitch: 88,
                 lfoFreq: 14,
                 lfoDepth: 25,
                 cutoff: 400,
                 shape: 1, // sawtooth
-                instruction: "An aggressive warning snarl. Boost LFO frequency above 12Hz, use a Sawtooth shape, and open the lowpass filter cutoff."
+                instruction: "An aggressive warning snarl. Boost LFO frequency above 12Hz, use a Sawtooth shape, and open the lowpass filter cutoff to expose harmonics."
             },
             {
-                title: "3. Tummy Rumble Gravity Path",
-                pitch: 42,
-                lfoFreq: 6,
-                lfoDepth: 18,
-                cutoff: 100,
-                shape: 2, // sine
-                instruction: "Extremely deep rumble. Tune base carrier pitch as low as possible and restrict filter cutoff to isolate the sub-bass vibration."
+                title: "4. ZMM Contract Resolution",
+                pitch: 110,
+                lfoFreq: 10,
+                lfoDepth: 30,
+                cutoff: 350,
+                shape: 0, // triangle
+                instruction: "Calibrating ZMM virtual hardware registers for address lookup loops. Keep the carrier frequency near 110Hz to resolve phase mismatch."
+            },
+            {
+                title: "5. Auncient Wavelet Decapitation",
+                pitch: 35,
+                lfoFreq: 22,
+                lfoDepth: 45,
+                cutoff: 90,
+                shape: 1, // sawtooth
+                instruction: "A highly distorted sub-bass rumble mimicking wave-trace cutting sequences. Lower the carrier pitch to 35Hz and filter cutoff below 100Hz."
             }
         ];
 
