@@ -265,6 +265,7 @@
         let gameState = "START";
         let shield = 100;
         let boostFuel = 100;
+        let avgFreq = 0, bassFreq = 0;
 
         // Active game values
         let bearPos = { x: 0, y: 0, z: 0 };
@@ -687,14 +688,20 @@
                         const ny = dy / dist;
                         const nz = dz / dist;
 
-                        for (let s = 0; s < 3; s++) {
+                        // Audio-reactive fur density (scales from 2 to 6 strands dynamically)
+                        const strandCount = 2 + Math.floor((avgFreq / 255.0) * 4);
+                        for (let s = 0; s < strandCount; s++) {
                             const strandSeed = idx * 7 + s * 13;
-                            const swayAmplitude = 3 + velocity * 0.4;
-                            const swayX = Math.sin(pulse * 0.15 + strandSeed) * swayAmplitude;
-                            const swayY = Math.cos(pulse * 0.1 + strandSeed) * swayAmplitude;
-                            const swayZ = Math.sin(pulse * 0.2 + strandSeed) * 2;
+                            // Audio-reactive sway amplitude & speed
+                            const audioSway = (bassFreq / 255.0) * 12;
+                            const swayAmplitude = 3 + velocity * 0.4 + audioSway;
+                            const audioSpeedMod = 1.0 + (avgFreq / 255.0) * 2.0;
+                            const swayX = Math.sin((pulse * audioSpeedMod) * 0.15 + strandSeed) * swayAmplitude;
+                            const swayY = Math.cos((pulse * audioSpeedMod) * 0.1 + strandSeed) * swayAmplitude;
+                            const swayZ = Math.sin((pulse * audioSpeedMod) * 0.2 + strandSeed) * (2 + audioSway * 0.2);
 
-                            const hairLength = 8 + E * 3;
+                            // Audio-reactive fur length (grows up to 14 units on heavy bass hits)
+                            const hairLength = 8 + E * 3 + (bassFreq / 255.0) * 14;
                             const hairEnd = {
                                 x: v.x + nx * hairLength + swayX,
                                 y: v.y + ny * hairLength + swayY,
@@ -803,6 +810,23 @@
         function loop() {
             pulse += 0.05;
             const time = Date.now() * 0.001;
+
+            if (analyser && audioCtx) {
+                const fftLength = analyser.frequencyBinCount;
+                const freqArray = new Uint8Array(fftLength);
+                analyser.getByteFrequencyData(freqArray);
+                let sum = 0;
+                for (let i = 0; i < fftLength; i++) sum += freqArray[i];
+                avgFreq = sum / fftLength;
+
+                let bassSum = 0;
+                const bassBins = Math.max(1, Math.floor(fftLength * 0.1));
+                for (let i = 0; i < bassBins; i++) bassSum += freqArray[i];
+                bassFreq = bassSum / bassBins;
+            } else {
+                avgFreq = 0;
+                bassFreq = 0;
+            }
 
             if (gameState === "START") {
                 ctx.clearRect(0, 0, width, height);
@@ -1365,31 +1389,35 @@
             const furColor = "rgba(241, 157, 174, 0.9)";
             const eyeColor = "rgba(0, 242, 254, 0.95)";
 
+            // Audio-reactive 4D rotation speed modulators
+            const audioRotTheta = 1.0 + (avgFreq / 255.0) * 3.5;
+            const audioRotPhi = 1.0 + (bassFreq / 255.0) * 3.5;
+
             // 1. Head Tesseract
-            drawTesseract4D(skeleton.head, emotionalHeadSize / 2, pulse * 0.02, pulse * 0.015, furColor, 2);
+            drawTesseract4D(skeleton.head, emotionalHeadSize / 2, pulse * 0.02 * audioRotTheta, pulse * 0.015 * audioRotPhi, furColor, 2);
 
             // 2. Ears
             const earLOffset = rotateVectorByQuaternion({ x: -emotionalHeadSize * 0.5, y: emotionalHeadSize * 0.5, z: 0 }, qCombined);
             const earL = new Point3D(skeleton.head.x + earLOffset.x, skeleton.head.y + earLOffset.y, skeleton.head.z + earLOffset.z);
-            drawTesseract4D(earL, emotionalHeadSize / 5, pulse * 0.03, -pulse * 0.02, furColor, 1.5);
+            drawTesseract4D(earL, emotionalHeadSize / 5, pulse * 0.03 * audioRotTheta, -pulse * 0.02 * audioRotPhi, furColor, 1.5);
 
             const earROffset = rotateVectorByQuaternion({ x: emotionalHeadSize * 0.5, y: emotionalHeadSize * 0.5, z: 0 }, qCombined);
             const earR = new Point3D(skeleton.head.x + earROffset.x, skeleton.head.y + earROffset.y, skeleton.head.z + earROffset.z);
-            drawTesseract4D(earR, emotionalHeadSize / 5, -pulse * 0.03, pulse * 0.02, furColor, 1.5);
+            drawTesseract4D(earR, emotionalHeadSize / 5, -pulse * 0.03 * audioRotTheta, pulse * 0.02 * audioRotPhi, furColor, 1.5);
 
             // 3. Nose/Muzzle
             const muzzleOffset = rotateVectorByQuaternion({ x: 0, y: -emotionalHeadSize * 0.15, z: emotionalHeadSize * 0.35 }, qCombined);
             const muzzle = new Point3D(skeleton.head.x + muzzleOffset.x, skeleton.head.y + muzzleOffset.y, skeleton.head.z + muzzleOffset.z);
-            drawTesseract4D(muzzle, emotionalHeadSize / 6, pulse * 0.01, pulse * 0.01, "rgba(255, 255, 255, 0.8)", 1.5);
+            drawTesseract4D(muzzle, emotionalHeadSize / 6, pulse * 0.01 * audioRotTheta, pulse * 0.01 * audioRotPhi, "rgba(255, 255, 255, 0.8)", 1.5);
 
             // 4. Eyes (Glowing Cyan Tesseracts)
             const eyeLOffset = rotateVectorByQuaternion({ x: -10, y: 5, z: 12 }, qCombined);
             const eyeL = new Point3D(skeleton.head.x + eyeLOffset.x, skeleton.head.y + eyeLOffset.y, skeleton.head.z + eyeLOffset.z);
-            drawTesseract4D(eyeL, 3, pulse * 0.04, pulse * 0.04, eyeColor, 1.5);
+            drawTesseract4D(eyeL, 3, pulse * 0.04 * audioRotTheta, pulse * 0.04 * audioRotPhi, eyeColor, 1.5);
 
             const eyeROffset = rotateVectorByQuaternion({ x: 10, y: 5, z: 12 }, qCombined);
             const eyeR = new Point3D(skeleton.head.x + eyeROffset.x, skeleton.head.y + eyeROffset.y, skeleton.head.z + eyeROffset.z);
-            drawTesseract4D(eyeR, 3, -pulse * 0.04, pulse * 0.04, eyeColor, 1.5);
+            drawTesseract4D(eyeR, 3, -pulse * 0.04 * audioRotTheta, pulse * 0.04 * audioRotPhi, eyeColor, 1.5);
 
             // 5. Torso Body Tesseract (Pulsates and vibrates during tummy rumbles)
             const bodyCenter = new Point3D(
@@ -1398,7 +1426,7 @@
                 (skeleton.neck.z + skeleton.midHip.z) / 2
             );
             const torsoSize = 28 + (rumbleActive ? Math.sin(pulse * 0.65) * 5 : 0);
-            drawTesseract4D(bodyCenter, torsoSize, pulse * 0.015, -pulse * 0.01, "rgba(0, 242, 254, 0.45)", 2.5);
+            drawTesseract4D(bodyCenter, torsoSize, pulse * 0.015 * audioRotTheta, -pulse * 0.01 * audioRotPhi, "rgba(0, 242, 254, 0.45)", 2.5);
 
             if (rumbleActive && Math.random() < 0.28) {
                 particles.push({
@@ -1415,10 +1443,10 @@
             }
 
             // 6. Limbs
-            drawTesseract4D(skeleton.lPaw, 10, pulse * 0.025, pulse * 0.03, furColor, 1.8);
-            drawTesseract4D(skeleton.rPaw, 10, -pulse * 0.025, -pulse * 0.03, furColor, 1.8);
-            drawTesseract4D(skeleton.lFoot, 13, pulse * 0.015, -pulse * 0.02, furColor, 1.8);
-            drawTesseract4D(skeleton.rFoot, 13, -pulse * 0.015, pulse * 0.02, furColor, 1.8);
+            drawTesseract4D(skeleton.lPaw, 10, pulse * 0.025 * audioRotTheta, pulse * 0.03 * audioRotPhi, furColor, 1.8);
+            drawTesseract4D(skeleton.rPaw, 10, -pulse * 0.025 * audioRotTheta, -pulse * 0.03 * audioRotPhi, furColor, 1.8);
+            drawTesseract4D(skeleton.lFoot, 13, pulse * 0.015 * audioRotTheta, -pulse * 0.02 * audioRotPhi, furColor, 1.8);
+            drawTesseract4D(skeleton.rFoot, 13, -pulse * 0.015 * audioRotTheta, pulse * 0.02 * audioRotPhi, furColor, 1.8);
 
             // 12. Draw Retro Oscilloscope HUD
             if (analyser && audioCtx) {
