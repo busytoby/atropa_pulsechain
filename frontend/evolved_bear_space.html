@@ -14,6 +14,7 @@
             --glow-cyan: #00f2fe;
             --glow-magenta: #ff007f;
             --glow-yellow: #ffea00;
+            --glow-green: #39ff14;
         }
 
         body {
@@ -52,6 +53,7 @@
             backdrop-filter: blur(12px);
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
             pointer-events: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .instructions-card {
@@ -106,6 +108,8 @@
         .value-cyan { color: var(--glow-cyan); }
         .value-magenta { color: var(--glow-magenta); }
         .value-yellow { color: var(--glow-yellow); }
+        .value-green { color: var(--glow-green); }
+        .value-red { color: #ef4444; }
 
         /* Subtle grid background */
         .grid-bg {
@@ -139,7 +143,7 @@
     <div class="grid-bg"></div>
     <canvas id="canvas3d"></canvas>
 
-    <div class="overlay-card">
+    <div class="overlay-card" id="deck-card">
         <h1>Hamiltonian Space</h1>
         <div class="subtitle">Interactive Flight Deck</div>
         
@@ -148,7 +152,11 @@
             <span id="score-counter" class="stat-value value-yellow">0</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Velocity Vector (q)</span>
+            <span class="stat-label">Flight Velocity</span>
+            <span id="velocity-counter" class="stat-value value-green">4.0 u/f</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Orientation Vector (q)</span>
             <span id="velocity-vector" class="stat-value value-cyan">0.00, 0.00, 0.00</span>
         </div>
         <div class="stat-row">
@@ -160,21 +168,24 @@
             <span id="phase-status" class="stat-value value-cyan">In-Phase</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Audio Synth Engine</span>
+            <span class="stat-label">303 Acid Arpeggiator</span>
             <span id="synth-status" class="stat-value">MUTED (Click to activate)</span>
         </div>
     </div>
 
     <div class="instructions-card">
         <h3 style="margin-top: 0; color: var(--glow-cyan); font-size: 1rem;">Flight Controls</h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 8px;">
             <kbd>W</kbd> <kbd>S</kbd> &nbsp;Pitch Nose Down/Up<br>
             <kbd>A</kbd> <kbd>D</kbd> &nbsp;Yaw Left/Right<br>
             <kbd>Space</kbd> Toggle In/Out Phase Modulation<br>
             <kbd>Click</kbd> Activate Audio Synthesizer
         </p>
-        <p style="font-size: 0.8rem; color: var(--glow-yellow); margin-bottom: 0;">
-            Objective: Navigate the evolved bear skeleton into the glowing target rings in space!
+        <p style="font-size: 0.8rem; color: var(--glow-green); margin-bottom: 4px;">
+            🟢 Speed Gates: Boosts flight velocity
+        </p>
+        <p style="font-size: 0.8rem; color: #ef4444; margin-bottom: 4px;">
+            🔴 Tesseracts: Damaging obstacles (slows down)
         </p>
     </div>
 
@@ -192,66 +203,175 @@
 
         // Web Audio Context setup
         let audioCtx = null;
+        let mainOut = null;
         document.body.addEventListener("click", () => {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                mainOut = audioCtx.createGain();
+                mainOut.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                mainOut.connect(audioCtx.destination);
+                
                 document.getElementById("synth-status").innerText = "ACTIVE";
                 document.getElementById("synth-status").className = "stat-value value-yellow";
+                
+                // Start continuous background arpeggiator
+                startContinuousArpeggiator();
             }
         });
 
-        // Trigger synthesiser sound upon ring collection
-        function triggerCollectionSynth(isOutPhase) {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-            
-            // Sub-bass fundamental frequency
-            const oscSub = audioCtx.createOscillator();
-            const subGain = audioCtx.createGain();
-            oscSub.type = "sine";
-            oscSub.frequency.setValueAtTime(65.41, now); // C2 fundamental
-            subGain.gain.setValueAtTime(0.2, now);
-            subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            oscSub.connect(subGain);
-            subGain.connect(audioCtx.destination);
-            oscSub.start(now);
-            oscSub.stop(now + 0.5);
+        // Evolved 303 sequence notes (pentatonic minor)
+        const C2 = 65.41, C3 = 130.81, Eb2 = 77.78, G2 = 98.00, Bb2 = 116.54;
+        const ARPEGGIATOR_NOTES = [C2, C2, C3, Eb2, G2, Bb2, C3, Eb2];
 
-            // Lead 303 slide sweep
-            const oscLead = audioCtx.createOscillator();
-            const leadGain = audioCtx.createGain();
-            const filter = audioCtx.createBiquadFilter();
-            
-            oscLead.type = "sawtooth";
-            oscLead.frequency.setValueAtTime(130.81, now); // Start C3
-            oscLead.frequency.exponentialRampToValueAtTime(261.63, now + 0.2); // Slide to C4
-            
-            filter.type = "lowpass";
-            filter.Q.setValueAtTime(12, now); // resonant sweep
-            
-            // Modulation based on Phase settings
-            const startCutoff = isOutPhase ? 2000 : 400;
-            const endCutoff = isOutPhase ? 400 : 2500;
-            filter.frequency.setValueAtTime(startCutoff, now);
-            filter.frequency.exponentialRampToValueAtTime(endCutoff, now + 0.35);
+        let arpIndex = 0;
+        let nextNoteTime = 0;
 
-            leadGain.gain.setValueAtTime(0.18, now);
-            leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-
-            oscLead.connect(filter);
-            filter.connect(leadGain);
-            leadGain.connect(audioCtx.destination);
-            
-            oscLead.start(now);
-            oscLead.stop(now + 0.4);
+        function startContinuousArpeggiator() {
+            function scheduler() {
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                
+                // Adjust tempo dynamically based on flight velocity
+                const tempoBPM = 90 + Math.floor(velocity * 12); 
+                const stepLen = 60.0 / tempoBPM / 2; // 8th notes
+                
+                while (nextNoteTime < now + 0.1) {
+                    if (nextNoteTime === 0) nextNoteTime = now;
+                    play303Note(ARPEGGIATOR_NOTES[arpIndex], nextNoteTime, stepLen);
+                    arpIndex = (arpIndex + 1) % ARPEGGIATOR_NOTES.length;
+                    nextNoteTime += stepLen;
+                }
+                setTimeout(scheduler, 25);
+            }
+            scheduler();
         }
 
-        // Active flight quaternion
+        function play303Note(freq, time, duration) {
+            if (!audioCtx) return;
+
+            // Map spaceflight variables: X-quaternion modulates pitch, Z-traveller modulates formant cutoff
+            const qX = qCombined.x;
+            const qZ = qCombined.y; // using composite coordinate
+
+            const pitchMod = 1.0 + (qX * 0.2);
+            const modulatedFreq = freq * pitchMod;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(modulatedFreq, time);
+
+            filter.type = "lowpass";
+            filter.Q.setValueAtTime(10, time);
+            
+            // Phase determines if Z modulates filter frequency constructively or destructively
+            const phaseMultiplier = isOutPhase ? -1.0 : 1.0;
+            const formantMod = 1.0 + (qZ * phaseMultiplier * 0.3);
+            const targetCutoff = Math.max(150, Math.min(3000, 600 * formantMod));
+            
+            filter.frequency.setValueAtTime(targetCutoff, time);
+            filter.frequency.exponentialRampToValueAtTime(150, time + duration * 0.9);
+
+            gain.gain.setValueAtTime(0.12, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+            // Create Stereo Panner Node to pan arpeggiator dynamically matching coordinates
+            let pannerNode = null;
+            if (typeof audioCtx.createStereoPanner === 'function') {
+                pannerNode = audioCtx.createStereoPanner();
+                const panVal = Math.max(-1.0, Math.min(1.0, qX * 1.5));
+                pannerNode.pan.setValueAtTime(panVal, time);
+            }
+
+            osc.connect(filter);
+            if (pannerNode) {
+                filter.connect(pannerNode);
+                pannerNode.connect(gain);
+            } else {
+                filter.connect(gain);
+            }
+            gain.connect(mainOut);
+
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+
+        // SFX trigger for hits
+        function triggerSfx(isGood) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (isGood) {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.25, now);
+            } else {
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.25);
+                gain.gain.setValueAtTime(0.4, now);
+            }
+
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            osc.connect(gain);
+            gain.connect(mainOut);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        }
+
+        // Active game values
         let qCombined = { w: 1.0, x: 0.0, y: 0.0, z: 0.0 };
         let bearPos = { x: 0, y: 0, z: 0 };
-        let targetRing = { x: (Math.random() * 400 - 200), y: (Math.random() * 300 - 150), z: -400 };
+        let velocity = 4.0;
         let score = 0;
         let isOutPhase = false;
+
+        // Targets and Obstacles arrays
+        let speedGates = [];
+        let tesseracts = [];
+        let particles = [];
+
+        // Add game objects ahead of bear
+        function spawnWorldElements() {
+            // Speed gates (green)
+            while (speedGates.length < 3) {
+                speedGates.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (1000 + Math.random() * 1500)
+                });
+            }
+            // Tesseract obstacles (red)
+            while (tesseracts.length < 5) {
+                tesseracts.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (800 + Math.random() * 2000),
+                    rot: Math.random() * Math.PI
+                });
+            }
+        }
+
+        // Particle System: Feature 4 (Phase Trail Particles)
+        function spawnPhaseParticles(x, y, z) {
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: x + (Math.random() * 8 - 4),
+                    y: y + (Math.random() * 8 - 4),
+                    z: z,
+                    vx: Math.random() * 2 - 1,
+                    vy: Math.random() * 2 - 1,
+                    vz: velocity * 0.2 + Math.random() * 2,
+                    age: 0,
+                    maxAge: 30 + Math.random() * 20
+                });
+            }
+        }
 
         // Key states
         const keys = { w: false, a: false, s: false, d: false };
@@ -270,7 +390,7 @@
             if (k in keys) keys[k] = false;
         });
 
-        // 3D Point projection
+        // 3D Point class
         class Point3D {
             constructor(x, y, z) {
                 this.x = x;
@@ -286,7 +406,6 @@
         };
 
         function project(p) {
-            // Perspective division relative to camera distance
             const relativeZ = p.z - bearPos.z;
             const relativeX = p.x - bearPos.x;
             const relativeY = p.y - bearPos.y;
@@ -314,7 +433,7 @@
             return { x: rx, y: ry, z: rz };
         }
 
-        // Hamiltonian multiplication to update active flight quaternions
+        // Hamiltonian multiplication
         function multiplyQuaternions(q1, q2) {
             return {
                 w: q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
@@ -340,7 +459,6 @@
             let rShoulder = new Point3D(bearPos.x + 50 * scale, bearPos.y + 60 * scale, bearPos.z);
             let midHip = new Point3D(bearPos.x, bearPos.y - 15 * scale, bearPos.z);
 
-            // Rotate limbs via active quaternion
             let armL = rotateVectorByQuaternion({ x: -35 * scale, y: -45 * scale, z: 0 }, qCombined);
             let armR = rotateVectorByQuaternion({ x: 35 * scale, y: -45 * scale, z: 0 }, qCombined);
             let legL = rotateVectorByQuaternion({ x: -25 * scale, y: -60 * scale, z: 0 }, qCombined);
@@ -354,7 +472,63 @@
             return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
         }
 
+        // Draw 3D Tesseract Wireframe (simplified hypercube projection)
+        function drawTesseract(center, rotAngle) {
+            const size = 30;
+            // Define 8 vertices of outer cube and 8 of inner cube
+            const vertices = [];
+            for (let inner = 0; inner < 2; inner++) {
+                const s = inner === 0 ? size * 0.5 : size * 1.0;
+                for (let x = -1; x <= 1; x += 2) {
+                    for (let y = -1; y <= 1; y += 2) {
+                        for (let z = -1; z <= 1; z += 2) {
+                            // Rotate around Y and X axis
+                            let rx = x * s * Math.cos(rotAngle) - z * s * Math.sin(rotAngle);
+                            let rz = x * s * Math.sin(rotAngle) + z * s * Math.cos(rotAngle);
+                            let ry = y * s;
+                            vertices.push(new Point3D(center.x + rx, center.y + ry, center.z + rz));
+                        }
+                    }
+                }
+            }
+
+            // Draw outer and inner cube faces
+            const renderCubeEdge = (i1, i2) => {
+                let sc1 = project(vertices[i1]);
+                let sc2 = project(vertices[i2]);
+                if (!sc1 || !sc2) return;
+                ctx.beginPath();
+                ctx.moveTo(sc1.x, sc1.y);
+                ctx.lineTo(sc2.x, sc2.y);
+                ctx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            };
+
+            // Connect cube edges
+            for (let offset = 0; offset < 16; offset += 8) {
+                renderCubeEdge(offset + 0, offset + 1);
+                renderCubeEdge(offset + 1, offset + 3);
+                renderCubeEdge(offset + 3, offset + 2);
+                renderCubeEdge(offset + 2, offset + 0);
+                renderCubeEdge(offset + 4, offset + 5);
+                renderCubeEdge(offset + 5, offset + 7);
+                renderCubeEdge(offset + 7, offset + 6);
+                renderCubeEdge(offset + 6, offset + 4);
+                renderCubeEdge(offset + 0, offset + 4);
+                renderCubeEdge(offset + 1, offset + 5);
+                renderCubeEdge(offset + 2, offset + 6);
+                renderCubeEdge(offset + 3, offset + 7);
+            }
+
+            // Connect inner and outer cube vertices to complete tesseract
+            for (let i = 0; i < 8; i++) {
+                renderCubeEdge(i, i + 8);
+            }
+        }
+
         let pulse = 0;
+        const deckCard = document.getElementById("deck-card");
 
         function drawJoint(proj, size, color) {
             if (!proj) return;
@@ -394,7 +568,6 @@
             if (keys.a) yawVel = -0.04;
             if (keys.d) yawVel = 0.04;
 
-            // Create delta quaternion for current rotation inputs
             const cp = Math.cos(pitchVel / 2), sp = Math.sin(pitchVel / 2);
             const cy = Math.cos(yawVel / 2), sy = Math.sin(yawVel / 2);
             
@@ -405,58 +578,151 @@
                 z: -sp * sy
             });
 
-            // Multiply active flight quaternion by delta input
             qCombined = normalizeQuaternion(multiplyQuaternions(qCombined, qDelta));
-
-            // Move target forward
-            bearPos.z -= 4; // continuous flight speed
-
-            // Check collision with target ring
-            const dx = bearPos.x - targetRing.x;
-            const dy = bearPos.y - targetRing.y;
-            const dz = bearPos.z - targetRing.z;
-            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-            
-            document.getElementById("target-dist").innerText = `${Math.round(dist)}m`;
-            document.getElementById("velocity-vector").innerText = `${qCombined.x.toFixed(2)}, ${qCombined.y.toFixed(2)}, ${qCombined.z.toFixed(2)}`;
-
-            if (dist < 80) {
-                // Caught ring!
-                score++;
-                document.getElementById("score-counter").innerText = score;
-                triggerCollectionSynth(isOutPhase);
-                // Relocate target ring further ahead
-                targetRing.x = bearPos.x + (Math.random() * 600 - 300);
-                targetRing.y = bearPos.y + (Math.random() * 400 - 200);
-                targetRing.z = bearPos.z - 600;
-            } else if (dz < -200) {
-                // Missed ring, respawn target ring
-                targetRing.x = bearPos.x + (Math.random() * 400 - 200);
-                targetRing.y = bearPos.y + (Math.random() * 300 - 150);
-                targetRing.z = bearPos.z - 600;
-            }
 
             // Apply slight flight adjustment based on yaw/pitch direction
             bearPos.x += qCombined.y * 12;
             bearPos.y += qCombined.x * 12;
 
+            // Glide forward continuously
+            bearPos.z -= velocity;
+
+            // Gradually decay velocity back to base (4.0)
+            velocity += (4.0 - velocity) * 0.01;
+            document.getElementById("velocity-counter").innerText = `${velocity.toFixed(1)} u/f`;
+            document.getElementById("velocity-counter").className = velocity > 4.5 ? "stat-value value-green" : "stat-value value-cyan";
+
+            // Spawn elements dynamically
+            spawnWorldElements();
+
             ctx.clearRect(0, 0, width, height);
 
-            // 2. Draw Target Ring in Space
-            let ringProj = project(targetRing);
-            if (ringProj) {
-                ctx.beginPath();
-                ctx.arc(ringProj.x, ringProj.y, Math.max(10, 60000 / (camera.distance + (targetRing.z - bearPos.z))), 0, Math.PI * 2);
-                ctx.strokeStyle = "var(--glow-yellow)";
-                ctx.lineWidth = 4;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = "var(--glow-yellow)";
-                ctx.stroke();
-                ctx.shadowBlur = 0;
+            // 2. Process Speed Gates (Green Rings) - Feature 3
+            speedGates.forEach((gate, idx) => {
+                const dx = bearPos.x - gate.x;
+                const dy = bearPos.y - gate.y;
+                const dz = bearPos.z - gate.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 80) {
+                    // Collected boost gate!
+                    velocity = Math.min(10.0, velocity + 2.5);
+                    score++;
+                    document.getElementById("score-counter").innerText = score;
+                    triggerSfx(true);
+                    
+                    // Flash deck card green
+                    deckCard.style.borderColor = "var(--glow-green)";
+                    deckCard.style.boxShadow = "0 0 40px rgba(57, 255, 20, 0.4)";
+                    setTimeout(() => {
+                        deckCard.style.borderColor = "var(--border-color)";
+                        deckCard.style.boxShadow = "0 0 30px rgba(0, 242, 254, 0.15)";
+                    }, 250);
+
+                    // Relocate gate further ahead
+                    gate.x = bearPos.x + (Math.random() * 800 - 400);
+                    gate.y = bearPos.y + (Math.random() * 600 - 300);
+                    gate.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    // Respawn gate
+                    gate.x = bearPos.x + (Math.random() * 800 - 400);
+                    gate.y = bearPos.y + (Math.random() * 600 - 300);
+                    gate.z = bearPos.z - 2000;
+                }
+
+                // Render Green Ring
+                let gateProj = project(gate);
+                if (gateProj && gateProj.depth > 0) {
+                    ctx.beginPath();
+                    ctx.arc(gateProj.x, gateProj.y, Math.max(10, 60000 / (camera.distance + gateProj.depth)), 0, Math.PI * 2);
+                    ctx.strokeStyle = "var(--glow-green)";
+                    ctx.lineWidth = 4;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "var(--glow-green)";
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // 3. Process Tesseracts (Red Obstacles) - Feature 2
+            tesseracts.forEach((tess, idx) => {
+                tess.rot += 0.02;
+
+                const dx = bearPos.x - tess.x;
+                const dy = bearPos.y - tess.y;
+                const dz = bearPos.z - tess.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 60) {
+                    // Collided with obstacle!
+                    velocity = Math.max(1.5, velocity - 1.5); // damping slow down
+                    triggerSfx(false);
+
+                    // Flash deck card red
+                    deckCard.style.borderColor = "#ef4444";
+                    deckCard.style.boxShadow = "0 0 40px rgba(239, 68, 68, 0.5)";
+                    setTimeout(() => {
+                        deckCard.style.borderColor = "var(--border-color)";
+                        deckCard.style.boxShadow = "0 0 30px rgba(0, 242, 254, 0.15)";
+                    }, 250);
+
+                    // Relocate obstacle
+                    tess.x = bearPos.x + (Math.random() * 800 - 400);
+                    tess.y = bearPos.y + (Math.random() * 600 - 300);
+                    tess.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    // Respawn obstacle
+                    tess.x = bearPos.x + (Math.random() * 800 - 400);
+                    tess.y = bearPos.y + (Math.random() * 600 - 300);
+                    tess.z = bearPos.z - 2000;
+                }
+
+                // Render Red Tesseract
+                let tessProj = project(tess);
+                if (tessProj && tessProj.depth > 0) {
+                    drawTesseract(tess, tess.rot);
+                }
+            });
+
+            // Update Target Ring UI stats
+            if (speedGates.length > 0) {
+                const nearestGate = speedGates.reduce((prev, curr) => {
+                    const d1 = Math.abs(curr.z - bearPos.z);
+                    const d2 = Math.abs(prev.z - bearPos.z);
+                    return d1 < d2 ? curr : prev;
+                });
+                const gateDx = bearPos.x - nearestGate.x;
+                const gateDy = bearPos.y - nearestGate.y;
+                const gateDz = bearPos.z - nearestGate.z;
+                const nearestDist = Math.sqrt(gateDx*gateDx + gateDy*gateDy + gateDz*gateDz);
+                document.getElementById("target-dist").innerText = `${Math.round(nearestDist)}m`;
             }
 
-            // 3. Draw Bear Skeleton
+            // 4. Render and Update Particles - Feature 4
+            particles.forEach((part, idx) => {
+                part.x += part.vx;
+                part.y += part.vy;
+                part.z += part.vz;
+                part.age++;
+
+                let proj = project(part);
+                if (proj && proj.depth > 0) {
+                    const life = 1.0 - (part.age / part.maxAge);
+                    const size = Math.max(1, 3 * life);
+                    const pCol = isOutPhase 
+                        ? `rgba(255, 0, 127, ${0.4 * life})` // Magenta out-of-phase
+                        : `rgba(0, 242, 254, ${0.4 * life})`; // Cyan in-phase
+                    drawJoint(proj, size, pCol);
+                }
+            });
+            particles = particles.filter(part => part.age < part.maxAge);
+
+            // 5. Draw Bear Skeleton
             const skeleton = getBearSkeleton(pulse);
+
+            // Spawn trail particles from paws
+            spawnPhaseParticles(skeleton.lPaw.x, skeleton.lPaw.y, skeleton.lPaw.z);
+            spawnPhaseParticles(skeleton.rPaw.x, skeleton.rPaw.y, skeleton.rPaw.z);
 
             const boneColor = "rgba(0, 242, 254, 0.4)";
             drawBone(skeleton.head, skeleton.neck, boneColor, 6);
@@ -468,13 +734,12 @@
             drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 5);
             drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 5);
 
-            // Draw volumetric fuzzy joints (pink fur, purple eyes)
             const furColor = "rgba(241, 157, 174, 0.85)";
             const eyeColor = "rgba(166, 7, 214, 0.95)";
 
             drawJoint(project(skeleton.head), 30, furColor);
             
-            // Draw eyes offset on head
+            // Draw eyes
             let eyeL = new Point3D(skeleton.head.x - 10, skeleton.head.y + 5, skeleton.head.z + 15);
             let eyeR = new Point3D(skeleton.head.x + 10, skeleton.head.y + 5, skeleton.head.z + 15);
             drawJoint(project(eyeL), 5, eyeColor);
