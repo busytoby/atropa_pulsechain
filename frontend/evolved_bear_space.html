@@ -6,11 +6,11 @@
     <title>Evolved Quaternion Bear Space Flight</title>
     <style>
         :root {
-            --bg-color: #030712;
-            --card-bg: rgba(17, 24, 39, 0.85);
+            --bg-color: #020617;
+            --card-bg: rgba(15, 23, 42, 0.85);
             --border-color: rgba(0, 242, 254, 0.35);
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
             --glow-cyan: #00f2fe;
             --glow-magenta: #ff007f;
             --glow-yellow: #ffea00;
@@ -187,20 +187,64 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Web Audio Context setup
+        // Web Audio Context setup with non-linear distortion & feedback delay
         let audioCtx = null;
         let mainOut = null;
+        let analyser = null;
+        let distortionNode = null;
+        let delayNode = null;
+        let delayFeedback = null;
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
         document.body.addEventListener("click", () => {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
                 mainOut = audioCtx.createGain();
-                mainOut.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                mainOut.connect(audioCtx.destination);
+                mainOut.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                
+                // Real-time oscilloscope analyser node
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+
+                // Non-linear wave-shaping distortion (Feature 2: Audio Distortion)
+                distortionNode = audioCtx.createWaveShaper();
+                distortionNode.curve = makeDistortionCurve(80);
+                distortionNode.oversample = '4x';
+
+                // Feedback Delay module (Feature 2: Delay lines)
+                delayNode = audioCtx.createDelay(1.0);
+                delayNode.delayTime.setValueAtTime(0.24, audioCtx.currentTime);
+                
+                delayFeedback = audioCtx.createGain();
+                delayFeedback.gain.setValueAtTime(0.38, audioCtx.currentTime);
+
+                // Wire up FX loop
+                distortionNode.connect(delayNode);
+                delayNode.connect(delayFeedback);
+                delayFeedback.connect(delayNode); // feedback loop
+
+                // Connect paths to output
+                distortionNode.connect(mainOut);
+                delayNode.connect(mainOut);
+                
+                mainOut.connect(analyser);
+                analyser.connect(audioCtx.destination);
                 
                 document.getElementById("synth-status").innerText = "ACTIVE";
                 document.getElementById("synth-status").className = "stat-value value-yellow";
                 
-                // Start continuous background arpeggiator
                 startContinuousArpeggiator();
             }
         });
@@ -217,7 +261,6 @@
                 if (!audioCtx) return;
                 const now = audioCtx.currentTime;
                 
-                // Adjust tempo dynamically based on flight velocity
                 const tempoBPM = 90 + Math.floor(velocity * 12); 
                 const stepLen = 60.0 / tempoBPM / 2; // 8th notes
                 
@@ -235,7 +278,6 @@
         function play303Note(freq, time, duration) {
             if (!audioCtx) return;
 
-            // Map spaceflight variables: X-quaternion modulates pitch, Z-traveller modulates formant cutoff
             const qX = qCombined.x;
             const qZ = qCombined.y;
 
@@ -250,20 +292,17 @@
             osc.frequency.setValueAtTime(modulatedFreq, time);
 
             filter.type = "lowpass";
-            filter.Q.setValueAtTime(10, time);
+            filter.Q.setValueAtTime(12, time);
             
-            // Phase determines if Z modulates filter frequency constructively or destructively
             const phaseMultiplier = isOutPhase ? -1.0 : 1.0;
             const formantMod = 1.0 + (qZ * phaseMultiplier * 0.3);
             
-            // Vaesen Biorhythm feeling (E) modulates the base filter cutoff sweep range
-            const emotionalOffset = E * 150;
-            const targetCutoff = Math.max(150, Math.min(3000, (600 + emotionalOffset) * formantMod));
+            const emotionalOffset = E * 180;
+            const targetCutoff = Math.max(150, Math.min(3200, (650 + emotionalOffset) * formantMod));
             
             filter.frequency.setValueAtTime(targetCutoff, time);
             
-            // Biorhythm modulates the envelope decay release speed
-            const releaseDecay = duration * (0.9 + E * 0.15);
+            const releaseDecay = duration * (0.95 + E * 0.15);
             filter.frequency.exponentialRampToValueAtTime(150, time + releaseDecay);
 
             gain.gain.setValueAtTime(0.12, time);
@@ -283,13 +322,13 @@
             } else {
                 filter.connect(gain);
             }
-            gain.connect(mainOut);
+            // Send to distortion node instead of raw output to enable driven tube sound
+            gain.connect(distortionNode);
 
             osc.start(time);
             osc.stop(time + duration);
         }
 
-        // SFX trigger for hits
         function triggerSfx(type) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
@@ -300,17 +339,17 @@
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(440, now);
                 osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
-                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.setValueAtTime(0.2, now);
             } else if (type === "token") {
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.setValueAtTime(0.15, now);
             } else {
                 osc.type = "triangle";
                 osc.frequency.setValueAtTime(120, now);
                 osc.frequency.linearRampToValueAtTime(40, now + 0.25);
-                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.setValueAtTime(0.35, now);
             }
 
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
@@ -326,13 +365,16 @@
         let velocity = 4.0;
         let score = 0;
         let isOutPhase = false;
-        let E = 0.0; // Vaesen Emotional state
+        let E = 0.0; 
 
         // Game arrays
         let speedGates = [];
         let tesseracts = [];
         let particles = [];
         
+        // Feature 4: 3D Shockwave Rings
+        let shockwaves = [];
+
         // Feature 1: Warp Starfield
         let stars = [];
         for (let i = 0; i < 80; i++) {
@@ -374,7 +416,6 @@
             }
         }
 
-        // Feature 4: Particle cloud trails
         function spawnPhaseParticles(x, y, z) {
             for (let i = 0; i < 3; i++) {
                 particles.push({
@@ -388,6 +429,31 @@
                     maxAge: 30 + Math.random() * 20
                 });
             }
+        }
+
+        // Particle burst on collisions (Feature 4: 3D explosions)
+        function triggerCollisionParticles(pos, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                    vx: (Math.random() * 12 - 6),
+                    vy: (Math.random() * 12 - 6),
+                    vz: (Math.random() * 12 - 6) - velocity,
+                    age: 0,
+                    maxAge: 40 + Math.random() * 20
+                });
+            }
+            shockwaves.push({
+                x: pos.x,
+                y: pos.y,
+                z: pos.z,
+                radius: 10,
+                maxRadius: 180,
+                color: color,
+                opacity: 1.0
+            });
         }
 
         const keys = { w: false, a: false, s: false, d: false };
@@ -414,24 +480,38 @@
             }
         }
 
+        // Feature 1: Camera spring kinematics state
         const camera = {
             distance: 800,
-            fov: 600
+            fov: 600,
+            yaw: 0.0,
+            pitch: 0.0,
+            targetYaw: 0.0,
+            targetPitch: 0.0
         };
 
         function project(p) {
             const relativeZ = p.z - bearPos.z;
             const relativeX = p.x - bearPos.x;
             const relativeY = p.y - bearPos.y;
-            const scale = camera.fov / (camera.distance + relativeZ);
+
+            // Apply camera spring rotation mapping (Feature 1)
+            let cosY = Math.cos(camera.yaw), sinY = Math.sin(camera.yaw);
+            let cosX = Math.cos(camera.pitch), sinX = Math.sin(camera.pitch);
+
+            let x1 = relativeX * cosY - relativeZ * sinY;
+            let z1 = relativeX * sinY + relativeZ * cosY;
+            let y2 = relativeY * cosX - z1 * sinX;
+            let z2 = relativeY * sinX + z1 * cosX;
+
+            const scale = camera.fov / (camera.distance + z2);
             return {
-                x: width / 2 + relativeX * scale,
-                y: height / 2 - relativeY * scale,
-                depth: relativeZ
+                x: width / 2 + x1 * scale,
+                y: height / 2 - y2 * scale,
+                depth: z2
             };
         }
 
-        // Quaternion rotation
         function rotateVectorByQuaternion(v, q) {
             const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
             const vx = v.x, vy = v.y, vz = v.z;
@@ -447,7 +527,6 @@
             return { x: rx, y: ry, z: rz };
         }
 
-        // Hamiltonian product
         function multiplyQuaternions(q1, q2) {
             return {
                 w: q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
@@ -465,8 +544,6 @@
         // Generate Bear Skeleton structure
         function getBearSkeleton(pulse) {
             const scale = 1.0;
-            
-            // Feature 4: Emotive Breathing Biorhythm modulates breathing speed and head/torso scales
             const breatheAmplitude = 3 + E * 2;
             const breathing = Math.sin(pulse * (1.0 + E * 0.2)) * breatheAmplitude;
 
@@ -476,9 +553,9 @@
             let rShoulder = new Point3D(bearPos.x + 50 * scale, bearPos.y + 60 * scale, bearPos.z);
             let midHip = new Point3D(bearPos.x, bearPos.y - 15 * scale, bearPos.z);
 
-            // Feature 3: Double Rotation 4D Morphing warps coordinate points if out-of-phase
+            // Feature 3: Double Rotation 4D Morphing
             const targetQuaternion = isOutPhase 
-                ? normalizeQuaternion(multiplyQuaternions(qCombined, { w: 0.707, x: 0.0, y: 0.707, z: 0.0 })) // 4D offset rotation
+                ? normalizeQuaternion(multiplyQuaternions(qCombined, { w: 0.707, x: 0.0, y: 0.707, z: 0.0 }))
                 : qCombined;
 
             let armL = rotateVectorByQuaternion({ x: -35 * scale, y: -45 * scale, z: 0 }, targetQuaternion);
@@ -494,7 +571,7 @@
             return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
         }
 
-        // Draw 3D Tesseract Wireframe (simplified hypercube projection)
+        // Draw 3D Tesseract Wireframe
         function drawTesseract(center, rotAngle) {
             const size = 30;
             const vertices = [];
@@ -577,7 +654,6 @@
             pulse += 0.05;
             const time = Date.now() * 0.001;
 
-            // Feature 4: Calculate Vaesen Emotional rhythm cycle E
             E = Math.sin((2.0 * Math.PI * time) / 28.0);
             const feelingLabel = E > 0.3 ? "Auncient Panic" : E < -0.3 ? "Auncient Melancholy" : "Auncient Balance";
             document.getElementById("vaesen-feeling").innerText = feelingLabel;
@@ -614,14 +690,20 @@
             velocity += (4.0 - velocity) * 0.01;
             document.getElementById("velocity-counter").innerText = `${velocity.toFixed(1)} u/f`;
 
-            // Spawn elements dynamically
+            // Feature 1: Camera spring kinematics yaw/pitch target mapping
+            camera.targetYaw = qCombined.y * 0.3;
+            camera.targetPitch = qCombined.x * 0.3;
+            
+            // Slew camera offsets with spring damping coefficient (0.08)
+            camera.yaw += (camera.targetYaw - camera.yaw) * 0.08;
+            camera.pitch += (camera.targetPitch - camera.pitch) * 0.08;
+
             spawnWorldElements();
 
             ctx.clearRect(0, 0, width, height);
 
             // 2. Render Warp Starfield (Feature 1)
             stars.forEach((star) => {
-                // Move stars relatively back
                 if (star.z - bearPos.z > 200) {
                     star.z = bearPos.z - 1500;
                     star.x = Math.random() * 2000 - 1000;
@@ -629,8 +711,7 @@
                 }
 
                 let proj1 = project(star);
-                // Draw star stretching to represent warp speed lines
-                let proj2 = project({ x: star.x, y: star.y, z: star.z + velocity * 3.5 });
+                let proj2 = project({ x: star.x, y: star.y, z: star.z + velocity * 4.0 });
 
                 if (proj1 && proj2 && proj1.depth > 0) {
                     ctx.beginPath();
@@ -655,6 +736,9 @@
                     document.getElementById("score-counter").innerText = score;
                     triggerSfx("boost");
                     
+                    // Feature 4: Trigger green expanding shockwave rings and explosion bursts
+                    triggerCollisionParticles(gate, "var(--glow-green)");
+
                     deckCard.style.borderColor = "var(--glow-green)";
                     deckCard.style.boxShadow = "0 0 40px rgba(57, 255, 20, 0.4)";
                     setTimeout(() => {
@@ -696,6 +780,9 @@
                 if (dist < 60) {
                     velocity = Math.max(1.5, velocity - 1.5);
                     triggerSfx("hit");
+                    
+                    // Feature 4: Red particle burst on collision
+                    triggerCollisionParticles(tess, "#ef4444");
 
                     deckCard.style.borderColor = "#ef4444";
                     deckCard.style.boxShadow = "0 0 40px rgba(239, 68, 68, 0.5)";
@@ -719,7 +806,7 @@
                 }
             });
 
-            // 5. Process WinchesterMQ Slots (Feature 2)
+            // 5. Process WinchesterMQ Slots
             memorySlots.forEach((slot) => {
                 const dx = bearPos.x - slot.x;
                 const dy = bearPos.y - slot.y;
@@ -727,15 +814,17 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
                 if (dist < 70) {
-                    // Collected hex slot!
                     triggerSfx("token");
+                    
+                    // Trigger yellow shockwave ring
+                    triggerCollisionParticles(slot, "var(--glow-yellow)");
+
                     const label = slot.address.split(":")[1];
                     if (!decodedStory.includes(label)) {
                         decodedStory.push(label);
                         document.getElementById("decoded-msg").innerText = decodedStory.join(" -> ");
                     }
 
-                    // Relocate
                     slot.x = bearPos.x + (Math.random() * 800 - 400);
                     slot.y = bearPos.y + (Math.random() * 600 - 300);
                     slot.z = bearPos.z - 2000;
@@ -755,7 +844,6 @@
                     ctx.fill();
                     ctx.shadowBlur = 0;
 
-                    // Draw address index text above ring
                     ctx.fillStyle = "#fff";
                     ctx.font = "10px monospace";
                     ctx.fillText(slot.address.split(":")[0], slotProj.x - 20, slotProj.y - 12);
@@ -775,7 +863,7 @@
                 document.getElementById("target-dist").innerText = `${Math.round(nearestDist)}m`;
             }
 
-            // 6. Render Trail Particles
+            // 6. Render and Update Particles
             particles.forEach((part) => {
                 part.x += part.vx;
                 part.y += part.vy;
@@ -794,7 +882,25 @@
             });
             particles = particles.filter(part => part.age < part.maxAge);
 
-            // 7. Draw Bear Skeleton
+            // 7. Render 3D Shockwave Rings (Feature 4)
+            shockwaves.forEach((wave) => {
+                wave.radius += 4;
+                wave.opacity = 1.0 - (wave.radius / wave.maxRadius);
+                
+                let proj = project(wave);
+                if (proj && proj.depth > 0) {
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, Math.max(1, wave.radius * (camera.fov / (camera.distance + (wave.z - bearPos.z)))), 0, Math.PI * 2);
+                    ctx.strokeStyle = wave.color;
+                    ctx.lineWidth = 3;
+                    ctx.globalAlpha = Math.max(0, wave.opacity);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0; // reset
+                }
+            });
+            shockwaves = shockwaves.filter(wave => wave.radius < wave.maxRadius);
+
+            // 8. Draw Bear Skeleton
             const skeleton = getBearSkeleton(pulse);
 
             spawnPhaseParticles(skeleton.lPaw.x, skeleton.lPaw.y, skeleton.lPaw.z);
@@ -810,7 +916,6 @@
             drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 5);
             drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 5);
 
-            // Feature 4: Emotional cycle E modulates head radius size dynamically
             const emotionalHeadSize = 30 + E * 4;
             const furColor = "rgba(241, 157, 174, 0.85)";
             const eyeColor = "rgba(166, 7, 214, 0.95)";
@@ -827,6 +932,52 @@
             drawJoint(project(skeleton.rPaw), 12, furColor);
             drawJoint(project(skeleton.lFoot), 15, furColor);
             drawJoint(project(skeleton.rFoot), 15, furColor);
+
+            // 9. Draw Retro Oscilloscope HUD (Feature 3)
+            if (analyser && audioCtx) {
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+
+                ctx.beginPath();
+                ctx.rect(30, 30, 200, 70);
+                ctx.fillStyle = "rgba(15, 23, 42, 0.6)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                const sliceWidth = 200 / bufferLength;
+                let x = 30;
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0; // normalised
+                    const y = 30 + (v * 70) / 2;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                ctx.strokeStyle = "var(--glow-cyan)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Draw radar/biorhythm loop (Feature 3)
+                ctx.beginPath();
+                ctx.arc(280, 65, 25, 0, Math.PI * 2);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.stroke();
+                
+                // Draw active E point orbit
+                const orbX = 280 + Math.cos(time * 1.5) * 20 * (1.0 + E * 0.2);
+                const orbY = 65 + Math.sin(time * 1.5) * 20 * (1.0 + E * 0.2);
+                ctx.beginPath();
+                ctx.arc(orbX, orbY, 4, 0, Math.PI * 2);
+                ctx.fillStyle = E > 0 ? "var(--glow-magenta)" : "var(--glow-cyan)";
+                ctx.fill();
+            }
 
             requestAnimationFrame(loop);
         }
