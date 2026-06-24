@@ -1327,6 +1327,40 @@
             drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 3);
             drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 3);
 
+            // Draw Hamiltonian Vector Paths pointing from the bear's paws to the nearest active speed gate
+            if (speedGates.length > 0) {
+                const nearestGate = speedGates.reduce((prev, curr) => {
+                    const d1 = Math.abs(curr.z - bearPos.z);
+                    const d2 = Math.abs(prev.z - bearPos.z);
+                    return d1 < d2 ? curr : prev;
+                });
+                
+                let projGate = project(nearestGate);
+                let projLPaw = project(skeleton.lPaw);
+                let projRPaw = project(skeleton.rPaw);
+                
+                if (projGate && projGate.depth > 0) {
+                    ctx.save();
+                    ctx.setLineDash([6, 6]);
+                    ctx.strokeStyle = "rgba(57, 255, 20, 0.55)";
+                    ctx.lineWidth = 2.0;
+                    
+                    if (projLPaw && projLPaw.depth > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(projLPaw.x, projLPaw.y);
+                        ctx.lineTo(projGate.x, projGate.y);
+                        ctx.stroke();
+                    }
+                    if (projRPaw && projRPaw.depth > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(projRPaw.x, projRPaw.y);
+                        ctx.lineTo(projGate.x, projGate.y);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            }
+
             const emotionalHeadSize = 32 + E * 5;
             const furColor = "rgba(241, 157, 174, 0.9)";
             const eyeColor = "rgba(0, 242, 254, 0.95)";
