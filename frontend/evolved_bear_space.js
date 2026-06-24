@@ -1,0 +1,1436 @@
+        const canvas = document.getElementById("canvas3d");
+        const ctx = canvas.getContext("2d");
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        let audioCtx = null;
+        let mainOut = null;
+        let analyser = null;
+        let distortionNode = null;
+        let delayNode = null;
+        let delayFeedback = null;
+        let rumbleOsc1 = null, rumbleOsc2 = null, rumbleGain = null;
+        let enemyRumbleOsc = null, enemyRumbleGain = null;
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        // Initialize Audio on any click/interaction
+        document.body.addEventListener("mousedown", () => {
+            initAudio();
+            if (gameState === "PLAYING") {
+                fireLaser();
+            }
+        });
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                mainOut = audioCtx.createGain();
+                mainOut.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+
+                distortionNode = audioCtx.createWaveShaper();
+                distortionNode.curve = makeDistortionCurve(80);
+                distortionNode.oversample = '4x';
+
+                delayNode = audioCtx.createDelay(1.0);
+                delayNode.delayTime.setValueAtTime(0.24, audioCtx.currentTime);
+                
+                delayFeedback = audioCtx.createGain();
+                delayFeedback.gain.setValueAtTime(0.38, audioCtx.currentTime);
+
+                distortionNode.connect(delayNode);
+                delayNode.connect(delayFeedback);
+                delayFeedback.connect(delayNode);
+
+                distortionNode.connect(mainOut);
+                delayNode.connect(mainOut);
+                
+                mainOut.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                
+                document.getElementById("synth-status").innerText = "ACTIVE";
+                document.getElementById("synth-status").className = "stat-value value-yellow";
+                
+                startContinuousArpeggiator();
+            }
+        }
+
+        const C2 = 65.41, C3 = 130.81, Eb2 = 77.78, G2 = 98.00, Bb2 = 116.54;
+        const ARPEGGIATOR_NOTES = [C2, C2, C3, Eb2, G2, Bb2, C3, Eb2];
+
+        let arpIndex = 0;
+        let nextNoteTime = 0;
+
+        function startContinuousArpeggiator() {
+            if (audioCtx && !rumbleOsc1) {
+                const now = audioCtx.currentTime;
+                rumbleGain = audioCtx.createGain();
+                rumbleGain.gain.setValueAtTime(0.001, now);
+
+                rumbleOsc1 = audioCtx.createOscillator();
+                rumbleOsc1.type = "triangle";
+                rumbleOsc1.frequency.setValueAtTime(55, now);
+
+                rumbleOsc2 = audioCtx.createOscillator();
+                rumbleOsc2.type = "sine";
+                rumbleOsc2.frequency.setValueAtTime(65, now);
+
+                const lfo = audioCtx.createOscillator();
+                lfo.type = "sine";
+                lfo.frequency.setValueAtTime(8, now);
+
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.setValueAtTime(12, now);
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(rumbleOsc1.frequency);
+                lfoGain.connect(rumbleOsc2.frequency);
+
+                rumbleOsc1.connect(rumbleGain);
+                rumbleOsc2.connect(rumbleGain);
+                rumbleGain.connect(mainOut);
+
+                lfo.start(now);
+                rumbleOsc1.start(now);
+                rumbleOsc2.start(now);
+
+                // Spatialized enemy growl initialization
+                enemyRumbleGain = audioCtx.createGain();
+                enemyRumbleGain.gain.setValueAtTime(0.001, now);
+
+                enemyRumbleOsc = audioCtx.createOscillator();
+                enemyRumbleOsc.type = "sawtooth";
+                enemyRumbleOsc.frequency.setValueAtTime(45, now);
+
+                const enemyLfo = audioCtx.createOscillator();
+                enemyLfo.type = "triangle";
+                enemyLfo.frequency.setValueAtTime(14, now);
+
+                const enemyLfoGain = audioCtx.createGain();
+                enemyLfoGain.gain.setValueAtTime(8, now);
+
+                enemyLfo.connect(enemyLfoGain);
+                enemyLfoGain.connect(enemyRumbleOsc.frequency);
+
+                const enemyFilter = audioCtx.createBiquadFilter();
+                enemyFilter.type = "lowpass";
+                enemyFilter.frequency.setValueAtTime(120, now);
+
+                enemyRumbleOsc.connect(enemyFilter);
+                enemyFilter.connect(enemyRumbleGain);
+                enemyRumbleGain.connect(mainOut);
+
+                enemyLfo.start(now);
+                enemyRumbleOsc.start(now);
+            }
+
+            function scheduler() {
+                if (!audioCtx || gameState !== "PLAYING") return;
+                const now = audioCtx.currentTime;
+                
+                const tempoBPM = 90 + Math.floor(velocity * 12); 
+                const stepLen = 60.0 / tempoBPM / 2;
+                
+                while (nextNoteTime < now + 0.1) {
+                    if (nextNoteTime === 0) nextNoteTime = now;
+                    play303Note(ARPEGGIATOR_NOTES[arpIndex], nextNoteTime, stepLen);
+                    arpIndex = (arpIndex + 1) % ARPEGGIATOR_NOTES.length;
+                    nextNoteTime += stepLen;
+                }
+                setTimeout(scheduler, 25);
+            }
+            scheduler();
+        }
+
+        function play303Note(freq, time, duration) {
+            if (!audioCtx) return;
+
+            const qX = qCombined.x;
+            const qZ = qCombined.y;
+
+            const pitchMod = 1.0 + (qX * 0.2);
+            const modulatedFreq = freq * pitchMod;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(modulatedFreq, time);
+
+            filter.type = "lowpass";
+            filter.Q.setValueAtTime(10, time);
+            
+            const phaseMultiplier = isOutPhase ? -1.0 : 1.0;
+            const formantMod = 1.0 + (qZ * phaseMultiplier * 0.3);
+            
+            const emotionalOffset = E * 180;
+            const targetCutoff = Math.max(150, Math.min(3000, (650 + emotionalOffset) * formantMod));
+            
+            filter.frequency.setValueAtTime(targetCutoff, time);
+            
+            const releaseDecay = duration * (0.95 + E * 0.15);
+            filter.frequency.exponentialRampToValueAtTime(150, time + releaseDecay);
+
+            gain.gain.setValueAtTime(0.12, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+            let pannerNode = null;
+            if (typeof audioCtx.createStereoPanner === 'function') {
+                pannerNode = audioCtx.createStereoPanner();
+                const panVal = Math.max(-1.0, Math.min(1.0, qX * 1.5));
+                pannerNode.pan.setValueAtTime(panVal, time);
+            }
+
+            osc.connect(filter);
+            if (pannerNode) {
+                filter.connect(pannerNode);
+                pannerNode.connect(gain);
+            } else {
+                filter.connect(gain);
+            }
+            gain.connect(distortionNode);
+
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+
+        function triggerSfx(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === "boost") {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+            } else if (type === "token" || type === "heal") {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+            } else if (type === "laser") {
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+            } else if (type === "explosion") {
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+                gain.gain.setValueAtTime(0.4, now);
+            } else if (type === "hyperdrive") {
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(1500, now + 0.6);
+                gain.gain.setValueAtTime(0.3, now);
+            } else {
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.25);
+                gain.gain.setValueAtTime(0.35, now);
+            }
+
+            const duration = type === "hyperdrive" ? 0.6 : (type === "explosion" ? 0.35 : 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(mainOut);
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        // Game states: "START", "PLAYING", "GAMEOVER"
+        let gameState = "START";
+        let shield = 100;
+        let boostFuel = 100;
+
+        // Active game values
+        let bearPos = { x: 0, y: 0, z: 0 };
+        let velocity = 4.0;
+        let score = 0;
+        let isOutPhase = false;
+        let E = 0.0; 
+
+        // Combo, Hyperdrive, and Tummy Rumble values
+        let comboCount = 0;
+        let comboMultiplier = 1;
+        let hyperdriveTimer = 0;
+        let rumbleTimer = 0;
+        let rumbleActive = false;
+
+        // Game arrays
+        let speedGates = [];
+        let tesseracts = [];
+        let particles = [];
+        let shockwaves = [];
+        let interceptors = [];
+        let powerups = [];
+        
+        // Feature 1: Laser weapons array
+        let lasers = [];
+
+        // Warp Tesseract Field
+        let stars = [];
+        for (let i = 0; i < 24; i++) {
+            stars.push({
+                x: Math.random() * 2000 - 1000,
+                y: Math.random() * 1600 - 800,
+                z: Math.random() * -1500
+            });
+        }
+
+        // WinchesterMQ Memory Address Slots
+        let memorySlots = [];
+        const STORY_FRAGMENTS = ["0x2100:Auncient", "0x2120:SCSI", "0x2140:ZMM", "0x2160:Envelope", "0x2180:LUN", "0x21A0:Hamilton"];
+        let decodedStory = [];
+
+        function resetGame() {
+            gameState = "PLAYING";
+            shield = 100;
+            boostFuel = 100;
+            score = 0;
+            velocity = 4.0;
+            bearPos = { x: 0, y: 0, z: 0 };
+            decodedStory = [];
+            
+            comboCount = 0;
+            comboMultiplier = 1;
+            hyperdriveTimer = 0;
+            rumbleTimer = 0;
+            rumbleActive = false;
+            if (rumbleGain && audioCtx) {
+                rumbleGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            }
+            
+            speedGates = [];
+            tesseracts = [];
+            interceptors = [];
+            powerups = [];
+            memorySlots = [];
+            particles = [];
+            shockwaves = [];
+            lasers = [];
+
+            document.getElementById("score-counter").innerText = "0";
+            document.getElementById("combo-counter").innerText = "1x";
+            document.getElementById("hyperdrive-row").style.display = "none";
+            document.getElementById("shield-counter").innerText = "100%";
+            document.getElementById("shield-counter").className = "stat-value value-green";
+            document.getElementById("boost-counter").innerText = "100%";
+            document.getElementById("boost-counter").className = "stat-value value-yellow";
+            document.getElementById("decoded-msg").innerText = "---";
+
+            nextNoteTime = 0;
+            if (audioCtx) {
+                startContinuousArpeggiator();
+            }
+        }
+
+        function spawnWorldElements() {
+            while (speedGates.length < 3) {
+                speedGates.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (1000 + Math.random() * 1500)
+                });
+            }
+            while (tesseracts.length < 5) {
+                tesseracts.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (800 + Math.random() * 2000),
+                    rot: Math.random() * Math.PI
+                });
+            }
+            while (interceptors.length < 2) {
+                interceptors.push({
+                    x: bearPos.x + (Math.random() * 600 - 300),
+                    y: bearPos.y + (Math.random() * 400 - 200),
+                    z: bearPos.z - (1200 + Math.random() * 1000),
+                    rot: 0
+                });
+            }
+            while (powerups.length < 1) {
+                powerups.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (1000 + Math.random() * 1500)
+                });
+            }
+            while (memorySlots.length < 2) {
+                memorySlots.push({
+                    x: bearPos.x + (Math.random() * 600 - 300),
+                    y: bearPos.y + (Math.random() * 450 - 225),
+                    z: bearPos.z - (1200 + Math.random() * 1000),
+                    address: STORY_FRAGMENTS[Math.floor(Math.random() * STORY_FRAGMENTS.length)]
+                });
+            }
+        }
+
+        // Fire Laser Weapon System - Feature 1
+        function fireLaser() {
+            triggerSfx("laser");
+            // Fire from player head position travelling along direction vectors
+            lasers.push({
+                x: bearPos.x,
+                y: bearPos.y + 120, // Head offset
+                z: bearPos.z,
+                vx: qCombined.y * 22,
+                vy: qCombined.x * 22,
+                vz: -32 - velocity, // Travels faster than bear velocity
+                age: 0,
+                maxAge: 45
+            });
+        }
+
+        function spawnPhaseParticles(x, y, z) {
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: x + (Math.random() * 8 - 4),
+                    y: y + (Math.random() * 8 - 4),
+                    z: z,
+                    vx: Math.random() * 2 - 1,
+                    vy: Math.random() * 2 - 1,
+                    vz: velocity * 0.2 + Math.random() * 2,
+                    age: 0,
+                    maxAge: 30 + Math.random() * 20
+                });
+            }
+        }
+
+        function triggerCollisionParticles(pos, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                    vx: (Math.random() * 12 - 6),
+                    vy: (Math.random() * 12 - 6),
+                    vz: (Math.random() * 12 - 6) - velocity,
+                    age: 0,
+                    maxAge: 40 + Math.random() * 20
+                });
+            }
+            shockwaves.push({
+                x: pos.x,
+                y: pos.y,
+                z: pos.z,
+                radius: 10,
+                maxRadius: 180,
+                color: color,
+                opacity: 1.0
+            });
+        }
+
+        const keys = { w: false, a: false, s: false, d: false, r: false, shift: false };
+        window.addEventListener("keydown", (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = true;
+            if (e.key === "Shift") keys.shift = true;
+            
+            if (e.key === " ") {
+                isOutPhase = !isOutPhase;
+                const statusEl = document.getElementById("phase-status");
+                statusEl.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
+                statusEl.className = isOutPhase ? "stat-value value-magenta" : "stat-value value-cyan";
+            }
+
+            if (k === "f" && gameState === "PLAYING") {
+                fireLaser();
+            }
+            
+            if (e.key === "Enter") {
+                initAudio();
+                if (gameState === "START" || gameState === "GAMEOVER") {
+                    resetGame();
+                }
+            }
+        });
+        window.addEventListener("keyup", (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = false;
+            if (e.key === "Shift") keys.shift = false;
+        });
+
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        const camera = {
+            distance: 800,
+            fov: 600,
+            yaw: 0.0,
+            pitch: 0.0,
+            targetYaw: 0.0,
+            targetPitch: 0.0
+        };
+
+        function project(p) {
+            const relativeZ = p.z - bearPos.z;
+            const relativeX = p.x - bearPos.x;
+            const relativeY = p.y - bearPos.y;
+
+            let cosY = Math.cos(camera.yaw), sinY = Math.sin(camera.yaw);
+            let cosX = Math.cos(camera.pitch), sinX = Math.sin(camera.pitch);
+
+            let x1 = relativeX * cosY - relativeZ * sinY;
+            let z1 = relativeX * sinY + relativeZ * cosY;
+            let y2 = relativeY * cosX - z1 * sinX;
+            let z2 = relativeY * sinX + z1 * cosX;
+
+            const scale = camera.fov / (camera.distance + z2);
+            return {
+                x: width / 2 + x1 * scale,
+                y: height / 2 - y2 * scale,
+                depth: z2
+            };
+        }
+
+        function rotateVectorByQuaternion(v, q) {
+            const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+            const vx = v.x, vy = v.y, vz = v.z;
+
+            const tx = 2.0 * (qy * vz - qz * vy);
+            const ty = 2.0 * (qz * vx - qx * vz);
+            const tz = 2.0 * (qx * vy - qy * vx);
+
+            const rx = vx + qw * tx + (qy * tz - qz * ty);
+            const ry = vy + qw * ty + (qz * tx - qx * tz);
+            const rz = vz + qw * tz + (qx * ty - qy * tx);
+
+            return { x: rx, y: ry, z: rz };
+        }
+
+        function multiplyQuaternions(q1, q2) {
+            return {
+                w: q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
+                x: q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
+                y: q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,
+                z: q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w
+            };
+        }
+
+        function normalizeQuaternion(q) {
+            const len = Math.sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+            return { w: q.w / len, x: q.x / len, y: q.y / len, z: q.z / len };
+        }
+
+        // Generate Bear Skeleton structure
+        function getBearSkeleton(pulse) {
+            const scale = 1.0;
+            const breatheAmplitude = 3 + E * 2;
+            const breathing = Math.sin(pulse * (1.0 + E * 0.2)) * breatheAmplitude;
+
+            let head = new Point3D(bearPos.x, bearPos.y + 120 * scale + breathing, bearPos.z);
+            let neck = new Point3D(bearPos.x, bearPos.y + 80 * scale + breathing, bearPos.z);
+            let lShoulder = new Point3D(bearPos.x - 50 * scale, bearPos.y + 60 * scale, bearPos.z);
+            let rShoulder = new Point3D(bearPos.x + 50 * scale, bearPos.y + 60 * scale, bearPos.z);
+            let midHip = new Point3D(bearPos.x, bearPos.y - 15 * scale, bearPos.z);
+
+            const targetQuaternion = isOutPhase 
+                ? normalizeQuaternion(multiplyQuaternions(qCombined, { w: 0.707, x: 0.0, y: 0.707, z: 0.0 }))
+                : qCombined;
+
+            let armL = rotateVectorByQuaternion({ x: -35 * scale, y: -45 * scale, z: 0 }, targetQuaternion);
+            let armR = rotateVectorByQuaternion({ x: 35 * scale, y: -45 * scale, z: 0 }, targetQuaternion);
+            let legL = rotateVectorByQuaternion({ x: -25 * scale, y: -60 * scale, z: 0 }, targetQuaternion);
+            let legR = rotateVectorByQuaternion({ x: 25 * scale, y: -60 * scale, z: 0 }, targetQuaternion);
+
+            let lPaw = new Point3D(lShoulder.x + armL.x, lShoulder.y + armL.y, lShoulder.z + armL.z);
+            let rPaw = new Point3D(rShoulder.x + armR.x, rShoulder.y + armR.y, rShoulder.z + armR.z);
+            let lFoot = new Point3D(midHip.x + legL.x, midHip.y + legL.y, midHip.z + legL.z);
+            let rFoot = new Point3D(midHip.x + legR.x, midHip.y + legR.y, midHip.z + legR.z);
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        // Draw 3D Tesseract Wireframe
+        function drawTesseract(center, rotAngle) {
+            const size = 30;
+            const vertices = [];
+            for (let inner = 0; inner < 2; inner++) {
+                const s = inner === 0 ? size * 0.5 : size * 1.0;
+                for (let x = -1; x <= 1; x += 2) {
+                    for (let y = -1; y <= 1; y += 2) {
+                        for (let z = -1; z <= 1; z += 2) {
+                            let rx = x * s * Math.cos(rotAngle) - z * s * Math.sin(rotAngle);
+                            let rz = x * s * Math.sin(rotAngle) + z * s * Math.cos(rotAngle);
+                            let ry = y * s;
+                            vertices.push(new Point3D(center.x + rx, center.y + ry, center.z + rz));
+                        }
+                    }
+                }
+            }
+
+            const renderCubeEdge = (i1, i2) => {
+                let sc1 = project(vertices[i1]);
+                let sc2 = project(vertices[i2]);
+                if (!sc1 || !sc2) return;
+                ctx.beginPath();
+                ctx.moveTo(sc1.x, sc1.y);
+                ctx.lineTo(sc2.x, sc2.y);
+                ctx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            };
+
+            for (let offset = 0; offset < 16; offset += 8) {
+                renderCubeEdge(offset + 0, offset + 1);
+                renderCubeEdge(offset + 1, offset + 3);
+                renderCubeEdge(offset + 3, offset + 2);
+                renderCubeEdge(offset + 2, offset + 0);
+                renderCubeEdge(offset + 4, offset + 5);
+                renderCubeEdge(offset + 5, offset + 7);
+                renderCubeEdge(offset + 7, offset + 6);
+                renderCubeEdge(offset + 6, offset + 4);
+                renderCubeEdge(offset + 0, offset + 4);
+                renderCubeEdge(offset + 1, offset + 5);
+                renderCubeEdge(offset + 2, offset + 6);
+                renderCubeEdge(offset + 3, offset + 7);
+            }
+
+            for (let i = 0; i < 8; i++) {
+                renderCubeEdge(i, i + 8);
+            }
+        }
+
+        // Draw 4D Tesseract Projected Wireframe
+        function drawTesseract4D(center, size, theta, phi, color, width) {
+            const vertices = [];
+            const wDepth = 1.6;
+            for (let x = -1; x <= 1; x += 2) {
+                for (let y = -1; y <= 1; y += 2) {
+                    for (let z = -1; z <= 1; z += 2) {
+                        for (let w = -1; w <= 1; w += 2) {
+                            const vx = x * size;
+                            const vy = y * size;
+                            const vz = z * size;
+                            const vw = w * size;
+
+                            // 4D Plane Rotations (xy and zw planes)
+                            let rx = vx * Math.cos(theta) - vy * Math.sin(theta);
+                            let ry = vx * Math.sin(theta) + vy * Math.cos(theta);
+                            let rz = vz * Math.cos(phi) - vw * Math.sin(phi);
+                            let rw = vz * Math.sin(phi) + vw * Math.cos(phi);
+
+                            // Transform using steering quaternion qCombined
+                            let rot3D = rotateVectorByQuaternion({ x: rx, y: ry, z: rz }, qCombined);
+
+                            // perspective projection from 4D down to 3D
+                            const pFactor = 1.0 / (wDepth - rw / (size * 4));
+                            vertices.push(new Point3D(
+                                center.x + rot3D.x * pFactor,
+                                center.y + rot3D.y * pFactor,
+                                center.z + rot3D.z * pFactor
+                            ));
+                        }
+                    }
+                }
+            }
+
+            const renderEdge = (i1, i2) => {
+                let sc1 = project(vertices[i1]);
+                let sc2 = project(vertices[i2]);
+                if (!sc1 || !sc2 || sc1.depth <= 0 || sc2.depth <= 0) return;
+                ctx.beginPath();
+                ctx.moveTo(sc1.x, sc1.y);
+                ctx.lineTo(sc2.x, sc2.y);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width || 1.5;
+                ctx.stroke();
+            };
+
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diff = i ^ j;
+                    if (diff === 1 || diff === 2 || diff === 4 || diff === 8) {
+                        renderEdge(i, j);
+                    }
+                }
+            }
+
+            // Draw Dynamic vibrating/swaying fur strands radiating from vertices
+            if (color.includes("rgba(241, 157, 174")) {
+                vertices.forEach((v, idx) => {
+                    const dx = v.x - center.x;
+                    const dy = v.y - center.y;
+                    const dz = v.z - center.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const nz = dz / dist;
+
+                        for (let s = 0; s < 3; s++) {
+                            const strandSeed = idx * 7 + s * 13;
+                            const swayAmplitude = 3 + velocity * 0.4;
+                            const swayX = Math.sin(pulse * 0.15 + strandSeed) * swayAmplitude;
+                            const swayY = Math.cos(pulse * 0.1 + strandSeed) * swayAmplitude;
+                            const swayZ = Math.sin(pulse * 0.2 + strandSeed) * 2;
+
+                            const hairLength = 8 + E * 3;
+                            const hairEnd = {
+                                x: v.x + nx * hairLength + swayX,
+                                y: v.y + ny * hairLength + swayY,
+                                z: v.z + nz * hairLength + swayZ
+                            };
+
+                            let scStart = project(v);
+                            let scEnd = project(hairEnd);
+                            if (scStart && scEnd && scStart.depth > 0 && scEnd.depth > 0) {
+                                ctx.beginPath();
+                                ctx.moveTo(scStart.x, scStart.y);
+                                ctx.lineTo(scEnd.x, scEnd.y);
+                                ctx.strokeStyle = `rgba(244, 180, 195, ${0.45 + 0.15 * Math.sin(pulse * 0.1 + strandSeed)})`;
+                                ctx.lineWidth = 1.0;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Draw Erisian Interceptor Probe
+        function drawInterceptor(enemy) {
+            const size = 20;
+            const vertices = [
+                new Point3D(enemy.x, enemy.y + size, enemy.z),
+                new Point3D(enemy.x - size, enemy.y - size, enemy.z - size),
+                new Point3D(enemy.x + size, enemy.y - size, enemy.z - size),
+                new Point3D(enemy.x, enemy.y - size, enemy.z + size)
+            ];
+
+            const drawPrismEdge = (i1, i2) => {
+                let sc1 = project(vertices[i1]);
+                let sc2 = project(vertices[i2]);
+                if (!sc1 || !sc2) return;
+                ctx.beginPath();
+                ctx.moveTo(sc1.x, sc1.y);
+                ctx.lineTo(sc2.x, sc2.y);
+                ctx.strokeStyle = "var(--glow-magenta)";
+                ctx.lineWidth = 2.0;
+                ctx.stroke();
+            };
+
+            drawPrismEdge(0, 1);
+            drawPrismEdge(0, 2);
+            drawPrismEdge(0, 3);
+            drawPrismEdge(1, 2);
+            drawPrismEdge(2, 3);
+            drawPrismEdge(3, 1);
+        }
+
+        // Draw Shield Power-up Capsule
+        function drawCapsule(item) {
+            let proj = project(item);
+            if (!proj || proj.depth <= 0) return;
+            const radius = Math.max(6, 25000 / (camera.distance + proj.depth));
+            
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(59, 130, 246, 0.9)";
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#3b82f6";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(proj.x - 5, proj.y);
+            ctx.lineTo(proj.x + 5, proj.y);
+            ctx.moveTo(proj.x, proj.y - 5);
+            ctx.lineTo(proj.x, proj.y + 5);
+            ctx.stroke();
+        }
+
+        let pulse = 0;
+        const deckCard = document.getElementById("deck-card");
+
+        function drawJoint(proj, size, color) {
+            if (!proj) return;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, Math.max(2, size), 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawBone(p1, p2, color, width) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.max(1, width);
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // Animation & Game Loop
+        function loop() {
+            pulse += 0.05;
+            const time = Date.now() * 0.001;
+
+            if (gameState === "START") {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = "var(--glow-cyan)";
+                ctx.font = "bold 32px 'Share Tech Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("HAMILTONIAN BEAR SPACE FLIGHT", width / 2, height / 2 - 40);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Composed upon the 3-Sphere Quaternion Arena", width / 2, height / 2);
+                
+                ctx.fillStyle = "var(--glow-yellow)";
+                ctx.font = "bold 18px monospace";
+                ctx.fillText("PRESS ENTER TO LAUNCH ENGINE", width / 2, height / 2 + 50);
+
+                requestAnimationFrame(loop);
+                return;
+            }
+
+            if (gameState === "GAMEOVER") {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "rgba(239, 68, 68, 0.15)";
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = "#ef4444";
+                ctx.font = "bold 42px 'Share Tech Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("SHIELD COLLAPSED - CRASH DETECTED", width / 2, height / 2 - 40);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "18px sans-serif";
+                ctx.fillText(`Fighter Score: ${score} points`, width / 2, height / 2 + 10);
+                
+                ctx.fillStyle = "var(--glow-cyan)";
+                ctx.font = "bold 20px monospace";
+                ctx.fillText("PRESS ENTER TO RETRY FLIGHT DECK", width / 2, height / 2 + 70);
+
+                requestAnimationFrame(loop);
+                return;
+            }
+
+            rumbleTimer++;
+            if (keys.r || (rumbleTimer % 350 < 80)) {
+                rumbleActive = true;
+                if (rumbleGain && audioCtx) {
+                    rumbleGain.gain.setTargetAtTime(0.28, audioCtx.currentTime, 0.1);
+                }
+            } else {
+                rumbleActive = false;
+                if (rumbleGain && audioCtx) {
+                    rumbleGain.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.15);
+                }
+            }
+
+            E = Math.sin((2.0 * Math.PI * time) / 28.0);
+            const feelingLabel = E > 0.3 ? "Auncient Panic" : E < -0.3 ? "Auncient Melancholy" : "Auncient Balance";
+            document.getElementById("vaesen-feeling").innerText = feelingLabel;
+            document.getElementById("vaesen-feeling").style.color = E > 0.3 ? "var(--glow-magenta)" : E < -0.3 ? "var(--glow-cyan)" : "#fff";
+
+            // 1. Process steering inputs
+            let pitchVel = 0;
+            let yawVel = 0;
+
+            if (keys.w) pitchVel = -0.04;
+            if (keys.s) pitchVel = 0.04;
+            if (keys.a) yawVel = -0.04;
+            if (keys.d) yawVel = 0.04;
+
+            const cp = Math.cos(pitchVel / 2), sp = Math.sin(pitchVel / 2);
+            const cy = Math.cos(yawVel / 2), sy = Math.sin(yawVel / 2);
+            
+            const qDelta = normalizeQuaternion({
+                w: cp * cy,
+                x: sp * cy,
+                y: cp * sy,
+                z: -sp * sy
+            });
+
+            qCombined = normalizeQuaternion(multiplyQuaternions(qCombined, qDelta));
+
+            bearPos.x += qCombined.y * 12;
+            bearPos.y += qCombined.x * 12;
+
+            let targetBaseSpeed = 4.0 + Math.min(4.0, score * 0.002);
+            if (keys.shift && boostFuel > 0) {
+                targetBaseSpeed = 8.5 + Math.min(4.0, score * 0.002);
+                boostFuel = Math.max(0, boostFuel - 0.4);
+                spawnPhaseParticles(bearPos.x, bearPos.y - 20, bearPos.z + 10);
+            }
+            
+            velocity += (targetBaseSpeed - velocity) * 0.08;
+            document.getElementById("velocity-counter").innerText = `${velocity.toFixed(1)} u/f`;
+
+            document.getElementById("boost-counter").innerText = `${Math.round(boostFuel)}%`;
+            document.getElementById("boost-counter").className = boostFuel > 30 ? "stat-value value-yellow" : "stat-value value-red";
+
+            if (hyperdriveTimer > 0) {
+                hyperdriveTimer--;
+                document.getElementById("hyperdrive-row").style.display = "flex";
+                document.getElementById("hyperdrive-counter").innerText = `ACTIVE (${Math.ceil(hyperdriveTimer / 60)}s)`;
+                deckCard.style.borderColor = "var(--glow-magenta)";
+                deckCard.style.boxShadow = "0 0 45px rgba(255, 0, 127, 0.6)";
+            } else {
+                document.getElementById("hyperdrive-row").style.display = "none";
+                if (comboMultiplier > 1) {
+                    deckCard.style.borderColor = "var(--glow-yellow)";
+                    deckCard.style.boxShadow = `0 0 ${25 + comboMultiplier * 5}px rgba(255, 234, 0, 0.35)`;
+                }
+            }
+
+            bearPos.z -= velocity;
+
+            camera.targetYaw = qCombined.y * 0.3;
+            camera.targetPitch = qCombined.x * 0.3;
+            camera.yaw += (camera.targetYaw - camera.yaw) * 0.08;
+            camera.pitch += (camera.targetPitch - camera.pitch) * 0.08;
+
+            spawnWorldElements();
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 2. Render Warp Tesseract Field (x-tessarants)
+            stars.forEach((star, idx) => {
+                if (star.z - bearPos.z > 200) {
+                    star.z = bearPos.z - 1500;
+                    star.x = Math.random() * 2000 - 1000;
+                    star.y = Math.random() * 1600 - 800;
+                }
+
+                const theta = pulse * 0.008 + idx;
+                const phi = -pulse * 0.006 + idx;
+                const depthScale = Math.max(0.01, 1.0 - Math.abs(star.z - bearPos.z) / 1500);
+                const color = `rgba(0, 242, 254, ${0.12 * depthScale})`;
+                drawTesseract4D(star, 18, theta, phi, color, 1.0);
+            });
+
+            // 3. Process Lasers - Feature 1
+            lasers.forEach((laser, lIdx) => {
+                laser.x += laser.vx;
+                laser.y += laser.vy;
+                laser.z += laser.vz;
+                laser.age++;
+
+                // Check collision between laser and obstacles / enemies
+                tesseracts.forEach((tess) => {
+                    const dx = laser.x - tess.x;
+                    const dy = laser.y - tess.y;
+                    const dz = laser.z - tess.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist < 80) {
+                        // Destroy tesseract!
+                        triggerSfx("explosion");
+                        triggerCollisionParticles(tess, "rgba(239, 68, 68, 0.8)");
+                        score += 5 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
+                        document.getElementById("score-counter").innerText = score;
+                        // Relocate obstacle
+                        tess.x = bearPos.x + (Math.random() * 800 - 400);
+                        tess.y = bearPos.y + (Math.random() * 600 - 300);
+                        tess.z = bearPos.z - 2000;
+                        laser.age = laser.maxAge; // expire laser
+                    }
+                });
+
+                interceptors.forEach((enemy) => {
+                    const dx = laser.x - enemy.x;
+                    const dy = laser.y - enemy.y;
+                    const dz = laser.z - enemy.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist < 70) {
+                        // Destroy interceptor!
+                        triggerSfx("explosion");
+                        triggerCollisionParticles(enemy, "rgba(255, 0, 127, 0.8)");
+                        score += 15 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
+                        document.getElementById("score-counter").innerText = score;
+                        // Relocate enemy
+                        enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                        enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                        enemy.z = bearPos.z - 2000;
+                        laser.age = laser.maxAge;
+                    }
+                });
+
+                // Render laser bolts
+                let sc1 = project(laser);
+                let sc2 = project({ x: laser.x, y: laser.y, z: laser.z + 50 });
+                if (sc1 && sc2 && sc1.depth > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(sc1.x, sc1.y);
+                    ctx.lineTo(sc2.x, sc2.y);
+                    ctx.strokeStyle = "var(--glow-cyan)";
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                }
+            });
+            lasers = lasers.filter(l => l.age < l.maxAge);
+
+            // 4. Process Speed Gates (Green Rings)
+            speedGates.forEach((gate) => {
+                const dx = bearPos.x - gate.x;
+                const dy = bearPos.y - gate.y;
+                const dz = bearPos.z - gate.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 80) {
+                    boostFuel = Math.min(100, boostFuel + 25);
+                    comboCount++;
+                    comboMultiplier = Math.min(5, 1 + Math.floor(comboCount / 3));
+                    document.getElementById("combo-counter").innerText = `${comboMultiplier}x`;
+
+                    score += 10 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
+                    document.getElementById("score-counter").innerText = score;
+                    triggerSfx("boost");
+                    triggerCollisionParticles(gate, "var(--glow-green)");
+
+                    deckCard.style.borderColor = "var(--glow-green)";
+                    deckCard.style.boxShadow = "0 0 40px rgba(57, 255, 20, 0.4)";
+                    setTimeout(() => {
+                        deckCard.style.borderColor = "var(--border-color)";
+                        deckCard.style.boxShadow = "0 0 30px rgba(0, 242, 254, 0.15)";
+                    }, 250);
+
+                    gate.x = bearPos.x + (Math.random() * 800 - 400);
+                    gate.y = bearPos.y + (Math.random() * 600 - 300);
+                    gate.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    gate.x = bearPos.x + (Math.random() * 800 - 400);
+                    gate.y = bearPos.y + (Math.random() * 600 - 300);
+                    gate.z = bearPos.z - 2000;
+                }
+
+                let gateProj = project(gate);
+                if (gateProj && gateProj.depth > 0) {
+                    ctx.beginPath();
+                    ctx.arc(gateProj.x, gateProj.y, Math.max(10, 60000 / (camera.distance + gateProj.depth)), 0, Math.PI * 2);
+                    ctx.strokeStyle = "var(--glow-green)";
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                }
+            });
+
+            // 5. Process Tesseracts (Red Obstacles)
+            tesseracts.forEach((tess) => {
+                tess.rot += 0.02;
+
+                const dx = bearPos.x - tess.x;
+                const dy = bearPos.y - tess.y;
+                const dz = bearPos.z - tess.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 60) {
+                    if (hyperdriveTimer <= 0) {
+                        shield = Math.max(0, shield - 20);
+                        document.getElementById("shield-counter").innerText = `${shield}%`;
+                        document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                        comboCount = 0;
+                        comboMultiplier = 1;
+                        document.getElementById("combo-counter").innerText = "1x";
+                    }
+
+                    triggerSfx("hit");
+                    triggerCollisionParticles(tess, "#ef4444");
+
+                    deckCard.style.borderColor = "#ef4444";
+                    deckCard.style.boxShadow = "0 0 40px rgba(239, 68, 68, 0.5)";
+                    setTimeout(() => {
+                        deckCard.style.borderColor = "var(--border-color)";
+                        deckCard.style.boxShadow = "0 0 30px rgba(0, 242, 254, 0.15)";
+                    }, 250);
+
+                    if (shield <= 0) {
+                        gameState = "GAMEOVER";
+                    }
+
+                    tess.x = bearPos.x + (Math.random() * 800 - 400);
+                    tess.y = bearPos.y + (Math.random() * 600 - 300);
+                    tess.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    tess.x = bearPos.x + (Math.random() * 800 - 400);
+                    tess.y = bearPos.y + (Math.random() * 600 - 300);
+                    tess.z = bearPos.z - 2000;
+                }
+
+                let tessProj = project(tess);
+                if (tessProj && tessProj.depth > 0) {
+                    drawTesseract(tess, tess.rot);
+                }
+            });
+
+            // 6. Process Erisian Interceptor Probes
+            interceptors.forEach((enemy) => {
+                const trackSpeed = 0.015 + Math.min(0.025, score * 0.00005);
+                enemy.x += (bearPos.x - enemy.x) * trackSpeed;
+                enemy.y += (bearPos.y - enemy.y) * trackSpeed;
+                enemy.z += velocity * (0.45 + Math.min(0.25, score * 0.0005));
+
+                const dx = bearPos.x - enemy.x;
+                const dy = bearPos.y - enemy.y;
+                const dz = bearPos.z - enemy.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 50) {
+                    if (hyperdriveTimer <= 0) {
+                        shield = Math.max(0, shield - 15);
+                        document.getElementById("shield-counter").innerText = `${shield}%`;
+                        document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                        comboCount = 0;
+                        comboMultiplier = 1;
+                        document.getElementById("combo-counter").innerText = "1x";
+                    }
+
+                    triggerSfx("hit");
+                    triggerCollisionParticles(enemy, "var(--glow-magenta)");
+
+                    if (shield <= 0) {
+                        gameState = "GAMEOVER";
+                    }
+
+                    enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                    enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                    enemy.z = bearPos.z - 2000;
+                } else if (dz > 200) {
+                    enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                    enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                    enemy.z = bearPos.z - 2000;
+                }
+
+                let enemyProj = project(enemy);
+                if (enemyProj && enemyProj.depth > 0) {
+                    drawInterceptor(enemy);
+                }
+            });
+
+            // Modulate spatialized enemy interceptor tummy rumbles based on proximity
+            let nearestEnemyDist = 9999;
+            interceptors.forEach((enemy) => {
+                const dx = bearPos.x - enemy.x;
+                const dy = bearPos.y - enemy.y;
+                const dz = bearPos.z - enemy.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                if (dist < nearestEnemyDist) nearestEnemyDist = dist;
+            });
+
+            if (enemyRumbleGain && audioCtx) {
+                if (nearestEnemyDist < 600) {
+                    const enemyVol = Math.max(0, 1.0 - nearestEnemyDist / 600) * 0.18;
+                    enemyRumbleGain.gain.setTargetAtTime(enemyVol, audioCtx.currentTime, 0.1);
+                } else {
+                    enemyRumbleGain.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.2);
+                }
+            }
+
+            // 7. Process Shield Power-Ups
+            powerups.forEach((item) => {
+                let dx = bearPos.x - item.x;
+                let dy = bearPos.y - item.y;
+                let dz = bearPos.z - item.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && dist < 500) {
+                    item.x += (dx / dist) * 8.0;
+                    item.y += (dy / dist) * 8.0;
+                    item.z += (dz / dist) * 8.0;
+                    dx = bearPos.x - item.x;
+                    dy = bearPos.y - item.y;
+                    dz = bearPos.z - item.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
+
+                if (dist < 60) {
+                    shield = Math.min(100, shield + 30);
+                    document.getElementById("shield-counter").innerText = `${shield}%`;
+                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+
+                    triggerSfx("heal");
+                    triggerCollisionParticles(item, "rgba(59, 130, 246, 0.8)");
+
+                    item.x = bearPos.x + (Math.random() * 800 - 400);
+                    item.y = bearPos.y + (Math.random() * 600 - 300);
+                    item.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    item.x = bearPos.x + (Math.random() * 800 - 400);
+                    item.y = bearPos.y + (Math.random() * 600 - 300);
+                    item.z = bearPos.z - 2000;
+                }
+
+                drawCapsule(item);
+            });
+
+            // 8. Process WinchesterMQ Slots
+            memorySlots.forEach((slot) => {
+                let dx = bearPos.x - slot.x;
+                let dy = bearPos.y - slot.y;
+                let dz = bearPos.z - slot.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && dist < 500) {
+                    slot.x += (dx / dist) * 8.0;
+                    slot.y += (dy / dist) * 8.0;
+                    slot.z += (dz / dist) * 8.0;
+                    dx = bearPos.x - slot.x;
+                    dy = bearPos.y - slot.y;
+                    dz = bearPos.z - slot.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
+
+                if (dist < 70) {
+                    triggerSfx("token");
+                    triggerCollisionParticles(slot, "var(--glow-yellow)");
+
+                    const label = slot.address.split(":")[1];
+                    if (!decodedStory.includes(label)) {
+                        decodedStory.push(label);
+                        document.getElementById("decoded-msg").innerText = decodedStory.join(" -> ");
+
+                        comboCount++;
+                        comboMultiplier = Math.min(5, 1 + Math.floor(comboCount / 3));
+                        document.getElementById("combo-counter").innerText = `${comboMultiplier}x`;
+                    }
+
+                    // Trigger Hyperdrive Mode if all 6 fragments collected
+                    if (decodedStory.length === 6 && hyperdriveTimer === 0) {
+                        hyperdriveTimer = 400; // ~6.6 seconds of invulnerability
+                        triggerSfx("hyperdrive");
+                        decodedStory = [];
+                        document.getElementById("decoded-msg").innerText = "⚡ HYPERDRIVE ACTIVE! ⚡";
+                    }
+
+                    slot.x = bearPos.x + (Math.random() * 800 - 400);
+                    slot.y = bearPos.y + (Math.random() * 600 - 300);
+                    slot.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    slot.x = bearPos.x + (Math.random() * 800 - 400);
+                    slot.y = bearPos.y + (Math.random() * 600 - 300);
+                    slot.z = bearPos.z - 2000;
+                }
+
+                let slotProj = project(slot);
+                if (slotProj && slotProj.depth > 0) {
+                    ctx.beginPath();
+                    ctx.arc(slotProj.x, slotProj.y, Math.max(8, 30000 / (camera.distance + slotProj.depth)), 0, Math.PI * 2);
+                    ctx.fillStyle = "var(--glow-yellow)";
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "var(--glow-yellow)";
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "10px monospace";
+                    ctx.fillText(slot.address.split(":")[0], slotProj.x - 20, slotProj.y - 12);
+                }
+            });
+
+            if (speedGates.length > 0) {
+                const nearestGate = speedGates.reduce((prev, curr) => {
+                    const d1 = Math.abs(curr.z - bearPos.z);
+                    const d2 = Math.abs(prev.z - bearPos.z);
+                    return d1 < d2 ? curr : prev;
+                });
+                const gateDx = bearPos.x - nearestGate.x;
+                const gateDy = bearPos.y - nearestGate.y;
+                const gateDz = bearPos.z - nearestGate.z;
+                const nearestDist = Math.sqrt(gateDx*gateDx + gateDy*gateDy + gateDz*gateDz);
+                document.getElementById("target-dist").innerText = `${Math.round(nearestDist)}m`;
+            }
+
+            // 9. Render and Update Particles
+            particles.forEach((part) => {
+                part.x += part.vx;
+                part.y += part.vy;
+                part.z += part.vz;
+                part.age++;
+
+                let proj = project(part);
+                if (proj && proj.depth > 0) {
+                    const life = 1.0 - (part.age / part.maxAge);
+                    const size = Math.max(1, 3 * life);
+                    const pCol = part.color 
+                        ? part.color.replace("ALPHA", 0.6 * life)
+                        : (isOutPhase 
+                            ? `rgba(255, 0, 127, ${0.4 * life})`
+                            : `rgba(0, 242, 254, ${0.4 * life})`);
+                    drawJoint(proj, size, pCol);
+                }
+            });
+            particles = particles.filter(part => part.age < part.maxAge);
+
+            // 10. Render 3D Shockwave Rings
+            shockwaves.forEach((wave) => {
+                wave.radius += 4;
+                wave.opacity = 1.0 - (wave.radius / wave.maxRadius);
+                
+                let proj = project(wave);
+                if (proj && proj.depth > 0) {
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, Math.max(1, wave.radius * (camera.fov / (camera.distance + (wave.z - bearPos.z)))), 0, Math.PI * 2);
+                    ctx.strokeStyle = wave.color;
+                    ctx.lineWidth = 3;
+                    ctx.globalAlpha = Math.max(0, wave.opacity);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+            });
+            shockwaves = shockwaves.filter(wave => wave.radius < wave.maxRadius);
+
+            // 11. Draw Bear Skeleton
+            const skeleton = getBearSkeleton(pulse);
+
+            spawnPhaseParticles(skeleton.lPaw.x, skeleton.lPaw.y, skeleton.lPaw.z);
+            spawnPhaseParticles(skeleton.rPaw.x, skeleton.rPaw.y, skeleton.rPaw.z);
+
+            const boneColor = "rgba(0, 242, 254, 0.25)";
+            drawBone(skeleton.head, skeleton.neck, boneColor, 4);
+            drawBone(skeleton.neck, skeleton.lShoulder, boneColor, 2);
+            drawBone(skeleton.neck, skeleton.rShoulder, boneColor, 2);
+            drawBone(skeleton.neck, skeleton.midHip, boneColor, 6);
+            drawBone(skeleton.lShoulder, skeleton.lPaw, boneColor, 2);
+            drawBone(skeleton.rShoulder, skeleton.rPaw, boneColor, 2);
+            drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 3);
+            drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 3);
+
+            const emotionalHeadSize = 32 + E * 5;
+            const furColor = "rgba(241, 157, 174, 0.9)";
+            const eyeColor = "rgba(0, 242, 254, 0.95)";
+
+            // 1. Head Tesseract
+            drawTesseract4D(skeleton.head, emotionalHeadSize / 2, pulse * 0.02, pulse * 0.015, furColor, 2);
+
+            // 2. Ears
+            const earLOffset = rotateVectorByQuaternion({ x: -emotionalHeadSize * 0.5, y: emotionalHeadSize * 0.5, z: 0 }, qCombined);
+            const earL = new Point3D(skeleton.head.x + earLOffset.x, skeleton.head.y + earLOffset.y, skeleton.head.z + earLOffset.z);
+            drawTesseract4D(earL, emotionalHeadSize / 5, pulse * 0.03, -pulse * 0.02, furColor, 1.5);
+
+            const earROffset = rotateVectorByQuaternion({ x: emotionalHeadSize * 0.5, y: emotionalHeadSize * 0.5, z: 0 }, qCombined);
+            const earR = new Point3D(skeleton.head.x + earROffset.x, skeleton.head.y + earROffset.y, skeleton.head.z + earROffset.z);
+            drawTesseract4D(earR, emotionalHeadSize / 5, -pulse * 0.03, pulse * 0.02, furColor, 1.5);
+
+            // 3. Nose/Muzzle
+            const muzzleOffset = rotateVectorByQuaternion({ x: 0, y: -emotionalHeadSize * 0.15, z: emotionalHeadSize * 0.35 }, qCombined);
+            const muzzle = new Point3D(skeleton.head.x + muzzleOffset.x, skeleton.head.y + muzzleOffset.y, skeleton.head.z + muzzleOffset.z);
+            drawTesseract4D(muzzle, emotionalHeadSize / 6, pulse * 0.01, pulse * 0.01, "rgba(255, 255, 255, 0.8)", 1.5);
+
+            // 4. Eyes (Glowing Cyan Tesseracts)
+            const eyeLOffset = rotateVectorByQuaternion({ x: -10, y: 5, z: 12 }, qCombined);
+            const eyeL = new Point3D(skeleton.head.x + eyeLOffset.x, skeleton.head.y + eyeLOffset.y, skeleton.head.z + eyeLOffset.z);
+            drawTesseract4D(eyeL, 3, pulse * 0.04, pulse * 0.04, eyeColor, 1.5);
+
+            const eyeROffset = rotateVectorByQuaternion({ x: 10, y: 5, z: 12 }, qCombined);
+            const eyeR = new Point3D(skeleton.head.x + eyeROffset.x, skeleton.head.y + eyeROffset.y, skeleton.head.z + eyeROffset.z);
+            drawTesseract4D(eyeR, 3, -pulse * 0.04, pulse * 0.04, eyeColor, 1.5);
+
+            // 5. Torso Body Tesseract (Pulsates and vibrates during tummy rumbles)
+            const bodyCenter = new Point3D(
+                (skeleton.neck.x + skeleton.midHip.x) / 2 + (rumbleActive ? (Math.random() * 4 - 2) : 0),
+                (skeleton.neck.y + skeleton.midHip.y) / 2 + (rumbleActive ? (Math.random() * 4 - 2) : 0),
+                (skeleton.neck.z + skeleton.midHip.z) / 2
+            );
+            const torsoSize = 28 + (rumbleActive ? Math.sin(pulse * 0.65) * 5 : 0);
+            drawTesseract4D(bodyCenter, torsoSize, pulse * 0.015, -pulse * 0.01, "rgba(0, 242, 254, 0.45)", 2.5);
+
+            if (rumbleActive && Math.random() < 0.28) {
+                particles.push({
+                    x: bodyCenter.x + (Math.random() * 20 - 10),
+                    y: bodyCenter.y + (Math.random() * 20 - 10),
+                    z: bodyCenter.z + (Math.random() * 10 - 5),
+                    vx: Math.random() * 3 - 1.5,
+                    vy: Math.random() * 3 - 1.5,
+                    vz: velocity + Math.random() * 1.5,
+                    age: 0,
+                    maxAge: 25,
+                    color: "rgba(255, 234, 0, ALPHA)"
+                });
+            }
+
+            // 6. Limbs
+            drawTesseract4D(skeleton.lPaw, 10, pulse * 0.025, pulse * 0.03, furColor, 1.8);
+            drawTesseract4D(skeleton.rPaw, 10, -pulse * 0.025, -pulse * 0.03, furColor, 1.8);
+            drawTesseract4D(skeleton.lFoot, 13, pulse * 0.015, -pulse * 0.02, furColor, 1.8);
+            drawTesseract4D(skeleton.rFoot, 13, -pulse * 0.015, pulse * 0.02, furColor, 1.8);
+
+            // 12. Draw Retro Oscilloscope HUD
+            if (analyser && audioCtx) {
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+
+                ctx.beginPath();
+                ctx.rect(30, 30, 200, 70);
+                ctx.fillStyle = "rgba(15, 23, 42, 0.6)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                const sliceWidth = 200 / bufferLength;
+                let x = 30;
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = 30 + (v * 70) / 2;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                ctx.strokeStyle = "var(--glow-cyan)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(280, 65, 25, 0, Math.PI * 2);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.stroke();
+                
+                const orbX = 280 + Math.cos(time * 1.5) * 20 * (1.0 + E * 0.2);
+                const orbY = 65 + Math.sin(time * 1.5) * 20 * (1.0 + E * 0.2);
+                ctx.beginPath();
+                ctx.arc(orbX, orbY, 4, 0, Math.PI * 2);
+                ctx.fillStyle = E > 0 ? "var(--glow-magenta)" : "var(--glow-cyan)";
+                ctx.fill();
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        loop();
