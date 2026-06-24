@@ -356,6 +356,14 @@
                     </div>
                     <input type="range" id="param-shape" min="0" max="2" value="0" step="1" oninput="updateParams()">
                 </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Zener Saturation (Gain)</span>
+                        <span class="val" id="val-zener">10x</span>
+                    </div>
+                    <input type="range" id="param-zener" min="1" max="25" value="10" oninput="updateParams()">
+                </div>
             </div>
         </div>
     </div>
@@ -368,6 +376,7 @@
         let modulatorOsc = null;
         let modGain = null;
         let filterNode = null;
+        let zenerNode = null;
         let synthGain = null;
         
         let targetOsc = null;
@@ -425,6 +434,26 @@
                 instruction: "A highly distorted sub-bass rumble mimicking wave-trace cutting sequences. Lower the carrier pitch to 35Hz and filter cutoff below 100Hz."
             }
         ];
+
+        function makeZenerDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 5;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const V_zener_bias = 0.15; 
+            const V_breakdown = 0.55; 
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                const biasedInput = x * k + V_zener_bias;
+                let saturatedVal = biasedInput;
+                if (biasedInput > V_breakdown) {
+                    saturatedVal = V_breakdown + (biasedInput - V_breakdown) * 0.12;
+                } else if (biasedInput < -V_breakdown) {
+                    saturatedVal = -V_breakdown + (biasedInput + V_breakdown) * 0.05;
+                }
+                curve[i] = saturatedVal - V_zener_bias;
+            }
+            return curve;
+        }
 
         function initAudio() {
             if (audioCtx) return;
@@ -502,6 +531,10 @@
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = "lowpass";
 
+            zenerNode = audioCtx.createWaveShaper();
+            zenerNode.curve = makeZenerDistortionCurve(10);
+            zenerNode.oversample = '4x';
+
             synthGain = audioCtx.createGain();
             synthGain.gain.setValueAtTime(0.001, now);
             synthGain.gain.linearRampToValueAtTime(0.8, now + 0.1);
@@ -514,7 +547,8 @@
             modGain.connect(carrierOsc.frequency);
 
             carrierOsc.connect(filterNode);
-            filterNode.connect(synthGain);
+            filterNode.connect(zenerNode);
+            zenerNode.connect(synthGain);
             synthGain.connect(mainOut);
 
             modulatorOsc.start(now);
@@ -538,6 +572,7 @@
                     modulatorOsc.stop();
                     carrierOsc = null;
                     modulatorOsc = null;
+                    zenerNode = null;
                 }
             }, 150);
 
@@ -551,6 +586,7 @@
             const lfoDepth = parseFloat(document.getElementById("param-lfo-depth").value);
             const cutoff = parseFloat(document.getElementById("param-filter").value);
             const shapeIdx = parseInt(document.getElementById("param-shape").value);
+            const zenerAmt = parseFloat(document.getElementById("param-zener").value);
 
             const shapes = ["triangle", "sawtooth", "sine"];
             document.getElementById("val-pitch").innerText = `${pitch} Hz`;
@@ -558,6 +594,7 @@
             document.getElementById("val-lfo-depth").innerText = `${lfoDepth} Hz`;
             document.getElementById("val-filter").innerText = `${cutoff} Hz`;
             document.getElementById("val-shape").innerText = shapes[shapeIdx].charAt(0).toUpperCase() + shapes[shapeIdx].slice(1);
+            document.getElementById("val-zener").innerText = `${zenerAmt}x`;
 
             const now = audioCtx ? audioCtx.currentTime : 0;
             if (isAudioPlaying && carrierOsc) {
@@ -566,6 +603,9 @@
                 modulatorOsc.frequency.setValueAtTime(lfoFreq, now);
                 modGain.gain.setValueAtTime(lfoDepth, now);
                 filterNode.frequency.setValueAtTime(cutoff, now);
+                if (zenerNode) {
+                    zenerNode.curve = makeZenerDistortionCurve(zenerAmt);
+                }
             }
 
             evaluateAccuracy(pitch, lfoFreq, lfoDepth, cutoff, shapeIdx);
@@ -643,6 +683,7 @@
             document.getElementById("param-lfo-depth").value = target.lfoDepth + (Math.random() * 6 - 3);
             document.getElementById("param-filter").value = target.cutoff + (Math.random() * 100 - 50);
             document.getElementById("param-shape").value = (target.shape + 1) % 3; // set slightly wrong
+            document.getElementById("param-zener").value = 10 + Math.floor(Math.random() * 6 - 3);
 
             updateParams();
         }
