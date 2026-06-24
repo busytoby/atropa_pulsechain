@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolved Quaternion Teddy Bear Space</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(0, 242, 254, 0.25);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --glow-cyan: #00f2fe;
+            --glow-magenta: #ff007f;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #canvas3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .overlay-card {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 2;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            width: 320px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
+            pointer-events: auto;
+            transition: all 0.3s ease;
+        }
+
+        .overlay-card:hover {
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.25);
+            border-color: rgba(0, 242, 254, 0.5);
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.4rem;
+            color: var(--glow-cyan);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .value-cyan { color: var(--glow-cyan); }
+        .value-magenta { color: var(--glow-magenta); }
+
+        /* Subtle grid background */
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <canvas id="canvas3d"></canvas>
+
+    <div class="overlay-card">
+        <h1>Hamiltonian Bear</h1>
+        <div class="subtitle">Evolved Quaternion Space</div>
+        
+        <div class="stat-row">
+            <span class="stat-label">Fur Color</span>
+            <span class="stat-value" style="color: rgb(241, 157, 174);">RGB(241, 157, 174)</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Eye Color</span>
+            <span class="stat-value" style="color: rgb(166, 7, 214);">RGB(166, 7, 214)</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Scale Factor</span>
+            <span class="stat-value value-cyan">1.64</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Fur Length</span>
+            <span class="stat-value value-magenta">0.94</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Sickness Mutation</span>
+            <span class="stat-value">9%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Active Phase</span>
+            <span id="phase-status" class="stat-value value-cyan">In-Phase</span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas3d");
+        const ctx = canvas.getContext("2d");
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Composed Quaternions from Hamiltonian product
+        // qCombined = { w: 0.8924, x: 0.2391, y: 0.3696, z: 0.0990 }
+        const qCombined = { w: 0.8924, x: 0.2391, y: 0.3696, z: 0.0990 };
+
+        // 3D Point projection
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        // Camera setup
+        const camera = {
+            distance: 1000,
+            fov: 800
+        };
+
+        function project(p, angleY, angleX) {
+            // Apply rotations
+            let cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+            let cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+
+            // Rotate Y
+            let x1 = p.x * cosY - p.z * sinY;
+            let z1 = p.x * sinY + p.z * cosY;
+
+            // Rotate X
+            let y2 = p.y * cosX - z1 * sinX;
+            let z2 = p.y * sinX + z1 * cosX;
+
+            // Perspective division
+            const scale = camera.fov / (camera.distance + z2);
+            return {
+                x: width / 2 + x1 * scale,
+                y: height / 2 - y2 * scale,
+                depth: z2
+            };
+        }
+
+        // Quaternion Rotation Helper
+        function rotateVectorByQuaternion(v, q) {
+            // Extract vector part of quaternion
+            const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+            const vx = v.x, vy = v.y, vz = v.z;
+
+            // Calculate tx, ty, tz
+            const tx = 2.0 * (qy * vz - qz * vy);
+            const ty = 2.0 * (qz * vx - qx * vz);
+            const tz = 2.0 * (qx * vy - qy * vx);
+
+            // Final rotated coordinates
+            const rx = vx + qw * tx + (qy * tz - qz * ty);
+            const ry = vy + qw * ty + (qz * tx - qx * tz);
+            const rz = vz + qw * tz + (qx * ty - qy * tx);
+
+            return { x: rx, y: ry, z: rz };
+        }
+
+        // Generate Bear Skeleton structure
+        function getBearSkeleton(pulse) {
+            const scale = 1.2;
+            const breathing = Math.sin(pulse) * 4;
+
+            // Limbs base offsets
+            let head = new Point3D(0, 140 * scale + breathing, 0);
+            let neck = new Point3D(0, 90 * scale + breathing, 0);
+            let lShoulder = new Point3D(-60 * scale, 70 * scale, 0);
+            let rShoulder = new Point3D(60 * scale, 70 * scale, 0);
+            let midHip = new Point3D(0, -20 * scale, 0);
+
+            // Rotate limbs via quaternion properties
+            let armL = rotateVectorByQuaternion({ x: -40 * scale, y: -50 * scale, z: 0 }, qCombined);
+            let armR = rotateVectorByQuaternion({ x: 40 * scale, y: -50 * scale, z: 0 }, qCombined);
+            let legL = rotateVectorByQuaternion({ x: -30 * scale, y: -70 * scale, z: 0 }, qCombined);
+            let legR = rotateVectorByQuaternion({ x: 30 * scale, y: -70 * scale, z: 0 }, qCombined);
+
+            let lPaw = new Point3D(lShoulder.x + armL.x, lShoulder.y + armL.y, lShoulder.z + armL.z);
+            let rPaw = new Point3D(rShoulder.x + armR.x, rShoulder.y + armR.y, rShoulder.z + armR.z);
+            let lFoot = new Point3D(midHip.x + legL.x, midHip.y + legL.y, midHip.z + legL.z);
+            let rFoot = new Point3D(midHip.x + legR.x, midHip.y + legR.y, midHip.z + legR.z);
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        let pulse = 0;
+        let rotY = 0;
+        let rotX = 0.2;
+
+        function drawJoint(proj, size, color) {
+            if (!proj) return;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+        }
+
+        function drawBone(p1, p2, color, width) {
+            let sc1 = project(p1, rotY, rotX);
+            let sc2 = project(p2, rotY, rotX);
+            if (!sc1 || !sc2) return;
+
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // Animation Loop
+        function animate() {
+            pulse += 0.05;
+            rotY += 0.01;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Update UI phase status dynamically
+            const time = Date.now() * 0.001;
+            const phaseStatus = document.getElementById("phase-status");
+            if (phaseStatus) {
+                const isOutPhase = Math.floor(time / 4) % 2 === 1;
+                phaseStatus.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
+                phaseStatus.style.color = isOutPhase ? "var(--glow-magenta)" : "var(--glow-cyan)";
+            }
+
+            const skeleton = getBearSkeleton(pulse);
+
+            // Draw connecting wireframe bones
+            const boneColor = "rgba(0, 242, 254, 0.4)";
+            drawBone(skeleton.head, skeleton.neck, boneColor, 6);
+            drawBone(skeleton.neck, skeleton.lShoulder, boneColor, 4);
+            drawBone(skeleton.neck, skeleton.rShoulder, boneColor, 4);
+            drawBone(skeleton.neck, skeleton.midHip, boneColor, 8);
+            drawBone(skeleton.lShoulder, skeleton.lPaw, boneColor, 4);
+            drawBone(skeleton.rShoulder, skeleton.rPaw, boneColor, 4);
+            drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 5);
+            drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 5);
+
+            // Draw volumetric fuzzy joints (representing the evolved fur color)
+            const furColor = "rgba(241, 157, 174, 0.85)";
+            const eyeColor = "rgba(166, 7, 214, 0.95)";
+
+            // Draw head
+            drawJoint(project(skeleton.head, rotY, rotX), 32, furColor);
+            
+            // Draw glowing eyes (offset on head)
+            let eyeL = new Point3D(skeleton.head.x - 12, skeleton.head.y + 6, skeleton.head.z + 18);
+            let eyeR = new Point3D(skeleton.head.x + 12, skeleton.head.y + 6, skeleton.head.z + 18);
+            drawJoint(project(eyeL, rotY, rotX), 6, eyeColor);
+            drawJoint(project(eyeR, rotY, rotX), 6, eyeColor);
+
+            // Draw other body parts
+            drawJoint(project(skeleton.neck, rotY, rotX), 24, furColor);
+            drawJoint(project(skeleton.lPaw, rotY, rotX), 14, furColor);
+            drawJoint(project(skeleton.rPaw, rotY, rotX), 14, furColor);
+            drawJoint(project(skeleton.lFoot, rotY, rotX), 16, furColor);
+            drawJoint(project(skeleton.rFoot, rotY, rotX), 16, furColor);
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
