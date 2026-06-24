@@ -200,6 +200,7 @@
         let distortionNode = null;
         let delayNode = null;
         let delayFeedback = null;
+        let rumbleOsc1 = null, rumbleOsc2 = null, rumbleGain = null;
 
         function makeDistortionCurve(amount) {
             const k = typeof amount === 'number' ? amount : 50;
@@ -265,6 +266,39 @@
         let nextNoteTime = 0;
 
         function startContinuousArpeggiator() {
+            if (audioCtx && !rumbleOsc1) {
+                const now = audioCtx.currentTime;
+                rumbleGain = audioCtx.createGain();
+                rumbleGain.gain.setValueAtTime(0.001, now);
+
+                rumbleOsc1 = audioCtx.createOscillator();
+                rumbleOsc1.type = "triangle";
+                rumbleOsc1.frequency.setValueAtTime(55, now);
+
+                rumbleOsc2 = audioCtx.createOscillator();
+                rumbleOsc2.type = "sine";
+                rumbleOsc2.frequency.setValueAtTime(65, now);
+
+                const lfo = audioCtx.createOscillator();
+                lfo.type = "sine";
+                lfo.frequency.setValueAtTime(8, now); // 8Hz modulation
+
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.setValueAtTime(12, now); // 12Hz swing
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(rumbleOsc1.frequency);
+                lfoGain.connect(rumbleOsc2.frequency);
+
+                rumbleOsc1.connect(rumbleGain);
+                rumbleOsc2.connect(rumbleGain);
+                rumbleGain.connect(mainOut);
+
+                lfo.start(now);
+                rumbleOsc1.start(now);
+                rumbleOsc2.start(now);
+            }
+
             function scheduler() {
                 if (!audioCtx || gameState !== "PLAYING") return;
                 const now = audioCtx.currentTime;
@@ -394,10 +428,12 @@
         let isOutPhase = false;
         let E = 0.0; 
 
-        // Combo and Hyperdrive values
+        // Combo, Hyperdrive, and Tummy Rumble values
         let comboCount = 0;
         let comboMultiplier = 1;
         let hyperdriveTimer = 0;
+        let rumbleTimer = 0;
+        let rumbleActive = false;
 
         // Game arrays
         let speedGates = [];
@@ -437,6 +473,11 @@
             comboCount = 0;
             comboMultiplier = 1;
             hyperdriveTimer = 0;
+            rumbleTimer = 0;
+            rumbleActive = false;
+            if (rumbleGain && audioCtx) {
+                rumbleGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            }
             
             speedGates = [];
             tesseracts = [];
@@ -962,6 +1003,19 @@
                 return;
             }
 
+            rumbleTimer++;
+            if (rumbleTimer % 350 < 80) {
+                rumbleActive = true;
+                if (rumbleGain && audioCtx) {
+                    rumbleGain.gain.setTargetAtTime(0.28, audioCtx.currentTime, 0.1);
+                }
+            } else {
+                rumbleActive = false;
+                if (rumbleGain && audioCtx) {
+                    rumbleGain.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.15);
+                }
+            }
+
             E = Math.sin((2.0 * Math.PI * time) / 28.0);
             const feelingLabel = E > 0.3 ? "Auncient Panic" : E < -0.3 ? "Auncient Melancholy" : "Auncient Balance";
             document.getElementById("vaesen-feeling").innerText = feelingLabel;
@@ -1351,9 +1405,11 @@
                 if (proj && proj.depth > 0) {
                     const life = 1.0 - (part.age / part.maxAge);
                     const size = Math.max(1, 3 * life);
-                    const pCol = isOutPhase 
-                        ? `rgba(255, 0, 127, ${0.4 * life})`
-                        : `rgba(0, 242, 254, ${0.4 * life})`;
+                    const pCol = part.color 
+                        ? part.color.replace("ALPHA", 0.6 * life)
+                        : (isOutPhase 
+                            ? `rgba(255, 0, 127, ${0.4 * life})`
+                            : `rgba(0, 242, 254, ${0.4 * life})`);
                     drawJoint(proj, size, pCol);
                 }
             });
@@ -1423,13 +1479,28 @@
             const eyeR = new Point3D(skeleton.head.x + eyeROffset.x, skeleton.head.y + eyeROffset.y, skeleton.head.z + eyeROffset.z);
             drawTesseract4D(eyeR, 3, -pulse * 0.04, pulse * 0.04, eyeColor, 1.5);
 
-            // 5. Torso Body Tesseract
+            // 5. Torso Body Tesseract (Pulsates and vibrates during tummy rumbles)
             const bodyCenter = new Point3D(
-                (skeleton.neck.x + skeleton.midHip.x) / 2,
-                (skeleton.neck.y + skeleton.midHip.y) / 2,
+                (skeleton.neck.x + skeleton.midHip.x) / 2 + (rumbleActive ? (Math.random() * 4 - 2) : 0),
+                (skeleton.neck.y + skeleton.midHip.y) / 2 + (rumbleActive ? (Math.random() * 4 - 2) : 0),
                 (skeleton.neck.z + skeleton.midHip.z) / 2
             );
-            drawTesseract4D(bodyCenter, 28, pulse * 0.015, -pulse * 0.01, "rgba(0, 242, 254, 0.45)", 2.5);
+            const torsoSize = 28 + (rumbleActive ? Math.sin(pulse * 0.65) * 5 : 0);
+            drawTesseract4D(bodyCenter, torsoSize, pulse * 0.015, -pulse * 0.01, "rgba(0, 242, 254, 0.45)", 2.5);
+
+            if (rumbleActive && Math.random() < 0.28) {
+                particles.push({
+                    x: bodyCenter.x + (Math.random() * 20 - 10),
+                    y: bodyCenter.y + (Math.random() * 20 - 10),
+                    z: bodyCenter.z + (Math.random() * 10 - 5),
+                    vx: Math.random() * 3 - 1.5,
+                    vy: Math.random() * 3 - 1.5,
+                    vz: velocity + Math.random() * 1.5,
+                    age: 0,
+                    maxAge: 25,
+                    color: "rgba(255, 234, 0, ALPHA)"
+                });
+            }
 
             // 6. Limbs
             drawTesseract4D(skeleton.lPaw, 10, pulse * 0.025, pulse * 0.03, furColor, 1.8);
