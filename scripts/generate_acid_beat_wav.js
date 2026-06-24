@@ -100,12 +100,18 @@ function main() {
 
     // 303 State
     let currentFreq = BASS_SEQUENCE[0];
-    let filterCutoff = 320; 
-    let envDecay = 0.14; 
-    let resonance = 0.85; 
-    let envMod = 1300; 
+    let filterCutoff = 350; 
+    let envDecay = 0.16; 
+    let resonance = 0.88; 
+    let envMod = 1200; 
     let phase303 = 0;
     let p0 = 0, p1 = 0, p2 = 0, p3 = 0; // Lowpass poles
+    
+    // Smooth envelope state for slide support
+    let currentEnvVal = 0;
+    let currentAmpVal = 0;
+    let lastNoteTriggerSample = -999999;
+    let lastGateDuration = 0;
 
     // 808 State (Track sample index of the last triggers)
     let lastKickTriggerSample = -999999; 
@@ -329,26 +335,40 @@ function main() {
         const isAccent = BASS_ACCENTS[stepIndex];
         const isSlide = BASS_SLIDES[stepIndex];
 
+        // Trigger note logic: if it's step start and not sliding, reset note envelope
+        if (sampleInStep === 0) {
+            if (!isSlide) {
+                lastNoteTriggerSample = i;
+                currentEnvVal = 1.0;
+            }
+            const actualStepDuration = stepStartSamples[currentStep + 1] - stepStartSamples[currentStep];
+            lastGateDuration = isSlide ? actualStepDuration : Math.floor(actualStepDuration * 0.65);
+        }
+
         // Modulation 1: Pitch modulated by X-Quaternion
-        const pitchMod = 1.0 + (qX * 0.3);
+        const pitchMod = 1.0 + (qX * 0.2);
         const modulatedTargetFreq = targetFreq * pitchMod;
 
-        const slideSpeed = isSlide ? 0.08 : 0.005;
+        // Smooth pitch transitions (sliding frequency)
+        const slideSpeed = isSlide ? 0.06 : 0.25; // Accelerate normal note attack
         currentFreq += (modulatedTargetFreq - currentFreq) * slideSpeed;
 
+        // Sawtooth phase accumulation
         phase303 += currentFreq / SAMPLE_RATE;
-        if (phase303 >= 1.0) phase303 -= 2.0;
-        let oscSample = phase303;
+        if (phase303 >= 1.0) phase303 -= 1.0;
+        let oscSample = phase303 * 2.0 - 1.0; // Scaled properly
 
+        // Decay note envelopes smoothly over steps
         const decayTime = isAccent ? envDecay * 1.5 : envDecay;
         const decaySamples = decayTime * SAMPLE_RATE;
-        const envVal = Math.exp(-sampleInStep / decaySamples);
+        currentEnvVal *= Math.exp(-1.0 / decaySamples);
 
         // Modulation 2: Formant / Filter Cutoff modulated by Z-Traveller
         const formantMod = 1.0 + (qZ * 0.2);
-        const dynamicCutoff = (filterCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal) * formantMod;
+        const dynamicCutoff = (filterCutoff + (isAccent ? envMod * 1.6 : envMod) * currentEnvVal) * formantMod;
 
-        const cutoffCoeff = (2 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
+        // 4-pole diode ladder simulation
+        const cutoffCoeff = (2.0 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
         const input = oscSample - resonance * p3;
         p0 += cutoffCoeff * (input - p0);
         p1 += cutoffCoeff * (p0 - p1);
@@ -356,19 +376,24 @@ function main() {
         p3 += cutoffCoeff * (p2 - p3);
         let filterOutput = p3;
 
-        const bassGain = isAccent ? 4.2 : 2.4;
+        // Bass gain / distortion
+        const bassGain = isAccent ? 3.6 : 2.2;
         let bassSample = Math.tanh(filterOutput * bassGain);
 
-        const actualStepDuration = stepStartSamples[currentStep + 1] - stepStartSamples[currentStep];
-        const gateDuration = isSlide ? actualStepDuration : Math.floor(actualStepDuration * 0.7);
-        let amp = 0;
-        if (sampleInStep < gateDuration) {
-            amp = isAccent ? 0.4 : 0.26;
+        // Smooth gate amplitude to prevent clicks on release
+        const ageInStep = i - stepStartSamples[currentStep];
+        let targetAmp = 0;
+        if (ageInStep < lastGateDuration) {
+            targetAmp = isAccent ? 0.35 : 0.22;
         } else {
-            const releaseSamples = 0.02 * SAMPLE_RATE;
-            amp = (isAccent ? 0.4 : 0.26) * Math.exp(-(sampleInStep - gateDuration) / releaseSamples);
+            const releaseSamples = 0.015 * SAMPLE_RATE;
+            targetAmp = (isAccent ? 0.35 : 0.22) * Math.exp(-(ageInStep - lastGateDuration) / releaseSamples);
         }
-        bassSample = bassSample * amp;
+        currentAmpVal += (targetAmp - currentAmpVal) * 0.08; // Smooth jump protection
+
+        // Blend raw distorted filter out with sub-bass fundamental wave
+        const subOsc = Math.sin(2.0 * Math.PI * phase303);
+        bassSample = (bassSample * 0.7 + subOsc * 0.3) * currentAmpVal;
 
         // ----------------------------------------------------
         // 3. Stereo Spatial Placement & Mixing
@@ -381,14 +406,14 @@ function main() {
         const rightGain = (1.0 + panVal) / 2.0;
 
         // Drums mixed slightly centered/wide
-        const monoDrums = (kickSample * 0.35) + (snareSample * 0.2) + (hhSample * 0.1) + (cowbellSample * 0.07) + (clapSample * 0.08);
+        const monoDrums = (kickSample * 0.38) + (snareSample * 0.18) + (hhSample * 0.1) + (cowbellSample * 0.06) + (clapSample * 0.08);
         
         // Dynamic panning applied to the TB-303 Bassline
         const bassL = bassSample * leftGain;
         const bassR = bassSample * rightGain;
 
-        leftBuffer[i] = Math.tanh(monoDrums * 0.5 + bassL * 0.5); 
-        rightBuffer[i] = Math.tanh(monoDrums * 0.5 + bassR * 0.5); 
+        leftBuffer[i] = Math.tanh(monoDrums * 0.45 + bassL * 0.55); 
+        rightBuffer[i] = Math.tanh(monoDrums * 0.45 + bassR * 0.55); 
     }
 
     // Write combined Stereo WAV file
