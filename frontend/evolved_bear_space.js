@@ -878,6 +878,12 @@
                 if (rumbleGain && audioCtx) {
                     rumbleGain.gain.setTargetAtTime(0.28, audioCtx.currentTime, 0.1);
                 }
+                if (rumbleOsc1 && rumbleOsc2 && audioCtx) {
+                    const targetFreq1 = isOutPhase ? 165 + Math.sin(time * 30) * 35 : 55;
+                    const targetFreq2 = isOutPhase ? 175 + Math.cos(time * 30) * 35 : 65;
+                    rumbleOsc1.frequency.setTargetAtTime(targetFreq1, audioCtx.currentTime, 0.08);
+                    rumbleOsc2.frequency.setTargetAtTime(targetFreq2, audioCtx.currentTime, 0.08);
+                }
             } else {
                 rumbleActive = false;
                 if (rumbleGain && audioCtx) {
