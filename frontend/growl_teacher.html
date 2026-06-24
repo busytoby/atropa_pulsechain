@@ -364,6 +364,11 @@
                     </div>
                     <input type="range" id="param-zener" min="1" max="25" value="10" oninput="updateParams()">
                 </div>
+
+                <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Synthesize Repulsion</span>
+                    <input type="checkbox" id="param-repel" onchange="updateParams()" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--glow-magenta);">
+                </div>
             </div>
         </div>
     </div>
@@ -587,12 +592,13 @@
             const cutoff = parseFloat(document.getElementById("param-filter").value);
             const shapeIdx = parseInt(document.getElementById("param-shape").value);
             const zenerAmt = parseFloat(document.getElementById("param-zener").value);
+            const repelActive = document.getElementById("param-repel").checked;
 
             const shapes = ["triangle", "sawtooth", "sine"];
             document.getElementById("val-pitch").innerText = `${pitch} Hz`;
-            document.getElementById("val-lfo-freq").innerText = `${lfoFreq} Hz`;
+            document.getElementById("val-lfo-freq").innerText = `${repelActive ? lfoFreq * 4.0 : lfoFreq} Hz`;
             document.getElementById("val-lfo-depth").innerText = `${lfoDepth} Hz`;
-            document.getElementById("val-filter").innerText = `${cutoff} Hz`;
+            document.getElementById("val-filter").innerText = `${repelActive ? cutoff * 0.5 : cutoff} Hz`;
             document.getElementById("val-shape").innerText = shapes[shapeIdx].charAt(0).toUpperCase() + shapes[shapeIdx].slice(1);
             document.getElementById("val-zener").innerText = `${zenerAmt}x`;
 
@@ -600,11 +606,11 @@
             if (isAudioPlaying && carrierOsc) {
                 carrierOsc.type = shapes[shapeIdx];
                 carrierOsc.frequency.setValueAtTime(pitch, now);
-                modulatorOsc.frequency.setValueAtTime(lfoFreq, now);
-                modGain.gain.setValueAtTime(lfoDepth, now);
-                filterNode.frequency.setValueAtTime(cutoff, now);
+                modulatorOsc.frequency.setValueAtTime(repelActive ? lfoFreq * 4.0 : lfoFreq, now);
+                modGain.gain.setValueAtTime(repelActive ? lfoDepth * 1.8 : lfoDepth, now);
+                filterNode.frequency.setValueAtTime(repelActive ? cutoff * 0.5 : cutoff, now);
                 if (zenerNode) {
-                    zenerNode.curve = makeZenerDistortionCurve(zenerAmt);
+                    zenerNode.curve = makeZenerDistortionCurve(repelActive ? zenerAmt * 2.0 : zenerAmt);
                 }
             }
 
@@ -684,6 +690,7 @@
             document.getElementById("param-filter").value = target.cutoff + (Math.random() * 100 - 50);
             document.getElementById("param-shape").value = (target.shape + 1) % 3; // set slightly wrong
             document.getElementById("param-zener").value = 10 + Math.floor(Math.random() * 6 - 3);
+            document.getElementById("param-repel").checked = false;
 
             updateParams();
         }
