@@ -788,6 +788,47 @@
                     }
                 }
             }
+
+            // Draw Dynamic vibrating/swaying fur strands radiating from vertices
+            if (color.includes("rgba(241, 157, 174")) {
+                vertices.forEach((v, idx) => {
+                    const dx = v.x - center.x;
+                    const dy = v.y - center.y;
+                    const dz = v.z - center.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const nz = dz / dist;
+
+                        for (let s = 0; s < 3; s++) {
+                            const strandSeed = idx * 7 + s * 13;
+                            const swayAmplitude = 3 + velocity * 0.4;
+                            const swayX = Math.sin(pulse * 0.15 + strandSeed) * swayAmplitude;
+                            const swayY = Math.cos(pulse * 0.1 + strandSeed) * swayAmplitude;
+                            const swayZ = Math.sin(pulse * 0.2 + strandSeed) * 2;
+
+                            const hairLength = 8 + E * 3;
+                            const hairEnd = {
+                                x: v.x + nx * hairLength + swayX,
+                                y: v.y + ny * hairLength + swayY,
+                                z: v.z + nz * hairLength + swayZ
+                            };
+
+                            let scStart = project(v);
+                            let scEnd = project(hairEnd);
+                            if (scStart && scEnd && scStart.depth > 0 && scEnd.depth > 0) {
+                                ctx.beginPath();
+                                ctx.moveTo(scStart.x, scStart.y);
+                                ctx.lineTo(scEnd.x, scEnd.y);
+                                ctx.strokeStyle = `rgba(244, 180, 195, ${0.45 + 0.15 * Math.sin(pulse * 0.1 + strandSeed)})`;
+                                ctx.lineWidth = 1.0;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         // Draw Erisian Interceptor Probe
