@@ -25,7 +25,7 @@ const BASS_SLIDES = [
     0, 0, 1, 0,  1, 0, 0, 1
 ];
 
-// TR-808 Kick Triggers: Four-on-the-floor beat (Steps 0, 4, 8, 12)
+// TR-808 Kick Triggers: Four-on-the-floor beat
 const KICK_SEQUENCE = [
     1, 0, 0, 0,  1, 0, 0, 0,
     1, 0, 0, 0,  1, 0, 0, 0
@@ -37,7 +37,7 @@ const SNARE_SEQUENCE = [
     0, 0, 0, 0,  1, 0, 0, 0
 ];
 
-// TR-808 Closed & Open Hihat Sequences (featuring off-beat Open Hihats)
+// TR-808 Closed & Open Hihat Sequences
 const CLOSED_HH_SEQUENCE = [
     0, 1, 0, 1,  0, 1, 0, 1,
     0, 1, 0, 1,  0, 1, 0, 1
@@ -74,10 +74,13 @@ function getSingleClapEnvelope(age) {
 
 function main() {
     console.log("===============================================================");
-    console.log("GENERATING COMBINED 303 ACID BASS & 808 BEAT WAV WITH DOUBLE CLAPS");
+    console.log("GENERATING MODERNIZED Z-TRAVELLER STEREO ACID BEAT WAV");
     console.log("===============================================================");
 
-    const audioBuffer = new Float32Array(TOTAL_SAMPLES);
+    // Left and Right channels for Stereo mapping
+    const leftBuffer = new Float32Array(TOTAL_SAMPLES);
+    const rightBuffer = new Float32Array(TOTAL_SAMPLES);
+
     const tempoBPM = 120;
     const stepDurationSamples = Math.floor(SAMPLE_RATE * (60 / tempoBPM) / 4); // 16th note step length
 
@@ -152,6 +155,21 @@ function main() {
     let currentStep = 0;
 
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
+        const timeSecs = i / SAMPLE_RATE;
+
+        // ----------------------------------------------------
+        // Modernized Z-Traveller Coordinate Modulations
+        // ----------------------------------------------------
+        // Map trajectory: morph from In-Phase (0 to 4s) to Out-of-Phase (4 to 8s)
+        const phaseOffset = timeSecs < 4.0 ? 0.0 : Math.PI;
+        
+        // Z-Traveller and X-Quaternion oscillations
+        const playerX = 150.0 * Math.sin(2.0 * Math.PI * 0.25 * timeSecs);
+        const playerZ = 150.0 * Math.sin(2.0 * Math.PI * 0.25 * timeSecs + phaseOffset);
+
+        const qX = playerX / 300.0;
+        const qZ = playerZ / 300.0;
+
         // Track the current step index based on boundaries
         while (currentStep < stepStartSamples.length - 1 && i >= stepStartSamples[currentStep + 1]) {
             currentStep++;
@@ -283,7 +301,7 @@ function main() {
             cowbellSample = Math.tanh(filteredCowbell * env * 1.5);
         }
 
-        // E. Synthesize 808 Clap (Double-clap / Flam engine spaced by 35ms)
+        // E. Synthesize 808 Clap (Double-clap / Flam engine spaced by 70ms)
         let clapSample = 0;
         const clapAgeSecs = (i - lastClapTriggerSample) / SAMPLE_RATE;
 
@@ -295,28 +313,28 @@ function main() {
         const clapNoise = cl_bp_band;
 
         if (clapAgeSecs >= 0 && clapAgeSecs < 0.5) {
-            // First Clap (starts at 0ms)
             const env1 = getSingleClapEnvelope(clapAgeSecs);
-
-            // Second Clap (starts at 70ms for double clap) - two of the exact same single claps
             let env2 = 0;
             if (lastClapType === 2) {
                 env2 = getSingleClapEnvelope(clapAgeSecs - 0.070);
             }
-
             const clapEnv = Math.max(env1, env2);
             clapSample = Math.tanh(clapNoise * clapEnv * 1.4);
         }
 
         // ----------------------------------------------------
-        // 2. Synthesize 303 Bassline
+        // 2. Synthesize 303 Bassline modulated by Z-Traveller
         // ----------------------------------------------------
         const targetFreq = BASS_SEQUENCE[stepIndex];
         const isAccent = BASS_ACCENTS[stepIndex];
         const isSlide = BASS_SLIDES[stepIndex];
 
+        // Modulation 1: Pitch modulated by X-Quaternion
+        const pitchMod = 1.0 + (qX * 0.3);
+        const modulatedTargetFreq = targetFreq * pitchMod;
+
         const slideSpeed = isSlide ? 0.08 : 0.005;
-        currentFreq += (targetFreq - currentFreq) * slideSpeed;
+        currentFreq += (modulatedTargetFreq - currentFreq) * slideSpeed;
 
         phase303 += currentFreq / SAMPLE_RATE;
         if (phase303 >= 1.0) phase303 -= 2.0;
@@ -325,7 +343,10 @@ function main() {
         const decayTime = isAccent ? envDecay * 1.5 : envDecay;
         const decaySamples = decayTime * SAMPLE_RATE;
         const envVal = Math.exp(-sampleInStep / decaySamples);
-        const dynamicCutoff = filterCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal;
+
+        // Modulation 2: Formant / Filter Cutoff modulated by Z-Traveller
+        const formantMod = 1.0 + (qZ * 0.2);
+        const dynamicCutoff = (filterCutoff + (isAccent ? envMod * 1.6 : envMod) * envVal) * formantMod;
 
         const cutoffCoeff = (2 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
         const input = oscSample - resonance * p3;
@@ -350,44 +371,71 @@ function main() {
         bassSample = bassSample * amp;
 
         // ----------------------------------------------------
-        // 3. Mix & Clip
+        // 3. Stereo Spatial Placement & Mixing
         // ----------------------------------------------------
-        const mixed = (kickSample * 0.35) + (snareSample * 0.2) + (bassSample * 0.2) + (hhSample * 0.1) + (cowbellSample * 0.07) + (clapSample * 0.08);
-        audioBuffer[i] = Math.tanh(mixed); 
+        // Pan maps directly to spatial x-position of traveller
+        const panVal = Math.max(-1.0, Math.min(1.0, qX));
+        
+        // Stereo gains
+        const leftGain = (1.0 - panVal) / 2.0;
+        const rightGain = (1.0 + panVal) / 2.0;
+
+        // Drums mixed slightly centered/wide
+        const monoDrums = (kickSample * 0.35) + (snareSample * 0.2) + (hhSample * 0.1) + (cowbellSample * 0.07) + (clapSample * 0.08);
+        
+        // Dynamic panning applied to the TB-303 Bassline
+        const bassL = bassSample * leftGain;
+        const bassR = bassSample * rightGain;
+
+        leftBuffer[i] = Math.tanh(monoDrums * 0.5 + bassL * 0.5); 
+        rightBuffer[i] = Math.tanh(monoDrums * 0.5 + bassR * 0.5); 
     }
 
-    // Write combined WAV file
+    // Write combined Stereo WAV file
     const wavPath = path.join(__dirname, "../teddy303_808_acid_beat.wav");
-    const buffer = writeWavFile(audioBuffer);
+    const buffer = writeStereoWavFile(leftBuffer, rightBuffer);
     fs.writeFileSync(wavPath, buffer);
     console.log(`Acid Beat WAV successfully generated at: ${wavPath}`);
 }
 
-function writeWavFile(audioBuffer) {
-    const numSamples = audioBuffer.length;
-    const buffer = Buffer.alloc(44 + numSamples * 2);
+function writeStereoWavFile(leftBuffer, rightBuffer) {
+    const numSamples = leftBuffer.length;
+    const numChannels = 2;
+    const bytesPerSample = 2; // 16-bit
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = SAMPLE_RATE * blockAlign;
+    const subChunk2Size = numSamples * blockAlign;
+
+    const buffer = Buffer.alloc(44 + subChunk2Size);
 
     buffer.write("RIFF", 0, "ascii");
-    buffer.writeUInt32LE(36 + numSamples * 2, 4);
+    buffer.writeUInt32LE(36 + subChunk2Size, 4);
     buffer.write("WAVE", 8, "ascii");
     
     buffer.write("fmt ", 12, "ascii");
     buffer.writeUInt32LE(16, 16);
-    buffer.writeUInt16LE(1, 20);
-    buffer.writeUInt16LE(1, 22);
+    buffer.writeUInt16LE(1, 20); // AudioFormat: PCM
+    buffer.writeUInt16LE(numChannels, 22);
     buffer.writeUInt32LE(SAMPLE_RATE, 24);
-    buffer.writeUInt32LE(SAMPLE_RATE * 2, 28);
-    buffer.writeUInt16LE(2, 32);
-    buffer.writeUInt16LE(16, 34);
+    buffer.writeUInt32LE(byteRate, 28);
+    buffer.writeUInt16LE(blockAlign, 32);
+    buffer.writeUInt16LE(16, 34); // BitsPerSample: 16
     
     buffer.write("data", 36, "ascii");
-    buffer.writeUInt32LE(numSamples * 2, 40);
+    buffer.writeUInt32LE(subChunk2Size, 40);
 
     let offset = 44;
     for (let i = 0; i < numSamples; i++) {
-        let s = Math.max(-1, Math.min(1, audioBuffer[i]));
-        let val = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        buffer.writeInt16LE(Math.floor(val), offset);
+        // Left Channel
+        let sL = Math.max(-1, Math.min(1, leftBuffer[i]));
+        let valL = sL < 0 ? sL * 0x8000 : sL * 0x7FFF;
+        buffer.writeInt16LE(Math.floor(valL), offset);
+        offset += 2;
+
+        // Right Channel
+        let sR = Math.max(-1, Math.min(1, rightBuffer[i]));
+        let valR = sR < 0 ? sR * 0x8000 : sR * 0x7FFF;
+        buffer.writeInt16LE(Math.floor(valR), offset);
         offset += 2;
     }
 
