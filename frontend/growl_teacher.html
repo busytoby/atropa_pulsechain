@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Teddy Bear Growl Teacher</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --border-color: rgba(0, 242, 254, 0.3);
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --glow-cyan: #00f2fe;
+            --glow-magenta: #ff007f;
+            --glow-yellow: #ffea00;
+            --glow-green: #39ff14;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace, 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 2.2rem;
+            color: var(--glow-cyan);
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-title {
+            font-size: 1.15rem;
+            color: var(--glow-magenta);
+            border-bottom: 1px solid rgba(255, 0, 127, 0.25);
+            padding-bottom: 8px;
+            margin-top: 0;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .control-label span.val {
+            color: var(--glow-cyan);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--glow-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--glow-cyan);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            font-family: inherit;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
+            box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.1);
+        }
+
+        .btn:hover {
+            background: var(--glow-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--glow-cyan);
+            text-shadow: none;
+        }
+
+        .btn-magenta {
+            border-color: var(--glow-magenta);
+            color: var(--glow-magenta);
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+            box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.1);
+        }
+
+        .btn-magenta:hover {
+            background: var(--glow-magenta);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--glow-magenta);
+            text-shadow: none;
+        }
+
+        .oscilloscope-container {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            background: #020617;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #oscilloscope {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .lesson-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lesson-card:hover, .lesson-card.active {
+            background: rgba(0, 242, 254, 0.08);
+            border-color: var(--glow-cyan);
+        }
+
+        .lesson-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .lesson-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+
+        .teacher-bubble {
+            background: rgba(255, 0, 127, 0.07);
+            border: 1px solid rgba(255, 0, 127, 0.2);
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #f8fafc;
+        }
+
+        .matching-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .matching-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--glow-magenta), var(--glow-cyan));
+            box-shadow: 0 0 10px var(--glow-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .matching-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Auncient Teddy Bear Growl Teacher</h1>
+            <div class="subtitle">Trigonometric Synthesizer & Formant Calibration Deck</div>
+        </header>
+
+        <div class="grid">
+            <!-- Left Panel: Lessons & Feedback -->
+            <div class="panel">
+                <h2 class="panel-title">Lessons & Calibration</h2>
+                
+                <div class="teacher-bubble" id="teacher-instructions">
+                    Greetings, Calibrator. Select a lesson below to begin matching growl frequencies. Adjust parameters to align the matching index.
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Lesson 1 -->
+                    <div class="lesson-card active" onclick="loadLesson(0)" id="lesson-0">
+                        <div class="lesson-title">1. Auncient Purr</div>
+                        <div class="lesson-desc">A low-frequency resonant rumble representing resting biorhythms. Pitch: 55Hz, LFO: 8Hz.</div>
+                    </div>
+                    <!-- Lesson 2 -->
+                    <div class="lesson-card" onclick="loadLesson(1)" id="lesson-1">
+                        <div class="lesson-title">2. Interceptor Snarl</div>
+                        <div class="lesson-desc">A sharp, aggressive tracking growl utilizing sawtooth harmonics. Pitch: 88Hz, LFO: 14Hz.</div>
+                    </div>
+                    <!-- Lesson 3 -->
+                    <div class="lesson-card" onclick="loadLesson(2)" id="lesson-2">
+                        <div class="lesson-title">3. Tummy Rumble Gravity Path</div>
+                        <div class="lesson-desc">A deep, shaking sub-oscillator rumble with heavy modulation. Pitch: 42Hz, LFO: 6Hz.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <div class="matching-text">
+                        <span>Calibration Match Index</span>
+                        <span id="match-pct" style="color: var(--glow-cyan); font-weight: bold;">0%</span>
+                    </div>
+                    <div class="matching-bar-container">
+                        <div class="matching-bar" id="match-bar"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button class="btn" style="flex: 1;" onclick="toggleAudio()" id="play-btn">Activate Growl</button>
+                    <button class="btn btn-magenta" style="flex: 1;" onclick="playTargetLesson()">Hear Target</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Synthesizer Controls -->
+            <div class="panel">
+                <h2 class="panel-title">Calibrator Controls</h2>
+
+                <div class="oscilloscope-container">
+                    <canvas id="oscilloscope"></canvas>
+                </div>
+
+                <!-- Controls -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Base Pitch (Carrier)</span>
+                        <span class="val" id="val-pitch">55 Hz</span>
+                    </div>
+                    <input type="range" id="param-pitch" min="30" max="220" value="70" oninput="updateParams()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>LFO Frequency (Vibration Rate)</span>
+                        <span class="val" id="val-lfo-freq">6 Hz</span>
+                    </div>
+                    <input type="range" id="param-lfo-freq" min="2" max="25" value="6" oninput="updateParams()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>LFO Modulation Depth</span>
+                        <span class="val" id="val-lfo-depth">10 Hz</span>
+                    </div>
+                    <input type="range" id="param-lfo-depth" min="0" max="50" value="10" oninput="updateParams()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Formant Lowpass Cutoff</span>
+                        <span class="val" id="val-filter">150 Hz</span>
+                    </div>
+                    <input type="range" id="param-filter" min="80" max="1000" value="150" oninput="updateParams()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Waveform Shape</span>
+                        <span class="val" id="val-shape">Triangle</span>
+                    </div>
+                    <input type="range" id="param-shape" min="0" max="2" value="0" step="1" oninput="updateParams()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let mainOut = null;
+        let analyser = null;
+        let carrierOsc = null;
+        let modulatorOsc = null;
+        let modGain = null;
+        let filterNode = null;
+        let synthGain = null;
+        
+        let targetOsc = null;
+        let targetGain = null;
+
+        let activeLessonIdx = 0;
+        let isAudioPlaying = false;
+        let isHearingTarget = false;
+
+        const LESSONS = [
+            {
+                title: "1. Auncient Purr",
+                pitch: 55,
+                lfoFreq: 8,
+                lfoDepth: 12,
+                cutoff: 140,
+                shape: 0, // triangle
+                instruction: "Excellent for meditative calibration. Keep LFO depth minimal and frequency under 10Hz to mimic breathing rhythm."
+            },
+            {
+                title: "2. Interceptor Snarl",
+                pitch: 88,
+                lfoFreq: 14,
+                lfoDepth: 25,
+                cutoff: 400,
+                shape: 1, // sawtooth
+                instruction: "An aggressive warning snarl. Boost LFO frequency above 12Hz, use a Sawtooth shape, and open the lowpass filter cutoff."
+            },
+            {
+                title: "3. Tummy Rumble Gravity Path",
+                pitch: 42,
+                lfoFreq: 6,
+                lfoDepth: 18,
+                cutoff: 100,
+                shape: 2, // sine
+                instruction: "Extremely deep rumble. Tune base carrier pitch as low as possible and restrict filter cutoff to isolate the sub-bass vibration."
+            }
+        ];
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            mainOut = audioCtx.createGain();
+            mainOut.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            mainOut.connect(audioCtx.destination);
+
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 1024;
+            mainOut.connect(analyser);
+
+            setupOscilloscope();
+        }
+
+        function setupOscilloscope() {
+            const canvas = document.getElementById("oscilloscope");
+            const canvasCtx = canvas.getContext("2d");
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            function draw() {
+                requestAnimationFrame(draw);
+                if (!analyser) return;
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+
+                canvasCtx.fillStyle = "#020617";
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                canvasCtx.lineWidth = 2.5;
+                canvasCtx.strokeStyle = isHearingTarget ? "#ff007f" : "#00f2fe";
+                canvasCtx.shadowBlur = 12;
+                canvasCtx.shadowColor = isHearingTarget ? "#ff007f" : "#00f2fe";
+
+                canvasCtx.beginPath();
+                const sliceWidth = canvas.width / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+                canvasCtx.shadowBlur = 0;
+            }
+            draw();
+        }
+
+        function toggleAudio() {
+            initAudio();
+            if (isAudioPlaying) {
+                stopGrowl();
+            } else {
+                startGrowl();
+            }
+        }
+
+        function startGrowl() {
+            if (!audioCtx) return;
+            if (isHearingTarget) stopTarget();
+
+            const now = audioCtx.currentTime;
+
+            filterNode = audioCtx.createBiquadFilter();
+            filterNode.type = "lowpass";
+
+            synthGain = audioCtx.createGain();
+            synthGain.gain.setValueAtTime(0.001, now);
+            synthGain.gain.linearRampToValueAtTime(0.8, now + 0.1);
+
+            carrierOsc = audioCtx.createOscillator();
+            modulatorOsc = audioCtx.createOscillator();
+            modGain = audioCtx.createGain();
+
+            modulatorOsc.connect(modGain);
+            modGain.connect(carrierOsc.frequency);
+
+            carrierOsc.connect(filterNode);
+            filterNode.connect(synthGain);
+            synthGain.connect(mainOut);
+
+            modulatorOsc.start(now);
+            carrierOsc.start(now);
+
+            isAudioPlaying = true;
+            document.getElementById("play-btn").innerText = "Deactivate Growl";
+            updateParams();
+        }
+
+        function stopGrowl() {
+            if (!audioCtx || !isAudioPlaying) return;
+            const now = audioCtx.currentTime;
+            synthGain.gain.cancelScheduledValues(now);
+            synthGain.gain.setValueAtTime(synthGain.gain.value, now);
+            synthGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+
+            setTimeout(() => {
+                if (carrierOsc) {
+                    carrierOsc.stop();
+                    modulatorOsc.stop();
+                    carrierOsc = null;
+                    modulatorOsc = null;
+                }
+            }, 150);
+
+            isAudioPlaying = false;
+            document.getElementById("play-btn").innerText = "Activate Growl";
+        }
+
+        function updateParams() {
+            const pitch = parseFloat(document.getElementById("param-pitch").value);
+            const lfoFreq = parseFloat(document.getElementById("param-lfo-freq").value);
+            const lfoDepth = parseFloat(document.getElementById("param-lfo-depth").value);
+            const cutoff = parseFloat(document.getElementById("param-filter").value);
+            const shapeIdx = parseInt(document.getElementById("param-shape").value);
+
+            const shapes = ["triangle", "sawtooth", "sine"];
+            document.getElementById("val-pitch").innerText = `${pitch} Hz`;
+            document.getElementById("val-lfo-freq").innerText = `${lfoFreq} Hz`;
+            document.getElementById("val-lfo-depth").innerText = `${lfoDepth} Hz`;
+            document.getElementById("val-filter").innerText = `${cutoff} Hz`;
+            document.getElementById("val-shape").innerText = shapes[shapeIdx].charAt(0).toUpperCase() + shapes[shapeIdx].slice(1);
+
+            const now = audioCtx ? audioCtx.currentTime : 0;
+            if (isAudioPlaying && carrierOsc) {
+                carrierOsc.type = shapes[shapeIdx];
+                carrierOsc.frequency.setValueAtTime(pitch, now);
+                modulatorOsc.frequency.setValueAtTime(lfoFreq, now);
+                modGain.gain.setValueAtTime(lfoDepth, now);
+                filterNode.frequency.setValueAtTime(cutoff, now);
+            }
+
+            evaluateAccuracy(pitch, lfoFreq, lfoDepth, cutoff, shapeIdx);
+        }
+
+        function evaluateAccuracy(pitch, lfoFreq, lfoDepth, cutoff, shape) {
+            const target = LESSONS[activeLessonIdx];
+
+            // Normalize differences
+            const dPitch = Math.abs(pitch - target.pitch) / 100;
+            const dLfoFreq = Math.abs(lfoFreq - target.lfoFreq) / 15;
+            const dLfoDepth = Math.abs(lfoDepth - target.lfoDepth) / 30;
+            const dCutoff = Math.abs(cutoff - target.cutoff) / 400;
+            const dShape = shape === target.shape ? 0 : 0.4;
+
+            const error = (dPitch + dLfoFreq + dLfoDepth + dCutoff + dShape) / 5;
+            const accuracy = Math.max(0, Math.min(100, Math.round((1.0 - error) * 100)));
+
+            document.getElementById("match-pct").innerText = `${accuracy}%`;
+            document.getElementById("match-bar").style.width = `${accuracy}%`;
+
+            if (accuracy >= 92) {
+                document.getElementById("teacher-instructions").innerText = "Match Confirmed! Calibrated successfully. " + target.instruction;
+                document.getElementById("match-pct").style.color = "var(--glow-green)";
+            } else {
+                document.getElementById("teacher-instructions").innerText = target.instruction;
+                document.getElementById("match-pct").style.color = "var(--glow-cyan)";
+            }
+        }
+
+        function loadLesson(idx) {
+            activeLessonIdx = idx;
+            document.querySelectorAll(".lesson-card").forEach((card, cIdx) => {
+                if (cIdx === idx) card.classList.add("active");
+                else card.classList.remove("active");
+            });
+
+            // Preset values to give user a starting point
+            const target = LESSONS[idx];
+            document.getElementById("param-pitch").value = target.pitch + (Math.random() * 20 - 10);
+            document.getElementById("param-lfo-freq").value = target.lfoFreq + (Math.random() * 4 - 2);
+            document.getElementById("param-lfo-depth").value = target.lfoDepth + (Math.random() * 6 - 3);
+            document.getElementById("param-filter").value = target.cutoff + (Math.random() * 100 - 50);
+            document.getElementById("param-shape").value = (target.shape + 1) % 3; // set slightly wrong
+
+            updateParams();
+        }
+
+        function playTargetLesson() {
+            initAudio();
+            if (isHearingTarget) {
+                stopTarget();
+                return;
+            }
+            if (isAudioPlaying) stopGrowl();
+
+            const target = LESSONS[activeLessonIdx];
+            const now = audioCtx.currentTime;
+
+            const targetFilter = audioCtx.createBiquadFilter();
+            targetFilter.type = "lowpass";
+            targetFilter.frequency.setValueAtTime(target.cutoff, now);
+
+            targetGain = audioCtx.createGain();
+            targetGain.gain.setValueAtTime(0.001, now);
+            targetGain.gain.linearRampToValueAtTime(0.8, now + 0.1);
+
+            targetOsc = audioCtx.createOscillator();
+            targetOsc.type = ["triangle", "sawtooth", "sine"][target.shape];
+            targetOsc.frequency.setValueAtTime(target.pitch, now);
+
+            const targetMod = audioCtx.createOscillator();
+            targetMod.type = "sine";
+            targetMod.frequency.setValueAtTime(target.lfoFreq, now);
+
+            const targetModGain = audioCtx.createGain();
+            targetModGain.gain.setValueAtTime(target.lfoDepth, now);
+
+            targetMod.connect(targetModGain);
+            targetModGain.connect(targetOsc.frequency);
+
+            targetOsc.connect(targetFilter);
+            targetFilter.connect(targetGain);
+            targetGain.connect(mainOut);
+
+            targetMod.start(now);
+            targetOsc.start(now);
+
+            isHearingTarget = true;
+            document.getElementById("teacher-instructions").innerText = `Hearing target growl for lesson: ${target.title}...`;
+
+            // Auto turn off after 2.5s
+            setTimeout(() => {
+                stopTarget();
+            }, 2500);
+        }
+
+        function stopTarget() {
+            if (!isHearingTarget || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            targetGain.gain.cancelScheduledValues(now);
+            targetGain.gain.setValueAtTime(targetGain.gain.value, now);
+            targetGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+            isHearingTarget = false;
+            document.getElementById("teacher-instructions").innerText = LESSONS[activeLessonIdx].instruction;
+        }
+    </script>
+</body>
+</html>
