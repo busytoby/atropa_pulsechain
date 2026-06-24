@@ -139,7 +139,7 @@
             <span id="boost-counter" class="stat-value value-yellow">100%</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Score (Rings Caught)</span>
+            <span class="stat-label">Score / Kills</span>
             <span id="score-counter" class="stat-value value-cyan">0</span>
         </div>
         <div class="stat-row">
@@ -161,6 +161,7 @@
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 8px;">
             <kbd>W</kbd> <kbd>S</kbd> &nbsp;Pitch Nose Down/Up<br>
             <kbd>A</kbd> <kbd>D</kbd> &nbsp;Yaw Left/Right<br>
+            <kbd>F</kbd> or <kbd>Click</kbd> Fire Cyan Lasers<br>
             <kbd>Shift</kbd> Hold to Boost Thrusters<br>
             <kbd>Space</kbd> Toggle Phase Modulation<br>
             <kbd>Enter</kbd> Start / Restart Game
@@ -169,7 +170,7 @@
             🟢 Speed Gates / 🔵 Capsule: Boost / Shield Restore
         </p>
         <p style="font-size: 0.8rem; color: #ef4444; margin-bottom: 4px;">
-            🔴 Tesseracts / 💥 Interceptors: Avoid crash
+            🔴 Tesseracts / 💥 Interceptors: Shoot to destroy
         </p>
     </div>
 
@@ -185,7 +186,6 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Web Audio Context setup with non-linear distortion & feedback delay
         let audioCtx = null;
         let mainOut = null;
         let analyser = null;
@@ -205,8 +205,12 @@
             return curve;
         }
 
-        document.body.addEventListener("click", () => {
+        // Initialize Audio on any click/interaction
+        document.body.addEventListener("mousedown", () => {
             initAudio();
+            if (gameState === "PLAYING") {
+                fireLaser();
+            }
         });
 
         function initAudio() {
@@ -246,7 +250,6 @@
             }
         }
 
-        // Evolved 303 sequence notes (pentatonic minor)
         const C2 = 65.41, C3 = 130.81, Eb2 = 77.78, G2 = 98.00, Bb2 = 116.54;
         const ARPEGGIATOR_NOTES = [C2, C2, C3, Eb2, G2, Bb2, C3, Eb2];
 
@@ -341,6 +344,16 @@
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.linearRampToValueAtTime(1200, now + 0.15);
                 gain.gain.setValueAtTime(0.2, now);
+            } else if (type === "laser") {
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+            } else if (type === "explosion") {
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+                gain.gain.setValueAtTime(0.4, now);
             } else {
                 osc.type = "triangle";
                 osc.frequency.setValueAtTime(120, now);
@@ -348,11 +361,11 @@
                 gain.gain.setValueAtTime(0.35, now);
             }
 
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (type === "explosion" ? 0.35 : 0.25));
             osc.connect(gain);
             gain.connect(mainOut);
             osc.start(now);
-            osc.stop(now + 0.25);
+            osc.stop(now + (type === "explosion" ? 0.35 : 0.25));
         }
 
         // Game states: "START", "PLAYING", "GAMEOVER"
@@ -372,12 +385,11 @@
         let tesseracts = [];
         let particles = [];
         let shockwaves = [];
-        
-        // Erisian Probes (Feature 3: Enemies)
         let interceptors = [];
-        
-        // Shield Power-Ups (Feature 4: Health capsules)
         let powerups = [];
+        
+        // Feature 1: Laser weapons array
+        let lasers = [];
 
         // Warp Starfield
         let stars = [];
@@ -410,6 +422,7 @@
             memorySlots = [];
             particles = [];
             shockwaves = [];
+            lasers = [];
 
             document.getElementById("score-counter").innerText = "0";
             document.getElementById("shield-counter").innerText = "100%";
@@ -440,7 +453,6 @@
                     rot: Math.random() * Math.PI
                 });
             }
-            // Spawn Interceptor Probes (Feature 3)
             while (interceptors.length < 2) {
                 interceptors.push({
                     x: bearPos.x + (Math.random() * 600 - 300),
@@ -449,7 +461,6 @@
                     rot: 0
                 });
             }
-            // Spawn Shield Power-Ups (Feature 4)
             while (powerups.length < 1) {
                 powerups.push({
                     x: bearPos.x + (Math.random() * 800 - 400),
@@ -465,6 +476,22 @@
                     address: STORY_FRAGMENTS[Math.floor(Math.random() * STORY_FRAGMENTS.length)]
                 });
             }
+        }
+
+        // Fire Laser Weapon System - Feature 1
+        function fireLaser() {
+            triggerSfx("laser");
+            // Fire from player head position travelling along direction vectors
+            lasers.push({
+                x: bearPos.x,
+                y: bearPos.y + 120, // Head offset
+                z: bearPos.z,
+                vx: qCombined.y * 22,
+                vy: qCombined.x * 22,
+                vz: -32 - velocity, // Travels faster than bear velocity
+                age: 0,
+                maxAge: 45
+            });
         }
 
         function spawnPhaseParticles(x, y, z) {
@@ -506,7 +533,6 @@
             });
         }
 
-        // Key states
         const keys = { w: false, a: false, s: false, d: false, shift: false };
         window.addEventListener("keydown", (e) => {
             const k = e.key.toLowerCase();
@@ -518,6 +544,10 @@
                 const statusEl = document.getElementById("phase-status");
                 statusEl.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
                 statusEl.className = isOutPhase ? "stat-value value-magenta" : "stat-value value-cyan";
+            }
+
+            if (k === "f" && gameState === "PLAYING") {
+                fireLaser();
             }
             
             if (e.key === "Enter") {
@@ -679,11 +709,11 @@
             }
         }
 
-        // Feature 3: Draw Erisian Interceptor Probe as a wireframe prism
+        // Draw Erisian Interceptor Probe
         function drawInterceptor(enemy) {
             const size = 20;
             const vertices = [
-                new Point3D(enemy.x, enemy.y + size, enemy.z), // apex
+                new Point3D(enemy.x, enemy.y + size, enemy.z),
                 new Point3D(enemy.x - size, enemy.y - size, enemy.z - size),
                 new Point3D(enemy.x + size, enemy.y - size, enemy.z - size),
                 new Point3D(enemy.x, enemy.y - size, enemy.z + size)
@@ -709,7 +739,7 @@
             drawPrismEdge(3, 1);
         }
 
-        // Feature 4: Draw Shield Power-up Capsule
+        // Draw Shield Power-up Capsule
         function drawCapsule(item) {
             let proj = project(item);
             if (!proj || proj.depth <= 0) return;
@@ -717,13 +747,12 @@
             
             ctx.beginPath();
             ctx.arc(proj.x, proj.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(59, 130, 246, 0.9)"; // blue glow
+            ctx.fillStyle = "rgba(59, 130, 246, 0.9)";
             ctx.shadowBlur = 20;
             ctx.shadowColor = "#3b82f6";
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Draw shield plus sign
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 3;
             ctx.beginPath();
@@ -801,7 +830,7 @@
 
                 ctx.fillStyle = "#fff";
                 ctx.font = "18px sans-serif";
-                ctx.fillText(`Fighter Score: ${score} segments decoded`, width / 2, height / 2 + 10);
+                ctx.fillText(`Fighter Score: ${score} points`, width / 2, height / 2 + 10);
                 
                 ctx.fillStyle = "var(--glow-cyan)";
                 ctx.font = "bold 20px monospace";
@@ -816,7 +845,7 @@
             document.getElementById("vaesen-feeling").innerText = feelingLabel;
             document.getElementById("vaesen-feeling").style.color = E > 0.3 ? "var(--glow-magenta)" : E < -0.3 ? "var(--glow-cyan)" : "#fff";
 
-            // 1. Process steering inputs (update active flight quaternion)
+            // 1. Process steering inputs
             let pitchVel = 0;
             let yawVel = 0;
 
@@ -840,12 +869,10 @@
             bearPos.x += qCombined.y * 12;
             bearPos.y += qCombined.x * 12;
 
-            // Feature 2: Manual Thrust/Boost Engine
             let targetBaseSpeed = 4.0;
             if (keys.shift && boostFuel > 0) {
-                targetBaseSpeed = 8.5; // manual boost speed
+                targetBaseSpeed = 8.5;
                 boostFuel = Math.max(0, boostFuel - 0.4);
-                // spawn extra exhaust boost particles
                 spawnPhaseParticles(bearPos.x, bearPos.y - 20, bearPos.z + 10);
             }
             
@@ -887,7 +914,67 @@
                 }
             });
 
-            // 3. Process Speed Gates (Green Rings) - Recharges boost
+            // 3. Process Lasers - Feature 1
+            lasers.forEach((laser, lIdx) => {
+                laser.x += laser.vx;
+                laser.y += laser.vy;
+                laser.z += laser.vz;
+                laser.age++;
+
+                // Check collision between laser and obstacles / enemies
+                tesseracts.forEach((tess) => {
+                    const dx = laser.x - tess.x;
+                    const dy = laser.y - tess.y;
+                    const dz = laser.z - tess.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist < 80) {
+                        // Destroy tesseract!
+                        triggerSfx("explosion");
+                        triggerCollisionParticles(tess, "rgba(239, 68, 68, 0.8)");
+                        score += 5;
+                        document.getElementById("score-counter").innerText = score;
+                        // Relocate obstacle
+                        tess.x = bearPos.x + (Math.random() * 800 - 400);
+                        tess.y = bearPos.y + (Math.random() * 600 - 300);
+                        tess.z = bearPos.z - 2000;
+                        laser.age = laser.maxAge; // expire laser
+                    }
+                });
+
+                interceptors.forEach((enemy) => {
+                    const dx = laser.x - enemy.x;
+                    const dy = laser.y - enemy.y;
+                    const dz = laser.z - enemy.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist < 70) {
+                        // Destroy interceptor!
+                        triggerSfx("explosion");
+                        triggerCollisionParticles(enemy, "rgba(255, 0, 127, 0.8)");
+                        score += 15;
+                        document.getElementById("score-counter").innerText = score;
+                        // Relocate enemy
+                        enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                        enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                        enemy.z = bearPos.z - 2000;
+                        laser.age = laser.maxAge;
+                    }
+                });
+
+                // Render laser bolts
+                let sc1 = project(laser);
+                let sc2 = project({ x: laser.x, y: laser.y, z: laser.z + 50 });
+                if (sc1 && sc2 && sc1.depth > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(sc1.x, sc1.y);
+                    ctx.lineTo(sc2.x, sc2.y);
+                    ctx.strokeStyle = "var(--glow-cyan)";
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                }
+            });
+            lasers = lasers.filter(l => l.age < l.maxAge);
+
+            // 4. Process Speed Gates (Green Rings)
             speedGates.forEach((gate) => {
                 const dx = bearPos.x - gate.x;
                 const dy = bearPos.y - gate.y;
@@ -896,7 +983,7 @@
 
                 if (dist < 80) {
                     boostFuel = Math.min(100, boostFuel + 25);
-                    score++;
+                    score += 10;
                     document.getElementById("score-counter").innerText = score;
                     triggerSfx("boost");
                     triggerCollisionParticles(gate, "var(--glow-green)");
@@ -927,7 +1014,7 @@
                 }
             });
 
-            // 4. Process Tesseracts (Red Obstacles) - Deals damage
+            // 5. Process Tesseracts (Red Obstacles)
             tesseracts.forEach((tess) => {
                 tess.rot += 0.02;
 
@@ -970,13 +1057,10 @@
                 }
             });
 
-            // 5. Process Erisian Interceptor Probes (Feature 3: Enemies)
+            // 6. Process Erisian Interceptor Probes
             interceptors.forEach((enemy) => {
-                // Seek player positions
                 enemy.x += (bearPos.x - enemy.x) * 0.015;
                 enemy.y += (bearPos.y - enemy.y) * 0.015;
-                
-                // Fly rapidly towards player
                 enemy.z += velocity * 0.45;
 
                 const dx = bearPos.x - enemy.x;
@@ -1011,7 +1095,7 @@
                 }
             });
 
-            // 6. Process Shield Power-Ups (Feature 4)
+            // 7. Process Shield Power-Ups
             powerups.forEach((item) => {
                 const dx = bearPos.x - item.x;
                 const dy = bearPos.y - item.y;
@@ -1038,7 +1122,7 @@
                 drawCapsule(item);
             });
 
-            // 7. Process WinchesterMQ Slots
+            // 8. Process WinchesterMQ Slots
             memorySlots.forEach((slot) => {
                 const dx = bearPos.x - slot.x;
                 const dy = bearPos.y - slot.y;
@@ -1080,7 +1164,6 @@
                 }
             });
 
-            // 8. Update nearest target ring distance on HUD
             if (speedGates.length > 0) {
                 const nearestGate = speedGates.reduce((prev, curr) => {
                     const d1 = Math.abs(curr.z - bearPos.z);
@@ -1091,7 +1174,7 @@
                 const gateDy = bearPos.y - nearestGate.y;
                 const gateDz = bearPos.z - nearestGate.z;
                 const nearestDist = Math.sqrt(gateDx*gateDx + gateDy*gateDy + gateDz*gateDz);
-                // Display nearest gate target helper
+                document.getElementById("target-dist").innerText = `${Math.round(nearestDist)}m`;
             }
 
             // 9. Render and Update Particles
