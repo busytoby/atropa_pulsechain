@@ -446,9 +446,9 @@
         // Feature 1: Laser weapons array
         let lasers = [];
 
-        // Warp Starfield
+        // Warp Tesseract Field
         let stars = [];
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 24; i++) {
             stars.push({
                 x: Math.random() * 2000 - 1000,
                 y: Math.random() * 1600 - 800,
@@ -1083,25 +1083,19 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            // 2. Render Warp Starfield
-            stars.forEach((star) => {
+            // 2. Render Warp Tesseract Field (x-tessarants)
+            stars.forEach((star, idx) => {
                 if (star.z - bearPos.z > 200) {
                     star.z = bearPos.z - 1500;
                     star.x = Math.random() * 2000 - 1000;
                     star.y = Math.random() * 1600 - 800;
                 }
 
-                let proj1 = project(star);
-                let proj2 = project({ x: star.x, y: star.y, z: star.z + velocity * 4.0 });
-
-                if (proj1 && proj2 && proj1.depth > 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(proj1.x, proj1.y);
-                    ctx.lineTo(proj2.x, proj2.y);
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-                    ctx.lineWidth = 1.0;
-                    ctx.stroke();
-                }
+                const theta = pulse * 0.008 + idx;
+                const phi = -pulse * 0.006 + idx;
+                const depthScale = Math.max(0.01, 1.0 - Math.abs(star.z - bearPos.z) / 1500);
+                const color = `rgba(0, 242, 254, ${0.12 * depthScale})`;
+                drawTesseract4D(star, 18, theta, phi, color, 1.0);
             });
 
             // 3. Process Lasers - Feature 1
