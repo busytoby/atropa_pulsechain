@@ -202,6 +202,7 @@
         let delayNode = null;
         let delayFeedback = null;
         let rumbleOsc1 = null, rumbleOsc2 = null, rumbleGain = null;
+        let enemyRumbleOsc = null, enemyRumbleGain = null;
 
         function makeDistortionCurve(amount) {
             const k = typeof amount === 'number' ? amount : 50;
@@ -282,10 +283,10 @@
 
                 const lfo = audioCtx.createOscillator();
                 lfo.type = "sine";
-                lfo.frequency.setValueAtTime(8, now); // 8Hz modulation
+                lfo.frequency.setValueAtTime(8, now);
 
                 const lfoGain = audioCtx.createGain();
-                lfoGain.gain.setValueAtTime(12, now); // 12Hz swing
+                lfoGain.gain.setValueAtTime(12, now);
 
                 lfo.connect(lfoGain);
                 lfoGain.connect(rumbleOsc1.frequency);
@@ -298,6 +299,35 @@
                 lfo.start(now);
                 rumbleOsc1.start(now);
                 rumbleOsc2.start(now);
+
+                // Spatialized enemy growl initialization
+                enemyRumbleGain = audioCtx.createGain();
+                enemyRumbleGain.gain.setValueAtTime(0.001, now);
+
+                enemyRumbleOsc = audioCtx.createOscillator();
+                enemyRumbleOsc.type = "sawtooth";
+                enemyRumbleOsc.frequency.setValueAtTime(45, now);
+
+                const enemyLfo = audioCtx.createOscillator();
+                enemyLfo.type = "triangle";
+                enemyLfo.frequency.setValueAtTime(14, now);
+
+                const enemyLfoGain = audioCtx.createGain();
+                enemyLfoGain.gain.setValueAtTime(8, now);
+
+                enemyLfo.connect(enemyLfoGain);
+                enemyLfoGain.connect(enemyRumbleOsc.frequency);
+
+                const enemyFilter = audioCtx.createBiquadFilter();
+                enemyFilter.type = "lowpass";
+                enemyFilter.frequency.setValueAtTime(120, now);
+
+                enemyRumbleOsc.connect(enemyFilter);
+                enemyFilter.connect(enemyRumbleGain);
+                enemyRumbleGain.connect(mainOut);
+
+                enemyLfo.start(now);
+                enemyRumbleOsc.start(now);
             }
 
             function scheduler() {
@@ -1294,6 +1324,25 @@
                     drawInterceptor(enemy);
                 }
             });
+
+            // Modulate spatialized enemy interceptor tummy rumbles based on proximity
+            let nearestEnemyDist = 9999;
+            interceptors.forEach((enemy) => {
+                const dx = bearPos.x - enemy.x;
+                const dy = bearPos.y - enemy.y;
+                const dz = bearPos.z - enemy.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                if (dist < nearestEnemyDist) nearestEnemyDist = dist;
+            });
+
+            if (enemyRumbleGain && audioCtx) {
+                if (nearestEnemyDist < 600) {
+                    const enemyVol = Math.max(0, 1.0 - nearestEnemyDist / 600) * 0.18;
+                    enemyRumbleGain.gain.setTargetAtTime(enemyVol, audioCtx.currentTime, 0.1);
+                } else {
+                    enemyRumbleGain.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.2);
+                }
+            }
 
             // 7. Process Shield Power-Ups
             powerups.forEach((item) => {
