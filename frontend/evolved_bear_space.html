@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evolved Quaternion Teddy Bear Space</title>
+    <title>Evolved Quaternion Bear Space Flight</title>
     <style>
         :root {
             --bg-color: #030712;
-            --card-bg: rgba(17, 24, 39, 0.7);
-            --border-color: rgba(0, 242, 254, 0.25);
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --border-color: rgba(0, 242, 254, 0.35);
             --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
             --glow-cyan: #00f2fe;
             --glow-magenta: #ff007f;
+            --glow-yellow: #ffea00;
         }
 
         body {
@@ -26,6 +27,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            user-select: none;
         }
 
         #canvas3d {
@@ -49,17 +51,25 @@
             width: 320px;
             backdrop-filter: blur(12px);
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
-            pointer-events: auto;
-            transition: all 0.3s ease;
+            pointer-events: none;
         }
 
-        .overlay-card:hover {
-            box-shadow: 0 0 40px rgba(0, 242, 254, 0.25);
-            border-color: rgba(0, 242, 254, 0.5);
+        .instructions-card {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            z-index: 2;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            width: 280px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
         }
 
         h1 {
-            margin: 0 0 8px 0;
+            margin: 0 0 4px 0;
             font-size: 1.4rem;
             color: var(--glow-cyan);
             text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
@@ -70,7 +80,7 @@
         .subtitle {
             font-size: 0.85rem;
             color: var(--text-secondary);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -78,10 +88,10 @@
         .stat-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 0.9rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 6px;
+            padding-bottom: 4px;
         }
 
         .stat-label {
@@ -95,6 +105,7 @@
 
         .value-cyan { color: var(--glow-cyan); }
         .value-magenta { color: var(--glow-magenta); }
+        .value-yellow { color: var(--glow-yellow); }
 
         /* Subtle grid background */
         .grid-bg {
@@ -111,6 +122,17 @@
             z-index: 0;
             pointer-events: none;
         }
+
+        kbd {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #f1f5f9;
+            box-shadow: 0 2px 0 #0f172a;
+        }
     </style>
 </head>
 <body>
@@ -118,33 +140,42 @@
     <canvas id="canvas3d"></canvas>
 
     <div class="overlay-card">
-        <h1>Hamiltonian Bear</h1>
-        <div class="subtitle">Evolved Quaternion Space</div>
+        <h1>Hamiltonian Space</h1>
+        <div class="subtitle">Interactive Flight Deck</div>
         
         <div class="stat-row">
-            <span class="stat-label">Fur Color</span>
-            <span class="stat-value" style="color: rgb(241, 157, 174);">RGB(241, 157, 174)</span>
+            <span class="stat-label">Score (Rings Caught)</span>
+            <span id="score-counter" class="stat-value value-yellow">0</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Eye Color</span>
-            <span class="stat-value" style="color: rgb(166, 7, 214);">RGB(166, 7, 214)</span>
+            <span class="stat-label">Velocity Vector (q)</span>
+            <span id="velocity-vector" class="stat-value value-cyan">0.00, 0.00, 0.00</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Scale Factor</span>
-            <span class="stat-value value-cyan">1.64</span>
+            <span class="stat-label">Target Ring Distance</span>
+            <span id="target-dist" class="stat-value">---</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Fur Length</span>
-            <span class="stat-value value-magenta">0.94</span>
-        </div>
-        <div class="stat-row">
-            <span class="stat-label">Sickness Mutation</span>
-            <span class="stat-value">9%</span>
-        </div>
-        <div class="stat-row">
-            <span class="stat-label">Active Phase</span>
+            <span class="stat-label">System Phase Status</span>
             <span id="phase-status" class="stat-value value-cyan">In-Phase</span>
         </div>
+        <div class="stat-row">
+            <span class="stat-label">Audio Synth Engine</span>
+            <span id="synth-status" class="stat-value">MUTED (Click to activate)</span>
+        </div>
+    </div>
+
+    <div class="instructions-card">
+        <h3 style="margin-top: 0; color: var(--glow-cyan); font-size: 1rem;">Flight Controls</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+            <kbd>W</kbd> <kbd>S</kbd> &nbsp;Pitch Nose Down/Up<br>
+            <kbd>A</kbd> <kbd>D</kbd> &nbsp;Yaw Left/Right<br>
+            <kbd>Space</kbd> Toggle In/Out Phase Modulation<br>
+            <kbd>Click</kbd> Activate Audio Synthesizer
+        </p>
+        <p style="font-size: 0.8rem; color: var(--glow-yellow); margin-bottom: 0;">
+            Objective: Navigate the evolved bear skeleton into the glowing target rings in space!
+        </p>
     </div>
 
     <script>
@@ -159,9 +190,85 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Composed Quaternions from Hamiltonian product
-        // qCombined = { w: 0.8924, x: 0.2391, y: 0.3696, z: 0.0990 }
-        const qCombined = { w: 0.8924, x: 0.2391, y: 0.3696, z: 0.0990 };
+        // Web Audio Context setup
+        let audioCtx = null;
+        document.body.addEventListener("click", () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                document.getElementById("synth-status").innerText = "ACTIVE";
+                document.getElementById("synth-status").className = "stat-value value-yellow";
+            }
+        });
+
+        // Trigger synthesiser sound upon ring collection
+        function triggerCollectionSynth(isOutPhase) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // Sub-bass fundamental frequency
+            const oscSub = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            oscSub.type = "sine";
+            oscSub.frequency.setValueAtTime(65.41, now); // C2 fundamental
+            subGain.gain.setValueAtTime(0.2, now);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            oscSub.connect(subGain);
+            subGain.connect(audioCtx.destination);
+            oscSub.start(now);
+            oscSub.stop(now + 0.5);
+
+            // Lead 303 slide sweep
+            const oscLead = audioCtx.createOscillator();
+            const leadGain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            oscLead.type = "sawtooth";
+            oscLead.frequency.setValueAtTime(130.81, now); // Start C3
+            oscLead.frequency.exponentialRampToValueAtTime(261.63, now + 0.2); // Slide to C4
+            
+            filter.type = "lowpass";
+            filter.Q.setValueAtTime(12, now); // resonant sweep
+            
+            // Modulation based on Phase settings
+            const startCutoff = isOutPhase ? 2000 : 400;
+            const endCutoff = isOutPhase ? 400 : 2500;
+            filter.frequency.setValueAtTime(startCutoff, now);
+            filter.frequency.exponentialRampToValueAtTime(endCutoff, now + 0.35);
+
+            leadGain.gain.setValueAtTime(0.18, now);
+            leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+            oscLead.connect(filter);
+            filter.connect(leadGain);
+            leadGain.connect(audioCtx.destination);
+            
+            oscLead.start(now);
+            oscLead.stop(now + 0.4);
+        }
+
+        // Active flight quaternion
+        let qCombined = { w: 1.0, x: 0.0, y: 0.0, z: 0.0 };
+        let bearPos = { x: 0, y: 0, z: 0 };
+        let targetRing = { x: (Math.random() * 400 - 200), y: (Math.random() * 300 - 150), z: -400 };
+        let score = 0;
+        let isOutPhase = false;
+
+        // Key states
+        const keys = { w: false, a: false, s: false, d: false };
+        window.addEventListener("keydown", (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = true;
+            if (e.key === " ") {
+                isOutPhase = !isOutPhase;
+                const statusEl = document.getElementById("phase-status");
+                statusEl.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
+                statusEl.className = isOutPhase ? "stat-value value-magenta" : "stat-value value-cyan";
+            }
+        });
+        window.addEventListener("keyup", (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = false;
+        });
 
         // 3D Point projection
         class Point3D {
@@ -174,44 +281,32 @@
 
         // Camera setup
         const camera = {
-            distance: 1000,
-            fov: 800
+            distance: 800,
+            fov: 600
         };
 
-        function project(p, angleY, angleX) {
-            // Apply rotations
-            let cosY = Math.cos(angleY), sinY = Math.sin(angleY);
-            let cosX = Math.cos(angleX), sinX = Math.sin(angleX);
-
-            // Rotate Y
-            let x1 = p.x * cosY - p.z * sinY;
-            let z1 = p.x * sinY + p.z * cosY;
-
-            // Rotate X
-            let y2 = p.y * cosX - z1 * sinX;
-            let z2 = p.y * sinX + z1 * cosX;
-
-            // Perspective division
-            const scale = camera.fov / (camera.distance + z2);
+        function project(p) {
+            // Perspective division relative to camera distance
+            const relativeZ = p.z - bearPos.z;
+            const relativeX = p.x - bearPos.x;
+            const relativeY = p.y - bearPos.y;
+            const scale = camera.fov / (camera.distance + relativeZ);
             return {
-                x: width / 2 + x1 * scale,
-                y: height / 2 - y2 * scale,
-                depth: z2
+                x: width / 2 + relativeX * scale,
+                y: height / 2 - relativeY * scale,
+                depth: relativeZ
             };
         }
 
         // Quaternion Rotation Helper
         function rotateVectorByQuaternion(v, q) {
-            // Extract vector part of quaternion
             const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
             const vx = v.x, vy = v.y, vz = v.z;
 
-            // Calculate tx, ty, tz
             const tx = 2.0 * (qy * vz - qz * vy);
             const ty = 2.0 * (qz * vx - qx * vz);
             const tz = 2.0 * (qx * vy - qy * vx);
 
-            // Final rotated coordinates
             const rx = vx + qw * tx + (qy * tz - qz * ty);
             const ry = vy + qw * ty + (qz * tx - qx * tz);
             const rz = vz + qw * tz + (qx * ty - qy * tx);
@@ -219,23 +314,37 @@
             return { x: rx, y: ry, z: rz };
         }
 
+        // Hamiltonian multiplication to update active flight quaternions
+        function multiplyQuaternions(q1, q2) {
+            return {
+                w: q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
+                x: q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
+                y: q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,
+                z: q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w
+            };
+        }
+
+        function normalizeQuaternion(q) {
+            const len = Math.sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+            return { w: q.w / len, x: q.x / len, y: q.y / len, z: q.z / len };
+        }
+
         // Generate Bear Skeleton structure
         function getBearSkeleton(pulse) {
-            const scale = 1.2;
-            const breathing = Math.sin(pulse) * 4;
+            const scale = 1.0;
+            const breathing = Math.sin(pulse) * 3;
 
-            // Limbs base offsets
-            let head = new Point3D(0, 140 * scale + breathing, 0);
-            let neck = new Point3D(0, 90 * scale + breathing, 0);
-            let lShoulder = new Point3D(-60 * scale, 70 * scale, 0);
-            let rShoulder = new Point3D(60 * scale, 70 * scale, 0);
-            let midHip = new Point3D(0, -20 * scale, 0);
+            let head = new Point3D(bearPos.x, bearPos.y + 120 * scale + breathing, bearPos.z);
+            let neck = new Point3D(bearPos.x, bearPos.y + 80 * scale + breathing, bearPos.z);
+            let lShoulder = new Point3D(bearPos.x - 50 * scale, bearPos.y + 60 * scale, bearPos.z);
+            let rShoulder = new Point3D(bearPos.x + 50 * scale, bearPos.y + 60 * scale, bearPos.z);
+            let midHip = new Point3D(bearPos.x, bearPos.y - 15 * scale, bearPos.z);
 
-            // Rotate limbs via quaternion properties
-            let armL = rotateVectorByQuaternion({ x: -40 * scale, y: -50 * scale, z: 0 }, qCombined);
-            let armR = rotateVectorByQuaternion({ x: 40 * scale, y: -50 * scale, z: 0 }, qCombined);
-            let legL = rotateVectorByQuaternion({ x: -30 * scale, y: -70 * scale, z: 0 }, qCombined);
-            let legR = rotateVectorByQuaternion({ x: 30 * scale, y: -70 * scale, z: 0 }, qCombined);
+            // Rotate limbs via active quaternion
+            let armL = rotateVectorByQuaternion({ x: -35 * scale, y: -45 * scale, z: 0 }, qCombined);
+            let armR = rotateVectorByQuaternion({ x: 35 * scale, y: -45 * scale, z: 0 }, qCombined);
+            let legL = rotateVectorByQuaternion({ x: -25 * scale, y: -60 * scale, z: 0 }, qCombined);
+            let legR = rotateVectorByQuaternion({ x: 25 * scale, y: -60 * scale, z: 0 }, qCombined);
 
             let lPaw = new Point3D(lShoulder.x + armL.x, lShoulder.y + armL.y, lShoulder.z + armL.z);
             let rPaw = new Point3D(rShoulder.x + armR.x, rShoulder.y + armR.y, rShoulder.z + armR.z);
@@ -246,53 +355,109 @@
         }
 
         let pulse = 0;
-        let rotY = 0;
-        let rotX = 0.2;
 
         function drawJoint(proj, size, color) {
             if (!proj) return;
             ctx.beginPath();
-            ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+            ctx.arc(proj.x, proj.y, Math.max(2, size), 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.shadowBlur = 15;
             ctx.shadowColor = color;
             ctx.fill();
-            ctx.shadowBlur = 0; // reset
+            ctx.shadowBlur = 0;
         }
 
         function drawBone(p1, p2, color, width) {
-            let sc1 = project(p1, rotY, rotX);
-            let sc2 = project(p2, rotY, rotX);
+            let sc1 = project(p1);
+            let sc2 = project(p2);
             if (!sc1 || !sc2) return;
 
             ctx.beginPath();
             ctx.moveTo(sc1.x, sc1.y);
             ctx.lineTo(sc2.x, sc2.y);
             ctx.strokeStyle = color;
-            ctx.lineWidth = width;
+            ctx.lineWidth = Math.max(1, width);
             ctx.lineCap = "round";
             ctx.stroke();
         }
 
-        // Animation Loop
-        function animate() {
+        // Animation & Game Loop
+        function loop() {
             pulse += 0.05;
-            rotY += 0.01;
+
+            // 1. Process steering inputs (update active flight quaternion)
+            let pitchVel = 0;
+            let yawVel = 0;
+
+            if (keys.w) pitchVel = -0.04;
+            if (keys.s) pitchVel = 0.04;
+            if (keys.a) yawVel = -0.04;
+            if (keys.d) yawVel = 0.04;
+
+            // Create delta quaternion for current rotation inputs
+            const cp = Math.cos(pitchVel / 2), sp = Math.sin(pitchVel / 2);
+            const cy = Math.cos(yawVel / 2), sy = Math.sin(yawVel / 2);
+            
+            const qDelta = normalizeQuaternion({
+                w: cp * cy,
+                x: sp * cy,
+                y: cp * sy,
+                z: -sp * sy
+            });
+
+            // Multiply active flight quaternion by delta input
+            qCombined = normalizeQuaternion(multiplyQuaternions(qCombined, qDelta));
+
+            // Move target forward
+            bearPos.z -= 4; // continuous flight speed
+
+            // Check collision with target ring
+            const dx = bearPos.x - targetRing.x;
+            const dy = bearPos.y - targetRing.y;
+            const dz = bearPos.z - targetRing.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            document.getElementById("target-dist").innerText = `${Math.round(dist)}m`;
+            document.getElementById("velocity-vector").innerText = `${qCombined.x.toFixed(2)}, ${qCombined.y.toFixed(2)}, ${qCombined.z.toFixed(2)}`;
+
+            if (dist < 80) {
+                // Caught ring!
+                score++;
+                document.getElementById("score-counter").innerText = score;
+                triggerCollectionSynth(isOutPhase);
+                // Relocate target ring further ahead
+                targetRing.x = bearPos.x + (Math.random() * 600 - 300);
+                targetRing.y = bearPos.y + (Math.random() * 400 - 200);
+                targetRing.z = bearPos.z - 600;
+            } else if (dz < -200) {
+                // Missed ring, respawn target ring
+                targetRing.x = bearPos.x + (Math.random() * 400 - 200);
+                targetRing.y = bearPos.y + (Math.random() * 300 - 150);
+                targetRing.z = bearPos.z - 600;
+            }
+
+            // Apply slight flight adjustment based on yaw/pitch direction
+            bearPos.x += qCombined.y * 12;
+            bearPos.y += qCombined.x * 12;
 
             ctx.clearRect(0, 0, width, height);
 
-            // Update UI phase status dynamically
-            const time = Date.now() * 0.001;
-            const phaseStatus = document.getElementById("phase-status");
-            if (phaseStatus) {
-                const isOutPhase = Math.floor(time / 4) % 2 === 1;
-                phaseStatus.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
-                phaseStatus.style.color = isOutPhase ? "var(--glow-magenta)" : "var(--glow-cyan)";
+            // 2. Draw Target Ring in Space
+            let ringProj = project(targetRing);
+            if (ringProj) {
+                ctx.beginPath();
+                ctx.arc(ringProj.x, ringProj.y, Math.max(10, 60000 / (camera.distance + (targetRing.z - bearPos.z))), 0, Math.PI * 2);
+                ctx.strokeStyle = "var(--glow-yellow)";
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "var(--glow-yellow)";
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
 
+            // 3. Draw Bear Skeleton
             const skeleton = getBearSkeleton(pulse);
 
-            // Draw connecting wireframe bones
             const boneColor = "rgba(0, 242, 254, 0.4)";
             drawBone(skeleton.head, skeleton.neck, boneColor, 6);
             drawBone(skeleton.neck, skeleton.lShoulder, boneColor, 4);
@@ -303,30 +468,28 @@
             drawBone(skeleton.midHip, skeleton.lFoot, boneColor, 5);
             drawBone(skeleton.midHip, skeleton.rFoot, boneColor, 5);
 
-            // Draw volumetric fuzzy joints (representing the evolved fur color)
+            // Draw volumetric fuzzy joints (pink fur, purple eyes)
             const furColor = "rgba(241, 157, 174, 0.85)";
             const eyeColor = "rgba(166, 7, 214, 0.95)";
 
-            // Draw head
-            drawJoint(project(skeleton.head, rotY, rotX), 32, furColor);
+            drawJoint(project(skeleton.head), 30, furColor);
             
-            // Draw glowing eyes (offset on head)
-            let eyeL = new Point3D(skeleton.head.x - 12, skeleton.head.y + 6, skeleton.head.z + 18);
-            let eyeR = new Point3D(skeleton.head.x + 12, skeleton.head.y + 6, skeleton.head.z + 18);
-            drawJoint(project(eyeL, rotY, rotX), 6, eyeColor);
-            drawJoint(project(eyeR, rotY, rotX), 6, eyeColor);
+            // Draw eyes offset on head
+            let eyeL = new Point3D(skeleton.head.x - 10, skeleton.head.y + 5, skeleton.head.z + 15);
+            let eyeR = new Point3D(skeleton.head.x + 10, skeleton.head.y + 5, skeleton.head.z + 15);
+            drawJoint(project(eyeL), 5, eyeColor);
+            drawJoint(project(eyeR), 5, eyeColor);
 
-            // Draw other body parts
-            drawJoint(project(skeleton.neck, rotY, rotX), 24, furColor);
-            drawJoint(project(skeleton.lPaw, rotY, rotX), 14, furColor);
-            drawJoint(project(skeleton.rPaw, rotY, rotX), 14, furColor);
-            drawJoint(project(skeleton.lFoot, rotY, rotX), 16, furColor);
-            drawJoint(project(skeleton.rFoot, rotY, rotX), 16, furColor);
+            drawJoint(project(skeleton.neck), 22, furColor);
+            drawJoint(project(skeleton.lPaw), 12, furColor);
+            drawJoint(project(skeleton.rPaw), 12, furColor);
+            drawJoint(project(skeleton.lFoot), 15, furColor);
+            drawJoint(project(skeleton.rFoot), 15, furColor);
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(loop);
         }
 
-        animate();
+        loop();
     </script>
 </body>
 </html>
