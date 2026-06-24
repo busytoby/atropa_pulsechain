@@ -143,6 +143,14 @@
             <span id="score-counter" class="stat-value value-cyan">0</span>
         </div>
         <div class="stat-row">
+            <span class="stat-label">Combo Multiplier</span>
+            <span id="combo-counter" class="stat-value value-yellow">1x</span>
+        </div>
+        <div class="stat-row" id="hyperdrive-row" style="display: none; box-shadow: 0 0 10px var(--glow-magenta); padding: 4px; border-radius: 4px;">
+            <span class="stat-label" style="color: var(--glow-magenta); font-weight: bold;">⚡ HYPERDRIVE ⚡</span>
+            <span id="hyperdrive-counter" class="stat-value value-magenta">ACTIVE (2x pts)</span>
+        </div>
+        <div class="stat-row">
             <span class="stat-label">Flight Velocity</span>
             <span id="velocity-counter" class="stat-value value-green">4.0 u/f</span>
         </div>
@@ -354,6 +362,11 @@
                 osc.frequency.setValueAtTime(180, now);
                 osc.frequency.linearRampToValueAtTime(30, now + 0.35);
                 gain.gain.setValueAtTime(0.4, now);
+            } else if (type === "hyperdrive") {
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(1500, now + 0.6);
+                gain.gain.setValueAtTime(0.3, now);
             } else {
                 osc.type = "triangle";
                 osc.frequency.setValueAtTime(120, now);
@@ -361,11 +374,12 @@
                 gain.gain.setValueAtTime(0.35, now);
             }
 
-            gain.gain.exponentialRampToValueAtTime(0.001, now + (type === "explosion" ? 0.35 : 0.25));
+            const duration = type === "hyperdrive" ? 0.6 : (type === "explosion" ? 0.35 : 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
             osc.connect(gain);
             gain.connect(mainOut);
             osc.start(now);
-            osc.stop(now + (type === "explosion" ? 0.35 : 0.25));
+            osc.stop(now + duration);
         }
 
         // Game states: "START", "PLAYING", "GAMEOVER"
@@ -379,6 +393,11 @@
         let score = 0;
         let isOutPhase = false;
         let E = 0.0; 
+
+        // Combo and Hyperdrive values
+        let comboCount = 0;
+        let comboMultiplier = 1;
+        let hyperdriveTimer = 0;
 
         // Game arrays
         let speedGates = [];
@@ -415,6 +434,10 @@
             bearPos = { x: 0, y: 0, z: 0 };
             decodedStory = [];
             
+            comboCount = 0;
+            comboMultiplier = 1;
+            hyperdriveTimer = 0;
+            
             speedGates = [];
             tesseracts = [];
             interceptors = [];
@@ -425,6 +448,8 @@
             lasers = [];
 
             document.getElementById("score-counter").innerText = "0";
+            document.getElementById("combo-counter").innerText = "1x";
+            document.getElementById("hyperdrive-row").style.display = "none";
             document.getElementById("shield-counter").innerText = "100%";
             document.getElementById("shield-counter").className = "stat-value value-green";
             document.getElementById("boost-counter").innerText = "100%";
@@ -869,9 +894,9 @@
             bearPos.x += qCombined.y * 12;
             bearPos.y += qCombined.x * 12;
 
-            let targetBaseSpeed = 4.0;
+            let targetBaseSpeed = 4.0 + Math.min(4.0, score * 0.002);
             if (keys.shift && boostFuel > 0) {
-                targetBaseSpeed = 8.5;
+                targetBaseSpeed = 8.5 + Math.min(4.0, score * 0.002);
                 boostFuel = Math.max(0, boostFuel - 0.4);
                 spawnPhaseParticles(bearPos.x, bearPos.y - 20, bearPos.z + 10);
             }
@@ -881,6 +906,20 @@
 
             document.getElementById("boost-counter").innerText = `${Math.round(boostFuel)}%`;
             document.getElementById("boost-counter").className = boostFuel > 30 ? "stat-value value-yellow" : "stat-value value-red";
+
+            if (hyperdriveTimer > 0) {
+                hyperdriveTimer--;
+                document.getElementById("hyperdrive-row").style.display = "flex";
+                document.getElementById("hyperdrive-counter").innerText = `ACTIVE (${Math.ceil(hyperdriveTimer / 60)}s)`;
+                deckCard.style.borderColor = "var(--glow-magenta)";
+                deckCard.style.boxShadow = "0 0 45px rgba(255, 0, 127, 0.6)";
+            } else {
+                document.getElementById("hyperdrive-row").style.display = "none";
+                if (comboMultiplier > 1) {
+                    deckCard.style.borderColor = "var(--glow-yellow)";
+                    deckCard.style.boxShadow = `0 0 ${25 + comboMultiplier * 5}px rgba(255, 234, 0, 0.35)`;
+                }
+            }
 
             bearPos.z -= velocity;
 
@@ -931,7 +970,7 @@
                         // Destroy tesseract!
                         triggerSfx("explosion");
                         triggerCollisionParticles(tess, "rgba(239, 68, 68, 0.8)");
-                        score += 5;
+                        score += 5 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
                         document.getElementById("score-counter").innerText = score;
                         // Relocate obstacle
                         tess.x = bearPos.x + (Math.random() * 800 - 400);
@@ -950,7 +989,7 @@
                         // Destroy interceptor!
                         triggerSfx("explosion");
                         triggerCollisionParticles(enemy, "rgba(255, 0, 127, 0.8)");
-                        score += 15;
+                        score += 15 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
                         document.getElementById("score-counter").innerText = score;
                         // Relocate enemy
                         enemy.x = bearPos.x + (Math.random() * 600 - 300);
@@ -983,7 +1022,11 @@
 
                 if (dist < 80) {
                     boostFuel = Math.min(100, boostFuel + 25);
-                    score += 10;
+                    comboCount++;
+                    comboMultiplier = Math.min(5, 1 + Math.floor(comboCount / 3));
+                    document.getElementById("combo-counter").innerText = `${comboMultiplier}x`;
+
+                    score += 10 * comboMultiplier * (hyperdriveTimer > 0 ? 2 : 1);
                     document.getElementById("score-counter").innerText = score;
                     triggerSfx("boost");
                     triggerCollisionParticles(gate, "var(--glow-green)");
@@ -1024,9 +1067,14 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
                 if (dist < 60) {
-                    shield = Math.max(0, shield - 20);
-                    document.getElementById("shield-counter").innerText = `${shield}%`;
-                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                    if (hyperdriveTimer <= 0) {
+                        shield = Math.max(0, shield - 20);
+                        document.getElementById("shield-counter").innerText = `${shield}%`;
+                        document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                        comboCount = 0;
+                        comboMultiplier = 1;
+                        document.getElementById("combo-counter").innerText = "1x";
+                    }
 
                     triggerSfx("hit");
                     triggerCollisionParticles(tess, "#ef4444");
@@ -1059,9 +1107,10 @@
 
             // 6. Process Erisian Interceptor Probes
             interceptors.forEach((enemy) => {
-                enemy.x += (bearPos.x - enemy.x) * 0.015;
-                enemy.y += (bearPos.y - enemy.y) * 0.015;
-                enemy.z += velocity * 0.45;
+                const trackSpeed = 0.015 + Math.min(0.025, score * 0.00005);
+                enemy.x += (bearPos.x - enemy.x) * trackSpeed;
+                enemy.y += (bearPos.y - enemy.y) * trackSpeed;
+                enemy.z += velocity * (0.45 + Math.min(0.25, score * 0.0005));
 
                 const dx = bearPos.x - enemy.x;
                 const dy = bearPos.y - enemy.y;
@@ -1069,9 +1118,14 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
                 if (dist < 50) {
-                    shield = Math.max(0, shield - 15);
-                    document.getElementById("shield-counter").innerText = `${shield}%`;
-                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                    if (hyperdriveTimer <= 0) {
+                        shield = Math.max(0, shield - 15);
+                        document.getElementById("shield-counter").innerText = `${shield}%`;
+                        document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+                        comboCount = 0;
+                        comboMultiplier = 1;
+                        document.getElementById("combo-counter").innerText = "1x";
+                    }
 
                     triggerSfx("hit");
                     triggerCollisionParticles(enemy, "var(--glow-magenta)");
@@ -1137,6 +1191,18 @@
                     if (!decodedStory.includes(label)) {
                         decodedStory.push(label);
                         document.getElementById("decoded-msg").innerText = decodedStory.join(" -> ");
+
+                        comboCount++;
+                        comboMultiplier = Math.min(5, 1 + Math.floor(comboCount / 3));
+                        document.getElementById("combo-counter").innerText = `${comboMultiplier}x`;
+                    }
+
+                    // Trigger Hyperdrive Mode if all 6 fragments collected
+                    if (decodedStory.length === 6 && hyperdriveTimer === 0) {
+                        hyperdriveTimer = 400; // ~6.6 seconds of invulnerability
+                        triggerSfx("hyperdrive");
+                        decodedStory = [];
+                        document.getElementById("decoded-msg").innerText = "⚡ HYPERDRIVE ACTIVE! ⚡";
                     }
 
                     slot.x = bearPos.x + (Math.random() * 800 - 400);
