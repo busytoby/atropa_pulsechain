@@ -386,6 +386,10 @@
         let bbdFilter = null;
         let bbdFeedback = null;
         let rtlNode = null;
+        let subOsc = null;
+        let subGain = null;
+        let formantF1 = null;
+        let formantF2 = null;
         let synthGain = null;
         
         let targetOsc = null;
@@ -558,6 +562,15 @@
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = "lowpass";
 
+            // Dual Formant Bandpass Channels
+            formantF1 = audioCtx.createBiquadFilter();
+            formantF1.type = "bandpass";
+            formantF1.Q.setValueAtTime(8, now);
+
+            formantF2 = audioCtx.createBiquadFilter();
+            formantF2.type = "bandpass";
+            formantF2.Q.setValueAtTime(6, now);
+
             rtlNode = audioCtx.createWaveShaper();
             rtlNode.curve = makeRTLDistortionCurve(1.5);
 
@@ -584,11 +597,26 @@
             modulatorOsc = audioCtx.createOscillator();
             modGain = audioCtx.createGain();
 
+            // Sub-harmonic sine oscillator (one octave below carrier)
+            subGain = audioCtx.createGain();
+            subGain.gain.setValueAtTime(0.35, now);
+
+            subOsc = audioCtx.createOscillator();
+            subOsc.type = "sine";
+            subOsc.frequency.setValueAtTime(55 * 0.5, now);
+
             modulatorOsc.connect(modGain);
             modGain.connect(carrierOsc.frequency);
 
             carrierOsc.connect(filterNode);
-            filterNode.connect(rtlNode);
+            
+            // Connect to parallel formant filters
+            filterNode.connect(formantF1);
+            filterNode.connect(formantF2);
+
+            formantF1.connect(rtlNode);
+            formantF2.connect(rtlNode);
+
             rtlNode.connect(zenerNode);
 
             // Connect Dry path
@@ -601,10 +629,15 @@
             bbdFeedback.connect(bbdDelay); // feedback loop
             bbdFilter.connect(synthGain); // wet mix
 
+            // Connect Sub-harmonic path
+            subOsc.connect(subGain);
+            subGain.connect(synthGain);
+
             synthGain.connect(mainOut);
 
             modulatorOsc.start(now);
             carrierOsc.start(now);
+            subOsc.start(now);
 
             isAudioPlaying = true;
             document.getElementById("play-btn").innerText = "Deactivate Growl";
@@ -622,8 +655,15 @@
                 if (carrierOsc) {
                     carrierOsc.stop();
                     modulatorOsc.stop();
+                    if (subOsc) {
+                        subOsc.stop();
+                    }
                     carrierOsc = null;
                     modulatorOsc = null;
+                    subOsc = null;
+                    subGain = null;
+                    formantF1 = null;
+                    formantF2 = null;
                     zenerNode = null;
                     rtlNode = null;
                     bbdDelay = null;
@@ -655,11 +695,30 @@
 
             const now = audioCtx ? audioCtx.currentTime : 0;
             if (isAudioPlaying && carrierOsc) {
+                // Synthesize organic Jitter (pitch instability)
+                const jitter = (Math.random() - 0.5) * 2.8;
+
                 carrierOsc.type = shapes[shapeIdx];
-                carrierOsc.frequency.setValueAtTime(pitch, now);
+                carrierOsc.frequency.setValueAtTime(pitch + jitter, now);
                 modulatorOsc.frequency.setValueAtTime(repelActive ? lfoFreq * 4.0 : lfoFreq, now);
                 modGain.gain.setValueAtTime(repelActive ? lfoDepth * 1.8 : lfoDepth, now);
+                
                 filterNode.frequency.setValueAtTime(repelActive ? cutoff * 0.5 : cutoff, now);
+                
+                // Formant sweeps
+                if (formantF1) formantF1.frequency.setValueAtTime(cutoff, now);
+                if (formantF2) formantF2.frequency.setValueAtTime(cutoff * 2.2, now);
+
+                if (subOsc) {
+                    subOsc.frequency.setValueAtTime(pitch * 0.5 + jitter * 0.5, now);
+                }
+
+                // Synthesize organic Shimmer (volume instability)
+                if (synthGain) {
+                    const shimmer = 0.8 + (Math.random() - 0.5) * 0.08;
+                    synthGain.gain.setValueAtTime(shimmer, now);
+                }
+
                 if (zenerNode) {
                     zenerNode.curve = makeZenerDistortionCurve(repelActive ? zenerAmt * 2.0 : zenerAmt);
                 }
