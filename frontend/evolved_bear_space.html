@@ -170,6 +170,7 @@
             <kbd>W</kbd> <kbd>S</kbd> &nbsp;Pitch Nose Down/Up<br>
             <kbd>A</kbd> <kbd>D</kbd> &nbsp;Yaw Left/Right<br>
             <kbd>F</kbd> or <kbd>Click</kbd> Fire Cyan Lasers<br>
+            <kbd>R</kbd> Hold for Tummy Rumble Gravity Pull<br>
             <kbd>Shift</kbd> Hold to Boost Thrusters<br>
             <kbd>Space</kbd> Toggle Phase Modulation<br>
             <kbd>Enter</kbd> Start / Restart Game
@@ -599,7 +600,7 @@
             });
         }
 
-        const keys = { w: false, a: false, s: false, d: false, shift: false };
+        const keys = { w: false, a: false, s: false, d: false, r: false, shift: false };
         window.addEventListener("keydown", (e) => {
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = true;
@@ -1004,7 +1005,7 @@
             }
 
             rumbleTimer++;
-            if (rumbleTimer % 350 < 80) {
+            if (keys.r || (rumbleTimer % 350 < 80)) {
                 rumbleActive = true;
                 if (rumbleGain && audioCtx) {
                     rumbleGain.gain.setTargetAtTime(0.28, audioCtx.currentTime, 0.1);
@@ -1296,10 +1297,20 @@
 
             // 7. Process Shield Power-Ups
             powerups.forEach((item) => {
-                const dx = bearPos.x - item.x;
-                const dy = bearPos.y - item.y;
-                const dz = bearPos.z - item.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                let dx = bearPos.x - item.x;
+                let dy = bearPos.y - item.y;
+                let dz = bearPos.z - item.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && dist < 500) {
+                    item.x += (dx / dist) * 8.0;
+                    item.y += (dy / dist) * 8.0;
+                    item.z += (dz / dist) * 8.0;
+                    dx = bearPos.x - item.x;
+                    dy = bearPos.y - item.y;
+                    dz = bearPos.z - item.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
 
                 if (dist < 60) {
                     shield = Math.min(100, shield + 30);
@@ -1323,10 +1334,20 @@
 
             // 8. Process WinchesterMQ Slots
             memorySlots.forEach((slot) => {
-                const dx = bearPos.x - slot.x;
-                const dy = bearPos.y - slot.y;
-                const dz = bearPos.z - slot.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                let dx = bearPos.x - slot.x;
+                let dy = bearPos.y - slot.y;
+                let dz = bearPos.z - slot.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && dist < 500) {
+                    slot.x += (dx / dist) * 8.0;
+                    slot.y += (dy / dist) * 8.0;
+                    slot.z += (dz / dist) * 8.0;
+                    dx = bearPos.x - slot.x;
+                    dy = bearPos.y - slot.y;
+                    dz = bearPos.z - slot.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
 
                 if (dist < 70) {
                     triggerSfx("token");
