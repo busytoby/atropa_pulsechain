@@ -131,24 +131,24 @@
         <div class="subtitle">Interactive Flight Deck</div>
         
         <div class="stat-row">
+            <span class="stat-label">Shield Integrity</span>
+            <span id="shield-counter" class="stat-value value-green">100%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Boost Fuel</span>
+            <span id="boost-counter" class="stat-value value-yellow">100%</span>
+        </div>
+        <div class="stat-row">
             <span class="stat-label">Score (Rings Caught)</span>
-            <span id="score-counter" class="stat-value value-yellow">0</span>
+            <span id="score-counter" class="stat-value value-cyan">0</span>
         </div>
         <div class="stat-row">
             <span class="stat-label">Flight Velocity</span>
             <span id="velocity-counter" class="stat-value value-green">4.0 u/f</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">Vaesen Feeling (E)</span>
-            <span id="vaesen-feeling" class="stat-value">Auncient</span>
-        </div>
-        <div class="stat-row">
-            <span class="stat-label">Decoded Story segment</span>
-            <span id="decoded-msg" class="stat-value value-magenta" style="font-size: 0.8rem;">---</span>
-        </div>
-        <div class="stat-row">
-            <span class="stat-label">System Phase Status</span>
-            <span id="phase-status" class="stat-value value-cyan">In-Phase</span>
+            <span class="stat-label">Decoded Story</span>
+            <span id="decoded-msg" class="stat-value value-magenta" style="font-size: 0.75rem;">---</span>
         </div>
         <div class="stat-row">
             <span class="stat-label">303 Acid Arpeggiator</span>
@@ -161,17 +161,15 @@
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 8px;">
             <kbd>W</kbd> <kbd>S</kbd> &nbsp;Pitch Nose Down/Up<br>
             <kbd>A</kbd> <kbd>D</kbd> &nbsp;Yaw Left/Right<br>
-            <kbd>Space</kbd> Toggle In/Out Phase Modulation<br>
-            <kbd>Click</kbd> Activate Audio Synthesizer
+            <kbd>Shift</kbd> Hold to Boost Thrusters<br>
+            <kbd>Space</kbd> Toggle Phase Modulation<br>
+            <kbd>Enter</kbd> Start / Restart Game
         </p>
         <p style="font-size: 0.8rem; color: var(--glow-green); margin-bottom: 4px;">
-            🟢 Speed Gates: Boosts flight velocity
+            🟢 Speed Gates / 🔵 Capsule: Boost / Shield Restore
         </p>
         <p style="font-size: 0.8rem; color: #ef4444; margin-bottom: 4px;">
-            🔴 Tesseracts: Damaging obstacles (slows down)
-        </p>
-        <p style="font-size: 0.8rem; color: var(--glow-yellow); margin-bottom: 4px;">
-            ⚡ WinchesterMQ Slots: Collect memory addresses
+            🔴 Tesseracts / 💥 Interceptors: Avoid crash
         </p>
     </div>
 
@@ -208,34 +206,33 @@
         }
 
         document.body.addEventListener("click", () => {
+            initAudio();
+        });
+
+        function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
                 mainOut = audioCtx.createGain();
                 mainOut.gain.setValueAtTime(0.25, audioCtx.currentTime);
                 
-                // Real-time oscilloscope analyser node
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 256;
 
-                // Non-linear wave-shaping distortion (Feature 2: Audio Distortion)
                 distortionNode = audioCtx.createWaveShaper();
                 distortionNode.curve = makeDistortionCurve(80);
                 distortionNode.oversample = '4x';
 
-                // Feedback Delay module (Feature 2: Delay lines)
                 delayNode = audioCtx.createDelay(1.0);
                 delayNode.delayTime.setValueAtTime(0.24, audioCtx.currentTime);
                 
                 delayFeedback = audioCtx.createGain();
                 delayFeedback.gain.setValueAtTime(0.38, audioCtx.currentTime);
 
-                // Wire up FX loop
                 distortionNode.connect(delayNode);
                 delayNode.connect(delayFeedback);
-                delayFeedback.connect(delayNode); // feedback loop
+                delayFeedback.connect(delayNode);
 
-                // Connect paths to output
                 distortionNode.connect(mainOut);
                 delayNode.connect(mainOut);
                 
@@ -247,7 +244,7 @@
                 
                 startContinuousArpeggiator();
             }
-        });
+        }
 
         // Evolved 303 sequence notes (pentatonic minor)
         const C2 = 65.41, C3 = 130.81, Eb2 = 77.78, G2 = 98.00, Bb2 = 116.54;
@@ -258,11 +255,11 @@
 
         function startContinuousArpeggiator() {
             function scheduler() {
-                if (!audioCtx) return;
+                if (!audioCtx || gameState !== "PLAYING") return;
                 const now = audioCtx.currentTime;
                 
                 const tempoBPM = 90 + Math.floor(velocity * 12); 
-                const stepLen = 60.0 / tempoBPM / 2; // 8th notes
+                const stepLen = 60.0 / tempoBPM / 2;
                 
                 while (nextNoteTime < now + 0.1) {
                     if (nextNoteTime === 0) nextNoteTime = now;
@@ -292,13 +289,13 @@
             osc.frequency.setValueAtTime(modulatedFreq, time);
 
             filter.type = "lowpass";
-            filter.Q.setValueAtTime(12, time);
+            filter.Q.setValueAtTime(10, time);
             
             const phaseMultiplier = isOutPhase ? -1.0 : 1.0;
             const formantMod = 1.0 + (qZ * phaseMultiplier * 0.3);
             
             const emotionalOffset = E * 180;
-            const targetCutoff = Math.max(150, Math.min(3200, (650 + emotionalOffset) * formantMod));
+            const targetCutoff = Math.max(150, Math.min(3000, (650 + emotionalOffset) * formantMod));
             
             filter.frequency.setValueAtTime(targetCutoff, time);
             
@@ -322,7 +319,6 @@
             } else {
                 filter.connect(gain);
             }
-            // Send to distortion node instead of raw output to enable driven tube sound
             gain.connect(distortionNode);
 
             osc.start(time);
@@ -340,11 +336,11 @@
                 osc.frequency.setValueAtTime(440, now);
                 osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
                 gain.gain.setValueAtTime(0.2, now);
-            } else if (type === "token") {
+            } else if (type === "token" || type === "heal") {
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(600, now);
-                osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.15, now);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
             } else {
                 osc.type = "triangle";
                 osc.frequency.setValueAtTime(120, now);
@@ -359,8 +355,12 @@
             osc.stop(now + 0.25);
         }
 
+        // Game states: "START", "PLAYING", "GAMEOVER"
+        let gameState = "START";
+        let shield = 100;
+        let boostFuel = 100;
+
         // Active game values
-        let qCombined = { w: 1.0, x: 0.0, y: 0.0, z: 0.0 };
         let bearPos = { x: 0, y: 0, z: 0 };
         let velocity = 4.0;
         let score = 0;
@@ -371,11 +371,15 @@
         let speedGates = [];
         let tesseracts = [];
         let particles = [];
-        
-        // Feature 4: 3D Shockwave Rings
         let shockwaves = [];
+        
+        // Erisian Probes (Feature 3: Enemies)
+        let interceptors = [];
+        
+        // Shield Power-Ups (Feature 4: Health capsules)
+        let powerups = [];
 
-        // Feature 1: Warp Starfield
+        // Warp Starfield
         let stars = [];
         for (let i = 0; i < 80; i++) {
             stars.push({
@@ -385,10 +389,40 @@
             });
         }
 
-        // Feature 2: WinchesterMQ Memory Address Slots
+        // WinchesterMQ Memory Address Slots
         let memorySlots = [];
         const STORY_FRAGMENTS = ["0x2100:Auncient", "0x2120:SCSI", "0x2140:ZMM", "0x2160:Envelope", "0x2180:LUN", "0x21A0:Hamilton"];
         let decodedStory = [];
+
+        function resetGame() {
+            gameState = "PLAYING";
+            shield = 100;
+            boostFuel = 100;
+            score = 0;
+            velocity = 4.0;
+            bearPos = { x: 0, y: 0, z: 0 };
+            decodedStory = [];
+            
+            speedGates = [];
+            tesseracts = [];
+            interceptors = [];
+            powerups = [];
+            memorySlots = [];
+            particles = [];
+            shockwaves = [];
+
+            document.getElementById("score-counter").innerText = "0";
+            document.getElementById("shield-counter").innerText = "100%";
+            document.getElementById("shield-counter").className = "stat-value value-green";
+            document.getElementById("boost-counter").innerText = "100%";
+            document.getElementById("boost-counter").className = "stat-value value-yellow";
+            document.getElementById("decoded-msg").innerText = "---";
+
+            nextNoteTime = 0;
+            if (audioCtx) {
+                startContinuousArpeggiator();
+            }
+        }
 
         function spawnWorldElements() {
             while (speedGates.length < 3) {
@@ -404,6 +438,23 @@
                     y: bearPos.y + (Math.random() * 600 - 300),
                     z: bearPos.z - (800 + Math.random() * 2000),
                     rot: Math.random() * Math.PI
+                });
+            }
+            // Spawn Interceptor Probes (Feature 3)
+            while (interceptors.length < 2) {
+                interceptors.push({
+                    x: bearPos.x + (Math.random() * 600 - 300),
+                    y: bearPos.y + (Math.random() * 400 - 200),
+                    z: bearPos.z - (1200 + Math.random() * 1000),
+                    rot: 0
+                });
+            }
+            // Spawn Shield Power-Ups (Feature 4)
+            while (powerups.length < 1) {
+                powerups.push({
+                    x: bearPos.x + (Math.random() * 800 - 400),
+                    y: bearPos.y + (Math.random() * 600 - 300),
+                    z: bearPos.z - (1000 + Math.random() * 1500)
                 });
             }
             while (memorySlots.length < 2) {
@@ -431,7 +482,6 @@
             }
         }
 
-        // Particle burst on collisions (Feature 4: 3D explosions)
         function triggerCollisionParticles(pos, color) {
             for (let i = 0; i < 20; i++) {
                 particles.push({
@@ -456,20 +506,31 @@
             });
         }
 
-        const keys = { w: false, a: false, s: false, d: false };
+        // Key states
+        const keys = { w: false, a: false, s: false, d: false, shift: false };
         window.addEventListener("keydown", (e) => {
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = true;
+            if (e.key === "Shift") keys.shift = true;
+            
             if (e.key === " ") {
                 isOutPhase = !isOutPhase;
                 const statusEl = document.getElementById("phase-status");
                 statusEl.innerText = isOutPhase ? "Out-of-Phase" : "In-Phase";
                 statusEl.className = isOutPhase ? "stat-value value-magenta" : "stat-value value-cyan";
             }
+            
+            if (e.key === "Enter") {
+                initAudio();
+                if (gameState === "START" || gameState === "GAMEOVER") {
+                    resetGame();
+                }
+            }
         });
         window.addEventListener("keyup", (e) => {
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = false;
+            if (e.key === "Shift") keys.shift = false;
         });
 
         class Point3D {
@@ -480,7 +541,6 @@
             }
         }
 
-        // Feature 1: Camera spring kinematics state
         const camera = {
             distance: 800,
             fov: 600,
@@ -495,7 +555,6 @@
             const relativeX = p.x - bearPos.x;
             const relativeY = p.y - bearPos.y;
 
-            // Apply camera spring rotation mapping (Feature 1)
             let cosY = Math.cos(camera.yaw), sinY = Math.sin(camera.yaw);
             let cosX = Math.cos(camera.pitch), sinX = Math.sin(camera.pitch);
 
@@ -553,7 +612,6 @@
             let rShoulder = new Point3D(bearPos.x + 50 * scale, bearPos.y + 60 * scale, bearPos.z);
             let midHip = new Point3D(bearPos.x, bearPos.y - 15 * scale, bearPos.z);
 
-            // Feature 3: Double Rotation 4D Morphing
             const targetQuaternion = isOutPhase 
                 ? normalizeQuaternion(multiplyQuaternions(qCombined, { w: 0.707, x: 0.0, y: 0.707, z: 0.0 }))
                 : qCombined;
@@ -621,6 +679,61 @@
             }
         }
 
+        // Feature 3: Draw Erisian Interceptor Probe as a wireframe prism
+        function drawInterceptor(enemy) {
+            const size = 20;
+            const vertices = [
+                new Point3D(enemy.x, enemy.y + size, enemy.z), // apex
+                new Point3D(enemy.x - size, enemy.y - size, enemy.z - size),
+                new Point3D(enemy.x + size, enemy.y - size, enemy.z - size),
+                new Point3D(enemy.x, enemy.y - size, enemy.z + size)
+            ];
+
+            const drawPrismEdge = (i1, i2) => {
+                let sc1 = project(vertices[i1]);
+                let sc2 = project(vertices[i2]);
+                if (!sc1 || !sc2) return;
+                ctx.beginPath();
+                ctx.moveTo(sc1.x, sc1.y);
+                ctx.lineTo(sc2.x, sc2.y);
+                ctx.strokeStyle = "var(--glow-magenta)";
+                ctx.lineWidth = 2.0;
+                ctx.stroke();
+            };
+
+            drawPrismEdge(0, 1);
+            drawPrismEdge(0, 2);
+            drawPrismEdge(0, 3);
+            drawPrismEdge(1, 2);
+            drawPrismEdge(2, 3);
+            drawPrismEdge(3, 1);
+        }
+
+        // Feature 4: Draw Shield Power-up Capsule
+        function drawCapsule(item) {
+            let proj = project(item);
+            if (!proj || proj.depth <= 0) return;
+            const radius = Math.max(6, 25000 / (camera.distance + proj.depth));
+            
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(59, 130, 246, 0.9)"; // blue glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#3b82f6";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Draw shield plus sign
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(proj.x - 5, proj.y);
+            ctx.lineTo(proj.x + 5, proj.y);
+            ctx.moveTo(proj.x, proj.y - 5);
+            ctx.lineTo(proj.x, proj.y + 5);
+            ctx.stroke();
+        }
+
         let pulse = 0;
         const deckCard = document.getElementById("deck-card");
 
@@ -654,6 +767,50 @@
             pulse += 0.05;
             const time = Date.now() * 0.001;
 
+            if (gameState === "START") {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = "var(--glow-cyan)";
+                ctx.font = "bold 32px 'Share Tech Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("HAMILTONIAN BEAR SPACE FLIGHT", width / 2, height / 2 - 40);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Composed upon the 3-Sphere Quaternion Arena", width / 2, height / 2);
+                
+                ctx.fillStyle = "var(--glow-yellow)";
+                ctx.font = "bold 18px monospace";
+                ctx.fillText("PRESS ENTER TO LAUNCH ENGINE", width / 2, height / 2 + 50);
+
+                requestAnimationFrame(loop);
+                return;
+            }
+
+            if (gameState === "GAMEOVER") {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "rgba(239, 68, 68, 0.15)";
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = "#ef4444";
+                ctx.font = "bold 42px 'Share Tech Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("SHIELD COLLAPSED - CRASH DETECTED", width / 2, height / 2 - 40);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "18px sans-serif";
+                ctx.fillText(`Fighter Score: ${score} segments decoded`, width / 2, height / 2 + 10);
+                
+                ctx.fillStyle = "var(--glow-cyan)";
+                ctx.font = "bold 20px monospace";
+                ctx.fillText("PRESS ENTER TO RETRY FLIGHT DECK", width / 2, height / 2 + 70);
+
+                requestAnimationFrame(loop);
+                return;
+            }
+
             E = Math.sin((2.0 * Math.PI * time) / 28.0);
             const feelingLabel = E > 0.3 ? "Auncient Panic" : E < -0.3 ? "Auncient Melancholy" : "Auncient Balance";
             document.getElementById("vaesen-feeling").innerText = feelingLabel;
@@ -683,18 +840,25 @@
             bearPos.x += qCombined.y * 12;
             bearPos.y += qCombined.x * 12;
 
-            // Glide forward continuously
-            bearPos.z -= velocity;
-
-            // Decay velocity back to base (4.0)
-            velocity += (4.0 - velocity) * 0.01;
+            // Feature 2: Manual Thrust/Boost Engine
+            let targetBaseSpeed = 4.0;
+            if (keys.shift && boostFuel > 0) {
+                targetBaseSpeed = 8.5; // manual boost speed
+                boostFuel = Math.max(0, boostFuel - 0.4);
+                // spawn extra exhaust boost particles
+                spawnPhaseParticles(bearPos.x, bearPos.y - 20, bearPos.z + 10);
+            }
+            
+            velocity += (targetBaseSpeed - velocity) * 0.08;
             document.getElementById("velocity-counter").innerText = `${velocity.toFixed(1)} u/f`;
 
-            // Feature 1: Camera spring kinematics yaw/pitch target mapping
+            document.getElementById("boost-counter").innerText = `${Math.round(boostFuel)}%`;
+            document.getElementById("boost-counter").className = boostFuel > 30 ? "stat-value value-yellow" : "stat-value value-red";
+
+            bearPos.z -= velocity;
+
             camera.targetYaw = qCombined.y * 0.3;
             camera.targetPitch = qCombined.x * 0.3;
-            
-            // Slew camera offsets with spring damping coefficient (0.08)
             camera.yaw += (camera.targetYaw - camera.yaw) * 0.08;
             camera.pitch += (camera.targetPitch - camera.pitch) * 0.08;
 
@@ -702,7 +866,7 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            // 2. Render Warp Starfield (Feature 1)
+            // 2. Render Warp Starfield
             stars.forEach((star) => {
                 if (star.z - bearPos.z > 200) {
                     star.z = bearPos.z - 1500;
@@ -723,7 +887,7 @@
                 }
             });
 
-            // 3. Process Speed Gates (Green Rings)
+            // 3. Process Speed Gates (Green Rings) - Recharges boost
             speedGates.forEach((gate) => {
                 const dx = bearPos.x - gate.x;
                 const dy = bearPos.y - gate.y;
@@ -731,12 +895,10 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
                 if (dist < 80) {
-                    velocity = Math.min(10.0, velocity + 2.5);
+                    boostFuel = Math.min(100, boostFuel + 25);
                     score++;
                     document.getElementById("score-counter").innerText = score;
                     triggerSfx("boost");
-                    
-                    // Feature 4: Trigger green expanding shockwave rings and explosion bursts
                     triggerCollisionParticles(gate, "var(--glow-green)");
 
                     deckCard.style.borderColor = "var(--glow-green)";
@@ -761,14 +923,11 @@
                     ctx.arc(gateProj.x, gateProj.y, Math.max(10, 60000 / (camera.distance + gateProj.depth)), 0, Math.PI * 2);
                     ctx.strokeStyle = "var(--glow-green)";
                     ctx.lineWidth = 4;
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = "var(--glow-green)";
                     ctx.stroke();
-                    ctx.shadowBlur = 0;
                 }
             });
 
-            // 4. Process Tesseracts (Red Obstacles)
+            // 4. Process Tesseracts (Red Obstacles) - Deals damage
             tesseracts.forEach((tess) => {
                 tess.rot += 0.02;
 
@@ -778,10 +937,11 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
                 if (dist < 60) {
-                    velocity = Math.max(1.5, velocity - 1.5);
+                    shield = Math.max(0, shield - 20);
+                    document.getElementById("shield-counter").innerText = `${shield}%`;
+                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+
                     triggerSfx("hit");
-                    
-                    // Feature 4: Red particle burst on collision
                     triggerCollisionParticles(tess, "#ef4444");
 
                     deckCard.style.borderColor = "#ef4444";
@@ -790,6 +950,10 @@
                         deckCard.style.borderColor = "var(--border-color)";
                         deckCard.style.boxShadow = "0 0 30px rgba(0, 242, 254, 0.15)";
                     }, 250);
+
+                    if (shield <= 0) {
+                        gameState = "GAMEOVER";
+                    }
 
                     tess.x = bearPos.x + (Math.random() * 800 - 400);
                     tess.y = bearPos.y + (Math.random() * 600 - 300);
@@ -806,7 +970,75 @@
                 }
             });
 
-            // 5. Process WinchesterMQ Slots
+            // 5. Process Erisian Interceptor Probes (Feature 3: Enemies)
+            interceptors.forEach((enemy) => {
+                // Seek player positions
+                enemy.x += (bearPos.x - enemy.x) * 0.015;
+                enemy.y += (bearPos.y - enemy.y) * 0.015;
+                
+                // Fly rapidly towards player
+                enemy.z += velocity * 0.45;
+
+                const dx = bearPos.x - enemy.x;
+                const dy = bearPos.y - enemy.y;
+                const dz = bearPos.z - enemy.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 50) {
+                    shield = Math.max(0, shield - 15);
+                    document.getElementById("shield-counter").innerText = `${shield}%`;
+                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+
+                    triggerSfx("hit");
+                    triggerCollisionParticles(enemy, "var(--glow-magenta)");
+
+                    if (shield <= 0) {
+                        gameState = "GAMEOVER";
+                    }
+
+                    enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                    enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                    enemy.z = bearPos.z - 2000;
+                } else if (dz > 200) {
+                    enemy.x = bearPos.x + (Math.random() * 600 - 300);
+                    enemy.y = bearPos.y + (Math.random() * 400 - 200);
+                    enemy.z = bearPos.z - 2000;
+                }
+
+                let enemyProj = project(enemy);
+                if (enemyProj && enemyProj.depth > 0) {
+                    drawInterceptor(enemy);
+                }
+            });
+
+            // 6. Process Shield Power-Ups (Feature 4)
+            powerups.forEach((item) => {
+                const dx = bearPos.x - item.x;
+                const dy = bearPos.y - item.y;
+                const dz = bearPos.z - item.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (dist < 60) {
+                    shield = Math.min(100, shield + 30);
+                    document.getElementById("shield-counter").innerText = `${shield}%`;
+                    document.getElementById("shield-counter").className = shield > 40 ? "stat-value value-green" : "stat-value value-red";
+
+                    triggerSfx("heal");
+                    triggerCollisionParticles(item, "rgba(59, 130, 246, 0.8)");
+
+                    item.x = bearPos.x + (Math.random() * 800 - 400);
+                    item.y = bearPos.y + (Math.random() * 600 - 300);
+                    item.z = bearPos.z - 2000;
+                } else if (dz < -200) {
+                    item.x = bearPos.x + (Math.random() * 800 - 400);
+                    item.y = bearPos.y + (Math.random() * 600 - 300);
+                    item.z = bearPos.z - 2000;
+                }
+
+                drawCapsule(item);
+            });
+
+            // 7. Process WinchesterMQ Slots
             memorySlots.forEach((slot) => {
                 const dx = bearPos.x - slot.x;
                 const dy = bearPos.y - slot.y;
@@ -815,8 +1047,6 @@
 
                 if (dist < 70) {
                     triggerSfx("token");
-                    
-                    // Trigger yellow shockwave ring
                     triggerCollisionParticles(slot, "var(--glow-yellow)");
 
                     const label = slot.address.split(":")[1];
@@ -850,6 +1080,7 @@
                 }
             });
 
+            // 8. Update nearest target ring distance on HUD
             if (speedGates.length > 0) {
                 const nearestGate = speedGates.reduce((prev, curr) => {
                     const d1 = Math.abs(curr.z - bearPos.z);
@@ -860,10 +1091,10 @@
                 const gateDy = bearPos.y - nearestGate.y;
                 const gateDz = bearPos.z - nearestGate.z;
                 const nearestDist = Math.sqrt(gateDx*gateDx + gateDy*gateDy + gateDz*gateDz);
-                document.getElementById("target-dist").innerText = `${Math.round(nearestDist)}m`;
+                // Display nearest gate target helper
             }
 
-            // 6. Render and Update Particles
+            // 9. Render and Update Particles
             particles.forEach((part) => {
                 part.x += part.vx;
                 part.y += part.vy;
@@ -882,7 +1113,7 @@
             });
             particles = particles.filter(part => part.age < part.maxAge);
 
-            // 7. Render 3D Shockwave Rings (Feature 4)
+            // 10. Render 3D Shockwave Rings
             shockwaves.forEach((wave) => {
                 wave.radius += 4;
                 wave.opacity = 1.0 - (wave.radius / wave.maxRadius);
@@ -895,12 +1126,12 @@
                     ctx.lineWidth = 3;
                     ctx.globalAlpha = Math.max(0, wave.opacity);
                     ctx.stroke();
-                    ctx.globalAlpha = 1.0; // reset
+                    ctx.globalAlpha = 1.0;
                 }
             });
             shockwaves = shockwaves.filter(wave => wave.radius < wave.maxRadius);
 
-            // 8. Draw Bear Skeleton
+            // 11. Draw Bear Skeleton
             const skeleton = getBearSkeleton(pulse);
 
             spawnPhaseParticles(skeleton.lPaw.x, skeleton.lPaw.y, skeleton.lPaw.z);
@@ -933,7 +1164,7 @@
             drawJoint(project(skeleton.lFoot), 15, furColor);
             drawJoint(project(skeleton.rFoot), 15, furColor);
 
-            // 9. Draw Retro Oscilloscope HUD (Feature 3)
+            // 12. Draw Retro Oscilloscope HUD
             if (analyser && audioCtx) {
                 const bufferLength = analyser.frequencyBinCount;
                 const dataArray = new Uint8Array(bufferLength);
@@ -951,7 +1182,7 @@
                 const sliceWidth = 200 / bufferLength;
                 let x = 30;
                 for (let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 128.0; // normalised
+                    const v = dataArray[i] / 128.0;
                     const y = 30 + (v * 70) / 2;
                     if (i === 0) {
                         ctx.moveTo(x, y);
@@ -964,13 +1195,11 @@
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
 
-                // Draw radar/biorhythm loop (Feature 3)
                 ctx.beginPath();
                 ctx.arc(280, 65, 25, 0, Math.PI * 2);
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
                 ctx.stroke();
                 
-                // Draw active E point orbit
                 const orbX = 280 + Math.cos(time * 1.5) * 20 * (1.0 + E * 0.2);
                 const orbY = 65 + Math.sin(time * 1.5) * 20 * (1.0 + E * 0.2);
                 ctx.beginPath();
