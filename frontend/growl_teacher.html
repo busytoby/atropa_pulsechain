@@ -382,6 +382,10 @@
         let modGain = null;
         let filterNode = null;
         let zenerNode = null;
+        let bbdDelay = null;
+        let bbdFilter = null;
+        let bbdFeedback = null;
+        let rtlNode = null;
         let synthGain = null;
         
         let targetOsc = null;
@@ -456,6 +460,24 @@
                     saturatedVal = -V_breakdown + (biasedInput + V_breakdown) * 0.05;
                 }
                 curve[i] = saturatedVal - V_zener_bias;
+            }
+            return curve;
+        }
+
+        function makeRTLDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 2;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                let val = x * k;
+                let out = 0;
+                if (val > 0) {
+                    out = 1.0 - Math.exp(-val * 1.5);
+                } else {
+                    out = Math.max(-0.6, val * 0.4);
+                }
+                curve[i] = out;
             }
             return curve;
         }
@@ -536,9 +558,23 @@
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = "lowpass";
 
+            rtlNode = audioCtx.createWaveShaper();
+            rtlNode.curve = makeRTLDistortionCurve(1.5);
+
             zenerNode = audioCtx.createWaveShaper();
             zenerNode.curve = makeZenerDistortionCurve(10);
             zenerNode.oversample = '4x';
+
+            // BBD Delay Line Loop simulation
+            bbdDelay = audioCtx.createDelay(1.0);
+            bbdDelay.delayTime.setValueAtTime(0.08, now);
+
+            bbdFilter = audioCtx.createBiquadFilter();
+            bbdFilter.type = "lowpass";
+            bbdFilter.frequency.setValueAtTime(1200, now);
+
+            bbdFeedback = audioCtx.createGain();
+            bbdFeedback.gain.setValueAtTime(0.35, now);
 
             synthGain = audioCtx.createGain();
             synthGain.gain.setValueAtTime(0.001, now);
@@ -552,8 +588,19 @@
             modGain.connect(carrierOsc.frequency);
 
             carrierOsc.connect(filterNode);
-            filterNode.connect(zenerNode);
+            filterNode.connect(rtlNode);
+            rtlNode.connect(zenerNode);
+
+            // Connect Dry path
             zenerNode.connect(synthGain);
+
+            // Connect BBD Delay path (wet path)
+            zenerNode.connect(bbdDelay);
+            bbdDelay.connect(bbdFilter);
+            bbdFilter.connect(bbdFeedback);
+            bbdFeedback.connect(bbdDelay); // feedback loop
+            bbdFilter.connect(synthGain); // wet mix
+
             synthGain.connect(mainOut);
 
             modulatorOsc.start(now);
@@ -578,6 +625,10 @@
                     carrierOsc = null;
                     modulatorOsc = null;
                     zenerNode = null;
+                    rtlNode = null;
+                    bbdDelay = null;
+                    bbdFilter = null;
+                    bbdFeedback = null;
                 }
             }, 150);
 
@@ -611,6 +662,13 @@
                 filterNode.frequency.setValueAtTime(repelActive ? cutoff * 0.5 : cutoff, now);
                 if (zenerNode) {
                     zenerNode.curve = makeZenerDistortionCurve(repelActive ? zenerAmt * 2.0 : zenerAmt);
+                }
+                if (bbdDelay) {
+                    const bbdWobble = 0.08 + Math.sin(now * 3.5) * 0.015;
+                    bbdDelay.delayTime.setValueAtTime(bbdWobble, now);
+                }
+                if (rtlNode) {
+                    rtlNode.curve = makeRTLDistortionCurve(repelActive ? 2.5 : 1.5);
                 }
             }
 
