@@ -1075,10 +1075,20 @@
             tesseracts.forEach((tess) => {
                 tess.rot += 0.02;
 
-                const dx = bearPos.x - tess.x;
-                const dy = bearPos.y - tess.y;
-                const dz = bearPos.z - tess.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                let dx = bearPos.x - tess.x;
+                let dy = bearPos.y - tess.y;
+                let dz = bearPos.z - tess.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && isOutPhase && dist < 450) {
+                    tess.x -= (dx / dist) * 9.5;
+                    tess.y -= (dy / dist) * 9.5;
+                    tess.z -= (dz / dist) * 9.5;
+                    dx = bearPos.x - tess.x;
+                    dy = bearPos.y - tess.y;
+                    dz = bearPos.z - tess.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
 
                 if (dist < 60) {
                     if (hyperdriveTimer <= 0) {
@@ -1126,10 +1136,20 @@
                 enemy.y += (bearPos.y - enemy.y) * trackSpeed;
                 enemy.z += velocity * (0.45 + Math.min(0.25, score * 0.0005));
 
-                const dx = bearPos.x - enemy.x;
-                const dy = bearPos.y - enemy.y;
-                const dz = bearPos.z - enemy.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                let dx = bearPos.x - enemy.x;
+                let dy = bearPos.y - enemy.y;
+                let dz = bearPos.z - enemy.z;
+                let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (rumbleActive && isOutPhase && dist < 450) {
+                    enemy.x -= (dx / dist) * 9.5;
+                    enemy.y -= (dy / dist) * 9.5;
+                    enemy.z -= (dz / dist) * 9.5;
+                    dx = bearPos.x - enemy.x;
+                    dy = bearPos.y - enemy.y;
+                    dz = bearPos.z - enemy.z;
+                    dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                }
 
                 if (dist < 50) {
                     if (hyperdriveTimer <= 0) {
