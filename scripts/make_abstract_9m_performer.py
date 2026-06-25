@@ -325,7 +325,7 @@ def render_9m_video(audio_path, mix_audio,
                     ag2_arr, pl2_arr, rep2_arr,
                     ag3_arr, pl3_arr, rep3_arr,
                     sig_names, kick_hits, fascinator_hits, growl_hits, output_mp4):
-    print("[VIDEO] Starting 9-minute frame rendering with cross-bird visual feedback and waveform grid...")
+    print("[VIDEO] Starting 9-minute frame rendering with Verlet physical environmental simulator...")
     width, height = 640, 360
     
     import subprocess
@@ -346,15 +346,62 @@ def render_9m_video(audio_path, mix_audio,
     process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     
     num_birds = 3
+    
+    # ---------------- 1. Physical Environment States ----------------
+    # Position, Velocity, and Tilt angles of the bird agents
     bird_x = [width * 0.25, width * 0.5, width * 0.75]
-    bird_y = [height * 0.45, height * 0.5, height * 0.55]
+    bird_y = [height * 0.5, height * 0.5, height * 0.5]
+    bird_vx = [0.0, 0.0, 0.0]
     bird_vy = [0.0, 0.0, 0.0]
+    bird_angle = [0.0, 0.0, 0.0]
+    
+    # Bird impact registers tracking when particles hit them directly
+    bird_impact = [0.0, 0.0, 0.0]
+    
+    # Bird DNA configuration specifying physical characteristics and behaviors
+    bird_dna = [
+        # Bird 0: Bass Bird (heavy, sluggish, large wings)
+        {
+            "mass": 1.5,
+            "drag": 0.93,
+            "lift_coeff": 0.0055,
+            "base_wing_len": 26,
+            "wing_color": (120, 80, 200),
+            "body_color": (255, 150, 100),
+            "ripple_color": ACCENT_COLOR,
+            "excitability": 1.2,
+            "spring_k": 0.03
+        },
+        # Bird 1: Fascinator Bird (lightweight, highly responsive/agile, small wings)
+        {
+            "mass": 0.7,
+            "drag": 0.86,
+            "lift_coeff": 0.0034,
+            "base_wing_len": 28,
+            "wing_color": WARNING_COLOR,
+            "body_color": (100, 242, 254),
+            "ripple_color": PEACH_COLOR,
+            "excitability": 0.8,
+            "spring_k": 0.05
+        },
+        # Bird 2: Agitation Bird (standard mass, aggressive, medium wings)
+        {
+            "mass": 1.0,
+            "drag": 0.90,
+            "lift_coeff": 0.0044,
+            "base_wing_len": 25,
+            "wing_color": (150, 0, 50),
+            "body_color": (255, 0, 127),
+            "ripple_color": HUD_COLOR,
+            "excitability": 1.0,
+            "spring_k": 0.04
+        }
+    ]
     
     k_env = 0.0
     f_env = 0.0
     g_env = 0.0
     
-    # Track particles for Echolocutions
     particles = []
     
     for f in range(TOTAL_FRAMES):
@@ -362,51 +409,39 @@ def render_9m_video(audio_path, mix_audio,
         if sample_idx >= len(ag1_arr):
             break
             
-        # Retrieve individual bird state values
         ag1, pl1, rep1 = ag1_arr[sample_idx], pl1_arr[sample_idx], rep1_arr[sample_idx]
         ag2, pl2, rep2 = ag2_arr[sample_idx], pl2_arr[sample_idx], rep2_arr[sample_idx]
         ag3, pl3, rep3 = ag3_arr[sample_idx], pl3_arr[sample_idx], rep3_arr[sample_idx]
         
-        # Smooth trigger envelopes
         k_env = k_env * 0.78 + kick_hits[sample_idx] * 0.22
         f_env = f_env * 0.78 + fascinator_hits[sample_idx] * 0.22
         g_env = g_env * 0.78 + growl_hits[sample_idx] * 0.22
         
-        # 1. Spawn Echolocation particles on triggers
-        # Kick trigger spawns sparks from Bird 1 (Bass) to Bird 2 (Center)
+        t_sec = f / FPS
+        
+        # ---------------- 2. Echolocation Sound Sparks ----------------
         if kick_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
             for _ in range(3):
                 particles.append({
-                    "x": bird_x[0],
-                    "y": bird_y[0],
-                    "tx": bird_x[1],
-                    "ty": bird_y[1],
-                    "progress": 0.0,
-                    "speed": 0.08 + np.random.rand() * 0.04,
+                    "x": bird_x[0], "y": bird_y[0],
+                    "target_bird": 1,
+                    "progress": 0.0, "speed": 0.08 + np.random.rand() * 0.04,
                     "color": PEACH_COLOR
                 })
-        # Fascinator trigger spawns sparks from Bird 2 (Center) to Bird 3 (Right)
         if fascinator_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
             for _ in range(3):
                 particles.append({
-                    "x": bird_x[1],
-                    "y": bird_y[1],
-                    "tx": bird_x[2],
-                    "ty": bird_y[2],
-                    "progress": 0.0,
-                    "speed": 0.08 + np.random.rand() * 0.04,
+                    "x": bird_x[1], "y": bird_y[1],
+                    "target_bird": 2,
+                    "progress": 0.0, "speed": 0.08 + np.random.rand() * 0.04,
                     "color": HUD_COLOR
                 })
-        # Growl trigger spawns sparks from Bird 3 (Right) back to Bird 1 (Left)
         if growl_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
             for _ in range(3):
                 particles.append({
-                    "x": bird_x[2],
-                    "y": bird_y[2],
-                    "tx": bird_x[0],
-                    "ty": bird_y[0],
-                    "progress": 0.0,
-                    "speed": 0.05 + np.random.rand() * 0.03,
+                    "x": bird_x[2], "y": bird_y[2],
+                    "target_bird": 0,
+                    "progress": 0.0, "speed": 0.05 + np.random.rand() * 0.03,
                     "color": ACCENT_COLOR
                 })
         
@@ -416,8 +451,7 @@ def render_9m_video(audio_path, mix_audio,
         img = Image.new("RGB", (width, height), BG_COLOR)
         draw = ImageDraw.Draw(img)
         
-        # ---------------- 2. Live Oscilloscope Waveform Background ----------------
-        # Render the actual current audio buffer as a vibrating line across the screen background
+        # ---------------- 3. Oscilloscope Wave Background ----------------
         w_size = 320
         start_w = max(0, sample_idx - w_size // 2)
         end_w = min(len(mix_audio), sample_idx + w_size // 2)
@@ -428,130 +462,206 @@ def render_9m_video(audio_path, mix_audio,
             dx = width / len(wave_slice)
             for j, val in enumerate(wave_slice):
                 wx = j * dx
-                wy = height * 0.5 + val * 120.0 * (1.0 + 0.5 * ag1) # ag1 adds warp height
+                wy = height * 0.5 + val * 120.0 * (1.0 + 0.5 * ag1)
                 points.append((wx, wy))
             draw.line(points, fill=(10, int(35 + 50 * pl2), int(70 + 100 * pl2)), width=2)
             
-        # Render static background grid with lower opacity
+        # Draw physical boundary walls (Ceiling and Floor lines)
+        # React and glow when triggers occur (echolocation feedback)
+        boundary_glow = int(40 + 200 * max(k_env, max(f_env, g_env)))
+        draw.line([(0, 45), (width, 45)], fill=(boundary_glow, 30, 80), width=3)
+        draw.line([(0, 315), (width, 315)], fill=(boundary_glow, 30, 80), width=3)
+        
+        # Draw static background grid
         grid_spacing = int(50 + 15 * pl2)
         for x in range(0, width, grid_spacing):
-            draw.line([(x, 0), (x, height)], fill=(5, 15, 30))
-        for y in range(0, height, grid_spacing):
+            draw.line([(x, 45), (x, 315)], fill=(5, 15, 30))
+        for y in range(45, 315, grid_spacing):
             draw.line([(0, y), (width, y)], fill=(5, 15, 30))
             
-        t_sec = f / FPS
-        
-        # ---------------- 3. Draw Echolocation particles ----------------
+        # ---------------- 4. Update Particle Physics & Echolocation Impacts ----------------
+        # Decay impact registers
+        for i in range(num_birds):
+            bird_impact[i] *= 0.85
+            
         next_particles = []
         for p in particles:
             p["progress"] += p["speed"]
+            tb = p["target_bird"]
+            # Dynamically target bird's current coordinates
+            p_tx, p_ty = bird_x[tb], bird_y[tb]
             if p["progress"] < 1.0:
-                # Interpolate coordinate
-                px = p["x"] + (p["tx"] - p["x"]) * p["progress"]
-                py = p["y"] + (p["ty"] - p["y"]) * p["progress"]
-                # Add sinusoidal arc
+                px = p["x"] + (p_tx - p["x"]) * p["progress"]
+                py = p["y"] + (p_ty - p["y"]) * p["progress"]
                 arc = math.sin(p["progress"] * math.pi) * 30.0
                 draw.ellipse([px - 2, py - 2 - arc, px + 2, py + 2 - arc], fill=p["color"])
                 next_particles.append(p)
+            else:
+                # Particle arrived: trigger impact on target bird
+                bird_impact[tb] = min(1.0, bird_impact[tb] + 0.45)
         particles = next_particles
         
-        # ---------------- 4. Draw Birds (Reacting Individually) ----------------
+        # ---------------- 5. Verlet Gravity, Lift & Wind Environment Simulator ----------------
+        # Environmental Wind gust model
+        wind_x = math.sin(t_sec * 2.8) * 0.22 + (np.random.rand() - 0.5) * 0.3
+        
         for i in range(num_birds):
+            dna = bird_dna[i]
+            # Scale wing flap speed & body shape size on direct echolocation impact
+            impact_scale = 1.0 + 0.4 * bird_impact[i]
+            
+            if i == 0:
+                wing_freq = 3.0 + 8.0 * rep1 + 10.0 * bird_impact[0] * dna["excitability"]
+                wing_amp = 16.0 + 35.0 * k_env + 15.0 * bird_impact[0]
+            elif i == 1:
+                wing_freq = 5.0 + 20.0 * pl2 + 8.0 * bird_impact[1] * dna["excitability"]
+                wing_amp = 18.0 + 10.0 * f_env + 12.0 * bird_impact[1]
+            else:
+                wing_freq = 4.0 + 22.0 * ag3 + 12.0 * bird_impact[2] * dna["excitability"]
+                wing_amp = 20.0 + 15.0 * g_env + 16.0 * bird_impact[2]
+            
+            # Periodic wing flapping phase & kinematics
+            wing_phase = 2.0 * math.pi * wing_freq * t_sec
+            wing_offset = math.sin(wing_phase) * wing_amp
+            # Wing velocity (rate of wing position change)
+            wing_velocity = math.cos(wing_phase) * wing_freq * wing_amp
+            
+            # Physics Model: Gravity pulls DOWN
+            gravity_force = 0.38
+            
+            # Downstroke generates lift and thrust; upstroke has drag and minimal lift
+            if wing_velocity < 0:
+                # Downstroke: wings move downwards producing upward lift and forward thrust
+                lift_force = -wing_velocity * dna["lift_coeff"] * (1.2 + (k_env if i==0 else (f_env if i==1 else g_env)))
+                thrust_force = -wing_velocity * 0.003 * (1.2 + (k_env if i==0 else (f_env if i==1 else g_env)))
+            else:
+                # Upstroke: wings fold/return upwards producing minor lift and slight drag
+                lift_force = wing_velocity * 0.0008
+                thrust_force = -wing_velocity * 0.0005
+            
+            # Apply forces with species mass DNA (Acceleration = Force / Mass)
+            bird_vy[i] += (gravity_force - lift_force) / dna["mass"]
+            
+            # Birds attempt to remain within their designated sector centers (steering force spring)
+            target_x = width * 0.165 + i * 160
+            steering_force = (target_x - bird_x[i]) * dna["spring_k"]
+            
+            bird_vx[i] += (thrust_force + wind_x * 0.15 + steering_force) / dna["mass"]
+            
+            # Drag resistance damping from species DNA
+            bird_vy[i] *= dna["drag"]
+            bird_vx[i] *= dna["drag"]
+            
+            # Update coordinate positions
+            bird_x[i] += bird_vx[i]
+            bird_y[i] += bird_vy[i]
+            
+            # Boundary collisions (rebound on ceiling/floor)
+            if bird_y[i] < 65:
+                bird_y[i] = 65
+                bird_vy[i] = -bird_vy[i] * 0.4
+            elif bird_y[i] > 295:
+                bird_y[i] = 295
+                bird_vy[i] = -bird_vy[i] * 0.4
+                
+            # Horizontal boundary limits
+            min_x = width * 0.08 + i * 160
+            max_x = width * 0.25 + i * 160
+            bird_x[i] = max(min_x, min(max_x, bird_x[i]))
+            
+            # Pitch Angle Leaning (lean into movement, with physical pitch body vibration from wing beats)
+            target_angle = bird_vx[i] * 6.5 + math.cos(wing_phase) * 4.0
+            bird_angle[i] = bird_angle[i] * 0.82 + target_angle * 0.18
+            
+            # Render bird with rotation angle (bird_angle[i]) using trig projection
             bx = bird_x[i]
             by = bird_y[i]
             
+            cos_a = math.cos(math.radians(bird_angle[i]))
+            sin_a = math.sin(math.radians(bird_angle[i]))
+            
+            wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
+            
+            # Helper to rotate local offsets
+            def get_rot_point(dx, dy):
+                rx = bx + dx * cos_a - dy * sin_a
+                ry = by + dx * sin_a + dy * cos_a
+                return (rx, ry)
+                
+            # Sonar ripple reflecting sound on impact
+            if bird_impact[i] > 0.05:
+                rip_col = dna["ripple_color"]
+                ripple_r = int(12 + 65 * (1.0 - bird_impact[i]))
+                dim_color = (
+                    int(rip_col[0] * bird_impact[i]),
+                    int(rip_col[1] * bird_impact[i]),
+                    int(rip_col[2] * bird_impact[i])
+                )
+                draw.ellipse([bx - ripple_r, by - ripple_r, bx + ripple_r, by + ripple_r], outline=dim_color, width=2)
+                
+            # Individual shapes
             if i == 0:
-                # BIRD 1: Bass / Kick Bird (Left)
-                wing_freq = 3.0 + 8.0 * rep1
-                wing_amp = 16.0 + 35.0 * k_env
+                body_h = (6 + 12 * k_env) * impact_scale
+                body_w = (12 - 4 * k_env) * impact_scale
+                b_color = (dna["body_color"][0], int(dna["body_color"][1] + 100 * k_env), dna["body_color"][2])
+                w_color = (int(100 + 155 * k_env), dna["wing_color"][1], dna["wing_color"][2])
                 
-                # Verlet hover bobbing
-                bird_vy[0] = 0.85 * bird_vy[0] - 12.0 * kick_hits[sample_idx] * 0.15 + (math.sin(t_sec * 6.0) * 0.5)
-                bird_y[0] = max(50, min(height - 50, bird_y[0] + bird_vy[0]))
-                by = bird_y[0]
-                
-                # Squash and stretch
-                body_h = 6 + 12 * k_env
-                body_w = 12 - 4 * k_env
-                
-                wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
-                b_color = (255, int(150 + 100 * k_env), 100)
-                w_color = (int(100 + 155 * k_env), 80, 200)
-                
-                draw.ellipse([bx - body_w, by - body_h, bx + body_w, by + body_h], fill=b_color)
-                draw.line([(bx, by), (bx - 26, by - 8 + wing_offset)], fill=w_color, width=4)
-                draw.line([(bx, by), (bx + 26, by - 8 + wing_offset)], fill=w_color, width=4)
-                draw.polygon([(bx - 8, by), (bx - 18, by - 4), (bx - 18, by + 4)], fill=WARNING_COLOR)
+                # Draw rotated body
+                draw.polygon([get_rot_point(-body_w, -body_h), get_rot_point(body_w, -body_h),
+                              get_rot_point(body_w, body_h), get_rot_point(-body_w, body_h)], fill=b_color)
+                # Draw wings
+                draw.line([get_rot_point(0, 0), get_rot_point(int(-dna["base_wing_len"] * impact_scale), -8 + wing_offset)], fill=w_color, width=4)
+                draw.line([get_rot_point(0, 0), get_rot_point(int(dna["base_wing_len"] * impact_scale), -8 + wing_offset)], fill=w_color, width=4)
+                # Tail
+                draw.polygon([get_rot_point(int(-8 * impact_scale), 0), get_rot_point(int(-18 * impact_scale), -4), get_rot_point(int(-18 * impact_scale), 4)], fill=WARNING_COLOR)
                 
             elif i == 1:
-                # BIRD 2: Fascinator Bird (Center)
-                wing_freq = 5.0 + 20.0 * pl2
-                wing_amp = 18.0 + 10.0 * f_env
+                b_color = (int(dna["body_color"][0] - 50 * f_env), dna["body_color"][1], dna["body_color"][2])
+                w_color = dna["wing_color"]
                 
-                bird_vy[1] = 0.9 * bird_vy[1] + 0.1 * math.sin(t_sec * 12.0) * (2.0 + 5.0 * pl2)
-                bird_y[1] = max(50, min(height - 50, bird_y[1] + bird_vy[1]))
-                by = bird_y[1]
-                
-                wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
-                
-                # Fascinator concentric scan rings
+                # concentric scan lines pointing to Bird 3
                 if f_env > 0.05:
+                    draw.line([get_rot_point(0, 0), (bird_x[2], bird_y[2])], fill=(0, 242, 254, 80), width=2)
                     r_rad = int(35 * f_env)
-                    draw.line([(bx, by), (bird_x[2], bird_y[2])], fill=(0, 242, 254, 80), width=2)
                     draw.ellipse([bx - r_rad, by - r_rad, bx + r_rad, by + r_rad], outline=(0, 242, 254, 100), width=2)
-                
-                b_color = (int(100 - 50 * f_env), 242, 254)
-                w_color = WARNING_COLOR
-                
-                draw.ellipse([bx - 10, by - 8, bx + 10, by + 8], fill=b_color)
-                draw.line([(bx, by), (bx - 28, by - 12 + wing_offset)], fill=w_color, width=3)
-                draw.line([(bx, by), (bx + 28, by - 12 + wing_offset)], fill=w_color, width=3)
-                draw.polygon([(bx - 10, by), (bx - 18, by - 5), (bx - 18, by + 5)], fill=ACCENT_COLOR)
+                    
+                draw.ellipse([bx - int(10 * impact_scale), by - int(8 * impact_scale), bx + int(10 * impact_scale), by + int(8 * impact_scale)], fill=b_color)
+                draw.line([get_rot_point(0, 0), get_rot_point(int(-dna["base_wing_len"] * impact_scale), -12 + wing_offset)], fill=w_color, width=3)
+                draw.line([get_rot_point(0, 0), get_rot_point(int(dna["base_wing_len"] * impact_scale), -12 + wing_offset)], fill=w_color, width=3)
+                draw.polygon([get_rot_point(int(-10 * impact_scale), 0), get_rot_point(int(-18 * impact_scale), -5), get_rot_point(int(-18 * impact_scale), 5)], fill=ACCENT_COLOR)
                 
             else:
-                # BIRD 3: Agitation Bird (Right)
-                wing_freq = 4.0 + 22.0 * ag3
-                wing_amp = 20.0 + 15.0 * g_env
-                
-                # Jitter displacement
-                jx = (np.random.rand() - 0.5) * 18.0 * g_env
-                jy = (np.random.rand() - 0.5) * 18.0 * g_env
-                bx += jx
-                by += jy
-                
-                wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
+                b_color = (dna["body_color"][0], dna["body_color"][1], int(dna["body_color"][2] + 128 * g_env))
+                w_color = (int(150 + 105 * g_env), dna["wing_color"][1], dna["wing_color"][2])
                 
                 if g_env > 0.05:
-                    draw.line([(bx, by), (bird_x[0], bird_y[0])], fill=(255, 0, 127, 80), width=2)
+                    draw.line([get_rot_point(0, 0), (bird_x[0], bird_y[0])], fill=(255, 0, 127, 80), width=2)
+                    
+                draw.polygon([get_rot_point(int(-11 * impact_scale), -6), get_rot_point(int(11 * impact_scale), -6), get_rot_point(int(11 * impact_scale), 6), get_rot_point(int(-11 * impact_scale), 6)], fill=b_color)
+                draw.line([get_rot_point(0, 0), get_rot_point(int(-dna["base_wing_len"] * impact_scale), -10 + wing_offset)], fill=w_color, width=3)
+                draw.line([get_rot_point(0, 0), get_rot_point(int(dna["base_wing_len"] * impact_scale), -10 + wing_offset)], fill=w_color, width=3)
+                draw.polygon([get_rot_point(int(-11 * impact_scale), 0), get_rot_point(int(-19 * impact_scale), -4), get_rot_point(int(-19 * impact_scale), 4)], fill=WARNING_COLOR)
                 
-                b_color = (255, 0, int(127 + 128 * g_env))
-                w_color = (int(150 + 105 * g_env), 0, 50)
-                
-                draw.ellipse([bx - 11, by - 6, bx + 11, by + 6], fill=b_color)
-                draw.line([(bx, by), (bx - 25, by - 10 + wing_offset)], fill=w_color, width=3)
-                draw.line([(bx, by), (bx + 25, by - 10 + wing_offset)], fill=w_color, width=3)
-                draw.polygon([(bx - 11, by), (bx - 19, by - 4), (bx - 19, by + 4)], fill=WARNING_COLOR)
-                
-            draw.ellipse([bx + 4, by - 3, bx + 7, by], fill=(255, 255, 255))
+            # Rotated Eye (Dilation flash effect on impact)
+            ep = get_rot_point(5, -2)
+            eye_rad = 1.5 + 2.0 * bird_impact[i]
+            draw.ellipse([ep[0]-eye_rad, ep[1]-eye_rad, ep[0]+eye_rad, ep[1]+eye_rad], fill=(255, 255, 255))
             
         # HUD overlays
         draw.text((20, 20), "TSFI/2: AUNCIENT FLOCK AGENT COMMUNICATION NETWORK", fill=HUD_COLOR)
         draw.text((20, 36), f"ACTIVE SIGNATURE: {sig_name.upper()}", fill=WARNING_COLOR)
         
         # Display 3 columns of accumulators
-        # Bird 1 Column
         draw.text((20, 240), "BIRD 1 (LEFT/BASS)", fill=PEACH_COLOR)
         draw.text((20, 255), f"AG1: {int(ag1*100)}% PL1: {int(pl1*100)}%", fill=(180, 180, 180))
         draw.rectangle([20, 270, 180, 276], outline=PEACH_COLOR)
         draw.rectangle([20, 270, int(20 + 160 * ag1), 276], fill=ACCENT_COLOR)
         
-        # Bird 2 Column
         draw.text((220, 240), "BIRD 2 (CENTER/FASC)", fill=HUD_COLOR)
         draw.text((220, 255), f"AG2: {int(ag2*100)}% PL2: {int(pl2*100)}%", fill=(180, 180, 180))
         draw.rectangle([220, 270, 380, 276], outline=HUD_COLOR)
         draw.rectangle([220, 270, int(220 + 160 * pl2), 276], fill=HUD_COLOR)
         
-        # Bird 3 Column
         draw.text((420, 240), "BIRD 3 (RIGHT/GROWL)", fill=ACCENT_COLOR)
         draw.text((420, 255), f"AG3: {int(ag3*100)}% PL3: {int(pl3*100)}%", fill=(180, 180, 180))
         draw.rectangle([420, 270, 580, 276], outline=ACCENT_COLOR)
