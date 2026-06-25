@@ -14,12 +14,20 @@ static inline unsigned int hash_selector(uint32_t selector) {
     return (selector * 2654435761U) % DISPATCH_MAP_SIZE;
 }
 
+static inline unsigned int hash_selector_2(uint32_t selector) {
+    // Secondary hash determines step size. Must be coprime to table size (256).
+    // Forced odd value is always coprime to 2^N.
+    return (1 + ((selector * 1099273U) % 255)) | 1;
+}
+
 bool abi_dispatch_register(ABIDispatchMap *map, uint32_t selector, uintptr_t ip_offset) {
     if (!map || selector == EMPTY_SELECTOR) return false;
 
     unsigned int idx = hash_selector(selector);
+    unsigned int step = hash_selector_2(selector);
+    
     for (int i = 0; i < DISPATCH_MAP_SIZE; i++) {
-        unsigned int curr_idx = (idx + i) % DISPATCH_MAP_SIZE;
+        unsigned int curr_idx = (idx + i * step) % DISPATCH_MAP_SIZE;
         uint32_t expected = EMPTY_SELECTOR;
 
         // Try to claim the slot lock-freely if it is empty
@@ -41,7 +49,7 @@ bool abi_dispatch_register(ABIDispatchMap *map, uint32_t selector, uintptr_t ip_
             return true;
         }
 
-        // Otherwise (collision), loop to probe the next slot
+        // Otherwise (collision), loop to probe the next slot using step offset
     }
 
     return false; // Map is full
@@ -51,8 +59,10 @@ bool abi_dispatch_lookup(const ABIDispatchMap *map, uint32_t selector, uintptr_t
     if (!map || selector == EMPTY_SELECTOR || !out_ip_offset) return false;
 
     unsigned int idx = hash_selector(selector);
+    unsigned int step = hash_selector_2(selector);
+    
     for (int i = 0; i < DISPATCH_MAP_SIZE; i++) {
-        unsigned int curr_idx = (idx + i) % DISPATCH_MAP_SIZE;
+        unsigned int curr_idx = (idx + i * step) % DISPATCH_MAP_SIZE;
         
         // Read the selector with acquire memory ordering
         uint32_t curr_sel = atomic_load_explicit(&map->entries[curr_idx].selector, memory_order_acquire);
