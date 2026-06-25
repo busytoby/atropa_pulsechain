@@ -34,9 +34,11 @@ def rotate_vector_by_quaternion(v, q):
     return (result[1], result[2], result[3])
 
 def run_emotional_syrinx(s_len, start_time):
+    # Simulates the Vaesen bird's syrinx modulating dynamically over 180s based on running emotional accumulators
     out = np.zeros(s_len)
     t = np.arange(s_len) / SAMPLE_RATE
     
+    # Syrinx baseline state
     x1, x1_prev = 0.05, 0.05
     x2, x2_prev = 0.04, 0.04
     m1, m2 = 0.12, 0.09
@@ -45,6 +47,7 @@ def run_emotional_syrinx(s_len, start_time):
     Kc = 120.0
     A_fold = 0.2
     
+    # Emotional Accumulators
     E_ag = 0.1
     H_pl = 0.9
     decay = 0.96
@@ -52,7 +55,11 @@ def run_emotional_syrinx(s_len, start_time):
     for s in range(1, s_len - 1):
         t_sec = start_time + t[s]
         
-        # Vaesen emotional state sweep
+        # Self-Judgement dynamic inputs:
+        # Phase 1 (0s-45s): Calm, low error.
+        # Phase 2 (45s-90s): Gradual agitation increase.
+        # Phase 3 (90s-150s): Climax, high aesthetic distress/excitement.
+        # Phase 4 (150s-180s): Resolution back to calm.
         if t_sec < 45.0:
             dyn_in = 0.06
             error_in = 0.03
@@ -69,8 +76,11 @@ def run_emotional_syrinx(s_len, start_time):
         E_ag = decay * E_ag + (1.0 - decay) * dyn_in
         H_pl = decay * H_pl + (1.0 - decay) * (1.0 - error_in)
         
+        # Syrinx parameter modulation mapping
         k_closed_mod = k_closed * (1.0 + 1.8 * E_ag)
         Kc_mod = Kc * (1.0 - 0.7 * H_pl)
+        
+        # Pitch modulation based on emotional excitement
         stiff_mod = 1.0 + 0.45 * math.sin(2.0 * math.pi * (6.0 + 5.0 * E_ag) * t_sec)
         
         stiffness1 = (k_open if x1 > 0.0 else k_closed_mod) * stiff_mod
@@ -99,12 +109,14 @@ def run_emotional_syrinx(s_len, start_time):
     return out
 
 def generate_wing_flaps(length, start_time):
+    # Swept low-pass noise representing wing turbulence wooshes
     out = np.zeros(length)
     noise = np.random.uniform(-1.0, 1.0, length)
     t = np.arange(length) / SAMPLE_RATE
     
     for s in range(length):
         t_sec = start_time + t[s]
+        # Flapping rate accelerates during excitement (Phase 3)
         rate = 5.0 if t_sec < 45.0 else (8.5 if t_sec < 150.0 else 4.0)
         
         # Periodic burst modulation to make flutters sound natural and spaced out
@@ -117,7 +129,7 @@ def generate_wing_flaps(length, start_time):
             flap_env = (0.5 + 0.5 * math.sin(2.0 * math.pi * rate * t_sec)) * fade_env
         else:
             flap_env = 0.0
-        
+            
         cutoff = 80.0 + 300.0 * flap_env
         alpha = 2.0 * math.pi * cutoff * dt
         y = 0.0 if s == 0 else out[s-1]
@@ -126,6 +138,7 @@ def generate_wing_flaps(length, start_time):
     return out
 
 def generate_feather_flutter(length, start_time, turbulence_sig):
+    # Level 2 feather shaft resonators driven by flapping turbulence
     out = np.zeros(length)
     noise = np.random.uniform(-1.0, 1.0, length)
     t = np.arange(length) / SAMPLE_RATE
@@ -168,8 +181,11 @@ def generate_percussion_claps(length, beat_samples, start_time):
         onset_1 = int(i * beat_samples)
         time_sec = start_time + (onset_1 / SAMPLE_RATE)
         
+        # Double claps on beats 2 and 4 (indices 1, 3, 5...)
         if i % 2 == 1:
             onset_2 = onset_1 + int(SAMPLE_RATE * 0.024)
+            
+            # Double snaps active during performance build & drops (45s - 150s)
             if 45.0 <= time_sec < 150.0:
                 len_1 = min(length - onset_1, int(SAMPLE_RATE * 0.045))
                 if len_1 > 0:
@@ -186,73 +202,11 @@ def generate_percussion_claps(length, beat_samples, start_time):
                     out[onset_2:onset_2+len_2] += bp * 0.32
     return out
 
-def generate_acid_house_bass(length, beat_samples, start_time):
-    # Generates a TB-303 squelch baseline using a Chamberlin SVF sweep
-    out = np.zeros(length)
-    step_samples = int(beat_samples / 2) # eighth notes
-    total_steps = int(length / step_samples)
-    
-    # C minor pentatonic acid pattern
-    scale = [65.41, 77.78, 87.31, 98.00, 116.54, 130.81]
-    pattern = [0, 4, 3, 0, 5, 2, 4, 1, 3, 0, 5, 4, 2, 0, 3, 1]
-    
-    filter_state = [0.0, 0.0]
-    
-    for i in range(total_steps):
-        onset = i * step_samples
-        time_sec = start_time + (onset / SAMPLE_RATE)
-        
-        # Bass active 45s - 150s
-        if 45.0 <= time_sec < 150.0:
-            note_freq = scale[pattern[i % len(pattern)]] * 0.5
-            
-            # Slide and Accent modulation
-            is_slide = (i % 4 == 3)
-            is_accent = (i % 8 == 0 or i % 8 == 4)
-            
-            end = min(length, onset + step_samples)
-            b_len = end - onset
-            if b_len > 0:
-                b_age = np.arange(b_len) / SAMPLE_RATE
-                
-                # Dynamic filter cutoff envelope
-                decay_rate = 0.08 if is_slide else 0.16
-                filter_env = np.exp(-b_age / decay_rate)
-                
-                # Acid Squelch frequency modulation
-                f0 = 200.0 + 800.0 * filter_env
-                if is_accent:
-                    f0 += 400.0 * filter_env
-                
-                # Chamberlin State Variable Filter simulation
-                for s in range(b_len):
-                    # Sawtooth oscillator
-                    phase = (note_freq * b_age[s]) % 1.0
-                    saw = 2.0 * phase - 1.0
-                    
-                    # Run Chamberlin SVF
-                    fc = f0[s]
-                    omega = 2.0 * math.sin(math.pi * fc * dt)
-                    q = 0.12 if is_accent else 0.18 # lower q is higher resonance
-                    
-                    low = filter_state[0] + omega * filter_state[1]
-                    high = saw - low - q * filter_state[1]
-                    band = omega * high + filter_state[1]
-                    
-                    filter_state[0] = low
-                    filter_state[1] = band
-                    
-                    # Apply clipping/waveshaping
-                    sig = np.tanh(low * (1.6 if is_accent else 1.2))
-                    out[onset + s] = sig * 0.28
-                    
-    return out
-
-def generate_grand_acid_audio():
-    print("[DSP] Synthesizing 3-minute Grand Osiris Acid Bird House soundtrack...")
+def generate_grand_osiris_audio():
+    print("[DSP] Synthesizing 3-minute Grand Osiris Bird House soundtrack...")
     mix = np.zeros(num_samples)
     
-    # 1. House beat
+    # 1. House beat & bassline
     drums = np.zeros(num_samples)
     beat_samples = int(SAMPLE_RATE * BEAT_DUR)
     total_beats = int(DURATION / BEAT_DUR)
@@ -261,6 +215,7 @@ def generate_grand_acid_audio():
         onset = int(i * beat_samples)
         time_sec = onset / SAMPLE_RATE
         
+        # Kick active from 45s to 180s
         if time_sec >= 45.0:
             k_len = min(num_samples - onset, int(SAMPLE_RATE * 0.25))
             if k_len > 0:
@@ -269,6 +224,7 @@ def generate_grand_acid_audio():
                 kick_val = np.sin(2.0 * np.pi * freq * k_age) * np.exp(-k_age / 0.18)
                 drums[onset:onset+k_len] += np.tanh(kick_val * 1.9) * 0.45
                 
+        # Hi-hats
         if 45.0 <= time_sec < 150.0:
             h_onset = onset + int(beat_samples / 2)
             h_len = min(num_samples - h_onset, int(SAMPLE_RATE * 0.05))
@@ -277,19 +233,34 @@ def generate_grand_acid_audio():
                 noise = (np.random.rand(h_len) - 0.5) * 2.0
                 drums[h_onset:h_onset+h_len] += noise * np.exp(-h_age / 0.015) * 0.035
 
-    # 2. Acid Bassline
-    acid_bass = generate_acid_house_bass(num_samples, beat_samples, 0.0)
+    # Bassline (45s to 150s)
+    bass = np.zeros(num_samples)
+    bass_scale = [65.41, 77.78, 87.31, 98.00, 116.54]
+    step_samples = int(beat_samples / 2)
+    num_bass_steps = int(num_samples / step_samples)
+    for i in range(num_bass_steps):
+        onset = i * step_samples
+        time_sec = onset / SAMPLE_RATE
+        if 45.0 <= time_sec < 150.0:
+            note_freq = bass_scale[(i % 16) % len(bass_scale)] * 0.5
+            end = min(num_samples, onset + step_samples)
+            b_len = end - onset
+            if b_len > 0:
+                b_age = np.arange(b_len) / SAMPLE_RATE
+                phase = (note_freq * b_age) % 1.0
+                saw = 2.0 * phase - 1.0
+                bass[onset:end] += saw * np.exp(-b_age / 0.15) * 0.28
 
-    # 3. Flaps, Flutters, Claps, and Syrinx vocals
+    # 2. Integrate emotional syrinx, flutters, flaps and snaps
     syrinx_vocals = run_emotional_syrinx(num_samples, 0.0)
     turbulence = generate_wing_flaps(num_samples, 0.0)
     flutter = generate_feather_flutter(num_samples, 0.0, turbulence)
     percussion_claps = generate_percussion_claps(num_samples, beat_samples, 0.0)
     
-    mix = drums + acid_bass + syrinx_vocals * 0.32 + turbulence * 0.9 + flutter * 1.1 + percussion_claps * 0.98
+    mix = drums + bass + syrinx_vocals * 0.32 + turbulence * 0.9 + flutter * 1.1 + percussion_claps * 0.98
     mix = np.clip(mix, -1.0, 1.0)
     
-    audio_path = "temp_grand_osiris_acid.wav"
+    audio_path = "temp_grand_osiris.wav"
     byte_data = bytearray(44 + len(mix) * 2)
     byte_data[0:4] = b"RIFF"
     byte_data[4:8] = int(36 + len(mix) * 2).to_bytes(4, "little")
@@ -314,9 +285,9 @@ def generate_grand_acid_audio():
     with open(audio_path, "wb") as f:
         f.write(byte_data)
         
-    return audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, acid_bass
+    return audio_path, syrinx_vocals, turbulence, flutter, percussion_claps
 
-def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, acid_bass, output_mp4):
+def render_grand_osiris_video(audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, output_mp4):
     vertices, edges = generate_3d_teddy_wireframe()
     
     cmd = (
@@ -326,9 +297,10 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
     )
     pipe = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
     
-    np.random.seed(666)
+    np.random.seed(555)
     stars = [{'x': np.random.uniform(-300, 300), 'y': np.random.uniform(-400, 400), 'z': np.random.uniform(20, 600)} for _ in range(65)]
     
+    # Emotional Accumulators for visual mapping
     E_ag = 0.1
     H_pl = 0.9
     decay = 0.96
@@ -350,9 +322,8 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
         amp_turb = abs(turbulence[sample_idx])
         amp_flut = abs(flutter[sample_idx])
         amp_clap = abs(percussion_claps[sample_idx])
-        amp_bass = abs(acid_bass[sample_idx])
         
-        # Emotional state sweeps
+        # Running emotional state trackers for visual mapping
         if time_sec < 45.0:
             dyn_in = 0.06
             error_in = 0.03
@@ -369,15 +340,15 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
         E_ag = decay * E_ag + (1.0 - decay) * dyn_in
         H_pl = decay * H_pl + (1.0 - decay) * (1.0 - error_in)
         
-        # Starfield speed reacts to wing flaps and acid bass sweeps
-        star_speed = 3.0 + 15.0 * amp_turb + 15.0 * amp_flut + 20.0 * amp_bass
+        # Starfield speed reacts to wing flaps (wooshes)
+        star_speed = 3.0 + 15.0 * amp_turb + 25.0 * amp_flut
         for star in stars:
             z_pos = (star['z'] - frame * (star_speed / 8.0) * 10.0) % 580 + 20
             factor = 280.0 / z_pos
             sx = CX + int(star['x'] * factor)
             sy = CY + int(star['y'] * factor)
             if 0 <= sx < 720 and 0 <= sy < 1280:
-                color_fill = (255, 255, 100) if amp_clap > 0.05 else ((130, 255, 255) if amp_bass > 0.15 else (130, 130, 255))
+                color_fill = (255, 120, 255) if amp_clap > 0.05 else ((130, 255, 130) if amp_flut > 0.1 else (130, 130, 255))
                 draw.ellipse([sx, sy, sx + 2, sy + 2], fill=color_fill)
                 
         # Perspective Grid
@@ -386,7 +357,7 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
             x_bottom = (i / 11.0) * 1120.0 - 200.0
             draw.line([(CX, 950), (x_bottom, 1200)], fill=(80, 0, 80), width=1)
             
-        # Rotate Teddy Bear
+        # Rotate Teddy Bear (rotates faster during excitement)
         rot_speed = 2.0 + 6.0 * E_ag
         angle_y = progress * 2.0 * math.pi * rot_speed
         angle_x = 0.25 * math.cos(progress * 2.0 * math.pi * (rot_speed + 2.0))
@@ -394,18 +365,20 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
         qx = (math.cos(angle_x / 2.0), math.sin(angle_x / 2.0), 0.0, 0.0)
         q_rot = quaternion_multiply(qy, qx)
         
-        # Verlet Squash and Stretch mapping based on double claps & acid bass amplitude
-        scale_x = 1.0 + 0.22 * amp_clap + 0.18 * amp_bass
-        scale_y = 1.0 - 0.22 * amp_clap - 0.18 * amp_bass
+        # Physics: Verlet Squash and Stretch mapping based on wing claps & emotional tension
+        scale_x = 1.0 + 0.25 * amp_clap + 0.15 * E_ag
+        scale_y = 1.0 - 0.25 * amp_clap - 0.15 * E_ag
         
         projected = []
         for vx, vy, vz, joint in vertices:
             vx_s = vx * scale_x
             vy_s = vy * scale_y
             
+            # Speak (jaw displacement)
             if joint == 1:
                 vy_s = vy_s - 0.22 * amp_vocals
                 
+            # Animate wings/arms based on wing flaps and aeroelastic flutter
             if joint == 2:  # Left Wing
                 vx_s -= 0.25 * amp_turb
                 vy_s += 0.08 * math.sin(2.0 * math.pi * 30.0 * time_sec) * amp_flut * 6.0
@@ -423,11 +396,10 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
             proj_y = CY - int(ry * factor * 220.0)
             projected.append((proj_x, proj_y))
             
-        # Wireframe color cycles to reflect internal Vaesen bird mood + acid flash
-        if amp_bass > 0.2:
-            color = "#39ff14"  # acid green flash
-        elif E_ag > 0.7:
-            color = "#ff3399" if (frame % 4 < 2) else "#ffff00"
+        # Wireframe color cycles to reflect internal Vaesen bird mood
+        # Pleasure (calm) -> Green/Cyan. Agitation (screeching) -> Neon Pink/Yellow.
+        if E_ag > 0.7:
+            color = "#ff3399" if (frame % 4 < 2) else "#ffff00" # flashing alarm
         elif E_ag > 0.3:
             color = "#ff9900"
         else:
@@ -444,29 +416,29 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
         bar_spacing = 4
         for band_idx in range(num_bands):
             val_mod = math.sin(progress * 2.0 * math.pi * (2.0 + band_idx) + 16.0 * time_sec)
-            band_val = 0.3 * amp_turb + 0.3 * amp_flut + 0.2 * amp_bass + 0.2 * (0.5 + 0.5 * val_mod)
+            band_val = 0.3 * amp_turb + 0.3 * amp_flut + 0.2 * amp_vocals + 0.2 * (0.5 + 0.5 * val_mod)
             num_segs = int(band_val * 12)
             lx = 30 + band_idx * (bar_w + bar_spacing)
             rx = 690 - (num_bands - 1 - band_idx) * (bar_w + bar_spacing)
             for seg in range(12):
                 y_pos = 780 - seg * 12
-                color_seg = (255, 0, 128) if seg < 6 else ((255, 255, 0) if seg < 10 else (57, 255, 20))
+                color_seg = (255, 0, 128) if seg < 6 else ((255, 128, 0) if seg < 10 else (0, 255, 255))
                 if seg < num_segs:
                     draw.rectangle([lx, y_pos, lx + bar_w, y_pos + 8], fill=color_seg)
                     draw.rectangle([rx, y_pos, rx + bar_w, y_pos + 8], fill=color_seg)
                     
         # Telemetry
-        draw.text((40, 60), "TSFi/2: 'GRAND OSIRIS' ACID BIRD HOUSE DEMO", fill="#39ff14")
-        draw.text((40, 80), f"AGITATION (E_ag): {E_ag:.4f}", fill="#ff3399")
-        draw.text((40, 100), f"BASS COUPLING: {amp_bass:.4f}", fill="#00e5ff")
+        draw.text((40, 60), "TSFi/2: 'GRAND OSIRIS' EMOTIONAL ACCUMULATOR STAGE", fill="#00ffcc")
+        draw.text((40, 80), f"AGITATION index (E_ag): {E_ag:.4f}", fill="#ff3399")
+        draw.text((40, 100), f"PLEASURE index (H_pl): {H_pl:.4f}", fill="#39ff14")
         
         reg_val_103 = 1000 - int(840 * beat_amp)
         draw.text((480, 60), f"MQ[103]: {reg_val_103:03d}", fill="#ffff00")
-        draw.text((480, 80), "SYNTH: TB-303 RESONANT SVF", fill="#00ff00")
-        draw.text((480, 100), "STATUS: ACID_PLAYING", fill="#ff00ff")
+        draw.text((480, 80), f"COLLISION STIFFNESS: {int(3200 * (1.0 + 1.8 * E_ag))} N/m", fill="#00ff00")
+        draw.text((480, 100), f"JUDGEMENT: {'DISTR_AGITATED' if E_ag > 0.7 else 'PLEASANT_CALM'}", fill="#ff00ff")
         
         # Scrolltext
-        scroll_text = "TSFi/2 GRAND OSIRIS ACID BIRD HOUSE RELEASE --- TB-303 EMULATION WITH SQUELCH CHAMBERLIN SVF --- EMOTIONAL VAESEN BIRD COUPLINGS --- PEGGING THE BLOCKCHAIN..."
+        scroll_text = "TSFi/2 GRAND OSIRIS EMOTIONAL ACCUMULATOR RELEASE --- MODULATES DUAL COUPLED SYRINX STIFFNESS AND COUPLING DYNAMICALLY --- SELF-JUDGEMENT FEEDBACK LOOP --- PEGGING THE BLOCKCHAIN..."
         char_spacing = 15
         total_text_width = len(scroll_text) * char_spacing
         scroll_x = 720 - int(progress * 4.0 * (total_text_width + 720)) % (total_text_width + 720)
@@ -475,14 +447,14 @@ def render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, perc
         pipe.stdin.write(img.tobytes())
         
         if frame % 600 == 0:
-            print(f"  -> Rendering Grand Osiris Acid: {frame}/{total_frames} frames ({progress*100:.1f}%)...")
+            print(f"  -> Rendering Grand Osiris: {frame}/{total_frames} frames ({progress*100:.1f}%)...")
             
     pipe.stdin.close()
     pipe.wait()
-    print("[SUCCESS] Grand Osiris Acid performance successfully saved!")
+    print("[SUCCESS] Grand Osiris performance successfully saved!")
 
 def generate_3d_teddy_wireframe():
-    # Build wireframe teddy bear model
+    # Build standard teddy bear wireframe model with joints
     vertices = []
     edges = []
     
@@ -581,12 +553,12 @@ def generate_3d_teddy_wireframe():
     return vertices, edges
 
 if __name__ == "__main__":
-    audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, acid_bass = generate_grand_acid_audio()
+    audio_path, syrinx_vocals, turbulence, flutter, percussion_claps = generate_grand_osiris_audio()
     
     output_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353"
-    output_mp4 = os.path.join(output_dir, "grand_osiris_acid.mp4")
+    output_mp4 = os.path.join(output_dir, "grand_osiris_birds.mp4")
     
-    render_grand_acid_video(audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, acid_bass, output_mp4)
+    render_grand_osiris_video(audio_path, syrinx_vocals, turbulence, flutter, percussion_claps, output_mp4)
     
     try:
         os.remove(audio_path)
