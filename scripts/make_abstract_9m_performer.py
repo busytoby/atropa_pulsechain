@@ -125,7 +125,7 @@ def generate_9m_performance():
             snare_pat = [1 if (x or np.random.rand() < 0.20) else 0 for x in base_snare]
             hat_pat = [1 if (x or np.random.rand() < 0.35) else 0 for x in base_hat]
             
-        # Repetition calculation
+        # Calculate pattern repetition
         step_hash = (kick_pat[step % len(kick_pat)] << 2) | (snare_pat[step % len(snare_pat)] << 1) | hat_pat[step % len(hat_pat)]
         if step_hash == last_pattern_hash:
             consecutive_repeats += 1
@@ -314,18 +314,18 @@ def generate_9m_performance():
     with open(audio_path, "wb") as f:
         f.write(byte_data)
         
-    return (audio_path, 
+    return (audio_path, mix,
             ag1_arr, pl1_arr, rep1_arr,
             ag2_arr, pl2_arr, rep2_arr,
             ag3_arr, pl3_arr, rep3_arr,
             sig_names, kick_hits, fascinator_hits, growl_hits)
 
-def render_9m_video(audio_path, 
+def render_9m_video(audio_path, mix_audio,
                     ag1_arr, pl1_arr, rep1_arr,
                     ag2_arr, pl2_arr, rep2_arr,
                     ag3_arr, pl3_arr, rep3_arr,
                     sig_names, kick_hits, fascinator_hits, growl_hits, output_mp4):
-    print("[VIDEO] Starting 9-minute frame rendering with cross-bird visual feedback...")
+    print("[VIDEO] Starting 9-minute frame rendering with cross-bird visual feedback and waveform grid...")
     width, height = 640, 360
     
     import subprocess
@@ -354,6 +354,9 @@ def render_9m_video(audio_path,
     f_env = 0.0
     g_env = 0.0
     
+    # Track particles for Echolocutions
+    particles = []
+    
     for f in range(TOTAL_FRAMES):
         sample_idx = int(f * (SAMPLE_RATE / FPS))
         if sample_idx >= len(ag1_arr):
@@ -364,9 +367,48 @@ def render_9m_video(audio_path,
         ag2, pl2, rep2 = ag2_arr[sample_idx], pl2_arr[sample_idx], rep2_arr[sample_idx]
         ag3, pl3, rep3 = ag3_arr[sample_idx], pl3_arr[sample_idx], rep3_arr[sample_idx]
         
+        # Smooth trigger envelopes
         k_env = k_env * 0.78 + kick_hits[sample_idx] * 0.22
         f_env = f_env * 0.78 + fascinator_hits[sample_idx] * 0.22
         g_env = g_env * 0.78 + growl_hits[sample_idx] * 0.22
+        
+        # 1. Spawn Echolocation particles on triggers
+        # Kick trigger spawns sparks from Bird 1 (Bass) to Bird 2 (Center)
+        if kick_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
+            for _ in range(3):
+                particles.append({
+                    "x": bird_x[0],
+                    "y": bird_y[0],
+                    "tx": bird_x[1],
+                    "ty": bird_y[1],
+                    "progress": 0.0,
+                    "speed": 0.08 + np.random.rand() * 0.04,
+                    "color": PEACH_COLOR
+                })
+        # Fascinator trigger spawns sparks from Bird 2 (Center) to Bird 3 (Right)
+        if fascinator_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
+            for _ in range(3):
+                particles.append({
+                    "x": bird_x[1],
+                    "y": bird_y[1],
+                    "tx": bird_x[2],
+                    "ty": bird_y[2],
+                    "progress": 0.0,
+                    "speed": 0.08 + np.random.rand() * 0.04,
+                    "color": HUD_COLOR
+                })
+        # Growl trigger spawns sparks from Bird 3 (Right) back to Bird 1 (Left)
+        if growl_hits[sample_idx] > 0.5 and np.random.rand() < 0.3:
+            for _ in range(3):
+                particles.append({
+                    "x": bird_x[2],
+                    "y": bird_y[2],
+                    "tx": bird_x[0],
+                    "ty": bird_y[0],
+                    "progress": 0.0,
+                    "speed": 0.05 + np.random.rand() * 0.03,
+                    "color": ACCENT_COLOR
+                })
         
         step_idx = int(sample_idx / (SAMPLE_RATE * 60.0 / 124.0 / 4))
         sig_name = sig_names[min(step_idx, len(sig_names)-1)]
@@ -374,30 +416,62 @@ def render_9m_video(audio_path,
         img = Image.new("RGB", (width, height), BG_COLOR)
         draw = ImageDraw.Draw(img)
         
-        # Grid lines reacting to Bird 2 Pleasure
-        grid_spacing = int(40 + 20 * pl2)
+        # ---------------- 2. Live Oscilloscope Waveform Background ----------------
+        # Render the actual current audio buffer as a vibrating line across the screen background
+        w_size = 320
+        start_w = max(0, sample_idx - w_size // 2)
+        end_w = min(len(mix_audio), sample_idx + w_size // 2)
+        wave_slice = mix_audio[start_w:end_w]
+        
+        if len(wave_slice) > 1:
+            points = []
+            dx = width / len(wave_slice)
+            for j, val in enumerate(wave_slice):
+                wx = j * dx
+                wy = height * 0.5 + val * 120.0 * (1.0 + 0.5 * ag1) # ag1 adds warp height
+                points.append((wx, wy))
+            draw.line(points, fill=(10, int(35 + 50 * pl2), int(70 + 100 * pl2)), width=2)
+            
+        # Render static background grid with lower opacity
+        grid_spacing = int(50 + 15 * pl2)
         for x in range(0, width, grid_spacing):
-            draw.line([(x, 0), (x, height)], fill=(10, int(20 + 40 * pl2), int(40 + 80 * pl2)))
+            draw.line([(x, 0), (x, height)], fill=(5, 15, 30))
         for y in range(0, height, grid_spacing):
-            draw.line([(0, y), (width, y)], fill=(10, int(20 + 40 * pl2), int(40 + 80 * pl2)))
+            draw.line([(0, y), (width, y)], fill=(5, 15, 30))
             
         t_sec = f / FPS
         
-        # Draw Birds (Communicating via cross-linked variables)
+        # ---------------- 3. Draw Echolocation particles ----------------
+        next_particles = []
+        for p in particles:
+            p["progress"] += p["speed"]
+            if p["progress"] < 1.0:
+                # Interpolate coordinate
+                px = p["x"] + (p["tx"] - p["x"]) * p["progress"]
+                py = p["y"] + (p["ty"] - p["y"]) * p["progress"]
+                # Add sinusoidal arc
+                arc = math.sin(p["progress"] * math.pi) * 30.0
+                draw.ellipse([px - 2, py - 2 - arc, px + 2, py + 2 - arc], fill=p["color"])
+                next_particles.append(p)
+        particles = next_particles
+        
+        # ---------------- 4. Draw Birds (Reacting Individually) ----------------
         for i in range(num_birds):
             bx = bird_x[i]
             by = bird_y[i]
             
             if i == 0:
-                # ----------------- BIRD 1: Bass / Kick Bird (Left) -----------------
+                # BIRD 1: Bass / Kick Bird (Left)
                 wing_freq = 3.0 + 8.0 * rep1
                 wing_amp = 16.0 + 35.0 * k_env
                 
+                # Verlet hover bobbing
                 bird_vy[0] = 0.85 * bird_vy[0] - 12.0 * kick_hits[sample_idx] * 0.15 + (math.sin(t_sec * 6.0) * 0.5)
                 bird_y[0] = max(50, min(height - 50, bird_y[0] + bird_vy[0]))
                 by = bird_y[0]
                 
-                body_h = 6 + 10 * k_env
+                # Squash and stretch
+                body_h = 6 + 12 * k_env
                 body_w = 12 - 4 * k_env
                 
                 wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
@@ -410,7 +484,7 @@ def render_9m_video(audio_path,
                 draw.polygon([(bx - 8, by), (bx - 18, by - 4), (bx - 18, by + 4)], fill=WARNING_COLOR)
                 
             elif i == 1:
-                # ----------------- BIRD 2: Fascinator Bird (Center) -----------------
+                # BIRD 2: Fascinator Bird (Center)
                 wing_freq = 5.0 + 20.0 * pl2
                 wing_amp = 18.0 + 10.0 * f_env
                 
@@ -420,9 +494,9 @@ def render_9m_video(audio_path,
                 
                 wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
                 
+                # Fascinator concentric scan rings
                 if f_env > 0.05:
                     r_rad = int(35 * f_env)
-                    # Cross-talk communication visual: draw line to Bird 3 when triggered
                     draw.line([(bx, by), (bird_x[2], bird_y[2])], fill=(0, 242, 254, 80), width=2)
                     draw.ellipse([bx - r_rad, by - r_rad, bx + r_rad, by + r_rad], outline=(0, 242, 254, 100), width=2)
                 
@@ -435,19 +509,19 @@ def render_9m_video(audio_path,
                 draw.polygon([(bx - 10, by), (bx - 18, by - 5), (bx - 18, by + 5)], fill=ACCENT_COLOR)
                 
             else:
-                # ----------------- BIRD 3: Agitation Bird (Right) -----------------
+                # BIRD 3: Agitation Bird (Right)
                 wing_freq = 4.0 + 22.0 * ag3
                 wing_amp = 20.0 + 15.0 * g_env
                 
-                jx = (np.random.rand() - 0.5) * 16.0 * g_env
-                jy = (np.random.rand() - 0.5) * 16.0 * g_env
+                # Jitter displacement
+                jx = (np.random.rand() - 0.5) * 18.0 * g_env
+                jy = (np.random.rand() - 0.5) * 18.0 * g_env
                 bx += jx
                 by += jy
                 
                 wing_offset = math.sin(2.0 * math.pi * wing_freq * t_sec) * wing_amp
                 
                 if g_env > 0.05:
-                    # Cross-talk communication visual: draw line back to Bird 1
                     draw.line([(bx, by), (bird_x[0], bird_y[0])], fill=(255, 0, 127, 80), width=2)
                 
                 b_color = (255, 0, int(127 + 128 * g_env))
@@ -464,7 +538,7 @@ def render_9m_video(audio_path,
         draw.text((20, 20), "TSFI/2: AUNCIENT FLOCK AGENT COMMUNICATION NETWORK", fill=HUD_COLOR)
         draw.text((20, 36), f"ACTIVE SIGNATURE: {sig_name.upper()}", fill=WARNING_COLOR)
         
-        # Display 3 columns of accumulators (one for each bird agent)
+        # Display 3 columns of accumulators
         # Bird 1 Column
         draw.text((20, 240), "BIRD 1 (LEFT/BASS)", fill=PEACH_COLOR)
         draw.text((20, 255), f"AG1: {int(ag1*100)}% PL1: {int(pl1*100)}%", fill=(180, 180, 180))
@@ -507,13 +581,13 @@ if __name__ == "__main__":
     output_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353"
     output_mp4 = os.path.join(output_dir, "abstract_9m_performance.mp4")
     
-    (audio_path, 
+    (audio_path, mix_audio,
      ag1_arr, pl1_arr, rep1_arr,
      ag2_arr, pl2_arr, rep2_arr,
      ag3_arr, pl3_arr, rep3_arr,
      sig_names, kick_hits, fascinator_hits, growl_hits) = generate_9m_performance()
      
-    render_9m_video(audio_path, 
+    render_9m_video(audio_path, mix_audio,
                     ag1_arr, pl1_arr, rep1_arr,
                     ag2_arr, pl2_arr, rep2_arr,
                     ag3_arr, pl3_arr, rep3_arr,
