@@ -342,9 +342,10 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 12px; margin-top: 10px;">
-                    <button class="btn" style="flex: 1;" onclick="toggleAudio()" id="play-btn">Activate Growl</button>
-                    <button class="btn btn-magenta" style="flex: 1;" onclick="playTargetLesson()">Hear Target</button>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem;" onclick="toggleAudio()" id="play-btn">Activate Growl</button>
+                    <button class="btn btn-magenta" style="flex: 1; padding: 10px 8px; font-size: 0.85rem;" onclick="playTargetLesson()">Hear Target</button>
+                    <button class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; border-color: #ffcc00; color: #ffcc00; text-shadow: 0 0 8px rgba(255, 204, 0, 0.4);" onclick="triggerEcholocutionProbe()">Echolocute</button>
                 </div>
             </div>
 
@@ -1046,6 +1047,63 @@
             targetGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
             isHearingTarget = false;
             document.getElementById("teacher-instructions").innerText = LESSONS[activeLessonIdx].instruction;
+        }
+
+        function triggerEcholocutionProbe() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            
+            // Create a short frequency-swept echolocution chirp
+            const chirpOsc = audioCtx.createOscillator();
+            const chirpGain = audioCtx.createGain();
+            
+            chirpOsc.type = "sine";
+            // Sweep from 4800Hz down to 900Hz to scan physical resonance of formants
+            chirpOsc.frequency.setValueAtTime(4800, now);
+            chirpOsc.frequency.exponentialRampToValueAtTime(900, now + 0.12);
+            
+            chirpGain.gain.setValueAtTime(0.001, now);
+            chirpGain.gain.linearRampToValueAtTime(0.4, now + 0.01);
+            chirpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            // Connect directly to the formant/distortion chain
+            chirpOsc.connect(chirpGain);
+            if (filterNode) {
+                chirpGain.connect(filterNode);
+            } else {
+                chirpGain.connect(mainOut);
+            }
+            
+            chirpOsc.start(now);
+            chirpOsc.stop(now + 0.16);
+
+            // "Weigh the quality" of the accumulator state based on current parameters
+            // An acoustic quality coefficient Q_ech:
+            // High pleasure and high repetition resonance with low agitation creates stable reflection quality.
+            const qualityWeight = (vaesenPleasure * 1.5 + vaesenRepetition * 1.0) / (1.0 + vaesenAgitation * 2.0);
+            
+            // Log scan results
+            const instEl = document.getElementById("teacher-instructions");
+            if (qualityWeight > 1.2) {
+                instEl.innerText = `⚡ Echolocution Scan Complete: High Reflection Quality (${qualityWeight.toFixed(2)}). Accumulators aligned.`;
+                vaesenPleasure = Math.min(1.0, vaesenPleasure + 0.08);
+            } else if (qualityWeight < 0.6) {
+                instEl.innerText = `⚠️ Echolocution Scan Complete: Dissonant Reflection Quality (${qualityWeight.toFixed(2)}). Agitation detected.`;
+                vaesenAgitation = Math.min(1.0, vaesenAgitation + 0.12);
+            } else {
+                instEl.innerText = `ℹ️ Echolocution Scan Complete: Balanced Reflection Quality (${qualityWeight.toFixed(2)}).`;
+            }
+            
+            // Update UI meters after adjustments
+            document.getElementById("vaesen-ag-pct").innerText = `${Math.round(vaesenAgitation * 100)}%`;
+            document.getElementById("vaesen-ag-bar").style.width = `${Math.round(vaesenAgitation * 100)}%`;
+            document.getElementById("vaesen-pl-pct").innerText = `${Math.round(vaesenPleasure * 100)}%`;
+            document.getElementById("vaesen-pl-bar").style.width = `${Math.round(vaesenPleasure * 100)}%`;
+            
+            // Save quality results to ZMM memory logs
+            saveCalibrationToZmm("Echolocution Reflection Scan", Math.round(Math.min(1.0, qualityWeight / 2.0) * 100), lastParams.pitch, vaesenAgitation, vaesenPleasure, vaesenRepetition, 0);
         }
     </script>
 </body>
