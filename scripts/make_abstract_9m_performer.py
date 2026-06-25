@@ -17,6 +17,62 @@ ACCENT_COLOR = (255, 0, 127)
 WARNING_COLOR = (255, 204, 0)
 PEACH_COLOR = (255, 150, 100)
 
+# Unified Bird DNA configuration specifying physical flight characteristics and sound synthesis properties
+BIRD_DNA = [
+    # Bird 0: Bass Bird (heavy, deep frequency, large wings)
+    {
+        "name": "Bass Agent",
+        "mass": 1.5,
+        "drag": 0.93,
+        "lift_coeff": 0.0055,
+        "base_wing_len": 26,
+        "wing_color": (120, 80, 200),
+        "body_color": (255, 150, 100),
+        "ripple_color": ACCENT_COLOR,
+        "excitability": 1.2,
+        "spring_k": 0.03,
+        # Synthesis parameters:
+        "synth_base_freq": 50.0,
+        "synth_pitch_decay": 0.03,
+        "synth_vol": 0.4
+    },
+    # Bird 1: Fascinator Bird (lightweight, highly responsive/agile, high pitch sweep)
+    {
+        "name": "Fascinator Agent",
+        "mass": 0.7,
+        "drag": 0.86,
+        "lift_coeff": 0.0034,
+        "base_wing_len": 28,
+        "wing_color": WARNING_COLOR,
+        "body_color": (100, 242, 254),
+        "ripple_color": PEACH_COLOR,
+        "excitability": 0.8,
+        "spring_k": 0.05,
+        # Synthesis parameters:
+        "synth_base_freq": 2500.0,
+        "synth_sweep_width": 2000.0,
+        "synth_vol": 0.04
+    },
+    # Bird 2: Agitation Growl Bird (medium mass, low gravel croak pitch, high-pressure hiss)
+    {
+        "name": "Growl Agent",
+        "mass": 1.0,
+        "drag": 0.90,
+        "lift_coeff": 0.0044,
+        "base_wing_len": 25,
+        "wing_color": (150, 0, 50),
+        "body_color": (255, 0, 127),
+        "ripple_color": HUD_COLOR,
+        "excitability": 1.0,
+        "spring_k": 0.04,
+        # Synthesis parameters:
+        "synth_croak_freq": 85.0,
+        "synth_hiss_freq": 3200.0,
+        "synth_gravel_mod": 14.0,
+        "synth_vol": 0.24
+    }
+]
+
 def generate_9m_performance():
     print("[DSP] Starting 9-minute abstract flock-communication performance synthesis...")
     num_samples = int(DURATION_SEC * SAMPLE_RATE)
@@ -43,12 +99,13 @@ def generate_9m_performance():
     base_snare = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
     base_hat = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1]
     
-    # Pre-render drum sounds
+    # Pre-render drum sounds bound to Bass Agent DNA parameters
+    dna_b0 = BIRD_DNA[0]
     kick_len = int(SAMPLE_RATE * 0.18)
     k_age = np.arange(kick_len) / SAMPLE_RATE
-    k_freq = 50.0 + 120.0 * np.exp(-k_age / 0.03)
+    k_freq = dna_b0["synth_base_freq"] + 120.0 * np.exp(-k_age / dna_b0["synth_pitch_decay"])
     kick_sound = np.sin(2.0 * np.pi * k_freq * k_age) * np.exp(-k_age / 0.12)
-    kick_sound = np.tanh(kick_sound * 1.5) * 0.4
+    kick_sound = np.tanh(kick_sound * 1.5) * dna_b0["synth_vol"]
     
     snare_len = int(SAMPLE_RATE * 0.15)
     s_age = np.arange(snare_len) / SAMPLE_RATE
@@ -94,6 +151,11 @@ def generate_9m_performance():
     growl_hits = np.zeros(num_samples)
     
     sig_names = []
+    
+    # Track rhythmic steadiness to repel steady beats
+    steadiness = [0.0, 0.0, 0.0]
+    last_trigger_step = [0, 0, 0]
+    last_interval = [0, 0, 0]
     
     for step in range(total_steps):
         onset = step * step_samples
@@ -164,23 +226,51 @@ def generate_9m_performance():
         pl3 = decay * pl3 + (1.0 - decay) * 0.65
         
         # ---------------- Flock Cross-Talk Communication Loops ----------------
-        # 1. When Bird 1 (Bass) triggers a Kick, it comforts Bird 2 (Center):
+        # Rhythmic steadiness decay (habituation/accumulator repulsion)
+        for i in range(3):
+            steadiness[i] = max(0.0, steadiness[i] - 0.006)
+            
+        # 1. When Bird 1 (Bass) triggers a Kick, it startles Bird 2 (Center):
         is_kick_trigger = (kick_pat[step % len(kick_pat)] == 1) and not is_break
         if is_kick_trigger:
-            pl2 = min(1.0, pl2 + 0.16)
-            ag2 = max(0.01, ag2 - 0.12)
+            ag2 = min(1.0, ag2 + 0.18)
+            pl2 = max(0.1, pl2 - 0.08)
             
-        # 2. When Bird 2 (Center) triggers a Fascinator sweep, it delights Bird 3 (Right):
-        is_fasc_trigger = (pl2 > 0.58 and step % 4 == 0) and not is_break
+        # 2. When Bird 2 (Center) triggers a Fascinator sweep, it calms Bird 3 (Right):
+        # Repulsion to steady beats pushes threshold higher and shifts/jitters step grid alignment
+        fasc_threshold = 0.58 + 0.30 * steadiness[1]
+        fasc_step_offset = int(3 * steadiness[1])
+        is_fasc_trigger = (pl2 > fasc_threshold and (step + fasc_step_offset) % 4 == 0) and not is_break
         if is_fasc_trigger:
-            pl3 = min(1.0, pl3 + 0.18)
-            ag3 = max(0.01, ag3 - 0.14)
+            # Update steadiness based on repetition of intervals
+            interval = step - last_trigger_step[1]
+            if interval == last_interval[1]:
+                steadiness[1] = min(1.0, steadiness[1] + 0.40)
+            else:
+                steadiness[1] = max(0.0, steadiness[1] - 0.12)
+            last_interval[1] = interval
+            last_trigger_step[1] = step
             
-        # 3. When Bird 3 (Right) is pleased, it triggers a Resonance Chirp to comfort Bird 1 (Left):
-        is_growl_trigger = (pl3 > 0.60 and step % 8 == 0) and not is_break
+            pl3 = min(1.0, pl3 + 0.14)
+            ag3 = max(0.01, ag3 - 0.08)
+            
+        # 3. When Bird 3 (Right) triggers a Crow Hiss-Growl, it startles Bird 1 (Left):
+        # Repulsion shifts threshold and step grid alignment as growl triggers get too steady
+        growl_threshold = 0.35 + 0.35 * steadiness[2]
+        growl_step_offset = int(5 * steadiness[2])
+        is_growl_trigger = (ag3 > growl_threshold and (step + growl_step_offset) % 8 == 0) and not is_break
         if is_growl_trigger:
-            pl1 = min(1.0, pl1 + 0.15)
-            ag1 = max(0.01, ag1 - 0.10)
+            # Update steadiness based on repetition of intervals
+            interval = step - last_trigger_step[2]
+            if interval == last_interval[2]:
+                steadiness[2] = min(1.0, steadiness[2] + 0.40)
+            else:
+                steadiness[2] = max(0.0, steadiness[2] - 0.12)
+            last_interval[2] = interval
+            last_trigger_step[2] = step
+            
+            ag1 = min(1.0, ag1 + 0.22)
+            pl1 = max(0.05, pl1 - 0.12)
             
         # Also track Resonance Dwell triggers for Bird 2 & 3
         if consecutive_repeats < 4:
@@ -225,16 +315,17 @@ def generate_9m_performance():
             if l > 0:
                 mix[onset:onset+l] += hat_sound[:l]
                 
-        # 1. Fascinators (High Pleasure trigger from Bird 2)
+        # 1. Fascinators (High Pleasure trigger from Bird 2) using Fascinator Agent DNA
         if is_fasc_trigger:
-            f_start = 2500.0 + 1500.0 * math.sin(step * 0.4)
-            f_end = f_start + 2000.0 * (1.0 - np.random.rand() * 0.4)
+            dna_b1 = BIRD_DNA[1]
+            f_start = dna_b1["synth_base_freq"] + 1500.0 * math.sin(step * 0.4)
+            f_end = f_start + dna_b1["synth_sweep_width"] * (1.0 - np.random.rand() * 0.4)
             f_len = int(SAMPLE_RATE * 0.08)
             l = min(num_samples - onset, f_len)
             if l > 0:
                 age_f = np.arange(l) / SAMPLE_RATE
                 sweep = f_start + (f_end - f_start) * (age_f / 0.08)
-                fascinator_sig = np.sin(2.0 * np.pi * sweep * age_f) * np.exp(-age_f / 0.018) * 0.04
+                fascinator_sig = np.sin(2.0 * np.pi * sweep * age_f) * np.exp(-age_f / 0.018) * dna_b1["synth_vol"]
                 mix[onset:onset+l] += fascinator_sig
                 fascinator_hits[onset:onset+l] = 1.0
                 
@@ -274,17 +365,26 @@ def generate_9m_performance():
                 bell = np.sin(2.0 * np.pi * f_carrier * b_age + modulator) * np.exp(-b_age / 0.12)
                 mix[b_onset:b_onset+b_l] += bell * 0.045
                 
-        # Resonance Chirps driven by Bird 3 Pleasure
+        # Crow Hiss-Growl driven by Bird 3 Agitation using Growl Agent DNA parameters
         if is_growl_trigger:
-            chirp_len = int(SAMPLE_RATE * 0.28)
-            c_age = np.arange(min(num_samples - onset, chirp_len)) / SAMPLE_RATE
-            if len(c_age) > 0:
-                f_start = 800.0 + 400.0 * pl3
-                f_end = 2200.0 + 800.0 * pl3
-                sweep_freq = f_start + (f_end - f_start) * (c_age / 0.28)
-                chirp_sig = np.sin(2.0 * np.pi * sweep_freq * c_age) * np.exp(-c_age / 0.08) * 0.12
-                mix[onset:onset+len(c_age)] += chirp_sig * 0.45
-                growl_hits[onset:onset+len(c_age)] = 1.0
+            dna_b2 = BIRD_DNA[2]
+            growl_len = int(SAMPLE_RATE * 0.42)
+            g_age = np.arange(min(num_samples - onset, growl_len)) / SAMPLE_RATE
+            if len(g_age) > 0:
+                # 1. High frequency hiss component
+                hiss_noise = np.random.uniform(-1.0, 1.0, len(g_age))
+                hiss = hiss_noise * np.sin(2.0 * np.pi * dna_b2["synth_hiss_freq"] * g_age) * np.exp(-g_age / 0.10) * 0.09
+                
+                # 2. Low-frequency gravelly croak/growl
+                gravel_mod = 1.0 + 0.9 * np.sin(2.0 * np.pi * dna_b2["synth_gravel_mod"] * g_age)
+                croak_carrier = np.sign(np.sin(2.0 * np.pi * (dna_b2["synth_croak_freq"] + 35.0 * ag3) * g_age))  # gravelly square wave
+                croak = croak_carrier * gravel_mod * np.exp(-g_age / 0.26) * 0.22
+                
+                # Combined and distorted through tanh wave shaper
+                combined = hiss + croak
+                growl_sig = np.tanh(combined * (2.2 + 4.5 * ag3)) * dna_b2["synth_vol"]
+                mix[onset:onset+len(g_age)] += growl_sig
+                growl_hits[onset:onset+len(g_age)] = 1.0
                 
         # 4. Warm, loving comfort trill (vibrato whistle solo) during macro breaks
         if is_break and step % 4 == 0:
@@ -382,45 +482,8 @@ def render_9m_video(audio_path, mix_audio,
     # Bird impact registers tracking when particles hit them directly
     bird_impact = [0.0, 0.0, 0.0]
     
-    # Bird DNA configuration specifying physical characteristics and behaviors
-    bird_dna = [
-        # Bird 0: Bass Bird (heavy, sluggish, large wings)
-        {
-            "mass": 1.5,
-            "drag": 0.93,
-            "lift_coeff": 0.0055,
-            "base_wing_len": 26,
-            "wing_color": (120, 80, 200),
-            "body_color": (255, 150, 100),
-            "ripple_color": ACCENT_COLOR,
-            "excitability": 1.2,
-            "spring_k": 0.03
-        },
-        # Bird 1: Fascinator Bird (lightweight, highly responsive/agile, small wings)
-        {
-            "mass": 0.7,
-            "drag": 0.86,
-            "lift_coeff": 0.0034,
-            "base_wing_len": 28,
-            "wing_color": WARNING_COLOR,
-            "body_color": (100, 242, 254),
-            "ripple_color": PEACH_COLOR,
-            "excitability": 0.8,
-            "spring_k": 0.05
-        },
-        # Bird 2: Agitation Bird (standard mass, aggressive, medium wings)
-        {
-            "mass": 1.0,
-            "drag": 0.90,
-            "lift_coeff": 0.0044,
-            "base_wing_len": 25,
-            "wing_color": (150, 0, 50),
-            "body_color": (255, 0, 127),
-            "ripple_color": HUD_COLOR,
-            "excitability": 1.0,
-            "spring_k": 0.04
-        }
-    ]
+    # Reference the unified global Bird DNA configuration
+    bird_dna = BIRD_DNA
     
     k_env = 0.0
     f_env = 0.0
@@ -686,14 +749,14 @@ def render_9m_video(audio_path, mix_audio,
         draw.rectangle([220, 270, 380, 276], outline=HUD_COLOR)
         draw.rectangle([220, 270, int(220 + 160 * pl2), 276], fill=HUD_COLOR)
         
-        draw.text((420, 240), "BIRD 3 (RIGHT/RESONANCE)", fill=ACCENT_COLOR)
+        draw.text((420, 240), "BIRD 3 (RIGHT/GROWL)", fill=ACCENT_COLOR)
         draw.text((420, 255), f"AG3: {int(ag3*100)}% PL3: {int(pl3*100)}%", fill=(180, 180, 180))
         draw.rectangle([420, 270, 580, 276], outline=ACCENT_COLOR)
         draw.rectangle([420, 270, int(420 + 160 * ag3), 276], fill=ACCENT_COLOR)
         
         # HUD triggers
         if g_env > 0.05:
-            draw.text((420, 290), "🌸 RESONANCE CHIRP B1", fill=ACCENT_COLOR)
+            draw.text((420, 290), "⚡ CROW HISS-GROWL B1", fill=ACCENT_COLOR)
         if f_env > 0.05:
             draw.text((220, 290), "⭐ FASCINATE TRIGGER B3", fill=HUD_COLOR)
         if kick_hits[sample_idx] > 0.5:
