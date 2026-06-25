@@ -7,10 +7,11 @@ class TestBionikaAccumulators(unittest.TestCase):
     
     def test_g2p_parsing(self):
         """Verify text parsing resolves to correct Auncient phonetic symbols."""
-        phrase = "auncient bionika"
+        phrase = "auncient bionika singing"
         phonemes = text_to_phonemes(phrase)
         self.assertIn("a", phonemes)
-        self.assertIn("n", phonemes)
+        self.assertIn("un", phonemes)  # "un" from auncient
+        self.assertIn("ng", phonemes)  # "ng" from singing
         self.assertIn("e", phonemes)
         self.assertIn("i", phonemes)
 

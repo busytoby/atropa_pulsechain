@@ -30,6 +30,8 @@ PHONEME_TABLE = {
     "t": (1500.0, 3000.0, 5000.0, False),  # transient burst
     "n": (300.0, 1400.0, 2700.0, True),
     "m": (300.0, 1100.0, 2500.0, True),
+    "ng": (300.0, 1800.0, 2700.0, True),  # nasal ng
+    "un": (400.0, 1500.0, 2500.0, True),  # nasal un
     " ": (0.0, 0.0, 0.0, False),  # silence
 }
 
@@ -60,6 +62,14 @@ def text_to_phonemes(text):
                 continue
             if sh == "th":
                 phonemes.append("f")
+                i += 2
+                continue
+            if sh == "ng":
+                phonemes.append("ng")
+                i += 2
+                continue
+            if sh == "un":
+                phonemes.append("un")
                 i += 2
                 continue
 
