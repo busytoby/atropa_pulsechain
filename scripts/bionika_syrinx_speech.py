@@ -118,7 +118,7 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
     bionika_threshold = 1.0
     
     # Sub-accumulator states
-    bionika_vsub = 0.0
+    bionika_vsub = 0.50
     bionika_sub_leak = 0.98
     
     # Acoustic tract load
