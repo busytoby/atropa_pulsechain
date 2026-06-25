@@ -3407,7 +3407,7 @@ void present_ab4h_to_argb(TsfiAb4hMat *canvas, uint32_t *dest_argb) {
 }
 
 static void export_ppm_real(TsfiAb4hMat *canvas) {
-    const char *out_path = "/home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm";
+    const char *out_path = "/home/mariarahel/.gemini/antigravity-cli/brain/38436d6a-7ad9-4ea9-8cde-2800837ce953/scratch/photorealistic_teddy_bear.ppm";
     FILE *fp = fopen(out_path, "wb");
     if (fp) {
         fprintf(fp, "P6\n%d %d\n255\n", 1280, 720);

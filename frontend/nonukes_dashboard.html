@@ -578,7 +578,15 @@
 
                             async function queryScoreForToken(tokenAddr) {
                                 const qing = await getQingAddress(tokenAddr);
-                                if (!qing) return { hypobar: 0, epibar: 0, qing: null, yueAddr: null };
+                                let diyatFormatted = "0.0000";
+                                try {
+                                    const c = new ethers.Contract(tokenAddr, [
+                                        "function balanceOf(address) external view returns (uint256)"
+                                    ], provider);
+                                    const diyatBal = await c.balanceOf("0x0000000000000000000000000000000000000898");
+                                    diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, 18)).toFixed(4);
+                                } catch(e){}
+                                if (!qing) return { hypobar: 0, epibar: 0, qing: null, yueAddr: null, diyat: diyatFormatted };
                                 const yueRes = await resolveYueContract(tokenAddr);
                                 const yueAddresses = Array.isArray(yueRes) ? yueRes : [yueRes];
                                 
@@ -592,7 +600,7 @@
                                         if (bar[1] > maxEpibar) maxEpibar = bar[1];
                                     } catch (e) {}
                                 }
-                                return { hypobar: maxHypobar.toString(), epibar: maxEpibar.toString(), qing, yueAddr: yueAddresses[0] };
+                                return { hypobar: maxHypobar.toString(), epibar: maxEpibar.toString(), qing, yueAddr: yueAddresses[0], diyat: diyatFormatted };
                             }
 
                             const score0 = await queryScoreForToken(data.reserves.token0_addr || "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62");
@@ -613,6 +621,7 @@
                                                 <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
                                                     <div>Hypobar: ${score0.hypobar}</div>
                                                     <div>Epibar: ${score0.epibar}</div>
+                                                    <div style="color: #ffd600; font-weight: bold; margin-top: 4px;">Diyat: ${score0.diyat} CABS</div>
                                                 </div>
                                             </div>
                                             ${btn0}
@@ -623,6 +632,7 @@
                                                 <div style="font-family: 'Share Tech Mono', monospace; font-size: 13px;">
                                                     <div>Hypobar: ${score0.hypobar === "0" && score1.hypobar === "0" ? "0" : score1.hypobar}</div>
                                                     <div>Epibar: ${score0.epibar === "0" && score1.epibar === "0" ? "0" : score1.epibar}</div>
+                                                    <div style="color: #ffd600; font-weight: bold; margin-top: 4px;">Diyat: ${score1.diyat} CABS</div>
                                                 </div>
                                             </div>
                                             ${btn1}

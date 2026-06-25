@@ -340,6 +340,10 @@
                     <span style="font-weight: bold; font-size: 0.95rem; color: #f43f5e;">⚡ CCS Auto-Attenuation</span>
                     <input type="checkbox" id="chkCCSAuto" checked style="width: 18px; height: 18px; cursor: pointer;">
                 </div>
+                <div style="background: rgba(0, 255, 128, 0.03); border: 1px solid rgba(0, 255, 128, 0.15); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold; font-size: 0.95rem; color: #00ff80;">✨ JFET Sparkle Boost</span>
+                    <input type="checkbox" id="chkSparkleBoost" style="width: 18px; height: 18px; cursor: pointer;">
+                </div>
                 <div id="ccsStatusPanel" style="background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.1); border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #fda4af; display: flex; justify-content: space-between; margin-bottom: 15px;">
                     <span>CCS Attenuation Gain:</span>
                     <span id="txtCCSGain" style="font-weight: bold;">100%</span>
@@ -1479,6 +1483,14 @@
         let masterAttenuation = 1.0;
         let lastClipTime = 0;
 
+        function applySparkleBoostJS(v, boostDb = 4.0) {
+            const gain = Math.pow(10, boostDb / 20.0);
+            const vIn = v * gain;
+            // Asymmetric JFET quadratic soft-clipping with warmth
+            const vOut = (vIn - 0.18 * (vIn * vIn)) / (1.0 + 0.65 * Math.abs(vIn));
+            return Math.max(-1.0, Math.min(1.0, vOut));
+        }
+
         // Apply Equa-Amplifier dynamic limiter (AGC)
         async function applyEquaLimiter(outVolts, loadImpedance = 0.51) {
             // 1. Thermal Junction Heat Accumulation & Half-Life Cooling (Bell Micro-Temperature, Issue 16)
@@ -1647,30 +1659,36 @@
             // Restore DC Coupling balance (subtracting the constant Zener bias offset)
             saturatedVal = saturatedVal - V_zener_bias;
 
+            let finalVal = saturatedVal;
             const isChecked = document.getElementById("chkEquaLimiter").checked;
-            if (!isChecked) return saturatedVal;
+            if (isChecked) {
+                const inputVal = BigInt(Math.round(saturatedVal * 1e18));
+                const loadVal = BigInt(Math.round(loadImpedance * 1e18));
 
-            const inputVal = BigInt(Math.round(saturatedVal * 1e18));
-            const loadVal = BigInt(Math.round(loadImpedance * 1e18));
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputVal, loadVal]);
 
-            const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
-            const calldata = iface.encodeFunctionData("processSample", [inputVal, loadVal]);
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "EquaAmplifier", calldata })
+                });
+                const payload = await res.json();
 
-            const res = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: "EquaAmplifier", calldata })
-            });
-            const payload = await res.json();
-
-            if (payload && payload.result && payload.result.output) {
-                const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
-                const resultVal = Number(decoded[0]) / 1e18;
-                updateAudioSynthesis(resultVal);
-                return resultVal;
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    finalVal = Number(decoded[0]) / 1e18;
+                }
             }
-            updateAudioSynthesis(outVolts);
-            return outVolts;
+
+            // Apply Sparkle Boost if active
+            const isSparkleActive = document.getElementById("chkSparkleBoost").checked;
+            if (isSparkleActive) {
+                finalVal = applySparkleBoostJS(finalVal, 4.0);
+            }
+
+            updateAudioSynthesis(finalVal);
+            return finalVal;
         }
 
         function checkGraeffeStability(f, d) {

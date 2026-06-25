@@ -76,46 +76,81 @@ def run_coupled_syrinx(s_len, mode, start_time):
     c3 = 0.45
     A_fold = 0.2
     
+    # Dual-Substrate Hertzian contact parameters
+    d_soft = 0.005  # outer soft mucosal shell boundary
+    d_hard = 0.015  # inner hard cartilage core boundary
+    k_soft = 1200.0 # stiffness of mucosal layer
+    k_hard = 8500.0 # stiffness of rigid core
+    alpha = 1.5     # Hertzian exponent (standard 3/2 contact rule)
+    eta = 8.5       # depth-dependent contact damping factor
+    
     for s in range(1, s_len - 1):
         t_sec = start_time + s * dt
         
         # Dynamic frequency modulations for active bird calls
         stiff_mod = 1.0
         if mode == "thrush":
-            # Rapid microtonal sweeps
             stiff_mod = 1.0 + 0.5 * math.sin(2.0 * math.pi * 9.0 * t_sec)
         elif mode == "crow":
-            # Low hoarse modulations
             stiff_mod = 1.0 + 0.15 * math.sin(2.0 * math.pi * 3.0 * t_sec)
         elif mode == "pigeon":
-            # Soft warble
             stiff_mod = 1.0 + 0.08 * math.sin(2.0 * math.pi * 5.0 * t_sec)
         elif mode == "arpeggiator_chaos":
-            # Chaotic pitch leaps
             stiff_mod = 1.0 + 0.8 * math.sin(2.0 * math.pi * (2.0 + (int(t_sec * 4) % 7)) * t_sec)
             
         stiffness1 = (epibar1 if x1 > 0.0 else hypobar1) * stiff_mod
         stiffness2 = (epibar2 if x2 > 0.0 else hypobar2) * stiff_mod
-        
-        # Aerodynamic driving forces
-        f_p1 = Ps1 * A_fold if x1 > 0.0 else 0.0
-        f_p2 = Ps2 * A_fold if x2 > 0.0 else 0.0
         
         # Velocities
         v1 = (x1 - x1_prev) / dt
         v2 = (x2 - x2_prev) / dt
         v3 = (x3 - x3_prev) / dt
         
-        # Resonant load piston driven by glottal flow
-        current_flow = (max(x1, 0.0) ** 2) + (max(x2, 0.0) ** 2)
+        # Dual-Substrate Hertzian contact force calculations (Left Labia)
+        f_col1 = 0.0
+        penetration1 = 0.0
+        if x1 < -d_soft:
+            penetration1 = -x1 - d_soft
+            # Soft mucosal layer compression
+            f_col1 = -k_soft * (penetration1 ** alpha)
+            if x1 < -d_hard:
+                # Hard rigid core cartilage compression
+                f_col1 += -k_hard * (( -x1 - d_hard ) ** alpha)
+            # Power-law damping proportional to penetration depth and velocity
+            f_col1 -= eta * penetration1 * v1
+            
+        # Dual-Substrate Hertzian contact force calculations (Right Labia)
+        f_col2 = 0.0
+        penetration2 = 0.0
+        if x2 < -d_soft:
+            penetration2 = -x2 - d_soft
+            # Soft mucosal layer compression
+            f_col2 = -k_soft * (penetration2 ** alpha)
+            if x2 < -d_hard:
+                # Hard rigid core cartilage compression
+                f_col2 += -k_hard * (( -x2 - d_hard ) ** alpha)
+            # Power-law damping proportional to penetration depth and velocity
+            f_col2 -= eta * penetration2 * v2
+        
+        # Aerodynamic driving forces (Bernoulli pressure modulation)
+        # Flow velocity depends on dynamic area aperture (relative to outer soft boundary)
+        aperture1 = max(x1 + d_soft, 0.0)
+        aperture2 = max(x2 + d_soft, 0.0)
+        
+        # Bernoulli pressure drops across the glottal folds
+        f_p1 = Ps1 * A_fold * (1.0 - (aperture1 / (aperture1 + 0.05))) if aperture1 > 0.0 else 0.0
+        f_p2 = Ps2 * A_fold * (1.0 - (aperture2 / (aperture2 + 0.05))) if aperture2 > 0.0 else 0.0
+        
+        # Resonant load piston driven by glottal flow area sum
+        current_flow = (aperture1 ** 2) + (aperture2 ** 2)
         f_p3 = current_flow * 2.5
         
         # Feedback force from resonant piston onto upper glottal mass
         F_fb = -k3 * x3 - c3 * v3
         
-        # Coupled acceleration calculations
-        acc1 = (f_p1 - stiffness1 * x1 - c1 * v1 + Kc * (x2 - x1)) / m1
-        acc2 = (f_p2 - stiffness2 * x2 - c2 * v2 + Kc * (x1 - x2) + F_fb) / m2
+        # Coupled acceleration calculations (including Hertzian dualist contact forces)
+        acc1 = (f_p1 + f_col1 - stiffness1 * x1 - c1 * v1 + Kc * (x2 - x1)) / m1
+        acc2 = (f_p2 + f_col2 - stiffness2 * x2 - c2 * v2 + Kc * (x1 - x2) + F_fb) / m2
         acc3 = (f_p3 - k3 * x3 - c3 * v3) / m3
         
         # Verlet integration step
@@ -123,8 +158,8 @@ def run_coupled_syrinx(s_len, mode, start_time):
         x2_next = 2.0 * x2 - x2_prev + acc2 * (dt ** 2)
         x3_next = 2.0 * x3 - x3_prev + acc3 * (dt ** 2)
         
-        x1_prev, x1 = x1, max(-0.2, min(1.0, x1_next))
-        x2_prev, x2 = x2, max(-0.2, min(1.0, x2_next))
+        x1_prev, x1 = x1, max(-0.4, min(1.0, x1_next))
+        x2_prev, x2 = x2, max(-0.4, min(1.0, x2_next))
         x3_prev, x3 = x3, max(-0.5, min(1.0, x3_next))
         
         # Save output flow (modulated by acoustic load piston)

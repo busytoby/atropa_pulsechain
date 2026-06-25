@@ -1,0 +1,143 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include "libantigravity_interop.h"
+
+#define WIDTH 1280
+#define HEIGHT 720
+#define CHANNELS 3
+#define FRAME_SIZE (WIDTH * HEIGHT * CHANNELS)
+#define TOTAL_FRAMES 960
+
+int main(int argc, char *argv[]) {
+    if (argc < 7) {
+        fprintf(stderr, "Usage: %s <base_raw> <lineart_raw> <depth_raw> <normal_raw> <seg_raw> <interop_registry_bin>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *f_base = fopen(argv[1], "rb");
+    FILE *f_line = fopen(argv[2], "rb");
+    FILE *f_depth = fopen(argv[3], "rb");
+    FILE *f_norm = fopen(argv[4], "rb");
+    FILE *f_seg = fopen(argv[5], "rb");
+    FILE *f_reg = fopen(argv[6], "rb"); // Binary stream of InteropRegistry state
+
+    if (!f_base || !f_line || !f_depth || !f_norm || !f_seg || !f_reg) {
+        fprintf(stderr, "Error opening raw frame input pipes or registry file.\n");
+        return 1;
+    }
+
+    uint8_t *buf_base = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_line = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_depth = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_norm = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_seg = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_out = (uint8_t *)malloc(FRAME_SIZE);
+
+    if (!buf_base || !buf_line || !buf_depth || !buf_norm || !buf_seg || !buf_out) {
+        fprintf(stderr, "Memory allocation failure.\n");
+        return 1;
+    }
+
+    InteropRegistry reg;
+    memset(&reg, 0, sizeof(InteropRegistry));
+    reg.frame_modulation_factor = 1.0f;
+
+    // Process frame-by-frame
+    for (int frame = 0; frame < TOTAL_FRAMES; frame++) {
+        size_t r1 = fread(buf_base, 1, FRAME_SIZE, f_base);
+        size_t r2 = fread(buf_line, 1, FRAME_SIZE, f_line);
+        size_t r3 = fread(buf_depth, 1, FRAME_SIZE, f_depth);
+        size_t r4 = fread(buf_norm, 1, FRAME_SIZE, f_norm);
+        size_t r5 = fread(buf_seg, 1, FRAME_SIZE, f_seg);
+
+        // Read active registry state for this frame if available
+        if (fread(&reg, sizeof(InteropRegistry), 1, f_reg) < 1) {
+            // Keep previous registry state if stream ends early
+        }
+
+        if (r1 < FRAME_SIZE || r2 < FRAME_SIZE || r3 < FRAME_SIZE || r4 < FRAME_SIZE || r5 < FRAME_SIZE) {
+            break; // EOF reached
+        }
+
+        // Extract registers to modulate compositing factors
+        // Check if there are active messages in the interop LUN network queue
+        double mq_boost = 0.0;
+        if (reg.network_lun.head < reg.network_lun.tail) {
+            mq_boost = 0.25; // Boost brightness/gain when network packets are active in queue
+        }
+
+        double spec_power = 8.0 + ((reg.frame_modulation_factor + mq_boost) * 16.0); // Modulated specularity
+        double edge_blend = 0.5 + ((reg.frame_modulation_factor + mq_boost) * 0.5);  // LineArt visibility mapping
+
+        for (int i = 0; i < FRAME_SIZE; i += 3) {
+            uint8_t br = buf_base[i], bg = buf_base[i+1], bb = buf_base[i+2];
+            uint8_t lr = buf_line[i], lg = buf_line[i+1], lb = buf_line[i+2];
+            uint8_t dr = buf_depth[i], dg = buf_depth[i+1], db = buf_depth[i+2];
+            uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
+            uint8_t sr = buf_seg[i], sg = buf_seg[i+1], sb = buf_seg[i+2];
+
+            double d_val = dr / 255.0;
+            double l_val = (255.0 - lr) / 255.0;
+
+            double nx = (nr - 127.5) / 127.5;
+            double ny = (ng - 127.5) / 127.5;
+            double nz = (nb - 127.5) / 127.5;
+            double spec = pow(fmax(0.0, nz), spec_power);
+
+            // Custom Material routing based on Segmentation Color Mask with boosted brightness
+            double r_out = br * 1.3, g_out = bg * 1.3, b_out = bb * 1.3; // Boost base brightness
+            if (sr > 200 && sg > 200 && sb < 50) { // Yellow Mask: Casing B
+                r_out = br * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
+                g_out = bg * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
+                b_out = bb * 0.8;
+            } else if (sb > 200 && sr < 50 && sg < 50) { // Blue Mask: Casing A
+                r_out = br * 1.0 + spec * (160 + reg.frame_modulation_factor * 80);
+                g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
+                b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
+            } else if (sr > 200 && sg < 50 && sb < 50) { // Red Mask: Verlet Particles / Connections (Boosted)
+                r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120;
+                g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80;
+                b_out = bb * 1.2 + 50;
+            }
+
+            // Apply LineArt borders (edges mask details but lighter)
+            r_out = r_out * (1.0 - l_val * (edge_blend * 0.4));
+            g_out = g_out * (1.0 - l_val * (edge_blend * 0.4));
+            b_out = b_out * (1.0 - l_val * (edge_blend * 0.4));
+
+            // Apply Lighter Volumetric Fog and Ambient Occlusion from Depth maps
+            double fog_r = 30, fog_g = 35, fog_b = 55; // Lighter atmospheric background
+            // Focus when the beat drops: reduce fog and boost clarity of the manifold geometry
+            double depth_blend = 0.3 + (d_val * 0.7) + (reg.frame_modulation_factor * 0.25);
+            if (depth_blend > 1.0) depth_blend = 1.0;
+            r_out = r_out * depth_blend + fog_r * (1.0 - depth_blend);
+            g_out = g_out * depth_blend + fog_g * (1.0 - depth_blend);
+            b_out = b_out * depth_blend + fog_b * (1.0 - depth_blend);
+
+            buf_out[i]   = (uint8_t)fmin(255.0, fmax(0.0, r_out));
+            buf_out[i+1] = (uint8_t)fmin(255.0, fmax(0.0, g_out));
+            buf_out[i+2] = (uint8_t)fmin(255.0, fmax(0.0, b_out));
+        }
+
+        fwrite(buf_out, 1, FRAME_SIZE, stdout);
+    }
+
+    fclose(f_base);
+    fclose(f_line);
+    fclose(f_depth);
+    fclose(f_norm);
+    fclose(f_seg);
+    fclose(f_reg);
+
+    free(buf_base);
+    free(buf_line);
+    free(buf_depth);
+    free(buf_norm);
+    free(buf_seg);
+    free(buf_out);
+
+    return 0;
+}

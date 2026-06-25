@@ -5,18 +5,18 @@ const SAMPLE_RATE = 44100;
 const DURATION_SECS = 32; // Expanded to a structured 32-second arrangement
 const TOTAL_SAMPLES = SAMPLE_RATE * DURATION_SECS;
 
-// pentatonic minor scale notes
+// Phrygian dark folklore scale notes
 const C2 = 65.41;
+const Db2 = 73.42;
 const Eb2 = 77.78;
-const F2 = 87.31;
 const G2 = 98.00;
-const Bb2 = 116.54;
+const Ab2 = 103.83;
 const C3 = 130.81;
 
 // 16-step patterns
 const BASS_SEQUENCE = [
-    C2, C3, 0, Eb2,  F2, 0, G2, Bb2,
-    C2, 0, Bb2, F2,  G2, Eb2, C2, 0
+    C2, Db2, 0, Eb2,  G2, 0, Ab2, G2,
+    C2, 0, Db2, Eb2,  Db2, Eb2, C2, 0
 ];
 const BASS_ACCENTS = [
     1, 0, 0, 0,  1, 0, 0, 1,
@@ -105,6 +105,11 @@ function main() {
     const hhFreqs = [205.3, 369.6, 522.0, 565.1, 675.9, 716.9];
     let hhPhases = [0, 0, 0, 0, 0, 0];
 
+    // Feedback formant resonators
+    let f1_low = 0, f1_band = 0;
+    let f2_low = 0, f2_band = 0;
+    let bassFeedback = 0.0;
+
     for (let i = 0; i < TOTAL_SAMPLES; i++) {
         const timeSecs = i / SAMPLE_RATE;
         
@@ -119,41 +124,45 @@ function main() {
         let hhMute = 1;
         let bassMute = 1;
         
-        let dynamicFilterCutoff = 280;
-        let dynamicEnvMod = 1200;
-        let dynamicResonance = 0.82;
-        let dynamicDecay = 0.12;
+        let dynamicFilterCutoff = 180;
+        let dynamicEnvMod = 600;
+        let dynamicResonance = 0.45;
+        let dynamicDecay = 0.05;
 
         if (timeSecs < 8.0) {
             // Intro: simple kick and hats, low filter cutoff (dark bass), no claps/snares
             snareMute = 0;
             clapMute = 0;
-            dynamicFilterCutoff = 200;
-            dynamicResonance = 0.7;
-            dynamicEnvMod = 600;
+            dynamicFilterCutoff = 130;
+            dynamicResonance = 0.40;
+            dynamicEnvMod = 300;
+            dynamicDecay = 0.04;
         } else if (timeSecs >= 8.0 && timeSecs < 16.0) {
             // Build-up: Introduce snare, open hats, filter opens up gradually
             snareMute = 1;
             clapMute = 0;
             const progress = (timeSecs - 8.0) / 8.0;
-            dynamicFilterCutoff = 200 + progress * 150; // Sweeps up
-            dynamicEnvMod = 600 + progress * 600;
-            dynamicResonance = 0.7 + progress * 0.15;
+            dynamicFilterCutoff = 130 + progress * 90; // Sweeps up
+            dynamicEnvMod = 300 + progress * 400;
+            dynamicResonance = 0.40 + progress * 0.10;
+            dynamicDecay = 0.04 + progress * 0.03;
         } else if (timeSecs >= 16.0 && timeSecs < 24.0) {
             // Drop: Maximum energy, all drums on, resonance high
             snareMute = 1;
             clapMute = 1;
-            dynamicFilterCutoff = 360;
-            dynamicEnvMod = 1400;
-            dynamicResonance = 0.88;
+            dynamicFilterCutoff = 220;
+            dynamicEnvMod = 700;
+            dynamicResonance = 0.50;
+            dynamicDecay = 0.07;
         } else {
             // Outro: Claps & Snares stop, cutoff sweeps down, master fade out
             snareMute = 0;
             clapMute = 0;
             const progress = (timeSecs - 24.0) / 8.0;
-            dynamicFilterCutoff = 360 - progress * 200; // Sweeps down
-            dynamicResonance = 0.88 - progress * 0.2;
-            dynamicEnvMod = 1400 - progress * 900;
+            dynamicFilterCutoff = 220 - progress * 100; // Sweeps down
+            dynamicResonance = 0.50 - progress * 0.20;
+            dynamicEnvMod = 700 - progress * 500;
+            dynamicDecay = 0.07 - progress * 0.04;
             // Master fade
             kickMute = 1.0 - progress;
             hhMute = 1.0 - progress;
@@ -220,10 +229,10 @@ function main() {
         hp_out_prev = filteredHihat;
 
         if (closedHhAge >= 0 && closedHhAge < 0.08) {
-            hhSample += filteredHihat * Math.exp(-closedHhAge / 0.03) * 0.35;
+            hhSample += filteredHihat * Math.exp(-closedHhAge / 0.03) * 0.12;
         }
         if (openHhAge >= 0 && openHhAge < 0.45) {
-            hhSample += filteredHihat * Math.exp(-openHhAge / 0.18) * 0.35;
+            hhSample += filteredHihat * Math.exp(-openHhAge / 0.18) * 0.12;
         }
         hhSample *= hhMute;
 
@@ -258,20 +267,56 @@ function main() {
         if (phase303 >= 1.0) phase303 -= 2.0;
         let oscSample = phase303;
 
+        // Dynamic Q that sharpens over the first 16 seconds (learning & refining accumulations)
+        let fb_Q = 0.5;
+        if (timeSecs < 16.0) {
+            fb_Q = 0.5 + (timeSecs / 16.0) * 11.5; // Morphs from 0.5 (wide noise) to 12.0 (sharp resonance)
+        } else {
+            fb_Q = 12.0;
+        }
+        
+        let fb_f1_freq = 300.0;
+        let fb_f2_freq = 1200.0;
+        
+        let fb_f1 = 2.0 * Math.sin(Math.PI * fb_f1_freq / SAMPLE_RATE);
+        let fb_f2 = 2.0 * Math.sin(Math.PI * fb_f2_freq / SAMPLE_RATE);
+        let fb_q = 1.0 / fb_Q;
+        
+        // Tick feedback resonators in cascade
+        let f1_high = bassFeedback - f1_low - fb_q * f1_band;
+        f1_band += fb_f1 * f1_high;
+        f1_low += fb_f1 * f1_band;
+        let r1 = f1_band;
+        
+        let f2_high = r1 - f2_low - fb_q * f2_band;
+        f2_band += fb_f2 * f2_high;
+        f2_low += fb_f2 * f2_band;
+        let refinedFeedback = f2_band;
+
+        // Feedback gain sweeps down from unstable self-oscillation
+        let feedbackGain = 0.0;
+        if (timeSecs < 8.0) {
+            feedbackGain = 1.05 - (timeSecs / 8.0) * 0.45; // 1.05 down to 0.6
+        } else if (timeSecs < 16.0) {
+            feedbackGain = 0.6 - ((timeSecs - 8.0) / 8.0) * 0.4; // 0.6 down to 0.2
+        } else {
+            feedbackGain = 0.2;
+        }
+
         const decaySamples = (isAccent ? dynamicDecay * 1.4 : dynamicDecay) * SAMPLE_RATE;
         const envVal = Math.exp(-sampleInStep / decaySamples);
         const dynamicCutoff = dynamicFilterCutoff + (isAccent ? dynamicEnvMod * 1.5 : dynamicEnvMod) * envVal;
         const cutoffCoeff = (2 * Math.PI * dynamicCutoff) / SAMPLE_RATE;
         
-        const filterInput = oscSample - dynamicResonance * p3;
+        const filterInput = oscSample - dynamicResonance * p3 + refinedFeedback * feedbackGain;
         p0 += cutoffCoeff * (filterInput - p0);
         p1 += cutoffCoeff * (p0 - p1);
         p2 += cutoffCoeff * (p1 - p2);
         p3 += cutoffCoeff * (p2 - p3);
         let filterOutput = p3;
 
-        let bassSample = Math.tanh(filterOutput * (isAccent ? 4.0 : 2.5));
-        const gateDuration = isSlide ? stepDurationSamples : Math.floor(stepDurationSamples * 0.65);
+        let bassSample = Math.tanh(filterOutput * (isAccent ? 12.0 : 8.0));
+        const gateDuration = isSlide ? stepDurationSamples : Math.floor(stepDurationSamples * 0.30);
         let amp = 0;
         if (targetFreq === 0) {
             amp = 0;
@@ -281,10 +326,15 @@ function main() {
             amp = (isAccent ? 0.38 : 0.24) * Math.exp(-(sampleInStep - gateDuration) / (0.015 * SAMPLE_RATE));
         }
         bassSample = bassSample * amp * bassMute;
+        bassFeedback = filterOutput;
 
-        // Mix & clip
-        const mixed = (kickSample * 0.4) + (snareSample * 0.18) + (bassSample * 0.22) + (hhSample * 0.08) + (clapSample * 0.07);
-        audioBuffer[i] = Math.tanh(mixed);
+        // Mix & clip with heavy asymmetric overdrive
+        let mixed = (kickSample * 0.45) + (snareSample * 0.15) + (bassSample * 0.45) + (hhSample * 0.04) + (clapSample * 0.02);
+        if (mixed > 0) {
+            audioBuffer[i] = Math.tanh(mixed * 1.8);
+        } else {
+            audioBuffer[i] = Math.tanh(mixed * 1.3);
+        }
     }
 
     const wavPath = path.join(__dirname, "../teddy303_808_booty_bass.wav");

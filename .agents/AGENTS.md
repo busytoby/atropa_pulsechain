@@ -27,3 +27,7 @@
 
 ## 9. Dynamic Contract ZMM Resolution
 * **Address-Based Resolution:** Always use contract addresses (e.g., `dynamic_<address>`) to resolve and query dynamic contract states on the ZMM VM, rather than relying on contract names or string transformations of names.
+
+## 10. Physics Constraints
+* **FET Discharge Physics:** Soft body physics (Verlet solvers and mass-spring dynamics) should always only apply to the discharge cycles of field-effect transistors (FETs) in simulated low-level hardware structures.
+

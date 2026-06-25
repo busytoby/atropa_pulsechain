@@ -250,6 +250,25 @@ Loading ZMM VM inventory coordinates and items...
                         <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; flex: 1;" onclick="queryZmmInventory()">Refresh</button>
                     </div>
                 </div>
+                <!-- Authority Manager (Owner Only) -->
+                <div id="ledgerAuthorityPanel" style="display: none; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                    <h4 style="font-family: 'Orbitron', sans-serif; color: var(--neon-magenta); font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase;">👑 Authority Control Panel</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-secondary);">TARGET CONTRACT:</label>
+                            <select id="ledgerAuthorityTarget" style="width: 100%; background: #000; color: #fff; border: 1px solid var(--neon-purple); padding: 6px; font-size: 0.8rem; border-radius: 4px; outline: none;"></select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-secondary);">OWNER ADDRESS:</label>
+                            <input type="text" id="txtLedgerAuthorityOwner" style="width: 100%; background: #000; color: #fff; border: 1px solid var(--neon-purple); padding: 6px; font-family: monospace; font-size: 0.85rem; border-radius: 4px; box-sizing: border-box;" placeholder="0x...">
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-connect" onclick="ledgerAddOwner()" style="flex: 1; padding: 6px; font-size: 0.8rem; margin: 0;">Add Owner</button>
+                            <button class="btn btn-secondary" onclick="ledgerRenounceOwner()" style="flex: 1; padding: 6px; font-size: 0.8rem; border-color: var(--neon-magenta); background: rgba(255,0,127,0.1); color: #fff; margin: 0;">Renounce</button>
+                        </div>
+                        <div id="ledgerAuthorityResult" style="font-family: monospace; font-size: 0.75rem; color: #00ffcc; word-break: break-all; margin-top: 4px;"></div>
+                    </div>
+                </div>
             </section>
 
             <!-- Right Side: CABS Store & Journal Logs -->
@@ -443,6 +462,7 @@ Loading ZMM VM inventory coordinates and items...
                 networkBadge.className = "network-badge connected";
 
                 await updateBalances(address);
+                await checkLedgerOwnership(address);
             } catch (err) {
                 log(`Connection failed: ${err.message}`, "error");
             }
@@ -864,6 +884,11 @@ Loading ZMM VM inventory coordinates and items...
                 }
                 ledgerJournalBody.innerHTML = journalHtml;
                 log(`Double-entry balances queried successfully from live ERC20 token at ${tokenAddr}.`, "success");
+                
+                if (signer) {
+                    const address = await signer.getAddress();
+                    await checkLedgerOwnership(address);
+                }
             } catch (e) {
                 log(`ERC20 Balance query error: ${e.message}`, "error");
             }
@@ -1392,6 +1417,114 @@ Loading ZMM VM inventory coordinates and items...
                 await updateCrowsRankings();
             } catch (err) {
                 console.error("Auto-update failed:", err);
+            }
+        }
+
+        async function checkLedgerOwnership(userAddr) {
+            const panel = document.getElementById("ledgerAuthorityPanel");
+            const select = document.getElementById("ledgerAuthorityTarget");
+            if (!userAddr) {
+                panel.style.display = "none";
+                return;
+            }
+            
+            const contractsToCheck = [];
+            if (config.networks && config.networks.localhost) {
+                const lh = config.networks.localhost;
+                if (lh.mariarahelLau) contractsToCheck.push({ name: "LAU Contract", address: lh.mariarahelLau });
+                if (lh.CHO) contractsToCheck.push({ name: "CHO Contract", address: lh.CHO });
+                if (lh.zmachineAddress) contractsToCheck.push({ name: "ZMachine Contract", address: lh.zmachineAddress });
+                if (lh.ledgerAddress) contractsToCheck.push({ name: "Ledger Contract", address: lh.ledgerAddress });
+            }
+            
+            select.innerHTML = "";
+            let ownCount = 0;
+            const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+            
+            for (const c of contractsToCheck) {
+                try {
+                    const contract = new ethers.Contract(c.address, [
+                        "function owner(address) external view returns (bool)"
+                    ], activeProvider);
+                    const isOwner = await contract.owner(userAddr);
+                    if (isOwner) {
+                        const opt = document.createElement("option");
+                        opt.value = c.address;
+                        opt.textContent = `${c.name} (${c.address.substring(0,6)}...)`;
+                        select.appendChild(opt);
+                        ownCount++;
+                    }
+                } catch(e) {}
+            }
+            
+            if (ownCount > 0) {
+                panel.style.display = "block";
+            } else {
+                panel.style.display = "none";
+            }
+        }
+
+        async function ledgerAddOwner() {
+            if (!signer) {
+                alert("Please connect wallet first.");
+                return;
+            }
+            const target = document.getElementById("ledgerAuthorityTarget").value;
+            const newOwner = document.getElementById("txtLedgerAuthorityOwner").value.trim();
+            const resultDiv = document.getElementById("ledgerAuthorityResult");
+            if (!ethers.isAddress(newOwner)) {
+                alert("Invalid address.");
+                return;
+            }
+            try {
+                resultDiv.textContent = "⏳ Sending transaction...";
+                resultDiv.style.color = "var(--neon-blue)";
+                const contract = new ethers.Contract(target, [
+                    "function addOwner(address) external"
+                ], signer);
+                const tx = await contract.addOwner(newOwner);
+                resultDiv.textContent = `⏳ Pending confirmation: ${tx.hash.substring(0, 10)}...`;
+                await tx.wait();
+                resultDiv.textContent = "🟢 Owner added successfully!";
+                resultDiv.style.color = "#00ffcc";
+                document.getElementById("txtLedgerAuthorityOwner").value = "";
+                await checkLedgerOwnership(await signer.getAddress());
+            } catch (err) {
+                console.error(err);
+                resultDiv.textContent = `❌ Error: ${err.message}`;
+                resultDiv.style.color = "var(--neon-magenta)";
+            }
+        }
+
+        async function ledgerRenounceOwner() {
+            if (!signer) {
+                alert("Please connect wallet first.");
+                return;
+            }
+            const target = document.getElementById("ledgerAuthorityTarget").value;
+            const removeOwner = document.getElementById("txtLedgerAuthorityOwner").value.trim();
+            const resultDiv = document.getElementById("ledgerAuthorityResult");
+            if (!ethers.isAddress(removeOwner)) {
+                alert("Invalid address.");
+                return;
+            }
+            try {
+                resultDiv.textContent = "⏳ Sending transaction...";
+                resultDiv.style.color = "var(--neon-blue)";
+                const contract = new ethers.Contract(target, [
+                    "function renounceOwnership(address) external"
+                ], signer);
+                const tx = await contract.renounceOwnership(removeOwner);
+                resultDiv.textContent = `⏳ Pending confirmation: ${tx.hash.substring(0, 10)}...`;
+                await tx.wait();
+                resultDiv.textContent = "🟢 Ownership renounced!";
+                resultDiv.style.color = "#00ffcc";
+                document.getElementById("txtLedgerAuthorityOwner").value = "";
+                await checkLedgerOwnership(await signer.getAddress());
+            } catch (err) {
+                console.error(err);
+                resultDiv.textContent = `❌ Error: ${err.message}`;
+                resultDiv.style.color = "var(--neon-magenta)";
             }
         }
 

@@ -451,13 +451,15 @@ src/firmware/LauWireFirmware_rtl.c src/firmware/LauWireFirmware_rtl.h: src/firmw
 	./bin/tsfi_v2c $<
 
 # --- Object Rules ---
-$(OBJ_DIR)/tsfi_wire_firmware.o: src/tsfi_wire_firmware.c src/firmware/LauWireFirmware_rtl.h
+$(OBJ_DIR)/tsfi_wire_firmware.o: src/tsfi_wire_firmware.c src/firmware/LauWireFirmware_rtl.h | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: src/firmware/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/firmware/%.o: src/firmware/%.c | $(OBJ_DIR)/firmware
@@ -465,12 +467,15 @@ $(OBJ_DIR)/firmware/%.o: src/firmware/%.c | $(OBJ_DIR)/firmware
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: plugins/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: plugins/vulkan/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: plugins/window_src/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR):

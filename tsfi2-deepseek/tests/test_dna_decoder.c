@@ -70,9 +70,13 @@ int main() {
     }
     
     uint32_t compiled_frames = *(uint32_t*)(dna_map + 4);
-    TsfiDNAFrame *dna_frames = (TsfiDNAFrame*)(dna_map + 8);
+    float epibar = *(float*)(dna_map + 8);
+    float hypobar = *(float*)(dna_map + 12);
+    TsfiDNAFrame *dna_frames = (TsfiDNAFrame*)(dna_map + 16);
     
-    if (compiled_frames < TOTAL_FRAMES) {
+    printf("[DNA LOG] Compiled Frames: %u, Epibar: %.4f, Hypobar: %.4f\n", compiled_frames, epibar, hypobar);
+    
+    if (compiled_frames < (uint32_t)TOTAL_FRAMES) {
         TOTAL_FRAMES = compiled_frames;
     }
     
@@ -85,10 +89,6 @@ int main() {
         
         TsfiDNAFrame dna = dna_frames[f];
         float time_offset = f * 0.1f;
-        
-        // Deep Volumetric Constraints (Phase 0 and 3.5)
-        float head_radius = 200.0f + (dna.pulse * 5.0f);
-        float pupil_radius = 20.0f + (fabsf(dna.pulse) * 15.0f);
         
         for (int y = 100; y < 1400; y++) {
             int row_idx = y * W * 3;
