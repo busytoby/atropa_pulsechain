@@ -914,7 +914,19 @@
                         ];
                     }
 
-                    const qing = await getQingAddress(tok.address);
+                    const LAU_ADDR = "0x6c615C766EE6b7e69275b0D070eF50acc93ab880";
+                    const DYS_ADDR = "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
+                    
+                    let hasMap = false, hasChan = false, hasLau = false, hasDys = false;
+                    try { hasMap = (await globalProvider.getCode(MAP_ADDR)) !== "0x"; } catch(e){}
+                    try { hasChan = (await globalProvider.getCode(CHAN_ADDR)) !== "0x"; } catch(e){}
+                    try { hasLau = (await globalProvider.getCode(LAU_ADDR)) !== "0x"; } catch(e){}
+                    try { hasDys = (await globalProvider.getCode(DYS_ADDR)) !== "0x"; } catch(e){}
+                    
+                    const systemActive = hasMap && hasChan && hasLau && hasDys;
+                    tok.systemActive = systemActive;
+
+                    const qing = systemActive ? await getQingAddress(tok.address) : null;
                     if (qing) {
                         const yueRes = await resolveYueContract(tok.address);
                         const yueAddresses = Array.isArray(yueRes) ? yueRes : [yueRes];
@@ -930,6 +942,9 @@
                         }
                         tok.hypobar = Number(maxHypobar);
                         tok.epibar = Number(maxEpibar);
+                    } else {
+                        tok.hypobar = 0;
+                        tok.epibar = 0;
                     }
 
                     if (!document.getElementById("chkOverrideStats").checked) {
@@ -1216,6 +1231,7 @@
 
         function getEffectiveStats() {
             if (!activeCard) return { hypobar: 0, epibar: 0 };
+            if (!activeCard.systemActive) return { hypobar: 0, epibar: 0 };
             const checked = document.getElementById("chkOverrideStats").checked;
             if (checked) {
                 const h = Math.max(0, parseInt(document.getElementById("txtHypobarOverride").value) || 0);
@@ -1230,17 +1246,42 @@
             const stats = getEffectiveStats();
             const statsContainer = document.getElementById("cardStats");
             
+            const txtH = document.getElementById("txtHypobarOverride");
+            const rngH = document.getElementById("rngHypobarOverride");
+            const txtE = document.getElementById("txtEpibarOverride");
+            const rngE = document.getElementById("rngEpibarOverride");
+            const chk = document.getElementById("chkOverrideStats");
+
+            if (!activeCard.systemActive) {
+                txtH.disabled = true; rngH.disabled = true;
+                txtE.disabled = true; rngE.disabled = true;
+                chk.disabled = true;
+                txtH.value = 0; rngH.value = 0;
+                txtE.value = 0; rngE.value = 0;
+            } else {
+                txtH.disabled = false; rngH.disabled = false;
+                txtE.disabled = false; rngE.disabled = false;
+                chk.disabled = false;
+            }
+
             const hypoBoost = stats.hypobar > 0 ? Math.floor(Math.log10(stats.hypobar + 1) * 2) : 0;
             const epiBoost = stats.epibar > 0 ? Math.floor(Math.log10(stats.epibar + 1) * 2) : 0;
 
-            const isOverridden = document.getElementById("chkOverrideStats").checked;
+            const isOverridden = chk.checked;
             const labelStr = isOverridden ? "SIMULATED STATS BOOSTS:" : "LIVE STATS BOOSTS:";
 
-            statsContainer.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 5px; color: ${isOverridden ? 'var(--secondary)' : 'var(--primary)'};">${labelStr}</div>
-                <div>Hypobar: ${stats.hypobar} (+${hypoBoost} ATK/BURST)</div>
-                <div>Epibar: ${stats.epibar} (+${epiBoost} DEF/SHIELD)</div>
-            `;
+            if (!activeCard.systemActive) {
+                statsContainer.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px; color: var(--muted);">⚠️ Ecosystem Systems Incomplete</div>
+                    <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.3;">QING, YUE, LAU, and DYSNOMIA systems must be active/resolved on-chain before using these bars.</div>
+                `;
+            } else {
+                statsContainer.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px; color: ${isOverridden ? 'var(--secondary)' : 'var(--primary)'};">${labelStr}</div>
+                    <div>Hypobar: ${stats.hypobar} (+${hypoBoost} ATK/BURST)</div>
+                    <div>Epibar: ${stats.epibar} (+${epiBoost} DEF/SHIELD)</div>
+                `;
+            }
             statsContainer.style.color = isOverridden ? "var(--secondary)" : "var(--primary)";
         }
 
