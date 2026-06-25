@@ -117,6 +117,10 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
     bionika_leak = 0.95
     bionika_threshold = 1.0
     
+    # Sub-accumulator states
+    bionika_vsub = 0.0
+    bionika_sub_leak = 0.98
+    
     # Acoustic tract load
     r_tract = 0.95
     y_tract, y_tract_prev = 0.0, 0.0
@@ -155,8 +159,11 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
             bionika_vm = 0.0
             fired = 1
             
-        # Neural modulation: Spikes shift base pitch higher, V_m increases tract damping
-        pitch_mod = 1.0 + (bionika_vm * 0.15) + (fired * 0.25)
+        # Sub-Accumulator: integrates threshold spike discharge events
+        bionika_vsub = bionika_vsub * bionika_sub_leak + (fired * 0.40)
+            
+        # Exponential pitch envelope modulated by nested accumulator and sub-accumulator
+        pitch_mod = math.exp(0.12 * bionika_vm + 0.35 * bionika_vsub)
         base_melody_freq = 180.0 * pitch_mod  # base frequency
         
         # Map frequency to stiffness scaling
