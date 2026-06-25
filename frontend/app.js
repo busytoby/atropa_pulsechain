@@ -613,56 +613,67 @@ function renderSynthHardwareDeck() {
     const synthHardwareDeck = document.getElementById("synthHardwareDeck");
     if (!synthHardwareDeck) return;
 
-    const synthModules = [
-        {
-            name: "TB-303 Acid Bass Engine",
-            topology: "4-Pole Diode-Ladder Lowpass Filter Cascade",
-            saturation: "Triode Valve emulation / non-linear tanhf saturation",
-            features: "Exponential RC slide glide loop & VCA decay envelope",
-            status: "ACTIVE (TEDDY 303)",
-            glow: "#32ff6a",
-            desc: "Models individual capacitor discharge loops and internal diode forward resistance to replicate authentic 24dB/oct acid resonance."
-        },
-        {
-            name: "MOS 6581 SID Sound Card",
-            topology: "3-Voice Multi-waveform Synthesizer + Analog Filter",
-            saturation: "Standard linear mixing / optional overdrive thunk",
-            features: "ADSR envelope generators, Ring Modulation, Oscillator Sync",
-            status: "EMULATED (YUL)",
-            glow: "var(--neon-magenta)",
-            desc: "Faithful clock-cycle emulation of the SID sound chip compiled via musicMaker.yul. Controls arpeggiators and voice frequency registers."
-        },
-        {
-            name: "TR-808 Kick Drum Engine",
-            topology: "Active 2-Pole Bridged-T Resonator Circuit",
-            saturation: "Triode valve saturation overlay",
-            features: "1ms capacitor trigger impulse & decay depth selector",
-            status: "ACTIVE",
-            glow: "var(--neon-amber)",
-            desc: "Simulates an active twin-T bandpass filter driven into self-oscillation by a trigger pulse, creating the signature 808 sub bass decay."
-        },
-        {
-            name: "TMS5220 LPC Vocoder",
-            topology: "10-Stage Lattice Filter Speech Synthesizer",
-            saturation: "TMS5220 specific clipping models",
-            features: "K1-K10 reflection coefficient interpolation",
-            status: "EMULATED (C64)",
-            glow: "var(--neon-cyan)",
-            desc: "Linear Predictive Coding voice model reproducing Speak & Spell audio thunks. Uses dynamic lattice filters to morph voice timbres."
-        },
-        {
-            name: "Zener Diode Avalanche Shaper",
-            topology: "Series Resistor Rs + Zener Breakdown Model",
-            saturation: "Avalanche breakdown clipping & dynamic thermal regulation",
-            features: "5mV white noise avalanche generator & self-heating tracking",
-            status: "ACTIVE (PHYSICS)",
-            glow: "#ff9f1c",
-            desc: "Implements physical models of forward p-n junction conduction, temperature-dependent breakdown, and high-frequency avalanche noise generators."
-        }
-    ];
+    if (!window.synthModules) {
+        window.synthModules = [
+            {
+                name: "TB-303 Acid Bass Engine",
+                topology: "4-Pole Diode-Ladder Lowpass Filter Cascade",
+                saturation: "Triode Valve emulation / non-linear tanhf saturation",
+                features: "Exponential RC slide glide loop & VCA decay envelope",
+                status: "ACTIVE (TEDDY 303)",
+                glow: "#32ff6a",
+                desc: "Models individual capacitor discharge loops and internal diode forward resistance to replicate authentic 24dB/oct acid resonance."
+            },
+            {
+                name: "MOS 6581 SID Sound Card",
+                topology: "3-Voice Multi-waveform Synthesizer + Analog Filter",
+                saturation: "Standard linear mixing / optional overdrive thunk",
+                features: "ADSR envelope generators, Ring Modulation, Oscillator Sync",
+                status: "EMULATED (YUL)",
+                glow: "var(--neon-magenta)",
+                desc: "Faithful clock-cycle emulation of the SID sound chip compiled via musicMaker.yul. Controls arpeggiators and voice frequency registers."
+            },
+            {
+                name: "TR-808 Kick Drum Engine",
+                topology: "Active 2-Pole Bridged-T Resonator Circuit",
+                saturation: "Triode valve saturation overlay",
+                features: "1ms capacitor trigger impulse & decay depth selector",
+                status: "ACTIVE",
+                glow: "var(--neon-amber)",
+                desc: "Simulates an active twin-T bandpass filter driven into self-oscillation by a trigger pulse, creating the signature 808 sub bass decay."
+            },
+            {
+                name: "TMS5220 LPC Vocoder",
+                topology: "10-Stage Lattice Filter Speech Synthesizer",
+                saturation: "TMS5220 specific clipping models",
+                features: "K1-K10 reflection coefficient interpolation",
+                status: "EMULATED (C64)",
+                glow: "var(--neon-cyan)",
+                desc: "Linear Predictive Coding voice model reproducing Speak & Spell audio thunks. Uses dynamic lattice filters to morph voice timbres."
+            },
+            {
+                name: "Zener Diode Avalanche Shaper",
+                topology: "Series Resistor Rs + Zener Breakdown Model",
+                saturation: "Avalanche breakdown clipping & dynamic thermal regulation",
+                features: "5mV white noise avalanche generator & self-heating tracking",
+                status: "ACTIVE (PHYSICS)",
+                glow: "#ff9f1c",
+                desc: "Implements physical models of forward p-n junction conduction, temperature-dependent breakdown, and high-frequency avalanche noise generators."
+            },
+            {
+                name: "Auncient Tessarant Spatial Modulator",
+                topology: "4D Hyper-Perspective Projection (XY/XZ/XW/YZ/YW/ZW)",
+                saturation: "WinchesterMQ SCSI data register latching overdrive",
+                features: "Dynamic hyper-focal distance shift & joint deformation",
+                status: "ACTIVE (4D)",
+                glow: "var(--neon-blue)",
+                desc: "Projects 16-vertex hyper-volumes from 4D space into 3D. Modulates corner offsets dynamically through the Auncient WinchesterMQ bus registers."
+            }
+        ];
+    }
 
     synthHardwareDeck.innerHTML = "";
-    synthModules.forEach(mod => {
+    window.synthModules.forEach((mod, idx) => {
         const cardNode = document.createElement("div");
         cardNode.style.background = "rgba(10, 10, 15, 0.6)";
         cardNode.style.border = `1px solid ${mod.glow}40`;
@@ -672,6 +683,8 @@ function renderSynthHardwareDeck() {
         cardNode.style.flexDirection = "column";
         cardNode.style.gap = "6px";
         cardNode.style.transition = "border-color 0.2s, box-shadow 0.2s";
+        cardNode.draggable = true;
+        cardNode.style.cursor = "grab";
 
         cardNode.onmouseover = () => {
             cardNode.style.borderColor = mod.glow;
@@ -681,6 +694,42 @@ function renderSynthHardwareDeck() {
             cardNode.style.borderColor = `${mod.glow}40`;
             cardNode.style.boxShadow = "none";
         };
+
+        // Drag & Drop event handlers
+        cardNode.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", idx);
+            e.dataTransfer.effectAllowed = "move";
+            cardNode.style.opacity = "0.5";
+            window.draggedDeckType = "synth";
+        });
+        cardNode.addEventListener("dragend", () => {
+            cardNode.style.opacity = "1";
+        });
+        cardNode.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        });
+        cardNode.addEventListener("dragenter", () => {
+            if (window.draggedDeckType === "synth") {
+                cardNode.style.borderColor = mod.glow;
+                cardNode.style.borderStyle = "dashed";
+            }
+        });
+        cardNode.addEventListener("dragleave", () => {
+            cardNode.style.borderColor = `${mod.glow}40`;
+            cardNode.style.borderStyle = "solid";
+        });
+        cardNode.addEventListener("drop", (e) => {
+            e.preventDefault();
+            if (window.draggedDeckType !== "synth") return;
+            const fromIdx = parseInt(e.dataTransfer.getData("text/plain"));
+            const toIdx = idx;
+            if (fromIdx !== toIdx) {
+                const moved = window.synthModules.splice(fromIdx, 1)[0];
+                window.synthModules.splice(toIdx, 0, moved);
+                renderSynthHardwareDeck();
+            }
+        });
 
         cardNode.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -704,57 +753,67 @@ function renderYulHardwareDeck() {
     const yulHardwareDeck = document.getElementById("yulHardwareDeck");
     if (!yulHardwareDeck) return;
 
-    // Define virtual hardware modules compiled in Yul
-    const hardwareModules = [
-        {
-            name: "cpu6502 (folklore.yul)",
-            role: "MOS 6502 instruction execution core",
-            vaddr: "0x0000000000000001",
-            capacity: "256 registers + stack segments",
-            revision: "v1.2a",
-            glow: "var(--neon-blue)",
-            desc: "Implements strict instruction decoding, program counter incrementation, stack pointer, and ALU flags logic."
-        },
-        {
-            name: "graphicsSystem (graphicsSystem.yul)",
-            role: "VIC-II Video Controller emulation thunk",
-            vaddr: "0x0000000000000002",
-            capacity: "Color RAM, coordinates, sprite colliders",
-            revision: "v2.0-beta",
-            glow: "var(--neon-magenta)",
-            desc: "Calculates scanline offsets, parses coordinate bounds for up to 8 sprites, and registers collision overlaps."
-        },
-        {
-            name: "musicMaker (musicMaker.yul)",
-            role: "SID 6581 sound synthesis engine",
-            vaddr: "0x0000000000000003",
-            capacity: "3 voices, ADSR envelope generators",
-            revision: "v1.4",
-            glow: "var(--neon-amber)",
-            desc: "Modulates sawtooth, triangle, noise wave shapes, and drives low-pass filter thunks with resonance parameters."
-        },
-        {
-            name: "diskSystem (diskSystem.yul)",
-            role: "Commodore 1541 Disk Drive sector encoder",
-            vaddr: "0x0000000000000004",
-            capacity: "Dynamic sector index, head tracking",
-            revision: "v1.0",
-            glow: "var(--neon-cyan)",
-            desc: "Simulates physical floppy drive sectors, GCR alignment sync marks, and directory header queries."
-        },
-        {
-            name: "dc (dc.yul)",
-            role: "On-chain RPN postfix calculator",
-            vaddr: "Local Contract Call (dc)",
-            capacity: "Math expression compiler",
-            revision: "v1.1",
-            glow: "#32ff6a",
-            desc: "Operates math stacks dynamically on-chain using Yul assembly instructions like add, sub, mul, div, sload."
-        }
-    ];
+    if (!window.hardwareModules) {
+        window.hardwareModules = [
+            {
+                name: "cpu6502 (folklore.yul)",
+                role: "MOS 6502 instruction execution core",
+                vaddr: "0x0000000000000001",
+                capacity: "256 registers + stack segments",
+                revision: "v1.2a",
+                glow: "var(--neon-blue)",
+                desc: "Implements strict instruction decoding, program counter incrementation, stack pointer, and ALU flags logic."
+            },
+            {
+                name: "graphicsSystem (graphicsSystem.yul)",
+                role: "VIC-II Video Controller emulation thunk",
+                vaddr: "0x0000000000000002",
+                capacity: "Color RAM, coordinates, sprite colliders",
+                revision: "v2.0-beta",
+                glow: "var(--neon-magenta)",
+                desc: "Calculates scanline offsets, parses coordinate bounds for up to 8 sprites, and registers collision overlaps."
+            },
+            {
+                name: "musicMaker (musicMaker.yul)",
+                role: "SID 6581 sound synthesis engine",
+                vaddr: "0x0000000000000003",
+                capacity: "3 voices, ADSR envelope generators",
+                revision: "v1.4",
+                glow: "var(--neon-amber)",
+                desc: "Modulates sawtooth, triangle, noise wave shapes, and drives low-pass filter thunks with resonance parameters."
+            },
+            {
+                name: "diskSystem (diskSystem.yul)",
+                role: "Commodore 1541 Disk Drive sector encoder",
+                vaddr: "0x0000000000000004",
+                capacity: "Dynamic sector index, head tracking",
+                revision: "v1.0",
+                glow: "var(--neon-cyan)",
+                desc: "Simulates physical floppy drive sectors, GCR alignment sync marks, and directory header queries."
+            },
+            {
+                name: "dc (dc.yul)",
+                role: "On-chain RPN postfix calculator",
+                vaddr: "Local Contract Call (dc)",
+                capacity: "Math expression compiler",
+                revision: "v1.1",
+                glow: "#32ff6a",
+                desc: "Operates math stacks dynamically on-chain using Yul assembly instructions like add, sub, mul, div, sload."
+            },
+            {
+                name: "tessarantEngine (tessarant.yul)",
+                role: "Auncient 4D collision & deformation processor",
+                vaddr: "0x0000000000000005",
+                capacity: "16 vertices, 24 cyclic faces, 6-axis rotation",
+                revision: "v4.0-auncient",
+                glow: "var(--neon-magenta)",
+                desc: "Implements 4D rotational kinematics, perspective projection pipelines, hyper-sphere bounding volume collision resolution, and register-based joint sabotage."
+            }
+        ];
+    }
 
     yulHardwareDeck.innerHTML = "";
-    hardwareModules.forEach(mod => {
+    window.hardwareModules.forEach((mod, idx) => {
         const cardNode = document.createElement("div");
         cardNode.style.background = "rgba(10, 10, 15, 0.7)";
         cardNode.style.border = `1px solid ${mod.glow}`;
@@ -766,6 +825,8 @@ function renderYulHardwareDeck() {
         cardNode.style.flexDirection = "column";
         cardNode.style.gap = "8px";
         cardNode.style.transition = "transform 0.2s, box-shadow 0.2s";
+        cardNode.draggable = true;
+        cardNode.style.cursor = "grab";
 
         // Add subtle hover effect via JS
         cardNode.onmouseover = () => {
@@ -776,6 +837,40 @@ function renderYulHardwareDeck() {
             cardNode.style.transform = "none";
             cardNode.style.boxShadow = `0 4px 15px ${mod.glow}20`;
         };
+
+        // Drag & Drop event handlers
+        cardNode.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", idx);
+            e.dataTransfer.effectAllowed = "move";
+            cardNode.style.opacity = "0.5";
+            window.draggedDeckType = "yul";
+        });
+        cardNode.addEventListener("dragend", () => {
+            cardNode.style.opacity = "1";
+        });
+        cardNode.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        });
+        cardNode.addEventListener("dragenter", () => {
+            if (window.draggedDeckType === "yul") {
+                cardNode.style.borderStyle = "dashed";
+            }
+        });
+        cardNode.addEventListener("dragleave", () => {
+            cardNode.style.borderStyle = "solid";
+        });
+        cardNode.addEventListener("drop", (e) => {
+            e.preventDefault();
+            if (window.draggedDeckType !== "yul") return;
+            const fromIdx = parseInt(e.dataTransfer.getData("text/plain"));
+            const toIdx = idx;
+            if (fromIdx !== toIdx) {
+                const moved = window.hardwareModules.splice(fromIdx, 1)[0];
+                window.hardwareModules.splice(toIdx, 0, moved);
+                renderYulHardwareDeck();
+            }
+        });
 
         cardNode.innerHTML = `
             <div style="font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: bold; color: ${mod.glow}; letter-spacing: 0.5px;">${mod.name.toUpperCase()}</div>

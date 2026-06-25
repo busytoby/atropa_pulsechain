@@ -74,6 +74,48 @@ object "SpeechSynthesizer" {
             }
 
             // ----------------------------------------------------------------
+            // Method: getSpeechStateExtended() -> (uint256, uint256, uint256, uint256, uint256, uint256, uint256)
+            // Selector: 0xd0e83b8b
+            // ----------------------------------------------------------------
+            if eq(selector, 0xd0e83b8b) {
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
+                let p := peekUser(cpu, callerAddr, 54784)
+                let inf := peekUser(cpu, callerAddr, 54785)
+                let busy := peekUser(cpu, callerAddr, 54786)
+                let counter := peekUser(cpu, callerAddr, 54787)
+                let glide := peekUser(cpu, callerAddr, 54788)
+                let vibrato := peekUser(cpu, callerAddr, 54789)
+                let acousticHash := peekUser(cpu, callerAddr, 54796)
+                
+                mstore(0x00, p)
+                mstore(0x20, inf)
+                mstore(0x40, busy)
+                mstore(0x60, counter)
+                mstore(0x80, glide)
+                mstore(0xa0, vibrato)
+                mstore(0xc0, acousticHash)
+                return(0x00, 224)
+            }
+
+            // ----------------------------------------------------------------
+            // Method: writeSpeechControlsExtended(uint256 glide, uint256 vibrato) -> uint256
+            // Selector: 0x789b21f0
+            // ----------------------------------------------------------------
+            if eq(selector, 0x789b21f0) {
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
+                let glide := calldataload(4)
+                let vibrato := calldataload(36)
+                
+                pokeUser(cpu, callerAddr, 54788, glide)
+                pokeUser(cpu, callerAddr, 54789, vibrato)
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // Method: writePhoneme(uint256 phoneme, uint256 inflection) -> uint256
             // Selector: 0xe435320e
             // ----------------------------------------------------------------
@@ -643,6 +685,8 @@ object "SpeechSynthesizer" {
             // Selector: 0xfae0b699
             // ----------------------------------------------------------------
             if eq(selector, 0xfae0b699) {
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
                 let synthKey := calldataload(4)
                 let numSamples := calldataload(36)
                 if gt(numSamples, 1000) { numSamples := 1000 }
@@ -779,12 +823,36 @@ object "SpeechSynthesizer" {
                         }
                         let noise := sub(mod(seed, 200), 100) // [-100, 100]
 
-                        // Pitch contour + Jitter (using seed)
+                        // Extended Pitch contour tracking with Glide
                         let baseContourPitch := synthBasePitch
-                        let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
-                        let jitteredPitch := add(baseContourPitch, sdiv(mul(baseContourPitch, jitterPercent), 1000))
+                        let targetPitch := peekUser(cpu, callerAddr, 54785)
+                        if iszero(targetPitch) { targetPitch := synthBasePitch }
                         
-                        // 5.2Hz triangle vibrato LFO (phase step = 128 samples)
+                        let glideRate := peekUser(cpu, callerAddr, 54788)
+                        let currentPitch := baseContourPitch
+                        
+                        // Linear glide interpolation step per sample time 't'
+                        if and(glideRate, gt(t, 0)) {
+                            let steps := mul(t, glideRate)
+                            if lt(steps, 1000) {
+                                let diff := sub(targetPitch, baseContourPitch)
+                                currentPitch := add(baseContourPitch, sdiv(mul(diff, steps), 1000))
+                            }
+                            if iszero(lt(steps, 1000)) {
+                                currentPitch := targetPitch
+                            }
+                        }
+                        if iszero(glideRate) {
+                            currentPitch := targetPitch
+                        }
+
+                        let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
+                        let jitteredPitch := add(currentPitch, sdiv(mul(currentPitch, jitterPercent), 1000))
+                        
+                        // 5.2Hz triangle vibrato LFO with dynamic Vibrato Depth ($D605)
+                        let vibDepth := peekUser(cpu, callerAddr, 54789)
+                        if iszero(vibDepth) { vibDepth := 6 } // default depth
+                        
                         let vibratoPhase := mod(div(t, 128), 24)
                         let vibratoOffset := 0
                         if lt(vibratoPhase, 12) {
@@ -793,6 +861,7 @@ object "SpeechSynthesizer" {
                         if iszero(lt(vibratoPhase, 12)) {
                             vibratoOffset := sub(18, vibratoPhase)
                         }
+                        vibratoOffset := sdiv(mul(vibratoOffset, vibDepth), 6)
                         let finalPitch := add(jitteredPitch, vibratoOffset)
 
                         let period := div(16000, finalPitch)
@@ -856,6 +925,11 @@ object "SpeechSynthesizer" {
                     let pcmVal := mul(forward, 8)
                     if sgt(pcmVal, 32767) { pcmVal := 32767 }
                     if slt(pcmVal, sub(0, 32768)) { pcmVal := sub(0, 32768) }
+
+                    // Accumulate deterministic Acoustic Hash ($D60C / 54796)
+                    let currentHash := peekUser(cpu, callerAddr, 54796)
+                    currentHash := and(add(mul(currentHash, 33), and(pcmVal, 0xFFFF)), 0xFFFFFFFF)
+                    pokeUser(cpu, callerAddr, 54796, currentHash)
 
                     // Pack 16-bit values sequentially starting at offset 0x5040
                     let byteOffset := mul(t, 2)
@@ -1580,9 +1654,23 @@ object "SpeechSynthesizer" {
                         for { let i := 10 } gt(i, 0) { } {
                             i := sub(i, 1)
                             let K := mload(add(0x4300, mul(i, 32)))
+                            
+                            // On-chain Post-filter Spectral Sharpening: Scale K by gamma^i (gamma = 0.88)
+                            let gamma := 128
+                            if eq(i, 1) { gamma := 112 }
+                            if eq(i, 2) { gamma := 98 }
+                            if eq(i, 3) { gamma := 86 }
+                            if eq(i, 4) { gamma := 75 }
+                            if eq(i, 5) { gamma := 66 }
+                            if eq(i, 6) { gamma := 58 }
+                            if eq(i, 7) { gamma := 51 }
+                            if eq(i, 8) { gamma := 44 }
+                            if eq(i, 9) { gamma := 39 }
+                            let K_sharp := sdiv(mul(K, gamma), 128)
+                            
                             let delayVal := mload(add(0x2000, mul(i, 32)))
-                            let nextForward := sub(forward, sdiv(mul(K, delayVal), 128))
-                            let nextDelay := add(delayVal, sdiv(mul(K, nextForward), 128))
+                            let nextForward := sub(forward, sdiv(mul(K_sharp, delayVal), 128))
+                            let nextDelay := add(delayVal, sdiv(mul(K_sharp, nextForward), 128))
                             mstore(add(0x2000, mul(add(i, 1), 32)), nextDelay)
                             forward := nextForward
                         }
@@ -2096,6 +2184,145 @@ object "SpeechSynthesizer" {
 
                 let paddedBytesLen := mul(div(add(totalOutputBytes, 31), 32), 32)
                 return(0x6000, add(64, paddedBytesLen))
+            }
+
+            // ----------------------------------------------------------------
+            // Method: trainOnPhoneme(bytes32 name, bytes32 phoneme) -> (uint256, uint256)
+            // Selector: 0x7802b32f
+            // ----------------------------------------------------------------
+            if eq(selector, 0x7802b32f) {
+                let name := calldataload(4)
+                let key := calldataload(36)
+
+                // Load speaker embedding
+                mstore(0x00, name)
+                mstore(0x20, 0x9999)
+                let baseSlot := keccak256(0x00, 0x40)
+                for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                    mstore(add(0x4000, mul(i, 32)), sload(add(baseSlot, i)))
+                }
+
+                // Load phoneme targets
+                for { let j := 0 } lt(j, 8) { j := add(j, 1) } { mstore(add(0x3000, mul(j, 32)), 0) }
+                let synthTwoChars := and(key, 0xFFFF000000000000000000000000000000000000000000000000000000000000)
+                let synthOneChar := and(key, 0xFF00000000000000000000000000000000000000000000000000000000000000)
+
+                if eq(synthTwoChars, 0x6161000000000000000000000000000000000000000000000000000000000000) {
+                    mstore(0x3000, 90) mstore(0x3020, 10) mstore(0x3040, sub(0, 50)) mstore(0x3060, 80)
+                    mstore(0x3080, sub(0, 20)) mstore(0x30a0, 10) mstore(0x30c0, sub(0, 10)) mstore(0x30e0, 5)
+                }
+                if eq(synthTwoChars, 0x6565000000000000000000000000000000000000000000000000000000000000) {
+                    mstore(0x3000, 95) mstore(0x3020, 20) mstore(0x3040, sub(0, 30)) mstore(0x3060, 90)
+                    mstore(0x3080, sub(0, 10)) mstore(0x30a0, 15) mstore(0x30c0, sub(0, 5)) mstore(0x30e0, 10)
+                }
+                if eq(synthTwoChars, 0x6f6f000000000000000000000000000000000000000000000000000000000000) {
+                    mstore(0x3000, 85) mstore(0x3020, 5) mstore(0x3040, sub(0, 60)) mstore(0x3060, 70)
+                    mstore(0x3080, sub(0, 30)) mstore(0x30a0, 5) mstore(0x30c0, sub(0, 15)) mstore(0x30e0, 0)
+                }
+
+                // Input vector x_c is phoneme + speaker embedding
+                for { let j := 0 } lt(j, 8) { j := add(j, 1) } {
+                    let phVal := mload(add(0x3000, mul(j, 32)))
+                    let spkVal := mload(add(0x4000, mul(j, 32)))
+                    mstore(add(0x3000, mul(j, 32)), add(phVal, spkVal))
+                }
+
+                // Load current weights
+                let weights0 := sload(0x7777)
+                let weights1 := sload(0x7778)
+
+                // Run forward pass to get current outputs y_r
+                for { let r := 0 } lt(r, 8) { r := add(r, 1) } {
+                    let dot := 0
+                    let bias := 0
+                    if eq(r, 0) { bias := 10 }
+                    if eq(r, 1) { bias := sub(0, 5) }
+                    if eq(r, 2) { bias := 15 }
+                    if eq(r, 4) { bias := 5 }
+                    if eq(r, 5) { bias := sub(0, 10) }
+                    if eq(r, 6) { bias := 20 }
+                    if eq(r, 7) { bias := sub(0, 15) }
+                    dot := mul(bias, 100)
+
+                    for { let c := 0 } lt(c, 8) { c := add(c, 1) } {
+                        let wIdx := add(mul(r, 8), c)
+                        let rawWeight := 0
+                        if lt(wIdx, 32) {
+                            rawWeight := and(shr(mul(wIdx, 8), weights0), 0xFF)
+                        }
+                        if iszero(lt(wIdx, 32)) {
+                            rawWeight := and(shr(mul(sub(wIdx, 32), 8), weights1), 0xFF)
+                        }
+                        let weight := 0
+                        if and(rawWeight, 0x80) {
+                            weight := or(rawWeight, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00)
+                        }
+                        if iszero(and(rawWeight, 0x80)) {
+                            weight := rawWeight
+                        }
+                        let inputVal := mload(add(0x3000, mul(c, 32)))
+                        dot := add(dot, mul(weight, inputVal))
+                    }
+                    let scaledVal := add(sdiv(dot, 100), 128)
+                    if slt(scaledVal, 0) { scaledVal := 0 }
+                    if sgt(scaledVal, 255) { scaledVal := 255 }
+                    mstore8(add(0x3100, r), scaledVal)
+                }
+
+                // Delta Rule Weight Update
+                let newWeights0 := 0
+                let newWeights1 := 0
+
+                for { let r := 0 } lt(r, 8) { r := add(r, 1) } {
+                    // targetVal is the target features (original 0x3000 values offset by 128)
+                    let targetVal := 128
+                    if eq(r, 0) { targetVal := 218 } // 90 + 128
+                    if eq(r, 1) { targetVal := 138 } // 10 + 128
+                    if eq(r, 2) { targetVal := 78 }  // -50 + 128
+                    
+                    let yVal := and(mload(add(0x3100, r)), 0xFF)
+                    let error := sub(targetVal, yVal) // e_r = target - output
+
+                    for { let c := 0 } lt(c, 8) { c := add(c, 1) } {
+                        let wIdx := add(mul(r, 8), c)
+                        let rawWeight := 0
+                        if lt(wIdx, 32) {
+                            rawWeight := and(shr(mul(wIdx, 8), weights0), 0xFF)
+                        }
+                        if iszero(lt(wIdx, 32)) {
+                            rawWeight := and(shr(mul(sub(wIdx, 32), 8), weights1), 0xFF)
+                        }
+                        let weight := 0
+                        if and(rawWeight, 0x80) {
+                            weight := or(rawWeight, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00)
+                        }
+                        if iszero(and(rawWeight, 0x80)) {
+                            weight := rawWeight
+                        }
+
+                        // Delta step: w_new = w + error * input / 256
+                        let inputVal := mload(add(0x3000, mul(c, 32)))
+                        let delta := sdiv(mul(error, inputVal), 256)
+                        let newW := add(weight, delta)
+                        if slt(newW, sub(0, 128)) { newW := sub(0, 128) }
+                        if sgt(newW, 127) { newW := 127 }
+
+                        let cleanNewW := and(newW, 0xFF)
+                        if lt(wIdx, 32) {
+                            newWeights0 := or(newWeights0, shl(mul(wIdx, 8), cleanNewW))
+                        }
+                        if iszero(lt(wIdx, 32)) {
+                            newWeights1 := or(newWeights1, shl(mul(sub(wIdx, 32), 8), cleanNewW))
+                        }
+                    }
+                }
+
+                sstore(0x7777, newWeights0)
+                sstore(0x7778, newWeights1)
+
+                mstore(0x5000, newWeights0)
+                mstore(0x5020, newWeights1)
+                return(0x5000, 64)
             }
 
             revert(0, 0)

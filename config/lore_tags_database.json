@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-06-23T18:59:42.061Z",
-    "totalDocuments": 504,
-    "totalUniqueTags": 764,
+    "generatedAt": "2026-06-25T02:15:19.161Z",
+    "totalDocuments": 505,
+    "totalUniqueTags": 766,
     "totalUniqueQingsMapped": 91,
     "description": "Auncient Relational Lore Tag & QING Dataset mapping lore documentation files to concepts and smart contracts."
   },
@@ -81,6 +81,16 @@
     "accumulator_vector_fields.md": [
       "accumulator",
       "fields",
+      "vector"
+    ],
+    "advanced_dsp_tiling.md": [
+      "accumulator",
+      "advanced",
+      "auncient",
+      "dsp",
+      "dysnomia",
+      "synth",
+      "tiling",
       "vector"
     ],
     "advanced_infocom_technologies_blueprint.md": [
@@ -3802,6 +3812,7 @@
     ],
     "accumulator": [
       "accumulator_vector_fields.md",
+      "advanced_dsp_tiling.md",
       "agentic_vector_field_cpu_testing.md",
       "ahoy_issue_18_code_listings_review.md",
       "ai_debugger_input_methods.md",
@@ -3836,6 +3847,7 @@
       "langchain_blueprint.md"
     ],
     "advanced": [
+      "advanced_dsp_tiling.md",
       "advanced_infocom_technologies_blueprint.md",
       "elm_debugger_advanced_usecases.md",
       "vic_ii_advanced_concepts.md"
@@ -4252,6 +4264,7 @@
     "auncient": [
       "DYSNOMIA_VM_LORE.md",
       "MATERNAL_AI.md",
+      "advanced_dsp_tiling.md",
       "associahedron_lore.md",
       "automation_system_design.md",
       "daskmig_magazine_issue_1_review.md",
@@ -5000,6 +5013,9 @@
     "dreamcast": [
       "sega_dreamcast_powervr2.md"
     ],
+    "dsp": [
+      "advanced_dsp_tiling.md"
+    ],
     "dual": [
       "sega_genesis_dual_cpu.md"
     ],
@@ -5025,6 +5041,7 @@
       "DYSNOMIA_SYSTEM_INTEGRATION_MAP.md",
       "DYSNOMIA_VM_LORE.md",
       "MATERNAL_AI.md",
+      "advanced_dsp_tiling.md",
       "associahedron_lore.md",
       "biotika_neuron_motzkin_vertex_firing.md",
       "conjecture_topological_motzkin_primes.md",
@@ -7085,6 +7102,7 @@
       "SPEECH_OPTIMIZATION_PLAN.md",
       "ZMACHINE_SPEC.md",
       "access_software_analysis.md",
+      "advanced_dsp_tiling.md",
       "advanced_infocom_technologies_blueprint.md",
       "ahoy_issue_6_pages_38_40_review.md",
       "ahoy_magazine_integration.md",
@@ -7398,6 +7416,9 @@
     "thunks": [
       "thunks_vs_bloom_filters.md"
     ],
+    "tiling": [
+      "advanced_dsp_tiling.md"
+    ],
     "timbre": [
       "ZMACHINE_SPEC.md"
     ],
@@ -7568,6 +7589,7 @@
       "SPEECH_OPTIMIZATION_PLAN.md",
       "access_software_analysis.md",
       "accumulator_vector_fields.md",
+      "advanced_dsp_tiling.md",
       "agentic_vector_field_cpu_testing.md",
       "agentic_vector_fields.md",
       "ahoy_interrupt_music_maker.md",
@@ -7981,6 +8003,11 @@
       "0x58065d1351972d9358665602c967ea58c13dc744",
       "0x872739df73cad8ec87418bc0b00eb9925bbf6971",
       "0x900ae7e39d13f8d0dbc9bd6f2f117c144efb489a",
+      "0xd0eabe17031f975fbad155ae435d0708ed8572be"
+    ],
+    "advanced_dsp_tiling.md": [
+      "0x55fd3be287ec145c791539ff1257b7536d8a390e",
+      "0x60231492ea7a40f72119da9e6c8bf738961679f3",
       "0xd0eabe17031f975fbad155ae435d0708ed8572be"
     ],
     "advanced_infocom_technologies_blueprint.md": [
@@ -10486,6 +10513,7 @@
       "3d_rendering_advancements_deepseek.md",
       "abrash_mode_x_analysis.md",
       "accumulator_vector_fields.md",
+      "advanced_dsp_tiling.md",
       "agentic_vector_field_cpu_testing.md",
       "ahoy_issue_18_code_listings_review.md",
       "ahoy_issue_33_last_ninja_review.md",
@@ -10734,6 +10762,7 @@
       "nonukes_pulsex_pairs.md"
     ],
     "0x60231492ea7a40f72119da9e6c8bf738961679f3": [
+      "advanced_dsp_tiling.md",
       "ahoy_magazine_issue_6_review.md",
       "arena_state_sharing.md",
       "computer_design_issue_13_analysis.md",
@@ -11258,6 +11287,7 @@
       "abrash_mode_x_analysis.md",
       "access_software_analysis.md",
       "accumulator_vector_fields.md",
+      "advanced_dsp_tiling.md",
       "advanced_infocom_technologies_blueprint.md",
       "agentic_vector_field_cpu_testing.md",
       "agentic_vector_fields.md",

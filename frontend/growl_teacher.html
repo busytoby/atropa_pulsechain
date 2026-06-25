@@ -386,6 +386,8 @@
         let bbdFilter = null;
         let bbdFeedback = null;
         let rtlNode = null;
+        let tunnelNode = null;
+        let clickInterval = null;
         let subOsc = null;
         let subGain = null;
         let formantF1 = null;
@@ -486,6 +488,45 @@
             return curve;
         }
 
+        function makeTunnelDiodeCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 2;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                const v = x * k;
+                let current = 0;
+                if (v >= 0) {
+                    if (v < 0.15) {
+                        current = (v / 0.15) * 0.8;
+                    } else if (v < 0.4) {
+                        const t = (v - 0.15) / (0.4 - 0.15);
+                        current = 0.8 - t * 0.6;
+                    } else {
+                        current = 0.2 + Math.pow(v - 0.4, 2) * 2.5;
+                    }
+                } else {
+                    current = v * 3.0;
+                }
+                curve[i] = Math.max(-1.0, Math.min(1.0, current * 0.7));
+            }
+            return curve;
+        }
+
+        function triggerMicroClick(time) {
+            if (!audioCtx) return;
+            const clickOsc = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            clickOsc.type = "sine";
+            clickOsc.frequency.setValueAtTime(4500 + Math.random() * 1500, time);
+            clickGain.gain.setValueAtTime(0.05, time);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.002);
+            clickOsc.connect(clickGain);
+            clickGain.connect(mainOut);
+            clickOsc.start(time);
+            clickOsc.stop(time + 0.003);
+        }
+
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -574,6 +615,9 @@
             rtlNode = audioCtx.createWaveShaper();
             rtlNode.curve = makeRTLDistortionCurve(1.5);
 
+            tunnelNode = audioCtx.createWaveShaper();
+            tunnelNode.curve = makeTunnelDiodeCurve(1.8);
+
             zenerNode = audioCtx.createWaveShaper();
             zenerNode.curve = makeZenerDistortionCurve(10);
             zenerNode.oversample = '4x';
@@ -617,7 +661,8 @@
             formantF1.connect(rtlNode);
             formantF2.connect(rtlNode);
 
-            rtlNode.connect(zenerNode);
+            rtlNode.connect(tunnelNode);
+            tunnelNode.connect(zenerNode);
 
             // Connect Dry path
             zenerNode.connect(synthGain);
@@ -642,6 +687,12 @@
             isAudioPlaying = true;
             document.getElementById("play-btn").innerText = "Deactivate Growl";
             updateParams();
+
+            clickInterval = setInterval(() => {
+                if (audioCtx && Math.random() < 0.18) {
+                    triggerMicroClick(audioCtx.currentTime);
+                }
+            }, 60);
         }
 
         function stopGrowl() {
@@ -650,6 +701,11 @@
             synthGain.gain.cancelScheduledValues(now);
             synthGain.gain.setValueAtTime(synthGain.gain.value, now);
             synthGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+
+            if (clickInterval) {
+                clearInterval(clickInterval);
+                clickInterval = null;
+            }
 
             setTimeout(() => {
                 if (carrierOsc) {
@@ -665,6 +721,7 @@
                     formantF1 = null;
                     formantF2 = null;
                     zenerNode = null;
+                    tunnelNode = null;
                     rtlNode = null;
                     bbdDelay = null;
                     bbdFilter = null;
@@ -728,6 +785,9 @@
                 }
                 if (rtlNode) {
                     rtlNode.curve = makeRTLDistortionCurve(repelActive ? 2.5 : 1.5);
+                }
+                if (tunnelNode) {
+                    tunnelNode.curve = makeTunnelDiodeCurve(repelActive ? 3.0 : 1.8);
                 }
             }
 
