@@ -16,8 +16,8 @@ typedef struct {
 typedef struct {
     int p1, p2;
     float target_dist;
-    float epibar;  // Tension threshold (stretching)
-    float hypobar; // Compression threshold (squeezing)
+    float epibar;  // Outgoing bearing weight
+    float hypobar; // Incoming bearing weight
 } AsymmetricConstraint;
 
 // Function to resolve constraint asymmetrically using Epibar and Hypobar

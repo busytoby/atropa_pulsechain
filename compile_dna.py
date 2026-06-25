@@ -13,6 +13,8 @@ PRESETS = {
         "breathing_frequency": 55.0,
         "biotika_membrane_threshold": 0.80,
         "sickness_resistance": 0.35,
+        "epibar": 0.96,                # Outgoing bearing weight
+        "hypobar": 0.35,               # Incoming bearing weight
         "base_fur_color": (230, 230, 230), # White Slugcat fur
         "eye_accent_color": (20, 20, 20)   # Dark obsidian eyes
     },
@@ -25,6 +27,8 @@ PRESETS = {
         "breathing_frequency": 35.0,
         "biotika_membrane_threshold": 0.98,
         "sickness_resistance": 0.12,
+        "epibar": 0.78,                # Outgoing bearing weight
+        "hypobar": 0.12,               # Incoming bearing weight
         "base_fur_color": (91, 63, 51),    # Vintage brown bear fur
         "eye_accent_color": (0, 255, 0)     # Kr0wZ green eyes
     }
@@ -47,6 +51,7 @@ def compile_dna():
     print(f"=== Procedural DNA Compiler for TSFi2 (Preset: {ACTIVE_PRESET.upper()}) ===")
     print(f"[GENOME] Cranial Scale: {GENOME['cranial_scale']}, Body Fatness: {GENOME['body_fatness']}")
     print(f"[GENOME] Muscle Stiffness: {GENOME['muscle_stiffness']}, Walk Freq: {GENOME['walk_frequency']}")
+    print(f"[GENOME] Epibar: {GENOME['epibar']}, Hypobar: {GENOME['hypobar']}")
     
     TOTAL_FRAMES = 10800
     STAND_FRAME = 9900
@@ -68,9 +73,9 @@ def compile_dna():
     dna_path = "tsfi2-deepseek/assets/atropa.dna"
     
     with open(dna_path, "wb") as f:
-        # Write DNA Header (Magic bytes + Total Frames)
+        # Write DNA Header (Magic bytes + Total Frames + Epibar + Hypobar)
         f.write(b'TSFI')
-        f.write(struct.pack('=I', TOTAL_FRAMES))
+        f.write(struct.pack('=Iff', TOTAL_FRAMES, GENOME["epibar"], GENOME["hypobar"]))
         
         g_x = 0.0
         g_y = 0.0
