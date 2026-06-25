@@ -35,7 +35,7 @@ PRESETS = {
 }
 
 # Select active genome preset (slugcat / teddy)
-ACTIVE_PRESET = "slugcat"
+ACTIVE_PRESET = "teddy"
 GENOME = PRESETS[ACTIVE_PRESET]
 
 def bessel_j0(x):
@@ -70,6 +70,9 @@ def compile_dna():
     spike_glow = 0.0
     
     os.makedirs("tsfi2-deepseek/assets", exist_ok=True)
+    import json
+    with open("tsfi2-deepseek/assets/dna_config.json", "w") as jf:
+        json.dump({"active_preset": ACTIVE_PRESET}, jf)
     dna_path = "tsfi2-deepseek/assets/atropa.dna"
     
     with open(dna_path, "wb") as f:

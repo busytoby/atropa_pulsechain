@@ -38,6 +38,18 @@ def render_and_evaluate():
         print(f"[Error] DNA file not found at {dna_path}. Run compile_dna.py first.")
         return
         
+    config_path = "tsfi2-deepseek/assets/dna_config.json"
+    active_preset = "teddy"
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as cf:
+                config = json.load(cf)
+                active_preset = config.get("active_preset", "teddy")
+        except Exception:
+            pass
+            
+    print(f"[Director] Active Genome Preset: {active_preset.upper()}")
+    
     frame_idx = 5000
     print(f"[Director] Decoding DNA Frame {frame_idx}...")
     frame = load_dna_frame(dna_path, frame_idx)
@@ -46,15 +58,22 @@ def render_and_evaluate():
     print(f"  -> Sickness: {sick_percent}% | Light: {frame['light']:.2f}")
     print(f"  -> Fur RGB: ({frame['r']}, {frame['g']}, {frame['b']})")
     
+    if active_preset == "slugcat":
+        creature_name = "slugcat creature from Rain World"
+        fur_term = "skin"
+    else:
+        creature_name = "teddy bear plush"
+        fur_term = "fur"
+        
     prompt = (
-        f"A highly detailed photorealistic teddy bear plush sitting down, "
-        f"fur color RGB({frame['r']},{frame['g']},{frame['b']}), glowing eyes RGB({frame['er']},{frame['eg']},{frame['eb']}), "
+        f"A highly detailed photorealistic {creature_name} sitting down, "
+        f"{fur_term} color RGB({frame['r']},{frame['g']},{frame['b']}), glowing eyes RGB({frame['er']},{frame['eg']},{frame['eb']}), "
         f"cinematic lighting with intensity {frame['light']:.2f}, "
         f"{sick_percent} percent sickness mutation details, dark background, 8k resolution, masterpiece"
     )
     
     raw_out = "tmp/dna_render_bear.raw"
-    png_out = "assets/photorealistic_bear_final.png"
+    png_out = f"assets/photorealistic_{active_preset}_final.png"
     
     os.makedirs("tmp", exist_ok=True)
     os.makedirs("assets", exist_ok=True)
@@ -84,7 +103,10 @@ def render_and_evaluate():
         height = 512 if len(raw_data) == 512 * 512 * 3 else 720
         img = Image.frombytes('RGB', (width, height), raw_data)
         img.save(png_out)
-        print(f"[Director] Photorealistic bear frame ({width}x{height}) saved to: {png_out}")
+        print(f"[Director] Photorealistic {active_preset} frame ({width}x{height}) saved to: {png_out}")
+        
+        # Maintain compatibility for bear output path
+        subprocess.run(["cp", png_out, "assets/photorealistic_bear_final.png"])
         
         # Call OpenCV Evaluator
         print("[Director] Initiating OpenCV query tokenizer and visual validation...")

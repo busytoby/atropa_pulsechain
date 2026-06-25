@@ -38,15 +38,25 @@ def tokenize_query(query_str):
     target_eyes = (0, 255, 0)
     target_sick = 0.5
     
-    for word, rgb in VOCAB_FUR.items():
-        if word in query_lower:
-            target_fur = rgb
-            break
+    import re
+    # Extract RGB values if specified directly (e.g. fur color RGB(63,233,163))
+    fur_match = re.search(r'(?:fur|skin)\s+color\s+rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', query_lower)
+    if fur_match:
+        target_fur = (int(fur_match.group(1)), int(fur_match.group(2)), int(fur_match.group(3)))
+    else:
+        for word, rgb in VOCAB_FUR.items():
+            if word in query_lower:
+                target_fur = rgb
+                break
             
-    for word, rgb in VOCAB_EYES.items():
-        if word in query_lower:
-            target_eyes = rgb
-            break
+    eyes_match = re.search(r'eyes\s+rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', query_lower)
+    if eyes_match:
+        target_eyes = (int(eyes_match.group(1)), int(eyes_match.group(2)), int(eyes_match.group(3)))
+    else:
+        for word, rgb in VOCAB_EYES.items():
+            if word in query_lower:
+                target_eyes = rgb
+                break
             
     if "sick" in query_lower or "mutation" in query_lower:
         target_sick = 0.6
