@@ -34,151 +34,97 @@ def rotate_vector_by_quaternion(v, q):
     return (result[1], result[2], result[3])
 
 def generate_vocalized_speech():
-    print("[DSP] Generating Verlet vocal fold speech audio...")
+    print("[DSP] Generating strict Dirac LPC lattice speech audio...")
     t = np.linspace(0, DURATION, num_samples, endpoint=False)
     audio = np.zeros(num_samples)
     
-    # Simulate dynamic vowels (EE -> AH -> OO -> EE)
-    # Target formants F1, F2:
-    # 0s - 2s (EE): F1=270, F2=2290
-    # 2s - 4s (AH): F1=730, F2=1090
-    # 4s - 6s (OO): F1=300, F2=870
-    # 6s - 8s (EE): F1=270, F2=2290
+    # 9th-order reflection coefficients for speech vowel segments (K1..K9)
+    # ee vowel: high front vowel
+    k_ee = [0.60, -0.13, 0.34, -0.10, 0.05, -0.08, -0.04, -0.02, -0.01]
+    # ah vowel: low back vowel
+    k_ah = [0.25, -0.35, 0.20, -0.15, 0.08, -0.04, 0.02, -0.01, 0.00]
+    # oo vowel: high back rounded vowel
+    k_oo = [0.75, -0.45, 0.50, -0.25, 0.12, -0.06, 0.03, -0.01, 0.00]
     
-    # 3-Mass Ishizaka-Flanagan style Verlet physical model simulation variables
-    # Mass 1 (Lower Fold)
-    x1, x1_prev = 0.05, 0.05
-    m1 = 0.15
-    epibar1 = 1000.0
-    hypobar1 = 3500.0
-    c1 = 1.4
-    Ps1 = 0.55
+    # Lattice filter backward path state memory
+    delay_line = np.zeros(10)
     
-    # Mass 2 (Upper Fold)
-    x2, x2_prev = 0.04, 0.04
-    m2 = 0.12
-    epibar2 = 1380.0
-    hypobar2 = 4000.0
-    c2 = 1.1
-    Ps2 = 0.65
-    
-    # Mass 3 (Resonant Load Piston representing vocal tract impedance)
-    x3, x3_prev = 0.0, 0.0
-    m3 = 0.08
-    k3 = 800.0
-    c3 = 0.5
-    
-    # Coupling parameters
-    Kc = 180.0
-    A_fold = 0.2
-    
-    glottal_flow = np.zeros(num_samples)
-    for s in range(1, num_samples - 1):
-        # Asymmetric stiffness based on displacement (Epibar for tension, Hypobar for compression)
-        stiffness1 = epibar1 if x1 > 0.0 else hypobar1
-        stiffness2 = epibar2 if x2 > 0.0 else hypobar2
-        
-        # Aerodynamic driving forces
-        f_p1 = Ps1 * A_fold if x1 > 0.0 else 0.0
-        f_p2 = Ps2 * A_fold if x2 > 0.0 else 0.0
-        
-        # Velocities
-        v1 = (x1 - x1_prev) / dt
-        v2 = (x2 - x2_prev) / dt
-        v3 = (x3 - x3_prev) / dt
-        
-        # Resonant load piston driven by glottal flow
-        current_flow = (max(x1, 0.0) ** 2) + (max(x2, 0.0) ** 2)
-        f_p3 = current_flow * 2.5
-        
-        # Feedback force from resonant piston onto upper glottal mass
-        F_fb = -k3 * x3 - c3 * v3
-        
-        # Coupled acceleration calculations
-        acc1 = (f_p1 - stiffness1 * x1 - c1 * v1 + Kc * (x2 - x1)) / m1
-        acc2 = (f_p2 - stiffness2 * x2 - c2 * v2 + Kc * (x1 - x2) + F_fb) / m2
-        acc3 = (f_p3 - k3 * x3 - c3 * v3) / m3
-        
-        # Verlet integration step
-        x1_next = 2.0 * x1 - x1_prev + acc1 * (dt ** 2)
-        x2_next = 2.0 * x2 - x2_prev + acc2 * (dt ** 2)
-        x3_next = 2.0 * x3 - x3_prev + acc3 * (dt ** 2)
-        
-        x1_prev, x1 = x1, max(-0.2, min(1.0, x1_next))
-        x2_prev, x2 = x2, max(-0.2, min(1.0, x2_next))
-        x3_prev, x3 = x3, max(-0.5, min(1.0, x3_next))
-        
-        # Save output flow (modulated by acoustic load piston)
-        glottal_flow[s] = current_flow
-        
-    glottal_flow -= np.mean(glottal_flow)
-    if np.max(np.abs(glottal_flow)) > 0:
-        glottal_flow /= np.max(np.abs(glottal_flow))
-        
-    # Generate noise sources for consonants
+    # Noise generator for unvoiced sibilants
     noise = np.random.uniform(-1.0, 1.0, num_samples)
     
-    # 1. "S" noise (high-pass filter)
-    s_noise = noise.copy()
-    for _ in range(3):
-        s_noise = np.concatenate([[0.0], s_noise[1:] - 0.95 * s_noise[:-1]])
-    s_noise /= np.maximum(np.max(np.abs(s_noise)), 1e-5)
+    glottal_flow = np.zeros(num_samples)
     
-    # 2. "SH" noise (band-pass filter: high-pass then moving average low-pass)
-    sh_noise = np.concatenate([[0.0], noise[1:] - 0.82 * noise[:-1]])
-    sh_noise = np.convolve(sh_noise, np.ones(6)/6.0, mode='same')
-    sh_noise /= np.maximum(np.max(np.abs(sh_noise)), 1e-5)
-    
-    # Synthesize phoneme sequence: S -> EE -> SH -> AH -> T -> OO -> S
-    for s in range(num_samples):
+    for s in range(1, num_samples):
         time_sec = s / SAMPLE_RATE
         
-        # Voicing or Aspiration selection
-        if time_sec < 0.8:
-            # "S" phoneme
-            audio[s] = s_noise[s] * 0.28
-        elif time_sec < 2.5:
-            # "EE" vowel
-            f1, f2 = 270.0, 2290.0
-            formant_excitation = glottal_flow[s] * (
-                0.6 * math.sin(2.0 * math.pi * f1 * time_sec) +
-                0.4 * math.sin(2.0 * math.pi * f2 * time_sec)
-            )
-            audio[s] = formant_excitation * 0.45
-        elif time_sec < 3.3:
-            # "SH" phoneme
-            audio[s] = sh_noise[s] * 0.26
-        elif time_sec < 5.0:
-            # "AH" vowel
+        # Determine active phoneme segment coefficients
+        if time_sec < 0.8: # "S"
+            K = [-0.25, -0.65, 0.00, -0.50, 0.05, -0.08, 0.12, -0.05, 0.02]
+            excitation = noise[s] * 0.3
+            is_voiced = False
+        elif time_sec < 2.5: # "EE"
+            K = k_ee
+            f_carrier = 120.0
+            f_mod = 6.0
+            beta = 0.08  # Bessel modulation index governing dispersion sidebands
+            vibrato = beta * math.cos(2.0 * math.pi * f_mod * time_sec)
+            period = int(SAMPLE_RATE / (f_carrier * (1.0 + vibrato)))
+            excitation = 1.0 if (s % period == 0) else 0.0
+            is_voiced = True
+        elif time_sec < 3.3: # "SH"
+            K = [-0.20, -0.55, 0.10, -0.40, 0.04, -0.06, 0.08, -0.03, 0.01]
+            excitation = noise[s] * 0.25
+            is_voiced = False
+        elif time_sec < 5.0: # "AH"
             ratio = (time_sec - 3.3) / 1.7
-            f1 = 270.0 * (1.0 - ratio) + 730.0 * ratio
-            f2 = 2290.0 * (1.0 - ratio) + 1090.0 * ratio
-            formant_excitation = glottal_flow[s] * (
-                0.6 * math.sin(2.0 * math.pi * f1 * time_sec) +
-                0.4 * math.sin(2.0 * math.pi * f2 * time_sec)
-            )
-            audio[s] = formant_excitation * 0.45
-        elif time_sec < 5.1:
-            # Silence/closure before "T" plosive
-            audio[s] = 0.0
-        elif time_sec < 5.25:
-            # "T" release burst (short high-pass noise spike)
+            K = [k_ee[i] * (1.0 - ratio) + k_ah[i] * ratio for i in range(9)]
+            f_carrier = 110.0
+            f_mod = 6.0
+            beta = 0.08
+            vibrato = beta * math.cos(2.0 * math.pi * f_mod * time_sec)
+            period = int(SAMPLE_RATE / (f_carrier * (1.0 + vibrato)))
+            excitation = 1.0 if (s % period == 0) else 0.0
+            is_voiced = True
+        elif time_sec < 5.1: # Silence
+            K = [0.0] * 9
+            excitation = 0.0
+            is_voiced = False
+        elif time_sec < 5.25: # "T" burst
+            K = [-0.30, -0.70, -0.10, -0.60, 0.05, -0.08, 0.10, -0.04, 0.02]
             decay = math.exp(-(time_sec - 5.1) / 0.02)
-            audio[s] = s_noise[s] * 0.35 * decay
-        elif time_sec < 7.0:
-            # "OO" vowel
+            excitation = noise[s] * 0.4 * decay
+            is_voiced = False
+        elif time_sec < 7.0: # "OO"
             ratio = (time_sec - 5.25) / 1.75
-            f1 = 730.0 * (1.0 - ratio) + 300.0 * ratio
-            f2 = 1090.0 * (1.0 - ratio) + 870.0 * ratio
-            formant_excitation = glottal_flow[s] * (
-                0.6 * math.sin(2.0 * math.pi * f1 * time_sec) +
-                0.4 * math.sin(2.0 * math.pi * f2 * time_sec)
-            )
-            audio[s] = formant_excitation * 0.45
-        else:
-            # "S" trailing phoneme
-            audio[s] = s_noise[s] * 0.25
+            K = [k_ah[i] * (1.0 - ratio) + k_oo[i] * ratio for i in range(9)]
+            f_carrier = 100.0
+            f_mod = 6.0
+            beta = 0.08
+            vibrato = beta * math.cos(2.0 * math.pi * f_mod * time_sec)
+            period = int(SAMPLE_RATE / (f_carrier * (1.0 + vibrato)))
+            excitation = 1.0 if (s % period == 0) else 0.0
+            is_voiced = True
+        else: # "S"
+            K = [-0.25, -0.65, 0.00, -0.50, 0.05, -0.08, 0.12, -0.05, 0.02]
+            excitation = noise[s] * 0.25
+            is_voiced = False
+
+        # Apply LPC Lattice Recursive Filter Flow
+        forward = excitation
+        for i in range(8, -1, -1):
+            forward = forward - K[i] * delay_line[i]
+            delay_line[i + 1] = delay_line[i] + K[i] * forward
+        delay_line[0] = forward
         
+        audio[s] = forward
+        
+        # Trace flow amplitude for wireframe synchronization
+        glottal_flow[s] = excitation if is_voiced else abs(excitation)
+
+    # Lip-Radiation Filter: High-pass differentiator to restore high frequency clarity
+    for s in range(num_samples - 1, 0, -1):
+        audio[s] = audio[s] - 0.95 * audio[s - 1]
+
     audio -= np.mean(audio)
     if np.max(np.abs(audio)) > 0:
         audio /= np.max(np.abs(audio))
@@ -399,7 +345,7 @@ def render_demo_video(audio_path, glottal_flow, output_mp4):
 if __name__ == "__main__":
     audio_path, glottal_flow = generate_vocalized_speech()
     
-    output_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353"
+    output_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/38436d6a-7ad9-4ea9-8cde-2800837ce953"
     output_mp4 = os.path.join(output_dir, "teddy_speech_demo.mp4")
     
     render_demo_video(audio_path, glottal_flow, output_mp4)

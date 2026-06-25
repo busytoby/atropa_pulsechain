@@ -120,3 +120,9 @@ libtsfi2.so
 /frontend/latest_frame.jpg
 /frontend/vulkan_frame.ppm
 
+# Ignore syrinx generated assets
+assets/syrinx/
+
+# Ignore compiled C interop compositor binaries
+/scripts/libantigravity_interop.so
+/scripts/manifold_interop_renderer
