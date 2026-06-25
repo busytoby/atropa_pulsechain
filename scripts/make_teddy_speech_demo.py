@@ -49,16 +49,16 @@ def generate_vocalized_speech():
     # Mass 1 (Lower Fold)
     x1, x1_prev = 0.05, 0.05
     m1 = 0.15
-    k1_open = 1000.0
-    k1_closed = 3500.0
+    epibar1 = 1000.0
+    hypobar1 = 3500.0
     c1 = 1.4
     Ps1 = 0.55
     
     # Mass 2 (Upper Fold)
     x2, x2_prev = 0.04, 0.04
     m2 = 0.12
-    k2_open = 1380.0
-    k2_closed = 4000.0
+    epibar2 = 1380.0
+    hypobar2 = 4000.0
     c2 = 1.1
     Ps2 = 0.65
     
@@ -74,9 +74,9 @@ def generate_vocalized_speech():
     
     glottal_flow = np.zeros(num_samples)
     for s in range(1, num_samples - 1):
-        # Asymmetric stiffness based on displacement
-        stiffness1 = k1_open if x1 > 0.0 else k1_closed
-        stiffness2 = k2_open if x2 > 0.0 else k2_closed
+        # Asymmetric stiffness based on displacement (Epibar for tension, Hypobar for compression)
+        stiffness1 = epibar1 if x1 > 0.0 else hypobar1
+        stiffness2 = epibar2 if x2 > 0.0 else hypobar2
         
         # Aerodynamic driving forces
         f_p1 = Ps1 * A_fold if x1 > 0.0 else 0.0
