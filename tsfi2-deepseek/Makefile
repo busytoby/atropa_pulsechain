@@ -214,6 +214,12 @@ bin/test_sd_thunk_execution: tests/test_sd_thunk_execution.c $(CORE_OBJS) $(OBJ_
 bin/tsfi_dna_crossover: src/tsfi_dna_crossover.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_dna_decoder: tests/test_dna_decoder.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_dualist_neuron_weights: tests/test_dualist_neuron_weights.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_yang_audion_bjt_quality: tests/test_yang_audion_bjt_quality.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
