@@ -197,6 +197,8 @@ def generate_acid_house_bass(length, beat_samples, start_time):
     pattern = [0, 4, 3, 0, 5, 2, 4, 1, 3, 0, 5, 4, 2, 0, 3, 1]
     
     filter_state = [0.0, 0.0]
+    vaesen_rep = 0.0
+    last_note = -1
     
     for i in range(total_steps):
         onset = i * step_samples
@@ -204,7 +206,18 @@ def generate_acid_house_bass(length, beat_samples, start_time):
         
         # Bass active 45s - 150s
         if 45.0 <= time_sec < 150.0:
-            note_freq = scale[pattern[i % len(pattern)]] * 0.5
+            note_idx = pattern[i % len(pattern)]
+            note_freq = scale[note_idx] * 0.5
+            
+            # Accumulator increments on note repetition or hitting root note (scale[0])
+            if note_idx == last_note:
+                vaesen_rep = 0.92 * vaesen_rep + 0.08 * 1.0
+            elif note_idx == 0:
+                vaesen_rep = 0.92 * vaesen_rep + 0.08 * 0.7
+            else:
+                vaesen_rep = 0.92 * vaesen_rep
+                
+            last_note = note_idx
             
             # Slide and Accent modulation
             is_slide = (i % 4 == 3)
@@ -233,10 +246,16 @@ def generate_acid_house_bass(length, beat_samples, start_time):
                     # Run Chamberlin SVF
                     fc = f0[s]
                     omega = 2.0 * math.sin(math.pi * fc * dt)
-                    q = 0.12 if is_accent else 0.18 # lower q is higher resonance
+                    
+                    # Base resonance
+                    q = 0.12 if is_accent else 0.18
+                    # Repetitive note/dwell accumulator lowers q (boosting squelch resonance)
+                    q_mod = q - 0.07 * vaesen_rep
+                    if q_mod < 0.05:
+                        q_mod = 0.05
                     
                     low = filter_state[0] + omega * filter_state[1]
-                    high = saw - low - q * filter_state[1]
+                    high = saw - low - q_mod * filter_state[1]
                     band = omega * high + filter_state[1]
                     
                     filter_state[0] = low
