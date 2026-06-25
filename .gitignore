@@ -127,3 +127,4 @@ assets/syrinx/
 /scripts/libantigravity_interop.so
 /scripts/manifold_interop_renderer
 /scripts/test_abi_dispatch
+/scripts/test_verlet
