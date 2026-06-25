@@ -113,7 +113,7 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
     Ps = 0.35
     
     # Bionika Spiking Neuron states
-    bionika_vm = 0.0
+    bionika_vm = 0.50
     bionika_leak = 0.95
     bionika_threshold = 1.0
     
