@@ -330,6 +330,16 @@
                             <div class="matching-bar" id="vaesen-pl-bar" style="background: var(--glow-cyan); box-shadow: 0 0 10px var(--glow-cyan); width: 90%;"></div>
                         </div>
                     </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div class="matching-text">
+                            <span>Resonance Dwell (E_dw)</span>
+                            <span id="vaesen-rp-pct" style="color: #ffcc00; font-weight: bold;">0%</span>
+                        </div>
+                        <div class="matching-bar-container">
+                            <div class="matching-bar" id="vaesen-rp-bar" style="background: #ffcc00; box-shadow: 0 0 10px #ffcc00; width: 0%;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 12px; margin-top: 10px;">
@@ -435,6 +445,7 @@
         // Vaesen Emotional Accumulator State
         let vaesenAgitation = 0.1;
         let vaesenPleasure = 0.9;
+        let vaesenRepetition = 0.0;
         const vaesenDecay = 0.95;
         let lastParams = { pitch: 70, lfoFreq: 6, lfoDepth: 10, cutoff: 150 };
 
@@ -819,14 +830,30 @@
 
             vaesenPleasure = vaesenDecay * vaesenPleasure + (1.0 - vaesenDecay) * (1.0 - aestheticError);
             
+            // Calculate Resonance Dwell (E_dw)
+            // Accumulates when adjusting knobs slowly/holding a note, or when hitting the target note exactly
+            let repetitionExcite = 0.0;
+            if (isAudioPlaying) {
+                if (dynamicInput < 0.08) {
+                    repetitionExcite += 0.3; // resting on note
+                }
+                if (Math.abs(pitch - target.pitch) < 1.5) {
+                    repetitionExcite += 0.7; // target resonance lock-in
+                }
+            }
+            vaesenRepetition = vaesenDecay * vaesenRepetition + (1.0 - vaesenDecay) * repetitionExcite;
+
             vaesenAgitation = Math.max(0.01, Math.min(1.0, vaesenAgitation));
             vaesenPleasure = Math.max(0.01, Math.min(1.0, vaesenPleasure));
+            vaesenRepetition = Math.max(0.0, Math.min(1.0, vaesenRepetition));
 
             // Update UI gauges
             document.getElementById("vaesen-ag-pct").innerText = `${Math.round(vaesenAgitation * 100)}%`;
             document.getElementById("vaesen-ag-bar").style.width = `${Math.round(vaesenAgitation * 100)}%`;
             document.getElementById("vaesen-pl-pct").innerText = `${Math.round(vaesenPleasure * 100)}%`;
             document.getElementById("vaesen-pl-bar").style.width = `${Math.round(vaesenPleasure * 100)}%`;
+            document.getElementById("vaesen-rp-pct").innerText = `${Math.round(vaesenRepetition * 100)}%`;
+            document.getElementById("vaesen-rp-bar").style.width = `${Math.round(vaesenRepetition * 100)}%`;
 
             const now = audioCtx ? audioCtx.currentTime : 0;
             if (isAudioPlaying && carrierOsc) {
@@ -840,9 +867,15 @@
                 
                 filterNode.frequency.setValueAtTime(repelActive ? cutoff * 0.5 : cutoff, now);
                 
-                // Formant sweeps
-                if (formantF1) formantF1.frequency.setValueAtTime(cutoff, now);
-                if (formantF2) formantF2.frequency.setValueAtTime(cutoff * 2.2, now);
+                // Formant sweeps & Resonance: Resonance Dwell increases Q factor dynamically
+                if (formantF1) {
+                    formantF1.frequency.setValueAtTime(cutoff, now);
+                    formantF1.Q.setValueAtTime(8.0 + 24.0 * vaesenRepetition, now);
+                }
+                if (formantF2) {
+                    formantF2.frequency.setValueAtTime(cutoff * 2.2, now);
+                    formantF2.Q.setValueAtTime(6.0 + 18.0 * vaesenRepetition, now);
+                }
 
                 if (subOsc) {
                     subOsc.frequency.setValueAtTime(pitch * 0.5 + agitationJitter * 0.5, now);
