@@ -103,6 +103,11 @@ def generate_9m_performance():
         time_sec = onset / SAMPLE_RATE
         sig = signatures[current_sig_idx]
         
+        # Macro structural break and drop timing (each measure is 16 steps)
+        measure = step // 16
+        is_break = (measure % 16 == 15)  # 15th measure of a 16-measure block is a break (comfort solo)
+        is_drop = (measure % 16 == 0 and step % 16 == 0 and step > 0)
+        
         # 4-Second Phase Trigger: mutate time signature based on overall agitation
         phase_idx = int(time_sec / 4.0)
         is_phase_trigger = False
@@ -159,23 +164,23 @@ def generate_9m_performance():
         pl3 = decay * pl3 + (1.0 - decay) * 0.65
         
         # ---------------- Flock Cross-Talk Communication Loops ----------------
-        # 1. When Bird 1 (Bass) triggers a Kick, it startles Bird 2 (Center):
-        is_kick_trigger = (kick_pat[step % len(kick_pat)] == 1)
+        # 1. When Bird 1 (Bass) triggers a Kick, it comforts Bird 2 (Center):
+        is_kick_trigger = (kick_pat[step % len(kick_pat)] == 1) and not is_break
         if is_kick_trigger:
-            ag2 = min(1.0, ag2 + 0.18)
-            pl2 = max(0.1, pl2 - 0.08)
+            pl2 = min(1.0, pl2 + 0.16)
+            ag2 = max(0.01, ag2 - 0.12)
             
-        # 2. When Bird 2 (Center) triggers a Fascinator sweep, it calms Bird 3 (Right):
-        is_fasc_trigger = (pl2 > 0.58 and step % 4 == 0)
+        # 2. When Bird 2 (Center) triggers a Fascinator sweep, it delights Bird 3 (Right):
+        is_fasc_trigger = (pl2 > 0.58 and step % 4 == 0) and not is_break
         if is_fasc_trigger:
-            pl3 = min(1.0, pl3 + 0.14)
-            ag3 = max(0.01, ag3 - 0.08)
+            pl3 = min(1.0, pl3 + 0.18)
+            ag3 = max(0.01, ag3 - 0.14)
             
-        # 3. When Bird 3 (Right) triggers a Growl/Mimic, it startles Bird 1 (Left):
-        is_growl_trigger = (ag3 > 0.35 and step % 8 == 0)
+        # 3. When Bird 3 (Right) is pleased, it triggers a Resonance Chirp to comfort Bird 1 (Left):
+        is_growl_trigger = (pl3 > 0.60 and step % 8 == 0) and not is_break
         if is_growl_trigger:
-            ag1 = min(1.0, ag1 + 0.22)
-            pl1 = max(0.05, pl1 - 0.12)
+            pl1 = min(1.0, pl1 + 0.15)
+            ag1 = max(0.01, ag1 - 0.10)
             
         # Also track Resonance Dwell triggers for Bird 2 & 3
         if consecutive_repeats < 4:
@@ -203,19 +208,19 @@ def generate_9m_performance():
         if len(sig_names) <= step:
             sig_names.append(sig["name"])
             
-        # Render step drums (Bird 1 triggers Kicks)
+        # Render step drums modulated by macro breaks (Bird 1 triggers Kicks)
         if is_kick_trigger:
             l = min(num_samples - onset, kick_len)
             if l > 0:
                 mix[onset:onset+l] += kick_sound[:l]
                 kick_hits[onset:onset+l] = 1.0
                 
-        if snare_pat[step % len(snare_pat)] == 1:
+        if snare_pat[step % len(snare_pat)] == 1 and not is_break:
             l = min(num_samples - onset, snare_len)
             if l > 0:
                 mix[onset:onset+l] += snare_sound[:l] * (1.0 + 0.6 * ag1)
                 
-        if hat_pat[step % len(hat_pat)] == 1:
+        if hat_pat[step % len(hat_pat)] == 1 and not is_break:
             l = min(num_samples - onset, hat_len)
             if l > 0:
                 mix[onset:onset+l] += hat_sound[:l]
@@ -243,7 +248,7 @@ def generate_9m_performance():
                 mix[onset:onset+m_l] += quantized
                 
         # 3. Hybrid click trains (Dwell/Repetition trigger from Bird 2/3)
-        if rep3 > 0.40 and step % 2 == 0:
+        if rep3 > 0.40 and step % 2 == 0 and not is_break:
             c_len = int(SAMPLE_RATE * 0.015)
             c_l = min(num_samples - onset, c_len)
             if c_l > 0:
@@ -253,7 +258,7 @@ def generate_9m_performance():
                 
         # FM bells
         arp_rate = 6 if pl2 > 0.75 else 4
-        if step % arp_rate == 0:
+        if step % arp_rate == 0 and not is_break:
             notes = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63]
             note_idx = (step // arp_rate) % len(notes)
             f_carrier = notes[note_idx] * (1.5 if rep2 > 0.5 else 1.0)
@@ -269,21 +274,40 @@ def generate_9m_performance():
                 bell = np.sin(2.0 * np.pi * f_carrier * b_age + modulator) * np.exp(-b_age / 0.12)
                 mix[b_onset:b_onset+b_l] += bell * 0.045
                 
-        # Growl tests driven by Bird 3 Agitation
+        # Resonance Chirps driven by Bird 3 Pleasure
         if is_growl_trigger:
-            growl_len = int(SAMPLE_RATE * 0.35)
-            g_age = np.arange(min(num_samples - onset, growl_len)) / SAMPLE_RATE
-            if len(g_age) > 0:
-                f_growl = 60.0 + 120.0 * np.sin(2.0 * np.pi * 3.0 * g_age)
-                growl_osc = np.sign(np.sin(2.0 * np.pi * f_growl * g_age))
-                f_f1 = 280.0 + 300.0 * ag3
-                f_f2 = 800.0 + 1200.0 * (1.0 - pl3)
-                y_f1 = np.sin(2.0 * np.pi * f_f1 * g_age) * growl_osc
-                y_f2 = np.sin(2.0 * np.pi * f_f2 * g_age) * growl_osc
-                growl_sig = (y_f1 + y_f2) * np.exp(-g_age / 0.15) * 0.18
-                growl_sig = np.tanh(growl_sig * (2.0 + 4.0 * ag3))
-                mix[onset:onset+len(g_age)] += growl_sig * 0.22
-                growl_hits[onset:onset+len(g_age)] = 1.0
+            chirp_len = int(SAMPLE_RATE * 0.28)
+            c_age = np.arange(min(num_samples - onset, chirp_len)) / SAMPLE_RATE
+            if len(c_age) > 0:
+                f_start = 800.0 + 400.0 * pl3
+                f_end = 2200.0 + 800.0 * pl3
+                sweep_freq = f_start + (f_end - f_start) * (c_age / 0.28)
+                chirp_sig = np.sin(2.0 * np.pi * sweep_freq * c_age) * np.exp(-c_age / 0.08) * 0.12
+                mix[onset:onset+len(c_age)] += chirp_sig * 0.45
+                growl_hits[onset:onset+len(c_age)] = 1.0
+                
+        # 4. Warm, loving comfort trill (vibrato whistle solo) during macro breaks
+        if is_break and step % 4 == 0:
+            trill_len = int(SAMPLE_RATE * 0.45)
+            t_age = np.arange(min(num_samples - onset, trill_len)) / SAMPLE_RATE
+            if len(t_age) > 0:
+                vib = 15.0 * np.sin(2.0 * np.pi * 6.0 * t_age)
+                f_base = 900.0 + 300.0 * math.sin(step * 0.5)
+                trill_sig = np.sin(2.0 * np.pi * (f_base + vib) * t_age) * np.exp(-t_age / 0.15) * 0.08
+                trill_sig *= np.minimum(1.0, t_age / 0.03)  # smooth fade-in
+                mix[onset:onset+len(t_age)] += trill_sig
+                
+        # 5. Euphoric harmonized chord chime on the beat drop
+        if is_drop:
+            chord = [261.63, 329.63, 392.00, 523.25]  # C Major triad + octave confort chord
+            for f_root in chord:
+                chime_len = int(SAMPLE_RATE * 0.60)
+                chime_onset = onset
+                c_l = min(num_samples - chime_onset, chime_len)
+                if c_l > 0:
+                    c_age = np.arange(c_l) / SAMPLE_RATE
+                    chime = np.sin(2.0 * np.pi * f_root * c_age) * np.exp(-c_age / 0.18) * 0.035
+                    mix[chime_onset:chime_onset+c_l] += chime
 
     mix = np.clip(mix, -1.0, 1.0)
     
@@ -662,14 +686,14 @@ def render_9m_video(audio_path, mix_audio,
         draw.rectangle([220, 270, 380, 276], outline=HUD_COLOR)
         draw.rectangle([220, 270, int(220 + 160 * pl2), 276], fill=HUD_COLOR)
         
-        draw.text((420, 240), "BIRD 3 (RIGHT/GROWL)", fill=ACCENT_COLOR)
+        draw.text((420, 240), "BIRD 3 (RIGHT/RESONANCE)", fill=ACCENT_COLOR)
         draw.text((420, 255), f"AG3: {int(ag3*100)}% PL3: {int(pl3*100)}%", fill=(180, 180, 180))
         draw.rectangle([420, 270, 580, 276], outline=ACCENT_COLOR)
         draw.rectangle([420, 270, int(420 + 160 * ag3), 276], fill=ACCENT_COLOR)
         
         # HUD triggers
         if g_env > 0.05:
-            draw.text((420, 290), "⚡ GROWL TRIGGER B1", fill=ACCENT_COLOR)
+            draw.text((420, 290), "🌸 RESONANCE CHIRP B1", fill=ACCENT_COLOR)
         if f_env > 0.05:
             draw.text((220, 290), "⭐ FASCINATE TRIGGER B3", fill=HUD_COLOR)
         if kick_hits[sample_idx] > 0.5:
