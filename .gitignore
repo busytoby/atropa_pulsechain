@@ -126,3 +126,4 @@ assets/syrinx/
 # Ignore compiled C interop compositor binaries
 /scripts/libantigravity_interop.so
 /scripts/manifold_interop_renderer
+/scripts/test_abi_dispatch
