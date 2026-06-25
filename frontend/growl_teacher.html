@@ -307,6 +307,31 @@
                     </div>
                 </div>
 
+                <!-- Vaesen Emotional Accumulator Gauges -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">VAESEN EMOTIONAL ACCUMULATORS</div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div class="matching-text">
+                            <span>Agitation (E_ag)</span>
+                            <span id="vaesen-ag-pct" style="color: var(--glow-magenta); font-weight: bold;">10%</span>
+                        </div>
+                        <div class="matching-bar-container">
+                            <div class="matching-bar" id="vaesen-ag-bar" style="background: var(--glow-magenta); box-shadow: 0 0 10px var(--glow-magenta); width: 10%;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div class="matching-text">
+                            <span>Pleasure (H_pl)</span>
+                            <span id="vaesen-pl-pct" style="color: var(--glow-cyan); font-weight: bold;">90%</span>
+                        </div>
+                        <div class="matching-bar-container">
+                            <div class="matching-bar" id="vaesen-pl-bar" style="background: var(--glow-cyan); box-shadow: 0 0 10px var(--glow-cyan); width: 90%;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 12px; margin-top: 10px;">
                     <button class="btn" style="flex: 1;" onclick="toggleAudio()" id="play-btn">Activate Growl</button>
                     <button class="btn btn-magenta" style="flex: 1;" onclick="playTargetLesson()">Hear Target</button>
@@ -406,6 +431,12 @@
         let isAudioPlaying = false;
         let isHearingTarget = false;
         let calibratedLessons = {};
+
+        // Vaesen Emotional Accumulator State
+        let vaesenAgitation = 0.1;
+        let vaesenPleasure = 0.9;
+        const vaesenDecay = 0.95;
+        let lastParams = { pitch: 70, lfoFreq: 6, lfoDepth: 10, cutoff: 150 };
 
         const LESSONS = [
             {
@@ -764,13 +795,46 @@
             document.getElementById("val-shape").innerText = shapes[shapeIdx].charAt(0).toUpperCase() + shapes[shapeIdx].slice(1);
             document.getElementById("val-zener").innerText = `${zenerAmt}x`;
 
+            // Calculate dynamic parameter adjustment velocity (dynamic input)
+            const deltaPitch = Math.abs(pitch - lastParams.pitch) / 100;
+            const deltaLfoFreq = Math.abs(lfoFreq - lastParams.lfoFreq) / 15;
+            const deltaLfoDepth = Math.abs(lfoDepth - lastParams.lfoDepth) / 30;
+            const deltaCutoff = Math.abs(cutoff - lastParams.cutoff) / 400;
+            
+            const dynamicInput = Math.min(1.0, (deltaPitch + deltaLfoFreq + deltaLfoDepth + deltaCutoff) * 6.0);
+            lastParams = { pitch, lfoFreq, lfoDepth, cutoff };
+
+            // Update Vaesen Accumulators
+            // High dynamic variance (knob twisting) increases Agitation
+            vaesenAgitation = vaesenDecay * vaesenAgitation + (1.0 - vaesenDecay) * dynamicInput;
+            
+            // High target matching error decreases Pleasure
+            const target = LESSONS[activeLessonIdx];
+            const dPitch = Math.abs(pitch - target.pitch) / 100;
+            const dLfoFreq = Math.abs(lfoFreq - target.lfoFreq) / 15;
+            const dLfoDepth = Math.abs(lfoDepth - target.lfoDepth) / 30;
+            const dCutoff = Math.abs(cutoff - target.cutoff) / 400;
+            const dShape = shapeIdx === target.shape ? 0 : 0.4;
+            const aestheticError = (dPitch + dLfoFreq + dLfoDepth + dCutoff + dShape) / 5;
+
+            vaesenPleasure = vaesenDecay * vaesenPleasure + (1.0 - vaesenDecay) * (1.0 - aestheticError);
+            
+            vaesenAgitation = Math.max(0.01, Math.min(1.0, vaesenAgitation));
+            vaesenPleasure = Math.max(0.01, Math.min(1.0, vaesenPleasure));
+
+            // Update UI gauges
+            document.getElementById("vaesen-ag-pct").innerText = `${Math.round(vaesenAgitation * 100)}%`;
+            document.getElementById("vaesen-ag-bar").style.width = `${Math.round(vaesenAgitation * 100)}%`;
+            document.getElementById("vaesen-pl-pct").innerText = `${Math.round(vaesenPleasure * 100)}%`;
+            document.getElementById("vaesen-pl-bar").style.width = `${Math.round(vaesenPleasure * 100)}%`;
+
             const now = audioCtx ? audioCtx.currentTime : 0;
             if (isAudioPlaying && carrierOsc) {
-                // Synthesize organic Jitter (pitch instability)
-                const jitter = (Math.random() - 0.5) * 2.8;
+                // Synthesize organic Jitter: Agitation boosts frequency instability
+                const agitationJitter = (Math.random() - 0.5) * (2.8 + 12.0 * vaesenAgitation);
 
                 carrierOsc.type = shapes[shapeIdx];
-                carrierOsc.frequency.setValueAtTime(pitch + jitter, now);
+                carrierOsc.frequency.setValueAtTime(pitch + agitationJitter, now);
                 modulatorOsc.frequency.setValueAtTime(repelActive ? lfoFreq * 4.0 : lfoFreq, now);
                 modGain.gain.setValueAtTime(repelActive ? lfoDepth * 1.8 : lfoDepth, now);
                 
@@ -781,7 +845,7 @@
                 if (formantF2) formantF2.frequency.setValueAtTime(cutoff * 2.2, now);
 
                 if (subOsc) {
-                    subOsc.frequency.setValueAtTime(pitch * 0.5 + jitter * 0.5, now);
+                    subOsc.frequency.setValueAtTime(pitch * 0.5 + agitationJitter * 0.5, now);
                 }
 
                 // Synthesize organic Shimmer (volume instability)
@@ -790,18 +854,24 @@
                     synthGain.gain.setValueAtTime(shimmer, now);
                 }
 
+                // Modulate waveshaper curves based on Agitation (distorts harder when agitated)
                 if (zenerNode) {
-                    zenerNode.curve = makeZenerDistortionCurve(repelActive ? zenerAmt * 2.0 : zenerAmt);
+                    zenerNode.curve = makeZenerDistortionCurve((repelActive ? zenerAmt * 2.0 : zenerAmt) * (1.0 + 1.2 * vaesenAgitation));
+                }
+                if (rtlNode) {
+                    rtlNode.curve = makeRTLDistortionCurve((repelActive ? 2.5 : 1.5) * (1.0 + 0.8 * vaesenAgitation));
+                }
+                if (tunnelNode) {
+                    tunnelNode.curve = makeTunnelDiodeCurve((repelActive ? 3.0 : 1.8) * (1.0 + 0.8 * vaesenAgitation));
+                }
+
+                // Modulate BBD delay line feedback: Pleasure reduces feedback for clean singing
+                if (bbdFeedback) {
+                    bbdFeedback.gain.setValueAtTime(0.35 * (1.0 - 0.7 * vaesenPleasure), now);
                 }
                 if (bbdDelay) {
                     const bbdWobble = 0.08 + Math.sin(now * 3.5) * 0.015;
                     bbdDelay.delayTime.setValueAtTime(bbdWobble, now);
-                }
-                if (rtlNode) {
-                    rtlNode.curve = makeRTLDistortionCurve(repelActive ? 2.5 : 1.5);
-                }
-                if (tunnelNode) {
-                    tunnelNode.curve = makeTunnelDiodeCurve(repelActive ? 3.0 : 1.8);
                 }
             }
 
