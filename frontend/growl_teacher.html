@@ -295,6 +295,21 @@
                         <div class="lesson-title">6. Auncient Moeuuuur Cow Calibration</div>
                         <div class="lesson-desc">Low pitch slow resonant sweeps emulating a deep Auncient cow sound. Pitch: 42Hz, LFO: 1.5Hz.</div>
                     </div>
+                    <!-- Lesson 7 -->
+                    <div class="lesson-card" onclick="loadLesson(6)" id="lesson-6">
+                        <div class="lesson-title">7. Auncient Crow Hiss-Growl</div>
+                        <div class="lesson-desc">Raspy warning throat hiss-growl threat calibration. Pitch: 85Hz, LFO: 14Hz.</div>
+                    </div>
+                    <!-- Lesson 8 -->
+                    <div class="lesson-card" onclick="loadLesson(7)" id="lesson-7">
+                        <div class="lesson-title">8. Spring-Damped Verlet Composure</div>
+                        <div class="lesson-desc">Modulation aligning Verlet parameter-smoothing feedback. Pitch: 70Hz, LFO: 6Hz.</div>
+                    </div>
+                    <!-- Lesson 9 -->
+                    <div class="lesson-card" onclick="loadLesson(8)" id="lesson-8">
+                        <div class="lesson-title">9. Dysnomia VM Core Resonance</div>
+                        <div class="lesson-desc">High speed register lookup cycle emulations. Pitch: 130Hz, LFO: 18Hz.</div>
+                    </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
@@ -504,6 +519,33 @@
                 cutoff: 120,
                 shape: 1, // sawtooth
                 instruction: "Low pitch slow sweeps emulating a deep Auncient cow sound. Set base pitch to 42Hz, slow LFO frequency to 1.5Hz, and use a sawtooth waveform shape."
+            },
+            {
+                title: "7. Auncient Crow Hiss-Growl",
+                pitch: 85,
+                lfoFreq: 14,
+                lfoDepth: 35,
+                cutoff: 280,
+                shape: 1, // sawtooth
+                instruction: "Calibrating raw Crow Hiss-Growl threat response. Maintain base pitch at 85Hz, LFO frequency at 14Hz, and open filter cutoff to 280Hz."
+            },
+            {
+                title: "8. Spring-Damped Verlet Composure",
+                pitch: 70,
+                lfoFreq: 6,
+                lfoDepth: 10,
+                cutoff: 150,
+                shape: 0, // triangle
+                instruction: "Aligning spring-damped Verlet composure values. LFO depth of 10Hz and base pitch of 70Hz balances momentum."
+            },
+            {
+                title: "9. Dysnomia VM Core Resonance",
+                pitch: 130,
+                lfoFreq: 18,
+                lfoDepth: 20,
+                cutoff: 480,
+                shape: 2, // sine
+                instruction: "Calibrating Core VM trace lookup cycles. Increase pitch to 130Hz and LFO frequency to 18Hz to match address phase."
             }
         ];
 
