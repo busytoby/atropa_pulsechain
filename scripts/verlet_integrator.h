@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "../tsfi2-deepseek/inc/tsfi_zener.h"
 
 #define MAX_PARTICLES 1024
 
@@ -21,6 +22,7 @@ typedef struct {
     float boundary_min_x, boundary_max_x;
     float boundary_min_y, boundary_max_y;
     float boundary_min_z, boundary_max_z;
+    TsfiZener zener;       // Electro-mechanical Zener clamp feedback
 } VerletSystem;
 
 // Initialize the particle system

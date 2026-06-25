@@ -13,6 +13,9 @@ void verlet_system_init(VerletSystem *system, float dt) {
     system->boundary_max_y =  300.0f;
     system->boundary_min_z = -500.0f;
     system->boundary_max_z =  500.0f;
+
+    // Initialize Auncient Zener diode: Vz = 5.6V, temp_coeff = +0.003
+    tsfi_zener_init(&system->zener, 5.6, 0.003, 1.0f / dt);
 }
 
 bool verlet_system_spawn(VerletSystem *system, float x, float y, float z, float vx, float vy, float vz) {
@@ -53,9 +56,16 @@ void verlet_system_update(VerletSystem *system) {
         float temp_y = p->y;
         float temp_z = p->z;
         
-        // 1. Integrate position
+        // Zener physical clamping feedback on Y displacement
+        double noise = 0.0;
+        double vs = 0.08 * p->y; // Map position to virtual voltage
+        double vd = tsfi_zener_tick(&system->zener, vs, 1000.0, &noise);
+        double id = (vs - vd) / 1000.0;
+        float restoring_ay = (float)(-id * 250000.0); // Saturated clamp acceleration
+        
+        // 1. Integrate position (including Zener restoring force on Y axis)
         p->x = 2.0f * p->x - p->px + p->ax * dt_sq;
-        p->y = 2.0f * p->y - p->py + p->ay * dt_sq;
+        p->y = 2.0f * p->y - p->py + (p->ay + restoring_ay) * dt_sq;
         p->z = 2.0f * p->z - p->pz + p->az * dt_sq;
         
         p->px = temp_x;

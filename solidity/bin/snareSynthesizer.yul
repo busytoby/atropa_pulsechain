@@ -24,6 +24,14 @@ object "SnareSynthesizer" {
                 let noiseMix := and(shr(192, packedVal), 0xffffffffffffffff)
                 let scale := SCALE()
 
+                // Dynamic Wrap-Around: If decay or mix exceed 1e18, modulo wrap them back to 0
+                if ugt(noiseDecay, scale) {
+                    noiseDecay := mod(noiseDecay, scale)
+                }
+                if ugt(noiseMix, scale) {
+                    noiseMix := mod(noiseMix, scale)
+                }
+
                 // Load state:
                 // y = slot 100 (resonator displacement)
                 // v = slot 101 (resonator velocity)

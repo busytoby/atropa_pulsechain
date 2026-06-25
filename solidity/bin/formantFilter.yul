@@ -47,21 +47,53 @@ object "FormantFilter" {
                 sstore(100, bp_new)
                 sstore(101, lp_new)
 
-                // Symmetrical quadratic saturation transfer function:
-                // y_sat = bp_new - 0.2 * bp_new^2 * sgn(bp_new) / SCALE
+                // 1. Chaotic Jerk Oscillator (Sprott system integration):
+                // State coordinates: x=sload(102), y=sload(103), z=sload(104)
+                let jx := sload(102)
+                let jy := sload(103)
+                let jz := sload(104)
+                if and(eq(jx, 0), eq(jy, 0)) {
+                    jx := 100000000000000000 // 0.1 init
+                    jy := 100000000000000000
+                }
+                
+                // Jerk ODE: dz/dt = -0.6*z - y + sgn(x)
+                let sgn_jx := scale
+                if slt(jx, 0) { sgn_jx := sub(0, scale) }
+                let dt_j := 5000000000000000 // dt = 0.005
+                let jz_delta := sdiv(mul(sub(sgn_jx, add(jy, sdiv(mul(600000000000000000, jz), scale))), dt_j), scale)
+                let jz_new := add(jz, jz_delta)
+                let jy_new := add(jy, sdiv(mul(jz_new, dt_j), scale))
+                let jx_new := add(jx, sdiv(mul(jy_new, dt_j), scale))
+                
+                sstore(102, jx_new)
+                sstore(103, jy_new)
+                sstore(104, jz_new)
+
+                // 2. Dynamic Warpfolding Saturation stage:
+                // Folding threshold deforms dynamically driven by the chaotic jerk amplitude
+                let fold_threshold := add(300000000000000000, sdiv(mul(jx_new, 2), 10)) // base 0.3V + modulated jerk
                 let output := bp_new
-                let absOut := bp_new
-                let sgn := 1
-                if slt(bp_new, 0) {
-                    absOut := sub(0, bp_new)
-                    sgn := sub(0, 1)
+                
+                // Wrap and fold signal if it exceeds the dynamic threshold
+                if sgt(output, fold_threshold) {
+                    let excess := sub(output, fold_threshold)
+                    output := sub(fold_threshold, excess)
+                }
+                if slt(output, sub(0, fold_threshold)) {
+                    let excess := add(output, fold_threshold)
+                    output := add(sub(0, fold_threshold), sub(0, excess))
                 }
 
-                // Only apply quadratic saturation if output is large to generate warm even harmonics
-                if sgt(absOut, 100000000000000000) {
-                    let squared := sdiv(mul(absOut, absOut), scale)
-                    let correction := sdiv(mul(squared, 200000000000000000), scale) // 0.2 multiplier
-                    output := sub(bp_new, mul(correction, sgn))
+                // Absolute Scale Wrap-Around: If output exceeds 1e18 limits, wrap it modulo SCALE() back to 0
+                let absOut := output
+                let sgn := 1
+                if slt(output, 0) {
+                    absOut := sub(0, output)
+                    sgn := sub(0, 1)
+                }
+                if ugt(absOut, scale) {
+                    output := mul(mod(absOut, scale), sgn)
                 }
 
                 mstore(0, output)

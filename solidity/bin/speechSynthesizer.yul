@@ -43,6 +43,32 @@ object "SpeechSynthesizer" {
                 if iszero(ok) { revert(0, 0) }
             }
 
+            // Fixed-point Taylor series approximation of J0(x) scaled by 1000
+            function besselJ0Scaled(x) -> val {
+                let x2 := div(mul(x, x), 1000)
+                let term1 := div(mul(x2, 250), 1000)
+                let x4 := div(mul(x2, x2), 1000)
+                let term2 := div(mul(x4, 15625), 1000000) // 1/64 = 0.015625
+                let x6 := div(mul(x4, x2), 1000)
+                let term3 := div(x6, 2304)
+                
+                let pos := add(1000, term2)
+                let neg := add(term1, term3)
+                if gt(pos, neg) {
+                    val := sub(pos, neg)
+                }
+                if iszero(gt(pos, neg)) {
+                    val := 0
+                }
+            }
+
+            // Simple exponential decay approximation for K0(x) scaled by 1000
+            function besselK0Scaled(x) -> val {
+                let x2 := div(mul(x, x), 1000)
+                let denom := add(add(1000, x), div(x2, 2))
+                val := div(1000000, denom)
+            }
+
             // ----------------------------------------------------------------
             // Method: bindCpuAddress(address cpu) -> bool
             // Selector: 0x678575ea
@@ -1577,8 +1603,19 @@ object "SpeechSynthesizer" {
                     }
 
                     for { let u := 0 } lt(u, upsampleFactor) { u := add(u, 1) } {
+                        // Calculate sample index for Bessel timeline modulation
+                        let sampleIdx := add(mul(f, upsampleFactor), u)
+                        
+                        // Modulate target pitch with Bessel J0 (efferent topicality cadence)
+                        // x parameter maps from 0 to 750 (representing 0.0 to 0.75 rad) over synthesis duration
+                        let x_param := div(mul(sampleIdx, 750), totalSamples)
+                        let j0 := besselJ0Scaled(x_param)
+                        // Pitch factor = (850 + J0 * 15 / 10) / 1000 [maps 85% to 115%]
+                        let pitchFactor := add(850, div(mul(j0, 15), 10))
+                        let activeTargetPitch := div(mul(targetPitch, pitchFactor), 1000)
+
                         // Smoothly interpolate parameters (1/64 transition rate)
-                        currentPitch := add(currentPitch, sdiv(sub(targetPitch, currentPitch), 64))
+                        currentPitch := add(currentPitch, sdiv(sub(activeTargetPitch, currentPitch), 64))
                         currentEnergy := add(currentEnergy, sdiv(sub(targetEnergy, currentEnergy), 64))
                         for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
                             let curK := mload(add(0x4300, mul(i, 32)))
@@ -1647,6 +1684,16 @@ object "SpeechSynthesizer" {
                             if bit { seed := xor(seed, 0xB400) }
                             excitation := sub(mod(seed, 2000), 1000)
                         }
+
+                        // Apply Bessel K0 amplitude decay at the release phase
+                        let ampScale := 1000
+                        let decayThreshold := div(mul(totalSamples, 85), 100)
+                        if gt(sampleIdx, decayThreshold) {
+                            // Map remaining 15% of samples to 0..1500 for K0 decay
+                            let decayIdx := div(mul(sub(sampleIdx, decayThreshold), 1500), sub(totalSamples, decayThreshold))
+                            ampScale := besselK0Scaled(decayIdx)
+                        }
+                        excitation := div(mul(excitation, ampScale), 1000)
 
                         // Filter forward path
                         let forward := sdiv(mul(excitation, currentEnergy), 100)
