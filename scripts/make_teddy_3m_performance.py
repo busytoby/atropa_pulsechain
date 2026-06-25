@@ -49,6 +49,8 @@ def generate_3m_audio():
     speech = np.zeros(num_samples_ext)
     glottal_flow = np.zeros(num_samples_ext)
     
+    # 3-Mass Ishizaka-Flanagan style Verlet physical model simulation variables
+    # Mass 1 (Lower Fold)
     x1, x1_prev = 0.05, 0.05
     m1 = 0.15
     epibar1 = 1000.0
@@ -56,6 +58,7 @@ def generate_3m_audio():
     c1 = 1.4
     Ps1 = 0.55
     
+    # Mass 2 (Upper Fold)
     x2, x2_prev = 0.04, 0.04
     m2 = 0.12
     epibar2 = 1380.0
@@ -63,29 +66,53 @@ def generate_3m_audio():
     c2 = 1.1
     Ps2 = 0.65
     
+    # Mass 3 (Resonant Load Piston representing vocal tract impedance)
+    x3, x3_prev = 0.0, 0.0
+    m3 = 0.08
+    k3 = 800.0
+    c3 = 0.5
+    
+    # Coupling parameters
     Kc = 180.0
     A_fold = 0.2
     
     for s in range(1, num_samples_ext - 1):
+        # Asymmetric stiffness based on displacement (Epibar for tension, Hypobar for compression)
         stiffness1 = epibar1 if x1 > 0.0 else hypobar1
         stiffness2 = epibar2 if x2 > 0.0 else hypobar2
         
+        # Aerodynamic driving forces
         f_p1 = Ps1 * A_fold if x1 > 0.0 else 0.0
         f_p2 = Ps2 * A_fold if x2 > 0.0 else 0.0
         
+        # Velocities
         v1 = (x1 - x1_prev) / dt
         v2 = (x2 - x2_prev) / dt
+        v3 = (x3 - x3_prev) / dt
         
+        # Resonant load piston driven by glottal flow
+        current_flow = (max(x1, 0.0) ** 2) + (max(x2, 0.0) ** 2)
+        f_p3 = current_flow * 2.5
+        
+        # Feedback force from resonant piston onto upper glottal mass
+        F_fb = -k3 * x3 - c3 * v3
+        
+        # Coupled acceleration calculations
         acc1 = (f_p1 - stiffness1 * x1 - c1 * v1 + Kc * (x2 - x1)) / m1
-        acc2 = (f_p2 - stiffness2 * x2 - c2 * v2 + Kc * (x1 - x2)) / m2
+        acc2 = (f_p2 - stiffness2 * x2 - c2 * v2 + Kc * (x1 - x2) + F_fb) / m2
+        acc3 = (f_p3 - k3 * x3 - c3 * v3) / m3
         
+        # Verlet integration step
         x1_next = 2.0 * x1 - x1_prev + acc1 * (dt ** 2)
         x2_next = 2.0 * x2 - x2_prev + acc2 * (dt ** 2)
+        x3_next = 2.0 * x3 - x3_prev + acc3 * (dt ** 2)
         
         x1_prev, x1 = x1, max(-0.2, min(1.0, x1_next))
         x2_prev, x2 = x2, max(-0.2, min(1.0, x2_next))
+        x3_prev, x3 = x3, max(-0.5, min(1.0, x3_next))
         
-        glottal_flow[s] = (max(x1, 0.0) ** 2) + (max(x2, 0.0) ** 2)
+        # Save output flow (modulated by acoustic load piston)
+        glottal_flow[s] = current_flow
         
     glottal_flow -= np.mean(glottal_flow)
     if np.max(np.abs(glottal_flow)) > 0:
