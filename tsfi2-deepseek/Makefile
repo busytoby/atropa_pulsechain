@@ -220,6 +220,9 @@ bin/test_dna_decoder: tests/test_dna_decoder.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_in
 bin/test_dualist_neuron_weights: tests/test_dualist_neuron_weights.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_dualist_pid_controller: tests/test_dualist_pid_controller.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_yang_audion_bjt_quality: tests/test_yang_audion_bjt_quality.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
