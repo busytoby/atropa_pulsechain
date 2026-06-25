@@ -103,8 +103,12 @@ def generate_9m_performance():
     dna_b0 = BIRD_DNA[0]
     kick_len = int(SAMPLE_RATE * 0.18)
     k_age = np.arange(kick_len) / SAMPLE_RATE
-    k_freq = dna_b0["synth_base_freq"] + 120.0 * np.exp(-k_age / dna_b0["synth_pitch_decay"])
-    kick_sound = np.sin(2.0 * np.pi * k_freq * k_age) * np.exp(-k_age / 0.12)
+    f_base = dna_b0["synth_base_freq"]
+    f_diff = 120.0
+    tau = dna_b0["synth_pitch_decay"]
+    # Mathematically integrated phase to prevent metallic reverse-sweeping artifacts
+    kick_phase = 2.0 * np.pi * (f_base * k_age - f_diff * tau * (np.exp(-k_age / tau) - 1.0))
+    kick_sound = np.sin(kick_phase) * np.exp(-k_age / 0.12)
     kick_sound = np.tanh(kick_sound * 1.5) * dna_b0["synth_vol"]
     
     snare_len = int(SAMPLE_RATE * 0.15)
@@ -324,8 +328,9 @@ def generate_9m_performance():
             l = min(num_samples - onset, f_len)
             if l > 0:
                 age_f = np.arange(l) / SAMPLE_RATE
-                sweep = f_start + (f_end - f_start) * (age_f / 0.08)
-                fascinator_sig = np.sin(2.0 * np.pi * sweep * age_f) * np.exp(-age_f / 0.018) * dna_b1["synth_vol"]
+                # Correct phase integration for linear sweep: integral of (a + b*t) dt is a*t + b/2 * t^2
+                sweep_phase = 2.0 * np.pi * (f_start * age_f + (f_end - f_start) / (2.0 * 0.08) * (age_f ** 2))
+                fascinator_sig = np.sin(sweep_phase) * np.exp(-age_f / 0.018) * dna_b1["synth_vol"]
                 mix[onset:onset+l] += fascinator_sig
                 fascinator_hits[onset:onset+l] = 1.0
                 
@@ -375,9 +380,12 @@ def generate_9m_performance():
                 hiss_noise = np.random.uniform(-1.0, 1.0, len(g_age))
                 hiss = hiss_noise * np.sin(2.0 * np.pi * dna_b2["synth_hiss_freq"] * g_age) * np.exp(-g_age / 0.10) * 0.09
                 
-                # 2. Low-frequency gravelly croak/growl
-                gravel_mod = 1.0 + 0.9 * np.sin(2.0 * np.pi * dna_b2["synth_gravel_mod"] * g_age)
-                croak_carrier = np.sign(np.sin(2.0 * np.pi * (dna_b2["synth_croak_freq"] + 35.0 * ag3) * g_age))  # gravelly square wave
+                # 2. Low-frequency gravelly croak/growl using band-limited shape to prevent aliasing
+                f_croak = dna_b2["synth_croak_freq"] + 35.0 * ag3
+                saw = 2.0 * ((g_age * f_croak) % 1.0) - 1.0
+                croak_carrier = np.tanh(saw * 3.0)  # smooth out sharp aliasing corners
+                
+                gravel_mod = 1.0 + 0.95 * np.sin(2.0 * np.pi * dna_b2["synth_gravel_mod"] * g_age)
                 croak = croak_carrier * gravel_mod * np.exp(-g_age / 0.26) * 0.22
                 
                 # Combined and distorted through tanh wave shaper
