@@ -196,7 +196,14 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
         if is_voiced:
             excitation = flow
         else:
-            excitation = noise[s] * 0.35
+            # Scale transient attack gain with the sub-accumulator (higher energy under stress)
+            attack_gain = 1.0 + (bionika_vsub * 1.5)
+            # Stop consonants like "t" decay rapidly, fricatives like "s", "f" have fast rise
+            if curr_ph in ["t"]:
+                envelope = math.exp(-15.0 * ph_progress) * 0.40 * attack_gain
+            else: # "s", "f"
+                envelope = (1.0 - math.exp(-15.0 * ph_progress)) * 0.35 * attack_gain
+            excitation = noise[s] * envelope
             
         if f1 > 0:
             # Dual-formant resonance model excited by syrinx membrane flow or friction noise
