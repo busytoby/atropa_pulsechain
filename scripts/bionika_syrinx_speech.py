@@ -34,6 +34,7 @@ PHONEME_TABLE = {
     "r": (310.0, 1060.0, 1670.0, True),
     "v": (250.0, 1500.0, 2500.0, True),
     "y": (300.0, 2200.0, 3000.0, True),
+    "z": (300.0, 1800.0, 2700.0, True),  # voiced fricative z
     "ng": (300.0, 1800.0, 2700.0, True),  # nasal ng
     "un": (400.0, 1500.0, 2500.0, True),  # nasal un
     " ": (0.0, 0.0, 0.0, False),  # silence
@@ -194,7 +195,10 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
         flow = (max(x1, 0.0) ** 2)
         
         if is_voiced:
-            excitation = flow
+            if curr_ph == "z":
+                excitation = flow * 0.65 + noise[s] * 0.35
+            else:
+                excitation = flow
         else:
             # Scale transient attack gain with the sub-accumulator (higher energy under stress)
             attack_gain = 1.0 + (bionika_vsub * 1.5)

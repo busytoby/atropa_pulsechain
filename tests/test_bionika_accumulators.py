@@ -7,7 +7,7 @@ class TestBionikaAccumulators(unittest.TestCase):
     
     def test_g2p_parsing(self):
         """Verify text parsing resolves to correct Auncient phonetic symbols."""
-        phrase = "auncient bionika singing antigravity"
+        phrase = "auncient bionika singing antigravity zener formant"
         phonemes = text_to_phonemes(phrase)
         self.assertIn("a", phonemes)
         self.assertIn("un", phonemes)  # "un" from auncient and antigravity
@@ -16,8 +16,14 @@ class TestBionikaAccumulators(unittest.TestCase):
         self.assertIn("r", phonemes)   # "r" from antigravity
         self.assertIn("v", phonemes)   # "v" from antigravity
         self.assertIn("y", phonemes)   # "y" from antigravity
+        self.assertIn("z", phonemes)   # "z" from zener
+        self.assertIn("f", phonemes)   # "f" from formant
         self.assertIn("e", phonemes)
         self.assertIn("i", phonemes)
+        
+        # Verify fricative voicing properties
+        self.assertTrue(PHONEME_TABLE["z"][3])  # z is voiced
+        self.assertFalse(PHONEME_TABLE["f"][3]) # f is voiceless
 
     def test_epi_hypo_stiffness_boundaries(self):
         """Verify the physical model alternates stiffness based on displacement boundaries (Epi vs Hypo)."""
