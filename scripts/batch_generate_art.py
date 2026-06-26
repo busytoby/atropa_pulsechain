@@ -144,6 +144,12 @@ def wrap_text(text, width_chars):
         lines.append(" ".join(current_line))
     return lines
 
+def draw_glow_line(draw_obj, p1, p2, color, width=1):
+    r, g, b, a = color
+    draw_obj.line([p1, p2], fill=(r, g, b, int(a * 0.15)), width=width+4)
+    draw_obj.line([p1, p2], fill=(r, g, b, int(a * 0.40)), width=width+2)
+    draw_obj.line([p1, p2], fill=(r, g, b, a), width=width)
+
 def render_card_art(card, output_path):
     from PIL import ImageFont
     
@@ -214,14 +220,74 @@ def render_card_art(card, output_path):
             if abs(px) + abs(py) <= 3:
                 draw_isometric_cube(draw, cx, cy, px, py, -4, 30, pedestal_color)
 
-    # 4. Generate & render the Voxel Shape inside HUD rings
+    # 4. Generate & render the 3D Lissajous curves inside HUD rings (Pure idealized register synthesis)
     desc = get_rich_description(card)
-    voxels = generate_voxel_shape(desc, seed_str=addr)
-    voxel_size = 30
+    # Target Lissajous frequencies and phase offsets from address hash
+    fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
+    fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
+    fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
+    phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
+    multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
     
-    for vx, vy, vz, color_type in voxels:
-        v_color = accent_rgb if color_type == 1 else color_rgb
-        draw_isometric_cube(draw, cx, cy, vx, vy, vz, voxel_size, v_color)
+    num_points = 180
+    
+    def project_lissajous(x, y, z, cx_val, cy_val):
+        yaw = 0.5
+        pitch = 0.4
+        cam_x = math.cos(yaw) * 260
+        cam_y = math.sin(yaw) * 260
+        cam_z = 150
+        zoom = 0.95
+        
+        dx = x - cam_x
+        dy = y - cam_y
+        dz = z - cam_z
+        
+        cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+        rx = dx * cos_y - dy * sin_y
+        ry = dx * sin_y + dy * cos_y
+        rz = dz
+        
+        cos_p, sin_p = math.cos(pitch), math.sin(pitch)
+        x_new = rx * cos_p + rz * sin_p
+        y_new = ry
+        z_new = -rx * sin_p + rz * cos_p
+        
+        focal = 350.0
+        if z_new == 0: z_new = 1
+        px = (x_new * focal) / (z_new + 500) * zoom + cx_val
+        py = (y_new * focal) / (z_new + 500) * zoom + cy_val
+        return int(px), int(py)
+
+    # Draw two interlaced Lissajous curves (representing Rod/Cone elements under magnetic pinning)
+    for is_cone in [False, True]:
+        fx_c = fx + (0.5 if is_cone else 0.0)
+        fy_c = fy + (0.5 if is_cone else 0.0)
+        fz_c = fz + (0.5 if is_cone else 0.0)
+        phi_c = phi + (math.pi if is_cone else 0.0)
+        
+        proj_points = []
+        for i in range(num_points):
+            theta = i * 2.0 * math.pi / num_points
+            lx = 100.0 * math.sin(fx_c * theta + phi_c)
+            ly = 100.0 * math.sin(fy_c * theta)
+            lz = 100.0 * math.cos(fz_c * theta)
+            
+            px, py = project_lissajous(lx, ly, lz, cx, cy)
+            proj_points.append((px, py))
+            
+        # Draw outlines
+        for i in range(num_points):
+            p1 = proj_points[i]
+            p2 = proj_points[(i + 1) % num_points]
+            draw_glow_line(draw, p1, p2, (color_rgb[0], color_rgb[1], color_rgb[2], 160), width=1)
+            
+        # Draw modulo chords representing arithmetic connections
+        for i in range(num_points):
+            target_idx = int((i * multiplier) % num_points)
+            p1 = proj_points[i]
+            p2 = proj_points[target_idx]
+            draw_glow_line(draw, p1, p2, (color_rgb[0], color_rgb[1], color_rgb[2], 40), width=1)
         
     # 5. Right side Info Panel (720x40 to 1240x680)
     draw.polygon([(740, 40), (1220, 40), (1240, 60), (1240, 660), (1220, 680), (740, 680), (720, 660), (720, 60)], outline=get_shade(color_rgb, 0.4), fill=(10, 6, 18), width=2)
@@ -321,47 +387,7 @@ def render_card_art(card, output_path):
     vignette = vignette.filter(ImageFilter.GaussianBlur(15))
     bg_img.paste(vignette, (0, 0), vignette)
     
-    # Run SD stylization pipeline
-    write_to_shm_depth(bg_img)
-    
-    sd_prompt = (
-        f"Vibrant high-fidelity sci-fi trading card game art, cel-shaded neon vector style, representing '{desc}', "
-        f"bold retro 1980s futuristic cyber aesthetic, neon glows, clean vector outlines, hand-painted gouache coloration, masterpiece"
-    )
-    
-    raw_out = f"tmp/batch_sd_out_{addr_hash}.raw"
-    os.makedirs("tsfi2-deepseek/tmp", exist_ok=True)
-    
-    worker_path = "./bin/tsfi_sd_worker"
-    cmd = [
-        worker_path,
-        sd_prompt,
-        raw_out,
-        "1", # use_shm = 1
-        "sd15", # profile
-        "4", # steps
-        "euler_a", # sampler
-        "1.5" # cfg
-    ]
-    
-    print(f"[Batch Generator] Executing Stable Diffusion worker for {card.get('name')}: {' '.join(cmd)}")
-    try:
-        subprocess.run(cmd, cwd="tsfi2-deepseek", check=True)
-        raw_path_adj = "tsfi2-deepseek/" + raw_out
-        if os.path.exists(raw_path_adj):
-            with open(raw_path_adj, 'rb') as f:
-                raw_data = f.read()
-            if len(raw_data) == 1280 * 704 * 3:
-                bg_img = Image.frombytes('RGB', (1280, 704), raw_data).resize((1280, 720))
-            elif len(raw_data) == 512 * 512 * 3:
-                bg_img = Image.frombytes('RGB', (512, 512), raw_data).resize((1280, 720))
-            
-            try:
-                os.remove(raw_path_adj)
-            except:
-                pass
-    except Exception as e:
-        print(f"[Batch Generator] SD worker failed, falling back to raw render: {e}")
+
         
     bg_img.save(output_path)
 
