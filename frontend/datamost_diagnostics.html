@@ -7501,6 +7501,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 ctx.stroke();
             }
 
+            // AI Friendship Routines progression and Tier Benefits
+            window.helperFriendshipTier = window.helperFriendshipTier || 1;
+            window.helperFriendshipXP = window.helperFriendshipXP || 0;
+            if (helpDist < 30) {
+                window.helperFriendshipXP += 0.2;
+                if (window.helperFriendshipXP >= 100) {
+                    window.helperFriendshipXP = 0;
+                    window.helperFriendshipTier = Math.min(3, window.helperFriendshipTier + 1);
+                    if (window.playSynthTone) playSynthTone(900, 200);
+                }
+            }
+            if (window.helperFriendshipTier >= 2 && window.omegaShield < 50 && helpDist < 50) {
+                window.omegaShield = Math.min(100, window.omegaShield + 0.1);
+            }
+            ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+            ctx.font = "8px monospace";
+            ctx.fillText(`Helper Tier: ${window.helperFriendshipTier} (XP: ${Math.floor(window.helperFriendshipXP)}%)`, 10, 45);
+
             // Shield status synthesis alarms and vocalizations
             if (window.omegaShield < 25) {
                 const now = Date.now();
