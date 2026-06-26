@@ -12,8 +12,15 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 7) {
-        fprintf(stderr, "Usage: %s <base_raw> <lineart_raw> <depth_raw> <normal_raw> <seg_raw> <interop_registry_bin>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <base_raw> <lineart_raw> <depth_raw> <normal_raw> <seg_raw> <interop_registry_bin> [style: stylized|lineart|retro]\n", argv[0]);
         return 1;
+    }
+
+    int style = 0; // 0 = photorealistic, 1 = stylized, 2 = lineart, 3 = retro
+    if (argc > 7) {
+        if (strcmp(argv[7], "stylized") == 0) style = 1;
+        else if (strcmp(argv[7], "lineart") == 0) style = 2;
+        else if (strcmp(argv[7], "retro") == 0) style = 3;
     }
 
     FILE *f_base = fopen(argv[1], "rb");
@@ -87,20 +94,40 @@ int main(int argc, char *argv[]) {
             double nz = (nb - 127.5) / 127.5;
             double spec = pow(fmax(0.0, nz), spec_power);
 
-            // Custom Material routing based on Segmentation Color Mask with boosted brightness
-            double r_out = br * 1.3, g_out = bg * 1.3, b_out = bb * 1.3; // Boost base brightness
-            if (sr > 200 && sg > 200 && sb < 50) { // Yellow Mask: Casing B
-                r_out = br * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
-                g_out = bg * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
-                b_out = bb * 0.8;
-            } else if (sb > 200 && sr < 50 && sg < 50) { // Blue Mask: Casing A
-                r_out = br * 1.0 + spec * (160 + reg.frame_modulation_factor * 80);
-                g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
-                b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
-            } else if (sr > 200 && sg < 50 && sb < 50) { // Red Mask: Verlet Particles / Connections (Boosted)
-                r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120;
-                g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80;
-                b_out = bb * 1.2 + 50;
+            // Material routing based on rendering style selection
+            double r_out = 0, g_out = 0, b_out = 0;
+            if (style == 2) { // Lineart only
+                r_out = lr; g_out = lg; b_out = lb;
+            } else if (style == 1) { // Stylized / Flat Casings
+                r_out = sr; g_out = sg; b_out = sb;
+                if (sr > 200 && sg > 200 && sb < 50) { // Yellow casing
+                    r_out = 230 + spec * 25;
+                    g_out = 190 + spec * 25;
+                    b_out = 30;
+                } else if (sb > 200 && sr < 50 && sg < 50) { // Blue casing
+                    r_out = 30;
+                    g_out = 140 + spec * 50;
+                    b_out = 240 + spec * 15;
+                } else if (sr > 200 && sg < 50 && sb < 50) { // Red connections
+                    r_out = 250;
+                    g_out = 40;
+                    b_out = 40;
+                }
+            } else { // Photorealistic or Retro base
+                r_out = br * 1.3; g_out = bg * 1.3; b_out = bb * 1.3; // Boost base brightness
+                if (sr > 200 && sg > 200 && sb < 50) { // Yellow Mask: Casing B
+                    r_out = br * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
+                    g_out = bg * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
+                    b_out = bb * 0.8;
+                } else if (sb > 200 && sr < 50 && sg < 50) { // Blue Mask: Casing A
+                    r_out = br * 1.0 + spec * (160 + reg.frame_modulation_factor * 80);
+                    g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
+                    b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
+                } else if (sr > 200 && sg < 50 && sb < 50) { // Red Mask: Verlet Particles / Connections (Boosted)
+                    r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120;
+                    g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80;
+                    b_out = bb * 1.2 + 50;
+                }
             }
 
             // Apply LineArt borders (edges mask details but lighter)
@@ -116,6 +143,12 @@ int main(int argc, char *argv[]) {
             r_out = r_out * depth_blend + fog_r * (1.0 - depth_blend);
             g_out = g_out * depth_blend + fog_g * (1.0 - depth_blend);
             b_out = b_out * depth_blend + fog_b * (1.0 - depth_blend);
+
+            if (style == 3) { // Retro Amiga 4-bit quantization (16-color channel bits)
+                r_out = ((int)(r_out / 16.0)) * 16.0;
+                g_out = ((int)(g_out / 16.0)) * 16.0;
+                b_out = ((int)(b_out / 16.0)) * 16.0;
+            }
 
             buf_out[i]   = (uint8_t)fmin(255.0, fmax(0.0, r_out));
             buf_out[i+1] = (uint8_t)fmin(255.0, fmax(0.0, g_out));

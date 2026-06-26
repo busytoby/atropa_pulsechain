@@ -12,6 +12,7 @@ NORMAL_VIDEO="manifold_layer_normal.mp4"
 SEG_VIDEO="manifold_layer_segmentation.mp4"
 AUDIO_FILE="cloudburst_ambient_resonance.wav"
 OUTPUT_VIDEO="ambient_manifold_composed_interop.mp4"
+RENDER_STYLE="photorealistic"
 
 # Print usage instructions
 usage() {
@@ -24,6 +25,7 @@ usage() {
     echo "  --seg <path>        Segmentation mask video (default: $SEG_VIDEO)"
     echo "  --audio <path>      Soundtrack file (default: $AUDIO_FILE)"
     echo "  --output <path>     Output video destination (default: $OUTPUT_VIDEO)"
+    echo "  --style <style>     Render aesthetic style: photorealistic|stylized|lineart|retro (default: $RENDER_STYLE)"
     echo "  -h, --help          Show this message"
     exit 1
 }
@@ -38,6 +40,7 @@ while [[ "$#" -gt 0 ]]; do
         --seg) SEG_VIDEO="$2"; shift ;;
         --audio) AUDIO_FILE="$2"; shift ;;
         --output) OUTPUT_VIDEO="$2"; shift ;;
+        --style) RENDER_STYLE="$2"; shift ;;
         -h|--help) usage ;;
         *) echo "Unknown parameter passed: $1"; usage ;;
     esac
@@ -101,7 +104,7 @@ echo "[PIPELINE] Launching fast C interop compositor..."
   <(ffmpeg -i "$DEPTH_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
   <(ffmpeg -i "$NORMAL_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
   <(ffmpeg -i "$SEG_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
-  "$REGISTRY_FILE" | \
+  "$REGISTRY_FILE" "$RENDER_STYLE" | \
 ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - \
   -stream_loop -1 -i "$AUDIO_FILE" -c:v libx264 -pix_fmt yuv420p \
   -c:a aac -b:a 192k -shortest "$OUTPUT_VIDEO"
