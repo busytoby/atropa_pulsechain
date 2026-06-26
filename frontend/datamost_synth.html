@@ -10310,6 +10310,35 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             if (window.dnaFrames && window.dnaFrames.length > 0) {
                 window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
             }
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const bannerY = canvas.height - 18;
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillRect(0, bannerY - 10, canvas.width, 20);
+                
+                const time = Date.now() / 150;
+                const glowHue = (Date.now() / 5) % 360;
+                ctx.fillStyle = `hsla(${glowHue}, 100%, 50%, 0.3)`;
+                ctx.fillRect(0, bannerY - 11, canvas.width, 1);
+                ctx.fillRect(0, bannerY + 10, canvas.width, 1);
+                
+                ctx.font = "bold 9px 'Orbitron', monospace";
+                ctx.textAlign = "center";
+                
+                const scrollMsg = "   *** RAZOR1911 RETRO DEMO SCENE INTR0 FOR GORF ON ATROPA PULSECHAIN *** PURE 6502 BYTECODE COMPATIBILITY *** SHADING COMPOSITOR SHIMMER ENABLED *** GREETINGS TO COMPILER AND EMULATOR HACKERS WORLDWIDE ***   ";
+                const charSpacing = 8;
+                const startX = canvas.width - ((Date.now() / 15) % (scrollMsg.length * charSpacing + canvas.width));
+                
+                for (let i = 0; i < scrollMsg.length; i++) {
+                    const charX = startX + i * charSpacing;
+                    if (charX > -10 && charX < canvas.width + 10) {
+                        const yOffset = Math.sin((charX / 12) + time) * 6;
+                        const charHue = (glowHue + i * 15) % 360;
+                        ctx.fillStyle = `hsl(${charHue}, 100%, 75%)`;
+                        ctx.fillText(scrollMsg[i], charX, bannerY + yOffset - 4);
+                    }
+                }
+            }
         }
 
         function drawSpriteIcon(index, x, y, color, hasCollision) {
