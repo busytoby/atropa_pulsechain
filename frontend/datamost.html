@@ -7039,15 +7039,192 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillStyle = "#1e130c"; // Deep brown cave background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const lvl = window.dinoLevel || 1;
+            // 4D rotating vertices definition
+            const baseVertices = [
+                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
+                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
+                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
+                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
+            ];
+
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diffs = 0;
+                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
+                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
+                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
+                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
+                    if (diffs === 1) edges.push([i, j]);
+                }
+            }
+
             if (!window.dinoKeyListenerAdded) {
                 window.dinoKeyListenerAdded = true;
                 window.addEventListener('keydown', (e) => {
                     if (e.key === 'l' || e.key === 'L') {
                         window.dinoLevel = (window.dinoLevel || 1) + 1;
                     }
+                    if (e.key === 'b' || e.key === 'B') {
+                        window.dinoBattleMode = !window.dinoBattleMode;
+                    }
                 });
             }
+
+            if (window.dinoBattleMode) {
+                // Battle mode screen renderer
+                ctx.fillStyle = "#0c0812"; // Deep space void
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (!window.dinoBattleState) {
+                    window.dinoBattleState = {
+                        playerHP: 120,
+                        opponentHP: 100,
+                        log: "A WILD PTERO-TESSARANT APPEARS!",
+                        turn: "player",
+                        actionTimeout: null
+                    };
+                }
+
+                const bs = window.dinoBattleState;
+
+                if (!window.dinoBattleKeyListenerAdded) {
+                    window.dinoBattleKeyListenerAdded = true;
+                    window.addEventListener('keydown', (e) => {
+                        if (!window.dinoBattleMode) return;
+                        if (bs.playerHP <= 0 || bs.opponentHP <= 0) {
+                            if (e.key === 'r' || e.key === 'R') {
+                                window.dinoBattleState = null;
+                            }
+                            return;
+                        }
+                        if (e.key === 'e' || e.key === 'E') {
+                            window.dinoBattleMode = false;
+                            return;
+                        }
+                        if (bs.turn !== "player") return;
+
+                        if (e.key === '1') {
+                            bs.opponentHP = Math.max(0, bs.opponentHP - 40);
+                            bs.log = "TIM USED SCSI PROBE FOR 40 DMG!";
+                            bs.turn = "opponent";
+                            triggerOpponentMove();
+                        } else if (e.key === '2') {
+                            bs.opponentHP = Math.max(0, bs.opponentHP - 80);
+                            bs.log = "TIM USED 4D WARP SPIN FOR 80 DMG!";
+                            bs.turn = "opponent";
+                            triggerOpponentMove();
+                        }
+                    });
+
+                    function triggerOpponentMove() {
+                        if (bs.opponentHP <= 0) {
+                            bs.log = "PTERO-TESSARANT COLLAPSED! VICTORY! (PRESS R)";
+                            return;
+                        }
+                        setTimeout(() => {
+                            if (!window.dinoBattleMode) return;
+                            const dmg = Math.random() > 0.4 ? 30 : 70;
+                            bs.playerHP = Math.max(0, bs.playerHP - dmg);
+                            bs.log = dmg === 30 ? "PTERO-TESSARANT USED DAMPENING WAVE!" : "PTERO USED HYPER-PROJECTION STRIKE!";
+                            if (bs.playerHP <= 0) {
+                                bs.log = "TIM FAINTED! DEFEAT! (PRESS R)";
+                            } else {
+                                bs.turn = "player";
+                            }
+                        }, 1200);
+                    }
+                }
+
+                // Render Card 1 (Tim Explorer)
+                const cardLeftX = 40;
+                const cardY = 30;
+                const cardW = 90;
+                const cardH = 120;
+
+                ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(cardLeftX, cardY, cardW, cardH);
+                ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
+                ctx.fillRect(cardLeftX, cardY, cardW, cardH);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 7px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("TIM EXPLORER", cardLeftX + cardW/2, cardY + 12);
+                ctx.fillText(`HP: ${bs.playerHP}/120`, cardLeftX + cardW/2, cardY + 22);
+
+                drawTessarantInsideCard(cardLeftX + cardW/2, cardY + 60, 15, "rgba(255, 235, 59, 0.9)");
+
+                // Render Card 2 (Ptero-Tessarant)
+                const cardRightX = 170;
+                ctx.strokeStyle = "rgba(255, 0, 127, 0.8)";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(cardRightX, cardY, cardW, cardH);
+                ctx.fillStyle = "rgba(255, 0, 127, 0.15)";
+                ctx.fillRect(cardRightX, cardY, cardW, cardH);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("PTERO-TESSARANT", cardRightX + cardW/2, cardY + 12);
+                ctx.fillText(`HP: ${bs.opponentHP}/100`, cardRightX + cardW/2, cardY + 22);
+
+                drawTessarantInsideCard(cardRightX + cardW/2, cardY + 60, 15, "rgba(155, 89, 182, 0.9)");
+
+                // Draw status log box at bottom
+                ctx.fillStyle = "#110b29";
+                ctx.strokeStyle = "#4a154b";
+                ctx.lineWidth = 1;
+                ctx.fillRect(20, 160, canvas.width - 40, 30);
+                ctx.strokeRect(20, 160, canvas.width - 40, 30);
+
+                ctx.fillStyle = "#00ffcc";
+                ctx.font = "8px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(bs.log, canvas.width/2, 172);
+
+                if (bs.playerHP > 0 && bs.opponentHP > 0) {
+                    ctx.fillStyle = "#a2b4c2";
+                    ctx.font = "7px monospace";
+                    ctx.fillText("ATTACKS: [1] SCSI PROBE (40 DMG)   [2] 4D WARP SPIN (80 DMG)   [E] ESCAPE", canvas.width/2, 185);
+                } else {
+                    ctx.fillStyle = "#ff007f";
+                    ctx.font = "8px monospace";
+                    ctx.fillText("PRESS [R] TO RE-INITIALIZE STATE", canvas.width/2, 185);
+                }
+
+                function drawTessarantInsideCard(cx, cy, radius, color) {
+                    const localT = dinoFrame * 0.04;
+                    const cosLt = Math.cos(localT);
+                    const sinLt = Math.sin(localT);
+                    const cosLt2 = Math.cos(localT * 1.5);
+                    const sinLt2 = Math.sin(localT * 1.5);
+                    const ld = 2.0;
+
+                    const projected = baseVertices.map(v => {
+                        let x1 = v.x * cosLt - v.w * sinLt;
+                        let w1 = v.x * sinLt + v.w * cosLt;
+                        let y1 = v.y * cosLt2 - v.z * sinLt2;
+                        let z1 = v.y * sinLt2 + v.z * cosLt2;
+                        const denom = ld - w1;
+                        return {
+                            x: cx + (x1 / denom) * radius,
+                            y: cy + (y1 / denom) * radius
+                        };
+                    });
+
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    for (const edge of edges) {
+                        ctx.moveTo(projected[edge[0]].x, projected[edge[0]].y);
+                        ctx.lineTo(projected[edge[1]].x, projected[edge[1]].y);
+                    }
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            const lvl = window.dinoLevel || 1;
 
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
                 const rand = (function(seed) {
