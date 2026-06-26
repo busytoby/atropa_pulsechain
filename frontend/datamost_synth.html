@@ -10396,9 +10396,23 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 for (let r = 0; r < 21; r++) {
                     const row_val = pattern[r] || 0;
                     const drawY = mappedY + r + stretchOffset * (r / 21);
+                    if (index === 3 && window.currentGame === "gorf") {
+                        const laserHue = (Date.now() / 3 + r * 8) % 360;
+                        const gradient = ctx.createLinearGradient(mappedX - 25, drawY, mappedX + 49, drawY);
+                        gradient.addColorStop(0, "rgba(0,0,0,0)");
+                        gradient.addColorStop(0.3, `hsla(${laserHue}, 100%, 50%, 0.1)`);
+                        gradient.addColorStop(0.5, `hsla(${laserHue}, 100%, 80%, 0.9)`);
+                        gradient.addColorStop(0.7, `hsla(${laserHue}, 100%, 50%, 0.1)`);
+                        gradient.addColorStop(1, "rgba(0,0,0,0)");
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(mappedX - 25, drawY, 74, 1);
+                    }
                     for (let c = 0; c < 24; c++) {
                         if ((row_val & (1 << (23 - c))) !== 0) {
-                            if (index === 3) {
+                            if (index === 3 && window.currentGame === "gorf") {
+                                const hue = (Date.now() / 2 + r * 12 + c * 4) % 360;
+                                ctx.fillStyle = `hsl(${hue}, 100%, 75%)`;
+                            } else if (index === 3) {
                                 // Vaesen Troll: White Hat, Blue skin, Leather trousers / stick
                                 if (r <= 5) ctx.fillStyle = "#e6dfd3";
                                 else if (r <= 15) ctx.fillStyle = "#3a86c8";
