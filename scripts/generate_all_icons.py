@@ -29,12 +29,20 @@ def main():
         print(f"[Error] Step 2 failed: {e}")
         
     # 3. Generate Layered Hypotrochoid Organism Icon
-    print("\n[Step 3/3] Generating Layered Hypotrochoid LAU Icon...")
+    print("\n[Step 3/4] Generating Layered Hypotrochoid LAU Icon...")
     cmd3 = ["python3", "scripts/generate_hypotrochoid.py", address]
     try:
         subprocess.run(cmd3, check=True)
     except Exception as e:
         print(f"[Error] Step 3 failed: {e}")
+        
+    # 4. Generate Photorealistic Humanoid/Bear/Angel/Butterfly Figure Icon
+    print("\n[Step 4/4] Generating Photorealistic Humanoid Figure...")
+    cmd4 = ["python3", "scripts/generate_lau_humanoid.py", address]
+    try:
+        subprocess.run(cmd4, check=True)
+    except Exception as e:
+        print(f"[Error] Step 4 failed: {e}")
         
     print("\n=== PIPELINE EXECUTION COMPLETED SUCCESSFULLY ===")
     print(f"Generated assets for address {address}:")
@@ -42,6 +50,7 @@ def main():
     print(f"  2. YI Textured:               assets/{address}_textured.png")
     print(f"  3. LAU Textured Hypotrochoid: assets/{address}_hypotrochoid_textured.png")
     print(f"  4. Hypotrochoid LAU (Vector): assets/{address}_hypotrochoid.png / .jpai")
+    print(f"  5. Humanoid Photorealistic:   assets/{address}_humanoid_photorealistic.png")
 
 if __name__ == "__main__":
     main()
