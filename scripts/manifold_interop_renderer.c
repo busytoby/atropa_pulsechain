@@ -9,7 +9,6 @@
 #define HEIGHT 720
 #define CHANNELS 3
 #define FRAME_SIZE (WIDTH * HEIGHT * CHANNELS)
-#define TOTAL_FRAMES 960
 
 int main(int argc, char *argv[]) {
     if (argc < 7) {
@@ -45,21 +44,22 @@ int main(int argc, char *argv[]) {
     memset(&reg, 0, sizeof(InteropRegistry));
     reg.frame_modulation_factor = 1.0f;
 
-    // Process frame-by-frame
-    for (int frame = 0; frame < TOTAL_FRAMES; frame++) {
+    // Process frame-by-frame until EOF
+    int frame = 0;
+    while (1) {
         size_t r1 = fread(buf_base, 1, FRAME_SIZE, f_base);
         size_t r2 = fread(buf_line, 1, FRAME_SIZE, f_line);
         size_t r3 = fread(buf_depth, 1, FRAME_SIZE, f_depth);
         size_t r4 = fread(buf_norm, 1, FRAME_SIZE, f_norm);
         size_t r5 = fread(buf_seg, 1, FRAME_SIZE, f_seg);
 
+        if (r1 < FRAME_SIZE || r2 < FRAME_SIZE || r3 < FRAME_SIZE || r4 < FRAME_SIZE || r5 < FRAME_SIZE) {
+            break; // EOF reached
+        }
+
         // Read active registry state for this frame if available
         if (fread(&reg, sizeof(InteropRegistry), 1, f_reg) < 1) {
             // Keep previous registry state if stream ends early
-        }
-
-        if (r1 < FRAME_SIZE || r2 < FRAME_SIZE || r3 < FRAME_SIZE || r4 < FRAME_SIZE || r5 < FRAME_SIZE) {
-            break; // EOF reached
         }
 
         // Extract registers to modulate compositing factors
@@ -123,6 +123,7 @@ int main(int argc, char *argv[]) {
         }
 
         fwrite(buf_out, 1, FRAME_SIZE, stdout);
+        frame++;
     }
 
     fclose(f_base);
