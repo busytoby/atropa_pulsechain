@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Generate a clean, idealized 3D Lissajous icon given any PulseChain token/LAU address.
+# Generate a complete, idealized 3D Lissajous icon given any PulseChain token/LAU address.
 # Outputs a 512x512 PNG icon and its SHA-256 reproducibility checksum.
 
 import sys
@@ -36,7 +36,6 @@ def draw_glow_line(draw_obj, p1, p2, color, width=1):
     draw_obj.line([p1, p2], fill=(r, g, b, 255), width=width)
 
 def project_lissajous(x, y, z, size):
-    # Standard perspective matrix
     yaw = 0.5
     pitch = 0.4
     cam_x = math.cos(yaw) * 260
@@ -64,10 +63,26 @@ def project_lissajous(x, y, z, size):
     py = (y_new * focal) / (z_new + 500) * zoom + size / 2
     return int(px), int(py)
 
+def create_radial_gradient(size):
+    bg = Image.new("RGB", (size, size))
+    pixels = bg.load()
+    cx, cy = size // 2, size // 2
+    max_d = math.sqrt(cx**2 + cy**2)
+    for y in range(size):
+        for x in range(size):
+            dx = x - cx
+            dy = y - cy
+            d = math.sqrt(dx**2 + dy**2)
+            f = d / max_d
+            r = int(12 * (1.0 - f) + 4 * f)
+            g = int(22 * (1.0 - f) + 6 * f)
+            b = int(45 * (1.0 - f) + 12 * f)
+            pixels[x, y] = (r, g, b)
+    return bg
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 generate_lau_icon.py <LAU_ADDRESS>")
-        print("Example: python3 generate_lau_icon.py 0xfede210090acc84f3db9c8c7bc8ffbed544b07e4")
         sys.exit(1)
         
     address = sys.argv[1].lower().strip()
@@ -77,27 +92,44 @@ def main():
         
     addr_hash = hashlib.md5(address.encode('utf-8')).hexdigest()
     
-    # 1. Deterministically derive vibrant HSL color from address hash
+    # 1. HSL color mapping
     hue = (int(addr_hash[10:13], 16) % 360)
     color_rgb = hsl_to_rgb(hue, 0.90, 0.55)
     
-    # 2. Derive Lissajous parameters from address hash
+    # 2. Parameters mapping
     fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
     fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
     fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
     phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
     multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
     
-    # 3. Create canvas (512x512)
+    # 3. Canvas setup
     size = 512
-    img = Image.new("RGBA", (size, size), (6, 9, 18, 255))
+    img = create_radial_gradient(size).convert("RGBA")
     draw = ImageDraw.Draw(img, "RGBA")
     
-    # Optional grid rings in background
+    # 4. Blueprint grid lines
+    cx_grid, cy_grid = size // 2, size // 2
+    max_dist = math.sqrt(cx_grid**2 + cy_grid**2)
+    for x in range(0, size, 20):
+        dist = abs(x - cx_grid)
+        alpha = int(max(2, 14 * (1.0 - dist / max_dist)))
+        draw.line([(x, 0), (x, size)], fill=(0, 242, 254, alpha), width=1)
+    for y in range(0, size, 20):
+        dist = abs(y - cy_grid)
+        alpha = int(max(2, 14 * (1.0 - dist / max_dist)))
+        draw.line([(0, y), (size, y)], fill=(0, 242, 254, alpha), width=1)
+        
+    # 5. Background concentric rings
     for r_val in [80, 160, 240]:
         draw.ellipse([size/2 - r_val, size/2 - r_val, size/2 + r_val, size/2 + r_val], outline=(0, 242, 254, 15), width=1)
         
-    # Render two interlaced Lissajous curves
+    # 6. Draw Axial Unchanged Signal Vector (Center green axis)
+    p1_x, p1_y = project_lissajous(0, 0, -120, size)
+    p2_x, p2_y = project_lissajous(0, 0, 120, size)
+    draw_glow_line(draw, (p1_x, p1_y), (p2_x, p2_y), (34, 197, 94), width=2)
+        
+    # 7. Render interlaced Lissajous curves
     num_points = 180
     for is_cone in [False, True]:
         fx_c = fx + (0.5 if is_cone else 0.0)
@@ -115,28 +147,23 @@ def main():
             px, py = project_lissajous(lx, ly, lz, size)
             proj_points.append((px, py))
             
-        # Draw connections
         for i in range(num_points):
             p1 = proj_points[i]
             p2 = proj_points[(i + 1) % num_points]
             draw_glow_line(draw, p1, p2, color_rgb, width=1)
             
-        # Draw modulo chords
         for i in range(num_points):
             target_idx = int((i * multiplier) % num_points)
             p1 = proj_points[i]
             p2 = proj_points[target_idx]
-            # Draw chord with lower opacity
             r, g, b = color_rgb
             draw.line([p1, p2], fill=(r, g, b, 30), width=1)
             
-    # Save output
     output_dir = "assets"
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{address}_icon.png")
     img.save(output_path)
     
-    # Compute verification hash
     with open(output_path, "rb") as f:
         sha_hash = hashlib.sha256(f.read()).hexdigest()
         
