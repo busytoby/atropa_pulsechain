@@ -5,7 +5,7 @@ import math
 import hashlib
 import subprocess
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 def generate_sd_texture(prompt, output_raw):
     os.makedirs("tmp", exist_ok=True)
@@ -147,6 +147,24 @@ def main():
     img_yi_out = Image.new("RGB", (size, size), (12, 22, 45))
     draw_yi = ImageDraw.Draw(img_yi_out, "RGBA")
     
+    # Load CJK font for 倫 Signature
+    try:
+        font_cjk = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 180)
+    except Exception:
+        try:
+            font_cjk = ImageFont.truetype("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf", 180)
+        except Exception:
+            font_cjk = None
+
+    if font_cjk:
+        text = "倫"
+        tx_pos = size // 2 - 90
+        ty_pos = size // 2 - 110
+        # Draw 3D embossed signature
+        draw_yi.text((tx_pos + 3, ty_pos + 3), text, font=font_cjk, fill=(0, 0, 0, 160))
+        draw_yi.text((tx_pos - 3, ty_pos - 3), text, font=font_cjk, fill=(255, 255, 255, 100))
+        draw_yi.text((tx_pos, ty_pos), text, font=font_cjk, fill=(180, 140, 60, 210))
+    
     num_points = 360
     proj_points_yi = []
     normals_yi = []
@@ -226,6 +244,15 @@ def main():
     pixels_lau = tex_lau.load()
     img_lau_out = Image.new("RGB", (size, size), (12, 22, 45))
     draw_lau = ImageDraw.Draw(img_lau_out, "RGBA")
+    
+    if font_cjk:
+        text = "倫"
+        tx_pos = size // 2 - 90
+        ty_pos = size // 2 - 110
+        # Draw 3D embossed signature
+        draw_lau.text((tx_pos + 3, ty_pos + 3), text, font=font_cjk, fill=(0, 0, 0, 160))
+        draw_lau.text((tx_pos - 3, ty_pos - 3), text, font=font_cjk, fill=(255, 255, 255, 100))
+        draw_lau.text((tx_pos, ty_pos), text, font=font_cjk, fill=(180, 140, 60, 210))
     
     # Layer multiple offsets of d to create concentric holographic rings
     d_offsets = [d_hyp * 0.7, d_hyp, d_hyp * 1.3]
