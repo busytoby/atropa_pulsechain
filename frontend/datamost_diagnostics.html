@@ -2435,6 +2435,22 @@
                 }
             };
             cpuContract = new SimulatedCPU();
+            window.getCartridgeDebugState = function() {
+                return {
+                    registers: cpuContract.registers ? {
+                        a: cpuContract.registers.a,
+                        x: cpuContract.registers.x,
+                        y: cpuContract.registers.y,
+                        pc: cpuContract.registers.pc,
+                        sp: cpuContract.registers.sp,
+                        sr: cpuContract.registers.sr
+                    } : null,
+                    game: document.getElementById("selectGame") ? document.getElementById("selectGame").value : null,
+                    memoryLength: cpuContract.memory ? cpuContract.memory.length : 0,
+                    peek: (addr) => cpuContract.peek ? cpuContract.peek(addr) : null,
+                    poke: (addr, val) => cpuContract.poke ? cpuContract.poke(addr, val) : null
+                };
+            };
             consensusContract = new SimulatedConsensus(cpuContract);
             graphicsContract = new SimulatedGraphics();
             musicContract = new SimulatedMusic();
@@ -7483,6 +7499,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 ctx.moveTo(window.s0_x, window.s0_y);
                 ctx.lineTo(window.s3_x, window.s3_y);
                 ctx.stroke();
+            }
+
+            // Shield status synthesis alarms and vocalizations
+            if (window.omegaShield < 25) {
+                const now = Date.now();
+                if (!window.lastShieldSpeechTime || now - window.lastShieldSpeechTime > 8000) {
+                    window.lastShieldSpeechTime = now;
+                    if (window.playSynthTone) {
+                        playSynthTone(880, 150);
+                        setTimeout(() => playSynthTone(660, 150), 150);
+                    }
+                    if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance("shields critical");
+                        utterance.rate = 1.1;
+                        utterance.pitch = 0.75;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
             }
 
             // WinchesterMQ keycode verification on overlap
