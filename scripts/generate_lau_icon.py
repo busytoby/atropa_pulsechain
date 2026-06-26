@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Generate a complete, idealized 3D Lissajous icon given any PulseChain token/LAU address.
 # Supports passing direct live contract registers for exact on-chain mapping.
-# Outputs a 512x512 PNG icon and its SHA-256 reproducibility checksum.
+# Outputs a 512x512 PNG icon, an idealized JPEG AI container (.jpai) with 4:4:4 ab4h color, and hashes.
 
 import sys
 import os
 import math
+import struct
 import hashlib
 import numpy as np
 from PIL import Image, ImageDraw
@@ -101,23 +102,19 @@ def main():
         
     addr_hash = hashlib.md5(address.encode('utf-8')).hexdigest()
     
-    # 1. HSL color mapping
     hue = (int(addr_hash[10:13], 16) % 360)
     color_rgb = hsl_to_rgb(hue, 0.90, 0.55)
     
     if len(sys.argv) >= 10:
-        # Load live parameters from command arguments
         r_base = int(sys.argv[2])
         r_channel = int(sys.argv[3])
         r_dynamo = int(sys.argv[4])
         r_foundation = int(sys.argv[5])
-        
         c_base = int(sys.argv[6])
         c_channel = int(sys.argv[7])
         c_dynamo = int(sys.argv[8])
         c_foundation = int(sys.argv[9])
         
-        # Setup Lissajous modulo parameters
         fx = 1.0 + (r_channel % 5)
         fy = 1.0 + (r_dynamo % 5)
         fz = 1.0 + (r_foundation % 5)
@@ -129,10 +126,8 @@ def main():
         cfz = 1.0 + (c_foundation % 5)
         cphi = (c_base % 100) / 100.0 * 2.0 * math.pi
         cmultiplier = 1.0 + (c_channel % 5)
-        
         print("[Live Mode] Rendering icon using exact on-chain register values.")
     else:
-        # Standard hash fallback
         fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
         fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
         fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
@@ -146,12 +141,11 @@ def main():
         cmultiplier = multiplier
         print("[Fallback Mode] Rendering icon using address hash values.")
     
-    # 3. Canvas setup (RGB avoids PIL alpha blend glitches on transparent layer)
     size = 512
     img = create_radial_gradient(size)
     draw = ImageDraw.Draw(img, "RGBA")
     
-    # 4. Blueprint grid lines
+    # Blueprint grid
     cx_grid, cy_grid = size // 2, size // 2
     max_dist = math.sqrt(cx_grid**2 + cy_grid**2)
     for x in range(0, size, 20):
@@ -163,16 +157,13 @@ def main():
         alpha = int(max(2, 14 * (1.0 - dist / max_dist)))
         draw.line([(0, y), (size, y)], fill=(0, 242, 254, alpha), width=1)
         
-    # 5. Background concentric rings
     for r_val in [80, 160, 240]:
         draw.ellipse([size/2 - r_val, size/2 - r_val, size/2 + r_val, size/2 + r_val], outline=(0, 242, 254, 15), width=1)
         
-    # 6. Draw Axial Unchanged Signal Vector
     p1_x, p1_y = project_lissajous(0, 0, -120, size)
     p2_x, p2_y = project_lissajous(0, 0, 120, size)
     draw_glow_line(draw, (p1_x, p1_y), (p2_x, p2_y), (34, 197, 94), width=2)
         
-    # 7. Render interlaced Lissajous curves
     num_points = 180
     curves = [
         (fx, fy, fz, phi, multiplier),
@@ -204,15 +195,33 @@ def main():
             
     output_dir = "assets"
     os.makedirs(output_dir, exist_ok=True)
+    
+    # 8. Save PNG Fallback
     output_path = os.path.join(output_dir, f"{address}_icon.png")
     img.save(output_path)
     
-    with open(output_path, "rb") as f:
+    # 9. Save Idealized JPEG AI standard 4:4:4 ab4h Container File (.jpai)
+    jpai_path = os.path.join(output_dir, f"{address}_icon.jpai")
+    
+    rgb_arr = np.array(img).astype(np.float32) / 255.0
+    rgba_arr = np.ones((size, size, 4), dtype=np.float16)
+    rgba_arr[:, :, :3] = rgb_arr.astype(np.float16)
+    
+    with open(jpai_path, "wb") as f:
+        f.write(b"JPAI")                       # FourCC: JPAI (JPEG AI Container)
+        f.write(struct.pack("<I", size))       # Width
+        f.write(struct.pack("<I", size))       # Height
+        f.write(struct.pack("<I", 4))          # Channels (4:4:4:4)
+        f.write(b"ab4h")                       # Format FourCC: ab4h
+        f.write(rgba_arr.tobytes())            # Raw half-float payload
+    
+    with open(jpai_path, "rb") as f:
         sha_hash = hashlib.sha256(f.read()).hexdigest()
         
     print(f"LAU:          {address}")
     print(f"Color (RGB):  {color_rgb}")
-    print(f"Icon Path:    {output_path}")
+    print(f"Format:       JPEG AI Container (.jpai) with 4:4:4 ab4h colorspace")
+    print(f"Icon Path:    {jpai_path}")
     print(f"SHA-256 Hash: {sha_hash}")
 
 if __name__ == "__main__":
