@@ -9226,6 +9226,52 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            const btnCompileDNA = document.getElementById("btnSprCompileDNA");
+            if (btnCompileDNA) {
+                btnCompileDNA.addEventListener("click", () => {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const rowVals = [];
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        rowVals.push(rowVal);
+                    }
+                    
+                    const buffer = new ArrayBuffer(4 + 4 + 21 * 4);
+                    const view = new DataView(buffer);
+                    view.setUint8(0, 84); // T
+                    view.setUint8(1, 83); // S
+                    view.setUint8(2, 70); // F
+                    view.setUint8(3, 73); // I
+                    view.setUint32(4, 21, true);
+                    for (let i = 0; i < 21; i++) {
+                        view.setUint32(8 + i * 4, rowVals[i], true);
+                    }
+                    
+                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `sprite_${sprEditIndex}_dna.dna`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    if (typeof appendOregonDashboardLog === "function") {
+                        appendOregonDashboardLog(`[SPRITE EDITOR] Compiled Sprite ${sprEditIndex} to asset DNA file successfully.`);
+                    }
+                });
+            }
+
             rebuildGrid();
         }
 
@@ -19549,6 +19595,52 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            const btnCompileDNA = document.getElementById("btnSprCompileDNA");
+            if (btnCompileDNA) {
+                btnCompileDNA.addEventListener("click", () => {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const rowVals = [];
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        rowVals.push(rowVal);
+                    }
+                    
+                    const buffer = new ArrayBuffer(4 + 4 + 21 * 4);
+                    const view = new DataView(buffer);
+                    view.setUint8(0, 84); // T
+                    view.setUint8(1, 83); // S
+                    view.setUint8(2, 70); // F
+                    view.setUint8(3, 73); // I
+                    view.setUint32(4, 21, true);
+                    for (let i = 0; i < 21; i++) {
+                        view.setUint32(8 + i * 4, rowVals[i], true);
+                    }
+                    
+                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `sprite_${sprEditIndex}_dna.dna`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    if (typeof appendOregonDashboardLog === "function") {
+                        appendOregonDashboardLog(`[SPRITE EDITOR] Compiled Sprite ${sprEditIndex} to asset DNA file successfully.`);
+                    }
+                });
+            }
+
             rebuildGrid();
         }
 
@@ -29608,6 +29700,52 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     btnUpload.disabled = false;
                 }
             });
+
+            const btnCompileDNA = document.getElementById("btnSprCompileDNA");
+            if (btnCompileDNA) {
+                btnCompileDNA.addEventListener("click", () => {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const rowVals = [];
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        rowVals.push(rowVal);
+                    }
+                    
+                    const buffer = new ArrayBuffer(4 + 4 + 21 * 4);
+                    const view = new DataView(buffer);
+                    view.setUint8(0, 84); // T
+                    view.setUint8(1, 83); // S
+                    view.setUint8(2, 70); // F
+                    view.setUint8(3, 73); // I
+                    view.setUint32(4, 21, true);
+                    for (let i = 0; i < 21; i++) {
+                        view.setUint32(8 + i * 4, rowVals[i], true);
+                    }
+                    
+                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `sprite_${sprEditIndex}_dna.dna`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    if (typeof appendOregonDashboardLog === "function") {
+                        appendOregonDashboardLog(`[SPRITE EDITOR] Compiled Sprite ${sprEditIndex} to asset DNA file successfully.`);
+                    }
+                });
+            }
 
             rebuildGrid();
         }
