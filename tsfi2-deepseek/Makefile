@@ -523,9 +523,13 @@ generate_artifacts: bin/test_vulkan_teddy
 	bin/test_vulkan_teddy --render-once
 	convert /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/photorealistic_bear_final.png
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision
+tests/test_ac_compositor_interop: tests/test_ac_compositor_interop.c tests/libmozilla_interop.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
+	./tests/test_ac_compositor_interop
 
 .PHONY: profile
 profile:
