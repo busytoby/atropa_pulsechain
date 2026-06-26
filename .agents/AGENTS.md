@@ -31,3 +31,8 @@
 ## 10. Physics Constraints
 * **FET Discharge Physics:** Soft body physics (Verlet solvers and mass-spring dynamics) should always only apply to the discharge cycles of field-effect transistors (FETs) in simulated low-level hardware structures.
 
+## 11. Aho-Corasick Caching Pipeline
+* **No Hot-Path Console Output:** Never perform console prints (e.g. `printf`) inside cache lookup pathways like `tsfi_compositor_cache_lookup` to avoid performance degradation due to print locking.
+* **Buffer Safety margins:** Key formatting buffers must be at least 256 bytes to prevent `-Wformat-overflow` compilation failures.
+* **Latency Guard Gates:** Caching lookups must maintain sub-microsecond latency (< 1000 ns), as enforced by performance guards in the unified profiler (`make profile`).
+
