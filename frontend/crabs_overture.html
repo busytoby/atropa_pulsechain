@@ -385,7 +385,7 @@
                 }
             }
 
-            draw(ctx, frame) {
+            draw(ctx, frame, index) {
                 const cx = this.x;
                 const cy = this.y + Math.sin(frame * 0.1 + this.x) * 2 - (this.danceOffset * 15);
                 const s = this.size;
@@ -454,6 +454,85 @@
                 ctx.beginPath();
                 ctx.arc(s * 1.1, rClawY, s * 0.3, 0, Math.PI * 2);
                 ctx.fill();
+
+                // DRUMS DRAWING LOGIC (Indices 2, 3, 4)
+                const isDrummer = (index === 2 || index === 3 || index === 4);
+                if (isDrummer) {
+                    // Draw Drumsticks in claws
+                    ctx.strokeStyle = "#d7ccc8"; // light wood color
+                    ctx.lineWidth = s / 7;
+
+                    // Left Stick
+                    ctx.save();
+                    ctx.translate(-s * 1.1, lClawY);
+                    ctx.rotate(-0.5 + this.pinchL * 0.8);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-s * 0.6, s * 0.6);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Right Stick
+                    ctx.save();
+                    ctx.translate(s * 1.1, rClawY);
+                    ctx.rotate(0.5 - this.pinchR * 0.8);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(s * 0.6, s * 0.6);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Render the instrument in front of them
+                    if (index === 2) { // Snare Drum
+                        ctx.fillStyle = "#ffffff";
+                        ctx.strokeStyle = "#e74c3c"; // red frame
+                        ctx.lineWidth = s / 5;
+                        ctx.beginPath();
+                        ctx.rect(-s * 0.8, s * 0.5, s * 1.6, s * 0.6);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Snare top skin line
+                        ctx.strokeStyle = "#90a4ae";
+                        ctx.lineWidth = s / 10;
+                        ctx.beginPath();
+                        ctx.moveTo(-s * 0.8, s * 0.5);
+                        ctx.lineTo(s * 0.8, s * 0.5);
+                        ctx.stroke();
+                    } else if (index === 3) { // Bass/Kick Drum
+                        ctx.fillStyle = "#ffffff";
+                        ctx.strokeStyle = "#37474f"; // dark frame
+                        ctx.lineWidth = s / 4;
+                        ctx.beginPath();
+                        ctx.arc(0, s * 0.8, s * 0.7, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Kick Drum inner logo/star
+                        ctx.fillStyle = "#cfd8dc";
+                        ctx.beginPath();
+                        ctx.arc(0, s * 0.8, s * 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (index === 4) { // Hi-hat stand
+                        ctx.strokeStyle = "#b0bec5";
+                        ctx.lineWidth = s / 8;
+                        // Stand
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(0, s * 0.9);
+                        ctx.stroke();
+
+                        // Double Cymbals
+                        ctx.fillStyle = "#ffd54f"; // Gold
+                        ctx.strokeStyle = "#ffb300";
+                        ctx.lineWidth = s / 12;
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(0, s * 0.4, s * 0.7, s * 0.15, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                }
 
                 ctx.restore();
             }
@@ -561,9 +640,9 @@
 
             // Update & Draw Crabs
             const isBeat = (window.musicPlaying && (frameCount % 12 === 0));
-            crabs.forEach(c => {
+            crabs.forEach((c, idx) => {
                 c.update(isBeat, window.musicPlaying ? 1 : 0.2);
-                c.draw(ctx, frameCount);
+                c.draw(ctx, frameCount, idx);
             });
 
             // CRT overlay grid lines
