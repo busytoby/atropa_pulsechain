@@ -3,7 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const PROVIDER_URL = "http://127.0.0.1:8545";
+// RPC endpoints prioritizing local node, then public PulseChain mainnet
+const RPC_URLS = [
+    "http://127.0.0.1:8545",
+    "https://rpc.pulsechain.com",
+    "https://pulsechain.publicnode.com"
+];
 
 function getContractArtifact(filename, contractName) {
     const filePath = path.join(__dirname, `../Wallet/bin/Contracts/${filename}.json`);
@@ -36,7 +41,7 @@ async function checkProviderConnection(provider, timeoutMs = 2500) {
 }
 
 async function runOfflineRenderer(address) {
-    console.log(`[PulseChain Linker] RPC unreachable. Falling back to offline address-hash mode.`);
+    console.log(`[PulseChain Linker] Falling back to offline address-hash mode.`);
     const pyScript = path.join(__dirname, "generate_lau_icon.py");
     const child = spawn("python3", [pyScript, address]);
 
@@ -65,27 +70,35 @@ async function main() {
     }
     
     address = address.toLowerCase().trim();
-    const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
     
-    console.log(`[PulseChain Linker] Attempting connection to local RPC node at ${PROVIDER_URL}...`);
-    const isOnline = await checkProviderConnection(provider);
+    let activeProvider = null;
+    let endpointUsed = "";
     
-    if (!isOnline) {
+    for (const url of RPC_URLS) {
+        console.log(`[PulseChain Linker] Checking RPC endpoint: ${url}...`);
+        const provider = new ethers.JsonRpcProvider(url);
+        const isOnline = await checkProviderConnection(provider);
+        if (isOnline) {
+            activeProvider = provider;
+            endpointUsed = url;
+            break;
+        }
+    }
+    
+    if (!activeProvider) {
+        console.log(`[PulseChain Linker] All RPC endpoints unreachable.`);
         await runOfflineRenderer(address);
         return;
     }
     
-    console.log(`[PulseChain Linker] RPC connected. Querying contract state for address: ${address}`);
+    console.log(`[PulseChain Linker] Connected via ${endpointUsed}. Querying state for address: ${address}`);
     try {
-        const signers = await provider.listAccounts();
-        const deployer = signers[0];
-
         const lauArtifact = getContractArtifact("11_lau.sol", "LAU");
-        const lau = new ethers.Contract(address, lauArtifact.abi, deployer);
+        const lau = new ethers.Contract(address, lauArtifact.abi, activeProvider);
 
         const on = await lau.On();
         const shaArtifact = getContractArtifact("02_sha.sol", "SHA");
-        const sha = new ethers.Contract(on.Mu, shaArtifact.abi, deployer);
+        const sha = new ethers.Contract(on.Mu, shaArtifact.abi, activeProvider);
 
         const fa = await sha.View();
 
