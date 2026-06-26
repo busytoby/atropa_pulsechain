@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overture to Crabs - Auncient Microtonal Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050a12;
+            --panel-bg: rgba(10, 25, 47, 0.7);
+            --border-color: rgba(0, 242, 254, 0.3);
+            --accent-cyan: #00f2fe;
+            --accent-coral: #ff5e62;
+            --accent-green: #39ff14;
+            --font-display: 'Orbitron', sans-serif;
+            --font-sans: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #e2e8f0;
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #0d1b2a 0%, #050a12 100%);
+        }
+
+        header {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: #8892b0;
+            font-weight: 300;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1000px;
+            gap: 20px;
+            padding: 0 20px 40px 20px;
+        }
+
+        .visualizer-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 380px;
+            border-radius: 8px;
+            background-color: #03070d;
+            display: block;
+        }
+
+        .controls-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-card {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel-left, .panel-right {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.8);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ff5e62 0%, #ff9966 100%);
+            box-shadow: 0 0 15px rgba(255, 94, 98, 0.4);
+        }
+
+        .btn-stop:hover {
+            box-shadow: 0 0 25px rgba(255, 94, 98, 0.8);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #8892b0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .label-val {
+            color: var(--accent-cyan);
+            font-family: var(--font-display);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #102a43;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        .status-display {
+            background: rgba(3, 7, 13, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-label {
+            color: #8892b0;
+        }
+
+        .status-val {
+            color: var(--accent-cyan);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: #102a43;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-coral));
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: width 0.1s linear;
+        }
+
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .key-btn {
+            background: #102a43;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            color: #e2e8f0;
+            padding: 10px 0;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .key-btn:hover {
+            background: var(--accent-cyan);
+            color: #03070d;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .water-ripple-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 4px, #fff 4px, #fff 8px);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>OVERTURE TO CRABS</h1>
+        <p class="subtitle">Auncient 22-EDO Microtonal Deep Bass & Paradiddle Suite (Duration: 6:30)</p>
+    </header>
+
+    <div class="main-container">
+        <div class="visualizer-card">
+            <canvas id="beachCanvas"></canvas>
+            <div class="water-ripple-layer"></div>
+        </div>
+
+        <div class="controls-card">
+            <div class="panel-left">
+                <button id="btnPlay" class="btn">🔊 PLAY OVERTURE</button>
+                <button id="btnStop" class="btn btn-stop" style="display: none;">⏹ STOP OVERTURE</button>
+
+                <div class="slider-group">
+                    <label>Master Volume <span id="valMaster" class="label-val">70%</span></label>
+                    <input id="slideMaster" type="range" min="0" max="100" value="70">
+                </div>
+
+                <div class="slider-group">
+                    <label>Sub-Bass Cutoff <span id="valCutoff" class="label-val">220Hz</span></label>
+                    <input id="slideCutoff" type="range" min="80" max="1200" value="220">
+                </div>
+
+                <div class="slider-group">
+                    <label>Tempo (BPM) <span id="valTempo" class="label-val">102</span></label>
+                    <input id="slideTempo" type="range" min="80" max="140" value="102">
+                </div>
+            </div>
+
+            <div class="panel-right">
+                <div class="status-display">
+                    <div class="status-row">
+                        <span class="status-label">Suite Section:</span>
+                        <span id="txtSection" class="status-val" style="color: var(--accent-coral)">Stopped</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Active Scale:</span>
+                        <span class="status-val">22-EDO Pentatonic</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Time Elapsed:</span>
+                        <span id="txtTime" class="status-val">00:00 / 06:30</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="pBar" class="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="margin-bottom: 5px; display: block;">Interactive Microtonal Keys (Manual Trigger)</label>
+                    <div class="keyboard-grid">
+                        <button class="key-btn" data-step="0">K0</button>
+                        <button class="key-btn" data-step="2">K2</button>
+                        <button class="key-btn" data-step="4">K4</button>
+                        <button class="key-btn" data-step="6">K6</button>
+                        <button class="key-btn" data-step="8">K8</button>
+                        <button class="key-btn" data-step="10">K10</button>
+                        <button class="key-btn" data-step="12">K12</button>
+                        <button class="key-btn" data-step="14">K14</button>
+                        <button class="key-btn" data-step="16">K16</button>
+                        <button class="key-btn" data-step="18">K18</button>
+                        <button class="key-btn" data-step="20">K20</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("beachCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Set high density display backing store
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = 380 * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 22-EDO Frequencies (root C3 = 130.81 Hz)
+        const rootFreq = 130.81;
+        const edo22 = [];
+        for (let i = 0; i < 22; i++) {
+            edo22.push(rootFreq * Math.pow(2, i / 22));
+        }
+
+        // Crab definition
+        class Crab {
+            constructor(x, y, size, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.pinchL = 0;
+                this.pinchR = 0;
+                this.danceOffset = 0;
+            }
+
+            update(beat, speedFactor) {
+                this.x += this.vx * speedFactor;
+                this.y += this.vy * speedFactor;
+
+                // Restrict boundaries
+                if (this.x < 30 || this.x > 450) this.vx = -this.vx;
+                if (this.y < 200 || this.y > 320) this.vy = -this.vy;
+
+                // Sync pinches to beats
+                this.pinchL = Math.max(0, this.pinchL - 0.1);
+                this.pinchR = Math.max(0, this.pinchR - 0.1);
+                if (beat) {
+                    if (Math.random() > 0.4) this.pinchL = 1.0;
+                    if (Math.random() > 0.4) this.pinchR = 1.0;
+                }
+            }
+
+            draw(ctx, frame) {
+                const cx = this.x;
+                const cy = this.y + Math.sin(frame * 0.1 + this.x) * 2;
+                const s = this.size;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+
+                // Shadow
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.ellipse(0, s/3, s * 1.2, s * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Legs
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = s / 5;
+                for (let side of [-1, 1]) {
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(side * (s/2), 0);
+                        const legAngle = 0.2 + i * 0.3 + Math.sin(frame * 0.15 + this.x + i) * 0.15;
+                        const lx = side * (s * 1.2);
+                        const ly = s * 0.8;
+                        ctx.quadraticCurveTo(side * (s * 0.9), s * 0.1, lx, ly);
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw Shell Body
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s, s * 0.7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eyes
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(-s * 0.4, -s * 0.6, s * 0.2, 0, Math.PI * 2);
+                ctx.arc(s * 0.4, -s * 0.6, s * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#000000";
+                ctx.beginPath();
+                ctx.arc(-s * 0.4, -s * 0.6 - (Math.sin(frame * 0.05) * 1), s * 0.1, 0, Math.PI * 2);
+                ctx.arc(s * 0.4, -s * 0.6 - (Math.sin(frame * 0.05) * 1), s * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Left Claw / Pinch
+                ctx.strokeStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(-s * 0.6, -s * 0.1);
+                const lClawY = -s * 0.8 - (this.pinchL * s * 0.3);
+                ctx.lineTo(-s * 1.1, lClawY);
+                ctx.stroke();
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(-s * 1.1, lClawY, s * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Right Claw / Pinch
+                ctx.beginPath();
+                ctx.moveTo(s * 0.6, -s * 0.1);
+                const rClawY = -s * 0.8 - (this.pinchR * s * 0.3);
+                ctx.lineTo(s * 1.1, rClawY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(s * 1.1, rClawY, s * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        const crabs = [
+            new Crab(100, 220, 14, "#ff5e62"),
+            new Crab(220, 250, 18, "#ffa07a"),
+            new Crab(350, 230, 12, "#ff6b81"),
+            new Crab(150, 290, 16, "#e65c00"),
+            new Crab(280, 270, 20, "#ff4757"),
+            new Crab(400, 260, 15, "#ff7f50")
+        ];
+
+        // Wave simulation parameters
+        let frameCount = 0;
+        let lastBeat = false;
+
+        function animate() {
+            frameCount++;
+            const w = canvas.offsetWidth;
+            const h = 380;
+
+            // Clear visualizer background
+            ctx.fillStyle = "#020914";
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw Ocean gradient
+            const oceanGrad = ctx.createLinearGradient(0, 0, 0, 200);
+            oceanGrad.addColorStop(0, "#011627");
+            oceanGrad.addColorStop(1, "#033246");
+            ctx.fillStyle = oceanGrad;
+            ctx.fillRect(0, 0, w, 200);
+
+            // Draw Volumetric refracted rays
+            ctx.fillStyle = "rgba(0, 242, 254, 0.08)";
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                const rayOffset = Math.sin(frameCount * 0.01 + i) * 60;
+                ctx.moveTo(w/2 + rayOffset, 0);
+                ctx.lineTo(w/2 - 100 + rayOffset * 1.5, 200);
+                ctx.lineTo(w/2 + 100 + rayOffset * 1.5, 200);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Draw shoreline sand
+            const sandGrad = ctx.createLinearGradient(0, 200, 0, h);
+            sandGrad.addColorStop(0, "#2c1c0c");
+            sandGrad.addColorStop(0.3, "#422806");
+            sandGrad.addColorStop(1, "#180d02");
+            ctx.fillStyle = sandGrad;
+            ctx.fillRect(0, 200, w, h - 200);
+
+            // Tide Wave wash animation
+            const waveY = 195 + Math.sin(frameCount * 0.04) * 8;
+            ctx.fillStyle = "rgba(0, 242, 254, 0.18)";
+            ctx.beginPath();
+            ctx.moveTo(0, waveY);
+            for (let x = 0; x <= w; x += 20) {
+                ctx.lineTo(x, waveY + Math.sin(x * 0.05 + frameCount * 0.1) * 3);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fill();
+
+            // Foam edge
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, waveY);
+            for (let x = 0; x <= w; x += 20) {
+                ctx.lineTo(x, waveY + Math.sin(x * 0.05 + frameCount * 0.1) * 3);
+            }
+            ctx.stroke();
+
+            // Update & Draw Crabs
+            const isBeat = (window.musicPlaying && (frameCount % 12 === 0));
+            crabs.forEach(c => {
+                c.update(isBeat, window.musicPlaying ? 1 : 0.2);
+                c.draw(ctx, frameCount);
+            });
+
+            // CRT overlay grid lines
+            ctx.fillStyle = "rgba(0,0,0,0.15)";
+            for (let y = 0; y < h; y += 4) {
+                ctx.fillRect(0, y, w, 1);
+            }
+
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+
+        // Audio System configuration
+        let audioCtx = null;
+        let mainGain = null;
+        let filterNode = null;
+        let sequenceTimer = null;
+        let overtureTime = 0; // Duration in seconds (up to 390s = 6:30)
+        let stepIndex = 0;
+
+        window.musicPlaying = false;
+
+        const sections = [
+            { start: 0, end: 45, name: "Auncient Tide (Intro)", scale: [0, 4, 8, 12, 16] },
+            { start: 45, end: 120, name: "Paradiddle Crawl (Rhythm)", scale: [0, 2, 6, 8, 14, 16] },
+            { start: 120, end: 210, name: "Microtonal Reef (Deep Bass)", scale: [0, 4, 6, 10, 12, 18, 20] },
+            { start: 210, end: 300, name: "Paradiddle Climax (Tutti)", scale: [0, 2, 4, 8, 10, 12, 16, 20] },
+            { start: 300, end: 390, name: "Sunset Shoreline (Outro)", scale: [0, 4, 8, 12, 16] }
+        ];
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            mainGain = audioCtx.createGain();
+            filterNode = audioCtx.createBiquadFilter();
+
+            filterNode.type = "lowpass";
+            filterNode.frequency.setValueAtTime(document.getElementById("slideCutoff").value, audioCtx.currentTime);
+
+            mainGain.gain.setValueAtTime(document.getElementById("slideMaster").value / 100 * 0.5, audioCtx.currentTime);
+
+            filterNode.connect(mainGain);
+            mainGain.connect(audioCtx.destination);
+        }
+
+        // Custom instruments synthesis
+        function playSubBassNote(freq, dur) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // Sub Voice 1: Triangle base
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = "triangle";
+            osc1.frequency.setValueAtTime(freq / 2, now); // Octave down sub
+
+            // Sub Voice 2: Saw blend
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = "sawtooth";
+            osc2.frequency.setValueAtTime(freq / 2, now);
+
+            gain1.gain.setValueAtTime(0.4, now);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+            gain2.gain.setValueAtTime(0.12, now);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+            osc1.connect(gain1);
+            osc2.connect(gain2);
+
+            gain1.connect(filterNode);
+            gain2.connect(filterNode);
+
+            osc1.start(now);
+            osc1.stop(now + dur);
+            osc2.start(now);
+            osc2.stop(now + dur);
+        }
+
+        function playLeadSynth(freq, dur) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+
+            // Subtle vibrato
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            lfo.frequency.setValueAtTime(6, now); // 6 Hz modulation
+            lfoGain.gain.setValueAtTime(4, now);
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc.frequency);
+
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+            osc.connect(gain);
+            gain.connect(mainGain); // bypass lowpass filter for crispy lead highs
+
+            lfo.start(now);
+            osc.start(now);
+
+            lfo.stop(now + dur);
+            osc.stop(now + dur);
+        }
+
+        function playPerididdle(isSnare, isKick, isHat) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            if (isKick) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+
+                osc.connect(gain);
+                gain.connect(mainGain);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            if (isSnare) {
+                // Noise buffer
+                const bufferSize = audioCtx.sampleRate * 0.15;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = "highpass";
+                filter.frequency.setValueAtTime(1000, now);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(mainGain);
+
+                noise.start(now);
+                noise.stop(now + 0.15);
+            }
+
+            if (isHat) {
+                const bufferSize = audioCtx.sampleRate * 0.03;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = "bandpass";
+                filter.frequency.setValueAtTime(8000, now);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(mainGain);
+
+                noise.start(now);
+                noise.stop(now + 0.04);
+            }
+        }
+
+        // Quantized step sequencing loop
+        function scheduleTick() {
+            if (!window.musicPlaying) return;
+
+            const tempo = document.getElementById("slideTempo").value;
+            const stepDuration = 60 / tempo / 4; // 16th notes
+
+            // Get current section scale
+            const section = sections.find(s => overtureTime >= s.start && overtureTime < s.end) || sections[sections.length - 1];
+            document.getElementById("txtSection").innerText = section.name;
+
+            // Arpeggiator & Lead Note Generation
+            const scale = section.scale;
+            const subStep = stepIndex % 16;
+
+            if (subStep === 0 || subStep === 8) {
+                // Ground Sub Bass Roots
+                const noteStep = scale[0];
+                playSubBassNote(edo22[noteStep], stepDuration * 6);
+            } else if (subStep === 4 || subStep === 12) {
+                // Secondary octave harmonies
+                const noteStep = scale[Math.min(scale.length - 1, 2)];
+                playSubBassNote(edo22[noteStep], stepDuration * 4);
+            }
+
+            // Melodic Lead Patterns
+            if (subStep % 2 === 0 && Math.random() > 0.3) {
+                const leadStepIdx = Math.floor(Math.random() * scale.length);
+                const baseFreq = edo22[scale[leadStepIdx]];
+                playLeadSynth(baseFreq * 2, stepDuration * 1.5);
+            }
+
+            // Paradiddle Drum Rhythms (Kick, Snare, Hihat)
+            // Paradiddle rhythm structure: RLRR LRLL
+            // Mapped to Step sequences:
+            // Right = Kick, Left = Snare, double beats = hi-hats
+            const rRhythm = [1, 0, 1, 1, 0, 1, 0, 0];
+            const lRhythm = [0, 1, 0, 0, 1, 0, 1, 1];
+            const isR = rRhythm[stepIndex % 8];
+            const isL = lRhythm[stepIndex % 8];
+
+            if (section.name.includes("Rhythm") || section.name.includes("Bass") || section.name.includes("Climax")) {
+                playPerididdle(isL, isR, (stepIndex % 2 === 0));
+            } else if (section.name.includes("Intro") || section.name.includes("Outro")) {
+                // sparse ambient hi-hats
+                if (stepIndex % 4 === 0 && Math.random() > 0.4) {
+                    playPerididdle(false, false, true);
+                }
+            }
+
+            stepIndex++;
+            sequenceTimer = setTimeout(scheduleTick, stepDuration * 1000);
+        }
+
+        // Time updates
+        setInterval(() => {
+            if (!window.musicPlaying) return;
+            overtureTime++;
+
+            if (overtureTime >= 390) {
+                stopOverture();
+                return;
+            }
+
+            // Display formatted elapsed time
+            const m = String(Math.floor(overtureTime / 60)).padStart(2, '0');
+            const s = String(overtureTime % 60).padStart(2, '0');
+            document.getElementById("txtTime").innerText = `${m}:${s} / 06:30`;
+
+            const percent = (overtureTime / 390) * 100;
+            document.getElementById("pBar").style.width = `${percent}%`;
+        }, 1000);
+
+        function startOverture() {
+            initAudio();
+            window.musicPlaying = true;
+            overtureTime = 0;
+            stepIndex = 0;
+            document.getElementById("btnPlay").style.display = "none";
+            document.getElementById("btnStop").style.display = "block";
+            scheduleTick();
+        }
+
+        function stopOverture() {
+            window.musicPlaying = false;
+            if (sequenceTimer) clearTimeout(sequenceTimer);
+            if (audioCtx) {
+                audioCtx.close();
+                audioCtx = null;
+            }
+            document.getElementById("btnPlay").style.display = "block";
+            document.getElementById("btnStop").style.display = "none";
+            document.getElementById("txtSection").innerText = "Stopped";
+            document.getElementById("txtTime").innerText = "00:00 / 06:30";
+            document.getElementById("pBar").style.width = "0%";
+            overtureTime = 0;
+        }
+
+        document.getElementById("btnPlay").addEventListener('click', startOverture);
+        document.getElementById("btnStop").addEventListener('click', stopOverture);
+
+        // Control Sliders events
+        document.getElementById("slideMaster").addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById("valMaster").innerText = `${val}%`;
+            if (mainGain && audioCtx) {
+                mainGain.gain.setValueAtTime(val / 100 * 0.5, audioCtx.currentTime);
+            }
+        });
+
+        document.getElementById("slideCutoff").addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById("valCutoff").innerText = `${val}Hz`;
+            if (filterNode && audioCtx) {
+                filterNode.frequency.setValueAtTime(val, audioCtx.currentTime);
+            }
+        });
+
+        document.getElementById("slideTempo").addEventListener('input', (e) => {
+            document.getElementById("valTempo").innerText = e.target.value;
+        });
+
+        // Manual microtonal key buttons
+        document.querySelectorAll(".key-btn").forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!audioCtx) initAudio();
+                const step = Number(e.target.getAttribute("data-step"));
+                const freq = edo22[step];
+                
+                // Play manual note
+                playLeadSynth(freq * 2, 0.4);
+                playSubBassNote(freq, 0.4);
+
+                // Make a random crab pinch claws
+                const randomCrab = crabs[Math.floor(Math.random() * crabs.length)];
+                randomCrab.pinchL = 1.0;
+                randomCrab.pinchR = 1.0;
+            });
+        });
+    </script>
+</body>
+</html>
