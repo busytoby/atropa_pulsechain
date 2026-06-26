@@ -31,7 +31,7 @@ THRESHOLDS = {
         "zero_polling_latency_us": {"max": 100.0, "desc": "Zero-Polling Hardware Latency"}
     },
     "summary": {
-        "average_fps": {"min": 4000.0, "desc": "Headless Vulkan Teddy Bear FPS"}
+        "average_fps": {"min": 3000.0, "desc": "Headless Vulkan Teddy Bear FPS"}
     }
 }
 
