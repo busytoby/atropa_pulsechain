@@ -2423,6 +2423,52 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             };
         }
 
+        window.dnaFrames = [];
+        window.dnaFrameIndex = 0;
+        function loadDnaFile() {
+            fetch("tsfi2-deepseek/assets/atropa.dna")
+                .then(res => {
+                    if (!res.ok) throw new Error("File not found");
+                    return res.arrayBuffer();
+                })
+                .then(buf => {
+                    const view = new DataView(buf);
+                    const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                    if (magic !== "TSFI") return;
+                    const totalFrames = view.getUint32(4, true);
+                    const frames = [];
+                    let offset = 8;
+                    for (let i = 0; i < totalFrames; i++) {
+                        if (offset + 31 > buf.byteLength) break;
+                        const g_x = view.getFloat32(offset, true);
+                        const g_y = view.getFloat32(offset + 4, true);
+                        const stretch = view.getFloat32(offset + 8, true);
+                        const pulse = view.getFloat32(offset + 12, true);
+                        const sick = view.getFloat32(offset + 16, true);
+                        const light = view.getFloat32(offset + 20, true);
+                        const r = view.getUint8(offset + 24);
+                        const g = view.getUint8(offset + 25);
+                        const b = view.getUint8(offset + 26);
+                        const er = view.getUint8(offset + 27);
+                        const eg = view.getUint8(offset + 28);
+                        const eb = view.getUint8(offset + 29);
+                        const ec = view.getUint8(offset + 30);
+                        frames.push({
+                            g_x, g_y, stretch, pulse, sick, light,
+                            color: `rgb(${r},${g},${b})`,
+                            eyeColor: `rgba(${er},${eg},${eb},0.35)`,
+                            eyeCount: ec
+                        });
+                        offset += 31;
+                    }
+                    window.dnaFrames = frames;
+                    console.log(`[DNA] Successfully loaded ${frames.length} frames.`);
+                })
+                .catch(err => {
+                    console.error("[DNA] Failed to load genomic presets:", err);
+                });
+        }
+
         async function init() {
             drawVulkanPlaceholder();
             
@@ -2430,6 +2476,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
             const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
             signer = new ethers.Wallet(fallbackPrivateKey, provider);
+
+            // Load genomic properties
+            loadDnaFile();
 
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
@@ -8681,6 +8730,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             // Draw Sprite 2: Alien Invader
             drawSpriteIcon(2, s2_x, s2_y, "#00ff7f", hasCollision);
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
+            }
         }
 
         function drawSpriteIcon(index, x, y, color, hasCollision) {
@@ -8688,6 +8741,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const mappedX = (x % 320);
             const mappedY = (y % 200);
             const zDepth = window[`s${index}_z`] || 0;
+
+            // Fetch current DNA frame parameters if available
+            let dnaFrame = null;
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                const fIdx = (window.dnaFrameIndex || 0) % window.dnaFrames.length;
+                dnaFrame = window.dnaFrames[fIdx];
+            }
+
+            // Adjust size, stretch, and color based on DNA
+            let stretchOffset = 0;
+            let displayColor = color;
+            let diffusionOpacity = 0.25;
+            let pulseScale = 1.0;
+
+            if (dnaFrame) {
+                // Apply genomic color override/blend
+                displayColor = dnaFrame.color || color;
+                stretchOffset = dnaFrame.stretch * 4; // Use DNA stretch to offset height
+                diffusionOpacity = Math.min(0.8, 0.2 + dnaFrame.light * 0.5);
+                pulseScale = 1.0 + Math.sin(dnaFrame.pulse * Math.PI) * 0.1;
+            }
 
             // Read from local storage to allow hot-reloading newly drawn sprites directly
             try {
@@ -8730,21 +8804,23 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const offset = Math.min(8, zDepth / 4);
                     for (let r = 0; r < 21; r++) {
                         const row_val = pattern[r] || 0;
+                        const drawY = mappedY + r + stretchOffset * (r / 21);
                         for (let c = 0; c < 24; c++) {
                             if ((row_val & (1 << (23 - c))) !== 0) {
-                                ctx.fillRect(mappedX + c + offset, mappedY + r + offset, 1, 1);
+                                ctx.fillRect(mappedX + c + offset, drawY + offset, 1, 1);
                             }
                         }
                     }
                 }
 
                 // Layer 2: Main Sprite Layer
-                ctx.fillStyle = color;
+                ctx.fillStyle = displayColor;
                 for (let r = 0; r < 21; r++) {
                     const row_val = pattern[r] || 0;
+                    const drawY = mappedY + r + stretchOffset * (r / 21);
                     for (let c = 0; c < 24; c++) {
                         if ((row_val & (1 << (23 - c))) !== 0) {
-                            ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                            ctx.fillRect(mappedX + c, drawY, 1, 1);
                         }
                     }
                 }
@@ -8753,30 +8829,34 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 if (zDepth > 0) {
                     for (let r = 0; r < 21; r++) {
                         const row_val = pattern[r] || 0;
+                        const drawY = mappedY + r + stretchOffset * (r / 21);
                         for (let c = 0; c < 24; c++) {
                             if ((row_val & (1 << (23 - c))) !== 0) {
-                                const noise = Math.sin((mappedX + c) * 12.9898 + (mappedY + r) * 78.233) * 43758.5453;
+                                const noise = Math.sin((mappedX + c) * 12.9898 + (drawY) * 78.233) * 43758.5453;
                                 const noiseFract = noise - Math.floor(noise);
                                 if (noiseFract > 0.6) {
-                                    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-                                    ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                                    ctx.fillStyle = dnaFrame ? dnaFrame.eyeColor : `rgba(255, 255, 255, ${diffusionOpacity})`;
+                                    ctx.fillRect(mappedX + c, drawY, 1, 1);
                                 } else if (noiseFract < 0.15) {
                                     ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-                                    ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                                    ctx.fillRect(mappedX + c, drawY, 1, 1);
                                 }
                             }
                         }
                     }
                 }
 
-                // Draw bounding box matching 24x21 sprite size
+                // Draw bounding box matching 24x21 sprite size (with pulse scaling)
                 ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
                 ctx.lineWidth = 1;
-                ctx.strokeRect(mappedX - 2, mappedY - 2, 28, 25);
+                const boxW = 28 * pulseScale;
+                const boxH = (25 + stretchOffset) * pulseScale;
+                ctx.strokeRect(mappedX - 2, mappedY - 2, boxW, boxH);
             } else {
-                ctx.fillStyle = color;
-                // Draw simple 12x12 block character representing sprite
-                ctx.fillRect(mappedX, mappedY, 12, 12);
+                ctx.fillStyle = displayColor;
+                ctx.fillRect(mappedX, mappedY, 12 * pulseScale, 12 * pulseScale);
+            }
+        }
 
                 // Bounding box indicator
                 ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
