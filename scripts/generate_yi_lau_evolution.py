@@ -28,25 +28,33 @@ def hsl_to_rgb(h, s, l):
     return int((r + m) * 255), int((g + m) * 255), int((b + m) * 255)
 
 def project_3d(x, y, z, cam_x, cam_y, cam_z, yaw, pitch, zoom, width, height):
-    dx = x - cam_x
-    dy = y - cam_y
-    dz = z - cam_z
+    def get_raw_proj(px_val, py_val, pz_val):
+        dx = px_val - cam_x
+        dy = py_val - cam_y
+        dz = pz_val - cam_z
+        
+        cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+        rx = dx * cos_y - dz * sin_y
+        ry = dy
+        rz = dx * sin_y + dz * cos_y
+        
+        cos_p, sin_p = math.cos(pitch), math.sin(pitch)
+        x_new = rx
+        y_new = ry * cos_p - rz * sin_p
+        z_new = ry * sin_p + rz * cos_p
+        
+        focal = 500.0
+        if z_new == 0: z_new = 1
+        px = (x_new * focal) / (z_new + 700) * zoom
+        py = (y_new * focal) / (z_new + 700) * zoom
+        return px, py
+        
+    px_raw, py_raw = get_raw_proj(x, y, z)
+    px_orig, py_orig = get_raw_proj(0, 0, 0)
     
-    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
-    rx = dx * cos_y - dz * sin_y
-    ry = dy
-    rz = dx * sin_y + dz * cos_y
-    
-    cos_p, sin_p = math.cos(pitch), math.sin(pitch)
-    x_new = rx
-    y_new = ry * cos_p - rz * sin_p
-    z_new = ry * sin_p + rz * cos_p
-    
-    focal = 500.0
-    if z_new == 0: z_new = 1
-    px = (x_new * focal) / (z_new + 700) * zoom + width / 2
-    py = (y_new * focal) / (z_new + 700) * zoom + height / 2
-    return int(px), int(py)
+    px_final = px_raw - px_orig + width / 2
+    py_final = py_raw - py_orig + height / 2
+    return int(px_final), int(py_final)
 
 def main():
     address = "0xd32c39fee49391c7952d1b30b15921b0d3b42e69"
@@ -115,39 +123,51 @@ def main():
         output_video
     ]
     
+    # Load SD texture for LAU
+    cwd = "tsfi2-deepseek" if os.path.exists("tsfi2-deepseek") else "."
+    tex_path = os.path.join(cwd, "tmp/sd_texture_lau.raw")
+    if os.path.exists(tex_path):
+        try:
+            with open(tex_path, "rb") as f_tex:
+                tex_lau_data = f_tex.read()
+            tex_lau = Image.frombytes("RGB", (512, 512), tex_lau_data)
+        except Exception:
+            tex_lau = Image.new("RGB", (512, 512), (218, 165, 32))
+    else:
+        tex_lau = Image.new("RGB", (512, 512), (218, 165, 32))
+        
+    tex_pixels = tex_lau.load()
     pipe = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
     
     for f in range(TOTAL_FRAMES):
         t = f / TOTAL_FRAMES
-        # Morph phases: 
-        # t = 0.0 -> 0.33: YI Icon pure
-        # t = 0.33 -> 0.66: YI Morphs into hypotrochoid LAU
-        # t = 0.66 -> 1.0: LAU solidifies with textured bamboo segments
         
+        # Morph stages:
+        # t = 0.0 -> 0.30: pure non-textured vector YI
+        # t = 0.30 -> 0.70: morphs coordinates and texturing/embossing into bamboo hypotrochoid LAU
+        # t = 0.70 -> 1.00: fully textured, centered, embossed bamboo LAU
         morph_factor = 0.0
         if t > 0.30:
-            morph_factor = min(1.0, (t - 0.30) / 0.35)
+            morph_factor = min(1.0, (t - 0.30) / 0.40)
             
         bg = Image.new("RGB", (WIDTH, HEIGHT), (12, 16, 28))
         draw = ImageDraw.Draw(bg, "RGBA")
         
-        # Camera orbit
-        cam_yaw = f * 0.02
-        cam_pitch = 0.3 + 0.1 * math.sin(f * 0.01)
-        cam_x = math.cos(cam_yaw) * 320
-        cam_y = math.sin(cam_yaw) * 320
-        cam_z = 200 + 50 * math.cos(f * 0.005)
-        zoom = 1.0
+        # Camera orbital settings scaled to keep assets inside the viewport
+        cam_yaw = f * 0.015
+        cam_pitch = 0.3 + 0.05 * math.sin(f * 0.008)
+        cam_x = math.cos(cam_yaw) * 360
+        cam_y = math.sin(cam_yaw) * 360
+        cam_z = 240 + 40 * math.cos(f * 0.005)
+        zoom = 0.82 # Slightly zoom out to prevent viewport clipping
         
-        num_points = 400
-        proj_points = []
-        normals = []
-        
-        # Define layered offsets for d
+        num_points = 360
         d_offsets = [d_hyp * 0.7, d_hyp, d_hyp * 1.3]
         
         for idx, d_val in enumerate(d_offsets):
             points_layer = []
+            normals_2d = []
+            
             for i in range(num_points):
                 theta = i * 4.0 * math.pi / num_points
                 
@@ -161,7 +181,7 @@ def main():
                 ly_lau = (R_hyp - r_hyp) * math.sin(theta) - d_val * math.sin(((R_hyp - r_hyp) / r_hyp) * theta)
                 lz_lau = 80.0 * math.cos(5.0 * theta)
                 
-                # Linearly interpolate coordinate values for morphing
+                # Morph coordinates
                 lx = lx_yi * (1.0 - morph_factor) + lx_lau * morph_factor
                 ly = ly_yi * (1.0 - morph_factor) + ly_lau * morph_factor
                 lz = lz_yi * (1.0 - morph_factor) + lz_lau * morph_factor
@@ -169,23 +189,57 @@ def main():
                 px, py = project_3d(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, WIDTH, HEIGHT)
                 points_layer.append((px, py))
                 
-            # Draw segment lines with bamboo highlights & shadows
-            w = 3 if idx == 1 else 1
+            # Compute 2D projected normals for shading
+            for i in range(num_points):
+                p_curr = points_layer[i]
+                p_next = points_layer[(i + 1) % num_points]
+                tx = p_next[0] - p_curr[0]
+                ty = p_next[1] - p_curr[1]
+                length = math.sqrt(tx**2 + ty**2) or 1.0
+                normals_2d.append((-ty/length, tx/length))
+                
+            # Interpolated line width
+            w_base = 2 if idx == 1 else 1
+            w_target = 4 if idx == 1 else 2
+            w = int(w_base * (1.0 - morph_factor) + w_target * morph_factor)
+            
+            # Interpolated emboss opacities
+            sh_alpha = int(140 * morph_factor)
+            hl_alpha = int(90 * morph_factor)
+            
             for i in range(num_points):
                 p1 = points_layer[i]
                 p2 = points_layer[(i + 1) % num_points]
+                nx, ny = normals_2d[i]
                 
-                # 3D Embossed look
-                p1_sh = (p1[0] + 1, p1[1] + 1)
-                p2_sh = (p2[0] + 1, p2[1] + 1)
-                p1_hl = (p1[0] - 1, p1[1] - 1)
-                p2_hl = (p2[0] - 1, p2[1] - 1)
+                # Fetch color from SD texture map
+                tx_coord = int(p1[0]) % 512
+                ty_coord = int(p1[1]) % 512
+                r_t, g_t, b_t = tex_pixels[tx_coord, ty_coord]
                 
-                draw.line([p1_sh, p2_sh], fill=(0, 0, 0, 100), width=w)
-                draw.line([p1_hl, p2_hl], fill=(255, 255, 255, 60), width=w)
-                draw.line([p1, p2], fill=color_rgb + (220,), width=w)
+                # Shading
+                dot = max(0.2, nx * 0.707 + ny * 0.707)
+                r_s, g_s, b_s = int(r_t * dot), int(g_t * dot), int(b_t * dot)
                 
-        # Write image bytes to FFmpeg stdin pipe
+                # Interpolate color from vector to textured
+                r_curr = int(color_rgb[0] * (1.0 - morph_factor) + r_s * morph_factor)
+                g_curr = int(color_rgb[1] * (1.0 - morph_factor) + g_s * morph_factor)
+                b_curr = int(color_rgb[2] * (1.0 - morph_factor) + b_s * morph_factor)
+                
+                # Render emboss shadows & highlights if morphed
+                if morph_factor > 0.02:
+                    p1_sh = (p1[0] + 1.2 * nx, p1[1] + 1.2 * ny)
+                    p2_sh = (p2[0] + 1.2 * nx, p2[1] + 1.2 * ny)
+                    p1_hl = (p1[0] - 1.2 * nx, p1[1] - 1.2 * ny)
+                    p2_hl = (p2[0] - 1.2 * nx, p2[1] - 1.2 * ny)
+                    
+                    draw.line([p1_sh, p2_sh], fill=(0, 0, 0, sh_alpha), width=w)
+                    draw.line([p1_hl, p2_hl], fill=(255, 255, 255, hl_alpha), width=w)
+                    
+                draw.line([p1, p2], fill=(r_curr, g_curr, b_curr, 255), width=w)
+                if morph_factor > 0.02:
+                    draw.line([p1, p2], fill=(min(255, r_curr + 40), min(255, g_curr + 40), min(255, b_curr + 40), 255), width=w // 2)
+                    
         pipe.stdin.write(bg.tobytes())
         if f % 300 == 0:
             print(f"[Pipeline] Processed {f}/{TOTAL_FRAMES} frames...")
