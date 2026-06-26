@@ -236,13 +236,18 @@
                 const name = (token.name || '').toLowerCase();
                 const minterName = (token.minter_name || '').toLowerCase();
                 
+                // Skip ignored tokens
+                if (token.ignored) return false;
+                
                 // Allow any token that matches the LAU naming profiles or has been deployed as mariarahelLau
-                const isLau = symbol.includes('lau') || 
-                              minterName.includes('lau') || 
-                              address === "0xd32c39fee49391c7952d1b30b15921b0d3b42e69" || 
-                              address === "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b" ||
-                              address === "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e" ||
-                              address === "0xad4e198623a5e2723e19e4d4a6ecf72b1d19fe4b";
+                // Filter out extra long raw narrative dumps by checking symbol length
+                const isLau = (symbol.includes('lau') || 
+                               minterName.includes('lau') || 
+                               address === "0xd32c39fee49391c7952d1b30b15921b0d3b42e69" || 
+                               address === "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b" ||
+                               address === "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e" ||
+                               address === "0xad4e198623a5e2723e19e4d4a6ecf72b1d19fe4b") && 
+                              (symbol.length < 16);
                 if (!isLau) return false;
                 
                 return address.includes(searchVal) || symbol.includes(searchVal) || name.includes(searchVal);
