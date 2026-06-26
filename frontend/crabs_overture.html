@@ -365,6 +365,7 @@
                 this.pinchL = 0;
                 this.pinchR = 0;
                 this.danceOffset = 0;
+                this.loveTimer = 0;
             }
 
             update(beat, speedFactor) {
@@ -379,6 +380,7 @@
                 this.pinchL = Math.max(0, this.pinchL - 0.1);
                 this.pinchR = Math.max(0, this.pinchR - 0.1);
                 this.danceOffset = Math.max(0, this.danceOffset - 0.05);
+                this.loveTimer = Math.max(0, this.loveTimer - 1);
                 if (beat) {
                     if (Math.random() > 0.4) this.pinchL = 1.0;
                     if (Math.random() > 0.4) this.pinchR = 1.0;
@@ -547,6 +549,14 @@
                     }
                 }
 
+                // Draw heart if in love
+                if (this.loveTimer > 0) {
+                    ctx.fillStyle = "#ff2e63";
+                    ctx.font = "10px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText("❤️", 0, -s * 1.3);
+                }
+
                 ctx.restore();
             }
         }
@@ -682,9 +692,11 @@
                         const tvx = c1.vx; c1.vx = c2.vx; c2.vx = tvx;
                         const tvy = c1.vy; c1.vy = c2.vy; c2.vy = tvy;
 
-                        // Surprise pinch reactions
+                        // Surprise pinch reactions and love hearts
                         c1.pinchL = 1.0; c1.pinchR = 1.0;
                         c2.pinchL = 1.0; c2.pinchR = 1.0;
+                        c1.loveTimer = 45;
+                        c2.loveTimer = 45;
                     }
                 }
             }
@@ -919,17 +931,29 @@
                 // Ground Sub Bass Roots with section.bass factor
                 const noteStep = scale[0];
                 playSubBassNote(edo22[noteStep], stepDuration * 6, section.bass);
+                crabs[0].danceOffset = 1.0;
+                crabs[0].pinchL = 1.0;
             } else if (subStep === 4 || subStep === 12) {
                 // Secondary octave harmonies
                 const noteStep = scale[Math.min(scale.length - 1, 2)];
                 playSubBassNote(edo22[noteStep], stepDuration * 4, section.bass);
+                crabs[0].danceOffset = 0.8;
+                crabs[0].pinchR = 1.0;
             }
 
-            // Melodic Lead Patterns
+            // Melodic Lead Patterns (Crab 1)
             if (subStep % 2 === 0 && Math.random() > 0.3) {
                 const leadStepIdx = Math.floor(Math.random() * scale.length);
                 const baseFreq = edo22[scale[leadStepIdx]];
                 playLeadSynth(baseFreq * 2, stepDuration * 1.5);
+                crabs[1].danceOffset = 0.8;
+                crabs[1].pinchL = 1.0;
+            }
+
+            // Counterpoint chords (Crab 5)
+            if (subStep % 4 === 2) {
+                crabs[5].danceOffset = 0.6;
+                crabs[5].pinchR = 1.0;
             }
 
             // Paradiddle Drum Rhythms (Kick, Snare, Hihat)
@@ -944,10 +968,29 @@
 
             if (playDrums) {
                 playPerididdle(isL, isR, (stepIndex % 2 === 0));
+                // Snare Drummer (Crab 2)
+                if (isL) {
+                    crabs[2].pinchL = 1.0;
+                    crabs[2].pinchR = 1.0;
+                    crabs[2].danceOffset = 0.7;
+                }
+                // Bass/Kick Drummer (Crab 3)
+                if (isR) {
+                    crabs[3].pinchL = 1.0;
+                    crabs[3].pinchR = 1.0;
+                    crabs[3].danceOffset = 0.9;
+                }
+                // Hi-Hat Drummer (Crab 4)
+                if (stepIndex % 2 === 0) {
+                    crabs[4].pinchL = 1.0;
+                    crabs[4].pinchR = 1.0;
+                }
             } else {
                 // ambient sparse hihats
                 if (stepIndex % 4 === 0 && Math.random() > 0.4) {
                     playPerididdle(false, false, true);
+                    crabs[4].pinchL = 1.0;
+                    crabs[4].pinchR = 1.0;
                 }
             }
 
