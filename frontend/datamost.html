@@ -986,6 +986,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         pokes.push({ addr: 53269, val: 15 });
                         pokes.push({ addr: 56832, val: 0 });
                         return { program: banks[0] || [], pokes, banks };
+                    },
+                    4: (romBytes) => {
+                        const banks = [];
+                        const bankSize = 16384;
+                        for (let offset = 0; offset < romBytes.length; offset += bankSize) {
+                            banks.push(Array.from(romBytes.slice(offset, offset + bankSize)));
+                        }
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        pokes.push({ addr: 56834, val: 0 });
+                        return { program: banks[0] || [], pokes, banks };
                     }
                 };
             }
@@ -1006,6 +1017,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 } else if (magic === "MDESK") {
                     mapperId = 3;
                     name = "Magic Desk Cartridge";
+                } else if (magic === "EASYS") {
+                    mapperId = 4;
+                    name = "EasyFlash Cartridge";
                 }
                 
                 const mapper = this.mappers[mapperId];
@@ -1744,6 +1758,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                             this.memory[8192 + i] = bankBytes[i];
                         }
                         console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
+                    }
+                }
+                if (addr === 56834 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex} via EasyFlash register`);
                     }
                 }
                 return { wait: async () => {} };
@@ -12188,6 +12212,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
                     }
                 }
+                if (addr === 56834 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex} via EasyFlash register`);
+                    }
+                }
                 return { wait: async () => {} };
             }
 
@@ -22217,11 +22251,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
                 
                 // Hook poke to register 54752 (Regen Nonce trigger)
-                if (addr === 54752 && val === 1) {
-                    for (let i = 0; i < 32; i++) {
-                        this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                if (addr === 56832 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
                     }
-                    this.memory[54752] = 0;
+                }
+                if (addr === 56834 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex} via EasyFlash register`);
+                    }
                 }
                 return { wait: async () => {} };
             }
