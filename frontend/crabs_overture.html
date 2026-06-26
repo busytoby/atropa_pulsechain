@@ -420,17 +420,30 @@
                 ctx.ellipse(0, 0, s, s * 0.7, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Eyes
+                // Eyes base
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(-s * 0.4, -s * 0.6, s * 0.2, 0, Math.PI * 2);
                 ctx.arc(s * 0.4, -s * 0.6, s * 0.2, 0, Math.PI * 2);
                 ctx.fill();
 
+                // Pupil Tracking
+                let dx = 0;
+                let dy = 0;
+                if (window.mouseX && window.mouseY) {
+                    const eyeX = cx;
+                    const eyeY = cy - s * 0.6;
+                    const angle = Math.atan2(window.mouseY - eyeY, window.mouseX - eyeX);
+                    dx = Math.cos(angle) * (s * 0.08);
+                    dy = Math.sin(angle) * (s * 0.08);
+                } else {
+                    dy = Math.sin(frame * 0.05) * (s * 0.04);
+                }
+
                 ctx.fillStyle = "#000000";
                 ctx.beginPath();
-                ctx.arc(-s * 0.4, -s * 0.6 - (Math.sin(frame * 0.05) * 1), s * 0.1, 0, Math.PI * 2);
-                ctx.arc(s * 0.4, -s * 0.6 - (Math.sin(frame * 0.05) * 1), s * 0.1, 0, Math.PI * 2);
+                ctx.arc(-s * 0.4 + dx, -s * 0.6 + dy, s * 0.09, 0, Math.PI * 2);
+                ctx.arc(s * 0.4 + dx, -s * 0.6 + dy, s * 0.09, 0, Math.PI * 2);
                 ctx.fill();
 
                 // Left Claw / Pinch
@@ -1070,6 +1083,24 @@
                 randomCrab.pinchR = 1.0;
             });
         });
+        window.mouseX = 0;
+        window.mouseY = 0;
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const scaleX = canvas.width / rect.width / window.devicePixelRatio;
+            const scaleY = canvas.height / rect.height / window.devicePixelRatio;
+            window.mouseX = clickX * scaleX;
+            window.mouseY = clickY * scaleY;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            window.mouseX = 0;
+            window.mouseY = 0;
+        });
+
         // Canvas click controller: click crabs to trigger synthesizers and jumps
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
