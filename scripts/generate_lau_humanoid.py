@@ -74,7 +74,7 @@ def main():
         
     # Scale elements for details
     lobes = 5 + (r_channel % 3)
-    hardness = "extreme mirror-polished finish" if (r_foundation % 2 == 0) else "matte micro-brushed steel finish"
+    hardness = "raw polished bamboo finish" if (r_foundation % 2 == 0) else "weathered natural wood grain finish"
     
     # Soft descriptive properties that guide Stable Diffusion to naturally discover the figure
     # rather than hardcoding names. Maps details like wing hints, body shapes, or monster characteristics.
@@ -83,27 +83,27 @@ def main():
     # Base structure range (organism at least, humanoid/super-humanoid or monster at most)
     struct_mod = r_base % 4
     if struct_mod == 0:
-        form_descriptors.append("biomechanical living organism structure")
+        form_descriptors.append("organic living plant creature structure")
     elif struct_mod == 1:
-        form_descriptors.append("humanoid figure with stylized anatomical details")
+        form_descriptors.append("humanoid figure grown from interlocking branches and shoots")
     elif struct_mod == 2:
-        form_descriptors.append("super-humanoid figure with angelic wing-like extensions")
+        form_descriptors.append("super-humanoid wooden figure with leaf and wing-like extensions")
     else:
-        form_descriptors.append("exotic cybernetic monster entity with multi-faceted limbs")
+        form_descriptors.append("exotic forest monster entity with multi-faceted roots and limbs")
         
     # Append visual qualities mapped from dynamic registers
     if r_channel % 2 == 0:
-        form_descriptors.append("delicate butterfly-like wing structures")
+        form_descriptors.append("delicate butterfly-like leaf wing structures")
     if r_dynamo % 2 == 0:
-        form_descriptors.append("bear-like mechanical posture characteristics")
+        form_descriptors.append("bear-like organic posture characteristics")
         
     guides = ", ".join(form_descriptors)
     
     # Formulate SD prompt using vocabulary and mapped registers
     prompt = (
-        f"A highly detailed photorealistic statue with arms and legs, sitting in meditation, "
-        f"featuring a {guides}, metallic body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
-        f"glowing eyes, intricate micro-chords and circuits of EDO-22 frequency lines, "
+        f"A highly detailed photorealistic statue sculpted from natural materials, sitting in meditation, "
+        f"featuring a {guides}, body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
+        f"glowing green eyes, intricate micro-chords and lines resembling EDO-22 frequency patterns, "
         f"integrated natural bamboo fiber textures and organic hypotrochoid shoot patterns, "
         f"embossed wood grain details, {lobes}-cusped symmetry geometry, "
         f"{hardness}, cinematic studio lighting, dark background, 8k resolution, masterpiece"
