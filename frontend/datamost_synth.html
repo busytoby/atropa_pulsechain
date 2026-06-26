@@ -953,6 +953,7 @@
     <!-- JS Execution Engine -->
     <script src="js/cartridge_registry.js"></script>
     <script src="js/tessarant_compositor.js"></script>
+    <script src="js/dino_maps.js"></script>
     <script>
         let provider, signer;
         
@@ -7241,85 +7242,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const lvl = window.dinoLevel || 1;
 
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
-                const rand = (function(seed) {
-                    let s = seed;
-                    return function() {
-                        s = (s * 1103515245 + 12345) & 0x7fffffff;
-                        return s / 0x7fffffff;
-                    };
-                })(lvl);
-
-                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
-                const platforms = [];
-                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
-                for (let i = 0; i < numPlatforms - 1; i++) {
-                    const y = 60 + i * 30;
-                    const w = 80 + Math.floor(rand() * 100);
-                    const x = 40 + Math.floor(rand() * (240 - w));
-                    platforms.push({ x, y, w });
-                }
-
-                const vines = [];
-                for (let i = 0; i < platforms.length - 1; i++) {
-                    const p1 = platforms[i];
-                    const p2 = platforms[i + 1];
-                    const minX = Math.max(p1.x, p2.x) + 10;
-                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
-                    if (maxX > minX) {
-                        const vx = minX + Math.floor(rand() * (maxX - minX));
-                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
-                    } else {
-                        const vx = p1.x + Math.floor(p1.w / 2);
-                        vines.push({ x: vx, y1: p1.y, y2: 170 });
-                    }
-                }
-
-                const nests = [];
-                for (let i = 1; i < platforms.length; i++) {
-                    const p = platforms[i];
-                    if (rand() > 0.3) {
-                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
-                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
-                    }
-                }
-                if (nests.length === 0) {
-                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
-                }
-
-                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
             }
 
             const lvlData = window.currentDinoLevelData;
-
-            // Draw cave platforms
-            ctx.fillStyle = "#5c4033"; // Earthy brown
-            for (const p of lvlData.platforms) {
-                ctx.fillRect(p.x, p.y, p.w, 8);
-            }
-
-            // Draw green climbing vines (ladders)
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (const v of lvlData.vines) {
-                ctx.moveTo(v.x, v.y1);
-                ctx.lineTo(v.x, v.y2);
-            }
-            ctx.stroke();
-
-            // Draw vine leaves
-            ctx.fillStyle = "#2ecc71";
-            for (const v of lvlData.vines) {
-                for (let y = v.y1 + 5; y < v.y2; y += 10) {
-                    ctx.fillRect(v.x - 5, y, 4, 2);
-                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
-                }
-            }
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
 
             for (const nest of lvlData.nests) {
                 if (!nest.collected) {
                     // Draw nest base (pedestal)
-                    ctx.fillStyle = "#ff007f";
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
                     ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
 
                     for (let e = 0; e < nest.eggs; e++) {
@@ -7329,14 +7261,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             // Tim the Explorer (Sprite 0) coordinate tracking
-            if (!window.vaultX) {
-                window.vaultX = 144;
-                window.vaultY = 120;
-            }
-            if (isDemoModeActive) {
-                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
-                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
-            }
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
 
             // Check collision with nests
             let allCollected = true;
@@ -8147,85 +8072,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
-                const rand = (function(seed) {
-                    let s = seed;
-                    return function() {
-                        s = (s * 1103515245 + 12345) & 0x7fffffff;
-                        return s / 0x7fffffff;
-                    };
-                })(lvl);
-
-                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
-                const platforms = [];
-                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
-                for (let i = 0; i < numPlatforms - 1; i++) {
-                    const y = 60 + i * 30;
-                    const w = 80 + Math.floor(rand() * 100);
-                    const x = 40 + Math.floor(rand() * (240 - w));
-                    platforms.push({ x, y, w });
-                }
-
-                const vines = [];
-                for (let i = 0; i < platforms.length - 1; i++) {
-                    const p1 = platforms[i];
-                    const p2 = platforms[i + 1];
-                    const minX = Math.max(p1.x, p2.x) + 10;
-                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
-                    if (maxX > minX) {
-                        const vx = minX + Math.floor(rand() * (maxX - minX));
-                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
-                    } else {
-                        const vx = p1.x + Math.floor(p1.w / 2);
-                        vines.push({ x: vx, y1: p1.y, y2: 170 });
-                    }
-                }
-
-                const nests = [];
-                for (let i = 1; i < platforms.length; i++) {
-                    const p = platforms[i];
-                    if (rand() > 0.3) {
-                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
-                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
-                    }
-                }
-                if (nests.length === 0) {
-                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
-                }
-
-                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
             }
 
             const lvlData = window.currentDinoLevelData;
-
-            // Draw cave platforms
-            ctx.fillStyle = "#5c4033"; // Earthy brown
-            for (const p of lvlData.platforms) {
-                ctx.fillRect(p.x, p.y, p.w, 8);
-            }
-
-            // Draw green climbing vines (ladders)
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (const v of lvlData.vines) {
-                ctx.moveTo(v.x, v.y1);
-                ctx.lineTo(v.x, v.y2);
-            }
-            ctx.stroke();
-
-            // Draw vine leaves
-            ctx.fillStyle = "#2ecc71";
-            for (const v of lvlData.vines) {
-                for (let y = v.y1 + 5; y < v.y2; y += 10) {
-                    ctx.fillRect(v.x - 5, y, 4, 2);
-                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
-                }
-            }
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
 
             for (const nest of lvlData.nests) {
                 if (!nest.collected) {
                     // Draw nest base (pedestal)
-                    ctx.fillStyle = "#ff007f";
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
                     ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
 
                     for (let e = 0; e < nest.eggs; e++) {
@@ -8235,14 +8091,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             // Tim the Explorer (Sprite 0) coordinate tracking
-            if (!window.vaultX) {
-                window.vaultX = 144;
-                window.vaultY = 120;
-            }
-            if (isDemoModeActive) {
-                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
-                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
-            }
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
 
             // Check collision with nests
             let allCollected = true;

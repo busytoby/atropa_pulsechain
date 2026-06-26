@@ -809,6 +809,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
     <!-- JS Execution Engine -->
     <script src="js/cartridge_registry.js"></script>
     <script src="js/tessarant_compositor.js"></script>
+    <script src="js/dino_maps.js"></script>
     <script>
         let provider, signer;
         
@@ -7078,170 +7079,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 return;
             }
 
-            const lvl = window.dinoLevel || 1;
-
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
-                const rand = (function(seed) {
-                    let s = seed;
-                    return function() {
-                        s = (s * 1103515245 + 12345) & 0x7fffffff;
-                        return s / 0x7fffffff;
-                    };
-                })(lvl);
-
-                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
-                const platforms = [];
-                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
-                for (let i = 0; i < numPlatforms - 1; i++) {
-                    const y = 60 + i * 30;
-                    const w = 80 + Math.floor(rand() * 100);
-                    const x = 40 + Math.floor(rand() * (240 - w));
-                    platforms.push({ x, y, w });
-                }
-
-                const vines = [];
-                for (let i = 0; i < platforms.length - 1; i++) {
-                    const p1 = platforms[i];
-                    const p2 = platforms[i + 1];
-                    const minX = Math.max(p1.x, p2.x) + 10;
-                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
-                    if (maxX > minX) {
-                        const vx = minX + Math.floor(rand() * (maxX - minX));
-                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
-                    } else {
-                        const vx = p1.x + Math.floor(p1.w / 2);
-                        vines.push({ x: vx, y1: p1.y, y2: 170 });
-                    }
-                }
-
-                const nests = [];
-                for (let i = 1; i < platforms.length; i++) {
-                    const p = platforms[i];
-                    if (rand() > 0.3) {
-                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
-                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
-                    }
-                }
-                if (nests.length === 0) {
-                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
-                }
-
-                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
             }
 
             const lvlData = window.currentDinoLevelData;
-
-            // Draw cave platforms
-            ctx.fillStyle = "#5c4033"; // Earthy brown
-            for (const p of lvlData.platforms) {
-                ctx.fillRect(p.x, p.y, p.w, 8);
-            }
-
-            // Draw green climbing vines (ladders)
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (const v of lvlData.vines) {
-                ctx.moveTo(v.x, v.y1);
-                ctx.lineTo(v.x, v.y2);
-            }
-            ctx.stroke();
-
-            // Draw vine leaves
-            ctx.fillStyle = "#2ecc71";
-            for (const v of lvlData.vines) {
-                for (let y = v.y1 + 5; y < v.y2; y += 10) {
-                    ctx.fillRect(v.x - 5, y, 4, 2);
-                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
-                }
-            }
-
-            // Draw Dino Nests and Eggs (as Cards / Tessarants)
-            const t = dinoFrame * 0.05;
-            const cosT = Math.cos(t);
-            const sinT = Math.sin(t);
-            const cosT2 = Math.cos(t * 1.3);
-            const sinT2 = Math.sin(t * 1.3);
-            const d = 2.2;
-
-            // 4D rotating vertices definition
-            const baseVertices = [
-                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
-                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
-                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
-                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
-            ];
-
-            const edges = [];
-            for (let i = 0; i < 16; i++) {
-                for (let j = i + 1; j < 16; j++) {
-                    let diffs = 0;
-                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
-                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
-                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
-                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
-                    if (diffs === 1) edges.push([i, j]);
-                }
-            }
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
 
             for (const nest of lvlData.nests) {
                 if (!nest.collected) {
                     // Draw nest base (pedestal)
-                    ctx.fillStyle = "#ff007f";
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
                     ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
 
                     for (let e = 0; e < nest.eggs; e++) {
-                        const cardX = nest.x - 6 + e * 12;
-                        const cardY = nest.y - 6;
-
-                        // Draw holographic card border
-                        ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(cardX - 5, cardY - 8, 10, 14);
-                        ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
-                        ctx.fillRect(cardX - 5, cardY - 8, 10, 14);
-
-                        // Calculate projected vertices
-                        const projectedPoints = baseVertices.map(v => {
-                            let x1 = v.x * cosT - v.w * sinT;
-                            let w1 = v.x * sinT + v.w * cosT;
-                            let y1 = v.y * cosT2 - v.z * sinT2;
-                            let z1 = v.y * sinT2 + v.z * cosT2;
-                            
-                            const denom = d - w1;
-                            const x3 = x1 / denom;
-                            const y3 = y1 / denom;
-                            
-                            return {
-                                x: cardX + x3 * 3,
-                                y: cardY + y3 * 3
-                            };
-                        });
-
-                        // Draw tessarant wireframe
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        for (const edge of edges) {
-                            const p1 = projectedPoints[edge[0]];
-                            const p2 = projectedPoints[edge[1]];
-                            ctx.moveTo(p1.x, p1.y);
-                            ctx.lineTo(p2.x, p2.y);
-                        }
-                        ctx.stroke();
+                        window.TessarantCompositor.drawEggCard(ctx, nest.x - 6 + e * 12, nest.y - 6, dinoFrame, e);
                     }
                 }
             }
 
             // Tim the Explorer (Sprite 0) coordinate tracking
-            if (!window.vaultX) {
-                window.vaultX = 144;
-                window.vaultY = 120;
-            }
-            if (isDemoModeActive) {
-                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
-                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
-            }
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
 
             // Check collision with nests
             let allCollected = true;
@@ -18773,167 +18631,26 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
-                const rand = (function(seed) {
-                    let s = seed;
-                    return function() {
-                        s = (s * 1103515245 + 12345) & 0x7fffffff;
-                        return s / 0x7fffffff;
-                    };
-                })(lvl);
-
-                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
-                const platforms = [];
-                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
-                for (let i = 0; i < numPlatforms - 1; i++) {
-                    const y = 60 + i * 30;
-                    const w = 80 + Math.floor(rand() * 100);
-                    const x = 40 + Math.floor(rand() * (240 - w));
-                    platforms.push({ x, y, w });
-                }
-
-                const vines = [];
-                for (let i = 0; i < platforms.length - 1; i++) {
-                    const p1 = platforms[i];
-                    const p2 = platforms[i + 1];
-                    const minX = Math.max(p1.x, p2.x) + 10;
-                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
-                    if (maxX > minX) {
-                        const vx = minX + Math.floor(rand() * (maxX - minX));
-                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
-                    } else {
-                        const vx = p1.x + Math.floor(p1.w / 2);
-                        vines.push({ x: vx, y1: p1.y, y2: 170 });
-                    }
-                }
-
-                const nests = [];
-                for (let i = 1; i < platforms.length; i++) {
-                    const p = platforms[i];
-                    if (rand() > 0.3) {
-                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
-                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
-                    }
-                }
-                if (nests.length === 0) {
-                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
-                }
-
-                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
             }
 
             const lvlData = window.currentDinoLevelData;
-
-            // Draw cave platforms
-            ctx.fillStyle = "#5c4033"; // Earthy brown
-            for (const p of lvlData.platforms) {
-                ctx.fillRect(p.x, p.y, p.w, 8);
-            }
-
-            // Draw green climbing vines (ladders)
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (const v of lvlData.vines) {
-                ctx.moveTo(v.x, v.y1);
-                ctx.lineTo(v.x, v.y2);
-            }
-            ctx.stroke();
-
-            // Draw vine leaves
-            ctx.fillStyle = "#2ecc71";
-            for (const v of lvlData.vines) {
-                for (let y = v.y1 + 5; y < v.y2; y += 10) {
-                    ctx.fillRect(v.x - 5, y, 4, 2);
-                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
-                }
-            }
-
-            // Draw Dino Nests and Eggs (as Cards / Tessarants)
-            const t = dinoFrame * 0.05;
-            const cosT = Math.cos(t);
-            const sinT = Math.sin(t);
-            const cosT2 = Math.cos(t * 1.3);
-            const sinT2 = Math.sin(t * 1.3);
-            const d = 2.2;
-
-            // 4D rotating vertices definition
-            const baseVertices = [
-                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
-                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
-                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
-                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
-            ];
-
-            const edges = [];
-            for (let i = 0; i < 16; i++) {
-                for (let j = i + 1; j < 16; j++) {
-                    let diffs = 0;
-                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
-                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
-                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
-                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
-                    if (diffs === 1) edges.push([i, j]);
-                }
-            }
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
 
             for (const nest of lvlData.nests) {
                 if (!nest.collected) {
                     // Draw nest base (pedestal)
-                    ctx.fillStyle = "#ff007f";
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
                     ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
 
                     for (let e = 0; e < nest.eggs; e++) {
-                        const cardX = nest.x - 6 + e * 12;
-                        const cardY = nest.y - 6;
-
-                        // Draw holographic card border
-                        ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(cardX - 5, cardY - 8, 10, 14);
-                        ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
-                        ctx.fillRect(cardX - 5, cardY - 8, 10, 14);
-
-                        // Calculate projected vertices
-                        const projectedPoints = baseVertices.map(v => {
-                            let x1 = v.x * cosT - v.w * sinT;
-                            let w1 = v.x * sinT + v.w * cosT;
-                            let y1 = v.y * cosT2 - v.z * sinT2;
-                            let z1 = v.y * sinT2 + v.z * cosT2;
-                            
-                            const denom = d - w1;
-                            const x3 = x1 / denom;
-                            const y3 = y1 / denom;
-                            
-                            return {
-                                x: cardX + x3 * 3,
-                                y: cardY + y3 * 3
-                            };
-                        });
-
-                        // Draw tessarant wireframe
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        for (const edge of edges) {
-                            const p1 = projectedPoints[edge[0]];
-                            const p2 = projectedPoints[edge[1]];
-                            ctx.moveTo(p1.x, p1.y);
-                            ctx.lineTo(p2.x, p2.y);
-                        }
-                        ctx.stroke();
+                        window.TessarantCompositor.drawEggCard(ctx, nest.x - 6 + e * 12, nest.y - 6, dinoFrame, e);
                     }
                 }
             }
 
             // Tim the Explorer (Sprite 0) coordinate tracking
-            if (!window.vaultX) {
-                window.vaultX = 144;
-                window.vaultY = 120;
-            }
-            if (isDemoModeActive) {
-                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
-                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
-            }
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
 
             // Check collision with nests
             let allCollected = true;
@@ -29593,167 +29310,26 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
-                const rand = (function(seed) {
-                    let s = seed;
-                    return function() {
-                        s = (s * 1103515245 + 12345) & 0x7fffffff;
-                        return s / 0x7fffffff;
-                    };
-                })(lvl);
-
-                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
-                const platforms = [];
-                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
-                for (let i = 0; i < numPlatforms - 1; i++) {
-                    const y = 60 + i * 30;
-                    const w = 80 + Math.floor(rand() * 100);
-                    const x = 40 + Math.floor(rand() * (240 - w));
-                    platforms.push({ x, y, w });
-                }
-
-                const vines = [];
-                for (let i = 0; i < platforms.length - 1; i++) {
-                    const p1 = platforms[i];
-                    const p2 = platforms[i + 1];
-                    const minX = Math.max(p1.x, p2.x) + 10;
-                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
-                    if (maxX > minX) {
-                        const vx = minX + Math.floor(rand() * (maxX - minX));
-                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
-                    } else {
-                        const vx = p1.x + Math.floor(p1.w / 2);
-                        vines.push({ x: vx, y1: p1.y, y2: 170 });
-                    }
-                }
-
-                const nests = [];
-                for (let i = 1; i < platforms.length; i++) {
-                    const p = platforms[i];
-                    if (rand() > 0.3) {
-                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
-                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
-                    }
-                }
-                if (nests.length === 0) {
-                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
-                }
-
-                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
             }
 
             const lvlData = window.currentDinoLevelData;
-
-            // Draw cave platforms
-            ctx.fillStyle = "#5c4033"; // Earthy brown
-            for (const p of lvlData.platforms) {
-                ctx.fillRect(p.x, p.y, p.w, 8);
-            }
-
-            // Draw green climbing vines (ladders)
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (const v of lvlData.vines) {
-                ctx.moveTo(v.x, v.y1);
-                ctx.lineTo(v.x, v.y2);
-            }
-            ctx.stroke();
-
-            // Draw vine leaves
-            ctx.fillStyle = "#2ecc71";
-            for (const v of lvlData.vines) {
-                for (let y = v.y1 + 5; y < v.y2; y += 10) {
-                    ctx.fillRect(v.x - 5, y, 4, 2);
-                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
-                }
-            }
-
-            // Draw Dino Nests and Eggs (as Cards / Tessarants)
-            const t = dinoFrame * 0.05;
-            const cosT = Math.cos(t);
-            const sinT = Math.sin(t);
-            const cosT2 = Math.cos(t * 1.3);
-            const sinT2 = Math.sin(t * 1.3);
-            const d = 2.2;
-
-            // 4D rotating vertices definition
-            const baseVertices = [
-                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
-                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
-                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
-                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
-            ];
-
-            const edges = [];
-            for (let i = 0; i < 16; i++) {
-                for (let j = i + 1; j < 16; j++) {
-                    let diffs = 0;
-                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
-                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
-                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
-                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
-                    if (diffs === 1) edges.push([i, j]);
-                }
-            }
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
 
             for (const nest of lvlData.nests) {
                 if (!nest.collected) {
                     // Draw nest base (pedestal)
-                    ctx.fillStyle = "#ff007f";
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
                     ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
 
                     for (let e = 0; e < nest.eggs; e++) {
-                        const cardX = nest.x - 6 + e * 12;
-                        const cardY = nest.y - 6;
-
-                        // Draw holographic card border
-                        ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(cardX - 5, cardY - 8, 10, 14);
-                        ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
-                        ctx.fillRect(cardX - 5, cardY - 8, 10, 14);
-
-                        // Calculate projected vertices
-                        const projectedPoints = baseVertices.map(v => {
-                            let x1 = v.x * cosT - v.w * sinT;
-                            let w1 = v.x * sinT + v.w * cosT;
-                            let y1 = v.y * cosT2 - v.z * sinT2;
-                            let z1 = v.y * sinT2 + v.z * cosT2;
-                            
-                            const denom = d - w1;
-                            const x3 = x1 / denom;
-                            const y3 = y1 / denom;
-                            
-                            return {
-                                x: cardX + x3 * 3,
-                                y: cardY + y3 * 3
-                            };
-                        });
-
-                        // Draw tessarant wireframe
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        for (const edge of edges) {
-                            const p1 = projectedPoints[edge[0]];
-                            const p2 = projectedPoints[edge[1]];
-                            ctx.moveTo(p1.x, p1.y);
-                            ctx.lineTo(p2.x, p2.y);
-                        }
-                        ctx.stroke();
+                        window.TessarantCompositor.drawEggCard(ctx, nest.x - 6 + e * 12, nest.y - 6, dinoFrame, e);
                     }
                 }
             }
 
             // Tim the Explorer (Sprite 0) coordinate tracking
-            if (!window.vaultX) {
-                window.vaultX = 144;
-                window.vaultY = 120;
-            }
-            if (isDemoModeActive) {
-                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
-                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
-            }
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
 
             // Check collision with nests
             let allCollected = true;
