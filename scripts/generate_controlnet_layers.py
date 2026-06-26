@@ -91,6 +91,17 @@ def init_ffmpeg_pipe(filename):
 
 # Main generation loop
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start-frame", type=int, default=0)
+    parser.add_argument("--end-frame", type=int, default=960)
+    parser.add_argument("--output-prefix", type=str, default="")
+    args = parser.parse_args()
+
+    start_frame = args.start_frame
+    end_frame = args.end_frame
+    prefix = args.output_prefix
+
     print("=== STARTING CONTROLNET LAYER VIDEO COMPILER ===")
     
     global subprocess
@@ -98,10 +109,10 @@ def main():
 
     # Initialize layer video pipes
     pipes = {
-        "lineart": init_ffmpeg_pipe("manifold_layer_lineart.mp4"),
-        "depth": init_ffmpeg_pipe("manifold_layer_depth.mp4"),
-        "normal": init_ffmpeg_pipe("manifold_layer_normal.mp4"),
-        "segmentation": init_ffmpeg_pipe("manifold_layer_segmentation.mp4")
+        "lineart": init_ffmpeg_pipe(prefix + "manifold_layer_lineart.mp4"),
+        "depth": init_ffmpeg_pipe(prefix + "manifold_layer_depth.mp4"),
+        "normal": init_ffmpeg_pipe(prefix + "manifold_layer_normal.mp4"),
+        "segmentation": init_ffmpeg_pipe(prefix + "manifold_layer_segmentation.mp4")
     }
 
     # Initialize 3D particles matching main video physics
@@ -157,7 +168,7 @@ def main():
     fov = float(680 * SCALE)
 
     print("[VIDEO] Compiling 960 frames per layer...")
-    for frame_idx in range(TOTAL_FRAMES):
+    for frame_idx in range(start_frame, end_frame):
         time_secs = frame_idx / FPS
         
         # Audio amplitude mapping for beat-reactive camera matching

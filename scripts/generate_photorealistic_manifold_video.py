@@ -81,6 +81,17 @@ def project_3d(x, y, z, cx, cy, cz, pitch, yaw, fov, w, h, tx=0, ty=0, tz=0, rol
     return screen_x, screen_y, z2
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start-frame", type=int, default=0)
+    parser.add_argument("--end-frame", type=int, default=960)
+    parser.add_argument("--output", type=str, default="ambient_manifold_photorealistic.mp4")
+    args = parser.parse_args()
+
+    start_frame = args.start_frame
+    end_frame = args.end_frame
+    output_path = args.output
+
     print("=== STARTING MULTI-PASS SHADER VIDEO GENERATOR ===")
     audio_path = "cloudburst_ambient_resonance.wav"
     audio_data = load_wav_samples(audio_path)
@@ -101,7 +112,7 @@ def main():
         "-c:a", "aac",
         "-b:a", "192k",
         "-shortest",
-        "ambient_manifold_photorealistic.mp4"
+        output_path
     ]
     
     process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
@@ -156,7 +167,7 @@ def main():
     fov = float(680 * SCALE)
 
     print("[VIDEO] Executing multi-pass render loops...")
-    for frame_idx in range(TOTAL_FRAMES):
+    for frame_idx in range(start_frame, end_frame):
         time_secs = frame_idx / FPS
         # Continuous epoch progression to render smooth transitions
         epoch_progression = (time_secs / DURATION_SECS) * (len(EPOCHS) - 1)
