@@ -276,6 +276,7 @@
             <div class="panel-left">
                 <button id="btnPlay" class="btn">🔊 PLAY OVERTURE</button>
                 <button id="btnStop" class="btn btn-stop" style="display: none;">⏹ STOP OVERTURE</button>
+                <button id="btnRecord" class="btn" style="margin-top: 10px; background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); box-shadow: 0 0 15px rgba(255, 8, 68, 0.4);">🔴 RECORD HIGH-QUALITY WEBM/MP4</button>
 
                 <div class="slider-group">
                     <label>Master Volume <span id="valMaster" class="label-val">70%</span></label>
@@ -818,6 +819,84 @@
 
         document.getElementById("btnPlay").addEventListener('click', startOverture);
         document.getElementById("btnStop").addEventListener('click', stopOverture);
+
+        // Recording Implementation
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        function toggleRecord() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            if (!audioCtx) initAudio();
+            if (!window.musicPlaying) startOverture();
+            
+            recordedChunks = [];
+            isRecording = true;
+            
+            // Capture synthesized audio
+            const dest = audioCtx.createMediaStreamDestination();
+            mainGain.connect(dest);
+            
+            // Capture canvas video stream
+            const videoStream = canvas.captureStream(30);
+            
+            // Combine video and audio tracks
+            const combinedStream = new MediaStream([
+                ...videoStream.getVideoTracks(),
+                ...dest.stream.getAudioTracks()
+            ]);
+            
+            const options = { mimeType: 'video/webm;codecs=vp9,opus', videoBitsPerSecond: 4000000 };
+            try {
+                mediaRecorder = new MediaRecorder(combinedStream, options);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(combinedStream, { videoBitsPerSecond: 3000000 });
+            }
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'crabs_overture_render.webm';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            };
+            
+            mediaRecorder.start();
+            document.getElementById("btnRecord").innerText = "⏹ STOP & SAVE WEBM/MP4";
+            document.getElementById("btnRecord").style.background = "linear-gradient(135deg, #f80759 0%, #bc4e9c 100%)";
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            stopOverture();
+            document.getElementById("btnRecord").innerText = "🔴 RECORD HIGH-QUALITY WEBM/MP4";
+            document.getElementById("btnRecord").style.background = "linear-gradient(135deg, #ff0844 0%, #ffb199 100%)";
+        }
+
+        document.getElementById("btnRecord").addEventListener('click', toggleRecord);
 
         // Control Sliders events
         document.getElementById("slideMaster").addEventListener('input', (e) => {
