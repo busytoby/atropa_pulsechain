@@ -78,7 +78,7 @@ def main():
     # Pack register values and calculated properties as a strictly formatted numeric matrix prompt.
     # The AI must discover shape coordinates and rendering traits purely from numeric/hex arrays.
     prompt = (
-        f"0x{r_base:016X} 0x{r_channel:016X} 0x{r_dynamo:016X} 0x{r_foundation:016X} "
+        f"humanoid maybe animal, 0x{r_base:016X} 0x{r_channel:016X} 0x{r_dynamo:016X} 0x{r_foundation:016X} "
         f"0x{c_base:016X} 0x{c_channel:016X} 0x{c_dynamo:016X} 0x{c_foundation:016X} "
         f"RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}) {lobes} 0x{int(addr_hash, 16):032X}"
     )
