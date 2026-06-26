@@ -106,10 +106,10 @@ with open('$REGISTRY_FILE', 'wb') as f:
         vx = [0.0] * 16
         vy = [0.0] * 16
         vz = [0.0] * 16
-        f.write(struct.pack('<11Q2If16f16f16fI4108s',
+        f.write(struct.pack('<11Q2If16f16f16fII4108s',
             0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500,
             0, frame, mod,
-            *vx, *vy, *vz, 0, b'\x00' * 4108
+            *vx, *vy, *vz, 0, 0, b'\x00' * 4108
         ))
 "
 

@@ -36,6 +36,7 @@ typedef struct {
     float verlet_y[16];
     float verlet_z[16];
     uint32_t active_verlet_count;
+    uint32_t boundary_collision_flags;
     InteropLUN network_lun; // Maps to LUN 4 (Network queue) for live chat telemetry
 } InteropRegistry;
 

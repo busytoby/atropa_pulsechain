@@ -42,12 +42,22 @@ def run_compositor_benchmark():
             vx = [float(k * 20.0 - 150.0 + i * 2) for k in range(16)]
             vy = [float(k * 10.0 - 100.0 - i) for k in range(16)]
             vz = [0.0] * 16
-            # Pack format: 11Q (88b), 2I (8b), 1f (4b), 16f (64b), 16f (64b), 16f (64b), 1I (4b), 4108s (4108b)
-            # Total size: 4404 bytes
-            f.write(struct.pack("<11Q2If16f16f16fI4108s",
+            
+            # Calculate collision flags based on boundaries:
+            collision_flags = 0
+            for x in vx:
+                if x < -500.0 or x > 500.0: collision_flags |= 1
+            for y in vy:
+                if y < -300.0 or y > 300.0: collision_flags |= 2
+            for z in vz:
+                if z < -500.0 or z > 500.0: collision_flags |= 4
+
+            # Pack format: 11Q (88b), 2I (8b), 1f (4b), 16f (64b), 16f (64b), 16f (64b), 1I (4b), 1I (4b), 4108s (4108b)
+            # Total size: 4408 bytes
+            f.write(struct.pack("<11Q2If16f16f16fII4108s",
                 0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500,
                 i, 100, 0.75,
-                *vx, *vy, *vz, 16, b'\x00' * 4108
+                *vx, *vy, *vz, 16, collision_flags, b'\x00' * 4108
             ))
 
     c_renderer = "./scripts/manifold_interop_renderer"
