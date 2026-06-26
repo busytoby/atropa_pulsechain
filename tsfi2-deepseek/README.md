@@ -103,6 +103,7 @@ The primary verification tool is `tests/benchmark_suite`. It validates performan
 | **Switch Latency** | Time to toggle active Resident Wavefronts. | **< 5.0 ns** | **~2.5 ns** (PASS) |
 | **Wave512 Compute** | FP32 Throughput (Saturating all 32 ZMMs). | **> 300 GFLOPS** | **~350 GFLOPS** |
 | **SVDAG Traversal** | Recursive Octree walk (8 levels). | **> 100 M Wave/s** | **~370 M Wave/s** |
+| **Compositor Caching** | Aho-Corasick trie pipeline layout lookup. | **< 1000 ns / lookup** | **~230 ns** (PASS) |
 | **VRAM Bandwidth** | Simulated Memory IO (Stream/Store). | **> 15 GB/s** | **~19 GB/s** |
 
 ### Interpretation
@@ -114,6 +115,11 @@ The primary verification tool is `tests/benchmark_suite`. It validates performan
 ### Memory Management (`lau_memory`)
 *   **Wired Allocator:** All simulation objects must use `lau_malloc_wired`. This ensures **512-byte alignment** for ZMM compatibility and header protection.
 *   **Seal & Scramble:** Critical objects are "Sealed" (checksummed) and "Scrambled" (obfuscated) when at rest to prevent tampering.
+
+### Compositor Caching (Aho-Corasick Interop)
+*   **Zero-Print Hot Path**: Banned `printf` inside `tsfi_compositor_cache_lookup` to avoid mutex I/O locks and maintain sub-microsecond latency.
+*   **Hardened Buffer Keys**: Key formatting arrays must be at least 256 bytes to prevent compilation `-Wformat-overflow` warnings.
+*   **Mutex Protection**: Read/Write trie operations are protected by thread-safe mutex guards to prevent parallel race conditions.
 
 ### Thunk Safety
 *   **RX Pools:** Thunks are emitted into `PROT_READ | PROT_EXEC` memory pools.
