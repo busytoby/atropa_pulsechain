@@ -104,7 +104,8 @@ def main():
         f"A highly detailed photorealistic statue with arms and legs, sitting in meditation, "
         f"featuring a {guides}, metallic body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
         f"glowing eyes, intricate micro-chords and circuits of EDO-22 frequency lines, "
-        f"embossed gold and polished brass armor plates, {lobes}-cusped symmetry geometry, "
+        f"integrated natural bamboo fiber textures and organic hypotrochoid shoot patterns, "
+        f"embossed wood grain details, {lobes}-cusped symmetry geometry, "
         f"{hardness}, cinematic studio lighting, dark background, 8k resolution, masterpiece"
     )
     
