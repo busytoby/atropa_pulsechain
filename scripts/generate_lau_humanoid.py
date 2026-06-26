@@ -32,12 +32,9 @@ def main():
     else:
         address = sys.argv[1].lower().strip()
         
-    addr_hash = hashlib.md5(address.encode('utf-8')).hexdigest()
-    hue = (int(addr_hash[10:13], 16) % 360)
-    color_rgb = hsl_to_rgb(hue, 0.90, 0.55)
-    
-    # Load registers from cache
+    # Load registers from cache (LAU registers: r_base etc., and SHA/SHIO/YI registers: c_base etc.)
     r_base, r_channel, r_dynamo, r_foundation = 0, 0, 0, 0
+    c_base, c_channel, c_dynamo, c_foundation = 0, 0, 0, 0
     cache_path = os.path.join(os.path.dirname(__file__), "pulsechain_register_cache.json")
     if os.path.exists(cache_path):
         try:
@@ -49,14 +46,31 @@ def main():
                 r_channel = int(entry["r_channel"])
                 r_dynamo = int(entry["r_dynamo"])
                 r_foundation = int(entry["r_foundation"])
+                c_base = int(entry["c_base"])
+                c_channel = int(entry["c_channel"])
+                c_dynamo = int(entry["c_dynamo"])
+                c_foundation = int(entry["c_foundation"])
         except Exception:
             pass
             
+    addr_hash = hashlib.md5(address.encode('utf-8')).hexdigest()
     if r_base == 0:
         r_base = int(addr_hash[0:4], 16)
         r_channel = int(addr_hash[4:8], 16)
         r_dynamo = int(addr_hash[8:12], 16)
         r_foundation = int(addr_hash[12:16], 16)
+        
+    if c_base == 0:
+        c_base = int(addr_hash[16:20], 16)
+        c_channel = int(addr_hash[20:24], 16)
+        c_dynamo = int(addr_hash[24:28], 16)
+        c_foundation = int(addr_hash[28:32], 16)
+        
+    # Derive colors entirely from SHA/SHIO/YI numbers (c_base, c_channel)
+    hue = (c_base % 360)
+    saturation = 0.5 + ((c_channel % 50) / 100.0) # 50% to 100%
+    lightness = 0.4 + ((c_foundation % 30) / 100.0) # 40% to 70%
+    color_rgb = hsl_to_rgb(hue, saturation, lightness)
         
     # Scale elements for details
     lobes = 5 + (r_channel % 3)
