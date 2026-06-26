@@ -653,8 +653,43 @@
 
             // Update & Draw Crabs
             const isBeat = (window.musicPlaying && (frameCount % 12 === 0));
-            crabs.forEach((c, idx) => {
+            crabs.forEach(c => {
                 c.update(isBeat, window.musicPlaying ? 1 : 0.2);
+            });
+
+            // Crab-to-crab collision check and resolution
+            for (let i = 0; i < crabs.length; i++) {
+                for (let j = i + 1; j < crabs.length; j++) {
+                    const c1 = crabs[i];
+                    const c2 = crabs[j];
+                    const dx = c2.x - c1.x;
+                    const dy = c2.y - c1.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = (c1.size + c2.size) * 1.3;
+                    if (dist < minDist) {
+                        const overlap = minDist - dist;
+                        const angle = Math.atan2(dy, dx);
+                        
+                        // Push apart
+                        const forceX = Math.cos(angle) * overlap * 0.5;
+                        const forceY = Math.sin(angle) * overlap * 0.5;
+                        c1.x -= forceX;
+                        c1.y -= forceY;
+                        c2.x += forceX;
+                        c2.y += forceY;
+
+                        // Swap velocities (elastic bounce)
+                        const tvx = c1.vx; c1.vx = c2.vx; c2.vx = tvx;
+                        const tvy = c1.vy; c1.vy = c2.vy; c2.vy = tvy;
+
+                        // Surprise pinch reactions
+                        c1.pinchL = 1.0; c1.pinchR = 1.0;
+                        c2.pinchL = 1.0; c2.pinchR = 1.0;
+                    }
+                }
+            }
+
+            crabs.forEach((c, idx) => {
                 c.draw(ctx, frameCount, idx);
             });
 
