@@ -378,6 +378,7 @@
                 // Sync pinches to beats
                 this.pinchL = Math.max(0, this.pinchL - 0.1);
                 this.pinchR = Math.max(0, this.pinchR - 0.1);
+                this.danceOffset = Math.max(0, this.danceOffset - 0.05);
                 if (beat) {
                     if (Math.random() > 0.4) this.pinchL = 1.0;
                     if (Math.random() > 0.4) this.pinchR = 1.0;
@@ -386,7 +387,7 @@
 
             draw(ctx, frame) {
                 const cx = this.x;
-                const cy = this.y + Math.sin(frame * 0.1 + this.x) * 2;
+                const cy = this.y + Math.sin(frame * 0.1 + this.x) * 2 - (this.danceOffset * 15);
                 const s = this.size;
 
                 ctx.save();
@@ -988,6 +989,44 @@
                 const randomCrab = crabs[Math.floor(Math.random() * crabs.length)];
                 randomCrab.pinchL = 1.0;
                 randomCrab.pinchR = 1.0;
+            });
+        });
+        // Canvas click controller: click crabs to trigger synthesizers and jumps
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const scaleX = canvas.width / rect.width / window.devicePixelRatio;
+            const scaleY = canvas.height / rect.height / window.devicePixelRatio;
+            const canvasX = clickX * scaleX;
+            const canvasY = clickY * scaleY;
+            
+            crabs.forEach((c, idx) => {
+                const dist = Math.hypot(canvasX - c.x, canvasY - c.y);
+                if (dist < c.size * 1.8) {
+                    c.pinchL = 1.0;
+                    c.pinchR = 1.0;
+                    c.danceOffset = 1.0;
+                    c.vx = -c.vx;
+                    
+                    if (!audioCtx) initAudio();
+                    
+                    if (idx === 0) {
+                        playSubBassNote(edo22[4], 0.6, 2.0);
+                    } else if (idx === 1) {
+                        playLeadSynth(edo22[12], 0.5);
+                    } else if (idx === 2) {
+                        playPerididdle(true, false, false);
+                    } else if (idx === 3) {
+                        playPerididdle(false, true, false);
+                    } else if (idx === 4) {
+                        playPerididdle(false, false, true);
+                    } else {
+                        playLeadSynth(edo22[16] * 2, 0.4);
+                        playSubBassNote(edo22[8], 0.4, 1.2);
+                    }
+                }
             });
         });
     </script>
