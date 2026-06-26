@@ -74,40 +74,13 @@ def main():
         
     # Scale elements for details
     lobes = 5 + (r_channel % 3)
-    hardness = "raw polished bamboo finish" if (r_foundation % 2 == 0) else "weathered natural wood grain finish"
     
-    # Soft descriptive properties that guide Stable Diffusion to naturally discover the figure
-    # rather than hardcoding names. Maps details like wing hints, body shapes, or monster characteristics.
-    form_descriptors = []
-    
-    # Base structure range (organism at least, humanoid/super-humanoid or monster at most)
-    struct_mod = r_base % 4
-    if struct_mod == 0:
-        form_descriptors.append("organic living plant creature structure")
-    elif struct_mod == 1:
-        form_descriptors.append("humanoid figure grown from interlocking branches and shoots")
-    elif struct_mod == 2:
-        form_descriptors.append("super-humanoid wooden figure with leaf and wing-like extensions")
-    else:
-        form_descriptors.append("exotic forest monster entity with multi-faceted roots and limbs")
-        
-    # Append visual qualities mapped from dynamic registers
-    if r_channel % 2 == 0:
-        form_descriptors.append("delicate butterfly-like leaf wing structures")
-    if r_dynamo % 2 == 0:
-        form_descriptors.append("bear-like organic posture characteristics")
-        
-    guides = ", ".join(form_descriptors)
-    
-    # Formulate SD prompt using vocabulary and mapped registers
+    # Pack register values and calculated properties as a strictly formatted numeric matrix prompt.
+    # The AI must discover shape coordinates and rendering traits purely from numeric/hex arrays.
     prompt = (
-        f"A highly detailed photorealistic humanoid statue sculpted from natural materials, sitting in meditation, "
-        f"where the humanoid body is physically constructed and grown from the concentric hypotrochoid vector rings and Lissajous loops of the LAU token, "
-        f"featuring a {guides}, body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
-        f"glowing green eyes, intricate EDO-22 frequency patterns of micro-chords and wood lines, "
-        f"integrated natural bamboo fiber textures and organic hypotrochoid shoot patterns, "
-        f"embossed wood grain details, {lobes}-cusped symmetry geometry, "
-        f"{hardness}, cinematic studio lighting, dark background, 8k resolution, masterpiece"
+        f"0x{r_base:016X} 0x{r_channel:016X} 0x{r_dynamo:016X} 0x{r_foundation:016X} "
+        f"0x{c_base:016X} 0x{c_channel:016X} 0x{c_dynamo:016X} 0x{c_foundation:016X} "
+        f"RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}) {lobes} 0x{int(addr_hash, 16):032X}"
     )
     
     raw_out = "tmp/humanoid_render.raw"
