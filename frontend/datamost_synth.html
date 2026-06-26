@@ -10406,6 +10406,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         gradient.addColorStop(1, "rgba(0,0,0,0)");
                         ctx.fillStyle = gradient;
                         ctx.fillRect(mappedX - 25, drawY, 74, 1);
+                        
+                        if (r === 10) {
+                            const time = Date.now() / 200;
+                            const pulseRadius = (time % 1) * 18;
+                            ctx.strokeStyle = `hsla(${laserHue}, 100%, 70%, ${1 - (time % 1)})`;
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(mappedX + 12, drawY, pulseRadius, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
                     }
                     for (let c = 0; c < 24; c++) {
                         if ((row_val & (1 << (23 - c))) !== 0) {
