@@ -1130,6 +1130,54 @@
             ]
         ];
 
+        class CartridgeRegistry {
+            constructor() {
+                this.mappers = {
+                    0: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        return { program: Array.from(romBytes), pokes };
+                    },
+                    1: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 7 });
+                        pokes.push({ addr: 53272, val: 21 });
+                        return { program: Array.from(romBytes), pokes };
+                    },
+                    2: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        return { program: Array.from(romBytes), pokes };
+                    }
+                };
+            }
+
+            parseCartridge(rawBytes) {
+                if (rawBytes.length < 16) return null;
+                const magic = String.fromCharCode(...rawBytes.slice(0, 5));
+                let mapperId = 0;
+                let romStart = 16;
+                let name = "Generic ROM";
+                
+                if (magic === "ROMOX") {
+                    mapperId = 1;
+                    name = "Romox Cartridge";
+                } else if (magic === "DATAM") {
+                    mapperId = 2;
+                    name = "Datamost Cartridge";
+                }
+                
+                const mapper = this.mappers[mapperId];
+                const mapped = mapper(rawBytes.slice(romStart));
+                return {
+                    name: name,
+                    program: mapped.program,
+                    pokes: mapped.pokes
+                };
+            }
+        }
+        window.cartridgeRegistry = new CartridgeRegistry();
+
         const games = {
             pong: {
                 name: "Pong-on-Chain",
@@ -1374,11 +1422,13 @@
                     ]
                 ],
                 program: [
-                    0xA9, 0x04, 0x8D, 0x15, 0xD0,
-                    0xA9, 0x70, 0x8D, 0x00, 0xD0,
-                    0xA9, 0x40, 0x8D, 0x01, 0xD0,
-                    0xA9, 0x08, 0x8D, 0x02, 0xD6,
-                    0xEA, 0x60
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF1, 0x18, 0x69, 0x01, 0x85, 0xF1,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x03, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x03, 0xD0, 0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0,
+                    0x03, 0xCE, 0x00, 0xD0, 0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE,
+                    0x00, 0xD0, 0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0, 0x60
                 ],
                 sprites: [
                     { id: 0, x: 140, y: 110 },
@@ -1466,10 +1516,13 @@
                     ]
                 ],
                 program: [
-                    0xA9, 0x06, 0x8D, 0x15, 0xD0,
-                    0xA9, 0x90, 0x8D, 0x00, 0xD0,
-                    0xA9, 0x80, 0x8D, 0x01, 0xD0,
-                    0x60
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x40, 0xF0, 0x06, 0xCE, 0x04, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x04, 0xD0, 0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0,
+                    0x03, 0xCE, 0x00, 0xD0, 0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE,
+                    0x00, 0xD0, 0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0, 0x60
                 ],
                 sprites: [
                     { id: 0, x: 144, y: 120 }, // Bounty Bob
@@ -1774,7 +1827,26 @@
         };
 
         async function loadGame(gameId) {
-            const game = games[gameId];
+            let game = games[gameId];
+            if (!game && gameId.startsWith("0x")) {
+                try {
+                    const rawBytes = ethers.getBytes(gameId);
+                    const parsed = window.cartridgeRegistry.parseCartridge(rawBytes);
+                    if (parsed) {
+                        game = {
+                            name: parsed.name,
+                            spriteEnableMask: 15,
+                            program: parsed.program,
+                            sprites: [{ id: 0, x: 120, y: 120 }]
+                        };
+                        for (const poke of parsed.pokes) {
+                            game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
+                        }
+                    }
+                } catch(e) {
+                    console.error("Failed to parse raw cartridge:", e);
+                }
+            }
             if (!game) return;
             console.log("Loading ROM:", game.name);
             
@@ -1784,8 +1856,12 @@
 
             // Load sprites coordinates
             for (const sp of game.sprites) {
-                addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
-                addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+                if (sp.id >= 53248) {
+                    addrs.push(sp.id); vals.push(sp.x);
+                } else {
+                    addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
+                    addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+                }
             }
             
             // Set enabled mask
@@ -4109,6 +4185,12 @@
                         const spr1_y = Number(await cpuContract.peek(0xd003));
                         const spr2_x = Number(await cpuContract.peek(0xd004));
                         const spr2_y = Number(await cpuContract.peek(0xd005));
+                        const spr0_z = Number(await cpuContract.peek(53279)) || 0;
+                        const spr1_z = Number(await cpuContract.peek(53280)) || 0;
+                        const spr2_z = Number(await cpuContract.peek(53281)) || 0;
+                        window.s0_z = spr0_z;
+                        window.s1_z = spr1_z;
+                        window.s2_z = spr2_z;
 
                         s0_x = spr0_x;
                         s0_y = spr0_y;
@@ -9154,6 +9236,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             // Coordinates translation to fit 320x200 scale
             const mappedX = (x % 320);
             const mappedY = (y % 200);
+            const zDepth = window[`s${index}_z`] || 0;
 
             // Read directly from Simulated CPU RAM to connect the sprite editor and the running game in real-time
             if (cpuContract) {
@@ -9197,12 +9280,47 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             if (hasPattern) {
+                // Layer 1: Volumetric Shadow Layer
+                if (zDepth > 0) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                    const offset = Math.min(8, zDepth / 4);
+                    for (let r = 0; r < 21; r++) {
+                        const row_val = pattern[r] || 0;
+                        for (let c = 0; c < 24; c++) {
+                            if ((row_val & (1 << (23 - c))) !== 0) {
+                                ctx.fillRect(mappedX + c + offset, mappedY + r + offset, 1, 1);
+                            }
+                        }
+                    }
+                }
+
+                // Layer 2: Main Sprite Layer
                 ctx.fillStyle = color;
                 for (let r = 0; r < 21; r++) {
                     const row_val = pattern[r] || 0;
                     for (let c = 0; c < 24; c++) {
                         if ((row_val & (1 << (23 - c))) !== 0) {
                             ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                        }
+                    }
+                }
+
+                // Layer 3: Photorealistic Soft Diffusion Texture Overlay
+                if (zDepth > 0) {
+                    for (let r = 0; r < 21; r++) {
+                        const row_val = pattern[r] || 0;
+                        for (let c = 0; c < 24; c++) {
+                            if ((row_val & (1 << (23 - c))) !== 0) {
+                                const noise = Math.sin((mappedX + c) * 12.9898 + (mappedY + r) * 78.233) * 43758.5453;
+                                const noiseFract = noise - Math.floor(noise);
+                                if (noiseFract > 0.6) {
+                                    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+                                    ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                                } else if (noiseFract < 0.15) {
+                                    ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+                                    ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                                }
+                            }
                         }
                     }
                 }

@@ -3,15 +3,15 @@
   "product_suite": "TSFi2 RDNA4 Simulation Engine",
   "engine_version": "4.1",
   "provenance": {
-    "git_commit": "b449e6da74b677798cc44948ecf7808bd94c54c4",
-    "timestamp": "2026-06-26T00:52:24Z",
+    "git_commit": "26256e15634cf79092bcd86f113fbd5dcd1dc204",
+    "timestamp": "2026-06-26T00:53:37Z",
     "licensing": "ATROPA/DYSNOMIA"
   },
   "system_policy_guards": {
     "vulkan_teddy_bear": {
       "metric": "Headless Vulkan Teddy Bear FPS",
       "target": ">= 3000.0 FPS",
-      "verified_actual": "6,564.58 FPS",
+      "verified_actual": "6,497.23 FPS",
       "status": "PASS"
     },
     "wavelet_arena_memory": {
@@ -23,25 +23,25 @@
     "aho_corasick_compositor": {
       "metric": "Aho-Corasick Compositor Latency",
       "target": "<= 1000.0 ns",
-      "verified_actual": "251.62 ns",
+      "verified_actual": "232.49 ns",
       "status": "PASS"
     },
     "yang_synthesis": {
       "metric": "AVX-512 Yang Synthesis Rate",
       "target": ">= 20000.0 Waveforms/sec",
-      "verified_actual": "26,462.41 Waveforms/sec",
+      "verified_actual": "23,787.91 Waveforms/sec",
       "status": "PASS"
     },
     "merkle_reduction": {
       "metric": "Helmholtz Reduction Throughput",
       "target": ">= 4000.0 ns",
-      "verified_actual": "4521.28 ns",
+      "verified_actual": "4436.88 ns",
       "status": "PASS"
     },
     "deepseek_mla": {
       "metric": "DeepSeek MLA Kernels Rate",
       "target": ">= 90.0 MPasses/sec",
-      "verified_actual": "94.91 MPasses/sec",
+      "verified_actual": "157.75 MPasses/sec",
       "status": "PASS"
     },
     "architectural_supremacy": {
@@ -53,7 +53,7 @@
     "zero_polling": {
       "metric": "Zero-Polling Hardware Latency",
       "target": "<= 100.0 us",
-      "verified_actual": "61.56 us",
+      "verified_actual": "62.20 us",
       "status": "PASS"
     }
   }
