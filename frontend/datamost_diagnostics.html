@@ -201,6 +201,7 @@
                             <option value="spider">🕷️ Apple Cider Spider (Datamost Cartridge)</option>
                             <option value="ultima">⚔️ Ultima-on-Chain (Tilemap RPG)</option>
                             <option value="miner2049er">⛏️ Miner 2049er (Micro Fun Cartridge)</option>
+                            <option value="gorf">👾 Gorf (Commodore MAX/Ultimax Cartridge)</option>
                             <option value="dinoeggs">🦖 Dino Eggs (Micro Fun Cartridge)</option>
                             <option value="bluemax">✈️ Blue Max (Synapse Cartridge)</option>
                             <option value="impossiblemission">🕵️ Impossible Mission (Epyx Cartridge)</option>
@@ -1325,6 +1326,69 @@
                     { id: 1, x: 60, y: 90 },   // elevator
                     { id: 2, x: 200, y: 140 },  // mutant snap
                     { id: 3, x: 100, y: 80 }   // hazard
+                ]
+            },
+            gorf: {
+                name: "Gorf (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                spriteLayouts: [
+                    // Sprite 0: Gorf Player Ship
+                    [
+                        0x001800, 0x003c00, 0x003c00, 0x007e00,
+                        0x007e00, 0x00ff00, 0x01db80, 0x03c3c0,
+                        0x07c3e0, 0x0ffff0, 0x1ffffe, 0x3ffffc,
+                        0x3c3c3c, 0x303c0c, 0x101808, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Gorfian Flagship (Enemy 1)
+                    [
+                        0x1ffff8, 0x3ffffc, 0x7ffff5, 0xffffff,
+                        0xefbd77, 0xc3c3c3, 0x818181, 0x03c3c0,
+                        0x07ffe0, 0x0fffff, 0x1ffffe, 0x3ffffc,
+                        0x7c3c3e, 0xf83c1f, 0xf0000f, 0xe00007,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Gorfian Fighter (Enemy 2)
+                    [
+                        0x000000, 0x03c3c0, 0x07ffe0, 0x0e7c70,
+                        0x1c3c38, 0x38181c, 0x70000e, 0xe00007,
+                        0xffffff, 0xefbd77, 0xc7e3e3, 0x83c1c1,
+                        0x018180, 0x03c3c0, 0x07ffe0, 0x0fffff,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Helper Droid
+                    [
+                        0x007e00, 0x00ff00, 0x018180, 0x03c3c0,
+                        0x07c3e0, 0x0ffff0, 0x1ffffe, 0x3ffffe,
+                        0x7ffffe, 0xffffff, 0xffffff, 0xffffff,
+                        0x7ffffe, 0x3ffffe, 0x1ffff8, 0x0ffff0,
+                        0x07ffe0, 0x03c3c0, 0x01c380, 0x007e00,
+                        0x001800
+                    ]
+                ],
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x02, 0xD0,
+                    0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0, 0x03, 0xCE, 0x00, 0xD0,
+                    0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE, 0x00, 0xD0,
+                    0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x03, 0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 150 },
+                    { id: 1, x: 80, y: 50 },
+                    { id: 2, x: 240, y: 50 },
+                    { id: 3, x: 160, y: 120 }
                 ]
             },
             dinoeggs: {

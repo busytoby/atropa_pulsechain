@@ -201,6 +201,7 @@
                             <option value="spider">🕷️ Apple Cider Spider (Datamost Cartridge)</option>
                             <option value="ultima">⚔️ Ultima-on-Chain (Tilemap RPG)</option>
                             <option value="miner2049er">⛏️ Miner 2049er (Micro Fun Cartridge)</option>
+                            <option value="gorf">👾 Gorf (Commodore MAX/Ultimax Cartridge)</option>
                             <option value="dinoeggs">🦖 Dino Eggs (Micro Fun Cartridge)</option>
                             <option value="bluemax">✈️ Blue Max (Synapse Cartridge)</option>
                             <option value="impossiblemission">🕵️ Impossible Mission (Epyx Cartridge)</option>
@@ -1287,6 +1288,31 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 1, x: 60, y: 90 },   // elevator
                     { id: 2, x: 200, y: 140 },  // mutant snap
                     { id: 3, x: 100, y: 80 }   // hazard
+                ]
+            },
+            gorf: {
+                name: "Gorf (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x02, 0xD0,
+                    0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0, 0x03, 0xCE, 0x00, 0xD0,
+                    0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE, 0x00, 0xD0,
+                    0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x03, 0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 150 },
+                    { id: 1, x: 80, y: 50 },
+                    { id: 2, x: 240, y: 50 },
+                    { id: 3, x: 160, y: 120 }
                 ]
             },
             dinoeggs: {
@@ -12571,6 +12597,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     { id: 3, x: 100, y: 80 }   // hazard
                 ]
             },
+            gorf: {
+                name: "Gorf (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x02, 0xD0,
+                    0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0, 0x03, 0xCE, 0x00, 0xD0,
+                    0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE, 0x00, 0xD0,
+                    0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x03, 0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 150 },
+                    { id: 1, x: 80, y: 50 },
+                    { id: 2, x: 240, y: 50 },
+                    { id: 3, x: 160, y: 120 }
+                ]
+            },
             dinoeggs: {
                 name: "Dino Eggs",
                 spriteEnableMask: 15,
@@ -22793,6 +22844,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     { id: 1, x: 60, y: 90 },   // elevator
                     { id: 2, x: 200, y: 140 },  // mutant snap
                     { id: 3, x: 100, y: 80 }   // hazard
+                ]
+            },
+            gorf: {
+                name: "Gorf (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x02, 0xD0,
+                    0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0, 0x03, 0xCE, 0x00, 0xD0,
+                    0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE, 0x00, 0xD0,
+                    0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x03, 0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 150 },
+                    { id: 1, x: 80, y: 50 },
+                    { id: 2, x: 240, y: 50 },
+                    { id: 3, x: 160, y: 120 }
                 ]
             },
             dinoeggs: {

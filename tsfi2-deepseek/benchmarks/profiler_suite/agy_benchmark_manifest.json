@@ -3,15 +3,15 @@
   "product_suite": "TSFi2 RDNA4 Simulation Engine",
   "engine_version": "4.1",
   "provenance": {
-    "git_commit": "3cf0705f68137eac1a3f285a0228f81ccb123b87",
-    "timestamp": "2026-06-26T02:58:59Z",
+    "git_commit": "f00dfa88716ae2390c3e4c875364459d7b2d8950",
+    "timestamp": "2026-06-26T02:59:40Z",
     "licensing": "ATROPA/DYSNOMIA"
   },
   "system_policy_guards": {
     "vulkan_teddy_bear": {
       "metric": "Headless Vulkan Teddy Bear FPS",
       "target": ">= 3000.0 FPS",
-      "verified_actual": "6,554.33 FPS",
+      "verified_actual": "6,535.50 FPS",
       "status": "PASS"
     },
     "wavelet_arena_memory": {
@@ -23,37 +23,37 @@
     "aho_corasick_compositor": {
       "metric": "Aho-Corasick Compositor Latency",
       "target": "<= 1000.0 ns",
-      "verified_actual": "234.82 ns",
+      "verified_actual": "231.24 ns",
       "status": "PASS"
     },
     "yang_synthesis": {
       "metric": "AVX-512 Yang Synthesis Rate",
       "target": ">= 20000.0 Waveforms/sec",
-      "verified_actual": "24,717.70 Waveforms/sec",
+      "verified_actual": "24,129.26 Waveforms/sec",
       "status": "PASS"
     },
     "merkle_reduction": {
       "metric": "Helmholtz Reduction Throughput",
       "target": ">= 4000.0 ns",
-      "verified_actual": "4238.91 ns",
+      "verified_actual": "4416.78 ns",
       "status": "PASS"
     },
     "deepseek_mla": {
       "metric": "DeepSeek MLA Kernels Rate",
       "target": ">= 90.0 MPasses/sec",
-      "verified_actual": "111.92 MPasses/sec",
+      "verified_actual": "186.03 MPasses/sec",
       "status": "PASS"
     },
     "architectural_supremacy": {
       "metric": "Field vs Pointer Efficiency Gain",
       "target": ">= 1.20x",
-      "verified_actual": "1.46x",
+      "verified_actual": "1.53x",
       "status": "PASS"
     },
     "zero_polling": {
       "metric": "Zero-Polling Hardware Latency",
       "target": "<= 100.0 us",
-      "verified_actual": "61.61 us",
+      "verified_actual": "61.58 us",
       "status": "PASS"
     }
   }
