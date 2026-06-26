@@ -95,68 +95,16 @@ with open('$REGISTRY_FILE', 'wb') as f:
 "
 
 echo "[PIPELINE] Launching fast C interop compositor..."
-python3 -c "
-import os
-import subprocess
-import sys
-
-frame_bytes = 1280 * 720 * 3
-# Pipes for raw extraction
-def extract(v):
-    return subprocess.Popen(['ffmpeg', '-i', v, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-
-p_b = extract('$BASE_VIDEO')
-p_l = extract('$LINEART_VIDEO')
-p_d = extract('$DEPTH_VIDEO')
-p_n = extract('$NORMAL_VIDEO')
-p_s = extract('$SEG_VIDEO')
-
-# Encode process
-cmd_encode = [
-    'ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', '1280x720', '-r', '30',
-    '-i', '-', '-stream_loop', '-1', '-i', '$AUDIO_FILE', '-c:v', 'libx264',
-    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '$OUTPUT_VIDEO'
-]
-p_enc = subprocess.Popen(cmd_encode, stdin=subprocess.PIPE)
-
-f_reg = open('$REGISTRY_FILE', 'rb')
-c_renderer = './scripts/manifold_interop_renderer'
-
-print('-> Compositing frames...')
-try:
-    f = 0
-    while True:
-        b_base = p_b.stdout.read(frame_bytes)
-        if not b_base:
-            break
-        b_line = p_l.stdout.read(frame_bytes)
-        b_depth = p_d.stdout.read(frame_bytes)
-        b_norm = p_n.stdout.read(frame_bytes)
-        b_seg = p_s.stdout.read(frame_bytes)
-
-        if not (b_line and b_depth and b_norm and b_seg):
-            break
-
-        with open('tmp_b.raw', 'wb') as tmp: tmp.write(b_base)
-        with open('tmp_l.raw', 'wb') as tmp: tmp.write(b_line)
-        with open('tmp_d.raw', 'wb') as tmp: tmp.write(b_depth)
-        with open('tmp_n.raw', 'wb') as tmp: tmp.write(b_norm)
-        with open('tmp_s.raw', 'wb') as tmp: tmp.write(b_seg)
-
-        subprocess.run([
-            c_renderer, 'tmp_b.raw', 'tmp_l.raw', 'tmp_d.raw', 'tmp_n.raw', 'tmp_s.raw', '$REGISTRY_FILE'
-        ], stdout=p_enc.stdin)
-        f += 1
-finally:
-    for p in [p_b, p_l, p_d, p_n, p_s]:
-        p.terminate()
-    p_enc.stdin.close()
-    p_enc.wait()
-    f_reg.close()
-    for tmp in ['tmp_b.raw', 'tmp_l.raw', 'tmp_d.raw', 'tmp_n.raw', 'tmp_s.raw']:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-"
+./scripts/manifold_interop_renderer \
+  <(ffmpeg -i "$BASE_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$LINEART_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$DEPTH_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$NORMAL_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$SEG_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  "$REGISTRY_FILE" | \
+ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - \
+  -stream_loop -1 -i "$AUDIO_FILE" -c:v libx264 -pix_fmt yuv420p \
+  -c:a aac -b:a 192k -shortest "$OUTPUT_VIDEO"
 
 # Clean up local dummy registry
 if [ -f "$REGISTRY_FILE" ]; then
