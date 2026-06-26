@@ -7060,7 +7060,57 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             // Reset shadow
             ctx.shadowBlur = 0;
 
-            // Render active C64 sprites (player ship, droid, photon bullets) on top
+            // Initialize dynamic inertia coordinates
+            if (typeof window.omegaShipAngle === "undefined") {
+                window.omegaShipAngle = -Math.PI / 2;
+                window.omegaShipVX = 0;
+                window.omegaShipVY = 0;
+                window.omegaShipX = 160;
+                window.omegaShipY = 120;
+            }
+
+            // Keyboard/Joystick steering inputs
+            if (interactiveKeys.left) {
+                window.omegaShipAngle -= 0.08;
+            }
+            if (interactiveKeys.right) {
+                window.omegaShipAngle += 0.08;
+            }
+            if (interactiveKeys.up || interactiveKeys.fire || interactiveKeys.space) {
+                window.omegaShipVX += Math.cos(window.omegaShipAngle) * 0.18;
+                window.omegaShipVY += Math.sin(window.omegaShipAngle) * 0.18;
+                
+                // Draw rocket exhaust fire particle vector line
+                ctx.strokeStyle = "#ff8c00";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const exhaustX = window.omegaShipX - Math.cos(window.omegaShipAngle) * 6;
+                const exhaustY = window.omegaShipY - Math.sin(window.omegaShipAngle) * 6;
+                ctx.moveTo(exhaustX, exhaustY);
+                ctx.lineTo(exhaustX - Math.cos(window.omegaShipAngle) * (6 + Math.random() * 8), exhaustY - Math.sin(window.omegaShipAngle) * (6 + Math.random() * 8));
+                ctx.stroke();
+            }
+
+            // Apply movement & friction
+            window.omegaShipX += window.omegaShipVX;
+            window.omegaShipY += window.omegaShipVY;
+            window.omegaShipVX *= 0.985;
+            window.omegaShipVY *= 0.985;
+
+            // Wrap around playfield screen boundaries
+            if (window.omegaShipX < 12) window.omegaShipX = 308;
+            if (window.omegaShipX > 308) window.omegaShipX = 12;
+            if (window.omegaShipY < 12) window.omegaShipY = 188;
+            if (window.omegaShipY > 188) window.omegaShipY = 12;
+
+            // Sync with global register/memory mappings
+            window.s0_x = window.omegaShipX;
+            window.s0_y = window.omegaShipY;
+            if (cpuContract) {
+                cpuContract.memory[0xD000] = Math.round(window.s0_x);
+                cpuContract.memory[0xD001] = Math.round(window.s0_y);
+            }
+
             const s0_x = Number(window.s0_x) || 160;
             const s0_y = Number(window.s0_y) || 120;
             const s1_x = Number(window.s1_x) || 100;
@@ -7073,7 +7123,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const dy1 = Math.abs(s0_y - s2_y);
             const hasCollision = (dx1 < 16 && dy1 < 16);
 
-            drawSpriteIcon(0, s0_x, s0_y, strokeColor, hasCollision);
+            // Draw player ship as a vector delta-wing triangle
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            const shipLen = 8;
+            const shipWidth = 5;
+            const frontX = window.s0_x + Math.cos(window.omegaShipAngle) * shipLen;
+            const frontY = window.s0_y + Math.sin(window.omegaShipAngle) * shipLen;
+            const backLeftX = window.s0_x + Math.cos(window.omegaShipAngle + Math.PI * 0.8) * shipWidth;
+            const backLeftY = window.s0_y + Math.sin(window.omegaShipAngle + Math.PI * 0.8) * shipWidth;
+            const backRightX = window.s0_x + Math.cos(window.omegaShipAngle - Math.PI * 0.8) * shipWidth;
+            const backRightY = window.s0_y + Math.sin(window.omegaShipAngle - Math.PI * 0.8) * shipWidth;
+            ctx.moveTo(frontX, frontY);
+            ctx.lineTo(backLeftX, backLeftY);
+            ctx.lineTo(backRightX, backRightY);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Render other C64 sprites (droid, bullets) using normal icon sprite rendering
             drawSpriteIcon(1, s1_x, s1_y, "#ffcc00", hasCollision);
             drawSpriteIcon(2, s2_x, s2_y, "#ff007f", hasCollision);
 
