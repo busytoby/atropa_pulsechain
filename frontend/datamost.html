@@ -7053,6 +7053,80 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillText("IDENTIFIED: " + activeConst.name + " (" + activeConst.pinyin + ")", canvas.width / 2, canvas.height - 12);
         }
 
+        let omegaRaceFrame = 0;
+        function bessel_j0_calc(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 1; k < 12; k++) {
+                term *= - (x * x) / (4.0 * k * k);
+                val += term;
+            }
+            return 1.0 + val;
+        }
+
+        function drawOmegaRaceScreen() {
+            omegaRaceFrame++;
+            // Black background space
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Get DNA values to modulate lines
+            let strokeColor = "#39ff14"; // Default vector green
+            let lineWidth = 1.5;
+            let offsetIntensity = 0.0;
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                const fIdx = (window.dnaFrameIndex || 0) % window.dnaFrames.length;
+                const frame = window.dnaFrames[fIdx];
+                strokeColor = frame.color || strokeColor;
+                lineWidth = 1.5 + frame.stretch * 2;
+                offsetIntensity = frame.pulse;
+            }
+
+            // Procedural Bessel modulation for vector glow/displacement
+            const besselArg = (omegaRaceFrame * 0.05) % 5.0;
+            const pulseOffset = bessel_j0_calc(besselArg) * 3 * offsetIntensity;
+
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = strokeColor;
+
+            // Outer Vector Box
+            ctx.beginPath();
+            ctx.rect(10 + pulseOffset, 10 + pulseOffset, 300 - pulseOffset * 2, 180 - pulseOffset * 2);
+            ctx.stroke();
+
+            // Inner Vector Box
+            ctx.beginPath();
+            ctx.rect(80 - pulseOffset, 60 - pulseOffset, 160 + pulseOffset * 2, 80 + pulseOffset * 2);
+            ctx.stroke();
+
+            // Reset shadow
+            ctx.shadowBlur = 0;
+
+            // Render active C64 sprites (player ship, droid, photon bullets) on top
+            const s0_x = Number(window.s0_x) || 160;
+            const s0_y = Number(window.s0_y) || 120;
+            const s1_x = Number(window.s1_x) || 100;
+            const s1_y = Number(window.s1_y) || 80;
+            const s2_x = Number(window.s2_x) || 220;
+            const s2_y = Number(window.s2_y) || 150;
+
+            // Determine collisions dynamically
+            const dx1 = Math.abs(s0_x - s2_x);
+            const dy1 = Math.abs(s0_y - s2_y);
+            const hasCollision = (dx1 < 16 && dy1 < 16);
+
+            drawSpriteIcon(0, s0_x, s0_y, strokeColor, hasCollision);
+            drawSpriteIcon(1, s1_x, s1_y, "#ffcc00", hasCollision);
+            drawSpriteIcon(2, s2_x, s2_y, "#ff007f", hasCollision);
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
+            }
+        }
+
         let thrustFrame = 0;
         function drawThrustScreen() {
             thrustFrame++;
@@ -8616,6 +8690,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "Thrust") {
                 drawThrustScreen();
+                return;
+            }
+            if (activeGameName === "Omega Race") {
+                drawOmegaRaceScreen();
                 return;
             }
             if (activeGameName === "The Last Ninja") {
@@ -19018,6 +19096,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 drawThrustScreen();
                 return;
             }
+            if (activeGameName === "Omega Race") {
+                drawOmegaRaceScreen();
+                return;
+            }
             if (activeGameName === "The Last Ninja") {
                 drawLastNinjaScreen();
                 return;
@@ -29122,6 +29204,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "Thrust") {
                 drawThrustScreen();
+                return;
+            }
+            if (activeGameName === "Omega Race") {
+                drawOmegaRaceScreen();
                 return;
             }
             if (activeGameName === "The Last Ninja") {
