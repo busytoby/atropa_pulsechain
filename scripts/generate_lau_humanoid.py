@@ -62,14 +62,33 @@ def main():
     lobes = 5 + (r_channel % 3)
     hardness = "extreme mirror-polished finish" if (r_foundation % 2 == 0) else "matte micro-brushed steel finish"
     
-    # Map the figure archetype based on dynamic register components
-    archetypes = ["humanoid android", "cybernetic mechanical teddy bear", "humanoid angelic android", "butterfly-winged humanoid hybrid"]
-    archetype = archetypes[r_base % len(archetypes)]
+    # Soft descriptive properties that guide Stable Diffusion to naturally discover the figure
+    # rather than hardcoding names. Maps details like wing hints, body shapes, or monster characteristics.
+    form_descriptors = []
+    
+    # Base structure range (organism at least, humanoid/super-humanoid or monster at most)
+    struct_mod = r_base % 4
+    if struct_mod == 0:
+        form_descriptors.append("biomechanical living organism structure")
+    elif struct_mod == 1:
+        form_descriptors.append("humanoid figure with stylized anatomical details")
+    elif struct_mod == 2:
+        form_descriptors.append("super-humanoid figure with angelic wing-like extensions")
+    else:
+        form_descriptors.append("exotic cybernetic monster entity with multi-faceted limbs")
+        
+    # Append visual qualities mapped from dynamic registers
+    if r_channel % 2 == 0:
+        form_descriptors.append("delicate butterfly-like wing structures")
+    if r_dynamo % 2 == 0:
+        form_descriptors.append("bear-like mechanical posture characteristics")
+        
+    guides = ", ".join(form_descriptors)
     
     # Formulate SD prompt using vocabulary and mapped registers
     prompt = (
-        f"A highly detailed photorealistic {archetype} statue with arms and legs, sitting in meditation, "
-        f"metallic body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
+        f"A highly detailed photorealistic statue with arms and legs, sitting in meditation, "
+        f"featuring a {guides}, metallic body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
         f"glowing eyes, intricate micro-chords and circuits of EDO-22 frequency lines, "
         f"embossed gold and polished brass armor plates, {lobes}-cusped symmetry geometry, "
         f"{hardness}, cinematic studio lighting, dark background, 8k resolution, masterpiece"
