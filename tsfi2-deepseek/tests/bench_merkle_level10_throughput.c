@@ -30,7 +30,7 @@ int main() {
     
     double start = get_time_ms();
     for (int i = 0; i < iterations; i++) {
-        tsfi_helmholtz_reduce_10(root, receipt, NULL, NULL, manifold, i, resonance_k, NULL);
+        tsfi_helmholtz_reduce_10(root, receipt, NULL, NULL, manifold, i, resonance_k, NULL, NULL);
     }
     double end = get_time_ms();
     

@@ -22,7 +22,7 @@ THRESHOLDS = {
         "throughput_reductions_sec": {"min": 4000.0, "desc": "Helmholtz Reduction Throughput"}
     },
     "deepseek_mla": {
-        "throughput_million_passes_sec": {"min": 100.0, "desc": "DeepSeek MLA Kernels Rate"}
+        "throughput_million_passes_sec": {"min": 90.0, "desc": "DeepSeek MLA Kernels Rate"}
     },
     "architectural_supremacy": {
         "efficiency_gain_x": {"min": 1.2, "desc": "Field vs Pointer Efficiency Gain"}

@@ -21,6 +21,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_deepseek_mla.c -o tests/bench_deepseek_mla -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_already_there.c -o tests/bench_already_there -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_zero_overhead.c -o tests/bench_zero_overhead -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."
@@ -54,6 +55,10 @@ echo "[RUN] Zero-Overhead Architectural Paradigms..."
 echo "[RUN] Genetic Crossover Performance Suite..."
 bash tests/run_genetic_bench.sh > "${TMP_DIR}/bench_genetic.log"
 
+# 10. Run Aho-Corasick Compositor Cache Interop Benchmark
+echo "[RUN] Aho-Corasick Compositor Cache Interop Benchmark..."
+./tests/bench_ac_compositor_interop > "${TMP_DIR}/bench_ac_compositor.log"
+
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
 # Parse values
@@ -84,6 +89,11 @@ GEN_DEEP=$(grep -oP 'Genetic_Deep\s+\| Throughput\s+\| \K[0-9\.]+' "${TMP_DIR}/b
 GEN_INPLACE=$(grep -oP 'Convergence_InPlace\s+\| Throughput\s+\| \K[0-9\.]+' "${TMP_DIR}/bench_genetic.log" || echo "0.0")
 GEN_ENTROPY=$(grep -oP 'Genetic_Entropy\s+\| Entropy\s+\| \K[0-9\.]+' "${TMP_DIR}/bench_genetic.log" || echo "0.0")
 GEN_CASCADE=$(grep -oP 'Genetic_Cascade\s+\| Cascade\s+\| \K[0-9\.]+' "${TMP_DIR}/bench_genetic.log" || echo "0.0")
+
+AC_COMP_BUILD=$(grep -oP 'Build Time: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "0.0")
+AC_COMP_LATENCY=$(grep -oP 'Lookup Latency: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "0.0")
+AC_COMP_THROUGH=$(grep -oP 'Throughput: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "0.0")
+AC_COMP_GAIN=$(grep -oP 'Speedup Gain: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "1.0")
 
 # Read Vulkan details if JSON file exists (which was written by vulkan teddy bear benchmark run)
 VK_JSON="${PROFILER_DIR}/benchmark_results.json"
@@ -137,6 +147,12 @@ cat <<EOF > "${OUTPUT_JSON}"
     "inplace_avx512_xo_sec": ${GEN_INPLACE},
     "entropy_mutation_xo_sec": ${GEN_ENTROPY},
     "recursive_cascade_stages_sec": ${GEN_CASCADE}
+  },
+  "aho_corasick_compositor": {
+    "build_time_ms": ${AC_COMP_BUILD},
+    "lookup_latency_ns": ${AC_COMP_LATENCY},
+    "throughput_m_lookups_sec": ${AC_COMP_THROUGH},
+    "speedup_gain_x": ${AC_COMP_GAIN}
   }
 }
 EOF

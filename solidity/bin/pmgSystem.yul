@@ -197,6 +197,42 @@ object "PmgSystem" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD 8: subscribeTraveller(address targetAddress, address travellerAddress) -> uint256
+            // Selector: 0xf411dd3b
+            // ----------------------------------------------------------------
+            if eq(selector, 0xf411dd3b) {
+                let targetAddress := and(calldataload(4), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                let travellerAddress := and(calldataload(36), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+
+                mstore(0x00, targetAddress)
+                mstore(0x20, travellerAddress)
+                let slot := keccak256(0x00, 64)
+
+                sstore(slot, 1)
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 9: isTravellerSubscribed(address targetAddress, address travellerAddress) -> uint256
+            // Selector: 0x179dee32
+            // ----------------------------------------------------------------
+            if eq(selector, 0x179dee32) {
+                let targetAddress := and(calldataload(4), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                let travellerAddress := and(calldataload(36), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+
+                mstore(0x00, targetAddress)
+                mstore(0x20, travellerAddress)
+                let slot := keccak256(0x00, 64)
+
+                let isSubbed := sload(slot)
+
+                mstore(0x00, isSubbed)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 4: loadDnaGenome(uint256 dnaRaw) -> void
             // Selector: 0xd6a111a9 (Parses 12-byte genome and configures P0 size/color registers)
             // ----------------------------------------------------------------

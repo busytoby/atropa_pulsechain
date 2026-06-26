@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 #include "libantigravity_interop.h"
 
 #define WIDTH 1280
@@ -83,15 +84,16 @@ int main(int argc, char *argv[]) {
             mq_boost = 0.25; // Boost brightness/gain when network packets are active in queue
         }
 
-        double spec_power = 8.0 + ((reg.frame_modulation_factor + mq_boost) * 16.0); // Modulated specularity
-        double edge_blend = 0.5 + ((reg.frame_modulation_factor + mq_boost) * 0.5);  // LineArt visibility mapping
+        float spec_power = 8.0f + ((reg.frame_modulation_factor + (float)mq_boost) * 16.0f); // Modulated specularity
+        float edge_blend = 0.5f + ((reg.frame_modulation_factor + (float)mq_boost) * 0.5f);  // LineArt visibility mapping
 
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < FRAME_SIZE; i += 3) {
             int px = (i / 3) % WIDTH;
             int py = (i / 3) / WIDTH;
 
             uint8_t lr = buf_line[i], lg = buf_line[i+1], lb = buf_line[i+2];
-            uint8_t dr = buf_depth[i], dg = buf_depth[i+1], db = buf_depth[i+2];
+            uint8_t dr = buf_depth[i];
             uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
             uint8_t sr = buf_seg[i], sg = buf_seg[i+1], sb = buf_seg[i+2];
 
@@ -112,16 +114,14 @@ int main(int argc, char *argv[]) {
                 br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
             }
 
-            double d_val = dr / 255.0;
-            double l_val = (255.0 - lr) / 255.0;
+            float d_val = dr / 255.0f;
+            float l_val = (255.0f - lr) / 255.0f;
 
-            double nx = (nr - 127.5) / 127.5;
-            double ny = (ng - 127.5) / 127.5;
-            double nz = (nb - 127.5) / 127.5;
-            double spec = pow(fmax(0.0, nz), spec_power);
+            float nz = (nb - 127.5f) / 127.5f;
+            float spec = powf(fmaxf(0.0f, nz), spec_power);
 
             // Compute proximity glow to Verlet particles for Fornax connections
-            double fornax_glow = 0.0;
+            float fornax_glow = 0.0f;
             if (is_fornax) {
                 if (reg.active_verlet_count > 0 && reg.active_verlet_count <= 16) {
                     for (uint32_t k = 0; k < reg.active_verlet_count; k++) {
@@ -134,71 +134,71 @@ int main(int argc, char *argv[]) {
                             fornax_glow += (1.0f - dist / 60.0f);
                         }
                     }
-                    if (fornax_glow > 1.0) fornax_glow = 1.0;
+                    if (fornax_glow > 1.0f) fornax_glow = 1.0f;
                 } else {
-                    fornax_glow = 0.3; // Default baseline fallback
+                    fornax_glow = 0.3f; // Default baseline fallback
                 }
             }
 
             // Material routing based on rendering style selection
-            double r_out = 0, g_out = 0, b_out = 0;
+            float r_out = 0.0f, g_out = 0.0f, b_out = 0.0f;
             if (style == 2) { // Lineart only
                 r_out = lr; g_out = lg; b_out = lb;
             } else if (style == 1) { // Stylized / Flat Casings
                 r_out = sr; g_out = sg; b_out = sb;
                 if (is_fomal) { // Yellow casing
-                    r_out = 230 + spec * 25;
-                    g_out = 190 + spec * 25;
-                    b_out = 30;
+                    r_out = 230.0f + spec * 25.0f;
+                    g_out = 190.0f + spec * 25.0f;
+                    b_out = 30.0f;
                 } else if (is_eris) { // Blue casing
-                    r_out = 30;
-                    g_out = 140 + spec * 50;
-                    b_out = 240 + spec * 15;
+                    r_out = 30.0f;
+                    g_out = 140.0f + spec * 50.0f;
+                    b_out = 240.0f + spec * 15.0f;
                 } else if (is_fornax) { // Red connections
-                    r_out = 250 * fornax_glow;
-                    g_out = 40 * fornax_glow;
-                    b_out = 40 * fornax_glow;
+                    r_out = 250.0f * fornax_glow;
+                    g_out = 40.0f * fornax_glow;
+                    b_out = 40.0f * fornax_glow;
                 }
             } else { // Photorealistic or Retro base
-                r_out = br * 1.3; g_out = bg * 1.3; b_out = bb * 1.3; // Boost base brightness
+                r_out = br * 1.3f; g_out = bg * 1.3f; b_out = bb * 1.3f; // Boost base brightness
                 if (is_fomal) { // Yellow Mask: Casing B (Fomalhaute)
-                    r_out = br * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
-                    g_out = bg * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
-                    b_out = bb * 0.8;
+                    r_out = br * 1.1f + spec * (140.0f + reg.frame_modulation_factor * 60.0f);
+                    g_out = bg * 1.1f + spec * (140.0f + reg.frame_modulation_factor * 60.0f);
+                    b_out = bb * 0.8f;
                 } else if (is_eris) { // Blue Mask: Casing A (Eris)
-                    r_out = br * 1.0 + spec * (160 + reg.frame_modulation_factor * 80);
-                    g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
-                    b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
+                    r_out = br * 1.0f + spec * (160.0f + reg.frame_modulation_factor * 80.0f);
+                    g_out = bg * 1.1f + spec * (120.0f + reg.frame_modulation_factor * 60.0f);
+                    b_out = bb * 1.3f + spec * (100.0f + reg.frame_modulation_factor * 50.0f);
                 } else if (is_fornax) { // Red Mask: Verlet Particles / Connections (Boosted Fornax)
-                    r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120.0 * fornax_glow + 80.0;
-                    g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80.0 * fornax_glow + 40.0;
-                    b_out = bb * 1.2 + 50.0 * fornax_glow;
+                    r_out = br * (1.8f + reg.frame_modulation_factor * 1.2f) + 120.0f * fornax_glow + 80.0f;
+                    g_out = bg * (1.8f + reg.frame_modulation_factor * 0.8f) + 80.0f * fornax_glow + 40.0f;
+                    b_out = bb * 1.2f + 50.0f * fornax_glow;
                 }
             }
 
             // Apply LineArt borders (edges mask details but lighter)
-            r_out = r_out * (1.0 - l_val * (edge_blend * 0.4));
-            g_out = g_out * (1.0 - l_val * (edge_blend * 0.4));
-            b_out = b_out * (1.0 - l_val * (edge_blend * 0.4));
+            r_out = r_out * (1.0f - l_val * (edge_blend * 0.4f));
+            g_out = g_out * (1.0f - l_val * (edge_blend * 0.4f));
+            b_out = b_out * (1.0f - l_val * (edge_blend * 0.4f));
 
             // Apply Lighter Volumetric Fog and Ambient Occlusion from Depth maps
-            double fog_r = 30, fog_g = 35, fog_b = 55; // Lighter atmospheric background
+            float fog_r = 30.0f, fog_g = 35.0f, fog_b = 55.0f; // Lighter atmospheric background
             // Focus when the beat drops: reduce fog and boost clarity of the manifold geometry
-            double depth_blend = 0.3 + (d_val * 0.7) + (reg.frame_modulation_factor * 0.25);
-            if (depth_blend > 1.0) depth_blend = 1.0;
-            r_out = r_out * depth_blend + fog_r * (1.0 - depth_blend);
-            g_out = g_out * depth_blend + fog_g * (1.0 - depth_blend);
-            b_out = b_out * depth_blend + fog_b * (1.0 - depth_blend);
+            float depth_blend = 0.3f + (d_val * 0.7f) + (reg.frame_modulation_factor * 0.25f);
+            if (depth_blend > 1.0f) depth_blend = 1.0f;
+            r_out = r_out * depth_blend + fog_r * (1.0f - depth_blend);
+            g_out = g_out * depth_blend + fog_g * (1.0f - depth_blend);
+            b_out = b_out * depth_blend + fog_b * (1.0f - depth_blend);
 
             if (style == 3) { // Retro Amiga 4-bit quantization (16-color channel bits)
-                r_out = ((int)(r_out / 16.0)) * 16.0;
-                g_out = ((int)(g_out / 16.0)) * 16.0;
-                b_out = ((int)(b_out / 16.0)) * 16.0;
+                r_out = ((int)(r_out / 16.0f)) * 16.0f;
+                g_out = ((int)(g_out / 16.0f)) * 16.0f;
+                b_out = ((int)(b_out / 16.0f)) * 16.0f;
             }
 
-            buf_out[i]   = (uint8_t)fmin(255.0, fmax(0.0, r_out));
-            buf_out[i+1] = (uint8_t)fmin(255.0, fmax(0.0, g_out));
-            buf_out[i+2] = (uint8_t)fmin(255.0, fmax(0.0, b_out));
+            buf_out[i]   = (uint8_t)fminf(255.0f, fmaxf(0.0f, r_out));
+            buf_out[i+1] = (uint8_t)fminf(255.0f, fmaxf(0.0f, g_out));
+            buf_out[i+2] = (uint8_t)fminf(255.0f, fmaxf(0.0f, b_out));
         }
 
         fwrite(buf_out, 1, FRAME_SIZE, stdout);

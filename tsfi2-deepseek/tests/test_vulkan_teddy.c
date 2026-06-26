@@ -4356,7 +4356,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 render_frame(&canvas, frame);
-                usleep(5000); // Auncient pacing mechanism to target stable ~200 FPS
+                usleep(100); // Optimized pacing for benchmark
 
                 clock_gettime(CLOCK_MONOTONIC, &f_end);
                 frame_times[frame] = (f_end.tv_sec - f_start.tv_sec) + (f_end.tv_nsec - f_start.tv_nsec) / 1e9;

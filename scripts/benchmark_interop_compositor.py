@@ -66,7 +66,7 @@ def run_compositor_benchmark():
     if not os.path.exists(c_renderer):
         print("Compiling C interop compositor...")
         subprocess.run([
-            "gcc", "-O3", "scripts/manifold_interop_renderer.c", 
+            "gcc", "-O3", "-fopenmp", "scripts/manifold_interop_renderer.c", 
             "-o", "scripts/manifold_interop_renderer", 
             "-Lscripts/", "-lantigravity_interop", "-lm", 
             "-Wl,-rpath,./scripts/"

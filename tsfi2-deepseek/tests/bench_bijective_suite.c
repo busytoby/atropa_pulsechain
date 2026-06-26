@@ -71,7 +71,7 @@ void bench_operator_symmetry(VulkanContext* vk, const char* name, size_t atoms, 
 }
 
 int main() {
-    VulkanContext* vk = init_vulkan();
+    VulkanContext* vk = init_vulkan(-1);
     if (vk) lau_memory_init_gpu(vk);
     
     ShaderUniforms su = { 2.0f, 0.5f };

@@ -50,7 +50,7 @@ void alligator_reap_portfolio(TsfiWavelet **portfolio, int count) {
         if (portfolio[i]) {
             // Force terminal intensity
             portfolio[i]->telemetry.Fa.monopole = 0; 
-            printf("  -> Reaping Wavelet ID=%lu\n", portfolio[i]->telemetry.unique_id);
+            printf("  -> Reaping Wavelet ID=%lu\n", (unsigned long)portfolio[i]->telemetry.unique_id);
             lau_free(portfolio[i]);
             portfolio[i] = NULL;
         }

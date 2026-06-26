@@ -51,7 +51,7 @@ static inline void tsfi_wavelet_arena_init(TsfiWaveletArena *arena, uint8_t *pre
     arena->wavelet_uid_counter = 1000;
 }
 
-#define TSFI_WAVELET_LEAF_SIZE 512
+#define TSFI_WAVELET_LEAF_SIZE 128
 
 #define TSFI_WAVELET_PRIME 953473ULL
 #define MOTZKIN_PRIME 953467954114363ULL
@@ -82,7 +82,7 @@ typedef struct __attribute__((packed)) {
     char owner[32];
     uint64_t quota;
     uint64_t role;
-    uint64_t balances[16]; 
+    uint64_t balances[1]; 
 } TsfiPrivateHeader;
 
 // 5th Dimensional Entropy Dai
@@ -100,66 +100,51 @@ typedef struct __attribute__((packed)) {
     uint64_t pole;
     uint64_t identity; 
     uint64_t foundation;
-    uint64_t element;
-    uint64_t coordinate;
     uint64_t charge;
-    uint64_t limit;
     uint64_t monopole;
 } TsfiDielectricFa;
 
 typedef struct __attribute__((packed)) {
-    uint64_t unique_id;
-    uint64_t Xi;   
-    uint64_t Manifold;
-    uint64_t Ring;
-    uint64_t Dynamo;
-    uint64_t Barn;
+    uint32_t unique_id;
+    uint32_t Xi;   
+    uint32_t Ring;
+    uint32_t Dynamo;
+    uint16_t Barn;
     uint64_t Monopole;
     uint64_t ReciprocalChannel; // Stored Context
     TsfiDielectricFa Fa;
     uint8_t current_seal_level; 
-    uint64_t trait;
+    uint16_t trait;
 } TsfiWaveletTelemetry;
 
 typedef struct __attribute__((packed)) TsfiWavelet {
-    TsfiWaveletTelemetry telemetry;
-    uint64_t Prime; // Contextual modulus for wired operations
-    void (*Evolve)(int selection);
-    void (*Connect)(struct TsfiWavelet *target);
-    void (*Disconnect)(struct TsfiWavelet *target);
-    void (*Bond)(void);
-    void (*Ionize)(void);
-    void (*Magnetize)(void);
-    void (*Activate)(uint64_t secret);
-    void (*Deactivate)(void);
-    void (*Scramble)(void);
-    void (*Tune)(void);
-    void (*Avail)(uint64_t Xi);
-    void (*Form)(uint64_t Chi);
-    void (*Polarize)(void);
-    void (*Conjugate)(uint64_t Chi);
-    void (*Conify)(uint64_t Beta);
-    void (*Saturate)(uint64_t Beta, uint64_t Epsilon, uint64_t Theta);
-    void (*React)(uint64_t Pi);
-    void (*Verify)(uint64_t *out_crc);
-    
-    // Physical Memory Map
     union {
-        TsfiPrivateHeader private_header;
-        TsfiEntropyDai entropy_dai;
         struct {
-            uint64_t ichidai;
-            uint64_t daiichi;
+            union {
+                TsfiWaveletTelemetry telemetry;
+                struct {
+                    uint8_t dummy[32];
+                    union {
+                        TsfiPrivateHeader private_header;
+                        TsfiEntropyDai entropy_dai;
+                        struct {
+                            uint64_t ichidai;
+                            uint64_t daiichi;
+                        };
+                        struct {
+                            char     filename[32];
+                            uint8_t *content_ptr;
+                            uint32_t content_size;
+                        } file_cell;
+                    };
+                };
+            };
+            uint64_t Prime; // Contextual modulus for wired operations
+            uint8_t total_size;
+            uint8_t state;
         };
-        struct {
-            char     filename[32];
-            uint8_t *content_ptr;
-            uint32_t content_size;
-        } file_cell;
+        uint8_t payload[128]; // Overlaps entire struct, allowing full 128-byte access
     };
-    uint32_t total_size;
-    uint32_t state;
-    uint8_t payload[127]; // Adjusted to make struct exactly 512 bytes
 } TsfiWavelet;
 
 // Role Definitions (Bijective Intent)
@@ -349,8 +334,8 @@ static inline void tsfi_EvolveDai(TsfiWavelet *W, int selection, uint64_t Prime)
 }
 
 static inline void tsfi_wavelet_print(TsfiWavelet *B, const char *label) {
-    printf("[%s] ID=%lu State=%d Seal=%d Fa.Identity=%lu\n", 
-           label, B->telemetry.unique_id, B->state, B->telemetry.current_seal_level, B->telemetry.Fa.identity);
+    printf("[%s] ID=%llu State=%d Seal=%d Fa.Identity=%llu\n", 
+           label, (unsigned long long)B->telemetry.unique_id, B->state, (int)B->telemetry.current_seal_level, (unsigned long long)B->telemetry.Fa.identity);
 }
 
 #endif

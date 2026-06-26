@@ -7,19 +7,19 @@
 #include "tsfi_jpeg_encoder.h"
 
 int main() {
-    uint8_t *pixels = (uint8_t*)malloc(256 * 256 * 3);
+    uint8_t *pixels = (uint8_t*)malloc(512 * 512 * 3);
     unsigned char *jpeg_buf = NULL;
     unsigned long jpeg_size = 0;
     int iterations = 1000;
 
-    printf("[BENCHMARK] Running %d iterations (256x256 Render + JPEG Encode)...\n", iterations);
+    printf("[BENCHMARK] Running %d iterations (512x512 Render + JPEG Encode)...\n", iterations);
     
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (int i = 0; i < iterations; i++) {
         generate_nand_trap_frame(pixels, i, i % 4, NULL);
-        tsfi_jpeg_encode(&jpeg_buf, &jpeg_size, pixels, 256, 256, 80);
+        tsfi_jpeg_encode(&jpeg_buf, &jpeg_size, pixels, 512, 512, 80);
         if (jpeg_buf) {
             free(jpeg_buf); 
             jpeg_buf = NULL;

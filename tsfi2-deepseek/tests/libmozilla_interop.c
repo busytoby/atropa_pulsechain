@@ -364,7 +364,6 @@ bool tsfi_compositor_cache_lookup(const char *pipeline_signature, void *pre_dest
             *post_size_out = entry->post_size;
         }
         pthread_mutex_unlock(&c->cache_mutex);
-        printf("[Auncient Compositor Cache] Pipeline lookup match found: %s\n", entry->shader_key);
         return true;
     }
 

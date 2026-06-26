@@ -41,7 +41,9 @@ async function main() {
         "function getPmgState(uint8 isMissile, uint8 index) external view returns (uint8 hpos, uint8 size, uint8 color)",
         "function checkPmgCollisions() external returns (uint8)",
         "function projectWeaponToDamage(uint8 isMissile, uint8 index, address targetAddress) external returns (uint256)",
-        "function getDamageAccumulator(address targetAddress) external view returns (uint256)"
+        "function getDamageAccumulator(address targetAddress) external view returns (uint256)",
+        "function subscribeTraveller(address targetAddress, address travellerAddress) external returns (uint256)",
+        "function isTravellerSubscribed(address targetAddress, address travellerAddress) external view returns (uint256)"
     ]);
 
     const pmgContract = new ethers.Contract(pmgAddress, pmgInterface, deployer);
@@ -117,6 +119,28 @@ async function main() {
     }
     
     console.log("SUCCESS: Weapon synthesizer successfully projected damage to accumulators!");
+
+    // Test 5: Verify Traveller Subscribers on Accumulators
+    console.log("\n=== TEST 5: Subscribing Traveller to Accumulator ===");
+    const travellerAddr = signers[1].address;
+    console.log(`Subscribing traveller: ${travellerAddr} to target: ${targetAddr}`);
+    const txSub = await pmgContract.subscribeTraveller(targetAddr, travellerAddr);
+    await txSub.wait();
+
+    const isSubscribed = await pmgContract.isTravellerSubscribed(targetAddr, travellerAddr);
+    console.log(`Traveller Subscribed Status: ${isSubscribed} (Expected: 1)`);
+    if (Number(isSubscribed) !== 1) {
+        console.error("FAIL: Traveller subscription failed!");
+        process.exit(1);
+    }
+
+    const isUnsubscribed = await pmgContract.isTravellerSubscribed(targetAddr, signers[2].address);
+    console.log(`Unsubscribed Traveller Status: ${isUnsubscribed} (Expected: 0)`);
+    if (Number(isUnsubscribed) !== 0) {
+        console.error("FAIL: Unsubscribed traveller marked as subscribed!");
+        process.exit(1);
+    }
+    console.log("SUCCESS: Traveller subscription logic verified successfully!");
 }
 
 main().catch(err => {

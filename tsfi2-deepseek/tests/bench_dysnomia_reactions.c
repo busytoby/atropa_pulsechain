@@ -24,8 +24,9 @@ int main() {
     printf("[SAFETY] WAVE15 Capacity Mapping Verified (4 atoms fits 64B).\n");
 
     // 2. SHOOT -> DAI (The Full Cycle)
-    printf("[SHOOT] Realizing Full Genome...\n");
-    struct YI* Mu = tsfi_reaction_shoot(NULL);
+    TSFiBigInt* Prime = tsfi_bn_alloc();
+    tsfi_bn_set_u64(Prime, 953467954114363ULL);
+    struct YI* Mu = tsfi_reaction_shoot(Prime);
     
     if (Mu) {
         printf("  Xi: %lu\n", Mu->Xi->limbs[0]);
@@ -106,5 +107,6 @@ int main() {
     lau_registry_teardown();
     extern void lau_report_memory_metrics(void);
     lau_report_memory_metrics();
+    tsfi_bn_free(Prime);
     return 0;
 }

@@ -112,7 +112,7 @@ long long run_std_ac() {
 // Instead of a huge array of arrays, we use the raw bytes of the wavelet.
 
 // Since Wavelet payload is ~300 bytes, we can fit 26 int32s (104 bytes) easily.
-#define WAVELET_AC_PAYLOAD_OFFSET 128 
+#define WAVELET_AC_PAYLOAD_OFFSET 16 
 
 static inline int32_t* get_wavelet_next(TsfiWavelet *W) {
     return (int32_t*)((char*)W + WAVELET_AC_PAYLOAD_OFFSET);

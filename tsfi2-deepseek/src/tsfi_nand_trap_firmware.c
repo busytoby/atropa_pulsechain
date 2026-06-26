@@ -468,21 +468,30 @@ void tsfi_image_alpha_composite(uint8_t* out, const uint8_t* bg, const uint8_t* 
 }
 
 int tsfi_nand_trap_autonomous_step(const char *p, float lti) {
-    NandTrapState c, n;
-    if (tsfi_nand_trap_restore(p, &c) != 0) {
-        memset(&c, 0, sizeof(c)); c.magic = NAND_TRAP_MAGIC; c.version = NAND_TRAP_VERSION;
-        for (int i = 0; i < GRANS; i++) { c.fibers[i].x = (float)i / (float)GRANS; c.fibers[i].weight = 1.0f; }
+    NandTrapState *c = (NandTrapState*)malloc(sizeof(NandTrapState));
+    NandTrapState *n = (NandTrapState*)malloc(sizeof(NandTrapState));
+    if (!c || !n) {
+        free(c);
+        free(n);
+        return -1;
+    }
+    if (tsfi_nand_trap_restore(p, c) != 0) {
+        memset(c, 0, sizeof(NandTrapState)); c->magic = NAND_TRAP_MAGIC; c->version = NAND_TRAP_VERSION;
+        for (int i = 0; i < GRANS; i++) { c->fibers[i].x = (float)i / (float)GRANS; c->fibers[i].weight = 1.0f; }
         
         // Embed the VAE on fresh init
-        tsfi_nand_trap_embed_vae(&c, "assets/models/taesd.safetensors");
+        tsfi_nand_trap_embed_vae(c, "assets/models/taesd.safetensors");
     }
-    tsfi_nand_trap_causal_discovery(&c, &n, lti);
+    tsfi_nand_trap_causal_discovery(c, n, lti);
     
     // Carry over the massive VAE payload
-    n.vae_actual_size = c.vae_actual_size;
-    memcpy(n.vae_payload, c.vae_payload, c.vae_actual_size);
+    n->vae_actual_size = c->vae_actual_size;
+    memcpy(n->vae_payload, c->vae_payload, c->vae_actual_size);
     
-    return tsfi_nand_trap_save(p, &n);
+    int ret = tsfi_nand_trap_save(p, n);
+    free(c);
+    free(n);
+    return ret;
 }
 
 int tsfi_nand_trap_embed_vae(NandTrapState *state, const char *vae_path) {

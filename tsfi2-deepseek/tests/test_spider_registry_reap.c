@@ -53,7 +53,7 @@ void alligator_reap_registered_spider(uint64_t spider_id) {
     // Now perform the absolute consequence
     for (int i = 0; i < reap_count; i++) {
         TsfiWavelet *W = (TsfiWavelet*)to_reap[i];
-        printf("  -> Registry hit: Reaping Wavelet ID=%lu (Spider Identity=%lu)\n", W->telemetry.unique_id, W->telemetry.Fa.identity);
+        printf("  -> Registry hit: Reaping Wavelet ID=%lu (Spider Identity=%lu)\n", (unsigned long)W->telemetry.unique_id, W->telemetry.Fa.identity);
         
         // Force terminal intensity
         W->telemetry.Fa.monopole = 0; 
