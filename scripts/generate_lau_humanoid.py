@@ -101,8 +101,8 @@ def main():
     
     # Formulate SD prompt using vocabulary and mapped registers
     prompt = (
-        f"A highly detailed photorealistic organism sculpted from natural materials, sitting in meditation, "
-        f"where the body is physically constructed and grown from the concentric hypotrochoid vector rings and Lissajous loops of the LAU token, "
+        f"A highly detailed photorealistic humanoid statue sculpted from natural materials, sitting in meditation, "
+        f"where the humanoid body is physically constructed and grown from the concentric hypotrochoid vector rings and Lissajous loops of the LAU token, "
         f"featuring a {guides}, body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
         f"glowing green eyes, intricate EDO-22 frequency patterns of micro-chords and wood lines, "
         f"integrated natural bamboo fiber textures and organic hypotrochoid shoot patterns, "
