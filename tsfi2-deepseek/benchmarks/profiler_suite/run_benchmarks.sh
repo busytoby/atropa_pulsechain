@@ -144,4 +144,7 @@ EOF
 echo "[INFO] Running generate_report.py..."
 python3 "${PROFILER_DIR}/generate_report.py"
 
-echo "[SUCCESS] Unified Auncient benchmarks successfully compiled and reported."
+echo "[INFO] Running performance_guard.py..."
+python3 "${PROFILER_DIR}/performance_guard.py"
+
+echo "[SUCCESS] Unified Auncient benchmarks successfully compiled, verified, and reported."
