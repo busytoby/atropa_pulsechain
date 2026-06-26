@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient LAU Signatures Gallery</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-primary: #10b981;
+            --accent-secondary: #8b5cf6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(17, 24, 39, 0.95);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem;
+            color: var(--text-primary);
+            letter-spacing: -0.05em;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 0 0 1.5rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 0.75rem 1.25rem;
+            border-radius: 9999px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .lau-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lau-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.05);
+        }
+
+        .image-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid var(--card-border);
+            position: relative;
+            background: #000;
+        }
+
+        .image-wrapper {
+            aspect-ratio: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-wrapper.vector {
+            border-right: 1px solid var(--card-border);
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .lau-card:hover .image-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .image-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #fff;
+            backdrop-filter: blur(4px);
+        }
+
+        .card-details {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .token-symbol {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .minter-badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .token-name {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .token-address {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            background: rgba(16, 185, 129, 0.06);
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-secondary);
+            grid-column: 1 / -1;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Auncient LAU Signatures Gallery</h1>
+        <p class="subtitle">Photorealistic humanoid shape discovery mapped from PulseChain register states</p>
+        <div class="controls">
+            <input type="text" id="search-input" placeholder="Search by Symbol, Name, or Address...">
+        </div>
+    </header>
+
+    <main class="gallery-grid" id="gallery-grid">
+        <!-- Dynamic Cards Loaded via JS -->
+    </main>
+
+    <script>
+        let allTokens = {};
+
+        async function fetchTokens() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                if (data.treasury_tokens) {
+                    allTokens = data.treasury_tokens;
+                    renderGallery();
+                }
+            } catch (err) {
+                console.error("Error loading gallery data:", err);
+            }
+        }
+
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+            grid.innerHTML = '';
+
+            const filtered = Object.values(allTokens).filter(token => {
+                if (token.ignored) return false;
+                
+                const address = token.address.toLowerCase();
+                const symbol = (token.symbol || '').toLowerCase();
+                const name = (token.name || '').toLowerCase();
+                const minterName = (token.minter_name || '').toLowerCase();
+                
+                // Show ONLY LAU user tokens (minter name contains 'lau', symbol contains 'lau', or matches mariarahel EVM/Mainnet addresses)
+                const isLau = symbol.includes('lau') || minterName.includes('lau') || 
+                              address === "0xd32c39fee49391c7952d1b30b15921b0d3b42e69" || 
+                              address === "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b";
+                if (!isLau) return false;
+                
+                return address.includes(searchVal) || symbol.includes(searchVal) || name.includes(searchVal);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-state">No active LAU tokens matched your query.</div>';
+                return;
+            }
+
+            filtered.forEach(token => {
+                const card = document.createElement('div');
+                card.className = 'lau-card';
+
+                const hypPath = `/assets/${token.address}_hypotrochoid.png`;
+                const humPath = `/assets/${token.address}_humanoid_photorealistic.png`;
+
+                // Render hypotrochoid and humanoid side-by-side
+                card.innerHTML = `
+                    <div class="image-container">
+                        <div class="image-wrapper vector">
+                            <img src="${hypPath}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23111827\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%234b5563\\' font-family=\\'sans-serif\\' font-size=\\'12\\'>Hypotrochoid Pending</text></svg>'">
+                            <span class="image-label">HYPOTROCHOID</span>
+                        </div>
+                        <div class="image-wrapper">
+                            <img src="${humPath}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23111827\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%234b5563\\' font-family=\\'sans-serif\\' font-size=\\'12\\'>Humanoid Pending</text></svg>'">
+                            <span class="image-label">HUMANOID</span>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="card-header">
+                            <span class="token-symbol">${token.symbol}</span>
+                            <span class="minter-badge">${token.minter_name || 'Unknown'}</span>
+                        </div>
+                        <span class="token-name">${token.name}</span>
+                        <div class="token-address">${token.address}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('search-input').addEventListener('input', renderGallery);
+
+        fetchTokens();
+        // Refresh every 10 seconds to catch newly generated images
+        setInterval(fetchTokens, 10000);
+    </script>
+</body>
+</html>

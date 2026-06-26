@@ -33,31 +33,38 @@ def draw_glow_line(draw_obj, p1, p2, color, width=1):
 
 def project_3d(x, y, z, size):
     def get_raw_proj(px_val, py_val, pz_val):
-        yaw = 0.5
-        pitch = 0.4
-        cam_x = math.cos(yaw) * 260
-        cam_y = math.sin(yaw) * 260
-        cam_z = 150
-        zoom = 0.90
+        # Align exactly with the evolution demo final-frame camera settings
+        # TOTAL_FRAMES = 2700. f_effective = TOTAL_FRAMES - 270 = 2430.
+        # cam_yaw = 2430 * 0.015 = 36.45
+        # cam_pitch = 0.3 + 0.05 * sin(2430 * 0.008) = 0.3 + 0.05 * sin(19.44) = 0.3155
+        # cam_x = cos(36.45) * 360 = 276.5
+        # cam_y = sin(36.45) * 360 = 230.7
+        # cam_z = 240 + 40 * cos(2430 * 0.005) = 240 + 40 * cos(12.15) = 278.4
+        yaw = 36.45
+        pitch = 0.3155
+        cam_x = 276.5
+        cam_y = 230.7
+        cam_z = 278.4
+        zoom = 0.82
         
         dx = px_val - cam_x
         dy = py_val - cam_y
         dz = pz_val - cam_z
         
         cos_y, sin_y = math.cos(yaw), math.sin(yaw)
-        rx = dx * cos_y - dy * sin_y
-        ry = dx * sin_y + dy * cos_y
-        rz = dz
+        rx = dx * cos_y - dz * sin_y
+        ry = dy
+        rz = dx * sin_y + dz * cos_y
         
         cos_p, sin_p = math.cos(pitch), math.sin(pitch)
-        x_new = rx * cos_p + rz * sin_p
-        y_new = ry
-        z_new = -rx * sin_p + rz * cos_p
+        x_new = rx
+        y_new = ry * cos_p - rz * sin_p
+        z_new = ry * sin_p + rz * cos_p
         
-        focal = 350.0
+        focal = 500.0
         if z_new == 0: z_new = 1
-        px = (x_new * focal) / (z_new + 500) * zoom
-        py = (y_new * focal) / (z_new + 500) * zoom
+        px = (x_new * focal) / (z_new + 700) * zoom
+        py = (y_new * focal) / (z_new + 700) * zoom
         return px, py
         
     px_raw, py_raw = get_raw_proj(x, y, z)
@@ -127,14 +134,13 @@ def main():
     phi = (r_base % 100) / 100.0 * 2.0 * math.pi
     
     size = 512
-    img = create_radial_gradient(size)
+    # Use pure black background for ControlNet depth map accuracy
+    img = Image.new("RGB", (size, size), (0, 0, 0))
     draw = ImageDraw.Draw(img, "RGBA")
     
-    # Render blueprint grids
-    cx, cy = size // 2, size // 2
-    for r_val in [80, 160, 240]:
-        draw.ellipse([cx - r_val, cy - r_val, cx + r_val, cy + r_val], outline=(0, 242, 254, 15), width=1)
-        
+    # Render coordinate path directly as pure white line features
+    color_rgb = (255, 255, 255)
+    
     num_points = 500
     # Layer multiple offsets of d to create concentric holographic rings
     d_offsets = [d * 0.7, d, d * 1.3]

@@ -456,7 +456,18 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        if self.path == '/nonukes' or self.path == '/nonukes/' or self.path == '/nonukes/index.html':
+        if self.path == '/lau-gallery' or self.path == '/lau-gallery/' or self.path == '/lau-gallery/index.html':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'lau_gallery', 'index.html'))
+            if not os.path.exists(file_path):
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'lau_gallery', 'index.html')
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        elif self.path == '/nonukes' or self.path == '/nonukes/' or self.path == '/nonukes/index.html':
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Access-Control-Allow-Origin', '*')
