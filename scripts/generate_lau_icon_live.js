@@ -87,6 +87,42 @@ async function main() {
     
     if (!activeProvider) {
         console.log(`[PulseChain Linker] All RPC endpoints unreachable.`);
+        const cachePath = path.join(__dirname, "pulsechain_register_cache.json");
+        if (fs.existsSync(cachePath)) {
+            try {
+                const cache = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+                const entry = cache[address];
+                if (entry) {
+                    console.log(`[PulseChain Linker] Found address register values in local cache.`);
+                    const args = [
+                        path.join(__dirname, "generate_lau_icon.py"),
+                        address,
+                        entry.r_base,
+                        entry.r_channel,
+                        entry.r_dynamo,
+                        entry.r_foundation,
+                        entry.c_base,
+                        entry.c_channel,
+                        entry.c_dynamo,
+                        entry.c_foundation
+                    ];
+                    console.log(`[PulseChain Linker] Spawning Python renderer with cached values...`);
+                    const child = spawn("python3", args);
+                    child.stdout.on("data", (data) => process.stdout.write(data.toString()));
+                    child.stderr.on("data", (data) => process.stderr.write(data.toString()));
+                    child.on("close", (code) => {
+                        if (code === 0) {
+                            console.log(`[PulseChain Linker] Offline cached icon generation completed successfully.`);
+                        } else {
+                            console.error(`[PulseChain Linker] Python renderer exited with code ${code}`);
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.error(`[PulseChain Linker Error] Failed to read local cache: ${e.message}`);
+            }
+        }
         await runOfflineRenderer(address);
         return;
     }
@@ -115,6 +151,31 @@ async function main() {
         console.log(`[PulseChain Linker] Successfully resolved live register values.`);
         console.log(`- Rod [Base: ${r_base}, Channel: ${r_channel}, Dynamo: ${r_dynamo}, Foundation: ${r_foundation}]`);
         console.log(`- Cone [Base: ${c_base}, Channel: ${c_channel}, Dynamo: ${c_dynamo}, Foundation: ${c_foundation}]`);
+
+        // Cache the retrieved values
+        const cachePath = path.join(__dirname, "pulsechain_register_cache.json");
+        let cache = {};
+        if (fs.existsSync(cachePath)) {
+            try {
+                cache = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+            } catch (e) {}
+        }
+        cache[address] = {
+            r_base,
+            r_channel,
+            r_dynamo,
+            r_foundation,
+            c_base,
+            c_channel,
+            c_dynamo,
+            c_foundation
+        };
+        try {
+            fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2), "utf8");
+            console.log(`[PulseChain Linker] Updated local cache for address: ${address}`);
+        } catch (e) {
+            console.error(`[PulseChain Linker Error] Failed to write cache: ${e.message}`);
+        }
 
         const pyScript = path.join(__dirname, "generate_lau_icon.py");
         const args = [

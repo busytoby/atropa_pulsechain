@@ -128,3 +128,7 @@ assets/syrinx/
 /scripts/manifold_interop_renderer
 /scripts/test_abi_dispatch
 /scripts/test_verlet
+
+# Ignore generated custom JPEG AI container format
+assets/**/*.jpai
+assets/*.jpai

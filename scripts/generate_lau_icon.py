@@ -128,18 +128,54 @@ def main():
         cmultiplier = 1.0 + (c_channel % 5)
         print("[Live Mode] Rendering icon using exact on-chain register values.")
     else:
-        fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
-        fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
-        fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
-        phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
-        multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
-        
-        cfx = fx + 0.5
-        cfy = fy + 0.5
-        cfz = fz + 0.5
-        cphi = phi + math.pi
-        cmultiplier = multiplier
-        print("[Fallback Mode] Rendering icon using address hash values.")
+        # Check local cache first for offline mode
+        cache_path = os.path.join(os.path.dirname(__file__), "pulsechain_register_cache.json")
+        loaded_from_cache = False
+        if os.path.exists(cache_path):
+            try:
+                import json
+                with open(cache_path, "r") as f:
+                    cache = json.load(f)
+                if address in cache:
+                    entry = cache[address]
+                    r_base = int(entry["r_base"])
+                    r_channel = int(entry["r_channel"])
+                    r_dynamo = int(entry["r_dynamo"])
+                    r_foundation = int(entry["r_foundation"])
+                    c_base = int(entry["c_base"])
+                    c_channel = int(entry["c_channel"])
+                    c_dynamo = int(entry["c_dynamo"])
+                    c_foundation = int(entry["c_foundation"])
+                    
+                    fx = 1.0 + (r_channel % 5)
+                    fy = 1.0 + (r_dynamo % 5)
+                    fz = 1.0 + (r_foundation % 5)
+                    phi = (r_base % 100) / 100.0 * 2.0 * math.pi
+                    multiplier = 1.0 + (r_channel % 5)
+                    
+                    cfx = 1.0 + (c_channel % 5)
+                    cfy = 1.0 + (c_dynamo % 5)
+                    cfz = 1.0 + (c_foundation % 5)
+                    cphi = (c_base % 100) / 100.0 * 2.0 * math.pi
+                    cmultiplier = 1.0 + (c_channel % 5)
+                    print("[Offline Cache Mode] Rendering icon using cached on-chain register values.")
+                    loaded_from_cache = True
+            except Exception as e:
+                print(f"[Offline Cache Warning] Failed to load from cache: {e}")
+                
+        if not loaded_from_cache:
+            fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
+            fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
+            fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
+            phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
+            multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
+            
+            cfx = fx + 0.5
+            cfy = fy + 0.5
+            cfz = fz + 0.5
+            cphi = phi + math.pi
+            cmultiplier = multiplier
+            print("[Fallback Mode] Rendering icon using address hash values.")
     
     size = 512
     img = create_radial_gradient(size)
