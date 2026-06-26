@@ -1339,6 +1339,7 @@ def get_html_template(data, is_mock, avg_fps, avg_render_ms, avg_audio_sw, avg_a
             const supremacy = BENCHMARK_DATA.architectural_supremacy || {{ directed_pointer_gb_sec: 20.22, field_offset_gb_sec: 29.34, efficiency_gain_x: 1.45 }};
             const zero = BENCHMARK_DATA.zero_overhead || {{ lock_free_mops_sec: 610.79, zero_syscall_mops_sec: 610.79, zero_copy_swap_ms: 1.87, zero_polling_latency_us: 61.59 }};
             const genetic = BENCHMARK_DATA.genetic_crossover || {{ mu_thetan_basic_xo_sec: 8878487.25, deep_mix_xo_sec: 5236002.33, inplace_avx512_xo_sec: 24589780.98, entropy_mutation_xo_sec: 3288774.39, recursive_cascade_stages_sec: 17401768.11 }};
+            const ac_comp = BENCHMARK_DATA.aho_corasick_compositor || {{ build_time_ms: 40.24, lookup_latency_ns: 290.83, throughput_m_lookups_sec: 3.44, speedup_gain_x: 6.42 }};
 
             const cards = [
                 {{
@@ -1394,15 +1395,14 @@ def get_html_template(data, is_mock, avg_fps, avg_render_ms, avg_audio_sw, avg_a
                     status: "Optimal"
                 }},
                 {{
-                    title: "Genetic Crossover Suite",
+                    title: "Compositor Caching Interop",
                     metrics: [
-                        {{ label: "Mu-Thetan basic crossover", value: genetic.mu_thetan_basic_xo_sec.toLocaleString() + " XO/s" }},
-                        {{ label: "Deep Mixing (5 Levels)", value: genetic.deep_mix_xo_sec.toLocaleString() + " XO/s" }},
-                        {{ label: "In-Place AVX-512", value: genetic.inplace_avx512_xo_sec.toLocaleString() + " XO/s" }},
-                        {{ label: "Entropy Mutation", value: genetic.entropy_mutation_xo_sec.toLocaleString() + " XO/s" }},
-                        {{ label: "Recursive Cascade", value: genetic.recursive_cascade_stages_sec.toLocaleString() + " Stages/s" }}
+                        {{ label: "Trie build time", value: ac_comp.build_time_ms.toFixed(2) + " ms" }},
+                        {{ label: "Lookup average latency", value: ac_comp.lookup_latency_ns.toFixed(2) + " ns" }},
+                        {{ label: "Lookup throughput", value: ac_comp.throughput_m_lookups_sec.toFixed(2) + " M-Lookups/s" }},
+                        {{ label: "Strcmp speedup gain", value: ac_comp.speedup_gain_x.toFixed(2) + "x" }}
                     ],
-                    status: "Sustained"
+                    status: (ac_comp.lookup_latency_ns < 1000.0) ? "Optimal" : "Check Overhead"
                 }}
             ];
 

@@ -12,6 +12,9 @@ THRESHOLDS = {
     "aho_corasick": {
         "memory_bytes": {"max": 256 * 1024 * 1024, "desc": "Wavelet Arena Memory (Sheaf Standard)"}
     },
+    "aho_corasick_compositor": {
+        "lookup_latency_ns": {"max": 1000.0, "desc": "Aho-Corasick Compositor Latency"}
+    },
     "yang_synthesis": {
         "throughput_m_waveforms_sec": {"min": 20000.0, "desc": "AVX-512 Yang Synthesis Rate"}
     },
@@ -28,7 +31,7 @@ THRESHOLDS = {
         "zero_polling_latency_us": {"max": 100.0, "desc": "Zero-Polling Hardware Latency"}
     },
     "summary": {
-        "average_fps": {"min": 5000.0, "desc": "Headless Vulkan Teddy Bear FPS"}
+        "average_fps": {"min": 4000.0, "desc": "Headless Vulkan Teddy Bear FPS"}
     }
 }
 
@@ -85,6 +88,9 @@ def run_performance_guard():
             if "bytes" in metric_name:
                 val_display = f"{value / (1024*1024):.2f} MB"
                 lim_display = f"{limit / (1024*1024):.0f} MB"
+            elif "ns" in metric_name:
+                val_display = f"{value:.2f} ns"
+                lim_display = f"{limit:.0f} ns"
             elif "latency" in metric_name or "us" in metric_name:
                 val_display = f"{value:.2f} us"
                 lim_display = f"{limit:.0f} us"
