@@ -163,4 +163,7 @@ python3 "${PROFILER_DIR}/generate_report.py"
 echo "[INFO] Running performance_guard.py..."
 python3 "${PROFILER_DIR}/performance_guard.py"
 
+echo "[INFO] Running generate_manifest.py..."
+python3 "${PROFILER_DIR}/generate_manifest.py"
+
 echo "[SUCCESS] Unified Auncient benchmarks successfully compiled, verified, and reported."
