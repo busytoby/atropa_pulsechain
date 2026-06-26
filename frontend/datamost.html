@@ -9508,6 +9508,22 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillStyle = borderCol || "#3b5dc9"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const time = Date.now() / 400;
+                for (let i = 0; i < 3; i++) {
+                    const barY = 30 + ((Math.sin(time + i * 1.2) + 1) / 2) * (canvas.height - 60);
+                    const gradient = ctx.createLinearGradient(0, barY - 12, 0, barY + 12);
+                    const hue = (Date.now() / 8 + i * 50) % 360;
+                    gradient.addColorStop(0, "rgba(0,0,0,0)");
+                    gradient.addColorStop(0.2, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(0.5, `hsla(${hue}, 100%, 65%, 0.9)`);
+                    gradient.addColorStop(0.8, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, barY - 12, canvas.width, 24);
+                }
+            }
+
             // Draw inner screen border box
             ctx.fillStyle = bgCol || "#a2b4c2"; 
             ctx.fillRect(40, 30, 240, 140);
@@ -20141,6 +20157,22 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillStyle = borderCol || "#3b5dc9"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const time = Date.now() / 400;
+                for (let i = 0; i < 3; i++) {
+                    const barY = 30 + ((Math.sin(time + i * 1.2) + 1) / 2) * (canvas.height - 60);
+                    const gradient = ctx.createLinearGradient(0, barY - 12, 0, barY + 12);
+                    const hue = (Date.now() / 8 + i * 50) % 360;
+                    gradient.addColorStop(0, "rgba(0,0,0,0)");
+                    gradient.addColorStop(0.2, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(0.5, `hsla(${hue}, 100%, 65%, 0.9)`);
+                    gradient.addColorStop(0.8, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, barY - 12, canvas.width, 24);
+                }
+            }
+
             // Draw inner screen border box
             ctx.fillStyle = bgCol || "#a2b4c2"; 
             ctx.fillRect(40, 30, 240, 140);
@@ -30464,6 +30496,22 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             // Clear screen
             ctx.fillStyle = borderCol || "#3b5dc9"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const time = Date.now() / 400;
+                for (let i = 0; i < 3; i++) {
+                    const barY = 30 + ((Math.sin(time + i * 1.2) + 1) / 2) * (canvas.height - 60);
+                    const gradient = ctx.createLinearGradient(0, barY - 12, 0, barY + 12);
+                    const hue = (Date.now() / 8 + i * 50) % 360;
+                    gradient.addColorStop(0, "rgba(0,0,0,0)");
+                    gradient.addColorStop(0.2, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(0.5, `hsla(${hue}, 100%, 65%, 0.9)`);
+                    gradient.addColorStop(0.8, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, barY - 12, canvas.width, 24);
+                }
+            }
 
             // Draw inner screen border box
             ctx.fillStyle = bgCol || "#a2b4c2"; 
