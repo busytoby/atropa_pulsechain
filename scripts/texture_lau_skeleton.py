@@ -209,7 +209,7 @@ def main():
     # ----------------------------------------------------
     # Prompt illustrating: EDO-22 frequency octaves, foundation gates, WinchesterMQ SCSI loops
     prompt_lau = (
-        "EDO-22 octave frequency circuit board, metallic gold and micro-etched brass plating, "
+        "EDO-22 octave frequency pattern, organic bamboo forest textures and raw polished wood shoots, "
         "WinchesterMQ SCSI handshake loops, foundation gates, realistic reflections, 8k resolution, masterpiece"
     )
     raw_out_lau = "tmp/sd_texture_lau.raw"
