@@ -139,16 +139,16 @@ object "PmgSystem" {
             }
 
             // ----------------------------------------------------------------
-            // METHOD 6: projectWeaponToDamage(uint8 isMissile, uint8 index, uint8 targetIndex) -> uint256
-            // Selector: 0x8d4ec2f1
             // ----------------------------------------------------------------
-            if eq(selector, 0x8d4ec2f1) {
+            // METHOD 6: projectWeaponToDamage(uint8 isMissile, uint8 index, address targetAddress) -> uint256
+            // Selector: 0x7f61fb5b
+            // ----------------------------------------------------------------
+            if eq(selector, 0x7f61fb5b) {
                 let isMissile := and(calldataload(4), 0xFF)
                 let index := and(calldataload(36), 0xFF)
-                let targetIndex := and(calldataload(68), 0xFF)
+                let targetAddress := and(calldataload(68), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
 
                 if gt(index, 3) { revert(0, 0) }
-                if gt(targetIndex, 3) { revert(0, 0) }
 
                 let damage := 0
                 if isMissile {
@@ -166,8 +166,11 @@ object "PmgSystem" {
                     if eq(index, 3) { damage := 6 }
                 }
 
-                // Storage slot mapping for target player's damage accumulator
-                let slot := getRegKey(add(54000, targetIndex))
+                // Storage slot mapping for target (QING, Card, Tessarant) damage accumulator
+                mstore(0x00, targetAddress)
+                mstore(0x20, 54000)
+                let slot := keccak256(0x00, 64)
+
                 let current_dmg := sload(slot)
                 let new_dmg := add(current_dmg, damage)
                 sstore(slot, new_dmg)
@@ -177,14 +180,16 @@ object "PmgSystem" {
             }
 
             // ----------------------------------------------------------------
-            // METHOD 7: getDamageAccumulator(uint8 targetIndex) -> uint256
-            // Selector: 0x2b3f6603
+            // METHOD 7: getDamageAccumulator(address targetAddress) -> uint256
+            // Selector: 0xa4fdf447
             // ----------------------------------------------------------------
-            if eq(selector, 0x2b3f6603) {
-                let targetIndex := and(calldataload(4), 0xFF)
-                if gt(targetIndex, 3) { revert(0, 0) }
+            if eq(selector, 0xa4fdf447) {
+                let targetAddress := and(calldataload(4), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
 
-                let slot := getRegKey(add(54000, targetIndex))
+                mstore(0x00, targetAddress)
+                mstore(0x20, 54000)
+                let slot := keccak256(0x00, 64)
+
                 let current_dmg := sload(slot)
 
                 mstore(0x00, current_dmg)
