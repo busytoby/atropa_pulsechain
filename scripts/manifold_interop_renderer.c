@@ -11,38 +11,42 @@
 #define FRAME_SIZE (WIDTH * HEIGHT * CHANNELS)
 
 int main(int argc, char *argv[]) {
-    if (argc < 7) {
-        fprintf(stderr, "Usage: %s <base_raw> <lineart_raw> <depth_raw> <normal_raw> <seg_raw> <interop_registry_bin> [style: stylized|lineart|retro]\n", argv[0]);
+    if (argc < 9) {
+        fprintf(stderr, "Usage: %s <eris_base_raw> <fomalhaute_base_raw> <fornax_base_raw> <lineart_raw> <depth_raw> <normal_raw> <seg_raw> <interop_registry_bin> [style: stylized|lineart|retro]\n", argv[0]);
         return 1;
     }
 
     int style = 0; // 0 = photorealistic, 1 = stylized, 2 = lineart, 3 = retro
-    if (argc > 7) {
-        if (strcmp(argv[7], "stylized") == 0) style = 1;
-        else if (strcmp(argv[7], "lineart") == 0) style = 2;
-        else if (strcmp(argv[7], "retro") == 0) style = 3;
+    if (argc > 9) {
+        if (strcmp(argv[9], "stylized") == 0) style = 1;
+        else if (strcmp(argv[9], "lineart") == 0) style = 2;
+        else if (strcmp(argv[9], "retro") == 0) style = 3;
     }
 
-    FILE *f_base = fopen(argv[1], "rb");
-    FILE *f_line = fopen(argv[2], "rb");
-    FILE *f_depth = fopen(argv[3], "rb");
-    FILE *f_norm = fopen(argv[4], "rb");
-    FILE *f_seg = fopen(argv[5], "rb");
-    FILE *f_reg = fopen(argv[6], "rb"); // Binary stream of InteropRegistry state
+    FILE *f_eris = fopen(argv[1], "rb");
+    FILE *f_fomal = fopen(argv[2], "rb");
+    FILE *f_fornax = fopen(argv[3], "rb");
+    FILE *f_line = fopen(argv[4], "rb");
+    FILE *f_depth = fopen(argv[5], "rb");
+    FILE *f_norm = fopen(argv[6], "rb");
+    FILE *f_seg = fopen(argv[7], "rb");
+    FILE *f_reg = fopen(argv[8], "rb"); // Binary stream of InteropRegistry state
 
-    if (!f_base || !f_line || !f_depth || !f_norm || !f_seg || !f_reg) {
+    if (!f_eris || !f_fomal || !f_fornax || !f_line || !f_depth || !f_norm || !f_seg || !f_reg) {
         fprintf(stderr, "Error opening raw frame input pipes or registry file.\n");
         return 1;
     }
 
-    uint8_t *buf_base = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_eris = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_fomal = (uint8_t *)malloc(FRAME_SIZE);
+    uint8_t *buf_fornax = (uint8_t *)malloc(FRAME_SIZE);
     uint8_t *buf_line = (uint8_t *)malloc(FRAME_SIZE);
     uint8_t *buf_depth = (uint8_t *)malloc(FRAME_SIZE);
     uint8_t *buf_norm = (uint8_t *)malloc(FRAME_SIZE);
     uint8_t *buf_seg = (uint8_t *)malloc(FRAME_SIZE);
     uint8_t *buf_out = (uint8_t *)malloc(FRAME_SIZE);
 
-    if (!buf_base || !buf_line || !buf_depth || !buf_norm || !buf_seg || !buf_out) {
+    if (!buf_eris || !buf_fomal || !buf_fornax || !buf_line || !buf_depth || !buf_norm || !buf_seg || !buf_out) {
         fprintf(stderr, "Memory allocation failure.\n");
         return 1;
     }
@@ -54,13 +58,16 @@ int main(int argc, char *argv[]) {
     // Process frame-by-frame until EOF
     int frame = 0;
     while (1) {
-        size_t r1 = fread(buf_base, 1, FRAME_SIZE, f_base);
+        size_t r1_e = fread(buf_eris, 1, FRAME_SIZE, f_eris);
+        size_t r1_fm = fread(buf_fomal, 1, FRAME_SIZE, f_fomal);
+        size_t r1_fn = fread(buf_fornax, 1, FRAME_SIZE, f_fornax);
         size_t r2 = fread(buf_line, 1, FRAME_SIZE, f_line);
         size_t r3 = fread(buf_depth, 1, FRAME_SIZE, f_depth);
         size_t r4 = fread(buf_norm, 1, FRAME_SIZE, f_norm);
         size_t r5 = fread(buf_seg, 1, FRAME_SIZE, f_seg);
 
-        if (r1 < FRAME_SIZE || r2 < FRAME_SIZE || r3 < FRAME_SIZE || r4 < FRAME_SIZE || r5 < FRAME_SIZE) {
+        if (r1_e < FRAME_SIZE || r1_fm < FRAME_SIZE || r1_fn < FRAME_SIZE ||
+            r2 < FRAME_SIZE || r3 < FRAME_SIZE || r4 < FRAME_SIZE || r5 < FRAME_SIZE) {
             break; // EOF reached
         }
 
@@ -80,11 +87,27 @@ int main(int argc, char *argv[]) {
         double edge_blend = 0.5 + ((reg.frame_modulation_factor + mq_boost) * 0.5);  // LineArt visibility mapping
 
         for (int i = 0; i < FRAME_SIZE; i += 3) {
-            uint8_t br = buf_base[i], bg = buf_base[i+1], bb = buf_base[i+2];
             uint8_t lr = buf_line[i], lg = buf_line[i+1], lb = buf_line[i+2];
             uint8_t dr = buf_depth[i], dg = buf_depth[i+1], db = buf_depth[i+2];
             uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
             uint8_t sr = buf_seg[i], sg = buf_seg[i+1], sb = buf_seg[i+2];
+
+            // Sample raw color based on target pixel mask routing
+            uint8_t br = 0, bg = 0, bb = 0;
+            int is_eris = (sb > 200 && sr < 50 && sg < 50);
+            int is_fomal = (sr > 200 && sg > 200 && sb < 50);
+            int is_fornax = (sr > 200 && sg < 50 && sb < 50);
+
+            if (is_eris) {
+                br = buf_eris[i]; bg = buf_eris[i+1]; bb = buf_eris[i+2];
+            } else if (is_fomal) {
+                br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+            } else if (is_fornax) {
+                br = buf_fornax[i]; bg = buf_fornax[i+1]; bb = buf_fornax[i+2];
+            } else {
+                // Background fallback to Fomalhaute base
+                br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+            }
 
             double d_val = dr / 255.0;
             double l_val = (255.0 - lr) / 255.0;
@@ -100,30 +123,30 @@ int main(int argc, char *argv[]) {
                 r_out = lr; g_out = lg; b_out = lb;
             } else if (style == 1) { // Stylized / Flat Casings
                 r_out = sr; g_out = sg; b_out = sb;
-                if (sr > 200 && sg > 200 && sb < 50) { // Yellow casing
+                if (is_fomal) { // Yellow casing
                     r_out = 230 + spec * 25;
                     g_out = 190 + spec * 25;
                     b_out = 30;
-                } else if (sb > 200 && sr < 50 && sg < 50) { // Blue casing
+                } else if (is_eris) { // Blue casing
                     r_out = 30;
                     g_out = 140 + spec * 50;
                     b_out = 240 + spec * 15;
-                } else if (sr > 200 && sg < 50 && sb < 50) { // Red connections
+                } else if (is_fornax) { // Red connections
                     r_out = 250;
                     g_out = 40;
                     b_out = 40;
                 }
             } else { // Photorealistic or Retro base
                 r_out = br * 1.3; g_out = bg * 1.3; b_out = bb * 1.3; // Boost base brightness
-                if (sr > 200 && sg > 200 && sb < 50) { // Yellow Mask: Casing B
+                if (is_fomal) { // Yellow Mask: Casing B (Fomalhaute)
                     r_out = br * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
                     g_out = bg * 1.1 + spec * (140 + reg.frame_modulation_factor * 60);
                     b_out = bb * 0.8;
-                } else if (sb > 200 && sr < 50 && sg < 50) { // Blue Mask: Casing A
+                } else if (is_eris) { // Blue Mask: Casing A (Eris)
                     r_out = br * 1.0 + spec * (160 + reg.frame_modulation_factor * 80);
                     g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
                     b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
-                } else if (sr > 200 && sg < 50 && sb < 50) { // Red Mask: Verlet Particles / Connections (Boosted)
+                } else if (is_fornax) { // Red Mask: Verlet Particles / Connections (Boosted Fornax)
                     r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120;
                     g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80;
                     b_out = bb * 1.2 + 50;
@@ -159,14 +182,18 @@ int main(int argc, char *argv[]) {
         frame++;
     }
 
-    fclose(f_base);
+    fclose(f_eris);
+    fclose(f_fomal);
+    fclose(f_fornax);
     fclose(f_line);
     fclose(f_depth);
     fclose(f_norm);
     fclose(f_seg);
     fclose(f_reg);
 
-    free(buf_base);
+    free(buf_eris);
+    free(buf_fomal);
+    free(buf_fornax);
     free(buf_line);
     free(buf_depth);
     free(buf_norm);

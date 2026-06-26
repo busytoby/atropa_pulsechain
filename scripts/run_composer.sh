@@ -5,7 +5,9 @@
 set -e
 
 # Default file paths
-BASE_VIDEO="ambient_manifold_photorealistic.mp4"
+ERIS_VIDEO="ambient_manifold_photorealistic.mp4"
+FOMAL_VIDEO="ambient_manifold_photorealistic.mp4"
+FORNAX_VIDEO="ambient_manifold_photorealistic.mp4"
 LINEART_VIDEO="manifold_layer_lineart.mp4"
 DEPTH_VIDEO="manifold_layer_depth.mp4"
 NORMAL_VIDEO="manifold_layer_normal.mp4"
@@ -18,7 +20,9 @@ RENDER_STYLE="photorealistic"
 usage() {
     echo "Usage: $0 [options]"
     echo "Options:"
-    echo "  --base <path>       Base background video (default: $BASE_VIDEO)"
+    echo "  --eris <path>       Eris base video (default: $ERIS_VIDEO)"
+    echo "  --fomalhaute <path> Fomalhaute base video (default: $FOMAL_VIDEO)"
+    echo "  --fornax <path>     Fornax base video (default: $FORNAX_VIDEO)"
     echo "  --lineart <path>    LineArt outline video (default: $LINEART_VIDEO)"
     echo "  --depth <path>      Depth map video (default: $DEPTH_VIDEO)"
     echo "  --normal <path>     Normal vector video (default: $NORMAL_VIDEO)"
@@ -33,7 +37,9 @@ usage() {
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --base) BASE_VIDEO="$2"; shift ;;
+        --eris) ERIS_VIDEO="$2"; shift ;;
+        --fomalhaute) FOMAL_VIDEO="$2"; shift ;;
+        --fornax) FORNAX_VIDEO="$2"; shift ;;
         --lineart) LINEART_VIDEO="$2"; shift ;;
         --depth) DEPTH_VIDEO="$2"; shift ;;
         --normal) NORMAL_VIDEO="$2"; shift ;;
@@ -53,10 +59,13 @@ if [ ! -f "scripts/libantigravity_interop.so" ]; then
     gcc -O3 -shared -fPIC scripts/libantigravity_interop.c -o scripts/libantigravity_interop.so
 fi
 
-if [ ! -f "scripts/manifold_interop_renderer" ]; then
-    echo "[COMPILER] Compiling C interop compositor..."
-    gcc -O3 scripts/manifold_interop_renderer.c -o scripts/manifold_interop_renderer -Lscripts/ -lantigravity_interop -lm -Wl,-rpath,./scripts/
+if [ -f "scripts/manifold_interop_renderer" ]; then
+    # Always rebuild since binary argument footprint changed
+    rm scripts/manifold_interop_renderer
 fi
+
+echo "[COMPILER] Compiling C interop compositor..."
+gcc -O3 scripts/manifold_interop_renderer.c -o scripts/manifold_interop_renderer -Lscripts/ -lantigravity_interop -lm -Wl,-rpath,./scripts/
 
 # Generate dynamic register state mapping from audio for beat modulation
 REGISTRY_FILE="tmp_registry.bin"
@@ -99,7 +108,9 @@ with open('$REGISTRY_FILE', 'wb') as f:
 
 echo "[PIPELINE] Launching fast C interop compositor..."
 ./scripts/manifold_interop_renderer \
-  <(ffmpeg -i "$BASE_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$ERIS_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$FOMAL_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
+  <(ffmpeg -i "$FORNAX_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
   <(ffmpeg -i "$LINEART_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
   <(ffmpeg -i "$DEPTH_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \
   <(ffmpeg -i "$NORMAL_VIDEO" -f rawvideo -pix_fmt rgb24 - 2>/dev/null) \

@@ -19,7 +19,9 @@ def run_compositor_benchmark():
     dummy_frame = bytes([128] * frame_size)
     
     files = {
-        "base": "tmp_bench_base.raw",
+        "eris": "tmp_bench_eris.raw",
+        "fomal": "tmp_bench_fomal.raw",
+        "fornax": "tmp_bench_fornax.raw",
         "line": "tmp_bench_line.raw",
         "depth": "tmp_bench_depth.raw",
         "norm": "tmp_bench_norm.raw",
@@ -59,7 +61,8 @@ def run_compositor_benchmark():
     with open(os.devnull, "wb") as devnull:
         process = subprocess.Popen([
             c_renderer, 
-            files["base"], files["line"], files["depth"], files["norm"], files["seg"], 
+            files["eris"], files["fomal"], files["fornax"],
+            files["line"], files["depth"], files["norm"], files["seg"], 
             registry_path
         ], stdout=devnull, stderr=subprocess.PIPE)
         
