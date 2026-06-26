@@ -479,6 +479,38 @@
                         </div>
                     </div>
 
+                    <!-- Chord & Harmonizer Panel -->
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-magenta); margin-top: 0; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; text-transform: uppercase;">Chord Harmonizer & Arpeggiator</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary);">CHORD TYPE</label>
+                                <select id="chordMode" class="input-glow" style="padding: 3px; font-size: 0.75rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta); width: 100%;">
+                                    <option value="off" selected>None (Single Note)</option>
+                                    <option value="major">Major Triad</option>
+                                    <option value="minor">Minor Triad</option>
+                                    <option value="diminished">Diminished Triad</option>
+                                    <option value="augmented">Augmented Triad</option>
+                                    <option value="fifth">Power Fifth (Couplet)</option>
+                                    <option value="octave">Octaves</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary);">PLAYBACK / ARP</label>
+                                <select id="chordArp" class="input-glow" style="padding: 3px; font-size: 0.75rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta); width: 100%;">
+                                    <option value="chord" selected>Simultaneous (Chord)</option>
+                                    <option value="up">Arpeggiate Up</option>
+                                    <option value="down">Arpeggiate Down</option>
+                                    <option value="random">Arpeggiate Random</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap;">ARP SPEED (ms):</label>
+                            <input type="range" id="synthArpSpeed" min="40" max="300" step="10" value="120" style="flex: 1;">
+                        </div>
+                    </div>
+
                     <!-- Step Sequencer Section -->
                     <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
                         <h4 style="color: var(--neon-blue); margin-top: 0; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">8-STEP SEQUENCER / EDITOR</h4>
@@ -1130,6 +1162,34 @@
             ]
         ];
 
+        class NPCRoutines {
+            static updateHunterDroid(s1X, s1Y, targetX, targetY, speed) {
+                const dx = targetX - s1X;
+                const dy = targetY - s1Y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 5) {
+                    return { x: s1X + (dx / dist) * speed, y: s1Y + (dy / dist) * speed };
+                }
+                return { x: s1X, y: s1Y };
+            }
+            static updateOrbitalMine(frame, radiusX = 120, radiusY = 75) {
+                const minePulse = Math.sin(frame * 0.05) * 10;
+                const x = 160 + Math.cos(-frame * 0.012) * (radiusX + minePulse);
+                const y = 100 + Math.sin(-frame * 0.012) * (radiusY + minePulse);
+                return { x, y };
+            }
+            static updateHelperDroid(s3X, s3Y, playerX, playerY, speed) {
+                const dx = playerX - s3X;
+                const dy = playerY - s3Y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 35) {
+                    return { x: s3X + (dx / dist) * speed, y: s3Y + (dy / dist) * speed };
+                }
+                return { x: s3X, y: s3Y };
+            }
+        }
+        window.NPCRoutines = NPCRoutines;
+
         class CartridgeRegistry {
             constructor() {
                 this.mappers = {
@@ -1572,7 +1632,9 @@
                     0xEE, 0x04, 0xD0, 0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0,
                     0x03, 0xCE, 0x00, 0xD0, 0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE,
                     0x00, 0xD0, 0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
-                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0, 0x60
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x02, 0x8D, 0x1F, 0xD0, // Auncient volumetric depth modulation
+                    0x60
                 ],
                 sprites: [
                     { id: 0, x: 144, y: 120 }, // Bounty Bob
@@ -1963,8 +2025,17 @@
                 addrs.push(55296 + startCol + i); vals.push(7);
             }
 
-            // Perform the single atomic initialization call!
-            const programBytes = ethers.getBytes(new Uint8Array(game.program));
+            // Perform the single atomic initialization call with a fully populated 8KB ROM image
+            const fullRomBytes = new Uint8Array(8192);
+            fullRomBytes.fill(0xEA); // Fill whole ROM with safe 6502 NOPs
+            for (let i = 0; i < game.program.length; i++) {
+                if (i < 8190) fullRomBytes[i] = game.program[i];
+            }
+            // Set C64 cartridge system entry vectors at the end of the 8KB ROM image
+            fullRomBytes[8190] = 0x00; // Reset Vector LSB
+            fullRomBytes[8191] = 0x20; // Reset Vector MSB (points to entrypoint address 8192 / 0x2000)
+
+            const programBytes = ethers.getBytes(fullRomBytes);
             await (await cpuContract.initializeGame(8192, programBytes, addrs, vals)).wait();
 
             // Clear Screen RAM (1024-2023) to Space (32) and Color RAM (55296-56295) to White (1) in separate calls!
@@ -1976,13 +2047,8 @@
                 try {
                     const header = "W0:" + gameId + "\x00";
                     const headerBytes = ethers.toUtf8Bytes(header);
-                    let dataLen = game.program.length;
-                    let paddedLen = Math.ceil(dataLen / 32) * 32;
-                    let payload = new Uint8Array(paddedLen);
-                    payload.set(game.program);
-                    const fullCmdBytes = ethers.concat([headerBytes, payload]);
                     await (await diskContract.executeDiskCommand(fullCmdBytes)).wait();
-                    console.log(`Installed ROM '${gameId}' (${dataLen} bytes) to 1541 disk system.`);
+                    console.log(`Installed ROM '${gameId}' (${fullRomBytes.length} bytes) to 1541 disk system.`);
                     refreshDiskDirectory();
                 } catch (diskErr) {
                     console.error("Failed to install ROM to 1541 disk system:", diskErr);
@@ -2222,10 +2288,63 @@
                         console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex} via EasyFlash register`);
                     }
                 }
+                // Generalized Inertia Coprocessor Registers ($D080 - $D083 -> 53376 - 53379)
+                if (addr === 53376) {
+                    window.coprocessorInertiaEnabled = (val & 0x01) === 1;
+                }
+                if (addr === 53377) {
+                    window.omegaShipAngle = (val / 255.0) * Math.PI * 2;
+                }
+
+                if (addr === 53378) {
+                    let vx = val;
+                    if (vx > 127) vx -= 256;
+                    window.omegaShipVX = vx / 10.0;
+                }
+                if (addr === 53379) {
+                    let vy = val;
+                    if (vy > 127) vy -= 256;
+                    window.omegaShipVY = vy / 10.0;
+                }
+                // Custom sound generator registers ($D084 - $D088 -> 53380 - 53384)
+                if (addr === 53380) {
+                    window.playProceduralSound && window.playProceduralSound('808', val);
+                }
+                if (addr === 53381) {
+                    window.playProceduralSound && window.playProceduralSound('303', val);
+                }
+                if (addr === 53382) {
+                    window.playProceduralSound && window.playProceduralSound('voice', val);
+                }
+                if (addr === 53383) {
+                    window.playProceduralSound && window.playProceduralSound('birds', val);
+                }
+                if (addr === 53384) {
+                    window.playProceduralSound && window.playProceduralSound('sequencer', val);
+                }
                 return { wait: async () => {} };
             }
 
             async peek(addr) {
+                // Generalized Inertia Coprocessor Registers ($D080 - $D083 -> 53376 - 53379)
+                if (addr === 53376) {
+                    return (window.coprocessorInertiaEnabled ? 1 : 0) | (interactiveKeys.up ? 2 : 0);
+                }
+                if (addr === 53377) {
+                    let angleVal = Math.round(((window.omegaShipAngle || 0) % (Math.PI * 2)) / (Math.PI * 2) * 255);
+                    if (angleVal < 0) angleVal += 256;
+                    return angleVal & 0xFF;
+                }
+                if (addr === 53378) {
+                    let vxVal = Math.round((window.omegaShipVX || 0) * 10);
+                    if (vxVal < 0) vxVal += 256;
+                    return vxVal & 0xFF;
+                }
+                if (addr === 53379) {
+                    let vyVal = Math.round((window.omegaShipVY || 0) * 10);
+                    if (vyVal < 0) vyVal += 256;
+                    return vyVal & 0xFF;
+                }
                 return this.memory[addr];
             }
 
@@ -2912,7 +3031,9 @@
             }
         });
 
-        // Voice 1 ADSR and Waveform logic
+
+
+        // Voice 1-3 ADSR and Waveform logic
         async function updateVoice1ADSR() {
             if (!musicContract) return;
             const attack = parseInt(document.getElementById("synthAttack").value);
@@ -2924,6 +3045,10 @@
             try {
                 await musicContract.poke(54277, ad);
                 await musicContract.poke(54278, sr);
+                await musicContract.poke(54284, ad);
+                await musicContract.poke(54285, sr);
+                await musicContract.poke(54291, ad);
+                await musicContract.poke(54292, sr);
             } catch (e) {}
         }
 
@@ -3059,7 +3184,7 @@
         }
 
         // Tweak reset listener to set preset back to custom
-        ["synthWaveform", "synthAttack", "synthDecay", "synthSustain", "synthRelease", "filterCutoff", "filterReso", "filterMode", "lfoToggle", "lfoRate", "lfoDepth"].forEach(id => {
+        ["synthWaveform", "synthAttack", "synthDecay", "synthSustain", "synthRelease", "filterCutoff", "filterReso", "filterMode", "lfoToggle", "lfoRate", "lfoDepth", "chordMode", "chordArp", "synthArpSpeed"].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener("input", () => {
@@ -4045,13 +4170,130 @@
         // Reuse a single global BroadcastChannel to prevent Garbage Collection overhead and thread blocking in Web Audio
         const elektuurSynthChannel = new BroadcastChannel('elektuur_synth');
 
+        let activeArpTimeouts = [];
+        function clearArpeggiator() {
+            activeArpTimeouts.forEach(t => clearTimeout(t));
+            activeArpTimeouts = [];
+        }
+
         async function pokeSIDFreq(freqVal, controlVal = 0x21) {
             try {
-                const lo = freqVal & 0xFF;
-                const hi = (freqVal >> 8) & 0xFF;
-                await musicContract.poke(54272, lo);
-                await musicContract.poke(54273, hi);
-                await musicContract.poke(54276, controlVal);
+                if (freqVal === 0 || (controlVal & 1) === 0) {
+                    clearArpeggiator();
+                    await musicContract.poke(54276, controlVal & 0xFE);
+                    await musicContract.poke(54283, controlVal & 0xFE);
+                    await musicContract.poke(54290, controlVal & 0xFE);
+                    return;
+                }
+
+                const mode = document.getElementById("chordMode") ? document.getElementById("chordMode").value : "off";
+                const arpMode = document.getElementById("chordArp") ? document.getElementById("chordArp").value : "chord";
+
+                // Generate chord notes
+                let notes = [freqVal];
+                if (mode === "major") {
+                    notes.push(Math.round(freqVal * 1.2599));
+                    notes.push(Math.round(freqVal * 1.4983));
+                } else if (mode === "minor") {
+                    notes.push(Math.round(freqVal * 1.1892));
+                    notes.push(Math.round(freqVal * 1.4983));
+                } else if (mode === "diminished") {
+                    notes.push(Math.round(freqVal * 1.1892));
+                    notes.push(Math.round(freqVal * 1.4142));
+                } else if (mode === "augmented") {
+                    notes.push(Math.round(freqVal * 1.2599));
+                    notes.push(Math.round(freqVal * 1.5874));
+                } else if (mode === "fifth") {
+                    notes.push(Math.round(freqVal * 1.4983));
+                    notes.push(Math.round(freqVal * 2.0));
+                } else if (mode === "octave") {
+                    notes.push(Math.round(freqVal * 2.0));
+                    notes.push(Math.round(freqVal * 4.0));
+                }
+
+                // Synth note controls for active NPC, helper, and player characters via peek/poke
+                if (typeof cpuContract !== "undefined" && cpuContract) {
+                    if (freqVal < 5000) {
+                        const direction = (freqVal % 2 === 0) ? -8 : 8;
+                        if (typeof window.omegaShipX !== "undefined") {
+                            window.omegaShipVX += direction * 0.15;
+                        }
+                        if (typeof window.s3_x !== "undefined") {
+                            window.s3_x += direction;
+                        }
+                    } else {
+                        if (typeof window.omegaWeaponStyle !== "undefined") {
+                            const styles = ["Standard", "Spiral", "Wave", "Homing"];
+                            const currentIdx = styles.indexOf(window.omegaWeaponStyle);
+                            window.omegaWeaponStyle = styles[(currentIdx + 1) % styles.length];
+                        }
+                        window.helperShield = Math.min(100, (window.helperShield || 100) + 15);
+                        cpuContract.poke(56320, 0xDF).catch(() => {}); // Fire action
+                    }
+                }
+
+                if (arpMode !== "chord" && notes.length > 1) {
+                    clearArpeggiator();
+                    let arpNotes = [...notes];
+                    if (arpMode === "down") arpNotes.reverse();
+                    
+                    let idx = 0;
+                    const arpSpeed = parseInt(document.getElementById("synthArpSpeed").value) || 120;
+                    
+                    const tick = async () => {
+                        if (arpMode === "random") {
+                            idx = Math.floor(Math.random() * arpNotes.length);
+                        }
+                        const f = arpNotes[idx];
+                        const lo = f & 0xFF;
+                        const hi = (f >> 8) & 0xFF;
+                        
+                        try {
+                            await musicContract.poke(54272, lo);
+                            await musicContract.poke(54273, hi);
+                            await musicContract.poke(54276, controlVal | 1); // Gate On
+                            // Gate off other voices to play arpeggio cleanly on voice 1
+                            await musicContract.poke(54283, controlVal & 0xFE);
+                            await musicContract.poke(54290, controlVal & 0xFE);
+                        } catch(e) {}
+                        
+                        idx = (idx + 1) % arpNotes.length;
+                        const timeoutId = setTimeout(tick, arpSpeed);
+                        activeArpTimeouts.push(timeoutId);
+                    };
+                    tick();
+                } else {
+                    clearArpeggiator();
+                    
+                    // Voice 1
+                    const lo1 = notes[0] & 0xFF;
+                    const hi1 = (notes[0] >> 8) & 0xFF;
+                    await musicContract.poke(54272, lo1);
+                    await musicContract.poke(54273, hi1);
+                    await musicContract.poke(54276, controlVal);
+
+                    // Voice 2
+                    if (notes.length > 1) {
+                        const lo2 = notes[1] & 0xFF;
+                        const hi2 = (notes[1] >> 8) & 0xFF;
+                        await musicContract.poke(54279, lo2);
+                        await musicContract.poke(54280, hi2);
+                        await musicContract.poke(54283, controlVal);
+                    } else {
+                        await musicContract.poke(54283, controlVal & 0xFE);
+                    }
+
+                    // Voice 3
+                    if (notes.length > 2) {
+                        const lo3 = notes[2] & 0xFF;
+                        const hi3 = (notes[2] >> 8) & 0xFF;
+                        await musicContract.poke(54286, lo3);
+                        await musicContract.poke(54287, hi3);
+                        await musicContract.poke(54290, controlVal);
+                    } else {
+                        await musicContract.poke(54290, controlVal & 0xFE);
+                    }
+                }
 
                 // Broadcast note changes to other DApp views (e.g. quaternion spaceflight sandbox)
                 try {
@@ -4318,6 +4560,18 @@
                         window.s1_z = spr1_z;
                         window.s2_z = spr2_z;
 
+                        // Modern hardware audio/shimmer register extensions
+                        const val2B = Number(await cpuContract.peek(53291)) || 0;
+                        const val2C = Number(await cpuContract.peek(53292)) || 0;
+                        if (val2B > 0) {
+                            if (window.playSynthTone) playSynthTone(val2B * 10, 150);
+                            cpuContract.poke(53291, 0, { nonce: datamostNonce++ }).catch(() => {});
+                        }
+                        if (val2C > 0) {
+                            window.omegaShake = val2C;
+                            cpuContract.poke(53292, 0, { nonce: datamostNonce++ }).catch(() => {});
+                        }
+
                         s0_x = spr0_x;
                         s0_y = spr0_y;
                         s1_x = spr1_x;
@@ -4370,14 +4624,28 @@
                         } catch (e) {}
 
                         const score = Number(await cpuContract.peek(3));
+                        // WinchesterMQ SCSI Handshake state machine emulation
+                        window.yulStorage = window.yulStorage || { 100: 0, 101: 0, 102: 0, 105: 0 };
+                        if (window.yulStorage[101] !== score) {
+                            window.yulStorage[101] = score;
+                            window.yulStorage[100] = 1; // REQ
+                        }
+                        if (window.yulStorage[100] === 1) {
+                            window.yulStorage[100] = 2; // ACK
+                            window.yulStorage[105]++;   // Increment SCSI loopback count
+                            window.yulStorage[100] = 0; // Return to IDLE
+                        }
+
                         const colStatusText = document.getElementById("collisionStatus");
-                        colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
-                        if (isCollision) {
-                            colStatusText.style.color = "var(--neon-magenta)";
-                            playSynthTone(100, 500); 
-                            pokeSIDFreq(1000, 0x21);
-                        } else {
-                            colStatusText.style.color = "var(--neon-blue)";
+                        if (colStatusText) {
+                            colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask} | WMQ SCSI Phase: ${window.yulStorage[100]} | Latch: ${window.yulStorage[101]} | Tx Count: ${window.yulStorage[105]}`;
+                            if (isCollision) {
+                                colStatusText.style.color = "var(--neon-magenta)";
+                                playSynthTone(100, 500); 
+                                pokeSIDFreq(1000, 0x21);
+                            } else {
+                                colStatusText.style.color = "var(--neon-blue)";
+                            }
                         }
 
                         drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
@@ -7692,9 +7960,100 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
         function drawOmegaRaceScreen() {
             omegaRaceFrame++;
-            // Black background space
-            ctx.fillStyle = "#000000";
+            // Screen shake setup
+            ctx.save();
+            window.omegaShake = window.omegaShake || 0;
+            if (window.omegaShake > 0) {
+                const shakeX = (Math.random() - 0.5) * window.omegaShake;
+                const shakeY = (Math.random() - 0.5) * window.omegaShake;
+                ctx.translate(shakeX, shakeY);
+                window.omegaShake *= 0.88;
+                if (window.omegaShake < 0.1) window.omegaShake = 0;
+            }
+
+            // Black background space with phosphor feedback trail decay
+            ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Initialize vector starfield
+            if (!window.omegaStars || window.omegaStars.length === 0) {
+                window.omegaStars = [];
+                for (let i = 0; i < 40; i++) {
+                    window.omegaStars.push({
+                        x: 12 + Math.random() * 296,
+                        y: 12 + Math.random() * 176,
+                        z: 1 + Math.floor(Math.random() * 3), // 1, 2, or 3 depth layers
+                        lastSoundTime: 0,
+                        // Each star gets its own unique mathematical function closure for visual modulation
+                        evalMod: (function(seed1, seed2, seed3) {
+                            return function(frame) {
+                                return Math.sin(frame * seed1) * Math.cos(frame * seed2 + seed3);
+                            };
+                        })(0.03 + Math.random() * 0.05, 0.01 + Math.random() * 0.03, Math.random() * Math.PI),
+                        // Each star gets its own unique mathematical function closure for audio frequency generation
+                        evalAudio: (function(baseFreq, modFreq) {
+                            return function() {
+                                return baseFreq + Math.sin(Date.now() * 0.005) * modFreq;
+                            };
+                        })(150 + Math.random() * 650, 50 + Math.random() * 100)
+                    });
+                }
+            }
+
+            // Update and draw starfield (behind other items)
+            window.omegaStars.forEach(star => {
+                // Drift opposite to ship movement
+                star.x -= (window.omegaShipVX || 0) * (0.8 / star.z);
+                star.y -= (window.omegaShipVY || 0) * (0.8 / star.z);
+
+                // Wrap stars within bounds
+                if (star.x < 12) star.x = 308;
+                if (star.x > 308) star.x = 12;
+                if (star.y < 12) star.y = 188;
+                if (star.y > 188) star.y = 12;
+
+                // Evaluate star's unique visual function closure
+                const starMod = star.evalMod(omegaRaceFrame);
+
+                const baseAlpha = star.z === 1 ? 0.8 : (star.z === 2 ? 0.5 : 0.2);
+                const modulatedAlpha = Math.max(0.1, Math.min(1.0, baseAlpha + starMod * 0.2));
+
+                // If player is close, trigger the star's unique audio function closure
+                const distToShip = Math.hypot(window.omegaShipX - star.x, window.omegaShipY - star.y);
+                if (distToShip < 12) {
+                    const now = Date.now();
+                    if (now - star.lastSoundTime > 600) {
+                        if (window.playSynthTone) {
+                            playSynthTone(star.evalAudio(), 80);
+                        }
+                        star.lastSoundTime = now;
+                    }
+                }
+
+                // Draw star based on modulated depth color
+                ctx.fillStyle = `rgba(255,255,255,${modulatedAlpha})`;
+                const size = star.z === 1 ? 1.8 : 1.2;
+                ctx.fillRect(star.x - size / 2, star.y - size / 2, size, size);
+            });
+
+            // Draw vector connections between stars in the same depth layer (constellation nodes)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.12)";
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < window.omegaStars.length; i++) {
+                for (let j = i + 1; j < window.omegaStars.length; j++) {
+                    const s1 = window.omegaStars[i];
+                    const s2 = window.omegaStars[j];
+                    if (s1.z === s2.z) {
+                        const dist = Math.hypot(s1.x - s2.x, s1.y - s2.y);
+                        if (dist < 45) {
+                            ctx.beginPath();
+                            ctx.moveTo(s1.x, s1.y);
+                            ctx.lineTo(s2.x, s2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
 
             // Get DNA values to modulate lines
             let strokeColor = "#39ff14"; // Default vector green
@@ -7718,14 +8077,30 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.shadowBlur = 10;
             ctx.shadowColor = strokeColor;
 
+            window.omegaLevel = window.omegaLevel || 1;
+
             // Outer Vector Box
             ctx.beginPath();
             ctx.rect(10 + pulseOffset, 10 + pulseOffset, 300 - pulseOffset * 2, 180 - pulseOffset * 2);
             ctx.stroke();
 
-            // Inner Vector Box
+            // Inner Vector Box / Barriers (Dynamic per level)
             ctx.beginPath();
-            ctx.rect(80 - pulseOffset, 60 - pulseOffset, 160 + pulseOffset * 2, 80 + pulseOffset * 2);
+            if (window.omegaLevel % 3 === 1) {
+                // Rectangle
+                ctx.rect(80 - pulseOffset, 60 - pulseOffset, 160 + pulseOffset * 2, 80 + pulseOffset * 2);
+            } else if (window.omegaLevel % 3 === 2) {
+                // Diamond
+                ctx.moveTo(160, 45 - pulseOffset);
+                ctx.lineTo(260 + pulseOffset, 100);
+                ctx.lineTo(160, 155 + pulseOffset);
+                ctx.lineTo(60 - pulseOffset, 100);
+                ctx.closePath();
+            } else {
+                // Dual Box Cross layout
+                ctx.rect(100 - pulseOffset, 80 - pulseOffset, 120 + pulseOffset * 2, 40 + pulseOffset * 2);
+                ctx.rect(130 - pulseOffset, 50 - pulseOffset, 60 + pulseOffset * 2, 100 + pulseOffset * 2);
+            }
             ctx.stroke();
 
             // Reset shadow
@@ -7741,25 +8116,151 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
 
             // Keyboard/Joystick steering inputs
+            window.omegaThrustParticles = window.omegaThrustParticles || [];
             if (interactiveKeys.left) {
                 window.omegaShipAngle -= 0.08;
             }
             if (interactiveKeys.right) {
                 window.omegaShipAngle += 0.08;
             }
-            if (interactiveKeys.up || interactiveKeys.fire || interactiveKeys.space) {
+            if (interactiveKeys.up) {
                 window.omegaShipVX += Math.cos(window.omegaShipAngle) * 0.18;
                 window.omegaShipVY += Math.sin(window.omegaShipAngle) * 0.18;
                 
-                // Draw rocket exhaust fire particle vector line
-                ctx.strokeStyle = "#ff8c00";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
+                // Spawn thrust particles with physical decay
                 const exhaustX = window.omegaShipX - Math.cos(window.omegaShipAngle) * 6;
                 const exhaustY = window.omegaShipY - Math.sin(window.omegaShipAngle) * 6;
-                ctx.moveTo(exhaustX, exhaustY);
-                ctx.lineTo(exhaustX - Math.cos(window.omegaShipAngle) * (6 + Math.random() * 8), exhaustY - Math.sin(window.omegaShipAngle) * (6 + Math.random() * 8));
+                for (let i = 0; i < 2; i++) {
+                    window.omegaThrustParticles.push({
+                        x: exhaustX,
+                        y: exhaustY,
+                        vx: -Math.cos(window.omegaShipAngle) * (1 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                        vy: -Math.sin(window.omegaShipAngle) * (1 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                        life: 20 + Math.random() * 15,
+                        color: Math.random() > 0.5 ? "#ff5500" : "#ffcc00"
+                    });
+                }
+            }
+
+            // Update & Draw Thrust Particles with physical decay
+            window.omegaThrustParticles = window.omegaThrustParticles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.96;
+                p.vy *= 0.96;
+                p.life--;
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 1;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5);
                 ctx.stroke();
+                ctx.shadowBlur = 0;
+                return p.life > 0;
+            });
+
+            // Cycle vector laser weapon styles with key C
+            window.omegaWeaponStyle = window.omegaWeaponStyle || "Standard";
+            if (interactiveKeys.c) {
+                const now = Date.now();
+                if (now - (window.lastWeaponSwitchTime || 0) > 300) {
+                    const styles = ["Standard", "Spiral", "Wave", "Homing"];
+                    const currentIdx = styles.indexOf(window.omegaWeaponStyle);
+                    window.omegaWeaponStyle = styles[(currentIdx + 1) % styles.length];
+                    window.lastWeaponSwitchTime = now;
+                    if (window.playSynthTone) playSynthTone(750, 80);
+                }
+            }
+
+            // Draw active weapon style status & Register/Memory HUD dashboard
+            ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+            ctx.font = "8px 'Courier New'";
+            ctx.fillText(`WEAPON: ${window.omegaWeaponStyle} (C to toggle)`, 20, 26);
+            ctx.fillText(`SHIP ADDR: $D000/$D001 [X: ${Math.round(window.s0_x || window.omegaShipX)}, Y: ${Math.round(window.s0_y || window.omegaShipY)}]`, 20, 36);
+            ctx.fillText(`DROID REG: $D002/$D003 [X: ${Math.round(window.s1_x || 160)}, Y: ${Math.round(window.s1_y || 100)}]`, 20, 46);
+            ctx.fillText(`MINE REG : $D004/$D005 [X: ${Math.round(window.s2_x || 160)}, Y: ${Math.round(window.s2_y || 100)}]`, 20, 56);
+            ctx.fillText(`LEVEL STATE: Level ${window.omegaLevel} ${window.omegaWarpReady ? '[WARP PORTAL ACTIVE IN CENTER]' : ''}`, 20, 66);
+
+            // Fire Laser on spacebar/fire check with cooldown
+            window.omegaLasers = window.omegaLasers || [];
+            window.lastOmegaLaserTime = window.lastOmegaLaserTime || 0;
+            if (interactiveKeys.fire) {
+                const now = Date.now();
+                if (now - window.lastOmegaLaserTime > 300) {
+                    const currentStyle = window.omegaWeaponStyle;
+                    const startX = window.omegaShipX + Math.cos(window.omegaShipAngle) * 8;
+                    const startY = window.omegaShipY + Math.sin(window.omegaShipAngle) * 8;
+                    const vx = Math.cos(window.omegaShipAngle) * 4;
+                    const vy = Math.sin(window.omegaShipAngle) * 4;
+
+                    window.omegaLasers.push({
+                        x: startX,
+                        y: startY,
+                        vx: vx,
+                        vy: vy,
+                        life: 60,
+                        initialLife: 60,
+                        style: currentStyle,
+                        evalPos: (function(style, sx, sy, dx, dy, angle) {
+                            if (style === "Spiral") {
+                                return function(t) {
+                                    const r = t * 0.9;
+                                    return {
+                                        x: sx + dx * t + Math.cos(t * 0.3) * r,
+                                        y: sy + dy * t + Math.sin(t * 0.3) * r
+                                    };
+                                };
+                            } else if (style === "Wave") {
+                                return function(t) {
+                                    const perpX = -dy / 4;
+                                    const perpY = dx / 4;
+                                    const amp = Math.sin(t * 0.4) * 8;
+                                    return {
+                                        x: sx + dx * t + perpX * amp,
+                                        y: sy + dy * t + perpY * amp
+                                    };
+                                };
+                            } else if (style === "Homing") {
+                                return function(t) {
+                                    // Target the nearest droid/mine (s1 or s2)
+                                    const targetX = (window.s1_x + window.s2_x) / 2;
+                                    const targetY = (window.s1_y + window.s2_y) / 2;
+                                    const progress = Math.min(1.0, t / 40.0);
+                                    const stdX = sx + dx * t;
+                                    const stdY = sy + dy * t;
+                                    return {
+                                        x: stdX * (1 - progress) + targetX * progress,
+                                        y: stdY * (1 - progress) + targetY * progress
+                                    };
+                                };
+                            } else {
+                                return function(t) {
+                                    return { x: sx + dx * t, y: sy + dy * t };
+                                };
+                            }
+                        })(currentStyle, startX, startY, vx, vy, window.omegaShipAngle)
+                    });
+                    window.lastOmegaLaserTime = now;
+
+                    // Play type-specific synthesizer tones
+                    if (window.playSynthTone) {
+                        if (currentStyle === "Spiral") {
+                            playSynthTone(350, 50);
+                            setTimeout(() => playSynthTone(550, 50), 50);
+                            setTimeout(() => playSynthTone(750, 50), 100);
+                        } else if (currentStyle === "Wave") {
+                            playSynthTone(600, 60);
+                            setTimeout(() => playSynthTone(450, 60), 60);
+                        } else if (currentStyle === "Homing") {
+                            playSynthTone(400, 80);
+                            setTimeout(() => playSynthTone(850, 120), 80);
+                        } else {
+                            playSynthTone(500, 100);
+                        }
+                    }
+                }
             }
 
             // Apply movement & friction
@@ -7782,6 +8283,109 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 cpuContract.memory[0xD001] = Math.round(window.s0_y);
             }
 
+            // Initialize enemy and helper coordinates if missing
+            if (typeof window.s1_x === "undefined") { window.s1_x = 160 + 110; window.s1_y = 100; }
+            if (typeof window.s2_x === "undefined") { window.s2_x = 160 - 120; window.s2_y = 100; }
+            if (typeof window.s3_x === "undefined") { window.s3_x = 160; window.s3_y = 140; }
+
+            // Helper Droid (s3) follows the player at a friendly distance and transfers energy/keycodes
+            const s3Update = NPCRoutines.updateHelperDroid(window.s3_x, window.s3_y, window.s0_x, window.s0_y, 0.9);
+            window.s3_x = s3Update.x;
+            window.s3_y = s3Update.y;
+            const helpDist = Math.hypot(window.s0_x - window.s3_x, window.s0_y - window.s3_y);
+
+            // Shield/Energy balance loop
+            window.omegaShield = window.omegaShield || 100;
+            window.helperShield = window.helperShield || 100;
+            if (helpDist < 30 && Math.abs(window.omegaShield - window.helperShield) > 2) {
+                const transfer = (window.omegaShield > window.helperShield) ? 0.5 : -0.5;
+                window.omegaShield -= transfer;
+                window.helperShield += transfer;
+                // Draw energy link
+                ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(window.s0_x, window.s0_y);
+                ctx.lineTo(window.s3_x, window.s3_y);
+                ctx.stroke();
+            }
+
+            // WinchesterMQ keycode verification on overlap
+            if (helpDist < 15) {
+                window.yulStorage = window.yulStorage || { 100: 0, 101: 0, 102: 0, 105: 0 };
+                if (window.yulStorage[102] !== 32) {
+                    window.yulStorage[102] = 32; // Set keycode 32
+                    if (window.playSynthTone) playSynthTone(600, 50);
+                }
+            }
+
+            // Move enemies along smooth paths using common NPCRoutines strategies
+            window.omegaTargetShip = typeof window.omegaTargetShip === "undefined" ? true : window.omegaTargetShip;
+            if (omegaRaceFrame % 180 === 0) {
+                window.omegaTargetShip = Math.random() > 0.4;
+            }
+            const chaseTargetX = window.omegaTargetShip ? window.s0_x : window.s3_x;
+            const chaseTargetY = window.omegaTargetShip ? window.s0_y : window.s3_y;
+            const s1Update = NPCRoutines.updateHunterDroid(window.s1_x, window.s1_y, chaseTargetX, chaseTargetY, 0.85);
+            window.s1_x = s1Update.x;
+            window.s1_y = s1Update.y;
+
+            // Mine (s2) orbits counter-clockwise with a weaving radial wave oscillation
+            const s2Update = NPCRoutines.updateOrbitalMine(omegaRaceFrame);
+            window.s2_x = s2Update.x;
+            window.s2_y = s2Update.y;
+
+            // Update lasers & detect collision
+            let hitTarget = false;
+            window.omegaLasers = window.omegaLasers.filter(laser => {
+                laser.life--;
+                const t = laser.initialLife - laser.life;
+                const pos = laser.evalPos(t);
+                laser.x = pos.x;
+                laser.y = pos.y;
+
+                // Wrap lasers
+                if (laser.x < 12) laser.x = 308;
+                if (laser.x > 308) laser.x = 12;
+                if (laser.y < 12) laser.y = 188;
+                if (laser.y > 188) laser.y = 12;
+
+                // Check collision with Droid (s1)
+                const dist1 = Math.hypot(laser.x - window.s1_x, laser.y - window.s1_y);
+                if (dist1 < 12) {
+                    window.s1_x = 40 + Math.random() * 240;
+                    window.s1_y = 30 + Math.random() * 140;
+                    hitTarget = true;
+                    window.omegaShake = 6;
+                    if (window.playSynthTone) playSynthTone(150, 300);
+                    return false;
+                }
+
+                // Check collision with Mine (s2)
+                const dist2 = Math.hypot(laser.x - window.s2_x, laser.y - window.s2_y);
+                if (dist2 < 12) {
+                    window.s2_x = 40 + Math.random() * 240;
+                    window.s2_y = 30 + Math.random() * 140;
+                    hitTarget = true;
+                    window.omegaShake = 6;
+                    if (window.playSynthTone) playSynthTone(150, 300);
+                    return false;
+                }
+
+                // Draw laser vector line
+                ctx.strokeStyle = "#00ffff";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = "#00ffff";
+                ctx.beginPath();
+                ctx.moveTo(laser.x, laser.y);
+                ctx.lineTo(laser.x - laser.vx * 1.5, laser.y - laser.vy * 1.5);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                return laser.life > 0;
+            });
+
             const s0_x = Number(window.s0_x) || 160;
             const s0_y = Number(window.s0_y) || 120;
             const s1_x = Number(window.s1_x) || 100;
@@ -7789,14 +8393,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const s2_x = Number(window.s2_x) || 220;
             const s2_y = Number(window.s2_y) || 150;
 
-            // Determine collisions dynamically
+            // Determine collision with player
             const dx1 = Math.abs(s0_x - s2_x);
             const dy1 = Math.abs(s0_y - s2_y);
-            const hasCollision = (dx1 < 16 && dy1 < 16);
+            const hasCollision = (dx1 < 16 && dy1 < 16) || hitTarget;
+            if (dx1 < 16 && dy1 < 16) {
+                window.omegaShake = 12;
+            }
 
             // Draw player ship as a vector delta-wing triangle
             ctx.strokeStyle = strokeColor;
             ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = strokeColor;
             ctx.beginPath();
             const shipLen = 8;
             const shipWidth = 5;
@@ -7811,14 +8420,58 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.lineTo(backRightX, backRightY);
             ctx.closePath();
             ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            if (hitTarget) {
+                if (typeof cpuContract !== "undefined" && cpuContract) {
+                    cpuContract.peek(4).then(scoreVal => {
+                        const nextScore = (Number(scoreVal) + 1) % 100;
+                        cpuContract.poke(4, nextScore).catch(() => {});
+                        if (nextScore > 0 && nextScore % 5 === 0) {
+                            window.omegaWarpReady = true;
+                        }
+                    }).catch(() => {});
+                }
+            }
+
+            // Draw Dynamic Vector Warp Gate portal if active
+            if (window.omegaWarpReady) {
+                ctx.strokeStyle = "#ff00ff";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#ff00ff";
+                ctx.beginPath();
+                ctx.arc(160, 100, 15 + Math.sin(omegaRaceFrame * 0.15) * 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Collision with warp gate
+                const distToWarp = Math.hypot(window.omegaShipX - 160, window.omegaShipY - 100);
+                if (distToWarp < 20) {
+                    window.omegaLevel = (window.omegaLevel || 1) + 1;
+                    window.omegaWarpReady = false;
+                    window.omegaShake = 25;
+                    if (window.playSynthTone) playSynthTone(900, 400);
+                    
+                    // Reposition ship safely
+                    window.omegaShipX = 160;
+                    window.omegaShipY = 160;
+                    window.omegaShipVX = 0;
+                    window.omegaShipVY = 0;
+                }
+            }
 
             // Render other C64 sprites (droid, bullets) using normal icon sprite rendering
             drawSpriteIcon(1, s1_x, s1_y, "#ffcc00", hasCollision);
             drawSpriteIcon(2, s2_x, s2_y, "#ff007f", hasCollision);
+            drawSpriteIcon(3, window.s3_x, window.s3_y, "#00f2fe", false);
 
             if (window.dnaFrames && window.dnaFrames.length > 0) {
                 window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
             }
+            
+            // Restore screen shake coordinate translation
+            ctx.restore();
         }
 
         let thrustFrame = 0;
