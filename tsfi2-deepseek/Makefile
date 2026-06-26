@@ -527,3 +527,7 @@ test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
 
+.PHONY: profile
+profile:
+	bash benchmarks/profiler_suite/run_benchmarks.sh
+
