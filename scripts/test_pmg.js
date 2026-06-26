@@ -39,7 +39,9 @@ async function main() {
     const pmgInterface = new ethers.Interface([
         "function updatePmg(uint8 isMissile, uint8 index, uint8 hpos, uint8 size, uint8 color) external returns (uint256)",
         "function getPmgState(uint8 isMissile, uint8 index) external view returns (uint8 hpos, uint8 size, uint8 color)",
-        "function checkPmgCollisions() external returns (uint8)"
+        "function checkPmgCollisions() external returns (uint8)",
+        "function projectWeaponToDamage(uint8 isMissile, uint8 index, uint8 targetIndex) external returns (uint256)",
+        "function getDamageAccumulator(uint8 targetIndex) external view returns (uint256)"
     ]);
 
     const pmgContract = new ethers.Contract(pmgAddress, pmgInterface, deployer);
@@ -82,6 +84,35 @@ async function main() {
         process.exit(1);
     }
     console.log("SUCCESS: Overlap collision correctly identified!");
+
+    // Test 4: Verify Weapon Synthesis projecting to Damage Accumulators
+    console.log("\n=== TEST 4: Projecting Weapons to Damage Accumulators ===");
+    
+    // Project Merlin's fireball (isMissile=1, index=2) onto Player 0 (targetIndex=0)
+    console.log("Projecting Merlin Fireball (25 damage) onto Player 0...");
+    const txProj1 = await pmgContract.projectWeaponToDamage(1, 2, 0);
+    await txProj1.wait();
+    
+    let dmg = await pmgContract.getDamageAccumulator(0);
+    console.log(`Player 0 Accumulated Damage: ${dmg} (Expected: 25)`);
+    if (Number(dmg) !== 25) {
+        console.error("FAIL: Incorrect damage accumulated for Merlin!");
+        process.exit(1);
+    }
+    
+    // Project Questor's Arrow (isMissile=1, index=3) onto Player 0 (targetIndex=0)
+    console.log("Projecting Questor Arrow (10 damage) onto Player 0...");
+    const txProj2 = await pmgContract.projectWeaponToDamage(1, 3, 0);
+    await txProj2.wait();
+    
+    dmg = await pmgContract.getDamageAccumulator(0);
+    console.log(`Player 0 Accumulated Damage: ${dmg} (Expected: 35)`);
+    if (Number(dmg) !== 35) {
+        console.error("FAIL: Incorrect cumulative damage accumulated!");
+        process.exit(1);
+    }
+    
+    console.log("SUCCESS: Weapon synthesizer successfully projected damage to accumulators!");
 }
 
 main().catch(err => {

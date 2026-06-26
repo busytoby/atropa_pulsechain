@@ -139,6 +139,59 @@ object "PmgSystem" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD 6: projectWeaponToDamage(uint8 isMissile, uint8 index, uint8 targetIndex) -> uint256
+            // Selector: 0x8d4ec2f1
+            // ----------------------------------------------------------------
+            if eq(selector, 0x8d4ec2f1) {
+                let isMissile := and(calldataload(4), 0xFF)
+                let index := and(calldataload(36), 0xFF)
+                let targetIndex := and(calldataload(68), 0xFF)
+
+                if gt(index, 3) { revert(0, 0) }
+                if gt(targetIndex, 3) { revert(0, 0) }
+
+                let damage := 0
+                if isMissile {
+                    // Missile weapon projection values
+                    if eq(index, 0) { damage := 15 } // Thor's Axe
+                    if eq(index, 1) { damage := 12 } // Thyra's Sword
+                    if eq(index, 2) { damage := 25 } // Merlin's Fireball
+                    if eq(index, 3) { damage := 10 } // Questor's Arrow
+                }
+                if iszero(isMissile) {
+                    // Player melee projection values
+                    if eq(index, 0) { damage := 10 }
+                    if eq(index, 1) { damage := 8 }
+                    if eq(index, 2) { damage := 5 }
+                    if eq(index, 3) { damage := 6 }
+                }
+
+                // Storage slot mapping for target player's damage accumulator
+                let slot := getRegKey(add(54000, targetIndex))
+                let current_dmg := sload(slot)
+                let new_dmg := add(current_dmg, damage)
+                sstore(slot, new_dmg)
+
+                mstore(0x00, new_dmg)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 7: getDamageAccumulator(uint8 targetIndex) -> uint256
+            // Selector: 0x2b3f6603
+            // ----------------------------------------------------------------
+            if eq(selector, 0x2b3f6603) {
+                let targetIndex := and(calldataload(4), 0xFF)
+                if gt(targetIndex, 3) { revert(0, 0) }
+
+                let slot := getRegKey(add(54000, targetIndex))
+                let current_dmg := sload(slot)
+
+                mstore(0x00, current_dmg)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 4: loadDnaGenome(uint256 dnaRaw) -> void
             // Selector: 0xd6a111a9 (Parses 12-byte genome and configures P0 size/color registers)
             // ----------------------------------------------------------------
