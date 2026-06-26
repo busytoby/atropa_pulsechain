@@ -252,6 +252,7 @@
                             <option value="ultima">⚔️ Ultima-on-Chain (Tilemap RPG)</option>
                             <option value="miner2049er">⛏️ Miner 2049er (Micro Fun Cartridge)</option>
                             <option value="gorf">👾 Gorf (Commodore MAX/Ultimax Cartridge)</option>
+                            <option value="radarratrace">🚗 Radar Rat Race (Commodore MAX/Ultimax Cartridge)</option>
                             <option value="dinoeggs">🦖 Dino Eggs (Micro Fun Cartridge)</option>
                             <option value="bluemax">✈️ Blue Max (Synapse Cartridge)</option>
                             <option value="impossiblemission">🕵️ Impossible Mission (Epyx Cartridge)</option>
@@ -278,6 +279,25 @@
                             <button class="btn btn-secondary" id="btnToggleShared" style="width: 100%; border-color: var(--neon-blue); color: var(--text-primary);">Join Shared</button>
                             <button class="btn btn-secondary" id="btnSaveSnapshot" style="width: 100%; border-color: #00ffcc; color: var(--text-primary);">💾 Save State</button>
                             <button class="btn btn-secondary" id="btnLoadSnapshot" style="width: 100%; border-color: #ffcc00; color: var(--text-primary);">📂 Load State</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 191, 255, 0.15); border-color: #00bfff;">
+                    <h2><span class="icon">🔍</span> Cartridge Binary Inspector</h2>
+                    <p class="description">Upload a raw C64 cartridge file (.bin or .crt) to inspect its mappers, bank configuration, and flash it directly to the virtual machine.</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                        <input type="file" id="cartridgeFileInput" accept=".bin,.crt" style="display: none;">
+                        <button class="btn btn-secondary" id="btnSelectCartridge" style="width: 100%; border-color: #00bfff; color: var(--text-primary);">Select Cartridge File</button>
+                        <div id="cartridgeFileDetails" style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 191, 255, 0.2); font-family: monospace; font-size: 0.85rem; display: none;">
+                            <div><strong>Name:</strong> <span id="inspectCartName">-</span></div>
+                            <div><strong>Size:</strong> <span id="inspectCartSize">-</span> bytes</div>
+                            <div><strong>Format/Magic:</strong> <span id="inspectCartMagic">-</span></div>
+                            <div><strong>Mapper Type:</strong> <span id="inspectCartMapper">-</span></div>
+                            <div><strong>Initial Program Offset:</strong> <span id="inspectCartOffset">-</span></div>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-primary" id="btnFlashInspected" style="width: 100%; background: #00bfff; border-color: #00bfff; display: none;">Flash to ZMM VM</button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -1742,6 +1762,102 @@
                     { id: 3, x: 160, y: 120 }
                 ]
             },
+            radarratrace: {
+                name: "Radar Rat Race (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                spriteLayouts: [
+                    // Sprite 0: Mouse Player
+                    [
+                        0x003c00, 0x007e00, 0x00ff00, 0x01ff80,
+                        0x03db40, 0x07c3e0, 0x0ffff0, 0x1ffffe,
+                        0x3db5bc, 0x7c7e3e, 0xffffff, 0xffffff,
+                        0x7c7e3e, 0x3db5bc, 0x1ffff8, 0x0ffff0,
+                        0x07c3e0, 0x03db40, 0x01ff80, 0x007e00,
+                        0x003c00
+                    ],
+                    // Sprite 1: Rat 1
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01db80, 0x03c3c0, 0x07e7e0, 0x0ffff0,
+                        0x1dbdb8, 0x3c3c3c, 0x7e3c7e, 0xffffff,
+                        0x7e3c7e, 0x3c3c3c, 0x1dbdb8, 0x0ffff0,
+                        0x07e7e0, 0x03c3c0, 0x01db80, 0x00ff00,
+                        0x007e00
+                    ],
+                    // Sprite 2: Rat 2
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01db80, 0x03c3c0, 0x07e7e0, 0x0ffff0,
+                        0x1dbdb8, 0x3c3c3c, 0x7e3c7e, 0xffffff,
+                        0x7e3c7e, 0x3c3c3c, 0x1dbdb8, 0x0ffff0,
+                        0x07e7e0, 0x03c3c0, 0x01db80, 0x00ff00,
+                        0x007e00
+                    ],
+                    // Sprite 3: Smoke Screen
+                    [
+                        0x000000, 0x001800, 0x003c00, 0x007e00,
+                        0x00ff00, 0x01c380, 0x03c3c0, 0x0781e0,
+                        0x0ffff0, 0x1e0788, 0x3c03c4, 0x7801e2,
+                        0xf000f1, 0xe00070, 0xc00030, 0x800010,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ],
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x10, 0xF0, 0x06, 0xEE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xCE, 0x02, 0xD0,
+                    0xAD, 0x05, 0xD0,
+                    0xF0, 0x15,
+                    0x38,
+                    0xAD, 0x05, 0xD0,
+                    0xE9, 0x02,
+                    0x8D, 0x05, 0xD0,
+                    0xC9, 0x30,
+                    0xB0, 0x08,
+                    0xA9, 0xD0,
+                    0x8D, 0x05, 0xD0,
+                    0xAD, 0x00, 0xDC,
+                    0xA8,
+                    0x29, 0x04,
+                    0xD0, 0x03,
+                    0xCE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x08,
+                    0xD0, 0x03,
+                    0xEE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x01,
+                    0xD0, 0x03,
+                    0xCE, 0x01, 0xD0,
+                    0x98,
+                    0x29, 0x02,
+                    0xD0, 0x03,
+                    0xEE, 0x01, 0xD0,
+                    0x98,
+                    0x29, 0x10,
+                    0xD0, 0x0E,
+                    0xAD, 0x00, 0xD0,
+                    0x8D, 0x06, 0xD0,
+                    0xAD, 0x01, 0xD0,
+                    0x8D, 0x07, 0xD0,
+                    0xA5, 0xF0,
+                    0x29, 0x03,
+                    0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x8D, 0x22, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 110 },
+                    { id: 1, x: 70, y: 60 },
+                    { id: 2, x: 220, y: 160 },
+                    { id: 3, x: 0, y: 0 }
+                ]
+            },
             dinoeggs: {
                 name: "Dino Eggs",
                 spriteEnableMask: 15,
@@ -2162,6 +2278,20 @@
             if (gameId === "impossiblemission") {
                 setTimeout(() => {
                     speakText("ANOTHER VISITOR. STAY A WHILE... STAY FOREVER!").catch(err => console.error("Speech failed:", err));
+                }, 1000);
+            } else if (gameId === "gorf") {
+                setTimeout(() => {
+                    const quotes = [
+                        "GORFIAN EMPIRE STRIKES BACK!",
+                        "PREPARE FOR DOOM, SPACE CADET!",
+                        "MY NAME IS GORF.",
+                        "YOU ARE CONQUERED!",
+                        "GORFIAN ROBOT SUPREME.",
+                        "LONG LIVE GORF!",
+                        "GORFIAN ROBOT ARMY."
+                    ];
+                    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                    speakText(randomQuote).catch(err => console.error("Speech failed:", err));
                 }, 1000);
             }
 
@@ -3567,6 +3697,37 @@
             }
         });
 
+        // Gorf Demoscene settings
+        window.gorfRasterSpeed = 1.0;
+        window.gorfRasterSpacing = 1.0;
+        window.gorfRasterPalette = 'retro';
+        window.speakGorfPhrase = function(phrase) {
+            if (typeof window.speakText === 'function') {
+                window.speakText(phrase).catch(e => console.error("Speech failed:", e));
+            } else {
+                console.log("Speech synthesis requested:", phrase);
+            }
+        };
+        
+        const gorfSpeedEl = document.getElementById("gorfRasterSpeedInput");
+        if (gorfSpeedEl) {
+            gorfSpeedEl.addEventListener("input", (e) => {
+                window.gorfRasterSpeed = parseFloat(e.target.value);
+            });
+        }
+        const gorfSpacingEl = document.getElementById("gorfRasterSpacingInput");
+        if (gorfSpacingEl) {
+            gorfSpacingEl.addEventListener("input", (e) => {
+                window.gorfRasterSpacing = parseFloat(e.target.value);
+            });
+        }
+        const gorfPaletteEl = document.getElementById("gorfRasterPaletteInput");
+        if (gorfPaletteEl) {
+            gorfPaletteEl.addEventListener("change", (e) => {
+                window.gorfRasterPalette = e.target.value;
+            });
+        }
+
         // Load Game cartridge selection
         document.getElementById("btnLoadGame").addEventListener("click", async () => {
             if (!cpuContract) return;
@@ -3631,6 +3792,95 @@
                 console.error("Failed to load state snapshot:", err);
             }
         });
+
+        // Cartridge Binary Inspector Event Listeners
+        const cartridgeFileInput = document.getElementById("cartridgeFileInput");
+        const btnSelectCartridge = document.getElementById("btnSelectCartridge");
+        const cartridgeFileDetails = document.getElementById("cartridgeFileDetails");
+        const inspectCartName = document.getElementById("inspectCartName");
+        const inspectCartSize = document.getElementById("inspectCartSize");
+        const inspectCartMagic = document.getElementById("inspectCartMagic");
+        const inspectCartMapper = document.getElementById("inspectCartMapper");
+        const inspectCartOffset = document.getElementById("inspectCartOffset");
+        const btnFlashInspected = document.getElementById("btnFlashInspected");
+
+        let inspectedRomBytes = null;
+        let parsedInspectedCart = null;
+
+        if (btnSelectCartridge) {
+            btnSelectCartridge.addEventListener("click", () => {
+                cartridgeFileInput.click();
+            });
+        }
+
+        if (cartridgeFileInput) {
+            cartridgeFileInput.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                inspectCartName.textContent = file.name;
+                inspectCartSize.textContent = file.size.toLocaleString();
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const rawBuffer = evt.target.result;
+                    inspectedRomBytes = new Uint8Array(rawBuffer);
+
+                    // Decode details
+                    let magicStr = "None/Generic";
+                    if (inspectedRomBytes.length >= 16) {
+                        magicStr = String.fromCharCode(...inspectedRomBytes.slice(0, 5));
+                    }
+                    inspectCartMagic.textContent = magicStr;
+
+                    parsedInspectedCart = window.cartridgeRegistry.parseCartridge(inspectedRomBytes);
+                    if (parsedInspectedCart) {
+                        inspectCartMapper.textContent = parsedInspectedCart.name;
+                        inspectCartOffset.textContent = "$8000 (Auncient C64 Mapping)";
+                        btnFlashInspected.style.display = "block";
+                    } else {
+                        // Fallback logic for raw .bin files without custom headers - treat as Generic ROM (Mapper 0)
+                        inspectCartMapper.textContent = "Generic ROM (Auncient Mapping)";
+                        inspectCartOffset.textContent = "$8000";
+                        parsedInspectedCart = {
+                            name: file.name,
+                            spriteEnableMask: 15,
+                            program: Array.from(inspectedRomBytes),
+                            sprites: [{ id: 0, x: 120, y: 120 }],
+                            pokes: [{ addr: 53269, val: 15 }]
+                        };
+                        btnFlashInspected.style.display = "block";
+                    }
+
+                    cartridgeFileDetails.style.display = "block";
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        if (btnFlashInspected) {
+            btnFlashInspected.addEventListener("click", async () => {
+                if (!parsedInspectedCart) return;
+                
+                // Format parsed cartridge info as ethers hex string or custom object
+                // If it is a generic ROM, we can register it or inject it directly.
+                // We'll generate a hex string and pass it to loadGame which handles starting with "0x"
+                const hexString = "0x" + Array.from(inspectedRomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                btnFlashInspected.innerText = "Flashing...";
+                btnFlashInspected.disabled = true;
+                try {
+                    await loadGame(hexString);
+                    document.getElementById("activeGameText").textContent = parsedInspectedCart.name + " (Inspected)";
+                } catch (err) {
+                    console.error("Failed to flash inspected cartridge:", err);
+                    alert("Flash failed. Check console details.");
+                } finally {
+                    btnFlashInspected.innerText = "Flash to ZMM VM";
+                    btnFlashInspected.disabled = false;
+                }
+            });
+        }
 
         document.getElementById("btnToggleDemo").addEventListener("click", () => {
             isDemoModeActive = !isDemoModeActive;
@@ -4668,12 +4918,18 @@
                         const spr1_y = Number(await cpuContract.peek(0xd003));
                         const spr2_x = Number(await cpuContract.peek(0xd004));
                         const spr2_y = Number(await cpuContract.peek(0xd005));
+                        const spr3_x = Number(await cpuContract.peek(0xd006));
+                        const spr3_y = Number(await cpuContract.peek(0xd007));
                         const spr0_z = Number(await cpuContract.peek(53279)) || 0;
                         const spr1_z = Number(await cpuContract.peek(53280)) || 0;
                         const spr2_z = Number(await cpuContract.peek(53281)) || 0;
+                        const spr3_z = Number(await cpuContract.peek(53282)) || 0;
                         window.s0_z = spr0_z;
                         window.s1_z = spr1_z;
                         window.s2_z = spr2_z;
+                        window.s3_z = spr3_z;
+                        window.s3_x = spr3_x;
+                        window.s3_y = spr3_y;
 
                         // Modern hardware audio/shimmer register extensions
                         const val2B = Number(await cpuContract.peek(53291)) || 0;
@@ -5046,7 +5302,30 @@
             "SYNTHESIZER": ["S", "I1", "N", "TH", "UH1", "S", "AY", "Z", "ER"],
             "GAUNTLET": ["G", "AW1", "N", "T", "L", "EH1", "T"],
             "ATROPA": ["AH1", "T", "R", "O", "P", "AH1"],
-            "PULSECHAIN": ["P", "UH1", "L", "S", "CH", "AY", "N"]
+            "PULSECHAIN": ["P", "UH1", "L", "S", "CH", "AY", "N"],
+            "GORF": ["G", "AW2", "O", "R", "F"],
+            "GORFIAN": ["G", "AW2", "O", "R", "F", "E1", "Y1", "UN"],
+            "EMPIRE": ["EH1", "M", "P", "AY", "R"],
+            "STRIKES": ["S", "T", "R", "AY", "K", "S"],
+            "BACK": ["B", "KAE", "K"],
+            "PREPARE": ["P", "R", "E1", "P", "EH1", "R"],
+            "FOR": ["F", "O", "UR"],
+            "DOOM": ["D", "OO1", "OO", "M"],
+            "SPACE": ["S", "P", "AY", "S"],
+            "CADET": ["K", "UH2", "D", "EH1", "T"],
+            "MY": ["M", "AY"],
+            "NAME": ["N", "AY", "M"],
+            "IS": ["I1", "Z"],
+            "YOU": ["Y1", "OO1", "OO"],
+            "ARE": ["AH1", "R"],
+            "CONQUERED": ["K", "AH1", "NG", "K", "ER", "D"],
+            "ROBOT": ["R", "OU", "B", "AH2", "T"],
+            "SUPREME": ["S", "Y1", "OO1", "P", "R", "E1", "M"],
+            "LONG": ["L", "AW1", "NG"],
+            "LIVE": ["L", "I1", "V"],
+            "ARMY": ["AH1", "R", "M", "E1"],
+            "CADETS": ["K", "UH2", "D", "EH1", "T", "S"],
+            "EMPEROR": ["EH1", "M", "P", "ER", "ER"]
         };
 
         const phonemeToCode = {};
@@ -5461,6 +5740,7 @@
         }
 
         async function speakText(text) {
+            window.speakText = speakText;
             if (typeof window !== 'undefined') {
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -5468,6 +5748,16 @@
                 if (audioCtx.state === 'suspended') {
                     await audioCtx.resume();
                 }
+            }
+            if (!speechContract) {
+                console.warn("Speech Synthesizer contract is not loaded. Falling back to Web Speech API.");
+                if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 1.0;
+                    utterance.pitch = 0.8;
+                    window.speechSynthesis.speak(utterance);
+                }
+                return;
             }
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
             const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
@@ -6846,6 +7136,307 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         const vulkanCanvas = document.getElementById("vulkanScreen");
         const vulkanCtx = vulkanCanvas ? vulkanCanvas.getContext("2d") : null;
 
+        let minerFrame = 0;
+        function drawMiner2049erScreen() {
+            minerFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw level platforms/girders (bright cyan)
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillRect(40, 60, 240, 4);   // Top platform
+            ctx.fillRect(40, 95, 240, 4);   // Mid platform
+            ctx.fillRect(40, 130, 240, 4);  // Low platform
+            ctx.fillRect(40, 165, 240, 4);  // Ground platform
+
+            // Draw ladders (vertical, red/white rungs)
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 2;
+            
+            // Ladder 1
+            ctx.beginPath();
+            ctx.moveTo(80, 60); ctx.lineTo(80, 95);
+            ctx.moveTo(220, 95); ctx.lineTo(220, 130);
+            ctx.moveTo(100, 130); ctx.lineTo(100, 165);
+            ctx.stroke();
+
+            // Ladder rungs
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let y = 62; y < 95; y += 5) { ctx.moveTo(76, y); ctx.lineTo(84, y); }
+            for (let y = 97; y < 130; y += 5) { ctx.moveTo(216, y); ctx.lineTo(224, y); }
+            for (let y = 132; y < 165; y += 5) { ctx.moveTo(96, y); ctx.lineTo(104, y); }
+            ctx.stroke();
+
+            // Draw hazardous radioactive canisters (bright green dots)
+            ctx.fillStyle = "#39ff14";
+            ctx.beginPath();
+            ctx.arc(60, 56, 3, 0, Math.PI * 2);
+            ctx.arc(150, 91, 3, 0, Math.PI * 2);
+            ctx.arc(260, 126, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bounty Bob (Sprite 0) interactive jumping position
+            if (!window.vaultX) {
+                window.vaultX = 144;
+                window.vaultY = 120;
+            }
+            // Update movement coordinates via keys or automatic walk cycle if demo
+            if (isDemoModeActive) {
+                window.vaultX = 120 + Math.sin(minerFrame * 0.03) * 60;
+                window.vaultY = 145 + Math.abs(Math.sin(minerFrame * 0.1)) * 5;
+            }
+
+            // Draw Bounty Bob indicator
+            ctx.fillStyle = "#e67e22";
+            ctx.fillRect(window.vaultX - 5, window.vaultY - 12, 10, 12); // Bob body
+            ctx.fillStyle = "#ffcc00";
+            ctx.fillRect(window.vaultX - 3, window.vaultY - 17, 6, 5);  // Bob head/hat
+
+            // Draw Mutant Snap (Sprite 1) wandering back and forth
+            let mutantX = 140 + Math.sin(minerFrame * 0.04) * 40;
+            ctx.fillStyle = "#9b59b6"; // Purple mutant
+            ctx.fillRect(mutantX - 4, 83, 8, 12);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(mutantX - 2, 85, 4, 4); // Glowing red mutant eyes
+
+            // Top HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("MICRO FUN 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("BOBS: 03  SCORE: 004850", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillText("MINER 2049ER", canvas.width / 2, 12);
+        }
+
+        let dinoFrame = 0;
+        function drawDinoEggsScreen() {
+            dinoFrame++;
+            ctx.fillStyle = "#1e130c"; // Deep brown cave background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const lvl = window.dinoLevel || 1;
+            if (!window.dinoKeyListenerAdded) {
+                window.dinoKeyListenerAdded = true;
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'l' || e.key === 'L') {
+                        window.dinoLevel = (window.dinoLevel || 1) + 1;
+                    }
+                });
+            }
+
+            if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
+                const rand = (function(seed) {
+                    let s = seed;
+                    return function() {
+                        s = (s * 1103515245 + 12345) & 0x7fffffff;
+                        return s / 0x7fffffff;
+                    };
+                })(lvl);
+
+                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
+                const platforms = [];
+                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
+                for (let i = 0; i < numPlatforms - 1; i++) {
+                    const y = 60 + i * 30;
+                    const w = 80 + Math.floor(rand() * 100);
+                    const x = 40 + Math.floor(rand() * (240 - w));
+                    platforms.push({ x, y, w });
+                }
+
+                const vines = [];
+                for (let i = 0; i < platforms.length - 1; i++) {
+                    const p1 = platforms[i];
+                    const p2 = platforms[i + 1];
+                    const minX = Math.max(p1.x, p2.x) + 10;
+                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
+                    if (maxX > minX) {
+                        const vx = minX + Math.floor(rand() * (maxX - minX));
+                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
+                    } else {
+                        const vx = p1.x + Math.floor(p1.w / 2);
+                        vines.push({ x: vx, y1: p1.y, y2: 170 });
+                    }
+                }
+
+                const nests = [];
+                for (let i = 1; i < platforms.length; i++) {
+                    const p = platforms[i];
+                    if (rand() > 0.3) {
+                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
+                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
+                    }
+                }
+                if (nests.length === 0) {
+                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
+                }
+
+                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+            }
+
+            const lvlData = window.currentDinoLevelData;
+
+            // Draw cave platforms
+            ctx.fillStyle = "#5c4033"; // Earthy brown
+            for (const p of lvlData.platforms) {
+                ctx.fillRect(p.x, p.y, p.w, 8);
+            }
+
+            // Draw green climbing vines (ladders)
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (const v of lvlData.vines) {
+                ctx.moveTo(v.x, v.y1);
+                ctx.lineTo(v.x, v.y2);
+            }
+            ctx.stroke();
+
+            // Draw vine leaves
+            ctx.fillStyle = "#2ecc71";
+            for (const v of lvlData.vines) {
+                for (let y = v.y1 + 5; y < v.y2; y += 10) {
+                    ctx.fillRect(v.x - 5, y, 4, 2);
+                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
+                }
+            }
+
+            // Draw Dino Nests and Eggs (as Cards / Tessarants)
+            const t = dinoFrame * 0.05;
+            const cosT = Math.cos(t);
+            const sinT = Math.sin(t);
+            const cosT2 = Math.cos(t * 1.3);
+            const sinT2 = Math.sin(t * 1.3);
+            const d = 2.2;
+
+            // 4D rotating vertices definition
+            const baseVertices = [
+                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
+                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
+                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
+                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
+            ];
+
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diffs = 0;
+                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
+                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
+                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
+                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
+                    if (diffs === 1) edges.push([i, j]);
+                }
+            }
+
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    // Draw nest base (pedestal)
+                    ctx.fillStyle = "#ff007f";
+                    ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
+
+                    for (let e = 0; e < nest.eggs; e++) {
+                        const cardX = nest.x - 6 + e * 12;
+                        const cardY = nest.y - 6;
+
+                        // Draw holographic card border
+                        ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(cardX - 5, cardY - 8, 10, 14);
+                        ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
+                        ctx.fillRect(cardX - 5, cardY - 8, 10, 14);
+
+                        // Calculate projected vertices
+                        const projectedPoints = baseVertices.map(v => {
+                            let x1 = v.x * cosT - v.w * sinT;
+                            let w1 = v.x * sinT + v.w * cosT;
+                            let y1 = v.y * cosT2 - v.z * sinT2;
+                            let z1 = v.y * sinT2 + v.z * cosT2;
+                            
+                            const denom = d - w1;
+                            const x3 = x1 / denom;
+                            const y3 = y1 / denom;
+                            
+                            return {
+                                x: cardX + x3 * 3,
+                                y: cardY + y3 * 3
+                            };
+                        });
+
+                        // Draw tessarant wireframe
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        for (const edge of edges) {
+                            const p1 = projectedPoints[edge[0]];
+                            const p2 = projectedPoints[edge[1]];
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Tim the Explorer (Sprite 0) coordinate tracking
+            if (!window.vaultX) {
+                window.vaultX = 144;
+                window.vaultY = 120;
+            }
+            if (isDemoModeActive) {
+                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
+                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
+            }
+
+            // Check collision with nests
+            let allCollected = true;
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    if (Math.hypot(window.vaultX - nest.x, window.vaultY - nest.y) < 15) {
+                        nest.collected = true;
+                    } else {
+                        allCollected = false;
+                    }
+                }
+            }
+
+            if (allCollected) {
+                window.dinoLevel = lvl + 1;
+            }
+
+            // Draw Tim
+            ctx.fillStyle = "#f1c40f"; // Yellow outfit
+            ctx.fillRect(window.vaultX - 4, window.vaultY - 14, 8, 14);
+            ctx.fillStyle = "#e74c3c"; // Red explorer hat
+            ctx.fillRect(window.vaultX - 6, window.vaultY - 17, 12, 3);
+
+            // Draw Pterodactyl flying (Sprite 3)
+            let pteroX = (dinoFrame * 1.5) % (canvas.width + 40) - 20;
+            let pteroY = 40 + Math.sin(dinoFrame * 0.1) * 8;
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.moveTo(pteroX, pteroY);
+            ctx.lineTo(pteroX - 10, pteroY - 6);
+            ctx.lineTo(pteroX - 4, pteroY + 2);
+            ctx.lineTo(pteroX + 10, pteroY - 6);
+            ctx.fill();
+
+            // Top HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("DATAMOST 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("LEVEL: " + lvl, canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#f39c12";
+            ctx.fillText("DINO EGGS (PRESS L FOR NEXT LEVEL)", canvas.width / 2, 12);
+        }
+
         function drawVulkanPlaceholder() {
             if (!vulkanCanvas || !vulkanCtx) return;
             vulkanCtx.fillStyle = "#110b29"; 
@@ -7506,6 +8097,307 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.textAlign = "center";
             ctx.fillStyle = "#ff007f";
             ctx.fillText("CRUSH, CRUMBLE & CHOMP!", canvas.width / 2, 12);
+        }
+
+        let minerFrame = 0;
+        function drawMiner2049erScreen() {
+            minerFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw level platforms/girders (bright cyan)
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillRect(40, 60, 240, 4);   // Top platform
+            ctx.fillRect(40, 95, 240, 4);   // Mid platform
+            ctx.fillRect(40, 130, 240, 4);  // Low platform
+            ctx.fillRect(40, 165, 240, 4);  // Ground platform
+
+            // Draw ladders (vertical, red/white rungs)
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 2;
+            
+            // Ladder 1
+            ctx.beginPath();
+            ctx.moveTo(80, 60); ctx.lineTo(80, 95);
+            ctx.moveTo(220, 95); ctx.lineTo(220, 130);
+            ctx.moveTo(100, 130); ctx.lineTo(100, 165);
+            ctx.stroke();
+
+            // Ladder rungs
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let y = 62; y < 95; y += 5) { ctx.moveTo(76, y); ctx.lineTo(84, y); }
+            for (let y = 97; y < 130; y += 5) { ctx.moveTo(216, y); ctx.lineTo(224, y); }
+            for (let y = 132; y < 165; y += 5) { ctx.moveTo(96, y); ctx.lineTo(104, y); }
+            ctx.stroke();
+
+            // Draw hazardous radioactive canisters (bright green dots)
+            ctx.fillStyle = "#39ff14";
+            ctx.beginPath();
+            ctx.arc(60, 56, 3, 0, Math.PI * 2);
+            ctx.arc(150, 91, 3, 0, Math.PI * 2);
+            ctx.arc(260, 126, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bounty Bob (Sprite 0) interactive jumping position
+            if (!window.vaultX) {
+                window.vaultX = 144;
+                window.vaultY = 120;
+            }
+            // Update movement coordinates via keys or automatic walk cycle if demo
+            if (isDemoModeActive) {
+                window.vaultX = 120 + Math.sin(minerFrame * 0.03) * 60;
+                window.vaultY = 145 + Math.abs(Math.sin(minerFrame * 0.1)) * 5;
+            }
+
+            // Draw Bounty Bob indicator
+            ctx.fillStyle = "#e67e22";
+            ctx.fillRect(window.vaultX - 5, window.vaultY - 12, 10, 12); // Bob body
+            ctx.fillStyle = "#ffcc00";
+            ctx.fillRect(window.vaultX - 3, window.vaultY - 17, 6, 5);  // Bob head/hat
+
+            // Draw Mutant Snap (Sprite 1) wandering back and forth
+            let mutantX = 140 + Math.sin(minerFrame * 0.04) * 40;
+            ctx.fillStyle = "#9b59b6"; // Purple mutant
+            ctx.fillRect(mutantX - 4, 83, 8, 12);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(mutantX - 2, 85, 4, 4); // Glowing red mutant eyes
+
+            // Top HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("MICRO FUN 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("BOBS: 03  SCORE: 004850", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillText("MINER 2049ER", canvas.width / 2, 12);
+        }
+
+        let dinoFrame = 0;
+        function drawDinoEggsScreen() {
+            dinoFrame++;
+            ctx.fillStyle = "#1e130c"; // Deep brown cave background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const lvl = window.dinoLevel || 1;
+            if (!window.dinoKeyListenerAdded) {
+                window.dinoKeyListenerAdded = true;
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'l' || e.key === 'L') {
+                        window.dinoLevel = (window.dinoLevel || 1) + 1;
+                    }
+                });
+            }
+
+            if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
+                const rand = (function(seed) {
+                    let s = seed;
+                    return function() {
+                        s = (s * 1103515245 + 12345) & 0x7fffffff;
+                        return s / 0x7fffffff;
+                    };
+                })(lvl);
+
+                const numPlatforms = 3 + Math.floor(rand() * 3); // 3 to 5 platforms
+                const platforms = [];
+                platforms.push({ x: 40, y: 160, w: 240 }); // ground platform
+                for (let i = 0; i < numPlatforms - 1; i++) {
+                    const y = 60 + i * 30;
+                    const w = 80 + Math.floor(rand() * 100);
+                    const x = 40 + Math.floor(rand() * (240 - w));
+                    platforms.push({ x, y, w });
+                }
+
+                const vines = [];
+                for (let i = 0; i < platforms.length - 1; i++) {
+                    const p1 = platforms[i];
+                    const p2 = platforms[i + 1];
+                    const minX = Math.max(p1.x, p2.x) + 10;
+                    const maxX = Math.min(p1.x + p1.w, p2.x + p2.w) - 10;
+                    if (maxX > minX) {
+                        const vx = minX + Math.floor(rand() * (maxX - minX));
+                        vines.push({ x: vx, y1: Math.min(p1.y, p2.y), y2: Math.max(p1.y, p2.y) });
+                    } else {
+                        const vx = p1.x + Math.floor(p1.w / 2);
+                        vines.push({ x: vx, y1: p1.y, y2: 170 });
+                    }
+                }
+
+                const nests = [];
+                for (let i = 1; i < platforms.length; i++) {
+                    const p = platforms[i];
+                    if (rand() > 0.3) {
+                        const nx = p.x + 10 + Math.floor(rand() * (p.w - 20));
+                        nests.push({ x: nx, y: p.y - 6, eggs: 1 + Math.floor(rand() * 2), collected: false });
+                    }
+                }
+                if (nests.length === 0) {
+                    nests.push({ x: platforms[1].x + 15, y: platforms[1].y - 6, eggs: 2, collected: false });
+                }
+
+                window.currentDinoLevelData = { level: lvl, platforms, vines, nests };
+            }
+
+            const lvlData = window.currentDinoLevelData;
+
+            // Draw cave platforms
+            ctx.fillStyle = "#5c4033"; // Earthy brown
+            for (const p of lvlData.platforms) {
+                ctx.fillRect(p.x, p.y, p.w, 8);
+            }
+
+            // Draw green climbing vines (ladders)
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (const v of lvlData.vines) {
+                ctx.moveTo(v.x, v.y1);
+                ctx.lineTo(v.x, v.y2);
+            }
+            ctx.stroke();
+
+            // Draw vine leaves
+            ctx.fillStyle = "#2ecc71";
+            for (const v of lvlData.vines) {
+                for (let y = v.y1 + 5; y < v.y2; y += 10) {
+                    ctx.fillRect(v.x - 5, y, 4, 2);
+                    ctx.fillRect(v.x + 1, y + 4, 4, 2);
+                }
+            }
+
+            // Draw Dino Nests and Eggs (as Cards / Tessarants)
+            const t = dinoFrame * 0.05;
+            const cosT = Math.cos(t);
+            const sinT = Math.sin(t);
+            const cosT2 = Math.cos(t * 1.3);
+            const sinT2 = Math.sin(t * 1.3);
+            const d = 2.2;
+
+            // 4D rotating vertices definition
+            const baseVertices = [
+                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
+                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
+                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
+                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
+            ];
+
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diffs = 0;
+                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
+                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
+                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
+                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
+                    if (diffs === 1) edges.push([i, j]);
+                }
+            }
+
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    // Draw nest base (pedestal)
+                    ctx.fillStyle = "#ff007f";
+                    ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
+
+                    for (let e = 0; e < nest.eggs; e++) {
+                        const cardX = nest.x - 6 + e * 12;
+                        const cardY = nest.y - 6;
+
+                        // Draw holographic card border
+                        ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(cardX - 5, cardY - 8, 10, 14);
+                        ctx.fillStyle = "rgba(0, 210, 255, 0.15)";
+                        ctx.fillRect(cardX - 5, cardY - 8, 10, 14);
+
+                        // Calculate projected vertices
+                        const projectedPoints = baseVertices.map(v => {
+                            let x1 = v.x * cosT - v.w * sinT;
+                            let w1 = v.x * sinT + v.w * cosT;
+                            let y1 = v.y * cosT2 - v.z * sinT2;
+                            let z1 = v.y * sinT2 + v.z * cosT2;
+                            
+                            const denom = d - w1;
+                            const x3 = x1 / denom;
+                            const y3 = y1 / denom;
+                            
+                            return {
+                                x: cardX + x3 * 3,
+                                y: cardY + y3 * 3
+                            };
+                        });
+
+                        // Draw tessarant wireframe
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        for (const edge of edges) {
+                            const p1 = projectedPoints[edge[0]];
+                            const p2 = projectedPoints[edge[1]];
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Tim the Explorer (Sprite 0) coordinate tracking
+            if (!window.vaultX) {
+                window.vaultX = 144;
+                window.vaultY = 120;
+            }
+            if (isDemoModeActive) {
+                window.vaultX = 100 + Math.sin(dinoFrame * 0.02) * 50;
+                window.vaultY = 140 - Math.abs(Math.sin(dinoFrame * 0.07)) * 12;
+            }
+
+            // Check collision with nests
+            let allCollected = true;
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    if (Math.hypot(window.vaultX - nest.x, window.vaultY - nest.y) < 15) {
+                        nest.collected = true;
+                    } else {
+                        allCollected = false;
+                    }
+                }
+            }
+
+            if (allCollected) {
+                window.dinoLevel = lvl + 1;
+            }
+
+            // Draw Tim
+            ctx.fillStyle = "#f1c40f"; // Yellow outfit
+            ctx.fillRect(window.vaultX - 4, window.vaultY - 14, 8, 14);
+            ctx.fillStyle = "#e74c3c"; // Red explorer hat
+            ctx.fillRect(window.vaultX - 6, window.vaultY - 17, 12, 3);
+
+            // Draw Pterodactyl flying (Sprite 3)
+            let pteroX = (dinoFrame * 1.5) % (canvas.width + 40) - 20;
+            let pteroY = 40 + Math.sin(dinoFrame * 0.1) * 8;
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.moveTo(pteroX, pteroY);
+            ctx.lineTo(pteroX - 10, pteroY - 6);
+            ctx.lineTo(pteroX - 4, pteroY + 2);
+            ctx.lineTo(pteroX + 10, pteroY - 6);
+            ctx.fill();
+
+            // Top HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("DATAMOST 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("LEVEL: " + lvl, canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#f39c12";
+            ctx.fillText("DINO EGGS (PRESS L FOR NEXT LEVEL)", canvas.width / 2, 12);
         }
 
         let spiderFrame = 0;
@@ -10250,6 +11142,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 drawHardballScreen();
                 return;
             }
+            if (activeGameName === "Miner 2049er") {
+                drawMiner2049erScreen();
+                return;
+            }
+            if (activeGameName === "Dino Eggs") {
+                drawDinoEggsScreen();
+                return;
+            }
 
             // Clear screen
             ctx.fillStyle = borderCol || "#3b5dc9"; 
@@ -10274,6 +11174,59 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             // Draw inner screen border box
             ctx.fillStyle = bgCol || "#a2b4c2"; 
             ctx.fillRect(40, 30, 240, 140);
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const speed = window.gorfRasterSpeed !== undefined ? window.gorfRasterSpeed : 1.0;
+                const spacing = window.gorfRasterSpacing !== undefined ? window.gorfRasterSpacing : 1.0;
+                const palette = window.gorfRasterPalette !== undefined ? window.gorfRasterPalette : 'retro';
+                const time = (Date.now() / 250) * speed;
+                const barOffsets = [
+                    Math.sin(time) * 40 + 70,
+                    Math.sin(time * 1.3) * 35 + 70,
+                    Math.cos(time * 0.8) * 45 + 70
+                ];
+                let barColors = [
+                    [255, 0, 127],
+                    [0, 242, 254],
+                    [0, 255, 127]
+                ];
+                if (palette === 'fire') {
+                    barColors = [
+                        [255, 30, 0],
+                        [255, 120, 0],
+                        [255, 210, 0]
+                    ];
+                } else if (palette === 'acid') {
+                    barColors = [
+                        [50, 255, 50],
+                        [180, 0, 255],
+                        [255, 0, 180]
+                    ];
+                } else if (palette === 'mono') {
+                    barColors = [
+                        [255, 255, 255],
+                        [150, 160, 170],
+                        [80, 90, 100]
+                    ];
+                }
+                const range = 15 * spacing;
+                for (let y = 0; y < 140; y++) {
+                    let r = 0, g = 0, b = 0;
+                    for (let bIdx = 0; bIdx < 3; bIdx++) {
+                        const dist = Math.abs(y - barOffsets[bIdx]);
+                        if (dist < range) {
+                            const intensity = Math.pow(1 - dist / range, 2);
+                            r += barColors[bIdx][0] * intensity;
+                            g += barColors[bIdx][1] * intensity;
+                            b += barColors[bIdx][2] * intensity;
+                        }
+                    }
+                    if (r > 0 || g > 0 || b > 0) {
+                        ctx.fillStyle = `rgb(${Math.min(255, Math.floor(r))}, ${Math.min(255, Math.floor(g))}, ${Math.min(255, Math.floor(b))})`;
+                        ctx.fillRect(40, 30 + y, 240, 1);
+                    }
+                }
+            }
 
             // Draw characters from Screen RAM (40 columns by 25 rows)
             if (screenRam && colorRam) {
@@ -10322,6 +11275,13 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             // Draw Sprite 2: Alien Invader
             drawSpriteIcon(2, s2_x, s2_y, "#00ff7f", hasCollision);
+
+            // Draw Sprite 3: Gorf Flagship / Space Shield
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                drawSpriteIcon(3, s3_x, s3_y, "#ffcc00", hasCollision);
+            }
 
             if (window.dnaFrames && window.dnaFrames.length > 0) {
                 window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
