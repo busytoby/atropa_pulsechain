@@ -87,6 +87,9 @@ int main(int argc, char *argv[]) {
         double edge_blend = 0.5 + ((reg.frame_modulation_factor + mq_boost) * 0.5);  // LineArt visibility mapping
 
         for (int i = 0; i < FRAME_SIZE; i += 3) {
+            int px = (i / 3) % WIDTH;
+            int py = (i / 3) / WIDTH;
+
             uint8_t lr = buf_line[i], lg = buf_line[i+1], lb = buf_line[i+2];
             uint8_t dr = buf_depth[i], dg = buf_depth[i+1], db = buf_depth[i+2];
             uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
@@ -117,6 +120,26 @@ int main(int argc, char *argv[]) {
             double nz = (nb - 127.5) / 127.5;
             double spec = pow(fmax(0.0, nz), spec_power);
 
+            // Compute proximity glow to Verlet particles for Fornax connections
+            double fornax_glow = 0.0;
+            if (is_fornax) {
+                if (reg.active_verlet_count > 0 && reg.active_verlet_count <= 16) {
+                    for (uint32_t k = 0; k < reg.active_verlet_count; k++) {
+                        float p_x = (reg.verlet_x[k] + 500.0f) / 1000.0f * 1280.0f;
+                        float p_y = (reg.verlet_y[k] + 300.0f) / 600.0f * 720.0f;
+                        float dx = (float)px - p_x;
+                        float dy = (float)py - p_y;
+                        float dist = sqrtf(dx * dx + dy * dy);
+                        if (dist < 60.0f) {
+                            fornax_glow += (1.0f - dist / 60.0f);
+                        }
+                    }
+                    if (fornax_glow > 1.0) fornax_glow = 1.0;
+                } else {
+                    fornax_glow = 0.3; // Default baseline fallback
+                }
+            }
+
             // Material routing based on rendering style selection
             double r_out = 0, g_out = 0, b_out = 0;
             if (style == 2) { // Lineart only
@@ -132,9 +155,9 @@ int main(int argc, char *argv[]) {
                     g_out = 140 + spec * 50;
                     b_out = 240 + spec * 15;
                 } else if (is_fornax) { // Red connections
-                    r_out = 250;
-                    g_out = 40;
-                    b_out = 40;
+                    r_out = 250 * fornax_glow;
+                    g_out = 40 * fornax_glow;
+                    b_out = 40 * fornax_glow;
                 }
             } else { // Photorealistic or Retro base
                 r_out = br * 1.3; g_out = bg * 1.3; b_out = bb * 1.3; // Boost base brightness
@@ -147,9 +170,9 @@ int main(int argc, char *argv[]) {
                     g_out = bg * 1.1 + spec * (120 + reg.frame_modulation_factor * 60);
                     b_out = bb * 1.3 + spec * (100 + reg.frame_modulation_factor * 50);
                 } else if (is_fornax) { // Red Mask: Verlet Particles / Connections (Boosted Fornax)
-                    r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120;
-                    g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80;
-                    b_out = bb * 1.2 + 50;
+                    r_out = br * (1.8 + reg.frame_modulation_factor * 1.2) + 120.0 * fornax_glow + 80.0;
+                    g_out = bg * (1.8 + reg.frame_modulation_factor * 0.8) + 80.0 * fornax_glow + 40.0;
+                    b_out = bb * 1.2 + 50.0 * fornax_glow;
                 }
             }
 

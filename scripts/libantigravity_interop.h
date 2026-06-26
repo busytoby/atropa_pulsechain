@@ -32,6 +32,10 @@ typedef struct {
     uint32_t current_epoch;
     uint32_t active_cycles;
     float frame_modulation_factor;
+    float verlet_x[16];
+    float verlet_y[16];
+    float verlet_z[16];
+    uint32_t active_verlet_count;
     InteropLUN network_lun; // Maps to LUN 4 (Network queue) for live chat telemetry
 } InteropRegistry;
 

@@ -34,13 +34,21 @@ def run_compositor_benchmark():
             for _ in range(total_frames):
                 f.write(dummy_frame)
 
-    # Generate registry binary stream (14 * 8 bytes = 112 bytes per frame)
-    # Struct format: 11Q (11 uint64_t), 2I (2 uint32_t), 1f (1 float)
+    # Generate registry binary stream aligned to the full InteropRegistry structure (4404 bytes per frame)
     registry_path = "tmp_bench_reg.bin"
     with open(registry_path, "wb") as f:
         for i in range(total_frames):
-            # epoch=i, active_cycles=100, modulation=0.75
-            f.write(struct.pack("<11Q2If", 0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500, i, 100, 0.75))
+            # Mock 16 active Verlet particles moving dynamically
+            vx = [float(k * 20.0 - 150.0 + i * 2) for k in range(16)]
+            vy = [float(k * 10.0 - 100.0 - i) for k in range(16)]
+            vz = [0.0] * 16
+            # Pack format: 11Q (88b), 2I (8b), 1f (4b), 16f (64b), 16f (64b), 16f (64b), 1I (4b), 4108s (4108b)
+            # Total size: 4404 bytes
+            f.write(struct.pack("<11Q2If16f16f16fI4108s",
+                0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500,
+                i, 100, 0.75,
+                *vx, *vy, *vz, 16, b'\x00' * 4108
+            ))
 
     c_renderer = "./scripts/manifold_interop_renderer"
     

@@ -103,7 +103,14 @@ with open('$REGISTRY_FILE', 'wb') as f:
             if chunk:
                 rms = np.sqrt(np.mean(np.array(chunk)**2))
                 mod = float(np.clip(rms * 5.0, 0.0, 1.0))
-        f.write(struct.pack('<11Q2If', 0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500, 0, 0, mod))
+        vx = [0.0] * 16
+        vy = [0.0] * 16
+        vz = [0.0] * 16
+        f.write(struct.pack('<11Q2If16f16f16fI4108s',
+            0, 0, 0, 0, 0, 0, 0, 1000, 0, 0, 500,
+            0, frame, mod,
+            *vx, *vy, *vz, 0, b'\x00' * 4108
+        ))
 "
 
 echo "[PIPELINE] Launching fast C interop compositor..."
