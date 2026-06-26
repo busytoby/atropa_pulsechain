@@ -476,19 +476,47 @@
             const w = canvas.offsetWidth;
             const h = 380;
 
+            const currentSec = window.musicPlaying ? overtureTime : 0;
+            const activeSection = sections.find(s => currentSec >= s.start && currentSec < s.end) || sections[0];
+            const theme = activeSection.theme;
+
+            // Theme colors selection
+            let oceanColors, sandColors, rayColor, waveColor;
+            if (theme === "sunset") {
+                oceanColors = ["#2c003e", "#fe346e"];
+                sandColors = ["#4b1248", "#2d0b5a", "#110222"];
+                rayColor = "rgba(255, 94, 98, 0.08)";
+                waveColor = "rgba(254, 52, 110, 0.18)";
+            } else if (theme === "deep") {
+                oceanColors = ["#020813", "#081b33"];
+                sandColors = ["#0e1626", "#162238", "#080c14"];
+                rayColor = "rgba(57, 255, 20, 0.05)";
+                waveColor = "rgba(57, 255, 20, 0.12)";
+            } else if (theme === "lava") {
+                oceanColors = ["#1a0505", "#800c0c"];
+                sandColors = ["#1c0c0c", "#2c0000", "#080000"];
+                rayColor = "rgba(255, 0, 0, 0.15)";
+                waveColor = "rgba(255, 94, 98, 0.25)";
+            } else { // sea
+                oceanColors = ["#011627", "#033246"];
+                sandColors = ["#2c1c0c", "#422806", "#180d02"];
+                rayColor = "rgba(0, 242, 254, 0.08)";
+                waveColor = "rgba(0, 242, 254, 0.18)";
+            }
+
             // Clear visualizer background
-            ctx.fillStyle = "#020914";
+            ctx.fillStyle = oceanColors[0];
             ctx.fillRect(0, 0, w, h);
 
             // Draw Ocean gradient
             const oceanGrad = ctx.createLinearGradient(0, 0, 0, 200);
-            oceanGrad.addColorStop(0, "#011627");
-            oceanGrad.addColorStop(1, "#033246");
+            oceanGrad.addColorStop(0, oceanColors[0]);
+            oceanGrad.addColorStop(1, oceanColors[1]);
             ctx.fillStyle = oceanGrad;
             ctx.fillRect(0, 0, w, 200);
 
             // Draw Volumetric refracted rays
-            ctx.fillStyle = "rgba(0, 242, 254, 0.08)";
+            ctx.fillStyle = rayColor;
             for (let i = 0; i < 4; i++) {
                 ctx.beginPath();
                 const rayOffset = Math.sin(frameCount * 0.01 + i) * 60;
@@ -501,15 +529,15 @@
 
             // Draw shoreline sand
             const sandGrad = ctx.createLinearGradient(0, 200, 0, h);
-            sandGrad.addColorStop(0, "#2c1c0c");
-            sandGrad.addColorStop(0.3, "#422806");
-            sandGrad.addColorStop(1, "#180d02");
+            sandGrad.addColorStop(0, sandColors[0]);
+            sandGrad.addColorStop(0.3, sandColors[1]);
+            sandGrad.addColorStop(1, sandColors[2]);
             ctx.fillStyle = sandGrad;
             ctx.fillRect(0, 200, w, h - 200);
 
             // Tide Wave wash animation
             const waveY = 195 + Math.sin(frameCount * 0.04) * 8;
-            ctx.fillStyle = "rgba(0, 242, 254, 0.18)";
+            ctx.fillStyle = waveColor;
             ctx.beginPath();
             ctx.moveTo(0, waveY);
             for (let x = 0; x <= w; x += 20) {
@@ -558,11 +586,32 @@
         window.musicPlaying = false;
 
         const sections = [
-            { start: 0, end: 45, name: "Auncient Tide (Intro)", scale: [0, 4, 8, 12, 16] },
-            { start: 45, end: 120, name: "Paradiddle Crawl (Rhythm)", scale: [0, 2, 6, 8, 14, 16] },
-            { start: 120, end: 210, name: "Microtonal Reef (Deep Bass)", scale: [0, 4, 6, 10, 12, 18, 20] },
-            { start: 210, end: 300, name: "Paradiddle Climax (Tutti)", scale: [0, 2, 4, 8, 10, 12, 16, 20] },
-            { start: 300, end: 390, name: "Sunset Shoreline (Outro)", scale: [0, 4, 8, 12, 16] }
+            { start: 0, end: 15, name: "Auncient Tide (Birth of Crabs)", scale: [0, 4, 8, 12, 16], bpm: 90, bass: 0.8, density: 0.1, theme: "sea" },
+            { start: 15, end: 30, name: "Melancholic Horizon (Lonely Shore)", scale: [0, 3, 7, 10, 14], bpm: 95, bass: 0.9, density: 0.2, theme: "sunset" },
+            { start: 30, end: 45, name: "Anticipation (First Pinch)", scale: [0, 2, 6, 8, 12, 16], bpm: 100, bass: 1.0, density: 0.4, theme: "sunset" },
+            { start: 45, end: 60, name: "Paradiddle Awakening (Crawl Begins)", scale: [0, 2, 6, 8, 14, 16], bpm: 102, bass: 1.1, density: 0.5, theme: "sea" },
+            { start: 60, end: 75, name: "Deep Manifold Groove (Thumpin Bass)", scale: [0, 4, 7, 11, 15, 18], bpm: 105, bass: 1.6, density: 0.6, theme: "deep" },
+            { start: 75, end: 90, name: "Sub-harmonic Tension (Undercurrent)", scale: [0, 1, 5, 8, 12, 17], bpm: 102, bass: 1.8, density: 0.5, theme: "deep" },
+            { start: 90, end: 105, name: "Pinch Dance (Playful Rhythm)", scale: [0, 4, 8, 12, 16, 20], bpm: 108, bass: 1.2, density: 0.7, theme: "lava" },
+            { start: 105, end: 120, name: "Crying Ocean Depth (Mournful Echo)", scale: [0, 3, 6, 9, 13, 16], bpm: 98, bass: 1.0, density: 0.4, theme: "sunset" },
+            { start: 120, end: 135, name: "Microtonal Reef (Heavy Sub-Bass)", scale: [0, 4, 6, 10, 12, 18, 20], bpm: 104, bass: 2.1, density: 0.6, theme: "deep" },
+            { start: 135, end: 150, name: "Claw Aggression (Crabs Assemble)", scale: [0, 2, 5, 8, 11, 14, 17], bpm: 110, bass: 1.8, density: 0.8, theme: "lava" },
+            { start: 150, end: 165, name: "Syrinx Synthesis (Ancient Signal)", scale: [0, 5, 10, 15, 20], bpm: 112, bass: 1.4, density: 0.7, theme: "sea" },
+            { start: 165, end: 180, name: "Paradiddle Hurricane (Intense Beats)", scale: [0, 2, 4, 8, 10, 12, 16, 20], bpm: 118, bass: 1.7, density: 0.95, theme: "lava" },
+            { start: 180, end: 195, name: "Echoplex Euphoria (Spiritual Wave)", scale: [0, 4, 8, 12, 16, 21], bpm: 105, bass: 1.3, density: 0.5, theme: "sunset" },
+            { start: 195, end: 210, name: "Volcanic Rift (Acid Thump)", scale: [0, 3, 6, 9, 12, 15, 18, 21], bpm: 114, bass: 2.3, density: 0.85, theme: "lava" },
+            { start: 210, end: 225, name: "Lava Tide Warning (Incineration)", scale: [0, 1, 4, 7, 10, 13, 16, 19], bpm: 116, bass: 2.5, density: 0.9, theme: "lava" },
+            { start: 225, end: 240, name: "Tutti Climax (All Claws Flailing)", scale: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20], bpm: 122, bass: 2.8, density: 1.0, theme: "lava" },
+            { start: 240, end: 255, name: "Reef Subversion (Mysterious Calm)", scale: [0, 4, 8, 12], bpm: 100, bass: 1.6, density: 0.3, theme: "deep" },
+            { start: 255, end: 270, name: "Melodic Resurgence (New Hope)", scale: [0, 5, 8, 13, 17, 21], bpm: 108, bass: 1.5, density: 0.6, theme: "sea" },
+            { start: 270, end: 285, name: "Intense Contrapuntal Swarm", scale: [0, 2, 6, 9, 12, 15, 18, 20], bpm: 116, bass: 1.9, density: 0.8, theme: "deep" },
+            { start: 285, end: 300, name: "Paradiddle Frenzy (Final Wave)", scale: [0, 2, 4, 8, 10, 12, 16, 20], bpm: 124, bass: 2.2, density: 0.95, theme: "lava" },
+            { start: 300, end: 315, name: "Oceanic Resolve (Triumphant Return)", scale: [0, 4, 8, 12, 16, 20], bpm: 110, bass: 1.6, density: 0.7, theme: "sea" },
+            { start: 315, end: 330, name: "Twilight Descending (Soft Shadows)", scale: [0, 3, 7, 10, 14, 18], bpm: 102, bass: 1.2, density: 0.4, theme: "sunset" },
+            { start: 330, end: 345, name: "Incantation of the Coral", scale: [0, 4, 8, 12, 16], bpm: 98, bass: 1.1, density: 0.3, theme: "sunset" },
+            { start: 345, end: 360, name: "Sub-aquatic Dream (Echoes)", scale: [0, 4, 9, 14, 19], bpm: 95, bass: 0.9, density: 0.2, theme: "deep" },
+            { start: 360, end: 375, name: "Sunset Shoreline (Farewell)", scale: [0, 4, 8, 12, 16], bpm: 90, bass: 0.7, density: 0.1, theme: "sunset" },
+            { start: 375, end: 390, name: "Auncient Tide (Return to Void)", scale: [0, 4, 8, 12, 16], bpm: 85, bass: 0.4, density: 0.05, theme: "sea" }
         ];
 
         function initAudio() {
@@ -580,7 +629,7 @@
         }
 
         // Custom instruments synthesis
-        function playSubBassNote(freq, dur) {
+        function playSubBassNote(freq, dur, multiplier = 1.0) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
@@ -596,10 +645,10 @@
             osc2.type = "sawtooth";
             osc2.frequency.setValueAtTime(freq / 2, now);
 
-            gain1.gain.setValueAtTime(0.4, now);
+            gain1.gain.setValueAtTime(0.4 * multiplier, now);
             gain1.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
-            gain2.gain.setValueAtTime(0.12, now);
+            gain2.gain.setValueAtTime(0.12 * multiplier, now);
             gain2.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
             osc1.connect(gain1);
@@ -723,25 +772,29 @@
         function scheduleTick() {
             if (!window.musicPlaying) return;
 
-            const tempo = document.getElementById("slideTempo").value;
-            const stepDuration = 60 / tempo / 4; // 16th notes
-
-            // Get current section scale
+            // Get current section
             const section = sections.find(s => overtureTime >= s.start && overtureTime < s.end) || sections[sections.length - 1];
             document.getElementById("txtSection").innerText = section.name;
+
+            // Dynamically set BPM and update slide & value
+            const tempo = section.bpm;
+            document.getElementById("slideTempo").value = tempo;
+            document.getElementById("valTempo").innerText = tempo;
+            
+            const stepDuration = 60 / tempo / 4; // 16th notes
 
             // Arpeggiator & Lead Note Generation
             const scale = section.scale;
             const subStep = stepIndex % 16;
 
             if (subStep === 0 || subStep === 8) {
-                // Ground Sub Bass Roots
+                // Ground Sub Bass Roots with section.bass factor
                 const noteStep = scale[0];
-                playSubBassNote(edo22[noteStep], stepDuration * 6);
+                playSubBassNote(edo22[noteStep], stepDuration * 6, section.bass);
             } else if (subStep === 4 || subStep === 12) {
                 // Secondary octave harmonies
                 const noteStep = scale[Math.min(scale.length - 1, 2)];
-                playSubBassNote(edo22[noteStep], stepDuration * 4);
+                playSubBassNote(edo22[noteStep], stepDuration * 4, section.bass);
             }
 
             // Melodic Lead Patterns
@@ -752,18 +805,19 @@
             }
 
             // Paradiddle Drum Rhythms (Kick, Snare, Hihat)
-            // Paradiddle rhythm structure: RLRR LRLL
-            // Mapped to Step sequences:
-            // Right = Kick, Left = Snare, double beats = hi-hats
             const rRhythm = [1, 0, 1, 1, 0, 1, 0, 0];
             const lRhythm = [0, 1, 0, 0, 1, 0, 1, 1];
             const isR = rRhythm[stepIndex % 8];
             const isL = lRhythm[stepIndex % 8];
 
-            if (section.name.includes("Rhythm") || section.name.includes("Bass") || section.name.includes("Climax")) {
+            // Scale drum hits by section.density
+            const drumChance = section.density;
+            const playDrums = Math.random() <= drumChance;
+
+            if (playDrums) {
                 playPerididdle(isL, isR, (stepIndex % 2 === 0));
-            } else if (section.name.includes("Intro") || section.name.includes("Outro")) {
-                // sparse ambient hi-hats
+            } else {
+                // ambient sparse hihats
                 if (stepIndex % 4 === 0 && Math.random() > 0.4) {
                     playPerididdle(false, false, true);
                 }
