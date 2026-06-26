@@ -62,9 +62,13 @@ def main():
     lobes = 5 + (r_channel % 3)
     hardness = "extreme mirror-polished finish" if (r_foundation % 2 == 0) else "matte micro-brushed steel finish"
     
+    # Map the figure archetype based on dynamic register components
+    archetypes = ["humanoid android", "cybernetic mechanical teddy bear", "humanoid angelic android", "butterfly-winged humanoid hybrid"]
+    archetype = archetypes[r_base % len(archetypes)]
+    
     # Formulate SD prompt using vocabulary and mapped registers
     prompt = (
-        f"A highly detailed photorealistic humanoid android statue with arms and legs, sitting in meditation, "
+        f"A highly detailed photorealistic {archetype} statue with arms and legs, sitting in meditation, "
         f"metallic body colored RGB({color_rgb[0]},{color_rgb[1]},{color_rgb[2]}), "
         f"glowing eyes, intricate micro-chords and circuits of EDO-22 frequency lines, "
         f"embossed gold and polished brass armor plates, {lobes}-cusped symmetry geometry, "
