@@ -860,6 +860,17 @@
                         const pokes = [];
                         pokes.push({ addr: 53269, val: 15 });
                         return { program: Array.from(romBytes), pokes };
+                    },
+                    3: (romBytes) => {
+                        const banks = [];
+                        const bankSize = 8192;
+                        for (let offset = 0; offset < romBytes.length; offset += bankSize) {
+                            banks.push(Array.from(romBytes.slice(offset, offset + bankSize)));
+                        }
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        pokes.push({ addr: 56832, val: 0 });
+                        return { program: banks[0] || [], pokes, banks };
                     }
                 };
             }
@@ -877,6 +888,9 @@
                 } else if (magic === "DATAM") {
                     mapperId = 2;
                     name = "Datamost Cartridge";
+                } else if (magic === "MDESK") {
+                    mapperId = 3;
+                    name = "Magic Desk Cartridge";
                 }
                 
                 const mapper = this.mappers[mapperId];
@@ -884,7 +898,8 @@
                 return {
                     name: name,
                     program: mapped.program,
-                    pokes: mapped.pokes
+                    pokes: mapped.pokes,
+                    banks: mapped.banks
                 };
             }
         }
@@ -1539,7 +1554,33 @@
         };
 
         async function loadGame(gameId) {
-            const game = games[gameId];
+            let game = games[gameId];
+            if (!game && gameId.startsWith("0x")) {
+                try {
+                    const rawBytes = ethers.getBytes(gameId);
+                    const parsed = window.cartridgeRegistry.parseCartridge(rawBytes);
+                    if (parsed) {
+                        game = {
+                            name: parsed.name,
+                            spriteEnableMask: 15,
+                            program: parsed.program,
+                            sprites: [{ id: 0, x: 120, y: 120 }]
+                        };
+                        for (const poke of parsed.pokes) {
+                            game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
+                        }
+                        if (parsed.banks) {
+                            window.activeCartridgeBanks = parsed.banks;
+                        } else {
+                            window.activeCartridgeBanks = null;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Failed to parse raw cartridge:", e);
+                }
+            } else {
+                window.activeCartridgeBanks = null;
+            }
             if (!game) return;
             console.log("Loading ROM:", game.name);
             
@@ -1549,8 +1590,12 @@
 
             // Load sprites coordinates
             for (const sp of game.sprites) {
-                addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
-                addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+                if (sp.id >= 53248) {
+                    addrs.push(sp.id); vals.push(sp.x);
+                } else {
+                    addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
+                    addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+                }
             }
             
             // Set enabled mask
@@ -1812,6 +1857,16 @@
                 if (addr === 54752 && val === 1) {
                     for (let i = 0; i < 32; i++) {
                         this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                    }
+                }
+                if (addr === 56832 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
                     }
                 }
                 return { wait: async () => {} };

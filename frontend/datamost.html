@@ -975,6 +975,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         const pokes = [];
                         pokes.push({ addr: 53269, val: 15 });
                         return { program: Array.from(romBytes), pokes };
+                    },
+                    3: (romBytes) => {
+                        const banks = [];
+                        const bankSize = 8192;
+                        for (let offset = 0; offset < romBytes.length; offset += bankSize) {
+                            banks.push(Array.from(romBytes.slice(offset, offset + bankSize)));
+                        }
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        pokes.push({ addr: 56832, val: 0 });
+                        return { program: banks[0] || [], pokes, banks };
                     }
                 };
             }
@@ -992,6 +1003,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 } else if (magic === "DATAM") {
                     mapperId = 2;
                     name = "Datamost Cartridge";
+                } else if (magic === "MDESK") {
+                    mapperId = 3;
+                    name = "Magic Desk Cartridge";
                 }
                 
                 const mapper = this.mappers[mapperId];
@@ -999,7 +1013,8 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 return {
                     name: name,
                     program: mapped.program,
-                    pokes: mapped.pokes
+                    pokes: mapped.pokes,
+                    banks: mapped.banks
                 };
             }
         }
@@ -1446,10 +1461,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         for (const poke of parsed.pokes) {
                             game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
                         }
+                        if (parsed.banks) {
+                            window.activeCartridgeBanks = parsed.banks;
+                        } else {
+                            window.activeCartridgeBanks = null;
+                        }
                     }
                 } catch(e) {
                     console.error("Failed to parse raw cartridge:", e);
                 }
+            } else {
+                window.activeCartridgeBanks = null;
             }
             if (!game) return;
             console.log("Loading ROM:", game.name);
@@ -1713,6 +1735,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         this.memory[54752 + i] = Math.floor(Math.random() * 256);
                     }
                     this.memory[54752] = 0;
+                }
+                if (addr === 56832 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
+                    }
                 }
                 return { wait: async () => {} };
             }
@@ -11871,10 +11903,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         for (const poke of parsed.pokes) {
                             game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
                         }
+                        if (parsed.banks) {
+                            window.activeCartridgeBanks = parsed.banks;
+                        } else {
+                            window.activeCartridgeBanks = null;
+                        }
                     }
                 } catch(e) {
                     console.error("Failed to parse raw cartridge:", e);
                 }
+            } else {
+                window.activeCartridgeBanks = null;
             }
             if (!game) return;
             console.log("Loading ROM:", game.name);
@@ -12138,6 +12177,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         this.memory[54752 + i] = Math.floor(Math.random() * 256);
                     }
                     this.memory[54752] = 0;
+                }
+                if (addr === 56832 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
+                    }
                 }
                 return { wait: async () => {} };
             }
@@ -21899,10 +21948,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         for (const poke of parsed.pokes) {
                             game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
                         }
+                        if (parsed.banks) {
+                            window.activeCartridgeBanks = parsed.banks;
+                        } else {
+                            window.activeCartridgeBanks = null;
+                        }
                     }
                 } catch(e) {
                     console.error("Failed to parse raw cartridge:", e);
                 }
+            } else {
+                window.activeCartridgeBanks = null;
             }
             if (!game) return;
             console.log("Loading ROM:", game.name);
