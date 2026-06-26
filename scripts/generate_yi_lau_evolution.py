@@ -154,11 +154,14 @@ def main():
         draw = ImageDraw.Draw(bg, "RGBA")
         
         # Camera orbital settings scaled to keep assets inside the viewport
-        cam_yaw = f * 0.015
-        cam_pitch = 0.3 + 0.05 * math.sin(f * 0.008)
+        # Freeze camera motion for the last 9 seconds (last 270 frames at 30 FPS)
+        f_effective = min(f, TOTAL_FRAMES - 270)
+        
+        cam_yaw = f_effective * 0.015
+        cam_pitch = 0.3 + 0.05 * math.sin(f_effective * 0.008)
         cam_x = math.cos(cam_yaw) * 360
         cam_y = math.sin(cam_yaw) * 360
-        cam_z = 240 + 40 * math.cos(f * 0.005)
+        cam_z = 240 + 40 * math.cos(f_effective * 0.005)
         zoom = 0.82 # Slightly zoom out to prevent viewport clipping
         
         num_points = 360
