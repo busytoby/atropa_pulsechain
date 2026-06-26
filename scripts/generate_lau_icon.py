@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Generate a complete, idealized 3D Lissajous icon given any PulseChain token/LAU address.
+# Supports passing direct live contract registers for exact on-chain mapping.
 # Outputs a 512x512 PNG icon and its SHA-256 reproducibility checksum.
 
 import sys
@@ -36,32 +37,40 @@ def draw_glow_line(draw_obj, p1, p2, color, width=1):
     draw_obj.line([p1, p2], fill=(r, g, b, 255), width=width)
 
 def project_lissajous(x, y, z, size):
-    yaw = 0.5
-    pitch = 0.4
-    cam_x = math.cos(yaw) * 260
-    cam_y = math.sin(yaw) * 260
-    cam_z = 150
-    zoom = 0.90
+    def get_raw_proj(px_val, py_val, pz_val):
+        yaw = 0.5
+        pitch = 0.4
+        cam_x = math.cos(yaw) * 260
+        cam_y = math.sin(yaw) * 260
+        cam_z = 150
+        zoom = 0.90
+        
+        dx = px_val - cam_x
+        dy = py_val - cam_y
+        dz = pz_val - cam_z
+        
+        cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+        rx = dx * cos_y - dy * sin_y
+        ry = dx * sin_y + dy * cos_y
+        rz = dz
+        
+        cos_p, sin_p = math.cos(pitch), math.sin(pitch)
+        x_new = rx * cos_p + rz * sin_p
+        y_new = ry
+        z_new = -rx * sin_p + rz * cos_p
+        
+        focal = 350.0
+        if z_new == 0: z_new = 1
+        px = (x_new * focal) / (z_new + 500) * zoom
+        py = (y_new * focal) / (z_new + 500) * zoom
+        return px, py
+        
+    px_raw, py_raw = get_raw_proj(x, y, z)
+    px_orig, py_orig = get_raw_proj(0, 0, 0)
     
-    dx = x - cam_x
-    dy = y - cam_y
-    dz = z - cam_z
-    
-    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
-    rx = dx * cos_y - dy * sin_y
-    ry = dx * sin_y + dy * cos_y
-    rz = dz
-    
-    cos_p, sin_p = math.cos(pitch), math.sin(pitch)
-    x_new = rx * cos_p + rz * sin_p
-    y_new = ry
-    z_new = -rx * sin_p + rz * cos_p
-    
-    focal = 350.0
-    if z_new == 0: z_new = 1
-    px = (x_new * focal) / (z_new + 500) * zoom + size / 2
-    py = (y_new * focal) / (z_new + 500) * zoom + size / 2
-    return int(px), int(py)
+    px_final = px_raw - px_orig + size / 2
+    py_final = py_raw - py_orig + size / 2
+    return int(px_final), int(py_final)
 
 def create_radial_gradient(size):
     bg = Image.new("RGB", (size, size))
@@ -82,7 +91,7 @@ def create_radial_gradient(size):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 generate_lau_icon.py <LAU_ADDRESS>")
+        print("Usage: python3 generate_lau_icon.py <LAU_ADDRESS> [r_base r_channel r_dynamo r_foundation c_base c_channel c_dynamo c_foundation]")
         sys.exit(1)
         
     address = sys.argv[1].lower().strip()
@@ -96,16 +105,50 @@ def main():
     hue = (int(addr_hash[10:13], 16) % 360)
     color_rgb = hsl_to_rgb(hue, 0.90, 0.55)
     
-    # 2. Parameters mapping
-    fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
-    fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
-    fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
-    phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
-    multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
+    if len(sys.argv) >= 10:
+        # Load live parameters from command arguments
+        r_base = int(sys.argv[2])
+        r_channel = int(sys.argv[3])
+        r_dynamo = int(sys.argv[4])
+        r_foundation = int(sys.argv[5])
+        
+        c_base = int(sys.argv[6])
+        c_channel = int(sys.argv[7])
+        c_dynamo = int(sys.argv[8])
+        c_foundation = int(sys.argv[9])
+        
+        # Setup Lissajous modulo parameters
+        fx = 1.0 + (r_channel % 5)
+        fy = 1.0 + (r_dynamo % 5)
+        fz = 1.0 + (r_foundation % 5)
+        phi = (r_base % 100) / 100.0 * 2.0 * math.pi
+        multiplier = 1.0 + (r_channel % 5)
+        
+        cfx = 1.0 + (c_channel % 5)
+        cfy = 1.0 + (c_dynamo % 5)
+        cfz = 1.0 + (c_foundation % 5)
+        cphi = (c_base % 100) / 100.0 * 2.0 * math.pi
+        cmultiplier = 1.0 + (c_channel % 5)
+        
+        print("[Live Mode] Rendering icon using exact on-chain register values.")
+    else:
+        # Standard hash fallback
+        fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
+        fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
+        fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
+        phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
+        multiplier = 1.0 + (int(addr_hash[8:10], 16) % 5)
+        
+        cfx = fx + 0.5
+        cfy = fy + 0.5
+        cfz = fz + 0.5
+        cphi = phi + math.pi
+        cmultiplier = multiplier
+        print("[Fallback Mode] Rendering icon using address hash values.")
     
-    # 3. Canvas setup
+    # 3. Canvas setup (RGB avoids PIL alpha blend glitches on transparent layer)
     size = 512
-    img = create_radial_gradient(size).convert("RGBA")
+    img = create_radial_gradient(size)
     draw = ImageDraw.Draw(img, "RGBA")
     
     # 4. Blueprint grid lines
@@ -124,25 +167,25 @@ def main():
     for r_val in [80, 160, 240]:
         draw.ellipse([size/2 - r_val, size/2 - r_val, size/2 + r_val, size/2 + r_val], outline=(0, 242, 254, 15), width=1)
         
-    # 6. Draw Axial Unchanged Signal Vector (Center green axis)
+    # 6. Draw Axial Unchanged Signal Vector
     p1_x, p1_y = project_lissajous(0, 0, -120, size)
     p2_x, p2_y = project_lissajous(0, 0, 120, size)
     draw_glow_line(draw, (p1_x, p1_y), (p2_x, p2_y), (34, 197, 94), width=2)
         
     # 7. Render interlaced Lissajous curves
     num_points = 180
-    for is_cone in [False, True]:
-        fx_c = fx + (0.5 if is_cone else 0.0)
-        fy_c = fy + (0.5 if is_cone else 0.0)
-        fz_c = fz + (0.5 if is_cone else 0.0)
-        phi_c = phi + (math.pi if is_cone else 0.0)
-        
+    curves = [
+        (fx, fy, fz, phi, multiplier),
+        (cfx, cfy, cfz, cphi, cmultiplier)
+    ]
+    
+    for f_x, f_y, f_z, ph, mult in curves:
         proj_points = []
         for i in range(num_points):
             theta = i * 2.0 * math.pi / num_points
-            lx = 135.0 * math.sin(fx_c * theta + phi_c)
-            ly = 135.0 * math.sin(fy_c * theta)
-            lz = 135.0 * math.cos(fz_c * theta)
+            lx = 135.0 * math.sin(f_x * theta + ph)
+            ly = 135.0 * math.sin(f_y * theta)
+            lz = 135.0 * math.cos(f_z * theta)
             
             px, py = project_lissajous(lx, ly, lz, size)
             proj_points.append((px, py))
@@ -153,7 +196,7 @@ def main():
             draw_glow_line(draw, p1, p2, color_rgb, width=1)
             
         for i in range(num_points):
-            target_idx = int((i * multiplier) % num_points)
+            target_idx = int((i * mult) % num_points)
             p1 = proj_points[i]
             p2 = proj_points[target_idx]
             r, g, b = color_rgb
