@@ -114,11 +114,11 @@
         "symbol": "PRISM",
         "name": "PRISM",
         "owner": "0x765414e37d836d3efde7613d2c576d063a8340be",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
-        "parent_symbol": "AoA",
-        "ignored": true
+        "parent_symbol": "AoA"
     },
     "0x0c7aa4e0c3f7235b78802022c56ffa54fde987f2": {
         "address": "0x0c7aa4e0c3f7235b78802022c56ffa54fde987f2",
@@ -939,11 +939,11 @@
         "symbol": "\ud83c\udf32\ud83c\udf32",
         "name": "Treesurance",
         "owner": "0x52e7d427c36dd15bfdc98dcae66f8228fbcc2b32",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": "0xdc006c7a4ede2a0f42444089859e27b2b615d928",
-        "parent_symbol": "\ud83c\udf32\ud83c\udf32\ud83c\udf32",
-        "ignored": false
+        "parent_symbol": "\ud83c\udf32\ud83c\udf32\ud83c\udf32"
     },
     "0xb533e1b9425bace1ccbbc52d123b916f80143a57": {
         "address": "0xb533e1b9425bace1ccbbc52d123b916f80143a57",
@@ -1467,11 +1467,11 @@
         "symbol": "TR\u03d8P",
         "name": "TR\u03d8PPER",
         "owner": "0x14df2e2dfbca0405f8853f0eee0c70809ec3b023",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": true
+        "parent_symbol": null
     },
     "0x9290737a8d3c9b3fbe1ed5b8a759a6436442bc5f": {
         "address": "0x9290737a8d3c9b3fbe1ed5b8a759a6436442bc5f",
@@ -2028,11 +2028,11 @@
         "symbol": "\u2c98\u2c80\u2c96\u2ca6\u2c80",
         "name": "Radju Malta",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": false
+        "parent_symbol": null
     },
     "0x34d14aebc0414373bdbf3c243c9af5637e4e72b1": {
         "address": "0x34d14aebc0414373bdbf3c243c9af5637e4e72b1",
@@ -2402,11 +2402,11 @@
         "symbol": "\u2cae\u03ec",
         "name": "\u2cae\u2c9f\u03eb\u2c9f\u2c8b",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": false
+        "parent_symbol": null
     },
     "0x642691389cf3dbba2f720755809da06765949cde": {
         "address": "0x642691389cf3dbba2f720755809da06765949cde",
@@ -2842,11 +2842,11 @@
         "symbol": "\u0f53\u0f72\u0f53\u0f97",
         "name": "\u0f50\u0f7a \u0f5d\u0f61 \u0f50\u0f4f \u0f50\u0f7a \u0f53\u0f72\u0f53\u0f97",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": false
+        "parent_symbol": null
     },
     "0xa3ca45298e068a4c67744a35c3d5c7dad2fd88c4": {
         "address": "0xa3ca45298e068a4c67744a35c3d5c7dad2fd88c4",
@@ -2864,11 +2864,11 @@
         "symbol": "",
         "name": "TEH IRRONCLAD\u0000\u0000\u0000\u0000\u0000",
         "owner": "0xce28607bb80a69c73173a933a25519e745b03ce9",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": true
+        "parent_symbol": null
     },
     "0xa4cc6424db9f50a74812d1cca165baf297fd2794": {
         "address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
@@ -3447,11 +3447,11 @@
         "symbol": "\u0f68\u0fb8\u0f7e",
         "name": "\u0f5d\u0f74\u0f5d\u0f74",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b",
         "minter_name": "TreasuryMinter",
         "parent_address": null,
-        "parent_symbol": null,
-        "ignored": false
+        "parent_symbol": null
     },
     "0xf4b8b3d3327436b909b16e13273e74a5290684a2": {
         "address": "0xf4b8b3d3327436b909b16e13273e74a5290684a2",

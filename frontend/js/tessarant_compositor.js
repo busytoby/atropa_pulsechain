@@ -318,6 +318,56 @@
         return dist < (r1 + r2);
     }
 
+    class ParticleEngine {
+        constructor() {
+            this.particles = [];
+        }
+
+        spawn(x, y, vx, vy, color, size, life) {
+            this.particles.push({ x, y, vx, vy, color, size, initialLife: life, life });
+        }
+
+        updateAndDraw(ctx) {
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                const p = this.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+
+                if (p.life <= 0) {
+                    this.particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.fillStyle = p.color;
+                const alpha = p.life / p.initialLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            }
+            ctx.globalAlpha = 1.0; // Reset
+        }
+    }
+
+    const HighscoreManager = {
+        get(gameId) {
+            try {
+                return Number(localStorage.getItem(`c64_highscore_${gameId}`) || 0);
+            } catch (e) {
+                return 0;
+            }
+        },
+        save(gameId, score) {
+            try {
+                const current = this.get(gameId);
+                if (score > current) {
+                    localStorage.setItem(`c64_highscore_${gameId}`, String(score));
+                    return true; // New Highscore
+                }
+            } catch (e) {}
+            return false;
+        }
+    };
+
     function drawBattleScreen(ctx, canvas, frame) {
         if (!window.dinoBattleState) {
             window.dinoBattleState = {
@@ -518,6 +568,8 @@
         drawHUD,
         checkAABBCollision,
         checkCircleCollision,
+        ParticleEngine,
+        HighscoreManager,
         drawBattleScreen
     };
 })();

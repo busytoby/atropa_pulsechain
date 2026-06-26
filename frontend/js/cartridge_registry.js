@@ -141,28 +141,123 @@ class CartridgeAudioSynth {
         } catch (e) {}
     }
     
-    playPickup() {
+    playArpeggio(notes, type = "square", duration = 0.5, speed = 0.08, volume = 0.08, pattern = "up", adsr = null) {
         try {
             this.init();
-            if (!this.ctx) return;
+            if (!this.ctx || !notes || notes.length === 0) return;
             const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             
-            osc.type = "square";
-            osc.frequency.setValueAtTime(523.25, now); // C5
-            osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-            osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+            osc.type = type;
             
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.setValueAtTime(0.1, now + 0.16);
-            gain.gain.linearRampToValueAtTime(0.001, now + 0.3);
+            let activeNotes = [...notes];
+            if (pattern === "down") {
+                activeNotes.reverse();
+            } else if (pattern === "updown") {
+                activeNotes = [...notes, ...[...notes].reverse().slice(1, -1)];
+            }
+            
+            let time = now;
+            let noteIdx = 0;
+            while (time < now + duration) {
+                let freq;
+                if (pattern === "random") {
+                    freq = activeNotes[Math.floor(Math.random() * activeNotes.length)];
+                } else {
+                    freq = activeNotes[noteIdx % activeNotes.length];
+                }
+                osc.frequency.setValueAtTime(freq, time);
+                time += speed;
+                noteIdx++;
+            }
+            
+            if (adsr) {
+                const a = adsr.attack || 0.01;
+                const d = adsr.decay || 0.05;
+                const s = adsr.sustain || 0.7;
+                const r = adsr.release || 0.15;
+                
+                const peakVolume = volume;
+                const sustainVolume = volume * s;
+                
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(peakVolume, now + a);
+                gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, sustainVolume), now + a + d);
+                gain.gain.setValueAtTime(Math.max(0.0001, sustainVolume), now + duration - r);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            } else {
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            }
             
             osc.connect(gain);
             gain.connect(this.ctx.destination);
+            
             osc.start();
-            osc.stop(now + 0.3);
-        } catch (e) {}
+            osc.stop(now + duration);
+        } catch (e) {
+            console.warn("Arpeggio playback failed:", e);
+        }
+    }
+
+    playMajorArpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playMinorArpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.2, rootFreq * 1.5, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playDiminishedArpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.2, rootFreq * 1.414, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playAugmentedArpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5625, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playSus2Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.125, rootFreq * 1.5, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playSus4Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.333, rootFreq * 1.5, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playMaj7Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5, rootFreq * 1.875, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playMin7Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.2, rootFreq * 1.5, rootFreq * 1.8, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playDom7Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5, rootFreq * 1.777, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playHalfDim7Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.2, rootFreq * 1.414, rootFreq * 1.8, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+
+    playDim7Arpeggio(rootFreq, type = "square", duration = 0.5, speed = 0.08, volume = 0.08) {
+        const notes = [rootFreq, rootFreq * 1.2, rootFreq * 1.414, rootFreq * 1.682, rootFreq * 2.0];
+        this.playArpeggio(notes, type, duration, speed, volume);
+    }
+    
+    playPickup() {
+        this.playMajorArpeggio(523.25, "square", 0.3, 0.08, 0.1);
     }
 
     playExplosion() {

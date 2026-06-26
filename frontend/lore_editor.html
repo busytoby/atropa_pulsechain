@@ -608,6 +608,11 @@
   <div class="workspace">
     <!-- Sidebar: Directory listing -->
     <div class="sidebar-left">
+      <!-- Scope Selector Toggle -->
+      <div style="display:flex; border-bottom:1px solid var(--border-color-dim); flex-shrink:0;">
+        <button class="btn active-tab" id="scope-local-btn" onclick="setScope('local')" style="flex:1; border:none; border-radius:0; padding:10px 0; margin:0; font-size:0.75rem;">Local Lore</button>
+        <button class="btn" id="scope-brain-btn" onclick="setScope('brain')" style="flex:1; border:none; border-radius:0; padding:10px 0; margin:0; font-size:0.75rem;">Brain Lore (~)</button>
+      </div>
       <div class="search-box" style="display:flex; flex-direction:column; gap:8px;">
         <input type="text" id="search-input" placeholder="Search files...">
         <select id="tag-filter" onchange="filterByTag()" style="width:100%; background:#17171d; border:1px solid var(--border-color-dim); color:var(--text-highlight); padding:8px; border-radius:4px; font-family:var(--font-body); font-size:0.9rem; outline:none; margin-bottom:0;">
@@ -692,6 +697,7 @@
 
     let files = [];
     let currentFile = null;
+    let currentScope = "local";
     let fileContent = "";
     let annotations = [];
     let selectedRange = null;
@@ -722,6 +728,17 @@
         gloContainer.style.display = 'flex';
         loadGlossary();
       }
+    }
+
+    function setScope(scope) {
+      currentScope = scope;
+      document.getElementById('scope-local-btn').classList.toggle('active-tab', scope === 'local');
+      document.getElementById('scope-brain-btn').classList.toggle('active-tab', scope === 'brain');
+      
+      // Hide tag-filter for brain scope as tags are local-only
+      document.getElementById('tag-filter').style.display = scope === 'local' ? 'block' : 'none';
+      
+      fetchFileList();
     }
 
     async function loadGlossary() {
@@ -832,7 +849,7 @@
 
     async function fetchFileList() {
       try {
-        const res = await fetch('/api/lore/list');
+        const res = await fetch(`/api/lore/list?scope=${currentScope}`);
         files = await res.json();
         renderFileList();
         // Parse URL query parameter
@@ -883,12 +900,12 @@
       container.innerHTML = '';
       
       let filtered = files.filter(f => f.name.toLowerCase().includes(filter.toLowerCase()));
-      if (selectedTag && loreTagsDb && loreTagsDb.tagToDocuments[selectedTag]) {
+      if (selectedTag && currentScope === 'local' && loreTagsDb && loreTagsDb.tagToDocuments[selectedTag]) {
         const docsWithTag = loreTagsDb.tagToDocuments[selectedTag];
         filtered = filtered.filter(f => docsWithTag.includes(f.name));
       }
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.5;">No files match tag filter</div>';
+        container.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.5;">No files match filter</div>';
         return;
       }
 
@@ -945,6 +962,8 @@
         } else if (currentSortMode === 'gaps' && file.louScore > 0) {
           const reasonsTitle = file.louReasons ? file.louReasons.join('\n') : '';
           badgeHtml = `<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(212,175,55,0.15); border:1px solid var(--border-color); color:var(--border-color); padding:1px 4px; border-radius:3px; flex-shrink:0;" title="${reasonsTitle}">GAP: ${file.louScore}</span>`;
+        } else if (currentScope === 'brain') {
+          badgeHtml = '<span style="font-family:var(--font-mono); font-size:0.65rem; background-color:rgba(0,180,255,0.15); border:1px solid #00b4ff; color:#00d2ff; padding:1px 4px; border-radius:3px; flex-shrink:0;">BRAIN</span>';
         } else {
           const nameLower = file.name.toLowerCase();
           if (nameLower.includes('daily_lore')) {
@@ -1138,7 +1157,7 @@
       // Load and display tags for this file
       const tagsContainer = document.getElementById('active-doc-tags');
       tagsContainer.innerHTML = '';
-      if (loreTagsDb && loreTagsDb.documentToTags[filename]) {
+      if (currentScope === 'local' && loreTagsDb && loreTagsDb.documentToTags[filename]) {
         const tags = loreTagsDb.documentToTags[filename];
         for (const tag of tags) {
           const badge = document.createElement('span');
@@ -1168,7 +1187,7 @@
       preview.innerHTML = "<div style='text-align:center; padding: 40px; opacity:0.6;'>Loading document content...</div>";
 
       try {
-        const res = await fetch(`/api/lore/content?file=${encodeURIComponent(filename)}`);
+        const res = await fetch(`/api/lore/content?file=${encodeURIComponent(filename)}&scope=${currentScope}`);
         const text = await res.text();
         
         parseFileContent(text);
@@ -1405,7 +1424,8 @@
           },
           body: JSON.stringify({
             file: currentFile,
-            content: finalContent
+            content: finalContent,
+            scope: currentScope
           })
         });
         const result = await res.json();

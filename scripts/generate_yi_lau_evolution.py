@@ -143,12 +143,11 @@ def main():
         t = f / TOTAL_FRAMES
         
         # Morph stages:
-        # t = 0.0 -> 0.30: pure non-textured vector YI
-        # t = 0.30 -> 0.70: morphs coordinates and texturing/embossing into bamboo hypotrochoid LAU
-        # t = 0.70 -> 1.00: fully textured, centered, embossed bamboo LAU
+        # t = 0.0 -> 0.30: first available coordinates to intermediate layout
+        # t = 0.30 -> 1.00: morphs coordinates and texturing/embossing into the final established Lissajous figure
         morph_factor = 0.0
         if t > 0.30:
-            morph_factor = min(1.0, (t - 0.30) / 0.40)
+            morph_factor = min(1.0, (t - 0.30) / 0.70)
             
         bg = Image.new("RGB", (WIDTH, HEIGHT), (12, 16, 28))
         draw = ImageDraw.Draw(bg, "RGBA")

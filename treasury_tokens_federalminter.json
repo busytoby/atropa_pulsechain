@@ -15,11 +15,11 @@
         "symbol": "TLRz",
         "name": "Tellerz  \u327e",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xe37acc54711562510fafc45d8199ee329ebbcedd",
-        "parent_symbol": "PARADE \u327e",
-        "ignored": false
+        "parent_symbol": "PARADE \u327e"
     },
     "0x00ccd2af7a6ef6e1bf68913c894eaf7bfaac45aa": {
         "address": "0x00ccd2af7a6ef6e1bf68913c894eaf7bfaac45aa",
@@ -796,11 +796,11 @@
         "symbol": "GUIDANCE\ud83d\udd6f\ufe0f",
         "name": "NRLMV ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x93c62ffb1f96731ffd55052cd8e0d46b556037f1",
-        "parent_symbol": "DOMESTIC HARMONY\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "DOMESTIC HARMONY\ud83d\udd6f\ufe0f"
     },
     "0x187bb9628379855f57c42316011f074a2d9f1fc0": {
         "address": "0x187bb9628379855f57c42316011f074a2d9f1fc0",
@@ -884,11 +884,11 @@
         "symbol": "SSA \u327e",
         "name": "Social Security Administration",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x6a8ee78653c588530d31fa308f4b165f346bd9e0",
-        "parent_symbol": "\ua3eb \u327e",
-        "ignored": false
+        "parent_symbol": "\ua3eb \u327e"
     },
     "0x1c58d8a2b8a0330cf396e7b301f350dfa9e65b0d": {
         "address": "0x1c58d8a2b8a0330cf396e7b301f350dfa9e65b0d",
@@ -1302,11 +1302,11 @@
         "symbol": "INSTINCTIVE\ud83d\udd6f\ufe0f",
         "name": "TECOP ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x2348e64b4ccbfe52a686746192e252dcbb422e15",
-        "parent_symbol": "WILL POWER\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "WILL POWER\ud83d\udd6f\ufe0f"
     },
     "0x2b9b69749b3cab826501b9ae5d1501f1211a9d30": {
         "address": "0x2b9b69749b3cab826501b9ae5d1501f1211a9d30",
@@ -1401,11 +1401,11 @@
         "symbol": "VERSTILITY\ud83d\udd6f\ufe0f",
         "name": "XFMND ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x4e51c8db4cf170b8b1e171e3118cc77dcbadedd4",
-        "parent_symbol": "CONCENTRATION\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "CONCENTRATION\ud83d\udd6f\ufe0f"
     },
     "0x300c8378df4de0a1f930a280bd621f7ed1a7d2d8": {
         "address": "0x300c8378df4de0a1f930a280bd621f7ed1a7d2d8",
@@ -1940,11 +1940,11 @@
         "symbol": "MOVEMENT\ud83d\udd6f\ufe0f",
         "name": "ORGAN ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x4af64d9ad1bd76568c3ba0c1ddcc7c8faa0df0b7",
-        "parent_symbol": "CONTINUITY\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "CONTINUITY\ud83d\udd6f\ufe0f"
     },
     "0x46ee9dd7a80eb7461f0a7bc2da33591fa05dbc73": {
         "address": "0x46ee9dd7a80eb7461f0a7bc2da33591fa05dbc73",
@@ -2138,11 +2138,11 @@
         "symbol": "CONCENTRATION\ud83d\udd6f\ufe0f",
         "name": "XSIAS ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x50dec5bd3d9f5454abd9bca3169a725e2d381fb4",
-        "parent_symbol": "COMPROMISE\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "COMPROMISE\ud83d\udd6f\ufe0f"
     },
     "0x4e894249330439ee10d9bab8f33c60fb0747faf5": {
         "address": "0x4e894249330439ee10d9bab8f33c60fb0747faf5",
@@ -2600,11 +2600,11 @@
         "symbol": "BEGINNING\ud83d\udd6f\ufe0f",
         "name": "TAMOX ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x2ae4ee4e16b14645b350e63eef62f4c992d86448",
-        "parent_symbol": "INSTINCTIVE\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "INSTINCTIVE\ud83d\udd6f\ufe0f"
     },
     "0x5f6cc53da54dd1770322fc2d6ac6e30bfc2d3a92": {
         "address": "0x5f6cc53da54dd1770322fc2d6ac6e30bfc2d3a92",
@@ -2886,11 +2886,11 @@
         "symbol": "\ua3eb \u327e",
         "name": "JOB",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f",
-        "parent_symbol": "TLRz",
-        "ignored": false
+        "parent_symbol": "TLRz"
     },
     "0x6c5b74bcbbb861ff14110cfe9659bf07e05951b8": {
         "address": "0x6c5b74bcbbb861ff14110cfe9659bf07e05951b8",
@@ -3227,11 +3227,11 @@
         "symbol": "\u0713\u0710\u071d\u0710\u0722\u0710\u0723",
         "name": "\u327e OPIUM \u327e",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xd33358f1b3130e2e9715c5992028d9de384544e8",
-        "parent_symbol": "CAMPAIGN \u327e",
-        "ignored": false
+        "parent_symbol": "CAMPAIGN \u327e"
     },
     "0x7bf0f16378c5d79d39546ec27302efe9bfc28e26": {
         "address": "0x7bf0f16378c5d79d39546ec27302efe9bfc28e26",
@@ -3898,11 +3898,11 @@
         "symbol": "TEHATER \u327e",
         "name": "\u327e \u072ce\u0717\u0710\u072ce\u072a \u327e",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xf5f1e1b45524cf6919e7ce3eddb83569ec452aea",
-        "parent_symbol": "\u072b",
-        "ignored": false
+        "parent_symbol": "\u072b"
     },
     "0x925ef99fe0c28b3089e7d72dab0ae9ba4e80e983": {
         "address": "0x925ef99fe0c28b3089e7d72dab0ae9ba4e80e983",
@@ -4283,11 +4283,11 @@
         "symbol": "DISTRACTION\ud83d\udd6f\ufe0f",
         "name": "TBRAP ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x5f4d034f05ed737937b53f867a9d4356aeb90f42",
-        "parent_symbol": "BEGINNING\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "BEGINNING\ud83d\udd6f\ufe0f"
     },
     "0xa327c33b3219f6946a7a5ebf76c0d012e67a5a0d": {
         "address": "0xa327c33b3219f6946a7a5ebf76c0d012e67a5a0d",
@@ -4426,11 +4426,11 @@
         "symbol": "FRUSTRATION\ud83d\udd6f\ufe0f",
         "name": "AAIRA ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xdad14fe5d74e4159041db64c140f7e01b6d37f63",
-        "parent_symbol": "RESOLUTE FORCE\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "RESOLUTE FORCE\ud83d\udd6f\ufe0f"
     },
     "0xa7b6263942e32010e1ada93e868c7a30a4a0bd00": {
         "address": "0xa7b6263942e32010e1ada93e868c7a30a4a0bd00",
@@ -4492,11 +4492,11 @@
         "symbol": "BAR \u327e",
         "name": "Cheat On Teh Bar Exam",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xca803da0df03c7e0897ff09bc53369654be0e3e7",
-        "parent_symbol": "\u32e8",
-        "ignored": false
+        "parent_symbol": "\u32e8"
     },
     "0xaaf6dce3184314ef26957f33ce23005beaeb0970": {
         "address": "0xaaf6dce3184314ef26957f33ce23005beaeb0970",
@@ -4855,11 +4855,11 @@
         "symbol": "ENVY\ud83d\udd6f\ufe0f",
         "name": "RNACO ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x7c2f4166c72f0c3dbe6a9b4eff7c64a3e6810e1c",
-        "parent_symbol": "ANALYSIS\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "ANALYSIS\ud83d\udd6f\ufe0f"
     },
     "0xb71b18074aba9c3c8d88bd8a4ff0b3b0ade19b55": {
         "address": "0xb71b18074aba9c3c8d88bd8a4ff0b3b0ade19b55",
@@ -4877,11 +4877,11 @@
         "symbol": "RESPONSIBILITY\ud83d\udd6f\ufe0f",
         "name": "NOMGG ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xc7e2ffa90909936ce42c6583f13fc091f08fdfc2",
-        "parent_symbol": "REGENERATIVE FORCE\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "REGENERATIVE FORCE\ud83d\udd6f\ufe0f"
     },
     "0xb782e7c18068fbf1dd5077b3ff27840b0a36b237": {
         "address": "0xb782e7c18068fbf1dd5077b3ff27840b0a36b237",
@@ -5394,11 +5394,11 @@
         "symbol": "\u32e8",
         "name": "\u327e \u0710\u072a\u0721\u0723 \u327e",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x921bc9a18eaf7299ae42c1cc416ef070b04ef81e",
-        "parent_symbol": "TEHATER \u327e",
-        "ignored": false
+        "parent_symbol": "TEHATER \u327e"
     },
     "0xcb0c1c447b6095449c940a93f8c179ba2b47c57b": {
         "address": "0xcb0c1c447b6095449c940a93f8c179ba2b47c57b",
@@ -5647,11 +5647,11 @@
         "symbol": "CAMPAIGN \u327e",
         "name": "United States Presidential Campaign",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xdb4ebeafb23eca5275821ab0d87c7f6fa5514ea4",
-        "parent_symbol": "SCOIETY \u327e",
-        "ignored": false
+        "parent_symbol": "SCOIETY \u327e"
     },
     "0xd343fb75fecbf3b950301063ae24804356b719f5": {
         "address": "0xd343fb75fecbf3b950301063ae24804356b719f5",
@@ -5746,11 +5746,11 @@
         "symbol": "STEADY FORCE\ud83d\udd6f\ufe0f",
         "name": "BANAA ",
         "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0xa16d0921d8ee0ca6773d66df248d5b7ff64e8265",
-        "parent_symbol": "INCREASE\ud83d\udd6f\ufe0f",
-        "ignored": true
+        "parent_symbol": "INCREASE\ud83d\udd6f\ufe0f"
     },
     "0xd6fac597c9785e2ea2d0ebb79fb4412f360273e0": {
         "address": "0xd6fac597c9785e2ea2d0ebb79fb4412f360273e0",
@@ -5889,11 +5889,11 @@
         "symbol": "SCOIETY \u327e",
         "name": "Teh Fdeeralist Scoiety",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x1c27fd7ab4faa8141119484e00d2455851639c2b",
-        "parent_symbol": "SSA \u327e",
-        "ignored": false
+        "parent_symbol": "SSA \u327e"
     },
     "0xdbc0a668e244fb0e6fe03baaa04065eb7e5ac27a": {
         "address": "0xdbc0a668e244fb0e6fe03baaa04065eb7e5ac27a",
@@ -6120,11 +6120,11 @@
         "symbol": "PARADE \u327e",
         "name": "The Parade Before The Interview",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x51160f352ed148c89d48dfe6384edd07afa24e0e",
-        "parent_symbol": "DFM \u327e",
-        "ignored": false
+        "parent_symbol": "DFM \u327e"
     },
     "0xe3d1d0a7c2fb5b02c03a7c90ee3959d108bb71d3": {
         "address": "0xe3d1d0a7c2fb5b02c03a7c90ee3959d108bb71d3",
@@ -6527,11 +6527,11 @@
         "symbol": "\u072b",
         "name": "\u327e \u0712\u0713\u0715\u0717\u0728 \u327e",
         "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x7ba907a5d308024e2a2010ea60318b834c1d8e9e",
-        "parent_symbol": "\u0713\u0710\u071d\u0710\u0722\u0710\u0723",
-        "ignored": false
+        "parent_symbol": "\u0713\u0710\u071d\u0710\u0722\u0710\u0723"
     },
     "0xf6c3e8de2db28bb274d0dfdea52d7d5891a5b356": {
         "address": "0xf6c3e8de2db28bb274d0dfdea52d7d5891a5b356",
@@ -6851,5 +6851,27 @@
         "parent_address": "0xd393cdda0552cbb2e5b44476a529b8bcf031eadd",
         "parent_symbol": "1",
         "ignored": true
+    },
+    "0x8097e28c2f7b2ad018607461d0b9d95a83afffc2": {
+        "address": "0x8097e28c2f7b2ad018607461d0b9d95a83afffc2",
+        "symbol": "DISMISSED \u327e",
+        "name": "Motion To Dismiss",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
+        "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
+        "minter_name": "FederalMinter",
+        "parent_address": "0xaae18cd46c45d343bba1eab46716b4d69d799734",
+        "parent_symbol": "BAR \u327e"
+    },
+    "0xa121b732fb8c6f7cb76f27bd1b65ba155ff0ec3d": {
+        "address": "0xa121b732fb8c6f7cb76f27bd1b65ba155ff0ec3d",
+        "symbol": "SAFETY \u327e",
+        "name": "Like Only You Can Count On",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
+        "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
+        "minter_name": "FederalMinter",
+        "parent_address": "0xaae18cd46c45d343bba1eab46716b4d69d799734",
+        "parent_symbol": "BAR \u327e"
     }
 }

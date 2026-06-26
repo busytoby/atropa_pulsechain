@@ -28,6 +28,17 @@ The Dysnomia Virtual Machine is a 512-byte manifold of deterministic stochastici
 | **30** | **LOCK** | Dielectric sentinel. 100=MAGNETIC, 200=FREE_ACTIVE. |
 | **31** | **Ichidai** | Absolute Rod endpoint. |
 
+### Fa Core Register Definitions (Words 0-12 / 32-44)
+
+*   **Base** (Word 0 / 32):
+    *   **VM Register Context**: The root reference alignment register in SHA's `Fa` structure for WinchesterMQ state machines. It is established via exactly three pathways: constructor initialization (**Seed**), transitive state propagation (**Form**), or direct administrative override (**Fuse**). Deletion of the physical storage register is impossible; however, the state can be cleared via zeroing (**Fuse(0)**) which collapses dependent registers to zero, or discarded via contextual reset (**Void**).
+    *   **Mathematical Function**: Serves as the base value $B$ in modular exponentiations to derive the following system registers:
+        1.  **Channel**: $Channel = Base^{Signal} \pmod{MotzkinPrime}$ (via `Tune`)
+        2.  **Pole**: $Pole = Base^{Secret} \pmod{MotzkinPrime}$ (via `Polarize`)
+        3.  **Foundation**: $Foundation = Base^{Identity} \pmod{MotzkinPrime}$ (via `Conify`)
+        4.  **Dynamo**: $Dynamo = Base^{Signal} \pmod{Element}$ (via `Bond`)
+    *   **Visual / Geometric Manifestation**: Governs the starting phase angle offset ($\phi_w$) of the $q_w$ coordinate, defining the initial temporal twist and fold of the projected 3D wireframe envelope.
+
 ### The Cone (Diejective Apogee)
 | Word | Entropy | State |
 | :--- | :--- | :--- |

@@ -8,12 +8,33 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
+        /* Custom scrollbar styling for all scrollable sections */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(5, 7, 18, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--neon-blue), var(--neon-purple));
+            border-radius: 4px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
         .dashboard-container {
             max-width: 1400px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 25px;
+            position: relative;
+            z-index: 2;
         }
         .metrics-grid {
             display: grid;
@@ -31,11 +52,28 @@
             border-radius: 12px;
             padding: 20px;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
         .metric-card:hover {
             border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.25), inset 0 0 15px rgba(0, 242, 254, 0.1);
+            transform: translateY(-5px);
+        }
+        .metric-card:hover::before {
+            opacity: 1;
         }
         .metric-title {
             font-size: 0.85rem;
@@ -43,11 +81,16 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 8px;
+            font-weight: 700;
         }
         .metric-value {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.8rem;
             font-weight: 900;
+            transition: text-shadow 0.3s ease;
+        }
+        .metric-card:hover .metric-value {
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
         }
         .status-pass {
             color: #00ff7f;
@@ -79,6 +122,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.25);
         }
         .data-table {
             width: 100%;
@@ -89,6 +133,12 @@
             text-align: left;
             padding: 12px 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .data-table tr {
+            transition: background-color 0.25s ease;
+        }
+        .data-table tbody tr:hover {
+            background-color: rgba(0, 242, 254, 0.03);
         }
         .data-table th {
             font-family: 'Orbitron', sans-serif;
@@ -104,6 +154,10 @@
             font-family: monospace;
             font-size: 0.85rem;
             color: #8c9ba5;
+            transition: color 0.25s ease;
+        }
+        .data-table tr:hover .addr-cell {
+            color: var(--neon-blue);
         }
         .type-badge {
             background: rgba(255, 255, 255, 0.05);
@@ -124,6 +178,20 @@
             height: 500px;
             overflow-y: auto;
             white-space: pre-wrap;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        /* Scanline effect for console feed */
+        .console-output::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
         }
         .pulse-badge {
             background: rgba(0, 242, 254, 0.08);
@@ -133,10 +201,60 @@
             border-radius: 4px;
             font-size: 0.75rem;
             font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 5px rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Floating background particles style */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, var(--neon-blue) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float-particle 15s infinite linear;
+        }
+        .particle-pink {
+            background: radial-gradient(circle, var(--neon-magenta) 0%, transparent 70%);
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(105vh) translateX(0) scale(0.8);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.35;
+            }
+            90% {
+                opacity: 0.35;
+            }
+            100% {
+                transform: translateY(-10vh) translateX(80px) scale(1.2);
+                opacity: 0;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Floating background particles -->
+    <div class="particles-container">
+        <div class="particle" style="left: 10%; width: 100px; height: 100px; animation-delay: 0s; animation-duration: 18s;"></div>
+        <div class="particle particle-pink" style="left: 30%; width: 150px; height: 150px; animation-delay: 2s; animation-duration: 25s;"></div>
+        <div class="particle" style="left: 55%; width: 80px; height: 80px; animation-delay: 5s; animation-duration: 15s;"></div>
+        <div class="particle particle-pink" style="left: 75%; width: 120px; height: 120px; animation-delay: 8s; animation-duration: 22s;"></div>
+        <div class="particle" style="left: 90%; width: 60px; height: 60px; animation-delay: 1s; animation-duration: 12s;"></div>
+    </div>
+
     <div class="glass-bg-container">
         <header>
             <div class="logo">
@@ -339,6 +457,32 @@
         function appendLog(msg, color = "#a2b4c0") {
             logsDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 4px;">&gt; ${msg}</div>`;
             logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function decodeStringJS(hex) {
+            if (!hex || hex === "0x" || hex === "") return "";
+            try {
+                const clean = hex.replace(/^0x/, "");
+                if (clean.length < 128) return "";
+                const len = parseInt(clean.substring(64, 128), 16);
+                const strHex = clean.substring(128, 128 + len * 2);
+                let str = "";
+                for (let i = 0; i < strHex.length; i += 2) {
+                    str += String.fromCharCode(parseInt(strHex.substr(i, 2), 16));
+                }
+                return str.trim();
+            } catch (e) {
+                return "";
+            }
+        }
+
+        function decodeUint8JS(hex) {
+            if (!hex || hex === "0x" || hex === "") return 0;
+            try {
+                return parseInt(hex.replace(/^0x/, ""), 16);
+            } catch (e) {
+                return 0;
+            }
         }
 
         const tokens = [
@@ -705,6 +849,48 @@
                                 } else {
                                     evmBalance = "0";
                                 }
+
+                                // Query metadata
+                                try {
+                                    const nameRes = await fetch(anvilUrl, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            jsonrpc: "2.0",
+                                            method: "eth_call",
+                                            params: [{ to: evmAddr, data: "0x06fdde03" }, "latest"],
+                                            id: 3
+                                        })
+                                    }).then(r => r.json());
+                                    const symRes = await fetch(anvilUrl, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            jsonrpc: "2.0",
+                                            method: "eth_call",
+                                            params: [{ to: evmAddr, data: "0x95d89b41" }, "latest"],
+                                            id: 4
+                                        })
+                                    }).then(r => r.json());
+                                    const decRes = await fetch(anvilUrl, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            jsonrpc: "2.0",
+                                            method: "eth_call",
+                                            params: [{ to: evmAddr, data: "0x313ce567" }, "latest"],
+                                            id: 5
+                                        })
+                                    }).then(r => r.json());
+
+                                    item.evmMetadata = {
+                                        name: decodeStringJS(nameRes.result),
+                                        symbol: decodeStringJS(symRes.result),
+                                        decimals: decodeUint8JS(decRes.result)
+                                    };
+                                } catch (e) {
+                                    item.evmMetadata = null;
+                                }
                             }
                         }
                     } catch (err) {
@@ -754,6 +940,33 @@
                             } else {
                                 zmmBalance = "0";
                             }
+
+                            // Query metadata
+                            try {
+                                const zmmNameRes = await fetch(zmmUrl, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ name: item.zmmName, calldata: "06fdde03" })
+                                }).then(r => r.json());
+                                const zmmSymRes = await fetch(zmmUrl, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ name: item.zmmName, calldata: "95d89b41" })
+                                }).then(r => r.json());
+                                const zmmDecRes = await fetch(zmmUrl, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ name: item.zmmName, calldata: "313ce567" })
+                                }).then(r => r.json());
+
+                                item.zmmMetadata = {
+                                    name: decodeStringJS("0x" + ((zmmNameRes.result && zmmNameRes.result.output) || "")),
+                                    symbol: decodeStringJS("0x" + ((zmmSymRes.result && zmmSymRes.result.output) || "")),
+                                    decimals: decodeUint8JS("0x" + ((zmmDecRes.result && zmmDecRes.result.output) || ""))
+                                };
+                            } catch (e) {
+                                item.zmmMetadata = null;
+                            }
                         }
                     }
                 } catch (err) {
@@ -785,8 +998,24 @@
 
                 // Consistency verification count
                 if (item.type === "Token") {
-                    if (evmStatus === "Deployed" && zmmStatus === "Deployed" && evmBalance === zmmBalance) {
-                        passedChecks++;
+                    if (evmStatus === "Deployed" && zmmStatus === "Deployed") {
+                        const balancesMatch = evmBalance === zmmBalance;
+                        let metadataMatch = false;
+                        if (item.evmMetadata && item.zmmMetadata) {
+                            metadataMatch = item.evmMetadata.name === item.zmmMetadata.name &&
+                                            item.evmMetadata.symbol === item.zmmMetadata.symbol &&
+                                            item.evmMetadata.decimals === item.zmmMetadata.decimals;
+                        }
+                        if (balancesMatch && metadataMatch) {
+                            passedChecks++;
+                        } else {
+                            if (!balancesMatch) {
+                                appendLog(`[FAIL] ${item.name} balance mismatch: EVM=${evmBalance}, ZMM=${zmmBalance}`, "var(--neon-magenta)");
+                            }
+                            if (!metadataMatch) {
+                                appendLog(`[FAIL] ${item.name} metadata mismatch: EVM=${JSON.stringify(item.evmMetadata)}, ZMM=${JSON.stringify(item.zmmMetadata)}`, "var(--neon-magenta)");
+                            }
+                        }
                     } else if (evmStatus === "Not Deployed" && zmmStatus === "Not Deployed") {
                         passedChecks++;
                     }

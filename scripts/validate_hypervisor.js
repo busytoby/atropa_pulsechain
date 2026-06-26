@@ -133,6 +133,28 @@ function getEVMAddress(item) {
     return loc[item.name] || null;
 }
 
+function decodeString(hex) {
+    if (!hex || hex === "0x" || hex === "") return "";
+    try {
+        const clean = hex.replace(/^0x/, "");
+        if (clean.length < 128) return "";
+        const len = parseInt(clean.substring(64, 128), 16);
+        const strHex = clean.substring(128, 128 + len * 2);
+        return Buffer.from(strHex, "hex").toString("utf8").trim();
+    } catch (e) {
+        return "";
+    }
+}
+
+function decodeUint8(hex) {
+    if (!hex || hex === "0x" || hex === "") return 0;
+    try {
+        return parseInt(hex.replace(/^0x/, ""), 16);
+    } catch (e) {
+        return 0;
+    }
+}
+
 // Main execution routine
 async function main() {
     const anvilUrl = "http://127.0.0.1:8545";
@@ -168,12 +190,8 @@ async function main() {
                         } else {
                             item.resolvedEVMAddress = "0x" + res.result.substring(res.result.length - 40);
                         }
-                    } else {
-                        console.log(`[DEBUG] eth_call for ${item.name} returned empty:`, res);
                     }
-                } catch (e) {
-                    console.log(`[DEBUG] eth_call for ${item.name} failed:`, e.message);
-                }
+                } catch (e) {}
             }
             try {
                 const parentContract = allContracts.find(c => c.name === item.dynamicResolver.parent);
@@ -195,12 +213,8 @@ async function main() {
                         item.resolvedZMMAddress = "0x" + output.substring(output.length - 40);
                     }
                     item.zmmName = `dynamic_${item.resolvedZMMAddress.replace("0x", "").toLowerCase()}`;
-                } else {
-                    console.log(`[DEBUG] ZMM call for ${item.name} failed or empty:`, zmmRes);
                 }
-            } catch (e) {
-                console.log(`[DEBUG] ZMM call for ${item.name} failed:`, e.message);
-            }
+            } catch (e) {}
         }
     }
 
@@ -212,6 +226,7 @@ async function main() {
         const evmAddr = getEVMAddress(item);
         let evmStatus = "Not Deployed";
         let evmBalance = "-";
+        let evmMetadata = null;
         
         // 1. Query Anvil EVM (port 8545)
         if (evmAddr) {
@@ -227,7 +242,7 @@ async function main() {
                 if (codeRes && codeRes.result && codeRes.result !== "0x" && codeRes.result !== "") {
                     evmStatus = "Deployed";
                     
-                    // If it is a token, query balance
+                    // If it is a token, query balance and metadata
                     if (item.type === "Token") {
                         const balRes = await postJSON(anvilUrl, {
                             jsonrpc: "2.0",
@@ -248,6 +263,32 @@ async function main() {
                         } else {
                             evmBalance = "0";
                         }
+
+                        // Query metadata
+                        const nameRes = await postJSON(anvilUrl, {
+                            jsonrpc: "2.0",
+                            method: "eth_call",
+                            params: [{ to: evmAddr, data: "0x06fdde03" }, "latest"],
+                            id: 3
+                        });
+                        const symRes = await postJSON(anvilUrl, {
+                            jsonrpc: "2.0",
+                            method: "eth_call",
+                            params: [{ to: evmAddr, data: "0x95d89b41" }, "latest"],
+                            id: 4
+                        });
+                        const decRes = await postJSON(anvilUrl, {
+                            jsonrpc: "2.0",
+                            method: "eth_call",
+                            params: [{ to: evmAddr, data: "0x313ce567" }, "latest"],
+                            id: 5
+                        });
+
+                        evmMetadata = {
+                            name: decodeString(nameRes.result),
+                            symbol: decodeString(symRes.result),
+                            decimals: decodeUint8(decRes.result)
+                        };
                     }
                 }
             } catch (err) {
@@ -259,6 +300,7 @@ async function main() {
         // 2. Query ZMM VM (port 3000 /api/zmm-exec)
         let zmmStatus = "Not Deployed";
         let zmmBalance = "-";
+        let zmmMetadata = null;
         
         try {
             // Query token balance or execution to test deployment
@@ -283,6 +325,17 @@ async function main() {
                     } else {
                         zmmBalance = "0";
                     }
+
+                    // Query metadata
+                    const zmmNameRes = await postJSON(zmmUrl, { name: item.zmmName, calldata: "06fdde03" });
+                    const zmmSymRes = await postJSON(zmmUrl, { name: item.zmmName, calldata: "95d89b41" });
+                    const zmmDecRes = await postJSON(zmmUrl, { name: item.zmmName, calldata: "313ce567" });
+
+                    zmmMetadata = {
+                        name: decodeString("0x" + ((zmmNameRes.result && zmmNameRes.result.output) || "")),
+                        symbol: decodeString("0x" + ((zmmSymRes.result && zmmSymRes.result.output) || "")),
+                        decimals: decodeUint8("0x" + ((zmmDecRes.result && zmmDecRes.result.output) || ""))
+                    };
                 }
             }
         } catch (err) {
@@ -295,9 +348,11 @@ async function main() {
             evmAddr: evmAddr || "N/A",
             evmStatus,
             evmBalance,
+            evmMetadata,
             zmmName: item.zmmName,
             zmmStatus,
-            zmmBalance
+            zmmBalance,
+            zmmMetadata
         });
     }
     
@@ -329,11 +384,24 @@ async function main() {
     for (const r of results) {
         if (r.type === "Token") {
             if (r.evmStatus === "Deployed" && r.zmmStatus === "Deployed") {
-                if (r.evmBalance === r.zmmBalance) {
-                    console.log(`[PASS] Consistency verified for ${r.name}: balances match (${r.evmBalance}).`);
+                const balancesMatch = r.evmBalance === r.zmmBalance;
+                let metadataMatch = false;
+                if (r.evmMetadata && r.zmmMetadata) {
+                    metadataMatch = r.evmMetadata.name === r.zmmMetadata.name &&
+                                    r.evmMetadata.symbol === r.zmmMetadata.symbol &&
+                                    r.evmMetadata.decimals === r.zmmMetadata.decimals;
+                }
+                
+                if (balancesMatch && metadataMatch) {
+                    console.log(`[PASS] Consistency verified for ${r.name}: balances match (${r.evmBalance}) & metadata matches ("${r.evmMetadata.name}", "${r.evmMetadata.symbol}", ${r.evmMetadata.decimals} dec).`);
                     matchedCount++;
                 } else {
-                    console.warn(`[WARNING] Balances differ for ${r.name}: EVM=${r.evmBalance}, ZMM=${r.zmmBalance}.`);
+                    if (!balancesMatch) {
+                        console.warn(`[WARNING] Balances differ for ${r.name}: EVM=${r.evmBalance}, ZMM=${r.zmmBalance}.`);
+                    }
+                    if (!metadataMatch) {
+                        console.warn(`[WARNING] Metadata differs for ${r.name}: EVM=${JSON.stringify(r.evmMetadata)}, ZMM=${JSON.stringify(r.zmmMetadata)}.`);
+                    }
                     mismatchedCount++;
                 }
             } else if (r.evmStatus !== r.zmmStatus) {
@@ -352,7 +420,7 @@ async function main() {
     console.log("-------------------------------------------------------------");
     console.log(`Summary: Verified ${matchedCount} consistent deployment states.`);
     if (mismatchedCount > 0) {
-        console.log(`Alert: Found ${mismatchedCount} token distribution inconsistencies.`);
+        console.log(`Alert: Found ${mismatchedCount} token distribution/metadata inconsistencies.`);
     }
     console.log("Validation execution completed successfully.");
     process.exit(0);

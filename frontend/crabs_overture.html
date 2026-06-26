@@ -353,6 +353,68 @@
             edo22.push(rootFreq * Math.pow(2, i / 22));
         }
 
+        class EcholectricPulse {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.r = 0;
+                this.maxR = type === "bass" ? 220 : 160;
+                this.speed = type === "bass" ? 4.5 : 6.0;
+                this.hitCrabs = new Set();
+                
+                // Color mapping
+                if (type === "bass") this.color = "rgba(186, 104, 200, 0.45)"; // purple
+                else if (type === "lead") this.color = "rgba(0, 242, 254, 0.45)"; // cyan
+                else if (type === "snare") this.color = "rgba(255, 94, 98, 0.45)"; // pink/coral
+                else if (type === "kick") this.color = "rgba(230, 92, 0, 0.45)"; // orange
+                else if (type === "hihat") this.color = "rgba(255, 213, 79, 0.45)"; // gold
+                else this.color = "rgba(255, 255, 255, 0.45)";
+            }
+
+            update(crabs) {
+                this.r += this.speed;
+                crabs.forEach((c, idx) => {
+                    if (this.hitCrabs.has(idx)) return;
+                    const dx = c.x - this.x;
+                    const dy = c.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (Math.abs(dist - this.r) < c.size + 10) {
+                        this.hitCrabs.add(idx);
+                        // Echolectrocution charge boost
+                        c.electroAccumulator = Math.min(10.0, c.electroAccumulator + 0.8);
+                        c.sparkFlashTimer = 6;
+                        c.sparkSourceX = this.x;
+                        c.sparkSourceY = this.y;
+                    }
+                });
+            }
+
+            draw(ctx) {
+                const progress = this.r / this.maxR;
+                const alpha = 0.08 * (1.0 - progress);
+                if (alpha <= 0) return;
+
+                ctx.save();
+                let baseRGB = "255, 255, 255";
+                if (this.type === "bass") baseRGB = "186, 104, 200";
+                else if (this.type === "lead") baseRGB = "0, 242, 254";
+                else if (this.type === "snare") baseRGB = "255, 94, 98";
+                else if (this.type === "kick") baseRGB = "230, 92, 0";
+                else if (this.type === "hihat") baseRGB = "255, 213, 79";
+
+                ctx.strokeStyle = `rgba(${baseRGB}, ${alpha})`;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        const activePulses = [];
+
         // Crab definition
         class Crab {
             constructor(x, y, size, color) {
@@ -366,9 +428,21 @@
                 this.pinchR = 0;
                 this.danceOffset = 0;
                 this.loveTimer = 0;
+                this.speechBubble = "";
+                this.speechBubbleTimer = 0;
+                this.electroAccumulator = 0;
+                this.vaesenMood = "Auncient Serene";
+                this.vaesenIntensity = 0.4;
+                this.sparkFlashTimer = 0;
+                this.sparkSourceX = 0;
+                this.sparkSourceY = 0;
             }
 
-            update(beat, speedFactor) {
+            emitPulse(type) {
+                activePulses.push(new EcholectricPulse(this.x, this.y, type));
+            }
+
+            update(beat, speedFactor, theme) {
                 this.x += this.vx * speedFactor;
                 this.y += this.vy * speedFactor;
 
@@ -381,13 +455,66 @@
                 this.pinchR = Math.max(0, this.pinchR - 0.1);
                 this.danceOffset = Math.max(0, this.danceOffset - 0.05);
                 this.loveTimer = Math.max(0, this.loveTimer - 1);
+                this.speechBubbleTimer = Math.max(0, this.speechBubbleTimer - 1);
+                this.sparkFlashTimer = Math.max(0, this.sparkFlashTimer - 1);
                 if (beat) {
                     if (Math.random() > 0.4) this.pinchL = 1.0;
                     if (Math.random() > 0.4) this.pinchR = 1.0;
                 }
+
+                // Update Vaesen Emotions & Electrolocation Accumulators
+                this.updateVaesen(theme);
             }
 
-            draw(ctx, frame, index) {
+            updateVaesen(theme) {
+                // Environment charge impact
+                if (theme === "lava") {
+                    this.electroAccumulator = Math.min(10, this.electroAccumulator + 0.08);
+                } else if (theme === "deep") {
+                    this.electroAccumulator = Math.min(10, this.electroAccumulator + 0.02);
+                } else if (theme === "sunset") {
+                    this.electroAccumulator = Math.max(0, this.electroAccumulator - 0.03);
+                }
+                
+                // Decay
+                this.electroAccumulator = Math.max(0, this.electroAccumulator * 0.96);
+
+                if (theme === "sunset") {
+                    if (this.electroAccumulator > 3.0) {
+                        this.vaesenMood = "Somber Electra";
+                        this.vaesenIntensity = Math.min(1.0, (this.electroAccumulator - 3) / 7);
+                    } else {
+                        this.vaesenMood = "Melancholy";
+                        this.vaesenIntensity = 0.5;
+                    }
+                } else if (theme === "lava") {
+                    if (this.electroAccumulator > 6.0) {
+                        this.vaesenMood = "Volcanic Frenzy";
+                        this.vaesenIntensity = Math.min(1.0, this.electroAccumulator / 10);
+                    } else {
+                        this.vaesenMood = "Charged Storm";
+                        this.vaesenIntensity = Math.min(1.0, this.electroAccumulator / 6);
+                    }
+                } else if (theme === "deep") {
+                    if (this.electroAccumulator > 4.0) {
+                        this.vaesenMood = "Sub-aquatic Pulse";
+                        this.vaesenIntensity = Math.min(1.0, this.electroAccumulator / 8);
+                    } else {
+                        this.vaesenMood = "Deep Trance";
+                        this.vaesenIntensity = 0.6;
+                    }
+                } else {
+                    if (this.electroAccumulator > 4.0) {
+                        this.vaesenMood = "Electro-Excited";
+                        this.vaesenIntensity = Math.min(1.0, this.electroAccumulator / 8);
+                    } else {
+                        this.vaesenMood = "Auncient Serene";
+                        this.vaesenIntensity = 0.4;
+                    }
+                }
+            }
+
+            draw(ctx, frame, index, theme) {
                 const cx = this.x;
                 const cy = this.y + Math.sin(frame * 0.1 + this.x) * 2 - (this.danceOffset * 15);
                 const s = this.size;
@@ -400,6 +527,64 @@
                 ctx.beginPath();
                 ctx.ellipse(0, s/3, s * 1.2, s * 0.6, 0, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Electrolocation Aura
+                if (this.electroAccumulator > 0.1) {
+                    ctx.save();
+                    let colorBase = "0, 242, 254";
+                    if (theme === "lava") colorBase = "255, 94, 98";
+                    else if (theme === "deep") colorBase = "57, 255, 20";
+                    else if (theme === "sunset") colorBase = "254, 52, 110";
+                    
+                    const baseRadius = s * (1.1 + Math.sin(frame * 0.15) * 0.08);
+                    const accumOffset = Math.min(this.electroAccumulator * 0.12, 0.8);
+                    
+                    // Layer 1: Outer soft fill
+                    ctx.fillStyle = `rgba(${colorBase}, 0.06)`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, baseRadius * (1.5 + accumOffset), 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Layer 2: Middle fill
+                    ctx.fillStyle = `rgba(${colorBase}, 0.12)`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, baseRadius * (1.2 + accumOffset), 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Layer 3: Inner outline
+                    ctx.strokeStyle = `rgba(${colorBase}, 0.25)`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, baseRadius * (1.0 + accumOffset), 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Electric arcs
+                    if (this.electroAccumulator > 3.0) {
+                        ctx.strokeStyle = `rgba(${colorBase}, 0.6)`;
+                        ctx.lineWidth = 1.5;
+                        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                            ctx.beginPath();
+                            const angle = a + Math.sin(frame * 0.12 + a) * 0.2;
+                            const startDist = s * 0.8;
+                            const endDist = s * (1.1 + this.electroAccumulator * 0.15);
+                            
+                            const x1 = Math.cos(angle) * startDist;
+                            const y1 = Math.sin(angle) * startDist;
+                            
+                            const xMid = Math.cos(angle) * ((startDist + endDist) / 2) + (Math.random() - 0.5) * 12;
+                            const yMid = Math.sin(angle) * ((startDist + endDist) / 2) + (Math.random() - 0.5) * 12;
+                            
+                            const x2 = Math.cos(angle) * endDist + (Math.random() - 0.5) * 16;
+                            const y2 = Math.sin(angle) * endDist + (Math.random() - 0.5) * 16;
+                            
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(xMid, yMid);
+                            ctx.lineTo(x2, y2);
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
+                }
 
                 // Draw Legs
                 ctx.strokeStyle = this.color;
@@ -459,16 +644,74 @@
                 ctx.beginPath();
                 ctx.arc(-s * 1.1, lClawY, s * 0.3, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Left Pinch Sparkle (Starburst)
+                if (this.pinchL > 0.8) {
+                    let sparkleColor = "#ffd54f";
+                    if (theme === "lava") sparkleColor = "#ffeb3b";
+                    else if (theme === "deep") sparkleColor = "#8bc34a";
+                    
+                    ctx.save();
+                    const rays = [
+                        { len: 14, angle: 0, col: "#ffffff", w: 3 },
+                        { len: 14, angle: Math.PI / 2, col: "#ffffff", w: 3 },
+                        { len: 9, angle: Math.PI / 4, col: sparkleColor, w: 2 },
+                        { len: 9, angle: -Math.PI / 4, col: sparkleColor, w: 2 },
+                        { len: 18, angle: 0, col: sparkleColor, w: 1 },
+                        { len: 18, angle: Math.PI / 2, col: sparkleColor, w: 1 }
+                    ];
+                    rays.forEach(r => {
+                        ctx.strokeStyle = r.col;
+                        ctx.lineWidth = r.w;
+                        ctx.beginPath();
+                        const dx = Math.cos(r.angle) * r.len;
+                        const dy = Math.sin(r.angle) * r.len;
+                        ctx.moveTo(-s * 1.1 - dx, lClawY - dy);
+                        ctx.lineTo(-s * 1.1 + dx, lClawY + dy);
+                        ctx.stroke();
+                    });
+                    ctx.restore();
+                }
 
                 // Right Claw / Pinch
+                ctx.strokeStyle = this.color;
                 ctx.beginPath();
                 ctx.moveTo(s * 0.6, -s * 0.1);
                 const rClawY = -s * 0.8 - (this.pinchR * s * 0.3);
                 ctx.lineTo(s * 1.1, rClawY);
                 ctx.stroke();
+                ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.arc(s * 1.1, rClawY, s * 0.3, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Right Pinch Sparkle (Starburst)
+                if (this.pinchR > 0.8) {
+                    let sparkleColor = "#ffd54f";
+                    if (theme === "lava") sparkleColor = "#ffeb3b";
+                    else if (theme === "deep") sparkleColor = "#8bc34a";
+                    
+                    ctx.save();
+                    const rays = [
+                        { len: 14, angle: 0, col: "#ffffff", w: 3 },
+                        { len: 14, angle: Math.PI / 2, col: "#ffffff", w: 3 },
+                        { len: 9, angle: Math.PI / 4, col: sparkleColor, w: 2 },
+                        { len: 9, angle: -Math.PI / 4, col: sparkleColor, w: 2 },
+                        { len: 18, angle: 0, col: sparkleColor, w: 1 },
+                        { len: 18, angle: Math.PI / 2, col: sparkleColor, w: 1 }
+                    ];
+                    rays.forEach(r => {
+                        ctx.strokeStyle = r.col;
+                        ctx.lineWidth = r.w;
+                        ctx.beginPath();
+                        const dx = Math.cos(r.angle) * r.len;
+                        const dy = Math.sin(r.angle) * r.len;
+                        ctx.moveTo(s * 1.1 - dx, rClawY - dy);
+                        ctx.lineTo(s * 1.1 + dx, rClawY + dy);
+                        ctx.stroke();
+                    });
+                    ctx.restore();
+                }
 
                 // DRUMS DRAWING LOGIC (Indices 2, 3, 4)
                 const isDrummer = (index === 2 || index === 3 || index === 4);
@@ -549,12 +792,74 @@
                     }
                 }
 
-                // Draw heart if in love
-                if (this.loveTimer > 0) {
-                    ctx.fillStyle = "#ff2e63";
-                    ctx.font = "10px sans-serif";
+                // Draw speech bubble if speaking
+                if (this.speechBubbleTimer > 0 && this.speechBubble) {
+                    ctx.save();
+                    ctx.font = "bold 9px 'Orbitron', sans-serif";
+                    const textWidth = ctx.measureText(this.speechBubble).width;
+                    
+                    // Bubble background
+                    ctx.fillStyle = "#ffffff";
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 1.5;
+                    
+                    const bx = - (textWidth / 2) - 6;
+                    const by = -s * 2.2;
+                    const bw = textWidth + 12;
+                    const bh = 15;
+                    
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, bw, bh, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Pointer triangle
+                    ctx.beginPath();
+                    ctx.moveTo(-4, by + bh);
+                    ctx.lineTo(4, by + bh);
+                    ctx.lineTo(0, by + bh + 4);
+                    ctx.closePath();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Text
+                    ctx.fillStyle = "#000000";
                     ctx.textAlign = "center";
-                    ctx.fillText("❤️", 0, -s * 1.3);
+                    ctx.fillText(this.speechBubble, 0, by + 10);
+                    ctx.restore();
+                }
+
+                // Vaesen Emotion Label
+                ctx.save();
+                ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+                ctx.font = "bold 8px 'Orbitron', sans-serif";
+                ctx.textAlign = "center";
+                const moodText = `${this.vaesenMood} (${this.electroAccumulator.toFixed(1)}e)`;
+                ctx.fillText(moodText, 0, s * 1.35);
+                ctx.restore();
+
+                // Echolectric Spark zig-zag
+                if (this.sparkFlashTimer > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    
+                    const steps = 4;
+                    const targetX = this.sparkSourceX - cx;
+                    const targetY = this.sparkSourceY - cy;
+                    
+                    for (let i = 1; i < steps; i++) {
+                        const t = i / steps;
+                        const px = targetX * t + (Math.random() - 0.5) * 8;
+                        const py = targetY * t + (Math.random() - 0.5) * 8;
+                        ctx.lineTo(px, py);
+                    }
+                    ctx.lineTo(targetX, targetY);
+                    ctx.stroke();
+                    ctx.restore();
                 }
 
                 ctx.restore();
@@ -562,12 +867,15 @@
         }
 
         const crabs = [
-            new Crab(100, 220, 14, "#ff5e62"),
-            new Crab(220, 250, 18, "#ffa07a"),
-            new Crab(350, 230, 12, "#ff6b81"),
-            new Crab(150, 290, 16, "#e65c00"),
-            new Crab(280, 270, 20, "#ff4757"),
-            new Crab(400, 260, 15, "#ff7f50")
+            // Front Row: Melodic & Bass players (Stage Left, Center, Stage Right)
+            new Crab(100, 290, 15, "#ff5e62"), // Crab 0: Sub Bass
+            new Crab(270, 290, 18, "#ffa07a"), // Crab 1: Lead Synth
+            new Crab(430, 290, 16, "#ff7f50"), // Crab 5: Counterpoint Lead
+            
+            // Back Row: Organized Drummers (Stage Left, Center, Stage Right)
+            new Crab(120, 210, 13, "#ff6b81"), // Crab 2: Snare Drummer
+            new Crab(270, 215, 17, "#e65c00"), // Crab 3: Bass/Kick Drummer
+            new Crab(410, 210, 14, "#ff4757")  // Crab 4: Hi-Hat Drummer
         ];
 
         // Wave simulation parameters
@@ -661,11 +969,35 @@
             }
             ctx.stroke();
 
-            // Update & Draw Crabs
+            // Electrolocation proximity detection
+            for (let i = 0; i < crabs.length; i++) {
+                for (let j = i + 1; j < crabs.length; j++) {
+                    const c1 = crabs[i];
+                    const c2 = crabs[j];
+                    const dist = Math.hypot(c2.x - c1.x, c2.y - c1.y);
+                    if (dist < 150) {
+                        const electroCharge = (150 - dist) * 0.02;
+                        c1.electroAccumulator = Math.min(10, c1.electroAccumulator + electroCharge);
+                        c2.electroAccumulator = Math.min(10, c2.electroAccumulator + electroCharge);
+                    }
+                }
+            }
+
+            // Update Crabs
             const isBeat = (window.musicPlaying && (frameCount % 12 === 0));
             crabs.forEach(c => {
-                c.update(isBeat, window.musicPlaying ? 1 : 0.2);
+                c.update(isBeat, window.musicPlaying ? 1 : 0.2, theme);
             });
+
+            // Update and draw active pulses
+            for (let i = activePulses.length - 1; i >= 0; i--) {
+                const p = activePulses[i];
+                p.update(crabs);
+                p.draw(ctx);
+                if (p.r > p.maxR) {
+                    activePulses.splice(i, 1);
+                }
+            }
 
             // Crab-to-crab collision check and resolution
             for (let i = 0; i < crabs.length; i++) {
@@ -702,7 +1034,7 @@
             }
 
             crabs.forEach((c, idx) => {
-                c.draw(ctx, frameCount, idx);
+                c.draw(ctx, frameCount, idx, theme);
             });
 
             // CRT overlay grid lines
@@ -725,33 +1057,29 @@
 
         window.musicPlaying = false;
 
+        const melodies = {
+            "circle_of_life": [4, 4, 4, 4, 5, 4, 2, 0, 2, 4, 2, 2, 4, 4, 4, 4, 5, 4, 5, 7, 6, 4, 5, 5],
+            "your_song": [2, 4, 5, 4, 2, 0, 0, 2, 4, 5, 4, 2, 0, 2, 4, 4, 5, 6, 5, 4, 2, 0, 2, 4],
+            "rocket_man": [7, 7, 7, 6, 5, 4, 5, 4, 2, 4, 4, 5, 7, 7, 7, 6, 5, 4, 5, 4, 2, 0, 0],
+            "tiny_dancer": [4, 5, 7, 7, 6, 5, 4, 5, 5, 4, 2, 0, 0, 2, 4, 2, 0, 2, 4, 5, 4, 2, 0],
+            "still_standing": [7, 7, 7, 7, 6, 5, 4, 2, 0, 2, 4, 4, 4, 5, 6, 5, 4, 2, 0, 2, 4, 7, 7, 7]
+        };
+
+        const lyrics = {
+            "circle_of_life": ["it", "is", "the", "cir", "cle", "of", "life", "and", "it", "moves", "us", "all", "through", "des", "ti", "ny", "and", "faith", "and", "love", "and", "hope"],
+            "your_song": ["it", "is", "a", "lit", "tle", "bit", "fun", "ny", "this", "feel", "ing", "in", "side", "i", "am", "not", "one", "of", "those", "who", "can", "ea", "si", "ly", "hide"],
+            "rocket_man": ["rock", "et", "man", "burn", "ing", "out", "his", "fuse", "up", "here", "a", "lone", "and", "i", "think", "it", "is", "gon", "na", "be", "a", "long", "time"],
+            "tiny_dancer": ["hold", "me", "clo", "ser", "ti", "ny", "dan", "cer", "count", "the", "head", "lights", "on", "the", "high", "way", "lay", "me", "down", "in", "sheets", "of", "li", "nen"],
+            "still_standing": ["don't", "you", "know", "i", "am", "still", "stand", "ing", "bet", "ter", "than", "i", "e", "ver", "did", "look", "ing", "like", "a", "true", "sur", "vi", "vor"]
+        };
+
         const sections = [
-            { start: 0, end: 15, name: "Auncient Tide (Birth of Crabs)", scale: [0, 4, 8, 12, 16], bpm: 90, bass: 0.8, density: 0.1, theme: "sea" },
-            { start: 15, end: 30, name: "Melancholic Horizon (Lonely Shore)", scale: [0, 3, 7, 10, 14], bpm: 95, bass: 0.9, density: 0.2, theme: "sunset" },
-            { start: 30, end: 45, name: "Anticipation (First Pinch)", scale: [0, 2, 6, 8, 12, 16], bpm: 100, bass: 1.0, density: 0.4, theme: "sunset" },
-            { start: 45, end: 60, name: "Paradiddle Awakening (Crawl Begins)", scale: [0, 2, 6, 8, 14, 16], bpm: 102, bass: 1.1, density: 0.5, theme: "sea" },
-            { start: 60, end: 75, name: "Deep Manifold Groove (Thumpin Bass)", scale: [0, 4, 7, 11, 15, 18], bpm: 105, bass: 1.6, density: 0.6, theme: "deep" },
-            { start: 75, end: 90, name: "Sub-harmonic Tension (Undercurrent)", scale: [0, 1, 5, 8, 12, 17], bpm: 102, bass: 1.8, density: 0.5, theme: "deep" },
-            { start: 90, end: 105, name: "Pinch Dance (Playful Rhythm)", scale: [0, 4, 8, 12, 16, 20], bpm: 108, bass: 1.2, density: 0.7, theme: "lava" },
-            { start: 105, end: 120, name: "Crying Ocean Depth (Mournful Echo)", scale: [0, 3, 6, 9, 13, 16], bpm: 98, bass: 1.0, density: 0.4, theme: "sunset" },
-            { start: 120, end: 135, name: "Microtonal Reef (Heavy Sub-Bass)", scale: [0, 4, 6, 10, 12, 18, 20], bpm: 104, bass: 2.1, density: 0.6, theme: "deep" },
-            { start: 135, end: 150, name: "Claw Aggression (Crabs Assemble)", scale: [0, 2, 5, 8, 11, 14, 17], bpm: 110, bass: 1.8, density: 0.8, theme: "lava" },
-            { start: 150, end: 165, name: "Syrinx Synthesis (Ancient Signal)", scale: [0, 5, 10, 15, 20], bpm: 112, bass: 1.4, density: 0.7, theme: "sea" },
-            { start: 165, end: 180, name: "Paradiddle Hurricane (Intense Beats)", scale: [0, 2, 4, 8, 10, 12, 16, 20], bpm: 118, bass: 1.7, density: 0.95, theme: "lava" },
-            { start: 180, end: 195, name: "Echoplex Euphoria (Spiritual Wave)", scale: [0, 4, 8, 12, 16, 21], bpm: 105, bass: 1.3, density: 0.5, theme: "sunset" },
-            { start: 195, end: 210, name: "Volcanic Rift (Acid Thump)", scale: [0, 3, 6, 9, 12, 15, 18, 21], bpm: 114, bass: 2.3, density: 0.85, theme: "lava" },
-            { start: 210, end: 225, name: "Lava Tide Warning (Incineration)", scale: [0, 1, 4, 7, 10, 13, 16, 19], bpm: 116, bass: 2.5, density: 0.9, theme: "lava" },
-            { start: 225, end: 240, name: "Tutti Climax (All Claws Flailing)", scale: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20], bpm: 122, bass: 2.8, density: 1.0, theme: "lava" },
-            { start: 240, end: 255, name: "Reef Subversion (Mysterious Calm)", scale: [0, 4, 8, 12], bpm: 100, bass: 1.6, density: 0.3, theme: "deep" },
-            { start: 255, end: 270, name: "Melodic Resurgence (New Hope)", scale: [0, 5, 8, 13, 17, 21], bpm: 108, bass: 1.5, density: 0.6, theme: "sea" },
-            { start: 270, end: 285, name: "Intense Contrapuntal Swarm", scale: [0, 2, 6, 9, 12, 15, 18, 20], bpm: 116, bass: 1.9, density: 0.8, theme: "deep" },
-            { start: 285, end: 300, name: "Paradiddle Frenzy (Final Wave)", scale: [0, 2, 4, 8, 10, 12, 16, 20], bpm: 124, bass: 2.2, density: 0.95, theme: "lava" },
-            { start: 300, end: 315, name: "Oceanic Resolve (Triumphant Return)", scale: [0, 4, 8, 12, 16, 20], bpm: 110, bass: 1.6, density: 0.7, theme: "sea" },
-            { start: 315, end: 330, name: "Twilight Descending (Soft Shadows)", scale: [0, 3, 7, 10, 14, 18], bpm: 102, bass: 1.2, density: 0.4, theme: "sunset" },
-            { start: 330, end: 345, name: "Incantation of the Coral", scale: [0, 4, 8, 12, 16], bpm: 98, bass: 1.1, density: 0.3, theme: "sunset" },
-            { start: 345, end: 360, name: "Sub-aquatic Dream (Echoes)", scale: [0, 4, 9, 14, 19], bpm: 95, bass: 0.9, density: 0.2, theme: "deep" },
-            { start: 360, end: 375, name: "Sunset Shoreline (Farewell)", scale: [0, 4, 8, 12, 16], bpm: 90, bass: 0.7, density: 0.1, theme: "sunset" },
-            { start: 375, end: 390, name: "Auncient Tide (Return to Void)", scale: [0, 4, 8, 12, 16], bpm: 85, bass: 0.4, density: 0.05, theme: "sea" }
+            { start: 0, end: 60, name: "Circle of Life (DnB Intro)", melody: "circle_of_life", rootKey: 0, bpm: 172, bass: 1.5, density: 0.8, theme: "sea" },
+            { start: 60, end: 120, name: "Your Song (Liquid DnB)", melody: "your_song", rootKey: 6, bpm: 170, bass: 1.3, density: 0.6, theme: "sunset" },
+            { start: 120, end: 180, name: "Rocket Man (Space DnB)", melody: "rocket_man", rootKey: 14, bpm: 174, bass: 1.6, density: 0.7, theme: "deep" },
+            { start: 180, end: 240, name: "Tiny Dancer (Piano DnB)", melody: "tiny_dancer", rootKey: 0, bpm: 172, bass: 1.4, density: 0.7, theme: "sunset" },
+            { start: 240, end: 330, name: "I'm Still Standing (Climax DnB)", melody: "still_standing", rootKey: 20, bpm: 176, bass: 1.9, density: 0.9, theme: "lava" },
+            { start: 330, end: 390, name: "Circle of Life (Outro Reprise)", melody: "circle_of_life", rootKey: 0, bpm: 168, bass: 1.1, density: 0.5, theme: "sea" }
         ];
 
         function initAudio() {
@@ -768,7 +1096,6 @@
             mainGain.connect(audioCtx.destination);
         }
 
-        // Custom instruments synthesis
         function playSubBassNote(freq, dur, multiplier = 1.0) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
@@ -777,30 +1104,73 @@
             const osc1 = audioCtx.createOscillator();
             const gain1 = audioCtx.createGain();
             osc1.type = "triangle";
-            osc1.frequency.setValueAtTime(freq / 2, now); // Octave down sub
-
+            
             // Sub Voice 2: Saw blend
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
             osc2.type = "sawtooth";
-            osc2.frequency.setValueAtTime(freq / 2, now);
 
-            gain1.gain.setValueAtTime(0.4 * multiplier, now);
+            // Sub Voice 3: Square wave grit
+            const osc3 = audioCtx.createOscillator();
+            const gain3 = audioCtx.createGain();
+            osc3.type = "square";
+
+            // Distortion for booty bass saturation
+            const dist = audioCtx.createWaveShaper();
+            const makeDistortionCurve = (amount) => {
+                const k = typeof amount === 'number' ? amount : 50;
+                const n_samples = 44100;
+                const curve = new Float32Array(n_samples);
+                const deg = Math.PI / 180;
+                for (let i = 0; i < n_samples; ++i) {
+                    const x = (i * 2) / n_samples - 1;
+                    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+                }
+                return curve;
+            };
+            dist.curve = makeDistortionCurve(30);
+            dist.oversample = '4x';
+
+            // Booty Bass pitch sweeps for that sliding bounce
+            osc1.frequency.setValueAtTime(freq * 1.8, now);
+            osc1.frequency.exponentialRampToValueAtTime(freq * 0.9, now + 0.15);
+            osc2.frequency.setValueAtTime(freq * 1.8, now);
+            osc2.frequency.exponentialRampToValueAtTime(freq * 0.9, now + 0.15);
+            osc3.frequency.setValueAtTime(freq * 1.8, now);
+            osc3.frequency.exponentialRampToValueAtTime(freq * 0.9, now + 0.15);
+
+            // Filter envelope sweep (classic booty bass filter modulation)
+            if (filterNode) {
+                filterNode.frequency.setValueAtTime(180, now);
+                filterNode.frequency.exponentialRampToValueAtTime(650, now + 0.08);
+                filterNode.frequency.exponentialRampToValueAtTime(220, now + dur);
+            }
+
+            gain1.gain.setValueAtTime(0.50 * multiplier, now);
             gain1.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
-            gain2.gain.setValueAtTime(0.12 * multiplier, now);
+            gain2.gain.setValueAtTime(0.25 * multiplier, now);
             gain2.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+            gain3.gain.setValueAtTime(0.20 * multiplier, now);
+            gain3.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
             osc1.connect(gain1);
             osc2.connect(gain2);
+            osc3.connect(gain3);
 
-            gain1.connect(filterNode);
-            gain2.connect(filterNode);
+            gain1.connect(dist);
+            gain2.connect(dist);
+            gain3.connect(dist);
+
+            dist.connect(filterNode);
 
             osc1.start(now);
             osc1.stop(now + dur);
             osc2.start(now);
             osc2.stop(now + dur);
+            osc3.start(now);
+            osc3.stop(now + dur);
         }
 
         function playLeadSynth(freq, dur) {
@@ -924,36 +1294,60 @@
             const stepDuration = 60 / tempo / 4; // 16th notes
 
             // Arpeggiator & Lead Note Generation
-            const scale = section.scale;
             const subStep = stepIndex % 16;
+            const majScale = [0, 4, 8, 10, 14, 18, 21];
+            const minScale = [0, 4, 6, 10, 14, 16, 20];
+            const scaleSteps = (section.theme === "deep") ? minScale : majScale;
+            const melody = melodies[section.melody];
+            const noteDeg = melody[stepIndex % melody.length];
+            const degree = noteDeg % 7;
+            const octave = Math.floor(noteDeg / 7);
+            const finalStep = section.rootKey + scaleSteps[degree] + (octave * 22);
+            const baseFreq = rootFreq * Math.pow(2, finalStep / 22);
 
-            if (subStep === 0 || subStep === 8) {
-                // Ground Sub Bass Roots with section.bass factor
-                const noteStep = scale[0];
-                playSubBassNote(edo22[noteStep], stepDuration * 6, section.bass);
+            // Rolling Drum and Bass Sub Bass Roots
+            if (subStep === 0 || subStep === 8 || (subStep === 10 && Math.random() > 0.4)) {
+                const bassStep = (subStep === 8 && Math.random() > 0.5) ? section.rootKey + 14 - 22 : section.rootKey - 22;
+                const subBassFreq = rootFreq * Math.pow(2, bassStep / 22);
+                playSubBassNote(subBassFreq, stepDuration * 3, section.bass);
                 crabs[0].danceOffset = 1.0;
                 crabs[0].pinchL = 1.0;
+                crabs[0].emitPulse("bass");
             } else if (subStep === 4 || subStep === 12) {
-                // Secondary octave harmonies
-                const noteStep = scale[Math.min(scale.length - 1, 2)];
-                playSubBassNote(edo22[noteStep], stepDuration * 4, section.bass);
+                const subBassFreq = rootFreq * Math.pow(2, (section.rootKey - 22) / 22);
+                playSubBassNote(subBassFreq, stepDuration * 2, section.bass);
                 crabs[0].danceOffset = 0.8;
                 crabs[0].pinchR = 1.0;
+                crabs[0].emitPulse("bass");
             }
 
-            // Melodic Lead Patterns (Crab 1)
-            if (subStep % 2 === 0 && Math.random() > 0.3) {
-                const leadStepIdx = Math.floor(Math.random() * scale.length);
-                const baseFreq = edo22[scale[leadStepIdx]];
+            // Melodic Lead Patterns (Crab 1 plays Elton John melodies & sings the lyrics syllable-by-syllable!)
+            if (subStep % 2 === 0) {
                 playLeadSynth(baseFreq * 2, stepDuration * 1.5);
                 crabs[1].danceOffset = 0.8;
                 crabs[1].pinchL = 1.0;
+                crabs[1].emitPulse("lead");
+                
+                // Real-time vocoder lyric syllables
+                const songLyrics = lyrics[section.melody];
+                const lyricIdx = Math.floor(stepIndex / 2) % songLyrics.length;
+                const word = songLyrics[lyricIdx];
+                crabs[1].speechBubble = word;
+                crabs[1].speechBubbleTimer = 6;
+                singWord(word, baseFreq * 2);
             }
 
-            // Counterpoint chords (Crab 5)
-            if (subStep % 4 === 2) {
+            // Counterpoint melody (Crab 5 canon delayed by 3 steps)
+            if (subStep % 2 === 1) {
+                const prevNoteDeg = melody[Math.max(0, stepIndex - 3) % melody.length];
+                const prevDeg = prevNoteDeg % 7;
+                const prevOct = Math.floor(prevNoteDeg / 7);
+                const prevStep = section.rootKey + scaleSteps[prevDeg] + (prevOct * 22);
+                const prevFreq = rootFreq * Math.pow(2, prevStep / 22);
+                playLeadSynth(prevFreq * 2, stepDuration * 1.0);
                 crabs[5].danceOffset = 0.6;
                 crabs[5].pinchR = 1.0;
+                crabs[5].emitPulse("lead");
             }
 
             // Paradiddle Drum Rhythms (Kick, Snare, Hihat)
@@ -973,17 +1367,20 @@
                     crabs[2].pinchL = 1.0;
                     crabs[2].pinchR = 1.0;
                     crabs[2].danceOffset = 0.7;
+                    crabs[2].emitPulse("snare");
                 }
                 // Bass/Kick Drummer (Crab 3)
                 if (isR) {
                     crabs[3].pinchL = 1.0;
                     crabs[3].pinchR = 1.0;
                     crabs[3].danceOffset = 0.9;
+                    crabs[3].emitPulse("kick");
                 }
                 // Hi-Hat Drummer (Crab 4)
                 if (stepIndex % 2 === 0) {
                     crabs[4].pinchL = 1.0;
                     crabs[4].pinchR = 1.0;
+                    crabs[4].emitPulse("hihat");
                 }
             } else {
                 // ambient sparse hihats
@@ -991,11 +1388,69 @@
                     playPerididdle(false, false, true);
                     crabs[4].pinchL = 1.0;
                     crabs[4].pinchR = 1.0;
+                    crabs[4].emitPulse("hihat");
                 }
             }
 
+
             stepIndex++;
             sequenceTimer = setTimeout(scheduleTick, stepDuration * 1000);
+        }
+
+        // Web Audio Formant Synthesizer for Crab Singing
+        function singWord(word, pitchFreq = 140) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // Map vowels to resonant frequencies (F1, F2 formant pairs)
+            const formants = {
+                "a": [730, 1090],
+                "e": [270, 2290],
+                "i": [300, 2200],
+                "o": [570, 840],
+                "u": [300, 870],
+                "space": [0, 0]
+            };
+            
+            // Extract vowel-like timeline from word
+            let timeOffset = 0;
+            for (let char of word) {
+                let fPair = formants[char] || formants["a"]; // default to 'a' vowel formant
+                if (char === " ") fPair = formants["space"];
+                
+                if (fPair[0] > 0) {
+                    const dur = 0.15;
+                    const osc = audioCtx.createOscillator();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(pitchFreq + Math.sin(timeOffset * 10) * 10, now + timeOffset); // voice pitch
+                    
+                    // Filter 1 (F1 Formant)
+                    const filter1 = audioCtx.createBiquadFilter();
+                    filter1.type = "bandpass";
+                    filter1.frequency.setValueAtTime(fPair[0], now + timeOffset);
+                    filter1.Q.setValueAtTime(8, now + timeOffset);
+                    
+                    // Filter 2 (F2 Formant)
+                    const filter2 = audioCtx.createBiquadFilter();
+                    filter2.type = "bandpass";
+                    filter2.frequency.setValueAtTime(fPair[1], now + timeOffset);
+                    filter2.Q.setValueAtTime(8, now + timeOffset);
+                    
+                    const voiceGain = audioCtx.createGain();
+                    voiceGain.gain.setValueAtTime(0.08, now + timeOffset);
+                    voiceGain.gain.exponentialRampToValueAtTime(0.0001, now + timeOffset + dur);
+                    
+                    osc.connect(filter1);
+                    osc.connect(filter2);
+                    filter1.connect(voiceGain);
+                    filter2.connect(voiceGain);
+                    voiceGain.connect(mainGain);
+                    
+                    osc.start(now + timeOffset);
+                    osc.stop(now + timeOffset + dur);
+                }
+                timeOffset += 0.18;
+            }
         }
 
         // Time updates

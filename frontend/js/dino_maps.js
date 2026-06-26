@@ -249,6 +249,24 @@
         }
     }
 
+    function handleReset(win) {
+        win.vaultX = 144;
+        win.vaultY = 120;
+        win.dinoVx = 0;
+        win.dinoVy = 0;
+        
+        win.dinoLives = Math.max(0, (win.dinoLives || 3) - 1);
+        if (win.dinoLives === 0) {
+            if (win.TessarantCompositor && win.TessarantCompositor.HighscoreManager) {
+                win.TessarantCompositor.HighscoreManager.save("dino_eggs", win.dinoScore || 0);
+            }
+            win.dinoScore = 0;
+            win.dinoLives = 3;
+            win.dinoLevel = 1;
+        }
+        if (win.cartridgeAudio) win.cartridgeAudio.playExplosion();
+    }
+
     function updatePlayer(win, map, interactiveKeys, isDemo, frame) {
         if (!win.vaultX) {
             win.vaultX = 144;
@@ -360,11 +378,7 @@
 
         // Lava Hazard resets player
         if (map.theme.hasLava && win.vaultY >= 170) {
-            win.vaultX = 144;
-            win.vaultY = 120;
-            win.dinoVx = 0;
-            win.dinoVy = 0;
-            if (win.cartridgeAudio) win.cartridgeAudio.playExplosion();
+            handleReset(win);
         }
 
         // Update Crawling Spiders
@@ -376,12 +390,7 @@
                 }
                 // Collision with Tim
                 if (Math.hypot(win.vaultX - s.x, win.vaultY - s.y) < 10) {
-                    // reset player position
-                    win.vaultX = 144;
-                    win.vaultY = 120;
-                    win.dinoVx = 0;
-                    win.dinoVy = 0;
-                    if (win.cartridgeAudio) win.cartridgeAudio.playExplosion();
+                    handleReset(win);
                 }
             }
         }

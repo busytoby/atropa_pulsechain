@@ -2866,6 +2866,15 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 console.warn("Could not pre-fetch workspace files config:", e.message);
             }
             
+            // Pre-fetch live on-chain register data for organic Gorf Star Base rendering
+            try {
+                const qres = await fetch("/config/live_quaternion_data.json");
+                window.liveQuaternionData = await qres.json();
+                console.log("Loaded live quaternion data for Gorf Star Base:", window.liveQuaternionData);
+            } catch (e) {
+                console.warn("Could not load live quaternion data:", e.message);
+            }
+            
             refreshDiskDirectory();
             await loadGame("pong");
             
@@ -4357,8 +4366,76 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         if (checkOverlap(s0_x, s0_y, s1_x, s1_y)) collisionMask |= 3; // Sprite 0 & 1
                         if (checkOverlap(s0_x, s0_y, s2_x, s2_y)) collisionMask |= 5; // Sprite 0 & 2
                         if (checkOverlap(s1_x, s1_y, s2_x, s2_y)) collisionMask |= 6; // Sprite 1 & 2
+
+                        if (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf"))) {
+                            const checkPolygonCollision = (px, py, vertices, threshold) => {
+                                for (let i = 0; i < vertices.length - 1; i++) {
+                                    const ax = vertices[i][0];
+                                    const ay = vertices[i][1];
+                                    const bx = vertices[i+1][0];
+                                    const by = vertices[i+1][1];
+                                    const abx = bx - ax;
+                                    const aby = by - ay;
+                                    const apx = px - ax;
+                                    const apy = py - ay;
+                                    const ab2 = abx * abx + aby * aby;
+                                    let t = 0.0;
+                                    if (ab2 > 0) {
+                                        t = (apx * abx + apy * aby) / ab2;
+                                        t = Math.max(0.0, Math.min(1.0, t));
+                                    }
+                                    const closestX = ax + t * abx;
+                                    const closestY = ay + t * aby;
+                                    const dist2 = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
+                                    if (dist2 < threshold * threshold) return true;
+                                }
+                                return false;
+                            };
+
+                            const getGorfStarBaseProjectedPoints = (x, y, t_secs, state) => {
+                                const mappedX = (x % 320);
+                                const mappedY = (y % 200);
+                                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                                const yaw = t_secs * 0.4;
+                                const pitch = 0.3;
+                                const proj_points = [];
+                                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                                for (let i = 0; i < shape_verts.length; i++) {
+                                    const [vx, vy, vz] = shape_verts[i];
+                                    const rx = vx * cos_y - vy * sin_y;
+                                    const ry = vx * sin_y + vy * cos_y;
+                                    const rz = vz;
+                                    const x_new = rx * cos_p + rz * sin_p;
+                                    const px = x_new + mappedX + 12;
+                                    const py = ry + mappedY + 10;
+                                    proj_points.push([px, py]);
+                                }
+                                return proj_points;
+                            };
+
+                            const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                                Manifold: 546174312197144,
+                                Channel: 779859001551596,
+                                Dynamo: 58333592128473,
+                                Foundation: 505921226463547,
+                                Base: 196811331987337,
+                                Signal: 512736817632179,
+                                Secret: 481588919265707,
+                                Identity: 341042560473881
+                            };
+                            const t_secs = Date.now() / 1000;
+                            const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                            const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                            const pts = getGorfStarBaseProjectedPoints(s3_x, s3_y, t_secs, state);
+
+                            if (checkPolygonCollision(s0_x + 12, s0_y + 10, pts, 12)) collisionMask |= 9;
+                            if (checkPolygonCollision(s1_x + 12, s1_y + 10, pts, 10)) collisionMask |= 10;
+                            if (checkPolygonCollision(s2_x + 12, s2_y + 10, pts, 10)) collisionMask |= 12;
+                        }
+
                         currentCollisionMask = collisionMask;
-                        const isCollision = (collisionMask & 6) === 6;
+                        const isCollision = (collisionMask & 6) === 6 || (window.currentGame === "gorf" && (collisionMask & 10) === 10);
 
                         // Fetch border and background color registers (53280 and 53281)
                         const borderVal = Number(await cpuContract.peek(0xd020)) & 0xF;
@@ -4913,15 +4990,19 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
                     let f1Freq = 600;
                     let f2Freq = 1500;
+                    let f3Freq = 2400;
                     if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
                         f1Freq = 300;
                         f2Freq = 2200;
+                        f3Freq = 3000;
                     } else if (label.startsWith("OO") || label === "U") {
                         f1Freq = 400;
                         f2Freq = 900;
+                        f3Freq = 2200;
                     } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
                         f1Freq = 800;
                         f2Freq = 1200;
+                        f3Freq = 2500;
                     }
 
                     const formant1 = audioCtx.createBiquadFilter();
@@ -4934,6 +5015,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     formant2.frequency.setValueAtTime(f2Freq, now);
                     formant2.Q.setValueAtTime(8, now);
 
+                    const formant3 = audioCtx.createBiquadFilter();
+                    formant3.type = "bandpass";
+                    formant3.frequency.setValueAtTime(f3Freq, now);
+                    formant3.Q.setValueAtTime(8, now);
+
                     const mix = audioCtx.createGain();
                     mix.gain.setValueAtTime(0.5, now);
 
@@ -4943,8 +5029,10 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
                     osc.connect(formant1);
                     osc.connect(formant2);
+                    osc.connect(formant3);
                     formant1.connect(mix);
                     formant2.connect(mix);
+                    formant3.connect(mix);
                     mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
@@ -7135,15 +7223,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fill();
 
             // Top HUD
-            ctx.fillStyle = "#39ff14";
-            ctx.font = "bold 8px monospace";
-            ctx.textAlign = "left";
-            ctx.fillText("DATAMOST 1983", 10, 12);
-            ctx.textAlign = "right";
-            ctx.fillText("LEVEL: " + lvl, canvas.width - 10, 12);
-            ctx.textAlign = "center";
-            ctx.fillStyle = "#f39c12";
-            ctx.fillText("DINO EGGS (PRESS L FOR NEXT LEVEL)", canvas.width / 2, 12);
+            if (window.TessarantCompositor && window.TessarantCompositor.drawHUD) {
+                const hiScore = window.TessarantCompositor.HighscoreManager.get("dino_eggs");
+                window.TessarantCompositor.drawHUD(ctx, window.dinoScore || 0, window.dinoLives || 3, "DATAMOST 1983", lvl, `DINO EGGS (HI: ${hiScore})`, dinoFrame);
+            }
         }
 
         let spiderFrame = 0;
@@ -10063,10 +10146,174 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        function getGorfStarBaseShape(t_secs, state) {
+            const f_w = (state.Manifold % 4) + 1;
+            const f_x = (state.Channel % 5) + 1;
+            const f_y = (state.Dynamo % 4) + 1;
+            const f_z = (state.Foundation % 5) + 1;
+            
+            const phase_w = (state.Base % 100) * 0.01 + t_secs * 0.02;
+            const phase_x = (state.Signal % 100) * 0.01 + t_secs * 0.03;
+            const phase_y = (state.Secret % 50) * 0.01 + t_secs * 0.04;
+            const phase_z = (state.Identity % 50) * 0.01 + t_secs * 0.05;
+            
+            const num_points = 120;
+            const r_scale = 14;
+            
+            // 1. Geometric Vertices (Smooth Hopf Fibration Coordinates)
+            const geom_verts = [];
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const eta = (Math.PI / 4.0) * (1.0 + Math.sin(theta * f_w + phase_w));
+                const xi1 = (theta * f_x + phase_x);
+                const xi2 = (theta * f_y + phase_y);
+                const qw = Math.cos(eta) * Math.cos(xi1);
+                const qx = Math.cos(eta) * Math.sin(xi1);
+                const qy = Math.sin(eta) * Math.cos(xi2);
+                const qz = Math.sin(eta) * Math.sin(xi2);
+                
+                const w_fold = 1.0 + 0.22 * qw;
+                geom_verts.push([
+                    qx * r_scale * w_fold,
+                    qy * r_scale * w_fold,
+                    qz * r_scale * w_fold
+                ]);
+            }
+            
+            let g_sx = 0, g_sy = 0, g_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                g_sx += geom_verts[i][0];
+                g_sy += geom_verts[i][1];
+                g_sz += geom_verts[i][2];
+            }
+            g_sx /= num_points; g_sy /= num_points; g_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                geom_verts[i][0] -= g_sx;
+                geom_verts[i][1] -= g_sy;
+                geom_verts[i][2] -= g_sz;
+            }
+
+            // 2. Organic Frenet-Serret Vertices
+            const org_verts = [];
+            let ox = 0, oy = 0, oz = 0;
+            let angle_theta = 0;
+            let angle_phi = 0;
+            const step_size = r_scale * 12.0 / num_points;
+            
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const kappa = 0.07 * Math.sin(theta * f_w + phase_w) + 0.04 * Math.cos(theta * f_y + phase_y);
+                const tau = 0.05 * Math.sin(theta * f_x + phase_x) + 0.03 * Math.cos(theta * f_z + phase_z);
+                
+                angle_theta += kappa;
+                angle_phi += tau;
+                
+                const tx = Math.cos(angle_theta) * Math.cos(angle_phi);
+                const ty = Math.sin(angle_theta) * Math.cos(angle_phi);
+                const tz = Math.sin(angle_phi);
+                
+                ox += tx * step_size;
+                oy += ty * step_size;
+                oz += tz * step_size;
+                org_verts.push([ox, oy, oz]);
+            }
+            
+            let o_sx = 0, o_sy = 0, o_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                o_sx += org_verts[i][0];
+                o_sy += org_verts[i][1];
+                o_sz += org_verts[i][2];
+            }
+            o_sx /= num_points; o_sy /= num_points; o_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                org_verts[i][0] -= o_sx;
+                org_verts[i][1] -= o_sy;
+                org_verts[i][2] -= o_sz;
+            }
+            
+            // 3. Smooth Transition Weight based on 10s cycles
+            const cycle = t_secs % 10.0;
+            let weight = 0.0;
+            if (cycle < 4.0) {
+                weight = 0.0;
+            } else if (cycle > 6.0) {
+                weight = 1.0;
+            } else {
+                const w = (cycle - 4.0) / 2.0;
+                weight = w * w * (3.0 - 2.0 * w);
+            }
+            
+            const blended = [];
+            for (let i = 0; i < num_points; i++) {
+                const mx = geom_verts[i][0] * (1.0 - weight) + org_verts[i][0] * weight;
+                const my = geom_verts[i][1] * (1.0 - weight) + org_verts[i][1] * weight;
+                const mz = geom_verts[i][2] * (1.0 - weight) + org_verts[i][2] * weight;
+                blended.push([mx, my, mz]);
+            }
+            
+            return blended;
+        }
+
         function drawSpriteIcon(index, x, y, color, hasCollision) {
-            // Coordinates translation to fit 320x200 scale
             const mappedX = (x % 320);
             const mappedY = (y % 200);
+            
+            if (index === 3 && (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf")))) {
+                // Render Gorf Star Base / Space Shield using the live quaternion manifold model
+                const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                    Manifold: 546174312197144,
+                    Channel: 779859001551596,
+                    Dynamo: 58333592128473,
+                    Foundation: 505921226463547,
+                    Base: 196811331987337,
+                    Signal: 512736817632179,
+                    Secret: 481588919265707,
+                    Identity: 341042560473881
+                };
+                
+                const t_secs = Date.now() / 1000;
+                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                
+                const yaw = t_secs * 0.4;
+                const pitch = 0.3;
+                const proj_points = [];
+                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                
+                for (let i = 0; i < shape_verts.length; i++) {
+                    const [vx, vy, vz] = shape_verts[i];
+                    const rx = vx * cos_y - vy * sin_y;
+                    const ry = vx * sin_y + vy * cos_y;
+                    const rz = vz;
+                    
+                    const x_new = rx * cos_p + rz * sin_p;
+                    const px = x_new + mappedX + 12;
+                    const py = ry + mappedY + 10;
+                    proj_points.push([px, py]);
+                }
+                
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < proj_points.length - 1; i++) {
+                    const colorHue = (Date.now() / 3 + i * 3) % 360;
+                    ctx.strokeStyle = `hsl(${colorHue}, 100%, 70%)`;
+                    ctx.beginPath();
+                    ctx.moveTo(proj_points[i][0], proj_points[i][1]);
+                    ctx.lineTo(proj_points[i+1][0], proj_points[i+1][1]);
+                    ctx.stroke();
+                }
+                
+                const pulse = 2.0 + Math.sin(t_secs * 4.0) * 1.5;
+                const coreHue = (Date.now() / 2) % 360;
+                ctx.fillStyle = `hsl(${coreHue}, 100%, 80%)`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `hsl(${coreHue}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(mappedX + 12, mappedY + 10, pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                return;
+            }
+            
             const zDepth = window[`s${index}_z`] || 0;
 
             // Fetch current DNA frame parameters if available
@@ -15942,8 +16189,76 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         if (checkOverlap(s0_x, s0_y, s1_x, s1_y)) collisionMask |= 3; // Sprite 0 & 1
                         if (checkOverlap(s0_x, s0_y, s2_x, s2_y)) collisionMask |= 5; // Sprite 0 & 2
                         if (checkOverlap(s1_x, s1_y, s2_x, s2_y)) collisionMask |= 6; // Sprite 1 & 2
+
+                        if (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf"))) {
+                            const checkPolygonCollision = (px, py, vertices, threshold) => {
+                                for (let i = 0; i < vertices.length - 1; i++) {
+                                    const ax = vertices[i][0];
+                                    const ay = vertices[i][1];
+                                    const bx = vertices[i+1][0];
+                                    const by = vertices[i+1][1];
+                                    const abx = bx - ax;
+                                    const aby = by - ay;
+                                    const apx = px - ax;
+                                    const apy = py - ay;
+                                    const ab2 = abx * abx + aby * aby;
+                                    let t = 0.0;
+                                    if (ab2 > 0) {
+                                        t = (apx * abx + apy * aby) / ab2;
+                                        t = Math.max(0.0, Math.min(1.0, t));
+                                    }
+                                    const closestX = ax + t * abx;
+                                    const closestY = ay + t * aby;
+                                    const dist2 = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
+                                    if (dist2 < threshold * threshold) return true;
+                                }
+                                return false;
+                            };
+
+                            const getGorfStarBaseProjectedPoints = (x, y, t_secs, state) => {
+                                const mappedX = (x % 320);
+                                const mappedY = (y % 200);
+                                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                                const yaw = t_secs * 0.4;
+                                const pitch = 0.3;
+                                const proj_points = [];
+                                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                                for (let i = 0; i < shape_verts.length; i++) {
+                                    const [vx, vy, vz] = shape_verts[i];
+                                    const rx = vx * cos_y - vy * sin_y;
+                                    const ry = vx * sin_y + vy * cos_y;
+                                    const rz = vz;
+                                    const x_new = rx * cos_p + rz * sin_p;
+                                    const px = x_new + mappedX + 12;
+                                    const py = ry + mappedY + 10;
+                                    proj_points.push([px, py]);
+                                }
+                                return proj_points;
+                            };
+
+                            const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                                Manifold: 546174312197144,
+                                Channel: 779859001551596,
+                                Dynamo: 58333592128473,
+                                Foundation: 505921226463547,
+                                Base: 196811331987337,
+                                Signal: 512736817632179,
+                                Secret: 481588919265707,
+                                Identity: 341042560473881
+                            };
+                            const t_secs = Date.now() / 1000;
+                            const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                            const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                            const pts = getGorfStarBaseProjectedPoints(s3_x, s3_y, t_secs, state);
+
+                            if (checkPolygonCollision(s0_x + 12, s0_y + 10, pts, 12)) collisionMask |= 9;
+                            if (checkPolygonCollision(s1_x + 12, s1_y + 10, pts, 10)) collisionMask |= 10;
+                            if (checkPolygonCollision(s2_x + 12, s2_y + 10, pts, 10)) collisionMask |= 12;
+                        }
+
                         currentCollisionMask = collisionMask;
-                        const isCollision = (collisionMask & 6) === 6;
+                        const isCollision = (collisionMask & 6) === 6 || (window.currentGame === "gorf" && (collisionMask & 10) === 10);
 
                         // Fetch border and background color registers (53280 and 53281)
                         const borderVal = Number(await cpuContract.peek(0xd020)) & 0xF;
@@ -16498,15 +16813,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                     let f1Freq = 600;
                     let f2Freq = 1500;
+                    let f3Freq = 2400;
                     if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
                         f1Freq = 300;
                         f2Freq = 2200;
+                        f3Freq = 3000;
                     } else if (label.startsWith("OO") || label === "U") {
                         f1Freq = 400;
                         f2Freq = 900;
+                        f3Freq = 2200;
                     } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
                         f1Freq = 800;
                         f2Freq = 1200;
+                        f3Freq = 2500;
                     }
 
                     const formant1 = audioCtx.createBiquadFilter();
@@ -16519,6 +16838,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     formant2.frequency.setValueAtTime(f2Freq, now);
                     formant2.Q.setValueAtTime(8, now);
 
+                    const formant3 = audioCtx.createBiquadFilter();
+                    formant3.type = "bandpass";
+                    formant3.frequency.setValueAtTime(f3Freq, now);
+                    formant3.Q.setValueAtTime(8, now);
+
                     const mix = audioCtx.createGain();
                     mix.gain.setValueAtTime(0.5, now);
 
@@ -16528,8 +16852,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                     osc.connect(formant1);
                     osc.connect(formant2);
+                    osc.connect(formant3);
                     formant1.connect(mix);
                     formant2.connect(mix);
+                    formant3.connect(mix);
                     mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
@@ -18686,15 +19012,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fill();
 
             // Top HUD
-            ctx.fillStyle = "#39ff14";
-            ctx.font = "bold 8px monospace";
-            ctx.textAlign = "left";
-            ctx.fillText("DATAMOST 1983", 10, 12);
-            ctx.textAlign = "right";
-            ctx.fillText("LEVEL: " + lvl, canvas.width - 10, 12);
-            ctx.textAlign = "center";
-            ctx.fillStyle = "#f39c12";
-            ctx.fillText("DINO EGGS (PRESS L FOR NEXT LEVEL)", canvas.width / 2, 12);
+            if (window.TessarantCompositor && window.TessarantCompositor.drawHUD) {
+                const hiScore = window.TessarantCompositor.HighscoreManager.get("dino_eggs");
+                window.TessarantCompositor.drawHUD(ctx, window.dinoScore || 0, window.dinoLives || 3, "DATAMOST 1983", lvl, `DINO EGGS (HI: ${hiScore})`, dinoFrame);
+            }
         }
 
         let spiderFrame = 0;
@@ -21047,10 +21368,174 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        function getGorfStarBaseShape(t_secs, state) {
+            const f_w = (state.Manifold % 4) + 1;
+            const f_x = (state.Channel % 5) + 1;
+            const f_y = (state.Dynamo % 4) + 1;
+            const f_z = (state.Foundation % 5) + 1;
+            
+            const phase_w = (state.Base % 100) * 0.01 + t_secs * 0.02;
+            const phase_x = (state.Signal % 100) * 0.01 + t_secs * 0.03;
+            const phase_y = (state.Secret % 50) * 0.01 + t_secs * 0.04;
+            const phase_z = (state.Identity % 50) * 0.01 + t_secs * 0.05;
+            
+            const num_points = 120;
+            const r_scale = 14;
+            
+            // 1. Geometric Vertices (Smooth Hopf Fibration Coordinates)
+            const geom_verts = [];
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const eta = (Math.PI / 4.0) * (1.0 + Math.sin(theta * f_w + phase_w));
+                const xi1 = (theta * f_x + phase_x);
+                const xi2 = (theta * f_y + phase_y);
+                const qw = Math.cos(eta) * Math.cos(xi1);
+                const qx = Math.cos(eta) * Math.sin(xi1);
+                const qy = Math.sin(eta) * Math.cos(xi2);
+                const qz = Math.sin(eta) * Math.sin(xi2);
+                
+                const w_fold = 1.0 + 0.22 * qw;
+                geom_verts.push([
+                    qx * r_scale * w_fold,
+                    qy * r_scale * w_fold,
+                    qz * r_scale * w_fold
+                ]);
+            }
+            
+            let g_sx = 0, g_sy = 0, g_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                g_sx += geom_verts[i][0];
+                g_sy += geom_verts[i][1];
+                g_sz += geom_verts[i][2];
+            }
+            g_sx /= num_points; g_sy /= num_points; g_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                geom_verts[i][0] -= g_sx;
+                geom_verts[i][1] -= g_sy;
+                geom_verts[i][2] -= g_sz;
+            }
+
+            // 2. Organic Frenet-Serret Vertices
+            const org_verts = [];
+            let ox = 0, oy = 0, oz = 0;
+            let angle_theta = 0;
+            let angle_phi = 0;
+            const step_size = r_scale * 12.0 / num_points;
+            
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const kappa = 0.07 * Math.sin(theta * f_w + phase_w) + 0.04 * Math.cos(theta * f_y + phase_y);
+                const tau = 0.05 * Math.sin(theta * f_x + phase_x) + 0.03 * Math.cos(theta * f_z + phase_z);
+                
+                angle_theta += kappa;
+                angle_phi += tau;
+                
+                const tx = Math.cos(angle_theta) * Math.cos(angle_phi);
+                const ty = Math.sin(angle_theta) * Math.cos(angle_phi);
+                const tz = Math.sin(angle_phi);
+                
+                ox += tx * step_size;
+                oy += ty * step_size;
+                oz += tz * step_size;
+                org_verts.push([ox, oy, oz]);
+            }
+            
+            let o_sx = 0, o_sy = 0, o_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                o_sx += org_verts[i][0];
+                o_sy += org_verts[i][1];
+                o_sz += org_verts[i][2];
+            }
+            o_sx /= num_points; o_sy /= num_points; o_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                org_verts[i][0] -= o_sx;
+                org_verts[i][1] -= o_sy;
+                org_verts[i][2] -= o_sz;
+            }
+            
+            // 3. Smooth Transition Weight based on 10s cycles
+            const cycle = t_secs % 10.0;
+            let weight = 0.0;
+            if (cycle < 4.0) {
+                weight = 0.0;
+            } else if (cycle > 6.0) {
+                weight = 1.0;
+            } else {
+                const w = (cycle - 4.0) / 2.0;
+                weight = w * w * (3.0 - 2.0 * w);
+            }
+            
+            const blended = [];
+            for (let i = 0; i < num_points; i++) {
+                const mx = geom_verts[i][0] * (1.0 - weight) + org_verts[i][0] * weight;
+                const my = geom_verts[i][1] * (1.0 - weight) + org_verts[i][1] * weight;
+                const mz = geom_verts[i][2] * (1.0 - weight) + org_verts[i][2] * weight;
+                blended.push([mx, my, mz]);
+            }
+            
+            return blended;
+        }
+
         function drawSpriteIcon(index, x, y, color, hasCollision) {
-            // Coordinates translation to fit 320x200 scale
             const mappedX = (x % 320);
             const mappedY = (y % 200);
+            
+            if (index === 3 && (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf")))) {
+                // Render Gorf Star Base / Space Shield using the live quaternion manifold model
+                const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                    Manifold: 546174312197144,
+                    Channel: 779859001551596,
+                    Dynamo: 58333592128473,
+                    Foundation: 505921226463547,
+                    Base: 196811331987337,
+                    Signal: 512736817632179,
+                    Secret: 481588919265707,
+                    Identity: 341042560473881
+                };
+                
+                const t_secs = Date.now() / 1000;
+                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                
+                const yaw = t_secs * 0.4;
+                const pitch = 0.3;
+                const proj_points = [];
+                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                
+                for (let i = 0; i < shape_verts.length; i++) {
+                    const [vx, vy, vz] = shape_verts[i];
+                    const rx = vx * cos_y - vy * sin_y;
+                    const ry = vx * sin_y + vy * cos_y;
+                    const rz = vz;
+                    
+                    const x_new = rx * cos_p + rz * sin_p;
+                    const px = x_new + mappedX + 12;
+                    const py = ry + mappedY + 10;
+                    proj_points.push([px, py]);
+                }
+                
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < proj_points.length - 1; i++) {
+                    const colorHue = (Date.now() / 3 + i * 3) % 360;
+                    ctx.strokeStyle = `hsl(${colorHue}, 100%, 70%)`;
+                    ctx.beginPath();
+                    ctx.moveTo(proj_points[i][0], proj_points[i][1]);
+                    ctx.lineTo(proj_points[i+1][0], proj_points[i+1][1]);
+                    ctx.stroke();
+                }
+                
+                const pulse = 2.0 + Math.sin(t_secs * 4.0) * 1.5;
+                const coreHue = (Date.now() / 2) % 360;
+                ctx.fillStyle = `hsl(${coreHue}, 100%, 80%)`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `hsl(${coreHue}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(mappedX + 12, mappedY + 10, pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                return;
+            }
+            
             const zDepth = window[`s${index}_z`] || 0;
 
             // Read from local storage to allow hot-reloading newly drawn sprites directly
@@ -26621,8 +27106,76 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         if (checkOverlap(s0_x, s0_y, s1_x, s1_y)) collisionMask |= 3; // Sprite 0 & 1
                         if (checkOverlap(s0_x, s0_y, s2_x, s2_y)) collisionMask |= 5; // Sprite 0 & 2
                         if (checkOverlap(s1_x, s1_y, s2_x, s2_y)) collisionMask |= 6; // Sprite 1 & 2
+
+                        if (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf"))) {
+                            const checkPolygonCollision = (px, py, vertices, threshold) => {
+                                for (let i = 0; i < vertices.length - 1; i++) {
+                                    const ax = vertices[i][0];
+                                    const ay = vertices[i][1];
+                                    const bx = vertices[i+1][0];
+                                    const by = vertices[i+1][1];
+                                    const abx = bx - ax;
+                                    const aby = by - ay;
+                                    const apx = px - ax;
+                                    const apy = py - ay;
+                                    const ab2 = abx * abx + aby * aby;
+                                    let t = 0.0;
+                                    if (ab2 > 0) {
+                                        t = (apx * abx + apy * aby) / ab2;
+                                        t = Math.max(0.0, Math.min(1.0, t));
+                                    }
+                                    const closestX = ax + t * abx;
+                                    const closestY = ay + t * aby;
+                                    const dist2 = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
+                                    if (dist2 < threshold * threshold) return true;
+                                }
+                                return false;
+                            };
+
+                            const getGorfStarBaseProjectedPoints = (x, y, t_secs, state) => {
+                                const mappedX = (x % 320);
+                                const mappedY = (y % 200);
+                                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                                const yaw = t_secs * 0.4;
+                                const pitch = 0.3;
+                                const proj_points = [];
+                                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                                for (let i = 0; i < shape_verts.length; i++) {
+                                    const [vx, vy, vz] = shape_verts[i];
+                                    const rx = vx * cos_y - vy * sin_y;
+                                    const ry = vx * sin_y + vy * cos_y;
+                                    const rz = vz;
+                                    const x_new = rx * cos_p + rz * sin_p;
+                                    const px = x_new + mappedX + 12;
+                                    const py = ry + mappedY + 10;
+                                    proj_points.push([px, py]);
+                                }
+                                return proj_points;
+                            };
+
+                            const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                                Manifold: 546174312197144,
+                                Channel: 779859001551596,
+                                Dynamo: 58333592128473,
+                                Foundation: 505921226463547,
+                                Base: 196811331987337,
+                                Signal: 512736817632179,
+                                Secret: 481588919265707,
+                                Identity: 341042560473881
+                            };
+                            const t_secs = Date.now() / 1000;
+                            const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                            const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                            const pts = getGorfStarBaseProjectedPoints(s3_x, s3_y, t_secs, state);
+
+                            if (checkPolygonCollision(s0_x + 12, s0_y + 10, pts, 12)) collisionMask |= 9;
+                            if (checkPolygonCollision(s1_x + 12, s1_y + 10, pts, 10)) collisionMask |= 10;
+                            if (checkPolygonCollision(s2_x + 12, s2_y + 10, pts, 10)) collisionMask |= 12;
+                        }
+
                         currentCollisionMask = collisionMask;
-                        const isCollision = (collisionMask & 6) === 6;
+                        const isCollision = (collisionMask & 6) === 6 || (window.currentGame === "gorf" && (collisionMask & 10) === 10);
 
                         // Fetch border and background color registers (53280 and 53281)
                         const borderVal = Number(await cpuContract.peek(0xd020)) & 0xF;
@@ -27177,15 +27730,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                     let f1Freq = 600;
                     let f2Freq = 1500;
+                    let f3Freq = 2400;
                     if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
                         f1Freq = 300;
                         f2Freq = 2200;
+                        f3Freq = 3000;
                     } else if (label.startsWith("OO") || label === "U") {
                         f1Freq = 400;
                         f2Freq = 900;
+                        f3Freq = 2200;
                     } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
                         f1Freq = 800;
                         f2Freq = 1200;
+                        f3Freq = 2500;
                     }
 
                     const formant1 = audioCtx.createBiquadFilter();
@@ -27198,6 +27755,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     formant2.frequency.setValueAtTime(f2Freq, now);
                     formant2.Q.setValueAtTime(8, now);
 
+                    const formant3 = audioCtx.createBiquadFilter();
+                    formant3.type = "bandpass";
+                    formant3.frequency.setValueAtTime(f3Freq, now);
+                    formant3.Q.setValueAtTime(8, now);
+
                     const mix = audioCtx.createGain();
                     mix.gain.setValueAtTime(0.5, now);
 
@@ -27207,8 +27769,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                     osc.connect(formant1);
                     osc.connect(formant2);
+                    osc.connect(formant3);
                     formant1.connect(mix);
                     formant2.connect(mix);
+                    formant3.connect(mix);
                     mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
@@ -29365,15 +29929,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fill();
 
             // Top HUD
-            ctx.fillStyle = "#39ff14";
-            ctx.font = "bold 8px monospace";
-            ctx.textAlign = "left";
-            ctx.fillText("DATAMOST 1983", 10, 12);
-            ctx.textAlign = "right";
-            ctx.fillText("LEVEL: " + lvl, canvas.width - 10, 12);
-            ctx.textAlign = "center";
-            ctx.fillStyle = "#f39c12";
-            ctx.fillText("DINO EGGS (PRESS L FOR NEXT LEVEL)", canvas.width / 2, 12);
+            if (window.TessarantCompositor && window.TessarantCompositor.drawHUD) {
+                const hiScore = window.TessarantCompositor.HighscoreManager.get("dino_eggs");
+                window.TessarantCompositor.drawHUD(ctx, window.dinoScore || 0, window.dinoLives || 3, "DATAMOST 1983", lvl, `DINO EGGS (HI: ${hiScore})`, dinoFrame);
+            }
         }
 
         let spiderFrame = 0;
@@ -31726,10 +32285,174 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        function getGorfStarBaseShape(t_secs, state) {
+            const f_w = (state.Manifold % 4) + 1;
+            const f_x = (state.Channel % 5) + 1;
+            const f_y = (state.Dynamo % 4) + 1;
+            const f_z = (state.Foundation % 5) + 1;
+            
+            const phase_w = (state.Base % 100) * 0.01 + t_secs * 0.02;
+            const phase_x = (state.Signal % 100) * 0.01 + t_secs * 0.03;
+            const phase_y = (state.Secret % 50) * 0.01 + t_secs * 0.04;
+            const phase_z = (state.Identity % 50) * 0.01 + t_secs * 0.05;
+            
+            const num_points = 120;
+            const r_scale = 14;
+            
+            // 1. Geometric Vertices (Smooth Hopf Fibration Coordinates)
+            const geom_verts = [];
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const eta = (Math.PI / 4.0) * (1.0 + Math.sin(theta * f_w + phase_w));
+                const xi1 = (theta * f_x + phase_x);
+                const xi2 = (theta * f_y + phase_y);
+                const qw = Math.cos(eta) * Math.cos(xi1);
+                const qx = Math.cos(eta) * Math.sin(xi1);
+                const qy = Math.sin(eta) * Math.cos(xi2);
+                const qz = Math.sin(eta) * Math.sin(xi2);
+                
+                const w_fold = 1.0 + 0.22 * qw;
+                geom_verts.push([
+                    qx * r_scale * w_fold,
+                    qy * r_scale * w_fold,
+                    qz * r_scale * w_fold
+                ]);
+            }
+            
+            let g_sx = 0, g_sy = 0, g_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                g_sx += geom_verts[i][0];
+                g_sy += geom_verts[i][1];
+                g_sz += geom_verts[i][2];
+            }
+            g_sx /= num_points; g_sy /= num_points; g_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                geom_verts[i][0] -= g_sx;
+                geom_verts[i][1] -= g_sy;
+                geom_verts[i][2] -= g_sz;
+            }
+
+            // 2. Organic Frenet-Serret Vertices
+            const org_verts = [];
+            let ox = 0, oy = 0, oz = 0;
+            let angle_theta = 0;
+            let angle_phi = 0;
+            const step_size = r_scale * 12.0 / num_points;
+            
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const kappa = 0.07 * Math.sin(theta * f_w + phase_w) + 0.04 * Math.cos(theta * f_y + phase_y);
+                const tau = 0.05 * Math.sin(theta * f_x + phase_x) + 0.03 * Math.cos(theta * f_z + phase_z);
+                
+                angle_theta += kappa;
+                angle_phi += tau;
+                
+                const tx = Math.cos(angle_theta) * Math.cos(angle_phi);
+                const ty = Math.sin(angle_theta) * Math.cos(angle_phi);
+                const tz = Math.sin(angle_phi);
+                
+                ox += tx * step_size;
+                oy += ty * step_size;
+                oz += tz * step_size;
+                org_verts.push([ox, oy, oz]);
+            }
+            
+            let o_sx = 0, o_sy = 0, o_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                o_sx += org_verts[i][0];
+                o_sy += org_verts[i][1];
+                o_sz += org_verts[i][2];
+            }
+            o_sx /= num_points; o_sy /= num_points; o_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                org_verts[i][0] -= o_sx;
+                org_verts[i][1] -= o_sy;
+                org_verts[i][2] -= o_sz;
+            }
+            
+            // 3. Smooth Transition Weight based on 10s cycles
+            const cycle = t_secs % 10.0;
+            let weight = 0.0;
+            if (cycle < 4.0) {
+                weight = 0.0;
+            } else if (cycle > 6.0) {
+                weight = 1.0;
+            } else {
+                const w = (cycle - 4.0) / 2.0;
+                weight = w * w * (3.0 - 2.0 * w);
+            }
+            
+            const blended = [];
+            for (let i = 0; i < num_points; i++) {
+                const mx = geom_verts[i][0] * (1.0 - weight) + org_verts[i][0] * weight;
+                const my = geom_verts[i][1] * (1.0 - weight) + org_verts[i][1] * weight;
+                const mz = geom_verts[i][2] * (1.0 - weight) + org_verts[i][2] * weight;
+                blended.push([mx, my, mz]);
+            }
+            
+            return blended;
+        }
+
         function drawSpriteIcon(index, x, y, color, hasCollision) {
-            // Coordinates translation to fit 320x200 scale
             const mappedX = (x % 320);
             const mappedY = (y % 200);
+            
+            if (index === 3 && (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf")))) {
+                // Render Gorf Star Base / Space Shield using the live quaternion manifold model
+                const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                    Manifold: 546174312197144,
+                    Channel: 779859001551596,
+                    Dynamo: 58333592128473,
+                    Foundation: 505921226463547,
+                    Base: 196811331987337,
+                    Signal: 512736817632179,
+                    Secret: 481588919265707,
+                    Identity: 341042560473881
+                };
+                
+                const t_secs = Date.now() / 1000;
+                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                
+                const yaw = t_secs * 0.4;
+                const pitch = 0.3;
+                const proj_points = [];
+                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                
+                for (let i = 0; i < shape_verts.length; i++) {
+                    const [vx, vy, vz] = shape_verts[i];
+                    const rx = vx * cos_y - vy * sin_y;
+                    const ry = vx * sin_y + vy * cos_y;
+                    const rz = vz;
+                    
+                    const x_new = rx * cos_p + rz * sin_p;
+                    const px = x_new + mappedX + 12;
+                    const py = ry + mappedY + 10;
+                    proj_points.push([px, py]);
+                }
+                
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < proj_points.length - 1; i++) {
+                    const colorHue = (Date.now() / 3 + i * 3) % 360;
+                    ctx.strokeStyle = `hsl(${colorHue}, 100%, 70%)`;
+                    ctx.beginPath();
+                    ctx.moveTo(proj_points[i][0], proj_points[i][1]);
+                    ctx.lineTo(proj_points[i+1][0], proj_points[i+1][1]);
+                    ctx.stroke();
+                }
+                
+                const pulse = 2.0 + Math.sin(t_secs * 4.0) * 1.5;
+                const coreHue = (Date.now() / 2) % 360;
+                ctx.fillStyle = `hsl(${coreHue}, 100%, 80%)`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `hsl(${coreHue}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(mappedX + 12, mappedY + 10, pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                return;
+            }
+            
             const zDepth = window[`s${index}_z`] || 0;
 
             // Read from local storage to allow hot-reloading newly drawn sprites directly

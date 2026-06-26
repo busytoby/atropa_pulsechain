@@ -547,12 +547,55 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API endpoint to list lore documentation files
-    if (req.url === "/api/lore/list") {
-        const loreDir = path.join(__dirname, "../lore");
-        try {
+    if (req.url.startsWith("/api/lore/list")) {
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const scope = urlObj.searchParams.get("scope") || "local";
+        
+        let targetDirs = [];
+        if (scope === "brain") {
+            const homeDir = process.env.HOME || "/home/mariarahel";
+            const brainRoot = path.join(homeDir, ".gemini/antigravity-cli/brain");
+            if (fs.existsSync(brainRoot)) {
+                // Find all .md files under brain/ recursively using a helper function
+                const getMarkdownFiles = (dir) => {
+                    let results = [];
+                    if (!fs.existsSync(dir)) return results;
+                    const list = fs.readdirSync(dir);
+                    list.forEach(file => {
+                        const fullPath = path.join(dir, file);
+                        let stat;
+                        try {
+                            stat = fs.statSync(fullPath);
+                        } catch (e) {
+                            return; // skip if cannot stat
+                        }
+                        if (stat && stat.isDirectory()) {
+                            results = results.concat(getMarkdownFiles(fullPath));
+                        } else if (file.endsWith(".md") && !file.includes(".system_generated")) {
+                            results.push({ fullPath, relativePath: path.relative(brainRoot, fullPath) });
+                        }
+                    });
+                    return results;
+                };
+                targetDirs = getMarkdownFiles(brainRoot);
+            }
+        } else {
+            const loreDir = path.join(__dirname, "../lore");
             if (fs.existsSync(loreDir)) {
-                // Execute git status to check for untracked or modified files under lore/
-                let gitStatusMap = {};
+                const files = fs.readdirSync(loreDir);
+                targetDirs = files
+                    .filter(file => file.endsWith(".md") || file.endsWith(".lore"))
+                    .map(file => ({
+                        fullPath: path.join(loreDir, file),
+                        relativePath: file
+                    }));
+            }
+        }
+
+        try {
+            // Execute git status to check for untracked or modified files under lore/ (only for local scope)
+            let gitStatusMap = {};
+            if (scope === "local") {
                 try {
                     const { execSync } = require("child_process");
                     const gitOut = execSync("git status --porcelain lore", { encoding: "utf8" });
@@ -571,49 +614,46 @@ const server = http.createServer(async (req, res) => {
                 } catch (gitErr) {
                     // Fail silently if not a git repository
                 }
-
-                const files = fs.readdirSync(loreDir);
-                const results = files
-                    .filter(file => file.endsWith(".md") || file.endsWith(".lore"))
-                    .map(file => {
-                        const fullPath = path.join(loreDir, file);
-                        const stat = fs.statSync(fullPath);
-                        let isReviewed = false;
-                        try {
-                            if (stat.size > 0) {
-                                const fd = fs.openSync(fullPath, 'r');
-                                const buffer = Buffer.alloc(200);
-                                const position = Math.max(0, stat.size - 200);
-                                const bytesRead = fs.readSync(fd, buffer, 0, 200, position);
-                                const lastBytes = buffer.toString('utf8', 0, bytesRead);
-                                fs.closeSync(fd);
-                                if (lastBytes.includes('AUNCIENT_STATUS: REVIEWED')) {
-                                    isReviewed = true;
-                                }
-                            }
-                        } catch (readErr) {
-                            // Ignore read errors
-                        }
-
-                        return {
-                            name: file,
-                            sizeBytes: stat.size,
-                            modified: Math.round(stat.mtimeMs),
-                            gitStatus: gitStatusMap[file] || null,
-                            reviewed: isReviewed,
-                            louScore: (loreAnalysisCache[file] ? loreAnalysisCache[file].score : 0),
-                            louReasons: (loreAnalysisCache[file] ? loreAnalysisCache[file].reasons : [])
-                        };
-                    });
-                res.writeHead(200, {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                });
-                res.end(JSON.stringify(results));
-            } else {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Lore directory not found" }));
             }
+
+            const results = targetDirs.map(item => {
+                const fullPath = item.fullPath;
+                const file = item.relativePath;
+                const stat = fs.statSync(fullPath);
+                let isReviewed = false;
+                try {
+                    if (stat.size > 0) {
+                        const fd = fs.openSync(fullPath, 'r');
+                        const buffer = Buffer.alloc(200);
+                        const position = Math.max(0, stat.size - 200);
+                        const bytesRead = fs.readSync(fd, buffer, 0, 200, position);
+                        const lastBytes = buffer.toString('utf8', 0, bytesRead);
+                        fs.closeSync(fd);
+                        if (lastBytes.includes('AUNCIENT_STATUS: REVIEWED')) {
+                            isReviewed = true;
+                        }
+                    }
+                } catch (readErr) {
+                    // Ignore read errors
+                }
+
+                return {
+                    name: file,
+                    sizeBytes: stat.size,
+                    modified: Math.round(stat.mtimeMs),
+                    gitStatus: scope === "local" ? (gitStatusMap[file] || null) : null,
+                    reviewed: isReviewed,
+                    louScore: (loreAnalysisCache[file] ? loreAnalysisCache[file].score : 0),
+                    louReasons: (loreAnalysisCache[file] ? loreAnalysisCache[file].reasons : []),
+                    scope: scope
+                };
+            });
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify(results));
         } catch (err) {
             res.writeHead(500, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: err.message }));
@@ -625,13 +665,24 @@ const server = http.createServer(async (req, res) => {
     if (req.url.startsWith("/api/lore/content") && req.method === "GET") {
         const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         const fileName = urlObj.searchParams.get("file");
+        const scope = urlObj.searchParams.get("scope") || "local";
         if (!fileName) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "File parameter missing" }));
             return;
         }
-        const cleanName = path.basename(fileName);
-        const filePath = path.join(__dirname, "../lore", cleanName);
+
+        let filePath;
+        if (scope === "brain") {
+            const homeDir = process.env.HOME || "/home/mariarahel";
+            // Ensure no path traversal outside brain/
+            const cleanRel = fileName.replace(/\.\./g, "");
+            filePath = path.join(homeDir, ".gemini/antigravity-cli/brain", cleanRel);
+        } else {
+            const cleanName = path.basename(fileName);
+            filePath = path.join(__dirname, "../lore", cleanName);
+        }
+
         if (fs.existsSync(filePath)) {
             const data = fs.readFileSync(filePath, "utf8");
             res.writeHead(200, {
@@ -647,7 +698,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API endpoint to write/save a lore file content
-    if (req.url === "/api/lore/save" && req.method === "POST") {
+    if (req.url.startsWith("/api/lore/save") && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
             body += chunk.toString();
@@ -655,31 +706,42 @@ const server = http.createServer(async (req, res) => {
         req.on("end", () => {
             try {
                 const payload = JSON.parse(body);
-                const { file, content } = payload;
+                const { file, content, scope } = payload;
+                const fileScope = scope || "local";
                 if (!file || content === undefined) {
                     res.writeHead(400, { "Content-Type": "application/json" });
                     res.end(JSON.stringify({ error: "Invalid payload parameters" }));
                     return;
                 }
-                const cleanName = path.basename(file);
-                const filePath = path.join(__dirname, "../lore", cleanName);
-                
+
+                let filePath;
+                if (fileScope === "brain") {
+                    const homeDir = process.env.HOME || "/home/mariarahel";
+                    const cleanRel = file.replace(/\.\./g, "");
+                    filePath = path.join(homeDir, ".gemini/antigravity-cli/brain", cleanRel);
+                } else {
+                    const cleanName = path.basename(file);
+                    filePath = path.join(__dirname, "../lore", cleanName);
+                }
+
                 // Process automated replies to annotations
-                const processedContent = processAnnotationReplies(content, cleanName);
+                const processedContent = processAnnotationReplies(content, path.basename(file));
                 
                 fs.writeFileSync(filePath, processedContent, "utf8");
-                try {
-                    performLoreAnalysis();
-                } catch (e) {}
+                if (fileScope === "local") {
+                    try {
+                        performLoreAnalysis();
+                    } catch (e) {}
 
-                // Auto-commit saved lore file safely without staging any binaries
-                try {
-                    const { execSync } = require("child_process");
-                    execSync(`git add lore/${cleanName}`, { cwd: path.join(__dirname, "..") });
-                    execSync(`git commit -m "Auto-commit lore: ${cleanName}"`, { cwd: path.join(__dirname, "..") });
-                    console.log(`[SERVER] Auto-committed lore/${cleanName}`);
-                } catch (gitErr) {
-                    console.error("[SERVER] Failed to auto-commit lore file:", gitErr.message);
+                    // Auto-commit saved lore file safely without staging any binaries
+                    try {
+                        const { execSync } = require("child_process");
+                        execSync(`git add lore/${path.basename(file)}`, { cwd: path.join(__dirname, "..") });
+                        execSync(`git commit -m "Auto-commit lore: ${path.basename(file)}"`, { cwd: path.join(__dirname, "..") });
+                        console.log(`[SERVER] Auto-committed lore/${path.basename(file)}`);
+                    } catch (gitErr) {
+                        console.error("[SERVER] Failed to auto-commit lore file:", gitErr.message);
+                    }
                 }
 
                 res.writeHead(200, {
@@ -777,10 +839,11 @@ const server = http.createServer(async (req, res) => {
 
     if (req.url === "/api/vanity-keys" && req.method === "GET") {
         try {
+            const homeDir = process.env.HOME || "/home/mariarahel";
             const files = [
                 path.join(__dirname, "../found_addresses.txt"),
-                "/home/mariarahel/repkeys.txt",
-                "/home/mariarahel/repkeys2.txt"
+                path.join(homeDir, "repkeys.txt"),
+                path.join(homeDir, "repkeys2.txt")
             ];
             const matches = [];
             const seen = new Set();
@@ -1509,6 +1572,8 @@ const server = http.createServer(async (req, res) => {
         absolutePath = path.join(__dirname, "..", filePath);
     } else if (parsedUrl.pathname === "/config/user_config.json") {
         absolutePath = CONFIG_PATH;
+    } else if (parsedUrl.pathname === "/config/live_quaternion_data.json") {
+        absolutePath = path.join(__dirname, "../config/live_quaternion_data.json");
     } else if (parsedUrl.pathname === "/scripts/deployed_addresses_localhost.json") {
         absolutePath = path.join(__dirname, "../scripts/deployed_addresses_localhost.json");
     } else if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {

@@ -14,17 +14,37 @@ for (let x of [-1, 1]) {
 }
 
 // 6-axis 4D rotation function under test
-// Pre-computed Sine/Cosine Lookup Tables (LUTs) for high-speed Auncient 4D rotation math (Hugi #16)
+// Pre-computed Lookup Tables (LUTs) for high-speed Auncient 4D rotation math
 const LUT_SIZE = 262144;
 const LUT_MASK = 262143;
 const sinLUT = new Float64Array(LUT_SIZE);
 const cosLUT = new Float64Array(LUT_SIZE);
+const secLUT = new Float64Array(LUT_SIZE);
+const cscLUT = new Float64Array(LUT_SIZE);
+const sinhLUT = new Float64Array(LUT_SIZE);
+const coshLUT = new Float64Array(LUT_SIZE);
+const tanLUT = new Float64Array(LUT_SIZE);
+const cotLUT = new Float64Array(LUT_SIZE);
 const LUT_FACTOR = LUT_SIZE / (2 * Math.PI);
 
 for (let i = 0; i < LUT_SIZE; i++) {
     const angle = (i * 2 * Math.PI) / LUT_SIZE;
-    sinLUT[i] = Math.sin(angle);
-    cosLUT[i] = Math.cos(angle);
+    const s = Math.sin(angle);
+    const c = Math.cos(angle);
+    sinLUT[i] = s;
+    cosLUT[i] = c;
+    
+    // Secant & Cosecant (with division-by-zero guards)
+    secLUT[i] = Math.abs(c) > 1e-15 ? 1 / c : 1e15;
+    cscLUT[i] = Math.abs(s) > 1e-15 ? 1 / s : 1e15;
+    
+    // Hyperbolic curves
+    sinhLUT[i] = Math.sinh(angle);
+    coshLUT[i] = Math.cosh(angle);
+    
+    // Tangent & Cotangent
+    tanLUT[i] = Math.abs(c) > 1e-15 ? s / c : 1e15;
+    cotLUT[i] = Math.abs(s) > 1e-15 ? c / s : 1e15;
 }
 
 function lutSin(a) {
@@ -32,10 +52,7 @@ function lutSin(a) {
     const idx1 = Math.floor(val);
     const fract = val - idx1;
     const idx2 = idx1 + 1;
-    
-    const s1 = sinLUT[idx1 & LUT_MASK];
-    const s2 = sinLUT[idx2 & LUT_MASK];
-    return s1 + fract * (s2 - s1);
+    return sinLUT[idx1 & LUT_MASK] * (1 - fract) + sinLUT[idx2 & LUT_MASK] * fract;
 }
 
 function lutCos(a) {
@@ -43,10 +60,55 @@ function lutCos(a) {
     const idx1 = Math.floor(val);
     const fract = val - idx1;
     const idx2 = idx1 + 1;
-    
-    const c1 = cosLUT[idx1 & LUT_MASK];
-    const c2 = cosLUT[idx2 & LUT_MASK];
-    return c1 + fract * (c2 - c1);
+    return cosLUT[idx1 & LUT_MASK] * (1 - fract) + cosLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutSec(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return secLUT[idx1 & LUT_MASK] * (1 - fract) + secLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutCsc(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return cscLUT[idx1 & LUT_MASK] * (1 - fract) + cscLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutSinh(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return sinhLUT[idx1 & LUT_MASK] * (1 - fract) + sinhLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutCosh(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return coshLUT[idx1 & LUT_MASK] * (1 - fract) + coshLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutTan(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return tanLUT[idx1 & LUT_MASK] * (1 - fract) + tanLUT[idx2 & LUT_MASK] * fract;
+}
+
+function lutCot(a) {
+    const val = a * LUT_FACTOR;
+    const idx1 = Math.floor(val);
+    const fract = val - idx1;
+    const idx2 = idx1 + 1;
+    return cotLUT[idx1 & LUT_MASK] * (1 - fract) + cotLUT[idx2 & LUT_MASK] * fract;
 }
 
 function rotate4D(p, aXY, aXZ, aXW, aYZ, aYW, aZW) {
