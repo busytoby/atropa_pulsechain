@@ -2529,11 +2529,43 @@ Status: Press Pitch to begin.</div>
                         consoleBox.innerHTML += `\n[Z-Machine] Shared collection deck count: ${document.getElementById("deck-count").innerText}`;
                     }
                 } else if (action === "track" || action === "ft" || action === "fasttracker") {
-                    // Custom Fasttracker pitching design syntax: track <Freq> <VX> <VY> <VZ>
-                    let trackFreq = parseFloat(arg) || 440;
-                    let trackVX = parseFloat(arg2) || 0;
-                    let trackVZ = parseFloat(parts[3]) || -10;
-                    let trackVY = parseFloat(parts[4]) || 1;
+                    let trackFreq = 440;
+                    let trackVX = 0;
+                    let trackVZ = -10;
+                    let trackVY = 1;
+
+                    // Check if argument is a binary 0x hex code
+                    if (arg.startsWith("0x")) {
+                        let val = parseInt(arg, 16);
+                        // Decode 32-bit packed float: Freq (10 bits), VX (7 bits), VY (7 bits), VZ (8 bits)
+                        let rawFreq = (val >> 22) & 0x3FF;
+                        let rawVX = (val >> 15) & 0x7F;
+                        let rawVY = (val >> 8) & 0x7F;
+                        let rawVZ = val & 0xFF;
+
+                        trackFreq = 100 + rawFreq * 2; // maps to 100Hz - 2146Hz
+                        trackVX = (rawVX - 64) / 10;    // maps to -6.4 to 6.3
+                        trackVY = rawVY / 10;           // maps to 0 to 12.7
+                        trackVZ = -(rawVZ / 10);        // maps to 0 to -25.5
+                        
+                        logEvent(`🔓 Decoded Pitch Hex ${arg}: Freq: ${trackFreq}Hz, VX: ${trackVX.toFixed(1)}, VY: ${trackVY.toFixed(1)}, VZ: ${trackVZ.toFixed(1)}`);
+                    } else {
+                        // Standard human-readable parameters
+                        trackFreq = parseFloat(arg) || 440;
+                        trackVX = parseFloat(arg2) || 0;
+                        trackVZ = parseFloat(parts[3]) || -10;
+                        trackVY = parseFloat(parts[4]) || 1;
+
+                        // Compile to packed 32-bit hex code for easy copying/sharing
+                        let compFreq = Math.min(1023, Math.max(0, Math.floor((trackFreq - 100) / 2)));
+                        let compVX = Math.min(127, Math.max(0, Math.floor(trackVX * 10 + 64)));
+                        let compVY = Math.min(127, Math.max(0, Math.floor(trackVY * 10)));
+                        let compVZ = Math.min(255, Math.max(0, Math.floor(Math.abs(trackVZ) * 10)));
+
+                        let packed = (compFreq << 22) | (compVX << 15) | (compVY << 8) | compVZ;
+                        let hexStr = "0x" + packed.toString(16).toUpperCase().padStart(8, '0');
+                        logEvent(`💾 Compiled Pitch Hex: ${hexStr} (Save or share this code!)`);
+                    }
                     
                     if (ballActive) {
                         consoleBox.innerHTML += `\n[Z-Machine] Cannot track: A pitch is already active on the field.`;
