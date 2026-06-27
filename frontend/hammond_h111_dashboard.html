@@ -310,6 +310,40 @@
             </div>
 
             <div class="panel-title">
+                ADSR ENVELOPE <span>AMPLITUDE (VCA)</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>ATTACK (A):</span>
+                        <span id="lbl-env-attack" style="color: var(--glow-cyan);">0.01s</span>
+                    </div>
+                    <input type="range" id="env-attack" min="0.01" max="2.0" step="0.05" value="0.01" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>DECAY (D):</span>
+                        <span id="lbl-env-decay" style="color: var(--glow-cyan);">0.1s</span>
+                    </div>
+                    <input type="range" id="env-decay" min="0.05" max="3.0" step="0.05" value="0.1" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>SUSTAIN (S):</span>
+                        <span id="lbl-env-sustain" style="color: var(--glow-cyan);">100%</span>
+                    </div>
+                    <input type="range" id="env-sustain" min="0.0" max="1.0" step="0.05" value="1.0" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>RELEASE (R):</span>
+                        <span id="lbl-env-release" style="color: var(--glow-cyan);">0.1s</span>
+                    </div>
+                    <input type="range" id="env-release" min="0.05" max="4.0" step="0.05" value="0.1" style="width: 100%;">
+                </div>
+            </div>
+
+            <div class="panel-title">
                 REVERBERATION <span>SPACE RESONANCE</span>
             </div>
             <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
@@ -1130,6 +1164,21 @@
             dryGain.gain.value = 0.25; // 25% dry bypass signal
             valveSaturation.connect(dryGain);
 
+            // Configure ADSR envelope parameters
+            const attackTime = parseFloat(document.getElementById("env-attack")?.value || "0.01");
+            const decayTime = parseFloat(document.getElementById("env-decay")?.value || "0.1");
+            const sustainLevel = parseFloat(document.getElementById("env-sustain")?.value || "1.0");
+            
+            // Channel Gain node for ADSR
+            const adsrGain = audioCtx.createGain();
+            const now = audioCtx.currentTime;
+            adsrGain.gain.setValueAtTime(0, now);
+            
+            // Attack stage
+            adsrGain.gain.linearRampToValueAtTime(1.0, now + attackTime);
+            // Decay/Sustain stage
+            adsrGain.gain.linearRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
+
             gains.forEach(g => g.connect(valveSaturation));
             if (percGain) percGain.connect(valveSaturation);
 
@@ -1149,11 +1198,13 @@
             if (leslieAmpGain) {
                 pipeFilter.connect(leslieAmpGain);
                 dryGain.connect(leslieAmpGain);
-                leslieAmpGain.connect(mainVolume);
+                leslieAmpGain.connect(adsrGain);
             } else {
-                pipeFilter.connect(mainVolume);
-                dryGain.connect(mainVolume);
+                pipeFilter.connect(adsrGain);
+                dryGain.connect(adsrGain);
             }
+
+            adsrGain.connect(mainVolume);
 
             oscillators.forEach(o => o.start());
             if (lfoNode) lfoNode.start();
@@ -1179,12 +1230,27 @@
                 percGain,
                 lfoNode,
                 leslieLfo,
+                adsrGain,
                 saturation: valveSaturation,
                 filter: pipeFilter,
                 delayNode,
                 cutoffTimeout
             };
         }
+
+        // Hook envelope label updates
+        document.getElementById("env-attack")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-env-attack").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("env-decay")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-env-decay").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("env-sustain")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-env-sustain").innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
+        });
+        document.getElementById("env-release")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-env-release").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
 
         // Update vibrato rate label dynamically
         document.getElementById("vibrato-rate")?.addEventListener("input", (e) => {
@@ -1205,16 +1271,24 @@
                 clearTimeout(node.cutoffTimeout);
             }
 
-            // Fadeout
+            const releaseTime = parseFloat(document.getElementById("env-release")?.value || "0.1");
+
+            // Apply ADSR release envelope curve
             const now = audioCtx.currentTime;
+            if (node.adsrGain) {
+                node.adsrGain.gain.cancelScheduledValues(now);
+                node.adsrGain.gain.setValueAtTime(node.adsrGain.gain.value, now);
+                node.adsrGain.gain.linearRampToValueAtTime(0.0001, now + releaseTime);
+            }
+
             node.gains.forEach(g => {
                 g.gain.setValueAtTime(g.gain.value, now);
-                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+                g.gain.linearRampToValueAtTime(0.0001, now + releaseTime);
             });
 
             if (node.percGain) {
                 node.percGain.gain.setValueAtTime(node.percGain.gain.value, now);
-                node.percGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+                node.percGain.gain.linearRampToValueAtTime(0.0001, now + releaseTime);
             }
 
             setTimeout(() => {
@@ -1222,7 +1296,7 @@
                 if (node.percOsc) node.percOsc.stop();
                 if (node.lfoNode) node.lfoNode.stop();
                 if (node.leslieLfo) node.leslieLfo.stop();
-            }, 120);
+            }, (releaseTime * 1000) + 50);
 
             delete activeNodes[noteIndex];
         }
