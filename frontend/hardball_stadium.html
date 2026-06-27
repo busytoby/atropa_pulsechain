@@ -1293,10 +1293,10 @@ Status: Press Pitch to begin.</div>
             // Calculate hitting zone time dilation factor: slow down when ball approaches home plate (z is close to -100)
             let timeDilation = 1.0;
             if (ballActive && ballZ < 50 && ballZ > -130) {
-                // Closer to plate (z = -100) means stronger time dilation slowing things down to 25% speed
+                // Closer to plate (z = -100) means ultra super slow motion time dilation slowing things down to 5% speed
                 let distToPlate = Math.abs(ballZ - (-100));
                 if (distToPlate < 150) {
-                    timeDilation = 0.25 + 0.75 * (distToPlate / 150);
+                    timeDilation = 0.05 + 0.95 * (distToPlate / 150);
                 }
             }
 
