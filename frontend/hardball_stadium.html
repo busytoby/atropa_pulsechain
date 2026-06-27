@@ -1696,17 +1696,26 @@ Status: Press Pitch to begin.</div>
                     travelers.forEach(t => {
                         // 1. Calculate potential gradient force at traveler location
                         let potential = 0.0;
+                        let proximityScale = 1.0;
                         boundaries.forEach(b => {
                             let dx = t.x - b.x;
                             let dz = t.z - b.z;
                             let dist = Math.sqrt(dx*dx + dz*dz + 100.0);
                             potential += b.charge / dist;
+                            
+                            // Proximity-based time dilation: slow traveler when close to strong fields
+                            if (dist < 45.0) {
+                                let localDilation = (dist / 45.0); // scales from 0.2 to 1.0
+                                if (localDilation < proximityScale) {
+                                    proximityScale = Math.max(0.15, localDilation);
+                                }
+                            }
                         });
 
-                        // 2. Adjust velocities to align with local streamline field angle
+                        // 2. Adjust velocities to align with local streamline field angle, factored by time dilation
                         let angle = potential * Math.PI * 8.0;
-                        t.x += Math.cos(angle) * t.speed;
-                        t.z += Math.sin(angle) * t.speed;
+                        t.x += Math.cos(angle) * t.speed * proximityScale;
+                        t.z += Math.sin(angle) * t.speed * proximityScale;
 
                         // 3. Reset travelers if they escape the boundaries
                         if (t.x < -150 || t.x > 150 || t.z < 20 || t.z > 350) {
