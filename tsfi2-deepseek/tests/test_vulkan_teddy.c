@@ -663,6 +663,34 @@ static void* audio_mixer_thread(void *arg) {
                 }
             }
             
+            // 111-Frequency EDO-22 Tonewheel Organ Generator
+            static float tonewheel_phases[111] = {0.0f};
+            float tonewheel_sum = 0.0f;
+            
+            // Generate and mix active tonewheel frequencies (drawbar simulation)
+            for (int tw = 0; tw < 111; tw++) {
+                // Calculate EDO-22 microtonal frequency (Note 0 = Low C at 32.7032 Hz)
+                float freq = 32.7032f * powf(2.0f, (float)tw / 22.0f);
+                tonewheel_phases[tw] += freq / 8000.0f;
+                if (tonewheel_phases[tw] >= 1.0f) {
+                    tonewheel_phases[tw] -= 1.0f;
+                }
+                
+                // Additive drawbar mix (simulate drawing standard drawbars e.g. sub, fundamental, octave)
+                // We activate active harmonics corresponding to the drawbar settings
+                float amplitude = 0.0f;
+                if (tw % 22 == 0) amplitude += 0.35f;      // Sub-octave fundamental drawbars
+                if (tw % 22 == 12) amplitude += 0.25f;     // Fifth/harmonic drawbars
+                if (tw % 22 == 7) amplitude += 0.15f;      // High overtone drawbars
+                
+                if (amplitude > 0.01f) {
+                    tonewheel_sum += sinf(tonewheel_phases[tw] * 2.0f * 3.14159265f) * amplitude;
+                }
+            }
+            
+            // Limit and saturate tonewheel sum
+            float tonewheel_out = tanhf(tonewheel_sum * 0.4f) * 0.3f;
+
             // 303 Synth Engine sample generation
             tb303_freq_curr += (tb303_freq_target - tb303_freq_curr) * 0.0028f; // glide
             tb303_phase += tb303_freq_curr / 8000.0f;
@@ -707,7 +735,9 @@ static void* audio_mixer_thread(void *arg) {
             float drive = 1.0f;
             if (opt_viewport_boost) drive += 1.3f;
             if (opt_ssaa) drive += 0.8f;
-            float driven_out = synth_out * drive;
+            
+            // Mix the 303 bass synth output with the 111-frequency tonewheel output
+            float driven_out = (synth_out + tonewheel_out) * drive;
             
             float sat_out = apply_valve_simulation(driven_out, selected_valve);
             
@@ -718,9 +748,8 @@ static void* audio_mixer_thread(void *arg) {
             int tb303_sample = (int)(amp_out * 128.0f);
             
             sum += tb303_sample;
-            if (tb303_vca_env > 0.001f) {
-                any_active = true;
-            }
+            // EDO-22 tonewheel organ runs continuously like a real Hammond generator
+            any_active = true;
             
             int mixed = sum + 128;
             if (mixed < 0) mixed = 0;
