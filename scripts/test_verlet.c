@@ -39,6 +39,24 @@ int main() {
     
     printf("After 301 updates: y=%.4f (Expected to remain inside boundaries: [-300, 300])\n", p->y);
     assert(p->y >= -300.0f && p->y <= 300.0f);
+
+    // 4. Test Spring Constraint link solver
+    printf("Testing Spring Link Constraints...\n");
+    assert(verlet_system_spawn(&system, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); // Particle 1
+    assert(verlet_system_spawn(&system, 0.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f)); // Particle 2
+    
+    // Create spring link constraint between Particle 1 and 2
+    assert(verlet_system_link(&system, 1, 2, 1.0f));
+    assert(system.constraints[0].active == 1);
+    assert(fabs(system.constraints[0].rest_length - 10.0f) < 0.001f);
+
+    // Displace particle 2 and verify spring forces contract it back towards rest length
+    system.particles[2].y = 20.0f;
+    verlet_system_update(&system);
+    
+    printf("After constraint resolution: p1.y=%.4f, p2.y=%.4f (Restoring contraction expected)\n", 
+           system.particles[1].y, system.particles[2].y);
+    assert(system.particles[2].y < 20.0f); // Should pull back down
     
     printf("=== ALL VERLET INTEGRATOR TESTS PASSED ===\n");
     return 0;

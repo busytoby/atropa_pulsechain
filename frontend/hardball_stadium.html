@@ -1493,30 +1493,52 @@ Status: Press Pitch to begin.</div>
                 if (document.getElementById("show-verlet-grid").checked) {
                     const steps = 8;
                     const spacing = 18;
+                    
+                    // Accumulate all spring links in a single path to optimize draw calls
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+                    ctx.lineWidth = 1.0;
+                    ctx.beginPath();
+                    
+                    let positions = [];
                     for (let r = 0; r < steps; r++) {
+                        positions[r] = [];
                         for (let c = 0; c < steps; c++) {
-                            // Compute wave offsets replicating dynamic capacitor discharge cycles
                             const pX = -70 + c * spacing;
                             const pZ = 50 + r * spacing;
                             const cycleOffset = Math.sin(Date.now() * 0.003 + (r + c) * 0.4) * 8.0;
-                            const pY = -90 + cycleOffset; // Wobble based on field effect discharge
+                            const pY = -90 + cycleOffset;
+                            positions[r][c] = { x: pX, y: pY, z: pZ };
                             
                             // Render nodes
-                            drawVolumetricSphere({ x: pX, y: pY, z: pZ }, 2.0, "rgba(0, 240, 255, 0.65)");
+                            drawVolumetricSphere(positions[r][c], 2.0, "rgba(0, 240, 255, 0.65)");
+                        }
+                    }
+                    
+                    for (let r = 0; r < steps; r++) {
+                        for (let c = 0; c < steps; c++) {
+                            const p = positions[r][c];
+                            const scP = project(p);
+                            if (!scP) continue;
                             
-                            // Render spring constraints links between neighbors
                             if (c < steps - 1) {
-                                const nextX = -70 + (c + 1) * spacing;
-                                const nextY = -90 + Math.sin(Date.now() * 0.003 + (r + c + 1) * 0.4) * 8.0;
-                                drawLine3D({ x: pX, y: pY, z: pZ }, { x: nextX, y: nextY, z: pZ }, "rgba(0, 240, 255, 0.25)", 1.0);
+                                const scNext = project(positions[r][c+1]);
+                                if (scNext) {
+                                    ctx.moveTo(scP.x, scP.y);
+                                    ctx.lineTo(scNext.x, scNext.y);
+                                }
                             }
                             if (r < steps - 1) {
-                                const nextZ = 50 + (r + 1) * spacing;
-                                const nextY = -90 + Math.sin(Date.now() * 0.003 + (r + 1 + c) * 0.4) * 8.0;
-                                drawLine3D({ x: pX, y: pY, z: pZ }, { x: pX, y: nextY, z: nextZ }, "rgba(0, 240, 255, 0.25)", 1.0);
+                                const scNext = project(positions[r+1][c]);
+                                if (scNext) {
+                                    ctx.moveTo(scP.x, scP.y);
+                                    ctx.lineTo(scNext.x, scNext.y);
+                                }
                             }
                         }
                     }
+                    ctx.stroke();
+                    ctx.restore();
                 }
 
                 // 4. Fielders
