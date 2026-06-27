@@ -302,7 +302,7 @@ def update_price(address, price, symbol, name, is_treasury=False, treasury_owner
 
     addr_lower = address.lower()
     # Pin stablecoin prices to exactly 1.0 USD
-    if symbol.upper() in ["USDC", "USDT", "DAI"] or addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2, DAI_ADDR, DAI_ADDR2]:
+    if symbol.upper() in ["USDC", "USDT", "DAI"] and addr_lower in [USDC_ADDR, USDT_ADDR, DAI_ADDR]:
         price = 1.0
         
     old_price = get_cached_price(address)
