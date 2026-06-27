@@ -321,6 +321,27 @@
             </div>
 
             <div class="panel-title">
+                LESLIE ROTARY SPEAKER <span>CABINET</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>ROTATOR SPEED:</span>
+                    <select id="leslie-speed" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="off" selected>Bypassed (Stationary)</option>
+                        <option value="chorale">Chorale (Slow, 0.8Hz)</option>
+                        <option value="tremolo">Tremolo (Fast, 6.8Hz)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>ROTARY MIX (WET/DRY):</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="range" id="leslie-mix" min="0" max="1" step="0.05" value="0.7" style="width: 100%;">
+                        <span id="lbl-leslie-mix" style="color: var(--glow-cyan);">70%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-title">
                 HARMONIC PERCUSSION <span>DECAY</span>
             </div>
             <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
@@ -604,6 +625,36 @@
                 lfoNode.connect(lfoGain);
             }
 
+            // Leslie Speaker cabinet simulation setup (Doppler pitch + AM amplitude rotation)
+            const leslieSpeedSel = document.getElementById("leslie-speed")?.value || "off";
+            const leslieMixVal = parseFloat(document.getElementById("leslie-mix")?.value || "0.7");
+            
+            let leslieLfo = null;
+            let lesliePitchGain = null;
+            let leslieAmpGain = null;
+            
+            if (leslieSpeedSel !== "off") {
+                const rotRate = leslieSpeedSel === "chorale" ? 0.8 : 6.8;
+                
+                leslieLfo = audioCtx.createOscillator();
+                leslieLfo.frequency.value = rotRate;
+                
+                // Doppler Pitch Modulation
+                lesliePitchGain = audioCtx.createGain();
+                lesliePitchGain.gain.value = 4.0 * leslieMixVal;
+                leslieLfo.connect(lesliePitchGain);
+                
+                // Amplitude Modulation Gain Node
+                leslieAmpGain = audioCtx.createGain();
+                // AM depth sweeps between (1 - mix) and 1
+                leslieAmpGain.gain.value = 1.0;
+                
+                const amLfoGain = audioCtx.createGain();
+                amLfoGain.gain.value = 0.3 * leslieMixVal;
+                leslieLfo.connect(amLfoGain);
+                amLfoGain.connect(leslieAmpGain.gain);
+            }
+
             harmonicOffsets.forEach((offset, idx) => {
                 const amp = drawbars[idx];
                 if (amp <= 0.01) return;
@@ -617,12 +668,14 @@
                 osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
                 osc.frequency.value = twFreqs[targetIndex];
                 
-                // Multiply the default drawbar amplitude by the individual tonewheel's gain modifier
                 const twGainMultiplier = tonewheelGains[targetIndex];
                 gainNode.gain.value = amp * 0.12 * twGainMultiplier;
 
                 if (lfoGain) {
                     lfoGain.connect(osc.frequency);
+                }
+                if (lesliePitchGain) {
+                    lesliePitchGain.connect(osc.frequency);
                 }
 
                 osc.connect(gainNode);
@@ -638,7 +691,6 @@
                 percOsc = audioCtx.createOscillator();
                 percGain = audioCtx.createGain();
                 
-                // 2nd harmonic (octave) vs 3rd harmonic (quint/twelfth) EDO-22 pitch offsets
                 const percTargetIdx = noteIndex + (percMode === "2nd" ? 22 : 35);
                 if (percTargetIdx < 111) {
                     percOsc.frequency.value = twFreqs[percTargetIdx];
@@ -648,9 +700,12 @@
                     const decayVal = document.getElementById("perc-decay")?.value || "slow";
                     const decayTime = decayVal === "fast" ? 0.15 : 0.8;
                     
-                    // Trigger dynamic attack/decay envelope
                     percGain.gain.setValueAtTime(0.35, now);
                     percGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
+                    
+                    if (lesliePitchGain) {
+                        lesliePitchGain.connect(percOsc.frequency);
+                    }
                     
                     percOsc.connect(percGain);
                     percOsc.start();
@@ -677,13 +732,11 @@
             const pipeFilter = audioCtx.createBiquadFilter();
             pipeFilter.type = "peaking";
 
-            // Resolve pipe frequency matching physical tube length
             const lengthSel = document.getElementById("pipe-length")?.value || "32";
-            let pipeFreq = 33.3; // Default 32-Foot sub diapason
+            let pipeFreq = 33.3; 
             if (lengthSel === "16") pipeFreq = 66.6;
             else if (lengthSel === "64") pipeFreq = 16.65;
             else if (lengthSel === "limitless") {
-                // Dynamic sweep matching note base pitch frequency
                 pipeFreq = twFreqs[noteIndex] / 4.0;
             }
 
@@ -700,18 +753,29 @@
             let delayNode = null;
             if (vibMode === "c1" || vibMode === "c3") {
                 delayNode = audioCtx.createDelay();
-                delayNode.delayTime.value = 0.006; // 6ms analog scanner delay offset
+                delayNode.delayTime.value = 0.006; 
                 
-                // Mix wet and dry paths
                 valveSaturation.connect(delayNode);
                 delayNode.connect(pipeFilter);
             }
 
             valveSaturation.connect(pipeFilter);
-            pipeFilter.connect(mainVolume);
+
+            if (leslieAmpGain) {
+                pipeFilter.connect(leslieAmpGain);
+                leslieAmpGain.connect(mainVolume);
+            } else {
+                pipeFilter.connect(mainVolume);
+            }
 
             oscillators.forEach(o => o.start());
             if (lfoNode) lfoNode.start();
+            if (leslieLfo) leslieLfo.start();
+
+            // Update leslie label updates
+            document.getElementById("leslie-mix")?.addEventListener("input", (e) => {
+                document.getElementById("lbl-leslie-mix").innerText = `${Math.round(e.target.value * 100)}%`;
+            });
 
             activeNodes[noteIndex] = {
                 oscillators,
@@ -719,6 +783,7 @@
                 percOsc,
                 percGain,
                 lfoNode,
+                leslieLfo,
                 saturation: valveSaturation,
                 filter: pipeFilter,
                 delayNode
@@ -755,6 +820,7 @@
                 node.oscillators.forEach(o => o.stop());
                 if (node.percOsc) node.percOsc.stop();
                 if (node.lfoNode) node.lfoNode.stop();
+                if (node.leslieLfo) node.leslieLfo.stop();
             }, 120);
 
             delete activeNodes[noteIndex];
