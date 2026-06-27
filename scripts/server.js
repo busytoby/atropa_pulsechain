@@ -1106,6 +1106,16 @@ const server = http.createServer(async (req, res) => {
                         res.writeHead(500, { "Content-Type": "application/json" });
                         res.end(JSON.stringify({ error: err.message }));
                     } else {
+                        // Check if the ZMM VM execution target triggered diyat actions
+                        try {
+                            if (response && response.result && response.result.logs) {
+                                const logsStr = JSON.stringify(response.result.logs);
+                                if (logsStr.includes("TaxPaid") || logsStr.includes("diyat")) {
+                                    console.log(`[SERVER] [Diyat Audit] Active dynamic Diyat tax fee payment detected in response logs.`);
+                                }
+                            }
+                        } catch (e) {}
+
                         res.writeHead(200, { 
                             "Content-Type": "application/json",
                             "Access-Control-Allow-Origin": "*"

@@ -16,6 +16,8 @@ typedef struct __attribute__((aligned(64))) {
     uint32_t padding[6];   // Padding to exactly fill 64 bytes
 } Particle;
 
+#include "libantigravity_interop.h"
+
 typedef struct {
     Particle particles[MAX_PARTICLES];
     float dt;
@@ -23,6 +25,7 @@ typedef struct {
     float boundary_min_y, boundary_max_y;
     float boundary_min_z, boundary_max_z;
     TsfiZener zener;       // Electro-mechanical Zener clamp feedback
+    InteropRegistry *registry; // Direct pointer to feed back Diyat tax values
 } VerletSystem;
 
 // Initialize the particle system

@@ -282,7 +282,50 @@
                 <div style="grid-column: span 2;">RESULT<br><span class="sb-val" id="sb-result" style="color: var(--glow-cyan); font-size: 10px;">READY</span></div>
             </div>
 
+            <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid #1e293b;">
+                <span>Game Mode:</span>
+                <select id="game-mode" onchange="resetGame()" style="background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
+                    <option value="human_pitch">👤 Human Pitch / Bat</option>
+                    <option value="ai_match">🤖 AI Pitcher / Batter</option>
+                </select>
+            </div>
             <div class="section-title">STADIUM CONTROLS</div>
+            <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid #1e293b;">
+                <span>Select Pitch Type:</span>
+                <select id="pitch-type" style="background: #000; border: 1px solid #1e293b; color: var(--glow-gold); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
+                    <option value="fastball">☄️ Fastball</option>
+                    <option value="curveball">🌀 Curveball</option>
+                    <option value="slider">⚡ Slider</option>
+                    <option value="splitter">☄️ Splitter</option>
+                    <option value="screwball">🌀 Screwball</option>
+                    <option value="cutter">🔪 Cutter</option>
+                    <option value="gyroball">🌀 Gyroball</option>
+                    <option value="eephus">🎈 Eephus</option>
+                    <option value="changeup">🍃 Changeup</option>
+                    <option value="sinker">⚓ Sinker</option>
+                    <option value="knuckleball">🎲 Knuckleball</option>
+                    <option value="slurve">⚡ Slurve (Slider-Curve)</option>
+                    <option value="spitter">💦 Spitball</option>
+                    <option value="forkball">🍴 Forkball</option>
+                    <option value="shuuto">🌀 Shuuto (Shootball)</option>
+                    <option value="vulcan">🖖 Vulcan Changeup</option>
+                    <option value="palmball">🖐️ Palmball</option>
+                    <option value="sweeper">🧹 Sweeper</option>
+                    <option value="sub_rise">🚀 Submarine Riser</option>
+                    <option value="fireball">🔥 Fireball (105mph)</option>
+                    <option value="corkscrew">🌀 Corkscrew (Spiral)</option>
+                </select>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid #1e293b;">
+                <span>Select Camera View:</span>
+                <select id="camera-view" onchange="changeCameraView()" style="background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
+                    <option value="steady">🎥 Broadcast Steady</option>
+                    <option value="pitcher">⚾ Behind Pitcher</option>
+                    <option value="batter">⚔️ Batter Zoom</option>
+                    <option value="pressbox">🏢 High Press Box</option>
+                    <option value="outfield">🛸 Outfield Drone</option>
+                </select>
+            </div>
             <button class="btn btn-gold" onclick="triggerPitch()">⚾ Pitch Ball (ENTER)</button>
             <button class="btn" onclick="triggerSwing()">⚔️ Swing Bat (SPACE)</button>
 
@@ -327,6 +370,9 @@ Status: Press Pitch to begin.</div>
                 <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8; margin-top: -2px;">
                     <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
                 </label>
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: var(--glow-cyan); margin-top: -2px;">
+                    <input type="checkbox" id="show-verlet-grid"> 🔬 Show Verlet soft-body grid (Transistor Discharge)
+                </label>
                 <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Baseball Card</button>
                 <button class="btn" id="btn-save-card" onclick="saveCurrentCardToDeck()" style="border-color: var(--glow-cyan); color: var(--glow-cyan); margin-top: 2px;">💾 Save Card to Deck</button>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
@@ -369,12 +415,12 @@ Status: Press Pitch to begin.</div>
         const canvas = document.getElementById("stageCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Camera setup mimicking C64 viewport perspective
+        // Camera setup mimicking C64 viewport perspective (steady baseline setup)
         const camera = {
-            yaw: 0.0,
-            pitch: 0.05,
-            distance: 650,
-            fov: 600
+            yaw: -0.22,      // Aligns pitcher mound and batter box offset nicely
+            pitch: 0.16,     // Higher elevation angles for better layout visibility
+            distance: 980,   // Adjusted distance for a steadier, wider baseline overview
+            fov: 650
         };
 
         // Projected point representation
@@ -584,6 +630,20 @@ Status: Press Pitch to begin.</div>
                     skel.rFoot = { x: localOffset.x + 60 * scale, y: -10 * scale, z: localOffset.z };
                 }
             }
+            // Fielder or Runner
+            else if (position === 'fielder' || position === 'runner') {
+                skel = {
+                    head: { x: localOffset.x, y: 55 * scale, z: localOffset.z },
+                    neck: { x: localOffset.x, y: 35 * scale, z: localOffset.z },
+                    midHip: { x: localOffset.x, y: -20 * scale, z: localOffset.z },
+                    lShoulder: { x: localOffset.x - 14 * scale, y: 35 * scale, z: localOffset.z },
+                    rShoulder: { x: localOffset.x + 14 * scale, y: 35 * scale, z: localOffset.z },
+                    lPaw: { x: localOffset.x - 18 * scale, y: 10 * scale, z: localOffset.z },
+                    rPaw: { x: localOffset.x + 18 * scale, y: 10 * scale, z: localOffset.z },
+                    lFoot: { x: localOffset.x - 12 * scale, y: -65 * scale, z: localOffset.z },
+                    rFoot: { x: localOffset.x + 12 * scale, y: -65 * scale, z: localOffset.z }
+                };
+            }
             // Catcher
             else {
                 skel = {
@@ -741,6 +801,100 @@ Status: Press Pitch to begin.</div>
 
         let sdPitcher = null, sdBatter = null, sdCatcher = null;
 
+        // Fielder Positions
+        let shortstopPos = { x: -80, y: -90, z: 320 };
+        let outfieldLeftPos = { x: -160, y: -90, z: 450 };
+        let outfieldRightPos = { x: 160, y: -90, z: 450 };
+
+        // Base positions mapping
+        const bases = [
+            { x: 90, y: -90, z: 60 },   // 1st Base
+            { x: 0, y: -90, z: 220 },   // 2nd Base
+            { x: -90, y: -90, z: 60 },  // 3rd Base
+            { x: 0, y: -90, z: -100 }   // Home Plate
+        ];
+
+        let runnerActive = false;
+        let runnerProgress = 0.0; // Interpolation factor (0.0 to 3.0 base-running cycles)
+        let runnerCoords = { x: 0, y: -90, z: -100 };
+
+        // C64 SID Chip emulator synth
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSidSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === "pitch") {
+                    // High-pitch laser sweep
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.35);
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === "swing") {
+                    // Triangle wind whoosh
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.22);
+                    gainNode.gain.setValueAtTime(0.25, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                } else if (type === "hit") {
+                    // Sharp detuned triangle hit bip
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(587, now); // D5
+                    osc.frequency.setValueAtTime(880, now + 0.05); // A5
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === "strike") {
+                    // Retro strike alarm buzz
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(150, now);
+                    gainNode.gain.setValueAtTime(0.18, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === "ball") {
+                    // Low tone bip
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(330, now);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === "out") {
+                    // Staggered down-sweeping buzzer
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.linearRampToValueAtTime(40, now + 0.5);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            } catch (e) {
+                console.error("Audio synth error:", e);
+            }
+        }
+
         function logEvent(msg) {
             const consoleBox = document.getElementById("console");
             consoleBox.innerHTML += `\n${msg}`;
@@ -756,6 +910,8 @@ Status: Press Pitch to begin.</div>
             document.getElementById("sb-balls").innerText = balls;
         }
 
+        let currentPitchType = "fastball";
+
         function triggerPitch() {
             if (ballActive) return;
             ballActive = true;
@@ -763,11 +919,117 @@ Status: Press Pitch to begin.</div>
             ballY = 35;
             ballZ = 220;
             
-            ballVX = (Math.random() * 2 - 1);
-            ballVY = 4;
-            ballVZ = -8;
-            logEvent("⚾ Pitch is thrown! Curve ball sliding towards the strike zone...");
+            const pType = document.getElementById("pitch-type").value;
+            currentPitchType = pType;
+
+            if (pType === "fastball") {
+                ballVX = (Math.random() * 0.4 - 0.2);
+                ballVY = 1.0;
+                ballVZ = -14.0; // High speed
+                logEvent("☄️ Fastball fired! High velocity heat heading straight down the middle!");
+            } else if (pType === "curveball") {
+                ballVX = 1.8; // Heavy sideways glide
+                ballVY = 5.0;
+                ballVZ = -7.5; // Slower, looping curve
+                logEvent("🌀 Curveball thrown! Looping horizontal slide breaking hard towards the plate.");
+            } else if (pType === "slider") {
+                ballVX = 0.9;
+                ballVY = 2.0;
+                ballVZ = -11.0; // Fast speed with late break
+                logEvent("⚡ Slider thrown! Fast and breaks laterally late.");
+            } else if (pType === "splitter") {
+                ballVX = (Math.random() * 0.2 - 0.1);
+                ballVY = 2.5;
+                ballVZ = -12.0; // Rapid drop near plate
+                logEvent("☄️ Splitter thrown! Tumbles down sharply as it reaches the plate.");
+            } else if (pType === "screwball") {
+                ballVX = -1.8; // Breaks opposite direction of curveball
+                ballVY = 4.8;
+                ballVZ = -7.8;
+                logEvent("🌀 Screwball thrown! Breaks in the reverse direction deceptively.");
+            } else if (pType === "cutter") {
+                ballVX = 0.4;
+                ballVY = 1.2;
+                ballVZ = -13.0; // Fast speed with tiny late cut
+                logEvent("🔪 Cutter thrown! Fastball velocity that cuts away slightly at the end.");
+            } else if (pType === "gyroball") {
+                ballVX = (Math.random() * 0.2 - 0.1);
+                ballVY = 1.0;
+                ballVZ = -12.5; // High spiral stability
+                logEvent("🌀 Gyroball delivered! Bullet spin velocity holding path stability.");
+            } else if (pType === "eephus") {
+                ballVX = 0;
+                ballVY = 12.0; // Very high arch path
+                ballVZ = -4.0; // Extremely slow speed
+                logEvent("🎈 Eephus pitch lofted! Gigantic, slow-motion arch toward the zone.");
+            } else if (pType === "changeup") {
+                ballVX = (Math.random() * 0.2 - 0.1);
+                ballVY = 3.0;
+                ballVZ = -5.8; // Very slow speed, deceptive drop
+                logEvent("🍃 Changeup floated! Drastic speed reduction off the release.");
+            } else if (pType === "sinker") {
+                ballVX = (Math.random() * 0.6 - 0.3);
+                ballVY = 2.0;
+                ballVZ = -11.0; 
+                logEvent("⚓ Sinker delivered! Heavy downward dive near the zone.");
+            } else if (pType === "knuckleball") {
+                ballVX = 0;
+                ballVY = 1.8;
+                ballVZ = -6.5;
+                logEvent("🎲 Knuckleball! Erratic drift and zero spin trajectory.");
+            } else if (pType === "slurve") {
+                ballVX = 1.4;
+                ballVY = 3.5;
+                ballVZ = -9.5;
+                logEvent("⚡ Slurve delivered! Wide lateral curve velocity.");
+            } else if (pType === "spitter") {
+                ballVX = (Math.random() * 0.4 - 0.2);
+                ballVY = 1.6;
+                ballVZ = -10.5;
+                logEvent("💦 Spitball delivered! Deceptive wet friction drops.");
+            } else if (pType === "forkball") {
+                ballVX = 0;
+                ballVY = 1.5;
+                ballVZ = -9.0;
+                logEvent("🍴 Forkball delivered! Plummets straight down at home plate.");
+            } else if (pType === "shuuto") {
+                ballVX = -1.5;
+                ballVY = 1.5;
+                ballVZ = -13.0; // Inwards break to righty batters
+                logEvent("🌀 Shuuto! Rapid inside breaking speed.");
+            } else if (pType === "vulcan") {
+                ballVX = -0.6;
+                ballVY = 2.5;
+                ballVZ = -7.5;
+                logEvent("🖖 Vulcan Changeup! Breaks downwards and inwards.");
+            } else if (pType === "palmball") {
+                ballVX = 0;
+                ballVY = 3.8;
+                ballVZ = -5.0; // Slow falling speed
+                logEvent("🖐️ Palmball floated! Drops slowly near the plate.");
+            } else if (pType === "sweeper") {
+                ballVX = 2.4; // Massive sideways sweep
+                ballVY = 2.0;
+                ballVZ = -10.0;
+                logEvent("🧹 Sweeper thrown! Horizontal sliding sweep breaking wide.");
+            } else if (pType === "sub_rise") {
+                ballVX = 0;
+                ballVY = -2.5; // Starts low
+                ballVZ = -10.5;
+                logEvent("🚀 Submarine Riser! Released low, rising up past home plate.");
+            } else if (pType === "fireball") {
+                ballVX = 0;
+                ballVY = 0.5;
+                ballVZ = -18.5; // Max speed 105mph
+                logEvent("🔥 Fireball! Unbelievable heat blazing past the hitter!");
+            } else if (pType === "corkscrew") {
+                ballVX = 0;
+                ballVY = 4.0;
+                ballVZ = -7.0; // Moderate loop speed
+                logEvent("🌀 Corkscrew pitch released! Moving in a spiral trajectory!");
+            }
             document.getElementById("sb-result").innerText = "IN FLIGHT";
+            playSidSound("pitch");
         }
 
         function triggerSwing() {
@@ -775,6 +1037,7 @@ Status: Press Pitch to begin.</div>
             batSwinging = true;
             batSwingAngle = 0;
             logEvent("⚔️ Batter swings the bat with high velocity!");
+            playSidSound("swing");
         }
 
         // Floor drop shadows
@@ -950,17 +1213,152 @@ Status: Press Pitch to begin.</div>
                 ballX += ballVX;
                 ballY += ballVY;
                 ballZ += ballVZ;
-                ballVY -= 0.12; // curve gravity
+
+                // Apply unique dynamic movement curves based on active pitch type
+                if (currentPitchType === "fastball") {
+                    ballVY -= 0.05; // Light drop
+                } else if (currentPitchType === "curveball") {
+                    // Late breaking curve: shift hard laterally and drop fast as it reaches the plate
+                    if (ballZ < 80) {
+                        ballVX -= 0.28;
+                        ballVY -= 0.25;
+                    } else {
+                        ballVY -= 0.08;
+                    }
+                } else if (currentPitchType === "slider") {
+                    // Slide sideways very quickly as it reaches the batter
+                    if (ballZ < 90) {
+                        ballVX -= 0.32;
+                        ballVY -= 0.15;
+                    } else {
+                        ballVY -= 0.06;
+                    }
+                } else if (currentPitchType === "splitter") {
+                    // Falls off a table: rapid drop late
+                    if (ballZ < 70) {
+                        ballVY -= 0.55;
+                    } else {
+                        ballVY -= 0.06;
+                    }
+                } else if (currentPitchType === "screwball") {
+                    // Opposite horizontal break of a curveball
+                    if (ballZ < 80) {
+                        ballVX += 0.28;
+                        ballVY -= 0.25;
+                    } else {
+                        ballVY -= 0.08;
+                    }
+                } else if (currentPitchType === "cutter") {
+                    // Sharp late horizontal cut
+                    if (ballZ < 60) {
+                        ballVX += 0.16; 
+                    }
+                    ballVY -= 0.05;
+                } else if (currentPitchType === "gyroball") {
+                    // Extremely stable straight path, tiny late drop
+                    ballVY -= 0.035;
+                } else if (currentPitchType === "eephus") {
+                    // Steep high-arched gravity drop
+                    ballVY -= 0.22;
+                } else if (currentPitchType === "changeup") {
+                    ballVY -= 0.04; // Gentle float
+                } else if (currentPitchType === "sinker") {
+                    // Dive downwards sharply near home plate
+                    if (ballZ < 60) {
+                        ballVY -= 0.42; 
+                    } else {
+                        ballVY -= 0.12;
+                    }
+                } else if (currentPitchType === "knuckleball") {
+                    // Random fluttering drift pattern
+                    ballVX += (Math.random() * 0.6 - 0.3);
+                    ballVY += (Math.random() * 0.4 - 0.2) - 0.08;
+                } else if (currentPitchType === "slurve") {
+                    // Combined slider horizontal sweep & curveball drop
+                    if (ballZ < 90) {
+                        ballVX -= 0.26;
+                        ballVY -= 0.20;
+                    } else {
+                        ballVY -= 0.08;
+                    }
+                } else if (currentPitchType === "spitter") {
+                    // Slight slip-downward path
+                    ballVY -= 0.08;
+                    if (Math.random() > 0.8) ballVX += (Math.random() * 0.4 - 0.2);
+                } else if (currentPitchType === "forkball") {
+                    // Heavy tumble drop late
+                    if (ballZ < 60) {
+                        ballVY -= 0.48;
+                    } else {
+                        ballVY -= 0.07;
+                    }
+                } else if (currentPitchType === "shuuto") {
+                    // Rapid lateral slide inwards
+                    if (ballZ < 85) {
+                        ballVX += 0.28;
+                        ballVY -= 0.12;
+                    } else {
+                        ballVY -= 0.05;
+                    }
+                } else if (currentPitchType === "vulcan") {
+                    // Vulcan changeup drops downwards and breaks inwards late
+                    if (ballZ < 75) {
+                        ballVX += 0.12;
+                        ballVY -= 0.35;
+                    } else {
+                        ballVY -= 0.05;
+                    }
+                } else if (currentPitchType === "palmball") {
+                    // Floating drop path
+                    ballVY -= 0.065;
+                } else if (currentPitchType === "sweeper") {
+                    // Massive sweeping horizontal slide break
+                    if (ballZ < 100) {
+                        ballVX -= 0.42;
+                        ballVY -= 0.10;
+                    } else {
+                        ballVY -= 0.05;
+                    }
+                } else if (currentPitchType === "sub_rise") {
+                    // Submarine rise trajectory
+                    if (ballZ < 90) {
+                        ballVY += 0.30; // Rises late
+                    } else {
+                        ballVY -= 0.03;
+                    }
+                } else if (currentPitchType === "fireball") {
+                    // Flat high-speed heat
+                    ballVY -= 0.04;
+                } else if (currentPitchType === "corkscrew") {
+                    // Spiral trajectory modeled as sine/cosine functions of ball depth (ballZ)
+                    ballVX = Math.sin(ballZ * 0.15) * 1.8;
+                    ballVY = Math.cos(ballZ * 0.15) * 1.8 + 1.2;
+                }
 
                 if (ballZ <= -120) {
                     ballActive = false;
                     // Collision check
                     if (batSwinging && Math.abs(ballX) < 18 && Math.abs(ballY - 15) < 18) {
-                        scoreHome++;
                         strikes = 0;
                         balls = 0;
-                        document.getElementById("sb-result").innerText = "HOME RUN!";
-                        logEvent("💥 HIT! Ball crunched into deep field! HOME RUN!");
+                        runnerActive = true;
+                        runnerProgress = 0.0;
+                        
+                        // Determine random hit direction/velocity
+                        let hitPower = Math.random();
+                        if (hitPower > 0.75) {
+                            scoreHome++;
+                            document.getElementById("sb-result").innerText = "HOME RUN!";
+                            logEvent("💥 HIT! Ball crunched into deep field! HOME RUN!");
+                            runnerProgress = 3.0; // Instantly runs all bases
+                        } else if (hitPower > 0.35) {
+                            document.getElementById("sb-result").innerText = "DOUBLE!";
+                            logEvent("☄️ Double! Ball sliced into left-field gap. Runner advances to 2nd base!");
+                        } else {
+                            document.getElementById("sb-result").innerText = "SINGLE";
+                            logEvent("⚾ Single! Base hit down the shortstop line!");
+                        }
+                        playSidSound("hit");
                     } else {
                         if (Math.abs(ballX) < 12 && ballY > -10 && ballY < 45) {
                             strikes++;
@@ -969,9 +1367,11 @@ Status: Press Pitch to begin.</div>
                                 if (outs >= 3) { outs = 0; inning++; }
                                 document.getElementById("sb-result").innerText = "STRIKE OUT";
                                 logEvent("❌ Strike three! Batter struck out!");
+                                playSidSound("out");
                             } else {
                                 document.getElementById("sb-result").innerText = "STRIKE";
                                 logEvent("⚾ Strike! Right down the pipe.");
+                                playSidSound("strike");
                             }
                         } else {
                             balls++;
@@ -979,12 +1379,60 @@ Status: Press Pitch to begin.</div>
                                 balls = 0;
                                 document.getElementById("sb-result").innerText = "WALK";
                                 logEvent("🚶 Walk! Batter takes base.");
+                                runnerActive = true;
+                                runnerProgress = 1.0; // Advances to 1st base
+                                playSidSound("ball");
                             } else {
                                 document.getElementById("sb-result").innerText = "BALL";
                                 logEvent("🟢 Ball. Outside zone.");
+                                playSidSound("ball");
                             }
                         }
                     }
+                }
+            }
+
+            // Update base runner movements & dynamic camera panning tracking
+            if (runnerActive) {
+                let targetProgress = 1.0; // Default Single / Walk
+                if (document.getElementById("sb-result").innerText === "DOUBLE!") targetProgress = 2.0;
+                else if (document.getElementById("sb-result").innerText === "HOME RUN!") targetProgress = 3.0;
+
+                if (runnerProgress < targetProgress) {
+                    runnerProgress += 0.015; // Speed of runner
+                    if (runnerProgress >= targetProgress) {
+                        runnerProgress = targetProgress;
+                        if (targetProgress >= 3.0) {
+                            runnerActive = false; // Home run completed
+                        }
+                    }
+                }
+
+                // Smoothly pan camera to follow base runner
+                let camTargetYaw = -0.22 + (runnerProgress * 0.45);
+                camera.yaw = camera.yaw + (camTargetYaw - camera.yaw) * 0.08;
+                camera.distance = camera.distance + (850 - camera.distance) * 0.05;
+
+                // Interpolate runnerCoordinates along the diamond
+                // 1st base (90, -90, 60), 2nd base (0, -90, 220), 3rd base (-90, -90, 60)
+                let baseIndex = Math.floor(runnerProgress);
+                let t = runnerProgress - baseIndex;
+                let startPos = (baseIndex === 0) ? { x: -45, y: -90, z: -60 } : bases[baseIndex - 1];
+                let endPos = bases[baseIndex];
+
+                if (startPos && endPos) {
+                    runnerCoords.x = startPos.x + (endPos.x - startPos.x) * t;
+                    runnerCoords.y = -90;
+                    runnerCoords.z = startPos.z + (endPos.z - startPos.z) * t;
+                }
+            }
+
+            } else {
+                // Ease camera back to default/preset coordinates when play concludes
+                const currentView = document.getElementById("camera-view").value;
+                if (currentView === "steady") {
+                    camera.yaw += (-0.22 - camera.yaw) * 0.05;
+                    camera.distance += (980 - camera.distance) * 0.05;
                 }
             }
 
@@ -1017,6 +1465,14 @@ Status: Press Pitch to begin.</div>
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
             const useSD = isOverlayEnabled && sdPitcher && sdBatter && sdCatcher;
 
+            // Render shadows for fielders and runner if active
+            drawFloorShadows(shortstopPos, 0.9);
+            drawFloorShadows(outfieldLeftPos, 0.8);
+            drawFloorShadows(outfieldRightPos, 0.8);
+            if (runnerActive) {
+                drawFloorShadows(runnerCoords, 0.95);
+            }
+
             if (useSD) {
                 // Render synthesized baseball player cards
                 drawOverlaySegment({ x: 0, y: 0, z: 220 }, 1.2, sdPitcher);
@@ -1032,6 +1488,46 @@ Status: Press Pitch to begin.</div>
 
                 // 3. Catcher elements
                 drawCharacter3D({ x: 0, y: 0, z: -100 }, 1.2, 0, 'catcher', "rgba(0, 240, 255, 0.8)");
+
+                // Draw simulated Verlet particle grid representing low-level FET discharge physics
+                if (document.getElementById("show-verlet-grid").checked) {
+                    const steps = 8;
+                    const spacing = 18;
+                    for (let r = 0; r < steps; r++) {
+                        for (let c = 0; c < steps; c++) {
+                            // Compute wave offsets replicating dynamic capacitor discharge cycles
+                            const pX = -70 + c * spacing;
+                            const pZ = 50 + r * spacing;
+                            const cycleOffset = Math.sin(Date.now() * 0.003 + (r + c) * 0.4) * 8.0;
+                            const pY = -90 + cycleOffset; // Wobble based on field effect discharge
+                            
+                            // Render nodes
+                            drawVolumetricSphere({ x: pX, y: pY, z: pZ }, 2.0, "rgba(0, 240, 255, 0.65)");
+                            
+                            // Render spring constraints links between neighbors
+                            if (c < steps - 1) {
+                                const nextX = -70 + (c + 1) * spacing;
+                                const nextY = -90 + Math.sin(Date.now() * 0.003 + (r + c + 1) * 0.4) * 8.0;
+                                drawLine3D({ x: pX, y: pY, z: pZ }, { x: nextX, y: nextY, z: pZ }, "rgba(0, 240, 255, 0.25)", 1.0);
+                            }
+                            if (r < steps - 1) {
+                                const nextZ = 50 + (r + 1) * spacing;
+                                const nextY = -90 + Math.sin(Date.now() * 0.003 + (r + 1 + c) * 0.4) * 8.0;
+                                drawLine3D({ x: pX, y: pY, z: pZ }, { x: pX, y: nextY, z: nextZ }, "rgba(0, 240, 255, 0.25)", 1.0);
+                            }
+                        }
+                    }
+                }
+
+                // 4. Fielders
+                drawCharacter3D(shortstopPos, 0.9, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
+                drawCharacter3D(outfieldLeftPos, 0.8, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
+                drawCharacter3D(outfieldRightPos, 0.8, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
+
+                // 5. Runner (if active, runs around bases)
+                if (runnerActive) {
+                    drawCharacter3D(runnerCoords, 0.95, 0, 'runner', "rgba(255, 0, 127, 0.85)");
+                }
             }
 
             // Draw baseball ball
@@ -1052,7 +1548,81 @@ Status: Press Pitch to begin.</div>
 
             if (typeof updateRain === "function") updateRain();
 
+            // AI Match Gameplay Loop Automation
+            const mode = document.getElementById("game-mode").value;
+            if (mode === "ai_match") {
+                // 1. If ball is idle, AI Pitcher throws after a small delay
+                if (!ballActive && !batSwinging && !runnerActive) {
+                    if (!window.aiPitchDelay) window.aiPitchDelay = Date.now() + 1500;
+                    if (Date.now() > window.aiPitchDelay) {
+                        // Randomly choose one of our 21 pitch types
+                        const pitchSelect = document.getElementById("pitch-type");
+                        const randomIndex = Math.floor(Math.random() * pitchSelect.options.length);
+                        pitchSelect.selectedIndex = randomIndex;
+                        triggerPitch();
+                        window.aiPitchDelay = null;
+                    }
+                }
+                
+                // 2. If ball is active and close to home plate (z < 0), AI Batter swings
+                if (ballActive && ballZ < 20 && ballZ > -40 && !batSwinging) {
+                    // Batter swings with high timing accuracy
+                    if (Math.random() > 0.3) {
+                        triggerSwing();
+                    }
+                }
+            }
+
             requestAnimationFrame(loop);
+        }
+
+        function resetGame() {
+            scoreHome = 0;
+            scoreVis = 0;
+            inning = 1;
+            outs = 0;
+            strikes = 0;
+            balls = 0;
+            ballActive = false;
+            batSwinging = false;
+            runnerActive = false;
+            updateScoreboard();
+            logEvent("🏟️ Stadium Reset: A new lineup is aligned on the field.");
+        }
+
+        function changeCameraView() {
+            const view = document.getElementById("camera-view").value;
+            if (view === "steady") {
+                camera.yaw = -0.22;
+                camera.pitch = 0.16;
+                camera.distance = 980;
+                camera.fov = 650;
+                logEvent("[Camera] Switched to Broadcast Steady overview.");
+            } else if (view === "pitcher") {
+                camera.yaw = 0.0;
+                camera.pitch = 0.08;
+                camera.distance = 450; // Inside behind pitcher
+                camera.fov = 700;
+                logEvent("[Camera] Switched to Behind Pitcher mound perspective.");
+            } else if (view === "batter") {
+                camera.yaw = -0.65;
+                camera.pitch = 0.22;
+                camera.distance = 360; // Close batter view
+                camera.fov = 750;
+                logEvent("[Camera] Switched to Batter Zoom perspective.");
+            } else if (view === "pressbox") {
+                camera.yaw = -0.32;
+                camera.pitch = 0.65; // High angle
+                camera.distance = 1350;
+                camera.fov = 550;
+                logEvent("[Camera] Switched to High Press Box perspective.");
+            } else if (view === "outfield") {
+                camera.yaw = 2.85; // Behind outfield looking in
+                camera.pitch = 0.35;
+                camera.distance = 1100;
+                camera.fov = 600;
+                logEvent("[Camera] Switched to Outfield Drone perspective.");
+            }
         }
 
         // Collapsible Card Deck Tray Javascript Crossover

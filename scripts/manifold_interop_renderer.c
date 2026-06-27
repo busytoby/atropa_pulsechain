@@ -78,10 +78,36 @@ int main(int argc, char *argv[]) {
         }
 
         // Extract registers to modulate compositing factors
-        // Check if there are active messages in the interop LUN network queue
+        // Parse the WinchesterMQ packet queue sectors to detect commands
         double mq_boost = 0.0;
+        float green_shimmer = 0.0f;
+        float glitch_effect = 0.0f;
+        
         if (reg.network_lun.head < reg.network_lun.tail) {
-            mq_boost = 0.25; // Boost brightness/gain when network packets are active in queue
+            mq_boost = 0.25; // Base boost for any active packet in queue
+            
+            // Read active sector payload (max 16 sectors ring buffer)
+            uint32_t active_lba = reg.network_lun.head % 16;
+            const uint8_t *packet = reg.network_lun.sectors[active_lba];
+            
+            // Scan packet payload for special flags/shimmer command keywords
+            if (strstr((const char *)packet, "SHIMMER") || strstr((const char *)packet, "shimmer")) {
+                green_shimmer = 45.0f; // Boost green shimmer intensity
+            }
+            if (strstr((const char *)packet, "GLITCH") || strstr((const char *)packet, "glitch")) {
+                glitch_effect = 30.0f; // Shift rendering channels
+            }
+
+            // Perform dynamic flow-control queue acknowledgment
+            interop_mq_ack_phase2(&reg.network_lun);
+        }
+
+        // Detect Diyat tax events in active registry state
+        static uint64_t last_monopole = 0;
+        if (reg.active_state.monopole > last_monopole) {
+            fprintf(stderr, "[Z-Machine API] Excised %lu Diyat tax units (Total Monopole: %lu) for dynamic physics Zener breakdown.\n",
+                    (unsigned long)(reg.active_state.monopole - last_monopole), (unsigned long)reg.active_state.monopole);
+            last_monopole = reg.active_state.monopole;
         }
 
         float spec_power = 8.0f + ((reg.frame_modulation_factor + (float)mq_boost) * 16.0f); // Modulated specularity
@@ -195,6 +221,11 @@ int main(int argc, char *argv[]) {
                 g_out = ((int)(g_out / 16.0f)) * 16.0f;
                 b_out = ((int)(b_out / 16.0f)) * 16.0f;
             }
+
+            // Apply active WinchesterMQ telemetry adjustments
+            g_out += green_shimmer;
+            r_out += glitch_effect;
+            b_out -= glitch_effect * 0.5f;
 
             buf_out[i]   = (uint8_t)fminf(255.0f, fmaxf(0.0f, r_out));
             buf_out[i+1] = (uint8_t)fminf(255.0f, fmaxf(0.0f, g_out));

@@ -63,6 +63,18 @@ void verlet_system_update(VerletSystem *system) {
         double id = (vs - vd) / 1000.0;
         float restoring_ay = (float)(-id * 250000.0); // Saturated clamp acceleration
         
+        // Calculate Diyat printing / breakdown tax and feed directly back to InteropRegistry
+        if (system->registry && id > 0.0) {
+            uint64_t diyat_fee = (uint64_t)(id * 50000.0); // Calibrate breakdown scale
+            if (diyat_fee > 0) {
+                // Accumulate accrued diyat fees into the active state monopole register
+                system->registry->active_state.monopole += diyat_fee;
+                
+                // Modulate Barn heat parameter based on the physical Zener temperature junction drift
+                system->registry->active_state.barn = (uint64_t)(system->zener.temp * 100.0);
+            }
+        }
+
         // 1. Integrate position (including Zener restoring force on Y axis)
         p->x = 2.0f * p->x - p->px + p->ax * dt_sq;
         p->y = 2.0f * p->y - p->py + (p->ay + restoring_ay) * dt_sq;
@@ -79,27 +91,33 @@ void verlet_system_update(VerletSystem *system) {
         if (p->x < system->boundary_min_x) {
             p->x = system->boundary_min_x;
             p->px = p->x + (temp_x - p->px) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 1;
         } else if (p->x > system->boundary_max_x) {
             p->x = system->boundary_max_x;
             p->px = p->x + (temp_x - p->px) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 1;
         }
         
         // Y Boundaries
         if (p->y < system->boundary_min_y) {
             p->y = system->boundary_min_y;
             p->py = p->y + (temp_y - p->py) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 2;
         } else if (p->y > system->boundary_max_y) {
             p->y = system->boundary_max_y;
             p->py = p->y + (temp_y - p->py) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 2;
         }
         
         // Z Boundaries
         if (p->z < system->boundary_min_z) {
             p->z = system->boundary_min_z;
             p->pz = p->z + (temp_z - p->pz) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 4;
         } else if (p->z > system->boundary_max_z) {
             p->z = system->boundary_max_z;
             p->pz = p->z + (temp_z - p->pz) * cor;
+            if (system->registry) system->registry->boundary_collision_flags |= 4;
         }
     }
 }

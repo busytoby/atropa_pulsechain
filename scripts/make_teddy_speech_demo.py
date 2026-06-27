@@ -345,7 +345,12 @@ def render_demo_video(audio_path, glottal_flow, output_mp4):
 if __name__ == "__main__":
     audio_path, glottal_flow = generate_vocalized_speech()
     
-    output_dir = "/home/mariarahel/.gemini/antigravity-cli/brain/38436d6a-7ad9-4ea9-8cde-2800837ce953"
+    # Resolve brain conversation id dynamically for portability
+    conv_id = os.environ.get("CONVERSATION_ID", "38436d6a-7ad9-4ea9-8cde-2800837ce953")
+    home = os.environ.get("HOME", "/home/mariarahel")
+    output_dir = os.path.join(home, ".gemini/antigravity-cli/brain", conv_id)
+    if not os.path.exists(output_dir):
+        output_dir = "." # Fallback to current directory if brain path is missing
     output_mp4 = os.path.join(output_dir, "teddy_speech_demo.mp4")
     
     render_demo_video(audio_path, glottal_flow, output_mp4)

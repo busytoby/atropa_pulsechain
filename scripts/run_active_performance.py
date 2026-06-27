@@ -84,9 +84,15 @@ def main():
     if os.path.exists(reg_log):
         os.remove(reg_log)
 
+    conv_id = os.environ.get("CONVERSATION_ID", "38436d6a-7ad9-4ea9-8cde-2800837ce953")
+    home = os.environ.get("HOME", "/home/mariarahel")
+    final_output_dir = os.path.join(home, ".gemini/antigravity-cli/brain", conv_id)
+    if not os.path.exists(final_output_dir):
+        final_output_dir = "."
+
     print(f"\n=== PERFORMANCE COMPLETED ===")
     print(f"-> Composited video saved: {output_video}")
-    print(f"-> Commentary video saved: /home/mariarahel/.gemini/antigravity-cli/brain/38436d6a-7ad9-4ea9-8cde-2800837ce953/teddy_speech_demo.mp4")
+    print(f"-> Commentary video saved: {os.path.join(final_output_dir, 'teddy_speech_demo.mp4')}")
 
 if __name__ == "__main__":
     main()
