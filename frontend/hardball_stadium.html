@@ -976,6 +976,8 @@ Status: Press Pitch to begin.</div>
                 }
 
                 const now = audioCtx.currentTime;
+
+                // --- CHANNEL 1: Lead Arpeggiator ---
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 osc.connect(gainNode);
@@ -994,9 +996,43 @@ Status: Press Pitch to begin.</div>
 
                 gainNode.gain.setValueAtTime(0.04, now);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18 / scaleDilation);
-                
                 osc.start(now);
                 osc.stop(now + 0.2 / scaleDilation);
+
+                // --- CHANNEL 2: Deep Booty Bassline (Sub-octave sine wave) ---
+                if (noteIndex % 2 === 0) {
+                    const bassOsc = audioCtx.createOscillator();
+                    const bassGain = audioCtx.createGain();
+                    bassOsc.connect(bassGain);
+                    bassGain.connect(audioCtx.destination);
+                    
+                    bassOsc.type = "sine";
+                    // Play pitch 2 octaves lower
+                    let bassFreq = (freq / 4.0) * scaleDilation;
+                    bassOsc.frequency.setValueAtTime(bassFreq, now);
+                    
+                    bassGain.gain.setValueAtTime(0.20, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35 / scaleDilation);
+                    bassOsc.start(now);
+                    bassOsc.stop(now + 0.35 / scaleDilation);
+                }
+
+                // --- CHANNEL 3: Retro Noise Drum (Deep Kick) ---
+                if (noteIndex % 4 === 0) {
+                    const kickOsc = audioCtx.createOscillator();
+                    const kickGain = audioCtx.createGain();
+                    kickOsc.connect(kickGain);
+                    kickGain.connect(audioCtx.destination);
+                    
+                    kickOsc.type = "sine";
+                    kickOsc.frequency.setValueAtTime(130 * scaleDilation, now);
+                    kickOsc.frequency.exponentialRampToValueAtTime(35 * scaleDilation, now + 0.12 / scaleDilation);
+                    
+                    kickGain.gain.setValueAtTime(0.35, now);
+                    kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15 / scaleDilation);
+                    kickOsc.start(now);
+                    kickOsc.stop(now + 0.15 / scaleDilation);
+                }
 
                 // Update Fasttracker UI Pattern Monitor View
                 const container = document.getElementById("tracker-rows-container");
