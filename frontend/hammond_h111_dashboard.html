@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hammond H111 Organ Hypervisor & Live Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050811;
+            --panel-bg: rgba(9, 14, 28, 0.85);
+            --border-glow: rgba(0, 240, 255, 0.35);
+            --glow-cyan: #00f0ff;
+            --glow-green: #39ff14;
+            --glow-magenta: #ff007f;
+            --glow-yellow: #ffea00;
+            --text-color: #f1f5f9;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 50% 30%, rgba(10, 25, 60, 0.4) 0%, transparent 80%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(3, 5, 11, 0.95);
+            border-bottom: 1px solid #141d33;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .status {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--glow-green);
+            font-size: 12px;
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+        }
+
+        #main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            flex: 1;
+            gap: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid #1a2744;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #202e4d;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-title span {
+            color: var(--glow-cyan);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* 3D Vis Columns */
+        .vis-container {
+            display: grid;
+            grid-template-rows: 1.2fr 1fr;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .canvas-card {
+            background: #020409;
+            border: 1px solid #18253f;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: #64748b;
+            z-index: 5;
+            background: rgba(2, 4, 9, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Drawbar Sliders */
+        .drawbar-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+            height: 220px;
+            padding: 10px;
+            background: #02040a;
+            border-radius: 8px;
+            border: 1px solid #142036;
+        }
+
+        .drawbar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .drawbar-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .drawbar-slider-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .drawbar-slider {
+            -webkit-appearance: none;
+            writing-mode: bt-lr; /* IE */
+            appearance: slider-vertical;
+            width: 8px;
+            height: 140px;
+            background: #101929;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .drawbar-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 24px;
+            border-radius: 4px;
+            background: var(--glow-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .drawbar-slider::-moz-range-thumb {
+            width: 18px;
+            height: 24px;
+            border-radius: 4px;
+            background: var(--glow-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        /* Virtual Keybed */
+        .keybed {
+            display: flex;
+            background: #02040a;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #142036;
+            overflow-x: auto;
+            gap: 2px;
+        }
+
+        .key {
+            height: 120px;
+            flex: 1;
+            min-width: 24px;
+            background: #ffffff;
+            border-radius: 0 0 4px 4px;
+            cursor: pointer;
+            position: relative;
+            box-sizing: border-box;
+            border: 1px solid #cccccc;
+        }
+
+        .key.black {
+            background: #080c16;
+            height: 75px;
+            min-width: 16px;
+            margin-left: -9px;
+            margin-right: -9px;
+            z-index: 2;
+            border: 1px solid #000000;
+        }
+
+        .key.active {
+            background: var(--glow-cyan) !important;
+            box-shadow: 0 0 12px var(--glow-cyan);
+            border-color: var(--glow-cyan);
+        }
+
+        .key-label {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 8px;
+            color: #475569;
+            pointer-events: none;
+        }
+
+        .key.black .key-label {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Hammond H111 Organ Hypervisor</div>
+        <div class="status">AUDIO ENGINE: READY</div>
+    </header>
+
+    <div id="main-container">
+        <!-- Left: Open Resonator and Rotating Gear Viewports -->
+        <div class="vis-container">
+            <div class="canvas-card">
+                <div class="canvas-label">COAXIAL ROTATING TONEWHEELS (111 ACTIVE GEARS)</div>
+                <canvas id="tonewheel-canvas"></canvas>
+            </div>
+            
+            <div class="canvas-card">
+                <div class="canvas-label">LIMITLESS ACOUSTIC PIPE RESONATOR WAVEFORM</div>
+                <canvas id="pipe-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right: Drawbars and keyboard controller -->
+        <div class="panel">
+            <div class="panel-title">
+                H111 DRAWBARS <span>COAXIAL MIX</span>
+            </div>
+
+            <div class="drawbar-grid">
+                <div class="drawbar-col">
+                    <span class="drawbar-label">16'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-0" min="0" max="8" value="8" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-0">8</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">8'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-1" min="0" max="8" value="6" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-1">6</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">4'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-2" min="0" max="8" value="5" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-2">5</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">2-2/3'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-3" min="0" max="8" value="4" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-3">4</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">2'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-4" min="0" max="8" value="3" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-4">3</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">1-3/5'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-5" min="0" max="8" value="2" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-5">2</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">1-1/3'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-6" min="0" max="8" value="1" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-6">1</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">1'</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-7" min="0" max="8" value="0" step="1">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-7">0</span>
+                </div>
+                <div class="drawbar-col">
+                    <span class="drawbar-label">Pipe Q</span>
+                    <div class="drawbar-slider-wrapper">
+                        <input type="range" class="drawbar-slider" id="db-8" min="0" max="8" value="7" step="1" style="background: #27142c;">
+                    </div>
+                    <span class="drawbar-label" id="lbl-db-8">7</span>
+                </div>
+            </div>
+
+            <div class="panel-title">
+                EDO-22 PLAYABLE KEYBOARD <span>OCTAVE 2-3</span>
+            </div>
+
+            <div class="keybed" id="keyboard">
+                <!-- Javascript populated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio Organ Synthesis Pipeline
+        let audioCtx = null;
+        let mainVolume = null;
+        let activeNodes = {};
+
+        // 111-frequency phase accumulation data for visualizers
+        let twPhases = new Array(111).fill(0);
+        let twFreqs = [];
+        for (let i = 0; i < 111; i++) {
+            twFreqs.push(32.7032 * Math.pow(2.0, i / 22.0)); // EDO-22 Scale
+        }
+
+        // Drawbar coefficients
+        let drawbars = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0.875]; // Last is Pipe Resonance Q
+
+        // Hook sliders
+        for (let i = 0; i <= 8; i++) {
+            const slider = document.getElementById(`db-${i}`);
+            slider.addEventListener("input", (e) => {
+                const val = parseInt(e.target.value);
+                document.getElementById(`lbl-db-${i}`).innerText = val;
+                drawbars[i] = val / 8.0;
+            });
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            mainVolume = audioCtx.createGain();
+            mainVolume.gain.value = 0.5;
+            mainVolume.connect(audioCtx.destination);
+            document.querySelector(".status").innerText = "AUDIO ENGINE: ACTIVE";
+        }
+
+        // Play EDO-22 Note
+        function playNote(noteIndex) {
+            initAudio();
+            if (activeNodes[noteIndex]) return;
+
+            // Generate additive tones for active drawbars
+            const baseFreq = twFreqs[noteIndex];
+            const oscillators = [];
+            const gains = [];
+
+            // Drawbar offsets relative to base note index
+            const harmonicOffsets = [0, 22, 35, 44, 57, 66, 73, 88]; // EDO-22 octave spacing offsets
+
+            harmonicOffsets.forEach((offset, idx) => {
+                const amp = drawbars[idx];
+                if (amp <= 0.01) return;
+
+                const targetIndex = noteIndex + offset;
+                if (targetIndex >= 111) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc.frequency.value = twFreqs[targetIndex];
+                gainNode.gain.value = amp * 0.12;
+
+                osc.connect(gainNode);
+                oscillators.push(osc);
+                gains.push(gainNode);
+            });
+
+            // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet)
+            const pipeFilter = audioCtx.createBiquadFilter();
+            pipeFilter.type = "peaking";
+            pipeFilter.frequency.value = 33.3; // Low C resonance thud
+            pipeFilter.Q.value = 1.0 + drawbars[8] * 12.0; // Modulated by slider 8
+            pipeFilter.gain.value = 8.0;
+
+            gains.forEach(g => g.connect(pipeFilter));
+            pipeFilter.connect(mainVolume);
+
+            oscillators.forEach(o => o.start());
+
+            activeNodes[noteIndex] = {
+                oscillators,
+                gains,
+                filter: pipeFilter
+            };
+        }
+
+        function stopNote(noteIndex) {
+            if (!activeNodes[noteIndex]) return;
+            const node = activeNodes[noteIndex];
+            
+            // Fadeout
+            const now = audioCtx.currentTime;
+            node.gains.forEach(g => {
+                g.gain.setValueAtTime(g.gain.value, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+            });
+
+            setTimeout(() => {
+                node.oscillators.forEach(o => o.stop());
+            }, 120);
+
+            delete activeNodes[noteIndex];
+        }
+
+        // Build EDO-22 keyboard keys
+        const keyboard = document.getElementById("keyboard");
+        // We render two full EDO-22 octaves starting at note index 22 (Low C)
+        for (let i = 22; i < 66; i++) {
+            const key = document.createElement("div");
+            const isBlack = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21].includes(i % 22);
+            key.className = `key ${isBlack ? 'black' : ''}`;
+            
+            const label = document.createElement("div");
+            label.className = "key-label";
+            label.innerText = `N${i}`;
+            key.appendChild(label);
+
+            key.addEventListener("mousedown", () => {
+                key.classList.add("active");
+                playNote(i);
+            });
+            key.addEventListener("mouseup", () => {
+                key.classList.remove("active");
+                stopNote(i);
+            });
+            key.addEventListener("mouseleave", () => {
+                if (key.classList.contains("active")) {
+                    key.classList.remove("active");
+                    stopNote(i);
+                }
+            });
+
+            keyboard.appendChild(key);
+        }
+
+        // Viewport 1: Rotating Tonewheels visualizer
+        const twCanvas = document.getElementById("tonewheel-canvas");
+        const twCtx = twCanvas.getContext("2d");
+        
+        // Viewport 2: Waveguide pipe visualizer
+        const pipeCanvas = document.getElementById("pipe-canvas");
+        const pipeCtx = pipeCanvas.getContext("2d");
+
+        function resizeCanvas() {
+            twCanvas.width = twCanvas.parentElement.clientWidth;
+            twCanvas.height = twCanvas.parentElement.clientHeight;
+            pipeCanvas.width = pipeCanvas.parentElement.clientWidth;
+            pipeCanvas.height = pipeCanvas.parentElement.clientHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        let time = 0;
+        function renderLoop() {
+            time += 0.03;
+            
+            // 1. Render rotating tonewheel gear grid
+            twCtx.fillStyle = "#010307";
+            twCtx.fillRect(0, 0, twCanvas.width, twCanvas.height);
+            
+            const cols = 15;
+            const rows = 8;
+            const size = 30;
+            const gap = 16;
+            
+            const startX = (twCanvas.width - (cols * (size + gap))) / 2;
+            const startY = (twCanvas.height - (rows * (size + gap))) / 2;
+            
+            for (let idx = 0; idx < 111; idx++) {
+                const c = idx % cols;
+                const r = Math.floor(idx / cols);
+                const x = startX + c * (size + gap) + size/2;
+                const y = startY + r * (size + gap) + size/2;
+                
+                // Spin rate based on EDO-22 frequency speed
+                const angle = time * (twFreqs[idx] * 0.05);
+                
+                twCtx.save();
+                twCtx.translate(x, y);
+                twCtx.rotate(angle);
+                
+                // Draw geared wheel
+                twCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+                twCtx.lineWidth = 1.5;
+                twCtx.beginPath();
+                twCtx.arc(0, 0, size/2, 0, Math.PI * 2);
+                twCtx.stroke();
+                
+                // Draw gear teeth teeth marks
+                const teeth = 8 + (idx % 8);
+                twCtx.strokeStyle = "rgba(0, 240, 255, 0.75)";
+                for (let t = 0; t < teeth; t++) {
+                    const tAngle = (t / teeth) * Math.PI * 2;
+                    twCtx.beginPath();
+                    twCtx.moveTo(Math.cos(tAngle) * (size/2 - 2), Math.sin(tAngle) * (size/2 - 2));
+                    twCtx.lineTo(Math.cos(tAngle) * (size/2 + 2), Math.sin(tAngle) * (size/2 + 2));
+                    twCtx.stroke();
+                }
+                
+                twCtx.restore();
+            }
+
+            // 2. Render pipe pressure waveguide wave graph
+            pipeCtx.fillStyle = "#010307";
+            pipeCtx.fillRect(0, 0, pipeCanvas.width, pipeCanvas.height);
+            
+            pipeCtx.strokeStyle = "rgba(255, 0, 127, 0.6)";
+            pipeCtx.lineWidth = 2;
+            pipeCtx.shadowColor = "rgba(255, 0, 127, 0.5)";
+            pipeCtx.shadowBlur = 8;
+            
+            pipeCtx.beginPath();
+            const width = pipeCanvas.width;
+            const height = pipeCanvas.height;
+            const midY = height / 2;
+            
+            for (let x = 0; x < width; x++) {
+                let waveSum = 0;
+                // Additive sweep interference of active notes
+                Object.keys(activeNodes).forEach(noteIndex => {
+                    const freq = twFreqs[parseInt(noteIndex)];
+                    waveSum += Math.sin((x * 0.08) - (time * freq * 0.1)) * 40;
+                });
+                
+                // Ambient cabinet hum thud
+                waveSum += Math.sin((x * 0.02) - time * 2) * 15 * Math.cos(time * 0.5);
+                
+                if (x === 0) {
+                    pipeCtx.moveTo(x, midY + waveSum);
+                } else {
+                    pipeCtx.lineTo(x, midY + waveSum);
+                }
+            }
+            pipeCtx.stroke();
+            pipeCtx.shadowBlur = 0; // reset
+            
+            requestAnimationFrame(renderLoop);
+        }
+        
+        renderLoop();
+    </script>
+</body>
+</html>
