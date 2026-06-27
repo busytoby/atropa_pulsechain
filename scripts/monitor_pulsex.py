@@ -207,34 +207,30 @@ def save_resolved(swap):
     except Exception as e:
         print(f"Error saving resolved swap: {e}")
 
-# Base stablecoin addresses (lowercased)
+# Base stablecoin addresses (lowercased) - Only real pegged stablecoins from bridge
 USDC_ADDR = "0x15D38573d2feeb82e7ad5187aB8c1D52810B1f07".lower()
 USDC_ADDR2 = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".lower()
 USDT_ADDR = "0x0Cb81b54A05e0547D2d08C4A9E273a7d4C72B9eB".lower()
 USDT_ADDR2 = "0xdac17f958d2ee523a2206206994597c13d831ec7".lower()
-DAI_ADDR = "0xefD766cCb8C15E5E9F813af7b2809857Baa53A1f".lower()
-DAI_ADDR2 = "0x6b175474e89094c44da98b954eedeac495271d0f".lower()
 
 # Known token prices in USD (stored with metadata)
 price_cache = {
     USDC_ADDR: {"price": 1.0, "symbol": "USDC", "name": "USD Coin from Ethereum"},
     USDC_ADDR2: {"price": 1.0, "symbol": "USDC", "name": "USD Coin"},
     USDT_ADDR: {"price": 1.0, "symbol": "USDT", "name": "Tether USD"},
-    USDT_ADDR2: {"price": 1.0, "symbol": "USDT", "name": "Tether USD"},
-    DAI_ADDR: {"price": 1.0, "symbol": "DAI", "name": "Dai Stablecoin"},
-    DAI_ADDR2: {"price": 1.0, "symbol": "DAI", "name": "Dai Stablecoin"}
+    USDT_ADDR2: {"price": 1.0, "symbol": "USDT", "name": "Tether USD"}
 }
 
 def get_cached_price(address):
     addr_lower = address.lower()
-    if addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2, DAI_ADDR, DAI_ADDR2]:
+    if addr_lower in [USDC_ADDR, USDC_ADDR2, USDT_ADDR, USDT_ADDR2]:
         return 1.0
     entry = price_cache.get(addr_lower)
     if entry is None:
         return None
     if isinstance(entry, dict):
         symbol = entry.get("symbol", "")
-        if symbol.upper() in ["USDC", "USDT", "DAI"]:
+        if symbol.upper() in ["USDC", "USDT"]:
             return 1.0
         p = entry.get("price")
     else:
