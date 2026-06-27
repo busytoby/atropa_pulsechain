@@ -707,13 +707,30 @@ Status: Press Pitch to begin.</div>
 
             // Draw bat for batter
             if (position === 'batter') {
+                let batLength = 55 * scale;
+                ctx.save();
+                
                 if (batSwinging) {
-                    let batX = skel.rPaw.x + Math.cos(swingAngle) * 35 * scale;
-                    let batY = skel.rPaw.y + Math.sin(swingAngle) * 15 * scale;
-                    drawLine3D(skel.rPaw, { x: batX, y: batY, z: skel.rPaw.z }, "rgba(255, 234, 0, 0.95)", 5);
+                    // Motion blur trails (multiple transparent segments)
+                    for (let s = 1; s <= 4; s++) {
+                        let trailAngle = swingAngle - (s * 0.08);
+                        let trailTipX = skel.rPaw.x + Math.cos(trailAngle) * batLength;
+                        let trailTipY = skel.rPaw.y + Math.sin(trailAngle) * 20 * scale;
+                        drawLine3D(skel.rPaw, { x: trailTipX, y: trailTipY, z: skel.rPaw.z }, `rgba(180, 100, 40, ${0.4 - s * 0.08})`, 8 * scale);
+                    }
+                    
+                    let batX = skel.rPaw.x + Math.cos(swingAngle) * batLength;
+                    let batY = skel.rPaw.y + Math.sin(swingAngle) * 20 * scale;
+                    // Draw tapered C64 wood bat (thick barrel tip, thin handle)
+                    drawLine3D(skel.rPaw, { x: batX, y: batY, z: skel.rPaw.z }, "#d27d2d", 8 * scale); // barrel
+                    drawLine3D(skel.rPaw, { x: skel.rPaw.x + Math.cos(swingAngle) * 15 * scale, y: skel.rPaw.y + Math.sin(swingAngle) * 5 * scale, z: skel.rPaw.z }, "#ffe4c4", 4 * scale); // handle
                 } else {
-                    drawLine3D(skel.rPaw, { x: skel.rPaw.x + 20 * scale, y: skel.rPaw.y + 35 * scale, z: skel.rPaw.z }, "rgba(255, 234, 0, 0.95)", 5);
+                    // Standing/Ready pose wooden bat angle
+                    let batTip = { x: skel.rPaw.x + 25 * scale, y: skel.rPaw.y + 45 * scale, z: skel.rPaw.z };
+                    drawLine3D(skel.rPaw, batTip, "#d27d2d", 8 * scale);
+                    drawLine3D(skel.rPaw, { x: skel.rPaw.x + 8 * scale, y: skel.rPaw.y + 15 * scale, z: skel.rPaw.z }, "#ffe4c4", 4 * scale);
                 }
+                ctx.restore();
             }
         }
 
