@@ -282,9 +282,6 @@
         <!-- Right: Drawbars and keyboard controller -->
         <div class="panel">
             <div class="panel-title">
-            <!-- Right: Drawbars and keyboard controller -->
-        <div class="panel">
-            <div class="panel-title">
                 TIMBRE & VALVE PROFILE <span>VOICES</span>
             </div>
             <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
@@ -295,6 +292,27 @@
                     <option value="triangle">Brass (Saw/Pulse)</option>
                     <option value="square">Organ (Square Mix)</option>
                 </select>
+            </div>
+
+            <div class="panel-title">
+                REVERBERATION <span>SPACE RESONANCE</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>REVERB TYPE:</span>
+                    <select id="reverb-type" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="off" selected>Dry (None)</option>
+                        <option value="spring">Spring (Hammond Tank)</option>
+                        <option value="cathedral">Cathedral (Gothic Hall)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>REVERB MIX:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="range" id="reverb-mix" min="0" max="0.8" value="0.3" step="0.05" style="width: 100%;">
+                        <span id="lbl-reverb-mix" style="color: var(--glow-cyan);">30%</span>
+                    </div>
+                </div>
             </div>
 
             <div class="panel-title">
@@ -627,14 +645,85 @@
             });
         }
 
+        let reverbNode = null;
+        let reverbWetGain = null;
+        let reverbDryGain = null;
+
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             mainVolume = audioCtx.createGain();
             mainVolume.gain.value = 0.5;
-            mainVolume.connect(audioCtx.destination);
+
+            // Set up reverb nodes
+            reverbNode = audioCtx.createConvolver();
+            reverbWetGain = audioCtx.createGain();
+            reverbDryGain = audioCtx.createGain();
+
+            // Default settings (Dry)
+            reverbWetGain.gain.value = 0.0;
+            reverbDryGain.gain.value = 1.0;
+
+            // Generate synthetic impulse response for cathedral and spring decay spaces
+            updateReverbSpace();
+
+            mainVolume.connect(reverbDryGain);
+            mainVolume.connect(reverbNode);
+            reverbNode.connect(reverbWetGain);
+
+            reverbDryGain.connect(audioCtx.destination);
+            reverbWetGain.connect(audioCtx.destination);
+
             document.querySelector(".status").innerText = "AUDIO ENGINE: ACTIVE";
         }
+
+        // Generates synthetic decay impulse response buffers (Spring tank vs Cathedral Space)
+        function updateReverbSpace() {
+            if (!audioCtx) return;
+            const type = document.getElementById("reverb-type")?.value || "off";
+            const mix = parseFloat(document.getElementById("reverb-mix")?.value || "0.3");
+
+            if (type === "off") {
+                reverbWetGain.gain.value = 0.0;
+                reverbDryGain.gain.value = 1.0;
+                return;
+            }
+
+            reverbWetGain.gain.value = mix;
+            reverbDryGain.gain.value = 1.0 - mix;
+
+            const rate = audioCtx.sampleRate;
+            const duration = type === "spring" ? 1.5 : 4.5;
+            const len = rate * duration;
+            const buffer = audioCtx.createBuffer(2, len, rate);
+            
+            for (let channel = 0; channel < 2; channel++) {
+                const data = buffer.getChannelData(channel);
+                for (let i = 0; i < len; i++) {
+                    const t = i / rate;
+                    // Decay curve
+                    let envelope = Math.exp(-t * (type === "spring" ? 3.5 : 1.2));
+                    
+                    // Spring simulation has specific high-frequency flutter reflections
+                    if (type === "spring") {
+                        envelope *= (0.8 + 0.2 * Math.sin(t * 120.0 * Math.PI));
+                    }
+                    
+                    data[i] = (Math.random() * 2 - 1) * envelope;
+                }
+            }
+            reverbNode.buffer = buffer;
+        }
+
+        document.getElementById("reverb-type")?.addEventListener("change", () => {
+            initAudio();
+            updateReverbSpace();
+        });
+        document.getElementById("reverb-mix")?.addEventListener("input", (e) => {
+            initAudio();
+            updateReverbSpace();
+            document.getElementById("lbl-reverb-mix").innerText = `${Math.round(e.target.value * 100)}%`;
+        });
 
         // Play EDO-22 Note
         function playNote(noteIndex) {
