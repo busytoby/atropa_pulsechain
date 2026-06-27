@@ -336,8 +336,8 @@ def update_price(address, price, symbol, name, is_treasury=False, treasury_owner
         else:
             classification = f"CALM (STABLE {pct:+.2f}%)"
             
-        # Highlight ATROPA (0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c) 1% price fluctuations in CLI
-        is_atropa = (addr_lower == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or symbol.upper() == "ATROPA")
+        # Highlight ATROPA (0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6) 1% price fluctuations in CLI
+        is_atropa = (addr_lower == "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6" or symbol.upper() == "ATROPA")
         if is_atropa and abs(pct) >= 1.0:
             print("\n" + "#" * 80)
             print(f"🚨🚨🚨 ATROPA VOLATILITY ALERT: Price shifted by {pct:+.2f}%! 🚨🚨🚨")
@@ -641,8 +641,8 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     if is_nonukes:
         print(f"🎯 Target Swap: Swapped in NoNukes Pool ({nonukes_pools[pool_address.lower()]['target_group']})")
         
-    is_atropa = (sent_token["address"].lower() == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or 
-                 recv_token["address"].lower() == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or 
+    is_atropa = (sent_token["address"].lower() == "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6" or 
+                 recv_token["address"].lower() == "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6" or 
                  sent_token["symbol"].upper() == "ATROPA" or 
                  recv_token["symbol"].upper() == "ATROPA")
                  
