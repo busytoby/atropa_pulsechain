@@ -328,6 +328,7 @@
             </div>
             <button class="btn btn-gold" onclick="triggerPitch()">⚾ Pitch Ball (ENTER)</button>
             <button class="btn" onclick="triggerSwing()">⚔️ Swing Bat (SPACE)</button>
+            <button class="btn" onclick="toggleRetroMusic()" style="border-color: var(--glow-cyan); color: var(--glow-cyan); margin-top: 2px;">🎵 Toggle Retro Music</button>
 
             <div class="section-title">CHOREOGRAPHY CONSOLE</div>
             <div id="console">System: Vulcan-Wayland hardball module online.
@@ -906,6 +907,64 @@ Status: Press Pitch to begin.</div>
                 }
             } catch (e) {
                 console.error("Audio synth error:", e);
+            }
+        }
+
+        let musicPlaying = false;
+        let musicIntervalId = null;
+        let noteIndex = 0;
+        
+        // Multi-channel SID music sequence arpeggiator loop
+        const musicSequence = [
+            261.63, 329.63, 392.00, 523.25, // C major arpeggio
+            293.66, 349.23, 440.00, 587.33, // D minor arpeggio
+            329.63, 392.00, 493.88, 659.25, // E minor arpeggio
+            349.23, 440.00, 523.25, 698.46  // F major arpeggio
+        ];
+
+        function playMusicTick() {
+            if (!musicPlaying) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                // Alternating pulse wave style synthesis
+                osc.type = (noteIndex % 2 === 0) ? "triangle" : "sawtooth";
+                let freq = musicSequence[noteIndex];
+                osc.frequency.setValueAtTime(freq, now);
+                
+                // Add rapid octave modulation to simulate old SID registers
+                if (noteIndex % 3 === 0) {
+                    osc.frequency.setValueAtTime(freq * 2.0, now + 0.08);
+                }
+
+                gainNode.gain.setValueAtTime(0.04, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                
+                osc.start(now);
+                osc.stop(now + 0.2);
+
+                noteIndex = (noteIndex + 1) % musicSequence.length;
+            } catch (e) {}
+        }
+
+        function toggleRetroMusic() {
+            musicPlaying = !musicPlaying;
+            if (musicPlaying) {
+                logEvent("🎵 Retro SID music loop started! 8-bit arpeggios enabled.");
+                musicIntervalId = setInterval(playMusicTick, 180); // 180ms per note step
+            } else {
+                logEvent("🔇 Retro music muted.");
+                if (musicIntervalId) {
+                    clearInterval(musicIntervalId);
+                    musicIntervalId = null;
+                }
             }
         }
 
