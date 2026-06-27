@@ -1045,6 +1045,11 @@ Status: Press Pitch to begin.</div>
                     kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15 / scaleDilation);
                     kickOsc.start(now);
                     kickOsc.stop(now + 0.15 / scaleDilation);
+
+                    // Rigging and pitching unified: rhythmic camera distance pulse on every kick beat tick
+                    if (!runnerActive && !(ballActive && ballZ < 50 && ballZ > -130)) {
+                        camera.distance -= 35; // Instant zoom punch-in
+                    }
                 }
 
                 // Update Fasttracker UI Pattern Monitor View
