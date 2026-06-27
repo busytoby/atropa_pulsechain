@@ -723,6 +723,16 @@
                     drawbars[idx] = val / 8.0;
                 });
                 
+                // Default ADSR (Instant click Organ)
+                document.getElementById("env-attack").value = "0.01";
+                document.getElementById("lbl-env-attack").innerText = "0.01s";
+                document.getElementById("env-decay").value = "0.10";
+                document.getElementById("lbl-env-decay").innerText = "0.10s";
+                document.getElementById("env-sustain").value = "1.00";
+                document.getElementById("lbl-env-sustain").innerText = "100%";
+                document.getElementById("env-release").value = "0.10";
+                document.getElementById("lbl-env-release").innerText = "0.10s";
+
                 // Tonewheel Settings
                 tonewheelGains.fill(1.0);
                 tonewheelDetunes.fill(0);
@@ -734,10 +744,22 @@
                 document.getElementById("synth-timbre").value = "sawtooth";
                 document.getElementById("reverb-type").value = "cathedral";
                 document.getElementById("reverb-mix").value = "0.60";
+                document.getElementById("lbl-reverb-mix").innerText = "60%";
                 document.getElementById("leslie-speed").value = "off";
                 document.getElementById("pipe-length").value = "64";
                 document.getElementById("pipe-damping").value = "0.98";
+                document.getElementById("lbl-pipe-damping").innerText = "0.98";
                 
+                // Church Organ Slow Attack & Long Decay Release
+                document.getElementById("env-attack").value = "0.15";
+                document.getElementById("lbl-env-attack").innerText = "0.15s";
+                document.getElementById("env-decay").value = "0.80";
+                document.getElementById("lbl-env-decay").innerText = "0.80s";
+                document.getElementById("env-sustain").value = "0.90";
+                document.getElementById("lbl-env-sustain").innerText = "90%";
+                document.getElementById("env-release").value = "1.80";
+                document.getElementById("lbl-env-release").innerText = "1.80s";
+
                 // Full drawbars configuration
                 const dbVals = [8, 8, 8, 8, 6, 6, 4, 2, 8];
                 dbVals.forEach((val, idx) => {
@@ -759,11 +781,24 @@
                 document.getElementById("synth-timbre").value = "triangle";
                 document.getElementById("reverb-type").value = "cathedral";
                 document.getElementById("reverb-mix").value = "0.55";
+                document.getElementById("lbl-reverb-mix").innerText = "55%";
                 document.getElementById("leslie-speed").value = "tremolo";
                 document.getElementById("leslie-mix").value = "0.85";
+                document.getElementById("lbl-leslie-mix").innerText = "85%";
                 document.getElementById("pipe-length").value = "limitless";
                 document.getElementById("pipe-damping").value = "0.90";
+                document.getElementById("lbl-pipe-damping").innerText = "0.90";
                 
+                // Pad envelope
+                document.getElementById("env-attack").value = "0.40";
+                document.getElementById("lbl-env-attack").innerText = "0.40s";
+                document.getElementById("env-decay").value = "1.20";
+                document.getElementById("lbl-env-decay").innerText = "1.20s";
+                document.getElementById("env-sustain").value = "0.75";
+                document.getElementById("lbl-env-sustain").innerText = "75%";
+                document.getElementById("env-release").value = "1.50";
+                document.getElementById("lbl-env-release").innerText = "1.50s";
+
                 const dbVals = [8, 0, 8, 0, 8, 0, 8, 8, 5];
                 dbVals.forEach((val, idx) => {
                     document.getElementById(`db-${idx}`).value = val;
@@ -784,10 +819,22 @@
                 document.getElementById("synth-timbre").value = "square";
                 document.getElementById("reverb-type").value = "spring";
                 document.getElementById("reverb-mix").value = "0.40";
+                document.getElementById("lbl-reverb-mix").innerText = "40%";
                 document.getElementById("leslie-speed").value = "chorale";
                 document.getElementById("leslie-mix").value = "0.50";
+                document.getElementById("lbl-leslie-mix").innerText = "50%";
                 document.getElementById("pipe-length").value = "16";
                 document.getElementById("pipe-damping").value = "0.97";
+                document.getElementById("lbl-pipe-damping").innerText = "0.97";
+
+                document.getElementById("env-attack").value = "0.05";
+                document.getElementById("lbl-env-attack").innerText = "0.05s";
+                document.getElementById("env-decay").value = "0.40";
+                document.getElementById("lbl-env-decay").innerText = "0.40s";
+                document.getElementById("env-sustain").value = "0.80";
+                document.getElementById("lbl-env-sustain").innerText = "80%";
+                document.getElementById("env-release").value = "0.35";
+                document.getElementById("lbl-env-release").innerText = "0.35s";
                 
                 const dbVals = [8, 6, 4, 3, 2, 1, 0, 0, 7];
                 dbVals.forEach((val, idx) => {
@@ -810,10 +857,22 @@
                 document.getElementById("synth-timbre").value = "sawtooth";
                 document.getElementById("reverb-type").value = "spring";
                 document.getElementById("reverb-mix").value = "0.20";
+                document.getElementById("lbl-reverb-mix").innerText = "20%";
                 document.getElementById("leslie-speed").value = "off";
                 document.getElementById("pipe-length").value = "16";
                 document.getElementById("pipe-damping").value = "0.85";
+                document.getElementById("lbl-pipe-damping").innerText = "0.85";
                 
+                // Punchy staccato bass growl ADSR
+                document.getElementById("env-attack").value = "0.01";
+                document.getElementById("lbl-env-attack").innerText = "0.01s";
+                document.getElementById("env-decay").value = "0.25";
+                document.getElementById("lbl-env-decay").innerText = "0.25s";
+                document.getElementById("env-sustain").value = "0.40";
+                document.getElementById("lbl-env-sustain").innerText = "40%";
+                document.getElementById("env-release").value = "0.15";
+                document.getElementById("lbl-env-release").innerText = "0.15s";
+
                 const dbVals = [8, 8, 4, 0, 0, 0, 0, 0, 4];
                 dbVals.forEach((val, idx) => {
                     document.getElementById(`db-${idx}`).value = val;
@@ -835,10 +894,23 @@
                 document.getElementById("synth-timbre").value = "sawtooth";
                 document.getElementById("reverb-type").value = "cathedral";
                 document.getElementById("reverb-mix").value = "0.45";
+                document.getElementById("lbl-reverb-mix").innerText = "45%";
                 document.getElementById("leslie-speed").value = "tremolo";
                 document.getElementById("leslie-mix").value = "0.50";
+                document.getElementById("lbl-leslie-mix").innerText = "50%";
                 document.getElementById("pipe-length").value = "limitless";
                 document.getElementById("pipe-damping").value = "0.96";
+                document.getElementById("lbl-pipe-damping").innerText = "0.96";
+
+                // Swelling lead ADSR envelope settings
+                document.getElementById("env-attack").value = "0.20";
+                document.getElementById("lbl-env-attack").innerText = "0.20s";
+                document.getElementById("env-decay").value = "0.60";
+                document.getElementById("lbl-env-decay").innerText = "0.60s";
+                document.getElementById("env-sustain").value = "0.80";
+                document.getElementById("lbl-env-sustain").innerText = "80%";
+                document.getElementById("env-release").value = "1.00";
+                document.getElementById("lbl-env-release").innerText = "1.00s";
                 
                 const dbVals = [8, 6, 8, 4, 3, 0, 0, 0, 6];
                 dbVals.forEach((val, idx) => {
