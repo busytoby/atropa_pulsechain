@@ -804,6 +804,17 @@ Status: Press Pitch to begin.</div>
 
         let sdPitcher = null, sdBatter = null, sdCatcher = null;
 
+        // BEM Streamline Traveler Particles (guided path flow without collisions)
+        let travelers = [];
+        for (let i = 0; i < 40; i++) {
+            travelers.push({
+                x: -100 + Math.random() * 20,
+                y: -90,
+                z: 60 + Math.random() * 200,
+                speed: 1.5 + Math.random() * 2.0
+            });
+        }
+
         // Fielder Positions
         let shortstopPos = { x: -80, y: -90, z: 320 };
         let outfieldLeftPos = { x: -160, y: -90, z: 450 };
@@ -1593,6 +1604,40 @@ Status: Press Pitch to begin.</div>
                     }
                     ctx.stroke();
                     ctx.restore();
+                }
+
+                // Render BEM Streamline Traveler particles flowing along field boundaries
+                if (document.getElementById("show-bem-field").checked) {
+                    const boundaries = [
+                        { x: -75, y: -90, z: 120, charge: 1.5 },
+                        { x: 0,   y: -75, z: 220, charge: -2.0 },
+                        { x: 75,  y: -90, z: 120, charge: 1.5 }
+                    ];
+
+                    travelers.forEach(t => {
+                        // 1. Calculate potential gradient force at traveler location
+                        let potential = 0.0;
+                        boundaries.forEach(b => {
+                            let dx = t.x - b.x;
+                            let dz = t.z - b.z;
+                            let dist = Math.sqrt(dx*dx + dz*dz + 100.0);
+                            potential += b.charge / dist;
+                        });
+
+                        // 2. Adjust velocities to align with local streamline field angle
+                        let angle = potential * Math.PI * 8.0;
+                        t.x += Math.cos(angle) * t.speed;
+                        t.z += Math.sin(angle) * t.speed;
+
+                        // 3. Reset travelers if they escape the boundaries
+                        if (t.x < -150 || t.x > 150 || t.z < 20 || t.z > 350) {
+                            t.x = -100 + Math.random() * 20;
+                            t.z = 60 + Math.random() * 200;
+                        }
+
+                        // 4. Render traveler node
+                        drawVolumetricSphere(t, 2.5, "rgba(0, 240, 255, 0.85)");
+                    });
                 }
 
                 // 4. Fielders
