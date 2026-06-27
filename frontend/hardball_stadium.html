@@ -2340,6 +2340,14 @@ Status: Press Pitch to begin.</div>
                 if (stored) savedDeck = JSON.parse(stored);
             } catch (e) { console.error(e); }
 
+            // Compile the current active pitch parameter to a sharing hex code
+            let compFreq = Math.min(1023, Math.max(0, Math.floor((musicSequence[0] - 100) / 2)));
+            let compVX = Math.min(127, Math.max(0, Math.floor(ballVX * 10 + 64)));
+            let compVY = Math.min(127, Math.max(0, Math.floor(ballVY * 10)));
+            let compVZ = Math.min(255, Math.max(0, Math.floor(Math.abs(ballVZ) * 10)));
+            let packedVal = (compFreq << 22) | (compVX << 15) | (compVY << 8) | compVZ;
+            let currentHex = "0x" + packedVal.toString(16).toUpperCase().padStart(8, '0');
+
             savedDeck.push({
                 image: cardBase64,
                 timestamp: Date.now(),
@@ -2351,7 +2359,10 @@ Status: Press Pitch to begin.</div>
                     inning: inning,
                     outs: outs,
                     strikes: strikes,
-                    balls: balls
+                    balls: balls,
+                    pitchType: currentPitchType,
+                    pitchHex: currentHex,
+                    choreographyStance: window.activeBalletStance || "none"
                 }
             });
 
@@ -2577,7 +2588,25 @@ Status: Press Pitch to begin.</div>
                                 strikes = card.bag.strikes;
                                 balls = card.bag.balls;
                                 updateScoreboard();
-                                consoleBox.innerHTML += `\n[Z-Machine] Successfully restored Baseball Lineup state!`;
+                                
+                                // Restore custom tracker pitch presets and choreography stances
+                                if (card.bag.pitchType) currentPitchType = card.bag.pitchType;
+                                if (card.bag.choreographyStance) window.activeBalletStance = card.bag.choreographyStance;
+                                if (card.bag.pitchHex && card.bag.pitchHex.startsWith("0x")) {
+                                    let val = parseInt(card.bag.pitchHex, 16);
+                                    let rawFreq = (val >> 22) & 0x3FF;
+                                    let rawVX = (val >> 15) & 0x7F;
+                                    let rawVY = (val >> 8) & 0x7F;
+                                    let rawVZ = val & 0xFF;
+                                    
+                                    musicSequence[0] = 100 + rawFreq * 2;
+                                    ballVX = (rawVX - 64) / 10;
+                                    ballVY = rawVY / 10;
+                                    ballVZ = -(rawVZ / 10);
+                                    noteIndex = 0;
+                                    consoleBox.innerHTML += `\n[Z-Machine] Restored pitch vectors: Freq: ${musicSequence[0]}Hz, V(${ballVX.toFixed(1)}, ${ballVY.toFixed(1)}, ${ballVZ.toFixed(1)})`;
+                                }
+                                consoleBox.innerHTML += `\n[Z-Machine] Successfully restored Baseball Lineup state, choreographies, and pitch score presets!`;
                             } else {
                                 consoleBox.innerHTML += `\n[Z-Machine] Cannot load: Card type '${card.bag ? card.bag.type : "unknown"}' is not baseball_lineup compatible.`;
                             }
