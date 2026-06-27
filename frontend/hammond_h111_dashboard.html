@@ -648,6 +648,19 @@
         let mainVolume = null;
         let activeNodes = {};
 
+        // Cache distortion curve globally to prevent GC memory thrashing
+        const distortionCurve = (() => {
+            const k = 30;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        })();
+
         // 111-frequency phase accumulation data for visualizers
         let twPhases = new Array(111).fill(0);
         let twFreqs = [];
@@ -1362,18 +1375,8 @@
 
             // Route through Audion Valve Saturation simulation
             const valveSaturation = audioCtx.createWaveShaper();
-            const makeDistortionCurve = (amount) => {
-                const k = typeof amount === 'number' ? amount : 50;
-                const n_samples = 44100;
-                const curve = new Float32Array(n_samples);
-                const deg = Math.PI / 180;
-                for (let i = 0; i < n_samples; ++i) {
-                    const x = (i * 2) / n_samples - 1;
-                    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-                }
-                return curve;
-            };
-            valveSaturation.curve = makeDistortionCurve(30);
+            // Use globally cached distortion curve to prevent memory thrashing
+            valveSaturation.curve = distortionCurve;
             valveSaturation.oversample = '4x';
 
             // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet resonance)
@@ -1411,12 +1414,15 @@
             // Channel Gain node for ADSR
             const adsrGain = audioCtx.createGain();
             const now = audioCtx.currentTime;
-            adsrGain.gain.setValueAtTime(0, now);
+            
+            // Set starting value
+            adsrGain.gain.setValueAtTime(0.0001, now);
             
             // Attack stage
-            adsrGain.gain.linearRampToValueAtTime(1.0, now + attackTime);
-            // Decay/Sustain stage
-            adsrGain.gain.linearRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
+            adsrGain.gain.exponentialRampToValueAtTime(1.0, now + Math.max(attackTime, 0.002));
+            
+            // Decay to Sustain stage
+            adsrGain.gain.exponentialRampToValueAtTime(Math.max(sustainLevel, 0.0001), now + Math.max(attackTime, 0.002) + Math.max(decayTime, 0.002));
 
             gains.forEach(g => g.connect(valveSaturation));
             if (percGain) percGain.connect(valveSaturation);
@@ -1448,11 +1454,6 @@
             oscillators.forEach(o => o.start());
             if (lfoNode) lfoNode.start();
             if (leslieLfo) leslieLfo.start();
-
-            // Update leslie label updates
-            document.getElementById("leslie-mix")?.addEventListener("input", (e) => {
-                document.getElementById("lbl-leslie-mix").innerText = `${Math.round(e.target.value * 100)}%`;
-            });
 
             // Polyphony Safety Cutoff: Automatically release node after 6.0 seconds to prevent hanging voices
             const cutoffTimeout = setTimeout(() => {
@@ -1499,6 +1500,10 @@
         // Update pipe damping label dynamically
         document.getElementById("pipe-damping")?.addEventListener("input", (e) => {
             document.getElementById("lbl-pipe-damping").innerText = e.target.value;
+        });
+
+        document.getElementById("leslie-mix")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-leslie-mix").innerText = `${Math.round(e.target.value * 100)}%`;
         });
 
         function stopNote(noteIndex) {
@@ -1895,7 +1900,6 @@
             pipeCtx.stroke();
             pipeCtx.shadowBlur = 0; // reset
             
-            requestAnimationFrame(renderLoop);
             requestAnimationFrame(renderLoop);
         }
         
