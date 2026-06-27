@@ -908,6 +908,29 @@ Status: Press Pitch to begin.</div>
                         osc.start(now);
                         osc.stop(now + 0.35 / factor);
                     }
+                } else if (type === "echolocation") {
+                    // Echolocation Sonar Click synthesis
+                    const panNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+                    if (panNode) {
+                        osc.disconnect(gainNode);
+                        osc.connect(panNode);
+                        panNode.connect(gainNode);
+                        
+                        // Map stereo pan to ball position (-1.0 to 1.0)
+                        let rawPan = ballX / 50; 
+                        panNode.pan.setValueAtTime(Math.min(1.0, Math.max(-1.0, rawPan)), now);
+                    }
+                    
+                    osc.type = "sine";
+                    // Frequency increases as ball approaches batter
+                    let baseFreq = 800 + (220 - ballZ) * 4;
+                    osc.frequency.setValueAtTime(baseFreq * factor, now);
+                    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5 * factor, now + 0.03 / factor);
+                    
+                    gainNode.gain.setValueAtTime(0.06, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.035 / factor);
+                    osc.start(now);
+                    osc.stop(now + 0.035 / factor);
                 } else if (type === "swing") {
                     // Triangle wind whoosh (deepened wind noise)
                     osc.type = "triangle";
@@ -1456,6 +1479,21 @@ Status: Press Pitch to begin.</div>
                 ballX += ballVX * timeDilation;
                 ballY += ballVY * timeDilation;
                 ballZ += ballVZ * timeDilation;
+
+                // Echolocation trigger: chirp clicks dynamically based on ball proximity to home plate (Z=-100)
+                if (currentPitchType === "songbird") {
+                    if (!window.lastSonarTick) window.lastSonarTick = 0;
+                    let elapsed = Date.now() - window.lastSonarTick;
+                    
+                    // Sonar click interval drops (clicks speed up) from 500ms down to 40ms as ballZ approaches home plate
+                    let proximityRatio = Math.max(0.0, Math.min(1.0, (ballZ - (-100)) / 320));
+                    let dynamicInterval = 40 + proximityRatio * 460;
+                    
+                    if (elapsed > dynamicInterval * timeDilation) {
+                        playSidSound("echolocation");
+                        window.lastSonarTick = Date.now();
+                    }
+                }
 
                 // Apply unique dynamic movement curves based on active pitch type
                 if (currentPitchType === "fastball") {
