@@ -728,23 +728,32 @@
             valveSaturation.curve = makeDistortionCurve(30);
             valveSaturation.oversample = '4x';
 
-            // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet)
+            // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet resonance)
             const pipeFilter = audioCtx.createBiquadFilter();
-            pipeFilter.type = "peaking";
+            
+            // Use bandpass to sharply color the sound based on pipe length resonances
+            pipeFilter.type = "bandpass";
 
             const lengthSel = document.getElementById("pipe-length")?.value || "32";
-            let pipeFreq = 33.3; 
-            if (lengthSel === "16") pipeFreq = 66.6;
-            else if (lengthSel === "64") pipeFreq = 16.65;
-            else if (lengthSel === "limitless") {
-                pipeFreq = twFreqs[noteIndex] / 4.0;
+            let pipeFreq = 130.81; // 8-Foot scale (C3)
+            if (lengthSel === "16") pipeFreq = 65.41;      // 16-Foot Contrabass (C2)
+            if (lengthSel === "32") pipeFreq = 32.70;      // 32-Foot Sub-Diapason (C1)
+            if (lengthSel === "64") pipeFreq = 16.35;      // 64-Foot Diapason (C0)
+            if (lengthSel === "limitless") {
+                // Limitless mode matches the played note pitch directly
+                pipeFreq = twFreqs[noteIndex];
             }
 
             const dampingVal = parseFloat(document.getElementById("pipe-damping")?.value || "0.95");
 
             pipeFilter.frequency.value = pipeFreq;
-            pipeFilter.Q.value = (1.0 + drawbars[8] * 12.0) * (dampingVal / 0.95); 
-            pipeFilter.gain.value = 8.0 * (1.0 + (1.0 - dampingVal) * 5.0);
+            // High damping gives high Q (narrow resonance peak), low damping spreads the resonance wide
+            pipeFilter.Q.value = 0.5 + (1.0 - dampingVal) * 45.0 + drawbars[8] * 10.0;
+
+            // Parallel dry path mix to prevent total sound cut when bandpass frequency is out of note range
+            const dryGain = audioCtx.createGain();
+            dryGain.gain.value = 0.25; // 25% dry bypass signal
+            valveSaturation.connect(dryGain);
 
             gains.forEach(g => g.connect(valveSaturation));
             if (percGain) percGain.connect(valveSaturation);
@@ -761,11 +770,14 @@
 
             valveSaturation.connect(pipeFilter);
 
+            // Combine resonant wet path and dry bypass path
             if (leslieAmpGain) {
                 pipeFilter.connect(leslieAmpGain);
+                dryGain.connect(leslieAmpGain);
                 leslieAmpGain.connect(mainVolume);
             } else {
                 pipeFilter.connect(mainVolume);
+                dryGain.connect(mainVolume);
             }
 
             oscillators.forEach(o => o.start());
@@ -920,6 +932,16 @@
                     if (!isLatched) latchedNotes = [];
                     if (!latchedNotes.includes(noteIdx)) latchedNotes.push(noteIdx);
                     restartArpeggiator();
+                }
+            });
+            k.addEventListener("mouseup", () => {
+                if (arpMode !== "off" && !isLatched) {
+                    latchedNotes = latchedNotes.filter(n => n !== noteIdx);
+                    if (latchedNotes.length === 0) {
+                        stopArpNote();
+                        clearInterval(arpTimer);
+                        arpTimer = null;
+                    }
                 }
             });
         });
