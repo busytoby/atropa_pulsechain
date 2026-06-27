@@ -442,13 +442,60 @@
                 activePulses.push(new EcholectricPulse(this.x, this.y, type));
             }
 
-            update(beat, speedFactor, theme) {
+            update(beat, speedFactor, theme, crabsList, index) {
+                // Proprioception & Intelligent Steer Math
+                // Drummers align with their instruments: Snare (2), Bass (3), Hat (4)
+                let targetX = this.x;
+                let targetY = this.y;
+                
+                const isDrummer = (index === 2 || index === 3 || index === 4);
+                if (isDrummer) {
+                    // Drummers hold intentional station configurations
+                    if (index === 2) { targetX = 140; targetY = 210; }
+                    else if (index === 3) { targetX = 270; targetY = 215; }
+                    else if (index === 4) { targetX = 400; targetY = 210; }
+                } else {
+                    // Singers wander intentionally towards front-row coordinates, shifting on beat
+                    if (beat) {
+                        this.targetWanderX = 80 + Math.random() * 320;
+                        this.targetWanderY = 250 + Math.random() * 70;
+                    }
+                    targetX = this.targetWanderX || this.x;
+                    targetY = this.targetWanderY || this.y;
+                }
+
+                // Calculate steer velocities towards targets
+                let steerX = (targetX - this.x) * 0.05;
+                let steerY = (targetY - this.y) * 0.05;
+
+                // Collaborative Flocking Repulsion (Avoid Bumping)
+                let repX = 0, repY = 0;
+                crabsList.forEach((other, oIdx) => {
+                    if (oIdx === index) return;
+                    let dx = this.x - other.x;
+                    let dy = this.y - other.y;
+                    let dist = Math.hypot(dx, dy);
+                    let minDist = (this.size + other.size) * 1.5;
+                    if (dist < minDist && dist > 0) {
+                        // Repel proportional to closeness
+                        let force = (minDist - dist) / minDist;
+                        repX += (dx / dist) * force * 3.5;
+                        repY += (dy / dist) * force * 1.5;
+                    }
+                });
+
+                // Apply update vectors
+                this.vx = (this.vx * 0.8) + (steerX + repX) * 0.2;
+                this.vy = (this.vy * 0.8) + (steerY + repY) * 0.2;
+
                 this.x += this.vx * speedFactor;
                 this.y += this.vy * speedFactor;
 
-                // Restrict boundaries
-                if (this.x < 30 || this.x > 450) this.vx = -this.vx;
-                if (this.y < 200 || this.y > 320) this.vy = -this.vy;
+                // Proprioceptive boundary warnings (steer away instead of solid bounce)
+                if (this.x < 30) { this.x = 30; this.vx = Math.abs(this.vx) * 0.8; }
+                if (this.x > 450) { this.x = 450; this.vx = -Math.abs(this.vx) * 0.8; }
+                if (this.y < 180) { this.y = 180; this.vy = Math.abs(this.vy) * 0.8; }
+                if (this.y > 330) { this.y = 330; this.vy = -Math.abs(this.vy) * 0.8; }
 
                 // Sync pinches to beats
                 this.pinchL = Math.max(0, this.pinchL - 0.1);
@@ -985,8 +1032,8 @@
 
             // Update Crabs
             const isBeat = (window.musicPlaying && (frameCount % 12 === 0));
-            crabs.forEach(c => {
-                c.update(isBeat, window.musicPlaying ? 1 : 0.2, theme);
+            crabs.forEach((c, idx) => {
+                c.update(isBeat, window.musicPlaying ? 1 : 0.2, theme, crabs, idx);
             });
 
             // Update and draw active pulses
