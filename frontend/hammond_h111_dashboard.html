@@ -292,6 +292,9 @@
                     <option value="detuned">Gears Detune (Micro-Chorus)</option>
                     <option value="moog_bass">Moog Bass Growl (FM Link)</option>
                     <option value="moog_lead">Moog Lead Sweep (FM Link)</option>
+                    <option value="mellotron">Mellotron Flute Strings (Slow Attack)</option>
+                    <option value="acid">Acid Resonance Growl (FM Saturate)</option>
+                    <option value="tension">Tension Chaos (Love-Hate Detune)</option>
                 </select>
                 <button id="btn-load-preset" style="background: rgba(0, 240, 255, 0.15); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-family: 'Share Tech Mono', monospace; cursor: pointer; text-shadow: 0 0 6px var(--glow-cyan);">LOAD</button>
             </div>
@@ -956,6 +959,122 @@
                     tonewheelPhases[i] = (i % 6) * 60;
                     // Cross modulate using Perfect Fifth FM routing
                     tonewheelFm[i] = "fifth";
+                }
+            }
+            
+            // Mellotron Flute Strings
+            else if (preset === "mellotron") {
+                document.getElementById("synth-timbre").value = "triangle";
+                document.getElementById("reverb-type").value = "spring";
+                document.getElementById("reverb-mix").value = "0.35";
+                document.getElementById("lbl-reverb-mix").innerText = "35%";
+                document.getElementById("leslie-speed").value = "chorale";
+                document.getElementById("leslie-mix").value = "0.40";
+                document.getElementById("lbl-leslie-mix").innerText = "40%";
+                document.getElementById("pipe-length").value = "32";
+                document.getElementById("pipe-damping").value = "0.93";
+                document.getElementById("lbl-pipe-damping").innerText = "0.93";
+
+                // Slow attack swell and tape wobble decay
+                document.getElementById("env-attack").value = "0.30";
+                document.getElementById("lbl-env-attack").innerText = "0.30s";
+                document.getElementById("env-decay").value = "0.75";
+                document.getElementById("lbl-env-decay").innerText = "0.75s";
+                document.getElementById("env-sustain").value = "0.85";
+                document.getElementById("lbl-env-sustain").innerText = "85%";
+                document.getElementById("env-release").value = "0.80";
+                document.getElementById("lbl-env-release").innerText = "0.80s";
+
+                const dbVals = [6, 8, 8, 5, 0, 0, 0, 0, 5];
+                dbVals.forEach((val, idx) => {
+                    document.getElementById(`db-${idx}`).value = val;
+                    document.getElementById(`lbl-db-${idx}`).innerText = val;
+                    drawbars[idx] = val / 8.0;
+                });
+
+                for (let i = 0; i < 111; i++) {
+                    tonewheelGains[i] = 1.0;
+                    tonewheelDetunes[i] = Math.round(Math.sin(i * 0.4) * 5); // Tape wobble emulator detune
+                    tonewheelPhases[i] = (i % 5) * 72;
+                    tonewheelFm[i] = "-1";
+                    tonewheelDirs[i] = 1;
+                    tonewheelBlowups[i] = 1.0;
+                }
+            }
+
+            // Acid Resonance Growl
+            else if (preset === "acid") {
+                document.getElementById("synth-timbre").value = "sawtooth";
+                document.getElementById("reverb-type").value = "cathedral";
+                document.getElementById("reverb-mix").value = "0.25";
+                document.getElementById("lbl-reverb-mix").innerText = "25%";
+                document.getElementById("leslie-speed").value = "off";
+                document.getElementById("pipe-length").value = "16";
+                document.getElementById("pipe-damping").value = "0.70"; // Very high resonant peak
+                document.getElementById("lbl-pipe-damping").innerText = "0.70";
+
+                document.getElementById("env-attack").value = "0.01";
+                document.getElementById("lbl-env-attack").innerText = "0.01s";
+                document.getElementById("env-decay").value = "0.20";
+                document.getElementById("lbl-env-decay").innerText = "0.20s";
+                document.getElementById("env-sustain").value = "0.30";
+                document.getElementById("lbl-env-sustain").innerText = "30%";
+                document.getElementById("env-release").value = "0.15";
+                document.getElementById("lbl-env-release").innerText = "0.15s";
+
+                const dbVals = [8, 8, 8, 0, 0, 0, 0, 0, 8];
+                dbVals.forEach((val, idx) => {
+                    document.getElementById(`db-${idx}`).value = val;
+                    document.getElementById(`lbl-db-${idx}`).innerText = val;
+                    drawbars[idx] = val / 8.0;
+                });
+
+                for (let i = 0; i < 111; i++) {
+                    tonewheelGains[i] = 1.2;
+                    tonewheelDetunes[i] = 0;
+                    tonewheelPhases[i] = 0;
+                    tonewheelFm[i] = "sub";
+                    tonewheelDirs[i] = 1;
+                    tonewheelBlowups[i] = (i % 4 === 0) ? 20.0 : 1.0; // Blow up accent wheels
+                }
+            }
+
+            // Tension Chaos
+            else if (preset === "tension") {
+                document.getElementById("synth-timbre").value = "square";
+                document.getElementById("reverb-type").value = "spring";
+                document.getElementById("reverb-mix").value = "0.50";
+                document.getElementById("lbl-reverb-mix").innerText = "50%";
+                document.getElementById("leslie-speed").value = "tremolo";
+                document.getElementById("leslie-mix").value = "0.75";
+                document.getElementById("lbl-leslie-mix").innerText = "75%";
+                document.getElementById("pipe-length").value = "limitless";
+                document.getElementById("pipe-damping").value = "0.98";
+                document.getElementById("lbl-pipe-damping").innerText = "0.98";
+
+                document.getElementById("env-attack").value = "0.10";
+                document.getElementById("lbl-env-attack").innerText = "0.10s";
+                document.getElementById("env-decay").value = "0.50";
+                document.getElementById("lbl-env-decay").innerText = "0.50s";
+                document.getElementById("env-sustain").value = "0.90";
+                document.getElementById("lbl-env-sustain").innerText = "90%";
+                document.getElementById("env-release").value = "0.60";
+                document.getElementById("lbl-env-release").innerText = "0.60s";
+
+                const dbVals = [8, 8, 8, 8, 8, 8, 8, 8, 8];
+                dbVals.forEach((val, idx) => {
+                    document.getElementById(`db-${idx}`).value = val;
+                    document.getElementById(`lbl-db-${idx}`).innerText = val;
+                    drawbars[idx] = val / 8.0;
+                });
+
+                for (let i = 0; i < 111; i++) {
+                    tonewheelGains[i] = 1.0;
+                    tonewheelDetunes[i] = (i % 2 === 0) ? 15 : -15; // Wide microtonal clash
+                    tonewheelPhases[i] = (i % 4) * 90;
+                    tonewheelFm[i] = "-1";
+                    tonewheelDirs[i] = (i % 3 === 0) ? -1 : 1; // Reverse every third wheel!
+                    tonewheelBlowups[i] = 1.0;
                 }
             }
 
