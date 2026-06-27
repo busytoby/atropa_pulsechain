@@ -273,16 +273,63 @@
         <!-- Right: Drawbars and keyboard controller -->
         <div class="panel">
             <div class="panel-title">
+            <!-- Right: Drawbars and keyboard controller -->
+        <div class="panel">
+            <div class="panel-title">
                 TIMBRE & VALVE PROFILE <span>VOICES</span>
             </div>
-            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #94a3b8;">TIMBRE VOICE:</span>
-                <select id="synth-timbre" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 4px; border-radius: 4px;">
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #94a3b8;">TIMBRE:</span>
+                <select id="synth-timbre" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 4px; border-radius: 4px; flex: 1;">
                     <option value="sine" selected>Chime (Sine/Tri)</option>
                     <option value="sawtooth">Strings (Saw/Tri)</option>
                     <option value="triangle">Brass (Saw/Pulse)</option>
                     <option value="square">Organ (Square Mix)</option>
                 </select>
+            </div>
+
+            <div class="panel-title">
+                VIBRATO & CHORUS <span>SCANNER</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>SCANNER MODE:</span>
+                    <select id="vibrato-mode" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="off" selected>Off</option>
+                        <option value="v1">V1 (Soft Vibrato)</option>
+                        <option value="v3">V3 (Deep Vibrato)</option>
+                        <option value="c1">C1 (Chorus-1)</option>
+                        <option value="c3">C3 (Chorus-3)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>SCANNER RATE:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="range" id="vibrato-rate" min="3" max="12" value="7" step="0.5" style="width: 100%;">
+                        <span id="lbl-vibrato-rate" style="color: var(--glow-cyan);">7Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-title">
+                HARMONIC PERCUSSION <span>DECAY</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>PERCUSSION HARM:</span>
+                    <select id="perc-harmonic" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="off" selected>Off</option>
+                        <option value="2nd">2nd (Octave)</option>
+                        <option value="3rd">3rd (Quint/Twelfth)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>DECAY TIME:</span>
+                    <select id="perc-decay" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="fast">Fast (0.15s)</option>
+                        <option value="slow" selected>Slow (0.8s)</option>
+                    </select>
+                </div>
             </div>
 
             <div class="panel-title">
@@ -453,8 +500,24 @@
             const oscillators = [];
             const gains = [];
 
-            // Drawbar offsets relative to base note index
+            // Additive Drawbar components
             const harmonicOffsets = [0, 22, 35, 44, 57, 66, 73, 88]; // EDO-22 octave spacing offsets
+            const selectedTimbre = document.getElementById("synth-timbre")?.value || "sine";
+
+            // Scanner Vibrato & Chorus LFO Setup
+            const vibMode = document.getElementById("vibrato-mode")?.value || "off";
+            const vibRate = parseFloat(document.getElementById("vibrato-rate")?.value || "7");
+            
+            let lfoNode = null;
+            let lfoGain = null;
+            if (vibMode !== "off") {
+                lfoNode = audioCtx.createOscillator();
+                lfoNode.frequency.value = vibRate;
+                lfoGain = audioCtx.createGain();
+                // Deep vs soft modulation depth
+                lfoGain.gain.value = (vibMode === "v3" || vibMode === "c3") ? 6.0 : 2.5;
+                lfoNode.connect(lfoGain);
+            }
 
             harmonicOffsets.forEach((offset, idx) => {
                 const amp = drawbars[idx];
@@ -466,17 +529,45 @@
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
 
-                // Connect to global timbre controls or fallback to sine/triangle additive components
-                const selectedTimbre = document.getElementById("synth-timbre")?.value || "sine";
                 osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
-
                 osc.frequency.value = twFreqs[targetIndex];
                 gainNode.gain.value = amp * 0.12;
+
+                if (lfoGain) {
+                    lfoGain.connect(osc.frequency);
+                }
 
                 osc.connect(gainNode);
                 oscillators.push(osc);
                 gains.push(gainNode);
             });
+
+            // Harmonic Percussion addition
+            const percMode = document.getElementById("perc-harmonic")?.value || "off";
+            let percOsc = null;
+            let percGain = null;
+            if (percMode !== "off") {
+                percOsc = audioCtx.createOscillator();
+                percGain = audioCtx.createGain();
+                
+                // 2nd harmonic (octave) vs 3rd harmonic (quint/twelfth) EDO-22 pitch offsets
+                const percTargetIdx = noteIndex + (percMode === "2nd" ? 22 : 35);
+                if (percTargetIdx < 111) {
+                    percOsc.frequency.value = twFreqs[percTargetIdx];
+                    percOsc.type = "sine";
+                    
+                    const now = audioCtx.currentTime;
+                    const decayVal = document.getElementById("perc-decay")?.value || "slow";
+                    const decayTime = decayVal === "fast" ? 0.15 : 0.8;
+                    
+                    // Trigger dynamic attack/decay envelope
+                    percGain.gain.setValueAtTime(0.35, now);
+                    percGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
+                    
+                    percOsc.connect(percGain);
+                    percOsc.start();
+                }
+            }
 
             // Route through Audion Valve Saturation simulation
             const valveSaturation = audioCtx.createWaveShaper();
@@ -487,7 +578,6 @@
                 const deg = Math.PI / 180;
                 for (let i = 0; i < n_samples; ++i) {
                     const x = (i * 2) / n_samples - 1;
-                    // Audion N-tube negative resistance transfer curve asymmetry
                     curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
                 }
                 return curve;
@@ -503,18 +593,41 @@
             pipeFilter.gain.value = 8.0;
 
             gains.forEach(g => g.connect(valveSaturation));
+            if (percGain) percGain.connect(valveSaturation);
+
+            // Scanner Chorus path splitting
+            let delayNode = null;
+            if (vibMode === "c1" || vibMode === "c3") {
+                delayNode = audioCtx.createDelay();
+                delayNode.delayTime.value = 0.006; // 6ms analog scanner delay offset
+                
+                // Mix wet and dry paths
+                valveSaturation.connect(delayNode);
+                delayNode.connect(pipeFilter);
+            }
+
             valveSaturation.connect(pipeFilter);
             pipeFilter.connect(mainVolume);
 
             oscillators.forEach(o => o.start());
+            if (lfoNode) lfoNode.start();
 
             activeNodes[noteIndex] = {
                 oscillators,
                 gains,
+                percOsc,
+                percGain,
+                lfoNode,
                 saturation: valveSaturation,
-                filter: pipeFilter
+                filter: pipeFilter,
+                delayNode
             };
         }
+
+        // Update vibrato rate label dynamically
+        document.getElementById("vibrato-rate")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-vibrato-rate").innerText = `${e.target.value}Hz`;
+        });
 
         function stopNote(noteIndex) {
             if (!activeNodes[noteIndex]) return;
@@ -527,8 +640,15 @@
                 g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
             });
 
+            if (node.percGain) {
+                node.percGain.gain.setValueAtTime(node.percGain.gain.value, now);
+                node.percGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+            }
+
             setTimeout(() => {
                 node.oscillators.forEach(o => o.stop());
+                if (node.percOsc) node.percOsc.stop();
+                if (node.lfoNode) node.lfoNode.stop();
             }, 120);
 
             delete activeNodes[noteIndex];
