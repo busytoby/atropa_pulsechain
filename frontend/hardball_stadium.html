@@ -382,6 +382,19 @@ Status: Press Pitch to begin.</div>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
             </div>
 
+            <div class="section-title">FASTTRACKER XM PATTERN MONITOR</div>
+            <div class="card" style="border-color: var(--glow-gold); background: #000; padding: 6px; font-family: 'Share Tech Mono', monospace; font-size: 11px;">
+                <div style="display: grid; grid-template-columns: 24px 45px 30px 45px; border-bottom: 1px solid #1e293b; padding-bottom: 4px; color: #64748b; font-weight: bold; text-align: center;">
+                    <span>Row</span>
+                    <span>Note</span>
+                    <span>Ins</span>
+                    <span>Effect</span>
+                </div>
+                <div id="tracker-rows-container" style="height: 115px; overflow-y: hidden; display: flex; flex-direction: column; gap: 2px; padding-top: 4px; text-align: center;">
+                    <!-- Rows will be populated and scrolled dynamically in JS -->
+                </div>
+            </div>
+
             <div class="section-title">CONTROLNET MAP DEBUGGER</div>
             <div class="card" style="border-color: rgba(0, 240, 255, 0.25); display: flex; flex-direction: row; gap: 8px;">
                 <div style="flex: 1; text-align: center;">
@@ -931,12 +944,37 @@ Status: Press Pitch to begin.</div>
             349.23, 440.00, 523.25, 698.46  // F major arpeggio
         ];
 
+        // Maps frequencies back to Fasttracker note labels for UI display
+        function getTrackerNoteLabel(freq) {
+            if (freq === 261.63) return "C-4";
+            if (freq === 329.63) return "E-4";
+            if (freq === 392.00) return "G-4";
+            if (freq === 523.25) return "C-5";
+            if (freq === 293.66) return "D-4";
+            if (freq === 349.23) return "F-4";
+            if (freq === 440.00) return "A-4";
+            if (freq === 587.33) return "D-5";
+            if (freq === 493.88) return "B-4";
+            if (freq === 659.25) return "E-5";
+            if (freq === 698.46) return "F-5";
+            return "---";
+        }
+
         function playMusicTick() {
             if (!musicPlaying) return;
             try {
                 initAudio();
                 if (!audioCtx) return;
                 
+                // Fetch loop update tick rate and slow down background music when timeDilation is low
+                let scaleDilation = 1.0;
+                if (ballActive && ballZ < 50 && ballZ > -130) {
+                    let distToPlate = Math.abs(ballZ - (-100));
+                    if (distToPlate < 150) {
+                        scaleDilation = 0.05 + 0.95 * (distToPlate / 150);
+                    }
+                }
+
                 const now = audioCtx.currentTime;
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
@@ -944,29 +982,62 @@ Status: Press Pitch to begin.</div>
                 gainNode.connect(audioCtx.destination);
 
                 // Alternating pulse wave style synthesis
-                osc.type = (noteIndex % 2 === 0) ? "triangle" : "sawtooth";
+                let isPulse = (noteIndex % 2 === 0);
+                osc.type = isPulse ? "triangle" : "sawtooth";
                 let freq = musicSequence[noteIndex];
-                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.setValueAtTime(freq * scaleDilation, now);
                 
                 // Add rapid octave modulation to simulate old SID registers
                 if (noteIndex % 3 === 0) {
-                    osc.frequency.setValueAtTime(freq * 2.0, now + 0.08);
+                    osc.frequency.setValueAtTime(freq * 2.0 * scaleDilation, now + 0.08 / scaleDilation);
                 }
 
                 gainNode.gain.setValueAtTime(0.04, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18 / scaleDilation);
                 
                 osc.start(now);
-                osc.stop(now + 0.2);
+                osc.stop(now + 0.2 / scaleDilation);
+
+                // Update Fasttracker UI Pattern Monitor View
+                const container = document.getElementById("tracker-rows-container");
+                if (container) {
+                    let rowsHtml = "";
+                    for (let i = -2; i <= 2; i++) {
+                        let idx = (noteIndex + i + musicSequence.length) % musicSequence.length;
+                        let rowNum = idx.toString(16).toUpperCase().padStart(2, '0');
+                        let noteName = getTrackerNoteLabel(musicSequence[idx]);
+                        let instrumentNum = isPulse ? "01" : "02";
+                        let effectCode = (idx % 3 === 0) ? "Arp" : "---";
+                        let isCurrent = (i === 0);
+                        let color = isCurrent ? "var(--glow-gold)" : "#475569";
+                        let weight = isCurrent ? "bold" : "normal";
+                        
+                        rowsHtml += `
+                            <div style="display: grid; grid-template-columns: 24px 45px 30px 45px; color: ${color}; font-weight: ${weight};">
+                                <span>${rowNum}</span>
+                                <span>${noteName}</span>
+                                <span>${instrumentNum}</span>
+                                <span>${effectCode}</span>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = rowsHtml;
+                }
 
                 noteIndex = (noteIndex + 1) % musicSequence.length;
+
+                // Dynamically reschedule music tick intervals to scale with slow-mo tempo
+                if (musicIntervalId) {
+                    clearInterval(musicIntervalId);
+                    musicIntervalId = setInterval(playMusicTick, 180 / scaleDilation);
+                }
             } catch (e) {}
         }
 
         function toggleRetroMusic() {
             musicPlaying = !musicPlaying;
             if (musicPlaying) {
-                logEvent("🎵 Retro SID music loop started! 8-bit arpeggios enabled.");
+                logEvent("🎵 Retro SID music loop started! Fasttracker monitor online.");
                 musicIntervalId = setInterval(playMusicTick, 180); // 180ms per note step
             } else {
                 logEvent("🔇 Retro music muted.");
@@ -974,6 +1045,8 @@ Status: Press Pitch to begin.</div>
                     clearInterval(musicIntervalId);
                     musicIntervalId = null;
                 }
+                const container = document.getElementById("tracker-rows-container");
+                if (container) container.innerHTML = "";
             }
         }
 
