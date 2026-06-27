@@ -1692,6 +1692,13 @@ Status: Press Pitch to begin.</div>
                     // Linear high-velocity trajectory with minor fletch wind-shear flutter
                     ballVX = Math.sin(ballZ * 0.85) * 0.45;
                     ballVY = Math.cos(ballZ * 0.85) * 0.45 + 1.5;
+                } else if (currentPitchType === "custom_tracked") {
+                    // Multi-directional vector tracking: Modulate trajectory dynamically using arpeggiator note indices
+                    let sweepPhase = ballZ * 0.08;
+                    // Rotate horizontal direction based on music loop frequency step modifications
+                    ballVX += Math.sin(sweepPhase + noteIndex) * 0.15;
+                    // Rise or sink depending on arpeggiator octave steps
+                    ballVY += Math.cos(sweepPhase * 0.5 + noteIndex) * 0.12 - 0.04;
                 }
 
                 if (ballZ <= -120) {
