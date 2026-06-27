@@ -288,6 +288,7 @@
                     <option value="human_pitch">👤 Human Pitch / Bat</option>
                     <option value="ai_match">🤖 AI Pitcher / Batter</option>
                     <option value="gauntlet_boss">⚔️ Gauntlet Boss Battle</option>
+                    <option value="vaesen_horror">🌲 Vaesen Gothic Horror</option>
                 </select>
             </div>
             <div class="section-title">STADIUM CONTROLS</div>
@@ -1936,15 +1937,37 @@ Status: Press Pitch to begin.</div>
             updateScoreboard();
 
             // Clear Screen
-            ctx.fillStyle = "#030408";
+            let isVaesen = (document.getElementById("game-mode").value === "vaesen_horror");
+            if (isVaesen) {
+                // Vaesen Gothic Dark Scandinavian Forest floor color
+                ctx.fillStyle = "#0c100a"; 
+            } else {
+                ctx.fillStyle = "#030408";
+            }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw mist/fog vectors for Vaesen Horror mode
+            if (isVaesen) {
+                ctx.save();
+                for (let i = 0; i < 6; i++) {
+                    let fogY = 180 + Math.sin(Date.now() * 0.001 + i) * 20;
+                    let grad = ctx.createLinearGradient(0, fogY - 60, 0, fogY + 60);
+                    grad.addColorStop(0, "rgba(200, 210, 220, 0.0)");
+                    grad.addColorStop(0.5, "rgba(100, 110, 100, 0.08)");
+                    grad.addColorStop(1, "rgba(200, 210, 220, 0.0)");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, fogY - 60, canvas.width, 120);
+                }
+                ctx.restore();
+            }
 
             // Draw Stage Spotlight
             drawSpotlights(0.1);
 
-            // Perspective Outfield Ground Foul lines
-            drawLine3D({ x: -180, y: -90, z: -100 }, { x: -5, y: -90, z: 600 }, "rgba(0, 240, 255, 0.22)", 1.5);
-            drawLine3D({ x: 180, y: -90, z: -100 }, { x: 5, y: -90, z: 600 }, "rgba(0, 240, 255, 0.22)", 1.5);
+            // Perspective Outfield Ground Foul lines (gothic moss-green in Vaesen mode)
+            let boundaryColor = isVaesen ? "rgba(75, 110, 80, 0.28)" : "rgba(0, 240, 255, 0.22)";
+            drawLine3D({ x: -180, y: -90, z: -100 }, { x: -5, y: -90, z: 600 }, boundaryColor, 1.5);
+            drawLine3D({ x: 180, y: -90, z: -100 }, { x: 5, y: -90, z: 600 }, boundaryColor, 1.5);
 
             // Draw drop shadows
             drawFloorShadows({ x: 0, y: 0, z: 220 }, 1.2);
@@ -2217,7 +2240,22 @@ Status: Press Pitch to begin.</div>
 
                     // Base rendering of the ball (or arrow for bowmanship)
                     ctx.save();
-                    if (currentPitchType === "bowmanship") {
+                    if (isVaesen) {
+                        // Render glowing Vaesen ancient runic glyph shape (cross with orbiting ring)
+                        ctx.strokeStyle = "rgba(190, 160, 220, 0.95)";
+                        ctx.lineWidth = 3.0;
+                        ctx.shadowColor = "#9333ea";
+                        ctx.shadowBlur = 20;
+                        ctx.beginPath();
+                        // Draw runic cross
+                        ctx.moveTo(p.x - rad * 1.5, p.y);
+                        ctx.lineTo(p.x + rad * 1.5, p.y);
+                        ctx.moveTo(p.x, p.y - rad * 1.5);
+                        ctx.lineTo(p.x, p.y + rad * 1.5);
+                        // Draw runic circle
+                        ctx.arc(p.x, p.y, rad * 0.9, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else if (currentPitchType === "bowmanship") {
                         // Render a fletched bamboo arrow pointing down the trajectory vector
                         ctx.strokeStyle = "#4ade80";
                         ctx.lineWidth = 3.0;
