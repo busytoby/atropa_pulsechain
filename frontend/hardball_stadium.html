@@ -272,8 +272,8 @@
             <div class="scoreboard-c64">
                 <div>VISITORS<br><span class="sb-val" id="sb-vis">0</span></div>
                 <div>HOME<br><span class="sb-val" id="sb-home">2</span></div>
-                <div>INNING<br><span class="sb-val" id="sb-inning">5</span></div>
-                <div>OUTS<br><span class="sb-val" id="sb-outs">2</span></div>
+                <div>BATTER HP<br><span class="sb-val" id="sb-batter-hp" style="color: #ff007f;">100</span></div>
+                <div>BOSS HP<br><span class="sb-val" id="sb-boss-hp" style="color: #00f0ff;">500</span></div>
             </div>
 
             <div class="scoreboard-c64" style="margin-top: -6px;">
@@ -287,6 +287,7 @@
                 <select id="game-mode" onchange="resetGame()" style="background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
                     <option value="human_pitch">👤 Human Pitch / Bat</option>
                     <option value="ai_match">🤖 AI Pitcher / Batter</option>
+                    <option value="gauntlet_boss">⚔️ Gauntlet Boss Battle</option>
                 </select>
             </div>
             <div class="section-title">STADIUM CONTROLS</div>
@@ -1110,11 +1111,18 @@ Status: Press Pitch to begin.</div>
             consoleBox.scrollTop = consoleBox.scrollHeight;
         }
 
+        let batterHp = 100;
+        let bossHp = 500;
+
         function updateScoreboard() {
             document.getElementById("sb-vis").innerText = scoreVis;
             document.getElementById("sb-home").innerText = scoreHome;
-            document.getElementById("sb-inning").innerText = inning;
-            document.getElementById("sb-outs").innerText = outs;
+            if (document.getElementById("sb-batter-hp")) {
+                document.getElementById("sb-batter-hp").innerText = batterHp;
+            }
+            if (document.getElementById("sb-boss-hp")) {
+                document.getElementById("sb-boss-hp").innerText = bossHp;
+            }
             document.getElementById("sb-strikes").innerText = strikes;
             document.getElementById("sb-balls").innerText = balls;
         }
@@ -1571,21 +1579,36 @@ Status: Press Pitch to begin.</div>
                         runnerProgress = 0.0;
                         
                         let hitResult = "SINGLE";
+                        let dmg = 0;
                         if (swingDelta < 0.12) {
                             // Perfect swing timing alignment
                             scoreHome++;
                             hitResult = "HOME RUN!";
-                            logEvent(`💥 PERFECT HIT! Swing Delta: ${swingDelta.toFixed(3)} rad. HOME RUN!`);
+                            dmg = 120;
+                            logEvent(`💥 PERFECT HIT! Swing Delta: ${swingDelta.toFixed(3)} rad. Boss takes ${dmg} DMG!`);
                             runnerProgress = 3.0; // Instantly runs all bases
                         } else if (swingDelta < 0.32) {
                             // Good timing
                             hitResult = "DOUBLE!";
-                            logEvent(`☄️ Good Hit! Swing Delta: ${swingDelta.toFixed(3)} rad. Double to left-field gap.`);
+                            dmg = 50;
+                            logEvent(`☄️ Good Hit! Swing Delta: ${swingDelta.toFixed(3)} rad. Boss takes ${dmg} DMG!`);
                         } else {
                             // Late/early swing alignment
                             hitResult = "SINGLE";
-                            logEvent(`⚾ Contact! Swing Delta: ${swingDelta.toFixed(3)} rad. Sliced single down the line.`);
+                            dmg = 20;
+                            logEvent(`⚾ Contact! Swing Delta: ${swingDelta.toFixed(3)} rad. Boss takes ${dmg} DMG!`);
                         }
+                        
+                        // Apply damage to Boss if in Gauntlet Mode
+                        if (document.getElementById("game-mode").value === "gauntlet_boss") {
+                            bossHp = Math.max(0, bossHp - dmg);
+                            if (bossHp <= 0) {
+                                logEvent("🏆 GAUNTLET VICTORY! Boss has been defeated! The stadium field collapses.");
+                                bossHp = 500;
+                                batterHp = 100;
+                            }
+                        }
+
                         document.getElementById("sb-result").innerText = hitResult;
                         playSidSound("hit");
 
@@ -1634,23 +1657,35 @@ Status: Press Pitch to begin.</div>
                     } else {
                         if (Math.abs(ballX) < 12 && ballY > -10 && ballY < 45) {
                             strikes++;
+                            let batterDmg = 15;
                             if (strikes >= 3) {
                                 strikes = 0; outs++;
                                 if (outs >= 3) { outs = 0; inning++; }
+                                batterDmg = 40;
                                 document.getElementById("sb-result").innerText = "STRIKE OUT";
-                                logEvent("❌ Strike three! Batter struck out!");
+                                logEvent(`❌ Strike three! Batter takes ${batterDmg} DMG!`);
                                 playSidSound("out");
                             } else {
                                 document.getElementById("sb-result").innerText = "STRIKE";
-                                logEvent("⚾ Strike! Right down the pipe.");
+                                logEvent(`⚾ Strike! Batter takes ${batterDmg} DMG!`);
                                 playSidSound("strike");
+                            }
+                            
+                            // Apply damage to Batter if in Gauntlet Mode
+                            if (document.getElementById("game-mode").value === "gauntlet_boss") {
+                                batterHp = Math.max(0, batterHp - batterDmg);
+                                if (batterHp <= 0) {
+                                    logEvent("💀 GAUNTLET DEFEAT! Batter collapsed. Resetting battle simulation.");
+                                    bossHp = 500;
+                                    batterHp = 100;
+                                }
                             }
                         } else {
                             balls++;
                             if (balls >= 4) {
                                 balls = 0;
                                 document.getElementById("sb-result").innerText = "WALK";
-                                logEvent("🚶 Walk! Batter takes base.");
+                                logEvent("🚶 Walk! Batter takes base safely.");
                                 runnerActive = true;
                                 runnerProgress = 1.0; // Advances to 1st base
                                 playSidSound("ball");
