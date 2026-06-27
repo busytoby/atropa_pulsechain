@@ -217,6 +217,43 @@ static float process_speaker(SpeakerModel *sp, float input_force, float dt) {
     return sp->vel;
 }
 
+// Limitless Acoustic Waveguide Pipe Resonator Model
+#define PIPE_MAX_DELAY 512
+typedef struct {
+    float delay_line_forward[PIPE_MAX_DELAY];
+    float delay_line_backward[PIPE_MAX_DELAY];
+    int write_ptr;
+    int length;
+    float reflection_coef; // scattering junction reflection loss
+    float damping;         // air-column high-frequency loss
+} PipeModel;
+
+static inline float process_metal_pipe(PipeModel *pipe, float input_breath, float end_reflection_bias) {
+    // Read reflective terminals with 180-degree phase shift (pressure node reflection)
+    int read_forward_ptr = (pipe->write_ptr + 1) % pipe->length;
+    int read_backward_ptr = (pipe->write_ptr + pipe->length - 1) % pipe->length;
+    
+    float wave_forward = pipe->delay_line_forward[read_forward_ptr];
+    float wave_backward = pipe->delay_line_backward[read_backward_ptr];
+    
+    // Boundary reflection dispersion
+    float reflected_backward = -wave_forward * pipe->reflection_coef * end_reflection_bias;
+    float reflected_forward = -wave_backward * pipe->reflection_coef * end_reflection_bias;
+    
+    // Inject input energy at the excitation mouth boundary
+    float next_forward = reflected_forward * pipe->damping + input_breath;
+    float next_backward = reflected_backward * pipe->damping;
+    
+    // Write new delay lines states
+    pipe->delay_line_forward[pipe->write_ptr] = next_forward;
+    pipe->delay_line_backward[pipe->write_ptr] = next_backward;
+    
+    pipe->write_ptr = (pipe->write_ptr + 1) % pipe->length;
+    
+    // Output is the sum of forward and backward pressure waves at the pipe mouth
+    return wave_forward + wave_backward;
+}
+
 void precompute_all_sounds() {
     pthread_mutex_lock(&g_audio_mutex);
     for (int idx = 0; idx < NUM_SOUND_TYPES; idx++) {
@@ -729,17 +766,19 @@ static void* audio_mixer_thread(void *arg) {
             float ds4 = g * (tanhf(tb303_s3) - tanhf(tb303_s4));
             tb303_s4 += ds4;
             
-            float synth_out = tb303_s4 * tb303_vca_env * 0.38f;
+            // Instantiate static pipe model for the enormous metal open cabinet tubes (pedal note resonance)
+            static PipeModel organ_cabinet_pipe = {
+                .write_ptr = 0,
+                .length = 240, // 240 samples corresponds to ~33.3 Hz low C cabinet resonance at 8kHz sample rate
+                .reflection_coef = 0.995f,
+                .damping = 0.996f
+            };
             
-            // Map viewport boost & SSAA to drive valve saturation
-            float drive = 1.0f;
-            if (opt_viewport_boost) drive += 1.3f;
-            if (opt_ssaa) drive += 0.8f;
+            // Route the combined mixed output through the metal resonator pipe
+            float pipe_input = (synth_out + tonewheel_out) * drive;
+            float resonant_out = process_metal_pipe(&organ_cabinet_pipe, pipe_input * 0.15f, 1.0f);
             
-            // Mix the 303 bass synth output with the 111-frequency tonewheel output
-            float driven_out = (synth_out + tonewheel_out) * drive;
-            
-            float sat_out = apply_valve_simulation(driven_out, selected_valve);
+            float sat_out = apply_valve_simulation(resonant_out, selected_valve);
             
             // Involve Elektuur's transistor amplifier (AtoomVersterker)
             // Scale input to match base-emitter clipping range (input gain is 10x), process, and scale back down
