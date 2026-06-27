@@ -940,23 +940,50 @@ Status: Press Pitch to begin.</div>
                     gainNode.gain.linearRampToValueAtTime(0.01, now + 0.22 / factor);
                     osc.start(now);
                     osc.stop(now + 0.22 / factor);
-                } else if (type === "hit") {
-                    // Sharp detuned triangle hit bip
+                    // FM synthesis: Modulator oscillator sweeps frequency parameter of carrier osc
+                    const modOsc = audioCtx.createOscillator();
+                    const modGain = audioCtx.createGain();
+                    
+                    modOsc.type = "sawtooth";
+                    modOsc.frequency.setValueAtTime(120 * factor, now); // Modulator frequency (Hz)
+                    modOsc.frequency.exponentialRampToValueAtTime(15 * factor, now + 0.4 / factor);
+                    
+                    modGain.gain.setValueAtTime(800 * factor, now); // Modulation depth
+                    modGain.gain.exponentialRampToValueAtTime(1 * factor, now + 0.4 / factor);
+                    
+                    modOsc.connect(modGain);
+                    modGain.connect(osc.frequency); // Route modulator output directly to carrier pitch parameter
+                    
                     osc.type = "triangle";
                     osc.frequency.setValueAtTime(587 * factor, now); 
-                    osc.frequency.setValueAtTime(880 * factor, now + 0.05 / factor); 
                     gainNode.gain.setValueAtTime(0.3, now);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4 / factor);
+                    
+                    modOsc.start(now);
                     osc.start(now);
+                    modOsc.stop(now + 0.4 / factor);
                     osc.stop(now + 0.4 / factor);
                 } else if (type === "strike") {
-                    // Retro strike alarm buzz
+                    // FM modulated alarm buzz for strikes
+                    const modOsc = audioCtx.createOscillator();
+                    const modGain = audioCtx.createGain();
+                    
+                    modOsc.type = "sine";
+                    modOsc.frequency.setValueAtTime(60 * factor, now);
+                    modGain.gain.setValueAtTime(200 * factor, now);
+                    
+                    modOsc.connect(modGain);
+                    modGain.connect(osc.frequency);
+                    
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(150 * factor, now);
+                    osc.frequency.setValueAtTime(180 * factor, now);
                     gainNode.gain.setValueAtTime(0.18, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15 / factor);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.25 / factor);
+                    
+                    modOsc.start(now);
                     osc.start(now);
-                    osc.stop(now + 0.15 / factor);
+                    modOsc.stop(now + 0.25 / factor);
+                    osc.stop(now + 0.25 / factor);
                 } else if (type === "ball") {
                     // Low tone bip
                     osc.type = "sine";
@@ -966,14 +993,27 @@ Status: Press Pitch to begin.</div>
                     osc.start(now);
                     osc.stop(now + 0.1 / factor);
                 } else if (type === "out") {
-                    // Staggered down-sweeping buzzer
+                    // FM pitch sweeping out buzzer
+                    const modOsc = audioCtx.createOscillator();
+                    const modGain = audioCtx.createGain();
+                    
+                    modOsc.type = "sawtooth";
+                    modOsc.frequency.setValueAtTime(180 * factor, now);
+                    modGain.gain.setValueAtTime(350 * factor, now);
+                    
+                    modOsc.connect(modGain);
+                    modGain.connect(osc.frequency);
+                    
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(120 * factor, now);
-                    osc.frequency.linearRampToValueAtTime(40 * factor, now + 0.5 / factor);
-                    gainNode.gain.setValueAtTime(0.2, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5 / factor);
+                    osc.frequency.setValueAtTime(150 * factor, now);
+                    osc.frequency.linearRampToValueAtTime(50 * factor, now + 0.65 / factor);
+                    gainNode.gain.setValueAtTime(0.22, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.65 / factor);
+                    
+                    modOsc.start(now);
                     osc.start(now);
-                    osc.stop(now + 0.5 / factor);
+                    modOsc.stop(now + 0.65 / factor);
+                    osc.stop(now + 0.65 / factor);
                 }
             } catch (e) {
                 console.error("Audio synth error:", e);
