@@ -976,15 +976,55 @@
             pipeCtx.fillStyle = "#010307";
             pipeCtx.fillRect(0, 0, pipeCanvas.width, pipeCanvas.height);
             
-            pipeCtx.strokeStyle = "rgba(255, 0, 127, 0.6)";
-            pipeCtx.lineWidth = 2;
-            pipeCtx.shadowColor = "rgba(255, 0, 127, 0.5)";
-            pipeCtx.shadowBlur = 8;
-            
-            pipeCtx.beginPath();
             const width = pipeCanvas.width;
             const height = pipeCanvas.height;
             const midY = height / 2;
+
+            // Draw background teddy bear organ brass pipes silhouettes
+            pipeCtx.save();
+            const pipeCount = 5;
+            const pipeW = width / (pipeCount + 1);
+            const gapP = (width - (pipeCount * pipeW)) / (pipeCount + 1);
+            
+            pipeCtx.strokeStyle = "rgba(180, 130, 45, 0.15)";
+            pipeCtx.lineWidth = 3;
+            for (let p = 0; p < pipeCount; p++) {
+                const px = gapP + p * (pipeW + gapP);
+                const pipeHeight = height * 0.7 - (p * 20) + Math.sin(time + p) * 10;
+                const py = height - pipeHeight;
+                
+                // Draw tube structure
+                pipeCtx.fillStyle = "rgba(180, 130, 45, 0.04)";
+                pipeCtx.fillRect(px, py, pipeW, pipeHeight);
+                pipeCtx.strokeRect(px, py, pipeW, pipeHeight);
+                
+                // Draw open mouth cutout at top
+                pipeCtx.beginPath();
+                pipeCtx.arc(px + pipeW/2, py + 25, pipeW/3, 0, Math.PI * 2);
+                pipeCtx.fillStyle = "#010307";
+                pipeCtx.fill();
+                pipeCtx.stroke();
+
+                // Draw engraved Teddy Bear logo face details on each physical metal tube
+                pipeCtx.strokeStyle = "rgba(180, 130, 45, 0.08)";
+                pipeCtx.beginPath();
+                // Face Circle
+                pipeCtx.arc(px + pipeW/2, py + pipeHeight/2, pipeW/4, 0, Math.PI * 2);
+                // Left Ear
+                pipeCtx.arc(px + pipeW/2 - pipeW/5, py + pipeHeight/2 - pipeW/5, pipeW/8, 0, Math.PI * 2);
+                // Right Ear
+                pipeCtx.arc(px + pipeW/2 + pipeW/5, py + pipeHeight/2 - pipeW/5, pipeW/8, 0, Math.PI * 2);
+                pipeCtx.stroke();
+            }
+            pipeCtx.restore();
+            
+            // Draw glowing waveguide pressure wave overlays
+            pipeCtx.strokeStyle = "rgba(255, 0, 127, 0.6)";
+            pipeCtx.lineWidth = 2.5;
+            pipeCtx.shadowColor = "rgba(255, 0, 127, 0.5)";
+            pipeCtx.shadowBlur = 10;
+            
+            pipeCtx.beginPath();
             
             for (let x = 0; x < width; x++) {
                 let waveSum = 0;
