@@ -51,6 +51,7 @@ static const char* valve_names[] = {
     "Audion Grid-Leak",
     "12AX7 Preamp", 
     "EL84 Pentode", 
+    "Audion N-Tube Complement",
     "Class C Radio"
 };
 static int selected_valve = 0;
@@ -122,6 +123,14 @@ static inline float apply_valve_simulation(float input_sig, int valve_type) {
     } else if (valve_type == 9) {
         // EL84 Pentode
         return input_sig / sqrtf(1.0f + input_sig * input_sig);
+    } else if (valve_type == 10) {
+        // Audion N-Tube Complement: negative resistance secondary emission slope
+        float x = input_sig * 2.5f;
+        if (x > 0.2f && x < 1.2f) {
+            // Drop current within secondary emission region (negative slope)
+            return tanhf(0.2f * 2.5f) - 0.35f * (x - 0.2f);
+        }
+        return tanhf(x);
     } else {
         // Class C Radio
         if (input_sig > 0.4f) return 1.0f;
