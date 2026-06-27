@@ -777,6 +777,14 @@
                 document.getElementById("lbl-leslie-mix").innerText = `${Math.round(e.target.value * 100)}%`;
             });
 
+            // Polyphony Safety Cutoff: Automatically release node after 6.0 seconds to prevent hanging voices
+            const cutoffTimeout = setTimeout(() => {
+                stopNote(noteIndex);
+                // Remove visual active styling
+                const kIdx = noteIndex - 22;
+                if (keys[kIdx]) keys[kIdx].classList.remove("active");
+            }, 6000);
+
             activeNodes[noteIndex] = {
                 oscillators,
                 gains,
@@ -786,7 +794,8 @@
                 leslieLfo,
                 saturation: valveSaturation,
                 filter: pipeFilter,
-                delayNode
+                delayNode,
+                cutoffTimeout
             };
         }
 
@@ -804,6 +813,11 @@
             if (!activeNodes[noteIndex]) return;
             const node = activeNodes[noteIndex];
             
+            // Clear polyphony safety timer handle if note is stopped manually early
+            if (node.cutoffTimeout) {
+                clearTimeout(node.cutoffTimeout);
+            }
+
             // Fadeout
             const now = audioCtx.currentTime;
             node.gains.forEach(g => {
