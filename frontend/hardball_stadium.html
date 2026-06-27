@@ -424,7 +424,12 @@ Status: Press Pitch to begin.</div>
             <div style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--glow-gold); font-weight: bold; display: flex; align-items: center; gap: 8px;">
                 🎴 COLLECTED SPORTS CARDS DECK (<span id="deck-count">0</span> Cards Saved)
             </div>
-            <div id="drawer-toggle-icon" style="color: #94a3b8; font-size: 10px; font-family: 'Share Tech Mono', monospace;">▲ EXPAND DECK Tray</div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="exportDeckToFile(); event.stopPropagation();" style="background: #1e293b; border: 1px solid #ffc400; color: #ffc400; font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;">📤 EXPORT ALBUM</button>
+                <button onclick="document.getElementById('import-file-input').click(); event.stopPropagation();" style="background: #1e293b; border: 1px solid var(--glow-cyan); color: var(--glow-cyan); font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;">📥 IMPORT ALBUM</button>
+                <input type="file" id="import-file-input" onchange="importDeckFromFile(event)" style="display: none;">
+                <div id="drawer-toggle-icon" style="color: #94a3b8; font-size: 10px; font-family: 'Share Tech Mono', monospace; margin-left: 10px;">▲ EXPAND DECK Tray</div>
+            </div>
         </div>
         <div id="deck-list-container" style="flex: 1; padding: 12px 30px; display: flex; gap: 16px; overflow-x: auto; align-items: center; background: rgba(1, 2, 5, 0.4);">
             <div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>
@@ -2411,6 +2416,62 @@ Status: Press Pitch to begin.</div>
             loadDeckList();
 
             if (!drawerExpanded) toggleDeckDrawer();
+        }
+
+        // Export entire album collection to a portable JSON file
+        function exportDeckToFile() {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            if (savedDeck.length === 0) {
+                alert("Your album is empty! Synthesize and save a card first before exporting.");
+                return;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedDeck, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "tsfi_hardball_sports_deck.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            logEvent("📤 Exported sports album JSON file successfully!");
+        }
+
+        // Import album file from disk and append to deck collection
+        function importDeckFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedDeck = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedDeck)) {
+                        alert("Invalid file format. Album must be a JSON array of cards.");
+                        return;
+                    }
+
+                    let savedDeck = [];
+                    try {
+                        const stored = localStorage.getItem("tsfi_hardball_deck");
+                        if (stored) savedDeck = JSON.parse(stored);
+                    } catch(e){}
+
+                    // Append and save to localStorage
+                    savedDeck = savedDeck.concat(importedDeck);
+                    localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+                    logEvent(`📥 Imported ${importedDeck.length} cards into your album deck collection!`);
+                    loadDeckList();
+                    if (!drawerExpanded) toggleDeckDrawer();
+                } catch(err) {
+                    alert("Failed to parse JSON file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
         }
 
         function loadDeckList() {
