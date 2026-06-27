@@ -2265,6 +2265,41 @@ Status: Press Pitch to begin.</div>
                 }
             }
 
+            // Render real-time visual tracker matrix HUD overlay
+            ctx.save();
+            ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.3)";
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(15, 15, 140, 100);
+            ctx.strokeRect(15, 15, 140, 100);
+
+            ctx.font = "bold 9px 'Share Tech Mono', monospace";
+            ctx.fillStyle = "#ffc400";
+            ctx.fillText("TRACKER MATRIX MONITOR", 22, 28);
+
+            ctx.font = "8px 'Share Tech Mono', monospace";
+            ctx.fillStyle = "#475569";
+            ctx.fillText("RW NOTE INST EFF", 20, 42);
+
+            for (let i = -2; i <= 2; i++) {
+                let idx = (noteIndex + i + musicSequence.length - 1) % musicSequence.length;
+                let rowNum = idx.toString(16).toUpperCase().padStart(2, '0');
+                let noteName = getTrackerNoteLabel(musicSequence[idx]);
+                let isCurrent = (i === 0);
+                
+                ctx.fillStyle = isCurrent ? "rgba(0, 240, 255, 0.95)" : "rgba(71, 85, 105, 0.8)";
+                if (isCurrent) {
+                    ctx.fillStyle = "#39ff14"; // Lime highlight for active note row
+                    ctx.font = "bold 9px 'Share Tech Mono', monospace";
+                } else {
+                    ctx.font = "8px 'Share Tech Mono', monospace";
+                }
+                
+                let yOffset = 56 + i * 11;
+                ctx.fillText(`${rowNum}  ${noteName.padEnd(5, ' ')}  01   ARP`, 20, yOffset);
+            }
+            ctx.restore();
+
             requestAnimationFrame(loop);
         }
 
