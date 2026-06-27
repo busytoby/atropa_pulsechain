@@ -210,23 +210,25 @@ def save_resolved(swap):
 # Base stablecoin addresses (lowercased) - Only real pegged stablecoins from bridge
 USDC_ADDR = "0x15D38573d2feeb82e7ad5187aB8c1D52810B1f07".lower()
 USDT_ADDR = "0x0Cb81b54A05e0547D2d08C4A9E273a7d4C72B9eB".lower()
+DAI_ADDR = "0xefd766ccb38eaf1dfd701853bfce31359239f305".lower()
 
 # Known token prices in USD (stored with metadata)
 price_cache = {
     USDC_ADDR: {"price": 1.0, "symbol": "USDC", "name": "USD Coin from Ethereum"},
-    USDT_ADDR: {"price": 1.0, "symbol": "USDT", "name": "Tether USD"}
+    USDT_ADDR: {"price": 1.0, "symbol": "USDT", "name": "Tether USD"},
+    DAI_ADDR: {"price": 1.0, "symbol": "DAI", "name": "Dai Stablecoin from Ethereum"}
 }
 
 def get_cached_price(address):
     addr_lower = address.lower()
-    if addr_lower in [USDC_ADDR, USDT_ADDR]:
+    if addr_lower in [USDC_ADDR, USDT_ADDR, DAI_ADDR]:
         return 1.0
     entry = price_cache.get(addr_lower)
     if entry is None:
         return None
     if isinstance(entry, dict):
         symbol = entry.get("symbol", "")
-        if symbol.upper() in ["USDC", "USDT"] and addr_lower in [USDC_ADDR, USDT_ADDR]:
+        if symbol.upper() in ["USDC", "USDT", "DAI"] and addr_lower in [USDC_ADDR, USDT_ADDR, DAI_ADDR]:
             return 1.0
         p = entry.get("price")
     else:
