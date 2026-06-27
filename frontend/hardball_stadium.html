@@ -1373,6 +1373,26 @@ Status: Press Pitch to begin.</div>
                             logEvent("⚾ Single! Base hit down the shortstop line!");
                         }
                         playSidSound("hit");
+
+                        // Spawn 25 explosion particles centered on home plate projections
+                        let pHome = project({ x: ballX, y: ballY, z: ballZ });
+                        if (pHome) {
+                            window.hitExplosions = [];
+                            for (let i = 0; i < 25; i++) {
+                                let expAngle = Math.random() * Math.PI * 2;
+                                let expVel = 2.0 + Math.random() * 5.0;
+                                window.hitExplosions.push({
+                                    x: pHome.x,
+                                    y: pHome.y,
+                                    vx: Math.cos(expAngle) * expVel,
+                                    vy: Math.sin(expAngle) * expVel - 1.0, // gravity drift bias
+                                    size: 4.0 + Math.random() * 8.0,
+                                    alpha: 1.0,
+                                    color: (currentPitchType === "fireball") ? "rgba(255, 69, 0, 0.85)" : 
+                                           (currentPitchType === "corkscrew" ? "rgba(0, 240, 255, 0.85)" : "rgba(255, 255, 255, 0.85)")
+                                });
+                            }
+                        }
                     } else {
                         if (Math.abs(ballX) < 12 && ballY > -10 && ballY < 45) {
                             strikes++;
@@ -1651,20 +1671,100 @@ Status: Press Pitch to begin.</div>
                 }
             }
 
-            // Draw baseball ball
+            // Draw baseball ball with dynamic electric sparks, fire trails, and hit contact explosions
             if (ballActive) {
                 let p = project({ x: ballX, y: ballY, z: ballZ });
                 if (p) {
                     let rad = 6 * (600 / p.depth);
+                    
+                    // Render fire trail particles for Fireballs
+                    if (currentPitchType === "fireball") {
+                        if (!window.fireParticles) window.fireParticles = [];
+                        window.fireParticles.push({
+                            x: p.x + (Math.random() * 8 - 4),
+                            y: p.y + (Math.random() * 8 - 4),
+                            alpha: 1.0,
+                            size: rad * (1.2 + Math.random() * 0.8)
+                        });
+                    }
+
+                    // Update and draw fire particles
+                    if (window.fireParticles) {
+                        ctx.save();
+                        window.fireParticles.forEach((fp, index) => {
+                            ctx.fillStyle = `rgba(255, 69, 0, ${fp.alpha})`;
+                            ctx.shadowBlur = 15;
+                            ctx.shadowColor = "#ff3700";
+                            ctx.beginPath();
+                            ctx.arc(fp.x, fp.y, fp.size, 0, Math.PI * 2);
+                            ctx.fill();
+                            fp.alpha -= 0.08;
+                            fp.size *= 0.95;
+                            if (fp.alpha <= 0) window.fireParticles.splice(index, 1);
+                        });
+                        ctx.restore();
+                    }
+
+                    // Render electric lightning bolt sparks for Corkscrew or Slider
+                    if (currentPitchType === "corkscrew" || currentPitchType === "slider") {
+                        ctx.save();
+                        ctx.strokeStyle = "rgba(0, 240, 255, 0.85)";
+                        ctx.lineWidth = 2.0;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = "#00f0ff";
+                        ctx.beginPath();
+                        for (let s = 0; s < 4; s++) {
+                            let len = rad * 4;
+                            let angle = Math.random() * Math.PI * 2;
+                            let midX = p.x + Math.cos(angle) * (len * 0.5) + (Math.random() * 6 - 3);
+                            let midY = p.y + Math.sin(angle) * (len * 0.5) + (Math.random() * 6 - 3);
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(midX, midY);
+                            ctx.lineTo(p.x + Math.cos(angle) * len, p.y + Math.sin(angle) * len);
+                        }
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Base rendering of the ball
                     ctx.save();
-                    ctx.fillStyle = "#ffffff";
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = "#ffffff";
+                    if (currentPitchType === "fireball") {
+                        ctx.fillStyle = "#ffaa00";
+                        ctx.shadowColor = "#ff3700";
+                    } else if (currentPitchType === "corkscrew") {
+                        ctx.fillStyle = "#00ffff";
+                        ctx.shadowColor = "#00f0ff";
+                    } else {
+                        ctx.fillStyle = "#ffffff";
+                        ctx.shadowColor = "#ffffff";
+                    }
+                    ctx.shadowBlur = 18;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.restore();
                 }
+            }
+
+            // Render hit explosion shockwave particles
+            if (window.hitExplosions) {
+                ctx.save();
+                window.hitExplosions.forEach((exp, index) => {
+                    ctx.fillStyle = exp.color;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = exp.color;
+                    ctx.beginPath();
+                    ctx.arc(exp.x, exp.y, exp.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    exp.x += exp.vx;
+                    exp.y += exp.vy;
+                    exp.size *= 0.96;
+                    exp.alpha -= 0.04;
+                    if (exp.size <= 0.5 || exp.alpha <= 0) {
+                        window.hitExplosions.splice(index, 1);
+                    }
+                });
+                ctx.restore();
             }
 
             if (typeof updateRain === "function") updateRain();
