@@ -774,6 +774,13 @@ static void* audio_mixer_thread(void *arg) {
                 .damping = 0.996f
             };
             
+            float synth_out = tb303_s4 * tb303_vca_env * 0.38f;
+            
+            // Map viewport boost & SSAA to drive valve saturation
+            float drive = 1.0f;
+            if (opt_viewport_boost) drive += 1.3f;
+            if (opt_ssaa) drive += 0.8f;
+
             // Route the combined mixed output through the metal resonator pipe
             float pipe_input = (synth_out + tonewheel_out) * drive;
             float resonant_out = process_metal_pipe(&organ_cabinet_pipe, pipe_input * 0.15f, 1.0f);
