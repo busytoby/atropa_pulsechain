@@ -22,9 +22,10 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Outfit', sans-serif;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             background-image: radial-gradient(circle at 50% 30%, rgba(10, 25, 60, 0.4) 0%, transparent 80%);
         }
 
@@ -32,15 +33,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 32px;
+            padding: 12px 32px;
             background: rgba(3, 5, 11, 0.95);
             border-bottom: 1px solid #141d33;
             backdrop-filter: blur(20px);
             z-index: 10;
+            height: 50px;
+            box-sizing: border-box;
         }
 
         .logo {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             letter-spacing: 2px;
             background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
@@ -52,39 +55,43 @@
         .status {
             font-family: 'Share Tech Mono', monospace;
             color: var(--glow-green);
-            font-size: 12px;
+            font-size: 11px;
             text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
         }
 
         #main-container {
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 1fr 450px;
             flex: 1;
-            gap: 24px;
-            padding: 24px;
+            gap: 16px;
+            padding: 16px;
             box-sizing: border-box;
+            height: calc(100vh - 50px);
+            overflow: hidden;
         }
 
         .panel {
             background: var(--panel-bg);
             border: 1px solid #1a2744;
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 14px;
             backdrop-filter: blur(20px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            overflow-y: auto;
+            max-height: 100%;
         }
 
         .panel-title {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             color: #94a3b8;
             text-transform: uppercase;
             letter-spacing: 2px;
             border-bottom: 1px solid #202e4d;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
             display: flex;
             justify-content: space-between;
         }
@@ -97,9 +104,10 @@
         /* 3D Vis Columns */
         .vis-container {
             display: grid;
-            grid-template-rows: 1.2fr 1fr;
+            grid-template-rows: 1fr 1fr;
             gap: 16px;
             height: 100%;
+            overflow: hidden;
         }
 
         .canvas-card {
@@ -108,6 +116,7 @@
             border-radius: 12px;
             overflow: hidden;
             position: relative;
+            height: 100%;
         }
 
         .canvas-label {
