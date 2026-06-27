@@ -1560,6 +1560,50 @@
             keyboard.appendChild(key);
         }
 
+        // --- Physical Keyboard Mapping ---
+        const physicalKeys = [
+            "a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j", "k", "o", "l", "p", ";", "'", "z", "x", "c", "v",
+            "q", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "[", "]", "\\", "r", "t", "y", "u", "i", "o", "p"
+        ];
+        
+        const activePhysicalNotes = {};
+
+        window.addEventListener("keydown", (e) => {
+            if (e.repeat) return;
+            // Ignore if user is entering a value into the Wheel ID input
+            if (document.activeElement.tagName === "INPUT") return;
+            
+            const keyChar = e.key.toLowerCase();
+            const keyIndex = physicalKeys.indexOf(keyChar);
+            if (keyIndex !== -1) {
+                const targetNoteIdx = 22 + keyIndex;
+                if (targetNoteIdx < 66) {
+                    const keyElements = keyboard.querySelectorAll(".key");
+                    const element = keyElements[keyIndex];
+                    if (element) {
+                        element.classList.add("active");
+                        playNote(targetNoteIdx);
+                        activePhysicalNotes[keyChar] = targetNoteIdx;
+                    }
+                }
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            const keyChar = e.key.toLowerCase();
+            if (activePhysicalNotes[keyChar] !== undefined) {
+                const targetNoteIdx = activePhysicalNotes[keyChar];
+                const keyIndex = targetNoteIdx - 22;
+                const keyElements = keyboard.querySelectorAll(".key");
+                const element = keyElements[keyIndex];
+                if (element) {
+                    element.classList.remove("active");
+                    stopNote(targetNoteIdx);
+                }
+                delete activePhysicalNotes[keyChar];
+            }
+        });
+
         // --- 4D TESSERACT ARPEGGIATOR ENGINE ---
         let arpMode = "off";
         let arpSpeedBpm = 120;
