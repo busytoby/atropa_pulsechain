@@ -641,15 +641,26 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
     if is_nonukes:
         print(f"🎯 Target Swap: Swapped in NoNukes Pool ({nonukes_pools[pool_address.lower()]['target_group']})")
         
-    print(f"\n------------------------------------------------------------")
-    print(f"🌐 Swap Version: {version}")
-    print(f"🔗 Tx Hash: {tx_hash}")
-    print(f"🏫 Pool Address: {pool_address}")
-    print(f"➡️ Sent: {sent_amt:.6f} {sent_token['symbol']} ({sent_token['name']}) [{sent_token['address']}]")
-    print(f"⬅️ Recv: {recv_amt:.6f} {recv_token['symbol']} ({recv_token['name']}) [{recv_token['address']}]")
+    is_atropa = (sent_token["address"].lower() == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or 
+                 recv_token["address"].lower() == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or 
+                 sent_token["symbol"].upper() == "ATROPA" or 
+                 recv_token["symbol"].upper() == "ATROPA")
+                 
+    should_print = (usd_val is not None and usd_val >= 20.0) or is_atropa
     
+    if should_print:
+        print(f"\n------------------------------------------------------------")
+        print(f"🌐 Swap Version: {version}")
+        print(f"🔗 Tx Hash: {tx_hash}")
+        print(f"🏫 Pool Address: {pool_address}")
+        print(f"➡️ Sent: {sent_amt:.6f} {sent_token['symbol']} ({sent_token['name']}) [{sent_token['address']}]")
+        print(f"⬅️ Recv: {recv_amt:.6f} {recv_token['symbol']} ({recv_token['name']}) [{recv_token['address']}]")
+        if usd_val is not None:
+            print(f"💵 Swap Value: ${usd_val:.4f} USD")
+        else:
+            print(f"⚠️ USD Value: Unresolved (no price path to USD)")
+            
     if usd_val is not None:
-        print(f"💵 Swap Value: ${usd_val:.4f} USD")
         swap_obj = {
             "tx_hash": tx_hash,
             "pool_address": pool_address,
@@ -667,7 +678,6 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         # Since we resolved a new price, try resolving pending swaps
         resolve_retroactive_prices()
     else:
-        print(f"⚠️ USD Value: Unresolved (no price path to USD)")
         # Store in unresolved table
         unresolved = load_unresolved()
         swap_obj = {

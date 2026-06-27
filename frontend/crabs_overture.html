@@ -464,38 +464,48 @@
                     targetY = this.targetWanderY || this.y;
                 }
 
-                // Calculate steer velocities towards targets
-                let steerX = (targetX - this.x) * 0.05;
-                let steerY = (targetY - this.y) * 0.05;
+                // Authentic Crab Sideways walking: strict horizontal walking, no vertical floating or diagonal slide
+                let walkSpeed = 1.2;
+                
+                // Keep drummers strictly stationed next to instruments
+                if (isDrummer) {
+                    let diffX = targetX - this.x;
+                    if (Math.abs(diffX) > 2) {
+                        this.x += Math.sign(diffX) * walkSpeed * speedFactor;
+                    }
+                    // Snap strictly to their vertical station line
+                    this.y = targetY;
+                } else {
+                    // Singers walk sideways to targetX, and only adjust target Y on beat
+                    let diffX = targetX - this.x;
+                    if (Math.abs(diffX) > 2) {
+                        this.x += Math.sign(diffX) * walkSpeed * speedFactor;
+                    }
+                    let diffY = targetY - this.y;
+                    if (Math.abs(diffY) > 2) {
+                        this.y += Math.sign(diffY) * 0.4 * speedFactor;
+                    }
+                }
 
                 // Collaborative Flocking Repulsion (Avoid Bumping)
-                let repX = 0, repY = 0;
                 crabsList.forEach((other, oIdx) => {
                     if (oIdx === index) return;
                     let dx = this.x - other.x;
-                    let dy = this.y - other.y;
-                    let dist = Math.hypot(dx, dy);
-                    let minDist = (this.size + other.size) * 1.5;
+                    let dist = Math.abs(dx);
+                    let minDist = (this.size + other.size) * 1.2;
                     if (dist < minDist && dist > 0) {
-                        // Repel proportional to closeness
-                        let force = (minDist - dist) / minDist;
-                        repX += (dx / dist) * force * 3.5;
-                        repY += (dy / dist) * force * 1.5;
+                        // Nudge sideways only
+                        this.x += Math.sign(dx) * 0.8 * speedFactor;
                     }
                 });
 
-                // Apply update vectors
-                this.vx = (this.vx * 0.8) + (steerX + repX) * 0.2;
-                this.vy = (this.vy * 0.8) + (steerY + repY) * 0.2;
+                // Proprioceptive boundary constraints
+                if (this.x < 30) this.x = 30;
+                if (this.x > 450) this.x = 450;
+                if (this.y < 180) this.y = 180;
+                if (this.y > 330) this.y = 330;
 
-                this.x += this.vx * speedFactor;
-                this.y += this.vy * speedFactor;
 
-                // Proprioceptive boundary warnings (steer away instead of solid bounce)
-                if (this.x < 30) { this.x = 30; this.vx = Math.abs(this.vx) * 0.8; }
-                if (this.x > 450) { this.x = 450; this.vx = -Math.abs(this.vx) * 0.8; }
-                if (this.y < 180) { this.y = 180; this.vy = Math.abs(this.vy) * 0.8; }
-                if (this.y > 330) { this.y = 330; this.vy = -Math.abs(this.vy) * 0.8; }
 
                 // Sync pinches to beats
                 this.pinchL = Math.max(0, this.pinchL - 0.1);

@@ -10,11 +10,11 @@ from PIL import Image, ImageDraw
 
 # --- Configuration ---
 SAMPLE_RATE = 44100
-DURATION_SECS = 390 # 6 and a half minutes
+DURATION_SECS = 120 # 2 minutes
 FPS = 30
 WIDTH = 1280
 HEIGHT = 720
-TOTAL_FRAMES = DURATION_SECS * FPS # 11700 frames
+TOTAL_FRAMES = DURATION_SECS * FPS # 3600 frames
 
 # 22-EDO Scale frequencies (Root C3 = 130.81 Hz)
 ROOT_FREQ = 130.81
@@ -186,35 +186,36 @@ class RenderCrab:
             target_x = self.target_wander_x
             target_y = self.target_wander_y
 
-        # Steering vector
-        steer_x = (target_x - self.x) * 0.05
-        steer_y = (target_y - self.y) * 0.05
+        # Strict sideways walking: horizontal increments only
+        walk_speed = 2.4
+        if is_drummer:
+            diff_x = target_x - self.x
+            if abs(diff_x) > 4:
+                self.x += math.copysign(walk_speed, diff_x)
+            self.y = target_y
+        else:
+            diff_x = target_x - self.x
+            if abs(diff_x) > 4:
+                self.x += math.copysign(walk_speed, diff_x)
+            diff_y = target_y - self.y
+            if abs(diff_y) > 4:
+                self.y += math.copysign(0.8, diff_y)
 
-        # Avoid collision repulsion
-        rep_x, rep_y = 0.0, 0.0
+        # Collision repulsion sideways only
         for idx, other in enumerate(crabs_list):
             if idx == index:
                 continue
             dx = self.x - other.x
-            dy = self.y - other.y
-            dist = math.hypot(dx, dy)
-            min_dist = (self.size + other.size) * 1.5
+            dist = abs(dx)
+            min_dist = (self.size + other.size) * 1.2
             if dist < min_dist and dist > 0:
-                force = (min_dist - dist) / min_dist
-                rep_x += (dx / dist) * force * 4.0
-                rep_y += (dy / dist) * force * 2.0
+                self.x += math.copysign(1.6, dx)
 
-        # Proprioceptive boundaries
-        self.vx = (self.vx * 0.8) + (steer_x + rep_x) * 0.2
-        self.vy = (self.vy * 0.8) + (steer_y + rep_y) * 0.2
-        
-        self.x += self.vx
-        self.y += self.vy
-        
-        if self.x < 100: self.x = 100; self.vx = abs(self.vx) * 0.8
-        if self.x > WIDTH - 100: self.x = WIDTH - 100; self.vx = -abs(self.vx) * 0.8
-        if self.y < 380: self.y = 380; self.vy = abs(self.vy) * 0.8
-        if self.y > HEIGHT - 80: self.y = HEIGHT - 80; self.vy = -abs(self.vy) * 0.8
+        # Constraints Snap
+        if self.x < 100: self.x = 100
+        if self.x > WIDTH - 100: self.x = WIDTH - 100
+        if self.y < 380: self.y = 380
+        if self.y > HEIGHT - 80: self.y = HEIGHT - 80
         
         self.pinch_l = max(0.0, self.pinch_l - 0.1)
         self.pinch_r = max(0.0, self.pinch_r - 0.1)
@@ -315,25 +316,45 @@ def main():
         # Update and draw crabs
         for idx, c in enumerate(crabs):
             c.update(is_beat, crabs, idx)
+            is_lobster = (idx == 1) # Make the lead synth crab a majestic red lobster!
+            
             # Legs
             for side in [-1, 1]:
-                for leg in range(3):
+                leg_count = 4 if is_lobster else 3
+                for leg in range(leg_count):
                     angle = 0.2 + leg * 0.3 + math.sin(frame_idx * 0.15 + c.x + leg) * 0.15
                     lx = c.x + side * (c.size * 1.2)
                     ly = c.y + c.size * 0.8
                     draw.line([(c.x + side * (c.size/2), c.y), (lx, ly)], fill=c.color, width=int(c.size/5))
             
+            # Tail (if lobster)
+            if is_lobster:
+                # Elongated segmented tail extending backwards
+                for s_idx in range(4):
+                    seg_y = c.y + c.size * 0.6 + s_idx * (c.size * 0.4)
+                    seg_w = c.size * (1.0 - s_idx * 0.15)
+                    draw.ellipse([c.x - seg_w, seg_y - c.size * 0.3, c.x + seg_w, seg_y + c.size * 0.3], fill=c.color)
+                # Tail Fan
+                fan_y = c.y + c.size * 2.2
+                draw.polygon([
+                    (c.x, c.y + c.size * 1.8),
+                    (c.x - c.size * 1.2, fan_y),
+                    (c.x + c.size * 1.2, fan_y)
+                ], fill=c.color)
+            
             # Shell Body
-            draw.ellipse([c.x - c.size, c.y - int(c.size * 0.7), c.x + c.size, c.y + int(c.size * 0.7)], fill=c.color)
+            body_h = int(c.size * 1.2) if is_lobster else int(c.size * 0.7)
+            draw.ellipse([c.x - c.size, c.y - body_h, c.x + c.size, c.y + int(c.size * 0.7)], fill=c.color)
             
             # Claws
             cl_y = c.y - int(c.size * 0.8) - int(c.pinch_l * c.size * 0.3)
             draw.line([(c.x - int(c.size * 0.6), c.y), (c.x - c.size, cl_y)], fill=c.color, width=int(c.size/5))
-            draw.ellipse([c.x - c.size - 6, cl_y - 6, c.x - c.size + 6, cl_y + 6], fill=c.color)
+            claw_sz = 10 if is_lobster else 6
+            draw.ellipse([c.x - c.size - claw_sz, cl_y - claw_sz, c.x - c.size + claw_sz, cl_y + claw_sz], fill=c.color)
             
             cr_y = c.y - int(c.size * 0.8) - int(c.pinch_r * c.size * 0.3)
             draw.line([(c.x + int(c.size * 0.6), c.y), (c.x + c.size, cr_y)], fill=c.color, width=int(c.size/5))
-            draw.ellipse([c.x + c.size - 6, cr_y - 6, c.x + c.size + 6, cr_y + 6], fill=c.color)
+            draw.ellipse([c.x + c.size - claw_sz, cr_y - claw_sz, c.x + c.size + claw_sz, cr_y + claw_sz], fill=c.color)
             
             # Eyes
             draw.ellipse([c.x - int(c.size * 0.5), c.y - int(c.size * 0.8), c.x - int(c.size * 0.2), c.y - int(c.size * 0.5)], fill=(255,255,255))
@@ -343,7 +364,7 @@ def main():
             
         # Draw dynamic HUD text (displays active emotion & progress)
         draw.text((20, 20), f"CRABS OVERTURE - SECTION: {section['name'].upper()}", fill=(255, 255, 255))
-        draw.text((20, 40), f"TIME: {int(time_secs//60):02}:{int(time_secs%60):02} / 06:30 | BPM: {bpm}", fill=(0, 242, 254))
+        draw.text((20, 40), f"TIME: {int(time_secs//60):02}:{int(time_secs%60):02} / 02:00 | BPM: {section['bpm']}", fill=(0, 242, 254))
 
         # CRT Scanlines overlay
         for y in range(0, HEIGHT, 4):
