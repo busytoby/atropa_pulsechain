@@ -1692,8 +1692,10 @@ Status: Press Pitch to begin.</div>
                     runnerCoords.y = -90;
                     runnerCoords.z = startPos.z + (endPos.z - startPos.z) * t;
                 }
-            }
-
+            } else if (ballActive && ballZ < 50 && ballZ > -130) {
+                // Hitting zone camera action zoom: glide down closer to home plate (distance = 550) during slow-mo
+                let zoomTargetDist = 550 + (ballZ - (-100)); // Dynamic zoom tracking ball depth
+                camera.distance = camera.distance + (zoomTargetDist - camera.distance) * 0.12;
             } else {
                 // Ease camera back to default/preset coordinates when play concludes
                 const currentView = document.getElementById("camera-view").value;
