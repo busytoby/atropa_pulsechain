@@ -262,6 +262,10 @@
 
     <header>
         <div class="logo">Hammond H111 Organ Hypervisor</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="demo-track-info" style="font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--glow-magenta);">DEMO: INACTIVE</span>
+            <button id="btn-start-demo" style="background: rgba(255, 0, 127, 0.15); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 4px 10px; border-radius: 4px; cursor: pointer; text-shadow: 0 0 6px var(--glow-magenta);">START 68-MIN MELODY DEMO</button>
+        </div>
         <div class="status">AUDIO ENGINE: READY</div>
     </header>
 
@@ -1892,9 +1896,180 @@
             pipeCtx.shadowBlur = 0; // reset
             
             requestAnimationFrame(renderLoop);
+            requestAnimationFrame(renderLoop);
         }
         
         renderLoop();
+
+        // --- 68-MINUTE CLASSICAL/DISCO GENERATOR ENGINE ---
+        // Staged melody motifs (Classical & Disco lines) mapped to microtonal EDO-22 notes
+        const stagedMelodies = [
+            // Melody 1: Bach Toccata theme
+            [34, 33, 34, 30, 26, 22, 26, 30],
+            // Melody 2: Beethoven's Ode to Joy (Disco pulse)
+            [44, 44, 45, 47, 47, 45, 44, 42, 40, 40, 42, 44, 44, 42, 42],
+            // Melody 3: Mozart Symphony No. 40
+            [40, 39, 39, 40, 39, 39, 40, 35, 34, 30, 26, 22],
+            // Melody 4: Donna Summer Disco Bassline octave jumps
+            [22, 44, 22, 44, 26, 48, 26, 48],
+            // Melody 5: Vivaldi Spring Arpeggiations
+            [44, 47, 44, 47, 44, 40, 44, 47, 51, 47, 51, 47],
+            // Melody 6: ABBA Gimme Gimme Synth hook
+            [34, 38, 41, 45, 41, 38, 34, 38, 41, 45, 41, 38],
+            // Melody 7: Beethoven Fifth Motif
+            [39, 39, 39, 31, 37, 37, 37, 29],
+            // Melody 8: Giorgio Moroder Octave pulse
+            [30, 52, 30, 52, 34, 56, 34, 56],
+            // Melody 9: Handel Hallelujah
+            [44, 39, 40, 44, 39, 40, 44, 39, 40],
+            // Melody 10: Chic Good Times Disco Funk line
+            [22, 26, 30, 34, 30, 26, 22, 26, 30, 34, 30, 26],
+            // Melody 11: Brahms Lullaby
+            [40, 40, 44, 40, 40, 44, 40, 44, 47, 45, 44, 42]
+        ];
+
+        let demoInterval = null;
+        let isDemoPlaying = false;
+        let demoTimeElapsed = 0; // seconds
+        
+        // Zener-Accumulator State trackers to avoid repetition
+        let zenerLimit = 12; // Max measures before automatic shift
+        let zenerAccumulator = 0; // Accumulates active beat duration
+        let currentMelodyIndex = 0;
+        let measureCounter = 0;
+        let songStructureStep = 0; // 0 = Verse, 1 = Chorus, 2 = Bridge
+        
+        const btnDemo = document.getElementById("btn-start-demo");
+        const txtDemoInfo = document.getElementById("demo-track-info");
+
+        function toggleMelodyDemo() {
+            if (isDemoPlaying) {
+                stopMelodyDemo();
+            } else {
+                startMelodyDemo();
+            }
+        }
+
+        function startMelodyDemo() {
+            initAudio();
+            isDemoPlaying = true;
+            btnDemo.innerText = "STOP DEMO";
+            btnDemo.style.background = "rgba(0, 240, 255, 0.2)";
+            btnDemo.style.borderColor = "var(--glow-cyan)";
+            btnDemo.style.color = "var(--glow-cyan)";
+            
+            // Set synthesis envelope settings for melody projection
+            document.getElementById("env-attack").value = "0.05";
+            document.getElementById("env-decay").value = "0.20";
+            document.getElementById("env-sustain").value = "0.60";
+            document.getElementById("env-release").value = "0.30";
+
+            let step = 0;
+            demoInterval = setInterval(() => {
+                demoTimeElapsed += 0.25; // 4 beats per second (120 BPM)
+                
+                // Track visual timers
+                const minutes = Math.floor(demoTimeElapsed / 60);
+                const seconds = Math.floor(demoTimeElapsed % 60);
+                
+                // Accumulator checks
+                zenerAccumulator += 0.25;
+                if (zenerAccumulator >= 8.0) { // 8 beats = 2 measures at 4/4
+                    zenerAccumulator = 0;
+                    measureCounter++;
+                    
+                    // Zener trigger: Force melody and tempo shift every 12 measures
+                    if (measureCounter >= zenerLimit) {
+                        measureCounter = 0;
+                        currentMelodyIndex = (currentMelodyIndex + 1) % stagedMelodies.length;
+                        
+                        // Shift dynamic verse / chorus length randomly between 2-6 measures
+                        zenerLimit = 2 + Math.floor(Math.random() * 5); 
+                        songStructureStep = (songStructureStep + 1) % 3;
+                    }
+                }
+
+                const currentMotif = stagedMelodies[currentMelodyIndex];
+                const noteToPlay = currentMotif[step % currentMotif.length];
+                
+                // Dynamic verse/chorus structure transposition
+                let pitchShift = 0;
+                if (songStructureStep === 1) pitchShift = 5;  // Chorus shifted up perfect 4th
+                if (songStructureStep === 2) pitchShift = -3; // Bridge shifted down minor 3rd
+                
+                playNote(noteToPlay + pitchShift);
+                
+                // Simulated drum track overlay (synthetic noise snare & bass kick)
+                triggerSynthDrumPattern(step);
+
+                txtDemoInfo.innerText = `DEMO: ${minutes}m ${seconds}s | M${currentMelodyIndex + 1} | STRUC: ${songStructureStep === 0 ? "VERSE" : (songStructureStep === 1 ? "CHORUS" : "BRIDGE")} | MEASURE: ${measureCounter}/${zenerLimit}`;
+
+                step++;
+            }, 250);
+        }
+
+        function stopMelodyDemo() {
+            isDemoPlaying = false;
+            clearInterval(demoInterval);
+            demoInterval = null;
+            btnDemo.innerText = "START 68-MIN MELODY DEMO";
+            btnDemo.style.background = "rgba(255, 0, 127, 0.15)";
+            btnDemo.style.borderColor = "var(--glow-magenta)";
+            btnDemo.style.color = "var(--glow-magenta)";
+            txtDemoInfo.innerText = "DEMO: INACTIVE";
+            
+            // stop all active notes
+            Object.keys(activeNodes).forEach(note => {
+                stopNote(parseInt(note));
+            });
+        }
+
+        function triggerSynthDrumPattern(step) {
+            if (!audioCtx) return;
+            
+            // Simple synthesized Kick Drum on beat 1 and 3
+            if (step % 4 === 0) {
+                const kickOsc = audioCtx.createOscillator();
+                const kickGain = audioCtx.createGain();
+                kickOsc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                kickOsc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                kickGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                kickGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                kickOsc.connect(kickGain);
+                kickGain.connect(mainVolume);
+                kickOsc.start();
+                kickOsc.stop(audioCtx.currentTime + 0.16);
+            }
+            
+            // Simple synthesized snare noise on beat 2 and 4
+            if (step % 4 === 2) {
+                const bufferSize = audioCtx.sampleRate * 0.12;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noiseNode = audioCtx.createBufferSource();
+                noiseNode.buffer = buffer;
+                
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = "bandpass";
+                noiseFilter.frequency.value = 1000;
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                
+                noiseNode.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(mainVolume);
+                
+                noiseNode.start();
+                noiseNode.stop(audioCtx.currentTime + 0.12);
+            }
+        }
+
+        btnDemo.addEventListener("click", toggleMelodyDemo);
     </script>
 </body>
 </html>
