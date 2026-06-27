@@ -1420,27 +1420,31 @@ Status: Press Pitch to begin.</div>
 
                 if (ballZ <= -120) {
                     ballActive = false;
-                    // Collision check
-                    if (batSwinging && Math.abs(ballX) < 18 && Math.abs(ballY - 15) < 18) {
+                    // Collision check evaluating exact swing angle timing alignment (delta to PI/2)
+                    let swingDelta = Math.abs(batSwingAngle - Math.PI / 2);
+                    let isContact = batSwinging && swingDelta < 0.65 && Math.abs(ballX) < 22;
+
+                    if (isContact) {
                         strikes = 0;
                         balls = 0;
                         runnerActive = true;
                         runnerProgress = 0.0;
                         
-                        // Determine random hit direction/velocity
-                        let hitPower = Math.random();
                         let hitResult = "SINGLE";
-                        if (hitPower > 0.75) {
+                        if (swingDelta < 0.12) {
+                            // Perfect swing timing alignment
                             scoreHome++;
                             hitResult = "HOME RUN!";
-                            logEvent("💥 HIT! Ball crunched into deep field! HOME RUN!");
+                            logEvent(`💥 PERFECT HIT! Swing Delta: ${swingDelta.toFixed(3)} rad. HOME RUN!`);
                             runnerProgress = 3.0; // Instantly runs all bases
-                        } else if (hitPower > 0.35) {
+                        } else if (swingDelta < 0.32) {
+                            // Good timing
                             hitResult = "DOUBLE!";
-                            logEvent("☄️ Double! Ball sliced into left-field gap. Runner advances to 2nd base!");
+                            logEvent(`☄️ Good Hit! Swing Delta: ${swingDelta.toFixed(3)} rad. Double to left-field gap.`);
                         } else {
+                            // Late/early swing alignment
                             hitResult = "SINGLE";
-                            logEvent("⚾ Single! Base hit down the shortstop line!");
+                            logEvent(`⚾ Contact! Swing Delta: ${swingDelta.toFixed(3)} rad. Sliced single down the line.`);
                         }
                         document.getElementById("sb-result").innerText = hitResult;
                         playSidSound("hit");
