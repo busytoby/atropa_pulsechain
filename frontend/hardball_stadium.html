@@ -846,6 +846,15 @@ Status: Press Pitch to begin.</div>
                 initAudio();
                 if (!audioCtx) return;
                 
+                // Read current time dilation factor
+                let factor = 1.0;
+                if (ballActive && ballZ < 50 && ballZ > -130) {
+                    let distToPlate = Math.abs(ballZ - (-100));
+                    if (distToPlate < 150) {
+                        factor = 0.25 + 0.75 * (distToPlate / 150);
+                    }
+                }
+
                 const now = audioCtx.currentTime;
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
@@ -853,57 +862,57 @@ Status: Press Pitch to begin.</div>
                 gainNode.connect(audioCtx.destination);
 
                 if (type === "pitch") {
-                    // High-pitch laser sweep
+                    // High-pitch laser sweep (pitch-shifted down in slow-mo)
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(880, now);
-                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.35);
+                    osc.frequency.setValueAtTime(880 * factor, now);
+                    osc.frequency.exponentialRampToValueAtTime(110 * factor, now + 0.35 / factor);
                     gainNode.gain.setValueAtTime(0.12, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.35);
+                    osc.stop(now + 0.35 / factor);
                 } else if (type === "swing") {
-                    // Triangle wind whoosh
+                    // Triangle wind whoosh (deepened wind noise)
                     osc.type = "triangle";
-                    osc.frequency.setValueAtTime(220, now);
-                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.22);
+                    osc.frequency.setValueAtTime(220 * factor, now);
+                    osc.frequency.exponentialRampToValueAtTime(80 * factor, now + 0.22 / factor);
                     gainNode.gain.setValueAtTime(0.25, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.22 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.22);
+                    osc.stop(now + 0.22 / factor);
                 } else if (type === "hit") {
                     // Sharp detuned triangle hit bip
                     osc.type = "triangle";
-                    osc.frequency.setValueAtTime(587, now); // D5
-                    osc.frequency.setValueAtTime(880, now + 0.05); // A5
+                    osc.frequency.setValueAtTime(587 * factor, now); 
+                    osc.frequency.setValueAtTime(880 * factor, now + 0.05 / factor); 
                     gainNode.gain.setValueAtTime(0.3, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.4);
+                    osc.stop(now + 0.4 / factor);
                 } else if (type === "strike") {
                     // Retro strike alarm buzz
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.setValueAtTime(150 * factor, now);
                     gainNode.gain.setValueAtTime(0.18, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.15);
+                    osc.stop(now + 0.15 / factor);
                 } else if (type === "ball") {
                     // Low tone bip
                     osc.type = "sine";
-                    osc.frequency.setValueAtTime(330, now);
+                    osc.frequency.setValueAtTime(330 * factor, now);
                     gainNode.gain.setValueAtTime(0.15, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.1);
+                    osc.stop(now + 0.1 / factor);
                 } else if (type === "out") {
                     // Staggered down-sweeping buzzer
                     osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.linearRampToValueAtTime(40, now + 0.5);
+                    osc.frequency.setValueAtTime(120 * factor, now);
+                    osc.frequency.linearRampToValueAtTime(40 * factor, now + 0.5 / factor);
                     gainNode.gain.setValueAtTime(0.2, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5 / factor);
                     osc.start(now);
-                    osc.stop(now + 0.5);
+                    osc.stop(now + 0.5 / factor);
                 }
             } catch (e) {
                 console.error("Audio synth error:", e);
