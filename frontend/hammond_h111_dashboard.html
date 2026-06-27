@@ -455,19 +455,37 @@
             </div>
 
             <div class="panel-title">
-                INDIVIDUAL TONEWHEEL ATTENUATOR <span>111 GAINS</span>
+                INDIVIDUAL TONEWHEEL SETTINGS <span>111 CORES</span>
             </div>
-            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <span>WHEEL ID (0-110):</span>
-                    <input type="number" id="tw-adjust-id" min="0" max="110" value="22" style="width: 55px; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 2px 4px; font-size: 11px; text-align: center;">
-                    <span>GAIN:</span>
-                    <input type="range" id="tw-adjust-gain" min="0" max="2" step="0.05" value="1.0" style="flex: 1;">
-                    <span id="lbl-tw-adjust" style="color: var(--glow-cyan); width: 35px; text-align: right;">1.0x</span>
+                    <input type="number" id="tw-adjust-id" min="0" max="110" value="22" style="width: 50px; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 2px; font-size: 11px; text-align: center;">
                 </div>
-                <div style="display: flex; gap: 6px;">
-                    <button id="btn-tw-reset-all" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;">Reset All Wheels to 1.0x</button>
-                    <button id="btn-tw-mute-even" style="flex: 1; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;">Mute Even Wheels</button>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>VOLUME SCALE:</span>
+                        <span id="lbl-tw-adjust" style="color: var(--glow-cyan);">1.0x</span>
+                    </div>
+                    <input type="range" id="tw-adjust-gain" min="0" max="2" step="0.05" value="1.0" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>DETUNE (CENTS):</span>
+                        <span id="lbl-tw-detune" style="color: var(--glow-magenta);">0¢</span>
+                    </div>
+                    <input type="range" id="tw-adjust-detune" min="-50" max="50" step="1" value="0" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>PHASE SHIFT:</span>
+                        <span id="lbl-tw-phase" style="color: var(--glow-green);">0°</span>
+                    </div>
+                    <input type="range" id="tw-adjust-phase" min="0" max="360" step="5" value="0" style="width: 100%;">
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                    <button id="btn-tw-reset-all" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Reset All Wheels</button>
+                    <button id="btn-tw-mute-even" style="flex: 1; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Mute Even Wheels</button>
                 </div>
             </div>
 
@@ -540,32 +558,54 @@
         // Drawbar coefficients
         let drawbars = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0.875]; // Last is Pipe Resonance Q
 
-        // 111 Individual tonewheel gain values
+        // 111 Individual tonewheel gain, detuning (cents), and phase offset (radians) arrays
         let tonewheelGains = new Array(111).fill(1.0);
+        let tonewheelDetunes = new Array(111).fill(0); // in cents (-50 to +50)
+        let tonewheelPhases = new Array(111).fill(0);   // in degrees (0 to 360)
 
         // Hook adjustment sliders
         const twIdInput = document.getElementById("tw-adjust-id");
         const twGainSlider = document.getElementById("tw-adjust-gain");
         const lblTwAdjust = document.getElementById("lbl-tw-adjust");
+        
+        const twDetuneSlider = document.getElementById("tw-adjust-detune");
+        const lblTwDetune = document.getElementById("lbl-tw-detune");
+        
+        const twPhaseSlider = document.getElementById("tw-adjust-phase");
+        const lblTwPhase = document.getElementById("lbl-tw-phase");
 
-        function updateTwGainDisplay() {
+        function updateTwSettingsDisplay() {
             const id = parseInt(twIdInput.value);
-            const val = parseFloat(twGainSlider.value);
-            tonewheelGains[id] = val;
-            lblTwAdjust.innerText = `${val.toFixed(1)}x`;
+            
+            tonewheelGains[id] = parseFloat(twGainSlider.value);
+            tonewheelDetunes[id] = parseInt(twDetuneSlider.value);
+            tonewheelPhases[id] = parseInt(twPhaseSlider.value);
+
+            lblTwAdjust.innerText = `${tonewheelGains[id].toFixed(1)}x`;
+            lblTwDetune.innerText = `${tonewheelDetunes[id] >= 0 ? '+' : ''}${tonewheelDetunes[id]}¢`;
+            lblTwPhase.innerText = `${tonewheelPhases[id]}°`;
         }
 
         twIdInput.addEventListener("input", () => {
             const id = parseInt(twIdInput.value);
             twGainSlider.value = tonewheelGains[id];
-            lblTwAdjust.innerText = `${tonewheelGains[id].toFixed(1)}x`;
+            twDetuneSlider.value = tonewheelDetunes[id];
+            twPhaseSlider.value = tonewheelPhases[id];
+            updateTwSettingsDisplay();
         });
-        twGainSlider.addEventListener("input", updateTwGainDisplay);
+
+        twGainSlider.addEventListener("input", updateTwSettingsDisplay);
+        twDetuneSlider.addEventListener("input", updateTwSettingsDisplay);
+        twPhaseSlider.addEventListener("input", updateTwSettingsDisplay);
 
         document.getElementById("btn-tw-reset-all").addEventListener("click", () => {
             tonewheelGains.fill(1.0);
+            tonewheelDetunes.fill(0);
+            tonewheelPhases.fill(0);
             twGainSlider.value = 1.0;
-            lblTwAdjust.innerText = "1.0x";
+            twDetuneSlider.value = 0;
+            twPhaseSlider.value = 0;
+            updateTwSettingsDisplay();
         });
 
         document.getElementById("btn-tw-mute-even").addEventListener("click", () => {
@@ -574,7 +614,7 @@
             }
             const currentId = parseInt(twIdInput.value);
             twGainSlider.value = tonewheelGains[currentId];
-            lblTwAdjust.innerText = `${tonewheelGains[currentId].toFixed(1)}x`;
+            updateTwSettingsDisplay();
         });
 
         // Hook sliders
@@ -667,6 +707,29 @@
 
                 osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
                 osc.frequency.value = twFreqs[targetIndex];
+                
+                // Apply individual detune in cents
+                osc.detune.value = tonewheelDetunes[targetIndex];
+                
+                // Adjust oscillator start timing or phase table if offset exists
+                const phaseDeg = tonewheelPhases[targetIndex] || 0;
+                if (phaseDeg > 0) {
+                    // Create PeriodicWave to model custom phase shifts
+                    const real = new Float32Array(2);
+                    const imag = new Float32Array(2);
+                    const rad = phaseDeg * Math.PI / 180;
+                    
+                    // Basic fundamental component shifted by rad phase offset
+                    real[1] = Math.sin(rad);
+                    imag[1] = Math.cos(rad);
+                    
+                    try {
+                        const wave = audioCtx.createPeriodicWave(real, imag, {disableNormalization: false});
+                        osc.setPeriodicWave(wave);
+                    } catch (e) {
+                        // fallback to standard timbre if custom periodic wave fails
+                    }
+                }
                 
                 const twGainMultiplier = tonewheelGains[targetIndex];
                 gainNode.gain.value = amp * 0.12 * twGainMultiplier;
