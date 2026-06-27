@@ -1720,9 +1720,37 @@ Status: Press Pitch to begin.</div>
 
                 if (ballZ <= -120) {
                     ballActive = false;
-                    // Collision check evaluating exact swing angle timing alignment (delta to PI/2)
+                    
+                    // Circular sweep intersection check:
+                    // Batter stand: (-45, -30, -60)
+                    // The bat pivots around rPaw. The swing sweeps an arc in the X/Y plane.
+                    let scale = 1.2;
+                    let batLength = 55 * scale;
+                    let skel = getFighterSkeleton({ x: -45, y: 0, z: -60 }, scale, batSwingAngle, 'batter');
+                    
+                    // Current bat tip position in 3D
+                    let batTipX = skel.rPaw.x + Math.cos(batSwingAngle) * batLength;
+                    let batTipY = skel.rPaw.y + Math.sin(batSwingAngle) * 20 * scale;
+                    let batTipZ = skel.rPaw.z;
+                    
+                    // Distance from ball to line segment (rPaw to batTip)
+                    let dx = batTipX - skel.rPaw.x;
+                    let dy = batTipY - skel.rPaw.y;
+                    let segmentLengthSq = dx*dx + dy*dy;
+                    
+                    let t = 0.0;
+                    if (segmentLengthSq > 0) {
+                        t = ((ballX - skel.rPaw.x) * dx + (ballY - skel.rPaw.y) * dy) / segmentLengthSq;
+                        t = Math.max(0.0, Math.min(1.0, t));
+                    }
+                    
+                    let projectionX = skel.rPaw.x + t * dx;
+                    let projectionY = skel.rPaw.y + t * dy;
+                    let distSq = (ballX - projectionX)*(ballX - projectionX) + (ballY - projectionY)*(ballY - projectionY) + (ballZ - batTipZ)*(ballZ - batTipZ);
+                    let dist = Math.sqrt(distSq);
+                    
                     let swingDelta = Math.abs(batSwingAngle - Math.PI / 2);
-                    let isContact = batSwinging && swingDelta < 0.65 && Math.abs(ballX) < 22;
+                    let isContact = batSwinging && dist < 32.0;
 
                     if (isContact) {
                         strikes = 0;
