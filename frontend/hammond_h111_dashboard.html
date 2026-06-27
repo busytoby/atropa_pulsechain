@@ -1081,6 +1081,7 @@
             // Sync visual sliders
             updateTwSettingsDisplay();
             updateReverbSpace();
+            restartArpeggiator();
             
             // Trigger feedback status alert
             const stNode = document.querySelector(".status");
@@ -1582,7 +1583,13 @@
                     const element = keyElements[keyIndex];
                     if (element) {
                         element.classList.add("active");
-                        playNote(targetNoteIdx);
+                        if (arpMode !== "off") {
+                            if (!isLatched) latchedNotes = [];
+                            if (!latchedNotes.includes(targetNoteIdx)) latchedNotes.push(targetNoteIdx);
+                            restartArpeggiator();
+                        } else {
+                            playNote(targetNoteIdx);
+                        }
                         activePhysicalNotes[keyChar] = targetNoteIdx;
                     }
                 }
@@ -1598,7 +1605,16 @@
                 const element = keyElements[keyIndex];
                 if (element) {
                     element.classList.remove("active");
-                    stopNote(targetNoteIdx);
+                    if (arpMode !== "off" && !isLatched) {
+                        latchedNotes = latchedNotes.filter(n => n !== targetNoteIdx);
+                        if (latchedNotes.length === 0) {
+                            stopArpNote();
+                            clearInterval(arpTimer);
+                            arpTimer = null;
+                        }
+                    } else {
+                        stopNote(targetNoteIdx);
+                    }
                 }
                 delete activePhysicalNotes[keyChar];
             }
