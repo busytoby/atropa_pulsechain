@@ -165,12 +165,56 @@ class RenderCrab:
         self.vy = random.uniform(-0.5, 0.5)
         self.pinch_l = 0.0
         self.pinch_r = 0.0
+        self.target_wander_x = x
+        self.target_wander_y = y
 
-    def update(self, is_beat):
+    def update(self, is_beat, crabs_list, index):
+        # Proprioceptive target determination
+        target_x = self.x
+        target_y = self.y
+        
+        is_drummer = (index == 2 or index == 3 or index == 4)
+        if is_drummer:
+            # Fixed coordinate configurations for drum sections
+            if index == 2: target_x, target_y = 350, 420
+            elif index == 3: target_x, target_y = 550, 480
+            elif index == 4: target_x, target_y = 800, 450
+        else:
+            if is_beat:
+                self.target_wander_x = 150 + random.random() * 900
+                self.target_wander_y = 480 + random.random() * 160
+            target_x = self.target_wander_x
+            target_y = self.target_wander_y
+
+        # Steering vector
+        steer_x = (target_x - self.x) * 0.05
+        steer_y = (target_y - self.y) * 0.05
+
+        # Avoid collision repulsion
+        rep_x, rep_y = 0.0, 0.0
+        for idx, other in enumerate(crabs_list):
+            if idx == index:
+                continue
+            dx = self.x - other.x
+            dy = self.y - other.y
+            dist = math.hypot(dx, dy)
+            min_dist = (self.size + other.size) * 1.5
+            if dist < min_dist and dist > 0:
+                force = (min_dist - dist) / min_dist
+                rep_x += (dx / dist) * force * 4.0
+                rep_y += (dy / dist) * force * 2.0
+
+        # Proprioceptive boundaries
+        self.vx = (self.vx * 0.8) + (steer_x + rep_x) * 0.2
+        self.vy = (self.vy * 0.8) + (steer_y + rep_y) * 0.2
+        
         self.x += self.vx
         self.y += self.vy
-        if self.x < 100 or self.x > WIDTH - 100: self.vx = -self.vx
-        if self.y < 380 or self.y > HEIGHT - 80: self.vy = -self.vy
+        
+        if self.x < 100: self.x = 100; self.vx = abs(self.vx) * 0.8
+        if self.x > WIDTH - 100: self.x = WIDTH - 100; self.vx = -abs(self.vx) * 0.8
+        if self.y < 380: self.y = 380; self.vy = abs(self.vy) * 0.8
+        if self.y > HEIGHT - 80: self.y = HEIGHT - 80; self.vy = -abs(self.vy) * 0.8
         
         self.pinch_l = max(0.0, self.pinch_l - 0.1)
         self.pinch_r = max(0.0, self.pinch_r - 0.1)
@@ -269,8 +313,8 @@ def main():
         draw.polygon(wave_coords, fill=wave_color)
         
         # Update and draw crabs
-        for c in crabs:
-            c.update(is_beat)
+        for idx, c in enumerate(crabs):
+            c.update(is_beat, crabs, idx)
             # Legs
             for side in [-1, 1]:
                 for leg in range(3):
