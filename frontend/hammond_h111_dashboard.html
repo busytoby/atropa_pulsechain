@@ -290,6 +290,8 @@
                     <option value="church">Cathedral Pipe Organ</option>
                     <option value="space">Space Tesseract Warp</option>
                     <option value="detuned">Gears Detune (Micro-Chorus)</option>
+                    <option value="moog_bass">Moog Bass Growl (FM Link)</option>
+                    <option value="moog_lead">Moog Lead Sweep (FM Link)</option>
                 </select>
                 <button id="btn-load-preset" style="background: rgba(0, 240, 255, 0.15); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-family: 'Share Tech Mono', monospace; cursor: pointer; text-shadow: 0 0 6px var(--glow-cyan);">LOAD</button>
             </div>
@@ -765,6 +767,58 @@
                     tonewheelGains[i] = 1.0;
                     tonewheelDetunes[i] = (i % 2 === 0) ? 6 : -6;
                     tonewheelPhases[i] = (i % 3) * 120;
+                    tonewheelFm[i] = "-1";
+                }
+            }
+            
+            // Moog Bass Growl (FM Sub-Octave Link)
+            else if (preset === "moog_bass") {
+                document.getElementById("synth-timbre").value = "sawtooth";
+                document.getElementById("reverb-type").value = "spring";
+                document.getElementById("reverb-mix").value = "0.20";
+                document.getElementById("leslie-speed").value = "off";
+                document.getElementById("pipe-length").value = "16";
+                document.getElementById("pipe-damping").value = "0.85";
+                
+                const dbVals = [8, 8, 4, 0, 0, 0, 0, 0, 4];
+                dbVals.forEach((val, idx) => {
+                    document.getElementById(`db-${idx}`).value = val;
+                    document.getElementById(`lbl-db-${idx}`).innerText = val;
+                    drawbars[idx] = val / 8.0;
+                });
+                
+                for (let i = 0; i < 111; i++) {
+                    tonewheelGains[i] = 1.0;
+                    tonewheelDetunes[i] = -4; // Fattening chorus pitch spread
+                    tonewheelPhases[i] = (i % 4) * 90;
+                    // Cross modulate using sub octave Moog FM routing
+                    tonewheelFm[i] = "sub";
+                }
+            }
+            
+            // Moog Lead Sweep (FM Perfect Fifth Link)
+            else if (preset === "moog_lead") {
+                document.getElementById("synth-timbre").value = "sawtooth";
+                document.getElementById("reverb-type").value = "cathedral";
+                document.getElementById("reverb-mix").value = "0.45";
+                document.getElementById("leslie-speed").value = "tremolo";
+                document.getElementById("leslie-mix").value = "0.50";
+                document.getElementById("pipe-length").value = "limitless";
+                document.getElementById("pipe-damping").value = "0.96";
+                
+                const dbVals = [8, 6, 8, 4, 3, 0, 0, 0, 6];
+                dbVals.forEach((val, idx) => {
+                    document.getElementById(`db-${idx}`).value = val;
+                    document.getElementById(`lbl-db-${idx}`).innerText = val;
+                    drawbars[idx] = val / 8.0;
+                });
+                
+                for (let i = 0; i < 111; i++) {
+                    tonewheelGains[i] = 1.0;
+                    tonewheelDetunes[i] = Math.round(Math.cos(i * 0.15) * 12); // Sweeping detune spread
+                    tonewheelPhases[i] = (i % 6) * 60;
+                    // Cross modulate using Perfect Fifth FM routing
+                    tonewheelFm[i] = "fifth";
                 }
             }
 
