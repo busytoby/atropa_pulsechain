@@ -1113,6 +1113,31 @@ Status: Press Pitch to begin.</div>
                     container.innerHTML = rowsHtml;
                 }
 
+                // --- CHOREOGRAPHY ENGINE: Translate Musical Pitch Score into Stadium Choreography ---
+                // Row indices determine movement steps for players and cameras
+                let step = noteIndex;
+                if (step % 4 === 1) {
+                    // Force batter into specific ballet stances synced to track beat sequences
+                    const stances = ["none", "plie", "arabesque", "pirouette"];
+                    window.activeBalletStance = stances[step % stances.length];
+                }
+                
+                // Track 3: Fielder choreography updates based on step modulations
+                if (window.fielders) {
+                    window.fielders.forEach((f, idx) => {
+                        // Modulate step size by note index frequencies
+                        let movementOffset = Math.sin(step * 0.5 + idx) * 4;
+                        f.x += movementOffset;
+                        f.z += Math.cos(step * 0.5 + idx) * 4;
+                    });
+                }
+                
+                // Track 4: Camera orbital sweep synced to chord step offsets
+                if (!runnerActive && !ballActive) {
+                    camera.yaw += Math.sin(step * 0.1) * 0.02;
+                    camera.pitch = 0.16 + Math.cos(step * 0.1) * 0.03;
+                }
+
                 noteIndex = (noteIndex + 1) % musicSequence.length;
 
                 // Dynamically reschedule music tick intervals to scale with slow-mo tempo
