@@ -314,6 +314,7 @@
                     <option value="sub_rise">🚀 Submarine Riser</option>
                     <option value="fireball">🔥 Fireball (105mph)</option>
                     <option value="corkscrew">🌀 Corkscrew (Spiral)</option>
+                    <option value="songbird">🐦 Songbird (Flutter Whistle)</option>
                 </select>
             </div>
             <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid #1e293b;">
@@ -875,14 +876,26 @@ Status: Press Pitch to begin.</div>
                 gainNode.connect(audioCtx.destination);
 
                 if (type === "pitch") {
-                    // High-pitch laser sweep (pitch-shifted down in slow-mo)
-                    osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(880 * factor, now);
-                    osc.frequency.exponentialRampToValueAtTime(110 * factor, now + 0.35 / factor);
-                    gainNode.gain.setValueAtTime(0.12, now);
-                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
-                    osc.start(now);
-                    osc.stop(now + 0.35 / factor);
+                    if (currentPitchType === "songbird") {
+                        // High-pitched sweet bird chirp whistles using frequency modulation sweeps
+                        osc.type = "sine";
+                        osc.frequency.setValueAtTime(1200 * factor, now);
+                        osc.frequency.linearRampToValueAtTime(1800 * factor, now + 0.1 / factor);
+                        osc.frequency.exponentialRampToValueAtTime(950 * factor, now + 0.35 / factor);
+                        gainNode.gain.setValueAtTime(0.08, now);
+                        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
+                        osc.start(now);
+                        osc.stop(now + 0.35 / factor);
+                    } else {
+                        // High-pitch laser sweep (pitch-shifted down in slow-mo)
+                        osc.type = "sawtooth";
+                        osc.frequency.setValueAtTime(880 * factor, now);
+                        osc.frequency.exponentialRampToValueAtTime(110 * factor, now + 0.35 / factor);
+                        gainNode.gain.setValueAtTime(0.12, now);
+                        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
+                        osc.start(now);
+                        osc.stop(now + 0.35 / factor);
+                    }
                 } else if (type === "swing") {
                     // Triangle wind whoosh (deepened wind noise)
                     osc.type = "triangle";
@@ -1534,6 +1547,10 @@ Status: Press Pitch to begin.</div>
                     // Spiral trajectory modeled as sine/cosine functions of ball depth (ballZ)
                     ballVX = Math.sin(ballZ * 0.15) * 1.8;
                     ballVY = Math.cos(ballZ * 0.15) * 1.8 + 1.2;
+                } else if (currentPitchType === "songbird") {
+                    // High-frequency nested flutter curves mimicking bird flight hops
+                    ballVX = Math.sin(ballZ * 0.4) * 2.2;
+                    ballVY = Math.cos(ballZ * 0.25) * 1.8 + Math.sin(ballZ * 0.6) * 1.0 + 3.0; // flutter hover height lift
                 }
 
                 if (ballZ <= -120) {
