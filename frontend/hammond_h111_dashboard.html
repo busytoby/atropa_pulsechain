@@ -273,6 +273,19 @@
         <!-- Right: Drawbars and keyboard controller -->
         <div class="panel">
             <div class="panel-title">
+                TIMBRE & VALVE PROFILE <span>VOICES</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #94a3b8;">TIMBRE VOICE:</span>
+                <select id="synth-timbre" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 4px; border-radius: 4px;">
+                    <option value="sine" selected>Chime (Sine/Tri)</option>
+                    <option value="sawtooth">Strings (Saw/Tri)</option>
+                    <option value="triangle">Brass (Saw/Pulse)</option>
+                    <option value="square">Organ (Square Mix)</option>
+                </select>
+            </div>
+
+            <div class="panel-title">
                 H111 DRAWBARS <span>COAXIAL MIX</span>
             </div>
 
@@ -453,6 +466,10 @@
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
 
+                // Connect to global timbre controls or fallback to sine/triangle additive components
+                const selectedTimbre = document.getElementById("synth-timbre")?.value || "sine";
+                osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
+
                 osc.frequency.value = twFreqs[targetIndex];
                 gainNode.gain.value = amp * 0.12;
 
@@ -461,6 +478,23 @@
                 gains.push(gainNode);
             });
 
+            // Route through Audion Valve Saturation simulation
+            const valveSaturation = audioCtx.createWaveShaper();
+            const makeDistortionCurve = (amount) => {
+                const k = typeof amount === 'number' ? amount : 50;
+                const n_samples = 44100;
+                const curve = new Float32Array(n_samples);
+                const deg = Math.PI / 180;
+                for (let i = 0; i < n_samples; ++i) {
+                    const x = (i * 2) / n_samples - 1;
+                    // Audion N-tube negative resistance transfer curve asymmetry
+                    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+                }
+                return curve;
+            };
+            valveSaturation.curve = makeDistortionCurve(30);
+            valveSaturation.oversample = '4x';
+
             // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet)
             const pipeFilter = audioCtx.createBiquadFilter();
             pipeFilter.type = "peaking";
@@ -468,7 +502,8 @@
             pipeFilter.Q.value = 1.0 + drawbars[8] * 12.0; // Modulated by slider 8
             pipeFilter.gain.value = 8.0;
 
-            gains.forEach(g => g.connect(pipeFilter));
+            gains.forEach(g => g.connect(valveSaturation));
+            valveSaturation.connect(pipeFilter);
             pipeFilter.connect(mainVolume);
 
             oscillators.forEach(o => o.start());
@@ -476,6 +511,7 @@
             activeNodes[noteIndex] = {
                 oscillators,
                 gains,
+                saturation: valveSaturation,
                 filter: pipeFilter
             };
         }
