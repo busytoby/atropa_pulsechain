@@ -2528,8 +2528,36 @@ Status: Press Pitch to begin.</div>
                     } else {
                         consoleBox.innerHTML += `\n[Z-Machine] Shared collection deck count: ${document.getElementById("deck-count").innerText}`;
                     }
+                } else if (action === "track" || action === "ft" || action === "fasttracker") {
+                    // Custom Fasttracker pitching design syntax: track <Freq> <VX> <VY> <VZ>
+                    let trackFreq = parseFloat(arg) || 440;
+                    let trackVX = parseFloat(arg2) || 0;
+                    let trackVZ = parseFloat(parts[3]) || -10;
+                    let trackVY = parseFloat(parts[4]) || 1;
+                    
+                    if (ballActive) {
+                        consoleBox.innerHTML += `\n[Z-Machine] Cannot track: A pitch is already active on the field.`;
+                    } else {
+                        // Reschedule music loop arpeggio start note to trackFreq
+                        musicSequence[0] = trackFreq;
+                        noteIndex = 0;
+                        
+                        ballActive = true;
+                        ballX = 0;
+                        ballY = 35;
+                        ballZ = 220;
+                        
+                        currentPitchType = "custom_tracked";
+                        ballVX = trackVX;
+                        ballVY = trackVY;
+                        ballVZ = trackVZ;
+                        
+                        // Populate custom visual effect
+                        logEvent(`🎹 Fasttracker compiled pitch: Note freq ${trackFreq}Hz, Vector V(${trackVX.toFixed(1)}, ${trackVY.toFixed(1)}, ${trackVZ.toFixed(1)})`);
+                        playSidSound("pitch");
+                    }
                 } else {
-                    consoleBox.innerHTML += `\n[Z-Machine] Unknown stadium command. Available: 'dance plie/arabesque/pirouette/grandjete/none', 'pitch strike', 'pitch ball', 'bat swing', 'stadium lights off', 'weather rain', 'camera zoom in', 'card save'.`;
+                    consoleBox.innerHTML += `\n[Z-Machine] Unknown stadium command. Available: 'track Freq VX VZ VY', 'dance plie/arabesque/pirouette/grandjete/none', 'pitch strike/ball', 'bat swing', 'stadium lights off', 'weather rain', 'camera zoom in/out/reset', 'card save'.`;
                 }
                 consoleBox.scrollTop = consoleBox.scrollHeight;
             }
