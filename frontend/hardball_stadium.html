@@ -316,6 +316,7 @@
                     <option value="fireball">🔥 Fireball (105mph)</option>
                     <option value="corkscrew">🌀 Corkscrew (Spiral)</option>
                     <option value="songbird">🐦 Songbird (Flutter Whistle)</option>
+                    <option value="bowmanship">🏹 Bowmanship (Bamboo Arrow)</option>
                 </select>
             </div>
             <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid #1e293b;">
@@ -887,6 +888,16 @@ Status: Press Pitch to begin.</div>
                         gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
                         osc.start(now);
                         osc.stop(now + 0.35 / factor);
+                    } else if (currentPitchType === "bowmanship") {
+                        // Bowmanship arrow launch sound: Slow tension string pull + rapid thwang release
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(110 * factor, now);
+                        osc.frequency.linearRampToValueAtTime(440 * factor, now + 0.15 / factor); // Tension sweep
+                        osc.frequency.exponentialRampToValueAtTime(80 * factor, now + 0.35 / factor); // Thwang decay
+                        gainNode.gain.setValueAtTime(0.28, now);
+                        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35 / factor);
+                        osc.start(now);
+                        osc.stop(now + 0.35 / factor);
                     } else {
                         // High-pitch laser sweep (pitch-shifted down in slow-mo)
                         osc.type = "sawtooth";
@@ -1244,6 +1255,11 @@ Status: Press Pitch to begin.</div>
                 ballVY = 4.0;
                 ballVZ = -7.0; // Moderate loop speed
                 logEvent("🌀 Corkscrew pitch released! Moving in a spiral trajectory!");
+            } else if (pType === "bowmanship") {
+                ballVX = 0;
+                ballVY = 2.0;
+                ballVZ = -15.5; // High velocity arrow
+                logEvent("🏹 bowmanship! Fletching and firing a bamboo arrow directly from the pitcher mound!");
             }
             document.getElementById("sb-result").innerText = "IN FLIGHT";
             playSidSound("pitch");
@@ -1564,6 +1580,10 @@ Status: Press Pitch to begin.</div>
                     // High-frequency nested flutter curves mimicking bird flight hops
                     ballVX = Math.sin(ballZ * 0.4) * 2.2;
                     ballVY = Math.cos(ballZ * 0.25) * 1.8 + Math.sin(ballZ * 0.6) * 1.0 + 3.0; // flutter hover height lift
+                } else if (currentPitchType === "bowmanship") {
+                    // Linear high-velocity trajectory with minor fletch wind-shear flutter
+                    ballVX = Math.sin(ballZ * 0.85) * 0.45;
+                    ballVY = Math.cos(ballZ * 0.85) * 0.45 + 1.5;
                 }
 
                 if (ballZ <= -120) {
@@ -2035,22 +2055,56 @@ Status: Press Pitch to begin.</div>
                         ctx.restore();
                     }
 
-                    // Base rendering of the ball
+                    // Base rendering of the ball (or arrow for bowmanship)
                     ctx.save();
-                    if (currentPitchType === "fireball") {
-                        ctx.fillStyle = "#ffaa00";
-                        ctx.shadowColor = "#ff3700";
-                    } else if (currentPitchType === "corkscrew") {
-                        ctx.fillStyle = "#00ffff";
-                        ctx.shadowColor = "#00f0ff";
+                    if (currentPitchType === "bowmanship") {
+                        // Render a fletched bamboo arrow pointing down the trajectory vector
+                        ctx.strokeStyle = "#4ade80";
+                        ctx.lineWidth = 3.0;
+                        ctx.shadowColor = "#22c55e";
+                        ctx.shadowBlur = 15;
+                        ctx.beginPath();
+                        
+                        // Calculate direction of arrow flight
+                        let arrowLength = 40 * (600 / p.depth);
+                        let tipX = p.x;
+                        let tipY = p.y;
+                        let tailX = p.x - ballVX * 2.5 * (600 / p.depth);
+                        let tailY = p.y - (ballVY - 5.0) * 2.5 * (600 / p.depth) + arrowLength; // compensate for depth direction
+                        
+                        // Draw arrow shaft
+                        ctx.moveTo(tailX, tailY);
+                        ctx.lineTo(tipX, tipY);
+                        
+                        // Draw arrowhead tips
+                        let angle = Math.atan2(tipY - tailY, tipX - tailX);
+                        ctx.lineTo(tipX - Math.cos(angle - 0.35) * 12, tipY - Math.sin(angle - 0.35) * 12);
+                        ctx.moveTo(tipX, tipY);
+                        ctx.lineTo(tipX - Math.cos(angle + 0.35) * 12, tipY - Math.sin(angle + 0.35) * 12);
+                        
+                        // Draw rear fletching feather ticks
+                        ctx.moveTo(tailX, tailY);
+                        ctx.lineTo(tailX - Math.cos(angle - 0.6) * 10, tailY - Math.sin(angle - 0.6) * 10);
+                        ctx.moveTo(tailX, tailY);
+                        ctx.lineTo(tailX - Math.cos(angle + 0.6) * 10, tailY - Math.sin(angle + 0.6) * 10);
+                        
+                        ctx.stroke();
                     } else {
-                        ctx.fillStyle = "#ffffff";
-                        ctx.shadowColor = "#ffffff";
+                        if (currentPitchType === "fireball") {
+                            ctx.fillStyle = "#ffaa00";
+                            ctx.shadowColor = "#ff3700";
+                        } else if (currentPitchType === "corkscrew") {
+                            ctx.fillStyle = "#00ffff";
+                            ctx.shadowColor = "#00f0ff";
+                        } else {
+                            ctx.fillStyle = "#ffffff";
+                            ctx.shadowColor = "#ffffff";
+                        }
+                        ctx.shadowBlur = 18;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+                        ctx.fill();
                     }
-                    ctx.shadowBlur = 18;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-                    ctx.fill();
                     ctx.restore();
                 }
             }
