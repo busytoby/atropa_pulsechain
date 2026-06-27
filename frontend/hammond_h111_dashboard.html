@@ -403,6 +403,23 @@
             </div>
 
             <div class="panel-title">
+                INDIVIDUAL TONEWHEEL ATTENUATOR <span>111 GAINS</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span>WHEEL ID (0-110):</span>
+                    <input type="number" id="tw-adjust-id" min="0" max="110" value="22" style="width: 55px; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 2px 4px; font-size: 11px; text-align: center;">
+                    <span>GAIN:</span>
+                    <input type="range" id="tw-adjust-gain" min="0" max="2" step="0.05" value="1.0" style="flex: 1;">
+                    <span id="lbl-tw-adjust" style="color: var(--glow-cyan); width: 35px; text-align: right;">1.0x</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button id="btn-tw-reset-all" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;">Reset All Wheels to 1.0x</button>
+                    <button id="btn-tw-mute-even" style="flex: 1; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;">Mute Even Wheels</button>
+                </div>
+            </div>
+
+            <div class="panel-title">
                 EDO-22 PLAYABLE KEYBOARD <span>OCTAVE 2-3</span>
             </div>
 
@@ -471,6 +488,43 @@
         // Drawbar coefficients
         let drawbars = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0.875]; // Last is Pipe Resonance Q
 
+        // 111 Individual tonewheel gain values
+        let tonewheelGains = new Array(111).fill(1.0);
+
+        // Hook adjustment sliders
+        const twIdInput = document.getElementById("tw-adjust-id");
+        const twGainSlider = document.getElementById("tw-adjust-gain");
+        const lblTwAdjust = document.getElementById("lbl-tw-adjust");
+
+        function updateTwGainDisplay() {
+            const id = parseInt(twIdInput.value);
+            const val = parseFloat(twGainSlider.value);
+            tonewheelGains[id] = val;
+            lblTwAdjust.innerText = `${val.toFixed(1)}x`;
+        }
+
+        twIdInput.addEventListener("input", () => {
+            const id = parseInt(twIdInput.value);
+            twGainSlider.value = tonewheelGains[id];
+            lblTwAdjust.innerText = `${tonewheelGains[id].toFixed(1)}x`;
+        });
+        twGainSlider.addEventListener("input", updateTwGainDisplay);
+
+        document.getElementById("btn-tw-reset-all").addEventListener("click", () => {
+            tonewheelGains.fill(1.0);
+            twGainSlider.value = 1.0;
+            lblTwAdjust.innerText = "1.0x";
+        });
+
+        document.getElementById("btn-tw-mute-even").addEventListener("click", () => {
+            for (let i = 0; i < 111; i++) {
+                if (i % 2 === 0) tonewheelGains[i] = 0.0;
+            }
+            const currentId = parseInt(twIdInput.value);
+            twGainSlider.value = tonewheelGains[currentId];
+            lblTwAdjust.innerText = `${tonewheelGains[currentId].toFixed(1)}x`;
+        });
+
         // Hook sliders
         for (let i = 0; i <= 8; i++) {
             const slider = document.getElementById(`db-${i}`);
@@ -531,7 +585,10 @@
 
                 osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
                 osc.frequency.value = twFreqs[targetIndex];
-                gainNode.gain.value = amp * 0.12;
+                
+                // Multiply the default drawbar amplitude by the individual tonewheel's gain modifier
+                const twGainMultiplier = tonewheelGains[targetIndex];
+                gainNode.gain.value = amp * 0.12 * twGainMultiplier;
 
                 if (lfoGain) {
                     lfoGain.connect(osc.frequency);
