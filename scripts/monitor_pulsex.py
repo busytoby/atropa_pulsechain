@@ -336,14 +336,15 @@ def update_price(address, price, symbol, name, is_treasury=False, treasury_owner
         else:
             classification = f"CALM (STABLE {pct:+.2f}%)"
             
-        # Highlight ATROPA (0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c) 10% price fluctuations in CLI
+        # Highlight ATROPA (0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c) 1% price fluctuations in CLI
         is_atropa = (addr_lower == "0x3cfb8b20ff44eaf16ff1a7d6560938f32512c45c" or symbol.upper() == "ATROPA")
+        if is_atropa and abs(pct) >= 1.0:
+            print("\n" + "#" * 80)
+            print(f"🚨🚨🚨 ATROPA VOLATILITY ALERT: Price shifted by {pct:+.2f}%! 🚨🚨🚨")
+            print(f"💰 New Price: ${format_price(price)} USD (Old: ${format_price(old_price)} USD)")
+            print("#" * 80 + "\n")
+            
         if abs(pct) >= 10.0:
-            if is_atropa:
-                print("\n" + "#" * 80)
-                print(f"🚨🚨🚨 ATROPA VOLATILITY ALERT: Price shifted by {pct:+.2f}%! 🚨🚨🚨")
-                print(f"💰 New Price: ${format_price(price)} USD (Old: ${format_price(old_price)} USD)")
-                print("#" * 80 + "\n")
             perform_volatility_analysis(address, symbol, name, pct, price)
             
     log_to_zmm_mcp(
