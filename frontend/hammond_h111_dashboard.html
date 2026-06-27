@@ -1138,7 +1138,16 @@
                 osc.frequency.value = twFreqs[targetIndex] * gearDir;
 
                 // Apply individual detune in cents
-                osc.detune.value = tonewheelDetunes[targetIndex];
+                let loveHateDetune = 0;
+                // If both Wheel 15 and 16 are playing, they alter each other's pitch dynamically
+                if (targetIndex === 15 && activeNodes[16]) {
+                    // Repulsion: Detune Wheel 15 downwards
+                    loveHateDetune = -35; 
+                } else if (targetIndex === 16 && activeNodes[15]) {
+                    // Attraction / Tension: Detune Wheel 16 upwards
+                    loveHateDetune = 35;
+                }
+                osc.detune.value = tonewheelDetunes[targetIndex] + loveHateDetune;
                 
                 // Adjust oscillator start timing or phase table if offset exists
                 const phaseDeg = tonewheelPhases[targetIndex] || 0;
