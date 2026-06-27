@@ -514,6 +514,15 @@
                     </div>
                     <input type="range" id="tw-adjust-phase" min="0" max="360" step="5" value="0" style="width: 100%;">
                 </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>FM MODULATION TARGET (FM LINK):</span>
+                    <select id="tw-adjust-fm" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="-1" selected>None (Standard Hammond Coaxial)</option>
+                        <option value="osc">Oscillator Link (Self Modulate)</option>
+                        <option value="sub">Sub-Octave Link (Moog Bass Growl)</option>
+                        <option value="fifth">Perfect Fifth Link (Synthesizer Lead)</option>
+                    </select>
+                </div>
                 <div style="display: flex; gap: 6px; margin-top: 4px;">
                     <button id="btn-tw-reset-all" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Reset All Wheels</button>
                     <button id="btn-tw-mute-even" style="flex: 1; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Mute Even Wheels</button>
@@ -589,10 +598,11 @@
         // Drawbar coefficients
         let drawbars = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0.875]; // Last is Pipe Resonance Q
 
-        // 111 Individual tonewheel gain, detuning (cents), and phase offset (radians) arrays
+        // 111 Individual tonewheel gain, detuning (cents), phase offset (radians), and FM routing targets (-1 = off)
         let tonewheelGains = new Array(111).fill(1.0);
         let tonewheelDetunes = new Array(111).fill(0); // in cents (-50 to +50)
         let tonewheelPhases = new Array(111).fill(0);   // in degrees (0 to 360)
+        let tonewheelFm = new Array(111).fill("-1");    // Modulator selection: "-1", "osc", "sub", "fifth"
 
         // Hook adjustment sliders
         const twIdInput = document.getElementById("tw-adjust-id");
@@ -605,12 +615,15 @@
         const twPhaseSlider = document.getElementById("tw-adjust-phase");
         const lblTwPhase = document.getElementById("lbl-tw-phase");
 
+        const twFmSelector = document.getElementById("tw-adjust-fm");
+
         function updateTwSettingsDisplay() {
             const id = parseInt(twIdInput.value);
             
             tonewheelGains[id] = parseFloat(twGainSlider.value);
             tonewheelDetunes[id] = parseInt(twDetuneSlider.value);
             tonewheelPhases[id] = parseInt(twPhaseSlider.value);
+            tonewheelFm[id] = twFmSelector.value;
 
             lblTwAdjust.innerText = `${tonewheelGains[id].toFixed(1)}x`;
             lblTwDetune.innerText = `${tonewheelDetunes[id] >= 0 ? '+' : ''}${tonewheelDetunes[id]}¢`;
@@ -622,20 +635,24 @@
             twGainSlider.value = tonewheelGains[id];
             twDetuneSlider.value = tonewheelDetunes[id];
             twPhaseSlider.value = tonewheelPhases[id];
+            twFmSelector.value = tonewheelFm[id];
             updateTwSettingsDisplay();
         });
 
         twGainSlider.addEventListener("input", updateTwSettingsDisplay);
         twDetuneSlider.addEventListener("input", updateTwSettingsDisplay);
         twPhaseSlider.addEventListener("input", updateTwSettingsDisplay);
+        twFmSelector.addEventListener("change", updateTwSettingsDisplay);
 
         document.getElementById("btn-tw-reset-all").addEventListener("click", () => {
             tonewheelGains.fill(1.0);
             tonewheelDetunes.fill(0);
             tonewheelPhases.fill(0);
+            tonewheelFm.fill("-1");
             twGainSlider.value = 1.0;
             twDetuneSlider.value = 0;
             twPhaseSlider.value = 0;
+            twFmSelector.value = "-1";
             updateTwSettingsDisplay();
         });
 
@@ -948,6 +965,28 @@
                     } catch (e) {
                         // fallback to standard timbre if custom periodic wave fails
                     }
+                }
+
+                // --- Moog Synthesizer FM Link Connection ---
+                const fmMode = tonewheelFm[targetIndex] || "-1";
+                if (fmMode !== "-1") {
+                    // Resolve frequency coordinate of modulator node
+                    let modFreq = twFreqs[targetIndex];
+                    if (fmMode === "sub") modFreq = twFreqs[targetIndex] / 2.0;       // Moog sub-octave bass modulator
+                    if (fmMode === "fifth") modFreq = twFreqs[targetIndex] * 1.5;     // 5th interval harmonic modulator
+                    
+                    const modulatorOsc = audioCtx.createOscillator();
+                    modulatorOsc.frequency.value = modFreq;
+                    
+                    const fmGain = audioCtx.createGain();
+                    // Modulate pitch index deep enough to produce standard Moog brass/leads
+                    fmGain.gain.value = modFreq * 0.45;
+                    
+                    modulatorOsc.connect(fmGain);
+                    fmGain.connect(osc.frequency);
+                    
+                    modulatorOsc.start();
+                    oscillators.push(modulatorOsc);
                 }
                 
                 const twGainMultiplier = tonewheelGains[targetIndex];
