@@ -333,6 +333,28 @@
             </div>
 
             <div class="panel-title">
+                HUMONGOUS RESONATOR PIPES <span>PHYSICAL MODEL</span>
+            </div>
+            <div style="background: #02040a; border: 1px solid #142036; padding: 12px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>PIPE TUBE LENGTH:</span>
+                    <select id="pipe-length" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                        <option value="16">16-Foot Contrabass (16Hz)</option>
+                        <option value="32" selected>32-Foot Sub-Diapason (32Hz)</option>
+                        <option value="64">64-Foot Diapason (64Hz)</option>
+                        <option value="limitless">Limitless (Dynamic sweep)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span>WALL DAMPING:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="range" id="pipe-damping" min="0.80" max="0.99" value="0.95" step="0.01" style="width: 100%;">
+                        <span id="lbl-pipe-damping" style="color: var(--glow-cyan);">0.95</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-title">
                 H111 DRAWBARS <span>COAXIAL MIX</span>
             </div>
 
@@ -645,9 +667,22 @@
             // Route through open pipe resonator (Biquad Filter simulating waveguide cabinet)
             const pipeFilter = audioCtx.createBiquadFilter();
             pipeFilter.type = "peaking";
-            pipeFilter.frequency.value = 33.3; // Low C resonance thud
-            pipeFilter.Q.value = 1.0 + drawbars[8] * 12.0; // Modulated by slider 8
-            pipeFilter.gain.value = 8.0;
+
+            // Resolve pipe frequency matching physical tube length
+            const lengthSel = document.getElementById("pipe-length")?.value || "32";
+            let pipeFreq = 33.3; // Default 32-Foot sub diapason
+            if (lengthSel === "16") pipeFreq = 66.6;
+            else if (lengthSel === "64") pipeFreq = 16.65;
+            else if (lengthSel === "limitless") {
+                // Dynamic sweep matching note base pitch frequency
+                pipeFreq = twFreqs[noteIndex] / 4.0;
+            }
+
+            const dampingVal = parseFloat(document.getElementById("pipe-damping")?.value || "0.95");
+
+            pipeFilter.frequency.value = pipeFreq;
+            pipeFilter.Q.value = (1.0 + drawbars[8] * 12.0) * (dampingVal / 0.95); 
+            pipeFilter.gain.value = 8.0 * (1.0 + (1.0 - dampingVal) * 5.0);
 
             gains.forEach(g => g.connect(valveSaturation));
             if (percGain) percGain.connect(valveSaturation);
@@ -684,6 +719,11 @@
         // Update vibrato rate label dynamically
         document.getElementById("vibrato-rate")?.addEventListener("input", (e) => {
             document.getElementById("lbl-vibrato-rate").innerText = `${e.target.value}Hz`;
+        });
+
+        // Update pipe damping label dynamically
+        document.getElementById("pipe-damping")?.addEventListener("input", (e) => {
+            document.getElementById("lbl-pipe-damping").innerText = e.target.value;
         });
 
         function stopNote(noteIndex) {
