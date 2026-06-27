@@ -559,6 +559,23 @@
                         <option value="fifth">Perfect Fifth Link (Synthesizer Lead)</option>
                     </select>
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span>GEAR DIRECTION:</span>
+                        <select id="tw-adjust-dir" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                            <option value="1" selected>Forward (+)</option>
+                            <option value="-1">Reverse (Backward -)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span>OVERDRIVE (BLOWUP):</span>
+                        <select id="tw-adjust-blowup" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                            <option value="1" selected>Normal (1.0x)</option>
+                            <option value="5">Saturate (5.0x)</option>
+                            <option value="20">Blow Up (20.0x!)</option>
+                        </select>
+                    </div>
+                </div>
                 <div style="display: flex; gap: 6px; margin-top: 4px;">
                     <button id="btn-tw-reset-all" style="flex: 1; background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Reset All Wheels</button>
                     <button id="btn-tw-mute-even" style="flex: 1; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--glow-cyan); color: var(--glow-cyan); padding: 4px; border-radius: 4px; font-size: 9px; cursor: pointer; font-family: 'Share Tech Mono', monospace;">Mute Even Wheels</button>
@@ -634,11 +651,13 @@
         // Drawbar coefficients
         let drawbars = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0.875]; // Last is Pipe Resonance Q
 
-        // 111 Individual tonewheel gain, detuning (cents), phase offset (radians), and FM routing targets (-1 = off)
+        // 111 Individual tonewheel gain, detuning (cents), phase offset (radians), FM targets, spin directions, and blowup overdrives
         let tonewheelGains = new Array(111).fill(1.0);
-        let tonewheelDetunes = new Array(111).fill(0); // in cents (-50 to +50)
-        let tonewheelPhases = new Array(111).fill(0);   // in degrees (0 to 360)
-        let tonewheelFm = new Array(111).fill("-1");    // Modulator selection: "-1", "osc", "sub", "fifth"
+        let tonewheelDetunes = new Array(111).fill(0);   // in cents (-50 to +50)
+        let tonewheelPhases = new Array(111).fill(0);     // in degrees (0 to 360)
+        let tonewheelFm = new Array(111).fill("-1");      // Modulator selection: "-1", "osc", "sub", "fifth"
+        let tonewheelDirs = new Array(111).fill(1);       // 1 = Forward, -1 = Reverse
+        let tonewheelBlowups = new Array(111).fill(1.0);  // Output overdrive multiplier (1.0x to 20.0x)
 
         // Hook adjustment sliders
         const twIdInput = document.getElementById("tw-adjust-id");
@@ -652,6 +671,8 @@
         const lblTwPhase = document.getElementById("lbl-tw-phase");
 
         const twFmSelector = document.getElementById("tw-adjust-fm");
+        const twDirSelector = document.getElementById("tw-adjust-dir");
+        const twBlowupSelector = document.getElementById("tw-adjust-blowup");
 
         function updateTwSettingsDisplay() {
             const id = parseInt(twIdInput.value);
@@ -660,6 +681,8 @@
             tonewheelDetunes[id] = parseInt(twDetuneSlider.value);
             tonewheelPhases[id] = parseInt(twPhaseSlider.value);
             tonewheelFm[id] = twFmSelector.value;
+            tonewheelDirs[id] = parseInt(twDirSelector.value);
+            tonewheelBlowups[id] = parseFloat(twBlowupSelector.value);
 
             lblTwAdjust.innerText = `${tonewheelGains[id].toFixed(1)}x`;
             lblTwDetune.innerText = `${tonewheelDetunes[id] >= 0 ? '+' : ''}${tonewheelDetunes[id]}¢`;
@@ -672,6 +695,8 @@
             twDetuneSlider.value = tonewheelDetunes[id];
             twPhaseSlider.value = tonewheelPhases[id];
             twFmSelector.value = tonewheelFm[id];
+            twDirSelector.value = tonewheelDirs[id].toString();
+            twBlowupSelector.value = tonewheelBlowups[id].toString();
             updateTwSettingsDisplay();
         });
 
@@ -679,16 +704,22 @@
         twDetuneSlider.addEventListener("input", updateTwSettingsDisplay);
         twPhaseSlider.addEventListener("input", updateTwSettingsDisplay);
         twFmSelector.addEventListener("change", updateTwSettingsDisplay);
+        twDirSelector.addEventListener("change", updateTwSettingsDisplay);
+        twBlowupSelector.addEventListener("change", updateTwSettingsDisplay);
 
         document.getElementById("btn-tw-reset-all").addEventListener("click", () => {
             tonewheelGains.fill(1.0);
             tonewheelDetunes.fill(0);
             tonewheelPhases.fill(0);
             tonewheelFm.fill("-1");
+            tonewheelDirs.fill(1);
+            tonewheelBlowups.fill(1.0);
             twGainSlider.value = 1.0;
             twDetuneSlider.value = 0;
             twPhaseSlider.value = 0;
             twFmSelector.value = "-1";
+            twDirSelector.value = "1";
+            twBlowupSelector.value = "1.0";
             updateTwSettingsDisplay();
         });
 
@@ -1102,8 +1133,10 @@
                 const gainNode = audioCtx.createGain();
 
                 osc.type = selectedTimbre === "sine" ? "sine" : (selectedTimbre === "sawtooth" ? "sawtooth" : (selectedTimbre === "square" ? "square" : "triangle"));
-                osc.frequency.value = twFreqs[targetIndex];
-                
+                // --- Gear Direction & Spin Phase calculations ---
+                const gearDir = tonewheelDirs[targetIndex] || 1;
+                osc.frequency.value = twFreqs[targetIndex] * gearDir;
+
                 // Apply individual detune in cents
                 osc.detune.value = tonewheelDetunes[targetIndex];
                 
@@ -1136,11 +1169,11 @@
                     if (fmMode === "fifth") modFreq = twFreqs[targetIndex] * 1.5;     // 5th interval harmonic modulator
                     
                     const modulatorOsc = audioCtx.createOscillator();
-                    modulatorOsc.frequency.value = modFreq;
+                    modulatorOsc.frequency.value = modFreq * gearDir;
                     
                     const fmGain = audioCtx.createGain();
                     // Modulate pitch index deep enough to produce standard Moog brass/leads
-                    fmGain.gain.value = modFreq * 0.45;
+                    fmGain.gain.value = Math.abs(modFreq) * 0.45;
                     
                     modulatorOsc.connect(fmGain);
                     fmGain.connect(osc.frequency);
@@ -1150,7 +1183,8 @@
                 }
                 
                 const twGainMultiplier = tonewheelGains[targetIndex];
-                gainNode.gain.value = amp * 0.12 * twGainMultiplier;
+                const blowupVal = tonewheelBlowups[targetIndex] || 1.0;
+                gainNode.gain.value = amp * 0.12 * twGainMultiplier * blowupVal;
 
                 if (lfoGain) {
                     lfoGain.connect(osc.frequency);
