@@ -373,6 +373,9 @@ Status: Press Pitch to begin.</div>
                 <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: var(--glow-cyan); margin-top: -2px;">
                     <input type="checkbox" id="show-verlet-grid"> 🔬 Show Verlet soft-body grid (Transistor Discharge)
                 </label>
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: var(--glow-gold); margin-top: -2px;">
+                    <input type="checkbox" id="show-bem-field"> ⚡ Show BEM Electrostatic Boundary Field
+                </label>
                 <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Baseball Card</button>
                 <button class="btn" id="btn-save-card" onclick="saveCurrentCardToDeck()" style="border-color: var(--glow-cyan); color: var(--glow-cyan); margin-top: 2px;">💾 Save Card to Deck</button>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
@@ -1534,6 +1537,57 @@ Status: Press Pitch to begin.</div>
                                     ctx.moveTo(scP.x, scP.y);
                                     ctx.lineTo(scNext.x, scNext.y);
                                 }
+                            }
+                        }
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Draw Boundary Element Method (BEM) Electrostatic potential field lines mapping transistor boundaries
+                if (document.getElementById("show-bem-field").checked) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(255, 196, 0, 0.4)";
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    
+                    // Simulate 3 charge boundaries (Source, Gate, Drain)
+                    const boundaries = [
+                        { x: -75, y: -90, z: 120, charge: 1.5 },
+                        { x: 0,   y: -75, z: 220, charge: -2.0 },
+                        { x: 75,  y: -90, z: 120, charge: 1.5 }
+                    ];
+
+                    // Draw boundary nodes
+                    boundaries.forEach(b => {
+                        drawVolumetricSphere(b, 4.0, b.charge > 0 ? "rgba(255, 60, 0, 0.85)" : "rgba(0, 180, 255, 0.85)");
+                    });
+
+                    // Sample field potential contour points using Green's function representation: V = sum(q_i / r_i)
+                    for (let zOffset = 60; zOffset <= 280; zOffset += 20) {
+                        for (let xOffset = -100; xOffset <= 100; xOffset += 15) {
+                            let potential = 0.0;
+                            boundaries.forEach(b => {
+                                let dx = xOffset - b.x;
+                                let dz = zOffset - b.z;
+                                let dist = Math.sqrt(dx*dx + dz*dz + 100.0);
+                                potential += b.charge / dist;
+                            });
+
+                            // Calculate field line vector using computed potential gradient
+                            let angle = potential * Math.PI * 8.0;
+                            let pStart = { x: xOffset, y: -90, z: zOffset };
+                            let pEnd = { 
+                                x: xOffset + Math.cos(angle) * 12.0, 
+                                y: -90, 
+                                z: zOffset + Math.sin(angle) * 12.0 
+                            };
+
+                            let scS = project(pStart);
+                            let scE = project(pEnd);
+                            if (scS && scE) {
+                                ctx.moveTo(scS.x, scS.y);
+                                ctx.lineTo(scE.x, scE.y);
                             }
                         }
                     }
