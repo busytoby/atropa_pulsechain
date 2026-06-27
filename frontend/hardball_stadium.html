@@ -1429,19 +1429,44 @@ Status: Press Pitch to begin.</div>
                         
                         // Determine random hit direction/velocity
                         let hitPower = Math.random();
+                        let hitResult = "SINGLE";
                         if (hitPower > 0.75) {
                             scoreHome++;
-                            document.getElementById("sb-result").innerText = "HOME RUN!";
+                            hitResult = "HOME RUN!";
                             logEvent("💥 HIT! Ball crunched into deep field! HOME RUN!");
                             runnerProgress = 3.0; // Instantly runs all bases
                         } else if (hitPower > 0.35) {
-                            document.getElementById("sb-result").innerText = "DOUBLE!";
+                            hitResult = "DOUBLE!";
                             logEvent("☄️ Double! Ball sliced into left-field gap. Runner advances to 2nd base!");
                         } else {
-                            document.getElementById("sb-result").innerText = "SINGLE";
+                            hitResult = "SINGLE";
                             logEvent("⚾ Single! Base hit down the shortstop line!");
                         }
+                        document.getElementById("sb-result").innerText = hitResult;
                         playSidSound("hit");
+
+                        // Trigger Outfield Fielder chase targets based on hit location
+                        window.fielderChaseActive = true;
+                        window.fielderChaseProgress = 0.0;
+                        if (hitResult === "HOME RUN!") {
+                            window.fielderTargets = {
+                                shortstop: { x: -80, y: -90, z: 320 },
+                                left: { x: -160, y: -90, z: 580 }, // Run back deep
+                                right: { x: 160, y: -90, z: 580 }
+                            };
+                        } else if (hitResult === "DOUBLE!") {
+                            window.fielderTargets = {
+                                shortstop: { x: -100, y: -90, z: 280 }, // Dive left
+                                left: { x: -110, y: -90, z: 420 }, // Intercept gap
+                                right: { x: 160, y: -90, z: 450 }
+                            };
+                        } else {
+                            window.fielderTargets = {
+                                shortstop: { x: -50, y: -90, z: 340 }, // Charge ball
+                                left: { x: -160, y: -90, z: 450 },
+                                right: { x: 160, y: -90, z: 450 }
+                            };
+                        }
 
                         // Spawn 25 explosion particles centered on home plate projections
                         let pHome = project({ x: ballX, y: ballY, z: ballZ });
@@ -1738,7 +1763,32 @@ Status: Press Pitch to begin.</div>
                     });
                 }
 
-                // 4. Fielders
+                // 4. Fielders - Update positions if chase targets are active
+                if (window.fielderChaseActive && window.fielderTargets) {
+                    window.fielderChaseProgress += 0.012;
+                    let tProgress = window.fielderChaseProgress;
+                    if (tProgress > 1.0) tProgress = 1.0;
+
+                    // Interpolate fielder positions
+                    shortstopPos.x = -80 + (window.fielderTargets.shortstop.x - (-80)) * tProgress;
+                    shortstopPos.z = 320 + (window.fielderTargets.shortstop.z - 320) * tProgress;
+
+                    outfieldLeftPos.x = -160 + (window.fielderTargets.left.x - (-160)) * tProgress;
+                    outfieldLeftPos.z = 450 + (window.fielderTargets.left.z - 450) * tProgress;
+
+                    outfieldRightPos.x = 160 + (window.fielderTargets.right.x - 160) * tProgress;
+                    outfieldRightPos.z = 450 + (window.fielderTargets.right.z - 450) * tProgress;
+                    
+                    if (tProgress >= 1.0 && !runnerActive) {
+                        window.fielderChaseActive = false; // complete chase
+                    }
+                } else if (!runnerActive) {
+                    // Reset fielders to home base configurations
+                    shortstopPos = { x: -80, y: -90, z: 320 };
+                    outfieldLeftPos = { x: -160, y: -90, z: 450 };
+                    outfieldRightPos = { x: 160, y: -90, z: 450 };
+                }
+
                 drawCharacter3D(shortstopPos, 0.9, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
                 drawCharacter3D(outfieldLeftPos, 0.8, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
                 drawCharacter3D(outfieldRightPos, 0.8, 0, 'fielder', "rgba(57, 255, 20, 0.7)");
