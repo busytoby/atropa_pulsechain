@@ -349,6 +349,49 @@
             <div class="keybed" id="keyboard">
                 <!-- Javascript populated -->
             </div>
+
+            <div class="panel-title">
+                4D TESSERACT ARPEGGIATOR <span>HYPER-ROTATION</span>
+            </div>
+
+            <div style="background: #02040a; border: 1px solid #142036; padding: 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; gap: 12px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <span>ARP MODE:</span>
+                        <select id="arp-mode" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                            <option value="off">Off (Manual Mode)</option>
+                            <option value="up">Up (X-Axis Orbit)</option>
+                            <option value="down">Down (Y-Axis Orbit)</option>
+                            <option value="converge">Converge (Z-Axis Spiral)</option>
+                            <option value="tesseract">Tesseract (4D Hyper-Fold)</option>
+                        </select>
+                    </div>
+                    
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <span>SPEED:</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <input type="range" id="arp-speed" min="40" max="300" value="120" style="flex: 1;">
+                            <span id="lbl-arp-speed" style="color: var(--glow-cyan);">120 BPM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; font-size: 11px; font-family: 'Share Tech Mono', monospace;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <span>OCTAVE DEPTH (W-AXIS):</span>
+                        <select id="arp-octaves" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 4px; font-family: monospace; font-size: 10px;">
+                            <option value="1">1 Octave</option>
+                            <option value="2" selected>2 Octaves</option>
+                            <option value="3">3 Octaves</option>
+                            <option value="4">4D Hyper-Octave</option>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center;">
+                        <button id="btn-arp-gate" style="background: rgba(255, 0, 127, 0.1); border: 1px solid var(--glow-magenta); color: var(--glow-magenta); padding: 6px; border-radius: 6px; font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: bold; cursor: pointer; text-shadow: 0 0 6px var(--glow-magenta);">Latch / Hold Pattern</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -476,14 +519,128 @@
                 key.classList.remove("active");
                 stopNote(i);
             });
-            key.addEventListener("mouseleave", () => {
-                if (key.classList.contains("active")) {
-                    key.classList.remove("active");
-                    stopNote(i);
-                }
-            });
 
             keyboard.appendChild(key);
+        }
+
+        // --- 4D TESSERACT ARPEGGIATOR ENGINE ---
+        let arpMode = "off";
+        let arpSpeedBpm = 120;
+        let arpOctaveRange = 2;
+        let arpTimer = null;
+        let arpStep = 0;
+        let latchedNotes = [];
+        let isLatched = false;
+        let arpCurrentNote = null;
+
+        document.getElementById("arp-mode").addEventListener("change", (e) => {
+            arpMode = e.target.value;
+            restartArpeggiator();
+        });
+
+        document.getElementById("arp-speed").addEventListener("input", (e) => {
+            arpSpeedBpm = parseInt(e.target.value);
+            document.getElementById("lbl-arp-speed").innerText = `${arpSpeedBpm} BPM`;
+            restartArpeggiator();
+        });
+
+        document.getElementById("arp-octaves").addEventListener("change", (e) => {
+            arpOctaveRange = parseInt(e.target.value);
+        });
+
+        const btnGate = document.getElementById("btn-arp-gate");
+        btnGate.addEventListener("click", () => {
+            isLatched = !isLatched;
+            if (isLatched) {
+                btnGate.style.background = "rgba(0, 240, 255, 0.2)";
+                btnGate.style.borderColor = "var(--glow-cyan)";
+                btnGate.style.color = "var(--glow-cyan)";
+                btnGate.style.textShadow = "0 0 6px var(--glow-cyan)";
+                btnGate.innerText = "LATCHED / HOLDING";
+            } else {
+                btnGate.style.background = "rgba(255, 0, 127, 0.1)";
+                btnGate.style.borderColor = "var(--glow-magenta)";
+                btnGate.style.color = "var(--glow-magenta)";
+                btnGate.style.textShadow = "0 0 6px var(--glow-magenta)";
+                btnGate.innerText = "Latch / Hold Pattern";
+                // Clear hold
+                latchedNotes = [];
+                stopArpNote();
+            }
+        });
+
+        // Monitor manual keyboard interactions for arpeggio patterns
+        const keys = document.querySelectorAll(".key");
+        keys.forEach((k, index) => {
+            const noteIdx = index + 22; // Align to note scale starting at 22
+            k.addEventListener("mousedown", () => {
+                if (arpMode !== "off") {
+                    if (!isLatched) latchedNotes = [];
+                    if (!latchedNotes.includes(noteIdx)) latchedNotes.push(noteIdx);
+                    restartArpeggiator();
+                }
+            });
+        });
+
+        function stopArpNote() {
+            if (arpCurrentNote !== null) {
+                stopNote(arpCurrentNote);
+                // remove visual active styling
+                const kIdx = arpCurrentNote - 22;
+                if (keys[kIdx]) keys[kIdx].classList.remove("active");
+                arpCurrentNote = null;
+            }
+        }
+
+        function restartArpeggiator() {
+            clearInterval(arpTimer);
+            arpTimer = null;
+            if (arpMode === "off" || latchedNotes.length === 0) {
+                stopArpNote();
+                return;
+            }
+
+            const stepDurationMs = (60 / arpSpeedBpm) * 1000 / 2; // Eighth notes
+            arpTimer = setInterval(tickArpeggiator, stepDurationMs);
+        }
+
+        function tickArpeggiator() {
+            if (latchedNotes.length === 0) return;
+
+            stopArpNote();
+
+            // Resolve 4D note coordinates
+            // Tesseract rotation coordinates mapping X, Y, Z, W axes
+            const notesCount = latchedNotes.length;
+            let noteSelection = latchedNotes[arpStep % notesCount];
+            let octaveOffset = 0;
+
+            if (arpMode === "up") {
+                octaveOffset = Math.floor(arpStep / notesCount) % arpOctaveRange;
+            } else if (arpMode === "down") {
+                octaveOffset = arpOctaveRange - 1 - (Math.floor(arpStep / notesCount) % arpOctaveRange);
+            } else if (arpMode === "converge") {
+                // Alternates octaves to spiral Z-depth coordinates
+                octaveOffset = (arpStep % 2 === 0) ? 0 : (arpOctaveRange - 1);
+            } else if (arpMode === "tesseract") {
+                // 4D hypercube spatial projection folding mapping W-axis octave shift
+                const projectionAngle = arpStep * 0.73;
+                const foldCoord = Math.sin(projectionAngle) * Math.cos(projectionAngle * 0.5);
+                octaveOffset = Math.floor((foldCoord + 1.0) * 0.5 * arpOctaveRange);
+            }
+
+            // Route octave offset directly to dynamic EDO-22 note spectrum (22 steps per octave)
+            let finalNote = noteSelection + (octaveOffset * 22);
+            if (finalNote >= 111) finalNote = 22 + (finalNote % 89);
+
+            arpCurrentNote = finalNote;
+            playNote(finalNote);
+
+            // Add active UI class
+            const kIdx = finalNote - 22;
+            if (keys[kIdx]) keys[kIdx].classList.add("active");
+
+            arpStep++;
         }
 
         // Viewport 1: Rotating Tonewheels visualizer
