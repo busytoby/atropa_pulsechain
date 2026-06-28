@@ -7,6 +7,7 @@
  * - sys_read(fd, memOffset, byteCount) -> readCount
  * - sys_fork(parentPid) -> childPid
  * - sys_exec(pid, binaryHash) -> success
+ * - sys_step(pid) -> executes one instruction step of the active binary
  * - sys_get_state() -> returns system tables (processes, active descriptors)
  */
 
@@ -102,6 +103,54 @@ object "Unix1Kernel" {
                 sstore(add(pStateSlot, 0), binaryHash) // Register 0 stores active binary hash
                 sstore(add(pStateSlot, 1), 0)          // Register 1 resets program counter (IP)
                 
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
+
+            // 0x00c71a91: sys_step(pid) -> success
+            // Executes one instruction of the loaded binary using the Folklore register layout
+            case 0x00c71a91 {
+                let pid := calldataload(4)
+                let pStateSlot := add(0x100, mul(pid, 16))
+                let binaryHash := sload(add(pStateSlot, 0))
+                let ip := sload(add(pStateSlot, 1))
+                
+                let inode := findOrCreateInode(binaryHash)
+                let instruction := sload(add(inode, ip))
+                
+                // Decode Folklore CPU instruction [8-bit op][8-bit dst][8-bit src1][8-bit val]
+                let op := byte(0, instruction)
+                let rDst := byte(1, instruction)
+                let rSrc1 := byte(2, instruction)
+                let val := byte(3, instruction)
+                
+                switch op
+                // Op 1: LOAD Immediate
+                case 1 {
+                    sstore(add(pStateSlot, rDst), val)
+                    ip := add(ip, 1)
+                }
+                // Op 2: ADD Registers
+                case 2 {
+                    let v1 := sload(add(pStateSlot, rSrc1))
+                    let v2 := sload(add(pStateSlot, val))
+                    sstore(add(pStateSlot, rDst), add(v1, v2))
+                    ip := add(ip, 1)
+                }
+                // Op 3: WinchesterMQ Write State (Emulates register updates)
+                case 3 {
+                    sstore(add(pStateSlot, 10), val) // Update virtual Monopole data register
+                    ip := add(ip, 1)
+                }
+                // Op 4: JUMP if Zero
+                case 4 {
+                    let cond := sload(add(pStateSlot, rSrc1))
+                    switch iszero(cond)
+                    case 1 { ip := val }
+                    default { ip := add(ip, 1) }
+                }
+                
+                sstore(add(pStateSlot, 1), ip)
                 mstore(0x00, 1)
                 return(0x00, 0x20)
             }
