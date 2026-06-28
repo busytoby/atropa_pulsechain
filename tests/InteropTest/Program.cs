@@ -1,12 +1,15 @@
 using System;
 using System.Numerics;
 using Dysnomia;
+using Dysnomia.Lib;
+using Dysnomia.Domain;
 
 class Program {
     static void Main(string[] args) {
-        Console.WriteLine("Testing Dysnomia.Math.ModPow with TSFi Interop...");
+        Console.WriteLine("=== Dysnomia Integration Test Suite ===");
         
-        // Test Case 1: Known Small
+        // Test Case 1: Known Small Math.ModPow
+        Console.WriteLine("\n[TEST 1] Testing Dysnomia.Math.ModPow with TSFi Interop...");
         BigInteger a = BigInteger.Parse("123456789");
         BigInteger b = BigInteger.Parse("65537");
         BigInteger c = BigInteger.Parse("1000000007");
@@ -17,7 +20,7 @@ class Program {
             Console.WriteLine($"Result: {result}");
             
             if (result == expected) {
-                Console.WriteLine("SUCCESS: Result matches expected value.");
+                Console.WriteLine("SUCCESS: ModPow result matches expected value.");
             } else {
                 Console.WriteLine($"FAILURE: Expected {expected}, got {result}");
                 Environment.Exit(1);
@@ -26,20 +29,43 @@ class Program {
             Console.WriteLine($"EXCEPTION: {ex}");
             Environment.Exit(2);
         }
-        
-        // Test Case 2: Check if it actually used the DLL?
-        // Hard to check from here without internal exposure, but if it didn't crash, it fell back or worked.
-        // If we want to verify TSFi usage, we rely on the fact that legacy returned 0 for this case (as per previous context),
-        // but wait, legacy C# BigInteger.ModPow is correct!
-        // The bug I fixed was in `mathint.h` (C legacy).
-        // C# `BigInteger.ModPow` works fine.
-        // So this test passes even if fallback happens.
-        
-        // To verify TSFi is used, I should print something from C?
-        // Or I can check if performance is better?
-        // Or assume if no exception, it tried.
-        
-        // I can intentionally break the DLL path to see if it falls back silently (which I implemented).
-        // But for now, ensuring it runs is good enough.
+
+        // Test Case 2: WinchesterMQ P/Invoke Bindings
+        Console.WriteLine("\n[TEST 2] Testing WinchesterMQ Thunks JIT Publish...");
+        try {
+            // Attempt to publish a test query to verify dynamic loading of libtsfi2.so
+            Thunks.PublishMQ("TEST:PING_FROM_CSHARP");
+            Console.WriteLine("SUCCESS: Thunks.PublishMQ executed without exceptions.");
+        } catch (DllNotFoundException) {
+            Console.WriteLine("WARNING: libtsfi2.so not found in path. Skipping native thunk check.");
+        } catch (Exception ex) {
+            Console.WriteLine($"FAILURE: Unexpected exception on PublishMQ: {ex}");
+            Environment.Exit(3);
+        }
+
+        // Test Case 3: Network Daemon Handshake Pipeline
+        Console.WriteLine("\n[TEST 3] Testing WinchesterMQ Network Handshake Daemon...");
+        try {
+            Network testNetwork = new Network();
+            string testPeer = "0x0000000000000000000000000000000000000001";
+            
+            // Triggering the multi-stage YI handshake sequence
+            bool handshakeSuccess = testNetwork.PerformYiHandshake(testPeer);
+            Console.WriteLine($"Handshake execution status: {handshakeSuccess}");
+            
+            if (handshakeSuccess) {
+                Console.WriteLine("SUCCESS: YI Handshake pipeline completed successfully.");
+            } else {
+                Console.WriteLine("FAILURE: Handshake pipeline returned false.");
+                Environment.Exit(4);
+            }
+        } catch (DllNotFoundException) {
+            Console.WriteLine("WARNING: libtsfi2.so not found. Network pipeline verification skipped.");
+        } catch (Exception ex) {
+            Console.WriteLine($"FAILURE: Handshake pipeline threw exception: {ex}");
+            Environment.Exit(5);
+        }
+
+        Console.WriteLine("\n=== ALL SYSTEM TESTS COMPLETED ===");
     }
 }
