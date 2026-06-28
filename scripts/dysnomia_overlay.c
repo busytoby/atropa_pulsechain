@@ -1,10 +1,7 @@
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xft/Xft.h>
+#include <gtk/gtk.h>
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #define DYSNOMIA_ZERO 638403877000000000ULL
 #define TICKS_PER_DAY (86400ULL * 10000000ULL)
@@ -12,6 +9,8 @@
 #define TICKS_PER_MINUTE (TICKS_PER_HOUR / 100ULL)
 #define TICKS_PER_SECOND (TICKS_PER_MINUTE / 34ULL)
 #define NET_UNIX_EPOCH_TICKS 621355968000000000ULL
+
+GtkWidget *label_time;
 
 void get_dysnomia_time(char *out_time) {
     uint64_t current_ticks = (uint64_t)time(NULL) * 10000000ULL + NET_UNIX_EPOCH_TICKS;
@@ -26,86 +25,87 @@ void get_dysnomia_time(char *out_time) {
     sprintf(out_time, "[d%04d/%02d%02d%02d]", day, hour, minute, second);
 }
 
-int main(int argc, char *argv[]) {
-    Display *dpy = XOpenDisplay(NULL);
-    if (!dpy) {
-        fprintf(stderr, "Error: Cannot open X display\n");
-        return 1;
-    }
-
-    int screen = DefaultScreen(dpy);
-    int screen_width = DisplayWidth(dpy, screen);
-    int screen_height = DisplayHeight(dpy, screen);
-
-    // Locate 32-bit TrueColor visual for transparent background
-    XVisualInfo vinfo;
-    if (!XMatchVisualInfo(dpy, screen, 32, TrueColor, &vinfo)) {
-        fprintf(stderr, "Error: No 32-bit ARGB visual found\n");
-        return 1;
-    }
-
-    Colormap cmap = XCreateColormap(dpy, RootWindow(dpy, screen), vinfo.visual, AllocNone);
-
-    // Window dimensions and positioning (bottom left of monitor)
-    int width = 160;
-    int height = 24;
-    int x = 16;
-    int y = screen_height - height - 16;
-
-    XSetWindowAttributes attrs;
-    attrs.colormap = cmap;
-    attrs.background_pixel = 0; // Fully transparent background
-    attrs.border_pixel = 0;
-    attrs.override_redirect = True; // Tells WM to skip decorating or positioning this window
-
-    Window win = XCreateWindow(
-        dpy, RootWindow(dpy, screen),
-        x, y, width, height, 0,
-        vinfo.depth, InputOutput, vinfo.visual,
-        CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect, &attrs
-    );
-
-    // Setup Xft fonts and colors (DeepPink = #FF1493)
-    XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=11:bold");
-    XRenderColor xr_color;
-    xr_color.red = 0xFFFF;
-    xr_color.green = 0x1414;
-    xr_color.blue = 0x9393;
-    xr_color.alpha = 0xFFFF;
-    XftColor color;
-    XftColorAllocValue(dpy, vinfo.visual, cmap, &xr_color, &color);
-
-    XftDraw *draw = XftDrawCreate(dpy, win, vinfo.visual, cmap);
-
-    XMapWindow(dpy, win);
-    XFlush(dpy);
-
+static gboolean update_time(gpointer data) {
     char time_str[64];
-    while (1) {
-        // Handle pending X events (clicks, etc. - though we pass them through)
-        while (XPending(dpy)) {
-            XEvent ev;
-            XNextEvent(dpy, &ev);
-        }
+    get_dysnomia_time(time_str);
 
-        // Clear display area
-        XClearWindow(dpy, win);
+    char markup[256];
+    sprintf(markup, "<span font_desc='Consolas Bold 11' foreground='DeepPink'>%s</span>", time_str);
+    gtk_label_set_markup(GTK_LABEL(label_time), markup);
+    return TRUE;
+}
 
-        // Fetch current Dysnomia time and draw text
-        get_dysnomia_time(time_str);
-        XftDrawStringUtf8(draw, &color, font, 0, 16, (XftChar8 *)time_str, strlen(time_str));
-        XFlush(dpy);
+static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+    cairo_paint(cr);
+    return FALSE;
+}
 
-        // Tick every 111ms
-        usleep(111000);
+static void realize_callback(GtkWidget *widget, gpointer data) {
+    GdkWindow *gdk_win = gtk_widget_get_window(widget);
+    if (gdk_win) {
+        gdk_window_set_pass_through(gdk_win, TRUE);
     }
+}
 
-    // Cleanup (unreached)
-    XftDrawDestroy(draw);
-    XftColorFree(dpy, vinfo.visual, cmap, &color);
-    XftFontClose(dpy, font);
-    XDestroyWindow(dpy, win);
-    XCloseDisplay(dpy);
+int main(int argc, char *argv[]) {
+    gtk_init(&argc, &argv);
+
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Dysnomia Time Overlay");
+    
+    // Set undecorated top-level
+    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
+    
+    // Set type hint to DOCK so Wayland compositors position it correctly at the screen boundary
+    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
+    gtk_window_set_accept_focus(GTK_WINDOW(window), FALSE);
+
+    // Apply strict CSS to prevent shadows and window borders
+    GdkScreen *screen = gtk_widget_get_screen(window);
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(css_provider,
+        "window, decoration, grid { background: transparent; background-color: transparent; border: none; box-shadow: none; margin: 0; padding: 0; }\n",
+        -1, NULL);
+    gtk_style_context_add_provider_for_screen(screen,
+        GTK_STYLE_PROVIDER(css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
+    if (visual) {
+        gtk_widget_set_visual(window, visual);
+    }
+    gtk_widget_set_app_paintable(window, TRUE);
+    
+    g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw_callback), NULL);
+    g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(realize_callback), NULL);
+
+    // Grid container
+    GtkWidget *grid = gtk_grid_new();
+    gtk_widget_set_hexpand(grid, TRUE);
+    gtk_container_add(GTK_CONTAINER(window), grid);
+
+    label_time = gtk_label_new(NULL);
+    // Align left (start) of the screen
+    gtk_widget_set_halign(label_time, GTK_ALIGN_START);
+    gtk_widget_set_valign(label_time, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_start(label_time, 16);
+    gtk_grid_attach(GTK_GRID(grid), label_time, 0, 0, 1, 1);
+
+    // Width spans the screen, height is a thin taskbar profile
+    gtk_window_set_default_size(GTK_WINDOW(window), 1920, 24);
+
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    update_time(NULL);
+    g_timeout_add(111, update_time, NULL);
+
+    gtk_widget_show_all(window);
+    gtk_main();
 
     return 0;
 }
