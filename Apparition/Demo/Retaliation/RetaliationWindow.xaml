@@ -50,10 +50,14 @@
               VerticalScrollBarVisibility="Hidden"
               IsReadOnly="false"
               FontSize="20"
+              Margin="16,400,16,18"
               PreviewMouseDown="RetaliationWindow_MouseDown"
-              PreviewKeyDown="Retaliation_KeyDown"
-              Margin="16,400,16,18">
+              PreviewKeyDown="Retaliation_KeyDown">
         </RichTextBox>
+        <Grid VerticalAlignment="Bottom" Height="16" Margin="22,0,22,2" Background="Transparent">
+            <TextBlock x:Name="DysnomiaDayText" Text="Day 0" HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="DeepPink" FontSize="11" FontFamily="Consolas" FontWeight="Bold"/>
+            <TextBlock x:Name="DysnomiaTimeText" Text="[d0000/000000]" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="DeepPink" FontSize="11" FontFamily="Consolas" FontWeight="Bold"/>
+        </Grid>
       </Grid>
     </Border>
 </Window>
