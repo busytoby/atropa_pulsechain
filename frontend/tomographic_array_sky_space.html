@@ -505,6 +505,9 @@
             const now = Date.now();
             const elapsed = ((now - startTime) * 0.001) % DEMO_DURATION;
             
+            // Derive timeline frame index corresponding to gallery timelines (900 frames total)
+            const frameIndex = Math.floor((elapsed / DEMO_DURATION) * 900);
+
             // Update HUD timeline progress
             document.getElementById("timeline-progress").style.width = `${(elapsed / DEMO_DURATION) * 100}%`;
             document.getElementById("timeline-time").innerText = `TIME: ${elapsed.toFixed(1)}s / ${DEMO_DURATION.toFixed(1)}s`;
@@ -550,6 +553,10 @@
             const d_hyp = 22.0 + (regs.dynamo % 30);
             const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
 
+            // YI coordinate frequencies
+            const fx = 1.0 + (regs.channel % 5);
+            const fy = 1.0 + (regs.dynamo % 5);
+
             const cx = width / 2;
             const cy = height / 2;
 
@@ -590,19 +597,16 @@
                 let discretePoints = [];
 
                 if (teleSystem === "vla") {
-                    // Y-Shape Layout: 27 Antennas (9 per arm at 120 degree spreads)
                     isDiscreteAperture = true;
                     for (let arm = 0; arm < 3; arm++) {
                         const armAngle = arm * (2 * Math.PI / 3);
                         for (let ant = 1; ant <= 9; ant++) {
                             const armDist = ant / 9.0;
-                            // Map VLA station to relative theta parameter on hypotrochoid
                             const antennaTheta = armAngle + armDist * Math.PI;
                             discretePoints.push(antennaTheta);
                         }
                     }
                 } else if (teleSystem === "alma") {
-                    // Golden Spiral: 66 Antennas distributed spirally
                     isDiscreteAperture = true;
                     const goldenAngle = 137.5 * Math.PI / 180;
                     for (let ant = 0; ant < 66; ant++) {
@@ -610,9 +614,7 @@
                         discretePoints.push(antennaTheta);
                     }
                 } else if (teleSystem === "lofar") {
-                    // Dense dutch central core clusters (clustered randomization)
                     isDiscreteAperture = true;
-                    // Seeded random distribution mapping core stations
                     let seedVal = regs.base;
                     for (let ant = 0; ant < 48; ant++) {
                         seedVal = (seedVal * 16807) % 2147483647;
@@ -620,7 +622,6 @@
                         discretePoints.push(antennaTheta);
                     }
                 } else if (teleSystem === "ska") {
-                    // Logarithmic spiral arms (3 spiral arm arrays)
                     isDiscreteAperture = true;
                     for (let arm = 0; arm < 3; arm++) {
                         const armStartAngle = arm * (2 * Math.PI / 3);
@@ -632,16 +633,44 @@
                     }
                 }
 
-                if (isDiscreteAperture) {
-                    // Render receiver stations as glowing dots and connect with scanning line loops
-                    discretePoints.forEach((theta, idx) => {
-                        const lx = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
-                        const ly = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
+                // Helper to resolve the morph coordinates for a given theta angle along the timeline
+                function resolveMorphCoords(theta) {
+                    // YI coordinate path (Lissajous)
+                    const lx_yi = 40.0 * Math.sin(fx * theta + phase);
+                    const ly_yi = 40.0 * Math.sin(fy * theta);
+                    
+                    // LAU coordinate path (Hypotrochoid)
+                    const lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
+                    const ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
+                    
+                    let mx, my;
+                    const breathe = 1.0 + (Math.sin(elapsed * 3.0 + phase) * 0.04);
+                    
+                    if (frameIndex < 300) {
+                        // Phase 1: YI Lissajous
+                        mx = lx_yi * breathe;
+                        my = ly_yi * breathe;
+                    } else if (frameIndex < 630) {
+                        // Phase 2: Morphing
+                        const morphFactor = (frameIndex - 300) / 330.0;
+                        mx = (lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor) * breathe;
+                        my = (ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor) * breathe;
+                    } else {
+                        // Phase 3: Perfect Tardibear locked pause (with anatomy warp and organic breathing)
                         const warpX = Math.sin(theta * 3) * 6;
                         const warpY = Math.cos(theta * 6) * 4;
-                        
-                        const baseCoordsX = lx + warpX;
-                        const baseCoordsY = ly + warpY;
+                        mx = (lx_lau + warpX) * breathe;
+                        my = (ly_lau + warpY) * breathe;
+                    }
+                    
+                    return { x: mx, y: my };
+                }
+
+                if (isDiscreteAperture) {
+                    discretePoints.forEach((theta, idx) => {
+                        const coords = resolveMorphCoords(theta);
+                        const baseCoordsX = coords.x;
+                        const baseCoordsY = coords.y;
 
                         // Projection modes mapping
                         if (mode === "coaxial") {
@@ -709,13 +738,9 @@
                     // Standard Continuous rendering
                     for (let i = 0; i <= steps; i++) {
                         const theta = i * 4.0 * Math.PI / steps;
-                        const lx = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
-                        const ly = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
-                        
-                        const warpX = Math.sin(theta * 3) * 6;
-                        const warpY = Math.cos(theta * 6) * 4;
-                        const baseCoordsX = lx + warpX;
-                        const baseCoordsY = ly + warpY;
+                        const coords = resolveMorphCoords(theta);
+                        const baseCoordsX = coords.x;
+                        const baseCoordsY = coords.y;
 
                         if (mode === "coaxial") {
                             localX = baseCoordsX;
