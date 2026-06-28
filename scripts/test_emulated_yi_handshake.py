@@ -42,10 +42,11 @@ def main():
     output = proc_run.stdout
     
     milestones = [
-        "Shared YI State Established on both devices!",
-        "Signature matches. Processing message: \"Secure-WinchesterMQ-Data\"",
-        "ACK verified. Packet transmission completed successfully!",
-        "Signature validation failed! Successfully blocked and ignored spoofed ACK."
+        "Auncient Emulated Helmholtz 9-Epoch Handshake (Rod A <=> Cone B)",
+        "Swapping Contour registers...",
+        "Swapping Pole registers...",
+        "Swapping Foundation registers...",
+        "Helmholtz convergence established! YI ="
     ]
     
     all_passed = True

@@ -6,16 +6,71 @@
 
 #define KERMIT_SOH 0x01
 #define MAX_PAYLOAD 90
+#define MOTZKIN_PRIME 953467954114363ULL
 
-// Auncient YI State Registers
+// Modular multiplication to prevent overflow of 64-bit unsigned integers
+static uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+    uint64_t res = 0;
+    a %= m;
+    while (b > 0) {
+        if (b & 1) res = (res + a) % m;
+        a = (a * 2) % m;
+        b /= 2;
+    }
+    return res;
+}
+
+// Modular exponentiation
+static uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t mod) {
+    uint64_t res = 1;
+    base %= mod;
+    while (exp > 0) {
+        if (exp & 1) res = mod_mul(res, base, mod);
+        base = mod_mul(base, base, mod);
+        exp /= 2;
+    }
+    return res;
+}
+
+// 9-epoch Helmholtz states matching Dysnomia registers
+typedef enum {
+    EPOCH_INIT = 0,
+    EPOCH_AVAIL = 1,
+    EPOCH_FORM = 2,
+    EPOCH_POLARIZE = 3,
+    EPOCH_CONJUGATE = 4,
+    EPOCH_CONIFY = 5,
+    EPOCH_SATURATE = 6,
+    EPOCH_IONIZE = 7,
+    EPOCH_MAGNETIZE = 8,
+    EPOCH_DONE = 9
+} HelmholtzEpoch;
+
 typedef struct {
     uint64_t base;
     uint64_t secret;
     uint64_t signal;
-    uint64_t motzkin_prime;
-} YiState;
+    uint64_t channel;
+    uint64_t contour;
+    uint64_t pole;
+    uint64_t identity;
+    uint64_t foundation;
+    uint64_t element;
+    uint64_t dynamo;
+} HelmholtzRegisters;
 
-// Protocol Frame
+typedef struct {
+    char name[16];
+    uint16_t address;
+    bool is_rod;
+    HelmholtzEpoch epoch;
+    HelmholtzRegisters reg;
+    uint64_t xi;
+    uint64_t beta;
+    uint64_t manifold;
+} HelmholtzPartner;
+
+// Kermit protocol frame struct
 typedef struct {
     uint8_t soh;
     uint8_t len;
@@ -25,18 +80,7 @@ typedef struct {
     uint8_t check;
 } KermitFrame;
 
-typedef struct {
-    char name[16];
-    uint16_t address;
-    bool is_rod;
-    uint8_t seq_num;
-    uint8_t public_key[32];
-    uint8_t peer_public_key[32];
-    YiState yi;
-    bool yi_established;
-} HeltecNode;
-
-// Helper to compute Kermit 6-bit checksum
+// Compute Kermit 6-bit checksum
 static uint8_t kermit_checksum(const uint8_t *buf, size_t len) {
     uint32_t sum = 0;
     for (size_t i = 0; i < len; i++) {
@@ -74,188 +118,179 @@ static bool parse_kermit_frame(const uint8_t *buf, size_t size, KermitFrame *fra
     return calc_check == frame->check;
 }
 
-// YI react signature derivation
-static uint64_t yi_react(HeltecNode *node, uint64_t nonce) {
-    uint64_t signature = node->yi.base;
-    if (node->is_rod) {
-        signature = (signature ^ node->yi.secret ^ nonce) % node->yi.motzkin_prime;
-    } else {
-        signature = (signature ^ node->yi.signal ^ nonce) % node->yi.motzkin_prime;
+// Step-wise Helmholtz transition math
+static void helmholtz_step(HelmholtzPartner *p, uint64_t external_input) {
+    switch (p->epoch) {
+        case EPOCH_INIT:
+            // Constructor values
+            p->reg.base = 1234567;
+            p->reg.secret = 9876543;
+            p->reg.signal = 5555555;
+            p->reg.identity = 1111111;
+            // Channel = Base^Signal mod MotzkinPrime (Tune)
+            p->reg.channel = mod_pow(p->reg.base, p->reg.signal, MOTZKIN_PRIME);
+            p->epoch = EPOCH_AVAIL;
+            break;
+            
+        case EPOCH_AVAIL:
+            // Contour = Base^Secret mod MotzkinPrime
+            p->reg.contour = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            p->epoch = EPOCH_FORM;
+            break;
+            
+        case EPOCH_FORM:
+            // Input: peer's Contour. Base = input^Secret mod MotzkinPrime
+            p->reg.base = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            p->epoch = EPOCH_POLARIZE;
+            break;
+            
+        case EPOCH_POLARIZE:
+            // Pole = Base^Secret mod MotzkinPrime
+            p->reg.pole = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            p->epoch = EPOCH_CONJUGATE;
+            break;
+            
+        case EPOCH_CONJUGATE:
+            // Input: peer's Pole. Secret = input^Secret mod MotzkinPrime
+            p->reg.secret = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            p->epoch = EPOCH_CONIFY;
+            break;
+            
+        case EPOCH_CONIFY:
+            // Foundation = Base^Identity mod MotzkinPrime
+            p->reg.foundation = mod_pow(p->reg.base, p->reg.identity, MOTZKIN_PRIME);
+            p->epoch = EPOCH_SATURATE;
+            break;
+            
+        case EPOCH_SATURATE:
+            // Input: peer's Foundation. Element = Beta + input
+            p->reg.element = p->beta + external_input;
+            p->epoch = EPOCH_IONIZE;
+            break;
+            
+        case EPOCH_IONIZE:
+            // Dynamo = Base^Signal mod Element
+            p->reg.dynamo = mod_pow(p->reg.base, p->reg.signal, p->reg.element);
+            p->epoch = EPOCH_MAGNETIZE;
+            break;
+            
+        case EPOCH_MAGNETIZE:
+            // Convergence Check (Adduct matches)
+            // Rod (A) checks: Adduct = Cone.Dynamo^Rod.Signal mod Rod.Element
+            // Cone (B) checks: Adduct = Rod.Dynamo^Cone.Signal mod Cone.Element
+            p->manifold = mod_pow(external_input, p->reg.signal, p->reg.element);
+            p->epoch = EPOCH_DONE;
+            break;
+            
+        default:
+            break;
     }
-    return signature;
 }
 
 int main() {
-    printf("=== Auncient Emulated YI Handshake & Nonce Signing Test Bed ===\n");
+    printf("=== Auncient Emulated Helmholtz 9-Epoch Handshake (Rod A <=> Cone B) ===\n");
     
-    // Initialize Node A (Rod) and Node B (Cone)
-    HeltecNode node_a = {
+    HelmholtzPartner node_a = {
         .name = "NODE_A_ROD",
         .address = 0xAA01,
         .is_rod = true,
-        .seq_num = 0,
-        .public_key = { 0x0A, 0x0B, 0x0C }, // Node A Ephemeral Key
-        .yi = { .secret = 9876543, .signal = 5555555, .motzkin_prime = 953467954114363ULL },
-        .yi_established = false
+        .epoch = EPOCH_INIT,
+        .beta = 99991234
     };
     
-    HeltecNode node_b = {
+    HelmholtzPartner node_b = {
         .name = "NODE_B_CONE",
         .address = 0xBB02,
         .is_rod = false,
-        .seq_num = 0,
-        .public_key = { 0x01, 0x02, 0x03 }, // Node B Ephemeral Key
-        .yi = { .secret = 9876543, .signal = 5555555, .motzkin_prime = 953467954114363ULL },
-        .yi_established = false
+        .epoch = EPOCH_INIT,
+        .beta = 99991234 // Must match for structural alignment of Element
     };
     
     uint8_t channel_buffer[256];
     size_t channel_len = 0;
+    KermitFrame rx_frame;
     
-    // --- PHASE 1: Open Key Exchange (No Nonces) ---
-    printf("\n[PHASE 1] Initiating Open Key Exchange...\n");
+    // --- STEP-BY-STEP HANDSHAKE EXCHANGE LOOP ---
     
-    // Node A sends 'S' frame carrying its public key
-    printf("[%s] Broadcasting Send-Init (S) frame...\n", node_a.name);
-    channel_len = pack_kermit_frame(node_a.seq_num, 'S', node_a.public_key, 32, channel_buffer);
+    // Epoch 0: INIT (Local calculations)
+    helmholtz_step(&node_a, 0);
+    helmholtz_step(&node_b, 0);
+    printf("[EPOCH 0: INIT] Local registers configured.\n");
     
-    // Node B receives and processes 'S' frame
-    KermitFrame frame_rx;
-    if (parse_kermit_frame(channel_buffer, channel_len, &frame_rx) && frame_rx.type == 'S') {
-        printf("[%s] Received Send-Init. Saving Peer Public Key.\n", node_b.name);
-        memcpy(node_b.peer_public_key, frame_rx.data, 32);
-        
-        // Derive shared YI base on Node B: XOR public keys
-        node_b.yi.base = 0;
-        for (int i = 0; i < 32; i++) {
-            node_b.yi.base ^= (node_b.public_key[i] ^ node_b.peer_public_key[i]);
-        }
-        node_b.yi_established = true;
-        printf("[%s] Derived YI Base: %lu\n", node_b.name, node_b.yi.base);
-        
-        // Node B responds with ACK ('Y') carrying its public key
-        printf("[%s] Transmitting ACK (Y) frame...\n", node_b.name);
-        channel_len = pack_kermit_frame(frame_rx.seq, 'Y', node_b.public_key, 32, channel_buffer);
-    }
+    // Epoch 1: AVAIL (Local contour calculations)
+    helmholtz_step(&node_a, 0);
+    helmholtz_step(&node_b, 0);
+    printf("[EPOCH 1: AVAIL] Channel and Contour registers resolved.\n");
     
-    // Node A receives the ACK frame
-    if (parse_kermit_frame(channel_buffer, channel_len, &frame_rx) && frame_rx.type == 'Y') {
-        printf("[%s] Received ACK. Saving Peer Public Key.\n", node_a.name);
-        memcpy(node_a.peer_public_key, frame_rx.data, 32);
-        
-        // Derive shared YI base on Node A
-        node_a.yi.base = 0;
-        for (int i = 0; i < 32; i++) {
-            node_a.yi.base ^= (node_a.public_key[i] ^ node_a.peer_public_key[i]);
-        }
-        node_a.yi_established = true;
-        printf("[%s] Derived YI Base: %lu\n", node_a.name, node_a.yi.base);
-    }
+    // Epoch 2: FORM (Swap Contours)
+    printf("[EPOCH 2: FORM] Swapping Contour registers...\n");
+    // Rod A sends Contour to Cone B
+    channel_len = pack_kermit_frame(1, 'C', (uint8_t*)&node_a.reg.contour, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t contour_a = *(uint64_t*)rx_frame.data;
     
-    // Check if base matches
-    if (node_a.yi.base == node_b.yi.base && node_a.yi_established) {
-        printf("[SUCCESS] Shared YI State Established on both devices!\n");
+    // Cone B sends Contour to Rod A
+    channel_len = pack_kermit_frame(1, 'C', (uint8_t*)&node_b.reg.contour, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t contour_b = *(uint64_t*)rx_frame.data;
+    
+    helmholtz_step(&node_a, contour_b);
+    helmholtz_step(&node_b, contour_a);
+    
+    // Epoch 3: POLARIZE (Local calculations)
+    helmholtz_step(&node_a, 0);
+    helmholtz_step(&node_b, 0);
+    printf("[EPOCH 3: POLARIZE] Pole registers derived.\n");
+    
+    // Epoch 4: CONJUGATE (Swap Poles)
+    printf("[EPOCH 4: CONJUGATE] Swapping Pole registers...\n");
+    channel_len = pack_kermit_frame(2, 'P', (uint8_t*)&node_a.reg.pole, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t pole_a = *(uint64_t*)rx_frame.data;
+    
+    channel_len = pack_kermit_frame(2, 'P', (uint8_t*)&node_b.reg.pole, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t pole_b = *(uint64_t*)rx_frame.data;
+    
+    helmholtz_step(&node_a, pole_b);
+    helmholtz_step(&node_b, pole_a);
+    
+    // Epoch 5: CONIFY (Local calculations)
+    helmholtz_step(&node_a, 0);
+    helmholtz_step(&node_b, 0);
+    printf("[EPOCH 5: CONIFY] Foundation registers resolved.\n");
+    
+    // Epoch 6: SATURATE (Swap Foundations)
+    printf("[EPOCH 6: SATURATE] Swapping Foundation registers...\n");
+    channel_len = pack_kermit_frame(3, 'F', (uint8_t*)&node_a.reg.foundation, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t found_a = *(uint64_t*)rx_frame.data;
+    
+    channel_len = pack_kermit_frame(3, 'F', (uint8_t*)&node_b.reg.foundation, 8, channel_buffer);
+    parse_kermit_frame(channel_buffer, channel_len, &rx_frame);
+    uint64_t found_b = *(uint64_t*)rx_frame.data;
+    
+    helmholtz_step(&node_a, found_b);
+    helmholtz_step(&node_b, found_a);
+    
+    // Epoch 7: IONIZE (Local calculations)
+    helmholtz_step(&node_a, 0);
+    helmholtz_step(&node_b, 0);
+    printf("[EPOCH 7: IONIZE] Element bound and Dynamo resolved.\n");
+    
+    // Epoch 8: MAGNETIZE (Verify Convergence of Manifolds)
+    printf("[EPOCH 8: MAGNETIZE] Swapping Dynamos and checking convergence...\n");
+    helmholtz_step(&node_a, node_b.reg.dynamo);
+    helmholtz_step(&node_b, node_a.reg.dynamo);
+    
+    printf("  -> Rod A Manifold:  %lu\n", node_a.manifold);
+    printf("  -> Cone B Manifold: %lu\n", node_b.manifold);
+    
+    if (node_a.manifold == node_b.manifold && node_a.epoch == EPOCH_DONE) {
+        printf("\n[RESULT] [SUCCESS] Helmholtz convergence established! YI = %lu\n", node_a.manifold);
+        return 0;
     } else {
-        printf("[FAILED] Shared YI derivation failed.\n");
+        printf("\n[RESULT] [FAILED] Helmholtz manifolds diverged.\n");
         return 1;
     }
-    
-    // --- PHASE 2: Secure Nonce-Signed Session ---
-    printf("\n[PHASE 2] Transitioning to Nonce-Signed Data Session...\n");
-    node_a.seq_num++;
-    
-    uint64_t nonce_index = 100;
-    // Node A generates signature using its role (ROD) and the nonce
-    // We bind address: (nonce_index << 16) | address
-    uint64_t nonce_a = (nonce_index << 16) | node_a.address;
-    uint64_t sig_a = yi_react(&node_a, nonce_a);
-    
-    uint8_t payload[48];
-    const char *payload_text = "Secure-WinchesterMQ-Data";
-    memset(payload, 0, 48);
-    memcpy(payload, payload_text, strlen(payload_text));
-    memcpy(&payload[32], &nonce_a, 8);
-    memcpy(&payload[40], &sig_a, 8);
-    
-    printf("[%s] Transmitting Signed Data: Nonce=0x%lx, Sig=%lu\n", node_a.name, nonce_a, sig_a);
-    channel_len = pack_kermit_frame(node_a.seq_num, 'D', payload, 48, channel_buffer);
-    
-    // Node B receives and verifies the signature
-    if (parse_kermit_frame(channel_buffer, channel_len, &frame_rx) && frame_rx.type == 'D') {
-        uint64_t rx_nonce, rx_sig;
-        memcpy(&rx_nonce, &frame_rx.data[32], 8);
-        memcpy(&rx_sig, &frame_rx.data[40], 8);
-        
-        // B (CONE) verifies using A's role (ROD) parameters
-        uint64_t expected_sig = yi_react(&node_a, rx_nonce); // Verify as Rod
-        printf("[%s] Verifying signature. Expected: %lu, Received: %lu\n", node_b.name, expected_sig, rx_sig);
-        
-        if (rx_sig == expected_sig) {
-            printf("[%s] [VERIFIED] Signature matches. Processing message: \"%s\"\n", node_b.name, frame_rx.data);
-            
-            // Respond with signed ACK ('Y') using B's role (CONE)
-            uint64_t nonce_b = rx_nonce + 1;
-            uint64_t sig_b = yi_react(&node_b, nonce_b);
-            
-            uint8_t ack_payload[48];
-            memset(ack_payload, 0, 48);
-            memcpy(&ack_payload[32], &nonce_b, 8);
-            memcpy(&ack_payload[40], &sig_b, 8);
-            
-            printf("[%s] Transmitting Signed ACK: Nonce=0x%lx, Sig=%lu\n", node_b.name, nonce_b, sig_b);
-            channel_len = pack_kermit_frame(frame_rx.seq, 'Y', ack_payload, 48, channel_buffer);
-        } else {
-            printf("[%s] [DROP] Signature verification failed! Blocked spoofing attempt.\n", node_b.name);
-        }
-    }
-    
-    // Node A receives and verifies Node B's ACK signature
-    if (parse_kermit_frame(channel_buffer, channel_len, &frame_rx) && frame_rx.type == 'Y') {
-        uint64_t rx_nonce, rx_sig;
-        memcpy(&rx_nonce, &frame_rx.data[32], 8);
-        memcpy(&rx_sig, &frame_rx.data[40], 8);
-        
-        uint64_t expected_sig = yi_react(&node_b, rx_nonce); // Verify as Cone
-        printf("[%s] Verifying ACK signature. Expected: %lu, Received: %lu\n", node_a.name, expected_sig, rx_sig);
-        
-        if (rx_sig == expected_sig) {
-            printf("[%s] [SUCCESS] ACK verified. Packet transmission completed successfully!\n", node_a.name);
-        } else {
-            printf("[%s] [FAIL] ACK verification failed. Rejected packet.\n", node_a.name);
-        }
-    }
-    
-    // --- SCENARIO 3: Attacker (Node C) Spoofing Attempt ---
-    printf("\n[PHASE 3] Simulating Spoofing Attack from Node C (Attacker)...\n");
-    
-    // Attacker sends a fake ACK with arbitrary signature
-    uint64_t fake_nonce = ((nonce_index + 1) << 16) | node_b.address;
-    uint64_t fake_sig = 999999999; // Bad signature
-    
-    uint8_t fake_payload[48];
-    memset(fake_payload, 0, 48);
-    memcpy(&fake_payload[32], &fake_nonce, 8);
-    memcpy(&fake_payload[40], &fake_sig, 8);
-    
-    printf("[NODE_C] Injecting fake ACK to Node A: Nonce=0x%lx, Sig=%lu\n", fake_nonce, fake_sig);
-    channel_len = pack_kermit_frame(node_a.seq_num, 'Y', fake_payload, 48, channel_buffer);
-    
-    // Node A tries to parse the incoming frame
-    if (parse_kermit_frame(channel_buffer, channel_len, &frame_rx) && frame_rx.type == 'Y') {
-        uint64_t rx_nonce, rx_sig;
-        memcpy(&rx_nonce, &frame_rx.data[32], 8);
-        memcpy(&rx_sig, &frame_rx.data[40], 8);
-        
-        uint64_t expected_sig = yi_react(&node_b, rx_nonce); // Expected B (Cone) signature
-        printf("[%s] Verifying signature. Expected: %lu, Received: %lu\n", node_a.name, expected_sig, rx_sig);
-        
-        if (rx_sig == expected_sig) {
-            printf("[%s] [FAIL] Accepted fake signature! Vulnerability exposed.\n", node_a.name);
-        } else {
-            printf("[%s] [SUCCESS] Signature validation failed! Successfully blocked and ignored spoofed ACK.\n", node_a.name);
-        }
-    }
-    
-    printf("\n=== Emulated YI Handshake & Nonce Verification Passed ===\n");
-    return 0;
 }
