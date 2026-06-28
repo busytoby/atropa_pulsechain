@@ -561,6 +561,9 @@
         // Keep track of calculated coordinates for clicking
         let currentMiddleLayerPoints = [];
 
+        // Roster of registered LAU tokens loaded dynamically
+        let registeredLauTokens = {};
+
         function updateLabels() {
             valGain.innerText = parseFloat(twGain.value).toFixed(1) + "x";
             valFreq.innerText = parseFloat(twFreq.value).toFixed(2);
@@ -603,6 +606,82 @@
             lblZoom.innerText = "1.0x";
             updateDashboard();
         });
+
+        // Fetch roster of registered LAU tokens on PulseChain
+        async function fetchRegisteredLauTokens() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                if (data.treasury_tokens) {
+                    // Filter using the standard gallery options logic
+                    Object.values(data.treasury_tokens).forEach(token => {
+                        const address = token.address.toLowerCase();
+                        const symbol = (token.symbol || '').toLowerCase();
+                        const minterName = (token.minter_name || '').toLowerCase();
+                        
+                        if (token.ignored) return;
+                        
+                        const isLau = (symbol.includes('lau') || 
+                                       minterName.includes('lau') || 
+                                       address === "0xd32c39fee49391c7952d1b30b15921b0d3b42e69" || 
+                                       address === "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b" ||
+                                       address === "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e" ||
+                                       address === "0xad4e198623a5e2723e19e4d4a6ecf72b1d19fe4b") && 
+                                      (symbol.length < 16);
+                        
+                        if (isLau) {
+                            registeredLauTokens[token.address] = token;
+                        }
+                    });
+                    
+                    // Re-render select options
+                    populateTokenSelector();
+                }
+            } catch (err) {
+                console.error("Failed to load registered CHO/LAU roster:", err);
+            }
+        }
+
+        function populateTokenSelector() {
+            const select = document.getElementById("token-pair-select");
+            select.innerHTML = '';
+            
+            // Add Default video-derived pair
+            const optDefault = document.createElement("option");
+            optDefault.value = "default";
+            optDefault.innerText = "YI & mariarahelLau (0x3E10e...) [Default/Video]";
+            select.appendChild(optDefault);
+            
+            // Add Void simulation option
+            const optVoid = document.createElement("option");
+            optVoid.value = "void_enter";
+            optVoid.innerText = "void.enter / cho.join Simulation LAU";
+            select.appendChild(optVoid);
+            
+            // Add all other dynamically discovered/registered LAU contracts
+            Object.values(registeredLauTokens).forEach(token => {
+                // Skip duplicating the default if it matches
+                if (token.address.toLowerCase() === "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e") return;
+                
+                const opt = document.createElement("option");
+                opt.value = token.address;
+                opt.innerText = `${token.symbol || 'LAU'} (${token.address.substring(0, 8)}...) - ${token.name || 'Registered Delegate'}`;
+                select.appendChild(opt);
+            });
+        }
+
+        // Simple stable hash function to derive mock registers for any custom LAU address
+        function getRegisterSetFromAddress(address) {
+            let hash = 0;
+            for (let i = 0; i < address.length; i++) {
+                hash = address.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let r_base = Math.abs(hash * 31 + 17);
+            let r_channel = Math.abs(hash * 37 + 103);
+            let r_dynamo = Math.abs(hash * 41 + 199);
+            let r_foundation = Math.abs(hash * 43 + 313);
+            return [r_base, r_channel, r_dynamo, r_foundation];
+        }
 
         // Bind interactive mouse events
         canvasCard.addEventListener("mousedown", (e) => {
@@ -933,12 +1012,21 @@
             let r_hyp = 20; // derived r_hyp
             let d_hyp = 81; // derived d_hyp
 
-            // Under "void_enter", simulate a morph with high-frequency structures
-            if (tokenPairSelect.value === "void_enter") {
+            let selection = tokenPairSelect.value;
+            if (selection === "void_enter") {
                 fx = tw_freq * 1.25;
                 R_hyp = 160;
                 r_hyp = 35;
                 d_hyp = 110;
+            } else if (selection !== "default" && registeredLauTokens[selection]) {
+                // Dynamically resolve constants from custom contract address hash values
+                let regs = getRegisterSetFromAddress(selection);
+                fx = tw_freq * (1.0 + (regs[1] % 3));
+                fy = 1.0 + (regs[2] % 5);
+                fz = 1.0 + (regs[3] % 5);
+                R_hyp = 100 + (regs[3] % 80);
+                r_hyp = 20 + (regs[1] % 40);
+                d_hyp = 30 + (regs[2] % 60);
             }
 
             // Map timeline t to video's original 2700-frame scale for camera perspective accuracy
@@ -1099,11 +1187,27 @@
             let refPoints = [];
             for (let i = 0; i < num_points; i++) {
                 let theta = i * 4.0 * Math.PI / num_points;
-                let lx_yi = 135.0 * Math.sin(1.0 * theta + 3.0159) * 1.0;
-                let ly_yi = 135.0 * Math.sin(2.0 * theta);
-                let lz_yi = 135.0 * Math.cos(1.0 * theta);
-                let lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + ref_d_val * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta);
-                let ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - ref_d_val * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                let r_fx = 1.0, r_fy = 2.0, r_fz = 1.0;
+                let r_R = 165, r_r = 20, r_d = 81;
+                
+                if (selection === "void_enter") {
+                    r_fx = 1.25;
+                    r_R = 160; r_r = 35; r_d = 110;
+                } else if (selection !== "default" && registeredLauTokens[selection]) {
+                    let regs = getRegisterSetFromAddress(selection);
+                    r_fx = 1.0 + (regs[1] % 3);
+                    r_fy = 1.0 + (regs[2] % 5);
+                    r_fz = 1.0 + (regs[3] % 5);
+                    r_R = 100 + (regs[3] % 80);
+                    r_r = 20 + (regs[1] % 40);
+                    r_d = 30 + (regs[2] % 60);
+                }
+
+                let lx_yi = 135.0 * Math.sin(r_fx * theta + 3.0159) * 1.0;
+                let ly_yi = 135.0 * Math.sin(r_fy * theta);
+                let lz_yi = 135.0 * Math.cos(r_fz * theta);
+                let lx_lau = (r_R - r_r) * Math.cos(theta) + r_d * Math.cos(((r_R - r_r) / r_r) * theta);
+                let ly_lau = (r_R - r_r) * Math.sin(theta) - r_d * Math.sin(((r_R - r_r) / r_r) * theta);
                 let lz_lau = 80.0 * Math.cos(5.0 * theta);
                 let lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
                 let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
@@ -1114,13 +1218,21 @@
             let referenceRatio = calculatePCA(refPoints);
             let ratioError = Math.abs(actualRatio - referenceRatio);
 
-            let frequencyError = Math.abs(tw_freq - 1.0);
+            // Align check boundaries adjust to dynamic frequencies
+            let target_fx = 1.0;
+            if (selection === "void_enter") target_fx = 1.25;
+            else if (selection !== "default" && registeredLauTokens[selection]) {
+                let regs = getRegisterSetFromAddress(selection);
+                target_fx = 1.0 + (regs[1] % 3);
+            }
+
+            let frequencyError = Math.abs(tw_freq - target_fx);
             let gainError = Math.abs(tw_gain - 1.0);
             let blowupError = Math.abs(tw_blowup - 1.0);
             let detuneError = Math.abs(tw_detune - 0);
 
             let alignmentFactor = 0.0;
-            if (tokenPairSelect.value === "default" && frequencyError < 0.35 && gainError < 0.35 && blowupError < 0.3 && detuneError < 15 && ratioError < 0.5) {
+            if (frequencyError < 0.35 && gainError < 0.35 && blowupError < 0.3 && detuneError < 15 && ratioError < 0.5) {
                 let penalty = (frequencyError * 1.5 + gainError * 1.5 + blowupError * 1.5 + detuneError * 0.02 + ratioError * 0.8);
                 alignmentFactor = Math.max(0.0, 1.0 - penalty);
             }
@@ -1259,6 +1371,41 @@
             requestAnimationFrame(renderLoop);
         }
         
+        // Handle dynamic address changes on selection
+        tokenPairSelect.addEventListener("change", () => {
+            let selection = tokenPairSelect.value;
+            console.log("Token Pair selection changed to:", selection);
+            manuallyLockedOrgans = {}; // clear manual locks for new target
+            activeOrganSelection = null;
+            document.querySelectorAll(".anatomy-item").forEach(item => item.classList.remove("active-selection", "manual-lock", "detected"));
+            
+            // Adjust slider ranges and defaults based on selection
+            if (selection === "default") {
+                twGain.value = 1.0;
+                twFreq.value = 1.0;
+                twDetune.value = 0;
+                twPhase.value = 173;
+                twBlowup.value = 1.0;
+            } else if (selection === "void_enter") {
+                twGain.value = 1.2;
+                twFreq.value = 4.0;
+                twDetune.value = 0;
+                twPhase.value = 0;
+                twBlowup.value = 1.0;
+            } else {
+                let regs = getRegisterSetFromAddress(selection);
+                twGain.value = 1.0;
+                twFreq.value = 1.0;
+                twDetune.value = 0;
+                twPhase.value = Math.abs(regs[0] % 360);
+                twBlowup.value = 1.0;
+            }
+            updateLabels();
+            updateDashboard();
+        });
+
+        // Initialize dynamic roster loader
+        fetchRegisteredLauTokens();
         updateLabels();
         renderLoop();
     </script>
