@@ -6,7 +6,8 @@
 
 #define KERMIT_SOH 0x01
 #define MAX_PAYLOAD 90
-#define MOTZKIN_PRIME 953473ULL
+#define MOTZKIN_PRIME 953467954114363ULL
+#define APOGEE_PRIME 953473ULL
 
 // Modular multiplication to prevent overflow of 64-bit unsigned integers
 static uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
@@ -314,10 +315,10 @@ int main() {
         node_b.yi.signal = node_b.reg.signal;
         node_b.yi.motzkin_prime = MOTZKIN_PRIME;
         
-        // Deriving Chin boundary values to resolve the Monopole
-        uint64_t chin_a = (node_a.beta + 7) % MOTZKIN_PRIME;
-        uint64_t chin_b = (node_b.beta + 7) % MOTZKIN_PRIME;
-        node_a.yi.monopole = mod_pow(chin_a, chin_b, MOTZKIN_PRIME);
+        // Deriving Chin boundary values to resolve the Monopole using APOGEE_PRIME
+        uint64_t chin_a = (node_a.beta + 7) % APOGEE_PRIME;
+        uint64_t chin_b = (node_b.beta + 7) % APOGEE_PRIME;
+        node_a.yi.monopole = mod_pow(chin_a, chin_b, APOGEE_PRIME);
         node_b.yi.monopole = node_a.yi.monopole;
         
         printf("\n[SESSION] Generating YI.react Nonce Signatures:\n");
