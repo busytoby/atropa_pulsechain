@@ -80,7 +80,7 @@ def compile_lau_timeline_dna(address, out_dir):
             t = frame / float(TOTAL_FRAMES)
             pulse = math.sin(frame * 0.08) * 0.5 + 0.5
             
-            # Segment timeline into distinct complexity phases
+            # Segment timeline into distinct complexity phases mapping to perfect reference details
             if frame < 300:
                 # 1. Bear Phase: 2 eyes, 0 sickness, static layout
                 ec = 2
@@ -94,19 +94,19 @@ def compile_lau_timeline_dna(address, out_dir):
                 t_morph = (frame - 300) / 400.0
                 ec = 4
                 sick_percent = final_sickness * t_morph
-                g_x = fx * t_morph * 0.5
-                g_y = fy * t_morph * 0.5
-                stretch = 1.0 + (pulse * 0.05 * (1.0 - t_morph))
-                light_intensity = 0.45 + (0.25 * t_morph) + (pulse * 0.05)
+                g_x = 0.1 * t_morph
+                g_y = 0.1 * t_morph
+                stretch = 1.0 - (t_morph * 0.1)
+                light_intensity = 0.5 + (0.2 * t_morph) + (pulse * 0.05)
             else:
-                # 3. Tardibear Phase: 8 eyes/segments, full sickness, maximum complexity
+                # 3. Tardibear Phase: 8 eyes/segments, full sickness, maximum complexity (matching the perfect reference attempt)
                 t_tardi = (frame - 700) / 200.0
                 ec = 8
                 sick_percent = final_sickness
-                g_x = fx * (0.5 + t_tardi * 0.5)
-                g_y = fy * (0.5 + t_tardi * 0.5)
-                stretch = 1.0 - (t_tardi * 0.1)
-                light_intensity = 0.7 + (0.2 * t_tardi) + (pulse * 0.05)
+                g_x = 0.25
+                g_y = 0.15 * math.sin(t_tardi * math.pi * 8) # shake rotation offset
+                stretch = 1.2 # matching established scale expansion
+                light_intensity = 1.0 - (t_tardi * 0.5) # extreme contrast flash
             
             # Pack 31-byte frame
             frame_data = struct.pack('=ffffffBBBBBBB',
