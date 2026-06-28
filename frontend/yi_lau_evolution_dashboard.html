@@ -665,12 +665,12 @@
             if (currentMiddleLayerPoints.length === 0) return;
             
             let len = currentMiddleLayerPoints.length;
-            let headIdx = Math.floor(len * 0.0);
-            let pharynxIdx = Math.floor(len * 0.12);
-            let glandsIdx = Math.floor(len * 0.25);
-            let midgutIdx = Math.floor(len * 0.50);
-            let malpighianIdx = Math.floor(len * 0.65);
-            let clawsIdx = Math.floor(len * 0.75);
+            let headIdx = Math.floor(len * 0.95) % len;
+            let pharynxIdx = Math.floor(len * 0.05) % len;
+            let glandsIdx = Math.floor(len * 0.12) % len;
+            let midgutIdx = Math.floor(len * 0.45) % len;
+            let malpighianIdx = Math.floor(len * 0.60) % len;
+            let clawsIdx = Math.floor(len * 0.82) % len;
 
             let organs = [
                 { id: "anat-head", name: "Anterior Head Capsule", pt: currentMiddleLayerPoints[headIdx] },
@@ -1152,13 +1152,13 @@
                 let middleLayer = currentMiddleLayerPoints;
                 let len = middleLayer.length;
                 
-                // Default index mappings on the actual hypotrochoid curve
-                let headIdx = Math.floor(len * 0.0);
-                let pharynxIdx = Math.floor(len * 0.12);
-                let glandsIdx = Math.floor(len * 0.25);
-                let midgutIdx = Math.floor(len * 0.50);
-                let malpighianIdx = Math.floor(len * 0.65);
-                let clawsIdx = Math.floor(len * 0.75);
+                // Fine-tuned index mappings on the actual hypotrochoid curve
+                let headIdx = Math.floor(len * 0.95) % len;
+                let pharynxIdx = Math.floor(len * 0.05) % len;
+                let glandsIdx = Math.floor(len * 0.12) % len;
+                let midgutIdx = Math.floor(len * 0.45) % len;
+                let malpighianIdx = Math.floor(len * 0.60) % len;
+                let clawsIdx = Math.floor(len * 0.82) % len;
 
                 let indicators = [
                     { id: "anat-head", label: "Anterior Head Capsule", defaultPt: middleLayer[headIdx] },
@@ -1212,7 +1212,7 @@
                         el.classList.add("manual-lock");
                         el.classList.remove("detected");
                         valSpan.innerText = "100% (LOCK)";
-                    } else if (targetMatch > 0.4) {
+                    } else if (targetMatch > 0.01) {
                         el.classList.add("detected");
                         el.classList.remove("manual-lock");
                         
