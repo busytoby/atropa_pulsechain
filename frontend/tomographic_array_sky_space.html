@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Tomographic Phased Array Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #03050a;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-cyan: #00f0ff;
+            --accent-pink: #ff007f;
+            --accent-gold: #d4af37;
+            --card-border: rgba(0, 240, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #space-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Overlay UI */
+        .hud-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        header, footer, .side-panel {
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            background: rgba(3, 5, 10, 0.7);
+            border: 1px solid var(--card-border);
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.6rem;
+            color: #fff;
+            text-shadow: 0 0 10px var(--accent-cyan);
+            letter-spacing: 2px;
+        }
+
+        h1 span {
+            color: var(--accent-gold);
+        }
+
+        .hud-stats {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+
+        .hud-stats span {
+            color: var(--accent-cyan);
+        }
+
+        /* Timeline controls */
+        .timeline-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .timeline-bar-wrapper {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .timeline-progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
+            border-radius: 4px;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Token Constellation Panel */
+        .constellation-panel {
+            position: absolute;
+            left: 2rem;
+            top: 8rem;
+            width: 260px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-height: 70vh;
+            overflow-y: auto;
+            pointer-events: auto;
+        }
+
+        .token-item {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .token-item:hover, .token-item.active {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+        }
+
+        .token-item .symbol {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .token-item .addr-slug {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Interactive Configuration Panel */
+        .settings-panel {
+            position: absolute;
+            right: 2rem;
+            top: 8rem;
+            width: 280px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            background: rgba(3, 5, 10, 0.7);
+            border: 1px solid var(--card-border);
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .setting-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        select, input[type="range"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            padding: 0.4rem;
+            border-radius: 6px;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type="range"] {
+            appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--accent-cyan);
+        }
+
+        /* Scrollbar styles */
+        .constellation-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        .constellation-panel::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="space-canvas"></canvas>
+
+    <div class="hud-overlay">
+        <header>
+            <div>
+                <h1>Auncient <span>Tomographic Array Space</span></h1>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-family: 'Share Tech Mono', monospace; margin-top: 0.2rem;">Phased Array Tomography / 17s Constellation Loop</p>
+            </div>
+            <div class="hud-stats">
+                Array Sensors: <span>36 Targets</span><br>
+                Render Mode: <span>Multi-Slice X-Ray</span>
+            </div>
+        </header>
+
+        <div class="constellation-panel" id="constellation-panel">
+            <!-- Active Tokens Listed Here -->
+        </div>
+
+        <div class="settings-panel">
+            <div class="setting-group">
+                <span class="setting-label">Array Mode</span>
+                <select id="array-mode">
+                    <option value="radial">Radial Rotational (CT Style)</option>
+                    <option value="coaxial">Coaxial Stack (MRI Style)</option>
+                    <option value="concentric">Concentric Shell (Radar Style)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <span class="setting-label" id="lbl-slice-count">Slice Count: 7</span>
+                <input type="range" id="slice-count" min="3" max="15" value="7">
+            </div>
+        </div>
+
+        <footer>
+            <div class="timeline-container">
+                <div class="timeline-bar-wrapper">
+                    <div class="timeline-progress" id="timeline-progress"></div>
+                </div>
+                <div class="timeline-labels">
+                    <span id="timeline-time">TIME: 0.0s / 17.0s</span>
+                    <span style="color: var(--accent-cyan);">CYCLE STATUS: ACTIVE SCAN</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("space-canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Sync slider label
+        const slider = document.getElementById("slice-count");
+        const sliderLabel = document.getElementById("lbl-slice-count");
+        slider.addEventListener("input", () => {
+            sliderLabel.innerText = `Slice Count: ${slider.value}`;
+        });
+
+        // HSL helper matching python script exactly
+        function hslToRgb(h, s, l) {
+            let c = (1.0 - Math.abs(2.0 * l - 1.0)) * s;
+            let x = c * (1.0 - Math.abs((h / 60.0) % 2.0 - 1.0));
+            let m = l - c / 2.0;
+            let r, g, b;
+            if (0 <= h && h < 60) {
+                [r, g, b] = [c, x, 0.0];
+            } else if (60 <= h && h < 120) {
+                [r, g, b] = [x, c, 0.0];
+            } else if (120 <= h && h < 180) {
+                [r, g, b] = [0.0, c, x];
+            } else if (180 <= h && h < 240) {
+                [r, g, b] = [0.0, x, c];
+            } else if (240 <= h && h < 300) {
+                [r, g, b] = [x, 0.0, c];
+            } else {
+                [r, g, b] = [c, 0.0, x];
+            }
+            return `rgb(${Math.round((r + m) * 255)}, ${Math.round((g + m) * 255)}, ${Math.round((b + m) * 255)})`;
+        }
+
+        function getAddressColor(address) {
+            let hash = 0;
+            for (let i = 0; i < address.length; i++) {
+                hash = address.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let hue = Math.abs(hash) % 360;
+            return hslToRgb(hue, 0.90, 0.55);
+        }
+
+        function deriveLauRegisters(address) {
+            let hash = 0;
+            for (let i = 0; i < address.length; i++) {
+                hash = address.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let val = Math.abs(hash);
+            return {
+                base: val % 1000000000,
+                secret: (val * 31) % 1000000000,
+                signal: (val * 37) % 1000000000,
+                channel: (val * 41) % 1000000000,
+                pole: (val * 43) % 1000000000,
+                foundation: (val * 47) % 1000000000,
+                element: (val * 53) % 1000000000,
+                chin: (val * 59) % 1000000000,
+                dynamo: (val * 61) % 1000000000
+            };
+        }
+
+        // Starfield background
+        const stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() - 0.5,
+                y: Math.random() - 0.5,
+                z: Math.random(),
+                size: Math.random() * 1.5 + 0.5
+            });
+        }
+
+        let tokensList = [];
+        let selectedAddress = null;
+
+        async function init() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                if (data.treasury_tokens) {
+                    const allTokens = data.treasury_tokens;
+                    
+                    // Filter for active LAUs
+                    tokensList = Object.values(allTokens).filter(token => {
+                        const address = token.address.toLowerCase();
+                        const symbol = (token.symbol || '').toLowerCase();
+                        const minterName = (token.minter_name || '').toLowerCase();
+                        
+                        if (token.ignored) return false;
+                        
+                        return (symbol.includes('lau') || 
+                                minterName.includes('lau') || 
+                                minterName === 'cho registry' ||
+                                address === "0xd32c39fee49391c7952d1b30b15921b0d3b42e69" || 
+                                address === "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b" ||
+                                address === "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e" ||
+                                address === "0xad4e198623a5e2723e19e4d4a6ecf72b1d19fe4b") && 
+                               (symbol.length < 16);
+                    });
+
+                    // Build sidebar constellation list
+                    const panel = document.getElementById("constellation-panel");
+                    panel.innerHTML = "";
+                    tokensList.forEach((token, index) => {
+                        const div = document.createElement("div");
+                        div.className = "token-item" + (index === 0 ? " active" : "");
+                        div.innerHTML = `
+                            <span class="symbol">${token.symbol}</span>
+                            <span class="addr-slug">${token.address.slice(0, 6)}...${token.address.slice(-4)}</span>
+                        `;
+                        div.addEventListener("click", () => {
+                            document.querySelectorAll(".token-item").forEach(d => d.classList.remove("active"));
+                            div.classList.add("active");
+                            selectedAddress = token.address;
+                        });
+                        panel.appendChild(div);
+                    });
+
+                    if (tokensList.length > 0) {
+                        selectedAddress = tokensList[0].address;
+                    }
+
+                    requestAnimationFrame(animate);
+                }
+            } catch (err) {
+                console.error("Failed to load constellation data:", err);
+            }
+        }
+
+        const DEMO_DURATION = 17.0; // 17 seconds demo loop
+        const startTime = Date.now();
+
+        function animate() {
+            const now = Date.now();
+            const elapsed = ((now - startTime) * 0.001) % DEMO_DURATION;
+            
+            // Update HUD timeline progress
+            document.getElementById("timeline-progress").style.width = `${(elapsed / DEMO_DURATION) * 100}%`;
+            document.getElementById("timeline-time").innerText = `TIME: ${elapsed.toFixed(1)}s / ${DEMO_DURATION.toFixed(1)}s`;
+
+            // Draw galactic background
+            ctx.fillStyle = "#03050a";
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw nebula background gradients
+            const nebula = ctx.createRadialGradient(width / 2, height / 2, 50, width / 2, height / 2, Math.max(width, height) * 0.7);
+            nebula.addColorStop(0, 'rgba(0, 240, 255, 0.02)');
+            nebula.addColorStop(0.5, 'rgba(255, 0, 127, 0.01)');
+            nebula.addColorStop(1, 'rgba(3, 5, 10, 1.0)');
+            ctx.fillStyle = nebula;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Starfield
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+            stars.forEach(star => {
+                const sx = (star.x * width) / (star.z) + width / 2;
+                const sy = (star.y * height) / (star.z) + height / 2;
+                if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, star.size / star.z, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                star.z -= 0.0005;
+                if (star.z <= 0) star.z = 1.0;
+            });
+
+            if (!selectedAddress) {
+                requestAnimationFrame(animate);
+                return;
+            }
+
+            // Draw current active target token
+            const regs = deriveLauRegisters(selectedAddress);
+            const color = getAddressColor(selectedAddress);
+
+            // Derive parameters
+            const R_hyp = 65.0 + (regs.foundation % 20);
+            const r_hyp = 15.0 + (regs.channel % 12);
+            const d_hyp = 22.0 + (regs.dynamo % 30);
+            const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
+
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Perspective rotation
+            const pitch = 0.5 + 0.15 * Math.sin(elapsed * 0.8);
+            const yaw = elapsed * 0.7;
+
+            // Read settings panel
+            const mode = document.getElementById("array-mode").value;
+            const sliceCount = parseInt(slider.value);
+
+            // Render tomographic slices
+            for (let s = 0; s < sliceCount; s++) {
+                let localX, localY, localZ;
+                let scaleFactor = 1.0;
+                let scanPhaseOffset = phase + (s * 0.25) + elapsed * 1.5;
+
+                // Adjust color opacity per slice
+                const distRatio = Math.abs(s - (sliceCount - 1) / 2) / (sliceCount / 2);
+                const sliceColor = color.replace('rgb', 'rgba').replace(')', `, ${0.15 + (1.0 - distRatio) * 0.65})`);
+                ctx.strokeStyle = sliceColor;
+                ctx.lineWidth = 1.6;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = sliceColor;
+
+                ctx.beginPath();
+                const steps = 180;
+                for (let i = 0; i <= steps; i++) {
+                    const theta = i * 4.0 * Math.PI / steps;
+
+                    // Base Hypotrochoid coordinates
+                    const lx = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
+                    const ly = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta + scanPhaseOffset);
+                    
+                    const warpX = Math.sin(theta * 3) * 6;
+                    const warpY = Math.cos(theta * 6) * 4;
+                    const baseCoordsX = lx + warpX;
+                    const baseCoordsY = ly + warpY;
+
+                    // Arrange coordinate projection vectors based on active mode
+                    if (mode === "coaxial") {
+                        // Coaxial stack (MRI style) - parallel along depth Z
+                        localX = baseCoordsX;
+                        localY = baseCoordsY;
+                        localZ = (s - (sliceCount - 1) / 2) * 22;
+                    } else if (mode === "radial") {
+                        // Radial rotational (CT style) - angled fan slices intersecting at center
+                        const phiSlice = (s * Math.PI) / sliceCount;
+                        localX = baseCoordsX * Math.cos(phiSlice);
+                        localY = baseCoordsY;
+                        localZ = baseCoordsX * Math.sin(phiSlice);
+                    } else {
+                        // Concentric shell (Radar style) - nested scale shells
+                        scaleFactor = 0.4 + (0.6 * (s / (sliceCount - 1)));
+                        localX = baseCoordsX * scaleFactor;
+                        localY = baseCoordsY * scaleFactor;
+                        localZ = 0;
+                    }
+
+                    // Apply global 3D yaw/pitch matrices
+                    const rx = localX * Math.cos(yaw) + localZ * Math.sin(yaw);
+                    const rz1 = -localX * Math.sin(yaw) + localZ * Math.cos(yaw);
+                    
+                    const ry = localY * Math.cos(pitch) + rz1 * Math.sin(pitch);
+                    const rz = -localY * Math.sin(pitch) + rz1 * Math.cos(pitch);
+
+                    // Perspective projection
+                    const d = 350;
+                    const factor = d / (d + rz);
+                    const projX = cx + rx * factor;
+                    const projY = cy + ry * factor;
+
+                    if (i === 0) {
+                        ctx.moveTo(projX, projY);
+                    } else {
+                        ctx.lineTo(projX, projY);
+                    }
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw scanning array grid
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.04)";
+            ctx.lineWidth = 0.5;
+            for (let r = 50; r <= 350; r += 50) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        init();
+    </script>
+</body>
+</html>
