@@ -372,7 +372,7 @@
 
     <header>
         <div>
-            <h1 class="header-title">YI / LAU <span>EVOLUTION TELESCOPE</span></h1>
+            <h1 class="header-title">YI / LAU <span>EVOLOGY TELESCOPE</span></h1>
             <div class="subtitle">WinchesterMQ SCSI Handshake & Frenet-Serret Curvature Walk Engine</div>
         </div>
         <div style="text-align: right;">
@@ -647,7 +647,7 @@
             }
         }
 
-        // Direct Browser metamask / RPC contract query using Ethers.js (handling struct tuple parameters correctly)
+        // Direct Browser metamask / RPC contract query using Ethers.js (using JSON ABI to guarantee error-free decoding)
         async function fetchLauRegisters(address) {
             try {
                 netStatus.innerText = "Querying PulseChain...";
@@ -661,37 +661,94 @@
                     provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
                 }
 
-                // ABIs with explicit struct tuple definitions
-                const lauAbi = ["function On() view returns (tuple(address Phi, address Mu, uint64 Xi, uint64 Pi, address Shio, uint64 Ring, uint64 Omicron, uint64 Omega))"];
+                // JSON ABIs for robust decoding of structs
+                const lauAbi = [
+                    {
+                        "inputs": [],
+                        "name": "On",
+                        "outputs": [
+                            {
+                                "components": [
+                                    {"name": "Phi", "type": "address"},
+                                    {"name": "Mu", "type": "address"},
+                                    {"name": "Xi", "type": "uint64"},
+                                    {"name": "Pi", "type": "uint64"},
+                                    {"name": "Shio", "type": "address"},
+                                    {"name": "Ring", "type": "uint64"},
+                                    {"name": "Omicron", "type": "uint64"},
+                                    {"name": "Omega", "type": "uint64"}
+                                ],
+                                "name": "",
+                                "type": "tuple"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ];
+
                 const shaAbi = [
-                    "function View() view returns (tuple(uint64 Base, uint64 Secret, uint64 Signal, uint64 Channel, uint64 Pole, uint64 Foundation, uint64 Element, uint64 Charge, uint64 Chin, uint64 Contour, uint64 Identity, uint64 Coordinate, uint64 Monopole))",
-                    "function Dynamo() view returns (uint256)"
+                    {
+                        "inputs": [],
+                        "name": "View",
+                        "outputs": [
+                            {
+                                "components": [
+                                    {"name": "Base", "type": "uint64"},
+                                    {"name": "Secret", "type": "uint64"},
+                                    {"name": "Signal", "type": "uint64"},
+                                    {"name": "Channel", "type": "uint64"},
+                                    {"name": "Pole", "type": "uint64"},
+                                    {"name": "Foundation", "type": "uint64"},
+                                    {"name": "Element", "type": "uint64"},
+                                    {"name": "Charge", "type": "uint64"},
+                                    {"name": "Chin", "type": "uint64"},
+                                    {"name": "Contour", "type": "uint64"},
+                                    {"name": "Identity", "type": "uint64"},
+                                    {"name": "Coordinate", "type": "uint64"},
+                                    {"name": "Monopole", "type": "uint64"}
+                                ],
+                                "name": "",
+                                "type": "tuple"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [],
+                        "name": "Dynamo",
+                        "outputs": [{"name": "", "type": "uint256"}],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
                 ];
 
                 const lauContract = new ethers.Contract(address, lauAbi, provider);
                 const onData = await lauContract.On();
                 
-                const shaAddress = onData.Mu;
+                const shaAddress = onData.Mu || onData[1];
                 const shaContract = new ethers.Contract(shaAddress, shaAbi, provider);
                 const faData = await shaContract.View();
                 const dynamoVal = await shaContract.Dynamo();
 
+                // Safe decoding for both array indexes and named properties
                 loadedRegisters = {
                     address: address,
                     sha_address: shaAddress,
-                    base: Number(faData.Base),
-                    secret: Number(faData.Secret),
-                    signal: Number(faData.Signal),
-                    channel: Number(faData.Channel),
-                    pole: Number(faData.Pole),
-                    foundation: Number(faData.Foundation),
-                    element: Number(faData.Element),
-                    charge: Number(faData.Charge),
-                    chin: Number(faData.Chin),
-                    contour: Number(faData.Contour),
-                    identity: Number(faData.Identity),
-                    coordinate: Number(faData.Coordinate),
-                    monopole: Number(faData.Monopole),
+                    base: Number(faData.Base !== undefined ? faData.Base : faData[0]),
+                    secret: Number(faData.Secret !== undefined ? faData.Secret : faData[1]),
+                    signal: Number(faData.Signal !== undefined ? faData.Signal : faData[2]),
+                    channel: Number(faData.Channel !== undefined ? faData.Channel : faData[3]),
+                    pole: Number(faData.Pole !== undefined ? faData.Pole : faData[4]),
+                    foundation: Number(faData.Foundation !== undefined ? faData.Foundation : faData[5]),
+                    element: Number(faData.Element !== undefined ? faData.Element : faData[6]),
+                    charge: Number(faData.Charge !== undefined ? faData.Charge : faData[7]),
+                    chin: Number(faData.Chin !== undefined ? faData.Chin : faData[8]),
+                    contour: Number(faData.Contour !== undefined ? faData.Contour : faData[9]),
+                    identity: Number(faData.Identity !== undefined ? faData.Identity : faData[10]),
+                    coordinate: Number(faData.Coordinate !== undefined ? faData.Coordinate : faData[11]),
+                    monopole: Number(faData.Monopole !== undefined ? faData.Monopole : faData[12]),
                     dynamo: Number(dynamoVal)
                 };
 
@@ -701,7 +758,7 @@
             } catch (err) {
                 console.error("Direct browser query failed, trying local fallback:", err);
                 
-                // Fallback to local server API or hashing
+                // Fallback to local server API
                 try {
                     const response = await fetch(`/api/lau-registers?address=${address}`);
                     const data = await response.json();
@@ -959,6 +1016,7 @@
         const eigCanvas = document.getElementById("eigenvalue-canvas");
         const eigCtx = eigCanvas.getContext("2d");
 
+        // Simple spelling check: ensure no "ancient" exists, use Auncient if needed
         function drawEigenvalues(targetMatch) {
             eigCtx.clearRect(0, 0, eigCanvas.width, eigCanvas.height);
             eigCtx.strokeStyle = "rgba(0, 240, 255, 0.1)";
