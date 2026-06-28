@@ -459,11 +459,16 @@
                 const h = item.canvas.height;
                 const regs = item.regs;
                 
-                ctx.fillStyle = "#060913";
+                // 1. Premium Radial Gradient Background using address color
+                const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 5, w / 2, h / 2, h * 0.6);
+                const colorBase = item.color.replace('rgb', 'rgba').replace(')', ', 0.08)');
+                bgGrad.addColorStop(0, colorBase);
+                bgGrad.addColorStop(1, '#060913');
+                ctx.fillStyle = bgGrad;
                 ctx.fillRect(0, 0, w, h);
                 
                 // Draw telemetry radar sweeps in background
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.035)";
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.arc(w / 2, h / 2, h * 0.42, 0, Math.PI * 2);
@@ -481,14 +486,34 @@
                 const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
                 const thetaOffset = time * 0.5 + item.offsetAngle;
                 
+                // 2. Faint Secondary Depth Curve (Phase shifted & scaled)
+                ctx.strokeStyle = item.color.replace('rgb', 'rgba').replace(')', ', 0.15)');
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                const depthSteps = 100;
+                for (let i = 0; i <= depthSteps; i++) {
+                    const theta = i * 4.0 * Math.PI / depthSteps;
+                    const lx = (R_hyp * 1.15 - r_hyp) * Math.cos(theta) + d_hyp * 0.8 * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset + Math.PI * 0.25);
+                    const ly = (R_hyp * 1.15 - r_hyp) * Math.sin(theta) - d_hyp * 0.8 * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                    const sx = w / 2 + lx;
+                    const sy = h / 2 + ly;
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                
+                // 3. Primary Lissajous Curve
                 ctx.strokeStyle = item.color;
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1.8;
                 ctx.lineCap = "round";
-                ctx.shadowBlur = 4;
+                ctx.shadowBlur = 6;
                 ctx.shadowColor = item.color;
                 
                 ctx.beginPath();
                 const steps = 180;
+                let particlePos = null;
+                const targetStepIdx = Math.floor((time * 25) % steps); // Particle moves along path
+                
                 for (let i = 0; i <= steps; i++) {
                     const theta = i * 4.0 * Math.PI / steps;
                     
@@ -498,6 +523,10 @@
                     const sx = w / 2 + lx;
                     const sy = h / 2 + ly;
                     
+                    if (i === targetStepIdx) {
+                        particlePos = { x: sx, y: sy };
+                    }
+                    
                     if (i === 0) {
                         ctx.moveTo(sx, sy);
                     } else {
@@ -506,6 +535,17 @@
                 }
                 ctx.stroke();
                 ctx.shadowBlur = 0; // reset
+                
+                // 4. Draw Orbiting Core Particle
+                if (particlePos) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = item.color;
+                    ctx.beginPath();
+                    ctx.arc(particlePos.x, particlePos.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
             });
             
             requestAnimationFrame(animateTelescopes);
