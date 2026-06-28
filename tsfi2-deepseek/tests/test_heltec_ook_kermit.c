@@ -3,34 +3,35 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <time.h>
 
 #define KERMIT_SOH 0x01
-#define MAX_PAYLOAD 94
+#define MAX_PAYLOAD 90
 
-// Kermit Frame Structure
+// Kermit Frame Structure with 2-byte addressing fields
 typedef struct {
     uint8_t soh;
     uint8_t len;
     uint8_t seq;
     uint8_t type;
+    uint16_t src_addr;
+    uint16_t dst_addr;
     uint8_t data[MAX_PAYLOAD];
     uint8_t check;
 } KermitFrame;
 
-// Emulated SX1262 RF channel registry with noise injection
+// Emulated Shared Broadcast RF Channel
 typedef struct {
     uint8_t buffer[256];
     size_t size;
     bool carrier_active;
-} VirtualRFChannel;
+} BroadcastRFChannel;
 
-static VirtualRFChannel ch_a_to_b;
-static VirtualRFChannel ch_b_to_a;
+static BroadcastRFChannel shared_channel;
 
 // Emulated Node States
 typedef struct {
     char name[16];
+    uint16_t address;
     uint8_t seq_num;
     uint8_t received_data[512];
     size_t received_len;
@@ -45,148 +46,141 @@ static uint8_t kermit_checksum(const uint8_t *buf, size_t len) {
     return (uint8_t)(((sum + ((sum & 0xC0) >> 6)) & 0x3F) + 32);
 }
 
-// Pack a Kermit frame into binary OOK bytes
-static size_t pack_kermit_frame(uint8_t seq, char type, const uint8_t *data, size_t data_len, uint8_t *out_buf) {
+// Pack an addressed Kermit frame into binary OOK bytes
+static size_t pack_addressed_frame(uint8_t seq, char type, uint16_t src, uint16_t dst, const uint8_t *data, size_t data_len, uint8_t *out_buf) {
     out_buf[0] = KERMIT_SOH;
-    out_buf[1] = (uint8_t)(data_len + 3 + 32); // length byte
-    out_buf[2] = (uint8_t)(seq + 32);          // sequence number
-    out_buf[3] = (uint8_t)type;                // packet type (D=Data, Y=ACK, N=NAK)
+    out_buf[1] = (uint8_t)(data_len + 7 + 32); // length byte (data_len + 4 bytes addresses + 3 header bytes)
+    out_buf[2] = (uint8_t)(seq + 32);          // sequence
+    out_buf[3] = (uint8_t)type;                // type
+    
+    // Add Addressing fields
+    out_buf[4] = (uint8_t)(src & 0xFF);
+    out_buf[5] = (uint8_t)((src >> 8) & 0xFF);
+    out_buf[6] = (uint8_t)(dst & 0xFF);
+    out_buf[7] = (uint8_t)((dst >> 8) & 0xFF);
     
     if (data_len > 0 && data != NULL) {
-        memcpy(&out_buf[4], data, data_len);
+        memcpy(&out_buf[8], data, data_len);
     }
     
-    uint8_t check = kermit_checksum(&out_buf[1], data_len + 3);
-    out_buf[4 + data_len] = check;
+    uint8_t check = kermit_checksum(&out_buf[1], data_len + 7);
+    out_buf[8 + data_len] = check;
     
-    return data_len + 5;
+    return data_len + 9;
 }
 
-// Parse/verify an incoming Kermit frame
-static bool parse_kermit_frame(const uint8_t *buf, size_t size, KermitFrame *frame) {
-    if (size < 5 || buf[0] != KERMIT_SOH) return false;
+// Parse/verify an incoming addressed Kermit frame
+static bool parse_addressed_frame(const uint8_t *buf, size_t size, KermitFrame *frame) {
+    if (size < 9 || buf[0] != KERMIT_SOH) return false;
     
     frame->soh = buf[0];
     frame->len = (uint8_t)(buf[1] - 32);
     frame->seq = (uint8_t)(buf[2] - 32);
     frame->type = buf[3];
     
-    size_t expected_data_len = frame->len - 3;
-    if (expected_data_len > MAX_PAYLOAD || expected_data_len + 5 > size) return false;
+    frame->src_addr = buf[4] | (buf[5] << 8);
+    frame->dst_addr = buf[6] | (buf[7] << 8);
     
-    memcpy(frame->data, &buf[4], expected_data_len);
-    frame->check = buf[4 + expected_data_len];
+    size_t expected_data_len = frame->len - 7;
+    if (expected_data_len > MAX_PAYLOAD || expected_data_len + 9 > size) return false;
     
-    uint8_t calc_check = kermit_checksum(&buf[1], expected_data_len + 3);
+    memcpy(frame->data, &buf[8], expected_data_len);
+    frame->check = buf[8 + expected_data_len];
+    
+    uint8_t calc_check = kermit_checksum(&buf[1], expected_data_len + 7);
     return calc_check == frame->check;
 }
 
-// Emulate physical OOK transmitter with noise injection support
-static void sx1262_transmit_ook(VirtualRFChannel *chan, const uint8_t *data, size_t len, bool inject_noise) {
-    chan->carrier_active = true;
-    memcpy(chan->buffer, data, len);
-    chan->size = len;
-    
-    if (inject_noise) {
-        // Corrupt a random byte in the payload to simulate party-line line noise
-        int corrupt_idx = (rand() % (len - 1)) + 1; // avoid corrupting SOH for parsing simplicity
-        chan->buffer[corrupt_idx] ^= 0xFF;
-        printf("[SX1262] [NOISE INJECTED] Transmitting corrupted %zu bytes envelope (corrupted byte at index %d)...\n", len, corrupt_idx);
-    } else {
-        printf("[SX1262] Transmitting clean %zu bytes envelope...\n", len);
-    }
+// Broadcast packet onto the shared channel
+static void transmit_broadcast(const uint8_t *data, size_t len) {
+    shared_channel.carrier_active = true;
+    memcpy(shared_channel.buffer, data, len);
+    shared_channel.size = len;
+    printf("[BROADCAST] Transmitting %zu bytes envelope over shared RF spectrum...\n", len);
 }
 
-// Emulate physical OOK receiver
-static size_t sx1262_receive_ook(VirtualRFChannel *chan, uint8_t *out_data) {
-    if (!chan->carrier_active || chan->size == 0) return 0;
-    memcpy(out_data, chan->buffer, chan->size);
-    size_t len = chan->size;
-    
-    chan->carrier_active = false;
-    chan->size = 0;
-    return len;
+// Listen / scan the shared broadcast channel
+static size_t receive_broadcast(uint8_t *out_data) {
+    if (!shared_channel.carrier_active || shared_channel.size == 0) return 0;
+    memcpy(out_data, shared_channel.buffer, shared_channel.size);
+    return shared_channel.size;
+}
+
+static void clear_channel() {
+    shared_channel.carrier_active = false;
+    shared_channel.size = 0;
 }
 
 int main() {
-    srand(time(NULL));
-    printf("=== Auncient Heltec v4 ESP32-S3 OOK Kermit Emulated Noise Tolerant Test ===\n");
+    printf("=== Auncient Multi-Party OOK Kermit Address Filtering Test ===\n");
     
-    // Initialize nodes
-    HeltecNode node_a = { .name = "HELTEC_V4_A", .seq_num = 0, .received_len = 0 };
-    HeltecNode node_b = { .name = "HELTEC_V4_B", .seq_num = 0, .received_len = 0 };
-    
-    // Multi-packet cryptographic payload (96 bytes split into 3 segments)
-    const uint8_t payload[96] = "Auncient-WinchesterMQ-SCSI-Transaction-Data-For-Secure-Channel-Key-Exchange-Sequence-Block-OK";
-    const size_t segment_size = 32;
-    const size_t total_segments = 3;
+    // Initialize 3 nodes in range of each other
+    HeltecNode node_a = { .name = "NODE_A", .address = 0xAA01, .seq_num = 0 };
+    HeltecNode node_b = { .name = "NODE_B", .address = 0xBB02, .seq_num = 0 };
+    HeltecNode node_c = { .name = "NODE_C", .address = 0xCC03, .seq_num = 0 };
     
     uint8_t tx_buffer[256];
     uint8_t rx_buffer[256];
     
-    for (size_t seg = 0; seg < total_segments; seg++) {
-        bool success = false;
-        int attempts = 0;
-        
-        while (!success && attempts < 5) {
-            attempts++;
-            printf("\n[%s] [Segment %zu/3] Attempt %d: Packaging packet...\n", node_a.name, seg + 1, attempts);
-            
-            size_t tx_len = pack_kermit_frame(node_a.seq_num, 'D', &payload[seg * segment_size], segment_size, tx_buffer);
-            
-            // Inject noise on the first attempt of segment 2 to test NAK recovery
-            bool inject_noise = (seg == 1 && attempts == 1);
-            sx1262_transmit_ook(&ch_a_to_b, tx_buffer, tx_len, inject_noise);
-            
-            // Node B receives
-            size_t rx_len = sx1262_receive_ook(&ch_a_to_b, rx_buffer);
-            if (rx_len > 0) {
-                KermitFrame parsed_frame;
-                if (parse_kermit_frame(rx_buffer, rx_len, &parsed_frame)) {
-                    printf("[%s] [SUCCESS] Decoded segment. Seq: %d | Size: %d\n",
-                           node_b.name, parsed_frame.seq, parsed_frame.len - 3);
-                    
-                    // Save payload segment
-                    memcpy(&node_b.received_data[seg * segment_size], parsed_frame.data, segment_size);
-                    node_b.received_len += segment_size;
-                    
-                    // Send ACK
-                    size_t ack_len = pack_kermit_frame(parsed_frame.seq, 'Y', NULL, 0, tx_buffer);
-                    sx1262_transmit_ook(&ch_b_to_a, tx_buffer, ack_len, false);
-                    success = true;
-                } else {
-                    printf("[%s] [CHECKSUM FAILED] Packet corrupted. Transmitting NAK reply envelope...\n", node_b.name);
-                    // Send NAK (Kermit 'N')
-                    size_t nak_len = pack_kermit_frame(node_a.seq_num, 'N', NULL, 0, tx_buffer);
-                    sx1262_transmit_ook(&ch_b_to_a, tx_buffer, nak_len, false);
-                }
+    const uint8_t secret_payload[32] = "Auncient-Secure-Multicast-Data";
+    
+    // --- STEP 1: Node A broadcasts a packet addressed explicitly to Node B ---
+    printf("\n[%s] Transmitting payload addressed to %s (0x%04X)...\n", node_a.name, node_b.name, node_b.address);
+    size_t tx_len = pack_addressed_frame(node_a.seq_num, 'D', node_a.address, node_b.address, secret_payload, sizeof(secret_payload), tx_buffer);
+    transmit_broadcast(tx_buffer, tx_len);
+    
+    // --- STEP 2: Node C (unintended recipient) listens to the channel ---
+    size_t rx_len = receive_broadcast(rx_buffer);
+    if (rx_len > 0) {
+        KermitFrame parsed_frame;
+        if (parse_addressed_frame(rx_buffer, rx_len, &parsed_frame)) {
+            printf("[%s] Heard packet on channel. Destination Address: 0x%04X\n", node_c.name, parsed_frame.dst_addr);
+            if (parsed_frame.dst_addr == node_c.address) {
+                printf("[%s] [ACCEPT] Packet is addressed to me! Processing...\n", node_c.name);
+            } else {
+                printf("[%s] [DISCARD] Destination mismatch! Ignoring packet to protect privacy.\n", node_c.name);
             }
-            
-            // Node A listens for reply
-            rx_len = sx1262_receive_ook(&ch_b_to_a, rx_buffer);
-            if (rx_len > 0) {
-                KermitFrame reply_frame;
-                if (parse_kermit_frame(rx_buffer, rx_len, &reply_frame)) {
-                    if (reply_frame.type == 'Y') {
-                        printf("[%s] Received ACK. Advancing packet sequence.\n", node_a.name);
-                        node_a.seq_num = (node_a.seq_num + 1) % 64;
-                    } else if (reply_frame.type == 'N') {
-                        printf("[%s] Received NAK. Retransmitting segment...\n", node_a.name);
-                        success = false;
-                    }
-                }
-            }
-        }
-        
-        if (!success) {
-            printf("[FATAL] Transfer failed after maximum attempts.\n");
-            return 1;
         }
     }
     
-    // Verify final assembled data at receiver
-    node_b.received_data[node_b.received_len] = '\0';
-    printf("\n[%s] [SUCCESS] Fully assembled payload: \"%s\"\n", node_b.name, node_b.received_data);
-    printf("=== Emulated Noise Tolerant Test Execution Finished successfully ===\n");
+    // --- STEP 3: Node B (intended recipient) listens to the channel ---
+    rx_len = receive_broadcast(rx_buffer);
+    if (rx_len > 0) {
+        KermitFrame parsed_frame;
+        if (parse_addressed_frame(rx_buffer, rx_len, &parsed_frame)) {
+            printf("[%s] Heard packet on channel. Destination Address: 0x%04X\n", node_b.name, parsed_frame.dst_addr);
+            if (parsed_frame.dst_addr == node_b.address) {
+                printf("[%s] [ACCEPT] Packet matches my address! Saving payload...\n", node_b.name);
+                memcpy(node_b.received_data, parsed_frame.data, sizeof(secret_payload));
+                node_b.received_len = sizeof(secret_payload);
+                
+                // Clear active channel to reply
+                clear_channel();
+                
+                // Reply with ACK addressed back to Node A
+                printf("[%s] Transmitting ACK addressed back to %s (0x%04X)...\n", node_b.name, node_a.name, node_a.address);
+                size_t ack_len = pack_addressed_frame(parsed_frame.seq, 'Y', node_b.address, node_a.address, NULL, 0, tx_buffer);
+                transmit_broadcast(tx_buffer, ack_len);
+            }
+        }
+    }
+    
+    // --- STEP 4: Node A listens for incoming ACK verification ---
+    rx_len = receive_broadcast(rx_buffer);
+    if (rx_len > 0) {
+        KermitFrame ack_frame;
+        if (parse_addressed_frame(rx_buffer, rx_len, &ack_frame)) {
+            printf("\n[%s] Received ACK frame. Source: 0x%04X | Destination: 0x%04X\n", node_a.name, ack_frame.src_addr, ack_frame.dst_addr);
+            if (ack_frame.dst_addr == node_a.address && ack_frame.src_addr == node_b.address) {
+                printf("[%s] [SUCCESS] ACK verified from target peer %s (0x%04X). Handshake complete!\n", 
+                       node_a.name, node_b.name, node_b.address);
+            } else {
+                printf("[%s] [IGNORE] Spoofed or misrouted ACK detected. Dropping packet.\n", node_a.name);
+            }
+        }
+    }
+    
+    clear_channel();
+    printf("\n=== Multi-Party Address Verification Completed Successfully ===\n");
     return 0;
 }
