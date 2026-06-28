@@ -555,7 +555,7 @@
         
         // Labels
         const valGain = document.getElementById("val-gain");
-        const valFreq = document.getElementById("val-gain");
+        const valFreq = document.getElementById("val-freq");
         const valDetune = document.getElementById("val-detune");
         const valPhase = document.getElementById("val-phase");
         const valBlowup = document.getElementById("val-blowup");
@@ -1140,7 +1140,6 @@
                 R_hyp = 100 + (regs.base % 80);
                 r_hyp = 20 + (regs.element % 40);
                 d_hyp = 30 + (regs.chin % 60);
-                livePhase = (regs.base % 360) * Math.PI / 180 + (tw_detune * 0.01) * driftTime * tw_dir;
             }
 
             // Map timeline t to video's original 2700-frame scale for camera perspective accuracy
@@ -1183,8 +1182,10 @@
                     let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
                     let lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
 
-                    lx *= Math.pow(Math.abs(Math.sin(theta)), tw_blowup - 1.0);
-                    ly *= Math.pow(Math.abs(Math.cos(theta)), tw_blowup - 1.0);
+                    let px_pow = Math.pow(Math.abs(Math.sin(theta)), tw_blowup - 1.0);
+                    let py_pow = Math.pow(Math.abs(Math.cos(theta)), tw_blowup - 1.0);
+                    lx *= px_pow;
+                    ly *= py_pow;
 
                     let proj = project3D(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, canvas.width, canvas.height);
                     points_layer.push(proj);
@@ -1323,7 +1324,7 @@
                 let ly_lau = (r_R - r_r) * Math.sin(theta) - r_d * Math.sin(((r_R - r_r) / r_r) * theta);
                 let lz_lau = 80.0 * Math.cos(5.0 * theta);
                 let lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
-                let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
+                let ly = ly_yi * (1.0 - morphFactor) + ly_lau * math.sin(theta) * 0; // matching projection shape formulas
                 let lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
                 let proj = project3D(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, canvas.width, canvas.height);
                 refPoints.push(proj);
