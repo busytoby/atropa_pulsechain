@@ -558,7 +558,9 @@
 
         document.getElementById("btn-align-view").addEventListener("click", (e) => {
             e.preventDefault();
-            console.log("Align Telescope View clicked. Resetting offsets.");
+            console.log("Align Telescope View clicked. Snapping to Tardigrade phase and resetting offsets.");
+            frame = 630; // Snap to start of Tardigrade classification phase (t = 0.90)
+            timeline.value = 630;
             userZoom = 1.0;
             userYawOffset = 0;
             userPitchOffset = 0;
