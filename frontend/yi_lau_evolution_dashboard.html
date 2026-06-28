@@ -370,20 +370,20 @@
                 <h2 class="section-title">Telescopic <span>Tonewheel 0</span></h2>
                 <div style="display: flex; flex-direction: column; gap: 14px;">
                     <div class="control-group">
-                        <label>Gain <span id="val-gain">1.2x</span></label>
-                        <input type="range" id="tw-gain" min="0" max="2" step="0.1" value="1.2">
+                        <label>Gain <span id="val-gain">1.0x</span></label>
+                        <input type="range" id="tw-gain" min="0" max="2" step="0.1" value="1.0">
                     </div>
                     <div class="control-group">
-                        <label>Frequency <span id="val-freq">4.00</span></label>
-                        <input type="range" id="tw-freq" min="1" max="10" step="0.25" value="4.0">
+                        <label>Frequency <span id="val-freq">1.00</span></label>
+                        <input type="range" id="tw-freq" min="1" max="10" step="0.25" value="1.0">
                     </div>
                     <div class="control-group">
                         <label>Detune <span id="val-detune">0¢</span></label>
                         <input type="range" id="tw-detune" min="-50" max="50" step="1" value="0">
                     </div>
                     <div class="control-group">
-                        <label>Phase Offset <span id="val-phase">0°</span></label>
-                        <input type="range" id="tw-phase" min="0" max="360" step="5" value="0">
+                        <label>Phase Offset <span id="val-phase">173°</span></label>
+                        <input type="range" id="tw-phase" min="0" max="360" step="1" value="173">
                     </div>
                     <div class="control-group">
                         <label>Blowup Overdrive <span id="val-blowup">1.0x</span></label>
@@ -542,12 +542,12 @@
             el.addEventListener("change", updateLabels);
         });
 
-        // Set optimized default values for 90%+ Tardigrade reliability
+        // Set optimized default values for 90%+ Tardigrade reliability (matching video script)
         document.getElementById("btn-reset-tw").addEventListener("click", () => {
-            twGain.value = 1.2;
-            twFreq.value = 4.0;
+            twGain.value = 1.0;
+            twFreq.value = 1.0;
             twDetune.value = 0;
-            twPhase.value = 0;
+            twPhase.value = 173; // 3.0159 rad = 172.8 deg
             twBlowup.value = 1.0;
             twDir.value = "1";
             updateLabels();
@@ -559,8 +559,8 @@
         document.getElementById("btn-align-view").addEventListener("click", (e) => {
             e.preventDefault();
             console.log("Align Telescope View clicked. Snapping to Tardigrade phase and resetting offsets.");
-            frame = 630; // Snap to start of Tardigrade classification phase (t = 0.90)
-            timeline.value = 630;
+            frame = 810; // Snap to 27.0s / 0.90 morph factor (810/900)
+            timeline.value = 810;
             userZoom = 1.0;
             userYawOffset = 0;
             userPitchOffset = 0;
@@ -797,10 +797,13 @@
             let driftTime = Date.now() * 0.001;
             let livePhase = tw_phase + (tw_detune * 0.01) * driftTime * tw_dir;
 
-            // Target mapping formulas
-            let fx = tw_freq, fy = 4.0, fz = 2.0;
-            let R_hyp = 150, r_hyp = 40;
-            let d_hyp = 90;
+            // Target mapping formulas (from generate_yi_lau_evolution.py)
+            let fx = tw_freq;
+            let fy = 2.0; // derived from r_dynamo % 5
+            let fz = 1.0; // derived from r_foundation % 5
+            let R_hyp = 165; // derived R_hyp
+            let r_hyp = 20; // derived r_hyp
+            let d_hyp = 81; // derived d_hyp
 
             // Under "void_enter", simulate a morph with high-frequency structures
             if (tokenPairSelect.value === "void_enter") {
@@ -965,9 +968,9 @@
             let refPoints = [];
             for (let i = 0; i < num_points; i++) {
                 let theta = i * 4.0 * Math.PI / num_points;
-                let lx_yi = 135.0 * Math.sin(4.0 * theta) * 1.2;
-                let ly_yi = 135.0 * Math.sin(4.0 * theta);
-                let lz_yi = 135.0 * Math.cos(2.0 * theta);
+                let lx_yi = 135.0 * Math.sin(1.0 * theta + 3.0159) * 1.0;
+                let ly_yi = 135.0 * Math.sin(2.0 * theta);
+                let lz_yi = 135.0 * Math.cos(1.0 * theta);
                 let lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + ref_d_val * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta);
                 let ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - ref_d_val * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
                 let lz_lau = 80.0 * Math.cos(5.0 * theta);
@@ -980,8 +983,8 @@
             let referenceRatio = calculatePCA(refPoints);
             let ratioError = Math.abs(actualRatio - referenceRatio);
 
-            let frequencyError = Math.abs(tw_freq - 4.0);
-            let gainError = Math.abs(tw_gain - 1.2);
+            let frequencyError = Math.abs(tw_freq - 1.0);
+            let gainError = Math.abs(tw_gain - 1.0);
             let blowupError = Math.abs(tw_blowup - 1.0);
             let detuneError = Math.abs(tw_detune - 0);
 
