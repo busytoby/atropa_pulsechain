@@ -82,7 +82,6 @@ def main():
                     if to_addr != "0x0000000000000000000000000000000000000000":
                         wallets.add(to_addr.lower())
         except Exception as e:
-            # Query range failures usually mean too many results, we fallback to standard chunking
             pass
 
     # Merge with published addresses
@@ -134,9 +133,14 @@ def main():
                 wallet_addr = addresses[idx]
                 delegates[lau_addr.lower()] = {
                     "address": lau_addr.lower(),
-                    "wallet": wallet_addr,
                     "symbol": "LAU",
-                    "name": "Discovered Delegate"
+                    "name": "Discovered Delegate",
+                    "owner": wallet_addr,
+                    "minter_address": CHO_ADDRESS.lower(),
+                    "minter_name": "CHO Registry",
+                    "parent_address": None,
+                    "parent_symbol": None,
+                    "ignored": False
                 }
                 tokens_to_fetch.append(lau_addr)
 
@@ -185,12 +189,16 @@ def main():
         except Exception as e:
             print(f"Metadata fetch failed: {e}")
 
-    # Save to dynamic roster file
+    # Save to dynamic roster files (both cho_delegates.json and the treasury registry file)
     roster_path = "cho_delegates.json"
     with open(roster_path, "w") as f:
         json.dump(delegates, f, indent=4)
+        
+    registry_path = "treasury_tokens_cho_registry.json"
+    with open(registry_path, "w") as f:
+        json.dump(delegates, f, indent=4)
 
-    print(f"CHO Delegate Roster successfully compiled and written to {roster_path}")
+    print(f"CHO Delegate Roster successfully compiled and written to {roster_path} and {registry_path}")
 
 if __name__ == "__main__":
     main()
