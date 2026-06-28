@@ -120,6 +120,44 @@ static void sx1262_config_ook(void) {
     ESP_LOGI(TAG, "SX1262 OOK Setup Successful");
 }
 
+// Put SX1262 in LoRa Mode
+static void sx1262_config_lora(void) {
+    ESP_LOGI(TAG, "Configuring SX1262 for LoRa Mode...");
+    
+    // Set Standby Mode (STDBY_RC = 0x01)
+    uint8_t stdby_param = 0x00; // RC mode
+    sx1262_write_cmd(0x80, &stdby_param, 1);
+    
+    // Set Packet Type to LoRa (0x01)
+    uint8_t pkt_type = 0x01;
+    sx1262_write_cmd(0x8A, &pkt_type, 1);
+    
+    // Set Modulation Parameters for LoRa
+    // SF7, BW125 (0x04), CR 4/5 (0x01), LDRO Off (0x00)
+    uint8_t mod_params[8] = {
+        0x07,             // Spreading Factor (SF7)
+        0x04,             // Bandwidth (125 kHz)
+        0x01,             // Coding Rate (4/5)
+        0x00,             // Low Data Rate Optimize (Off)
+        0x00, 0x00, 0x00, 0x00
+    };
+    sx1262_write_cmd(0x8B, mod_params, 8);
+    
+    // Set Packet Parameters for LoRa
+    // Preamble: 8 symbols, Header Type: Variable (0x00), Payload: 96 bytes, CRC: On (0x01)
+    uint8_t pkt_params[9] = {
+        0x00, 0x08,       // Preamble Length (8 symbols)
+        0x00,             // Header Type (Variable/Explicit)
+        0x60,             // Payload Length (96 bytes)
+        0x01,             // CRC Type (On)
+        0x00,             // Invert IQ (Normal)
+        0x00, 0x00, 0x00, 0x00
+    };
+    sx1262_write_cmd(0x8C, pkt_params, 9);
+    
+    ESP_LOGI(TAG, "SX1262 LoRa Setup Successful");
+}
+
 static void uart_init(void) {
     uart_config_t uart_config = {
         .baud_rate = 9600,
