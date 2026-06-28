@@ -611,6 +611,41 @@
             updateDashboard();
         });
 
+        // HSL helper matching python script exactly
+        function hslToRgb(h, s, l) {
+            let c = (1.0 - Math.abs(2.0 * l - 1.0)) * s;
+            let x = c * (1.0 - Math.abs((h / 60.0) % 2.0 - 1.0));
+            let m = l - c / 2.0;
+            let r, g, b;
+            if (0 <= h && h < 60) {
+                [r, g, b] = [c, x, 0.0];
+            } else if (60 <= h && h < 120) {
+                [r, g, b] = [x, c, 0.0];
+            } else if (120 <= h && h < 180) {
+                [r, g, b] = [0.0, c, x];
+            } else if (180 <= h && h < 240) {
+                [r, g, b] = [0.0, x, c];
+            } else if (240 <= h && h < 300) {
+                [r, g, b] = [x, 0.0, c];
+            } else {
+                [r, g, b] = [c, 0.0, x];
+            }
+            return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+        }
+
+        function getAddressColor(address) {
+            if (!address || address === "default") {
+                address = "0xd32c39fee49391c7952d1b30b15921b0d3b42e69";
+            }
+            // Generate deterministic HSL hue matching Python md5 approach
+            let hash = 0;
+            for (let i = 0; i < address.length; i++) {
+                hash = address.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let hue = Math.abs(hash) % 360;
+            return hslToRgb(hue, 0.90, 0.55);
+        }
+
         // Fetch roster of registered LAU tokens on PulseChain
         async function fetchRegisteredLauTokens() {
             try {
@@ -727,23 +762,31 @@
                 const faData = await shaContract.View();
                 const dynamoVal = await shaContract.Dynamo();
 
-                // Safe decoding for both array indexes and named properties
+                // Safe decoding helper for exact cases, lowercase, and indices
+                function getVal(struct, key, idx) {
+                    if (struct[key] !== undefined) return Number(struct[key]);
+                    let lower = key.toLowerCase();
+                    if (struct[lower] !== undefined) return Number(struct[lower]);
+                    return Number(struct[idx]);
+                }
+
+                // Decode safely ensuring Web3 type compatibility
                 loadedRegisters = {
                     address: address,
                     sha_address: shaAddress,
-                    base: Number(faData.Base !== undefined ? faData.Base : faData[0]),
-                    secret: Number(faData.Secret !== undefined ? faData.Secret : faData[1]),
-                    signal: Number(faData.Signal !== undefined ? faData.Signal : faData[2]),
-                    channel: Number(faData.Channel !== undefined ? faData.Channel : faData[3]),
-                    pole: Number(faData.Pole !== undefined ? faData.Pole : faData[4]),
-                    foundation: Number(faData.Foundation !== undefined ? faData.Foundation : faData[5]),
-                    element: Number(faData.Element !== undefined ? faData.Element : faData[6]),
-                    charge: Number(faData.Charge !== undefined ? faData.Charge : faData[7]),
-                    chin: Number(faData.Chin !== undefined ? faData.Chin : faData[8]),
-                    contour: Number(faData.Contour !== undefined ? faData.Contour : faData[9]),
-                    identity: Number(faData.Identity !== undefined ? faData.Identity : faData[10]),
-                    coordinate: Number(faData.Coordinate !== undefined ? faData.Coordinate : faData[11]),
-                    monopole: Number(faData.Monopole !== undefined ? faData.Monopole : faData[12]),
+                    base: getVal(faData, "Base", 0),
+                    secret: getVal(faData, "Secret", 1),
+                    signal: getVal(faData, "Signal", 2),
+                    channel: getVal(faData, "Channel", 3),
+                    pole: getVal(faData, "Pole", 4),
+                    foundation: getVal(faData, "Foundation", 5),
+                    element: getVal(faData, "Element", 6),
+                    charge: getVal(faData, "Charge", 7),
+                    chin: getVal(faData, "Chin", 8),
+                    contour: getVal(faData, "Contour", 9),
+                    identity: getVal(faData, "Identity", 10),
+                    coordinate: getVal(faData, "Coordinate", 11),
+                    monopole: getVal(faData, "Monopole", 12),
                     dynamo: Number(dynamoVal)
                 };
 
@@ -1126,11 +1169,14 @@
             let d_hyp = 81; // derived d_hyp
 
             let selection = tokenPairSelect.value;
+            let targetColor = [0, 240, 255]; // default cyan
+
             if (selection === "void_enter") {
                 fx = tw_freq * 1.25;
                 R_hyp = 160;
                 r_hyp = 35;
                 d_hyp = 110;
+                targetColor = getAddressColor("0x0000000000000000000000000000000000000000");
             } else if (selection !== "default" && loadedRegisters) {
                 // PURE ON-CHAIN REGISTER DRIVEN GEOMETRY RESOLUTION (Matching generate_yi_lau_evolution.py canonical formulas)
                 let regs = loadedRegisters;
@@ -1140,6 +1186,7 @@
                 R_hyp = 100.0 + (regs.foundation % 80);
                 r_hyp = 20.0 + (regs.channel % 40);
                 d_hyp = 30.0 + (regs.dynamo % 60);
+                targetColor = getAddressColor(selection);
             }
 
             // Map timeline t to video's original 2700-frame scale for camera perspective accuracy
@@ -1156,7 +1203,6 @@
             // Dynamically scale sample density proportional to frequency & blowup to avoid gaps
             let num_points = Math.round(360 + (tw_freq * 40) + (tw_blowup * 20));
             let d_offsets = [d_hyp * 0.7, d_hyp, d_hyp * 1.3];
-            let color_rgb = [0, 240, 255]; 
 
             // Track bounding box for dynamic auto-fitting
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1259,9 +1305,9 @@
                     let g_s = Math.round(texColor.g * dot);
                     let b_s = Math.round(texColor.b * dot);
 
-                    let r_curr = Math.round(color_rgb[0] * (1.0 - morphFactor) + r_s * morphFactor);
-                    let g_curr = Math.round(color_rgb[1] * (1.0 - morphFactor) + g_s * morphFactor);
-                    let b_curr = Math.round(color_rgb[2] * (1.0 - morphFactor) + b_s * morphFactor);
+                    let r_curr = Math.round(targetColor[0] * (1.0 - morphFactor) + r_s * morphFactor);
+                    let g_curr = Math.round(targetColor[1] * (1.0 - morphFactor) + g_s * morphFactor);
+                    let b_curr = Math.round(targetColor[2] * (1.0 - morphFactor) + b_s * morphFactor);
 
                     ctx.lineWidth = w;
 
