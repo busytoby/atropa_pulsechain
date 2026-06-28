@@ -6,7 +6,7 @@
 
 #define KERMIT_SOH 0x01
 #define MAX_PAYLOAD 90
-#define MOTZKIN_PRIME 953467954114363ULL
+#define MOTZKIN_PRIME 953473ULL
 
 // Modular multiplication to prevent overflow of 64-bit unsigned integers
 static uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
