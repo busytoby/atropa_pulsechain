@@ -38,6 +38,11 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            cursor: grab;
+        }
+
+        #space-canvas:active {
+            cursor: grabbing;
         }
 
         /* Overlay UI */
@@ -338,6 +343,12 @@
                     <span>Enable Telemetry Grid</span>
                 </label>
             </div>
+            <div class="setting-group">
+                <label class="toggle-container">
+                    <input type="checkbox" id="toggle-baselines" checked>
+                    <span>Enable Array Baselines</span>
+                </label>
+            </div>
         </div>
 
         <footer>
@@ -363,6 +374,51 @@
         window.addEventListener("resize", () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
+        });
+
+        // 3D Viewport click-and-drag interaction variables
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let userPitch = 0;
+        let userYaw = 0;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+            userYaw += deltaX * 0.005;
+            userPitch += deltaY * 0.005;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch support for mobile/trackpad drag
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const deltaX = e.touches[0].clientX - previousMousePosition.x;
+            const deltaY = e.touches[0].clientY - previousMousePosition.y;
+            userYaw += deltaX * 0.005;
+            userPitch += deltaY * 0.005;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
         });
 
         // Dynamic slider label synchronization
@@ -570,10 +626,14 @@
             const strokeWidth = parseFloat(document.getElementById("line-width").value);
             const glowIntensity = parseInt(document.getElementById("glow-intensity").value);
             const showGrid = document.getElementById("toggle-grid").checked;
+            const showBaselines = document.getElementById("toggle-baselines").checked;
 
-            // Perspective rotation
-            const pitch = 0.5 + 0.15 * Math.sin(elapsed * rotationSpeed * 1.14);
-            const yaw = elapsed * rotationSpeed;
+            // Perspective rotation (merges click-drag with automated orbital speed)
+            const pitch = userPitch + 0.5 + 0.15 * Math.sin(elapsed * rotationSpeed * 1.14);
+            const yaw = userYaw + elapsed * rotationSpeed;
+
+            // Retain historical station node projection positions for baseline mapping
+            const previousSlicePoints = [];
 
             // Render tomographic slices
             for (let s = 0; s < sliceCount; s++) {
@@ -666,6 +726,8 @@
                     return { x: mx, y: my };
                 }
 
+                const currentSlicePoints = [];
+
                 if (isDiscreteAperture) {
                     discretePoints.forEach((theta, idx) => {
                         const coords = resolveMorphCoords(theta);
@@ -721,6 +783,8 @@
                         const projX = cx + rx * factor;
                         const projY = cy + ry * factor;
 
+                        currentSlicePoints.push({ x: projX, y: projY });
+
                         // Draw antenna node
                         ctx.fillStyle = sliceColor;
                         ctx.beginPath();
@@ -734,6 +798,24 @@
                         }
                     });
                     ctx.stroke();
+
+                    // Render interop baselines linking matching antennas across slice stacks
+                    if (showBaselines && previousSlicePoints.length === currentSlicePoints.length) {
+                        ctx.strokeStyle = color.replace('rgb', 'rgba').replace(')', ', 0.05)');
+                        ctx.lineWidth = 0.5;
+                        ctx.shadowBlur = 0;
+                        for (let k = 0; k < currentSlicePoints.length; k++) {
+                            ctx.beginPath();
+                            ctx.moveTo(previousSlicePoints[k].x, previousSlicePoints[k].y);
+                            ctx.lineTo(currentSlicePoints[k].x, currentSlicePoints[k].y);
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Save points for matching adjacent slices
+                    previousSlicePoints.length = 0;
+                    currentSlicePoints.forEach(p => previousSlicePoints.push(p));
+
                 } else {
                     // Standard Continuous rendering
                     for (let i = 0; i <= steps; i++) {
