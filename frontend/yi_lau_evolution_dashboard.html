@@ -6,6 +6,8 @@
     <title>YI/LAU Evolution & Tardigrade Telescopic Classifier</title>
     <!-- Modern Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Ethers.js for direct view-only browser contract queries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root {
             --bg-space: #0c101c;
@@ -374,7 +376,7 @@
             <div class="subtitle">WinchesterMQ SCSI Handshake & Frenet-Serret Curvature Walk Engine</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--cyan-glow);">System: Interop Active</div>
+            <div style="font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--cyan-glow);" id="network-status">System: Interop Active</div>
             <div style="font-size: 11px; color: var(--text-muted);">Auncient Wavelet Synthesizer</div>
         </div>
     </header>
@@ -541,6 +543,7 @@
         const lblZoom = document.getElementById("lbl-zoom");
         const cvStatus = document.getElementById("cv-status");
         const tokenPairSelect = document.getElementById("token-pair-select");
+        const netStatus = document.getElementById("network-status");
         
         // Inputs
         const twGain = document.getElementById("tw-gain");
@@ -644,14 +647,72 @@
             }
         }
 
+        // Direct Browser metamask / RPC contract query using Ethers.js
         async function fetchLauRegisters(address) {
             try {
-                const response = await fetch(`/api/lau-registers?address=${address}`);
-                const data = await response.json();
-                loadedRegisters = data;
-                console.log("Loaded on-chain LAU registers:", data);
+                netStatus.innerText = "Querying PulseChain...";
+                netStatus.style.color = "var(--gold-accent)";
+                
+                // Initialize provider (MetaMask window.ethereum if present, fallback to public RPC)
+                let provider;
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                } else {
+                    provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
+                }
+
+                // ABIs
+                const lauAbi = ["function On() view returns (address Phi, address Mu, uint64 Xi, uint64 Pi, address Shio, uint64 Ring, uint64 Omicron, uint64 Omega)"];
+                const shaAbi = [
+                    "function View() view returns (uint64 Base, uint64 Secret, uint64 Signal, uint64 Channel, uint64 Pole, uint64 Foundation, uint64 Element, uint64 Charge, uint64 Chin, uint64 Contour, uint64 Identity, uint64 Coordinate, uint64 Monopole)",
+                    "function Dynamo() view returns (uint256)"
+                ];
+
+                const lauContract = new ethers.Contract(address, lauAbi, provider);
+                const onData = await lauContract.On();
+                
+                const shaAddress = onData.Mu;
+                const shaContract = new ethers.Contract(shaAddress, shaAbi, provider);
+                const faData = await shaContract.View();
+                const dynamoVal = await shaContract.Dynamo();
+
+                loadedRegisters = {
+                    address: address,
+                    sha_address: shaAddress,
+                    base: Number(faData.Base),
+                    secret: Number(faData.Secret),
+                    signal: Number(faData.Signal),
+                    channel: Number(faData.Channel),
+                    pole: Number(faData.Pole),
+                    foundation: Number(faData.Foundation),
+                    element: Number(faData.Element),
+                    charge: Number(faData.Charge),
+                    chin: Number(faData.Chin),
+                    contour: Number(faData.Contour),
+                    identity: Number(faData.Identity),
+                    coordinate: Number(faData.Coordinate),
+                    monopole: Number(faData.Monopole),
+                    dynamo: Number(dynamoVal)
+                };
+
+                console.log("Direct browser loaded registers:", loadedRegisters);
+                netStatus.innerText = "System: Interop Active";
+                netStatus.style.color = "var(--cyan-glow)";
             } catch (err) {
-                console.error("Failed to load LAU registers:", err);
+                console.error("Direct browser query failed, trying local fallback:", err);
+                
+                // Fallback to local server API or hashing
+                try {
+                    const response = await fetch(`/api/lau-registers?address=${address}`);
+                    const data = await response.json();
+                    loadedRegisters = data;
+                    netStatus.innerText = "System: Interop Active";
+                    netStatus.style.color = "var(--cyan-glow)";
+                } catch (fallbackErr) {
+                    console.error("Local fallback failed:", fallbackErr);
+                    netStatus.innerText = "System: Offline Fallback";
+                    netStatus.style.color = "var(--magenta-glow)";
+                }
             }
         }
 
