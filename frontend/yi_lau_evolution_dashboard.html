@@ -647,7 +647,7 @@
             }
         }
 
-        // Direct Browser metamask / RPC contract query using Ethers.js
+        // Direct Browser metamask / RPC contract query using Ethers.js (handling struct tuple parameters correctly)
         async function fetchLauRegisters(address) {
             try {
                 netStatus.innerText = "Querying PulseChain...";
@@ -661,10 +661,10 @@
                     provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
                 }
 
-                // ABIs
-                const lauAbi = ["function On() view returns (address Phi, address Mu, uint64 Xi, uint64 Pi, address Shio, uint64 Ring, uint64 Omicron, uint64 Omega)"];
+                // ABIs with explicit struct tuple definitions
+                const lauAbi = ["function On() view returns (tuple(address Phi, address Mu, uint64 Xi, uint64 Pi, address Shio, uint64 Ring, uint64 Omicron, uint64 Omega))"];
                 const shaAbi = [
-                    "function View() view returns (uint64 Base, uint64 Secret, uint64 Signal, uint64 Channel, uint64 Pole, uint64 Foundation, uint64 Element, uint64 Charge, uint64 Chin, uint64 Contour, uint64 Identity, uint64 Coordinate, uint64 Monopole)",
+                    "function View() view returns (tuple(uint64 Base, uint64 Secret, uint64 Signal, uint64 Channel, uint64 Pole, uint64 Foundation, uint64 Element, uint64 Charge, uint64 Chin, uint64 Contour, uint64 Identity, uint64 Coordinate, uint64 Monopole))",
                     "function Dynamo() view returns (uint256)"
                 ];
 
