@@ -495,31 +495,29 @@
                     const ly_yi = 40.0 * Math.sin(fy * theta);
                     const lz_yi = 40.0 * Math.cos(fz * theta);
                     
-                    // LAU coordinate path (Hypotrochoid)
+                    // LAU coordinate path (Hypotrochoid) - Symmetrical rotation applied to prevent oval collapse
                     const lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset);
-                    const ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                    const ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset);
                     const lz_lau = 25.0 * Math.cos(5.0 * theta);
                     
-                    let lx, ly, lz;
+                    let lx, ly;
+                    const breathe = 1.0 + (Math.sin(time * 3.0 + item.offsetAngle) * 0.04);
                     
                     if (frameIndex < 300) {
                         // Phase 1: YI Lissajous
-                        lx = lx_yi;
-                        ly = ly_yi;
-                        lz = lz_yi;
+                        lx = lx_yi * breathe;
+                        ly = ly_yi * breathe;
                     } else if (frameIndex < 630) {
                         // Phase 2: Morphing
                         const morphFactor = (frameIndex - 300) / 330.0;
-                        lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
-                        ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
-                        lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
+                        lx = (lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor) * breathe;
+                        ly = (ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor) * breathe;
                     } else {
-                        // Phase 3: Perfect Tardibear locked pause (with anatomy warp)
-                        const TardigradeWarpX = Math.sin(theta * 3) * 5;
-                        const TardigradeWarpY = Math.cos(theta * 6) * 3;
-                        lx = lx_lau + TardigradeWarpX;
-                        ly = ly_lau + TardigradeWarpY;
-                        lz = lz_lau;
+                        // Phase 3: Perfect Tardibear locked pause (with anatomy warp and organic breathing)
+                        const TardigradeWarpX = Math.sin(theta * 3) * 6;
+                        const TardigradeWarpY = Math.cos(theta * 6) * 4;
+                        lx = (lx_lau + TardigradeWarpX) * breathe;
+                        ly = (ly_lau + TardigradeWarpY) * breathe;
                     }
                     
                     return { x: lx, y: ly };
