@@ -139,11 +139,19 @@ static bool parse_kermit_frame(const uint8_t *buf, size_t size, KermitFrame *fra
 static void helmholtz_step(HelmholtzPartner *p, uint64_t external_input) {
     switch (p->epoch) {
         case EPOCH_INIT:
-            // Constructor values
-            p->reg.base = 1234567;
-            p->reg.secret = 9876543;
-            p->reg.signal = 5555555;
-            p->reg.identity = 1111111;
+            if (p->prime == APOGEE_PRIME) {
+                // APOGEE YI: Seed uniquely based on device address to make it unique to this device
+                p->reg.base = (p->address * 13) + 1234567;
+                p->reg.secret = (p->address * 17) + 9876543;
+                p->reg.signal = (p->address * 19) + 5555555;
+                p->reg.identity = (p->address * 23) + 1111111;
+            } else {
+                // Partner Handshake: Standard base seed
+                p->reg.base = 1234567;
+                p->reg.secret = 9876543;
+                p->reg.signal = 5555555;
+                p->reg.identity = 1111111;
+            }
             // Channel = Base^Signal mod prime (Tune)
             p->reg.channel = mod_pow(p->reg.base, p->reg.signal, p->prime);
             p->epoch = EPOCH_AVAIL;
@@ -331,18 +339,63 @@ int main() {
             printf("  -> Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
         }
         
-        // --- INTERNAL PRIVATE APOGEE YI GENERATION ---
+        // --- INTERNAL PRIVATE APOGEE YI GENERATION FOR DEVICE A ---
         printf("\n=== Building Internal APOGEE YI (Private Rod & Cone state on Device A) ===\n");
-        HelmholtzPartner apogee_node_a = {
-            .name = "APOGEE_ROD",
+        HelmholtzPartner apogee_node_a_rod = {
+            .name = "DEV_A_AP_ROD",
             .address = 0xAA01,
             .is_rod = true,
             .epoch = EPOCH_INIT,
             .beta = 99991234,
             .prime = APOGEE_PRIME
         };
-        HelmholtzPartner apogee_node_b = {
-            .name = "APOGEE_CONE",
+        HelmholtzPartner apogee_node_a_cone = {
+            .name = "DEV_A_AP_CONE",
+            .address = 0xAA01,
+            .is_rod = false,
+            .epoch = EPOCH_INIT,
+            .beta = 99991234,
+            .prime = APOGEE_PRIME
+        };
+        
+        helmholtz_step(&apogee_node_a_rod, 0);
+        helmholtz_step(&apogee_node_a_cone, 0);
+        helmholtz_step(&apogee_node_a_rod, 0);
+        helmholtz_step(&apogee_node_a_cone, 0);
+        helmholtz_step(&apogee_node_a_rod, apogee_node_a_cone.reg.contour);
+        helmholtz_step(&apogee_node_a_cone, apogee_node_a_rod.reg.contour);
+        helmholtz_step(&apogee_node_a_rod, 0);
+        helmholtz_step(&apogee_node_a_cone, 0);
+        helmholtz_step(&apogee_node_a_rod, apogee_node_a_cone.reg.pole);
+        helmholtz_step(&apogee_node_a_cone, apogee_node_a_rod.reg.pole);
+        helmholtz_step(&apogee_node_a_rod, 0);
+        helmholtz_step(&apogee_node_a_cone, 0);
+        helmholtz_step(&apogee_node_a_rod, apogee_node_a_cone.reg.foundation);
+        helmholtz_step(&apogee_node_a_cone, apogee_node_a_rod.reg.foundation);
+        helmholtz_step(&apogee_node_a_rod, 0);
+        helmholtz_step(&apogee_node_a_cone, 0);
+        helmholtz_step(&apogee_node_a_rod, apogee_node_a_cone.reg.dynamo);
+        helmholtz_step(&apogee_node_a_cone, apogee_node_a_rod.reg.dynamo);
+        
+        printf("  -> Device A APOGEE Rod Manifold:  %lu\n", apogee_node_a_rod.manifold);
+        printf("  -> Device A APOGEE Cone Manifold: %lu\n", apogee_node_a_cone.manifold);
+        
+        if (apogee_node_a_rod.manifold == apogee_node_a_cone.manifold && apogee_node_a_rod.epoch == EPOCH_DONE) {
+            printf("\n[RESULT] [SUCCESS] Device A Private APOGEE YI established! YI = %lu\n", apogee_node_a_rod.manifold);
+        }
+
+        // --- INTERNAL PRIVATE APOGEE YI GENERATION FOR DEVICE B ---
+        printf("\n=== Building Internal APOGEE YI (Private Rod & Cone state on Device B) ===\n");
+        HelmholtzPartner apogee_node_b_rod = {
+            .name = "DEV_B_AP_ROD",
+            .address = 0xBB02,
+            .is_rod = true,
+            .epoch = EPOCH_INIT,
+            .beta = 99991234,
+            .prime = APOGEE_PRIME
+        };
+        HelmholtzPartner apogee_node_b_cone = {
+            .name = "DEV_B_AP_CONE",
             .address = 0xBB02,
             .is_rod = false,
             .epoch = EPOCH_INIT,
@@ -350,40 +403,30 @@ int main() {
             .prime = APOGEE_PRIME
         };
         
-        // Step-wise calculations modulo APOGEE_PRIME
-        helmholtz_step(&apogee_node_a, 0);
-        helmholtz_step(&apogee_node_b, 0);
-        helmholtz_step(&apogee_node_a, 0);
-        helmholtz_step(&apogee_node_b, 0);
-        helmholtz_step(&apogee_node_a, apogee_node_b.reg.contour);
-        helmholtz_step(&apogee_node_b, apogee_node_a.reg.contour);
-        helmholtz_step(&apogee_node_a, 0);
-        helmholtz_step(&apogee_node_b, 0);
-        helmholtz_step(&apogee_node_a, apogee_node_b.reg.pole);
-        helmholtz_step(&apogee_node_b, apogee_node_a.reg.pole);
-        helmholtz_step(&apogee_node_a, 0);
-        helmholtz_step(&apogee_node_b, 0);
-        helmholtz_step(&apogee_node_a, apogee_node_b.reg.foundation);
-        helmholtz_step(&apogee_node_b, apogee_node_a.reg.foundation);
-        helmholtz_step(&apogee_node_a, 0);
-        helmholtz_step(&apogee_node_b, 0);
-        helmholtz_step(&apogee_node_a, apogee_node_b.reg.dynamo);
-        helmholtz_step(&apogee_node_b, apogee_node_a.reg.dynamo);
+        helmholtz_step(&apogee_node_b_rod, 0);
+        helmholtz_step(&apogee_node_b_cone, 0);
+        helmholtz_step(&apogee_node_b_rod, 0);
+        helmholtz_step(&apogee_node_b_cone, 0);
+        helmholtz_step(&apogee_node_b_rod, apogee_node_b_cone.reg.contour);
+        helmholtz_step(&apogee_node_b_cone, apogee_node_b_rod.reg.contour);
+        helmholtz_step(&apogee_node_b_rod, 0);
+        helmholtz_step(&apogee_node_b_cone, 0);
+        helmholtz_step(&apogee_node_b_rod, apogee_node_b_cone.reg.pole);
+        helmholtz_step(&apogee_node_b_cone, apogee_node_b_rod.reg.pole);
+        helmholtz_step(&apogee_node_b_rod, 0);
+        helmholtz_step(&apogee_node_b_cone, 0);
+        helmholtz_step(&apogee_node_b_rod, apogee_node_b_cone.reg.foundation);
+        helmholtz_step(&apogee_node_b_cone, apogee_node_b_rod.reg.foundation);
+        helmholtz_step(&apogee_node_b_rod, 0);
+        helmholtz_step(&apogee_node_b_cone, 0);
+        helmholtz_step(&apogee_node_b_rod, apogee_node_b_cone.reg.dynamo);
+        helmholtz_step(&apogee_node_b_cone, apogee_node_b_rod.reg.dynamo);
         
-        printf("  -> Apogee Rod Manifold:  %lu\n", apogee_node_a.manifold);
-        printf("  -> Apogee Cone Manifold: %lu\n", apogee_node_b.manifold);
+        printf("  -> Device B APOGEE Rod Manifold:  %lu\n", apogee_node_b_rod.manifold);
+        printf("  -> Device B APOGEE Cone Manifold: %lu\n", apogee_node_b_cone.manifold);
         
-        if (apogee_node_a.manifold == apogee_node_b.manifold && apogee_node_a.epoch == EPOCH_DONE) {
-            printf("\n[RESULT] [SUCCESS] Private Device APOGEE YI established! YI = %lu\n", apogee_node_a.manifold);
-            apogee_node_a.yi.base = apogee_node_a.manifold;
-            apogee_node_b.yi.base = apogee_node_b.manifold;
-            apogee_node_a.yi.secret = apogee_node_a.reg.secret;
-            apogee_node_a.yi.signal = apogee_node_a.reg.signal;
-            apogee_node_a.yi.motzkin_prime = APOGEE_PRIME;
-            apogee_node_b.yi.secret = apogee_node_b.reg.secret;
-            apogee_node_b.yi.signal = apogee_node_b.reg.signal;
-            apogee_node_b.yi.motzkin_prime = APOGEE_PRIME;
-            
+        if (apogee_node_b_rod.manifold == apogee_node_b_cone.manifold && apogee_node_b_rod.epoch == EPOCH_DONE) {
+            printf("\n[RESULT] [SUCCESS] Device B Private APOGEE YI established! YI = %lu\n", apogee_node_b_rod.manifold);
         }
         return 0;
     } else {

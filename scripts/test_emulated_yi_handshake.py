@@ -52,7 +52,9 @@ def main():
         "Nonce 1 | Ichidai:",
         "Nonce 2 | Ichidai:",
         "Building Internal APOGEE YI (Private Rod & Cone state on Device A)",
-        "Private Device APOGEE YI established! YI ="
+        "Device A Private APOGEE YI established! YI =",
+        "Building Internal APOGEE YI (Private Rod & Cone state on Device B)",
+        "Device B Private APOGEE YI established! YI ="
     ]
     
     all_passed = True
