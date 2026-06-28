@@ -315,18 +315,37 @@ static void calculate_local_apogee_yi(uint16_t address) {
     }
 }
 
+static void store_nvs_apogee_fuse(uint64_t base, uint64_t secret, uint64_t signal);
+
 static void init_nvs_apogee_fuse() {
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("apogee_store", NVS_READWRITE, &my_handle);
+    bool needs_generation = true;
     if (err == ESP_OK) {
-        nvs_get_u64(my_handle, "base", &apogee_base);
-        nvs_get_u64(my_handle, "secret", &apogee_secret);
-        nvs_get_u64(my_handle, "signal", &apogee_signal);
+        esp_err_t err_b = nvs_get_u64(my_handle, "base", &apogee_base);
+        esp_err_t err_s = nvs_get_u64(my_handle, "secret", &apogee_secret);
+        esp_err_t err_sig = nvs_get_u64(my_handle, "signal", &apogee_signal);
         nvs_close(my_handle);
-        ESP_LOGI(TAG, "Loaded APOGEE FUSE parameters from NVS: base=%llu, secret=%llu, signal=%llu",
-                 apogee_base, apogee_secret, apogee_signal);
-    } else {
-        ESP_LOGI(TAG, "No stored APOGEE FUSE parameters found in NVS.");
+        
+        if (err_b == ESP_OK && err_s == ESP_OK && err_sig == ESP_OK && apogee_base != 0) {
+            needs_generation = false;
+            ESP_LOGI(TAG, "Loaded APOGEE FUSE parameters from NVS: base=%llu, secret=%llu, signal=%llu",
+                     apogee_base, apogee_secret, apogee_signal);
+        }
+    }
+    
+    if (needs_generation) {
+        ESP_LOGI(TAG, "No valid stored APOGEE FUSE parameters found. Generating fresh APOGEE...");
+        // Use true hardware random source to seed fresh values
+        uint64_t new_base = ((uint64_t)esp_random() << 32) | esp_random();
+        uint64_t new_secret = ((uint64_t)esp_random() << 32) | esp_random();
+        uint64_t new_signal = ((uint64_t)esp_random() << 32) | esp_random();
+        
+        if (new_base == 0) new_base = 1234567;
+        if (new_secret == 0) new_secret = 9876543;
+        if (new_signal == 0) new_signal = 5555555;
+        
+        store_nvs_apogee_fuse(new_base, new_secret, new_signal);
     }
 }
 
