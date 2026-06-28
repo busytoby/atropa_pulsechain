@@ -50,7 +50,11 @@ def main():
         "Generating YI.react Nonce Signatures:",
         "Nonce 0 | Ichidai:",
         "Nonce 1 | Ichidai:",
-        "Nonce 2 | Ichidai:"
+        "Nonce 2 | Ichidai:",
+        "Building APOGEE YI (Separate Handshake modulo APOGEE Prime)",
+        "APOGEE YI established! YI =",
+        "Generating APOGEE YI Nonce Signatures:",
+        "APOGEE Nonce 0 | Ichidai:"
     ]
     
     all_passed = True

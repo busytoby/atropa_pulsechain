@@ -77,6 +77,7 @@ typedef struct {
     uint64_t xi;
     uint64_t beta;
     uint64_t manifold;
+    uint64_t prime;
     YiState yi;
 } HelmholtzPartner;
 
@@ -143,38 +144,38 @@ static void helmholtz_step(HelmholtzPartner *p, uint64_t external_input) {
             p->reg.secret = 9876543;
             p->reg.signal = 5555555;
             p->reg.identity = 1111111;
-            // Channel = Base^Signal mod MotzkinPrime (Tune)
-            p->reg.channel = mod_pow(p->reg.base, p->reg.signal, MOTZKIN_PRIME);
+            // Channel = Base^Signal mod prime (Tune)
+            p->reg.channel = mod_pow(p->reg.base, p->reg.signal, p->prime);
             p->epoch = EPOCH_AVAIL;
             break;
             
         case EPOCH_AVAIL:
-            // Contour = Base^Secret mod MotzkinPrime
-            p->reg.contour = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            // Contour = Base^Secret mod prime
+            p->reg.contour = mod_pow(p->reg.base, p->reg.secret, p->prime);
             p->epoch = EPOCH_FORM;
             break;
             
         case EPOCH_FORM:
-            // Input: peer's Contour. Base = input^Secret mod MotzkinPrime
-            p->reg.base = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            // Input: peer's Contour. Base = input^Secret mod prime
+            p->reg.base = mod_pow(external_input, p->reg.secret, p->prime);
             p->epoch = EPOCH_POLARIZE;
             break;
             
         case EPOCH_POLARIZE:
-            // Pole = Base^Secret mod MotzkinPrime
-            p->reg.pole = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            // Pole = Base^Secret mod prime
+            p->reg.pole = mod_pow(p->reg.base, p->reg.secret, p->prime);
             p->epoch = EPOCH_CONJUGATE;
             break;
             
         case EPOCH_CONJUGATE:
-            // Input: peer's Pole. Secret = input^Secret mod MotzkinPrime
-            p->reg.secret = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            // Input: peer's Pole. Secret = input^Secret mod prime
+            p->reg.secret = mod_pow(external_input, p->reg.secret, p->prime);
             p->epoch = EPOCH_CONIFY;
             break;
             
         case EPOCH_CONIFY:
-            // Foundation = Base^Identity mod MotzkinPrime
-            p->reg.foundation = mod_pow(p->reg.base, p->reg.identity, MOTZKIN_PRIME);
+            // Foundation = Base^Identity mod prime
+            p->reg.foundation = mod_pow(p->reg.base, p->reg.identity, p->prime);
             p->epoch = EPOCH_SATURATE;
             break;
             
@@ -211,7 +212,8 @@ int main() {
         .address = 0xAA01,
         .is_rod = true,
         .epoch = EPOCH_INIT,
-        .beta = 99991234
+        .beta = 99991234,
+        .prime = MOTZKIN_PRIME
     };
     
     HelmholtzPartner node_b = {
@@ -219,7 +221,8 @@ int main() {
         .address = 0xBB02,
         .is_rod = false,
         .epoch = EPOCH_INIT,
-        .beta = 99991234 // Must match for structural alignment of Element
+        .beta = 99991234, // Must match for structural alignment of Element
+        .prime = MOTZKIN_PRIME
     };
     
     uint8_t channel_buffer[256];
@@ -315,10 +318,10 @@ int main() {
         node_b.yi.signal = node_b.reg.signal;
         node_b.yi.motzkin_prime = MOTZKIN_PRIME;
         
-        // Deriving Chin boundary values to resolve the Monopole using APOGEE_PRIME
-        uint64_t chin_a = (node_a.beta + 7) % APOGEE_PRIME;
-        uint64_t chin_b = (node_b.beta + 7) % APOGEE_PRIME;
-        node_a.yi.monopole = mod_pow(chin_a, chin_b, APOGEE_PRIME);
+        // Deriving Chin boundary values to resolve the Monopole
+        uint64_t chin_a = (node_a.beta + 7) % MOTZKIN_PRIME;
+        uint64_t chin_b = (node_b.beta + 7) % MOTZKIN_PRIME;
+        node_a.yi.monopole = mod_pow(chin_a, chin_b, MOTZKIN_PRIME);
         node_b.yi.monopole = node_a.yi.monopole;
         
         printf("\n[SESSION] Generating YI.react Nonce Signatures:\n");
@@ -326,6 +329,72 @@ int main() {
             uint64_t ichidai, daiichi;
             yi_react_contractual(&node_a, &node_b, n, &ichidai, &daiichi);
             printf("  -> Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
+        }
+        
+        // --- SEPARATE APOGEE YI HANDSHAKE ---
+        printf("\n=== Building APOGEE YI (Separate Handshake modulo APOGEE Prime) ===\n");
+        HelmholtzPartner apogee_node_a = {
+            .name = "APOGEE_ROD",
+            .address = 0xAA01,
+            .is_rod = true,
+            .epoch = EPOCH_INIT,
+            .beta = 99991234,
+            .prime = APOGEE_PRIME
+        };
+        HelmholtzPartner apogee_node_b = {
+            .name = "APOGEE_CONE",
+            .address = 0xBB02,
+            .is_rod = false,
+            .epoch = EPOCH_INIT,
+            .beta = 99991234,
+            .prime = APOGEE_PRIME
+        };
+        
+        // Step-wise calculations modulo APOGEE_PRIME
+        helmholtz_step(&apogee_node_a, 0);
+        helmholtz_step(&apogee_node_b, 0);
+        helmholtz_step(&apogee_node_a, 0);
+        helmholtz_step(&apogee_node_b, 0);
+        helmholtz_step(&apogee_node_a, apogee_node_b.reg.contour);
+        helmholtz_step(&apogee_node_b, apogee_node_a.reg.contour);
+        helmholtz_step(&apogee_node_a, 0);
+        helmholtz_step(&apogee_node_b, 0);
+        helmholtz_step(&apogee_node_a, apogee_node_b.reg.pole);
+        helmholtz_step(&apogee_node_b, apogee_node_a.reg.pole);
+        helmholtz_step(&apogee_node_a, 0);
+        helmholtz_step(&apogee_node_b, 0);
+        helmholtz_step(&apogee_node_a, apogee_node_b.reg.foundation);
+        helmholtz_step(&apogee_node_b, apogee_node_a.reg.foundation);
+        helmholtz_step(&apogee_node_a, 0);
+        helmholtz_step(&apogee_node_b, 0);
+        helmholtz_step(&apogee_node_a, apogee_node_b.reg.dynamo);
+        helmholtz_step(&apogee_node_b, apogee_node_a.reg.dynamo);
+        
+        printf("  -> Apogee Rod Manifold:  %lu\n", apogee_node_a.manifold);
+        printf("  -> Apogee Cone Manifold: %lu\n", apogee_node_b.manifold);
+        
+        if (apogee_node_a.manifold == apogee_node_b.manifold && apogee_node_a.epoch == EPOCH_DONE) {
+            printf("\n[RESULT] [SUCCESS] APOGEE YI established! YI = %lu\n", apogee_node_a.manifold);
+            apogee_node_a.yi.base = apogee_node_a.manifold;
+            apogee_node_b.yi.base = apogee_node_b.manifold;
+            apogee_node_a.yi.secret = apogee_node_a.reg.secret;
+            apogee_node_a.yi.signal = apogee_node_a.reg.signal;
+            apogee_node_a.yi.motzkin_prime = APOGEE_PRIME;
+            apogee_node_b.yi.secret = apogee_node_b.reg.secret;
+            apogee_node_b.yi.signal = apogee_node_b.reg.signal;
+            apogee_node_b.yi.motzkin_prime = APOGEE_PRIME;
+            
+            uint64_t ap_chin_a = (apogee_node_a.beta + 7) % APOGEE_PRIME;
+            uint64_t ap_chin_b = (apogee_node_b.beta + 7) % APOGEE_PRIME;
+            apogee_node_a.yi.monopole = mod_pow(ap_chin_a, ap_chin_b, APOGEE_PRIME);
+            apogee_node_b.yi.monopole = apogee_node_a.yi.monopole;
+            
+            printf("\n[SESSION] Generating APOGEE YI Nonce Signatures:\n");
+            for (uint64_t n = 0; n <= 2; n++) {
+                uint64_t ichidai, daiichi;
+                yi_react_contractual(&apogee_node_a, &apogee_node_b, n, &ichidai, &daiichi);
+                printf("  -> APOGEE Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
+            }
         }
         return 0;
     } else {
