@@ -892,7 +892,7 @@ void app_main(void) {
                                     // Succeeded! Re-synchronize local nonce tracking
                                     transmit_nonce = (uint64_t)candidate + 1;
                                     match_found = true;
-                                    ESP_LOGI(TAG, "Signature VALID! Re-synced transmit_nonce to %llu (offset: %d)", transmit_nonce, dx);
+                                    ESP_LOGI(TAG, "Signature VALID! Packet conforms to SEAL1. Re-synced transmit_nonce to %llu (offset: %d)", transmit_nonce, dx);
                                     break;
                                 }
                             }
