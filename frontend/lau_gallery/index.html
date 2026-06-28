@@ -100,7 +100,7 @@
 
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 2rem;
             padding: 3rem 2rem;
             max-width: 1650px;
@@ -126,15 +126,16 @@
         }
 
         .image-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: block;
             border-bottom: 1px solid var(--card-border);
             position: relative;
             background: #060913;
+            width: 100%;
         }
 
         .image-wrapper {
-            aspect-ratio: 1;
+            width: 100%;
+            aspect-ratio: 1.618; /* Golden ratio landscape aspect */
             overflow: hidden;
             position: relative;
             display: flex;
@@ -142,25 +143,10 @@
             justify-content: center;
         }
 
-        .image-wrapper.vector {
-            border-right: 1px solid var(--card-border);
-        }
-
         .image-wrapper canvas {
             width: 100%;
             height: 100%;
             display: block;
-        }
-
-        .image-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.6s ease;
-        }
-
-        .lau-card:hover .image-wrapper img {
-            transform: scale(1.05);
         }
 
         .image-label {
@@ -355,18 +341,12 @@
                 const card = document.createElement('div');
                 card.className = 'lau-card';
 
-                const humPath = `/assets/${token.address}_humanoid_photorealistic.png`;
-
-                // Render dynamic canvas for radiotelescope animation and humanoid image side-by-side
+                // Single large self-animating radiotelescope hypotrochoid canvas preview
                 card.innerHTML = `
                     <div class="image-container">
-                        <div class="image-wrapper vector">
+                        <div class="image-wrapper">
                             <canvas class="radiotelescope-icon" data-address="${token.address}"></canvas>
                             <span class="image-label">TELESCOPE</span>
-                        </div>
-                        <div class="image-wrapper">
-                            <img src="${humPath}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23060913\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%232a354f\\' font-family=\\'sans-serif\\' font-size=\\'12\\'>Humanoid Pending</text></svg>'">
-                            <span class="image-label">HUMANOID</span>
                         </div>
                     </div>
                     <div class="card-details">
@@ -388,8 +368,8 @@
                 const color = getAddressColor(address);
                 
                 // Set canvas internal dimensions for scaling quality
-                canvas.width = 180;
-                canvas.height = 180;
+                canvas.width = 300;
+                canvas.height = 185;
                 
                 activeCanvases.push({
                     canvas: canvas,
@@ -419,18 +399,18 @@
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
-                ctx.arc(w / 2, h / 2, w * 0.42, 0, Math.PI * 2);
+                ctx.arc(w / 2, h / 2, h * 0.42, 0, Math.PI * 2);
                 ctx.stroke();
                 
                 ctx.beginPath();
-                ctx.arc(w / 2, h / 2, w * 0.22, 0, Math.PI * 2);
+                ctx.arc(w / 2, h / 2, h * 0.22, 0, Math.PI * 2);
                 ctx.stroke();
                 
                 // Derive canonical telescope coordinates
                 const fx = 1.0 + (regs.channel % 5);
-                const R_hyp = 45.0 + (regs.foundation % 20);
-                const r_hyp = 10.0 + (regs.channel % 15);
-                const d_hyp = 15.0 + (regs.dynamo % 25);
+                const R_hyp = 35.0 + (regs.foundation % 15);
+                const r_hyp = 8.0 + (regs.channel % 10);
+                const d_hyp = 12.0 + (regs.dynamo % 20);
                 const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
                 const thetaOffset = time * 0.5 + item.offsetAngle;
                 
