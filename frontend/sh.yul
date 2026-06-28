@@ -76,6 +76,33 @@ object "Unix1Shell" {
                     returndatacopy(0x00, 0, size)
                     return(0x00, size)
                 }
+
+                // "run" (hash: 0x72756e00...)
+                // Usage: run <kernelAddress> <filename>
+                case 0x72756e0000000000000000000000000000000000000000000000000000000000 {
+                    let space2 := findChar(add(0x100, add(cmdWordEnd, 1)), sub(cmdLen, add(cmdWordEnd, 1)), 0x20)
+                    let kernelAddr := getCommandHash(add(0x100, add(cmdWordEnd, 1)), space2)
+                    
+                    let filenameStart := add(add(0x100, cmdWordEnd), add(space2, 2))
+                    let filenameLen := sub(cmdLen, add(cmdWordEnd, add(space2, 2)))
+                    let filenameHash := getCommandHash(filenameStart, filenameLen)
+                    
+                    // Call sys_exec(0, filenameHash) on the kernel -> selector 0x5f2f5361
+                    mstore(0x00, 0x5f2f536100000000000000000000000000000000000000000000000000000000)
+                    mstore(0x04, 0) // pid 0
+                    mstore(0x24, filenameHash)
+                    let execSuccess := call(gas(), kernelAddr, 0, 0x00, 68, 0x00, 32)
+                    
+                    // Execute 4 instruction step cycles: call sys_step(0) -> selector 0x00c71a91
+                    for { let step := 0 } lt(step, 4) { step := add(step, 1) } {
+                        mstore(0x00, 0x00c71a9100000000000000000000000000000000000000000000000000000000)
+                        mstore(0x04, 0) // pid 0
+                        let stepSuccess := call(gas(), kernelAddr, 0, 0x00, 36, 0x00, 32)
+                    }
+                    
+                    mstore(0x00, 1)
+                    return(0x00, 0x20)
+                }
                 
                 default {
                     revert(0, 0)
