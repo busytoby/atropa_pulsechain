@@ -306,6 +306,20 @@
             text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
         }
 
+        .anatomy-item.active-selection {
+            border-left-color: var(--cyan-glow) !important;
+            background: rgba(0, 240, 255, 0.2) !important;
+            color: var(--cyan-glow) !important;
+            border: 1px solid var(--cyan-glow);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            animation: pulse-border 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            from { border-color: rgba(0, 240, 255, 0.4); }
+            to { border-color: rgba(0, 240, 255, 1.0); }
+        }
+
         .classification-badge {
             background: rgba(255, 0, 127, 0.1);
             border: 1px solid var(--magenta-glow);
@@ -426,7 +440,7 @@
                     <div>Manual Zoom: <span id="lbl-zoom">1.0x</span></div>
                 </div>
             </div>
-            <div class="instruction-box">Click on curves to manually identify eigenvalues | Drag to rotate | Scroll to zoom</div>
+            <div class="instruction-box">Click an organ on the right, then click its location on the canvas to map it manually | Drag to rotate</div>
 
             <!-- Bottom Scrubber -->
             <div class="timeline-card">
@@ -513,7 +527,7 @@
 
         // Manual Eigenvalue Lock state
         let manuallyLockedOrgans = {};
-        let lastClickCoords = null;
+        let activeOrganSelection = null; // ID of the currently selected organ in the right panel
 
         // Elements
         const canvas = document.getElementById("evolution-canvas");
@@ -574,6 +588,8 @@
             userYawOffset = 0;
             userPitchOffset = 0;
             manuallyLockedOrgans = {};
+            activeOrganSelection = null;
+            document.querySelectorAll(".anatomy-item").forEach(item => item.classList.remove("active-selection"));
         });
 
         document.getElementById("btn-align-view").addEventListener("click", (e) => {
@@ -599,12 +615,53 @@
             isMouseDown = false;
         });
 
+        // Handle selection on the right-hand side anatomy items
+        document.querySelectorAll(".anatomy-item").forEach(item => {
+            item.addEventListener("click", () => {
+                let id = item.getAttribute("id");
+                
+                // If clicked the already active selection, clear it
+                if (activeOrganSelection === id) {
+                    activeOrganSelection = null;
+                    item.classList.remove("active-selection");
+                    console.log("Cleared active selection");
+                } else {
+                    // Clear previous selection
+                    document.querySelectorAll(".anatomy-item").forEach(el => el.classList.remove("active-selection"));
+                    
+                    activeOrganSelection = id;
+                    item.classList.add("active-selection");
+                    console.log("Active selection set to:", id);
+                }
+            });
+        });
+
         // Handle clicking on the image to manually lock eigenvalues
         canvas.addEventListener("click", (e) => {
             let rect = canvas.getBoundingClientRect();
             let clickX = e.clientX - rect.left;
             let clickY = e.clientY - rect.top;
             
+            if (activeOrganSelection) {
+                // MANUAL MAPPING MODE: Lock the organ directly to the clicked coordinates
+                let organName = document.getElementById(activeOrganSelection).querySelector("span").innerText;
+                
+                manuallyLockedOrgans[activeOrganSelection] = {
+                    id: activeOrganSelection,
+                    name: organName,
+                    pt: { px: clickX, py: clickY }
+                };
+                
+                console.log(`Manually mapped and locked: ${organName} at (${clickX.toFixed(1)}, ${clickY.toFixed(1)})`);
+                
+                // Clear selection state
+                let el = document.getElementById(activeOrganSelection);
+                if (el) el.classList.remove("active-selection");
+                activeOrganSelection = null;
+                return;
+            }
+
+            // FALLBACK / DETECT MODE: Click near existing node to toggle lock
             if (currentMiddleLayerPoints.length === 0) return;
             
             let len = currentMiddleLayerPoints.length;
@@ -640,7 +697,11 @@
                 if (manuallyLockedOrgans[clickedOrgan.id]) {
                     delete manuallyLockedOrgans[clickedOrgan.id];
                 } else {
-                    manuallyLockedOrgans[clickedOrgan.id] = clickedOrgan;
+                    manuallyLockedOrgans[clickedOrgan.id] = {
+                        id: clickedOrgan.id,
+                        name: clickedOrgan.name,
+                        pt: { px: clickedOrgan.pt.px, py: clickedOrgan.pt.py }
+                    };
                 }
                 console.log("Manual Lock toggled for:", clickedOrgan.name);
             }
@@ -1091,7 +1152,7 @@
                 let middleLayer = currentMiddleLayerPoints;
                 let len = middleLayer.length;
                 
-                // Index mappings on the actual hypotrochoid curve representing the anatomy regions
+                // Default index mappings on the actual hypotrochoid curve
                 let headIdx = Math.floor(len * 0.0);
                 let pharynxIdx = Math.floor(len * 0.12);
                 let glandsIdx = Math.floor(len * 0.25);
@@ -1100,21 +1161,24 @@
                 let clawsIdx = Math.floor(len * 0.75);
 
                 let indicators = [
-                    { id: "anat-head", label: "Anterior Head Capsule", pt: middleLayer[headIdx] },
-                    { id: "anat-pharynx", label: "Sucking Pharynx", pt: middleLayer[pharynxIdx] },
-                    { id: "anat-stomach", label: "Digestive Midgut", pt: middleLayer[midgutIdx] },
-                    { id: "anat-claws", label: "Terminal Lobopod Claws", pt: middleLayer[clawsIdx] },
-                    { id: "anat-glands", label: "Salivary Gland Complex", pt: middleLayer[glandsIdx] },
-                    { id: "anat-malpighian", label: "Malpighian Excretory Tubules", pt: middleLayer[malpighianIdx] }
+                    { id: "anat-head", label: "Anterior Head Capsule", defaultPt: middleLayer[headIdx] },
+                    { id: "anat-pharynx", label: "Muscular Sucking Pharynx", defaultPt: middleLayer[pharynxIdx] },
+                    { id: "anat-stomach", label: "Digestive Midgut", defaultPt: middleLayer[midgutIdx] },
+                    { id: "anat-claws", label: "Terminal Lobopod Claws", defaultPt: middleLayer[clawsIdx] },
+                    { id: "anat-glands", label: "Salivary Gland Complex", defaultPt: middleLayer[glandsIdx] },
+                    { id: "anat-malpighian", label: "Malpighian Excretory Tubules", defaultPt: middleLayer[malpighianIdx] }
                 ];
 
                 indicators.forEach(ind => {
-                    if (!ind.pt) return;
-                    let isLocked = !!manuallyLockedOrgans[ind.id];
-                    let isDetected = targetMatch > 0.4 || isLocked;
+                    let lockData = manuallyLockedOrgans[ind.id];
+                    let isLocked = !!lockData;
+                    
+                    // Use manual coords if locked, otherwise use the default index-derived point
+                    let pt = isLocked ? lockData.pt : ind.defaultPt;
+                    if (!pt) return;
 
                     ctx.beginPath();
-                    ctx.arc(ind.pt.px, ind.pt.py, isLocked ? 7 : 4, 0, Math.PI * 2);
+                    ctx.arc(pt.px, pt.py, isLocked ? 7 : 4, 0, Math.PI * 2);
                     ctx.fillStyle = isLocked ? "var(--cyan-glow)" : "var(--magenta-glow)";
                     ctx.fill();
 
@@ -1122,26 +1186,21 @@
                         ctx.strokeStyle = "var(--cyan-glow)";
                         ctx.lineWidth = 1.5;
                         ctx.beginPath();
-                        ctx.arc(ind.pt.px, ind.pt.py, 12, 0, Math.PI * 2);
+                        ctx.arc(pt.px, pt.py, 12, 0, Math.PI * 2);
                         ctx.stroke();
                     }
 
                     ctx.strokeStyle = isLocked ? "rgba(0, 240, 255, 0.5)" : "rgba(255, 0, 127, 0.5)";
                     ctx.lineWidth = 1;
                     ctx.beginPath();
-                    ctx.moveTo(ind.pt.px, ind.pt.py);
-                    ctx.lineTo(ind.pt.px - 40, ind.pt.py - 30);
+                    ctx.moveTo(pt.px, pt.py);
+                    ctx.lineTo(pt.px - 40, pt.py - 30);
                     ctx.stroke();
 
                     ctx.fillStyle = isLocked ? "var(--cyan-glow)" : "#fff";
                     ctx.font = "10px 'Share Tech Mono'";
-                    ctx.fillText(isLocked ? `MANUAL LOCK: ${ind.label}` : ind.label, ind.pt.px - 75, ind.pt.py - 35);
+                    ctx.fillText(isLocked ? `MANUAL LOCK: ${ind.label}` : ind.label, pt.px - 75, pt.py - 35);
                 });
-
-                cvStatus.innerText = `TARDIGRADA MATCH: ${(targetMatch * 100).toFixed(1)}%`;
-                cvStatus.style.borderColor = targetMatch > 0.4 ? "var(--magenta-glow)" : "var(--cyan-glow)";
-                cvStatus.style.color = targetMatch > 0.4 ? "var(--magenta-glow)" : "var(--cyan-glow)";
-                cvStatus.style.background = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.15)" : "rgba(0, 240, 255, 0.15)";
 
                 // Update right panel list values
                 indicators.forEach(ind => {
