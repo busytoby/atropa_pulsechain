@@ -753,9 +753,10 @@
             let t = frame / TOTAL_FRAMES;
             lblTTime.innerText = (t * 30.0).toFixed(2) + "s";
 
+            // Morph factor maps exactly to video division
             let morphFactor = 0.0;
             if (t > 0.30) {
-                morphFactor = Math.min(1.0, (t - 0.30) / 0.60);
+                morphFactor = Math.min(1.0, (t - 0.30) / 0.70);
             }
             lblMorphFactor.innerText = Math.round(morphFactor * 100) + "%";
 
@@ -809,7 +810,10 @@
                 d_hyp = 110;
             }
 
-            let f_effective = Math.min(frame, TOTAL_FRAMES - 270);
+            // Map timeline t to video's original 2700-frame scale for camera perspective accuracy
+            let f_video = t * 2700;
+            let f_effective = Math.min(f_video, 2700 - 270);
+            
             let cam_yaw = f_effective * 0.015;
             let cam_pitch = 0.3 + 0.05 * Math.sin(f_effective * 0.008);
             let cam_x = Math.cos(cam_yaw) * 360;
