@@ -703,7 +703,7 @@ void app_main(void) {
                 if (rx_idx >= (size_t)(expected_len + 2)) {
                     KermitFrame frame;
                     if (parse_kermit_frame(rx_buffer, rx_idx, &frame)) {
-                        ESP_LOGI(TAG, "Valid Kermit Frame. Seq: %d | Type: %c", frame.seq, frame.type);
+                        ESP_LOGI(TAG, "Valid Kermit Frame. Conforms to SEAL0. Seq: %d | Type: %c", frame.seq, frame.type);
                         
                         if (frame.type == 'I') {
                             ESP_LOGI(TAG, "Initializing Helmholtz Partner Role...");
