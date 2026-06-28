@@ -909,7 +909,7 @@
 
             let organs = [
                 { id: "anat-head", name: "Anterior Head Capsule", pt: currentMiddleLayerPoints[headIdx] },
-                { id: "anat-pharynx", name: "Muscular Sucking Pharynx", pt: currentMiddleLayerPoints[pharynxIdx] },
+                { id: "anat-pharynx", name: "Muscular Sucking Pharynx", pt: currentMiddlePoints[pharynxIdx] },
                 { id: "anat-stomach", name: "Digestive Midgut", pt: currentMiddleLayerPoints[midgutIdx] },
                 { id: "anat-claws", name: "Terminal Lobopod Claws", pt: currentMiddleLayerPoints[clawsIdx] },
                 { id: "anat-glands", name: "Salivary Gland Complex", pt: currentMiddleLayerPoints[glandsIdx] },
@@ -1200,8 +1200,8 @@
             let cam_z = 240 + 40 * Math.cos(f_effective * 0.005);
             let zoom = 0.82;
 
-            // Dynamically scale sample density proportional to frequency & blowup to avoid gaps
-            let num_points = Math.round(360 + (tw_freq * 40) + (tw_blowup * 20));
+            // Dynamically scale sample density proportional to frequency & blowup to avoid gaps (super-sampled vector curves)
+            let num_points = Math.round(1000 + (tw_freq * 100) + (tw_blowup * 50));
             let d_offsets = [d_hyp * 0.7, d_hyp, d_hyp * 1.3];
 
             // Track bounding box for dynamic auto-fitting
