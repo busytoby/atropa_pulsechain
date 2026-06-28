@@ -811,26 +811,51 @@ void app_main(void) {
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                         }
                         else if (frame.type == 'F') {
-                            // Set/Store APOGEE FUSE configuration: Payload contains 24 bytes (base, secret, signal)
-                            uint64_t f_base, f_secret, f_signal;
+                            // Set/Store FUSE configuration: Payload contains 32 bytes (base, secret, signal, prime)
+                            uint64_t f_base, f_secret, f_signal, f_prime;
                             memcpy(&f_base, &frame.data[0], 8);
                             memcpy(&f_secret, &frame.data[8], 8);
                             memcpy(&f_signal, &frame.data[16], 8);
+                            memcpy(&f_prime, &frame.data[24], 8);
                             
-                            ESP_LOGI(TAG, "FUSE Kermit Request: Set APOGEE FUSE base=%llu, secret=%llu, signal=%llu",
-                                     f_base, f_secret, f_signal);
-                            store_nvs_apogee_fuse(f_base, f_secret, f_signal);
+                            ESP_LOGI(TAG, "FUSE Kermit Request: Set FUSE base=%llu, secret=%llu, signal=%llu, prime=%llu",
+                                     f_base, f_secret, f_signal, f_prime);
                             
-                            // Recalculate local APOGEE YI using the new config
-                            uint16_t current_addr = node_state.address;
-                            if (current_addr == 0) {
-                                current_addr = 0xAA01; // Default fallback
+                            uint64_t converged_val = 0;
+                            if (f_prime == APOGEE_PRIME) {
+                                store_nvs_apogee_fuse(f_base, f_secret, f_signal);
+                                uint16_t current_addr = node_state.address;
+                                if (current_addr == 0) {
+                                    current_addr = 0xAA01; // Default fallback
+                                }
+                                calculate_local_apogee_yi(current_addr);
+                                converged_val = apogee_yi;
+                            } else {
+                                // Reconstruct the partner handshake YI locally using MOTZKIN_PRIME
+                                node_state.prime = MOTZKIN_PRIME;
+                                node_state.reg.base = f_base;
+                                node_state.reg.secret = f_secret;
+                                node_state.reg.signal = f_signal;
+                                node_state.reg.identity = 1111111;
+                                
+                                node_state.reg.channel = mod_pow(f_base, f_signal, MOTZKIN_PRIME);
+                                node_state.reg.contour = mod_pow(f_base, f_secret, MOTZKIN_PRIME);
+                                uint64_t next_base = mod_pow(node_state.reg.contour, f_secret, MOTZKIN_PRIME);
+                                node_state.reg.pole = mod_pow(next_base, f_secret, MOTZKIN_PRIME);
+                                node_state.reg.foundation = mod_pow(next_base, node_state.reg.identity, MOTZKIN_PRIME);
+                                node_state.reg.element = node_state.beta + node_state.reg.foundation;
+                                node_state.reg.dynamo = mod_pow(next_base, f_signal, node_state.reg.element);
+                                node_state.manifold = mod_pow(node_state.reg.dynamo, f_signal, node_state.reg.element);
+                                node_state.monopole = mod_pow((node_state.beta + 7) % MOTZKIN_PRIME, (node_state.beta + 7) % MOTZKIN_PRIME, MOTZKIN_PRIME);
+                                node_state.epoch = EPOCH_DONE;
+                                
+                                converged_val = node_state.manifold;
+                                ESP_LOGI(TAG, "Local Partner YI Fused successfully! YI = %llu", converged_val);
                             }
-                            calculate_local_apogee_yi(current_addr);
                             
                             // Respond with the newly established converged YI (8 bytes)
                             uint8_t tx_buffer[64];
-                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', (uint8_t*)&apogee_yi, 8, tx_buffer);
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', (uint8_t*)&converged_val, 8, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                         }
                         else if (frame.type == 'V') {
@@ -844,6 +869,46 @@ void app_main(void) {
                             uint8_t tx_buffer[64];
                             size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, 32, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                        }
+                        else if (frame.type == 'S') {
+                            // Signature Verify/Sync with Sliding Window: Payload contains 24 bytes (nonce, ichidai, daiichi)
+                            uint64_t rx_nonce, rx_ichidai, rx_daiichi;
+                            memcpy(&rx_nonce, &frame.data[0], 8);
+                            memcpy(&rx_ichidai, &frame.data[8], 8);
+                            memcpy(&rx_daiichi, &frame.data[16], 8);
+                            
+                            ESP_LOGI(TAG, "Signature verification request. Nonce: %llu", rx_nonce);
+                            bool match_found = false;
+                            
+                            // Check sliding window of size 9 around received nonce
+                            for (int dx = -4; dx <= 4; dx++) {
+                                int64_t candidate = (int64_t)rx_nonce + dx;
+                                if (candidate < 0) continue;
+                                
+                                uint64_t exp_ichidai, exp_daiichi;
+                                yi_react_contractual((uint64_t)candidate, &exp_ichidai, &exp_daiichi);
+                                
+                                if (rx_ichidai == exp_ichidai && rx_daiichi == exp_daiichi) {
+                                    // Succeeded! Re-synchronize local nonce tracking
+                                    transmit_nonce = (uint64_t)candidate + 1;
+                                    match_found = true;
+                                    ESP_LOGI(TAG, "Signature VALID! Re-synced transmit_nonce to %llu (offset: %d)", transmit_nonce, dx);
+                                    break;
+                                }
+                            }
+                            
+                            if (match_found) {
+                                // Respond with ACK containing the newly synchronized nonce value (8 bytes)
+                                uint8_t tx_buffer[64];
+                                size_t tx_len = pack_kermit_frame(frame.seq, 'Y', (uint8_t*)&transmit_nonce, 8, tx_buffer);
+                                usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                            } else {
+                                ESP_LOGE(TAG, "Signature INVALID! Verification failed.");
+                                // Respond with NAK containing current device expected nonce (8 bytes)
+                                uint8_t tx_buffer[64];
+                                size_t tx_len = pack_kermit_frame(frame.seq, 'N', (uint8_t*)&transmit_nonce, 8, tx_buffer);
+                                usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                            }
                         }
                     } else {
                         uint8_t fail_seq = (rx_buffer[2] >= 32) ? (rx_buffer[2] - 32) : 0;
