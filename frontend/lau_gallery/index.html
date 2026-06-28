@@ -462,12 +462,8 @@
                 const h = item.canvas.height;
                 const regs = item.regs;
                 
-                // 1. Premium Radial Gradient Background using address color
-                const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 5, w / 2, h / 2, h * 0.6);
-                const colorBase = item.color.replace('rgb', 'rgba').replace(')', ', 0.08)');
-                bgGrad.addColorStop(0, colorBase);
-                bgGrad.addColorStop(1, '#060913');
-                ctx.fillStyle = bgGrad;
+                // 1. Flat Solid Dark Background (removes the center circular background glow)
+                ctx.fillStyle = "#060913";
                 ctx.fillRect(0, 0, w, h);
                 
                 // Draw telemetry radar sweeps in background
