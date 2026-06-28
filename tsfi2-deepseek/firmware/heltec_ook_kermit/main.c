@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "HELTEC_OOK_FW";
 
@@ -22,6 +23,18 @@ static const char *TAG = "HELTEC_OOK_FW";
 #define UART_PORT_NUM UART_NUM_1
 #define PIN_UART_TX   18
 #define PIN_UART_RX   19
+
+#define KERMIT_SOH 0x01
+#define MAX_PAYLOAD 94
+
+typedef struct {
+    uint8_t soh;
+    uint8_t len;
+    uint8_t seq;
+    uint8_t type;
+    uint8_t data[MAX_PAYLOAD];
+    uint8_t check;
+} KermitFrame;
 
 static spi_device_handle_t spi;
 
@@ -172,6 +185,63 @@ static void uart_init(void) {
     ESP_LOGI(TAG, "UART initialized at 9600 bps");
 }
 
+// Compute Kermit 6-bit checksum
+static uint8_t kermit_checksum(const uint8_t *buf, size_t len) {
+    uint32_t sum = 0;
+    for (size_t i = 0; i < len; i++) {
+        sum += buf[i];
+    }
+    return (uint8_t)(((sum + ((sum & 0xC0) >> 6)) & 0x3F) + 32);
+}
+
+// Pack a Kermit frame into binary OOK bytes
+static size_t pack_kermit_frame(uint8_t seq, char type, const uint8_t *data, size_t data_len, uint8_t *out_buf) {
+    out_buf[0] = KERMIT_SOH;
+    out_buf[1] = (uint8_t)(data_len + 3 + 32); // length byte
+    out_buf[2] = (uint8_t)(seq + 32);          // sequence number
+    out_buf[3] = (uint8_t)type;                // packet type (D=Data, Y=ACK, N=NAK)
+    
+    if (data_len > 0 && data != NULL) {
+        memcpy(&out_buf[4], data, data_len);
+    }
+    
+    uint8_t check = kermit_checksum(&out_buf[1], data_len + 3);
+    out_buf[4 + data_len] = check;
+    
+    return data_len + 5;
+}
+
+// Parse/verify an incoming Kermit frame
+static bool parse_kermit_frame(const uint8_t *buf, size_t size, KermitFrame *frame) {
+    if (size < 5 || buf[0] != KERMIT_SOH) return false;
+    
+    frame->soh = buf[0];
+    frame->len = (uint8_t)(buf[1] - 32);
+    frame->seq = (uint8_t)(buf[2] - 32);
+    frame->type = buf[3];
+    
+    size_t expected_data_len = frame->len - 3;
+    if (expected_data_len > MAX_PAYLOAD || expected_data_len + 5 > size) return false;
+    
+    memcpy(frame->data, &buf[4], expected_data_len);
+    frame->check = buf[4 + expected_data_len];
+    
+    uint8_t calc_check = kermit_checksum(&buf[1], expected_data_len + 3);
+    return calc_check == frame->check;
+}
+
+// Transmit envelope over OOK DIO2 pin
+static void modulate_ook_bytes(const uint8_t *data, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        uint8_t byte = data[i];
+        for (int bit = 0; bit < 8; bit++) {
+            uint8_t bit_val = (byte >> bit) & 0x01;
+            gpio_set_level(PIN_NUM_DIO2, bit_val);
+            esp_rom_delay_us(104); // 9600 bps symbol timing
+        }
+    }
+}
+
 void app_main(void) {
     ESP_LOGI(TAG, "Starting Heltec v4 ESP32-S3 OOK Kermit Firmware");
     
@@ -186,22 +256,46 @@ void app_main(void) {
     sx1262_config_ook();
     uart_init();
     
-    uint8_t data_buf[128];
+    uint8_t rx_buffer[256];
+    size_t rx_idx = 0;
+    
+    ESP_LOGI(TAG, "Firmware initialized. Awaiting Kermit handshake packages...");
+    
     while (1) {
-        // Direct OOK Bridge Mode: UART Rx bytes write directly to DIO2
-        int len = uart_read_bytes(UART_PORT_NUM, data_buf, sizeof(data_buf), pdMS_TO_TICKS(10));
-        if (len > 0) {
-            // Modulate DIO2 pin envelope matching the incoming serial bitstream
-            for (int i = 0; i < len; i++) {
-                uint8_t byte = data_buf[i];
-                for (int bit = 0; bit < 8; bit++) {
-                    uint8_t bit_val = (byte >> bit) & 0x01;
-                    gpio_set_level(PIN_NUM_DIO2, bit_val);
-                    // Bit timing at 9600 bps = 104 microseconds per bit
-                    esp_rom_delay_us(104);
+        // Read raw data from UART (representing incoming serial terminal packets)
+        uint8_t byte;
+        int read_len = uart_read_bytes(UART_PORT_NUM, &byte, 1, pdMS_TO_TICKS(5));
+        if (read_len > 0) {
+            if (byte == KERMIT_SOH) {
+                rx_idx = 0;
+            }
+            if (rx_idx < sizeof(rx_buffer)) {
+                rx_buffer[rx_idx++] = byte;
+            }
+            
+            // Check if we have received a complete kermit frame
+            if (rx_idx >= 5) {
+                uint8_t expected_len = rx_buffer[1] - 32;
+                if (rx_idx >= (size_t)(expected_len + 2)) {
+                    KermitFrame frame;
+                    if (parse_kermit_frame(rx_buffer, rx_idx, &frame)) {
+                        ESP_LOGI(TAG, "Valid Kermit Frame. Seq: %d | Type: %c", frame.seq, frame.type);
+                        
+                        if (frame.type == 'D') {
+                            ESP_LOGI(TAG, "Processing Handshake/Cryptographic Payload...");
+                            
+                            // Auto-generate ACK packet
+                            uint8_t tx_buffer[64];
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', NULL, 0, tx_buffer);
+                            
+                            // Transmit the ACK packet envelope over OOK
+                            modulate_ook_bytes(tx_buffer, tx_len);
+                            ESP_LOGI(TAG, "ACK Envelope Transmitted over OOK.");
+                        }
+                    }
+                    rx_idx = 0; // Reset buffer
                 }
             }
-            ESP_LOGD(TAG, "Modulated %d bytes over OOK", len);
         }
         vTaskDelay(pdMS_TO_TICKS(1));
     }
