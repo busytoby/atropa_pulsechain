@@ -288,6 +288,9 @@
                     <option value="radial">Radial Rotational (CT Style)</option>
                     <option value="coaxial">Coaxial Stack (MRI Style)</option>
                     <option value="concentric">Concentric Shell (Radar Style)</option>
+                    <option value="triaxial">Orthogonal Tri-Axial (3-Plane Style)</option>
+                    <option value="spiral">Spiral Helical (3D Sweep Style)</option>
+                    <option value="spherical">Spherical Shell (Globe Style)</option>
                 </select>
             </div>
             <div class="setting-group">
@@ -589,12 +592,42 @@
                         localX = baseCoordsX * Math.cos(phiSlice);
                         localY = baseCoordsY;
                         localZ = baseCoordsX * Math.sin(phiSlice);
-                    } else {
+                    } else if (mode === "concentric") {
                         // Concentric shell (Radar style) - nested scale shells
                         scaleFactor = 0.4 + (0.6 * (s / (sliceCount - 1)));
                         localX = baseCoordsX * scaleFactor;
                         localY = baseCoordsY * scaleFactor;
                         localZ = 0;
+                    } else if (mode === "triaxial") {
+                        // Orthogonal Tri-Axial (3-Plane Style) - Coronal, Sagittal, and Axial orthogonal projections
+                        const sub = s % 3;
+                        const layerSpacing = Math.floor(s / 3) * sliceSpacing - (sliceCount / 6) * sliceSpacing;
+                        if (sub === 0) {
+                            localX = baseCoordsX;
+                            localY = baseCoordsY;
+                            localZ = layerSpacing;
+                        } else if (sub === 1) {
+                            localX = baseCoordsX;
+                            localY = layerSpacing;
+                            localZ = baseCoordsY;
+                        } else {
+                            localX = layerSpacing;
+                            localY = baseCoordsX;
+                            localZ = baseCoordsY;
+                        }
+                    } else if (mode === "spiral") {
+                        // Spiral Helical (3D Sweep Style) - continuous spiral twist through 3D space
+                        const spiralAngle = s * (2.0 * Math.PI) / sliceCount;
+                        localX = baseCoordsX * Math.cos(spiralAngle);
+                        localY = baseCoordsY * Math.sin(spiralAngle);
+                        localZ = (s - (sliceCount - 1) / 2) * sliceSpacing;
+                    } else {
+                        // Spherical Shell (Globe Style) - maps vector magnitude to concentric spheres
+                        scaleFactor = 0.4 + (0.6 * (s / (sliceCount - 1)));
+                        const radius = Math.sqrt(baseCoordsX * baseCoordsX + baseCoordsY * baseCoordsY);
+                        localX = scaleFactor * radius * Math.sin(theta) * Math.cos(theta);
+                        localY = scaleFactor * radius * Math.sin(theta) * Math.sin(theta);
+                        localZ = scaleFactor * radius * Math.cos(theta);
                     }
 
                     // Apply global 3D yaw/pitch matrices
