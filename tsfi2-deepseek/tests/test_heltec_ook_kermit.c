@@ -79,10 +79,10 @@ typedef struct {
     YiState yi;
 } HelmholtzPartner;
 
-static void yi_react_contractual(HelmholtzPartner *node_a, HelmholtzPartner *node_b, uint64_t nonce, uint64_t *out_eta, uint64_t *out_kappa) {
+static void yi_react_contractual(HelmholtzPartner *node_a, HelmholtzPartner *node_b, uint64_t nonce, uint64_t *out_ichidai, uint64_t *out_daiichi) {
     uint64_t pi_val = nonce ^ node_a->yi.monopole;
-    *out_eta = mod_pow(pi_val, node_a->reg.channel, node_b->reg.channel);
-    *out_kappa = mod_pow(pi_val, node_b->reg.channel, node_a->reg.channel);
+    *out_ichidai = mod_pow(pi_val, node_a->reg.channel, node_b->reg.channel);
+    *out_daiichi = mod_pow(pi_val, node_b->reg.channel, node_a->reg.channel);
 }
 
 // Kermit protocol frame struct
@@ -322,9 +322,9 @@ int main() {
         
         printf("\n[SESSION] Generating YI.react Nonce Signatures:\n");
         for (uint64_t n = 0; n <= 2; n++) {
-            uint64_t eta, kappa;
-            yi_react_contractual(&node_a, &node_b, n, &eta, &kappa);
-            printf("  -> Nonce %lu | Eta Signature: %lu | Kappa Signature: %lu\n", n, eta, kappa);
+            uint64_t ichidai, daiichi;
+            yi_react_contractual(&node_a, &node_b, n, &ichidai, &daiichi);
+            printf("  -> Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
         }
         return 0;
     } else {
