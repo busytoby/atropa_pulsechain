@@ -281,16 +281,33 @@ void app_main(void) {
                     if (parse_kermit_frame(rx_buffer, rx_idx, &frame)) {
                         ESP_LOGI(TAG, "Valid Kermit Frame. Seq: %d | Type: %c", frame.seq, frame.type);
                         
-                        if (frame.type == 'D') {
+                        if (frame.type == 'D' && frame.len - 3 >= 32) {
                             ESP_LOGI(TAG, "Processing Handshake/Cryptographic Payload...");
                             
-                            // Auto-generate ACK packet
-                            uint8_t tx_buffer[64];
-                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', NULL, 0, tx_buffer);
+                            // Emulated Node B Ephemeral Public Key
+                            const uint8_t public_key_b[32] = {
+                                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+                                0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                                0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20
+                            };
+                            
+                            // Derive shared secret key (simulated Diffie-Hellman via XOR parameter exchange)
+                            uint8_t shared_secret[32];
+                            for (int i = 0; i < 32; i++) {
+                                shared_secret[i] = frame.data[i] ^ public_key_b[i];
+                            }
+                            
+                            ESP_LOGI(TAG, "Derived Shared Secret Hash Segment: 0x%02X%02X%02X%02X",
+                                     shared_secret[0], shared_secret[1], shared_secret[2], shared_secret[3]);
+                            
+                            // Pack Node B's ephemeral public key into the ACK response payload
+                            uint8_t tx_buffer[128];
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', public_key_b, 32, tx_buffer);
                             
                             // Transmit the ACK packet envelope over OOK
                             modulate_ook_bytes(tx_buffer, tx_len);
-                            ESP_LOGI(TAG, "ACK Envelope Transmitted over OOK.");
+                            ESP_LOGI(TAG, "ACK Envelope with Ephemeral Public Key Transmitted over OOK.");
                         }
                     }
                     rx_idx = 0; // Reset buffer
