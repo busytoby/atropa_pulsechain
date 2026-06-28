@@ -285,6 +285,11 @@
             border-left: 2px solid var(--text-muted);
             border-radius: 0 4px 4px 0;
             transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .anatomy-item:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .anatomy-item.detected {
@@ -292,6 +297,13 @@
             background: rgba(255, 0, 127, 0.06);
             color: var(--magenta-glow);
             text-shadow: 0 0 4px rgba(255, 0, 127, 0.3);
+        }
+
+        .anatomy-item.manual-lock {
+            border-left-color: var(--cyan-glow) !important;
+            background: rgba(0, 240, 255, 0.1) !important;
+            color: var(--cyan-glow) !important;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
         }
 
         .classification-badge {
@@ -414,7 +426,7 @@
                     <div>Manual Zoom: <span id="lbl-zoom">1.0x</span></div>
                 </div>
             </div>
-            <div class="instruction-box">Drag mouse on canvas to rotate target | Scroll wheel to zoom</div>
+            <div class="instruction-box">Click on curves to manually identify eigenvalues | Drag to rotate | Scroll to zoom</div>
 
             <!-- Bottom Scrubber -->
             <div class="timeline-card">
@@ -499,6 +511,10 @@
         let userPitchOffset = 0;
         let userZoom = 1.0;
 
+        // Manual Eigenvalue Lock state
+        let manuallyLockedOrgans = {};
+        let lastClickCoords = null;
+
         // Elements
         const canvas = document.getElementById("evolution-canvas");
         const canvasCard = document.getElementById("canvas-card");
@@ -528,6 +544,9 @@
         const valBlowup = document.getElementById("val-blowup");
         const valDir = document.getElementById("val-dir");
 
+        // Keep track of calculated coordinates for clicking
+        let currentMiddleLayerPoints = [];
+
         function updateLabels() {
             valGain.innerText = parseFloat(twGain.value).toFixed(1) + "x";
             valFreq.innerText = parseFloat(twFreq.value).toFixed(2);
@@ -554,6 +573,7 @@
             userZoom = 1.0;
             userYawOffset = 0;
             userPitchOffset = 0;
+            manuallyLockedOrgans = {};
         });
 
         document.getElementById("btn-align-view").addEventListener("click", (e) => {
@@ -577,6 +597,53 @@
 
         window.addEventListener("mouseup", () => {
             isMouseDown = false;
+        });
+
+        // Handle clicking on the image to manually lock eigenvalues
+        canvas.addEventListener("click", (e) => {
+            let rect = canvas.getBoundingClientRect();
+            let clickX = e.clientX - rect.left;
+            let clickY = e.clientY - rect.top;
+            
+            if (currentMiddleLayerPoints.length === 0) return;
+            
+            let len = currentMiddleLayerPoints.length;
+            let headIdx = Math.floor(len * 0.0);
+            let pharynxIdx = Math.floor(len * 0.12);
+            let glandsIdx = Math.floor(len * 0.25);
+            let midgutIdx = Math.floor(len * 0.50);
+            let malpighianIdx = Math.floor(len * 0.65);
+            let clawsIdx = Math.floor(len * 0.75);
+
+            let organs = [
+                { id: "anat-head", name: "Anterior Head Capsule", pt: currentMiddleLayerPoints[headIdx] },
+                { id: "anat-pharynx", name: "Muscular Sucking Pharynx", pt: currentMiddleLayerPoints[pharynxIdx] },
+                { id: "anat-stomach", name: "Digestive Midgut", pt: currentMiddleLayerPoints[midgutIdx] },
+                { id: "anat-claws", name: "Terminal Lobopod Claws", pt: currentMiddleLayerPoints[clawsIdx] },
+                { id: "anat-glands", name: "Salivary Gland Complex", pt: currentMiddleLayerPoints[glandsIdx] },
+                { id: "anat-malpighian", name: "Malpighian Excretory Tubules", pt: currentMiddleLayerPoints[malpighianIdx] }
+            ];
+
+            let clickedOrgan = null;
+            let minDist = 35; // Clicking within 35 pixels
+
+            organs.forEach(org => {
+                if (!org.pt) return;
+                let dist = Math.sqrt(Math.pow(clickX - org.pt.px, 2) + Math.pow(clickY - org.pt.py, 2));
+                if (dist < minDist) {
+                    minDist = dist;
+                    clickedOrgan = org;
+                }
+            });
+
+            if (clickedOrgan) {
+                if (manuallyLockedOrgans[clickedOrgan.id]) {
+                    delete manuallyLockedOrgans[clickedOrgan.id];
+                } else {
+                    manuallyLockedOrgans[clickedOrgan.id] = clickedOrgan;
+                }
+                console.log("Manual Lock toggled for:", clickedOrgan.name);
+            }
         });
 
         canvasCard.addEventListener("mousemove", (e) => {
@@ -890,6 +957,9 @@
                 }
             }
 
+            // Save middle layer points globally for clicking mechanics
+            currentMiddleLayerPoints = allProjectedLayers[1] || [];
+
             // 2. Compute Normals & Render Pure Shape
             for (let idx = 0; idx < d_offsets.length; idx++) {
                 let points_layer = allProjectedLayers[idx];
@@ -995,85 +1065,109 @@
             }
             let targetMatch = cvProgress * 0.98 * alignmentFactor;
 
+            // Render manual locks reticle & text overlay
+            let activeManualLocks = Object.keys(manuallyLockedOrgans).length;
+            
+            // Adjust classification status or add manual overrides
+            if (activeManualLocks > 0) {
+                targetMatch = Math.max(targetMatch, activeManualLocks / 6.0 * 0.98);
+            }
+
             // Tardigrade Bounding Box & Alignment Reliability Checks
-            if (cvActive && targetMatch > 0.4) {
-                ctx.strokeStyle = "rgba(255, 0, 127, 0.7)";
+            if (cvActive && targetMatch > 0.01) {
+                ctx.strokeStyle = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.7)" : "rgba(0, 240, 255, 0.4)";
                 ctx.lineWidth = 1.5;
                 ctx.setLineDash([4, 4]);
 
                 let pad = 30 * cvProgress;
                 ctx.strokeRect(canvas.width/2 - 120 - pad, canvas.height/2 - 100 - pad, 240 + pad*2, 200 + pad*2);
 
-                ctx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                ctx.fillStyle = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.9)" : "rgba(0, 240, 255, 0.9)";
                 ctx.font = "12px 'Share Tech Mono'";
                 ctx.fillText(`TARGET IDENTIFIED: TARDIGRADA [Match: ${(targetMatch * 100).toFixed(1)}%]`, canvas.width/2 - 120 - pad, canvas.height/2 - 110 - pad);
                 ctx.setLineDash([]);
 
                 // Visual target markers point directly to locations on the *actual* YI & LAU curve structure
-                let middleLayer = allProjectedLayers[1];
+                let middleLayer = currentMiddleLayerPoints;
                 let len = middleLayer.length;
                 
                 // Index mappings on the actual hypotrochoid curve representing the anatomy regions
                 let headIdx = Math.floor(len * 0.0);
                 let pharynxIdx = Math.floor(len * 0.12);
-                let midgutIdx = Math.floor(len * 0.5);
+                let glandsIdx = Math.floor(len * 0.25);
+                let midgutIdx = Math.floor(len * 0.50);
+                let malpighianIdx = Math.floor(len * 0.65);
                 let clawsIdx = Math.floor(len * 0.75);
 
                 let indicators = [
-                    { label: "Anterior Head Capsule", pt: middleLayer[headIdx] },
-                    { label: "Sucking Pharynx", pt: middleLayer[pharynxIdx] },
-                    { label: "Digestive Midgut", pt: middleLayer[midgutIdx] },
-                    { label: "Lobopod Claws", pt: middleLayer[clawsIdx] }
+                    { id: "anat-head", label: "Anterior Head Capsule", pt: middleLayer[headIdx] },
+                    { id: "anat-pharynx", label: "Sucking Pharynx", pt: middleLayer[pharynxIdx] },
+                    { id: "anat-stomach", label: "Digestive Midgut", pt: middleLayer[midgutIdx] },
+                    { id: "anat-claws", label: "Terminal Lobopod Claws", pt: middleLayer[clawsIdx] },
+                    { id: "anat-glands", label: "Salivary Gland Complex", pt: middleLayer[glandsIdx] },
+                    { id: "anat-malpighian", label: "Malpighian Excretory Tubules", pt: middleLayer[malpighianIdx] }
                 ];
 
                 indicators.forEach(ind => {
                     if (!ind.pt) return;
+                    let isLocked = !!manuallyLockedOrgans[ind.id];
+                    let isDetected = targetMatch > 0.4 || isLocked;
+
                     ctx.beginPath();
-                    ctx.arc(ind.pt.px, ind.pt.py, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = "var(--magenta-glow)";
+                    ctx.arc(ind.pt.px, ind.pt.py, isLocked ? 7 : 4, 0, Math.PI * 2);
+                    ctx.fillStyle = isLocked ? "var(--cyan-glow)" : "var(--magenta-glow)";
                     ctx.fill();
 
-                    ctx.strokeStyle = "rgba(255, 0, 127, 0.5)";
+                    if (isLocked) {
+                        ctx.strokeStyle = "var(--cyan-glow)";
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.arc(ind.pt.px, ind.pt.py, 12, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    ctx.strokeStyle = isLocked ? "rgba(0, 240, 255, 0.5)" : "rgba(255, 0, 127, 0.5)";
+                    ctx.lineWidth = 1;
                     ctx.beginPath();
                     ctx.moveTo(ind.pt.px, ind.pt.py);
                     ctx.lineTo(ind.pt.px - 40, ind.pt.py - 30);
                     ctx.stroke();
 
-                    ctx.fillStyle = "#fff";
+                    ctx.fillStyle = isLocked ? "var(--cyan-glow)" : "#fff";
                     ctx.font = "10px 'Share Tech Mono'";
-                    ctx.fillText(ind.label, ind.pt.px - 75, ind.pt.py - 35);
+                    ctx.fillText(isLocked ? `MANUAL LOCK: ${ind.label}` : ind.label, ind.pt.px - 75, ind.pt.py - 35);
                 });
 
                 cvStatus.innerText = `TARDIGRADA MATCH: ${(targetMatch * 100).toFixed(1)}%`;
-                cvStatus.style.borderColor = "var(--magenta-glow)";
-                cvStatus.style.color = "var(--magenta-glow)";
-                cvStatus.style.background = "rgba(255, 0, 127, 0.15)";
+                cvStatus.style.borderColor = targetMatch > 0.4 ? "var(--magenta-glow)" : "var(--cyan-glow)";
+                cvStatus.style.color = targetMatch > 0.4 ? "var(--magenta-glow)" : "var(--cyan-glow)";
+                cvStatus.style.background = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.15)" : "rgba(0, 240, 255, 0.15)";
 
-                let pctStr = Math.round(targetMatch * 100) + "%";
-                document.getElementById("anat-head").classList.add("detected");
-                document.getElementById("anat-head").querySelectorAll("span")[1].innerText = pctStr;
-                document.getElementById("anat-pharynx").classList.add("detected");
-                document.getElementById("anat-pharynx").querySelectorAll("span")[1].innerText = pctStr;
-                document.getElementById("anat-stomach").classList.add("detected");
-                document.getElementById("anat-stomach").querySelectorAll("span")[1].innerText = pctStr;
-                document.getElementById("anat-claws").classList.add("detected");
-                document.getElementById("anat-claws").querySelectorAll("span")[1].innerText = pctStr;
+                // Update right panel list values
+                indicators.forEach(ind => {
+                    let isLocked = !!manuallyLockedOrgans[ind.id];
+                    let el = document.getElementById(ind.id);
+                    let valSpan = el.querySelectorAll("span")[1];
+                    
+                    if (isLocked) {
+                        el.classList.add("manual-lock");
+                        el.classList.remove("detected");
+                        valSpan.innerText = "100% (LOCK)";
+                    } else if (targetMatch > 0.4) {
+                        el.classList.add("detected");
+                        el.classList.remove("manual-lock");
+                        
+                        let pct = Math.round(targetMatch * 100);
+                        if (ind.id === "anat-glands") pct = targetMatch > 0.5 ? Math.round(targetMatch * 100) : 0;
+                        if (ind.id === "anat-malpighian") pct = targetMatch > 0.85 ? Math.round(targetMatch * 100) : 0;
+                        
+                        valSpan.innerText = pct + "%";
+                    } else {
+                        el.classList.remove("detected", "manual-lock");
+                        valSpan.innerText = "0%";
+                    }
+                });
 
-                if (targetMatch > 0.5) {
-                    document.getElementById("anat-glands").classList.add("detected");
-                    document.getElementById("anat-glands").querySelectorAll("span")[1].innerText = pctStr;
-                } else {
-                    document.getElementById("anat-glands").classList.remove("detected");
-                    document.getElementById("anat-glands").querySelectorAll("span")[1].innerText = "0%";
-                }
-
-                if (targetMatch > 0.85) {
-                    document.getElementById("anat-malpighian").classList.add("detected");
-                    document.getElementById("anat-malpighian").querySelectorAll("span")[1].innerText = pctStr;
-                } else {
-                    document.getElementById("anat-malpighian").classList.remove("detected");
-                    document.getElementById("anat-malpighian").querySelectorAll("span")[1].innerText = "0%";
-                }
                 drawEigenvalues(targetMatch);
             } else {
                 cvStatus.innerText = cvActive ? `NO ALIGNMENT MATCH [${(targetMatch * 100).toFixed(1)}%]` : "NO TARGET IN RANGE";
@@ -1082,10 +1176,17 @@
                 cvStatus.style.background = "rgba(255, 255, 255, 0.02)";
 
                 document.querySelectorAll(".anatomy-item").forEach(item => {
-                    item.classList.remove("detected");
-                    item.querySelectorAll("span")[1].innerText = "0%";
+                    let valSpan = item.querySelectorAll("span")[1];
+                    let isLocked = !!manuallyLockedOrgans[item.id];
+                    if (isLocked) {
+                        item.classList.add("manual-lock");
+                        valSpan.innerText = "100% (LOCK)";
+                    } else {
+                        item.classList.remove("detected", "manual-lock");
+                        valSpan.innerText = "0%";
+                    }
                 });
-                drawEigenvalues(0.0);
+                drawEigenvalues(activeManualLocks > 0 ? activeManualLocks / 6.0 : 0.0);
             }
         }
 
