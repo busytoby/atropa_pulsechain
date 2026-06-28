@@ -230,7 +230,7 @@ static YiState yi_state = {
     .motzkin_prime = 953467954114363ULL
 };
 
-static void yi_react_contractual(uint64_t nonce, uint64_t *out_eta, uint64_t *out_kappa) {
+static void yi_react_contractual(uint64_t nonce, uint64_t *out_ichidai, uint64_t *out_daiichi) {
     uint64_t pi_val = nonce ^ node_state.monopole;
     // We compute Rod vs Cone react modulo the peer channel
     // Since channel data is set during handshake:
@@ -241,8 +241,8 @@ static void yi_react_contractual(uint64_t nonce, uint64_t *out_eta, uint64_t *ou
     // Let's assume peer channel is resolved or exchanged.
     // In our standard 9-epoch setup, channel_a = 507164254988891 (e.g. from derived parameters).
     // Let's keep it simple and robust using the derived node registers:
-    *out_eta = mod_pow(pi_val, node_state.reg.channel, 232763142391703ULL);
-    *out_kappa = mod_pow(pi_val, 232763142391703ULL, node_state.reg.channel);
+    *out_ichidai = mod_pow(pi_val, node_state.reg.channel, 232763142391703ULL);
+    *out_daiichi = mod_pow(pi_val, 232763142391703ULL, node_state.reg.channel);
 }
 
 static spi_device_handle_t spi;
@@ -541,6 +541,7 @@ void app_main(void) {
     
     uint8_t rx_buffer[256];
     size_t rx_idx = 0;
+    static uint64_t transmit_nonce = 0;
     
     uint32_t entropy = get_entropy_random();
     ESP_LOGI(TAG, "Auncient TRNG Sourced Random Number: 0x%08X", (unsigned int)entropy);
@@ -576,6 +577,7 @@ void app_main(void) {
                             node_state.is_rod = (role_val == 0);
                             node_state.beta = 99991234;
                             node_state.epoch = EPOCH_INIT;
+                            transmit_nonce = 0; // Reset nonce on init
                             
                             if (node_state.is_rod) {
                                 strcpy(node_state.name, "ROD_A");
@@ -589,22 +591,33 @@ void app_main(void) {
                             helmholtz_step(&node_state, 0);
                             helmholtz_step(&node_state, 0);
                             
-                            ESP_LOGI(TAG, "%s Initialized. Contour resolved: %lu", node_state.name, node_state.reg.contour);
+                            ESP_LOGI(TAG, "%s Initialized. Contour resolved: %llu", node_state.name, node_state.reg.contour);
+                            
+                            uint8_t tx_payload[96];
+                            memcpy(tx_payload, &node_state.reg, sizeof(HelmholtzRegisters));
+                            
+                            uint64_t ichidai, daiichi;
+                            yi_react_contractual(transmit_nonce, &ichidai, &daiichi);
+                            memcpy(&tx_payload[sizeof(HelmholtzRegisters)], &daiichi, 8); // Sign with Daiichi
                             
                             uint8_t tx_buffer[128];
-                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', (uint8_t*)&node_state.reg, sizeof(HelmholtzRegisters), tx_buffer);
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, sizeof(HelmholtzRegisters) + 8, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                         }
                         else if (frame.type == 'G') {
                             // Get Registers
-                            uint8_t tx_payload[108];
+                            uint8_t tx_payload[116];
                             memcpy(tx_payload, &node_state.reg, sizeof(HelmholtzRegisters));
                             memcpy(&tx_payload[sizeof(HelmholtzRegisters)], &node_state.manifold, 8);
                             uint32_t ep = (uint32_t)node_state.epoch;
                             memcpy(&tx_payload[sizeof(HelmholtzRegisters) + 8], &ep, 4);
                             
+                            uint64_t ichidai, daiichi;
+                            yi_react_contractual(transmit_nonce, &ichidai, &daiichi);
+                            memcpy(&tx_payload[sizeof(HelmholtzRegisters) + 12], &daiichi, 8); // Append Daiichi
+                            
                             uint8_t tx_buffer[128];
-                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, sizeof(HelmholtzRegisters) + 12, tx_buffer);
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, sizeof(HelmholtzRegisters) + 20, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                         }
                         else if (frame.type == 'P') {
@@ -629,14 +642,18 @@ void app_main(void) {
                                 node_state.monopole = mod_pow((node_state.beta + 7) % MOTZKIN_PRIME, (node_state.beta + 7) % MOTZKIN_PRIME, MOTZKIN_PRIME);
                             }
                             
-                            uint8_t tx_payload[108];
+                            uint8_t tx_payload[116];
                             memcpy(tx_payload, &node_state.reg, sizeof(HelmholtzRegisters));
                             memcpy(&tx_payload[sizeof(HelmholtzRegisters)], &node_state.manifold, 8);
                             uint32_t ep = (uint32_t)node_state.epoch;
                             memcpy(&tx_payload[sizeof(HelmholtzRegisters) + 8], &ep, 4);
                             
+                            uint64_t ichidai, daiichi;
+                            yi_react_contractual(transmit_nonce, &ichidai, &daiichi);
+                            memcpy(&tx_payload[sizeof(HelmholtzRegisters) + 12], &daiichi, 8); // Append Daiichi
+                            
                             uint8_t tx_buffer[128];
-                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, sizeof(HelmholtzRegisters) + 12, tx_buffer);
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, sizeof(HelmholtzRegisters) + 20, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                         }
                         else if (frame.type == 'R') {
@@ -644,20 +661,22 @@ void app_main(void) {
                             uint64_t nonce;
                             memcpy(&nonce, frame.data, 8);
                             
-                            uint64_t eta, kappa;
-                            yi_react_contractual(nonce, &eta, &kappa);
+                            uint64_t ichidai, daiichi;
+                            yi_react_contractual(nonce, &ichidai, &daiichi);
                             
                             uint8_t tx_payload[16];
-                            memcpy(&tx_payload[0], &eta, 8);
-                            memcpy(&tx_payload[8], &kappa, 8);
+                            memcpy(&tx_payload[0], &ichidai, 8);
+                            memcpy(&tx_payload[8], &daiichi, 8);
                             
                             uint8_t tx_buffer[64];
                             size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, 16, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
                     } else {
                         uint8_t fail_seq = (rx_buffer[2] >= 32) ? (rx_buffer[2] - 32) : 0;
+                        uint64_t ichidai, daiichi;
+                        yi_react_contractual(transmit_nonce, &ichidai, &daiichi);
                         uint8_t tx_buffer[64];
-                        size_t tx_len = pack_kermit_frame(fail_seq, 'N', NULL, 0, tx_buffer);
+                        size_t tx_len = pack_kermit_frame(fail_seq, 'N', (uint8_t*)&daiichi, 8, tx_buffer);
                         modulate_ook_bytes(tx_buffer, tx_len);
                     }
                     rx_idx = 0; // Reset buffer
