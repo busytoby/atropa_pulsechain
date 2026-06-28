@@ -400,7 +400,7 @@
             </div>
             
             <button class="btn-control" id="btn-reset-tw" style="margin-top: auto;">Reset Tonewheel</button>
-            <button class="btn-control" id="btn-align-view" style="margin-top: 8px;">Align Telescope View</button>
+            <button type="button" class="btn-control" id="btn-align-view" style="margin-top: 8px;">Align Telescope View</button>
         </section>
 
         <!-- Middle Panel: 3D Canvas Viewport -->
@@ -556,7 +556,9 @@
             userPitchOffset = 0;
         });
 
-        document.getElementById("btn-align-view").addEventListener("click", () => {
+        document.getElementById("btn-align-view").addEventListener("click", (e) => {
+            e.preventDefault();
+            console.log("Align Telescope View clicked. Resetting offsets.");
             userZoom = 1.0;
             userYawOffset = 0;
             userPitchOffset = 0;
