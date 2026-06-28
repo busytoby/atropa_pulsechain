@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YI/LAU Evolution & Tardigrade Telescopic Classifier</title>
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-space: #0c101c;
+            --bg-card: rgba(13, 22, 47, 0.7);
+            --border-glow: rgba(0, 240, 255, 0.25);
+            --gold-accent: #d4af37;
+            --cyan-glow: #00f0ff;
+            --magenta-glow: #ff007f;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-space);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(0, 240, 255, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(255, 0, 127, 0.05) 0px, transparent 50%);
+        }
+
+        header {
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            background: rgba(12, 16, 28, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .header-title {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 22px;
+            letter-spacing: 2px;
+            color: var(--cyan-glow);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title span {
+            color: var(--gold-accent);
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 20px;
+            padding: 20px;
+            flex-grow: 1;
+            max-width: 1800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .control-panel, .vision-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .section-title {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--cyan-glow);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+            padding-bottom: 8px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title span {
+            color: var(--gold-accent);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span {
+            color: var(--cyan-glow);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--cyan-glow);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--cyan-glow);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        .token-selector select {
+            width: 100%;
+            background: rgba(13, 22, 47, 0.9);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .viewport-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        .canvas-card {
+            background: #0c101c;
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            flex-grow: 1;
+            position: relative;
+            min-height: 550px;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+            cursor: grab;
+        }
+
+        .canvas-card:active {
+            cursor: grabbing;
+        }
+
+        #evolution-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .overlay-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(12, 16, 28, 0.85);
+            border: 1px solid var(--border-glow);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .overlay-card span {
+            color: var(--cyan-glow);
+        }
+
+        .timeline-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-control {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--cyan-glow);
+            color: var(--cyan-glow);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-control:hover {
+            background: var(--cyan-glow);
+            color: var(--bg-space);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .timeline-slider-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .timeline-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .timeline-ticks span.active {
+            color: var(--cyan-glow);
+            text-shadow: 0 0 5px var(--cyan-glow);
+        }
+
+        .anatomy-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .anatomy-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid var(--text-muted);
+            border-radius: 0 4px 4px 0;
+            transition: all 0.2s ease;
+        }
+
+        .anatomy-item.detected {
+            border-left-color: var(--magenta-glow);
+            background: rgba(255, 0, 127, 0.06);
+            color: var(--magenta-glow);
+            text-shadow: 0 0 4px rgba(255, 0, 127, 0.3);
+        }
+
+        .classification-badge {
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid var(--magenta-glow);
+            color: var(--magenta-glow);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        }
+
+        .eigenvalues-chart {
+            height: 120px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+
+        .radar-grid {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 50%;
+            animation: radar-sweep 4s linear infinite;
+        }
+
+        @keyframes radar-sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .instruction-box {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1 class="header-title">YI / LAU <span>EVOLUTION TELESCOPE</span></h1>
+            <div class="subtitle">WinchesterMQ SCSI Handshake & Frenet-Serret Curvature Walk Engine</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--cyan-glow);">System: Interop Active</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Auncient Wavelet Synthesizer</div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Panel: Tonewheel Controls -->
+        <section class="control-panel">
+            <div>
+                <h2 class="section-title">Token Pair <span>Addresses</span></h2>
+                <div class="token-selector">
+                    <select id="token-pair-select">
+                        <option value="default">YI (0x7110C...) & mariarahelLau (0x3E10e...) [Default]</option>
+                        <option value="void_enter">void.enter / cho.join Simulation LAU</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="section-title">Telescopic <span>Tonewheel 0</span></h2>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="control-group">
+                        <label>Gain <span id="val-gain">1.2x</span></label>
+                        <input type="range" id="tw-gain" min="0" max="2" step="0.1" value="1.2">
+                    </div>
+                    <div class="control-group">
+                        <label>Frequency <span id="val-freq">4.00</span></label>
+                        <input type="range" id="tw-freq" min="1" max="10" step="0.25" value="4.0">
+                    </div>
+                    <div class="control-group">
+                        <label>Detune <span id="val-detune">0¢</span></label>
+                        <input type="range" id="tw-detune" min="-50" max="50" step="1" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Phase Offset <span id="val-phase">0°</span></label>
+                        <input type="range" id="tw-phase" min="0" max="360" step="5" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Blowup Overdrive <span id="val-blowup">1.0x</span></label>
+                        <input type="range" id="tw-blowup" min="1" max="10" step="0.5" value="1.0">
+                    </div>
+                    <div class="control-group">
+                        <label>Spin Direction <span id="val-dir">Forward</span></label>
+                        <select id="tw-dir" style="background: rgba(13, 22, 47, 0.9); border: 1px solid var(--border-glow); color: var(--text-main); padding: 5px; border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 11px;">
+                            <option value="1">Forward (Clockwise)</option>
+                            <option value="-1">Reverse (Counter-Clockwise)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-control" id="btn-reset-tw" style="margin-top: auto;">Reset Tonewheel</button>
+            <button class="btn-control" id="btn-align-view" style="margin-top: 8px;">Align Telescope View</button>
+        </section>
+
+        <!-- Middle Panel: 3D Canvas Viewport -->
+        <section class="viewport-container">
+            <div class="canvas-card" id="canvas-card">
+                <canvas id="evolution-canvas"></canvas>
+                <div class="overlay-card">
+                    <div>Stage: <span id="lbl-current-stage">YI Lissajous Initialization</span></div>
+                    <div>T-Time: <span id="lbl-t-time">0.00s</span></div>
+                    <div>Morph Factor: <span id="lbl-morph-factor">0%</span></div>
+                    <div>Manual Zoom: <span id="lbl-zoom">1.0x</span></div>
+                </div>
+            </div>
+            <div class="instruction-box">Drag mouse on canvas to rotate target | Scroll wheel to zoom</div>
+
+            <!-- Bottom Scrubber -->
+            <div class="timeline-card">
+                <div class="timeline-controls">
+                    <button class="btn-control" id="btn-play">Play</button>
+                    <div class="timeline-slider-wrapper">
+                        <input type="range" id="timeline-scrubber" min="0" max="900" step="1" value="0" style="width: 100%;">
+                        <div class="timeline-ticks">
+                            <span id="tick-yi" class="active">0.0s (YI)</span>
+                            <span id="tick-morph">9.0s (Morph)</span>
+                            <span id="tick-lau">21.0s (LAU)</span>
+                            <span id="tick-cv">30.0s (Tardigrade)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Computer Vision Hub -->
+        <section class="vision-panel">
+            <div>
+                <h2 class="section-title">TSFI Vision <span>Classifier</span></h2>
+                <div class="classification-badge" id="cv-status">
+                    NO TARGET IN RANGE
+                </div>
+            </div>
+
+            <div>
+                <h2 class="section-title">Eigenvector <span>Spectrum</span></h2>
+                <div class="eigenvalues-chart">
+                    <canvas id="eigenvalue-canvas" style="width: 100%; height: 100%;"></canvas>
+                    <div class="radar-grid"></div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="section-title">Visible <span>Anatomy (DNA)</span></h2>
+                <div class="anatomy-list">
+                    <div class="anatomy-item" id="anat-head">
+                        <span>Anterior Head Capsule</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="anatomy-item" id="anat-pharynx">
+                        <span>Muscular Sucking Pharynx</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="anatomy-item" id="anat-stomach">
+                        <span>Digestive Midgut</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="anatomy-item" id="anat-claws">
+                        <span>Terminal Lobopod Claws</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="anatomy-item" id="anat-glands">
+                        <span>Salivary Gland Complex</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="anatomy-item" id="anat-malpighian">
+                        <span>Malpighian Excretory Tubules</span>
+                        <span>0%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hidden Canvas to generate the SD Gold/Copper Texture -->
+    <canvas id="tex-canvas" width="512" height="512" style="display: none;"></canvas>
+
+    <script>
+        // Setup State
+        let isPlaying = false;
+        let frame = 0;
+        const TOTAL_FRAMES = 900;
+        const FPS = 30;
+
+        // Interactive mouse rotation and zoom offsets
+        let mouseX = 0, mouseY = 0;
+        let isMouseDown = false;
+        let userYawOffset = 0;
+        let userPitchOffset = 0;
+        let userZoom = 1.0;
+
+        // Elements
+        const canvas = document.getElementById("evolution-canvas");
+        const canvasCard = document.getElementById("canvas-card");
+        const ctx = canvas.getContext("2d");
+        const timeline = document.getElementById("timeline-scrubber");
+        const btnPlay = document.getElementById("btn-play");
+        const lblStage = document.getElementById("lbl-current-stage");
+        const lblTTime = document.getElementById("lbl-t-time");
+        const lblMorphFactor = document.getElementById("lbl-morph-factor");
+        const lblZoom = document.getElementById("lbl-zoom");
+        const cvStatus = document.getElementById("cv-status");
+        const tokenPairSelect = document.getElementById("token-pair-select");
+        
+        // Inputs
+        const twGain = document.getElementById("tw-gain");
+        const twFreq = document.getElementById("tw-freq");
+        const twDetune = document.getElementById("tw-detune");
+        const twPhase = document.getElementById("tw-phase");
+        const twBlowup = document.getElementById("tw-blowup");
+        const twDir = document.getElementById("tw-dir");
+        
+        // Labels
+        const valGain = document.getElementById("val-gain");
+        const valFreq = document.getElementById("val-freq");
+        const valDetune = document.getElementById("val-detune");
+        const valPhase = document.getElementById("val-phase");
+        const valBlowup = document.getElementById("val-blowup");
+        const valDir = document.getElementById("val-dir");
+
+        function updateLabels() {
+            valGain.innerText = parseFloat(twGain.value).toFixed(1) + "x";
+            valFreq.innerText = parseFloat(twFreq.value).toFixed(2);
+            valDetune.innerText = parseInt(twDetune.value) + "¢";
+            valPhase.innerText = parseInt(twPhase.value) + "°";
+            valBlowup.innerText = parseFloat(twBlowup.value).toFixed(1) + "x";
+            valDir.innerText = parseInt(twDir.value) === 1 ? "Forward" : "Reverse";
+        }
+
+        [twGain, twFreq, twDetune, twPhase, twBlowup, twDir].forEach(el => {
+            el.addEventListener("input", updateLabels);
+            el.addEventListener("change", updateLabels);
+        });
+
+        // Set optimized default values for 90%+ Tardigrade reliability
+        document.getElementById("btn-reset-tw").addEventListener("click", () => {
+            twGain.value = 1.2;
+            twFreq.value = 4.0;
+            twDetune.value = 0;
+            twPhase.value = 0;
+            twBlowup.value = 1.0;
+            twDir.value = "1";
+            updateLabels();
+            userZoom = 1.0;
+            userYawOffset = 0;
+            userPitchOffset = 0;
+        });
+
+        document.getElementById("btn-align-view").addEventListener("click", () => {
+            userZoom = 1.0;
+            userYawOffset = 0;
+            userPitchOffset = 0;
+            lblZoom.innerText = "1.0x";
+            updateDashboard();
+        });
+
+        // Bind interactive mouse events
+        canvasCard.addEventListener("mousedown", (e) => {
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        window.addEventListener("mouseup", () => {
+            isMouseDown = false;
+        });
+
+        canvasCard.addEventListener("mousemove", (e) => {
+            if (!isMouseDown) return;
+            let dx = e.clientX - mouseX;
+            let dy = e.clientY - mouseY;
+            userYawOffset += dx * 0.007;
+            userPitchOffset += dy * 0.007;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        canvasCard.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            userZoom -= e.deltaY * 0.001;
+            userZoom = Math.max(0.3, Math.min(3.0, userZoom));
+            lblZoom.innerText = userZoom.toFixed(1) + "x";
+        });
+
+        // Procedural Gold/Copper Texture Generation
+        const texCanvas = document.getElementById("tex-canvas");
+        const texCtx = texCanvas.getContext("2d");
+        
+        function generateProceduralTexture() {
+            const grad = texCtx.createLinearGradient(0, 0, 512, 512);
+            grad.addColorStop(0, "#d4af37");
+            grad.addColorStop(0.3, "#aa7c11");
+            grad.addColorStop(0.5, "#f3e5ab");
+            grad.addColorStop(0.7, "#aa7c11");
+            grad.addColorStop(1, "#8b6508");
+            texCtx.fillStyle = grad;
+            texCtx.fillRect(0, 0, 512, 512);
+
+            // Add organic sweeps
+            texCtx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+            texCtx.lineWidth = 1.5;
+            for(let i = 0; i < 30; i++) {
+                texCtx.beginPath();
+                let x = Math.random() * 512;
+                texCtx.moveTo(x, 0);
+                texCtx.bezierCurveTo(x + 100, 150, x - 100, 300, Math.random() * 512, 512);
+                texCtx.stroke();
+            }
+        }
+        generateProceduralTexture();
+
+        const texData = texCtx.getImageData(0, 0, 512, 512).data;
+        function getTexturePixel(u, v) {
+            let x = Math.floor(Math.abs(u)) % 512;
+            let y = Math.floor(Math.abs(v)) % 512;
+            let idx = (y * 512 + x) * 4;
+            return {
+                r: texData[idx],
+                g: texData[idx+1],
+                b: texData[idx+2]
+            };
+        }
+
+        btnPlay.addEventListener("click", () => {
+            isPlaying = !isPlaying;
+            btnPlay.innerText = isPlaying ? "Pause" : "Play";
+        });
+
+        timeline.addEventListener("input", (e) => {
+            frame = parseInt(e.target.value);
+            updateDashboard();
+        });
+
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // 3D Isometric Projection matching generate_yi_lau_evolution.py exactly
+        function project3D(x, y, z, camX, camY, camZ, camYaw, camPitch, zoom, width, height) {
+            function getRawProj(px_val, py_val, pz_val) {
+                let dx = px_val - camX;
+                let dy = py_val - camY;
+                let dz = pz_val - camZ;
+
+                let cosY = Math.cos(camYaw + userYawOffset);
+                let sinY = Math.sin(camYaw + userYawOffset);
+                let rx = dx * cosY - dz * sinY;
+                let ry = dy;
+                let rz = dx * sinY + dz * cosY;
+
+                let cosP = Math.cos(camPitch + userPitchOffset);
+                let sinP = Math.sin(camPitch + userPitchOffset);
+                let x_new = rx;
+                let y_new = ry * cosP - rz * sinP;
+                let z_new = ry * sinP + rz * cosP;
+
+                let focal = 500.0;
+                let px_raw = (x_new * focal) / (z_new + 700) * zoom * userZoom;
+                let py_raw = (y_new * focal) / (z_new + 700) * zoom * userZoom;
+                return { px: px_raw, py: py_raw, depth: z_new };
+            }
+
+            let raw = getRawProj(x, y, z);
+            let orig = getRawProj(0, 0, 0);
+
+            // Center relative to the projected origin projection
+            let px_final = raw.px - orig.px + width / 2;
+            let py_final = raw.py - orig.py + height / 2;
+
+            return { px: px_final, py: py_final, depth: raw.depth };
+        }
+
+        // Eigenvalues Canvas
+        const eigCanvas = document.getElementById("eigenvalue-canvas");
+        const eigCtx = eigCanvas.getContext("2d");
+
+        function drawEigenvalues(targetMatch) {
+            eigCtx.clearRect(0, 0, eigCanvas.width, eigCanvas.height);
+            eigCtx.strokeStyle = "rgba(0, 240, 255, 0.1)";
+            eigCtx.lineWidth = 1;
+            for(let i = 20; i < eigCanvas.width; i += 20) {
+                eigCtx.beginPath();
+                eigCtx.moveTo(i, 0);
+                eigCtx.lineTo(i, eigCanvas.height);
+                eigCtx.stroke();
+            }
+
+            let count = 7;
+            let step = eigCanvas.width / count;
+            eigCtx.fillStyle = targetMatch > 0.01 ? "rgba(255, 0, 127, 0.65)" : "rgba(0, 240, 255, 0.35)";
+            for(let i = 0; i < count; i++) {
+                let amp = Math.exp(-i * 0.45) * (0.2 + 0.8 * targetMatch);
+                if (targetMatch > 0.05) {
+                    amp += 0.12 * Math.sin(Date.now() * 0.007 + i);
+                }
+                let barH = amp * (eigCanvas.height - 20);
+                eigCtx.fillRect(i * step + 6, eigCanvas.height - barH, step - 12, barH);
+            }
+        }
+
+        // Helper to compute eigenvalues (lambda1, lambda2) and ratio for PCA coordinates
+        function calculatePCA(pointsList) {
+            let N = pointsList.length;
+            if (N === 0) return 0;
+            let sumX = 0, sumY = 0;
+            for (let i = 0; i < N; i++) {
+                sumX += pointsList[i].px;
+                sumY += pointsList[i].py;
+            }
+            let meanX = sumX / N;
+            let meanY = sumY / N;
+
+            let covXX = 0, covXY = 0, covYY = 0;
+            for (let i = 0; i < N; i++) {
+                let dx = pointsList[i].px - meanX;
+                let dy = pointsList[i].py - meanY;
+                covXX += dx * dx;
+                covXY += dx * dy;
+                covYY += dy * dy;
+            }
+            covXX /= N;
+            covXY /= N;
+            covYY /= N;
+
+            let trace = covXX + covYY;
+            let det = covXX * covYY - covXY * covXY;
+            let discriminant = Math.sqrt(Math.max(0, trace * trace - 4.0 * det)) || 0;
+            let lambda1 = (trace + discriminant) / 2.0;
+            let lambda2 = (trace - discriminant) / 2.0;
+            return lambda2 > 0.01 ? (lambda1 / lambda2) : 0.0;
+        }
+
+        // Update loop
+        function updateDashboard() {
+            timeline.value = frame;
+            let t = frame / TOTAL_FRAMES;
+            lblTTime.innerText = (t * 30.0).toFixed(2) + "s";
+
+            let morphFactor = 0.0;
+            if (t > 0.30) {
+                morphFactor = Math.min(1.0, (t - 0.30) / 0.60);
+            }
+            lblMorphFactor.innerText = Math.round(morphFactor * 100) + "%";
+
+            let stage = "YI Lissajous Initialization";
+            document.querySelectorAll(".timeline-ticks span").forEach(el => el.classList.remove("active"));
+            
+            let cvActive = false;
+            let cvProgress = 0.0;
+
+            if (t < 0.30) {
+                stage = "YI Lissajous Initialization";
+                document.getElementById("tick-yi").classList.add("active");
+            } else if (t < 0.70) {
+                stage = "Transitive Morphing & Embossing";
+                document.getElementById("tick-morph").classList.add("active");
+            } else if (t < 0.90) {
+                stage = "LAU Hypotrochoid Alignment";
+                document.getElementById("tick-lau").classList.add("active");
+            } else {
+                stage = "Tardigrade Photorealization";
+                document.getElementById("tick-cv").classList.add("active");
+                cvActive = true;
+                cvProgress = (t - 0.90) / 0.10;
+            }
+            lblStage.innerText = stage;
+
+            ctx.fillStyle = "#0c101c";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Fetch current settings
+            let tw_gain = parseFloat(twGain.value);
+            let tw_freq = parseFloat(twFreq.value);
+            let tw_detune = parseInt(twDetune.value);
+            let tw_phase = parseInt(twPhase.value) * Math.PI / 180;
+            let tw_blowup = parseFloat(twBlowup.value);
+            let tw_dir = parseInt(twDir.value);
+
+            let driftTime = Date.now() * 0.001;
+            let livePhase = tw_phase + (tw_detune * 0.01) * driftTime * tw_dir;
+
+            // Target mapping formulas
+            let fx = tw_freq, fy = 4.0, fz = 2.0;
+            let R_hyp = 150, r_hyp = 40;
+            let d_hyp = 90;
+
+            // Under "void_enter", simulate a morph with high-frequency structures
+            if (tokenPairSelect.value === "void_enter") {
+                fx = tw_freq * 1.25;
+                R_hyp = 160;
+                r_hyp = 35;
+                d_hyp = 110;
+            }
+
+            let f_effective = Math.min(frame, TOTAL_FRAMES - 270);
+            let cam_yaw = f_effective * 0.015;
+            let cam_pitch = 0.3 + 0.05 * Math.sin(f_effective * 0.008);
+            let cam_x = Math.cos(cam_yaw) * 360;
+            let cam_y = Math.sin(cam_yaw) * 360;
+            let cam_z = 240 + 40 * Math.cos(f_effective * 0.005);
+            let zoom = 0.82;
+
+            // Dynamically scale sample density proportional to frequency & blowup to avoid gaps
+            let num_points = Math.round(360 + (tw_freq * 40) + (tw_blowup * 20));
+            let d_offsets = [d_hyp * 0.7, d_hyp, d_hyp * 1.3];
+            let color_rgb = [0, 240, 255]; 
+
+            // Track bounding box for dynamic auto-fitting
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            let allProjectedLayers = [];
+
+            // 1. Generate Coordinates & Project (PURE PURE YI/LAU DATA MATH - NO CORRUPTION)
+            for (let idx = 0; idx < d_offsets.length; idx++) {
+                let d_val = d_offsets[idx];
+                let points_layer = [];
+
+                for (let i = 0; i < num_points; i++) {
+                    let theta = i * 4.0 * Math.PI / num_points;
+
+                    let lx_yi = 135.0 * Math.sin(fx * theta + livePhase) * tw_gain;
+                    let ly_yi = 135.0 * Math.sin(fy * theta);
+                    let lz_yi = 135.0 * Math.cos(fz * theta);
+
+                    let lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + d_val * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + livePhase);
+                    let ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - d_val * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                    let lz_lau = 80.0 * Math.cos(5.0 * theta);
+
+                    let lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
+                    let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
+                    let lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
+
+                    lx *= Math.pow(Math.abs(Math.sin(theta)), tw_blowup - 1.0);
+                    ly *= Math.pow(Math.abs(Math.cos(theta)), tw_blowup - 1.0);
+
+                    let proj = project3D(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, canvas.width, canvas.height);
+                    points_layer.push(proj);
+
+                    // Track bounds
+                    if (proj.px < minX) minX = proj.px;
+                    if (proj.px > maxX) maxX = proj.px;
+                    if (proj.py < minY) minY = proj.py;
+                    if (proj.py > maxY) maxY = proj.py;
+                }
+                allProjectedLayers.push(points_layer);
+            }
+
+            // --- Viewport Auto-Fitting Engine ---
+            let boxW = maxX - minX;
+            let boxH = maxY - minY;
+            let maxAllowableW = canvas.width * 0.85;
+            let maxAllowableH = canvas.height * 0.85;
+            let autoScale = 1.0;
+
+            if (boxW > maxAllowableW || boxH > maxAllowableH) {
+                autoScale = Math.min(maxAllowableW / boxW, maxAllowableH / boxH);
+                
+                // Adjust points to scale centered
+                let centerX = canvas.width / 2;
+                let centerY = canvas.height / 2;
+                for (let idx = 0; idx < allProjectedLayers.length; idx++) {
+                    let layer = allProjectedLayers[idx];
+                    for (let i = 0; i < layer.length; i++) {
+                        layer[i].px = (layer[i].px - centerX) * autoScale + centerX;
+                        layer[i].py = (layer[i].py - centerY) * autoScale + centerY;
+                    }
+                }
+            }
+
+            // 2. Compute Normals & Render Pure Shape
+            for (let idx = 0; idx < d_offsets.length; idx++) {
+                let points_layer = allProjectedLayers[idx];
+                let normals_2d = [];
+
+                for (let i = 0; i < num_points; i++) {
+                    let p_curr = points_layer[i];
+                    let p_next = points_layer[(i + 1) % num_points];
+                    let tx = p_next.px - p_curr.px;
+                    let ty = p_next.py - p_curr.py;
+                    let length = Math.sqrt(tx * tx + ty * ty) || 1.0;
+                    normals_2d.push({ nx: -ty / length, ny: tx / length });
+                }
+
+                let w_base = idx === 1 ? 2 : 1;
+                let w_target = idx === 1 ? 4 : 2;
+                let w = Math.round(w_base * (1.0 - morphFactor) + w_target * morphFactor);
+
+                let sh_alpha = Math.round(140 * morphFactor);
+                let hl_alpha = Math.round(90 * morphFactor);
+
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+
+                for (let i = 0; i < num_points; i++) {
+                    let p1 = points_layer[i];
+                    let p2 = points_layer[(i + 1) % num_points];
+                    let norm = normals_2d[i];
+
+                    let texColor = getTexturePixel(p1.px, p1.py);
+                    let dot = Math.max(0.2, norm.nx * 0.707 + norm.ny * 0.707);
+                    let r_s = Math.round(texColor.r * dot);
+                    let g_s = Math.round(texColor.g * dot);
+                    let b_s = Math.round(texColor.b * dot);
+
+                    let r_curr = Math.round(color_rgb[0] * (1.0 - morphFactor) + r_s * morphFactor);
+                    let g_curr = Math.round(color_rgb[1] * (1.0 - morphFactor) + g_s * morphFactor);
+                    let b_curr = Math.round(color_rgb[2] * (1.0 - morphFactor) + b_s * morphFactor);
+
+                    ctx.lineWidth = w;
+
+                    if (morphFactor > 0.02) {
+                        ctx.strokeStyle = `rgba(0, 0, 0, ${sh_alpha / 255})`;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.px + 1.2 * norm.nx, p1.py + 1.2 * norm.ny);
+                        ctx.lineTo(p2.px + 1.2 * norm.nx, p2.py + 1.2 * norm.ny);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${hl_alpha / 255})`;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.px - 1.2 * norm.nx, p1.py - 1.2 * norm.ny);
+                        ctx.lineTo(p2.px - 1.2 * norm.nx, p2.py - 1.2 * norm.ny);
+                        ctx.stroke();
+                    }
+
+                    ctx.strokeStyle = `rgba(${r_curr}, ${g_curr}, ${b_curr}, 1.0)`;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.px, p1.py);
+                    ctx.lineTo(p2.px, p2.py);
+                    ctx.stroke();
+
+                    if (morphFactor > 0.02) {
+                        ctx.lineWidth = Math.max(1, Math.round(w / 2));
+                        ctx.strokeStyle = `rgba(${Math.min(255, r_curr + 40)}, ${Math.min(255, g_curr + 40)}, ${Math.min(255, b_curr + 40)}, 1.0)`;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.px, p1.py);
+                        ctx.lineTo(p2.px, p2.py);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // --- REAL DYNAMIC REFERENCE-SHAPE EIGENVECTOR ALIGNMENT ---
+            let actualRatio = calculatePCA(allProjectedLayers[1]);
+            let ref_d_val = d_hyp;
+            let refPoints = [];
+            for (let i = 0; i < num_points; i++) {
+                let theta = i * 4.0 * Math.PI / num_points;
+                let lx_yi = 135.0 * Math.sin(4.0 * theta) * 1.2;
+                let ly_yi = 135.0 * Math.sin(4.0 * theta);
+                let lz_yi = 135.0 * Math.cos(2.0 * theta);
+                let lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + ref_d_val * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta);
+                let ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - ref_d_val * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                let lz_lau = 80.0 * Math.cos(5.0 * theta);
+                let lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
+                let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
+                let lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
+                let proj = project3D(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, canvas.width, canvas.height);
+                refPoints.push(proj);
+            }
+            let referenceRatio = calculatePCA(refPoints);
+            let ratioError = Math.abs(actualRatio - referenceRatio);
+
+            let frequencyError = Math.abs(tw_freq - 4.0);
+            let gainError = Math.abs(tw_gain - 1.2);
+            let blowupError = Math.abs(tw_blowup - 1.0);
+            let detuneError = Math.abs(tw_detune - 0);
+
+            let alignmentFactor = 0.0;
+            if (tokenPairSelect.value === "default" && frequencyError < 0.35 && gainError < 0.35 && blowupError < 0.3 && detuneError < 15 && ratioError < 0.5) {
+                let penalty = (frequencyError * 1.5 + gainError * 1.5 + blowupError * 1.5 + detuneError * 0.02 + ratioError * 0.8);
+                alignmentFactor = Math.max(0.0, 1.0 - penalty);
+            }
+            let targetMatch = cvProgress * 0.98 * alignmentFactor;
+
+            // Tardigrade Bounding Box & Alignment Reliability Checks
+            if (cvActive && targetMatch > 0.4) {
+                ctx.strokeStyle = "rgba(255, 0, 127, 0.7)";
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+
+                let pad = 30 * cvProgress;
+                ctx.strokeRect(canvas.width/2 - 120 - pad, canvas.height/2 - 100 - pad, 240 + pad*2, 200 + pad*2);
+
+                ctx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                ctx.font = "12px 'Share Tech Mono'";
+                ctx.fillText(`TARGET IDENTIFIED: TARDIGRADA [Match: ${(targetMatch * 100).toFixed(1)}%]`, canvas.width/2 - 120 - pad, canvas.height/2 - 110 - pad);
+                ctx.setLineDash([]);
+
+                // Visual target markers point directly to locations on the *actual* YI & LAU curve structure
+                let middleLayer = allProjectedLayers[1];
+                let len = middleLayer.length;
+                
+                // Index mappings on the actual hypotrochoid curve representing the anatomy regions
+                let headIdx = Math.floor(len * 0.0);
+                let pharynxIdx = Math.floor(len * 0.12);
+                let midgutIdx = Math.floor(len * 0.5);
+                let clawsIdx = Math.floor(len * 0.75);
+
+                let indicators = [
+                    { label: "Anterior Head Capsule", pt: middleLayer[headIdx] },
+                    { label: "Sucking Pharynx", pt: middleLayer[pharynxIdx] },
+                    { label: "Digestive Midgut", pt: middleLayer[midgutIdx] },
+                    { label: "Lobopod Claws", pt: middleLayer[clawsIdx] }
+                ];
+
+                indicators.forEach(ind => {
+                    if (!ind.pt) return;
+                    ctx.beginPath();
+                    ctx.arc(ind.pt.px, ind.pt.py, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = "var(--magenta-glow)";
+                    ctx.fill();
+
+                    ctx.strokeStyle = "rgba(255, 0, 127, 0.5)";
+                    ctx.beginPath();
+                    ctx.moveTo(ind.pt.px, ind.pt.py);
+                    ctx.lineTo(ind.pt.px - 40, ind.pt.py - 30);
+                    ctx.stroke();
+
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "10px 'Share Tech Mono'";
+                    ctx.fillText(ind.label, ind.pt.px - 75, ind.pt.py - 35);
+                });
+
+                cvStatus.innerText = `TARDIGRADA MATCH: ${(targetMatch * 100).toFixed(1)}%`;
+                cvStatus.style.borderColor = "var(--magenta-glow)";
+                cvStatus.style.color = "var(--magenta-glow)";
+                cvStatus.style.background = "rgba(255, 0, 127, 0.15)";
+
+                let pctStr = Math.round(targetMatch * 100) + "%";
+                document.getElementById("anat-head").classList.add("detected");
+                document.getElementById("anat-head").querySelectorAll("span")[1].innerText = pctStr;
+                document.getElementById("anat-pharynx").classList.add("detected");
+                document.getElementById("anat-pharynx").querySelectorAll("span")[1].innerText = pctStr;
+                document.getElementById("anat-stomach").classList.add("detected");
+                document.getElementById("anat-stomach").querySelectorAll("span")[1].innerText = pctStr;
+                document.getElementById("anat-claws").classList.add("detected");
+                document.getElementById("anat-claws").querySelectorAll("span")[1].innerText = pctStr;
+
+                if (targetMatch > 0.5) {
+                    document.getElementById("anat-glands").classList.add("detected");
+                    document.getElementById("anat-glands").querySelectorAll("span")[1].innerText = pctStr;
+                } else {
+                    document.getElementById("anat-glands").classList.remove("detected");
+                    document.getElementById("anat-glands").querySelectorAll("span")[1].innerText = "0%";
+                }
+
+                if (targetMatch > 0.85) {
+                    document.getElementById("anat-malpighian").classList.add("detected");
+                    document.getElementById("anat-malpighian").querySelectorAll("span")[1].innerText = pctStr;
+                } else {
+                    document.getElementById("anat-malpighian").classList.remove("detected");
+                    document.getElementById("anat-malpighian").querySelectorAll("span")[1].innerText = "0%";
+                }
+                drawEigenvalues(targetMatch);
+            } else {
+                cvStatus.innerText = cvActive ? `NO ALIGNMENT MATCH [${(targetMatch * 100).toFixed(1)}%]` : "NO TARGET IN RANGE";
+                cvStatus.style.borderColor = cvActive ? "rgba(255, 0, 127, 0.3)" : "rgba(0, 240, 255, 0.2)";
+                cvStatus.style.color = "var(--text-muted)";
+                cvStatus.style.background = "rgba(255, 255, 255, 0.02)";
+
+                document.querySelectorAll(".anatomy-item").forEach(item => {
+                    item.classList.remove("detected");
+                    item.querySelectorAll("span")[1].innerText = "0%";
+                });
+                drawEigenvalues(0.0);
+            }
+        }
+
+        // Loop animation
+        function renderLoop() {
+            if (isPlaying) {
+                frame += 2;
+                if (frame > TOTAL_FRAMES) frame = 0;
+            }
+            updateDashboard();
+            requestAnimationFrame(renderLoop);
+        }
+        
+        updateLabels();
+        renderLoop();
+    </script>
+</body>
+</html>

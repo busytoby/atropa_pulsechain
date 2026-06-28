@@ -489,6 +489,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             with open(file_path, 'rb') as f:
                 self.wfile.write(f.read())
             return
+        elif self.path == '/evolution' or self.path == '/evolution/' or self.path == '/evolution/index.html' or self.path == '/yi_lau_evolution_dashboard.html':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'yi_lau_evolution_dashboard.html'))
+            if not os.path.exists(file_path):
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'yi_lau_evolution_dashboard.html')
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
         elif self.path == '/nonukes/style.css':
             self.send_response(200)
             self.send_header('Content-Type', 'text/css; charset=utf-8')
