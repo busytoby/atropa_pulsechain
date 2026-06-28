@@ -715,6 +715,48 @@
                 return { x: mx, y: my };
             }
 
+            // Set sample point steps based on aperture configurations (Calculated OUTSIDE the slice loop to prevent ReferenceErrors)
+            let steps = 180;
+            let isDiscreteAperture = false;
+            let discretePoints = [];
+
+            if (teleSystem === "vla") {
+                isDiscreteAperture = true;
+                for (let arm = 0; arm < 3; arm++) {
+                    const armAngle = arm * (2 * Math.PI / 3);
+                    for (let ant = 1; ant <= 9; ant++) {
+                        const armDist = ant / 9.0;
+                        const antennaTheta = armAngle + armDist * Math.PI;
+                        discretePoints.push(antennaTheta);
+                    }
+                }
+            } else if (teleSystem === "alma") {
+                isDiscreteAperture = true;
+                const goldenAngle = 137.5 * Math.PI / 180;
+                for (let ant = 0; ant < 66; ant++) {
+                    const antennaTheta = ant * goldenAngle;
+                    discretePoints.push(antennaTheta);
+                }
+            } else if (teleSystem === "lofar") {
+                isDiscreteAperture = true;
+                let seedVal = regs.base;
+                for (let ant = 0; ant < 48; ant++) {
+                    seedVal = (seedVal * 16807) % 2147483647;
+                    const antennaTheta = (seedVal / 2147483647.0) * 4.0 * Math.PI;
+                    discretePoints.push(antennaTheta);
+                }
+            } else if (teleSystem === "ska") {
+                isDiscreteAperture = true;
+                for (let arm = 0; arm < 3; arm++) {
+                    const armStartAngle = arm * (2 * Math.PI / 3);
+                    for (let ant = 0; ant < 25; ant++) {
+                        const t = ant / 25.0;
+                        const antennaTheta = armStartAngle + t * 2.5 * Math.PI;
+                        discretePoints.push(antennaTheta);
+                    }
+                }
+            }
+
             // Render tomographic slices
             for (let s = 0; s < sliceCount; s++) {
                 let localX, localY, localZ;
@@ -730,49 +772,6 @@
                 ctx.shadowColor = sliceColor;
 
                 ctx.beginPath();
-                
-                // Set sample point steps based on aperture configurations
-                let steps = 180;
-                let isDiscreteAperture = false;
-                let discretePoints = [];
-
-                if (teleSystem === "vla") {
-                    isDiscreteAperture = true;
-                    for (let arm = 0; arm < 3; arm++) {
-                        const armAngle = arm * (2 * Math.PI / 3);
-                        for (let ant = 1; ant <= 9; ant++) {
-                            const armDist = ant / 9.0;
-                            const antennaTheta = armAngle + armDist * Math.PI;
-                            discretePoints.push(antennaTheta);
-                        }
-                    }
-                } else if (teleSystem === "alma") {
-                    isDiscreteAperture = true;
-                    const goldenAngle = 137.5 * Math.PI / 180;
-                    for (let ant = 0; ant < 66; ant++) {
-                        const antennaTheta = ant * goldenAngle;
-                        discretePoints.push(antennaTheta);
-                    }
-                } else if (teleSystem === "lofar") {
-                    isDiscreteAperture = true;
-                    let seedVal = regs.base;
-                    for (let ant = 0; ant < 48; ant++) {
-                        seedVal = (seedVal * 16807) % 2147483647;
-                        const antennaTheta = (seedVal / 2147483647.0) * 4.0 * Math.PI;
-                        discretePoints.push(antennaTheta);
-                    }
-                } else if (teleSystem === "ska") {
-                    isDiscreteAperture = true;
-                    for (let arm = 0; arm < 3; arm++) {
-                        const armStartAngle = arm * (2 * Math.PI / 3);
-                        for (let ant = 0; ant < 25; ant++) {
-                            const t = ant / 25.0;
-                            const antennaTheta = armStartAngle + t * 2.5 * Math.PI;
-                            discretePoints.push(antennaTheta);
-                        }
-                    }
-                }
-
                 const currentSlicePoints = [];
 
                 if (isDiscreteAperture) {
@@ -973,7 +972,7 @@
             
             for (let i = 0; i < oscSteps; i++) {
                 // Synthesize signal by interpolating sampled receiver data
-                const sampleInterval = Math.floor(oscSteps / samplesCount);
+                const sampleInterval = Math.max(1, Math.floor(oscSteps / samplesCount));
                 const baseIdx = Math.floor(i / sampleInterval) * sampleInterval;
                 const nextIdx = (baseIdx + sampleInterval) % oscSteps;
                 const ratio = (i - baseIdx) / sampleInterval;
