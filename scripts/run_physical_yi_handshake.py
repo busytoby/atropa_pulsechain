@@ -115,14 +115,16 @@ def main():
         conn_b.close()
         sys.exit(1)
         
-    # Unpack registers (88 bytes total)
+    # Unpack registers (88 bytes total) and signature (8 bytes)
     regs_a = struct.unpack("<11Q", res_a[1][:88])
     regs_b = struct.unpack("<11Q", res_b[1][:88])
+    sig_init_a = struct.unpack("<Q", res_a[1][88:96])[0]
+    sig_init_b = struct.unpack("<Q", res_b[1][88:96])[0]
     
     contour_a = regs_a[4]
     contour_b = regs_b[4]
-    print(f"  -> Node A Contour: {contour_a}")
-    print(f"  -> Node B Contour: {contour_b}")
+    print(f"  -> Node A Contour: {contour_a} [ACK Sig Daiichi: {sig_init_a}]")
+    print(f"  -> Node B Contour: {contour_b} [ACK Sig Daiichi: {sig_init_b}]")
     
     # --- PHASE 2: EXCHANGE STEPS ---
     
@@ -139,10 +141,12 @@ def main():
         
     regs_a = struct.unpack("<11Q", res_a[1][:88])
     regs_b = struct.unpack("<11Q", res_b[1][:88])
+    sig_a = struct.unpack("<Q", res_a[1][100:108])[0]
+    sig_b = struct.unpack("<Q", res_b[1][100:108])[0]
     pole_a = regs_a[5]
     pole_b = regs_b[5]
-    print(f"  -> Node A Pole: {pole_a}")
-    print(f"  -> Node B Pole: {pole_b}")
+    print(f"  -> Node A Pole: {pole_a} [ACK Sig Daiichi: {sig_a}]")
+    print(f"  -> Node B Pole: {pole_b} [ACK Sig Daiichi: {sig_b}]")
     
     # Step 2: CONJUGATE (Swap Poles)
     print("\n[STEP 3: CONJUGATE] Swapping Poles...")
@@ -157,10 +161,12 @@ def main():
         
     regs_a = struct.unpack("<11Q", res_a[1][:88])
     regs_b = struct.unpack("<11Q", res_b[1][:88])
+    sig_a = struct.unpack("<Q", res_a[1][100:108])[0]
+    sig_b = struct.unpack("<Q", res_b[1][100:108])[0]
     found_a = regs_a[7]
     found_b = regs_b[7]
-    print(f"  -> Node A Foundation: {found_a}")
-    print(f"  -> Node B Foundation: {found_b}")
+    print(f"  -> Node A Foundation: {found_a} [ACK Sig Daiichi: {sig_a}]")
+    print(f"  -> Node B Foundation: {found_b} [ACK Sig Daiichi: {sig_b}]")
     
     # Step 3: SATURATE (Swap Foundations)
     print("\n[STEP 4: SATURATE] Swapping Foundations...")
@@ -175,10 +181,12 @@ def main():
         
     regs_a = struct.unpack("<11Q", res_a[1][:88])
     regs_b = struct.unpack("<11Q", res_b[1][:88])
+    sig_a = struct.unpack("<Q", res_a[1][100:108])[0]
+    sig_b = struct.unpack("<Q", res_b[1][100:108])[0]
     dynamo_a = regs_a[9]
     dynamo_b = regs_b[9]
-    print(f"  -> Node A Dynamo: {dynamo_a}")
-    print(f"  -> Node B Dynamo: {dynamo_b}")
+    print(f"  -> Node A Dynamo: {dynamo_a} [ACK Sig Daiichi: {sig_a}]")
+    print(f"  -> Node B Dynamo: {dynamo_b} [ACK Sig Daiichi: {sig_b}]")
     
     # Step 4: MAGNETIZE (Swap Dynamos and check Convergence)
     print("\n[STEP 5: MAGNETIZE] Swapping Dynamos and checking convergence...")
@@ -196,9 +204,11 @@ def main():
     manifold_b = struct.unpack("<Q", res_b[1][88:96])[0]
     epoch_a = struct.unpack("<I", res_a[1][96:100])[0]
     epoch_b = struct.unpack("<I", res_b[1][96:100])[0]
+    sig_a = struct.unpack("<Q", res_a[1][100:108])[0]
+    sig_b = struct.unpack("<Q", res_b[1][100:108])[0]
     
-    print(f"  -> Node A Manifold: {manifold_a} (Epoch: {epoch_a})")
-    print(f"  -> Node B Manifold: {manifold_b} (Epoch: {epoch_b})")
+    print(f"  -> Node A Manifold: {manifold_a} (Epoch: {epoch_a}) [ACK Sig Daiichi: {sig_a}]")
+    print(f"  -> Node B Manifold: {manifold_b} (Epoch: {epoch_b}) [ACK Sig Daiichi: {sig_b}]")
     
     if manifold_a == manifold_b and manifold_a != 0:
         print(f"\n[SUCCESS] Helmholtz convergence established physically! YI = {manifold_a}")
