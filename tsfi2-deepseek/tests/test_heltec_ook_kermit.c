@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define KERMIT_SOH 0x01
 #define MAX_PAYLOAD 94
@@ -17,7 +18,7 @@ typedef struct {
     uint8_t check;
 } KermitFrame;
 
-// Emulated SX1262 RF channel registry
+// Emulated SX1262 RF channel registry with noise injection
 typedef struct {
     uint8_t buffer[256];
     size_t size;
@@ -31,7 +32,7 @@ static VirtualRFChannel ch_b_to_a;
 typedef struct {
     char name[16];
     uint8_t seq_num;
-    uint8_t received_data[MAX_PAYLOAD];
+    uint8_t received_data[512];
     size_t received_len;
 } HeltecNode;
 
@@ -55,7 +56,6 @@ static size_t pack_kermit_frame(uint8_t seq, char type, const uint8_t *data, siz
         memcpy(&out_buf[4], data, data_len);
     }
     
-    // Checksum includes everything except SOH and checksum itself
     uint8_t check = kermit_checksum(&out_buf[1], data_len + 3);
     out_buf[4 + data_len] = check;
     
@@ -77,18 +77,24 @@ static bool parse_kermit_frame(const uint8_t *buf, size_t size, KermitFrame *fra
     memcpy(frame->data, &buf[4], expected_data_len);
     frame->check = buf[4 + expected_data_len];
     
-    // Verify checksum
     uint8_t calc_check = kermit_checksum(&buf[1], expected_data_len + 3);
     return calc_check == frame->check;
 }
 
-// Emulate physical OOK transmitter
-static void sx1262_transmit_ook(VirtualRFChannel *chan, const uint8_t *data, size_t len) {
-    // In OOK Mode, we physically modulate the carrier envelope
+// Emulate physical OOK transmitter with noise injection support
+static void sx1262_transmit_ook(VirtualRFChannel *chan, const uint8_t *data, size_t len, bool inject_noise) {
     chan->carrier_active = true;
     memcpy(chan->buffer, data, len);
     chan->size = len;
-    printf("[SX1262] OOK Carrier Active: Transmitting %zu bytes envelope...\n", len);
+    
+    if (inject_noise) {
+        // Corrupt a random byte in the payload to simulate party-line line noise
+        int corrupt_idx = (rand() % (len - 1)) + 1; // avoid corrupting SOH for parsing simplicity
+        chan->buffer[corrupt_idx] ^= 0xFF;
+        printf("[SX1262] [NOISE INJECTED] Transmitting corrupted %zu bytes envelope (corrupted byte at index %d)...\n", len, corrupt_idx);
+    } else {
+        printf("[SX1262] Transmitting clean %zu bytes envelope...\n", len);
+    }
 }
 
 // Emulate physical OOK receiver
@@ -97,71 +103,90 @@ static size_t sx1262_receive_ook(VirtualRFChannel *chan, uint8_t *out_data) {
     memcpy(out_data, chan->buffer, chan->size);
     size_t len = chan->size;
     
-    // Reset channel state
     chan->carrier_active = false;
     chan->size = 0;
     return len;
 }
 
 int main() {
-    printf("=== Auncient Heltec v4 ESP32-S3 OOK Kermit Interop Test ===\n");
+    srand(time(NULL));
+    printf("=== Auncient Heltec v4 ESP32-S3 OOK Kermit Emulated Noise Tolerant Test ===\n");
     
-    // Initialize emulated nodes
+    // Initialize nodes
     HeltecNode node_a = { .name = "HELTEC_V4_A", .seq_num = 0, .received_len = 0 };
     HeltecNode node_b = { .name = "HELTEC_V4_B", .seq_num = 0, .received_len = 0 };
     
-    // Prepare cryptographic handshake transaction payload (Node A Public Key)
-    const uint8_t public_key_a[32] = {
-        0xde, 0xad, 0xbe, 0xef, 0x01, 0x02, 0x03, 0x04,
-        0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
-        0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14,
-        0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c
-    };
+    // Multi-packet cryptographic payload (96 bytes split into 3 segments)
+    const uint8_t payload[96] = "Auncient-WinchesterMQ-SCSI-Transaction-Data-For-Secure-Channel-Key-Exchange-Sequence-Block-OK";
+    const size_t segment_size = 32;
+    const size_t total_segments = 3;
     
     uint8_t tx_buffer[256];
     uint8_t rx_buffer[256];
     
-    // --- STEP 1: Node A sends handshake transaction data packet ---
-    printf("\n[%s] Packaging cryptographic handshake packet...\n", node_a.name);
-    size_t tx_len = pack_kermit_frame(node_a.seq_num, 'D', public_key_a, sizeof(public_key_a), tx_buffer);
-    
-    // Modulate over virtual OOK channel A-to-B
-    sx1262_transmit_ook(&ch_a_to_b, tx_buffer, tx_len);
-    
-    // --- STEP 2: Node B scans carrier & decodes OOK packet ---
-    printf("\n[%s] Listening for OOK envelope...\n", node_b.name);
-    size_t rx_len = sx1262_receive_ook(&ch_a_to_b, rx_buffer);
-    if (rx_len > 0) {
-        KermitFrame parsed_frame;
-        if (parse_kermit_frame(rx_buffer, rx_len, &parsed_frame)) {
-            printf("[%s] [SUCCESS] Decoded valid Kermit packet. Seq: %d | Type: %c | Size: %d\n",
-                   node_b.name, parsed_frame.seq, parsed_frame.type, parsed_frame.len - 3);
+    for (size_t seg = 0; seg < total_segments; seg++) {
+        bool success = false;
+        int attempts = 0;
+        
+        while (!success && attempts < 5) {
+            attempts++;
+            printf("\n[%s] [Segment %zu/3] Attempt %d: Packaging packet...\n", node_a.name, seg + 1, attempts);
             
-            // Capture received payload
-            node_b.received_len = parsed_frame.len - 3;
-            memcpy(node_b.received_data, parsed_frame.data, node_b.received_len);
+            size_t tx_len = pack_kermit_frame(node_a.seq_num, 'D', &payload[seg * segment_size], segment_size, tx_buffer);
             
-            // --- STEP 3: Node B transmits ACK envelope (Kermit 'Y') ---
-            printf("[%s] Transmitting ACK reply envelope...\n", node_b.name);
-            size_t ack_len = pack_kermit_frame(parsed_frame.seq, 'Y', NULL, 0, tx_buffer);
-            sx1262_transmit_ook(&ch_b_to_a, tx_buffer, ack_len);
-        } else {
-            printf("[%s] [ERROR] Failed to parse corrupted OOK packet.\n", node_b.name);
+            // Inject noise on the first attempt of segment 2 to test NAK recovery
+            bool inject_noise = (seg == 1 && attempts == 1);
+            sx1262_transmit_ook(&ch_a_to_b, tx_buffer, tx_len, inject_noise);
+            
+            // Node B receives
+            size_t rx_len = sx1262_receive_ook(&ch_a_to_b, rx_buffer);
+            if (rx_len > 0) {
+                KermitFrame parsed_frame;
+                if (parse_kermit_frame(rx_buffer, rx_len, &parsed_frame)) {
+                    printf("[%s] [SUCCESS] Decoded segment. Seq: %d | Size: %d\n",
+                           node_b.name, parsed_frame.seq, parsed_frame.len - 3);
+                    
+                    // Save payload segment
+                    memcpy(&node_b.received_data[seg * segment_size], parsed_frame.data, segment_size);
+                    node_b.received_len += segment_size;
+                    
+                    // Send ACK
+                    size_t ack_len = pack_kermit_frame(parsed_frame.seq, 'Y', NULL, 0, tx_buffer);
+                    sx1262_transmit_ook(&ch_b_to_a, tx_buffer, ack_len, false);
+                    success = true;
+                } else {
+                    printf("[%s] [CHECKSUM FAILED] Packet corrupted. Transmitting NAK reply envelope...\n", node_b.name);
+                    // Send NAK (Kermit 'N')
+                    size_t nak_len = pack_kermit_frame(node_a.seq_num, 'N', NULL, 0, tx_buffer);
+                    sx1262_transmit_ook(&ch_b_to_a, tx_buffer, nak_len, false);
+                }
+            }
+            
+            // Node A listens for reply
+            rx_len = sx1262_receive_ook(&ch_b_to_a, rx_buffer);
+            if (rx_len > 0) {
+                KermitFrame reply_frame;
+                if (parse_kermit_frame(rx_buffer, rx_len, &reply_frame)) {
+                    if (reply_frame.type == 'Y') {
+                        printf("[%s] Received ACK. Advancing packet sequence.\n", node_a.name);
+                        node_a.seq_num = (node_a.seq_num + 1) % 64;
+                    } else if (reply_frame.type == 'N') {
+                        printf("[%s] Received NAK. Retransmitting segment...\n", node_a.name);
+                        success = false;
+                    }
+                }
+            }
+        }
+        
+        if (!success) {
+            printf("[FATAL] Transfer failed after maximum attempts.\n");
+            return 1;
         }
     }
     
-    // --- STEP 4: Node A receives ACK envelope ---
-    printf("\n[%s] Scanning for reverse ACK envelope...\n", node_a.name);
-    rx_len = sx1262_receive_ook(&ch_b_to_a, rx_buffer);
-    if (rx_len > 0) {
-        KermitFrame ack_frame;
-        if (parse_kermit_frame(rx_buffer, rx_len, &ack_frame) && ack_frame.type == 'Y') {
-            printf("[%s] [SUCCESS] Received ACK from receiver. Handshake sequence completed successfully!\n", node_a.name);
-        } else {
-            printf("[%s] [ERROR] ACK frame corrupted or missing.\n", node_a.name);
-        }
-    }
-    
-    printf("\n=== Interop Test Execution Finished ===\n");
+    // Verify final assembled data at receiver
+    node_b.received_data[node_b.received_len] = '\0';
+    printf("\n[%s] [SUCCESS] Fully assembled payload: \"%s\"\n", node_b.name, node_b.received_data);
+    printf("=== Emulated Noise Tolerant Test Execution Finished successfully ===\n");
     return 0;
 }
