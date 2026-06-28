@@ -449,9 +449,12 @@
             });
         }
 
-        // Global Lightweight Animation Loop for individual icons
+        // Global Lightweight Animation Loop for individual icons running the 30s performance timeline
         function animateTelescopes() {
             const time = Date.now() * 0.001;
+            
+            // Map global time to the 900-frame (30-second at 30fps) evolution timeline cycle
+            const frameIndex = Math.floor((time * 30) % 900);
             
             activeCanvases.forEach(item => {
                 const ctx = item.ctx;
@@ -478,31 +481,70 @@
                 ctx.arc(w / 2, h / 2, h * 0.22, 0, Math.PI * 2);
                 ctx.stroke();
                 
-                // Derive canonical telescope coordinates
+                // Derive canonical registers and coordinates mapping
                 const fx = 1.0 + (regs.channel % 5);
+                const fy = 1.0 + (regs.dynamo % 5);
+                const fz = 1.0 + (regs.foundation % 5);
+                
                 const R_hyp = 35.0 + (regs.foundation % 15);
                 const r_hyp = 8.0 + (regs.channel % 10);
                 const d_hyp = 12.0 + (regs.dynamo % 20);
                 const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
-                const thetaOffset = time * 0.5 + item.offsetAngle;
+                const thetaOffset = time * 0.2; // Slow background orbital rotation
                 
-                // 2. Faint Secondary Depth Curve (Phase shifted & scaled)
-                ctx.strokeStyle = item.color.replace('rgb', 'rgba').replace(')', ', 0.15)');
-                ctx.lineWidth = 1.0;
+                // 2. Compute 3D Coordinates based on current timeline frame index
+                function getTimelineCoords(theta) {
+                    // YI coordinate path (Lissajous)
+                    const lx_yi = 40.0 * Math.sin(fx * theta + phase);
+                    const ly_yi = 40.0 * Math.sin(fy * theta);
+                    const lz_yi = 40.0 * Math.cos(fz * theta);
+                    
+                    // LAU coordinate path (Hypotrochoid)
+                    const lx_lau = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset);
+                    const ly_lau = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+                    const lz_lau = 25.0 * Math.cos(5.0 * theta);
+                    
+                    let lx, ly, lz;
+                    
+                    if (frameIndex < 300) {
+                        // Phase 1: YI Lissajous
+                        lx = lx_yi;
+                        ly = ly_yi;
+                        lz = lz_yi;
+                    } else if (frameIndex < 630) {
+                        // Phase 2: Morphing
+                        const morphFactor = (frameIndex - 300) / 330.0;
+                        lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
+                        ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
+                        lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
+                    } else {
+                        // Phase 3: Perfect Tardibear locked pause (with anatomy warp)
+                        const TardigradeWarpX = Math.sin(theta * 3) * 5;
+                        const TardigradeWarpY = Math.cos(theta * 6) * 3;
+                        lx = lx_lau + TardigradeWarpX;
+                        ly = ly_lau + TardigradeWarpY;
+                        lz = lz_lau;
+                    }
+                    
+                    return { x: lx, y: ly };
+                }
+                
+                // 3. Faint Secondary Depth Curve
+                ctx.strokeStyle = item.color.replace('rgb', 'rgba').replace(')', ', 0.12)');
+                ctx.lineWidth = 0.8;
                 ctx.beginPath();
-                const depthSteps = 100;
+                const depthSteps = 90;
                 for (let i = 0; i <= depthSteps; i++) {
                     const theta = i * 4.0 * Math.PI / depthSteps;
-                    const lx = (R_hyp * 1.15 - r_hyp) * Math.cos(theta) + d_hyp * 0.8 * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset + Math.PI * 0.25);
-                    const ly = (R_hyp * 1.15 - r_hyp) * Math.sin(theta) - d_hyp * 0.8 * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
-                    const sx = w / 2 + lx;
-                    const sy = h / 2 + ly;
+                    const coords = getTimelineCoords(theta);
+                    const sx = w / 2 + coords.x * 1.15;
+                    const sy = h / 2 + coords.y * 1.15;
                     if (i === 0) ctx.moveTo(sx, sy);
                     else ctx.lineTo(sx, sy);
                 }
                 ctx.stroke();
                 
-                // 3. Primary Lissajous Curve
+                // 4. Primary Animated Curve
                 ctx.strokeStyle = item.color;
                 ctx.lineWidth = 1.8;
                 ctx.lineCap = "round";
@@ -512,16 +554,13 @@
                 ctx.beginPath();
                 const steps = 180;
                 let particlePos = null;
-                const targetStepIdx = Math.floor((time * 25) % steps); // Particle moves along path
+                const targetStepIdx = Math.floor((time * 25) % steps);
                 
                 for (let i = 0; i <= steps; i++) {
                     const theta = i * 4.0 * Math.PI / steps;
-                    
-                    const lx = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta + phase + thetaOffset);
-                    const ly = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
-                    
-                    const sx = w / 2 + lx;
-                    const sy = h / 2 + ly;
+                    const coords = getTimelineCoords(theta);
+                    const sx = w / 2 + coords.x;
+                    const sy = h / 2 + coords.y;
                     
                     if (i === targetStepIdx) {
                         particlePos = { x: sx, y: sy };
@@ -536,13 +575,13 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0; // reset
                 
-                // 4. Draw Orbiting Core Particle
+                // 5. Draw Orbiting Core Particle
                 if (particlePos) {
                     ctx.fillStyle = "#ffffff";
                     ctx.shadowBlur = 8;
                     ctx.shadowColor = item.color;
                     ctx.beginPath();
-                    ctx.arc(particlePos.x, particlePos.y, 3, 0, Math.PI * 2);
+                    ctx.arc(particlePos.x, particlePos.y, 2.5, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.shadowBlur = 0;
                 }
