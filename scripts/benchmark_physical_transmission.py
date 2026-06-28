@@ -59,7 +59,8 @@ def query_node(conn, tx_frame):
     while time.time() - start < 1.0:
         if conn.in_waiting > 0:
             rx.extend(conn.read(conn.in_waiting))
-            for i in range(len(rx)):
+            i = 0
+            while i < len(rx):
                 if rx[i] == 0x01:
                     if len(rx) > i + 1:
                         length = rx[i + 1] - 32
@@ -67,7 +68,14 @@ def query_node(conn, tx_frame):
                             res = parse_kermit(rx[i : i + length + 2])
                             if res:
                                 return res
-        time.sleep(0.01)
+                            i += 1
+                            continue
+                    break
+                i += 1
+            if i > 0:
+                rx = rx[i:]
+        else:
+            time.sleep(0.001) # 1ms yield to avoid CPU hogging while waiting
     return None
 
 def main():
@@ -75,8 +83,8 @@ def main():
     
     # Connect
     try:
-        conn_a = serial.Serial(PORT_A, BAUD_RATE, timeout=2)
-        conn_b = serial.Serial(PORT_B, BAUD_RATE, timeout=2)
+        conn_a = serial.Serial(PORT_A, BAUD_RATE, timeout=0.2)
+        conn_b = serial.Serial(PORT_B, BAUD_RATE, timeout=0.2)
     except Exception as e:
         print(f"[ERROR] Could not open ports: {e}")
         sys.exit(1)
@@ -141,7 +149,8 @@ def main():
     # Simulate a small 2% random channel error rate for realistic dynamic rate testing
     loss_rate = 0.02
     
-    for packet_idx in range(NUM_PACKETS):
+    packet_idx = 0
+    while packet_idx < NUM_PACKETS:
         # 1. Ask Node A to generate Ichidai/Daiichi for this nonce
         res_sig_a = query_node(conn_a, pack_kermit(packet_idx % 64, 'R', struct.pack("<Q", packet_idx)))
         if not res_sig_a:
@@ -179,6 +188,7 @@ def main():
                 
             accumulated_sim_time += t_transaction
             consecutive_successes += 1
+            packet_idx += 1
             
             if consecutive_successes >= 10:
                 if current_tier < 3:
