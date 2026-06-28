@@ -97,8 +97,8 @@ def main():
     conn_a.setDTR(True)
     conn_b.setDTR(True)
     
-    print("[INIT] Waiting 2.5 seconds for clean boot sequence...")
-    time.sleep(2.5)
+    print("[INIT] Waiting 4.0 seconds for clean boot sequence...")
+    time.sleep(4.0)
     
     # Clean out initial bootlogs from buffers
     conn_a.reset_input_buffer()
@@ -215,10 +215,10 @@ def main():
         res_sig_b = query_node(conn_b, pack_kermit(5 + n, 'R', struct.pack("<Q", n)))
         
         if res_sig_a and res_sig_b:
-            eta_a, kappa_a = struct.unpack("<QQ", res_sig_a[1][:16])
-            eta_b, kappa_b = struct.unpack("<QQ", res_sig_b[1][:16])
-            print(f"  -> Nonce {n} | Node A [Eta: {eta_a}, Kappa: {kappa_a}] | Node B [Eta: {eta_b}, Kappa: {kappa_b}]")
-            if eta_a != eta_b or kappa_a != kappa_b:
+            ichidai_a, daiichi_a = struct.unpack("<QQ", res_sig_a[1][:16])
+            ichidai_b, daiichi_b = struct.unpack("<QQ", res_sig_b[1][:16])
+            print(f"  -> Nonce {n} | Node A [Ichidai: {ichidai_a}, Daiichi: {daiichi_a}] | Node B [Ichidai: {ichidai_b}, Daiichi: {daiichi_b}]")
+            if ichidai_a != ichidai_b or daiichi_a != daiichi_b:
                 print(f"[FAIL] Signature mismatch at nonce {n}!")
                 conn_a.close()
                 conn_b.close()
