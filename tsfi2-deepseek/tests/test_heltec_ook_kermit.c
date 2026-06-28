@@ -384,17 +384,6 @@ int main() {
             apogee_node_b.yi.signal = apogee_node_b.reg.signal;
             apogee_node_b.yi.motzkin_prime = APOGEE_PRIME;
             
-            uint64_t ap_chin_a = (apogee_node_a.beta + 7) % APOGEE_PRIME;
-            uint64_t ap_chin_b = (apogee_node_b.beta + 7) % APOGEE_PRIME;
-            apogee_node_a.yi.monopole = mod_pow(ap_chin_a, ap_chin_b, APOGEE_PRIME);
-            apogee_node_b.yi.monopole = apogee_node_a.yi.monopole;
-            
-            printf("\n[SESSION] Generating Private APOGEE YI Nonce Signatures:\n");
-            for (uint64_t n = 0; n <= 2; n++) {
-                uint64_t ichidai, daiichi;
-                yi_react_contractual(&apogee_node_a, &apogee_node_b, n, &ichidai, &daiichi);
-                printf("  -> APOGEE Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
-            }
         }
         return 0;
     } else {
