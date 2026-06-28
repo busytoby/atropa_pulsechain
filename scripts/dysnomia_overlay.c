@@ -14,12 +14,8 @@
 GtkWidget *label_time;
 
 void get_dysnomia_time(char *out_time) {
-    time_t t = time(NULL);
-    struct tm *lt = localtime(&t);
-    
-    // Adjust UTC epoch seconds to local timezone seconds to match C# DateTime.Now
-    uint64_t local_seconds = (uint64_t)t + (uint64_t)lt->tm_gmtoff;
-    uint64_t current_ticks = local_seconds * 10000000ULL + NET_UNIX_EPOCH_TICKS;
+    // Revert to time(NULL) for a universal timestamp independent of local timezone offsets
+    uint64_t current_ticks = (uint64_t)time(NULL) * 10000000ULL + NET_UNIX_EPOCH_TICKS;
     
     int64_t ticks = (int64_t)current_ticks - DYSNOMIA_ZERO;
     if (ticks < 0) ticks = 0;
