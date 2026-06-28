@@ -45,6 +45,8 @@ static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
 static void realize_callback(GtkWidget *widget, gpointer data) {
     GdkWindow *gdk_win = gtk_widget_get_window(widget);
     if (gdk_win) {
+        // Force override-redirect to bypass window manager decoration/positioning in XWayland/X11
+        gdk_window_set_override_redirect(gdk_win, TRUE);
         gdk_window_set_pass_through(gdk_win, TRUE);
     }
 }
@@ -55,17 +57,14 @@ int main(int argc, char *argv[]) {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Dysnomia Time Overlay");
     
-    // Set undecorated top-level
+    // Request borderless window
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
-    
-    // Set type hint to DOCK so Wayland compositors position it correctly at the screen boundary
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
     gtk_window_set_accept_focus(GTK_WINDOW(window), FALSE);
 
-    // Apply strict CSS to prevent shadows and window borders
+    // Apply strict CSS to remove shadows and margins
     GdkScreen *screen = gtk_widget_get_screen(window);
     GtkCssProvider *css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider,
@@ -84,20 +83,25 @@ int main(int argc, char *argv[]) {
     g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw_callback), NULL);
     g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(realize_callback), NULL);
 
-    // Grid container
+    // Layout
     GtkWidget *grid = gtk_grid_new();
-    gtk_widget_set_hexpand(grid, TRUE);
     gtk_container_add(GTK_CONTAINER(window), grid);
 
     label_time = gtk_label_new(NULL);
-    // Align left (start) of the screen
-    gtk_widget_set_halign(label_time, GTK_ALIGN_START);
+    gtk_widget_set_halign(label_time, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(label_time, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_start(label_time, 16);
     gtk_grid_attach(GTK_GRID(grid), label_time, 0, 0, 1, 1);
 
-    // Width spans the screen, height is a thin taskbar profile
-    gtk_window_set_default_size(GTK_WINDOW(window), 1920, 24);
+    // Set compact window sizes
+    int width = 160;
+    int height = 24;
+    gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+
+    // Query screen height and position window at absolute bottom-left
+    int screen_height = gdk_screen_get_height(screen);
+    int x = 16;
+    int y = screen_height - height - 16;
+    gtk_window_move(GTK_WINDOW(window), x, y);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
