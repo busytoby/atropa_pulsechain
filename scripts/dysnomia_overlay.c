@@ -22,7 +22,6 @@ void get_dysnomia_time(char *out_time) {
     int minute = ((ticks % TICKS_PER_DAY) % TICKS_PER_HOUR) / TICKS_PER_MINUTE;
     int second = (((ticks % TICKS_PER_DAY) % TICKS_PER_HOUR) % TICKS_PER_MINUTE) / TICKS_PER_SECOND;
 
-    // Output only the [dXXXX/HHMMSS] format without the prefix space
     sprintf(out_time, "[d%04d/%02d%02d%02d]", day, hour, minute, second);
 }
 
@@ -46,7 +45,6 @@ static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
 static void realize_callback(GtkWidget *widget, gpointer data) {
     GdkWindow *gdk_win = gtk_widget_get_window(widget);
     if (gdk_win) {
-        // Enable input events pass-through (click-through overlay)
         gdk_window_set_pass_through(gdk_win, TRUE);
     }
 }
@@ -56,16 +54,28 @@ int main(int argc, char *argv[]) {
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Dysnomia Time Overlay");
+    
+    // Explicitly undecorate and bypass WM controls where possible
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
     
-    // Set as a Dock type window and refuse focus for desktop overlay behavior
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
+    // NOTIFICATION type hints force compositors to treat the window as a borderless overlay layer
+    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_NOTIFICATION);
     gtk_window_set_accept_focus(GTK_WINDOW(window), FALSE);
 
-    // Support transparency
+    // Apply strict CSS to prevent GTK client-side shadows and decorations
     GdkScreen *screen = gtk_widget_get_screen(window);
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(css_provider,
+        "window, decoration, grid { background: transparent; background-color: transparent; border: none; box-shadow: none; margin: 0; padding: 0; }\n",
+        -1, NULL);
+    gtk_style_context_add_provider_for_screen(screen,
+        GTK_STYLE_PROVIDER(css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    // Enable transparent visuals
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
     if (visual) {
         gtk_widget_set_visual(window, visual);
@@ -81,14 +91,12 @@ int main(int argc, char *argv[]) {
     gtk_container_add(GTK_CONTAINER(window), grid);
 
     label_time = gtk_label_new(NULL);
-    // Align to the left (start) of the monitor
     gtk_widget_set_hexpand(label_time, TRUE);
     gtk_widget_set_halign(label_time, GTK_ALIGN_START);
-    // Margin of 16px to prevent touching the absolute left screen border
     gtk_widget_set_margin_start(label_time, 16);
     gtk_grid_attach(GTK_GRID(grid), label_time, 0, 0, 1, 1);
 
-    // Size hint to stretch across screen at the bottom
+    // Width/height setup
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 22);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
