@@ -544,11 +544,17 @@
                 }
                 ctx.stroke();
                 
-                // 4. Primary Animated Curve
+                // 4. Primary Animated Curve (Glow fades over time during the final locked pause)
+                let activeGlow = 6;
+                if (frameIndex >= 630) {
+                    const t_tardi = (frameIndex - 630) / 270.0;
+                    activeGlow = 6.0 * (1.0 - t_tardi);
+                }
+                
                 ctx.strokeStyle = item.color;
                 ctx.lineWidth = 1.8;
                 ctx.lineCap = "round";
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = activeGlow;
                 ctx.shadowColor = item.color;
                 
                 ctx.beginPath();
