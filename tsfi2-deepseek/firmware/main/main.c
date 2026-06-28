@@ -9,9 +9,12 @@
 #include "esp_rom_sys.h"
 #include "esp_random.h"
 #include "esp_task_wdt.h"
-#include "driver/usb_serial_jtag.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 static const char *TAG = "HELTEC_OOK_FW";
+
+#define APOGEE_PRIME 953473ULL
 
 // Heltec v4 ESP32-S3 to SX1262 Pin Map
 #define PIN_NUM_MISO 11
@@ -96,6 +99,7 @@ typedef struct {
     uint64_t beta;
     uint64_t manifold;
     uint64_t monopole;
+    uint64_t prime;
 } HelmholtzPartner;
 
 // Modular multiplication to prevent overflow of 64-bit unsigned integers
@@ -124,46 +128,65 @@ static uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t mod) {
 
 static HelmholtzPartner node_state;
 
+static uint64_t apogee_yi = 0;
+static uint64_t apogee_base = 0;
+static uint64_t apogee_secret = 0;
+static uint64_t apogee_signal = 0;
+
 // Step-wise Helmholtz transition math on-device
 static void helmholtz_step(HelmholtzPartner *p, uint64_t external_input) {
+    uint64_t pr = (p->prime == 0) ? MOTZKIN_PRIME : p->prime;
     switch (p->epoch) {
         case EPOCH_INIT:
-            p->reg.base = 1234567;
-            p->reg.secret = 9876543;
-            p->reg.signal = 5555555;
-            p->reg.identity = 1111111;
-            p->reg.channel = mod_pow(p->reg.base, p->reg.signal, MOTZKIN_PRIME);
+            if (p->prime == APOGEE_PRIME) {
+                if (apogee_base != 0 && apogee_secret != 0 && apogee_signal != 0) {
+                    p->reg.base = apogee_base;
+                    p->reg.secret = apogee_secret;
+                    p->reg.signal = apogee_signal;
+                } else {
+                    p->reg.base = (p->address * 13) + 1234567;
+                    p->reg.secret = (p->address * 17) + 9876543;
+                    p->reg.signal = (p->address * 19) + 5555555;
+                }
+                p->reg.identity = (p->address * 23) + 1111111;
+            } else {
+                p->reg.base = 1234567;
+                p->reg.secret = 9876543;
+                p->reg.signal = 5555555;
+                p->reg.identity = 1111111;
+            }
+            p->reg.channel = mod_pow(p->reg.base, p->reg.signal, pr);
             ESP_LOGI(TAG, "[STEP INIT] base: %llu, secret: %llu, signal: %llu, identity: %llu, channel: %llu", 
                      p->reg.base, p->reg.secret, p->reg.signal, p->reg.identity, p->reg.channel);
             p->epoch = EPOCH_AVAIL;
             break;
             
         case EPOCH_AVAIL:
-            p->reg.contour = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            p->reg.contour = mod_pow(p->reg.base, p->reg.secret, pr);
             ESP_LOGI(TAG, "[STEP AVAIL] contour: %llu", p->reg.contour);
             p->epoch = EPOCH_FORM;
             break;
             
         case EPOCH_FORM:
-            p->reg.base = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            p->reg.base = mod_pow(external_input, p->reg.secret, pr);
             ESP_LOGI(TAG, "[STEP FORM] input: %llu, new base: %llu", external_input, p->reg.base);
             p->epoch = EPOCH_POLARIZE;
             break;
             
         case EPOCH_POLARIZE:
-            p->reg.pole = mod_pow(p->reg.base, p->reg.secret, MOTZKIN_PRIME);
+            p->reg.pole = mod_pow(p->reg.base, p->reg.secret, pr);
             ESP_LOGI(TAG, "[STEP POLARIZE] pole: %llu", p->reg.pole);
             p->epoch = EPOCH_CONJUGATE;
             break;
             
         case EPOCH_CONJUGATE:
-            p->reg.secret = mod_pow(external_input, p->reg.secret, MOTZKIN_PRIME);
+            p->reg.secret = mod_pow(external_input, p->reg.secret, pr);
             ESP_LOGI(TAG, "[STEP CONJUGATE] input: %llu, new secret: %llu", external_input, p->reg.secret);
             p->epoch = EPOCH_CONIFY;
             break;
             
         case EPOCH_CONIFY:
-            p->reg.foundation = mod_pow(p->reg.base, p->reg.identity, MOTZKIN_PRIME);
+            p->reg.foundation = mod_pow(p->reg.base, p->reg.identity, pr);
             ESP_LOGI(TAG, "[STEP CONIFY] foundation: %llu", p->reg.foundation);
             p->epoch = EPOCH_SATURATE;
             break;
@@ -243,6 +266,85 @@ static void yi_react_contractual(uint64_t nonce, uint64_t *out_ichidai, uint64_t
     // Let's keep it simple and robust using the derived node registers:
     *out_ichidai = mod_pow(pi_val, node_state.reg.channel, 232763142391703ULL);
     *out_daiichi = mod_pow(pi_val, 232763142391703ULL, node_state.reg.channel);
+}
+
+static void calculate_local_apogee_yi(uint16_t address) {
+    ESP_LOGI(TAG, "Calculating Local APOGEE YI for address 0x%04X...", address);
+    HelmholtzPartner apogee_node_a = {
+        .name = "DEV_AP_ROD",
+        .address = address,
+        .is_rod = true,
+        .epoch = EPOCH_INIT,
+        .beta = 99991234,
+        .prime = APOGEE_PRIME
+    };
+    HelmholtzPartner apogee_node_b = {
+        .name = "DEV_AP_CONE",
+        .address = address,
+        .is_rod = false,
+        .epoch = EPOCH_INIT,
+        .beta = 99991234,
+        .prime = APOGEE_PRIME
+    };
+    
+    // Evaluate 9-epoch loop locally
+    helmholtz_step(&apogee_node_a, 0);
+    helmholtz_step(&apogee_node_b, 0);
+    helmholtz_step(&apogee_node_a, 0);
+    helmholtz_step(&apogee_node_b, 0);
+    helmholtz_step(&apogee_node_a, apogee_node_b.reg.contour);
+    helmholtz_step(&apogee_node_b, apogee_node_a.reg.contour);
+    helmholtz_step(&apogee_node_a, 0);
+    helmholtz_step(&apogee_node_b, 0);
+    helmholtz_step(&apogee_node_a, apogee_node_b.reg.pole);
+    helmholtz_step(&apogee_node_b, apogee_node_a.reg.pole);
+    helmholtz_step(&apogee_node_a, 0);
+    helmholtz_step(&apogee_node_b, 0);
+    helmholtz_step(&apogee_node_a, apogee_node_b.reg.foundation);
+    helmholtz_step(&apogee_node_b, apogee_node_a.reg.foundation);
+    helmholtz_step(&apogee_node_a, 0);
+    helmholtz_step(&apogee_node_b, 0);
+    helmholtz_step(&apogee_node_a, apogee_node_b.reg.dynamo);
+    helmholtz_step(&apogee_node_b, apogee_node_a.reg.dynamo);
+    
+    if (apogee_node_a.manifold == apogee_node_b.manifold && apogee_node_a.epoch == EPOCH_DONE) {
+        apogee_yi = apogee_node_a.manifold;
+        ESP_LOGI(TAG, "Local APOGEE YI established! YI = %llu", apogee_yi);
+    } else {
+        ESP_LOGE(TAG, "Local APOGEE YI calculation failed (diverged).");
+    }
+}
+
+static void init_nvs_apogee_fuse() {
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open("apogee_store", NVS_READWRITE, &my_handle);
+    if (err == ESP_OK) {
+        nvs_get_u64(my_handle, "base", &apogee_base);
+        nvs_get_u64(my_handle, "secret", &apogee_secret);
+        nvs_get_u64(my_handle, "signal", &apogee_signal);
+        nvs_close(my_handle);
+        ESP_LOGI(TAG, "Loaded APOGEE FUSE parameters from NVS: base=%llu, secret=%llu, signal=%llu",
+                 apogee_base, apogee_secret, apogee_signal);
+    } else {
+        ESP_LOGI(TAG, "No stored APOGEE FUSE parameters found in NVS.");
+    }
+}
+
+static void store_nvs_apogee_fuse(uint64_t base, uint64_t secret, uint64_t signal) {
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open("apogee_store", NVS_READWRITE, &my_handle);
+    if (err == ESP_OK) {
+        nvs_set_u64(my_handle, "base", base);
+        nvs_set_u64(my_handle, "secret", secret);
+        nvs_set_u64(my_handle, "signal", signal);
+        nvs_commit(my_handle);
+        nvs_close(my_handle);
+        apogee_base = base;
+        apogee_secret = secret;
+        apogee_signal = signal;
+        ESP_LOGI(TAG, "Stored APOGEE FUSE parameters to NVS: base=%llu, secret=%llu, signal=%llu",
+                 base, secret, signal);
+    }
 }
 
 static spi_device_handle_t spi;
@@ -537,6 +639,20 @@ void app_main(void) {
     sx1262_write_cmd(0x8E, tx_power_params, 2);
     ESP_LOGI(TAG, "SX1262 Transmit Power set to +4 dBm");
     
+    // Initialize Non-Volatile Flash Storage (NVS)
+    esp_err_t nvs_err = nvs_flash_init();
+    if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        nvs_err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(nvs_err);
+    
+    // Load stored APOGEE FUSE configuration from NVS
+    init_nvs_apogee_fuse();
+    
+    // Compute initial local APOGEE YI (defaulting to 0xAA01 address prior to role binding)
+    calculate_local_apogee_yi(0xAA01);
+
     usb_serial_jtag_init();
     
     uint8_t rx_buffer[256];
@@ -586,6 +702,9 @@ void app_main(void) {
                                 strcpy(node_state.name, "CONE_B");
                                 node_state.address = 0xBB02;
                             }
+                            
+                            // Re-calculate the local unique APOGEE YI based on the assigned device address
+                            calculate_local_apogee_yi(node_state.address);
                             
                             // Step Epoch 0: INIT & Epoch 1: AVAIL
                             helmholtz_step(&node_state, 0);
@@ -671,6 +790,42 @@ void app_main(void) {
                             uint8_t tx_buffer[64];
                             size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, 16, tx_buffer);
                             usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                        }
+                        else if (frame.type == 'F') {
+                            // Set/Store APOGEE FUSE configuration: Payload contains 24 bytes (base, secret, signal)
+                            uint64_t f_base, f_secret, f_signal;
+                            memcpy(&f_base, &frame.data[0], 8);
+                            memcpy(&f_secret, &frame.data[8], 8);
+                            memcpy(&f_signal, &frame.data[16], 8);
+                            
+                            ESP_LOGI(TAG, "FUSE Kermit Request: Set APOGEE FUSE base=%llu, secret=%llu, signal=%llu",
+                                     f_base, f_secret, f_signal);
+                            store_nvs_apogee_fuse(f_base, f_secret, f_signal);
+                            
+                            // Recalculate local APOGEE YI using the new config
+                            uint16_t current_addr = node_state.address;
+                            if (current_addr == 0) {
+                                current_addr = 0xAA01; // Default fallback
+                            }
+                            calculate_local_apogee_yi(current_addr);
+                            
+                            // Respond with the newly established converged YI (8 bytes)
+                            uint8_t tx_buffer[64];
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', (uint8_t*)&apogee_yi, 8, tx_buffer);
+                            usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                        }
+                        else if (frame.type == 'V') {
+                            // View/Retrieve APOGEE FUSE parameters: Respond with 32 bytes (base, secret, signal, converged_yi)
+                            uint8_t tx_payload[32];
+                            memcpy(&tx_payload[0], &apogee_base, 8);
+                            memcpy(&tx_payload[8], &apogee_secret, 8);
+                            memcpy(&tx_payload[16], &apogee_signal, 8);
+                            memcpy(&tx_payload[24], &apogee_yi, 8);
+                            
+                            uint8_t tx_buffer[64];
+                            size_t tx_len = pack_kermit_frame(frame.seq, 'Y', tx_payload, 32, tx_buffer);
+                            usb_serial_jtag_write_bytes(tx_buffer, tx_len, pdMS_TO_TICKS(10));
+                        }
                     } else {
                         uint8_t fail_seq = (rx_buffer[2] >= 32) ? (rx_buffer[2] - 32) : 0;
                         uint64_t ichidai, daiichi;
@@ -685,5 +840,4 @@ void app_main(void) {
         }
         vTaskDelay(1); // Force 1 FreeRTOS tick delay to guarantee CPU yield to IDLE
     }
-}
 }
