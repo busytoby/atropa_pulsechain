@@ -79,9 +79,31 @@ def main():
     parser.add_argument("--base", type=int, help="APOGEE FUSE Base value (uint64_t)")
     parser.add_argument("--secret", type=int, help="APOGEE FUSE Secret value (uint64_t)")
     parser.add_argument("--signal", type=int, help="APOGEE FUSE Signal value (uint64_t)")
+    parser.add_argument("--prime", type=int, default=953473, help="FUSE Prime modulus (default APOGEE: 953473)")
+    parser.add_argument("--file", help="Path to .dys configuration file to load parameters from")
     
     args = parser.parse_args()
     
+    # Load from file if specified
+    f_base, f_secret, f_signal, f_prime = args.base, args.secret, args.signal, args.prime
+    if args.file:
+        print(f"[FILE] Loading parameters from {args.file}...")
+        try:
+            with open(args.file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k, v = k.strip().lower(), int(v.strip())
+                    if k == "base": f_base = v
+                    elif k == "secret": f_secret = v
+                    elif k == "signal": f_signal = v
+                    elif k == "prime": f_prime = v
+        except Exception as e:
+            print(f"[ERROR] Failed to read file {args.file}: {e}")
+            sys.exit(1)
+            
     conn = get_serial(args.port)
     if not conn:
         sys.exit(1)
@@ -112,12 +134,12 @@ def main():
             print("[ERROR] No response received from device.")
             
     elif args.action == "set":
-        if args.base is None or args.secret is None or args.signal is None:
-            print("[ERROR] Action 'set' requires --base, --secret, and --signal arguments.")
+        if f_base is None or f_secret is None or f_signal is None:
+            print("[ERROR] Action 'set' requires --base, --secret, and --signal arguments or a valid --file.")
             sys.exit(1)
             
-        print(f"[SET] Fusing device with Base={args.base}, Secret={args.secret}, Signal={args.signal}...")
-        payload = struct.pack("<QQQ", args.base, args.secret, args.signal)
+        print(f"[SET] Fusing device with Base={f_base}, Secret={f_secret}, Signal={f_signal}, Prime={f_prime}...")
+        payload = struct.pack("<QQQQ", f_base, f_secret, f_signal, f_prime)
         tx = pack_kermit(0, 'F', payload)
         res = query_node(conn, tx)
         if res:
@@ -125,7 +147,7 @@ def main():
             if type_char == 'Y' and len(data) >= 8:
                 converged_yi = struct.unpack("<Q", data[:8])[0]
                 print("\n=== APOGEE YI FUSE Configuration Successful ===")
-                print(f"  New Converged APOGEE YI: {converged_yi}")
+                print(f"  New Converged YI: {converged_yi}")
                 print("===============================================")
             else:
                 print(f"[ERROR] Unexpected response: Type: {type_char}, Data length: {len(data)}")
