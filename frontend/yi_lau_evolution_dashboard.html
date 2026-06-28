@@ -1359,20 +1359,8 @@
                 targetMatch = Math.max(targetMatch, activeManualLocks / 6.0 * 0.98);
             }
 
-            // Tardigrade Bounding Box & Alignment Reliability Checks
+            // Tardigrade Bounding Box & Target Identifier has been hidden per user request
             if (cvActive && targetMatch > 0.01) {
-                ctx.strokeStyle = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.7)" : "rgba(0, 240, 255, 0.4)";
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([4, 4]);
-
-                let pad = 30 * cvProgress;
-                ctx.strokeRect(canvas.width/2 - 120 - pad, canvas.height/2 - 100 - pad, 240 + pad*2, 200 + pad*2);
-
-                ctx.fillStyle = targetMatch > 0.4 ? "rgba(255, 0, 127, 0.9)" : "rgba(0, 240, 255, 0.9)";
-                ctx.font = "12px 'Share Tech Mono'";
-                ctx.fillText(`TARGET IDENTIFIED: TARDIGRADA [Match: ${(targetMatch * 100).toFixed(1)}%]`, canvas.width/2 - 120 - pad, canvas.height/2 - 110 - pad);
-                ctx.setLineDash([]);
-
                 // Visual target markers point directly to locations on the *actual* YI & LAU curve structure
                 let middleLayer = currentMiddleLayerPoints;
                 let len = middleLayer.length;
@@ -1454,7 +1442,7 @@
 
                 drawEigenvalues(targetMatch);
             } else {
-                cvStatus.innerText = cvActive ? `NO ALIGNMENT MATCH [${(targetMatch * 100).toFixed(1)}%]` : "NO TARGET IN RANGE";
+                cvStatus.innerText = cvActive ? `ALIGNMENT ACTIVE [${(targetMatch * 100).toFixed(1)}%]` : "NO TARGET IN RANGE";
                 cvStatus.style.borderColor = cvActive ? "rgba(255, 0, 127, 0.3)" : "rgba(0, 240, 255, 0.2)";
                 cvStatus.style.color = "var(--text-muted)";
                 cvStatus.style.background = "rgba(255, 255, 255, 0.02)";
