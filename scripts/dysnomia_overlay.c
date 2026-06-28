@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define DYSNOMIA_ZERO 638403877000000000ULL
 #define TICKS_PER_DAY (86400ULL * 10000000ULL)
@@ -45,19 +46,27 @@ static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
 static void realize_callback(GtkWidget *widget, gpointer data) {
     GdkWindow *gdk_win = gtk_widget_get_window(widget);
     if (gdk_win) {
-        // Force override-redirect to bypass window manager decoration/positioning in XWayland/X11
-        gdk_window_set_override_redirect(gdk_win, TRUE);
         gdk_window_set_pass_through(gdk_win, TRUE);
     }
 }
 
 int main(int argc, char *argv[]) {
+    // Automatically inject Hyprland compositor window rules for pure borderless floating overlay behaviour
+    if (getenv("HYPRLAND_INSTANCE_SIGNATURE") != NULL) {
+        system("hyprctl keyword windowrule \"float, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"noborder, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"noshadow, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"pin, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"move 16 97%, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"size 160 24, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+        system("hyprctl keyword windowrule \"noinitialfocus, title:^(Dysnomia Time Overlay)$\" > /dev/null 2>&1");
+    }
+
     gtk_init(&argc, &argv);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Dysnomia Time Overlay");
     
-    // Request borderless window
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
@@ -83,7 +92,7 @@ int main(int argc, char *argv[]) {
     g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw_callback), NULL);
     g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(realize_callback), NULL);
 
-    // Layout
+    // Grid layout for centering within container
     GtkWidget *grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(window), grid);
 
@@ -92,16 +101,8 @@ int main(int argc, char *argv[]) {
     gtk_widget_set_valign(label_time, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID(grid), label_time, 0, 0, 1, 1);
 
-    // Set compact window sizes
-    int width = 160;
-    int height = 24;
-    gtk_window_set_default_size(GTK_WINDOW(window), width, height);
-
-    // Query screen height and position window at absolute bottom-left
-    int screen_height = gdk_screen_get_height(screen);
-    int x = 16;
-    int y = screen_height - height - 16;
-    gtk_window_move(GTK_WINDOW(window), x, y);
+    // Default dimensions (overwritten by Hyprland rule but acts as safe fallback)
+    gtk_window_set_default_size(GTK_WINDOW(window), 160, 24);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
