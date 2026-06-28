@@ -239,7 +239,7 @@
             text-transform: uppercase;
         }
 
-        select, input[type="range"] {
+        select, input[type="file"], input[type="range"] {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(0, 240, 255, 0.2);
             color: var(--text-primary);
@@ -317,6 +317,10 @@
         </div>
 
         <div class="settings-panel">
+            <div class="setting-group" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.8rem; margin-bottom: 0.4rem;">
+                <span class="setting-label">Load Compiled DNA File</span>
+                <input type="file" id="dna-file-input" accept=".dna" style="font-size: 0.75rem; padding: 0.2rem; cursor: pointer;">
+            </div>
             <div class="setting-group">
                 <span class="setting-label">Array Mode</span>
                 <select id="array-mode">
@@ -412,7 +416,7 @@
                 </div>
                 <div class="timeline-labels">
                     <span id="timeline-time">TIME: 0.0s / 17.0s</span>
-                    <span style="color: var(--accent-cyan);">CYCLE STATUS: ACTIVE SCAN</span>
+                    <span id="timeline-status" style="color: var(--accent-cyan);">CYCLE STATUS: ACTIVE SCAN</span>
                 </div>
             </div>
         </footer>
@@ -508,6 +512,49 @@
         const slidersContainer = document.getElementById("hypotrochoid-sliders");
         overrideCheckbox.addEventListener("change", () => {
             slidersContainer.style.display = overrideCheckbox.checked ? "flex" : "none";
+        });
+
+        // Client-side DNA binary stream parser
+        let parsedDnaFrames = null;
+        document.getElementById("dna-file-input").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                parsedDnaFrames = null;
+                document.getElementById("timeline-status").innerText = "CYCLE STATUS: ACTIVE SCAN";
+                document.getElementById("timeline-status").style.color = "var(--accent-cyan)";
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const buffer = evt.target.result;
+                const view = new DataView(buffer);
+                
+                const sig = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                if (sig !== 'TSFI') {
+                    alert('Invalid DNA sequence format: Missing TSFI signature.');
+                    return;
+                }
+                const totalFrames = view.getUint32(4, true);
+                const frames = [];
+                let offset = 8;
+                
+                for (let i = 0; i < totalFrames; i++) {
+                    if (offset + 51 <= buffer.byteLength) {
+                        const R_hyp = view.getFloat32(offset + 31, true);
+                        const r_hyp = view.getFloat32(offset + 35, true);
+                        const d_hyp = view.getFloat32(offset + 39, true);
+                        const fx = view.getFloat32(offset + 43, true);
+                        const fy = view.getFloat32(offset + 47, true);
+                        
+                        frames.push({ R_hyp, r_hyp, d_hyp, fx, fy });
+                        offset += 51;
+                    }
+                }
+                parsedDnaFrames = frames;
+                document.getElementById("timeline-status").innerText = `PLAYING DNA: ${file.name.toUpperCase()}`;
+                document.getElementById("timeline-status").style.color = "var(--accent-gold)";
+            };
+            reader.readAsArrayBuffer(file);
         });
 
         // HSL helper matching python script exactly
@@ -677,16 +724,26 @@
             const regs = deriveLauRegisters(selectedAddress);
             const color = getAddressColor(selectedAddress);
 
-            // Derive parameters (allowing manual overrides for hypotrochoid variety exploration)
+            // Derive parameters (allowing manual overrides, on-chain derivation, or live DNA parser decoding)
             const isOverridden = document.getElementById("override-hypotrochoid").checked;
-            const R_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-fixed").value) : 65.0 + (regs.foundation % 20);
-            const r_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-rolling").value) : 15.0 + (regs.channel % 12);
-            const d_hyp = isOverridden ? parseFloat(document.getElementById("hyp-d-pen").value) : 22.0 + (regs.dynamo % 30);
-            const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
+            let R_hyp, r_hyp, d_hyp, fx, fy;
 
-            // YI coordinate frequencies
-            const fx = 1.0 + (regs.channel % 5);
-            const fy = 1.0 + (regs.dynamo % 5);
+            if (parsedDnaFrames && parsedDnaFrames[frameIndex]) {
+                const dnaFrame = parsedDnaFrames[frameIndex];
+                R_hyp = dnaFrame.R_hyp;
+                r_hyp = dnaFrame.r_hyp;
+                d_hyp = dnaFrame.d_hyp;
+                fx = dnaFrame.fx;
+                fy = dnaFrame.fy;
+            } else {
+                R_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-fixed").value) : 65.0 + (regs.foundation % 20);
+                r_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-rolling").value) : 15.0 + (regs.channel % 12);
+                d_hyp = isOverridden ? parseFloat(document.getElementById("hyp-d-pen").value) : 22.0 + (regs.dynamo % 30);
+                fx = 1.0 + (regs.channel % 5);
+                fy = 1.0 + (regs.dynamo % 5);
+            }
+
+            const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
 
             const cx = width / 2;
             const cy = height / 2;
