@@ -555,7 +555,7 @@
         
         // Labels
         const valGain = document.getElementById("val-gain");
-        const valFreq = document.getElementById("val-freq");
+        const valFreq = document.getElementById("val-gain");
         const valDetune = document.getElementById("val-detune");
         const valPhase = document.getElementById("val-phase");
         const valBlowup = document.getElementById("val-blowup");
@@ -1299,6 +1299,15 @@
             // --- REAL DYNAMIC REFERENCE-SHAPE EIGENVECTOR ALIGNMENT ---
             let actualRatio = calculatePCA(allProjectedLayers[1]);
             let refPoints = [];
+            
+            let refPhase = 3.0159;
+            if (selection === "void_enter") {
+                refPhase = 0;
+            } else if (selection !== "default" && loadedRegisters) {
+                let regs = loadedRegisters;
+                refPhase = (regs.base % 360) * Math.PI / 180;
+            }
+
             for (let i = 0; i < num_points; i++) {
                 let theta = i * 4.0 * Math.PI / num_points;
                 let r_fx = 1.0, r_fy = 2.0, r_fz = 1.0;
@@ -1317,15 +1326,18 @@
                     r_d = 30 + (regs.chin % 60);
                 }
 
-                let lx_yi = 135.0 * Math.sin(r_fx * theta + 3.0159) * 1.0;
+                let lx_yi = 135.0 * Math.sin(r_fx * theta + refPhase) * 1.0;
                 let ly_yi = 135.0 * Math.sin(r_fy * theta);
                 let lz_yi = 135.0 * Math.cos(r_fz * theta);
-                let lx_lau = (r_R - r_r) * Math.cos(theta) + r_d * Math.cos(((r_R - r_r) / r_r) * theta);
+                
+                let lx_lau = (r_R - r_r) * Math.cos(theta) + r_d * Math.cos(((r_R - r_r) / r_r) * theta + refPhase);
                 let ly_lau = (r_R - r_r) * Math.sin(theta) - r_d * Math.sin(((r_R - r_r) / r_r) * theta);
                 let lz_lau = 80.0 * Math.cos(5.0 * theta);
+                
                 let lx = lx_yi * (1.0 - morphFactor) + lx_lau * morphFactor;
-                let ly = ly_yi * (1.0 - morphFactor) + ly_lau * math.sin(theta) * 0; // matching projection shape formulas
+                let ly = ly_yi * (1.0 - morphFactor) + ly_lau * morphFactor;
                 let lz = lz_yi * (1.0 - morphFactor) + lz_lau * morphFactor;
+                
                 let proj = project3D(lx, ly, lz, cam_x, cam_y, cam_z, cam_yaw, cam_pitch, zoom, canvas.width, canvas.height);
                 refPoints.push(proj);
             }
