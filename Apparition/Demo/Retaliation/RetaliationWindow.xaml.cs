@@ -1,4 +1,4 @@
-using Dysnomia.Lib;
+﻿using Dysnomia.Lib;
 using ExtensionMethods;
 using System;
 using System.Collections.Generic;
@@ -41,12 +41,6 @@ namespace Apparition.Retaliation
                                 });
                         }
                 }
-                Application.Current.Dispatcher.Invoke((Action)delegate
-                {
-                    DysnomiaTime now = DysnomiaTime.Now;
-                    DysnomiaDayText.Text = "Day " + now.Day.ToString();
-                    DysnomiaTimeText.Text = now.ToString();
-                });
                 Thread.Sleep(111);
             }
         }
