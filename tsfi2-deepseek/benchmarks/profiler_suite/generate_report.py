@@ -1417,19 +1417,19 @@ def get_html_template(data, is_mock, avg_fps, avg_render_ms, avg_audio_sw, avg_a
                 card.metrics.forEach(m => {{
                     metricsHtml += `
                         <li class="auncient-metric-item">
-                            <span class="auncient-metric-label">\${{m.label}}</span>
-                            <span class="auncient-metric-value">\${{m.value}}</span>
+                            <span class="auncient-metric-label">\\${{m.label}}</span>
+                            <span class="auncient-metric-value">\\${{m.value}}</span>
                         </li>
                     `;
                 }});
                 
                 cardDiv.innerHTML = `
                     <div class="auncient-card-header">
-                        <h3 class="auncient-card-title">\${{card.title}}</h3>
-                        <span class="status-badge \${{badgeClass}}">\${{card.status}}</span>
+                        <h3 class="auncient-card-title">\\${{card.title}}</h3>
+                        <span class="status-badge \\${{badgeClass}}">\\${{card.status}}</span>
                     </div>
                     <ul class="auncient-metrics-list">
-                        \${{metricsHtml}}
+                        \\${{metricsHtml}}
                     </ul>
                 `;
                 auncientGrid.appendChild(cardDiv);
