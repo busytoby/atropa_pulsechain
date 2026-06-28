@@ -45,6 +45,7 @@ static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
 static void realize_callback(GtkWidget *widget, gpointer data) {
     GdkWindow *gdk_win = gtk_widget_get_window(widget);
     if (gdk_win) {
+        // Essential: Allow mouse clicks to pass through the fullscreen overlay window
         gdk_window_set_pass_through(gdk_win, TRUE);
     }
 }
@@ -55,17 +56,17 @@ int main(int argc, char *argv[]) {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Dysnomia Time Overlay");
     
-    // Explicitly undecorate and bypass WM controls where possible
+    // Set borderless, input bypass hints
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
-    
-    // NOTIFICATION type hints force compositors to treat the window as a borderless overlay layer
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_NOTIFICATION);
     gtk_window_set_accept_focus(GTK_WINDOW(window), FALSE);
 
-    // Apply strict CSS to prevent GTK client-side shadows and decorations
+    // Fullscreen forces the window to occupy the entire monitor and strips decorations
+    gtk_window_fullscreen(GTK_WINDOW(window));
+
+    // CSS styling override to ensure window container has no visual padding or border
     GdkScreen *screen = gtk_widget_get_screen(window);
     GtkCssProvider *css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider,
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
         GTK_STYLE_PROVIDER(css_provider),
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    // Enable transparent visuals
+    // Transparent window visual setup
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
     if (visual) {
         gtk_widget_set_visual(window, visual);
@@ -85,19 +86,21 @@ int main(int argc, char *argv[]) {
     g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw_callback), NULL);
     g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(realize_callback), NULL);
 
-    // Layout
+    // Grid occupying fullscreen
     GtkWidget *grid = gtk_grid_new();
-    gtk_widget_set_valign(grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(grid, TRUE);
+    gtk_widget_set_vexpand(grid, TRUE);
     gtk_container_add(GTK_CONTAINER(window), grid);
 
     label_time = gtk_label_new(NULL);
-    gtk_widget_set_hexpand(label_time, TRUE);
+    // Align clock to the absolute bottom-left corner of the monitor
     gtk_widget_set_halign(label_time, GTK_ALIGN_START);
+    gtk_widget_set_valign(label_time, GTK_ALIGN_END);
+    // Margin of 16px from left and bottom screen borders
     gtk_widget_set_margin_start(label_time, 16);
+    gtk_widget_set_margin_bottom(label_time, 16);
+    
     gtk_grid_attach(GTK_GRID(grid), label_time, 0, 0, 1, 1);
-
-    // Width/height setup
-    gtk_window_set_default_size(GTK_WINDOW(window), 1920, 22);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
