@@ -214,6 +214,34 @@
             border: 1px solid rgba(0, 240, 255, 0.1);
         }
 
+        .btn-compile {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.6rem;
+            width: 100%;
+            text-align: center;
+            outline: none;
+        }
+
+        .btn-compile:hover {
+            background: var(--accent-primary);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        .btn-compile.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .empty-state {
             text-align: center;
             padding: 5rem 2rem;
@@ -305,6 +333,44 @@
             }
         }
 
+        async function compileDna(address, button) {
+            if (button.classList.contains("loading")) return;
+            button.classList.add("loading");
+            button.innerText = "COMPILING...";
+            try {
+                const response = await fetch(`/api/compile-dna?address=${address}`);
+                const data = await response.json();
+                if (data.success) {
+                    button.innerText = "GENOME COMPILED!";
+                    button.style.borderColor = "var(--gold-accent)";
+                    button.style.color = "var(--gold-accent)";
+                    setTimeout(() => {
+                        button.innerText = "COMPILE GENOME DNA";
+                        button.style.borderColor = "";
+                        button.style.color = "";
+                        button.classList.remove("loading");
+                    }, 3000);
+                } else {
+                    button.innerText = "ERROR COMPILING";
+                    button.style.borderColor = "var(--accent-secondary)";
+                    button.style.color = "var(--accent-secondary)";
+                    setTimeout(() => {
+                        button.innerText = "COMPILE GENOME DNA";
+                        button.style.borderColor = "";
+                        button.style.color = "";
+                        button.classList.remove("loading");
+                    }, 3000);
+                }
+            } catch (err) {
+                console.error("Failed to compile DNA:", err);
+                button.innerText = "OFFLINE";
+                setTimeout(() => {
+                    button.innerText = "COMPILE GENOME DNA";
+                    button.classList.remove("loading");
+                }, 3000);
+            }
+        }
+
         function renderGallery() {
             const grid = document.getElementById('gallery-grid');
             const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
@@ -356,6 +422,7 @@
                         </div>
                         <span class="token-name">${token.name}</span>
                         <div class="token-address">${token.address}</div>
+                        <button class="btn-compile" onclick="compileDna('${token.address}', this)">COMPILE GENOME DNA</button>
                     </div>
                 `;
                 grid.appendChild(card);
