@@ -372,7 +372,7 @@
 
     <header>
         <div>
-            <h1 class="header-title">YI / LAU <span>EVOLOGY TELESCOPE</span></h1>
+            <h1 class="header-title">YI / LAU <span>EVOLUTION TELESCOPE</span></h1>
             <div class="subtitle">WinchesterMQ SCSI Handshake & Frenet-Serret Curvature Walk Engine</div>
         </div>
         <div style="text-align: right;">
@@ -555,7 +555,7 @@
         
         // Labels
         const valGain = document.getElementById("val-gain");
-        const valFreq = document.getElementById("val-freq");
+        const valFreq = document.getElementById("val-gain");
         const valDetune = document.getElementById("val-detune");
         const valPhase = document.getElementById("val-phase");
         const valBlowup = document.getElementById("val-blowup");
@@ -647,19 +647,14 @@
             }
         }
 
-        // Direct Browser metamask / RPC contract query using Ethers.js (using JSON ABI to guarantee error-free decoding)
+        // Direct view-only contract query using Ethers.js connected directly to public PulseChain RPC
         async function fetchLauRegisters(address) {
             try {
                 netStatus.innerText = "Querying PulseChain...";
                 netStatus.style.color = "var(--gold-accent)";
                 
-                // Initialize provider (MetaMask window.ethereum if present, fallback to public RPC)
-                let provider;
-                if (window.ethereum) {
-                    provider = new ethers.BrowserProvider(window.ethereum);
-                } else {
-                    provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
-                }
+                // Directly use public JsonRpcProvider to bypass MetaMask confirmation blocks
+                const provider = new ethers.JsonRpcProvider("https://rpc.pulsechain.com");
 
                 // JSON ABIs for robust decoding of structs
                 const lauAbi = [
@@ -1016,7 +1011,6 @@
         const eigCanvas = document.getElementById("eigenvalue-canvas");
         const eigCtx = eigCanvas.getContext("2d");
 
-        // Simple spelling check: ensure no "ancient" exists, use Auncient if needed
         function drawEigenvalues(targetMatch) {
             eigCtx.clearRect(0, 0, eigCanvas.width, eigCanvas.height);
             eigCtx.strokeStyle = "rgba(0, 240, 255, 0.1)";
