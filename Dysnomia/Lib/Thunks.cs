@@ -16,15 +16,5 @@ namespace Dysnomia.Lib
             [MarshalAs(UnmanagedType.LPStr)] string toAddress, 
             [MarshalAs(UnmanagedType.LPStr)] string dataHex
         );
-
-        // Mozilla WinchesterMQ Interop Bridge Lifecycle Methods
-        [DllImport("libtsfi2.so", EntryPoint = "tsfi_mozilla_wmq_bridge_init", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MozillaWmqBridgeInit();
-
-        [DllImport("libtsfi2.so", EntryPoint = "tsfi_mozilla_wmq_bridge_tick", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MozillaWmqBridgeTick();
-
-        [DllImport("libtsfi2.so", EntryPoint = "tsfi_mozilla_wmq_bridge_destroy", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MozillaWmqBridgeDestroy();
     }
 }
