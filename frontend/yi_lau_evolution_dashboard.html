@@ -1132,14 +1132,14 @@
                 r_hyp = 35;
                 d_hyp = 110;
             } else if (selection !== "default" && loadedRegisters) {
-                // PURE ON-CHAIN REGISTER DRIVEN GEOMETRY RESOLUTION
+                // PURE ON-CHAIN REGISTER DRIVEN GEOMETRY RESOLUTION (Matching generate_yi_lau_evolution.py canonical formulas)
                 let regs = loadedRegisters;
-                fx = tw_freq * (1.0 + (regs.channel % 3));
+                fx = tw_freq * (1.0 + (regs.channel % 5));
                 fy = 1.0 + (regs.dynamo % 5);
                 fz = 1.0 + (regs.foundation % 5);
-                R_hyp = 100 + (regs.base % 80);
-                r_hyp = 20 + (regs.element % 40);
-                d_hyp = 30 + (regs.chin % 60);
+                R_hyp = 100.0 + (regs.foundation % 80);
+                r_hyp = 20.0 + (regs.channel % 40);
+                d_hyp = 30.0 + (regs.dynamo % 60);
             }
 
             // Map timeline t to video's original 2700-frame scale for camera perspective accuracy
@@ -1305,7 +1305,7 @@
                 refPhase = 0;
             } else if (selection !== "default" && loadedRegisters) {
                 let regs = loadedRegisters;
-                refPhase = (regs.base % 360) * Math.PI / 180;
+                refPhase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
             }
 
             for (let i = 0; i < num_points; i++) {
@@ -1318,12 +1318,12 @@
                     r_R = 160; r_r = 35; r_d = 110;
                 } else if (selection !== "default" && loadedRegisters) {
                     let regs = loadedRegisters;
-                    r_fx = 1.0 + (regs.channel % 3);
+                    r_fx = 1.0 + (regs.channel % 5);
                     r_fy = 1.0 + (regs.dynamo % 5);
                     r_fz = 1.0 + (regs.foundation % 5);
-                    r_R = 100 + (regs.base % 80);
-                    r_r = 20 + (regs.element % 40);
-                    r_d = 30 + (regs.chin % 60);
+                    r_R = 100.0 + (regs.foundation % 80);
+                    r_r = 20.0 + (regs.channel % 40);
+                    r_d = 30.0 + (regs.dynamo % 60);
                 }
 
                 let lx_yi = 135.0 * Math.sin(r_fx * theta + refPhase) * 1.0;
@@ -1349,7 +1349,7 @@
             if (selection === "void_enter") target_fx = 1.25;
             else if (selection !== "default" && loadedRegisters) {
                 let regs = loadedRegisters;
-                target_fx = 1.0 + (regs.channel % 3);
+                target_fx = 1.0 + (regs.channel % 5);
             }
 
             let frequencyError = Math.abs(tw_freq - target_fx);
@@ -1515,7 +1515,7 @@
                     twGain.value = 1.0;
                     twFreq.value = 1.0;
                     twDetune.value = 0;
-                    twPhase.value = Math.abs(loadedRegisters.base % 360);
+                    twPhase.value = Math.abs((loadedRegisters.base % 100) / 100.0 * 360);
                     twBlowup.value = 1.0;
                 }
             }
