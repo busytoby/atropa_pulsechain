@@ -143,3 +143,9 @@ Or for **VM State Transitions**:
 * **VM Transition Context**: Finalization transition binding dynamic velocity.
 * **Mathematical Operation**: Resolves $Dynamo = Base^{Signal} \pmod{Element}$ and zeroes `Pole`.
 * **Visual / Geometric Shift**: Binds Y-axis frequencies and aligns the spatial rotation axis.
+
+### Delegate
+* **VM Register Context**: Registration mapping record within the CHO contract registry linking a wallet address to a verified LAU token contract structure.
+* **Mathematical Function**: Serves as the key/value state association resolving the unique user identifier: $Soul = LAU(UserToken).Saat(1)$.
+* **Visual / Geometric Manifestation**: Governs the coordinate mapping parameters ($fx, fy, fz, R_{hyp}, r_{hyp}, d_{hyp}$) derived from hashing the registered token address, rendering its distinct hypotrochoid geometric signature.
+
