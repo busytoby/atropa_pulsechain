@@ -553,18 +553,12 @@
                 
                 ctx.beginPath();
                 const steps = 180;
-                let particlePos = null;
-                const targetStepIdx = Math.floor((time * 25) % steps);
                 
                 for (let i = 0; i <= steps; i++) {
                     const theta = i * 4.0 * Math.PI / steps;
                     const coords = getTimelineCoords(theta);
                     const sx = w / 2 + coords.x;
                     const sy = h / 2 + coords.y;
-                    
-                    if (i === targetStepIdx) {
-                        particlePos = { x: sx, y: sy };
-                    }
                     
                     if (i === 0) {
                         ctx.moveTo(sx, sy);
@@ -574,17 +568,6 @@
                 }
                 ctx.stroke();
                 ctx.shadowBlur = 0; // reset
-                
-                // 5. Draw Orbiting Core Particle
-                if (particlePos) {
-                    ctx.fillStyle = "#ffffff";
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = item.color;
-                    ctx.beginPath();
-                    ctx.arc(particlePos.x, particlePos.y, 2.5, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
             });
             
             requestAnimationFrame(animateTelescopes);
