@@ -315,6 +315,8 @@ int main() {
     
     if (node_a.manifold == node_b.manifold && node_a.epoch == EPOCH_DONE) {
         printf("\n[RESULT] [SUCCESS] Helmholtz convergence established! YI = %lu\n", node_a.manifold);
+        printf("  -> Rod A Converged Registers | Base: %lu | Secret: %lu | Signal: %lu\n", node_a.reg.base, node_a.reg.secret, node_a.reg.signal);
+        printf("  -> Cone B Converged Registers | Base: %lu | Secret: %lu | Signal: %lu\n", node_b.reg.base, node_b.reg.secret, node_b.reg.signal);
         
         // Setup YI bases
         node_a.yi.base = node_a.manifold;
