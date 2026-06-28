@@ -374,6 +374,26 @@
                     <span>Enable Array Baselines</span>
                 </label>
             </div>
+            <div class="setting-group" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.8rem; margin-top: 0.4rem;">
+                <label class="toggle-container">
+                    <input type="checkbox" id="override-hypotrochoid">
+                    <span>Override Derived Parameters</span>
+                </label>
+            </div>
+            <div id="hypotrochoid-sliders" style="display: none; flex-direction: column; gap: 0.8rem; margin-top: 0.4rem;">
+                <div class="setting-group">
+                    <span class="setting-label" id="lbl-hyp-r-fixed">Fixed Radius (R): 75</span>
+                    <input type="range" id="hyp-r-fixed" min="20" max="150" value="75">
+                </div>
+                <div class="setting-group">
+                    <span class="setting-label" id="lbl-hyp-r-rolling">Rolling Radius (r): 15</span>
+                    <input type="range" id="hyp-r-rolling" min="1" max="60" value="15">
+                </div>
+                <div class="setting-group">
+                    <span class="setting-label" id="lbl-hyp-d-pen">Pen Distance (d): 25</span>
+                    <input type="range" id="hyp-d-pen" min="1" max="100" value="25">
+                </div>
+            </div>
         </div>
 
         <div class="oscilloscope-panel">
@@ -479,6 +499,16 @@
         setupSlider("rotation-speed", "Rotation Speed");
         setupSlider("line-width", "Line Width", " px");
         setupSlider("glow-intensity", "Glow Intensity");
+        setupSlider("hyp-r-fixed", "Fixed Radius (R)");
+        setupSlider("hyp-r-rolling", "Rolling Radius (r)");
+        setupSlider("hyp-d-pen", "Pen Distance (d)");
+
+        // Set up override checkbox handler
+        const overrideCheckbox = document.getElementById("override-hypotrochoid");
+        const slidersContainer = document.getElementById("hypotrochoid-sliders");
+        overrideCheckbox.addEventListener("change", () => {
+            slidersContainer.style.display = overrideCheckbox.checked ? "flex" : "none";
+        });
 
         // HSL helper matching python script exactly
         function hslToRgb(h, s, l) {
@@ -647,10 +677,11 @@
             const regs = deriveLauRegisters(selectedAddress);
             const color = getAddressColor(selectedAddress);
 
-            // Derive parameters
-            const R_hyp = 65.0 + (regs.foundation % 20);
-            const r_hyp = 15.0 + (regs.channel % 12);
-            const d_hyp = 22.0 + (regs.dynamo % 30);
+            // Derive parameters (allowing manual overrides for hypotrochoid variety exploration)
+            const isOverridden = document.getElementById("override-hypotrochoid").checked;
+            const R_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-fixed").value) : 65.0 + (regs.foundation % 20);
+            const r_hyp = isOverridden ? parseFloat(document.getElementById("hyp-r-rolling").value) : 15.0 + (regs.channel % 12);
+            const d_hyp = isOverridden ? parseFloat(document.getElementById("hyp-d-pen").value) : 22.0 + (regs.dynamo % 30);
             const phase = (regs.base % 100) / 100.0 * 2.0 * Math.PI;
 
             // YI coordinate frequencies
@@ -715,7 +746,7 @@
                 return { x: mx, y: my };
             }
 
-            // Set sample point steps based on aperture configurations (Calculated OUTSIDE the slice loop to prevent ReferenceErrors)
+            // Set sample point steps based on aperture configurations
             let steps = 180;
             let isDiscreteAperture = false;
             let discretePoints = [];
