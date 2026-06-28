@@ -61,7 +61,6 @@ def compile_lau_timeline_dna(address, out_dir):
     er = int((regs.get("secret", 0) % 256))
     eg = int((regs.get("secret", 0) >> 8) % 256)
     eb = int((regs.get("secret", 0) >> 16) % 256)
-    ec = 8 # 8-eyed Tardigrade structure segment count
     
     os.makedirs(out_dir, exist_ok=True)
     dna_path = os.path.join(out_dir, f"{address.lower()}.dna")
@@ -75,23 +74,39 @@ def compile_lau_timeline_dna(address, out_dir):
         fy = 1.0 + (regs.get("dynamo", 0) % 5)
         fz = 1.0 + (regs.get("foundation", 0) % 5)
         
+        final_sickness = float(regs.get("chin", 0) % 100) / 100.0
+        
         for frame in range(TOTAL_FRAMES):
             t = frame / float(TOTAL_FRAMES)
-            
-            # Morph calculations mapped to timeline t
-            morph_factor = 0.0
-            if t > 0.30:
-                morph_factor = min(1.0, (t - 0.30) / 0.70)
-                
-            # Idle/Pulse wave
             pulse = math.sin(frame * 0.08) * 0.5 + 0.5
             
-            # Pack coordinates and state
-            g_x = fx * t
-            g_y = fy * t
-            stretch = 1.0 + (pulse * 0.05 * (1.0 - morph_factor))
-            sick_percent = float(regs.get("chin", 0) % 100) / 100.0
-            light_intensity = 0.4 + (0.5 * morph_factor) + (pulse * 0.05)
+            # Segment timeline into distinct complexity phases
+            if frame < 300:
+                # 1. Bear Phase: 2 eyes, 0 sickness, static layout
+                ec = 2
+                sick_percent = 0.0
+                g_x = 0.0
+                g_y = pulse * 0.05
+                stretch = 1.0 + (pulse * 0.02)
+                light_intensity = 0.4 + (pulse * 0.05)
+            elif frame < 700:
+                # 2. Morphing Phase: 4 eyes, rising sickness, shifting layout
+                t_morph = (frame - 300) / 400.0
+                ec = 4
+                sick_percent = final_sickness * t_morph
+                g_x = fx * t_morph * 0.5
+                g_y = fy * t_morph * 0.5
+                stretch = 1.0 + (pulse * 0.05 * (1.0 - t_morph))
+                light_intensity = 0.45 + (0.25 * t_morph) + (pulse * 0.05)
+            else:
+                # 3. Tardibear Phase: 8 eyes/segments, full sickness, maximum complexity
+                t_tardi = (frame - 700) / 200.0
+                ec = 8
+                sick_percent = final_sickness
+                g_x = fx * (0.5 + t_tardi * 0.5)
+                g_y = fy * (0.5 + t_tardi * 0.5)
+                stretch = 1.0 - (t_tardi * 0.1)
+                light_intensity = 0.7 + (0.2 * t_tardi) + (pulse * 0.05)
             
             # Pack 31-byte frame
             frame_data = struct.pack('=ffffffBBBBBBB',
