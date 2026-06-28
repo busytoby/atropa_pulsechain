@@ -631,7 +631,7 @@
                 const sy = (star.y * height) / (star.z) + height / 2;
                 if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
                     ctx.beginPath();
-                    ctx.arc(sx, sy, star.size / star.z, 0, Math.PI * 2);
+                    ctx.arc(sx, sy, Math.min(3.0, star.size / star.z), 0, Math.PI * 2);
                     ctx.fill();
                 }
                 star.z -= 0.0005;
