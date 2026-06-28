@@ -1,4 +1,4 @@
-﻿using Dysnomia.Domain;
+using Dysnomia.Domain;
 using Dysnomia.Domain.World;
 using Nethereum.Web3.Accounts;
 using System;
@@ -16,10 +16,13 @@ namespace Dysnomia
         static public Oracle Oracle;
         static public Wallet.Wallet LocalWallet;
         static public Wallet.Contracts LocalContracts;
+        static public Network LocalNetwork;
 
         static Controller()
         {
             Oracle = new Oracle();
+            LocalNetwork = new Network();
+            
             /*
             LocalWallet = new Wallet.Wallet("http://127.0.0.1:8545/");
             //LocalWallet = new Wallet.Wallet("http://dysnomia.airforce:8545/");
