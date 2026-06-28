@@ -60,6 +60,13 @@ typedef struct {
 } HelmholtzRegisters;
 
 typedef struct {
+    uint64_t base;
+    uint64_t secret;
+    uint64_t signal;
+    uint64_t motzkin_prime;
+} YiState;
+
+typedef struct {
     char name[16];
     uint16_t address;
     bool is_rod;
@@ -68,7 +75,18 @@ typedef struct {
     uint64_t xi;
     uint64_t beta;
     uint64_t manifold;
+    YiState yi;
 } HelmholtzPartner;
+
+static uint64_t yi_react(HelmholtzPartner *node, uint64_t nonce) {
+    uint64_t signature = node->yi.base;
+    if (node->is_rod) {
+        signature = (signature ^ node->yi.secret ^ nonce) % node->yi.motzkin_prime;
+    } else {
+        signature = (signature ^ node->yi.signal ^ nonce) % node->yi.motzkin_prime;
+    }
+    return signature;
+}
 
 // Kermit protocol frame struct
 typedef struct {
@@ -288,6 +306,23 @@ int main() {
     
     if (node_a.manifold == node_b.manifold && node_a.epoch == EPOCH_DONE) {
         printf("\n[RESULT] [SUCCESS] Helmholtz convergence established! YI = %lu\n", node_a.manifold);
+        
+        // Setup YI bases
+        node_a.yi.base = node_a.manifold;
+        node_b.yi.base = node_b.manifold;
+        node_a.yi.secret = node_a.reg.secret;
+        node_a.yi.signal = node_a.reg.signal;
+        node_a.yi.motzkin_prime = MOTZKIN_PRIME;
+        node_b.yi.secret = node_b.reg.secret;
+        node_b.yi.signal = node_b.reg.signal;
+        node_b.yi.motzkin_prime = MOTZKIN_PRIME;
+        
+        printf("\n[SESSION] Generating YI.react Nonce Signatures:\n");
+        for (uint64_t n = 0; n <= 2; n++) {
+            uint64_t sig_rod = yi_react(&node_a, n);
+            uint64_t sig_cone = yi_react(&node_b, n);
+            printf("  -> Nonce %lu | Rod Signature: %lu | Cone Signature: %lu\n", n, sig_rod, sig_cone);
+        }
         return 0;
     } else {
         printf("\n[RESULT] [FAILED] Helmholtz manifolds diverged.\n");
