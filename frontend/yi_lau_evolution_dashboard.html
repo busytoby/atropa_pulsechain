@@ -568,6 +568,27 @@
         let registeredLauTokens = {};
         let loadedRegisters = null; // Holds the real blockchain registers (Base, Secret, Signal, etc.)
 
+        // LocalStorage persistence methods
+        function loadManualLocks() {
+            let selection = tokenPairSelect.value;
+            let saved = localStorage.getItem("manual_locks_" + selection);
+            if (saved) {
+                try {
+                    manuallyLockedOrgans = JSON.parse(saved);
+                    console.log("Loaded manual locks from localStorage:", manuallyLockedOrgans);
+                } catch (e) {
+                    manuallyLockedOrgans = {};
+                }
+            } else {
+                manuallyLockedOrgans = {};
+            }
+        }
+
+        function saveManualLocks() {
+            let selection = tokenPairSelect.value;
+            localStorage.setItem("manual_locks_" + selection, JSON.stringify(manuallyLockedOrgans));
+        }
+
         function updateLabels() {
             valGain.innerText = parseFloat(twGain.value).toFixed(1) + "x";
             valFreq.innerText = parseFloat(twFreq.value).toFixed(2);
@@ -595,8 +616,9 @@
             userYawOffset = 0;
             userPitchOffset = 0;
             manuallyLockedOrgans = {};
+            saveManualLocks();
             activeOrganSelection = null;
-            document.querySelectorAll(".anatomy-item").forEach(item => item.classList.remove("active-selection"));
+            document.querySelectorAll(".anatomy-item").forEach(item => item.classList.remove("active-selection", "manual-lock", "detected"));
         });
 
         document.getElementById("btn-align-view").addEventListener("click", (e) => {
@@ -889,6 +911,9 @@
                 
                 console.log(`Manually mapped and locked: ${organName} at (${clickX.toFixed(1)}, ${clickY.toFixed(1)})`);
                 
+                // Save manually locked coordinates to localStorage
+                saveManualLocks();
+                
                 // Clear selection state
                 let el = document.getElementById(activeOrganSelection);
                 if (el) el.classList.remove("active-selection");
@@ -909,7 +934,7 @@
 
             let organs = [
                 { id: "anat-head", name: "Anterior Head Capsule", pt: currentMiddleLayerPoints[headIdx] },
-                { id: "anat-pharynx", name: "Muscular Sucking Pharynx", pt: currentMiddlePoints[pharynxIdx] },
+                { id: "anat-pharynx", name: "Muscular Sucking Pharynx", pt: currentMiddleLayerPoints[pharynxIdx] },
                 { id: "anat-stomach", name: "Digestive Midgut", pt: currentMiddleLayerPoints[midgutIdx] },
                 { id: "anat-claws", name: "Terminal Lobopod Claws", pt: currentMiddleLayerPoints[clawsIdx] },
                 { id: "anat-glands", name: "Salivary Gland Complex", pt: currentMiddleLayerPoints[glandsIdx] },
@@ -938,6 +963,7 @@
                         pt: { px: clickedOrgan.pt.px, py: clickedOrgan.pt.py }
                     };
                 }
+                saveManualLocks();
                 console.log("Manual Lock toggled for:", clickedOrgan.name);
             }
         });
@@ -1419,7 +1445,7 @@
             }
 
             // Tardigrade Bounding Box & Target Identifier has been hidden per user request
-            if (cvActive && targetMatch > 0.01) {
+            if (cvActive || activeManualLocks > 0) {
                 // Visual target markers point directly to locations on the *actual* YI & LAU curve structure
                 let middleLayer = currentMiddleLayerPoints;
                 let len = middleLayer.length;
@@ -1535,7 +1561,10 @@
         tokenPairSelect.addEventListener("change", async () => {
             let selection = tokenPairSelect.value;
             console.log("Token Pair selection changed to:", selection);
-            manuallyLockedOrgans = {}; // clear manual locks for new target
+            
+            // Load manually locked organ coordinates for this specific token selection
+            loadManualLocks();
+            
             activeOrganSelection = null;
             document.querySelectorAll(".anatomy-item").forEach(item => item.classList.remove("active-selection", "manual-lock", "detected"));
             
@@ -1569,8 +1598,10 @@
             updateDashboard();
         });
 
-        // Initialize dynamic roster loader
-        fetchRegisteredLauTokens();
+        // Initialize dynamic roster loader and load defaults
+        fetchRegisteredLauTokens().then(() => {
+            loadManualLocks();
+        });
         updateLabels();
         renderLoop();
     </script>
