@@ -331,8 +331,8 @@ int main() {
             printf("  -> Nonce %lu | Ichidai: %lu | Daiichi: %lu\n", n, ichidai, daiichi);
         }
         
-        // --- SEPARATE APOGEE YI HANDSHAKE ---
-        printf("\n=== Building APOGEE YI (Separate Handshake modulo APOGEE Prime) ===\n");
+        // --- INTERNAL PRIVATE APOGEE YI GENERATION ---
+        printf("\n=== Building Internal APOGEE YI (Private Rod & Cone state on Device A) ===\n");
         HelmholtzPartner apogee_node_a = {
             .name = "APOGEE_ROD",
             .address = 0xAA01,
@@ -374,7 +374,7 @@ int main() {
         printf("  -> Apogee Cone Manifold: %lu\n", apogee_node_b.manifold);
         
         if (apogee_node_a.manifold == apogee_node_b.manifold && apogee_node_a.epoch == EPOCH_DONE) {
-            printf("\n[RESULT] [SUCCESS] APOGEE YI established! YI = %lu\n", apogee_node_a.manifold);
+            printf("\n[RESULT] [SUCCESS] Private Device APOGEE YI established! YI = %lu\n", apogee_node_a.manifold);
             apogee_node_a.yi.base = apogee_node_a.manifold;
             apogee_node_b.yi.base = apogee_node_b.manifold;
             apogee_node_a.yi.secret = apogee_node_a.reg.secret;
@@ -389,7 +389,7 @@ int main() {
             apogee_node_a.yi.monopole = mod_pow(ap_chin_a, ap_chin_b, APOGEE_PRIME);
             apogee_node_b.yi.monopole = apogee_node_a.yi.monopole;
             
-            printf("\n[SESSION] Generating APOGEE YI Nonce Signatures:\n");
+            printf("\n[SESSION] Generating Private APOGEE YI Nonce Signatures:\n");
             for (uint64_t n = 0; n <= 2; n++) {
                 uint64_t ichidai, daiichi;
                 yi_react_contractual(&apogee_node_a, &apogee_node_b, n, &ichidai, &daiichi);
