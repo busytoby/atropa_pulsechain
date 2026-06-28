@@ -254,6 +254,12 @@ void app_main(void) {
     spi_init();
     sx1262_reset();
     sx1262_config_ook();
+    
+    // Configure OOK output power to +4 dBm with 200us ramp time to protect local organic environment
+    uint8_t tx_power_params[2] = { 0x04, 0x04 };
+    sx1262_write_cmd(0x8E, tx_power_params, 2);
+    ESP_LOGI(TAG, "SX1262 Transmit Power set to +4 dBm");
+    
     uart_init();
     
     uint8_t rx_buffer[256];
@@ -301,6 +307,9 @@ void app_main(void) {
                             ESP_LOGI(TAG, "Derived Shared Secret Hash Segment: 0x%02X%02X%02X%02X",
                                      shared_secret[0], shared_secret[1], shared_secret[2], shared_secret[3]);
                             
+                            // Introduce a 5ms guard delay before transmitting to let the receiver settle
+                            vTaskDelay(pdMS_TO_TICKS(5));
+                            
                             // Pack Node B's ephemeral public key into the ACK response payload
                             uint8_t tx_buffer[128];
                             size_t tx_len = pack_kermit_frame(frame.seq, 'Y', public_key_b, 32, tx_buffer);
@@ -309,6 +318,18 @@ void app_main(void) {
                             modulate_ook_bytes(tx_buffer, tx_len);
                             ESP_LOGI(TAG, "ACK Envelope with Ephemeral Public Key Transmitted over OOK.");
                         }
+                    } else {
+                        ESP_LOGW(TAG, "Kermit Frame Checksum Failed. Transmitting NAK envelope...");
+                        
+                        // Parse header elements if SOH is valid to retrieve sequence number
+                        uint8_t fail_seq = (rx_buffer[2] >= 32) ? (rx_buffer[2] - 32) : 0;
+                        
+                        // Delay 5ms to avoid collisions during half-duplex transitions
+                        vTaskDelay(pdMS_TO_TICKS(5));
+                        
+                        uint8_t tx_buffer[64];
+                        size_t tx_len = pack_kermit_frame(fail_seq, 'N', NULL, 0, tx_buffer);
+                        modulate_ook_bytes(tx_buffer, tx_len);
                     }
                     rx_idx = 0; // Reset buffer
                 }
