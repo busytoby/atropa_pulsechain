@@ -384,6 +384,7 @@ int main() {
         
         if (apogee_node_a_rod.manifold == apogee_node_a_cone.manifold && apogee_node_a_rod.epoch == EPOCH_DONE) {
             printf("\n[RESULT] [SUCCESS] Device A Private APOGEE YI established! YI = %lu\n", apogee_node_a_rod.manifold);
+            printf("  -> Device A APOGEE Converged Registers | Base: %lu | Secret: %lu | Signal: %lu\n", apogee_node_a_rod.reg.base, apogee_node_a_rod.reg.secret, apogee_node_a_rod.reg.signal);
         }
 
         // --- INTERNAL PRIVATE APOGEE YI GENERATION FOR DEVICE B ---
@@ -429,6 +430,7 @@ int main() {
         
         if (apogee_node_b_rod.manifold == apogee_node_b_cone.manifold && apogee_node_b_rod.epoch == EPOCH_DONE) {
             printf("\n[RESULT] [SUCCESS] Device B Private APOGEE YI established! YI = %lu\n", apogee_node_b_rod.manifold);
+            printf("  -> Device B APOGEE Converged Registers | Base: %lu | Secret: %lu | Signal: %lu\n", apogee_node_b_rod.reg.base, apogee_node_b_rod.reg.secret, apogee_node_b_rod.reg.signal);
         }
         return 0;
     } else {
