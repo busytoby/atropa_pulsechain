@@ -48,9 +48,9 @@ def main():
         "Swapping Foundation registers...",
         "Helmholtz convergence established! YI =",
         "Generating YI.react Nonce Signatures:",
-        "Nonce 0 | Rod Signature:",
-        "Nonce 1 | Rod Signature:",
-        "Nonce 2 | Rod Signature:"
+        "Nonce 0 | Eta Signature:",
+        "Nonce 1 | Eta Signature:",
+        "Nonce 2 | Eta Signature:"
     ]
     
     all_passed = True

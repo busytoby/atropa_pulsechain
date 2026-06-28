@@ -64,6 +64,7 @@ typedef struct {
     uint64_t secret;
     uint64_t signal;
     uint64_t motzkin_prime;
+    uint64_t monopole;
 } YiState;
 
 typedef struct {
@@ -78,14 +79,10 @@ typedef struct {
     YiState yi;
 } HelmholtzPartner;
 
-static uint64_t yi_react(HelmholtzPartner *node, uint64_t nonce) {
-    uint64_t signature = node->yi.base;
-    if (node->is_rod) {
-        signature = (signature ^ node->yi.secret ^ nonce) % node->yi.motzkin_prime;
-    } else {
-        signature = (signature ^ node->yi.signal ^ nonce) % node->yi.motzkin_prime;
-    }
-    return signature;
+static void yi_react_contractual(HelmholtzPartner *node_a, HelmholtzPartner *node_b, uint64_t nonce, uint64_t *out_eta, uint64_t *out_kappa) {
+    uint64_t pi_val = nonce ^ node_a->yi.monopole;
+    *out_eta = mod_pow(pi_val, node_a->reg.channel, node_b->reg.channel);
+    *out_kappa = mod_pow(pi_val, node_b->reg.channel, node_a->reg.channel);
 }
 
 // Kermit protocol frame struct
@@ -317,11 +314,17 @@ int main() {
         node_b.yi.signal = node_b.reg.signal;
         node_b.yi.motzkin_prime = MOTZKIN_PRIME;
         
+        // Deriving Chin boundary values to resolve the Monopole
+        uint64_t chin_a = (node_a.beta + 7) % MOTZKIN_PRIME;
+        uint64_t chin_b = (node_b.beta + 7) % MOTZKIN_PRIME;
+        node_a.yi.monopole = mod_pow(chin_a, chin_b, MOTZKIN_PRIME);
+        node_b.yi.monopole = node_a.yi.monopole;
+        
         printf("\n[SESSION] Generating YI.react Nonce Signatures:\n");
         for (uint64_t n = 0; n <= 2; n++) {
-            uint64_t sig_rod = yi_react(&node_a, n);
-            uint64_t sig_cone = yi_react(&node_b, n);
-            printf("  -> Nonce %lu | Rod Signature: %lu | Cone Signature: %lu\n", n, sig_rod, sig_cone);
+            uint64_t eta, kappa;
+            yi_react_contractual(&node_a, &node_b, n, &eta, &kappa);
+            printf("  -> Nonce %lu | Eta Signature: %lu | Kappa Signature: %lu\n", n, eta, kappa);
         }
         return 0;
     } else {
