@@ -346,6 +346,9 @@ tests/test_dilemma_synthesizer: tests/test_dilemma_synthesizer.c $(CORE_OBJS) $(
 tests/test_bessel_zener_trapping: tests/test_bessel_zener_trapping.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_oscillating_audion: tests/test_oscillating_audion.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_rooted_browser_wmq_prophecy: tests/test_rooted_browser_wmq_prophecy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

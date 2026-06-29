@@ -72,12 +72,28 @@ int main() {
     // Assert that high feedback maintains self-sustained oscillation even with zero input
     assert(p2p_osc > 1.0f);
 
+    // 4. Verify Chebyshev Waveshaping Alternative
+    float *vp_out_cheb = (float*)lau_memalign(64, NUM_SAMPLES * sizeof(float));
+    tsfi_valve_process_chebyshev(vg_in, vp_out_cheb, NUM_SAMPLES, 0.50, 0.35, 0.15, 0.00);
+
+    float min_cheb = vp_out_cheb[0], max_cheb = vp_out_cheb[0];
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        if (vp_out_cheb[i] < min_cheb) min_cheb = vp_out_cheb[i];
+        if (vp_out_cheb[i] > max_cheb) max_cheb = vp_out_cheb[i];
+    }
+    float p2p_cheb = max_cheb - min_cheb;
+    printf("  Chebyshev Waveshaper (c1=0.5, c2=0.35): %.4f V\n", p2p_cheb);
+
+    // Assert Chebyshev bounds
+    assert(max_cheb <= 1.0f && min_cheb >= -1.0f);
+
     lau_free(vg_in);
     lau_free(vp_out_no_fb);
     lau_free(vp_out_fb);
     lau_free(vp_out_self_osc);
     lau_free(vg_zero);
+    lau_free(vp_out_cheb);
 
-    printf("[SUCCESS] Regenerative feedback loop successfully modeled. Oscillating Audion verified!\n");
+    printf("[SUCCESS] Regenerative feedback and Chebyshev waveshaping verified successfully!\n");
     return 0;
 }

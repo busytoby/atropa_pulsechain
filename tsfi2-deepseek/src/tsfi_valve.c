@@ -593,6 +593,37 @@ void tsfi_valve_process_differential_feedback(
     valve->state_vk = vk;
 }
 
+// Process a block of samples using Chebyshev polynomial waveshaping
+void tsfi_valve_process_chebyshev(
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double c1,
+    double c2,
+    double c3,
+    double c4
+) {
+    if (!vg_in || !vp_out || count == 0) return;
+
+    for (size_t i = 0; i < count; i++) {
+        double x = (double)vg_in[i];
+        
+        // Ensure input stays within normalized [-1, 1] range for Chebyshev domain
+        if (x < -1.0) x = -1.0;
+        if (x > 1.0) x = 1.0;
+
+        double t1 = x;
+        double t2 = 2.0 * (x * x) - 1.0;
+        double t3 = 4.0 * (x * x * x) - 3.0 * x;
+        double t4 = 8.0 * (x * x * x * x) - 8.0 * (x * x) + 1.0;
+
+        double y = c1 * t1 + c2 * t2 + c3 * t3 + c4 * t4;
+        
+        vp_out[i] = (float)y;
+    }
+}
+
+
 
 
 

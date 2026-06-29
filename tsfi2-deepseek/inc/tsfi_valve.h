@@ -112,4 +112,15 @@ void tsfi_valve_process_differential_feedback(
     double beta
 );
 
+// Process a block of samples using Chebyshev polynomial waveshaping
+void tsfi_valve_process_chebyshev(
+    const float *vg_in,
+    float *vp_out,
+    size_t count,
+    double c1,
+    double c2,
+    double c3,
+    double c4
+);
+
 #endif // TSFI_VALVE_H
