@@ -78,14 +78,20 @@ object "Unix1Shell" {
                 }
 
                 // "run" (hash: 0x72756e00...)
-                // Usage: run <kernelAddress> <filename>
+                // Usage: run <kernelAddress> <filename> <steps>
                 case 0x72756e0000000000000000000000000000000000000000000000000000000000 {
                     let space2 := findChar(add(0x100, add(cmdWordEnd, 1)), sub(cmdLen, add(cmdWordEnd, 1)), 0x20)
                     let kernelAddr := getCommandHash(add(0x100, add(cmdWordEnd, 1)), space2)
                     
-                    let filenameStart := add(add(0x100, cmdWordEnd), add(space2, 2))
-                    let filenameLen := sub(cmdLen, add(cmdWordEnd, add(space2, 2)))
-                    let filenameHash := getCommandHash(filenameStart, filenameLen)
+                    let filenameStart := add(0x100, add(cmdWordEnd, add(space2, 2)))
+                    let remainingLen := sub(cmdLen, add(cmdWordEnd, add(space2, 2)))
+                    
+                    let space3 := findChar(filenameStart, remainingLen, 0x20)
+                    let filenameHash := getCommandHash(filenameStart, space3)
+                    
+                    let stepsStart := add(filenameStart, add(space3, 1))
+                    let stepsLen := sub(remainingLen, add(space3, 1))
+                    let steps := parseDec(stepsStart, stepsLen)
                     
                     // Call sys_exec(0, filenameHash) on the kernel -> selector 0x5f2f5361
                     mstore(0x00, 0x5f2f536100000000000000000000000000000000000000000000000000000000)
@@ -93,8 +99,8 @@ object "Unix1Shell" {
                     mstore(0x24, filenameHash)
                     let execSuccess := call(gas(), kernelAddr, 0, 0x00, 68, 0x00, 32)
                     
-                    // Execute 4 instruction step cycles: call sys_step(0) -> selector 0x00c71a91
-                    for { let step := 0 } lt(step, 4) { step := add(step, 1) } {
+                    // Execute dynamic instruction step cycles: call sys_step(0) -> selector 0x00c71a91
+                    for { let step := 0 } lt(step, steps) { step := add(step, 1) } {
                         mstore(0x00, 0x00c71a9100000000000000000000000000000000000000000000000000000000)
                         mstore(0x04, 0) // pid 0
                         let stepSuccess := call(gas(), kernelAddr, 0, 0x00, 36, 0x00, 32)
@@ -116,6 +122,16 @@ object "Unix1Shell" {
             /*
              * Helpers
              */
+            function parseDec(start, len) -> val {
+                val := 0
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let char := byte(0, mload(add(start, i)))
+                    if and(gt(char, 47), lt(char, 58)) {
+                        val := add(mul(val, 10), sub(char, 48))
+                    }
+                }
+            }
+            
             function findChar(start, len, targetChar) -> index {
                 index := len
                 for { let i := 0 } lt(i, len) { i := add(i, 1) } {
