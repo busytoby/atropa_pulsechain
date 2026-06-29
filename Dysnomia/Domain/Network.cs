@@ -69,6 +69,15 @@ namespace Dysnomia.Domain
                 TcpClient client = _scsiListener.EndAcceptTcpClient(ar);
                 _scsiListener.BeginAcceptTcpClient(OnAcceptTcpClient, null);
                 
+                // Enforce loopback connection restriction boundary
+                IPEndPoint? remoteEndpoint = client.Client.RemoteEndPoint as IPEndPoint;
+                if (remoteEndpoint != null && !IPAddress.IsLoopback(remoteEndpoint.Address))
+                {
+                    Logging.Log("Network", $"Blocked unauthorized connection from non-loopback address: {remoteEndpoint.Address}", 4);
+                    client.Dispose();
+                    return;
+                }
+
                 // Process client asynchronously
                 System.Threading.Tasks.Task.Run(() =>
                 {
