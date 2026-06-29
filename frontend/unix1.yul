@@ -137,9 +137,12 @@ object "Unix1Kernel" {
                     sstore(add(pStateSlot, rDst), add(v1, v2))
                     ip := add(ip, 1)
                 }
-                // Op 3: WinchesterMQ Write State (Emulates register updates)
+                // Op 3: WinchesterMQ Monopole write (computes Monopole = Chin^Identity mod MotzkinPrime)
                 case 3 {
-                    sstore(add(pStateSlot, 10), val) // Update virtual Monopole data register
+                    let chin := sload(add(pStateSlot, 11)) // Register 11 is Chin
+                    let identity := sload(add(pStateSlot, 12)) // Register 12 is Identity
+                    let monopole := modExp(chin, identity, 953467954114363) // mod MotzkinPrime
+                    sstore(add(pStateSlot, 9), monopole) // Write to Register 9 (Monopole)
                     ip := add(ip, 1)
                 }
                 // Op 4: JUMP if Zero
@@ -168,8 +171,20 @@ object "Unix1Kernel" {
             }
             
             /*
-             * Inode & File Allocation Logic
+             * Helpers
              */
+            function modExp(b, e, m) -> r {
+                r := 1
+                b := mod(b, m)
+                for { } gt(e, 0) { } {
+                    if and(e, 1) {
+                        r := mulmod(r, b, m)
+                    }
+                    e := shr(1, e)
+                    b := mulmod(b, b, m)
+                }
+            }
+            
             function findOrCreateInode(nameHash) -> inode {
                 // Search file table starting at 0x2000
                 let count := sload(0x20)
