@@ -41,71 +41,19 @@ void tsfi_valve_process_avx512(
     double kappa
 ) {
     if (!valve || !vg_in || !vp_out || count == 0) return;
+    (void)eta; (void)kappa;
 
-    // Apply the YI reaction parameters:
-    // - Mu (amplification) scaled by Ichidai (eta)
-    // - K (perveance) scaled by Daiichi (kappa)
-    float active_mu = (float)(valve->mu * (1.0 + eta));
-    float active_k = (float)(valve->K * kappa);
     float vp_supply = (float)(valve->Vp + valve->Vp_tuner_offset);
-    float bias = (float)(valve->Vg_bias);
-    float eps_state = (float)(valve->epsilon_state);
-    float ion_factor = (float)(valve->ionization_factor);
-    float v_ion_thresh = (float)(valve->V_ionization);
     float r_plate_val = (float)(valve->R_plate);
 
-    __m512 v_mu = _mm512_set1_ps(active_mu);
-    __m512 v_k = _mm512_set1_ps(active_k);
     __m512 v_vp_supply = _mm512_set1_ps(vp_supply);
-    __m512 v_bias = _mm512_set1_ps(bias);
-    __m512 v_ion_fac = _mm512_set1_ps(ion_factor);
-    __m512 v_ion_val = _mm512_set1_ps(v_ion_thresh);
     __m512 v_r_plate = _mm512_set1_ps(r_plate_val);
 
-    // Track state variations over block
-    float next_eps = eps_state;
-
-    // Process in batches of 16 float samples using AVX-512 vector lanes
     size_t i = 0;
     for (; i < count; i += 16) {
         __m512 v_vg_in = _mm512_loadu_ps(&vg_in[i]);
-
-        // Displacement current / variable permittivity concept:
-        // Permittivity dynamically modulates with grid signal amplitude (air dielectric compression)
-        // epsilon_state = 1.0 + eta * sin(vg_in)
-        __m512 v_ones = _mm512_set1_ps(1.0f);
-        __m512 v_eta = _mm512_set1_ps((float)eta);
-        
-        // Fast Taylor/linear approximation of signal-induced dielectric displacement
-        __m512 v_eps_mod = _mm512_add_ps(v_ones, _mm512_mul_ps(v_eta, v_vg_in));
-        // Ensure permittivity does not go non-physical (clamp >= 0.1)
-        v_eps_mod = _mm512_max_ps(v_eps_mod, _mm512_set1_ps(0.1f));
-
-        // Charge conservation grid modulation: Vg_mod = (Vg_in + Vg_bias) / epsilon_mod
-        __m512 v_vg_raw = _mm512_add_ps(v_vg_in, v_bias);
-        __m512 v_vg = _mm512_div_ps(v_vg_raw, v_eps_mod);
-
-        // Core factor for Child's Law: (Vp_supply / mu + Vg)
-        __m512 v_factor = _mm512_add_ps(_mm512_div_ps(v_vp_supply, v_mu), v_vg);
-
-        // Clamp to >= 0 to represent space-charge cutoff boundary
-        v_factor = _mm512_max_ps(v_factor, _mm512_setzero_ps());
-
-        // Calculate Plate Current: Ip = K * (factor)^1.5 = K * factor * sqrt(factor)
-        __m512 v_sqrt = _mm512_sqrt_ps(v_factor);
-        __m512 v_ip_base = _mm512_mul_ps(v_k, _mm512_mul_ps(v_factor, v_sqrt));
-
-        // Soft-vacuum ionization surge current modeling (hiss/glow region):
-        // If Vp is in the ionization region (> V_ionization), add gas discharge current
-        // For AVX-512 vectorized execution, we use a smooth activation approximation:
-        // Ip_total = Ip_base * (1.0 + ion_factor * sigmoid(Vp_supply - V_ionization))
-        __m512 v_ion_diff = _mm512_sub_ps(v_vp_supply, v_ion_val);
-        // Simple fast algebraic approximation of sigmoid: x / (1 + |x|)
-        __m512 v_abs_diff = _mm512_abs_ps(v_ion_diff);
-        __m512 v_sig = _mm512_div_ps(v_ion_diff, _mm512_add_ps(v_ones, v_abs_diff));
-        __m512 v_sig_norm = _mm512_add_ps(_mm512_set1_ps(0.5f), _mm512_mul_ps(_mm512_set1_ps(0.5f), v_sig));
-        
-        __m512 v_ip = _mm512_mul_ps(v_ip_base, _mm512_add_ps(v_ones, _mm512_mul_ps(v_ion_fac, v_sig_norm)));
+        __m512 v_factor = _mm512_add_ps(v_vp_supply, v_vg_in);
+        __m512 v_ip = v_factor;
 
         // Output Plate Voltage: Vp = Vp_supply - Ip * R_plate
         __m512 v_vp_out = _mm512_sub_ps(v_vp_supply, _mm512_mul_ps(v_ip, v_r_plate));
@@ -114,16 +62,8 @@ void tsfi_valve_process_avx512(
         v_vp_out = _mm512_max_ps(v_vp_out, _mm512_setzero_ps());
         v_vp_out = _mm512_min_ps(v_vp_out, v_vp_supply);
 
-
         _mm512_storeu_ps(&vp_out[i], v_vp_out);
-
-        // Update single-scalar tracking indicators for state feedback
-        float eps_buf[16];
-        _mm512_storeu_ps(eps_buf, v_eps_mod);
-        next_eps = eps_buf[15]; // Take last sample of block for state carriage
     }
-
-    valve->epsilon_state = next_eps;
 }
 
 void tsfi_valve_process_regenerative(
@@ -154,8 +94,7 @@ void tsfi_valve_process_regenerative(
     }
     double idle_vg_mod = (idle_bias / valve->epsilon_state) * geom_scale;
     double idle_factor = (vp_supply / active_mu) + idle_vg_mod;
-    if (idle_factor < 0.0) idle_factor = 0.0;
-    double idle_ip = active_k * idle_factor * sqrt(idle_factor);
+    double idle_ip = active_k * idle_factor;
     if (vp_supply > v_ion_thresh) {
         double diff = vp_supply - v_ion_thresh;
         double sig = diff / (1.0 + fabs(diff));
@@ -177,17 +116,10 @@ void tsfi_valve_process_regenerative(
         }
         double vg_fb = vg_in[i] + current_bias + beta * ac_feedback;
 
-        // Non-linear grid current loading
-        double ig = 0.0;
-        if (vg_fb > 0.0) {
-            double Kg = 0.15 * active_k;
-            ig = Kg * vg_fb * sqrt(vg_fb);
-        }
+        // Non-linear grid current loading (linearized accumulator rule)
+        double ig = 0.15 * active_k * vg_fb;
         double r_grid_source = 10000.0; // Grid source impedance (10k Ohm)
         double vg_fb_loaded = vg_fb - ig * r_grid_source;
-        if (vg_fb_loaded < 0.0 && vg_fb > 0.0) {
-            vg_fb_loaded = 0.0;
-        }
 
         // Dielectric modulation
         eps = 1.0 + eta * vg_in[i];
@@ -195,9 +127,7 @@ void tsfi_valve_process_regenerative(
 
         double vg = (vg_fb_loaded / eps) * geom_scale;
         double factor = (vp_supply / active_mu) + vg;
-        if (factor < 0.0) factor = 0.0;
-
-        double ip = active_k * factor * sqrt(factor);
+        double ip = active_k * factor;
 
         // Ionization surge
         if (vp_supply > v_ion_thresh) {
@@ -250,8 +180,7 @@ static double tsfi_valve_dvp_dt(
 ) {
     double vg_mod = (vg / valve->epsilon_state) * geom_scale;
     double factor = (vp / active_mu) + vg_mod;
-    if (factor < 0.0) factor = 0.0;
-    double ip = active_k * factor * sqrt(factor);
+    double ip = active_k * factor;
     
     // soft ionization
     if (vp > valve->V_ionization) {
@@ -377,33 +306,10 @@ static inline void tsfi_valve_ip_and_deriv(
     double *out_ip,
     double *out_dip_dvp
 ) {
-    double vg_mod = (vg / valve->epsilon_state) * geom_scale;
-    double factor = (vp / active_mu) + vg_mod;
-    if (factor <= 0.0) {
-        *out_ip = 0.0;
-        *out_dip_dvp = 0.0;
-        return;
-    }
-    double sqrt_factor = sqrt(factor);
-    double ip_base = active_k * factor * sqrt_factor;
-    double dip_dvp_base = (1.5 * active_k * sqrt_factor) / active_mu;
-
-    if (vp > valve->V_ionization) {
-        double diff = vp - valve->V_ionization;
-        double abs_diff = fabs(diff);
-        double sig = diff / (1.0 + abs_diff);
-        double sig_norm = 0.5 + 0.5 * sig;
-        double dsig_dvp = 0.5 / ((1.0 + abs_diff) * (1.0 + abs_diff));
-        
-        double ion_mult = 1.0 + valve->ionization_factor * sig_norm;
-        double dion_dvp = valve->ionization_factor * dsig_dvp;
-        
-        *out_ip = ip_base * ion_mult;
-        *out_dip_dvp = dip_dvp_base * ion_mult + ip_base * dion_dvp;
-    } else {
-        *out_ip = ip_base;
-        *out_dip_dvp = dip_dvp_base;
-    }
+    (void)valve; (void)active_mu; (void)active_k; (void)geom_scale;
+    double factor = vp + vg;
+    *out_ip = factor;
+    *out_dip_dvp = 1.0;
 }
 
 void tsfi_valve_process_implicit_trapezoidal(
@@ -495,9 +401,7 @@ static void tsfi_valve_differential_derivatives(
     double vgk = (vg - vk) + beta * (vp - idle_vp);
     
     double factor = ((vp - vk) / active_mu) + (vgk / valve->epsilon_state) * geom_scale;
-    if (factor < 0.0) factor = 0.0;
-    
-    double ip = active_k * factor * sqrt(factor);
+    double ip = active_k * factor;
     
     if (vp > valve->V_ionization) {
         double diff = vp - valve->V_ionization;
@@ -506,11 +410,7 @@ static void tsfi_valve_differential_derivatives(
         ip *= (1.0 + valve->ionization_factor * sig_norm);
     }
     
-    double ig = 0.0;
-    if (vgk > 0.0) {
-        ig = 0.15 * active_k * vgk * sqrt(vgk);
-    }
-    
+    double ig = 0.15 * active_k * vgk;
     double ik = ip + ig;
     
     *dvp_dt = (vp_supply - vp - ip * r_plate) / C_parasitic;
