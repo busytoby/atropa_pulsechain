@@ -16,6 +16,15 @@ namespace Dysnomia.Domain
         private TcpListener? _scsiListener;
         private bool _isRunning = false;
 
+        public class WmqPayload
+        {
+            public string TransactionHash { get; set; } = "";
+            public int Lun { get; set; }
+            public int Priority { get; set; }
+            public string Word0 { get; set; } = "";
+            public string Word1 { get; set; } = "";
+        }
+
         public struct YiHandshakeState
         {
             public ulong Contour;
@@ -144,11 +153,20 @@ namespace Dysnomia.Domain
             {
                 // Step 1: INIT / FORM (Swap Contours)
                 Logging.Log("Network", "[STEP 1: FORM] Exchanging contours via WinchesterMQ JIT thunk", 2);
-                Thunks.PublishMQ("FORM:INITIATE:" + peerAddress);
                 
-                // Simulating transaction payload execution
-                string contourTxPayload = "0x0981a2f3" + peerAddress.Replace("0x", "");
-                bool formOk = Thunks.SendWmqTransaction(peerAddress, contourTxPayload);
+                // Pack details in formal payload object and serialize
+                var formPayload = new WmqPayload
+                {
+                    TransactionHash = "0x0981a2f3" + peerAddress.Replace("0x", ""),
+                    Lun = 0,
+                    Priority = 1,
+                    Word0 = peerAddress,
+                    Word1 = "FORM:INITIATE"
+                };
+                string formJson = JsonSerializer.Serialize(formPayload);
+                Thunks.PublishMQ(formJson);
+                
+                bool formOk = Thunks.SendWmqTransaction(peerAddress, formPayload.TransactionHash);
                 if (!formOk)
                 {
                     Logging.Log("Network", "[FAIL] FORM transaction handshake failed.", 5);
@@ -157,15 +175,39 @@ namespace Dysnomia.Domain
 
                 // Step 2: CONJUGATE (Swap Poles)
                 Logging.Log("Network", "[STEP 2: CONJUGATE] Swapping poles via WinchesterMQ JIT thunk", 2);
-                Thunks.PublishMQ("CONJUGATE:SWAP:" + peerAddress);
+                var conjugatePayload = new WmqPayload
+                {
+                    TransactionHash = "",
+                    Lun = 1,
+                    Priority = 1,
+                    Word0 = peerAddress,
+                    Word1 = "CONJUGATE:SWAP"
+                };
+                Thunks.PublishMQ(JsonSerializer.Serialize(conjugatePayload));
 
                 // Step 3: SATURATE (Swap Foundations)
                 Logging.Log("Network", "[STEP 3: SATURATE] Swapping foundations via WinchesterMQ JIT thunk", 2);
-                Thunks.PublishMQ("SATURATE:SWAP:" + peerAddress);
+                var saturatePayload = new WmqPayload
+                {
+                    TransactionHash = "",
+                    Lun = 2,
+                    Priority = 1,
+                    Word0 = peerAddress,
+                    Word1 = "SATURATE:SWAP"
+                };
+                Thunks.PublishMQ(JsonSerializer.Serialize(saturatePayload));
 
                 // Step 4: MAGNETIZE (Swap Dynamos and check Convergence)
                 Logging.Log("Network", "[STEP 4: MAGNETIZE] Swapping dynamos and establishing Helmholtz convergence", 2);
-                Thunks.PublishMQ("MAGNETIZE:CONVERGE:" + peerAddress);
+                var magnetizePayload = new WmqPayload
+                {
+                    TransactionHash = "",
+                    Lun = 3,
+                    Priority = 1,
+                    Word0 = peerAddress,
+                    Word1 = "MAGNETIZE:CONVERGE"
+                };
+                Thunks.PublishMQ(JsonSerializer.Serialize(magnetizePayload));
 
                 // Query active step state via MCP Server JSON-RPC
                 Logging.Log("Network", "Querying ZMM active step log via Port 10042 MCP socket...", 2);
