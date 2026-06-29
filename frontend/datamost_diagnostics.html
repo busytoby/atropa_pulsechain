@@ -605,6 +605,30 @@
                     </div>
                 </section>
 
+                <section class="card" style="box-shadow: 0 0 20px rgba(57, 255, 20, 0.15); border-color: #39ff14;">
+                    <h2><span class="icon">🎛️</span> Auncient WinchesterMQ Registers</h2>
+                    <p class="description">Verify Auncient SCSI registers, keycodes, and Helmholtz Monopole parameters.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; font-family: monospace; font-size: 0.85rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <div>
+                            <strong>SCSI Keycode (Reg 102):</strong><br>
+                            <span id="scsiKeycodeVal" style="color: var(--neon-blue);">0</span>
+                        </div>
+                        <div>
+                            <strong>SCSI Bus Buffer (Reg 101):</strong><br>
+                            <span id="scsiBufferVal" style="color: var(--neon-magenta);">0</span>
+                        </div>
+                        <div>
+                            <strong>Monopole (Reg 9):</strong><br>
+                            <span id="monopoleVal" style="color: #ffcc00;">0</span>
+                        </div>
+                        <div>
+                            <strong>Dynamo (Reg 8):</strong><br>
+                            <span id="dynamoVal" style="color: #00ffcc;">0</span>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="card">
                     <h2><span class="icon">📁</span> Virtual 1541 Disk System (DFS)</h2>
                     <p class="description">Query and write 6502 assembly files directly to on-chain simulated floppy sectors.</p>
@@ -3656,6 +3680,23 @@
                     } catch (e) {
                         console.error("Debouncer status error:", e);
                     }
+                }
+
+                // Update SCSI and WinchesterMQ registers in dashboard
+                try {
+                    const scsiKeycodeEl = document.getElementById("scsiKeycodeVal");
+                    const scsiBufferEl = document.getElementById("scsiBufferVal");
+                    const monopoleEl = document.getElementById("monopoleVal");
+                    const dynamoEl = document.getElementById("dynamoVal");
+
+                    if (window.yulStorage) {
+                        if (scsiKeycodeEl) scsiKeycodeEl.innerText = window.yulStorage[102] || 0;
+                        if (scsiBufferEl) scsiBufferEl.innerText = window.yulStorage[101] || 0;
+                        if (monopoleEl) monopoleEl.innerText = window.yulStorage[9] || 0;
+                        if (dynamoEl) dynamoEl.innerText = window.yulStorage[8] || 0;
+                    }
+                } catch (e) {
+                    console.error("Failed to update SCSI/WinchesterMQ registers", e);
                 }
 
                 // Fetch and update recent on-chain tax collection logs
