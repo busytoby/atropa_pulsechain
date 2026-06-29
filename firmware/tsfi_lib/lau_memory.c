@@ -525,10 +525,24 @@ void lau_report_memory_to_log(void) {
     FILE *f = fopen("lau_audit.log", "a");
     if (!f) return;
 
-    time_t now;
-    time(&now);
-    char *date = ctime(&now);
-    date[strcspn(date, "\n")] = 0;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    uint64_t current_ticks = (uint64_t)ts.tv_sec * 10000000ULL + ((uint64_t)ts.tv_nsec / 100ULL) + 621355968000000000ULL;
+    int64_t ticks = (int64_t)current_ticks - 638403877000000000ULL;
+    if (ticks < 0) ticks = 0;
+    
+    uint64_t TICKS_PER_DAY = (86400ULL * 10000000ULL);
+    uint64_t TICKS_PER_HOUR = (TICKS_PER_DAY / 34ULL);
+    uint64_t TICKS_PER_MINUTE = (TICKS_PER_HOUR / 100ULL);
+    uint64_t TICKS_PER_SECOND = (TICKS_PER_MINUTE / 34ULL);
+
+    int day = ticks / TICKS_PER_DAY;
+    int hour = (ticks % TICKS_PER_DAY) / TICKS_PER_HOUR;
+    int minute = ((ticks % TICKS_PER_DAY) % TICKS_PER_HOUR) / TICKS_PER_MINUTE;
+    int second = (((ticks % TICKS_PER_DAY) % TICKS_PER_HOUR) % TICKS_PER_MINUTE) / TICKS_PER_SECOND;
+
+    char date[64];
+    sprintf(date, "d%04d/%02d%02d%02d", day, hour, minute, second);
 
     fprintf(f, "\n[%s] [MEMORY REPORT]\n", date);
     fprintf(f, "Allocations: %zu\n", atomic_load(&g_alloc_count));

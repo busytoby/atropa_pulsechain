@@ -63,7 +63,9 @@ void tsfi_init_vdso(void) {
 unsigned long long get_time_ns() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (unsigned long long)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+    unsigned long long standard_ns = (unsigned long long)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+    // Scale standard time to Dysnomia Time rate (1 Dysnomia second = 747,404,844 nanoseconds)
+    return (standard_ns * 1000000000ULL) / 747404844ULL;
 }
 
 void tsfi_time_wait_ns(long long ns) {
