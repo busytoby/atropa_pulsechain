@@ -46,9 +46,14 @@ async function main() {
     const starCastle = compileYul(path.join(__dirname, "../solidity/bin/starCastle.yul"));
     const waylandCompositor = compileYul(path.join(__dirname, "../solidity/bin/WaylandCompositor.yul"));
     
+    // Unix1 Operating System and Shell contracts
+    const unix1 = compileYul(path.join(__dirname, "../frontend/unix1.yul"));
+    const sh = compileYul(path.join(__dirname, "../frontend/sh.yul"));
+    const unix1_utils = compileYul(path.join(__dirname, "../frontend/unix1_utils.yul"));
+    
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
-
+ 
     const data = {
         zmachine,
         zmachineParser,
@@ -80,12 +85,15 @@ async function main() {
         sphere,
         starCastle,
         waylandCompositor,
+        unix1,
+        sh,
+        unix1_utils,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
         }
     };
-
+ 
     fs.writeFileSync(path.join(__dirname, "../frontend/compiled_yul.json"), JSON.stringify(data, null, 2));
     console.log("compiled_yul.json successfully generated in frontend directory.");
 }

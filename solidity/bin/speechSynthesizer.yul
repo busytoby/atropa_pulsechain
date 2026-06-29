@@ -1736,7 +1736,7 @@ object "SpeechSynthesizer" {
                         if sgt(sampleVal, 32767) { sampleVal := 32767 }
                         if slt(sampleVal, sub(0, 32768)) { sampleVal := sub(0, 32768) }
 
-                        let sampleIdx := add(mul(f, upsampleFactor), u)
+                        sampleIdx := add(mul(f, upsampleFactor), u)
                         let pcmValLE := or(shl(8, and(sampleVal, 0xFF)), and(shr(8, sampleVal), 0xFF))
 
                         let byteOffset := add(44, mul(sampleIdx, 2))
