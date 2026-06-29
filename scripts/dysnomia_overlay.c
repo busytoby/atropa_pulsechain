@@ -14,8 +14,11 @@
 GtkWidget *label_time;
 
 void get_dysnomia_time(char *out_time) {
-    // Revert to time(NULL) for a universal timestamp independent of local timezone offsets
-    uint64_t current_ticks = (uint64_t)time(NULL) * 10000000ULL + NET_UNIX_EPOCH_TICKS;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    
+    // Resolve high-resolution ticks (10,000,000 ticks per second, 100ns per tick)
+    uint64_t current_ticks = (uint64_t)ts.tv_sec * 10000000ULL + ((uint64_t)ts.tv_nsec / 100ULL) + NET_UNIX_EPOCH_TICKS;
     
     int64_t ticks = (int64_t)current_ticks - DYSNOMIA_ZERO;
     if (ticks < 0) ticks = 0;
@@ -109,7 +112,7 @@ int main(int argc, char *argv[]) {
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     update_time(NULL);
-    g_timeout_add(747, update_time, NULL);
+    g_timeout_add(50, update_time, NULL);
 
     gtk_widget_show_all(window);
     gtk_main();
