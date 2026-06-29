@@ -1,28 +1,30 @@
 # Teamwork Project Prompt — Draft
 
-> Status: Launched (Conversation ID: 2ea803de-9c86-4141-a854-fff5f8f7462c)
+> Status: Launched
 > Goal: Craft prompt → get user approval → delegate to teamwork_preview
 
-An interactive real-time single-page web dashboard displaying the token prices, reserves depth, swap telemetry, and transaction volumes for the 480 identified pools of the NoNukes token family ecosystem.
+An interactive hypervisor dashboard comparing native ZMM VM holdings and Anvil EVM holdings for deployed ERC20 tokens and Yul systems, showing full balances and listing deployed contracts without any mock placeholders.
 
-Working directory: /home/mariarahel/src/tsfi2/atropa_pulsechain/frontend/nonukes_dashboard
-Integrity mode: benchmark
+Working directory: /home/mariarahel/src/tsfi2/atropa_pulsechain
+Integrity mode: development
 
 ## Requirements
 
-### R1. Interactive Frontend Dashboard SPA
-Implement a premium, responsive single-page visual dashboard application built using Vanilla HTML, CSS, and modern Javascript. The interface must dynamically present the list of pools, highlight those associated with each of the 7 NoNukes child tokens, and display charts or visual graphs for real-time telemetry (prices, swap counts, reserve depths).
+### R1. Dual VM Holdings Explorer
+The dashboard must allow querying the local processes (Anvil on port 8545, ZMM VM on port 3000 via `/api/zmm-exec`) to fetch the holdings of the default wallet address (`0x00000000000000000000000000000000000004cc` for ZMM and `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` for Anvil).
 
-### R2. Backend API Integration
-Connect the dashboard directly to the existing Python server API to query state, load `nonukes_pools.json`, and fetch the telemetry data in real-time. 
+### R2. Deployed Contracts Inventory
+It must show both ERC20 token balances and list deployed Yul objects or system contracts (such as `zmachine` and `zmachineParser`) that may not have standard token balances.
 
-### R3. Premium Design System
-Apply rich visual aesthetics: a dark-mode tailormade color palette (e.g. sleek HSL gradients, glassmorphism), premium typography, and responsive grid layouts. Avoid default browser elements.
+### R3. Automated Comparison Validation
+Implement a programmatic validation script that queries both endpoints (ZMM VM and Anvil EVM) directly, confirms they return valid comparable state data, and validates token distribution consistency.
 
 ## Acceptance Criteria
 
-### Core Dashboard Interface Verification
-- [ ] A clean visual dashboard HTML page must load in the workspace without any Console errors.
-- [ ] The app must render an interactive table/list showing all 480 pools with their respective target token group, version, reserves, and swap counts.
-- [ ] Clicking on a pool must display a details panel containing real-time price trends or reserve balances.
-- [ ] The frontend must fetch its data dynamically from the python server API without hardcoded mockup lists.
+### System Integration
+- [ ] A validation script successfully executes, querying both port 3000 and port 8545.
+- [ ] The dashboard displays actual holdings fetched from the native ZMM VM process and Anvil EVM without placeholders.
+- [ ] All deployed tokens and balance-less Yul contracts are listed correctly in the dashboard interface.
+
+---
+*Launched: delegation conversation ID `00c511e5-36cb-4d4a-a8d1-801c02b4b2e6`*
