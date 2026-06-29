@@ -137,20 +137,6 @@ object "Unix1Kernel" {
                     sstore(add(pStateSlot, rDst), add(v1, v2))
                     ip := add(ip, 1)
                 }
-                // Op 3: WinchesterMQ Direct Contract Call (ordered legal transition)
-                case 3 {
-                    let targetContract := sload(add(pStateSlot, 8)) // Register 8 stores target contract address
-                    
-                    let memPtr := mload(0x40)
-                    mstore(memPtr, 0xaeed2db800000000000000000000000000000000000000000000000000000000) // React/Isomerize selector
-                    mstore(add(memPtr, 4), sload(add(pStateSlot, 11))) // Param 1 (Chin/Data)
-                    mstore(add(memPtr, 36), sload(add(pStateSlot, 12))) // Param 2 (Identity/Key)
-                    
-                    let callSuccess := call(gas(), targetContract, 0, memPtr, 68, 0x00, 0)
-                    if iszero(callSuccess) { revert(0, 0) }
-                    
-                    ip := add(ip, 1)
-                }
                 // Op 4: JUMP if Zero
                 case 4 {
                     let cond := sload(add(pStateSlot, rSrc1))

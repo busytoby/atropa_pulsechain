@@ -38,8 +38,8 @@ async function main() {
     const inst1 = "0x0103000a" + "0".repeat(56);
     // Inst 2: Add registers 2 and 3 and store in register 4 (op=2, rDst=4, rSrc1=2, val=3)
     const inst2 = "0x02040203" + "0".repeat(56);
-    // Inst 3: WinchesterMQ Monopole write (op=3, val=15)
-    const inst3 = "0x0300000f" + "0".repeat(56);
+    // Inst 3: Load immediate 15 to register 5 (op=1, rDst=5, val=15)
+    const inst3 = "0x0105000f" + "0".repeat(56);
 
     console.log("[WRITE] Compiling Folklore test binary into Unix1 filesystem...");
     const compileSelector = "0x636f6d70";
