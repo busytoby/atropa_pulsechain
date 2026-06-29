@@ -27,6 +27,8 @@ typedef struct {
     double state_vk;          // Persistent cathode voltage state for continuous differential solvers
     double dV_dt_history[4];  // History of plate voltage derivatives for feedback solvers
     double dI_dt_history[4];  // History of plate current derivatives for feedback solvers
+    double zener_accumulator; // Dynamic accumulator tracking breakdown events
+    double V_zener_breakdown; // Zener diode breakdown voltage threshold
 } TsfiValveTriode;
 
 
@@ -114,6 +116,7 @@ void tsfi_valve_process_differential_feedback(
 
 // Process a block of samples using Chebyshev polynomial waveshaping
 void tsfi_valve_process_chebyshev(
+    TsfiValveTriode *valve,
     const float *vg_in,
     float *vp_out,
     size_t count,

@@ -27,6 +27,8 @@ void tsfi_valve_init(TsfiValveTriode *valve, double base_mu, double base_k, doub
         valve->dV_dt_history[i] = 0.0;
         valve->dI_dt_history[i] = 0.0;
     }
+    valve->zener_accumulator = 0.0;
+    valve->V_zener_breakdown = 12.0; // Default Zener breakdown limit
 }
 
 
@@ -595,6 +597,7 @@ void tsfi_valve_process_differential_feedback(
 
 // Process a block of samples using Chebyshev polynomial waveshaping
 void tsfi_valve_process_chebyshev(
+    TsfiValveTriode *valve,
     const float *vg_in,
     float *vp_out,
     size_t count,
@@ -604,6 +607,8 @@ void tsfi_valve_process_chebyshev(
     double c4
 ) {
     if (!vg_in || !vp_out || count == 0) return;
+
+    double zLimit = valve ? valve->V_zener_breakdown : 12.0;
 
     for (size_t i = 0; i < count; i++) {
         double x = (double)vg_in[i];
@@ -619,6 +624,22 @@ void tsfi_valve_process_chebyshev(
 
         double y = c1 * t1 + c2 * t2 + c3 * t3 + c4 * t4;
         
+        // Zener-Breakdown Check & Accumulator Integration
+        if (valve) {
+            // Apply scale or gain to reach Zener potential limit
+            double amplified_y = y * 15.0; 
+            if (amplified_y > zLimit) {
+                double diff = amplified_y - zLimit;
+                valve->zener_accumulator += diff;
+                amplified_y = zLimit;
+            } else if (amplified_y < -zLimit) {
+                double diff = -zLimit - amplified_y;
+                valve->zener_accumulator += diff;
+                amplified_y = -zLimit;
+            }
+            y = amplified_y / 15.0;
+        }
+
         vp_out[i] = (float)y;
     }
 }

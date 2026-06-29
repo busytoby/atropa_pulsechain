@@ -72,9 +72,10 @@ int main() {
     // Assert that high feedback maintains self-sustained oscillation even with zero input
     assert(p2p_osc > 1.0f);
 
-    // 4. Verify Chebyshev Waveshaping Alternative
+    // 4. Verify Chebyshev Waveshaping Alternative with Zener Accumulators
     float *vp_out_cheb = (float*)lau_memalign(64, NUM_SAMPLES * sizeof(float));
-    tsfi_valve_process_chebyshev(vg_in, vp_out_cheb, NUM_SAMPLES, 0.50, 0.35, 0.15, 0.00);
+    valve.V_zener_breakdown = 2.0; // Set breakdown lower to trigger accumulator checks
+    tsfi_valve_process_chebyshev(&valve, vg_in, vp_out_cheb, NUM_SAMPLES, 0.50, 0.35, 0.15, 0.00);
 
     float min_cheb = vp_out_cheb[0], max_cheb = vp_out_cheb[0];
     for (int i = 0; i < NUM_SAMPLES; i++) {
@@ -83,9 +84,11 @@ int main() {
     }
     float p2p_cheb = max_cheb - min_cheb;
     printf("  Chebyshev Waveshaper (c1=0.5, c2=0.35): %.4f V\n", p2p_cheb);
+    printf("  Zener Accumulator:                      %.4f\n", valve.zener_accumulator);
 
-    // Assert Chebyshev bounds
-    assert(max_cheb <= 1.0f && min_cheb >= -1.0f);
+    // Assert Chebyshev bounds and accumulator activity
+    assert(max_cheb <= (2.0f / 15.0f) + 1e-4); 
+    assert(valve.zener_accumulator > 0.0);
 
     lau_free(vg_in);
     lau_free(vp_out_no_fb);
