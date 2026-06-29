@@ -59,6 +59,39 @@ object "Unix1Utils" {
                 mstore(0x00, 1)
                 return(0x00, 0x20)
             }
+
+            // 0x636f6d70: compile_binary(nameHash, inst0, inst1, inst2, inst3) -> success
+            // Compiles and writes 4 instruction words of a Folklore CPU binary directly into file inode space
+            case 0x636f6d70 {
+                let nameHash := calldataload(4)
+                let inst0 := calldataload(36)
+                let inst1 := calldataload(68)
+                let inst2 := calldataload(100)
+                let inst3 := calldataload(132)
+
+                let inode := findOrCreateInode(nameHash)
+                sstore(add(inode, 1), inst0)
+                sstore(add(inode, 2), inst1)
+                sstore(add(inode, 3), inst2)
+                sstore(add(inode, 4), inst3)
+
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
+
+            // 0x77726974: write_instruction(nameHash, offset, instruction) -> success
+            // Incrementally writes a single Folklore CPU instruction word at a given offset in the file inode
+            case 0x77726974 {
+                let nameHash := calldataload(4)
+                let offset := calldataload(36)
+                let instruction := calldataload(68)
+
+                let inode := findOrCreateInode(nameHash)
+                sstore(add(add(inode, 1), offset), instruction)
+
+                mstore(0x00, 1)
+                return(0x00, 0x20)
+            }
             
             // 0x0f2fa44a: rm(nameHash) -> success
             case 0x0f2fa44a {
