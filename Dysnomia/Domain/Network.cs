@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -11,6 +12,9 @@ namespace Dysnomia.Domain
     {
         new public static string Name = "Network";
         new public static string Description = "WinchesterMQ Network & Handshake Manager";
+
+        private TcpListener? _scsiListener;
+        private bool _isRunning = false;
 
         public struct YiHandshakeState
         {
@@ -24,6 +28,87 @@ namespace Dysnomia.Domain
         public Network()
         {
             Logging.Log("Network", "Initializing WinchesterMQ Network Daemon");
+            StartScsiServer();
+        }
+
+        // Starts a background TCP loopback server to handle simulated raw SCSI packet transmissions
+        public void StartScsiServer()
+        {
+            if (_isRunning) return;
+            _isRunning = true;
+            
+            try
+            {
+                _scsiListener = new TcpListener(IPAddress.Loopback, 10043);
+                _scsiListener.Start();
+                Logging.Log("Network", "SCSI TCP Loopback Server started on Port 10043", 2);
+                
+                _scsiListener.BeginAcceptTcpClient(OnAcceptTcpClient, null);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log("Network", "Failed to start SCSI Server: " + ex.Message, 5);
+            }
+        }
+
+        private void OnAcceptTcpClient(IAsyncResult ar)
+        {
+            if (!_isRunning || _scsiListener == null) return;
+            
+            try
+            {
+                TcpClient client = _scsiListener.EndAcceptTcpClient(ar);
+                _scsiListener.BeginAcceptTcpClient(OnAcceptTcpClient, null);
+                
+                // Process client asynchronously
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        using (NetworkStream stream = client.GetStream())
+                        {
+                            byte[] buffer = new byte[3];
+                            int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                            if (bytesRead >= 3 && buffer[0] == 0x53 && buffer[1] == 0x43)
+                            {
+                                byte keycode = buffer[2];
+                                Logging.Log("Network", $"SCSI Packet Received: Keycode={keycode}", 3);
+                                
+                                // Latch keycode to WinchesterMQ state via JIT thunks
+                                Thunks.PublishMQ($"SCSI:LATENCY:KEY:{keycode}");
+                                
+                                // Formulate response frame: [SuccessByte, Phase, DivisorHigh, DivisorLow]
+                                byte[] response = new byte[4];
+                                response[0] = 1; // Success
+                                response[1] = 0; // Phase
+                                response[2] = 0; // DivisorHigh
+                                response[3] = 0; // DivisorLow
+                                
+                                stream.Write(response, 0, response.Length);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log("Network", "SCSI stream handling exception: " + ex.Message, 5);
+                    }
+                    finally
+                    {
+                        client.Dispose();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logging.Log("Network", "SCSI Client Exception: " + ex.Message, 5);
+            }
+        }
+
+        public void StopScsiServer()
+        {
+            _isRunning = false;
+            _scsiListener?.Stop();
+            Logging.Log("Network", "SCSI TCP Loopback Server stopped", 2);
         }
 
         // Sends a local JSON-RPC socket request to the ZMM MCP server on Port 10042
