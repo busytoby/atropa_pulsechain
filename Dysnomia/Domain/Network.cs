@@ -40,6 +40,52 @@ namespace Dysnomia.Domain
             StartScsiServer();
         }
 
+        // Compiles and writes a Folklore program incrementally to simulated disk storage
+        public bool CompileAndWriteFolklore(string filename, string programText)
+        {
+            try
+            {
+                Logging.Log("Network", $"Assembling Auncient Folklore program for '{filename}'...", 2);
+                string[] lines = programText.Split(new[] { ';', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                // Emulate filename hashing mapping to disk inode namespaces
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                {
+                    byte[] nameHash = sha.ComputeHash(Encoding.UTF8.GetBytes(filename));
+                    string nameHashHex = "0x" + Convert.ToHexString(nameHash).ToLower();
+                    
+                    for (int offset = 0; offset < lines.Length; offset++)
+                    {
+                        byte[] instBytes = FolkloreAssembler.AssembleInstruction(lines[offset]);
+                        if (instBytes.Length == 0) continue;
+                        
+                        string instHex = "0x" + Convert.ToHexString(instBytes).ToLower();
+                        
+                        // Structure compilation payloads formally and serialize
+                        var payload = new WmqPayload
+                        {
+                            TransactionHash = "0x77726974" + nameHashHex.Replace("0x", ""),
+                            Lun = 4,
+                            Priority = 2,
+                            Word0 = nameHashHex,
+                            Word1 = instHex
+                        };
+                        
+                        Thunks.PublishMQ(JsonSerializer.Serialize(payload));
+                        Logging.Log("Network", $"  -> Instruction {offset} compiled: {lines[offset].Trim()}", 3);
+                    }
+                }
+                
+                Logging.Log("Network", $"SUCCESS: Folklore program '{filename}' compiled and queued for disk sync.", 3);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logging.Log("Network", "Assembler compilation exception: " + ex.Message, 5);
+                return false;
+            }
+        }
+
         // Starts a background TCP loopback server to handle simulated raw SCSI packet transmissions
         public void StartScsiServer()
         {
