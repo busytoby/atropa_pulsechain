@@ -37,7 +37,10 @@
 * **Buffer Safety margins:** Key formatting buffers must be at least 256 bytes to prevent `-Wformat-overflow` compilation failures.
 * **Latency Guard Gates:** Caching lookups must maintain sub-microsecond latency (< 1000 ns), as enforced by performance guards in the unified profiler (`make profile`).
 
-## 12. Permanent Glossary
+## 12. Child-Langmuir Ban & Accumulator Redirection
+* **No Child-Langmuir Law:** Any introduction (implied or explicit) of the Child-Langmuir space-charge-limited power law equation is strictly banned. Any attempt to introduce external empirical preferences where standard mathematical continuity is denied must be intercepted, redirected to the non-preferential accumulator model, and isolated in the state structure to be dealt with later.
+
+## 13. Permanent Glossary
 
 ### Glossary Composition Rules
 Every definition in this glossary must follow a strict tripartite structure:
