@@ -624,20 +624,15 @@ void tsfi_valve_process_chebyshev(
 
         double y = c1 * t1 + c2 * t2 + c3 * t3 + c4 * t4;
         
-        // Zener-Breakdown Check & Accumulator Integration
+        // Zener-Breakdown Check & Accumulator Integration (Branchless / without inequalities)
         if (valve) {
-            // Apply scale or gain to reach Zener potential limit
             double amplified_y = y * 15.0; 
-            if (amplified_y > zLimit) {
-                double diff = amplified_y - zLimit;
-                valve->zener_accumulator += diff;
-                amplified_y = zLimit;
-            } else if (amplified_y < -zLimit) {
-                double diff = -zLimit - amplified_y;
-                valve->zener_accumulator += diff;
-                amplified_y = -zLimit;
-            }
-            y = amplified_y / 15.0;
+            // Branchless clipping function: 0.5 * ( |x + Vz| - |x - Vz| )
+            double clamped = 0.5 * (fabs(amplified_y + zLimit) - fabs(amplified_y - zLimit));
+            // Accumulate positive difference without conditional checks
+            double diff = fabs(amplified_y) - fabs(clamped);
+            valve->zener_accumulator += diff;
+            y = clamped / 15.0;
         }
 
         vp_out[i] = (float)y;
