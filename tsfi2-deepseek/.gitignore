@@ -81,6 +81,7 @@ tests/fix_*.c
 *.orig
 .DS_Store
 .vscode/
+.idea/
 
 # Ensure core exceptions
 !tools/vlm_score.txt
