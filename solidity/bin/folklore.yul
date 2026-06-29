@@ -881,16 +881,42 @@ object "cpu6502" {
                 let val := 0
                 switch addr
                 case 55600 {
-                    val := mod(mod(timestamp(), 3600), 60)
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    let hour_ticks := mod(day_ticks, 25411764705)
+                    let minute_ticks := mod(hour_ticks, 254117647)
+                    val := div(minute_ticks, 7474048)
                 }
                 case 55601 {
-                    val := div(mod(timestamp(), 3600), 60)
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    let hour_ticks := mod(day_ticks, 25411764705)
+                    val := div(hour_ticks, 254117647)
                 }
                 case 55602 {
-                    val := div(mod(timestamp(), 86400), 3600)
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    val := div(day_ticks, 25411764705)
                 }
                 case 55603 {
-                    val := timestamp()
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    val := div(ticks, 7474048)
                 }
                 default {
                     val := sload(getUserSlot(addr))

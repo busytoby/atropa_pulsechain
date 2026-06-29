@@ -311,17 +311,43 @@ object "CPU6502Emulator" {
                     }
                     val := rowMask
                 }
-                case 55600 { // RTC Seconds: (timestamp % 3600) % 60
-                    val := mod(mod(timestamp(), 3600), 60)
+                case 55600 {
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    let hour_ticks := mod(day_ticks, 25411764705)
+                    let minute_ticks := mod(hour_ticks, 254117647)
+                    val := div(minute_ticks, 7474048)
                 }
-                case 55601 { // RTC Minutes: (timestamp % 3600) / 60
-                    val := div(mod(timestamp(), 3600), 60)
+                case 55601 {
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    let hour_ticks := mod(day_ticks, 25411764705)
+                    val := div(hour_ticks, 254117647)
                 }
-                case 55602 { // RTC Hours: (timestamp % 86400) / 3600
-                    val := div(mod(timestamp(), 86400), 3600)
+                case 55602 {
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    let day_ticks := mod(ticks, 864000000000)
+                    val := div(day_ticks, 25411764705)
                 }
-                case 55603 { // RTC Epoch Timestamp
-                    val := timestamp()
+                case 55603 {
+                    let ticks := 0
+                    let total_ticks := mul(timestamp(), 10000000)
+                    if gt(total_ticks, 17047909000000000) {
+                        ticks := sub(total_ticks, 17047909000000000)
+                    }
+                    val := div(ticks, 7474048)
                 }
                 default {
                     let targetAddr := addr
