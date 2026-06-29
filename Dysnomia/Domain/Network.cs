@@ -1,6 +1,8 @@
 using System;
-using System.Runtime.InteropServices;
+using System.IO;
+using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using Dysnomia.Lib;
 
 namespace Dysnomia.Domain
@@ -22,6 +24,30 @@ namespace Dysnomia.Domain
         public Network()
         {
             Logging.Log("Network", "Initializing WinchesterMQ Network Daemon");
+        }
+
+        // Sends a local JSON-RPC socket request to the ZMM MCP server on Port 10042
+        public string SendMcpRequest(string method, string jsonParams)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient("127.0.0.1", 10042))
+                using (NetworkStream stream = client.GetStream())
+                {
+                    string request = $"{{\"jsonrpc\":\"2.0\",\"method\":\"{method}\",\"params\":{jsonParams},\"id\":1}}";
+                    byte[] requestBytes = Encoding.UTF8.GetBytes(request);
+                    stream.Write(requestBytes, 0, requestBytes.Length);
+
+                    byte[] buffer = new byte[8192];
+                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    return Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log("Network", "MCP Socket Request Failed: " + ex.Message, 5);
+                return "";
+            }
         }
 
         // Simulates/tests a WinchesterMQ YI Handshake sequence using direct contract thunks
@@ -55,6 +81,20 @@ namespace Dysnomia.Domain
                 // Step 4: MAGNETIZE (Swap Dynamos and check Convergence)
                 Logging.Log("Network", "[STEP 4: MAGNETIZE] Swapping dynamos and establishing Helmholtz convergence", 2);
                 Thunks.PublishMQ("MAGNETIZE:CONVERGE:" + peerAddress);
+
+                // Query active step state via MCP Server JSON-RPC
+                Logging.Log("Network", "Querying ZMM active step log via Port 10042 MCP socket...", 2);
+                string mcpResponse = SendMcpRequest("wave512.inspect", "{}");
+                if (!string.IsNullOrEmpty(mcpResponse))
+                {
+                    using (JsonDocument doc = JsonDocument.Parse(mcpResponse))
+                    {
+                        if (doc.RootElement.TryGetProperty("result", out JsonElement resultEl))
+                        {
+                            Logging.Log("Network", "ZMM State Inspected: " + resultEl.ToString(), 3);
+                        }
+                    }
+                }
 
                 Logging.Log("Network", "[SUCCESS] YI Handshake and Helmholtz convergence established physically over WinchesterMQ!", 3);
                 return true;
