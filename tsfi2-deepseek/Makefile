@@ -45,6 +45,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_temporal_warper.o \
             $(OBJ_DIR)/tsfi_safetensors_cache.o \
             $(OBJ_DIR)/tsfi_zmm_traverse_driver.o \
+            $(OBJ_DIR)/tsfi_gguf_loader.o \
             $(OBJ_DIR)/tsfi_sd_thunk.o \
             $(OBJ_DIR)/tsfi_taste_cache.o \
             $(OBJ_DIR)/tsfi_shading_manifold.o \
