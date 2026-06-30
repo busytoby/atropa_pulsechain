@@ -743,48 +743,54 @@
         }
 
         function animationLoop() {
-            const timeSec = (performance.now() - startTime) / 1000.0;
+            try {
+                const timeSec = (performance.now() - startTime) / 1000.0;
 
-            // Direct polling of DOM elements to guarantee instant feedback response
-            const f0 = parseFloat(freqSlider.value);
-            const crossoverValPct = parseFloat(crossoverSlider.value);
-            const wSub = parseFloat(drawbarSub.value);
-            const wFund = parseFloat(drawbarFund.value);
-            const wHarm = parseFloat(drawbarHarm.value);
-            const outputMode = outputModeSelect.value;
-            const biasOffset = parseFloat(biasSlider.value) / 10.0;
+                // Direct polling of DOM elements to guarantee instant feedback response
+                const f0 = parseFloat(freqSlider.value);
+                const crossoverValPct = parseFloat(crossoverSlider.value);
+                const wSub = parseFloat(drawbarSub.value);
+                const wFund = parseFloat(drawbarFund.value);
+                const wHarm = parseFloat(drawbarHarm.value);
+                const outputMode = outputModeSelect.value;
+                const biasOffset = parseFloat(biasSlider.value) / 10.0;
 
-            // Reconstruct instant signal value at current time
-            let instantSig = 0.0;
-            if (wSub > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 0.5) * timeSec * 0.015) * wSub; }
-            if (wFund > 0) { instantSig += Math.sin(2.0 * Math.PI * f0 * timeSec * 0.015) * wFund; }
-            if (wHarm > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 2.0) * timeSec * 0.015) * wHarm; }
-            const normInstantSig = Math.max(-1.0, Math.min(1.0, instantSig / (wSub + wFund + wHarm || 1.0)));
-            const biasedSig = Math.max(-1.0, Math.min(1.0, normInstantSig + biasOffset));
+                // Reconstruct instant signal value at current time
+                let instantSig = 0.0;
+                if (wSub > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 0.5) * timeSec * 0.015) * wSub; }
+                if (wFund > 0) { instantSig += Math.sin(2.0 * Math.PI * f0 * timeSec * 0.015) * wFund; }
+                if (wHarm > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 2.0) * timeSec * 0.015) * wHarm; }
+                const normInstantSig = Math.max(-1.0, Math.min(1.0, instantSig / (wSub + wFund + wHarm || 1.0)));
+                const biasedSig = Math.max(-1.0, Math.min(1.0, normInstantSig + biasOffset));
 
-            // Clear Background
-            ctx.fillStyle = "#05070a";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Clear Background
+                ctx.fillStyle = "#05070a";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Phased array calculations
-            calculateEmitterPhases(f0);
-            drawWavefield(timeSec, f0, wSub, wFund, wHarm, outputMode);
-            
-            // Semiconductor columns & BJT graphics
-            drawSemiconductorColumns(timeSec, biasedSig, crossoverValPct);
-            
-            // Focus target circle
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, 20 + 3 * Math.sin(timeSec * 15.0), 0, 2.0 * Math.PI);
-            ctx.strokeStyle = "rgba(59, 130, 246, 0.6)";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+                // Phased array calculations
+                calculateEmitterPhases(f0);
+                drawWavefield(timeSec, f0, wSub, wFund, wHarm, outputMode);
+                
+                // Semiconductor columns & BJT graphics
+                drawSemiconductorColumns(timeSec, biasedSig, crossoverValPct);
+                
+                // Focus target circle
+                ctx.beginPath();
+                ctx.arc(targetX, targetY, 20 + 3 * Math.sin(timeSec * 15.0), 0, 2.0 * Math.PI);
+                ctx.strokeStyle = "rgba(59, 130, 246, 0.6)";
+                ctx.lineWidth = 2;
+                ctx.stroke();
 
-            // Real-time oscilloscope tracking
-            drawConductionScope(timeSec, f0, 10.0, wSub, wFund, wHarm, crossoverValPct, biasOffset);
-            updateRegisters(f0, biasedSig);
+                // Real-time oscilloscope tracking
+                drawConductionScope(timeSec, f0, 10.0, wSub, wFund, wHarm, crossoverValPct, biasOffset);
+                updateRegisters(f0, biasedSig);
 
-            requestAnimationFrame(animationLoop);
+                requestAnimationFrame(animationLoop);
+            } catch (err) {
+                console.error(err);
+                document.querySelector("p.subtitle").style.color = "#ef4444";
+                document.querySelector("p.subtitle").innerText = "RUNTIME ERROR: " + err.message + " (Check console)";
+            }
         }
 
         animationLoop();
