@@ -98,17 +98,27 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
 
         if (char === 'GAP') {
             for (let g = 0; g < numSamplesWordGap; g++) {
-                samples.push(0.0);
+                // Decay pitch accumulator to baseline
+                const sentenceProgress = sampleCounter / totalSamples;
+                const declination = 135.0 - 45.0 * sentenceProgress;
+                pitchAcc += (declination - pitchAcc) * 0.0018;
+
+                // Process resonators with zero input to allow natural decay
+                const outF1 = resF1.process(0.0);
+                const outF2 = resF2.process(0.0);
+                const outF3 = resF3.process(0.0);
+                const vocalTractOutput = outF1 * 1.0 - outF2 * 0.35 + outF3 * 0.15;
+
+                const echoedSig = vocalTractOutput + params.echo_gain * delayLine[delayIdx];
+                delayLine[delayIdx] = echoedSig;
+                delayIdx = (delayIdx + 1) % delayLen;
+
+                const fricationOutput = hpFrication.process(0.0) * 0.0;
+                const finalSample = (echoedSig + fricationOutput) * 0.15;
+
+                samples.push(finalSample);
                 sampleCounter++;
             }
-            // Retain resonator and delay line states across gaps for acoustic continuity (SYNC/SYNC-like persistence)
-            // resF1.y1 = 0.0; resF1.y2 = 0.0;
-            // resF2.y1 = 0.0; resF2.y2 = 0.0;
-            // resF3.y1 = 0.0; resF3.y2 = 0.0;
-            // hpFrication.x1 = 0.0; hpFrication.y1 = 0.0;
-            // for (let d = 0; d < delayLen; d++) {
-            //     delayLine[d] = 0.0;
-            // }
             continue;
         }
 
@@ -185,6 +195,13 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             const finalSample = (echoedSig + fricationOutput) * 0.15;
             samples.push(finalSample);
             sampleCounter++;
+        }
+        if (char !== 'GAP') {
+            const lastSamples = samples.slice(-numSamplesSound);
+            let sumSq = 0;
+            for (let sVal of lastSamples) { sumSq += sVal * sVal; }
+            const rms = Math.sqrt(sumSq / numSamplesSound);
+            console.log(`[DEBUG] Phoneme ${char}: samples=${numSamplesSound}, RMS=${rms.toFixed(5)}`);
         }
     }
 
