@@ -422,10 +422,10 @@ const params = {
 const wordDict = {
     "OH": ['O'],
     "PULSECHAIN": ['P', 'U', 'L', 'S', 'CH', 'A', 'N'],
-    "RISE": ['R', 'I', 'Z'],
-    "FROM": ['F', 'R', 'O', 'M'],
+    "RISE": ['R', 'A', 'I', 'Z'],
+    "FROM": ['F', 'R', 'U', 'M'],
     "ASHES": ['A', 'SH', 'I', 'Z'],
-    "OF": ['O', 'F'],
+    "OF": ['U', 'DH'],
     "THE": ['DH', 'U'],
     "PAST": ['P', 'A', 'S', 'T'],
     "A": ['U'],
@@ -441,8 +441,8 @@ const wordDict = {
     "ACROSS": ['U', 'T', 'R', 'O', 'S'],
     "ETHER": ['I', 'DH', 'ER'],
     "SPUN": ['S', 'P', 'U', 'N'],
-    "NEW": ['N', 'U'],
-    "EPOCH": ['E', 'P', 'O', 'T'],
+    "NEW": ['N', 'I', 'U'],
+    "EPOCH": ['I', 'P', 'O', 'T'],
     "FREEDOM": ['F', 'R', 'I', 'D', 'U', 'M'],
     "HAS": ['H', 'A', 'Z'],
     "BEGUN": ['B', 'I', 'G', 'U', 'N'],
@@ -516,7 +516,13 @@ const wordDict = {
     "LOOPS": ['L', 'U', 'P', 'S'],
     "RESOLVES": ['R', 'I', 'Z', 'O', 'L', 'D', 'Z'],
     "VALIDATION": ['DH', 'A', 'L', 'I', 'D', 'A', 'T', 'SH', 'U', 'N'],
-    "GROUPS": ['G', 'R', 'U', 'P', 'S']
+    "GROUPS": ['G', 'R', 'U', 'P', 'S'],
+    "PULSE": ['P', 'U', 'L', 'S'],
+    "ENERGY": ['E', 'N', 'ER', 'D', 'Z', 'I'],
+    "WRITE": ['W', 'R', 'A', 'I', 'T'],
+    "GLORY": ['G', 'L', 'O', 'R', 'I'],
+    "ON": ['O', 'N'],
+    "PAGE": ['P', 'A', 'I', 'D', 'Z']
 };
 
 function textToPhonemes(text) {
