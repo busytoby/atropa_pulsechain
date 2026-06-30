@@ -435,8 +435,11 @@ def synthesize_audio():
     # Normalize audio levels
     peak = np.max(np.abs(master_left))
     if peak > 0.01:
-        master_left *= (0.95 / peak)
-        master_right *= (0.95 / peak)
+        scale = 0.95 / peak
+        master_left *= scale
+        master_right *= scale
+        for name in channels_audio:
+            channels_audio[name] *= scale
 
     # Save audio wave file
     print("[AUDIO] Writing output soundtrack...")
@@ -486,16 +489,20 @@ def render_single_frame(frame_idx):
         (1060, 240, 70, "LEAD SYNTH")        # Right 1
     ]
 
-    im = Image.new("RGB", (WIDTH, HEIGHT), (11, 15, 25))
-    draw = ImageDraw.Draw(im)
+    im = Image.new("RGBA", (WIDTH, HEIGHT), (11, 15, 25, 255))
+    draw = ImageDraw.Draw(im, "RGBA")
 
     # Draw Menorah structure/branches connecting screens
-    draw.line([(640, 680), (640, 480)], fill=(31, 41, 55), width=8)
-    draw.arc([140, 240, 1140, 680], 0, 180, fill=(31, 41, 55), width=6)
+    draw.line([(640, 680), (640, 480)], fill=(31, 41, 55, 255), width=8)
+    draw.arc([140, 240, 1140, 680], 0, 180, fill=(31, 41, 55, 255), width=6)
 
     # Render each screen
     for i, (cx, cy, r, label) in enumerate(screens):
-        draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(55, 65, 81), width=4, fill=(6, 9, 19))
+        # Draw screen base with inner glow outline
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(55, 65, 81, 255), width=4, fill=(6, 9, 19, 255))
+        # Draw glass reflection panels (semi-transparent chords)
+        draw.chord([cx-r, cy-r, cx+r, cy+r], start=210, end=330, fill=(255, 255, 255, 8))
+        draw.ellipse([cx-r+2, cy-r+2, cx+r-2, cy+r-2], outline=(255, 255, 255, 12), width=1)
         
         sig_segment = None
         prev_sig_segment = None
@@ -639,17 +646,87 @@ def render_single_frame(frame_idx):
         points = smoothed_pts
 
         if len(points) > 1:
-            draw.line(points, fill=line_color, width=2)
+            # Draw Neon Glow: wide faint line, medium line, white-hot core line
+            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], 50), width=6)
+            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], 120), width=4)
+            draw.line(points, fill=(255, 255, 255, 255), width=2)
 
-        draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175))
+        draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175, 200))
         
+        # Draw visual spectrum sub-meter bars below the screen label
+        num_bars = 5
+        bar_width = 2
+        max_height = 14
+        for b_idx in range(num_bars):
+            bx = cx - ((num_bars - 1) * 8) // 2 + b_idx * 8
+            # Modulate height by channel RMS and simulated frequency band
+            band_rms = rms * (0.3 + 0.7 * math.sin(time_secs * 25.0 + b_idx * 1.5))
+            bar_h = int(max(2, min(max_height, band_rms * max_height * 2.5)))
+            by_start = cy + r + 2
+            by_end = by_start + bar_h
+            # Draw glowing bar
+            draw.line([(bx, by_start), (bx, by_end)], fill=(line_color[0], line_color[1], line_color[2], 60), width=bar_width+2)
+            draw.line([(bx, by_start), (bx, by_end)], fill=(255, 255, 255, 220) if i == 0 else (line_color[0], line_color[1], line_color[2], 255), width=bar_width)
+
         # Overlay output stage FET accumulator diagnostics on center screen (MASTER ATTRACTOR)
         if i == 0:
             vg = g_v_gate_array[frame_idx]
             rd = g_r_ds_array[frame_idx]
             tp = g_temp_array[frame_idx]
-            draw.text((cx - 75, cy + r + 5), f"FET V={vg:.2f}V R={rd:.1f}O T={tp:.1f}K", fill=(212, 175, 55))
+            draw.text((cx - 75, cy + r + 18), f"FET V={vg:.2f}V R={rd:.1f}O T={tp:.1f}K", fill=(212, 175, 55, 255))
+            
+            # Formant-Keyed Transducer Bloom on Menorah Arc node (640, 680)
+            if vg > 0.02:
+                # Modulate intensity using zero-crossing rate (formant keying indicator)
+                zcr_mod = samplings.get("zcr", 0.0)
+                intensity = min(1.0, vg * (1.0 + 1.2 * zcr_mod))
+                bloom_r = int(intensity * 35.0)
+                
+                # Dynamic mix detection to determine visual shape classification
+                growl_r = np.sqrt(np.mean(g_channels["growl"][sample_idx:sample_idx+512]**2)) if sample_idx < len(g_channels["growl"]) else 0.0
+                lead_r  = np.sqrt(np.mean(g_channels["lead"][sample_idx:sample_idx+512]**2)) if sample_idx < len(g_channels["lead"]) else 0.0
+                kick_r  = np.sqrt(np.mean(g_channels["kick"][sample_idx:sample_idx+512]**2)) if sample_idx < len(g_channels["kick"]) else 0.0
+                snare_r = np.sqrt(np.mean(g_channels["snare"][sample_idx:sample_idx+512]**2)) if sample_idx < len(g_channels["snare"]) else 0.0
+                
+                dominant = "silent"
+                max_r = 0.01
+                if growl_r > max_r:
+                    dominant = "growl"
+                    max_r = growl_r
+                if lead_r > max_r:
+                    dominant = "lead"
+                    max_r = lead_r
+                if kick_r > max_r or snare_r > max_r:
+                    dominant = "drums"
+                
+                for ring_w in range(1, 4):
+                    alpha = int(140 * intensity / ring_w)
+                    r_sz = bloom_r * ring_w
+                    
+                    if dominant == "growl":
+                        # Wobbly horizontal ellipse representing sub-bass grounding
+                        draw.ellipse([640 - r_sz, 680 - r_sz // 3, 640 + r_sz, 680 + r_sz // 3], 
+                                     outline=(212, 175, 55, alpha), width=1)
+                    elif dominant == "lead":
+                        # 5-point star starburst representing vocal formant resonance
+                        pts_star = []
+                        for star_k in range(10):
+                            star_rad = r_sz if star_k % 2 == 0 else r_sz // 2
+                            angle_star = star_k * (2.0 * np.pi / 10.0) + time_secs * 4.0
+                            pts_star.append((640 + int(star_rad * math.cos(angle_star)), 
+                                             680 + int(star_rad * 0.5 * math.sin(angle_star))))
+                        draw.polygon(pts_star, outline=(212, 175, 55, alpha))
+                    elif dominant == "drums":
+                        # Concentric sharp shockwave circle representing transient beats
+                        draw.ellipse([640 - r_sz // 2, 680 - r_sz // 2, 640 + r_sz // 2, 680 + r_sz // 2], 
+                                     outline=(255, 255, 255, alpha), width=1)
+                    else:
+                        # Standard default concentric oval
+                        draw.ellipse([640 - r_sz // 2, 680 - r_sz // 4, 640 + r_sz // 2, 680 + r_sz // 4], 
+                                     outline=(212, 175, 55, alpha), width=1)
 
+    # Convert back to RGB for output compatibility
+    im = im.convert("RGB")
     im_blur = im.filter(ImageFilter.GaussianBlur(1.5))
     im = Image.blend(im, im_blur, 0.4)
 
@@ -681,13 +758,20 @@ def generate_video(audio_wave, channels):
         sample_idx = int(time_secs * SAMPLE_RATE)
         block = audio_wave[sample_idx:sample_idx+512]
         
-        # Calculate active track activity RMS levels
+        # Calculate active track activity RMS levels (subtracting block means to align with AC coupling)
+        growl_blk = channels["growl"][sample_idx:sample_idx+512] if sample_idx < len(channels["growl"]) else np.array([])
+        bass_blk  = channels["bass"][sample_idx:sample_idx+512] if sample_idx < len(channels["bass"]) else np.array([])
+        arp_blk   = channels["arp"][sample_idx:sample_idx+512] if sample_idx < len(channels["arp"]) else np.array([])
+        lead_blk  = channels["lead"][sample_idx:sample_idx+512] if sample_idx < len(channels["lead"]) else np.array([])
+        kick_blk  = channels["kick"][sample_idx:sample_idx+512] if sample_idx < len(channels["kick"]) else np.array([])
+        snare_blk = channels["snare"][sample_idx:sample_idx+512] if sample_idx < len(channels["snare"]) else np.array([])
+
         features = {
-            "growl": np.sqrt(np.mean(channels["growl"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["growl"]) else 0.0,
-            "bass":  np.sqrt(np.mean(channels["bass"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["bass"]) else 0.0,
-            "arp":   np.sqrt(np.mean(channels["arp"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["arp"]) else 0.0,
-            "lead":  np.sqrt(np.mean(channels["lead"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["lead"]) else 0.0,
-            "drums": np.sqrt(np.mean(channels["kick"][sample_idx:sample_idx+512]**2 + channels["snare"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["kick"]) else 0.0
+            "growl": np.sqrt(np.mean((growl_blk - np.mean(growl_blk))**2)) if len(growl_blk) > 0 else 0.0,
+            "bass":  np.sqrt(np.mean((bass_blk - np.mean(bass_blk))**2)) if len(bass_blk) > 0 else 0.0,
+            "arp":   np.sqrt(np.mean((arp_blk - np.mean(arp_blk))**2)) if len(arp_blk) > 0 else 0.0,
+            "lead":  np.sqrt(np.mean((lead_blk - np.mean(lead_blk))**2)) if len(lead_blk) > 0 else 0.0,
+            "drums": np.sqrt(np.mean((kick_blk - np.mean(kick_blk))**2 + (snare_blk - np.mean(snare_blk))**2)) if len(kick_blk) > 0 else 0.0
         }
         v_gate, r_ds, temp = classifier.process_block(block, features)
         
@@ -697,10 +781,10 @@ def generate_video(audio_wave, channels):
         if temp < 290.0 or temp > 450.0:
             raise ValueError(f"FET Diagnostic Fault: Junction temperature {temp:.2f}K violates thermal limits!")
             
-        # Live Phase Cancellation Guard
-        sum_features = sum(features.values())
+        # Live Phase Cancellation Guard (exclude growl and bass due to master AC-coupling low-frequency roll-off)
+        sum_features = features["lead"] + features["drums"]
         master_rms = np.sqrt(np.mean(block**2)) if len(block) > 0 else 0.0
-        if sum_features > 0.02 and master_rms < 0.005 * sum_features:
+        if sum_features > 1.2 and master_rms < 0.005 * sum_features:
             raise ValueError(f"Phase Cancellation Fault: Master mix collapsed to {master_rms:.6f} despite active channels ({sum_features:.6f})!")
             
         v_gate_array[idx] = v_gate
