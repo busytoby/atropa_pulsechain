@@ -397,26 +397,20 @@
             activeTarget = null;
         });
 
-        // Parameters
-        let f0 = parseFloat(freqSlider.value);
-        let hapticPulseRate = parseFloat(hapticSlider.value);
-
+        // Event listeners to update UI text labels
         freqSlider.addEventListener("input", (e) => {
-            f0 = parseFloat(e.target.value);
-            freqVal.innerText = f0 + " Hz";
+            freqVal.innerText = e.target.value + " Hz";
         });
 
         hapticSlider.addEventListener("input", (e) => {
-            hapticPulseRate = parseFloat(e.target.value);
-            hapticVal.innerText = hapticPulseRate + " Hz";
+            hapticVal.innerText = e.target.value + " Hz";
         });
 
-        // Drawbar listeners
         drawbarSub.addEventListener("input", (e) => { valSub.innerText = e.target.value; });
         drawbarFund.addEventListener("input", (e) => { valFund.innerText = e.target.value; });
         drawbarHarm.addEventListener("input", (e) => { valHarm.innerText = e.target.value; });
 
-        function calculateEmitterPhases() {
+        function calculateEmitterPhases(f0) {
             // Target A: steered by Fundamental (1.0f) and Harmonic (2.0f)
             const kFund = (2.0 * Math.PI * f0) / speedOfSound;
             const kHarm = (2.0 * Math.PI * (f0 * 2.0)) / speedOfSound;
@@ -434,15 +428,11 @@
             });
         }
 
-        function drawWavefield(timeSec) {
+        function drawWavefield(timeSec, f0, hapticPulseRate, wSub, wFund, wHarm) {
             const width = canvas.width;
             const height = canvas.height;
             const imgData = ctx.createImageData(width, height);
             const data = imgData.data;
-
-            const wSub = parseFloat(drawbarSub.value);
-            const wFund = parseFloat(drawbarFund.value);
-            const wHarm = parseFloat(drawbarHarm.value);
 
             const step = 8;
             for (let y = 100; y < emitterY; y += step) {
@@ -451,7 +441,6 @@
 
                     emitters.forEach(emitter => {
                         const dist = Math.hypot(x - emitter.x, y - emitter.y);
-
                         const speedFactor = 0.015; // Slow down temporal speed to fit monitor refresh Nyquist rate
 
                         // 1. Subharmonic (0.5f) contribution steered to Target B (haptic modulation pulse)
@@ -512,12 +501,10 @@
             });
         }
 
-        function updatePhysics(timeSec) {
+        function updatePhysics(timeSec, wFund, wHarm) {
             // Trapping particle force toward Target A (Levitation trap point)
             const dx = targetA.x - particle.x;
             const dy = targetA.y - particle.y;
-            const wFund = parseFloat(drawbarFund.value);
-            const wHarm = parseFloat(drawbarHarm.value);
 
             // Force scales with drawbar weights
             const forceStrength = 0.08 * (wFund + wHarm * 0.5);
@@ -569,12 +556,10 @@
             ctx.fill();
         }
 
-        function updateRegisters(timeSec) {
+        function updateRegisters(timeSec, f0, hapticPulseRate, wSub, wFund) {
             regBase.innerText = emitters[0].phaseA_fund.toFixed(2) + " rad";
             regChannel.innerText = f0.toFixed(2) + " Hz";
             
-            const wSub = parseFloat(drawbarSub.value);
-            const wFund = parseFloat(drawbarFund.value);
             const sigVal = wFund * 0.7 + wSub * 0.3 * (0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * timeSec));
             regSignal.innerText = sigVal.toFixed(2);
             
@@ -584,15 +569,22 @@
         function animationLoop() {
             const timeSec = (performance.now() - startTime) / 1000.0;
 
+            // Direct robust polling of sliders to guarantee immediate real-time response on every frame
+            const f0 = parseFloat(freqSlider.value);
+            const hapticPulseRate = parseFloat(hapticSlider.value);
+            const wSub = parseFloat(drawbarSub.value);
+            const wFund = parseFloat(drawbarFund.value);
+            const wHarm = parseFloat(drawbarHarm.value);
+
             ctx.fillStyle = "#05070a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            calculateEmitterPhases();
-            drawWavefield(timeSec);
+            calculateEmitterPhases(f0);
+            drawWavefield(timeSec, f0, hapticPulseRate, wSub, wFund, wHarm);
             drawEmitters();
-            updatePhysics(timeSec);
+            updatePhysics(timeSec, wFund, wHarm);
             drawTargetsAndParticle(timeSec);
-            updateRegisters(timeSec);
+            updateRegisters(timeSec, f0, hapticPulseRate, wSub, wFund);
 
             requestAnimationFrame(animationLoop);
         }
