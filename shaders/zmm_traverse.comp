@@ -33,7 +33,6 @@ layout(std430, binding = 2) writeonly buffer OutputBuffer {
 
 // 19D Lissajous LUT Mapping Function
 uint getLissajousLUTIndex(uint gID, float phaseOffset) {
-    // Spatial multipliers modulated by Foundation and Chin registers
     float fx = regs.channelFreq * 0.001;
     float fy = regs.foundationRail * 0.0001;
     float fz = regs.chinRail * 0.0001;
@@ -43,7 +42,6 @@ uint getLissajousLUTIndex(uint gID, float phaseOffset) {
     float y = sin(fy * t + regs.poleSteer * 0.01);
     float z = sin(fz * t);
 
-    // Map 3D coordinate to flat 1D index within weight manifold
     uint wSize = weights.length();
     uint index = uint(abs(x * 1000.0 + y * 10000.0 + z * 100000.0)) % wSize;
     return index;
@@ -60,41 +58,65 @@ void main() {
     float polarity = (gID % 2 == 0) ? 1.0 : -1.0;
     float activeAccumulator = (gID % 2 == 0) ? regs.accNPN : regs.accPNP;
     
-    float phaseOffset = activeAccumulator * 0.0628; // 2*pi / 100
+    float phaseOffset = activeAccumulator * 0.0628;
 
     // 3. Compute 19D LUT Index and lookup weight
     uint weightIdx = getLissajousLUTIndex(gID, phaseOffset);
     float rawWeight = weights[weightIdx];
 
     // 4. Apply beta-dependent gain and cutoff thresholding
-    float biasedVal = rawWeight * regs.signalAmp + (activeAccumulator * 0.01 * polarity);
+    float biasedVal = rawWeight * regs.signalAmp + (activeAccumulator * 0.002 * polarity);
     
     float finalAmplitude = 0.0;
     if (abs(biasedVal) > cutoffThreshold) {
-        // Conduction occurs: scale output by beta gain factor
-        finalAmplitude = biasedVal * betaGain;
+        // Clamp gain factor to prevent exploding geometry (blow up)
+        finalAmplitude = clamp(biasedVal * betaGain, -2.0, 2.0);
     }
 
-    // 5. Project coordinates to compile the holographic Teddy Bear geometry
-    float angle = float(gID) * 0.05 + regs.basePhase;
-    float radius = 5.0 + finalAmplitude * 2.0;
+    // 5. Parametric segmented Teddy Bear projection structure
+    vec4 pos = vec4(0.0, 0.0, 0.0, 1.0);
+    float angle = float(gID) * 0.1 + regs.basePhase;
 
-    // Parametric spherical coordinate projection
-    vec4 pos;
-    pos.x = radius * cos(angle) * sin(angle * 0.5);
-    pos.y = radius * sin(angle) * sin(angle * 0.5) - 2.0; // Y-Offset for vertical center
-    pos.z = radius * cos(angle * 0.5);
-    pos.w = 1.0;
+    if (gID < 400) {
+        // Body segment (large sphere at center-bottom)
+        float r = 3.0 + finalAmplitude * 0.5;
+        pos.x = r * cos(angle) * sin(angle * 0.5);
+        pos.y = r * sin(angle) * sin(angle * 0.5) - 1.5;
+        pos.z = r * cos(angle * 0.5);
+    } 
+    else if (gID < 700) {
+        // Head segment (smaller sphere at center-top)
+        float r = 2.0 + finalAmplitude * 0.3;
+        pos.x = r * cos(angle) * sin(angle * 0.5);
+        pos.y = r * sin(angle) * sin(angle * 0.5) + 2.0; // Y offset up
+        pos.z = r * cos(angle * 0.5);
+    }
+    else if (gID < 850) {
+        // Ears segments (two small offset spheres)
+        float r = 0.7 + finalAmplitude * 0.1;
+        float earSide = (gID % 2 == 0) ? 1.5 : -1.5; // alternate left/right ear
+        pos.x = r * cos(angle) * sin(angle * 0.5) + earSide;
+        pos.y = r * sin(angle) * sin(angle * 0.5) + 3.8; // top ear height
+        pos.z = r * cos(angle * 0.5);
+    }
+    else {
+        // Limbs segments (four cylinder-like protrusions)
+        float r = 0.8 + finalAmplitude * 0.2;
+        float side = (gID % 2 == 0) ? 2.5 : -2.5;
+        float limbHeight = (gID % 4 < 2) ? 1.0 : -3.5; // Arms vs Legs height
+        pos.x = r * cos(angle) + side;
+        pos.y = r * sin(angle) + limbHeight;
+        pos.z = r * sin(angle * 0.5);
+    }
 
-    // Complementary color mapping based on NPN (Green) vs PNP (Red) polarity
+    // Color mapping representing active NPN (Green) and PNP (Red) polarity rails
     vec4 color;
     if (gID % 2 == 0) {
-        color = vec4(0.06, 0.72, 0.50, 0.8); // NPN Green
+        color = vec4(0.06, 0.72, 0.50, 0.8);
     } else {
-        color = vec4(0.93, 0.26, 0.26, 0.8); // PNP Red
+        color = vec4(0.93, 0.26, 0.26, 0.8);
     }
 
-    // Write directly to shared Vulkan vertex buffer
     vertices[gID].position = pos;
     vertices[gID].color = color;
 }
