@@ -74,12 +74,8 @@ static bool skip_gguf_value(FILE *f, uint32_t type) {
 bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount) {
     FILE *f = fopen(filepath, "rb");
     if (!f) {
-        // Fallback: Populate simulated coherent tensor coordinates if GGUF is missing on test environment
-        printf("[GGUF LOAD WARN] File %s not found. Simulating coherent model weights...\n", filepath);
-        for (uint32_t i = 0; i < maxWeightsCount; i++) {
-            outWeights[i] = sinf((float)i * 0.012f) * cosf((float)i * 0.004f) * 0.6f;
-        }
-        return true;
+        fprintf(stderr, "[GGUF LOAD ERROR] File %s not found.\n", filepath);
+        return false;
     }
 
     GgufHeader header;
