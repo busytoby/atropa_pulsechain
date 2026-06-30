@@ -48,6 +48,81 @@ class HighPassFilter {
     }
 }
 
+class BandPassFilter {
+    constructor(freq, bandwidth, sampleRate = 44100) {
+        this.sampleRate = sampleRate;
+        this.x1 = 0.0;
+        this.x2 = 0.0;
+        this.y1 = 0.0;
+        this.y2 = 0.0;
+        this.setParams(freq, bandwidth);
+    }
+
+    setParams(freq, bandwidth) {
+        const w0 = 2.0 * Math.PI * freq / this.sampleRate;
+        const q = Math.max(0.1, freq / bandwidth);
+        const alpha = Math.sin(w0) / (2.0 * q);
+        const cosw0 = Math.cos(w0);
+        
+        this.b0 = alpha;
+        this.b1 = 0.0;
+        this.b2 = -alpha;
+        this.a0 = 1.0 + alpha;
+        this.a1 = -2.0 * cosw0;
+        this.a2 = 1.0 - alpha;
+    }
+
+    process(x) {
+        const y = (this.b0 * x + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2) / this.a0;
+        this.x2 = this.x1;
+        this.x1 = x;
+        this.y2 = this.y1;
+        this.y1 = y;
+        return y;
+    }
+}
+
+class MoogLadderFilter {
+    constructor(sampleRate = 44100) {
+        this.sampleRate = sampleRate;
+        this.stage = new Float32Array(4);
+        this.stageOld = new Float32Array(4);
+        this.cutoff = 1000.0;
+        this.resonance = 0.1;
+        this.updateCoefficients();
+    }
+
+    setParams(cutoff, resonance) {
+        this.cutoff = Math.max(10.0, Math.min(20000.0, cutoff));
+        this.resonance = Math.max(0.0, Math.min(3.99, resonance));
+        this.updateCoefficients();
+    }
+
+    updateCoefficients() {
+        const fc = (2.0 * this.cutoff) / this.sampleRate;
+        const x = fc * (1.0 - fc);
+        this.g = 1.0 - Math.exp(-2.0 * Math.PI * x);
+        this.k = this.resonance;
+    }
+
+    process(input) {
+        const vt = 4.0 * this.k * this.stageOld[3];
+        const resInput = input - vt;
+        
+        this.stage[0] = this.stageOld[0] + this.g * (Math.tanh(resInput) - Math.tanh(this.stageOld[0]));
+        this.stage[1] = this.stageOld[1] + this.g * (Math.tanh(this.stage[0]) - Math.tanh(this.stageOld[1]));
+        this.stage[2] = this.stageOld[2] + this.g * (Math.tanh(this.stage[1]) - Math.tanh(this.stageOld[2]));
+        this.stage[3] = this.stageOld[3] + this.g * (Math.tanh(this.stage[2]) - Math.tanh(this.stageOld[3]));
+
+        for (let i = 0; i < 4; i++) {
+            this.stageOld[i] = this.stage[i];
+        }
+
+        return this.stage[3];
+    }
+}
+
+
 function randomNoise(seed) {
     const nextSeed = (seed * 1103515245 + 12345) & 0x7fffffff;
     const val = (nextSeed / 2147483648.0) * 2.0 - 1.0;
@@ -70,7 +145,10 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
     const resF1 = new Resonator(500.0, 80.0, sampleRate);
     const resF2 = new Resonator(1500.0, 120.0, sampleRate);
     const resF3 = new Resonator(2500.0, 160.0, sampleRate);
-    const hpFrication = new HighPassFilter(4500.0, sampleRate);
+    
+    // Upgraded BandPassFilter and MoogLadderFilter instances
+    const bpFrication = new BandPassFilter(3500.0, 500.0, sampleRate);
+    const moogVCF = new MoogLadderFilter(sampleRate);
 
     let f1Acc = 500.0;
     let f2Acc = 1500.0;
@@ -114,8 +192,12 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
                 delayLine[delayIdx] = echoedSig;
                 delayIdx = (delayIdx + 1) % delayLen;
 
-                const fricationOutput = hpFrication.process(0.0) * 0.0;
-                const finalSample = (echoedSig + fricationOutput) * 0.15;
+                // Moog filter decay during gaps
+                moogVCF.setParams(1200.0, 0.2);
+                const filteredVoice = moogVCF.process(echoedSig);
+
+                const fricationOutput = bpFrication.process(0.0) * 0.0;
+                const finalSample = (filteredVoice + fricationOutput) * 0.15;
 
                 samples.push(finalSample);
                 sampleCounter++;
@@ -138,11 +220,26 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
         const numSamplesSound = Math.floor(sampleRate * (durMs / 1000.0));
         const isPlosive = (char === 'B' || char === 'G' || char === 'D' || char === 'T' || char === 'P');
 
+        // Consonant-specific bandpass frequencies for SH, S, Z, DH, F
+        let bpFreq = 3500.0;
+        let bpBW = 600.0;
+        if (char === 'SH') { bpFreq = 3200.0; bpBW = 600.0; }
+        else if (char === 'S' || char === 'Z') { bpFreq = 5500.0; bpBW = 800.0; }
+        else if (char === 'DH') { bpFreq = 2000.0; bpBW = 1200.0; }
+        else if (char === 'F') { bpFreq = 2500.0; bpBW = 1500.0; }
+        bpFrication.setParams(bpFreq, bpBW);
+
         for (let s = 0; s < numSamplesSound; s++) {
             const sentenceProgress = sampleCounter / totalSamples;
             const declination = 135.0 - 45.0 * sentenceProgress;
-            // Fall back to baseline declination pitch instead of 0.0 to prevent transition stalling
-            const pitchInst = pitchTarget > 0 ? declination + (pitchTarget - 120.0) : declination;
+            
+            // 5.2Hz triangle vibrato LFO and pitch jitter
+            const lfoPhase = (sampleCounter * 5.2) / sampleRate;
+            const lfoVal = Math.sin(2.0 * Math.PI * lfoPhase);
+            const jitterVal = (Math.random() * 2.0 - 1.0) * 0.015;
+            
+            const basePitchInst = pitchTarget > 0 ? declination + (pitchTarget - 120.0) : declination;
+            const pitchInst = basePitchInst * (1.0 + 0.012 * lfoVal + jitterVal);
 
             const glideSpeed = 0.0018 * glideFactor;
             f1Acc += (f1Target - f1Acc) * glideSpeed;
@@ -154,7 +251,6 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             resF1.setFrequency(f1Acc, 80.0);
             resF2.setFrequency(f2Acc, 120.0);
             resF3.setFrequency(f3Acc, 160.0);
-            hpFrication.setCutoff(hpCutoffAcc);
 
             let currentVoicing = voicingTarget;
             let currentAspiration = aspirationTarget;
@@ -193,9 +289,14 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             delayLine[delayIdx] = echoedSig;
             delayIdx = (delayIdx + 1) % delayLen;
 
-            const fricationOutput = hpFrication.process(whiteNoise) * currentFrication * 1.5;
+            // Warm Moog filter sweep (2.2kHz down to 1.8kHz resonance sweep)
+            const moogCutoff = 2200.0 + 800.0 * Math.sin(sentenceProgress * Math.PI);
+            moogVCF.setParams(moogCutoff, 0.45);
+            const filteredVoice = moogVCF.process(echoedSig);
 
-            const finalSample = (echoedSig + fricationOutput) * 0.15;
+            const fricationOutput = bpFrication.process(whiteNoise) * currentFrication * 1.5;
+
+            const finalSample = (filteredVoice + fricationOutput) * 0.15;
             samples.push(finalSample);
             sampleCounter++;
         }
