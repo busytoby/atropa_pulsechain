@@ -564,17 +564,27 @@ g_channels = None
 g_v_gate_array = None
 g_r_ds_array = None
 g_temp_array = None
+g_disp_x_array = None
+g_disp_y_array = None
+g_vel_x_array = None
+g_vel_y_array = None
 
-def init_worker(audio_wave_val, channels_val, v_gate_val, r_ds_val, temp_val):
+def init_worker(audio_wave_val, channels_val, v_gate_val, r_ds_val, temp_val, disp_x_val, disp_y_val, vel_x_val, vel_y_val):
     global g_audio_wave, g_channels, g_v_gate_array, g_r_ds_array, g_temp_array
+    global g_disp_x_array, g_disp_y_array, g_vel_x_array, g_vel_y_array
     g_audio_wave = audio_wave_val
     g_channels = channels_val
     g_v_gate_array = v_gate_val
     g_r_ds_array = r_ds_val
     g_temp_array = temp_val
+    g_disp_x_array = disp_x_val
+    g_disp_y_array = disp_y_val
+    g_vel_x_array = vel_x_val
+    g_vel_y_array = vel_y_val
 
 def render_single_frame(frame_idx):
     global g_audio_wave, g_channels, g_v_gate_array, g_r_ds_array, g_temp_array
+    global g_disp_x_array, g_disp_y_array, g_vel_x_array, g_vel_y_array
     
     time_secs = frame_idx / FPS
     sample_idx = int(time_secs * SAMPLE_RATE)
@@ -735,6 +745,21 @@ def render_single_frame(frame_idx):
         lut_shift = int((active_freq - 110.0) * 10.0)
         pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift, i)
         
+        # Retrieve camera spider-mount displacement and velocity
+        total_f = TOTAL_FRAMES
+        disp_x = g_disp_x_array[i * total_f + frame_idx]
+        disp_y = g_disp_y_array[i * total_f + frame_idx]
+        vel_x = g_vel_x_array[i * total_f + frame_idx]
+        vel_y = g_vel_y_array[i * total_f + frame_idx]
+        
+        cx_phys = cx + disp_x
+        cy_phys = cy + disp_y
+        
+        # Modulate glow parameters based on camera velocity
+        vel_mag = math.sqrt(vel_x**2 + vel_y**2)
+        glow_width_factor = 1.0 + min(1.2, vel_mag * 0.05)
+        glow_alpha_factor = 1.0 + min(0.8, vel_mag * 0.03)
+
         smoothed_pts = []
         for j in range(len(pts)):
             p_prev = pts[j - 1] if j > 0 else pts[j]
@@ -742,13 +767,13 @@ def render_single_frame(frame_idx):
             p_next = pts[j + 1] if j < len(pts) - 1 else pts[j]
             smoothed_x = (p_prev[0] + p_curr[0] + p_next[0]) / 3.0
             smoothed_y = (p_prev[1] + p_curr[1] + p_next[1]) / 3.0
-            smoothed_pts.append((cx + smoothed_x, cy + smoothed_y))
+            smoothed_pts.append((cx_phys + smoothed_x, cy_phys + smoothed_y))
         points = smoothed_pts
 
         if len(points) > 1:
-            # Draw Neon Glow: wide faint line, medium line, white-hot core line
-            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], 50), width=6)
-            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], 120), width=4)
+            # Draw Neon Glow: wide faint line, medium line, white-hot core line (modulated by spider mount sway)
+            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], int(50 * glow_alpha_factor)), width=int(6 * glow_width_factor))
+            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], int(120 * glow_alpha_factor)), width=int(4 * glow_width_factor))
             draw.line(points, fill=(255, 255, 255, 255), width=2)
 
         draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175, 200))
@@ -891,8 +916,66 @@ def generate_video(audio_wave, channels):
         r_ds_array[idx] = r_ds
         temp_array[idx] = temp
 
+    # Precompute camera physics states for all frames sequentially (spider mount elastic suspension)
+    print("[VIDEO] Precomputing camera spider mount suspension physics...")
+    disp_x_array = np.zeros((7, TOTAL_FRAMES))
+    disp_y_array = np.zeros((7, TOTAL_FRAMES))
+    vel_x_array = np.zeros((7, TOTAL_FRAMES))
+    vel_y_array = np.zeros((7, TOTAL_FRAMES))
+    
+    dt_phys = 1.0 / 30.0
+    m_phys = 1.0
+    k_phys = 220.0
+    d_phys = 9.0  # sub-arachnoid fluid damping
+    
+    for i in range(7):
+        disp_x, disp_y = 0.0, 0.0
+        vel_x, vel_y = 0.0, 0.0
+        
+        if i == 0:
+            wave_buf = audio_wave
+        elif i == 1:
+            wave_buf = channels["growl"] * 8.0
+        elif i == 2:
+            wave_buf = channels["bass"]
+        elif i == 3:
+            wave_buf = channels["arp"]
+        elif i == 4:
+            wave_buf = channels["kick"]
+        elif i == 5:
+            wave_buf = channels["snare"]
+        elif i == 6:
+            wave_buf = channels["lead"]
+            
+        for f in range(TOTAL_FRAMES):
+            sample_idx = f * 1470
+            sig_seg = wave_buf[sample_idx:sample_idx+512] if sample_idx < len(wave_buf) else np.zeros(512)
+            prev_idx = max(0, sample_idx - 512)
+            prev_sig_seg = wave_buf[prev_idx:prev_idx+512] if prev_idx < len(wave_buf) else np.zeros(512)
+            
+            rms = np.sqrt(np.mean(sig_seg**2)) if len(sig_seg) > 0 else 0.0
+            prev_rms = np.sqrt(np.mean(prev_sig_seg**2)) if len(prev_sig_seg) > 0 else 0.0
+            flux_val = abs(rms - prev_rms)
+            
+            # PMG hit impact force proportional to transient flux
+            f_impact_x = flux_val * 750.0 * (1.0 if f % 2 == 0 else -1.0)
+            f_impact_y = flux_val * 750.0 * (-1.0 if f % 3 == 0 else 1.0)
+            
+            accel_x = (-k_phys * disp_x - d_phys * vel_x + f_impact_x) / m_phys
+            accel_y = (-k_phys * disp_y - d_phys * vel_y + f_impact_y) / m_phys
+            
+            vel_x += accel_x * dt_phys
+            vel_y += accel_y * dt_phys
+            disp_x += vel_x * dt_phys
+            disp_y += vel_y * dt_phys
+            
+            disp_x_array[i, f] = disp_x
+            disp_y_array[i, f] = disp_y
+            vel_x_array[i, f] = vel_x
+            vel_y_array[i, f] = vel_y
+
     # Spawn process pool for parallel frame generation
-    with ProcessPoolExecutor(initializer=init_worker, initargs=(audio_wave, channels, v_gate_array, r_ds_array, temp_array)) as executor:
+    with ProcessPoolExecutor(initializer=init_worker, initargs=(audio_wave, channels, v_gate_array, r_ds_array, temp_array, disp_x_array.flatten(), disp_y_array.flatten(), vel_x_array.flatten(), vel_y_array.flatten())) as executor:
         futures = {executor.submit(render_single_frame, idx): idx for idx in range(TOTAL_FRAMES)}
         
         # Write frames sequentially as they are rendered
