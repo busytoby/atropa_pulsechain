@@ -1002,13 +1002,19 @@ def generate_video(audio_wave, channels):
             f_impact_x = flux_val * 750.0 * (1.0 if f % 2 == 0 else -1.0)
             f_impact_y = flux_val * 750.0 * (-1.0 if f % 3 == 0 else 1.0)
             
-            accel_x = (-k_phys * disp_x - d_phys * vel_x + f_impact_x) / m_phys
-            accel_y = (-k_phys * disp_y - d_phys * vel_y + f_impact_y) / m_phys
+            # Pure IIR linear decay filter (non-spring dynamics) to calculate displacements organically
+            target_disp_x = f_impact_x * 0.04
+            target_disp_y = f_impact_y * 0.04
             
-            vel_x += accel_x * dt_phys
-            vel_y += accel_y * dt_phys
-            disp_x += vel_x * dt_phys
-            disp_y += vel_y * dt_phys
+            # Smooth displacements and derive velocity from IIR differences (re-stabilizes to rest)
+            new_disp_x = disp_x * 0.82 + target_disp_x * 0.18
+            new_disp_y = disp_y * 0.82 + target_disp_y * 0.18
+            
+            vel_x = (new_disp_x - disp_x) / dt_phys
+            vel_y = (new_disp_y - disp_y) / dt_phys
+            
+            disp_x = new_disp_x
+            disp_y = new_disp_y
             
             disp_x_array[i, f] = disp_x
             disp_y_array[i, f] = disp_y
