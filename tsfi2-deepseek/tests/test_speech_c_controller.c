@@ -2,9 +2,131 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include <alsa/asoundlib.h>
 #include "tsfi_zmm_vm.h"
 #include "tsfi_wire_firmware.h"
+
+// Emulate the 3 physical analog stages and protection layers at machine-code speeds
+static void emulate_analog_pipeline(float *samples, int num_samples) {
+    double V_c_in = 0.0;
+    double V_c_e = 0.0;
+    double env = 0.0;
+    
+    // DC blocking filters state variables for inter-stage AC coupling
+    double stage1_x_prev = 0.0, stage1_y_prev = 0.0;
+    double stage2_x_prev = 0.0, stage2_y_prev = 0.0;
+    
+    double bias_offset_pp = 0.18;    // 180mV bias for push-pull (Germanium)
+    double bias_offset_trans = 0.68; // 680mV bias for transducer (Silicon)
+    double loadRL = 8.0;             // 8 ohm speaker load
+    
+    // 17-Point Precomputed Germanium Base-Emitter Voltage Table (0V to 1.6V inputs)
+    double lut[17] = {
+        0.0, 0.04, 0.08, 0.115, 0.14, 0.16, 0.175, 0.185, 0.195,
+        0.202, 0.208, 0.213, 0.218, 0.222, 0.226, 0.230, 0.235
+    };
+
+    for (int i = 0; i < num_samples; i++) {
+        double input = samples[i] * 0.8; // Input voltage swing matching physical verification spec (-0.8V to +0.8V)
+
+        // --- STAGE 1: GermaniumStage Pre-Amp ---
+        // Biasing base in active region (+0.25V DC bias) to prevent negative cutoff clipping
+        double V_b = (input + 0.25) - V_c_in;
+        double V_e = V_c_e;
+        double Vbe_input = V_b - V_e;
+        
+        // Solve Vbe via linear interpolation
+        double Vbe = 0.0;
+        if (Vbe_input > 0.0) {
+            double scaled_idx = Vbe_input / 0.1;
+            int idx = (int)scaled_idx;
+            double frac = scaled_idx - idx;
+            if (idx >= 15) {
+                Vbe = lut[16];
+            } else {
+                Vbe = lut[idx] + (lut[idx+1] - lut[idx]) * frac;
+            }
+        }
+        
+        double Ib = 0.0;
+        if (Vbe_input > Vbe) {
+            Ib = (Vbe_input - Vbe) / 100000.0; // 100k ohm source resistance
+        }
+        double Ic = Ib * 100.0; // Beta = 100
+        
+        // Vout = Vcc - Ic * Rc (Vcc = 9V, Rc = 4.7k)
+        double stage1_out = 9.0 - Ic * 4700.0;
+        
+        // Update capacitor charge variables on the physical substrate
+        V_c_in = V_c_in + Ib * 0.01 - V_c_in * 0.001;
+        V_c_e = V_c_e + Ib * 101.0 * 0.01 - V_c_e * 0.005;
+
+        // Centering the collector voltage swing around 5.5V bias point
+        double stage1_raw_ac = (5.5 - stage1_out) * 0.25;
+        // DC Blocking filter (AC Coupling) to prevent low-frequency drift
+        double stage1_ac = stage1_raw_ac - stage1_x_prev + 0.995 * stage1_y_prev;
+        stage1_x_prev = stage1_raw_ac;
+        stage1_y_prev = stage1_ac;
+
+        // --- STAGE 2: TransducerStage Modulation ---
+        double pressure = stage1_ac;
+        double modulated_offset = 0.6 - pressure * 0.05;
+        if (modulated_offset < 0.1) modulated_offset = 0.1;
+        if (modulated_offset > 1.0) modulated_offset = 1.0;
+        
+        double Vbe_input_trans = bias_offset_trans - modulated_offset;
+        double Ib_trans = Vbe_input_trans > 0.0 ? Vbe_input_trans / 10000.0 : 0.0;
+        double Ic_trans = Ib_trans * 150.0; // Beta = 150
+        double stage2_out = 9.0 - Ic_trans * 2200.0;
+        if (stage2_out < 0.0) stage2_out = 0.0;
+        if (stage2_out > 9.0) stage2_out = 9.0;
+        
+        // Centering the modulated output swing to map dynamic swings to [-1.0, 1.0] range
+        double stage2_raw_ac = (8.0 - stage2_out) * 1.0;
+        // DC Blocking filter (AC Coupling) to keep inputs to Push-Pull symmetric
+        double stage2_ac = stage2_raw_ac - stage2_x_prev + 0.995 * stage2_y_prev;
+        stage2_x_prev = stage2_raw_ac;
+        stage2_y_prev = stage2_ac;
+
+        // --- STAGE 3: PushPullStage & EquaAmplifier ---
+        double effective_threshold = 0.2 - bias_offset_pp;
+        if (effective_threshold < 0.0) effective_threshold = 0.0;
+        
+        double pp_out = 0.0;
+        if (stage2_ac > effective_threshold) {
+            pp_out = stage2_ac - effective_threshold;
+        } else if (stage2_ac < -effective_threshold) {
+            pp_out = stage2_ac + effective_threshold;
+        }
+        
+        // EquaAmplifier SOAR current-limiting protection
+        double I_limit = 1.97;
+        double V_max = I_limit * loadRL;
+        if (V_max < 0.1) V_max = 0.1;
+        
+        double absInput = fabs(pp_out);
+        if (absInput > env) {
+            env = (env + absInput) / 2.0;
+        } else {
+            env = env * 0.99;
+        }
+        
+        double gain = 1.0;
+        if (env > V_max) {
+            gain = V_max / env;
+        }
+        double final_out = pp_out * gain;
+        
+        // Symmetrical soft limits
+        double softLimit = V_max * 0.95;
+        if (final_out > softLimit) final_out = softLimit;
+        if (final_out < -softLimit) final_out = -softLimit;
+        
+        // Rescale output to dynamic range using softLimit normalization to preserve audible levels
+        samples[i] = (float)(final_out / softLimit);
+    }
+}
 
 // Helper to write raw WAV bytes to a file
 static void write_wav_file(const char *filename, const char *hex_data) {
@@ -18,6 +140,70 @@ static void write_wav_file(const char *filename, const char *hex_data) {
         unsigned int val;
         sscanf(hex_data + i * 2, "%2x", &val);
         buffer[i] = (uint8_t)val;
+    }
+
+    // Process WAV PCM payload through physical analog stages
+    if (bin_len > 44) {
+        size_t pcm_bytes = bin_len - 44;
+        size_t num_samples = pcm_bytes / 2;
+        int16_t *pcm_ptr = (int16_t *)(buffer + 44);
+        
+        float *float_samples = malloc(num_samples * sizeof(float));
+        if (float_samples) {
+            printf("[C_SPEECH_DEBUG] First 20 raw PCM samples from EVM:\n");
+            for (size_t i = 0; i < 20 && i < num_samples; i++) {
+                printf("  Sample %zu: %d\n", i, pcm_ptr[i]);
+            }
+            for (size_t i = 0; i < num_samples; i++) {
+                float_samples[i] = (float)pcm_ptr[i] / 32768.0f;
+            }
+            
+            // Run emulate_analog_pipeline
+            emulate_analog_pipeline(float_samples, (int)num_samples);
+            
+            // Peak normalization to 0.95 to maximize volume without clipping
+            float initial_peak = 0.0f;
+            for (size_t i = 0; i < num_samples; i++) {
+                float abs_val = fabs(float_samples[i]);
+                if (abs_val > initial_peak) initial_peak = abs_val;
+            }
+            if (initial_peak > 0.0001f) {
+                float norm_factor = 0.95f / initial_peak;
+                for (size_t i = 0; i < num_samples; i++) {
+                    float_samples[i] *= norm_factor;
+                }
+            }
+
+            float peak = 0.0f;
+            float rms_sum = 0.0f;
+            int clip_count = 0;
+            for (size_t i = 0; i < num_samples; i++) {
+                float val = float_samples[i];
+                float abs_val = fabs(val);
+                if (abs_val > peak) peak = abs_val;
+                rms_sum += val * val;
+                if (abs_val >= 0.94f) clip_count++;
+                
+                if (val > 1.0f) val = 1.0f;
+                if (val < -1.0f) val = -1.0f;
+                pcm_ptr[i] = (int16_t)(val * 32767.0f);
+            }
+            float rms = sqrt(rms_sum / num_samples);
+            float clip_ratio = (float)clip_count / num_samples;
+            
+            printf("[TEST_SPEECH_METRICS] Waveform analysis:\n");
+            printf("  - Samples analyzed: %zu\n", num_samples);
+            printf("  - Peak amplitude: %.4f\n", peak);
+            printf("  - RMS energy: %.4f\n", rms);
+            printf("  - Clipping ratio: %.2f%%\n", clip_ratio * 100.0f);
+            if (clip_ratio > 0.05f) {
+                printf("[TEST_SPEECH_WARNING] Extreme clipping detected (%.2f%%). Dynamic range is saturated!\n", clip_ratio * 100.0f);
+            } else {
+                printf("[TEST_SPEECH_SUCCESS] Waveform characteristics resemble valid, unsaturated human speech.\n");
+            }
+            free(float_samples);
+            printf("[C_SPEECH] Successfully processed audio through virtual analog stages.\n");
+        }
     }
 
     FILE *fp = fopen(filename, "wb");

@@ -123,21 +123,29 @@ int main(int argc, char *argv[]) {
             uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
             uint8_t sr = buf_seg[i], sg = buf_seg[i+1], sb = buf_seg[i+2];
 
-            // Sample raw color based on target pixel mask routing
+            // Sample raw color based on 3D UV mapping encoded in segmentation map
             uint8_t br = 0, bg = 0, bb = 0;
-            int is_eris = (sb > 200 && sr < 50 && sg < 50);
-            int is_fomal = (sr > 200 && sg > 200 && sb < 50);
-            int is_fornax = (sr > 200 && sg < 50 && sb < 50);
+            int mask = sb; // Blue channel is Mask ID
+            int is_eris = (mask == 1);
+            int is_fornax = (mask == 2);
+            int is_fomal = (mask == 0);
 
-            if (is_eris) {
-                br = buf_eris[i]; bg = buf_eris[i+1]; bb = buf_eris[i+2];
-            } else if (is_fomal) {
+            if (is_fomal) {
+                // Sky background stays mapped in screen-space coordinates
                 br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
-            } else if (is_fornax) {
-                br = buf_fornax[i]; bg = buf_fornax[i+1]; bb = buf_fornax[i+2];
             } else {
-                // Background fallback to Fomalhaute base
-                br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+                // Ground (Eris) and Wheel (Fornax) utilize true UV mapped lookups
+                int tx = (sr * 1279) / 255;
+                int ty = (sg * 719) / 255;
+                int tex_idx = (ty * 1280 + tx) * 3;
+                
+                if (is_eris) {
+                    br = buf_eris[tex_idx]; bg = buf_eris[tex_idx+1]; bb = buf_eris[tex_idx+2];
+                } else if (is_fornax) {
+                    br = buf_fornax[tex_idx]; bg = buf_fornax[tex_idx+1]; bb = buf_fornax[tex_idx+2];
+                } else {
+                    br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+                }
             }
 
             float d_val = dr / 255.0f;
@@ -185,33 +193,43 @@ int main(int argc, char *argv[]) {
                     g_out = 40.0f * fornax_glow;
                     b_out = 40.0f * fornax_glow;
                 }
-            } else { // Photorealistic or Retro base
-                r_out = br * 1.3f; g_out = bg * 1.3f; b_out = bb * 1.3f; // Boost base brightness
-                if (is_fomal) { // Yellow Mask: Casing B (Fomalhaute)
-                    r_out = br * 1.1f + spec * (140.0f + reg.frame_modulation_factor * 60.0f);
-                    g_out = bg * 1.1f + spec * (140.0f + reg.frame_modulation_factor * 60.0f);
-                    b_out = bb * 0.8f;
-                } else if (is_eris) { // Blue Mask: Casing A (Eris)
-                    r_out = br * 1.0f + spec * (160.0f + reg.frame_modulation_factor * 80.0f);
-                    g_out = bg * 1.1f + spec * (120.0f + reg.frame_modulation_factor * 60.0f);
-                    b_out = bb * 1.3f + spec * (100.0f + reg.frame_modulation_factor * 50.0f);
-                } else if (is_fornax) { // Red Mask: Verlet Particles / Connections (Boosted Fornax)
-                    r_out = br * (1.8f + reg.frame_modulation_factor * 1.2f) + 120.0f * fornax_glow + 80.0f;
-                    g_out = bg * (1.8f + reg.frame_modulation_factor * 0.8f) + 80.0f * fornax_glow + 40.0f;
-                    b_out = bb * 1.2f + 50.0f * fornax_glow;
+            } else { // Vaesen Nordic Gothic Photorealistic Style
+                // Base colors: Muted, earthy tones matching Scandinavian folklore
+                if (is_fomal) { // Background Sky: Misty dark forest green / gray-blue
+                    r_out = br * 0.45f + 8.0f;
+                    g_out = bg * 0.65f + 16.0f;
+                    b_out = bb * 0.58f + 12.0f;
+                } else if (is_eris) { // Ground Track: Wet dark cobblestones / mossy soil
+                    r_out = br * 0.52f + 10.0f;
+                    g_out = bg * 0.72f + 18.0f;
+                    b_out = bb * 0.48f + 8.0f;
+                } else if (is_fornax) { // Wheel: Weathered, oxidized cast iron / dark copper
+                    r_out = br * 0.68f + 30.0f;
+                    g_out = bg * 0.52f + 15.0f;
+                    b_out = bb * 0.44f;
+                } else {
+                    r_out = br * 0.60f; g_out = bg * 0.60f; b_out = bb * 0.60f;
                 }
+                
+                // Add a warm yellow lantern glow radiating from the wheel (always centered in viewport)
+                float dx_w = (float)px - 640.0f;
+                float dy_w = (float)py - 360.0f;
+                float dist_w = sqrtf(dx_w * dx_w + dy_w * dy_w);
+                float lantern = expf(-dist_w * 0.0032f) * 90.0f; // Soft radial falloff
+                
+                r_out += lantern;
+                g_out += lantern * 0.82f;
+                b_out += lantern * 0.48f;
             }
 
-            // Apply LineArt borders (edges mask details but lighter)
-            r_out = r_out * (1.0f - l_val * (edge_blend * 0.4f));
-            g_out = g_out * (1.0f - l_val * (edge_blend * 0.4f));
-            b_out = b_out * (1.0f - l_val * (edge_blend * 0.4f));
+            // Apply soft hand-inked watercolor outlines from LineArt map
+            r_out = r_out * (1.0f - l_val * 0.38f);
+            g_out = g_out * (1.0f - l_val * 0.38f);
+            b_out = b_out * (1.0f - l_val * 0.38f);
 
-            // Apply Lighter Volumetric Fog and Ambient Occlusion from Depth maps
-            float fog_r = 30.0f, fog_g = 35.0f, fog_b = 55.0f; // Lighter atmospheric background
-            // Focus when the beat drops: reduce fog and boost clarity of the manifold geometry
-            float depth_blend = 0.3f + (d_val * 0.7f) + (reg.frame_modulation_factor * 0.25f);
-            if (depth_blend > 1.0f) depth_blend = 1.0f;
+            // Apply cold, misty Nordic forest fog based on depth map
+            float fog_r = 25.0f, fog_g = 32.0f, fog_b = 38.0f; // Misty gray-blue
+            float depth_blend = 0.50f + (d_val * 0.50f);
             r_out = r_out * depth_blend + fog_r * (1.0f - depth_blend);
             g_out = g_out * depth_blend + fog_g * (1.0f - depth_blend);
             b_out = b_out * depth_blend + fog_b * (1.0f - depth_blend);

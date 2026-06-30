@@ -9,9 +9,9 @@ PORT_A = "/dev/ttyACM0"
 PORT_B = "/dev/ttyACM1"
 BAUD_RATE = 9600
 
-DATA_SIZE = 100 * 1024 # 100 KB
+DATA_SIZE = 1024 * 1024 # 1 MB
 DATA_PER_PACKET = 86 # bytes
-NUM_PACKETS = (DATA_SIZE + DATA_PER_PACKET - 1) // DATA_PER_PACKET # 1191 packets
+NUM_PACKETS = (DATA_SIZE + DATA_PER_PACKET - 1) // DATA_PER_PACKET # 12193 packets
 
 TIER_SPEEDS = {
     0: 9600,
@@ -56,7 +56,7 @@ def query_node(conn, tx_frame):
     
     rx = bytearray()
     start = time.time()
-    while time.time() - start < 1.0:
+    while time.time() - start < 2.0:
         if conn.in_waiting > 0:
             rx.extend(conn.read(conn.in_waiting))
             i = 0
@@ -142,6 +142,7 @@ def main():
     print(f"\n[PHASE 2] Starting 10KB Secure File Transfer Benchmark ({NUM_PACKETS} packets)...")
     
     current_tier = 0
+    max_allowed_tier = 3
     consecutive_successes = 0
     accumulated_sim_time = 0.0
     actual_start_time = time.time()
@@ -177,6 +178,9 @@ def main():
             current_tier = 0
             if old_tier != 0:
                 print(f"  [QOS FALLBACK] Packet {packet_idx} dropped! Throttling {TIER_SPEEDS[old_tier]/1000:.1f}k -> 9.6k")
+                if old_tier == 3:
+                    max_allowed_tier = 2
+                    print(f"  [DRA CAP] Tier 3 determined to be unstable. Capping max rate to Tier 2 (38.4 kbps)")
         else:
             # Successful delivery -> verify signature on Node B
             verify_payload = struct.pack("<QQQ", packet_idx, ichidai, daiichi)
@@ -191,7 +195,7 @@ def main():
             packet_idx += 1
             
             if consecutive_successes >= 10:
-                if current_tier < 3:
+                if current_tier < max_allowed_tier:
                     current_tier += 1
                     consecutive_successes = 0
                     print(f"  [QOS SPEED UP] Accelerating modulation rate to {TIER_SPEEDS[current_tier]/1000:.1f} kbps (Packet {packet_idx})")
@@ -203,6 +207,7 @@ def main():
         bar = '=' * filled + '-' * (bar_len - filled)
         sys.stdout.write(f"\r  Progress: [{bar}] {packet_idx + 1}/{NUM_PACKETS} packets | Speed: {TIER_SPEEDS[current_tier]/1000:.1f} kbps")
         sys.stdout.flush()
+        time.sleep(0.01) # 10ms JTAG pacing delay to prevent buffer congestion
         
     actual_rtt_overhead = time.time() - actual_start_time
     print(f"\n\n=== Physical Transfer Benchmark Complete ===")

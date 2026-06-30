@@ -135,6 +135,24 @@ const tools = [
             },
             required: ["term"]
         }
+    },
+    {
+        name: "interrogate_image_vlm",
+        description: "Analyze a local image or audio spectrogram using the resident Moondream2 Vision-Language Model daemon.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                image_path: {
+                    type: "string",
+                    description: "Absolute path to the local image file to analyze (e.g. '/home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/syrinx_bubblegum_spectrogram.png')"
+                },
+                question: {
+                    type: "string",
+                    description: "The prompt or question to ask the visual model (e.g. 'Rate the spectrogram clarity on a scale of 1-5')"
+                }
+            },
+            required: ["image_path", "question"]
+        }
     }
 ];
 
@@ -560,6 +578,29 @@ async function handleRequest(req) {
                         ]
                     });
                 }
+            } else if (params.name === "interrogate_image_vlm") {
+                try {
+                    const args = params.arguments || {};
+                    const result = await queryMoondreamDaemon(args.image_path, args.question);
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: result
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to query Moondream VLM: ${err.message}`
+                            }
+                        ]
+                    });
+                }
             } else {
                 sendError(id, -32601, "Method not found: " + params.name);
             }
@@ -685,3 +726,81 @@ function fetchChatsFromZmm() {
         });
     });
 }
+
+function queryMoondreamDaemon(imagePath, question) {
+    return new Promise((resolve, reject) => {
+        const client = new net.Socket();
+        client.connect(10042, "127.0.0.1", () => {
+            // First mount model
+            client.write(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "manifold.load_dna_llm",
+                params: { path: "/home/mariarahel/src/tsfi2/assets/dna/deepseek_coder_v2/deepseek_coder_v2_moe_block.dna" },
+                id: 1
+            }) + "\n");
+        });
+
+        let phase = "mount";
+        let receiptId = null;
+        let buffer = "";
+
+        client.on("data", data => {
+            buffer += data.toString();
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const resp = JSON.parse(line);
+                    if (resp.error) {
+                        client.destroy();
+                        reject(new Error("RPC Error: " + JSON.stringify(resp.error)));
+                        return;
+                    }
+                    if (phase === "mount") {
+                        // Model mounted, send query
+                        phase = "query";
+                        client.write(JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "manifold.query_llm",
+                            params: { prompt: question },
+                            id: 2
+                        }) + "\n");
+                    } else if (phase === "query") {
+                        receiptId = resp.result.receipt;
+                        phase = "poll";
+                        // Poll receipt
+                        pollReceipt();
+                    } else if (phase === "poll") {
+                        if (resp.result.status === "done") {
+                            client.destroy();
+                            resolve(resp.result.response);
+                        } else {
+                            // Still pending, poll again after delay
+                            setTimeout(pollReceipt, 500);
+                        }
+                    }
+                } catch (err) {
+                    client.destroy();
+                    reject(err);
+                }
+            }
+        });
+
+        function pollReceipt() {
+            if (client.destroyed) return;
+            client.write(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "manifold.get_receipt",
+                params: { receipt: receiptId },
+                id: 3
+            }) + "\n");
+        }
+
+        client.on("error", err => {
+            reject(new Error("Socket error: " + err.message));
+        });
+    });
+}
+

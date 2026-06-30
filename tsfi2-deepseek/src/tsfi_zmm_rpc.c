@@ -83,6 +83,9 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     char *method_dispatch = strstr(p, "manifold.dispatch");
     char *method_inspect_slots = strstr(p, "manifold.inspect_slots");
     char *method_upload_asset = strstr(p, "manifold.upload_asset");
+    char *method_load_dna = strstr(p, "manifold.load_dna_llm");
+    char *method_query_llm = strstr(p, "manifold.query_llm");
+    char *method_get_receipt = strstr(p, "manifold.get_receipt");
     char *method_flow_choreography = strstr(p, "flow.trigger_choreography");
     char *method_dilemma_log = strstr(p, "wave512.dilemma_log");
 
@@ -107,6 +110,9 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     if (method_dispatch && (!min_ptr || method_dispatch < min_ptr)) { min_ptr = method_dispatch; method_type = 24; }
     if (method_inspect_slots && (!min_ptr || method_inspect_slots < min_ptr)) { min_ptr = method_inspect_slots; method_type = 25; }
     if (method_upload_asset && (!min_ptr || method_upload_asset < min_ptr)) { min_ptr = method_upload_asset; method_type = 26; }
+    if (method_load_dna && (!min_ptr || method_load_dna < min_ptr)) { min_ptr = method_load_dna; method_type = 41; }
+    if (method_query_llm && (!min_ptr || method_query_llm < min_ptr)) { min_ptr = method_query_llm; method_type = 42; }
+    if (method_get_receipt && (!min_ptr || method_get_receipt < min_ptr)) { min_ptr = method_get_receipt; method_type = 43; }
     if (method_flow_choreography && (!min_ptr || method_flow_choreography < min_ptr)) { min_ptr = method_flow_choreography; method_type = 27; }
     if (method_dilemma_log && (!min_ptr || method_dilemma_log < min_ptr)) { min_ptr = method_dilemma_log; method_type = 28; }
 
@@ -514,6 +520,60 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
                 return 1;
             }
         }
+    } else if (method_type == 41) { // manifold.load_dna_llm
+        char path[1024];
+        if (extract_json_string(min_ptr, "\"path\"", path, sizeof(path))) {
+            // Check if file exists
+            if (access(path, F_OK) == 0) {
+                if (state->manifest) {
+                    state->manifest->slots[31].type = ZMM_TYPE_MASS;
+                    state->manifest->slots[31].data_ptr = (void*)0x55555555; // Placeholder
+                    state->manifest->active_mask |= (1U << 31);
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"DNA Model Mounted to ZMM31\", \"address\": \"0x55555555\", \"size\": 1024}, \"id\": %d}\n", id);
+                } else {
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"No ZMM active manifest\", \"id\": %d}\n", id);
+                }
+                return 1;
+            }
+        }
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"DNA File not found\", \"id\": %d}\n", id);
+        return 1;
+    } else if (method_type == 42) { // manifold.query_llm
+        char prompt[2048];
+        if (extract_json_string(min_ptr, "\"prompt\"", prompt, sizeof(prompt))) {
+            if (state->manifest && (state->manifest->active_mask & (1U << 31))) {
+                uint64_t tx_id = ++state->llm_tx_counter;
+                int slot = tx_id % 16;
+                state->llm_tx_status[slot] = 1;
+                snprintf(state->llm_tx_results[slot], 4096, "for '%s'", prompt); // Temp store prompt
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"pending\"}, \"id\": %d}\n", tx_id, id);
+                return 1;
+            }
+        }
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"DNA model not mounted or invalid prompt\", \"id\": %d}\n", id);
+        return 1;
+    } else if (method_type == 43) { // manifold.get_receipt
+        char id_str[64];
+        extract_json_string(min_ptr, "\"receipt\"", id_str, sizeof(id_str));
+        char *r_ptr = strstr(min_ptr, "\"receipt\"");
+        if (r_ptr) {
+            r_ptr += 9;
+            while (*r_ptr == ' ' || *r_ptr == ':') r_ptr++;
+            uint64_t tx_id = strtoull(r_ptr, NULL, 10);
+            if (tx_id > 0 && tx_id <= state->llm_tx_counter) {
+                int slot = tx_id % 16;
+                if (state->llm_tx_status[slot] == 2) {
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"done\", \"response\": \"%s\"}, \"id\": %d}\n", tx_id, state->llm_tx_results[slot], id);
+                    state->llm_tx_status[slot] = 0; 
+                    return 1;
+                } else if (state->llm_tx_status[slot] == 1) {
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"pending\"}, \"id\": %d}\n", tx_id, id);
+                    return 1;
+                }
+            }
+        }
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Receipt not found\", \"id\": %d}\n", id);
+        return 1;
     } else if (method_type == 27) { // flow.trigger_choreography
         // Launch the Google Labs Flow unified masterpiece matrix in the background
         int sys_ret = system("nohup python3 tools/tsfi_ipomoea_teddy_matrix.py > /tmp/tsfi_choreography.log 2>&1 &");
@@ -658,4 +718,61 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
+}
+
+void tsfi_zmm_rpc_step_async_llm(TsfiZmmVmState *state) {
+    if (!state) return;
+    for (int i = 0; i < 16; i++) {
+        if (state->llm_tx_status[i] == 1) { 
+            if (state->manifest && (state->manifest->active_mask & (1U << 31))) {
+                char prompt_extract[2048] = {0};
+                char *prompt_start = strstr(state->llm_tx_results[i], "for '");
+                if (prompt_start) {
+                    prompt_start += 5;
+                    char *prompt_end = strchr(prompt_start, '\'');
+                    if (prompt_end) {
+                        strncpy(prompt_extract, prompt_start, prompt_end - prompt_start);
+                    }
+                }
+                
+                memset(state->llm_tx_results[i], 0, sizeof(state->llm_tx_results[i]));
+                
+                char cmd[4096];
+                snprintf(cmd, sizeof(cmd), "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/bin/query_local_deepseek /home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf \"%s\"", prompt_extract);
+                
+                FILE *fp = popen(cmd, "r");
+                if (fp) {
+                    char chunk[1024];
+                    while (fgets(chunk, sizeof(chunk), fp) != NULL) {
+                        char esc_chunk[2048] = {0};
+                        int ei = 0;
+                        for(int ci=0; chunk[ci] != 0 && ei < 2046; ci++) {
+                            if (chunk[ci] == '\n') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = 'n';
+                            } else if (chunk[ci] == '"') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = '"';
+                            } else if (chunk[ci] == '\\') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = '\\';
+                            } else {
+                                esc_chunk[ei++] = chunk[ci];
+                            }
+                        }
+                        strcat(state->llm_tx_results[i], esc_chunk);
+                    }
+                    pclose(fp);
+                } else {
+                    strcat(state->llm_tx_results[i], "[FRACTURE] Popen failed.\\n");
+                }
+                
+                state->llm_tx_status[i] = 2; // DONE
+            } else {
+                state->llm_tx_status[i] = 2;
+                snprintf(state->llm_tx_results[i], 4096, "ERROR: DNA Manifold Unmounted.");
+            }
+            break;
+        }
+    }
 }

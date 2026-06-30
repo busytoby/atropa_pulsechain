@@ -14,6 +14,8 @@
 #include "tsfi_raw.h"
 #include "tsfi_io.h"
 
+extern void tsfi_zmm_rpc_step_async_llm(TsfiZmmVmState *state);
+
 // In-Memory MCP Loop (Bridges stdio, Network Port 10042, and SHM Command Channel)
 
 typedef struct {
@@ -544,6 +546,7 @@ int main() {
             }
         }
         
+        tsfi_zmm_rpc_step_async_llm(&state);
         tsfi_raw_usleep(1000); // Prevent 100% CPU
     }
     

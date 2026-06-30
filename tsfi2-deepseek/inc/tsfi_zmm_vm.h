@@ -46,6 +46,11 @@ typedef struct {
     // Microtechnic Solutions REU DMA Telemetry Buffer
     uint8_t *reu_ram;
     uint32_t reu_size;
+
+    // Async LLM Transaction State
+    uint64_t llm_tx_counter;
+    int llm_tx_status[16];          // 0=Empty, 1=Pending, 2=Done
+    char llm_tx_results[16][4096];  // Buffered outputs for receipts
 } TsfiZmmVmState;
 
 void tsfi_zmm_vm_init(TsfiZmmVmState *state);

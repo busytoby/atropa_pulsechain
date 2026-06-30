@@ -1714,6 +1714,8 @@ object "SpeechSynthesizer" {
                             if eq(i, 8) { gamma := 44 }
                             if eq(i, 9) { gamma := 39 }
                             let K_sharp := sdiv(mul(K, gamma), 128)
+                            if sgt(K_sharp, 120) { K_sharp := 120 }
+                            if slt(K_sharp, sub(0, 120)) { K_sharp := sub(0, 120) }
                             
                             let delayVal := mload(add(0x2000, mul(i, 32)))
                             let nextForward := sub(forward, sdiv(mul(K_sharp, delayVal), 128))

@@ -69,10 +69,13 @@ def compile_lau_timeline_dna(address, out_dir):
         f.write(b'TSFI')
         f.write(struct.pack('=I', TOTAL_FRAMES))
         
-        # Base settings
+        # Base parameters
         fx = 1.0 + (regs.get("channel", 0) % 5)
         fy = 1.0 + (regs.get("dynamo", 0) % 5)
-        fz = 1.0 + (regs.get("foundation", 0) % 5)
+        
+        R_hyp = 65.0 + (regs.get("foundation", 0) % 20)
+        r_hyp = 15.0 + (regs.get("channel", 0) % 12)
+        d_hyp = 22.0 + (regs.get("dynamo", 0) % 30)
         
         final_sickness = float(regs.get("chin", 0) % 100) / 100.0
         
@@ -82,7 +85,6 @@ def compile_lau_timeline_dna(address, out_dir):
             
             # Segment timeline into distinct complexity phases mapping to perfect reference details
             if frame < 300:
-                # 1. Bear Phase: 2 eyes, 0 sickness, static layout
                 ec = 2
                 sick_percent = 0.0
                 g_x = 0.0
@@ -90,7 +92,6 @@ def compile_lau_timeline_dna(address, out_dir):
                 stretch = 1.0 + (pulse * 0.02)
                 light_intensity = 0.4 + (pulse * 0.05)
             elif frame < 700:
-                # 2. Morphing Phase: 4 eyes, rising sickness, shifting layout
                 t_morph = (frame - 300) / 400.0
                 ec = 4
                 sick_percent = final_sickness * t_morph
@@ -99,19 +100,19 @@ def compile_lau_timeline_dna(address, out_dir):
                 stretch = 1.0 - (t_morph * 0.1)
                 light_intensity = 0.5 + (0.2 * t_morph) + (pulse * 0.05)
             else:
-                # 3. Tardibear Phase: 8 eyes/segments, full sickness, maximum complexity (matching the perfect reference attempt)
                 t_tardi = (frame - 700) / 200.0
                 ec = 8
                 sick_percent = final_sickness
                 g_x = 0.25
-                g_y = 0.15 * math.sin(t_tardi * math.pi * 8) # shake rotation offset
-                stretch = 1.2 # matching established scale expansion
-                light_intensity = 1.0 - (t_tardi * 0.5) # extreme contrast flash
+                g_y = 0.15 * math.sin(t_tardi * math.pi * 8)
+                stretch = 1.2
+                light_intensity = 1.0 - (t_tardi * 0.5)
             
-            # Pack 31-byte frame
-            frame_data = struct.pack('=ffffffBBBBBBB',
+            # Pack 51-byte frame including hypotrochoid space matrices
+            frame_data = struct.pack('=ffffffBBBBBBBfffff',
                                      g_x, g_y, stretch, pulse, sick_percent, light_intensity,
-                                     r, g, b, er, eg, eb, ec)
+                                     r, g, b, er, eg, eb, ec,
+                                     float(R_hyp), float(r_hyp), float(d_hyp), float(fx), float(fy))
             f.write(frame_data)
             
     print(f"[DNA Compiler] Completed: {dna_path}")

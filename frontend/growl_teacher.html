@@ -366,7 +366,10 @@
 
             <!-- Right Panel: Synthesizer Controls -->
             <div class="panel">
-                <h2 class="panel-title">Calibrator Controls</h2>
+                <h2 class="panel-title">
+                    <span>Calibrator Controls</span>
+                    <button class="btn" id="visual-mode-btn" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--glow-cyan); margin: 0;" onclick="toggleVisualMode()">Mode: Waveform</button>
+                </h2>
 
                 <div class="oscilloscope-container">
                     <canvas id="oscilloscope"></canvas>
@@ -421,6 +424,14 @@
                     <input type="range" id="param-zener" min="1" max="25" value="10" oninput="updateParams()">
                 </div>
 
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Phase Shear / Wavefolder</span>
+                        <span class="val" id="val-shear">1.0x</span>
+                    </div>
+                    <input type="range" id="param-shear" min="1" max="8" value="1" step="0.1" oninput="updateParams()">
+                </div>
+
                 <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">Synthesize Repulsion</span>
                     <input type="checkbox" id="param-repel" onchange="updateParams()" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--glow-magenta);">
@@ -438,6 +449,7 @@
         let modGain = null;
         let filterNode = null;
         let zenerNode = null;
+        let shearNode = null;
         let bbdDelay = null;
         let bbdFilter = null;
         let bbdFeedback = null;
@@ -549,6 +561,17 @@
             }
         ];
 
+        function makeWavefolderCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 1.0;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = Math.sin(x * Math.PI * k);
+            }
+            return curve;
+        }
+
         function makeZenerDistortionCurve(amount) {
             const k = typeof amount === 'number' ? amount : 5;
             const n_samples = 44100;
@@ -640,6 +663,18 @@
             setupOscilloscope();
         }
 
+        let visualMode = 'waveform';
+        function toggleVisualMode() {
+            const btn = document.getElementById("visual-mode-btn");
+            if (visualMode === 'waveform') {
+                visualMode = 'orbit';
+                btn.innerText = "Mode: Orbit Scope";
+            } else {
+                visualMode = 'waveform';
+                btn.innerText = "Mode: Waveform";
+            }
+        }
+
         function setupOscilloscope() {
             const canvas = document.getElementById("oscilloscope");
             const canvasCtx = canvas.getContext("2d");
@@ -657,29 +692,106 @@
                 canvasCtx.fillStyle = "#020617";
                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-                canvasCtx.lineWidth = 2.5;
-                canvasCtx.strokeStyle = isHearingTarget ? "#ff007f" : "#00f2fe";
-                canvasCtx.shadowBlur = 12;
-                canvasCtx.shadowColor = isHearingTarget ? "#ff007f" : "#00f2fe";
+                if (visualMode === 'waveform') {
+                    canvasCtx.lineWidth = 2.5;
+                    canvasCtx.strokeStyle = isHearingTarget ? "#ff007f" : "#00f2fe";
+                    canvasCtx.shadowBlur = 12;
+                    canvasCtx.shadowColor = isHearingTarget ? "#ff007f" : "#00f2fe";
 
-                canvasCtx.beginPath();
-                const sliceWidth = canvas.width / bufferLength;
-                let x = 0;
+                    canvasCtx.beginPath();
+                    const sliceWidth = canvas.width / bufferLength;
+                    let x = 0;
 
-                for (let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 128.0;
-                    const y = v * canvas.height / 2;
+                    for (let i = 0; i < bufferLength; i++) {
+                        const v = dataArray[i] / 128.0;
+                        const y = v * canvas.height / 2;
 
-                    if (i === 0) {
-                        canvasCtx.moveTo(x, y);
-                    } else {
-                        canvasCtx.lineTo(x, y);
+                        if (i === 0) {
+                            canvasCtx.moveTo(x, y);
+                        } else {
+                            canvasCtx.lineTo(x, y);
+                        }
+                        x += sliceWidth;
                     }
-                    x += sliceWidth;
+                    canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                    canvasCtx.stroke();
+                    canvasCtx.shadowBlur = 0;
+                } else {
+                    // Orbit Mode: Anode (Epitrochoid Plexus) and Cathode (Hypotrochoid Nexus)
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        const sample = (dataArray[i] / 128.0) - 1.0;
+                        sum += sample * sample;
+                    }
+                    const rms = Math.sqrt(sum / bufferLength);
+
+                    // Pull current parameters
+                    const pitch = parseFloat(document.getElementById("param-pitch").value) || 70;
+                    const lfoFreq = parseFloat(document.getElementById("param-lfo-freq").value) || 6;
+                    const lfoDepth = parseFloat(document.getElementById("param-lfo-depth").value) || 10;
+                    const filterVal = parseFloat(document.getElementById("param-filter").value) || 150;
+                    const zener = parseFloat(document.getElementById("param-zener").value) || 10;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    const timeSec = Date.now() / 1000;
+                    const rotAngle = timeSec * 0.4;
+
+                    // 1. Draw Anode (Epitrochoid Plexus) - Red/Magenta Glow
+                    canvasCtx.lineWidth = 2.0;
+                    canvasCtx.strokeStyle = "rgba(255, 0, 127, 0.85)";
+                    canvasCtx.shadowBlur = 10;
+                    canvasCtx.shadowColor = "#ff007f";
+                    canvasCtx.beginPath();
+
+                    const R_epi = 50 + lfoDepth * 0.6;
+                    const r_epi = 15 + lfoFreq * 1.2;
+                    const d_epi = 12 + rms * 90;
+
+                    for (let theta = 0; theta <= Math.PI * 10; theta += 0.04) {
+                        let px = (R_epi + r_epi) * Math.cos(theta) - d_epi * Math.cos(((R_epi + r_epi) / r_epi) * theta);
+                        let py = (R_epi + r_epi) * Math.sin(theta) - d_epi * Math.sin(((R_epi + r_epi) / r_epi) * theta);
+
+                        let rx = px * Math.cos(rotAngle) - py * Math.sin(rotAngle);
+                        let ry = px * Math.sin(rotAngle) + py * Math.cos(rotAngle);
+
+                        if (theta === 0) {
+                            canvasCtx.moveTo(centerX + rx, centerY + ry);
+                        } else {
+                            canvasCtx.lineTo(centerX + rx, centerY + ry);
+                        }
+                    }
+                    canvasCtx.closePath();
+                    canvasCtx.stroke();
+
+                    // 2. Draw Cathode (Hypotrochoid Nexus) - Cyan Glow
+                    canvasCtx.lineWidth = 1.8;
+                    canvasCtx.strokeStyle = "rgba(0, 242, 254, 0.9)";
+                    canvasCtx.shadowBlur = 12;
+                    canvasCtx.shadowColor = "#00f2fe";
+                    canvasCtx.beginPath();
+
+                    const R_hyp = 35 + filterVal * 0.05;
+                    const r_hyp = 10 + pitch * 0.15;
+                    const d_hyp = 8 + zener * 0.8 + rms * 50;
+
+                    for (let theta = 0; theta <= Math.PI * 10; theta += 0.04) {
+                        let px = (R_hyp - r_hyp) * Math.cos(theta) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta);
+                        let py = (R_hyp - r_hyp) * Math.sin(theta) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta);
+
+                        let rx = px * Math.cos(-rotAngle * 0.5) - py * Math.sin(-rotAngle * 0.5);
+                        let ry = px * Math.sin(-rotAngle * 0.5) + py * Math.cos(-rotAngle * 0.5);
+
+                        if (theta === 0) {
+                            canvasCtx.moveTo(centerX + rx, centerY + ry);
+                        } else {
+                            canvasCtx.lineTo(centerX + rx, centerY + ry);
+                        }
+                    }
+                    canvasCtx.closePath();
+                    canvasCtx.stroke();
+                    canvasCtx.shadowBlur = 0;
                 }
-                canvasCtx.lineTo(canvas.width, canvas.height / 2);
-                canvasCtx.stroke();
-                canvasCtx.shadowBlur = 0;
             }
             draw();
         }
@@ -721,6 +833,10 @@
             zenerNode.curve = makeZenerDistortionCurve(10);
             zenerNode.oversample = '4x';
 
+            shearNode = audioCtx.createWaveShaper();
+            shearNode.curve = makeWavefolderCurve(1.0);
+            shearNode.oversample = '4x';
+
             // BBD Delay Line Loop simulation
             bbdDelay = audioCtx.createDelay(1.0);
             bbdDelay.delayTime.setValueAtTime(0.08, now);
@@ -734,7 +850,7 @@
 
             synthGain = audioCtx.createGain();
             synthGain.gain.setValueAtTime(0.001, now);
-            synthGain.gain.linearRampToValueAtTime(0.8, now + 0.1);
+            synthGain.gain.linearRampToValueAtTime(0.22, now + 0.1);
 
             carrierOsc = audioCtx.createOscillator();
             modulatorOsc = audioCtx.createOscillator();
@@ -763,11 +879,12 @@
             rtlNode.connect(tunnelNode);
             tunnelNode.connect(zenerNode);
 
-            // Connect Dry path
-            zenerNode.connect(synthGain);
-
+            // Connect Dry path through shear wavefolder
+            zenerNode.connect(shearNode);
+            shearNode.connect(synthGain);
+ 
             // Connect BBD Delay path (wet path)
-            zenerNode.connect(bbdDelay);
+            shearNode.connect(bbdDelay);
             bbdDelay.connect(bbdFilter);
             bbdFilter.connect(bbdFeedback);
             bbdFeedback.connect(bbdDelay); // feedback loop
@@ -821,6 +938,7 @@
                     formantF2 = null;
                     zenerNode = null;
                     tunnelNode = null;
+                    shearNode = null;
                     rtlNode = null;
                     bbdDelay = null;
                     bbdFilter = null;
@@ -839,6 +957,7 @@
             const cutoff = parseFloat(document.getElementById("param-filter").value);
             const shapeIdx = parseInt(document.getElementById("param-shape").value);
             const zenerAmt = parseFloat(document.getElementById("param-zener").value);
+            const shearVal = parseFloat(document.getElementById("param-shear").value);
             const repelActive = document.getElementById("param-repel").checked;
 
             const shapes = ["triangle", "sawtooth", "sine"];
@@ -848,6 +967,7 @@
             document.getElementById("val-filter").innerText = `${repelActive ? cutoff * 0.5 : cutoff} Hz`;
             document.getElementById("val-shape").innerText = shapes[shapeIdx].charAt(0).toUpperCase() + shapes[shapeIdx].slice(1);
             document.getElementById("val-zener").innerText = `${zenerAmt}x`;
+            document.getElementById("val-shear").innerText = `${shearVal.toFixed(1)}x`;
 
             // Calculate dynamic parameter adjustment velocity (dynamic input)
             const deltaPitch = Math.abs(pitch - lastParams.pitch) / 100;
@@ -926,13 +1046,16 @@
 
                 // Synthesize organic Shimmer (volume instability)
                 if (synthGain) {
-                    const shimmer = 0.8 + (Math.random() - 0.5) * 0.08;
+                    const shimmer = 0.22 + (Math.random() - 0.5) * 0.03;
                     synthGain.gain.setValueAtTime(shimmer, now);
                 }
 
                 // Modulate waveshaper curves based on Agitation (distorts harder when agitated)
                 if (zenerNode) {
                     zenerNode.curve = makeZenerDistortionCurve((repelActive ? zenerAmt * 2.0 : zenerAmt) * (1.0 + 1.2 * vaesenAgitation));
+                }
+                if (shearNode) {
+                    shearNode.curve = makeWavefolderCurve(shearVal * (1.0 + 1.0 * vaesenAgitation));
                 }
                 if (rtlNode) {
                     rtlNode.curve = makeRTLDistortionCurve((repelActive ? 2.5 : 1.5) * (1.0 + 0.8 * vaesenAgitation));
