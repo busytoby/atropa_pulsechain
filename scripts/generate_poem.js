@@ -145,10 +145,7 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
     const resF1 = new Resonator(500.0, 80.0, sampleRate);
     const resF2 = new Resonator(1500.0, 120.0, sampleRate);
     const resF3 = new Resonator(2500.0, 160.0, sampleRate);
-    
-    // Upgraded BandPassFilter and MoogLadderFilter instances
-    const bpFrication = new BandPassFilter(3500.0, 500.0, sampleRate);
-    const moogVCF = new MoogLadderFilter(sampleRate);
+    const hpFrication = new HighPassFilter(4500.0, sampleRate);
 
     let f1Acc = 500.0;
     let f2Acc = 1500.0;
@@ -192,12 +189,8 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
                 delayLine[delayIdx] = echoedSig;
                 delayIdx = (delayIdx + 1) % delayLen;
 
-                // Moog filter decay during gaps
-                moogVCF.setParams(1200.0, 0.2);
-                const filteredVoice = moogVCF.process(echoedSig);
-
-                const fricationOutput = bpFrication.process(0.0) * 0.0;
-                const finalSample = (filteredVoice + fricationOutput) * 0.15;
+                const fricationOutput = hpFrication.process(0.0) * 0.0;
+                const finalSample = (echoedSig + fricationOutput) * 0.15;
 
                 samples.push(finalSample);
                 sampleCounter++;
@@ -219,15 +212,6 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
 
         const numSamplesSound = Math.floor(sampleRate * (durMs / 1000.0));
         const isPlosive = (char === 'B' || char === 'G' || char === 'D' || char === 'T' || char === 'P');
-
-        // Consonant-specific bandpass frequencies for SH, S, Z, DH, F
-        let bpFreq = 3500.0;
-        let bpBW = 600.0;
-        if (char === 'SH') { bpFreq = 3200.0; bpBW = 600.0; }
-        else if (char === 'S' || char === 'Z') { bpFreq = 5500.0; bpBW = 800.0; }
-        else if (char === 'DH') { bpFreq = 2000.0; bpBW = 1200.0; }
-        else if (char === 'F') { bpFreq = 2500.0; bpBW = 1500.0; }
-        bpFrication.setParams(bpFreq, bpBW);
 
         for (let s = 0; s < numSamplesSound; s++) {
             const sentenceProgress = sampleCounter / totalSamples;
@@ -251,6 +235,7 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             resF1.setFrequency(f1Acc, 80.0);
             resF2.setFrequency(f2Acc, 120.0);
             resF3.setFrequency(f3Acc, 160.0);
+            hpFrication.setCutoff(hpCutoffAcc);
 
             let currentVoicing = voicingTarget;
             let currentAspiration = aspirationTarget;
@@ -289,7 +274,7 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             delayLine[delayIdx] = echoedSig;
             delayIdx = (delayIdx + 1) % delayLen;
 
-            const fricationOutput = bpFrication.process(whiteNoise) * currentFrication * 1.5;
+            const fricationOutput = hpFrication.process(whiteNoise) * currentFrication * 1.5;
 
             const finalSample = (echoedSig + fricationOutput) * 0.15;
             samples.push(finalSample);
