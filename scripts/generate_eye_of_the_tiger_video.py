@@ -24,6 +24,52 @@ def lut_cos(angle_val, shift=0):
     idx = (int(math.floor(val)) + shift) & LUT_MASK
     return cos_lut[idx]
 
+class MasterStageAccumulatorClassifier:
+    """
+    Accumulates master output stage electrical signal content (instrument vectors, notes)
+    and estimates the virtual output stage FET parameters (gate, resistance, temperature)
+    using a non-preferential accumulator model, avoiding Child-Langmuir space-charge preferences.
+    """
+    def __init__(self, sample_rate=44100):
+        # Known weights for instrument vectors (growl, bass, arp, lead, drums)
+        self.weights = {
+            "growl": {"voltage_weight": 0.45, "thermal_weight": 0.65},
+            "bass":  {"voltage_weight": 0.35, "thermal_weight": 0.50},
+            "arp":   {"voltage_weight": 0.20, "thermal_weight": 0.30},
+            "lead":  {"voltage_weight": 0.25, "thermal_weight": 0.35},
+            "drums": {"voltage_weight": 0.50, "thermal_weight": 0.80}
+        }
+        # Non-preferential accumulator state registers
+        self.acc_charge = 0.0
+        self.acc_thermal = 0.0
+        self.temp_ambient = 293.15
+        
+    def process_block(self, block_samples, active_mix_features):
+        # Non-preferential integration of input electrical energy (rms)
+        rms = np.sqrt(np.mean(block_samples**2)) if len(block_samples) > 0 else 0.0
+        
+        # Accumulate gate voltage and thermal dissipation based on instrument weights
+        v_gate = 0.0
+        thermal_dissipation = 0.0
+        
+        for inst, w in self.weights.items():
+            activity = active_mix_features.get(inst, 0.0)
+            v_gate += activity * w["voltage_weight"] * rms * 3.3
+            thermal_dissipation += activity * w["thermal_weight"] * (rms ** 2) * 50.0
+            
+        # Update accumulator charge (FET Gate model)
+        self.acc_charge = 0.95 * self.acc_charge + 0.05 * v_gate
+        
+        # Update thermal accumulator (FET Lattice temperature)
+        # Bypasses Child-Langmuir law by maintaining standard mathematical continuity
+        self.acc_thermal = 0.98 * self.acc_thermal + 0.02 * thermal_dissipation
+        
+        # Derive output stage FET parameters
+        r_ds = 1.0 + 9.0 * (1.0 / (1.0 + self.acc_charge))
+        temp = self.temp_ambient + self.acc_thermal * 12.0
+        
+        return self.acc_charge, r_ds, temp
+
 # Hopf Fibration coordinates modulated by active YI contract registers (7D Lissajous Convolution Matrix)
 def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, lut_shift):
     f_w = (state["Manifold"] % 4) + 1
@@ -91,14 +137,34 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         h_x = (R_hyp - r_hyp) * math.cos(theta) + d_hyp * math.cos(((R_hyp - r_hyp) / r_hyp) * theta)
         h_y = (R_hyp - r_hyp) * math.sin(theta) - d_hyp * math.sin(((R_hyp - r_hyp) / r_hyp) * theta)
         
-        # Apply shear rotation utilizing Base parameter and blend in the hypotrochoid signature
-        x_final = x + h_x * (1.0 + 0.3 * sig_now)
-        y_final = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
+        # Calculate convolved 3D coordinates (with Z depth layer)
+        x_3d = x + h_x * (1.0 + 0.3 * sig_now)
+        y_3d = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
+        z_3d = math.sin(theta * f_z_mod + phase_y) * r_scale * 0.35 * (1.0 + 0.3 * sig_now)
         
-        # Apply 9D Chin hemisphere vertical asymmetry warping (asymmetric clamping)
-        if y_final < 0:
-            y_final *= (1.0 + f_c)
+        # Apply 9D Chin hemisphere vertical asymmetry warping (asymmetric clamping in 3D space)
+        if y_3d < 0:
+            y_3d *= (1.0 + f_c)
             
+        # Apply 3D single camera isometric projection matrix
+        cam_yaw = t_secs * 0.4
+        cam_pitch = 0.35 + 0.08 * math.sin(t_secs * 0.2)
+        
+        # Rotate coordinates around Z-axis (Yaw)
+        rx = x_3d * math.cos(cam_yaw) - y_3d * math.sin(cam_yaw)
+        ry = x_3d * math.sin(cam_yaw) + y_3d * math.cos(cam_yaw)
+        rz = z_3d
+        
+        # Rotate coordinates around X-axis (Pitch)
+        ry2 = ry * math.cos(cam_pitch) - rz * math.sin(cam_pitch)
+        rz2 = ry * math.sin(cam_pitch) + rz * math.cos(cam_pitch)
+        
+        # Apply perspective scaling factors
+        dist = 500.0
+        scale_factor = dist / (dist + ry2)
+        x_final = rx * scale_factor
+        y_final = -rz2 * scale_factor
+        
         # Physical CRT Electrostatic deflection limit (Soft tanh compression limit)
         max_tube_radius = r_scale * 0.9
         radial_distance = math.sqrt(x_final**2 + y_final**2)
@@ -123,18 +189,19 @@ YI_BASE_STATE = {
     "Base": 5208
 }
 
+# Load the Bionika score
+with open("assets/bionika/eye_of_the_tiger.bio", "r") as f:
+    score = json.load(f)
+
 # --- CONFIGURATION ---
 SAMPLE_RATE = 44100
 FPS = 30
 WIDTH = 1280
 HEIGHT = 720
-DURATION_SECS = 20  # Fast demo duration for preview/rendering speed
+# Calculate duration dynamically based on full score structure (16 steps per bar, 8 beats per pattern)
+DURATION_SECS = int(len(score["arrangement"]) * (480.0 / score["tempo"]))
 TOTAL_FRAMES = DURATION_SECS * FPS
 TOTAL_SAMPLES = SAMPLE_RATE * DURATION_SECS
-
-# Load the Bionika score
-with open("assets/bionika/eye_of_the_tiger.bio", "r") as f:
-    score = json.load(f)
 
 # Note frequency dictionary
 NOTE_FREQS = {
@@ -262,14 +329,14 @@ def synthesize_audio():
                     freq = NOTE_FREQS[note]
                     dur = step_samples * 2
                     t = np.arange(min(dur, TOTAL_SAMPLES - current_sample)) / SAMPLE_RATE
-                    # Gated pure sine carrier to produce a perfect visual circle that collapses to a central dot
-                    sig = 0.6 * np.sin(2 * np.pi * freq * t)
+                    # FM synthesis for growling texture: carrier modulated by low-frequency wobble rate (mod_val)
+                    wobble = np.sin(2 * np.pi * mod_val * t)
+                    sig = 0.6 * np.sin(2 * np.pi * freq * t + 3.5 * wobble)
                     
-                    # Attack-decay envelope: fast rising edge, decaying to form the central dot
-                    env = np.exp(-4.5 * t) * (1.0 - np.exp(-40 * t))
+                    # Wobbly envelope: sustains longer and pulsates at the wobble rate
+                    env = np.exp(-1.2 * t) * (1.0 - np.exp(-35 * t)) * (1.0 + 0.4 * wobble)
                     
-                    # Raise gain slightly to ensure prominent visibility
-                    sig_out = sig * env * (gain_val * 1.5)
+                    sig_out = sig * env * (gain_val * 2.2)
                     master_left[current_sample:current_sample+len(t)] += sig_out * 0.95
                     master_right[current_sample:current_sample+len(t)] += sig_out * 0.95
                     channels_audio["growl"][current_sample:current_sample+len(t)] += sig_out
@@ -384,21 +451,31 @@ def synthesize_audio():
 
     return master_left, channels_audio
 
-# --- VIDEO GENERATION ---
-def generate_video(audio_wave, channels):
-    print("[VIDEO] Starting 3D vector Menorah rendering...")
-    
-    # Setup ffmpeg pipeline
-    cmd = [
-        "ffmpeg", "-y", "-f", "image2pipe", "-vcodec", "png", "-r", str(FPS),
-        "-i", "-", "-i", "assets/bionika/eye_of_the_tiger.wav",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-shortest",
-        "assets/bionika/eye_of_the_tiger.mp4"
-    ]
-    process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+from concurrent.futures import ProcessPoolExecutor
+import io
+import colorsys
 
-    # Monitor circle layouts for the menorah (7 screens)
-    # (x, y, radius, label)
+# --- GLOBAL WORKER STATE FOR MULTIPROCESSING ---
+g_audio_wave = None
+g_channels = None
+g_v_gate_array = None
+g_r_ds_array = None
+g_temp_array = None
+
+def init_worker(audio_wave_val, channels_val, v_gate_val, r_ds_val, temp_val):
+    global g_audio_wave, g_channels, g_v_gate_array, g_r_ds_array, g_temp_array
+    g_audio_wave = audio_wave_val
+    g_channels = channels_val
+    g_v_gate_array = v_gate_val
+    g_r_ds_array = r_ds_val
+    g_temp_array = temp_val
+
+def render_single_frame(frame_idx):
+    global g_audio_wave, g_channels, g_v_gate_array, g_r_ds_array, g_temp_array
+    
+    time_secs = frame_idx / FPS
+    sample_idx = int(time_secs * SAMPLE_RATE)
+    
     screens = [
         (640, 480, 160, "MASTER ATTRACTOR"), # Center
         (220, 240, 70, "SUB GROWL"),         # Left 1
@@ -409,178 +486,237 @@ def generate_video(audio_wave, channels):
         (1060, 240, 70, "LEAD SYNTH")        # Right 1
     ]
 
-    last_rms_values = [0.0] * 7
+    im = Image.new("RGB", (WIDTH, HEIGHT), (11, 15, 25))
+    draw = ImageDraw.Draw(im)
 
-    for frame_idx in range(TOTAL_FRAMES):
-        if frame_idx % 30 == 0:
-            print(f"[VIDEO] Rendered frame {frame_idx}/{TOTAL_FRAMES}...")
-            
-        time_secs = frame_idx / FPS
-        sample_idx = int(time_secs * SAMPLE_RATE)
+    # Draw Menorah structure/branches connecting screens
+    draw.line([(640, 680), (640, 480)], fill=(31, 41, 55), width=8)
+    draw.arc([140, 240, 1140, 680], 0, 180, fill=(31, 41, 55), width=6)
+
+    # Render each screen
+    for i, (cx, cy, r, label) in enumerate(screens):
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(55, 65, 81), width=4, fill=(6, 9, 19))
         
-        # Base image
-        im = Image.new("RGB", (WIDTH, HEIGHT), (11, 15, 25))
-        draw = ImageDraw.Draw(im)
+        sig_segment = None
+        prev_sig_segment = None
+        
+        # Current window signal
+        if i == 0:
+            sig_segment = g_audio_wave[sample_idx:sample_idx+512]
+        elif i == 1:
+            sig_segment = g_channels["growl"][sample_idx:sample_idx+512] * 8.0
+            rms = np.sqrt(np.mean(sig_segment**2)) if len(sig_segment) > 0 else 0.0
+            if rms < 0.04:
+                t_rip = np.linspace(0, 4 * np.pi, len(sig_segment) if len(sig_segment) > 0 else 256)
+                sig_segment = sig_segment + 0.05 * np.sin(t_rip)
+        elif i == 2:
+            sig_segment = g_channels["bass"][sample_idx:sample_idx+512]
+        elif i == 3:
+            sig_segment = g_channels["arp"][sample_idx:sample_idx+512]
+        elif i == 4:
+            sig_segment = g_channels["kick"][sample_idx:sample_idx+512]
+        elif i == 5:
+            sig_segment = g_channels["snare"][sample_idx:sample_idx+512]
+        elif i == 6:
+            sig_segment = g_channels["lead"][sample_idx:sample_idx+512]
 
-        # Draw Menorah structure/branches connecting screens
-        draw.line([(640, 680), (640, 480)], fill=(31, 41, 55), width=8)
-        draw.arc([140, 240, 1140, 680], 0, 180, fill=(31, 41, 55), width=6)
+        if sig_segment is None or len(sig_segment) < 256:
+            sig_segment = np.zeros(256)
 
-        # Render each screen
-        for i, (cx, cy, r, label) in enumerate(screens):
-            # Screen boundary circle
-            draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(55, 65, 81), width=4, fill=(6, 9, 19))
-            
-            # Fetch corresponding signal data segment
-            sig_segment = None
-            if i == 0:
-                sig_segment = audio_wave[sample_idx:sample_idx+512]
-            elif i == 1:
-                growl_raw = channels["growl"][sample_idx:sample_idx+512]
-                # Boost visual amplitude by 8.0x so it is clearly visible on the screen
-                sig_segment = growl_raw * 8.0
-                # If signal is silent or extremely quiet, add a minimal active 60Hz humming ripple
-                rms = np.sqrt(np.mean(sig_segment**2)) if len(sig_segment) > 0 else 0.0
-                if rms < 0.04:
-                    t_rip = np.linspace(0, 4 * np.pi, len(sig_segment) if len(sig_segment) > 0 else 256)
-                    sig_segment = sig_segment + 0.05 * np.sin(t_rip)
-            elif i == 2:
-                sig_segment = channels["bass"][sample_idx:sample_idx+512]
-            elif i == 3:
-                sig_segment = channels["arp"][sample_idx:sample_idx+512]
-            elif i == 4:
-                sig_segment = channels["kick"][sample_idx:sample_idx+512]
-            elif i == 5:
-                sig_segment = channels["snare"][sample_idx:sample_idx+512]
-            elif i == 6:
-                sig_segment = channels["lead"][sample_idx:sample_idx+512]
+        # Previous window signal for stateless flux computation
+        prev_idx = max(0, sample_idx - 512)
+        if i == 0:
+            prev_sig_segment = g_audio_wave[prev_idx:prev_idx+512]
+        elif i == 1:
+            prev_sig_segment = g_channels["growl"][prev_idx:prev_idx+512] * 8.0
+        elif i == 2:
+            prev_sig_segment = g_channels["bass"][prev_idx:prev_idx+512]
+        elif i == 3:
+            prev_sig_segment = g_channels["arp"][prev_idx:prev_idx+512]
+        elif i == 4:
+            prev_sig_segment = g_channels["kick"][prev_idx:prev_idx+512]
+        elif i == 5:
+            prev_sig_segment = g_channels["snare"][prev_idx:prev_idx+512]
+        elif i == 6:
+            prev_sig_segment = g_channels["lead"][prev_idx:prev_idx+512]
 
-            if sig_segment is None or len(sig_segment) < 256:
-                sig_segment = np.zeros(256)
+        if prev_sig_segment is None or len(prev_sig_segment) < 256:
+            prev_sig_segment = np.zeros(256)
 
-            # Calculate current performance step index
-            bpm = score.get("tempo", 120)
-            step_duration = 60.0 / (bpm * 4.0)
-            step = int(time_secs / step_duration)
-            
-            # Map screen index to track pattern sequence
-            chan_map = {
-                1: "sub_growl",
-                2: "bass",
-                3: "arpeggiator_filter",
-                6: "lead"
+        # Calculate current performance step index
+        bpm = score.get("tempo", 120)
+        step_duration = 60.0 / (bpm * 4.0)
+        step = int(time_secs / step_duration)
+        
+        chan_map = {
+            1: "sub_growl",
+            2: "bass",
+            3: "arpeggiator_filter",
+            6: "lead"
+        }
+        active_freq = 220.0
+        
+        arr_idx = int(time_secs / (step_duration * 32))
+        if arr_idx < len(score["arrangement"]):
+            pat_name = score["arrangement"][arr_idx]
+            pat = score["patterns"].get(pat_name, {})
+            track_name = chan_map.get(i)
+            if track_name and track_name in pat:
+                seq = pat[track_name].get("sequence", [])
+                step_in_pat = step % 32
+                if step_in_pat < len(seq):
+                    note = seq[step_in_pat]
+                    if note != "REST" and note in NOTE_FREQS:
+                        active_freq = NOTE_FREQS[note]
+
+        if i in [1, 2, 3, 6]:
+            hue = min(280, max(0, int((active_freq - 55.0) / 800.0 * 280.0)))
+            r_rgb, g_rgb, b_rgb = colorsys.hsv_to_rgb(hue / 360.0, 0.95, 0.95)
+            line_color = (int(r_rgb * 255), int(g_rgb * 255), int(b_rgb * 255))
+        else:
+            color_map = {
+                0: (139, 92, 246),  # Master
+                4: (16, 185, 129),  # Kick
+                5: (239, 68, 68),   # Snare
             }
-            active_freq = 220.0 # Default reference frequency
-            
-            # Determine pattern from arrangement
-            arr_idx = int(time_secs / (step_duration * 32))
-            if arr_idx < len(score["arrangement"]):
-                pat_name = score["arrangement"][arr_idx]
-                pat = score["patterns"].get(pat_name, {})
-                track_name = chan_map.get(i)
-                if track_name and track_name in pat:
-                    seq = pat[track_name].get("sequence", [])
-                    step_in_pat = step % 32
-                    if step_in_pat < len(seq):
-                        note = seq[step_in_pat]
-                        if note != "REST" and note in NOTE_FREQS:
-                            active_freq = NOTE_FREQS[note]
+            line_color = color_map.get(i, (6, 182, 212))
 
-            # Dynamically modulate color based on pitch for melodic tracks
-            if i in [1, 2, 3, 6]:
-                # 55Hz (low growl/bass) -> Red (hue=0)
-                # 880Hz (high lead/arp) -> Violet (hue=280)
-                hue = min(280, max(0, int((active_freq - 55.0) / 800.0 * 280.0)))
-                import colorsys
-                r_rgb, g_rgb, b_rgb = colorsys.hsv_to_rgb(hue / 360.0, 0.95, 0.95)
-                line_color = (int(r_rgb * 255), int(g_rgb * 255), int(b_rgb * 255))
-            else:
-                color_map = {
-                    0: (139, 92, 246),  # Master: Purple
-                    4: (16, 185, 129),  # Kick: Emerald
-                    5: (239, 68, 68),   # Snare: Red
-                }
-                line_color = color_map.get(i, (6, 182, 212))
+        prime = 953467954114363
+        base_val = [3, 2, 5, 7, 11, 13, 17][i]
+        sig_val = [5, 11, 13, 17, 19, 23, 29][i]
+        secret_val = [7, 17, 19, 23, 29, 31, 37][i]
+        ident_val = [11, 23, 29, 31, 37, 41, 43][i]
+        element_val = base_val + sig_val
+        
+        state = {
+            "Prime": prime,
+            "Base": base_val,
+            "Identity": ident_val,
+            "Ring": (base_val + secret_val) % prime,
+            "Monopole": pow(base_val, sig_val, prime),
+            "Rod_Dynamo": pow(base_val, secret_val, prime),
+            "Cone_Dynamo": pow(base_val, ident_val, prime),
+            "Manifold": pow(base_val, sig_val, element_val),
+            "Element": element_val,
+            "Chin": (base_val + secret_val) % prime
+        }
 
-            # Derive unique YI contract state registers for this menorah screen index (7D WinchesterMQ registers)
-            # Mathematically computed based on glossary rules
-            prime = 953467954114363 # MotzkinPrime constant
-            base_val = [3, 2, 5, 7, 11, 13, 17][i]
-            sig_val = [5, 11, 13, 17, 19, 23, 29][i]
-            secret_val = [7, 17, 19, 23, 29, 31, 37][i]
-            ident_val = [11, 23, 29, 31, 37, 41, 43][i]
-            element_val = base_val + sig_val
-            
-            state = {
-                "Prime": prime,
-                "Base": base_val,
-                "Identity": ident_val,
-                "Ring": (base_val + secret_val) % prime, # Ring parameter
-                "Monopole": pow(base_val, sig_val, prime), # Channel
-                "Rod_Dynamo": pow(base_val, secret_val, prime), # Pole
-                "Cone_Dynamo": pow(base_val, ident_val, prime), # Foundation
-                "Manifold": pow(base_val, sig_val, element_val), # Dynamo
-                "Element": element_val, # Element parameter (8D)
-                "Chin": (base_val + secret_val) % prime # Chin parameter (9D)
-            }
+        sig_ac = sig_segment - np.mean(sig_segment)
+        prev_sig_ac = prev_sig_segment - np.mean(prev_sig_segment)
+        
+        rms = np.sqrt(np.mean(sig_ac**2)) if len(sig_ac) > 0 else 0.0
+        prev_rms = np.sqrt(np.mean(prev_sig_ac**2)) if len(prev_sig_ac) > 0 else 0.0
+        peak = np.max(np.abs(sig_ac)) if len(sig_ac) > 0 else 0.0
+        crest_factor = peak / (rms + 1e-6)
+        zero_crossings = np.sum(np.diff(np.sign(sig_ac)) != 0) if len(sig_ac) > 0 else 0
+        
+        flux_val = abs(rms - prev_rms)
+        
+        samplings = {
+            "pitch": active_freq,
+            "rms": min(1.0, rms * 2.5),
+            "crest": min(1.0, crest_factor / 12.0),
+            "zcr": min(1.0, zero_crossings / 120.0),
+            "brightness": min(1.0, zero_crossings / 90.0),
+            "stereo_width": 0.5 * (1.0 + np.sin(time_secs * 2.0 * np.pi * 0.05 + i)),
+            "flux": min(1.0, flux_val * 15.0)
+        }
+        
+        steps = 2048
+        sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
+        
+        lut_shift = int((active_freq - 110.0) * 10.0)
+        pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift)
+        
+        smoothed_pts = []
+        for j in range(len(pts)):
+            p_prev = pts[j - 1] if j > 0 else pts[j]
+            p_curr = pts[j]
+            p_next = pts[j + 1] if j < len(pts) - 1 else pts[j]
+            smoothed_x = (p_prev[0] + p_curr[0] + p_next[0]) / 3.0
+            smoothed_y = (p_prev[1] + p_curr[1] + p_next[1]) / 3.0
+            smoothed_pts.append((cx + smoothed_x, cy + smoothed_y))
+        points = smoothed_pts
 
-            # AC-couple signal segment to remove DC offsets causing straight radial lines
-            sig_ac = sig_segment - np.mean(sig_segment)
-            
-            # Compute 9 types of sampling features for YI register modulation
-            rms = np.sqrt(np.mean(sig_ac**2)) if len(sig_ac) > 0 else 0.0
-            peak = np.max(np.abs(sig_ac)) if len(sig_ac) > 0 else 0.0
-            crest_factor = peak / (rms + 1e-6)
-            zero_crossings = np.sum(np.diff(np.sign(sig_ac)) != 0) if len(sig_ac) > 0 else 0
-            
-            # Tracking spectral flux over video frames
-            flux_val = abs(rms - last_rms_values[i])
-            last_rms_values[i] = rms
-            
-            # Normalize samplings to [0, 1] bands
-            samplings = {
-                "pitch": active_freq,
-                "rms": min(1.0, rms * 2.5),
-                "crest": min(1.0, crest_factor / 12.0),
-                "zcr": min(1.0, zero_crossings / 120.0),
-                "brightness": min(1.0, zero_crossings / 90.0),
-                "stereo_width": 0.5 * (1.0 + np.sin(time_secs * 2.0 * np.pi * 0.05 + i)),
-                "flux": min(1.0, flux_val * 15.0)
-            }
-            
-            # Interpolate signal segment to 2048 steps to guarantee high resolution curves (zero boxiness!)
-            steps = 2048
-            sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
-            
-            # Generate coordinates using active YI-based LUT tables convolved with sound vector
-            lut_shift = int((active_freq - 110.0) * 10.0)
-            pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift)
-            
-            # Apply a 3-point moving average filter to coordinates to guarantee rounded arcs
-            smoothed_pts = []
-            for j in range(len(pts)):
-                p_prev = pts[j - 1] if j > 0 else pts[j]
-                p_curr = pts[j]
-                p_next = pts[j + 1] if j < len(pts) - 1 else pts[j]
-                smoothed_x = (p_prev[0] + p_curr[0] + p_next[0]) / 3.0
-                smoothed_y = (p_prev[1] + p_curr[1] + p_next[1]) / 3.0
-                smoothed_pts.append((cx + smoothed_x, cy + smoothed_y))
-            points = smoothed_pts
+        if len(points) > 1:
+            draw.line(points, fill=line_color, width=2)
 
-            # Draw vector points
-            if len(points) > 1:
-                draw.line(points, fill=line_color, width=2)
+        draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175))
+        
+        # Overlay output stage FET accumulator diagnostics on center screen (MASTER ATTRACTOR)
+        if i == 0:
+            vg = g_v_gate_array[frame_idx]
+            rd = g_r_ds_array[frame_idx]
+            tp = g_temp_array[frame_idx]
+            draw.text((cx - 75, cy + r + 5), f"FET V={vg:.2f}V R={rd:.1f}O T={tp:.1f}K", fill=(212, 175, 55))
 
-            # Screen Text label
-            draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175))
+    im_blur = im.filter(ImageFilter.GaussianBlur(1.5))
+    im = Image.blend(im, im_blur, 0.4)
 
-        # Apply minor bloom filter to create phosphor glow
-        im_blur = im.filter(ImageFilter.GaussianBlur(1.5))
-        im = Image.blend(im, im_blur, 0.4)
+    buf = io.BytesIO()
+    im.save(buf, format="PNG")
+    return buf.getvalue()
 
-        # Write frame to pipe
-        im.save(process.stdin, "PNG")
+# --- VIDEO GENERATION ---
+def generate_video(audio_wave, channels):
+    print("[VIDEO] Starting optimized parallel 3D Menorah rendering...")
+    
+    cmd = [
+        "ffmpeg", "-y", "-f", "image2pipe", "-vcodec", "png", "-r", str(FPS),
+        "-i", "-", "-i", "assets/bionika/eye_of_the_tiger.wav",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-shortest",
+        "assets/bionika/eye_of_the_tiger.mp4"
+    ]
+    process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
+    # Precompute master FET arrays sequentially on main process thread
+    classifier = MasterStageAccumulatorClassifier(SAMPLE_RATE)
+    v_gate_array = np.zeros(TOTAL_FRAMES)
+    r_ds_array = np.zeros(TOTAL_FRAMES)
+    temp_array = np.zeros(TOTAL_FRAMES)
+    
+    print("[VIDEO] Precomputing master stage FET accumulator telemetry...")
+    for idx in range(TOTAL_FRAMES):
+        time_secs = idx / FPS
+        sample_idx = int(time_secs * SAMPLE_RATE)
+        block = audio_wave[sample_idx:sample_idx+512]
+        
+        # Calculate active track activity RMS levels
+        features = {
+            "growl": np.sqrt(np.mean(channels["growl"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["growl"]) else 0.0,
+            "bass":  np.sqrt(np.mean(channels["bass"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["bass"]) else 0.0,
+            "arp":   np.sqrt(np.mean(channels["arp"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["arp"]) else 0.0,
+            "lead":  np.sqrt(np.mean(channels["lead"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["lead"]) else 0.0,
+            "drums": np.sqrt(np.mean(channels["kick"][sample_idx:sample_idx+512]**2 + channels["snare"][sample_idx:sample_idx+512]**2)) if sample_idx < len(channels["kick"]) else 0.0
+        }
+        v_gate, r_ds, temp = classifier.process_block(block, features)
+        
+        # Live Optical/Electrical Verification Guard: Throw fault on parameter collapse (Rule 12 protection)
+        if r_ds < 1.0 or r_ds > 30.0:
+            raise ValueError(f"FET Diagnostic Fault: Channel resistance {r_ds:.2f} ohms violates boundary limits!")
+        if temp < 290.0 or temp > 450.0:
+            raise ValueError(f"FET Diagnostic Fault: Junction temperature {temp:.2f}K violates thermal limits!")
+            
+        v_gate_array[idx] = v_gate
+        r_ds_array[idx] = r_ds
+        temp_array[idx] = temp
+
+    # Spawn process pool for parallel frame generation
+    with ProcessPoolExecutor(initializer=init_worker, initargs=(audio_wave, channels, v_gate_array, r_ds_array, temp_array)) as executor:
+        futures = {executor.submit(render_single_frame, idx): idx for idx in range(TOTAL_FRAMES)}
+        
+        # Write frames sequentially as they are rendered
+        for idx in range(TOTAL_FRAMES):
+            # Find the corresponding future
+            for fut, f_idx in futures.items():
+                if f_idx == idx:
+                    png_bytes = fut.result()
+                    process.stdin.write(png_bytes)
+                    break
+            
+            if idx % 90 == 0:
+                print(f"[VIDEO] Processed and piped frame {idx}/{TOTAL_FRAMES}...")
+                
     process.stdin.close()
     process.wait()
     print("[VIDEO] Successfully rendered MP4 to assets/bionika/eye_of_the_tiger.mp4")
