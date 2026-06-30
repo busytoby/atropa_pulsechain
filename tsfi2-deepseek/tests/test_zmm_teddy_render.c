@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <math.h>
 #include <vulkan/vulkan.h>
 
@@ -30,15 +31,18 @@ typedef struct {
     float r, g, b, a;
 } ShaderVertex;
 
-extern void tsfi_zmm_dispatch_traverse(
+extern void tsfi_zmm_dispatch_composite_traverse(
     VkDevice device,
     VkQueue queue,
     VkCommandPool cmdPool,
     VkBuffer regBuffer,
-    VkBuffer weightBuffer,
+    VkBuffer deepseekWeightBuffer,
+    VkBuffer sdWeightBuffer,
     VkBuffer outputBuffer,
     uint32_t workgroupCount
 );
+
+extern bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount);
 
 // Helper to create and allocate Vulkan Buffer
 static void createBuffer(
@@ -154,23 +158,37 @@ int main() {
                  &regBuffer, &regMemory);
 
     uint32_t weightCount = 65536;
-    VkBuffer weightBuffer;
-    VkDeviceMemory weightMemory;
+    
+    // DeepSeek Weights Allocation
+    VkBuffer deepseekWeightBuffer;
+    VkDeviceMemory deepseekWeightMemory;
     createBuffer(device, physDev, sizeof(float) * weightCount, 
                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                 &weightBuffer, &weightMemory);
+                 &deepseekWeightBuffer, &deepseekWeightMemory);
 
-    float* simulatedWeights = malloc(sizeof(float) * weightCount);
-    for (uint32_t i = 0; i < weightCount; i++) {
-        // Continuous coherent manifold structure (no random noise)
-        simulatedWeights[i] = sinf((float)i * 0.01f) * cosf((float)i * 0.003f) * 0.5f;
-    }
+    float* dsSimulated = malloc(sizeof(float) * weightCount);
+    tsfi_load_gguf_weights("deepseek_model.gguf", dsSimulated, weightCount);
     void* dataPtr;
-    vkMapMemory(device, weightMemory, 0, sizeof(float) * weightCount, 0, &dataPtr);
-    memcpy(dataPtr, simulatedWeights, sizeof(float) * weightCount);
-    vkUnmapMemory(device, weightMemory);
-    free(simulatedWeights);
+    vkMapMemory(device, deepseekWeightMemory, 0, sizeof(float) * weightCount, 0, &dataPtr);
+    memcpy(dataPtr, dsSimulated, sizeof(float) * weightCount);
+    vkUnmapMemory(device, deepseekWeightMemory);
+    free(dsSimulated);
+
+    // Stable Diffusion Weights Allocation
+    VkBuffer sdWeightBuffer;
+    VkDeviceMemory sdWeightMemory;
+    createBuffer(device, physDev, sizeof(float) * weightCount, 
+                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                 &sdWeightBuffer, &sdWeightMemory);
+
+    float* sdSimulated = malloc(sizeof(float) * weightCount);
+    tsfi_load_gguf_weights("stable_diffusion_model.gguf", sdSimulated, weightCount);
+    vkMapMemory(device, sdWeightMemory, 0, sizeof(float) * weightCount, 0, &dataPtr);
+    memcpy(dataPtr, sdSimulated, sizeof(float) * weightCount);
+    vkUnmapMemory(device, sdWeightMemory);
+    free(sdSimulated);
 
     uint32_t vertexCount = 1024;
     VkBuffer outputBuffer;
@@ -217,8 +235,8 @@ int main() {
         memcpy(dataPtr, &regs, sizeof(ZMMRegs));
         vkUnmapMemory(device, regMemory);
 
-        // Dispatch compute shader
-        tsfi_zmm_dispatch_traverse(device, queue, cmdPool, regBuffer, weightBuffer, outputBuffer, vertexCount / 256);
+        // Dispatch composite compute shader
+        tsfi_zmm_dispatch_composite_traverse(device, queue, cmdPool, regBuffer, deepseekWeightBuffer, sdWeightBuffer, outputBuffer, vertexCount / 256);
 
         // Map output vertices to draw
         vkMapMemory(device, outputMemory, 0, sizeof(ShaderVertex) * vertexCount, 0, &dataPtr);
@@ -258,8 +276,10 @@ int main() {
     // Cleanup resources
     vkDestroyBuffer(device, regBuffer, NULL);
     vkFreeMemory(device, regMemory, NULL);
-    vkDestroyBuffer(device, weightBuffer, NULL);
-    vkFreeMemory(device, weightMemory, NULL);
+    vkDestroyBuffer(device, deepseekWeightBuffer, NULL);
+    vkFreeMemory(device, deepseekWeightMemory, NULL);
+    vkDestroyBuffer(device, sdWeightBuffer, NULL);
+    vkFreeMemory(device, sdWeightMemory, NULL);
     vkDestroyBuffer(device, outputBuffer, NULL);
     vkFreeMemory(device, outputMemory, NULL);
     vkDestroyCommandPool(device, cmdPool, NULL);
