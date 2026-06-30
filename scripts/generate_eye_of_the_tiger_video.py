@@ -150,7 +150,7 @@ class MasterStageAccumulatorClassifier:
         return self.acc_charge, r_ds, temp
 
 # Hopf Fibration coordinates modulated by active YI contract registers (7D Lissajous Convolution Matrix)
-def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, lut_shift, chan_idx=0):
+def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, lut_shift, chan_idx=0, is_visual=False):
     f_w = (state["Manifold"] % 4) + 1
     f_x = (state["Monopole"] % 5) + 1
     f_y = (state["Rod_Dynamo"] % 4) + 1
@@ -191,9 +191,12 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
     r_hyp = (state["Element"] % 53) + 10.0
     d_hyp = (state["Chin"] % 41) + 5.0
     
-    # Dynamic visual gain control (blow-up constraint) on heavy shock (RMS and flux)
-    shock = samplings.get("rms", 0.0) * 0.7 + samplings.get("flux", 0.0) * 0.8
-    r_scale_constrained = r_scale / (1.0 + shock * 0.5)
+    # Dynamic visual gain control (blow-up constraint) on heavy shock (RMS and flux) - isolated from visuals
+    if is_visual:
+        shock = 0.0
+    else:
+        shock = samplings.get("rms", 0.0) * 0.7 + samplings.get("flux", 0.0) * 0.8
+    r_scale_constrained = r_scale / (1.0 + shock * 0.5) if not is_visual else r_scale
 
     for i in range(steps):
         # Sound reaction vector: current amplitude and phase-delayed amplitude (1D & 2D)
@@ -213,8 +216,8 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         # Project sound vector through the Lissajous Convolution Matrix:
         # [ X ] = [  qx   qy ] * [ sig_now     ]
         # [ Y ] = [ -qy   qx ]   [ sig_delayed ]
-        x = (qx_g * sig_now + qy_g * sig_delayed) * r_scale_constrained
-        y = (-qy_g * sig_now + qx_g * sig_delayed) * r_scale_constrained * f_z_mod
+        x = (qx_g * sig_now + qy_g * sig_delayed) * r_scale
+        y = (-qy_g * sig_now + qx_g * sig_delayed) * r_scale * f_z_mod
         
         # Apply 14D Hypotrochoid vector offset tracing (Delegate token signature)
         h_x = (R_hyp - r_hyp) * math.cos(theta) + d_hyp * math.cos(((R_hyp - r_hyp) / r_hyp) * theta)
@@ -223,7 +226,7 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         # Calculate convolved 3D coordinates (with Z depth layer)
         x_3d = x + h_x * (1.0 + 0.3 * sig_now)
         y_3d = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
-        z_3d = math.sin(theta * f_z_mod + phase_y) * r_scale_constrained * 0.35 * (1.0 + 0.3 * sig_now)
+        z_3d = math.sin(theta * f_z_mod + phase_y) * r_scale * 0.35 * (1.0 + 0.3 * sig_now)
         
         # Apply 9D Chin hemisphere vertical asymmetry warping (asymmetric clamping in 3D space)
         if y_3d < 0:
@@ -248,8 +251,8 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         ry2 = ry * math.cos(cam_pitch) - rz * math.sin(cam_pitch)
         rz2 = ry * math.sin(cam_pitch) + rz * math.cos(cam_pitch)
         
-        # Apply perspective scaling factors
-        dist = 500.0
+        # Apply perspective scaling factors (increase perspective distance 'dist' to reduce warping on shock)
+        dist = 500.0 * (1.0 + shock * 1.5)
         scale_factor = dist / (dist + ry2)
         x_final = rx * scale_factor
         y_final = -rz2 * scale_factor
@@ -774,22 +777,13 @@ def render_single_frame(frame_idx):
         sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
         
         lut_shift = int((active_freq - 110.0) * 10.0)
-        pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift, i)
+        pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift, i, is_visual=True)
         
-        # Retrieve camera spider-mount displacement and velocity
-        total_f = TOTAL_FRAMES
-        disp_x = g_disp_x_array[i * total_f + frame_idx]
-        disp_y = g_disp_y_array[i * total_f + frame_idx]
-        vel_x = g_vel_x_array[i * total_f + frame_idx]
-        vel_y = g_vel_y_array[i * total_f + frame_idx]
+        cx_phys = cx
+        cy_phys = cy
         
-        cx_phys = cx + disp_x
-        cy_phys = cy + disp_y
-        
-        # Modulate glow parameters based on camera velocity
-        vel_mag = math.sqrt(vel_x**2 + vel_y**2)
-        glow_width_factor = 1.0 + min(1.2, vel_mag * 0.05)
-        glow_alpha_factor = 1.0 + min(0.8, vel_mag * 0.03)
+        glow_width_factor = 1.0
+        glow_alpha_factor = 1.0
 
         smoothed_pts = []
         for j in range(len(pts)):
@@ -812,9 +806,9 @@ def render_single_frame(frame_idx):
                 if clipped:
                     c1 = (clipped[0], clipped[1])
                     c2 = (clipped[2], clipped[3])
-                    # Draw Neon Glow segment: wide faint line, medium line, white-hot core line (modulated by spider mount sway)
-                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], int(50 * glow_alpha_factor)), width=int(6 * glow_width_factor))
-                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], int(120 * glow_alpha_factor)), width=int(4 * glow_width_factor))
+                    # Draw Neon Glow segment: wide faint line, medium line, white-hot core line
+                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], 50), width=6)
+                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], 120), width=4)
                     draw.line([c1, c2], fill=(255, 255, 255, 255), width=2)
 
         draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175, 200))
