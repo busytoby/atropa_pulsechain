@@ -187,6 +187,7 @@ void OnTxTimeout(void) {
 }
 
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
+    if (size >= BUFFER_SIZE) size = BUFFER_SIZE - 1;
     memcpy(rxpacket, payload, size);
     rxpacket[size] = '\0';
     
@@ -315,8 +316,9 @@ void MathInit() {
     mbedtls_mpi_add_mpi(&y, &y, &b);
 
     char DysnomiaPrime[64];
-    strcpy(DysnomiaPrime, APOGEE);
-    strcat(DysnomiaPrime, APEX);
+    strncpy(DysnomiaPrime, APOGEE, sizeof(DysnomiaPrime) - 1);
+    DysnomiaPrime[sizeof(DysnomiaPrime) - 1] = '\0';
+    strncat(DysnomiaPrime, APEX, sizeof(DysnomiaPrime) - strlen(DysnomiaPrime) - 1);
     mbedtls_mpi_read_string(&s, 10, DysnomiaPrime);
 
     printf("# APOGEE       m= 0x%s\n", mpistring(&m));
@@ -463,7 +465,8 @@ char* GenKey() {
         }
     }
     NewKey[len] = '\0';
-    strcpy(mpibuf, NewKey);
+    strncpy(mpibuf, NewKey, sizeof(mpibuf) - 1);
+    mpibuf[sizeof(mpibuf) - 1] = '\0';
     free(NewKey);
     return mpibuf;
 }
@@ -822,9 +825,9 @@ static void wifi_init_apsta(void) {
                                                         NULL));
 
     wifi_config_t wifi_config = {};
-    strcpy((char*)wifi_config.ap.ssid, "Tracker-GNSS");
+    strncpy((char*)wifi_config.ap.ssid, "Tracker-GNSS", sizeof(wifi_config.ap.ssid) - 1);
     wifi_config.ap.ssid_len = strlen("Tracker-GNSS");
-    strcpy((char*)wifi_config.ap.password, "12345678");
+    strncpy((char*)wifi_config.ap.password, "12345678", sizeof(wifi_config.ap.password) - 1);
     wifi_config.ap.channel = 1;
     wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_config.ap.max_connection = 4;
@@ -856,7 +859,7 @@ static void handle_wifi_scan(const char *args) {
 
     if (ap_count > 20) ap_count = 20; // Limit APs count
 
-    wifi_ap_record_t *ap_records = (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t) * ap_count);
+    wifi_ap_record_t *ap_records = (wifi_ap_record_t*)calloc(ap_count, sizeof(wifi_ap_record_t));
     if (!ap_records) {
         printf("{\"type\":\"wifi_scan_err\",\"msg\":\"Out of memory\"}\n");
         return;
@@ -909,8 +912,8 @@ static void handle_wifi_connect(const char *args) {
     printf("# Connecting to WiFi SSID: '%s'...\n", ssid);
 
     wifi_config_t wifi_config = {};
-    strcpy((char*)wifi_config.sta.ssid, ssid);
-    strcpy((char*)wifi_config.sta.password, pass);
+    strncpy((char*)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char*)wifi_config.sta.password, pass, sizeof(wifi_config.sta.password) - 1);
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     esp_wifi_disconnect();
@@ -944,7 +947,7 @@ static httpd_handle_t start_web_server(void) {
 
 static void handle_gps(const char *args) {
     printf("# GPS Module Status (Live Background Reader):\n");
-    printf("# SSID: Tracker-GNSS Password: 12345678 ws://192.168.4.1/ws\n");
+    printf("# SSID: Tracker-GNSS Password: 12345678 wss://192.168.4.1/ws\n");
     if (latest_has_fix_data) {
         printf("# Time:       %s UTC\n", latest_time_str);
         printf("# Position:   Lat %s %s, Lon %s %s\n", latest_lat_str, latest_ns, latest_lon_str, latest_ew);
