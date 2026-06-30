@@ -14,3 +14,5 @@ const uint32_t wave_shader_spv[] = {
     0x00010038
 };
 const size_t wave_shader_spv_size = sizeof(wave_shader_spv);
+
+#include "../../shaders/zmm_traverse_spv.h"

@@ -12,30 +12,34 @@ void tsfi_zmm_winchester_handshake(TsfiZmmVmState *vm_state, uint8_t keycode) {
     uint8_t retval[32];
     size_t ret_len = 32;
 
-    // 1. Trigger SCSI REQ phase (Storage[100] = 1)
-    // Selector for triggerRequest phase selector (0x33d40010)
-    uint8_t req_selector[36] = {0x33, 0xd4, 0x00, 0x10};
-    req_selector[35] = keycode; // latch keycode in payload
-    bool req_ok = lau_yul_thunk_execute("WinchesterMQ", req_selector, 36, retval, &ret_len);
-    if (!req_ok) {
-        fprintf(stderr, "[THUNK_MQ ERROR] SCSI REQ Handshake transaction failed on WinchesterMQ Yul contract\n");
-        return;
-    }
-
-    // 2. Perform direct SCSI ACK verification via loopback socket mapping
-    // Selector for ackTransaction selector (0x77d40020)
-    uint8_t ack_selector[36] = {0x77, 0xd4, 0x00, 0x20};
-    ret_len = 32;
-    bool ack_ok = lau_yul_thunk_execute("WinchesterMQ", ack_selector, 36, retval, &ret_len);
-    if (!ack_ok) {
-        fprintf(stderr, "[THUNK_MQ ERROR] SCSI ACK Handshake loop failed validation\n");
-        return;
-    }
-
-    // Write keycode to REU RAM mapped register space (index 0xF002) for bridge process synchronization
+    // 1. Format and write Keyboard Down event using selector 0x98d400c0
+    uint8_t write_selector[36] = {0x98, 0xd4, 0x00, 0xc0};
+    uint8_t command_byte = (0x02 << 6) | 0x20; // Keyboard event class + DOWN state
+    write_selector[35] = command_byte;
+    
+    // Clear and set keycode in REU RAM matching compiler expectations
     if (vm_state->reu_ram) {
         vm_state->reu_ram[0xF002] = keycode;
     }
 
-    printf("[THUNK_MQ] WinchesterMQ SCSI Handshake Completed: Keycode=%u, Status=ACK (Storage[100]=2)\n", keycode);
+    bool write_ok = lau_yul_thunk_execute("WinchesterMQ", write_selector, 36, retval, &ret_len);
+    if (!write_ok) {
+        fprintf(stderr, "[THUNK_MQ ERROR] Event write failed on WinchesterMQ Yul contract\n");
+        return;
+    }
+
+    // 2. Format and publish Keyboard log event using selector 0xccb077a0
+    uint8_t log_selector[36] = {0xcc, 0xb0, 0x77, 0xa0};
+    char log_str[32] = {0};
+    snprintf(log_str, sizeof(log_str), "KEY %d DOWN", keycode);
+    memcpy(log_selector + 4, log_str, 32);
+
+    ret_len = 32;
+    bool log_ok = lau_yul_thunk_execute("WinchesterMQ", log_selector, 36, retval, &ret_len);
+    if (!log_ok) {
+        fprintf(stderr, "[THUNK_MQ ERROR] Event log handshake loop failed\n");
+        return;
+    }
+
+    printf("[THUNK_MQ] WinchesterMQ SCSI Handshake: Keycode=%u, Selector=0x98d400c0/0xccb077a0 (SUCCESS)\n", keycode);
 }

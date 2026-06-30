@@ -116,8 +116,35 @@ def project_visuals(state, sig_segment, active_freq, r_scale=100.0, apply_window
         h_x = (R_hyp - r_hyp) * math.cos(theta) + d_hyp * math.cos(((R_hyp - r_hyp) / r_hyp) * theta)
         h_y = (R_hyp - r_hyp) * math.sin(theta) - d_hyp * math.sin(((R_hyp - r_hyp) / r_hyp) * theta)
         
-        x_final = x + h_x * (1.0 + 0.3 * sig_now)
-        y_final = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
+        # Calculate convolved 3D coordinates (with Z depth layer)
+        x_3d = x + h_x * (1.0 + 0.3 * sig_now)
+        y_3d = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
+        
+        t_secs = i / 44100.0
+        z_3d = math.sin(theta * f_z + phase_y) * r_scale * 0.35 * (1.0 + 0.3 * sig_now)
+        
+        # Apply 9D Chin hemisphere vertical asymmetry warping (asymmetric clamping in 3D space)
+        if y_3d < 0:
+            y_3d *= (1.0 + f_c)
+            
+        # Apply 3D single camera isometric projection matrix
+        cam_yaw = t_secs * 0.4
+        cam_pitch = 0.35 + 0.08 * math.sin(t_secs * 0.2)
+        
+        # Rotate coordinates around Z-axis (Yaw)
+        rx = x_3d * math.cos(cam_yaw) - y_3d * math.sin(cam_yaw)
+        ry = x_3d * math.sin(cam_yaw) + y_3d * math.cos(cam_yaw)
+        rz = z_3d
+        
+        # Rotate coordinates around X-axis (Pitch)
+        ry2 = ry * math.cos(cam_pitch) - rz * math.sin(cam_pitch)
+        rz2 = ry * math.sin(cam_pitch) + rz * math.cos(cam_pitch)
+        
+        # Apply perspective scaling factors
+        dist = 500.0
+        scale_factor = dist / (dist + ry2)
+        x_final = rx * scale_factor
+        y_final = -rz2 * scale_factor
         points.append((x_final, y_final))
         
     return points
