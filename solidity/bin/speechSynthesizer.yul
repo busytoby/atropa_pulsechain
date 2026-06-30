@@ -810,9 +810,10 @@ object "SpeechSynthesizer" {
                     mstore(add(0x4000, mul(i, 32)), K)
                 }
 
-                // Clear Delay Line starting at 0x2000 (10 words)
+                // Restore Delay Line from CPU storage registers (54800 - 54809) for SYNC persistence
                 for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
-                    mstore(add(0x2000, mul(i, 32)), 0)
+                    let savedVal := peekUser(cpu, callerAddr, add(54800, i))
+                    mstore(add(0x2000, mul(i, 32)), savedVal)
                 }
 
                 // Initialize smoothing buffer at 0x4100 with target coefficients
@@ -967,8 +968,12 @@ object "SpeechSynthesizer" {
                     let mask := not(shl(bitShift, 0xFFFF))
                     currentWord := and(currentWord, mask)
                     let cleanPcm := and(pcmVal, 0xFFFF)
-                    currentWord := or(currentWord, shl(bitShift, cleanPcm))
                     mstore(targetAddress, currentWord)
+                }
+                // Save Delay Line back to CPU storage registers for SYNC persistence
+                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                    let finalVal := mload(add(0x2000, mul(i, 32)))
+                    pokeUser(cpu, callerAddr, add(54800, i), finalVal)
                 }
                 let totalBytes := mul(numSamples, 2)
                 let paddedBytesLen := mul(div(add(totalBytes, 31), 32), 32)
@@ -1059,6 +1064,8 @@ object "SpeechSynthesizer" {
             // Selector: 0x02ceea6d
             // ----------------------------------------------------------------
             if eq(selector, 0x02ceea6d) {
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
                 let synthKey := calldataload(4)
                 let numSamples := calldataload(36)
                 if gt(numSamples, 1000) { numSamples := 1000 }
@@ -1156,9 +1163,10 @@ object "SpeechSynthesizer" {
                     mstore(add(0x4000, mul(i, 32)), K)
                 }
 
-                // Clear Delay Line starting at 0x2000 (10 words)
+                // Restore Delay Line from CPU storage registers (54800 - 54809) for SYNC persistence
                 for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
-                    mstore(add(0x2000, mul(i, 32)), 0)
+                    let savedVal := peekUser(cpu, callerAddr, add(54800, i))
+                    mstore(add(0x2000, mul(i, 32)), savedVal)
                 }
 
                 // Initialize smoothing buffer at 0x4100 with target coefficients
@@ -1301,8 +1309,12 @@ object "SpeechSynthesizer" {
                     let currentWord := mload(targetAddress)
                     let mask := not(shl(bitShift, 0xFFFF))
                     currentWord := and(currentWord, mask)
-                    currentWord := or(currentWord, shl(bitShift, pcmValLE))
                     mstore(targetAddress, currentWord)
+                }
+                // Save Delay Line back to CPU storage registers for SYNC persistence
+                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                    let finalVal := mload(add(0x2000, mul(i, 32)))
+                    pokeUser(cpu, callerAddr, add(54800, i), finalVal)
                 }
 
                 let paddedBytesLen := mul(div(add(totalBytes, 31), 32), 32)
