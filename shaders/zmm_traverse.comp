@@ -16,23 +16,28 @@ layout(std140, binding = 0) readonly buffer ZMMRegisters {
     float accPNP;
 } regs;
 
-// DeepSeek LLM Weight Manifold stored in GPU VRAM
+// DeepSeek LLM Weight Manifold (steers semantic geometry)
 layout(std430, binding = 1) readonly buffer DeepSeekWeights {
-    float weights[];
+    float dsWeights[];
 };
 
-// Unified Vertex Output Buffer for Vulkan Renderer
+// Stable Diffusion GGUF weight buffer (steers composite color/fur texture detail)
+layout(std430, binding = 2) readonly buffer SDWeights {
+    float sdWeights[];
+};
+
+// Unified Vertex Output Buffer for Vulkan Renderer (contains surface + fur strand vertices)
 struct Vertex {
     vec4 position;
     vec4 color;
 };
 
-layout(std430, binding = 2) writeonly buffer OutputBuffer {
+layout(std430, binding = 3) writeonly buffer OutputBuffer {
     Vertex vertices[];
 };
 
 // 19D Lissajous LUT Mapping Function
-uint getLissajousLUTIndex(uint gID, float phaseOffset) {
+uint getLissajousLUTIndex(uint gID, float phaseOffset, uint manifoldSize) {
     float fx = regs.channelFreq * 0.001;
     float fy = regs.foundationRail * 0.0001;
     float fz = regs.chinRail * 0.0001;
@@ -42,8 +47,7 @@ uint getLissajousLUTIndex(uint gID, float phaseOffset) {
     float y = sin(fy * t + regs.poleSteer * 0.01);
     float z = sin(fz * t);
 
-    uint wSize = weights.length();
-    uint index = uint(abs(x * 1000.0 + y * 10000.0 + z * 100000.0)) % wSize;
+    uint index = uint(abs(x * 1000.0 + y * 10000.0 + z * 100000.0)) % manifoldSize;
     return index;
 }
 
@@ -57,64 +61,93 @@ void main() {
     // 2. Select conduction mode and phase offset based on dual accumulators
     float polarity = (gID % 2 == 0) ? 1.0 : -1.0;
     float activeAccumulator = (gID % 2 == 0) ? regs.accNPN : regs.accPNP;
-    
     float phaseOffset = activeAccumulator * 0.0628;
 
-    // 3. Compute 19D LUT Index and lookup weight
-    uint weightIdx = getLissajousLUTIndex(gID, phaseOffset);
-    float rawWeight = weights[weightIdx];
-
-    // 4. Apply beta-dependent gain and cutoff thresholding
-    float biasedVal = rawWeight * regs.signalAmp + (activeAccumulator * 0.002 * polarity);
+    // 3. Traversal of DeepSeek GGUF to steer spatial geometry offsets
+    uint dsIndex = getLissajousLUTIndex(gID, phaseOffset, dsWeights.length());
+    float rawDsWeight = dsWeights[dsIndex];
+    float dsBiasedVal = rawDsWeight * regs.signalAmp + (activeAccumulator * 0.002 * polarity);
     
-    float finalAmplitude = 0.0;
-    if (abs(biasedVal) > cutoffThreshold) {
-        // Clamp gain factor to prevent exploding geometry (blow up)
-        finalAmplitude = clamp(biasedVal * betaGain, -2.0, 2.0);
+    float geometryAmplitude = 0.0;
+    if (abs(dsBiasedVal) > cutoffThreshold) {
+        geometryAmplitude = clamp(dsBiasedVal * betaGain, -2.0, 2.0);
     }
 
-    // 5. Parametric segmented Teddy Bear projection structure
+    // 4. Traversal of Stable Diffusion GGUF to steer fur length and texture density
+    uint sdIndex = getLissajousLUTIndex(gID + 2000, phaseOffset, sdWeights.length());
+    float rawSdWeight = sdWeights[sdIndex];
+    float sdBiasedVal = rawSdWeight * regs.signalAmp + (activeAccumulator * 0.001 * polarity);
+    
+    float furFluffiness = 0.2;
+    if (abs(sdBiasedVal) > cutoffThreshold) {
+        // Modulate fur length/fluffiness dynamically using SD weights and beta gain
+        furFluffiness = clamp(0.1 + abs(sdBiasedVal) * betaGain * 0.4, 0.05, 1.2);
+    }
+
+    // 5. Segmented Teddy Bear coordinate projection with normal vector computation
     vec4 pos = vec4(0.0, 0.0, 0.0, 1.0);
-    float angle = float(gID) * 0.1 + regs.basePhase;
+    vec3 normal = vec3(0.0, 0.0, 0.0);
+    uint baseID = gID - (gID % 2);
+    float angle = float(baseID) * 0.15 + regs.basePhase;
 
-    if (gID < 400) {
-        // Body segment (large sphere at center-bottom)
-        float r = 3.0 + finalAmplitude * 0.5;
-        pos.x = r * cos(angle) * sin(angle * 0.5);
-        pos.y = r * sin(angle) * sin(angle * 0.5) - 1.5;
-        pos.z = r * cos(angle * 0.5);
+    if (baseID < 400) {
+        // Body segment
+        float r = 3.0 + geometryAmplitude * 0.4;
+        normal.x = cos(angle) * sin(angle * 0.5);
+        normal.y = sin(angle) * sin(angle * 0.5);
+        normal.z = cos(angle * 0.5);
+        
+        pos.xyz = normal * r;
+        pos.y -= 1.5; // Offset to bottom
     } 
-    else if (gID < 700) {
-        // Head segment (smaller sphere at center-top)
-        float r = 2.0 + finalAmplitude * 0.3;
-        pos.x = r * cos(angle) * sin(angle * 0.5);
-        pos.y = r * sin(angle) * sin(angle * 0.5) + 2.0; // Y offset up
-        pos.z = r * cos(angle * 0.5);
+    else if (baseID < 700) {
+        // Head segment
+        float r = 2.0 + geometryAmplitude * 0.2;
+        normal.x = cos(angle) * sin(angle * 0.5);
+        normal.y = sin(angle) * sin(angle * 0.5);
+        normal.z = cos(angle * 0.5);
+        
+        pos.xyz = normal * r;
+        pos.y += 2.0; // Offset up
     }
-    else if (gID < 850) {
-        // Ears segments (two small offset spheres)
-        float r = 0.7 + finalAmplitude * 0.1;
-        float earSide = (gID % 2 == 0) ? 1.5 : -1.5; // alternate left/right ear
-        pos.x = r * cos(angle) * sin(angle * 0.5) + earSide;
-        pos.y = r * sin(angle) * sin(angle * 0.5) + 3.8; // top ear height
-        pos.z = r * cos(angle * 0.5);
+    else if (baseID < 850) {
+        // Ears segments
+        float r = 0.7 + geometryAmplitude * 0.1;
+        float earSide = (baseID % 4 == 0) ? 1.5 : -1.5;
+        normal.x = cos(angle) * sin(angle * 0.5);
+        normal.y = sin(angle) * sin(angle * 0.5);
+        normal.z = cos(angle * 0.5);
+        
+        pos.xyz = normal * r;
+        pos.x += earSide;
+        pos.y += 3.8;
     }
     else {
-        // Limbs segments (four cylinder-like protrusions)
-        float r = 0.8 + finalAmplitude * 0.2;
-        float side = (gID % 2 == 0) ? 2.5 : -2.5;
-        float limbHeight = (gID % 4 < 2) ? 1.0 : -3.5; // Arms vs Legs height
-        pos.x = r * cos(angle) + side;
-        pos.y = r * sin(angle) + limbHeight;
-        pos.z = r * sin(angle * 0.5);
+        // Limbs segments
+        float r = 0.8 + geometryAmplitude * 0.15;
+        float side = (baseID % 4 == 0) ? 2.5 : -2.5;
+        float limbHeight = (baseID % 8 < 4) ? 1.0 : -3.5;
+        normal.x = cos(angle);
+        normal.y = sin(angle);
+        normal.z = sin(angle * 0.5);
+        
+        pos.xyz = normal * r;
+        pos.x += side;
+        pos.y += limbHeight;
     }
 
-    // Color mapping representing active NPN (Green) and PNP (Red) polarity rails
+    // 6. Generate fluffy stuffed fur strands protruding outwards along normal vectors
+    // Alternate vertices between surface shell and protruding fur tips
+    if (gID % 2 == 1) {
+        pos.xyz += normal * furFluffiness;
+    }
+
+    // 7. Synthesis of composite texture color using SD weights
     vec4 color;
     if (gID % 2 == 0) {
-        color = vec4(0.06, 0.72, 0.50, 0.8);
+        color = vec4(0.06, 0.72 * (1.0 - furFluffiness * 0.3), 0.50, 0.8);
     } else {
-        color = vec4(0.93, 0.26, 0.26, 0.8);
+        color = vec4(0.93, 0.26 * (1.0 - furFluffiness * 0.3), 0.26 * (1.0 - furFluffiness * 0.3), 0.8);
     }
 
     vertices[gID].position = pos;
