@@ -24,6 +24,58 @@ def lut_cos(angle_val, shift=0):
     idx = (int(math.floor(val)) + shift) & LUT_MASK
     return cos_lut[idx]
 
+class TubeVactrolWarmthTransducer:
+    """
+    Implements a 3D Tube Saturation Transducer where virtual triode tube parameters
+    are dynamically driven by the 3D spatial resonance volume of the projected Lissajous geometry.
+    """
+    def __init__(self, sample_rate=44100):
+        self.sample_rate = sample_rate
+        self.v_plate_sag = 0.0
+        
+    def process_triode_stage(self, audio_in, pts):
+        if len(pts) == 0:
+            return audio_in, audio_in
+            
+        # Extract spatial dimensions from 3D projected coordinate vectors
+        rx_avg = np.mean([p[0] for p in pts])
+        ry_avg = np.mean([p[1] for p in pts])
+        r_3d = np.mean(np.sqrt(np.sum(np.square(pts), axis=1)))
+        
+        # 1. Depth Warmth Modulation (optocoupler compression and plate sag)
+        self.v_plate_sag = 0.95 * self.v_plate_sag + 0.05 * (r_3d * 0.0008)
+        effective_plate_voltage = max(50.0, 250.0 - self.v_plate_sag * 180.0)
+        
+        # Asymmetric triode saturation driven by depth
+        drive = 1.0 + r_3d * 0.003
+        scaled_in = audio_in * drive
+        asymmetry_offset = 0.001 * ry_avg
+        warm_out = np.tanh(scaled_in + asymmetry_offset) * (effective_plate_voltage / 250.0)
+        
+        # 2. Elevation Timbral Shelving Filter (Formant-keying shift)
+        # High elevation (negative ry_avg) boosts highs, low elevation (positive ry_avg) boosts lows
+        treble_gain = 1.0 - ry_avg * 0.002
+        bass_gain = 1.0 + ry_avg * 0.002
+        
+        # Simple two-band shelving filter crossover
+        w_low = np.zeros_like(warm_out)
+        w_high = np.zeros_like(warm_out)
+        last_val = 0.0
+        for k in range(len(warm_out)):
+            last_val = last_val + 0.25 * (warm_out[k] - last_val) # Low pass crossover
+            w_low[k] = last_val
+            w_high[k] = warm_out[k] - last_val
+            
+        filtered_out = w_low * bass_gain + w_high * treble_gain
+        
+        # 3. Horizontal Stereo Panning (Rotational Space)
+        pan_factor = min(0.5, max(-0.5, rx_avg * 0.003))
+        left_channel = filtered_out * (1.0 - pan_factor)
+        right_channel = filtered_out * (1.0 + pan_factor)
+        
+        gain_correction = 1.0 / (1.0 + r_3d * 0.002)
+        return left_channel * gain_correction, right_channel * gain_correction
+
 class MasterStageAccumulatorClassifier:
     """
     Accumulates master output stage electrical signal content (instrument vectors, notes)
@@ -71,7 +123,7 @@ class MasterStageAccumulatorClassifier:
         return self.acc_charge, r_ds, temp
 
 # Hopf Fibration coordinates modulated by active YI contract registers (7D Lissajous Convolution Matrix)
-def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, lut_shift):
+def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, lut_shift, chan_idx=0):
     f_w = (state["Manifold"] % 4) + 1
     f_x = (state["Monopole"] % 5) + 1
     f_y = (state["Rod_Dynamo"] % 4) + 1
@@ -146,9 +198,15 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         if y_3d < 0:
             y_3d *= (1.0 + f_c)
             
-        # Apply 3D single camera isometric projection matrix
-        cam_yaw = t_secs * 0.4
-        cam_pitch = 0.35 + 0.08 * math.sin(t_secs * 0.2)
+        # Apply 3D single camera isometric projection matrix (decoupled acoustic cameras per tube)
+        yaw_speeds = {0: 0.4, 1: 0.08, 2: 0.22, 3: 0.85, 4: 0.25, 5: 0.30, 6: 0.55}
+        pitch_freqs = {0: 0.2, 1: 0.04, 2: 0.11, 3: 0.42, 4: 0.13, 5: 0.16, 6: 0.33}
+        
+        y_speed = yaw_speeds.get(chan_idx, 0.4)
+        p_freq = pitch_freqs.get(chan_idx, 0.2)
+        
+        cam_yaw = t_secs * y_speed + samplings.get("flux", 0.0) * 0.15
+        cam_pitch = 0.35 + 0.08 * math.sin(t_secs * 2.0 * np.pi * p_freq) + samplings.get("rms", 0.0) * 0.12
         
         # Rotate coordinates around Z-axis (Yaw)
         rx = x_3d * math.cos(cam_yaw) - y_3d * math.sin(cam_yaw)
@@ -431,6 +489,48 @@ def synthesize_audio():
         gain = V_max / env_state if env_state > V_max else 1.0
         final_out = max(-softLimit, min(softLimit, pp_out * gain))
         master_left[i] = final_out / softLimit
+        # Fill master_right buffer
+        master_right[i] = master_left[i]
+
+    # Apply 3D Auto-Warmth Effect convolving visual resonance volume
+    print("[AUDIO] Running 3D tube saturation transduction (optical warmth)...")
+    transducer = TubeVactrolWarmthTransducer(SAMPLE_RATE)
+    
+    # Setup mock state matching screen i=0 (MASTER ATTRACTOR)
+    prime_warm = 953467954114363
+    state_warm = {
+        "Prime": prime_warm, "Base": 3, "Identity": 11, "Ring": (3 + 7) % prime_warm,
+        "Monopole": pow(3, 5, prime_warm), "Rod_Dynamo": pow(3, 7, prime_warm),
+        "Cone_Dynamo": pow(3, 11, prime_warm), "Manifold": pow(3, 5, 8),
+        "Element": 8, "Chin": (3 + 7) % prime_warm
+    }
+    
+    for block_idx in range(0, TOTAL_SAMPLES, 512):
+        block_left = master_left[block_idx:block_idx+512]
+        block_right = master_right[block_idx:block_idx+512]
+        if len(block_left) == 0:
+            continue
+            
+        time_secs = block_idx / SAMPLE_RATE
+        sig_ac = block_left - np.mean(block_left)
+        rms = np.sqrt(np.mean(sig_ac**2)) if len(sig_ac) > 0 else 0.0
+        
+        samplings = {
+            "pitch": 220.0, "rms": min(1.0, rms * 2.5),
+            "crest": 1.0, "zcr": 0.1, "brightness": 0.1,
+            "stereo_width": 0.5 * (1.0 + np.sin(time_secs * 2.0 * np.pi * 0.05)),
+            "flux": 0.1
+        }
+        
+        steps = 512
+        sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
+        pts = get_lissajous_shape(state_warm, time_secs, steps, sig_interp, 160.0 * 0.7, samplings, 0, 0)
+        
+        # Process block through spatial triode stage
+        warmed_left, warmed_right = transducer.process_triode_stage(block_left, pts)
+        
+        master_left[block_idx:block_idx+512] = warmed_left
+        master_right[block_idx:block_idx+512] = warmed_right
 
     # Normalize audio levels
     peak = np.max(np.abs(master_left))
@@ -633,7 +733,7 @@ def render_single_frame(frame_idx):
         sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
         
         lut_shift = int((active_freq - 110.0) * 10.0)
-        pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift)
+        pts = get_lissajous_shape(state, time_secs, steps, sig_interp, r * 0.7, samplings, lut_shift, i)
         
         smoothed_pts = []
         for j in range(len(pts)):
