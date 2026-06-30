@@ -336,20 +336,22 @@
             emitters.push({
                 x: startX + i * spacing,
                 y: emitterY,
-                phaseA: 0.0, // phase steering for target A (levitation)
-                phaseB: 0.0  // phase steering for target B (haptics)
+                phaseA_fund: 0.0,
+                phaseA_harm: 0.0,
+                phaseB_sub: 0.0
             });
         }
 
         // Dual Target Nodes
-        let targetA = { x: 300, y: 300, color: '#10b981', label: 'Trap' }; // Green
+        let targetA = { x: 350, y: 300, color: '#10b981', label: 'Trap' }; // Green
         let targetB = { x: 500, y: 250, color: '#ef4444', label: 'Haptic' }; // Red
         let activeTarget = null;
 
         // Particle Physics (trapped in Target A)
-        let particle = { x: 300, y: 300, vx: 0.0, vy: 0.0, mass: 6.0 };
+        let particle = { x: 350, y: 300, vx: 0.0, vy: 0.0, mass: 6.0 };
 
-        let time = 0.0;
+        // Real timestamp tracking
+        let startTime = performance.now();
 
         // Interactive mouse tracking
         canvas.addEventListener("mousedown", (e) => {
@@ -416,11 +418,11 @@
 
         function calculateEmitterPhases() {
             // Target A: steered by Fundamental (1.0f) and Harmonic (2.0f)
-            const kFund = (2.0 * Math.PI) / (speedOfSound / f0);
-            const kHarm = (2.0 * Math.PI) / (speedOfSound / (f0 * 2.0));
+            const kFund = (2.0 * Math.PI * f0) / speedOfSound;
+            const kHarm = (2.0 * Math.PI * (f0 * 2.0)) / speedOfSound;
 
             // Target B: steered by Subharmonic (0.5f)
-            const kSub = (2.0 * Math.PI) / (speedOfSound / (f0 * 0.5));
+            const kSub = (2.0 * Math.PI * (f0 * 0.5)) / speedOfSound;
 
             emitters.forEach(emitter => {
                 const distA = Math.hypot(targetA.x - emitter.x, targetA.y - emitter.y);
@@ -432,7 +434,7 @@
             });
         }
 
-        function drawWavefield() {
+        function drawWavefield(timeSec) {
             const width = canvas.width;
             const height = canvas.height;
             const imgData = ctx.createImageData(width, height);
@@ -452,21 +454,24 @@
 
                         // 1. Subharmonic (0.5f) contribution steered to Target B (haptic modulation pulse)
                         if (wSub > 0) {
-                            const phaseSub = emitter.phaseB_sub + (dist * (2.0 * Math.PI * (f0 * 0.5)) / speedOfSound);
-                            const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * time);
-                            totalAmp += Math.sin(phaseSub - time * 12.0) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
+                            const omegaSub = 2.0 * Math.PI * (f0 * 0.5);
+                            const phaseSub = emitter.phaseB_sub + (dist * omegaSub) / speedOfSound;
+                            const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * timeSec);
+                            totalAmp += Math.sin(phaseSub - omegaSub * timeSec) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
                         }
 
                         // 2. Fundamental (1.0f) contribution steered to Target A (levitation trap)
                         if (wFund > 0) {
-                            const phaseFund = emitter.phaseA_fund + (dist * (2.0 * Math.PI * f0) / speedOfSound);
-                            totalAmp += Math.sin(phaseFund - time * 24.0) * (20.0 / Math.max(10.0, dist)) * wFund;
+                            const omegaFund = 2.0 * Math.PI * f0;
+                            const phaseFund = emitter.phaseA_fund + (dist * omegaFund) / speedOfSound;
+                            totalAmp += Math.sin(phaseFund - omegaFund * timeSec) * (20.0 / Math.max(10.0, dist)) * wFund;
                         }
 
-                        // 3. Harmonic (2.0f) contribution steered to Target A (potential wall tightener)
+                        // 3. Harmonic (2.0f) contribution steered to Target A (potential well tightening)
                         if (wHarm > 0) {
-                            const phaseHarm = emitter.phaseA_harm + (dist * (2.0 * Math.PI * (f0 * 2.0)) / speedOfSound);
-                            totalAmp += Math.sin(phaseHarm - time * 48.0) * (20.0 / Math.max(10.0, dist)) * wHarm;
+                            const omegaHarm = 2.0 * Math.PI * (f0 * 2.0);
+                            const phaseHarm = emitter.phaseA_harm + (dist * omegaHarm) / speedOfSound;
+                            totalAmp += Math.sin(phaseHarm - omegaHarm * timeSec) * (20.0 / Math.max(10.0, dist)) * wHarm;
                         }
                     });
 
@@ -505,7 +510,7 @@
             });
         }
 
-        function updatePhysics() {
+        function updatePhysics(timeSec) {
             // Trapping particle force toward Target A (Levitation trap point)
             const dx = targetA.x - particle.x;
             const dy = targetA.y - particle.y;
@@ -515,7 +520,7 @@
             // Force scales with drawbar weights
             const forceStrength = 0.08 * (wFund + wHarm * 0.5);
             particle.vx += dx * forceStrength;
-            particle.vy += dy * forceStrength + 0.03 * Math.sin(time * 15.0); // Acoustic vibration oscillations
+            particle.vy += dy * forceStrength + 0.03 * Math.sin(timeSec * 30.0); // Acoustic vibration oscillations
 
             particle.vx *= 0.82;
             particle.vy *= 0.82;
@@ -524,10 +529,10 @@
             particle.y += particle.vy;
         }
 
-        function drawTargetsAndParticle() {
+        function drawTargetsAndParticle(timeSec) {
             // 1. Draw target A (Levitation Trap focus ring)
             ctx.beginPath();
-            ctx.arc(targetA.x, targetA.y, 22 + 4 * Math.sin(time * 8.0), 0, 2.0 * Math.PI);
+            ctx.arc(targetA.x, targetA.y, 22 + 4 * Math.sin(timeSec * 20.0), 0, 2.0 * Math.PI);
             ctx.strokeStyle = "rgba(16, 185, 129, 0.5)";
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -543,7 +548,7 @@
             ctx.fillStyle = "rgba(239, 68, 68, 0.05)";
             ctx.fill();
 
-            const pulseRadius = (time * 160) % 130;
+            const pulseRadius = (timeSec * 350) % 130;
             ctx.beginPath();
             ctx.arc(targetB.x, targetB.y, pulseRadius, 0, 2.0 * Math.PI);
             ctx.strokeStyle = `rgba(239, 68, 68, ${Math.max(0, 1.0 - pulseRadius / 130)})`;
@@ -562,30 +567,30 @@
             ctx.fill();
         }
 
-        function updateRegisters() {
+        function updateRegisters(timeSec) {
             regBase.innerText = emitters[0].phaseA_fund.toFixed(2) + " rad";
             regChannel.innerText = f0.toFixed(2) + " Hz";
             
             const wSub = parseFloat(drawbarSub.value);
             const wFund = parseFloat(drawbarFund.value);
-            const sigVal = wFund * 0.7 + wSub * 0.3 * (0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * time));
+            const sigVal = wFund * 0.7 + wSub * 0.3 * (0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * timeSec));
             regSignal.innerText = sigVal.toFixed(2);
             
             regPole.innerText = `${Math.round(targetA.x - 400)}, ${Math.round(targetA.y - 300)} px`;
         }
 
         function animationLoop() {
-            time += 0.04;
+            const timeSec = (performance.now() - startTime) / 1000.0;
 
             ctx.fillStyle = "#05070a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             calculateEmitterPhases();
-            drawWavefield();
+            drawWavefield(timeSec);
             drawEmitters();
-            updatePhysics();
-            drawTargetsAndParticle();
-            updateRegisters();
+            updatePhysics(timeSec);
+            drawTargetsAndParticle(timeSec);
+            updateRegisters(timeSec);
 
             requestAnimationFrame(animationLoop);
         }
