@@ -1,9 +1,14 @@
+#define _GNU_SOURCE
 #include "tsfi_spirv_kernels.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <vulkan/vulkan.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 // Struct matching shader ZMMRegisters block
 typedef struct {
@@ -25,7 +30,6 @@ typedef struct {
     float r, g, b, a;
 } ShaderVertex;
 
-// Declarations from our Vulkan compute driver
 extern void tsfi_zmm_dispatch_traverse(
     VkDevice device,
     VkQueue queue,
@@ -78,16 +82,32 @@ static void createBuffer(
     vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
 }
 
-int main() {
-    printf("[REAL ZMM TEST] Initializing local Vulkan device driver...\n");
+// Bresenham's Line Drawing Algorithm to connect wireframe vertices
+static void drawLine(uint8_t* pixels, int w, int h, int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint8_t b) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
 
-    // 1. Initialize Vulkan Instance
+    while (1) {
+        if (x0 >= 0 && x0 < w && y0 >= 0 && y0 < h) {
+            int idx = (x0 + y0 * w) * 3;
+            pixels[idx] = r;
+            pixels[idx + 1] = g;
+            pixels[idx + 2] = b;
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+int main() {
+    printf("[REAL ZMM TEST] Initializing Vulkan device driver...\n");
+
     VkApplicationInfo appInfo = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = "ZMM Teddy Render",
-        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-        .pEngineName = "ZMM Engine",
-        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+        .pApplicationName = "ZMM Teddy Coherent Render",
         .apiVersion = VK_API_VERSION_1_0
     };
     VkInstanceCreateInfo instInfo = {
@@ -95,28 +115,15 @@ int main() {
         .pApplicationInfo = &appInfo
     };
     VkInstance instance;
-    if (vkCreateInstance(&instInfo, NULL, &instance) != VK_SUCCESS) {
-        fprintf(stderr, "Failed to create Vulkan instance\n");
-        return -1;
-    }
+    vkCreateInstance(&instInfo, NULL, &instance);
 
-    // 2. Select Physical Device
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, NULL);
-    if (deviceCount == 0) {
-        fprintf(stderr, "No Vulkan compatible GPUs found\n");
-        return -1;
-    }
-    VkPhysicalDevice* physDevs = malloc(sizeof(VkPhysicalDevice) * deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, physDevs);
-    VkPhysicalDevice physDev = physDevs[0];
-    free(physDevs);
+    uint32_t devCount = 1;
+    VkPhysicalDevice physDev;
+    vkEnumeratePhysicalDevices(instance, &devCount, &physDev);
 
-    // 3. Create Logical Device and Queue
     float queuePriority = 1.0f;
     VkDeviceQueueCreateInfo queueInfo = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        .queueFamilyIndex = 0,
         .queueCount = 1,
         .pQueuePriorities = &queuePriority
     };
@@ -126,25 +133,19 @@ int main() {
         .pQueueCreateInfos = &queueInfo
     };
     VkDevice device;
-    if (vkCreateDevice(physDev, &devInfo, NULL, &device) != VK_SUCCESS) {
-        fprintf(stderr, "Failed to create logical device\n");
-        return -1;
-    }
+    vkCreateDevice(physDev, &devInfo, NULL, &device);
 
     VkQueue queue;
     vkGetDeviceQueue(device, 0, 0, &queue);
 
-    // 4. Create Command Pool
     VkCommandPoolCreateInfo poolInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .queueFamilyIndex = 0,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+        .queueFamilyIndex = 0
     };
     VkCommandPool cmdPool;
     vkCreateCommandPool(device, &poolInfo, NULL, &cmdPool);
 
-    // 5. Setup Input Data Buffers
-    // Register Buffer (Input Registers)
+    // Buffers allocation
     VkBuffer regBuffer;
     VkDeviceMemory regMemory;
     createBuffer(device, physDev, sizeof(ZMMRegs), 
@@ -152,24 +153,6 @@ int main() {
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
                  &regBuffer, &regMemory);
 
-    ZMMRegs regs = {
-        .basePhase = 0.5f,
-        .channelFreq = 300.0f,
-        .signalAmp = 1.0f,
-        .poleSteer = 50.0f,
-        .foundationRail = 1200.0f,
-        .chinRail = 600.0f,
-        .rBeta = 20.0f,     // High Gain beta bias point
-        .rCutoff = 30.0f,   // Low cutoff threshold
-        .accNPN = 45.0f,
-        .accPNP = 15.0f
-    };
-    void* dataPtr;
-    vkMapMemory(device, regMemory, 0, sizeof(ZMMRegs), 0, &dataPtr);
-    memcpy(dataPtr, &regs, sizeof(ZMMRegs));
-    vkUnmapMemory(device, regMemory);
-
-    // Simulated local GGUF Weight Manifold Buffer (256KB of float weights)
     uint32_t weightCount = 65536;
     VkBuffer weightBuffer;
     VkDeviceMemory weightMemory;
@@ -180,15 +163,15 @@ int main() {
 
     float* simulatedWeights = malloc(sizeof(float) * weightCount);
     for (uint32_t i = 0; i < weightCount; i++) {
-        // Generate continuous high-frequency weight fluctuations mimicking a model's parameters
-        simulatedWeights[i] = sinf((float)i * 0.05f) * cosf((float)i * 0.01f);
+        // Continuous coherent manifold structure (no random noise)
+        simulatedWeights[i] = sinf((float)i * 0.01f) * cosf((float)i * 0.003f) * 0.5f;
     }
+    void* dataPtr;
     vkMapMemory(device, weightMemory, 0, sizeof(float) * weightCount, 0, &dataPtr);
     memcpy(dataPtr, simulatedWeights, sizeof(float) * weightCount);
     vkUnmapMemory(device, weightMemory);
     free(simulatedWeights);
 
-    // Output Vertex Buffer (For storing projected coordinates)
     uint32_t vertexCount = 1024;
     VkBuffer outputBuffer;
     VkDeviceMemory outputMemory;
@@ -197,48 +180,82 @@ int main() {
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
                  &outputBuffer, &outputMemory);
 
-    // 6. Dispatch GPU Compute Shader
-    printf("[REAL ZMM TEST] Submitting zmm_traverse compute pipeline to GPU queue...\n");
-    tsfi_zmm_dispatch_traverse(device, queue, cmdPool, regBuffer, weightBuffer, outputBuffer, vertexCount / 256);
-    printf("[REAL ZMM TEST] Compute pass completed.\n");
-
-    // 7. Retrieve coordinates and render local PPM Image of the Teddy Bear
-    vkMapMemory(device, outputMemory, 0, sizeof(ShaderVertex) * vertexCount, 0, &dataPtr);
-    ShaderVertex* vertices = (ShaderVertex*)dataPtr;
-
-    // Rasterize points to a 2D grid image (256x256 pixels)
-    int imgDim = 256;
+    // PPM output image allocation
+    int imgDim = 512;
     uint8_t* ppmPixels = calloc(imgDim * imgDim * 3, 1);
 
-    for (uint32_t i = 0; i < vertexCount; i++) {
-        // Project 3D coordinate space onto 2D image plane
-        int px = (int)((vertices[i].x / 10.0f + 0.5f) * (float)imgDim);
-        int py = (int)((vertices[i].y / 10.0f + 0.5f) * (float)imgDim);
+    // Initial register states
+    ZMMRegs regs = {
+        .basePhase = 0.0f,
+        .channelFreq = 300.0f,
+        .signalAmp = 1.0f,
+        .poleSteer = 0.0f,
+        .foundationRail = 1200.0f,
+        .chinRail = 600.0f,
+        .rBeta = 10.0f,     // High initial gain
+        .rCutoff = 20.0f    // Low initial cutoff
+    };
 
-        if (px >= 0 && px < imgDim && py >= 0 && py < imgDim) {
-            int idx = (px + py * imgDim) * 3;
-            ppmPixels[idx] = (uint8_t)(vertices[i].r * 255.0f);     // Red channel
-            ppmPixels[idx + 1] = (uint8_t)(vertices[i].g * 255.0f); // Green channel
-            ppmPixels[idx + 2] = (uint8_t)(vertices[i].b * 255.0f); // Blue channel
+    printf("[REAL ZMM TRAVERSAL] Running multi-frame loop modulating resistors and impedance...\n");
+
+    // We run 32 sweeps of phase accumulation to stitch the dots into continuous wireframe lines
+    int numSweeps = 32;
+    for (int frame = 0; frame < numSweeps; frame++) {
+        // Dynamic impedance modulation: change phase and frequency based on frame index
+        regs.basePhase = (float)frame * (2.0f * M_PI / (float)numSweeps);
+        
+        // Modulate resistors dynamically across the sweeps to sweep the threshold
+        regs.rBeta = 10.0f + sinf((float)frame * 0.5f) * 5.0f;
+        regs.rCutoff = 20.0f + cosf((float)frame * 0.5f) * 10.0f;
+
+        // Modulate the dual accumulators representing charge transport
+        regs.accNPN = 50.0f + 25.0f * sinf((float)frame * 0.2f);
+        regs.accPNP = 50.0f + 25.0f * cosf((float)frame * 0.2f);
+
+        // Map registers to Vulkan buffer
+        vkMapMemory(device, regMemory, 0, sizeof(ZMMRegs), 0, &dataPtr);
+        memcpy(dataPtr, &regs, sizeof(ZMMRegs));
+        vkUnmapMemory(device, regMemory);
+
+        // Dispatch compute shader
+        tsfi_zmm_dispatch_traverse(device, queue, cmdPool, regBuffer, weightBuffer, outputBuffer, vertexCount / 256);
+
+        // Map output vertices to draw
+        vkMapMemory(device, outputMemory, 0, sizeof(ShaderVertex) * vertexCount, 0, &dataPtr);
+        ShaderVertex* vertices = (ShaderVertex*)dataPtr;
+
+        // Connect the vertices with lines to form the coherent wireframe geometry
+        for (uint32_t i = 0; i < vertexCount - 1; i++) {
+            // Screen projection scaling
+            int x0 = (int)((vertices[i].x / 14.0f + 0.5f) * (float)imgDim);
+            int y0 = (int)((vertices[i].y / 14.0f + 0.5f) * (float)imgDim);
+            int x1 = (int)((vertices[i + 1].x / 14.0f + 0.5f) * (float)imgDim);
+            int y1 = (int)((vertices[i + 1].y / 14.0f + 0.5f) * (float)imgDim);
+
+            // Connect consecutive vertices sharing same group
+            if (abs(x0 - x1) < 100 && abs(y0 - y1) < 100) {
+                uint8_t r = (uint8_t)(vertices[i].r * 255.0f);
+                uint8_t g = (uint8_t)(vertices[i].g * 255.0f);
+                uint8_t b = (uint8_t)(vertices[i].b * 255.0f);
+                drawLine(ppmPixels, imgDim, imgDim, x0, y0, x1, y1, r, g, b);
+            }
         }
+        vkUnmapMemory(device, outputMemory);
     }
-    vkUnmapMemory(device, outputMemory);
 
-    // Write to PPM file
+    // Write final accumulated wireframe mesh to file
     const char* filename = "teddy_bear_output.ppm";
     FILE* f = fopen(filename, "wb");
     if (f) {
         fprintf(f, "P6\n%d %d\n255\n", imgDim, imgDim);
         fwrite(ppmPixels, 1, imgDim * imgDim * 3, f);
         fclose(f);
-        printf("[SUCCESS] Rendered local image: %s\n", filename);
-    } else {
-        fprintf(stderr, "Failed to write image output file\n");
+        printf("[SUCCESS] Coherent wireframe bear rendered: %s\n", filename);
     }
 
     free(ppmPixels);
 
-    // Cleanup Vulkan Resources
+    // Cleanup resources
     vkDestroyBuffer(device, regBuffer, NULL);
     vkFreeMemory(device, regMemory, NULL);
     vkDestroyBuffer(device, weightBuffer, NULL);
@@ -246,6 +263,7 @@ int main() {
     vkDestroyBuffer(device, outputBuffer, NULL);
     vkFreeMemory(device, outputMemory, NULL);
     vkDestroyCommandPool(device, cmdPool, NULL);
+    vkDeviceWaitIdle(device);
     vkDestroyDevice(device, NULL);
     vkDestroyInstance(instance, NULL);
 
