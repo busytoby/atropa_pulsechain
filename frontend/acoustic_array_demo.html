@@ -321,6 +321,24 @@
 
             <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
 
+            <h3>Dual Bus Accumulators</h3>
+            <div class="control-group">
+                <label>NPN-Hypobar Accumulator (Anpn)</label>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 4px; height: 16px; overflow: hidden; position: relative;">
+                    <div id="acc-npn-bar" style="background: var(--npn-color); width: 0%; height: 100%; transition: width 0.05s linear;"></div>
+                    <span id="acc-npn-val" style="position: absolute; right: 8px; top: 1px; font-size: 0.7rem; font-family: monospace; color: var(--text-color);">0.00</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>PNP-Epibar Accumulator (Apnp)</label>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 4px; height: 16px; overflow: hidden; position: relative;">
+                    <div id="acc-pnp-bar" style="background: var(--pnp-color); width: 0%; height: 100%; transition: width 0.05s linear;"></div>
+                    <span id="acc-pnp-val" style="position: absolute; right: 8px; top: 1px; font-size: 0.7rem; font-family: monospace; color: var(--text-color);">0.00</span>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
+
             <h3>Transistor Dichotomy Probe</h3>
             <div class="control-group">
                 <label for="bias-slider">Manual Base Bias (V)</label>
@@ -417,6 +435,15 @@
         const regChannel = document.getElementById("reg-channel");
         const regSignal = document.getElementById("reg-signal");
         const regPole = document.getElementById("reg-pole");
+
+        const accNPNBar = document.getElementById("acc-npn-bar");
+        const accNPNVal = document.getElementById("acc-npn-val");
+        const accPNPBar = document.getElementById("acc-pnp-bar");
+        const accPNPVal = document.getElementById("acc-pnp-val");
+
+        // Global accumulators
+        let accNPNValue = 0.0;
+        let accPNPValue = 0.0;
 
         // Constants & Emitter array geometry (6 vertical columns representing semiconductors)
         const numColumns = 6;
@@ -851,6 +878,31 @@
                 // Real-time oscilloscope tracking
                 drawConductionScope(timeSec, f0, 10.0, wSub, wFund, wHarm, crossoverValPct, biasOffset);
                 updateRegisters(f0, biasedSig);
+
+                // Update variable-rate accumulators based on conduction
+                const thresholdOffset = (rCutoff / 100.0) * 0.15;
+                const thresh = (1.0 - crossoverValPct / 100.0) * 0.4 + thresholdOffset;
+                
+                let condNPN = 0.0;
+                let condPNP = 0.0;
+                if (biasedSig > thresh) {
+                    condNPN = (biasedSig - thresh) / (1.0 - thresh);
+                }
+                if (biasedSig < -thresh) {
+                    condPNP = (Math.abs(biasedSig) - thresh) / (1.0 - thresh);
+                }
+
+                const idleRate = 0.2; // Baseline increase per frame
+                const rateNPN = idleRate + condNPN * 3.5; 
+                const ratePNP = idleRate + condPNP * 3.5;
+
+                accNPNValue = (accNPNValue + rateNPN) % 100.0;
+                accPNPValue = (accPNPValue + ratePNP) % 100.0;
+
+                accNPNBar.style.width = accNPNValue.toFixed(1) + "%";
+                accNPNVal.innerText = accNPNValue.toFixed(2);
+                accPNPBar.style.width = accPNPValue.toFixed(1) + "%";
+                accPNPVal.innerText = accPNPValue.toFixed(2);
 
                 requestAnimationFrame(animationLoop);
             } catch (err) {
