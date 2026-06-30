@@ -697,6 +697,12 @@ def generate_video(audio_wave, channels):
         if temp < 290.0 or temp > 450.0:
             raise ValueError(f"FET Diagnostic Fault: Junction temperature {temp:.2f}K violates thermal limits!")
             
+        # Live Phase Cancellation Guard
+        sum_features = sum(features.values())
+        master_rms = np.sqrt(np.mean(block**2)) if len(block) > 0 else 0.0
+        if sum_features > 0.02 and master_rms < 0.005 * sum_features:
+            raise ValueError(f"Phase Cancellation Fault: Master mix collapsed to {master_rms:.6f} despite active channels ({sum_features:.6f})!")
+            
         v_gate_array[idx] = v_gate
         r_ds_array[idx] = r_ds
         temp_array[idx] = temp
