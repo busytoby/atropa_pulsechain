@@ -289,14 +289,9 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             delayLine[delayIdx] = echoedSig;
             delayIdx = (delayIdx + 1) % delayLen;
 
-            // Warm Moog filter sweep (2.2kHz down to 1.8kHz resonance sweep)
-            const moogCutoff = 2200.0 + 800.0 * Math.sin(sentenceProgress * Math.PI);
-            moogVCF.setParams(moogCutoff, 0.45);
-            const filteredVoice = moogVCF.process(echoedSig);
-
             const fricationOutput = bpFrication.process(whiteNoise) * currentFrication * 1.5;
 
-            const finalSample = (filteredVoice + fricationOutput) * 0.15;
+            const finalSample = (echoedSig + fricationOutput) * 0.15;
             samples.push(finalSample);
             sampleCounter++;
         }
