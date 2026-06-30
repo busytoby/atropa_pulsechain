@@ -48,6 +48,26 @@ class HighPassFilter {
     }
 }
 
+class LowPassFilter {
+    constructor(cutoff, sampleRate = 44100) {
+        this.sampleRate = sampleRate;
+        this.y1 = 0.0;
+        this.setCutoff(cutoff);
+    }
+
+    setCutoff(cutoff) {
+        const rc = 1.0 / (2.0 * Math.PI * cutoff);
+        const dt = 1.0 / this.sampleRate;
+        this.alpha = dt / (rc + dt);
+    }
+
+    process(x) {
+        const y = this.y1 + this.alpha * (x - this.y1);
+        this.y1 = y;
+        return y;
+    }
+}
+
 class BandPassFilter {
     constructor(freq, bandwidth, sampleRate = 44100) {
         this.sampleRate = sampleRate;
@@ -146,6 +166,7 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
     const resF2 = new Resonator(1500.0, 120.0, sampleRate);
     const resF3 = new Resonator(2500.0, 160.0, sampleRate);
     const hpFrication = new HighPassFilter(4500.0, sampleRate);
+    const lpFrication = new LowPassFilter(8000.0, sampleRate);
 
     let f1Acc = 500.0;
     let f2Acc = 1500.0;
@@ -235,7 +256,6 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             resF1.setFrequency(f1Acc, 80.0);
             resF2.setFrequency(f2Acc, 120.0);
             resF3.setFrequency(f3Acc, 160.0);
-            hpFrication.setCutoff(hpCutoffAcc);
 
             let currentVoicing = voicingTarget;
             let currentAspiration = aspirationTarget;
@@ -274,7 +294,14 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             delayLine[delayIdx] = echoedSig;
             delayIdx = (delayIdx + 1) % delayLen;
 
-            const fricationOutput = hpFrication.process(whiteNoise) * currentFrication * 1.5;
+            let fricationOutput = 0.0;
+            if (char === 'F' || char === 'DH' || char === 'B' || char === 'D' || char === 'G' || char === 'P') {
+                lpFrication.setCutoff(hpCutoffAcc);
+                fricationOutput = lpFrication.process(whiteNoise) * currentFrication * 1.5;
+            } else {
+                hpFrication.setCutoff(hpCutoffAcc);
+                fricationOutput = hpFrication.process(whiteNoise) * currentFrication * 1.5;
+            }
 
             const finalSample = (echoedSig + fricationOutput) * 0.15;
             samples.push(finalSample);
