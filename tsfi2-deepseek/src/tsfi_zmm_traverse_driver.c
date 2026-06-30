@@ -4,13 +4,15 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-// Fully functional Vulkan Dispatcher for weight traversal (no mocks)
-void tsfi_zmm_dispatch_traverse(
+// Unified Vulkan Dispatcher for composite dual-GGUF weight traversal (DeepSeek + Stable Diffusion)
+// Configuration: Emitter-Follower (unity voltage gain buffer reproducing input register signals to drive low-impedance output buffers)
+void tsfi_zmm_dispatch_composite_traverse(
     VkDevice device,
     VkQueue queue,
     VkCommandPool cmdPool,
     VkBuffer regBuffer,
-    VkBuffer weightBuffer,
+    VkBuffer deepseekWeightBuffer,
+    VkBuffer sdWeightBuffer,
     VkBuffer outputBuffer,
     uint32_t workgroupCount
 ) {
@@ -25,12 +27,12 @@ void tsfi_zmm_dispatch_traverse(
     VkShaderModule shaderModule;
     res = vkCreateShaderModule(device, &shCreateInfo, NULL, &shaderModule);
     if (res != VK_SUCCESS) {
-        fprintf(stderr, "[ZMM DISPATCH ERROR] Failed to create shader module: %d\n", res);
+        fprintf(stderr, "[ZMM COMPOSITE ERROR] Failed to create shader module: %d\n", res);
         return;
     }
 
-    // 2. Define Descriptor Set Layout (3 Bindings: UBO/SSBO registers, SSBO weights, SSBO vertices)
-    VkDescriptorSetLayoutBinding bindings[3] = {
+    // 2. Define Descriptor Set Layout (4 Bindings: registers, DeepSeek GGUF, SD GGUF, output vertices)
+    VkDescriptorSetLayoutBinding bindings[4] = {
         {
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -48,12 +50,18 @@ void tsfi_zmm_dispatch_traverse(
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT
+        },
+        {
+            .binding = 3,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT
         }
     };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = 3,
+        .bindingCount = 4,
         .pBindings = bindings
     };
     VkDescriptorSetLayout descLayout;
@@ -100,7 +108,7 @@ void tsfi_zmm_dispatch_traverse(
     // 5. Descriptor Pool & Set Allocation
     VkDescriptorPoolSize poolSize = {
         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 3
+        .descriptorCount = 4
     };
     VkDescriptorPoolCreateInfo poolInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -135,15 +143,16 @@ void tsfi_zmm_dispatch_traverse(
         return;
     }
 
-    // 6. Update Descriptor Set with Buffers
-    VkDescriptorBufferInfo bufferInfos[3] = {
+    // 6. Update Descriptor Set with composite Buffers
+    VkDescriptorBufferInfo bufferInfos[4] = {
         { .buffer = regBuffer, .offset = 0, .range = VK_WHOLE_SIZE },
-        { .buffer = weightBuffer, .offset = 0, .range = VK_WHOLE_SIZE },
+        { .buffer = deepseekWeightBuffer, .offset = 0, .range = VK_WHOLE_SIZE },
+        { .buffer = sdWeightBuffer, .offset = 0, .range = VK_WHOLE_SIZE },
         { .buffer = outputBuffer, .offset = 0, .range = VK_WHOLE_SIZE }
     };
 
-    VkWriteDescriptorSet writes[3];
-    for (int i = 0; i < 3; i++) {
+    VkWriteDescriptorSet writes[4];
+    for (int i = 0; i < 4; i++) {
         writes[i] = (VkWriteDescriptorSet){
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = descSet,
@@ -153,7 +162,7 @@ void tsfi_zmm_dispatch_traverse(
             .pBufferInfo = &bufferInfos[i]
         };
     }
-    vkUpdateDescriptorSets(device, 3, writes, 0, NULL);
+    vkUpdateDescriptorSets(device, 4, writes, 0, NULL);
 
     // 7. Command Buffer Allocation & Recording
     VkCommandBufferAllocateInfo cmdAllocInfo = {
@@ -177,7 +186,6 @@ void tsfi_zmm_dispatch_traverse(
 
         vkEndCommandBuffer(cmdBuffer);
 
-        // Submit and Wait
         VkSubmitInfo submitInfo = {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .commandBufferCount = 1,
