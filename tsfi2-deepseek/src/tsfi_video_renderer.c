@@ -1,6 +1,8 @@
 #include "tsfi_c_math.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
 #include <immintrin.h>
 #include <unistd.h>
@@ -130,8 +132,8 @@ void render_frame(int frame, uint8_t *pixels) {
 
             __mmask16 mEye1 = _mm512_cmp_ps_mask(dist1, _mm512_set1_ps(pulse_radius), _CMP_LT_OS);
             __mmask16 mEye2 = _mm512_cmp_ps_mask(dist2, _mm512_set1_ps(eye2_radius), _CMP_LT_OS);
-            __mmask16 mEars = _mm512_or_mask16(_mm512_cmp_ps_mask(distE1, _mm512_set1_ps(0.075f), _CMP_LT_OS),
-                                               _mm512_cmp_ps_mask(distE2, _mm512_set1_ps(0.075f), _CMP_LT_OS));
+            __mmask16 mEars = _mm512_cmp_ps_mask(distE1, _mm512_set1_ps(0.075f), _CMP_LT_OS) |
+                              _mm512_cmp_ps_mask(distE2, _mm512_set1_ps(0.075f), _CMP_LT_OS);
             __mmask16 mHead = _mm512_cmp_ps_mask(distH, _mm512_set1_ps(0.2f), _CMP_LT_OS);
             __mmask16 mBody = _mm512_cmp_ps_mask(distB, _mm512_set1_ps(0.25f), _CMP_LT_OS);
 
