@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auncient Phased Array Transducer Demo</title>
+    <title>Auncient Multi-Tonewheel Phased Array Demo</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -12,9 +12,8 @@
             --accent-glow: rgba(59, 130, 246, 0.4);
             --text-color: #f3f4f6;
             --text-muted: #9ca3af;
-            --wave-color: rgba(59, 130, 246, 0.6);
-            --particle-color: #10b981;
-            --particle-glow: rgba(16, 185, 129, 0.8);
+            --trap-color: #10b981;
+            --haptic-color: #ef4444;
         }
 
         body {
@@ -43,7 +42,7 @@
             font-size: 1.8rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            background: linear-gradient(90deg, #3b82f6, #10b981);
+            background: linear-gradient(90deg, #3b82f6, #10b981, #ef4444);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -95,20 +94,39 @@
             color: var(--text-muted);
         }
 
+        .drawbars-container {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .drawbar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30%;
+        }
+
+        .drawbar-col input[type="range"] {
+            writing-mode: vertical-lr;
+            direction: rtl;
+            appearance: slider-vertical;
+            width: 12px;
+            height: 120px;
+            margin: 10px 0;
+        }
+
         select, input[type="range"] {
             width: 100%;
             background-color: var(--bg-color);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-color);
             border-radius: 6px;
-            padding: 8px;
-            box-sizing: border-box;
             outline: none;
             transition: border-color 0.2s;
-        }
-
-        select:focus {
-            border-color: var(--accent-color);
         }
 
         input[type="range"] {
@@ -116,7 +134,6 @@
             height: 6px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 3px;
-            padding: 0;
         }
 
         input[type="range"]::-webkit-slider-thumb {
@@ -146,7 +163,7 @@
 
         .stat-value {
             font-family: monospace;
-            font-size: 1.1rem;
+            font-size: 1.0rem;
             color: #10b981;
             margin-top: 4px;
         }
@@ -173,57 +190,76 @@
             color: var(--text-muted);
             text-align: center;
         }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Auncient Phased Array Transducer Control</h1>
-        <p class="subtitle">Acoustic Standing Wave Levitation & Mid-Air Haptic Field Simulator</p>
+        <h1>Auncient Multi-Tonewheel Phased Array Simulator</h1>
+        <p class="subtitle">Concurrent Acoustic Levitation Trap & Mid-Air Haptic Synthesis</p>
     </header>
 
     <div class="main-container">
         <div class="panel">
-            <h2>Array Settings</h2>
-            
-            <div class="control-group">
-                <label for="mode-select">Transducer Mode</label>
-                <select id="mode-select">
-                    <option value="levitation">Acoustic Levitation Trap (Standing Wave)</option>
-                    <option value="haptics">Mid-Air Haptic Focus (Modulated Impulse)</option>
-                </select>
+            <h2>Multi-Tonewheel Drawbars</h2>
+            <div class="drawbars-container">
+                <div class="drawbar-col">
+                    <label style="font-size:0.75rem;">Sub-Harm<br>(0.5f)</label>
+                    <input type="range" id="drawbar-sub" min="0" max="1" step="0.05" value="0.6">
+                    <span id="val-sub" style="font-size:0.75rem; color:var(--haptic-color);">0.6</span>
+                </div>
+                <div class="drawbar-col">
+                    <label style="font-size:0.75rem;">Fund<br>(1.0f)</label>
+                    <input type="range" id="drawbar-fund" min="0" max="1" step="0.05" value="1.0">
+                    <span id="val-fund" style="font-size:0.75rem; color:var(--trap-color);">1.0</span>
+                </div>
+                <div class="drawbar-col">
+                    <label style="font-size:0.75rem;">Harmonic<br>(2.0f)</label>
+                    <input type="range" id="drawbar-harm" min="0" max="1" step="0.05" value="0.4">
+                    <span id="val-harm" style="font-size:0.75rem; color:var(--accent-color);">0.4</span>
+                </div>
             </div>
 
             <div class="control-group">
-                <label for="freq-slider">Carrier Frequency (Hz)</label>
-                <input type="range" id="freq-slider" min="100" max="800" value="400">
+                <label for="freq-slider">Base Carrier Frequency (Hz)</label>
+                <input type="range" id="freq-slider" min="100" max="600" value="300">
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
                     <span>100 Hz</span>
-                    <span id="freq-val" style="color: var(--accent-color)">400 Hz</span>
-                    <span>800 Hz</span>
+                    <span id="freq-val" style="color: var(--accent-color)">300 Hz</span>
+                    <span>600 Hz</span>
                 </div>
             </div>
 
             <div class="control-group">
                 <label for="haptic-slider">Haptic Pulse Rate (Hz)</label>
-                <input type="range" id="haptic-slider" min="1" max="50" value="10">
+                <input type="range" id="haptic-slider" min="1" max="50" value="12">
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
                     <span>1 Hz</span>
-                    <span id="haptic-val" style="color: var(--accent-color)">10 Hz</span>
+                    <span id="haptic-val" style="color: var(--accent-color)">12 Hz</span>
                     <span>50 Hz</span>
                 </div>
             </div>
 
-            <div class="control-group">
-                <label for="particle-slider">Particle Size / Mass</label>
-                <input type="range" id="particle-slider" min="2" max="15" value="6">
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
-                    <span>Light</span>
-                    <span id="particle-val" style="color: var(--accent-color)">6 px</span>
-                    <span>Heavy</span>
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 20px 0;">
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
 
             <h3>Auncient State Registers</h3>
             <div class="stats-grid">
@@ -233,15 +269,15 @@
                 </div>
                 <div class="stat-card">
                     <label>Channel (Freq)</label>
-                    <div class="stat-value" id="reg-channel">400.00 Hz</div>
+                    <div class="stat-value" id="reg-channel">300.00 Hz</div>
                 </div>
                 <div class="stat-card">
-                    <label>Signal (Amplitude)</label>
+                    <label>Signal (Amp)</label>
                     <div class="stat-value" id="reg-signal">1.00</div>
                 </div>
                 <div class="stat-card">
-                    <label>Pole (X-offset)</label>
-                    <div class="stat-value" id="reg-pole">0 px</div>
+                    <label>Pole (Trap vector)</label>
+                    <div class="stat-value" id="reg-pole">0, 0 px</div>
                 </div>
             </div>
         </div>
@@ -250,8 +286,18 @@
             <div class="canvas-container">
                 <canvas id="array-canvas" width="800" height="600"></canvas>
             </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--trap-color);"></div>
+                    <span>Levitation Trap (Green Node)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--haptic-color);"></div>
+                    <span>Haptic Projection Point (Red Node)</span>
+                </div>
+            </div>
             <div class="instruction-box">
-                Drag the target ring inside the field to steer the focal trap. Click anywhere to reposition immediately.
+                Drag the <b>Green Ring</b> to steer the levitation trap or the <b>Red Ring</b> to target haptics.
             </div>
         </div>
     </div>
@@ -260,25 +306,27 @@
         const canvas = document.getElementById("array-canvas");
         const ctx = canvas.getContext("2d");
 
-        const modeSelect = document.getElementById("mode-select");
+        const drawbarSub = document.getElementById("drawbar-sub");
+        const drawbarFund = document.getElementById("drawbar-fund");
+        const drawbarHarm = document.getElementById("drawbar-harm");
+        const valSub = document.getElementById("val-sub");
+        const valFund = document.getElementById("val-fund");
+        const valHarm = document.getElementById("val-harm");
+
         const freqSlider = document.getElementById("freq-slider");
         const freqVal = document.getElementById("freq-val");
         const hapticSlider = document.getElementById("haptic-slider");
         const hapticVal = document.getElementById("haptic-val");
-        const particleSlider = document.getElementById("particle-slider");
-        const particleVal = document.getElementById("particle-val");
 
         const regBase = document.getElementById("reg-base");
         const regChannel = document.getElementById("reg-channel");
         const regSignal = document.getElementById("reg-signal");
         const regPole = document.getElementById("reg-pole");
 
-        // Constants
+        // Constants & Emitter array geometry
         const numEmitters = 16;
-        const speedOfSound = 343; // m/s in simulation units
+        const speedOfSound = 343;
         const emitters = [];
-        
-        // Emitter setup (horizontal array at bottom)
         const emitterY = 560;
         const arrayWidth = 700;
         const startX = 50;
@@ -288,257 +336,260 @@
             emitters.push({
                 x: startX + i * spacing,
                 y: emitterY,
-                phase: 0.0
+                phaseA: 0.0, // phase steering for target A (levitation)
+                phaseB: 0.0  // phase steering for target B (haptics)
             });
         }
 
-        // Steer Target Point
-        let targetX = 400;
-        let targetY = 300;
-        let isDragging = false;
+        // Dual Target Nodes
+        let targetA = { x: 300, y: 300, color: '#10b981', label: 'Trap' }; // Green
+        let targetB = { x: 500, y: 250, color: '#ef4444', label: 'Haptic' }; // Red
+        let activeTarget = null;
 
-        // Particle Physics (Levitation Trap)
-        let particleX = 400;
-        let particleY = 300;
-        let particleVx = 0.0;
-        let particleVy = 0.0;
+        // Particle Physics (trapped in Target A)
+        let particle = { x: 300, y: 300, vx: 0.0, vy: 0.0, mass: 6.0 };
 
         let time = 0.0;
 
-        // Mouse listeners
-        function updateTargetPos(e) {
+        // Interactive mouse tracking
+        canvas.addEventListener("mousedown", (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            targetX = Math.max(startX, Math.min(startX + arrayWidth, (e.clientX - rect.left) * scaleX));
-            targetY = Math.max(100, Math.min(emitterY - 50, (e.clientY - rect.top) * scaleY));
-        }
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
 
-        canvas.addEventListener("mousedown", (e) => {
-            isDragging = true;
-            updateTargetPos(e);
+            // Check if user clicked near Target A or B
+            const distA = Math.hypot(mouseX - targetA.x, mouseY - targetA.y);
+            const distB = Math.hypot(mouseX - targetB.x, mouseY - targetB.y);
+
+            if (distA < 30) {
+                activeTarget = targetA;
+            } else if (distB < 30) {
+                activeTarget = targetB;
+            } else {
+                // Relocate closest node to click coordinate
+                if (distA < distB) {
+                    targetA.x = mouseX;
+                    targetA.y = mouseY;
+                    activeTarget = targetA;
+                } else {
+                    targetB.x = mouseX;
+                    targetB.y = mouseY;
+                    activeTarget = targetB;
+                }
+            }
         });
 
         window.addEventListener("mousemove", (e) => {
-            if (isDragging) {
-                updateTargetPos(e);
+            if (activeTarget) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                activeTarget.x = Math.max(startX, Math.min(startX + arrayWidth, (e.clientX - rect.left) * scaleX));
+                activeTarget.y = Math.max(100, Math.min(emitterY - 50, (e.clientY - rect.top) * scaleY));
             }
         });
 
         window.addEventListener("mouseup", () => {
-            isDragging = false;
+            activeTarget = null;
         });
 
         // Parameters
-        let frequency = parseFloat(freqSlider.value);
-        let hapticRate = parseFloat(hapticSlider.value);
-        let particleMass = parseFloat(particleSlider.value);
+        let f0 = parseFloat(freqSlider.value);
+        let hapticPulseRate = parseFloat(hapticSlider.value);
 
         freqSlider.addEventListener("input", (e) => {
-            frequency = parseFloat(e.target.value);
-            freqVal.innerText = frequency + " Hz";
+            f0 = parseFloat(e.target.value);
+            freqVal.innerText = f0 + " Hz";
         });
 
         hapticSlider.addEventListener("input", (e) => {
-            hapticRate = parseFloat(e.target.value);
-            hapticVal.innerText = hapticRate + " Hz";
+            hapticPulseRate = parseFloat(e.target.value);
+            hapticVal.innerText = hapticPulseRate + " Hz";
         });
 
-        particleSlider.addEventListener("input", (e) => {
-            particleMass = parseFloat(e.target.value);
-            particleVal.innerText = particleMass + " px";
-        });
+        // Drawbar listeners
+        drawbarSub.addEventListener("input", (e) => { valSub.innerText = e.target.value; });
+        drawbarFund.addEventListener("input", (e) => { valFund.innerText = e.target.value; });
+        drawbarHarm.addEventListener("input", (e) => { valHarm.innerText = e.target.value; });
 
         function calculateEmitterPhases() {
-            // Steering phase delay: delta_phi = (2 * pi * f * distance) / speed
-            const lambda = speedOfSound / frequency;
-            const k = (2.0 * Math.PI) / lambda;
+            // Target A: steered by Fundamental (1.0f) and Harmonic (2.0f)
+            const kFund = (2.0 * Math.PI) / (speedOfSound / f0);
+            const kHarm = (2.0 * Math.PI) / (speedOfSound / (f0 * 2.0));
 
-            // Calculate phase delays so all waves arrive in-phase at targetX, targetY
+            // Target B: steered by Subharmonic (0.5f)
+            const kSub = (2.0 * Math.PI) / (speedOfSound / (f0 * 0.5));
+
             emitters.forEach(emitter => {
-                const dist = Math.hypot(targetX - emitter.x, targetY - emitter.y);
-                emitter.phase = -dist * k;
+                const distA = Math.hypot(targetA.x - emitter.x, targetA.y - emitter.y);
+                const distB = Math.hypot(targetB.x - emitter.x, targetB.y - emitter.y);
+                
+                emitter.phaseA_fund = -distA * kFund;
+                emitter.phaseA_harm = -distA * kHarm;
+                emitter.phaseB_sub = -distB * kSub;
             });
         }
 
-        function drawWavefield(mode) {
+        function drawWavefield() {
             const width = canvas.width;
             const height = canvas.height;
-            
-            // Render wave propagation lines from array
-            ctx.save();
-            ctx.lineWidth = 1;
-            
-            // Draw acoustic field intensity overlay
             const imgData = ctx.createImageData(width, height);
             const data = imgData.data;
 
-            // Compute field intensity selectively for performance (grid sampling)
+            const wSub = parseFloat(drawbarSub.value);
+            const wFund = parseFloat(drawbarFund.value);
+            const wHarm = parseFloat(drawbarHarm.value);
+
             const step = 8;
             for (let y = 100; y < emitterY; y += step) {
                 for (let x = startX - 20; x < startX + arrayWidth + 20; x += step) {
                     let totalAmp = 0;
-                    
+
                     emitters.forEach(emitter => {
                         const dist = Math.hypot(x - emitter.x, y - emitter.y);
-                        const phaseShift = emitter.phase + (dist * (2.0 * Math.PI * frequency) / 500.0);
-                        
-                        // Modulate signal with haptic pulse if haptic mode active
-                        let modFactor = 1.0;
-                        if (mode === "haptics") {
-                            modFactor = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticRate * time);
+
+                        // 1. Subharmonic (0.5f) contribution steered to Target B (haptic modulation pulse)
+                        if (wSub > 0) {
+                            const phaseSub = emitter.phaseB_sub + (dist * (2.0 * Math.PI * (f0 * 0.5)) / 500.0);
+                            const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * time);
+                            totalAmp += Math.sin(phaseSub - time * 12.0) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
                         }
-                        
-                        totalAmp += Math.sin(phaseShift - time * 25.0) * (20.0 / Math.max(10.0, dist)) * modFactor;
+
+                        // 2. Fundamental (1.0f) contribution steered to Target A (levitation trap)
+                        if (wFund > 0) {
+                            const phaseFund = emitter.phaseA_fund + (dist * (2.0 * Math.PI * f0) / 500.0);
+                            totalAmp += Math.sin(phaseFund - time * 24.0) * (20.0 / Math.max(10.0, dist)) * wFund;
+                        }
+
+                        // 3. Harmonic (2.0f) contribution steered to Target A (potential wall tightener)
+                        if (wHarm > 0) {
+                            const phaseHarm = emitter.phaseA_harm + (dist * (2.0 * Math.PI * (f0 * 2.0)) / 500.0);
+                            totalAmp += Math.sin(phaseHarm - time * 48.0) * (20.0 / Math.max(10.0, dist)) * wHarm;
+                        }
                     });
 
-                    // Draw intensity value in canvas grid cell
                     const normAmp = Math.max(0, Math.min(255, Math.floor(Math.abs(totalAmp) * 8.0)));
                     for (let dy = 0; dy < step; dy++) {
                         for (let dx = 0; dx < step; dx++) {
                             const px = (x + dx) + (y + dy) * width;
                             const idx = px * 4;
                             if (idx >= 0 && idx < data.length) {
-                                data[idx] = normAmp * 0.15; // Red
-                                data[idx + 1] = normAmp * 0.45; // Green
-                                data[idx + 2] = normAmp * 0.85; // Blue
-                                data[idx + 3] = 120; // Opacity
+                                // Composite coloration mapping green for levitation and red for haptic fields
+                                data[idx] = normAmp * (wSub * 0.85);      // Red
+                                data[idx + 1] = normAmp * (wFund * 0.65);  // Green
+                                data[idx + 2] = normAmp * (wHarm * 0.45);  // Blue
+                                data[idx + 3] = 130;
                             }
                         }
                     }
                 }
             }
             ctx.putImageData(imgData, 0, 0);
-            ctx.restore();
         }
 
         function drawEmitters() {
-            emitters.forEach((emitter, idx) => {
+            emitters.forEach(emitter => {
                 ctx.beginPath();
-                ctx.arc(emitter.x, emitter.y, 10, 0, 2.0 * Math.PI);
-                ctx.fillStyle = "rgba(59, 130, 246, 0.8)";
+                ctx.arc(emitter.x, emitter.y, 8, 0, 2.0 * Math.PI);
+                ctx.fillStyle = "rgba(59, 130, 246, 0.7)";
                 ctx.fill();
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
                 ctx.stroke();
 
-                // Small active status pulse
                 ctx.beginPath();
-                ctx.arc(emitter.x, emitter.y, 4, 0, 2.0 * Math.PI);
+                ctx.arc(emitter.x, emitter.y, 3, 0, 2.0 * Math.PI);
                 ctx.fillStyle = "#10b981";
                 ctx.fill();
             });
         }
 
-        function updateRegisters(mode) {
-            regBase.innerText = emitters[0].phase.toFixed(2) + " rad";
-            regChannel.innerText = frequency.toFixed(2) + " Hz";
+        function updatePhysics() {
+            // Trapping particle force toward Target A (Levitation trap point)
+            const dx = targetA.x - particle.x;
+            const dy = targetA.y - particle.y;
+            const wFund = parseFloat(drawbarFund.value);
+            const wHarm = parseFloat(drawbarHarm.value);
+
+            // Force scales with drawbar weights
+            const forceStrength = 0.08 * (wFund + wHarm * 0.5);
+            particle.vx += dx * forceStrength;
+            particle.vy += dy * forceStrength + 0.03 * Math.sin(time * 15.0); // Acoustic vibration oscillations
+
+            particle.vx *= 0.82;
+            particle.vy *= 0.82;
+
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+        }
+
+        function drawTargetsAndParticle() {
+            // 1. Draw target A (Levitation Trap focus ring)
+            ctx.beginPath();
+            ctx.arc(targetA.x, targetA.y, 22 + 4 * Math.sin(time * 8.0), 0, 2.0 * Math.PI);
+            ctx.strokeStyle = "rgba(16, 185, 129, 0.5)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
+            ctx.fill();
+
+            // 2. Draw Target B (Haptic focus point and radiating wave cycles)
+            ctx.beginPath();
+            ctx.arc(targetB.x, targetB.y, 25, 0, 2.0 * Math.PI);
+            ctx.strokeStyle = "rgba(239, 68, 68, 0.6)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = "rgba(239, 68, 68, 0.05)";
+            ctx.fill();
+
+            const pulseRadius = (time * 160) % 130;
+            ctx.beginPath();
+            ctx.arc(targetB.x, targetB.y, pulseRadius, 0, 2.0 * Math.PI);
+            ctx.strokeStyle = `rgba(239, 68, 68, ${Math.max(0, 1.0 - pulseRadius / 130)})`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // 3. Draw Levitating Particle in Trap A
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.mass + 6, 0, 2.0 * Math.PI);
+            ctx.fillStyle = "rgba(16, 185, 129, 0.35)";
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.mass, 0, 2.0 * Math.PI);
+            ctx.fillStyle = "#10b981";
+            ctx.fill();
+        }
+
+        function updateRegisters() {
+            regBase.innerText = emitters[0].phaseA_fund.toFixed(2) + " rad";
+            regChannel.innerText = f0.toFixed(2) + " Hz";
             
-            let sigVal = 1.0;
-            if (mode === "haptics") {
-                sigVal = (0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticRate * time));
-            }
+            const wSub = parseFloat(drawbarSub.value);
+            const wFund = parseFloat(drawbarFund.value);
+            const sigVal = wFund * 0.7 + wSub * 0.3 * (0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * time));
             regSignal.innerText = sigVal.toFixed(2);
-            regPole.innerText = Math.round(targetX - 400) + " px";
-        }
-
-        function updatePhysics(mode) {
-            if (mode === "levitation") {
-                // Standing wave trap potential field calculation
-                const targetDistX = targetX - particleX;
-                const targetDistY = targetY - particleY;
-                const dist = Math.hypot(targetDistX, targetDistY);
-
-                // Trapping force pushes particle toward targetX, targetY nodes
-                const forceStrength = 0.08 / (particleMass * 0.5);
-                const trapFx = targetDistX * forceStrength;
-                const trapFy = targetDistY * forceStrength;
-
-                // Add slight acoustic node oscillation
-                const waveOscY = 8.0 * Math.sin(time * 12.0);
-                
-                particleVx += trapFx;
-                particleVy += trapFy + waveOscY * 0.01;
-
-                // Apply damping (air viscosity simulation)
-                particleVx *= 0.82;
-                particleVy *= 0.82;
-
-                particleX += particleVx;
-                particleY += particleVy;
-            } else {
-                // In haptic mode, particle falls down due to gravity (not trapped)
-                particleVy += 0.5;
-                particleY += particleVy;
-                particleX += particleVx;
-
-                // Clamp to emitter height
-                if (particleY > emitterY - 30) {
-                    particleY = emitterY - 30;
-                    particleVy = 0;
-                }
-            }
-        }
-
-        function drawParticle(mode) {
-            if (mode === "levitation") {
-                // Trap focus ring
-                ctx.beginPath();
-                ctx.arc(targetX, targetY, 20 + 5 * Math.sin(time * 10), 0, 2.0 * Math.PI);
-                ctx.strokeStyle = "rgba(16, 185, 129, 0.4)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Glow ring
-                ctx.beginPath();
-                ctx.arc(particleX, particleY, particleMass + 6, 0, 2.0 * Math.PI);
-                ctx.fillStyle = "rgba(16, 185, 129, 0.3)";
-                ctx.fill();
-
-                // Solid particle
-                ctx.beginPath();
-                ctx.arc(particleX, particleY, particleMass, 0, 2.0 * Math.PI);
-                ctx.fillStyle = "#10b981";
-                ctx.fill();
-            } else {
-                // Focus target ring
-                ctx.beginPath();
-                ctx.arc(targetX, targetY, 25, 0, 2.0 * Math.PI);
-                ctx.strokeStyle = "rgba(239, 68, 68, 0.6)";
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                // Radiating haptic pulse rings
-                const pulseRadius = (time * 150) % 120;
-                ctx.beginPath();
-                ctx.arc(targetX, targetY, pulseRadius, 0, 2.0 * Math.PI);
-                ctx.strokeStyle = `rgba(239, 68, 68, ${Math.max(0, 1.0 - pulseRadius / 120)})`;
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
+            
+            regPole.innerText = `${Math.round(targetA.x - 400)}, ${Math.round(targetA.y - 300)} px`;
         }
 
         function animationLoop() {
-            time += 0.05;
+            time += 0.04;
 
-            const mode = modeSelect.value;
-
-            // Clear Background
             ctx.fillStyle = "#05070a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Phase and field updates
             calculateEmitterPhases();
-            drawWavefield(mode);
+            drawWavefield();
             drawEmitters();
-            updatePhysics(mode);
-            drawParticle(mode);
-            updateRegisters(mode);
+            updatePhysics();
+            drawTargetsAndParticle();
+            updateRegisters();
 
             requestAnimationFrame(animationLoop);
         }
 
-        // Run Loop
         animationLoop();
     </script>
 </body>
