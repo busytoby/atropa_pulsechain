@@ -65,10 +65,11 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
 
     let noiseSeed = 42;
     let phi = 0.0;
+    let glottalFilterState = 0.0;
 
-    const resF1 = new Resonator(500.0, 50.0, sampleRate);
-    const resF2 = new Resonator(1500.0, 70.0, sampleRate);
-    const resF3 = new Resonator(2500.0, 90.0, sampleRate);
+    const resF1 = new Resonator(500.0, 80.0, sampleRate);
+    const resF2 = new Resonator(1500.0, 120.0, sampleRate);
+    const resF3 = new Resonator(2500.0, 160.0, sampleRate);
     const hpFrication = new HighPassFilter(4500.0, sampleRate);
 
     let f1Acc = 500.0;
@@ -150,9 +151,9 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
             pitchAcc += (pitchInst - pitchAcc) * glideSpeed;
             hpCutoffAcc += (hpCutoffTarget - hpCutoffAcc) * glideSpeed;
 
-            resF1.setFrequency(f1Acc, 50.0);
-            resF2.setFrequency(f2Acc, 70.0);
-            resF3.setFrequency(f3Acc, 90.0);
+            resF1.setFrequency(f1Acc, 80.0);
+            resF2.setFrequency(f2Acc, 120.0);
+            resF3.setFrequency(f3Acc, 160.0);
             hpFrication.setCutoff(hpCutoffAcc);
 
             let currentVoicing = voicingTarget;
@@ -171,8 +172,10 @@ function synthesizeSequence(phonemeSequence, params, sampleRate = 44100) {
                 }
             }
 
-            phi += 2.0 * Math.PI * pitchAcc / sampleRate;
-            const glottalSource = (phi % (2.0 * Math.PI)) / Math.PI - 1.0;
+            phi = (phi + 2.0 * Math.PI * pitchAcc / sampleRate) % (2.0 * Math.PI);
+            const rawGlottal = phi / Math.PI - 1.0;
+            glottalFilterState = 0.95 * glottalFilterState + 0.05 * rawGlottal;
+            const glottalSource = glottalFilterState;
 
             const noiseRes = randomNoise(noiseSeed);
             const whiteNoise = noiseRes.val;
