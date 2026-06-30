@@ -1,0 +1,100 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+// ZMM Virtual Register Block (mapped to host MMIO)
+layout(std140, binding = 0) readonly buffer ZMMRegisters {
+    float basePhase;
+    float channelFreq;
+    float signalAmp;
+    float poleSteer;
+    float foundationRail;
+    float chinRail;
+    float rBeta;
+    float rCutoff;
+    float accNPN;
+    float accPNP;
+} regs;
+
+// DeepSeek LLM Weight Manifold stored in GPU VRAM
+layout(std430, binding = 1) readonly buffer DeepSeekWeights {
+    float weights[];
+};
+
+// Unified Vertex Output Buffer for Vulkan Renderer
+struct Vertex {
+    vec4 position;
+    vec4 color;
+};
+
+layout(std430, binding = 2) writeonly buffer OutputBuffer {
+    Vertex vertices[];
+};
+
+// 19D Lissajous LUT Mapping Function
+uint getLissajousLUTIndex(uint gID, float phaseOffset) {
+    // Spatial multipliers modulated by Foundation and Chin registers
+    float fx = regs.channelFreq * 0.001;
+    float fy = regs.foundationRail * 0.0001;
+    float fz = regs.chinRail * 0.0001;
+
+    float t = float(gID) * 0.01;
+    float x = sin(fx * t + regs.basePhase + phaseOffset);
+    float y = sin(fy * t + regs.poleSteer * 0.01);
+    float z = sin(fz * t);
+
+    // Map 3D coordinate to flat 1D index within weight manifold
+    uint wSize = weights.length();
+    uint index = uint(abs(x * 1000.0 + y * 10000.0 + z * 100000.0)) % wSize;
+    return index;
+}
+
+void main() {
+    uint gID = gl_GlobalInvocationID.x;
+    
+    // 1. Resolve BJT beta gain and cutoff threshold
+    float betaGain = 100.0 / max(1.0, regs.rBeta);
+    float cutoffThreshold = (regs.rCutoff / 200.0) * 0.3;
+
+    // 2. Select conduction mode and phase offset based on dual accumulators
+    float polarity = (gID % 2 == 0) ? 1.0 : -1.0;
+    float activeAccumulator = (gID % 2 == 0) ? regs.accNPN : regs.accPNP;
+    
+    float phaseOffset = activeAccumulator * 0.0628; // 2*pi / 100
+
+    // 3. Compute 19D LUT Index and lookup weight
+    uint weightIdx = getLissajousLUTIndex(gID, phaseOffset);
+    float rawWeight = weights[weightIdx];
+
+    // 4. Apply beta-dependent gain and cutoff thresholding
+    float biasedVal = rawWeight * regs.signalAmp + (activeAccumulator * 0.01 * polarity);
+    
+    float finalAmplitude = 0.0;
+    if (abs(biasedVal) > cutoffThreshold) {
+        // Conduction occurs: scale output by beta gain factor
+        finalAmplitude = biasedVal * betaGain;
+    }
+
+    // 5. Project coordinates to compile the holographic Teddy Bear geometry
+    float angle = float(gID) * 0.05 + regs.basePhase;
+    float radius = 5.0 + finalAmplitude * 2.0;
+
+    // Parametric spherical coordinate projection
+    vec4 pos;
+    pos.x = radius * cos(angle) * sin(angle * 0.5);
+    pos.y = radius * sin(angle) * sin(angle * 0.5) - 2.0; // Y-Offset for vertical center
+    pos.z = radius * cos(angle * 0.5);
+    pos.w = 1.0;
+
+    // Complementary color mapping based on NPN (Green) vs PNP (Red) polarity
+    vec4 color;
+    if (gID % 2 == 0) {
+        color = vec4(0.06, 0.72, 0.50, 0.8); // NPN Green
+    } else {
+        color = vec4(0.93, 0.26, 0.26, 0.8); // PNP Red
+    }
+
+    // Write directly to shared Vulkan vertex buffer
+    vertices[gID].position = pos;
+    vertices[gID].color = color;
+}
