@@ -452,20 +452,20 @@
 
                         // 1. Subharmonic (0.5f) contribution steered to Target B (haptic modulation pulse)
                         if (wSub > 0) {
-                            const phaseSub = emitter.phaseB_sub + (dist * (2.0 * Math.PI * (f0 * 0.5)) / 500.0);
+                            const phaseSub = emitter.phaseB_sub + (dist * (2.0 * Math.PI * (f0 * 0.5)) / speedOfSound);
                             const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * time);
                             totalAmp += Math.sin(phaseSub - time * 12.0) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
                         }
 
                         // 2. Fundamental (1.0f) contribution steered to Target A (levitation trap)
                         if (wFund > 0) {
-                            const phaseFund = emitter.phaseA_fund + (dist * (2.0 * Math.PI * f0) / 500.0);
+                            const phaseFund = emitter.phaseA_fund + (dist * (2.0 * Math.PI * f0) / speedOfSound);
                             totalAmp += Math.sin(phaseFund - time * 24.0) * (20.0 / Math.max(10.0, dist)) * wFund;
                         }
 
                         // 3. Harmonic (2.0f) contribution steered to Target A (potential wall tightener)
                         if (wHarm > 0) {
-                            const phaseHarm = emitter.phaseA_harm + (dist * (2.0 * Math.PI * (f0 * 2.0)) / 500.0);
+                            const phaseHarm = emitter.phaseA_harm + (dist * (2.0 * Math.PI * (f0 * 2.0)) / speedOfSound);
                             totalAmp += Math.sin(phaseHarm - time * 48.0) * (20.0 / Math.max(10.0, dist)) * wHarm;
                         }
                     });
