@@ -452,26 +452,28 @@
                     emitters.forEach(emitter => {
                         const dist = Math.hypot(x - emitter.x, y - emitter.y);
 
+                        const speedFactor = 0.015; // Slow down temporal speed to fit monitor refresh Nyquist rate
+
                         // 1. Subharmonic (0.5f) contribution steered to Target B (haptic modulation pulse)
                         if (wSub > 0) {
                             const omegaSub = 2.0 * Math.PI * (f0 * 0.5);
                             const phaseSub = emitter.phaseB_sub + (dist * omegaSub) / speedOfSound;
-                            const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * timeSec);
-                            totalAmp += Math.sin(phaseSub - omegaSub * timeSec) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
+                            const pulseMod = 0.5 + 0.5 * Math.sin(2.0 * Math.PI * hapticPulseRate * timeSec * 0.5);
+                            totalAmp += Math.sin(phaseSub - omegaSub * timeSec * speedFactor) * (20.0 / Math.max(10.0, dist)) * wSub * pulseMod;
                         }
 
                         // 2. Fundamental (1.0f) contribution steered to Target A (levitation trap)
                         if (wFund > 0) {
                             const omegaFund = 2.0 * Math.PI * f0;
                             const phaseFund = emitter.phaseA_fund + (dist * omegaFund) / speedOfSound;
-                            totalAmp += Math.sin(phaseFund - omegaFund * timeSec) * (20.0 / Math.max(10.0, dist)) * wFund;
+                            totalAmp += Math.sin(phaseFund - omegaFund * timeSec * speedFactor) * (20.0 / Math.max(10.0, dist)) * wFund;
                         }
 
                         // 3. Harmonic (2.0f) contribution steered to Target A (potential well tightening)
                         if (wHarm > 0) {
                             const omegaHarm = 2.0 * Math.PI * (f0 * 2.0);
                             const phaseHarm = emitter.phaseA_harm + (dist * omegaHarm) / speedOfSound;
-                            totalAmp += Math.sin(phaseHarm - omegaHarm * timeSec) * (20.0 / Math.max(10.0, dist)) * wHarm;
+                            totalAmp += Math.sin(phaseHarm - omegaHarm * timeSec * speedFactor) * (20.0 / Math.max(10.0, dist)) * wHarm;
                         }
                     });
 
