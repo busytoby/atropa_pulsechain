@@ -95,7 +95,32 @@ def test_lau_projections_similarity():
     self_corr = calculate_pearson_correlation(grid_alpha, grid_alpha)
     assert np.allclose(self_corr, 1.0)
     
-    print("[SUCCESS] LAU projection uniqueness unit test passed. Visual paths are distinct.")
+    print("[SUCCESS] LAU master channel projection uniqueness unit test passed.")
+
+    # ----------------------------------------------------
+    # Snare Drum channel test (chan_idx=5)
+    # ----------------------------------------------------
+    print("[LAU-TEST] Running snare drum projection uniqueness test (chan_idx=5)...")
+    # Generate snare-like noise burst transient
+    np.random.seed(42)
+    sig_snare = np.random.normal(0.0, 0.5, steps) * np.exp(-t * 8.0)
+    
+    samplings_snare = {
+        "pitch": 400.0, "rms": 0.4, "crest": 3.0, "zcr": 0.6, 
+        "brightness": 0.7, "stereo_width": 0.6, "flux": 0.4
+    }
+    
+    pts_alpha_snare = get_lissajous_shape(state_alpha, 0.05, steps, sig_snare, 50.0, samplings_snare, 0, chan_idx=5, is_visual=True)
+    pts_beta_snare = get_lissajous_shape(state_beta, 0.05, steps, sig_snare, 50.0, samplings_snare, 0, chan_idx=5, is_visual=True)
+    
+    grid_alpha_snare = rasterize_points(pts_alpha_snare)
+    grid_beta_snare = rasterize_points(pts_beta_snare)
+    
+    corr_snare = calculate_pearson_correlation(grid_alpha_snare, grid_beta_snare)
+    print(f"LAU Snare Drum Spatial Correlation: {corr_snare:.6f}")
+    
+    assert corr_snare < 0.80, f"Error: LAU snare drum projections are too similar! Correlation = {corr_snare:.6f}"
+    print("[SUCCESS] LAU snare drum projection uniqueness unit test passed.")
 
 if __name__ == "__main__":
     test_lau_projections_similarity()
