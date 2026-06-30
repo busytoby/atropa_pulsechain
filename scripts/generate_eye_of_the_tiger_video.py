@@ -51,6 +51,32 @@ def liang_barsky_clip(x1, y1, x2, y2, xmin, ymin, xmax, ymax):
         return None
     return (x1 + t0 * dx, y1 + t0 * dy, x1 + t1 * dx, y1 + t1 * dy)
 
+def get_lau_state(time_secs, total_duration=254.0):
+    """
+    Returns the active LAU state registers based on the current 1/5th section.
+    """
+    sec_idx = min(4, max(0, int(time_secs / (total_duration / 5.0))))
+    prime = 953467954114363
+    
+    # 5 distinct base register configurations matching UT0, UT1, UT2, UT3, UT4
+    base_vals = [3, 5, 7, 11, 13]
+    sig_vals  = [5, 11, 13, 17, 19]
+    secret_vals = [7, 17, 19, 23, 29]
+    ident_vals  = [11, 23, 29, 31, 37]
+    
+    b = base_vals[sec_idx]
+    s = sig_vals[sec_idx]
+    sec = secret_vals[sec_idx]
+    ident = ident_vals[sec_idx]
+    el = b + s
+    
+    return {
+        "Prime": prime, "Base": b, "Identity": ident, "Ring": (b + sec) % prime,
+        "Monopole": pow(b, s, prime), "Rod_Dynamo": pow(b, sec, prime),
+        "Cone_Dynamo": pow(b, ident, prime), "Manifold": pow(b, s, el),
+        "Element": el, "Chin": (b + sec) % prime
+    }
+
 class TubeVactrolWarmthTransducer:
     """
     Implements a 3D Tube Saturation Transducer where virtual triode tube parameters
@@ -530,15 +556,6 @@ def synthesize_audio():
     print("[AUDIO] Running 3D tube saturation transduction (optical warmth)...")
     transducer = TubeVactrolWarmthTransducer(SAMPLE_RATE)
     
-    # Setup mock state matching screen i=0 (MASTER ATTRACTOR)
-    prime_warm = 953467954114363
-    state_warm = {
-        "Prime": prime_warm, "Base": 3, "Identity": 11, "Ring": (3 + 7) % prime_warm,
-        "Monopole": pow(3, 5, prime_warm), "Rod_Dynamo": pow(3, 7, prime_warm),
-        "Cone_Dynamo": pow(3, 11, prime_warm), "Manifold": pow(3, 5, 8),
-        "Element": 8, "Chin": (3 + 7) % prime_warm
-    }
-    
     for block_idx in range(0, TOTAL_SAMPLES, 512):
         block_left = master_left[block_idx:block_idx+512]
         block_right = master_right[block_idx:block_idx+512]
@@ -558,6 +575,9 @@ def synthesize_audio():
         
         steps = 512
         sig_interp = np.interp(np.linspace(0, len(sig_ac) - 1, steps), np.arange(len(sig_ac)), sig_ac)
+        
+        # Dynamically query active LAU warmth state based on 1/5th section
+        state_warm = get_lau_state(time_secs, TOTAL_SAMPLES / SAMPLE_RATE)
         pts = get_lissajous_shape(state_warm, time_secs, steps, sig_interp, 160.0 * 0.7, samplings, 0, 0)
         
         # Process block through spatial triode stage
@@ -733,10 +753,18 @@ def render_single_frame(frame_idx):
             line_color = color_map.get(i, (6, 182, 212))
 
         prime = 953467954114363
-        base_val = [3, 2, 5, 7, 11, 13, 17][i]
-        sig_val = [5, 11, 13, 17, 19, 23, 29][i]
-        secret_val = [7, 17, 19, 23, 29, 31, 37][i]
-        ident_val = [11, 23, 29, 31, 37, 41, 43][i]
+        
+        # Determine 1/5th section index (0 to 4) based on 254.0s total duration
+        sec_idx = min(4, max(0, int(time_secs / (254.0 / 5.0))))
+        base_offsets = [3, 5, 7, 11, 13]
+        sig_offsets  = [5, 11, 13, 17, 19]
+        secret_offsets = [7, 17, 19, 23, 29]
+        ident_offsets  = [11, 23, 29, 31, 37]
+        
+        base_val = [3, 2, 5, 7, 11, 13, 17][i] + base_offsets[sec_idx]
+        sig_val = [5, 11, 13, 17, 19, 23, 29][i] + sig_offsets[sec_idx]
+        secret_val = [7, 17, 19, 23, 29, 31, 37][i] + secret_offsets[sec_idx]
+        ident_val = [11, 23, 29, 31, 37, 41, 43][i] + ident_offsets[sec_idx]
         element_val = base_val + sig_val
         
         state = {
