@@ -298,6 +298,48 @@
                     <div class="stat-value" id="reg-pole">0 px</div>
                 </div>
             </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
+
+            <h3>Transistor Dichotomy Probe</h3>
+            <div class="control-group">
+                <label for="bias-slider">Manual Base Bias (V)</label>
+                <input type="range" id="bias-slider" min="-20" max="20" value="0" step="1">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
+                    <span style="color: var(--pnp-color);">-2.0 V (PNP)</span>
+                    <span id="bias-val" style="color: var(--accent-color);">0.0 V (Cutoff)</span>
+                    <span style="color: var(--npn-color);">+2.0 V (NPN)</span>
+                </div>
+            </div>
+
+            <div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 10px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">
+                            <th>Metric</th>
+                            <th style="color: var(--npn-color)">NPN</th>
+                            <th style="color: var(--pnp-color)">PNP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td>Carrier</td>
+                            <td>Electrons (-)</td>
+                            <td>Holes (+)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td>Bias</td>
+                            <td>Base &gt; Emitter</td>
+                            <td>Base &lt; Emitter</td>
+                        </tr>
+                        <tr>
+                            <td>Current</td>
+                            <td>In to Col</td>
+                            <td>Out of Col</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="panel panel-large">
@@ -344,6 +386,8 @@
         const crossoverSlider = document.getElementById("crossover-slider");
         const crossoverVal = document.getElementById("crossover-val");
         const outputModeSelect = document.getElementById("output-mode");
+        const biasSlider = document.getElementById("bias-slider");
+        const biasVal = document.getElementById("bias-val");
 
         const regBase = document.getElementById("reg-base");
         const regChannel = document.getElementById("reg-channel");
@@ -404,6 +448,13 @@
         // Slider listeners
         freqSlider.addEventListener("input", (e) => { freqVal.innerText = e.target.value + " Hz"; });
         crossoverSlider.addEventListener("input", (e) => { crossoverVal.innerText = e.target.value + "% (Class AB)"; });
+        biasSlider.addEventListener("input", (e) => {
+            const v = (parseFloat(e.target.value) / 10.0).toFixed(1);
+            let stateStr = "Cutoff";
+            if (v > 0.3) stateStr = "NPN Active";
+            else if (v < -0.3) stateStr = "PNP Active";
+            biasVal.innerText = `${v} V (${stateStr})`;
+        });
         drawbarSub.addEventListener("input", (e) => { valSub.innerText = e.target.value; });
         drawbarFund.addEventListener("input", (e) => { valFund.innerText = e.target.value; });
         drawbarHarm.addEventListener("input", (e) => { valHarm.innerText = e.target.value; });
@@ -595,7 +646,7 @@
         }
 
         // Draw scope plots displaying push-pull polarity split
-        function drawConductionScope(timeSec, f0, hapticPulseRate, wSub, wFund, wHarm, biasPercent) {
+        function drawConductionScope(timeSec, f0, hapticPulseRate, wSub, wFund, wHarm, biasPercent, biasValOffset) {
             const width = scopeCanvas.width;
             const height = scopeCanvas.height;
             scopeCtx.fillStyle = '#05070a';
@@ -629,7 +680,8 @@
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
                 const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
-                const y = height / 2 + normSig * 45;
+                const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
+                const y = height / 2 + biasedSig * 45;
                 if (i === 0) scopeCtx.moveTo(0, y);
                 else scopeCtx.lineTo(i * dx, y);
             }
@@ -646,9 +698,10 @@
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
                 const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
+                const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
                 let npnCon = 0;
-                if (normSig > threshold) {
-                    npnCon = (normSig - threshold) / (1.0 - threshold);
+                if (biasedSig > threshold) {
+                    npnCon = (biasedSig - threshold) / (1.0 - threshold);
                 }
                 const y = height / 2 - npnCon * 45; // Plot upward
                 if (i === 0) scopeCtx.moveTo(0, y);
@@ -667,9 +720,10 @@
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
                 const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
+                const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
                 let pnpCon = 0;
-                if (normSig < -threshold) {
-                    pnpCon = (Math.abs(normSig) - threshold) / (1.0 - threshold);
+                if (biasedSig < -threshold) {
+                    pnpCon = (Math.abs(biasedSig) - threshold) / (1.0 - threshold);
                 }
                 const y = height / 2 + pnpCon * 45; // Plot downward
                 if (i === 0) scopeCtx.moveTo(0, y);
@@ -698,6 +752,7 @@
             const wFund = parseFloat(drawbarFund.value);
             const wHarm = parseFloat(drawbarHarm.value);
             const outputMode = outputModeSelect.value;
+            const biasOffset = parseFloat(biasSlider.value) / 10.0;
 
             // Reconstruct instant signal value at current time
             let instantSig = 0.0;
@@ -705,6 +760,7 @@
             if (wFund > 0) { instantSig += Math.sin(2.0 * Math.PI * f0 * timeSec * 0.015) * wFund; }
             if (wHarm > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 2.0) * timeSec * 0.015) * wHarm; }
             const normInstantSig = Math.max(-1.0, Math.min(1.0, instantSig / (wSub + wFund + wHarm || 1.0)));
+            const biasedSig = Math.max(-1.0, Math.min(1.0, normInstantSig + biasOffset));
 
             // Clear Background
             ctx.fillStyle = "#05070a";
@@ -715,7 +771,7 @@
             drawWavefield(timeSec, f0, wSub, wFund, wHarm, outputMode);
             
             // Semiconductor columns & BJT graphics
-            drawSemiconductorColumns(timeSec, normInstantSig, crossoverValPct);
+            drawSemiconductorColumns(timeSec, biasedSig, crossoverValPct);
             
             // Focus target circle
             ctx.beginPath();
@@ -725,8 +781,8 @@
             ctx.stroke();
 
             // Real-time oscilloscope tracking
-            drawConductionScope(timeSec, f0, 10.0, wSub, wFund, wHarm, crossoverValPct);
-            updateRegisters(f0, normInstantSig);
+            drawConductionScope(timeSec, f0, 10.0, wSub, wFund, wHarm, crossoverValPct, biasOffset);
+            updateRegisters(f0, biasedSig);
 
             requestAnimationFrame(animationLoop);
         }
