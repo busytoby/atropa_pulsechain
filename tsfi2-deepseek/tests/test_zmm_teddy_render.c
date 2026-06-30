@@ -44,6 +44,10 @@ extern void tsfi_zmm_dispatch_composite_traverse(
 
 extern bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount);
 
+struct TsfiZmmVmState;
+extern void tsfi_zmm_winchester_handshake(struct TsfiZmmVmState *vm_state, uint8_t keycode);
+extern void lau_yul_thunk_init(const char *name, const char *yul_path, size_t size);
+
 // Helper to create and allocate Vulkan Buffer
 static void createBuffer(
     VkDevice device,
@@ -108,6 +112,8 @@ static void drawLine(uint8_t* pixels, int w, int h, int x0, int y0, int x1, int 
 
 int main() {
     printf("[REAL ZMM TEST] Initializing Vulkan device driver...\n");
+    // Register the WinchesterMQ Yul contract thunk
+    lau_yul_thunk_init("WinchesterMQ", "../solidity/bin/WinchesterMQ.yul", 512);
 
     VkApplicationInfo appInfo = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -216,9 +222,26 @@ int main() {
 
     printf("[REAL ZMM TRAVERSAL] Running multi-frame loop modulating resistors and impedance...\n");
 
+    // Minimal ZMM VM State structure for WinchesterMQ mapping
+    struct TsfiZmmVmState {
+        uint32_t output_pos;
+        void* telem;
+        void* manifest;
+        uint8_t* reu_ram;
+        uint64_t reu_size;
+    };
+    struct TsfiZmmVmState* vm_state = malloc(sizeof(struct TsfiZmmVmState));
+    memset(vm_state, 0, sizeof(struct TsfiZmmVmState));
+    vm_state->reu_size = 1024 * 1024;
+    vm_state->reu_ram = malloc(vm_state->reu_size);
+    memset(vm_state->reu_ram, 0, vm_state->reu_size);
+
     // We run 32 sweeps of phase accumulation to stitch the dots into continuous wireframe lines
     int numSweeps = 32;
     for (int frame = 0; frame < numSweeps; frame++) {
+        // Trigger WinchesterMQ virtual SCSI loopback handshake for keyboard input routing
+        uint8_t test_keycode = (frame % 2 == 0) ? 30 : 32;
+        tsfi_zmm_winchester_handshake((void*)vm_state, test_keycode);
         // Dynamic impedance modulation: change phase and frequency based on frame index
         regs.basePhase = (float)frame * (2.0f * M_PI / (float)numSweeps);
         
@@ -242,20 +265,27 @@ int main() {
         vkMapMemory(device, outputMemory, 0, sizeof(ShaderVertex) * vertexCount, 0, &dataPtr);
         ShaderVertex* vertices = (ShaderVertex*)dataPtr;
 
-        // Connect the vertices with lines to form the coherent wireframe geometry
-        for (uint32_t i = 0; i < vertexCount - 1; i++) {
-            // Screen projection scaling
-            int x0 = (int)((vertices[i].x / 14.0f + 0.5f) * (float)imgDim);
-            int y0 = (int)((vertices[i].y / 14.0f + 0.5f) * (float)imgDim);
-            int x1 = (int)((vertices[i + 1].x / 14.0f + 0.5f) * (float)imgDim);
-            int y1 = (int)((vertices[i + 1].y / 14.0f + 0.5f) * (float)imgDim);
+        // Draw underlying body contours (connecting surface shell points) and distinct protruding fur fibers
+        for (uint32_t i = 0; i < vertexCount - 2; i += 2) {
+            int x_shell = (int)((vertices[i].x / 14.0f + 0.5f) * (float)imgDim);
+            int y_shell = (int)((vertices[i].y / 14.0f + 0.5f) * (float)imgDim);
+            int x_next_shell = (int)((vertices[i + 2].x / 14.0f + 0.5f) * (float)imgDim);
+            int y_next_shell = (int)((vertices[i + 2].y / 14.0f + 0.5f) * (float)imgDim);
+            int x_tip = (int)((vertices[i + 1].x / 14.0f + 0.5f) * (float)imgDim);
+            int y_tip = (int)((vertices[i + 1].y / 14.0f + 0.5f) * (float)imgDim);
 
-            // Connect consecutive vertices sharing same group
-            if (abs(x0 - x1) < 100 && abs(y0 - y1) < 100) {
-                uint8_t r = (uint8_t)(vertices[i].r * 255.0f);
-                uint8_t g = (uint8_t)(vertices[i].g * 255.0f);
-                uint8_t b = (uint8_t)(vertices[i].b * 255.0f);
-                drawLine(ppmPixels, imgDim, imgDim, x0, y0, x1, y1, r, g, b);
+            uint8_t r = (uint8_t)(vertices[i].r * 255.0f);
+            uint8_t g = (uint8_t)(vertices[i].g * 255.0f);
+            uint8_t b = (uint8_t)(vertices[i].b * 255.0f);
+
+            // 1. Draw the underlying body shell wireframe
+            if (abs(x_shell - x_next_shell) < 100 && abs(y_shell - y_next_shell) < 100) {
+                drawLine(ppmPixels, imgDim, imgDim, x_shell, y_shell, x_next_shell, y_next_shell, r * 0.4, g * 0.4, b * 0.4); // darker color for shell
+            }
+
+            // 2. Draw individual protruding fur fiber
+            if (abs(x_shell - x_tip) < 100 && abs(y_shell - y_tip) < 100) {
+                drawLine(ppmPixels, imgDim, imgDim, x_shell, y_shell, x_tip, y_tip, r, g, b); // bright neon color for fur tips
             }
         }
         vkUnmapMemory(device, outputMemory);
@@ -283,6 +313,8 @@ int main() {
     vkDestroyBuffer(device, outputBuffer, NULL);
     vkFreeMemory(device, outputMemory, NULL);
     vkDestroyCommandPool(device, cmdPool, NULL);
+    free(vm_state->reu_ram);
+    free(vm_state);
     vkDeviceWaitIdle(device);
     vkDestroyDevice(device, NULL);
     vkDestroyInstance(instance, NULL);
