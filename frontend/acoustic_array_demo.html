@@ -270,6 +270,26 @@
             </div>
 
             <div class="control-group">
+                <label for="r-beta-slider">Beta Resistor R_beta (Foundation Side)</label>
+                <input type="range" id="r-beta-slider" min="10" max="200" value="100">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
+                    <span>10 Ω (High Gain)</span>
+                    <span id="r-beta-val" style="color: var(--npn-color)">100 Ω</span>
+                    <span>200 Ω (Low Gain)</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="r-cutoff-slider">Cutoff Resistor R_cutoff (Chin Side)</label>
+                <input type="range" id="r-cutoff-slider" min="10" max="200" value="50">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
+                    <span>10 Ω (Low Threshold)</span>
+                    <span id="r-cutoff-val" style="color: var(--pnp-color)">50 Ω</span>
+                    <span>200 Ω (High Threshold)</span>
+                </div>
+            </div>
+
+            <div class="control-group">
                 <label for="output-mode">Polarity Output Mode</label>
                 <select id="output-mode">
                     <option value="route">Route (Summed Recombination)</option>
@@ -388,6 +408,10 @@
         const outputModeSelect = document.getElementById("output-mode");
         const biasSlider = document.getElementById("bias-slider");
         const biasVal = document.getElementById("bias-val");
+        const rBetaSlider = document.getElementById("r-beta-slider");
+        const rBetaVal = document.getElementById("r-beta-val");
+        const rCutoffSlider = document.getElementById("r-cutoff-slider");
+        const rCutoffVal = document.getElementById("r-cutoff-val");
 
         const regBase = document.getElementById("reg-base");
         const regChannel = document.getElementById("reg-channel");
@@ -455,6 +479,8 @@
             else if (v < -0.3) stateStr = "PNP Active";
             biasVal.innerText = `${v} V (${stateStr})`;
         });
+        rBetaSlider.addEventListener("input", (e) => { rBetaVal.innerText = e.target.value + " Ω"; });
+        rCutoffSlider.addEventListener("input", (e) => { rCutoffVal.innerText = e.target.value + " Ω"; });
         drawbarSub.addEventListener("input", (e) => { valSub.innerText = e.target.value; });
         drawbarFund.addEventListener("input", (e) => { valFund.innerText = e.target.value; });
         drawbarHarm.addEventListener("input", (e) => { valHarm.innerText = e.target.value; });
@@ -590,7 +616,29 @@
             ctx.restore();
         }
 
-        function drawSemiconductorColumns(timeSec, signalVal, biasPercent) {
+        function drawResistor(x, y, isVertical) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            if (isVertical) {
+                ctx.moveTo(x, y - 20);
+                ctx.lineTo(x, y - 12);
+                ctx.lineTo(x - 6, y - 9);
+                ctx.lineTo(x + 6, y - 6);
+                ctx.lineTo(x - 6, y - 3);
+                ctx.lineTo(x + 6, y);
+                ctx.lineTo(x - 6, y + 3);
+                ctx.lineTo(x + 6, y + 6);
+                ctx.lineTo(x - 6, y + 9);
+                ctx.lineTo(x, y + 12);
+                ctx.lineTo(x, y + 20);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawSemiconductorColumns(timeSec, signalVal, biasPercent, rBeta, rCutoff) {
             emitters.forEach((emitter, idx) => {
                 // 1. Draw vertical semiconductor rails
                 ctx.beginPath();
@@ -600,9 +648,22 @@
                 ctx.lineWidth = 4;
                 ctx.stroke();
 
-                // 2. Resolve push-pull conduction logic based on signal polarity
+                // Draw Beta resistor at Foundation side (top)
+                drawResistor(emitter.x, 90, true);
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '8px monospace';
+                ctx.fillText("Rb (" + rBeta + "Ω)", emitter.x + 18, 93);
+
+                // Draw Cutoff resistor at Chin side (bottom)
+                drawResistor(emitter.x, emitterY - 30, true);
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '8px monospace';
+                ctx.fillText("Rc (" + rCutoff + "Ω)", emitter.x + 18, emitterY - 27);
+
+                // 2. Resolve push-pull conduction logic incorporating R_cutoff threshold shift
                 let conduction = 0.0;
-                const thresh = (1.0 - biasPercent / 100.0) * 0.4; // Class AB deadband threshold
+                const thresholdOffset = (rCutoff / 100.0) * 0.15;
+                const thresh = (1.0 - biasPercent / 100.0) * 0.4 + thresholdOffset; // R_cutoff increases cutoff threshold
 
                 if (emitter.type === 'NPN') {
                     if (signalVal > thresh) {
@@ -620,20 +681,24 @@
                 emitter.particleVy *= 0.8;
                 emitter.particleY += emitter.particleVy;
 
-                // 4. Animate flow of charge carriers along the vertical semiconductor column
+                // 4. Animate flow of charge carriers along the vertical semiconductor column (R_beta scales flow speed and size)
                 if (conduction > 0) {
                     ctx.save();
                     const numParticles = 6;
                     ctx.fillStyle = emitter.type === 'NPN' ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
                     
+                    // High R_beta (low gain) decreases speed and carrier density
+                    const speedCoef = 15000.0 / rBeta;
+                    const sizeCoef = 100.0 / rBeta;
+
                     for (let p = 0; p < numParticles; p++) {
                         // NPN flows downward (electrons), PNP flows upward (holes)
-                        let flowOffset = (timeSec * 200 * (1 + conduction)) % 320;
-                        let pY = (emitter.type === 'NPN') ? 60 + flowOffset : emitterY - flowOffset;
+                        let flowOffset = (timeSec * speedCoef * (1 + conduction) + (p * 55)) % 300;
+                        let pY = (emitter.type === 'NPN') ? 110 + flowOffset : (emitterY - 50) - flowOffset;
                         
-                        if (pY > 60 && pY < emitterY) {
+                        if (pY > 110 && pY < emitterY - 50) {
                             ctx.beginPath();
-                            ctx.arc(emitter.x, pY, 2 + conduction * 2, 0, 2.0 * Math.PI);
+                            ctx.arc(emitter.x, pY, (2 + conduction * 2) * sizeCoef, 0, 2.0 * Math.PI);
                             ctx.fill();
                         }
                     }
@@ -754,6 +819,8 @@
                 const wHarm = parseFloat(drawbarHarm.value);
                 const outputMode = outputModeSelect.value;
                 const biasOffset = parseFloat(biasSlider.value) / 10.0;
+                const rBeta = parseFloat(rBetaSlider.value);
+                const rCutoff = parseFloat(rCutoffSlider.value);
 
                 // Reconstruct instant signal value at current time
                 let instantSig = 0.0;
@@ -772,7 +839,7 @@
                 drawWavefield(timeSec, f0, wSub, wFund, wHarm, outputMode);
                 
                 // Semiconductor columns & BJT graphics
-                drawSemiconductorColumns(timeSec, biasedSig, crossoverValPct);
+                drawSemiconductorColumns(timeSec, biasedSig, crossoverValPct, rBeta, rCutoff);
                 
                 // Focus target circle
                 ctx.beginPath();
