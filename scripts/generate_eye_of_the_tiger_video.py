@@ -24,6 +24,33 @@ def lut_cos(angle_val, shift=0):
     idx = (int(math.floor(val)) + shift) & LUT_MASK
     return cos_lut[idx]
 
+def liang_barsky_clip(x1, y1, x2, y2, xmin, ymin, xmax, ymax):
+    dx = x2 - x1
+    dy = y2 - y1
+    p = [-dx, dx, -dy, dy]
+    q = [x1 - xmin, xmax - x1, y1 - ymin, ymax - y1]
+    
+    t0, t1 = 0.0, 1.0
+    for k in range(4):
+        if p[k] == 0.0:
+            if q[k] < 0.0:
+                return None
+        else:
+            r = q[k] / p[k]
+            if p[k] < 0.0:
+                if r > t1:
+                    return None
+                elif r > t0:
+                    t0 = r
+            else:
+                if r < t0:
+                    return None
+                elif r < t1:
+                    t1 = r
+    if t0 > t1:
+        return None
+    return (x1 + t0 * dx, y1 + t0 * dy, x1 + t1 * dx, y1 + t1 * dy)
+
 class TubeVactrolWarmthTransducer:
     """
     Implements a 3D Tube Saturation Transducer where virtual triode tube parameters
@@ -164,6 +191,10 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
     r_hyp = (state["Element"] % 53) + 10.0
     d_hyp = (state["Chin"] % 41) + 5.0
     
+    # Dynamic visual gain control (blow-up constraint) on heavy shock (RMS and flux)
+    shock = samplings.get("rms", 0.0) * 0.7 + samplings.get("flux", 0.0) * 0.8
+    r_scale_constrained = r_scale / (1.0 + shock * 0.5)
+
     for i in range(steps):
         # Sound reaction vector: current amplitude and phase-delayed amplitude (1D & 2D)
         sig_now = sig_segment[i] * 1.8 if i < len(sig_segment) else 0.0
@@ -182,8 +213,8 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         # Project sound vector through the Lissajous Convolution Matrix:
         # [ X ] = [  qx   qy ] * [ sig_now     ]
         # [ Y ] = [ -qy   qx ]   [ sig_delayed ]
-        x = (qx_g * sig_now + qy_g * sig_delayed) * r_scale
-        y = (-qy_g * sig_now + qx_g * sig_delayed) * r_scale * f_z_mod
+        x = (qx_g * sig_now + qy_g * sig_delayed) * r_scale_constrained
+        y = (-qy_g * sig_now + qx_g * sig_delayed) * r_scale_constrained * f_z_mod
         
         # Apply 14D Hypotrochoid vector offset tracing (Delegate token signature)
         h_x = (R_hyp - r_hyp) * math.cos(theta) + d_hyp * math.cos(((R_hyp - r_hyp) / r_hyp) * theta)
@@ -192,7 +223,7 @@ def get_lissajous_shape(state, t_secs, steps, sig_segment, r_scale, samplings, l
         # Calculate convolved 3D coordinates (with Z depth layer)
         x_3d = x + h_x * (1.0 + 0.3 * sig_now)
         y_3d = y + x * shear_factor + h_y * (1.0 + 0.3 * sig_delayed)
-        z_3d = math.sin(theta * f_z_mod + phase_y) * r_scale * 0.35 * (1.0 + 0.3 * sig_now)
+        z_3d = math.sin(theta * f_z_mod + phase_y) * r_scale_constrained * 0.35 * (1.0 + 0.3 * sig_now)
         
         # Apply 9D Chin hemisphere vertical asymmetry warping (asymmetric clamping in 3D space)
         if y_3d < 0:
@@ -771,10 +802,20 @@ def render_single_frame(frame_idx):
         points = smoothed_pts
 
         if len(points) > 1:
-            # Draw Neon Glow: wide faint line, medium line, white-hot core line (modulated by spider mount sway)
-            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], int(50 * glow_alpha_factor)), width=int(6 * glow_width_factor))
-            draw.line(points, fill=(line_color[0], line_color[1], line_color[2], int(120 * glow_alpha_factor)), width=int(4 * glow_width_factor))
-            draw.line(points, fill=(255, 255, 255, 255), width=2)
+            # Liang-Barsky visual containment bounding box clipping
+            xmin, xmax = cx - r, cx + r
+            ymin, ymax = cy - r, cy + r
+            for seg_idx in range(len(points) - 1):
+                p1 = points[seg_idx]
+                p2 = points[seg_idx + 1]
+                clipped = liang_barsky_clip(p1[0], p1[1], p2[0], p2[1], xmin, ymin, xmax, ymax)
+                if clipped:
+                    c1 = (clipped[0], clipped[1])
+                    c2 = (clipped[2], clipped[3])
+                    # Draw Neon Glow segment: wide faint line, medium line, white-hot core line (modulated by spider mount sway)
+                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], int(50 * glow_alpha_factor)), width=int(6 * glow_width_factor))
+                    draw.line([c1, c2], fill=(line_color[0], line_color[1], line_color[2], int(120 * glow_alpha_factor)), width=int(4 * glow_width_factor))
+                    draw.line([c1, c2], fill=(255, 255, 255, 255), width=2)
 
         draw.text((cx - 30, cy + r - 20), label, fill=(156, 163, 175, 200))
         
