@@ -378,11 +378,11 @@
 
         // Initialize immediately with the 5 baseline bears by default
         let LAU_BEARS = [
-            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444"},
-            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706"},
-            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6"},
-            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981"},
-            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6"}
+            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0},
+            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6},
+            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6},
+            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8},
+            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
         ];
 
         let BEAR_DATABASES = [];
@@ -440,13 +440,15 @@
                         }
                         const exp = BigInt(Math.abs(hash) % 10000 + 440);
                         const hue = Math.abs(hash) % 360;
+                        const panVal = ((count % 5) - 2) * 0.4;
                         
                         dynamic_bears.push({
                             "id": count,
                             "name": item.symbol || item.name || `LAU-${count}`,
                             "address": item.address,
                             "exp": exp,
-                            "color": `hsl(${hue}, 80%, 55%)`
+                            "color": `hsl(${hue}, 80%, 55%)`,
+                            "pan": panVal
                         });
                         count++;
                     }
@@ -521,10 +523,87 @@
                 btn.classList.add("active");
                 targetEmotion = emo;
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
+                
+                // Play active chord of the speaker instantly on RS-131 reactor
+                const v_chord = EMOTIONS[targetEmotion];
+                dacSlider.value = v_chord;
+                dacStreamVal.innerText = v_chord;
+                
+                initAudio();
+                if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+                playSpeakerChord(activeSpeakerId, v_chord, audioCtx ? audioCtx.currentTime : 0);
+                
                 evaluateConsensus();
             };
             emoSelector.appendChild(btn);
         });
+
+        function playSpeakerChord(voiceIdx, inputVal, time) {
+            if (!audioCtx) return;
+            const v = LAU_BEARS[voiceIdx];
+            
+            const Pi = BigInt(inputVal);
+            const Eta = bigModExp(Pi, v.exp, MotzkinPrime);
+            const Kappa = bigModExp(Pi, MotzkinPrime, v.exp);
+            
+            const freqL = Number((Eta % 400n) + 150n);
+            const freqR = Number((Kappa % 400n) + 150n);
+
+            // Audio DAC effects path
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0.0, time);
+            mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+            mainGain.connect(audioCtx.destination);
+
+            const panner = audioCtx.createStereoPanner();
+            panner.pan.setValueAtTime(v.pan, time);
+            panner.connect(mainGain);
+
+            const oscL = audioCtx.createOscillator();
+            oscL.type = "sine";
+            oscL.frequency.setValueAtTime(freqL, time);
+            oscL.connect(panner);
+
+            const oscR = audioCtx.createOscillator();
+            oscR.type = "sawtooth";
+            oscR.frequency.setValueAtTime(freqR, time);
+            oscR.connect(panner);
+
+            // Add growl if not aligned
+            const speaker = LAU_BEARS[activeSpeakerId];
+            const res = bigModExp(inputVal, speaker.exp, MotzkinPrime);
+            const R_spk = Number(res % 50n) + 15.0;
+            const r_spk = Number(res % 25n) + 8.0;
+            const activeRatio = R_spk / r_spk;
+            const db = BEAR_DATABASES[voiceIdx];
+            
+            let self_classified = "CONFUSION";
+            let min_diff = Infinity;
+            Object.entries(db).forEach(([emo, target_ratio]) => {
+                const diff = Math.abs(target_ratio - activeRatio);
+                if (diff < min_diff) {
+                    min_diff = diff;
+                    self_classified = emo;
+                }
+            });
+
+            if (self_classified !== targetEmotion) {
+                const modulator = audioCtx.createOscillator();
+                modulator.frequency.value = 33; // 33Hz growl modulator
+                const modGain = audioCtx.createGain();
+                modGain.gain.value = 0.5;
+                modulator.connect(modGain);
+                modGain.connect(mainGain.gain);
+                modulator.start(time);
+                modulator.stop(time + 0.4);
+            }
+
+            oscL.start(time);
+            oscR.start(time);
+            oscL.stop(time + 0.4);
+            oscR.stop(time + 0.4);
+        }
 
         dacSlider.oninput = () => {
             dacStreamVal.innerText = dacSlider.value;
@@ -544,7 +623,7 @@
             const osc = audioCtx.createOscillator();
             osc.frequency.value = 180;
             const modulator = audioCtx.createOscillator();
-            modulator.frequency.value = 33; // 33Hz Growl
+            modulator.frequency.value = 33; 
             const modGain = audioCtx.createGain();
             modGain.gain.value = 0.5;
             
