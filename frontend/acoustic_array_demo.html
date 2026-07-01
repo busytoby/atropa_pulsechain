@@ -577,6 +577,145 @@
             ctx.putImageData(imgData, 0, 0);
         }
 
+        // Draw dual half-wave circuit: positive half-wave branch (silicon diode + LED pointing right)
+        // and negative half-wave branch (silicon diode + LED pointing left) in series.
+        function drawDualHalfWaveCircuit(x1, x2, y, signalVal) {
+            const midX = (x1 + x2) / 2;
+            ctx.save();
+            ctx.lineWidth = 2.0;
+
+            // Positive Branch (top)
+            const posActive = signalVal > 0.05;
+            ctx.strokeStyle = posActive ? '#10b981' : 'rgba(255,255,255,0.15)';
+            ctx.fillStyle = posActive ? '#10b981' : 'rgba(255,255,255,0.15)';
+            if (posActive) {
+                ctx.shadowColor = '#10b981';
+                ctx.shadowBlur = 8;
+            }
+
+            // Connection lines and positive branch layout
+            ctx.beginPath();
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x1 + 15, y);
+            ctx.lineTo(x1 + 15, y - 25);
+            ctx.lineTo(midX - 35, y - 25);
+            ctx.stroke();
+
+            // Silicon Diode pointing right
+            ctx.beginPath();
+            ctx.moveTo(midX - 35, y - 30);
+            ctx.lineTo(midX - 25, y - 25);
+            ctx.lineTo(midX - 35, y - 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(midX - 25, y - 30);
+            ctx.lineTo(midX - 25, y - 20);
+            ctx.stroke();
+
+            // Inter-connection
+            ctx.beginPath();
+            ctx.moveTo(midX - 25, y - 25);
+            ctx.lineTo(midX - 10, y - 25);
+            ctx.stroke();
+
+            // LED pointing right
+            ctx.beginPath();
+            ctx.moveTo(midX - 10, y - 30);
+            ctx.lineTo(midX, y - 25);
+            ctx.lineTo(midX - 10, y - 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(midX, y - 30);
+            ctx.lineTo(midX, y - 20);
+            ctx.stroke();
+
+            // LED light emission arrows
+            ctx.beginPath();
+            ctx.moveTo(midX - 5, y - 33);
+            ctx.lineTo(midX + 2, y - 40);
+            ctx.moveTo(midX - 1, y - 31);
+            ctx.lineTo(midX + 6, y - 38);
+            ctx.stroke();
+
+            // Positive branch output connection
+            ctx.beginPath();
+            ctx.moveTo(midX, y - 25);
+            ctx.lineTo(x2 - 15, y - 25);
+            ctx.lineTo(x2 - 15, y);
+            ctx.lineTo(x2, y);
+            ctx.stroke();
+
+            // Reset shadow for negative branch
+            ctx.shadowBlur = 0;
+
+            // Negative Branch (bottom)
+            const negActive = signalVal < -0.05;
+            ctx.strokeStyle = negActive ? '#ef4444' : 'rgba(255,255,255,0.15)';
+            ctx.fillStyle = negActive ? '#ef4444' : 'rgba(255,255,255,0.15)';
+            if (negActive) {
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 8;
+            }
+
+            // Connection lines and negative branch layout
+            ctx.beginPath();
+            ctx.moveTo(x2, y);
+            ctx.lineTo(x2 - 15, y);
+            ctx.lineTo(x2 - 15, y + 25);
+            ctx.lineTo(midX + 35, y + 25);
+            ctx.stroke();
+
+            // Silicon Diode pointing left
+            ctx.beginPath();
+            ctx.moveTo(midX + 35, y + 30);
+            ctx.lineTo(midX + 25, y + 25);
+            ctx.lineTo(midX + 35, y + 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(midX + 25, y + 30);
+            ctx.lineTo(midX + 25, y + 20);
+            ctx.stroke();
+
+            // Inter-connection
+            ctx.beginPath();
+            ctx.moveTo(midX + 25, y + 25);
+            ctx.lineTo(midX + 10, y + 25);
+            ctx.stroke();
+
+            // LED pointing left
+            ctx.beginPath();
+            ctx.moveTo(midX + 10, y + 30);
+            ctx.lineTo(midX, y + 25);
+            ctx.lineTo(midX + 10, y + 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(midX, y + 30);
+            ctx.lineTo(midX, y + 20);
+            ctx.stroke();
+
+            // LED light emission arrows (pointing up-left)
+            ctx.beginPath();
+            ctx.moveTo(midX + 5, y + 17);
+            ctx.lineTo(midX - 2, y + 10);
+            ctx.moveTo(midX + 1, y + 19);
+            ctx.lineTo(midX - 6, y + 12);
+            ctx.stroke();
+
+            // Negative branch output connection
+            ctx.beginPath();
+            ctx.moveTo(midX, y + 25);
+            ctx.lineTo(x1 + 15, y + 25);
+            ctx.lineTo(x1 + 15, y);
+            ctx.lineTo(x1, y);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
         // Draw BJT Transistor schematic symbol at levitating coordinate
         function drawBJT(x, y, type, conduction) {
             ctx.save();
@@ -735,6 +874,14 @@
                 // 5. Draw the physical transistor symbol
                 drawBJT(emitter.x, emitter.particleY, emitter.type, conduction);
             });
+
+            // 6. Draw the dual half-wave circuit diagram between each NPN/PNP column pair
+            for (let p = 0; p < numColumns / 2; p++) {
+                const emitter1 = emitters[2 * p];
+                const emitter2 = emitters[2 * p + 1];
+                const midY = (emitter1.particleY + emitter2.particleY) / 2;
+                drawDualHalfWaveCircuit(emitter1.x, emitter2.x, midY, signalVal);
+            }
         }
 
         // Draw scope plots displaying push-pull polarity split
