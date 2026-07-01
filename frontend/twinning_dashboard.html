@@ -407,6 +407,14 @@
                 </select>
             </div>
 
+            <!-- 3. Phonetic Sequence Playback (.BIO) -->
+            <div class="widget-card">
+                <h3>3. Phonetic Playback (.BIO)</h3>
+                <div class="selector-grid" id="phonetic-playback-grid">
+                    <!-- Load and trigger speech formants from .bio file -->
+                </div>
+            </div>
+
             <div class="widget-card">
                 <h3>Live Signal Telemetry</h3>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.75rem; font-family:'Share Tech Mono', monospace;">
@@ -456,8 +464,12 @@
         let twinInterval = null;
         let audioCtx = null;
         let bufValue = 0.0;
+        let phoneticProfiles = null;
         
         let twinPhase = 1; 
+
+        // Persistent carrier oscillator nodes for real-time swept formants
+        let activeSynthNode = null;
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
@@ -470,6 +482,7 @@
         const telemetryRatio = document.getElementById("telemetry-ratio");
         const speakerDropdown = document.getElementById("speaker-dropdown");
         const recBoard = document.getElementById("recognition-board");
+        const playbackGrid = document.getElementById("phonetic-playback-grid");
 
         // Fetch dynamic contract list from EVM config
         async function loadEVMContracts() {
@@ -525,6 +538,169 @@
                 logConsole(`[EVM] Failed to load config. Using baseline bears fallback.`);
                 buildUI();
             }
+        }
+
+        // Fetch and load Bionika sequence files (.bio)
+        async function loadBioProfiles() {
+            try {
+                const res = await fetch("../assets/bionika/phonetic_profiles.bio");
+                const data = await res.json();
+                phoneticProfiles = data.phonemes;
+                logConsole(`[BIO] Loaded Bionika Phonetic Profiles sequence definitions.`);
+                buildPhoneticPlaybackUI();
+            } catch (err) {
+                console.error(err);
+                logConsole(`[BIO] Failed to load assets/bionika/phonetic_profiles.bio directly. Trying fallback root.`);
+                try {
+                    const res = await fetch("/assets/bionika/phonetic_profiles.bio");
+                    const data = await res.json();
+                    phoneticProfiles = data.phonemes;
+                    logConsole(`[BIO] Loaded Bionika Phonetic Profiles.`);
+                    buildPhoneticPlaybackUI();
+                } catch (e) {
+                    logConsole(`[BIO] Warning: Bionika Phonetic Profiles could not be resolved.`);
+                }
+            }
+        }
+
+        function buildPhoneticPlaybackUI() {
+            playbackGrid.innerHTML = "";
+            if (!phoneticProfiles) return;
+            
+            Object.keys(phoneticProfiles).forEach(phKey => {
+                const btn = document.createElement("button");
+                btn.className = "select-btn";
+                btn.innerText = phKey;
+                btn.onclick = () => {
+                    initAudio();
+                    triggerPhonemeSweep(phKey);
+                };
+                playbackGrid.appendChild(btn);
+            });
+        }
+
+        // Interpolation helper for phonetic sequences
+        function interpolateTimeSeries(series, t) {
+            const times = series.times;
+            const values = series.values;
+            if (t <= times[0]) return values[0];
+            if (t >= times[times.length - 1]) return values[values.length - 1];
+
+            for (let i = 0; i < times.length - 1; i++) {
+                if (t >= times[i] && t <= times[i+1]) {
+                    const ratio = (t - times[i]) / (times[i+1] - times[i]);
+                    return values[i] + ratio * (values[i+1] - values[i]);
+                }
+            }
+            return values[0];
+        }
+
+        // Stepped real-time formant modulator
+        function triggerPhonemeSweep(phonemeName) {
+            const profile = phoneticProfiles[phonemeName];
+            if (!profile) return;
+            
+            logConsole(`[BIO] Playing speech formant sweep sequence: ${phonemeName}...`);
+            const speaker = LAU_BEARS[activeSpeakerId];
+            
+            const duration = 1000; // 1.0 second duration
+            const startTime = Date.now();
+
+            // Set up a continuous carrier synthesizer node to sweep parameters smoothly in real-time
+            if (activeSynthNode) {
+                try { activeSynthNode.stop(); } catch(e){}
+            }
+
+            const time = audioCtx.currentTime;
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0.0, time);
+            mainGain.gain.linearRampToValueAtTime(0.25, time + 0.05);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, time + 1.0);
+            mainGain.connect(audioCtx.destination);
+
+            const panner = audioCtx.createStereoPanner();
+            panner.pan.setValueAtTime(speaker.pan, time);
+            panner.connect(mainGain);
+
+            const oscL = audioCtx.createOscillator();
+            const oscR = audioCtx.createOscillator();
+            oscL.type = "sine";
+            oscR.type = "sawtooth";
+            oscL.connect(panner);
+            oscR.connect(panner);
+
+            oscL.start(time);
+            oscR.start(time);
+
+            activeSynthNode = {
+                stop: () => {
+                    try { oscL.stop(); oscR.stop(); } catch(e){}
+                }
+            };
+
+            function stepSequence() {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const t = Math.min(1.0, elapsed / duration);
+
+                // Modulate the 5 settings in sequence based on the .bio file definitions
+                const velocityVal = interpolateTimeSeries(profile.rotational_velocity, t);
+                const dispersionVal = interpolateTimeSeries(profile.dispersion_depth, t);
+                const bladeVal = interpolateTimeSeries(profile.blade_count_mod, t);
+                const offsetL = interpolateTimeSeries(profile.sensor_offset_l, t);
+                const offsetR = interpolateTimeSeries(profile.sensor_offset_r, t);
+
+                // Map 5 sequence values directly to current bear settings:
+                speaker.gain = dispersionVal;
+                speaker.detune = Math.round((bladeVal - 1.0) * 1200); // map blade count ratio to cents
+                speaker.phase = Math.round(offsetL * 15); // map left sensor offset to phase degrees
+                speaker.dir = velocityVal > 1.5 ? 1 : -1;
+                
+                // Keep the FM target responsive
+                speaker.fm = (offsetR > 8.0) ? "fifth" : ((offsetL > 8.0) ? "sub" : "-1");
+
+                // Update UI sliders/inputs on the dashboard live to reflect sequence modulation
+                const row = document.querySelector(`.rec-row[data-id="${speaker.id}"]`);
+                if (row) {
+                    const gainS = row.querySelector(".bear-gain-slider");
+                    const detuneS = row.querySelector(".bear-detune-slider");
+                    const phaseS = row.querySelector(".bear-phase-slider");
+                    const fmS = row.querySelector(".bear-fm-select");
+                    const dirS = row.querySelector(".bear-dir-select");
+
+                    if (gainS) gainS.value = speaker.gain;
+                    if (detuneS) detuneS.value = speaker.detune;
+                    if (phaseS) phaseS.value = speaker.phase;
+                    if (fmS) fmS.value = speaker.fm;
+                    if (dirS) dirS.value = speaker.dir;
+                }
+
+                // Update synthesizer parameters on the active semiconductor simulator (Web Audio)
+                const detuneFactor = Math.pow(2, speaker.detune / 1200);
+                const speakerPi = 3 * Number(speaker.exp) + EMOTION_KEYCODES[targetEmotion];
+                const freqL = ((speakerPi % 1500) + 120) * detuneFactor;
+                let freqR = freqL * 1.5;
+
+                if (speaker.fm === "sub") freqR = freqL * 0.5;
+                else if (speaker.fm === "fifth") freqR = freqL * 1.5;
+                else if (speaker.fm === "osc") freqR = freqL * 2.0;
+
+                const curAudioTime = audioCtx.currentTime;
+                oscL.frequency.setValueAtTime(freqL, curAudioTime);
+                oscR.frequency.setValueAtTime(freqR, curAudioTime);
+                mainGain.gain.setValueAtTime(0.25 * speaker.gain, curAudioTime);
+
+                if (t < 1.0) {
+                    requestAnimationFrame(stepSequence);
+                } else {
+                    setTimeout(() => {
+                        activeSynthNode.stop();
+                        logConsole(`[BIO] Finished playback sequence for ${phonemeName}.`);
+                    }, 50);
+                }
+            }
+
+            requestAnimationFrame(stepSequence);
         }
 
         function buildUI() {
@@ -1266,7 +1442,6 @@
                 }
             });
 
-            // Adjust rotation velocity based on the active speaker's spin direction setting
             const activeDir = LAU_BEARS[activeSpeakerId] ? LAU_BEARS[activeSpeakerId].dir : 1;
             rot += 0.025 * activeDir;
 
@@ -1276,6 +1451,7 @@
 
         buildUI();
         loadEVMContracts();
+        loadBioProfiles();
     </script>
 </body>
 </html>
