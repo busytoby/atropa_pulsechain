@@ -59,7 +59,7 @@
         .main-container {
             display: grid;
             grid-template-columns: 1fr 420px;
-            gap: 24px;
+ gap: 24px;
             width: 100%;
             max-width: 1200px;
             padding: 24px;
@@ -455,6 +455,8 @@
         let twinInterval = null;
         let audioCtx = null;
         let bufValue = 0.0;
+        
+        let twinPhase = 1; // 1 = Speaker Self-Calibration, 2 = Observer Twinning
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
@@ -747,6 +749,32 @@
             osc.stop(time + 0.3);
         }
 
+        // Returns which emotion a given bear classifies a voltage as
+        function classifyVoltageForBear(bearId, voltage) {
+            const speaker = LAU_BEARS[bearId];
+            const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+            const R_spk = Number(res % 50n) + 15.0;
+            const r_spk = Number(res % 25n) + 8.0;
+            const activeRatio = R_spk / r_spk;
+            
+            const db = BEAR_DATABASES[bearId];
+            const localOffset = ACTIVE_TRANSLATION_OFFSETS[bearId] || 1.0;
+            const translatedRatio = activeRatio * localOffset;
+
+            let best_emo = "CONFUSION";
+            let min_diff = Infinity;
+            Object.entries(db).forEach(([emo, target_ratios]) => {
+                target_ratios.forEach(target_ratio => {
+                    const diff = Math.abs(target_ratio - translatedRatio);
+                    if (diff < min_diff) {
+                        min_diff = diff;
+                        best_emo = emo;
+                    }
+                });
+            });
+            return best_emo;
+        }
+
         function evaluateConsensus() {
             if (LAU_BEARS.length === 0) return;
             const speaker = LAU_BEARS[activeSpeakerId];
@@ -762,8 +790,6 @@
             let matches = 0;
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
-                
-                // Observers apply local P2P translation scaling offsets to align dialects
                 const localOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
                 const translatedRatio = activeRatio * localOffset;
 
@@ -779,7 +805,6 @@
                     });
                 });
 
-                // Update individual bear modulo preference telemetry (Pi % exp)
                 const localPi = voltage % Number(observer.exp);
                 const dacIndicator = document.getElementById(`rec-dac-pi-${observer.id}`);
                 if (dacIndicator) {
@@ -854,39 +879,61 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        // Active P2P Twinning Loop: mutate local observer translation offsets
+        // Two-Phase Training Loop:
+        // Phase 1: Sweep until speaker (Judge) classifies the voltage as the target emotion
+        // Phase 2: Lock voltage and mutate observer translation offsets
         function startTwinning() {
             initAudio();
             isTwinning = true;
             btnTwin.innerText = "Stop Auto-Twin";
             btnTwin.style.background = "#ef4444";
-            logConsole(`[TWINNING] Auto-twinning active. Modulating observer translation offsets...`);
+            
+            twinPhase = 1; 
+            logConsole(`[TWINNING] Phase 1: Sweeping to calibrate active speaker (${LAU_BEARS[activeSpeakerId].name}) own chord preference...`);
 
             twinInterval = setInterval(() => {
                 const speaker = LAU_BEARS[activeSpeakerId];
-                const voltage = parseInt(dacSlider.value);
                 
-                const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
-                const R_spk = Number(res % 50n) + 15.0;
-                const r_spk = Number(res % 25n) + 8.0;
-                const activeRatio = R_spk / r_spk;
-
-                LAU_BEARS.forEach(observer => {
-                    const db = BEAR_DATABASES[observer.id];
-                    const target_ratios = db[targetEmotion];
-                    const target_ratio = target_ratios[0];
+                if (twinPhase === 1) {
+                    let voltage = parseInt(dacSlider.value);
+                    const currentClassification = classifyVoltageForBear(activeSpeakerId, voltage);
                     
-                    const currentOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
-                    const observedRatio = activeRatio * currentOffset;
-                    const error = target_ratio - observedRatio;
-
-                    if (Math.abs(error) > 0.02) {
-                        ACTIVE_TRANSLATION_OFFSETS[observer.id] = currentOffset + (error * 0.1);
+                    if (currentClassification === targetEmotion) {
+                        twinPhase = 2;
+                        logConsole(`[TWINNING] Phase 1 Success: Speaker calibrated at Pi = ${voltage}. Moving to Phase 2 (Observer Twinning)...`);
+                    } else {
+                        // Increment and wrap to find a valid chord preference for the speaker
+                        voltage += 71; 
+                        if (voltage > 9500) voltage = 1000;
+                        dacSlider.value = voltage;
+                        dacStreamVal.innerText = voltage;
                     }
-                });
+                } else if (twinPhase === 2) {
+                    const voltage = parseInt(dacSlider.value);
+                    const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+                    const R_spk = Number(res % 50n) + 15.0;
+                    const r_spk = Number(res % 25n) + 8.0;
+                    const activeRatio = R_spk / r_spk;
+
+                    LAU_BEARS.forEach(observer => {
+                        if (observer.id === activeSpeakerId) return; // Speaker is the reference benchmark
+                        
+                        const db = BEAR_DATABASES[observer.id];
+                        const target_ratios = db[targetEmotion];
+                        const target_ratio = target_ratios[0];
+                        
+                        const currentOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                        const observedRatio = activeRatio * currentOffset;
+                        const error = target_ratio - observedRatio;
+
+                        if (Math.abs(error) > 0.02) {
+                            ACTIVE_TRANSLATION_OFFSETS[observer.id] = currentOffset + (error * 0.1);
+                        }
+                    });
+                }
 
                 evaluateConsensus();
-            }, 200);
+            }, 150);
         }
 
         function stopTwinning() {
