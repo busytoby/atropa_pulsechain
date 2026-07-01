@@ -533,6 +533,29 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             with open(file_path, 'rb') as f:
                 self.wfile.write(f.read())
             return
+        elif self.path == '/twinning' or self.path == '/twinning/' or self.path == '/twinning/index.html' or self.path == '/twinning_dashboard.html':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            file_path = os.path.abspath(os.path.join('frontend', 'twinning_dashboard.html'))
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        elif self.path.startswith('/api/live-blocks'):
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            try:
+                from web3 import Web3
+                w3 = Web3(Web3.HTTPProvider("https://rpc.pulsechain.com"))
+                latest_block = w3.eth.get_block('latest', full_transactions=True)
+                txs = [tx['hash'].hex() for tx in latest_block.get('transactions', [])]
+                self.wfile.write(json.dumps({"success": True, "block": latest_block['number'], "transactions": txs}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+            return
         elif self.path.startswith('/api/lau-registers'):
             from urllib.parse import urlparse, parse_qs
             query = urlparse(self.path).query

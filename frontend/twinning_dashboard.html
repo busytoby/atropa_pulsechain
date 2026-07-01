@@ -235,6 +235,15 @@
             box-shadow: 0 0 12px var(--accent-emerald);
         }
 
+        .btn-stream {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .btn-stream:hover {
+            box-shadow: 0 0 12px #3b82f6;
+        }
+
         /* Status alerts */
         .status-alert {
             padding: 15px;
@@ -309,6 +318,7 @@
         <div class="dashboard-panel">
             <div class="action-bar">
                 <button id="btn-sweep" class="control-btn btn-sweep">Start Auto-Sweep Training</button>
+                <button id="btn-stream" class="control-btn btn-stream">Stream Live Blocks</button>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">
                     Sweeping digital <span style="color:var(--primary-glow); font-family:monospace;"><256bit</span> integer stream input
                 </div>
@@ -402,11 +412,14 @@
         let activeSpeakerId = 0;
         let targetEmotion = "MELANCHOLY";
         let isSweeping = false;
+        let isStreaming = false;
         let sweepInterval = null;
+        let streamInterval = null;
         let audioCtx = null;
         let bufValue = 0.0;
 
         const btnSweep = document.getElementById("btn-sweep");
+        const btnStream = document.getElementById("btn-stream");
         const dacSlider = document.getElementById("dac-slider");
         const dacStreamVal = document.getElementById("dac-stream-val");
         const audioBtn = document.getElementById("audio-btn");
@@ -524,7 +537,6 @@
                 targetEmotion = emo;
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
                 
-                // Play active chord of the speaker instantly on RS-131 reactor
                 const v_chord = EMOTIONS[targetEmotion];
                 dacSlider.value = v_chord;
                 dacStreamVal.innerText = v_chord;
@@ -549,7 +561,6 @@
             const freqL = Number((Eta % 400n) + 150n);
             const freqR = Number((Kappa % 400n) + 150n);
 
-            // Audio DAC effects path
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
             mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
@@ -590,7 +601,7 @@
 
             if (self_classified !== targetEmotion) {
                 const modulator = audioCtx.createOscillator();
-                modulator.frequency.value = 33; // 33Hz growl modulator
+                modulator.frequency.value = 33; 
                 const modGain = audioCtx.createGain();
                 modGain.gain.value = 0.5;
                 modulator.connect(modGain);
@@ -609,6 +620,19 @@
             dacStreamVal.innerText = dacSlider.value;
             evaluateConsensus();
         };
+
+        function bigModExp(base, exp, mod) {
+            let res = 1n;
+            base = BigInt(base) % BigInt(mod);
+            exp = BigInt(exp);
+            const m = BigInt(mod);
+            while (exp > 0n) {
+                if (exp % 2n === 1n) res = (res * base) % m;
+                base = (base * base) % m;
+                exp = exp / 2n;
+            }
+            return res;
+        }
 
         function initAudio() {
             if (audioCtx) return;
@@ -704,6 +728,13 @@
             telemetryEigen.innerText = (1.0 / (1.0 + bufValue)).toFixed(4);
         }
 
+        function logConsole(msg) {
+            const div = document.createElement("div");
+            div.innerText = msg;
+            consoleLog.appendChild(div);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
         function startSweep() {
             initAudio();
             isSweeping = true;
@@ -727,11 +758,76 @@
             clearInterval(sweepInterval);
         }
 
+        async function fetchLiveBlocks() {
+            try {
+                const res = await fetch("/api/live-blocks");
+                const response = await res.json();
+                if (response.success && response.transactions.length > 0) {
+                    logConsole(`[BRIDGE] Retrieved Block #${response.block} containing ${response.transactions.length} txs.`);
+                    
+                    // Process transactions one by one, spaced out
+                    let index = 0;
+                    const interval = setInterval(() => {
+                        if (index >= response.transactions.length || !isStreaming) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        const txHash = response.transactions[index];
+                        // Convert txHash to integer for DAC Pi input
+                        let hashVal = 0n;
+                        for (let i = 0; i < txHash.length; i++) {
+                            hashVal = (hashVal << 5n) - hashVal + BigInt(txHash.charCodeAt(i));
+                        }
+                        const pi = Number(hashVal % 5000n) + 3000; // Map to DAC slider range [3000, 8000]
+                        
+                        dacSlider.value = pi;
+                        dacStreamVal.innerText = pi;
+                        logConsole(`  [Tx] Hash: ${txHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
+                        
+                        initAudio();
+                        playSpeakerChord(activeSpeakerId, pi, audioCtx ? audioCtx.currentTime : 0);
+                        evaluateConsensus();
+                        
+                        index++;
+                    }, 1200);
+                }
+            } catch (err) {
+                console.error("Live stream error:", err);
+            }
+        }
+
+        function startStreaming() {
+            initAudio();
+            isStreaming = true;
+            btnStream.innerText = "Stop Stream";
+            btnStream.style.background = "#ef4444";
+            
+            fetchLiveBlocks();
+            streamInterval = setInterval(fetchLiveBlocks, 12000); // Poll once per block
+        }
+
+        function stopStreaming() {
+            isStreaming = false;
+            btnStream.innerText = "Stream Live Blocks";
+            btnStream.style.background = "#3b82f6";
+            clearInterval(streamInterval);
+        }
+
         btnSweep.onclick = () => {
             if (isSweeping) {
                 stopSweep();
             } else {
+                if (isStreaming) stopStreaming();
                 startSweep();
+            }
+        };
+
+        btnStream.onclick = () => {
+            if (isStreaming) {
+                stopStreaming();
+            } else {
+                if (isSweeping) stopSweep();
+                startStreaming();
             }
         };
 
@@ -739,7 +835,6 @@
             initAudio();
         };
 
-        // Bounding circle oscilloscope renderer
         const canvas = document.getElementById("oscilloscope");
         const ctx = canvas.getContext("2d");
         canvas.width = canvas.offsetWidth;
