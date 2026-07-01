@@ -178,9 +178,21 @@
             padding: 10px 14px;
         }
 
+        .rec-name-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         .rec-name {
             font-size: 0.75rem;
             font-weight: 600;
+        }
+
+        .rec-dac-pi {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
 
         .rec-label {
@@ -343,7 +355,7 @@
 
             <div class="dac-control-group">
                 <div style="display:flex; justify-content:space-between; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">
-                    <span>DAC Digital Stream Input (Pi)</span>
+                    <span>Shared DAC Stream Input (Pi)</span>
                     <span id="dac-stream-val" style="font-family:'Share Tech Mono', monospace; color:var(--primary-glow);">4423</span>
                 </div>
                 <input type="range" id="dac-slider" min="1000" max="9500" value="4423" style="width:100%;">
@@ -541,14 +553,17 @@
                 ACTIVE_TRANSLATION_OFFSETS.push(1.0); 
             });
 
-            // Build Recognition rows
+            // Build Recognition rows displaying individual bear DAC Pi settings (Pi % exp)
             recBoard.innerHTML = "";
             LAU_BEARS.forEach(b => {
                 const row = document.createElement("div");
                 row.className = "rec-row";
                 row.setAttribute("data-id", b.id);
                 row.innerHTML = `
-                    <span class="rec-name" style="color:${b.color};">${b.name}</span>
+                    <div class="rec-name-group">
+                        <span class="rec-name" style="color:${b.color};">${b.name}</span>
+                        <span class="rec-dac-pi" id="rec-dac-pi-${b.id}">DAC Pi: 0</span>
+                    </div>
                     <span class="rec-label mismatch">JOY</span>
                 `;
                 recBoard.appendChild(row);
@@ -586,7 +601,6 @@
                 targetEmotion = emo;
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
                 
-                // Select the primary reference chord for the target emotion
                 const v_chord = EMOTIONS_RANGE[targetEmotion][0];
                 dacSlider.value = v_chord;
                 dacStreamVal.innerText = v_chord;
@@ -765,6 +779,13 @@
                     });
                 });
 
+                // Update individual bear modulo preference telemetry (Pi % exp)
+                const localPi = voltage % Number(observer.exp);
+                const dacIndicator = document.getElementById(`rec-dac-pi-${observer.id}`);
+                if (dacIndicator) {
+                    dacIndicator.innerText = `DAC Pi: ${localPi}`;
+                }
+
                 const row = document.querySelector(`.rec-row[data-id="${observer.id}"]`);
                 if (row) {
                     const label = row.querySelector(".rec-label");
@@ -852,7 +873,6 @@
 
                 LAU_BEARS.forEach(observer => {
                     const db = BEAR_DATABASES[observer.id];
-                    // Align offset to target the average of the target emotion's ratio range
                     const target_ratios = db[targetEmotion];
                     const target_ratio = target_ratios[0];
                     
