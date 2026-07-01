@@ -1,0 +1,86 @@
+{
+  "comment": "Consensual baseline rule matrix mapping learned emotional voltage inputs per LAU bear node",
+  "version": "1.0.0",
+  "bears": {
+    "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B": {
+      "name": "Judge Bear (Alpha)",
+      "eigenvalue": 1.0,
+      "self_opinion": 0.98,
+      "learned_emotions": {
+        "JOY": 1009,
+        "SORROW": 1543,
+        "ANGER": 2237,
+        "FEAR": 3109,
+        "MELANCHOLY": 4423,
+        "EUPHORIA": 5519,
+        "SUSPENSE": 6701,
+        "TRANQUILITY": 7883,
+        "CONFUSION": 8923
+      }
+    },
+    "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce": {
+      "name": "Witness A (Beta)",
+      "eigenvalue": 1.0,
+      "self_opinion": 0.95,
+      "learned_emotions": {
+        "JOY": 1210,
+        "SORROW": 1782,
+        "ANGER": 2341,
+        "FEAR": 3204,
+        "MELANCHOLY": 4519,
+        "EUPHORIA": 5604,
+        "SUSPENSE": 6802,
+        "TRANQUILITY": 7921,
+        "CONFUSION": 8991
+      }
+    },
+    "0xd32c39fee49391c7952d1b30b15921b0d3b42e69": {
+      "name": "Witness B (Gamma)",
+      "eigenvalue": 1.0,
+      "self_opinion": 0.94,
+      "learned_emotions": {
+        "JOY": 1087,
+        "SORROW": 1612,
+        "ANGER": 2291,
+        "FEAR": 3154,
+        "MELANCHOLY": 4481,
+        "EUPHORIA": 5543,
+        "SUSPENSE": 6724,
+        "TRANQUILITY": 7891,
+        "CONFUSION": 8935
+      }
+    },
+    "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b": {
+      "name": "Juror 1 (Delta)",
+      "eigenvalue": 1.0,
+      "self_opinion": 0.94,
+      "learned_emotions": {
+        "JOY": 1045,
+        "SORROW": 1587,
+        "ANGER": 2253,
+        "FEAR": 3121,
+        "MELANCHOLY": 4439,
+        "EUPHORIA": 5532,
+        "SUSPENSE": 6711,
+        "TRANQUILITY": 7887,
+        "CONFUSION": 8929
+      }
+    },
+    "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e": {
+      "name": "Juror 2 (Epsilon)",
+      "eigenvalue": 1.0,
+      "self_opinion": 0.96,
+      "learned_emotions": {
+        "JOY": 1011,
+        "SORROW": 1547,
+        "ANGER": 2239,
+        "FEAR": 3111,
+        "MELANCHOLY": 4427,
+        "EUPHORIA": 5521,
+        "SUSPENSE": 6703,
+        "TRANQUILITY": 7885,
+        "CONFUSION": 8925
+      }
+    }
+  }
+}

@@ -316,7 +316,7 @@
 <body>
 
     <header>
-        <h1>Evolutionary React Sequencer</h1>
+        <h1>Consensual Baseline React Sequencer</h1>
         <div id="audio-btn" class="audio-status-banner">TAP TO ACTIVATE AUDIOPATHWAY</div>
     </header>
 
@@ -364,7 +364,7 @@
             </div>
 
             <div class="log-display" id="console-log">
-                <div>[System] Swearing in witnesses. Initialize P2P consensus.</div>
+                <div>[System] Preloaded 9-Emotion Baseline Consensual Rule Matrix.</div>
             </div>
         </div>
 
@@ -372,7 +372,7 @@
             <div class="widget-card">
                 <h3>Agreement Accumulator</h3>
                 <div class="control-group" style="text-align:center;">
-                    <div id="agreement-val" style="font-size:2.2rem; font-family:'Share Tech Mono', monospace; color:var(--primary-glow); text-shadow:0 0 10px rgba(239,68,68,0.5);">0.5000</div>
+                    <div id="agreement-val" style="font-size:2.2rem; font-family:'Share Tech Mono', monospace; color:var(--primary-glow); text-shadow:0 0 10px rgba(239,68,68,0.5);">0.9850</div>
                     <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-top:4px; letter-spacing:0.05em;">Five-Voice Similitude Status</div>
                 </div>
             </div>
@@ -401,7 +401,7 @@
                     </div>
                     <div class="stat-card">
                         <label>Self Opinion</label>
-                        <div class="stat-value" id="active-self-opinion">0.5000</div>
+                        <div class="stat-value" id="active-self-opinion">0.9800</div>
                     </div>
                 </div>
             </div>
@@ -411,19 +411,20 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
+        // Sworn in initial baseline state (Trust is pre-established at 0.98)
         const VOICES = [
-            {"id": 0, "abbr": "JDG", "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "buf": 0.0, "eigen": 1.0, "opinion": 0.5, "peers": [0.5, 0.5, 0.5, 0.5, 0.5]},
-            {"id": 1, "abbr": "WTA", "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6, "buf": 0.0, "eigen": 1.0, "opinion": 0.5, "peers": [0.5, 0.5, 0.5, 0.5, 0.5]},
-            {"id": 2, "abbr": "WTB", "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6, "buf": 0.0, "eigen": 1.0, "opinion": 0.5, "peers": [0.5, 0.5, 0.5, 0.5, 0.5]},
-            {"id": 3, "abbr": "JR1", "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8, "buf": 0.0, "eigen": 1.0, "opinion": 0.5, "peers": [0.5, 0.5, 0.5, 0.5, 0.5]},
-            {"id": 4, "abbr": "JR2", "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8, "buf": 0.0, "eigen": 1.0, "opinion": 0.5, "peers": [0.5, 0.5, 0.5, 0.5, 0.5]}
+            {"id": 0, "abbr": "JDG", "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "buf": 0.0, "eigen": 1.0, "opinion": 0.98, "peers": [0.98, 0.95, 0.94, 0.94, 0.96]},
+            {"id": 1, "abbr": "WTA", "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6, "buf": 0.0, "eigen": 1.0, "opinion": 0.95, "peers": [0.95, 0.98, 0.94, 0.94, 0.96]},
+            {"id": 2, "abbr": "WTB", "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6, "buf": 0.0, "eigen": 1.0, "opinion": 0.94, "peers": [0.94, 0.95, 0.98, 0.94, 0.96]},
+            {"id": 3, "abbr": "JR1", "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8, "buf": 0.0, "eigen": 1.0, "opinion": 0.94, "peers": [0.94, 0.95, 0.94, 0.98, 0.96]},
+            {"id": 4, "abbr": "JR2", "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8, "buf": 0.0, "eigen": 1.0, "opinion": 0.96, "peers": [0.96, 0.95, 0.94, 0.94, 0.98]}
         ];
 
         let audioCtx = null;
         let playhead = 0;
         let isPlaying = false;
         let seqInterval = null;
-        let globalAgreement = 0.5;
+        let globalAgreement = 0.985;
 
         const btnPlay = document.getElementById("btn-play");
         const tempoSlider = document.getElementById("seq-tempo");
@@ -437,6 +438,15 @@
         const agreementVal = document.getElementById("agreement-val");
         const evolutionMode = document.getElementById("evolution-mode");
         const trustMatrixDiv = document.getElementById("trust-matrix");
+
+        // Baseline preloaded prime keys for all 5 bears ensuring initial harmony
+        const BASELINE_KEYS = [
+            [1009, 1543, 2237, 3109, 4423, 5519, 6701, 7883, 8923, 1009, 1543, 2237, 3109, 4423, 5519, 7883], // Judge
+            [1210, 1782, 2341, 3204, 4519, 5604, 6802, 7921, 8991, 1210, 1782, 2341, 3204, 4519, 5604, 7921], // Witness A
+            [1087, 1612, 2291, 3154, 4481, 5543, 6724, 7891, 8935, 1087, 1612, 2291, 3154, 4481, 5543, 7891], // Witness B
+            [1045, 1587, 2253, 3121, 4439, 5532, 6711, 7887, 8929, 1045, 1587, 2253, 3121, 4439, 5532, 7887], // Juror 1
+            [1011, 1547, 2239, 3111, 4427, 5521, 6703, 7885, 8925, 1011, 1547, 2239, 3111, 4427, 5521, 7885]  // Juror 2
+        ];
 
         // Build sequencer grid
         document.querySelectorAll(".seq-row").forEach(row => {
@@ -456,7 +466,7 @@
                 const input = document.createElement("input");
                 input.type = "text";
                 input.className = "step-input";
-                input.value = (i + 1) * 31 + voiceIdx * 97;
+                input.value = BASELINE_KEYS[voiceIdx][i]; // Seed with baseline rules
 
                 container.appendChild(step);
                 container.appendChild(input);
@@ -468,13 +478,11 @@
         function drawTrustMatrix() {
             trustMatrixDiv.innerHTML = "";
             
-            // Empty top-left cell
             const tl = document.createElement("div");
             tl.className = "op-cell op-header";
             tl.innerText = "";
             trustMatrixDiv.appendChild(tl);
 
-            // Columns headers
             VOICES.forEach(v => {
                 const h = document.createElement("div");
                 h.className = "op-cell op-header";
@@ -482,7 +490,6 @@
                 trustMatrixDiv.appendChild(h);
             });
 
-            // Rows
             VOICES.forEach(rowBear => {
                 const h = document.createElement("div");
                 h.className = "op-cell op-header";
@@ -495,7 +502,6 @@
                     const val = rowBear.peers[colBear.id];
                     cell.innerText = val.toFixed(2);
                     
-                    // Curate HSL background values mapping opinion level
                     cell.style.background = `hsla(360, 80%, 25%, ${1.0 - val})`;
                     if (val > 0.8) {
                         cell.style.background = `hsla(120, 80%, 25%, ${val - 0.5})`;
@@ -554,20 +560,18 @@
             const freqL = Number((Eta % 400n) + 150n);
             const freqR = Number((Kappa % 400n) + 150n);
 
-            const isHarmonious = (inputVal % 2 !== 0 && inputVal % 3 !== 0);
+            // Prime key or baseline-defined key counts as harmonious
+            const isHarmonious = (inputVal % 2 !== 0 && inputVal % 3 !== 0) || BASELINE_KEYS[voiceIdx].includes(inputVal);
             
-            // Opinion self-updates
             const targetOpinion = isHarmonious ? 1.0 : 0.0;
             v.opinion += 0.15 * (targetOpinion - v.opinion);
             
-            // Opinion peer-updates: other bears adjust their trust of this bear
             VOICES.forEach(other => {
                 if (other.id !== voiceIdx) {
                     other.peers[voiceIdx] += 0.15 * (targetOpinion - other.peers[voiceIdx]);
                 }
             });
             
-            // Instability / constraint updates
             if (!isHarmonious) {
                 v.buf += 0.08;
                 logConsole(`[${v.name}] Discordance detected. Blow-Up Factor accumulates.`);
@@ -576,7 +580,6 @@
             }
             v.eigen = 1.0 / (1.0 + v.buf);
 
-            // Web Audio Synthesis Graph
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
             mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
@@ -613,7 +616,6 @@
             oscL.stop(time + 0.4);
             oscR.stop(time + 0.4);
 
-            // Telemetry update
             activeVoiceName.innerText = v.name;
             activeVoiceName.style.color = v.color;
             activeBuf.innerText = v.buf.toFixed(2);
@@ -644,7 +646,6 @@
                                 if (step.classList.contains("active")) {
                                     let val = parseInt(input.value) || 440;
                                     
-                                    // Evolutionary Twinning mutation search
                                     if (evolutionMode.checked && globalAgreement < 0.98) {
                                         if (val % 2 === 0 || val % 3 === 0) {
                                             val += 1;
