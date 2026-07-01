@@ -284,6 +284,11 @@
                         <span>High</span>
                     </div>
                 </div>
+
+                <div class="control-group">
+                    <label>Tonewheel Pre-Mangler</label>
+                    <button id="btn-mangle" class="control-btn" style="background:#ef4444; border:none; padding:10px; width:100%; border-radius:6px; color:#fff; cursor:pointer; font-weight:bold; margin-top:5px;">Mangle: OFF</button>
+                </div>
             </div>
 
             <div class="widget-card">
@@ -332,6 +337,21 @@
         const freqR = document.getElementById("freq-r");
 
         const audioBtn = document.getElementById("audio-btn");
+        const btnMangle = document.getElementById("btn-mangle");
+        
+        let mangleEnabled = false;
+        btnMangle.onclick = () => {
+            mangleEnabled = !mangleEnabled;
+            if (mangleEnabled) {
+                btnMangle.innerText = "Mangle: ON";
+                btnMangle.style.background = "#fbbf24";
+                btnMangle.style.color = "#030508";
+            } else {
+                btnMangle.innerText = "Mangle: OFF";
+                btnMangle.style.background = "#ef4444";
+                btnMangle.style.color = "#fff";
+            }
+        };
 
         // Note frequencies mapping
         const notes = {
@@ -410,7 +430,13 @@
         function triggerReactionNote(noteName) {
             initAudio();
             const f = notes[noteName];
-            const Pi = BigInt(Math.floor(f));
+            let Pi = BigInt(Math.floor(f));
+            
+            if (mangleEnabled) {
+                // Pre-circuit note mangling using time-dependent factor
+                const factor = BigInt(Math.floor(Math.sin(Date.now() / 200.0) * 4.0 + 5.0));
+                Pi = (Pi * factor) % MotzkinPrime;
+            }
             
             const baseParam = BigInt(baseSlider.value);
             const channelParam = BigInt(channelSlider.value);
