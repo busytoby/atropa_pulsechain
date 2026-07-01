@@ -162,10 +162,10 @@ def main():
                 f_lead = note_to_freq(lead_note)
                 if f_lead > 0:
                     Pi = int(f_lead)
-                    Eta = mod_exp(Pi, 440, 12000)
-                    Kappa = mod_exp(Pi, 12000, 440)
-                    f_left = (Eta % 800) + 100
-                    f_right = (Kappa % 800) + 100
+                    Eta = mod_exp(Pi, 440, MotzkinPrime)
+                    Kappa = mod_exp(Pi, 12000, MotzkinPrime)
+                    f_left = (Eta % 600) + 150
+                    f_right = (Kappa % 600) + 150
 
                     # Wave-shaped binaural triangle/sine combination
                     phase_l = 2 * np.pi * f_left * t_vals
@@ -271,10 +271,10 @@ def main():
             f_lead = note_to_freq(note)
             if f_lead > 0:
                 Pi = int(f_lead)
-                Eta = mod_exp(Pi, 440, 12000)
-                Kappa = mod_exp(Pi, 12000, 440)
-                f_left = (Eta % 800) + 100
-                f_right = (Kappa % 800) + 100
+                Eta = mod_exp(Pi, 440, MotzkinPrime)
+                Kappa = mod_exp(Pi, 12000, MotzkinPrime)
+                f_left = (Eta % 600) + 150
+                f_right = (Kappa % 600) + 150
 
         img = render_frame(f_idx, f_left, f_right, Eta, Kappa, note, bass_note, kick_val, snare_val)
         img.convert("RGB").save(process.stdin, "PNG")
