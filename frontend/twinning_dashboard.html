@@ -161,7 +161,7 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
-            max-height: 380px;
+            max-height: 480px;
             overflow-y: auto;
             border: 1px solid var(--glass-border);
             padding: 12px;
@@ -169,22 +169,20 @@
         }
 
         .rec-row {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 160px 1fr 100px;
             align-items: center;
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
             border-radius: 8px;
             padding: 14px 18px;
-            flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
         }
 
         .rec-name-group {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            min-width: 140px;
         }
 
         .rec-name {
@@ -198,8 +196,23 @@
             color: var(--text-muted);
         }
 
+        .slider-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.7rem;
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-muted);
+        }
+
         .bear-dac-slider {
-            width: 130px;
+            flex-grow: 1;
             accent-color: var(--primary-glow);
         }
 
@@ -209,6 +222,7 @@
             padding: 4px 10px;
             border-radius: 4px;
             text-transform: uppercase;
+            text-align: center;
         }
 
         .rec-label.match {
@@ -400,8 +414,8 @@
                     <div id="telemetry-buf" style="color:var(--primary-glow); text-align:right;">0.00</div>
                     <div>Eigenvalue limit:</div>
                     <div id="telemetry-eigen" style="color:var(--accent-emerald); text-align:right;">1.0000</div>
-                    <div>Tonewheel Gear Ratio:</div>
-                    <div id="telemetry-ratio" style="color:var(--text-muted); text-align:right;">0.00</div>
+                    <div>Active Modulo:</div>
+                    <div id="telemetry-ratio" style="color:var(--text-muted); text-align:right;">0</div>
                 </div>
             </div>
         </div>
@@ -413,23 +427,23 @@
         // Initialize immediately with the 5 baseline bears by default
         let LAU_BEARS = [
             {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "activeFreq": 220},
-            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6, "activeFreq": 310},
-            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6, "activeFreq": 440},
-            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8, "activeFreq": 180},
-            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8, "activeFreq": 290}
+            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 1200n, "color": "#d97706", "pan": -0.6, "activeFreq": 310},
+            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 880n, "color": "#3b82f6", "pan": 0.6, "activeFreq": 440},
+            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 443n, "color": "#10b981", "pan": -0.8, "activeFreq": 180},
+            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 552n, "color": "#8b5cf6", "pan": 0.8, "activeFreq": 290}
         ];
 
-        // Clean integer-based tonewheel gear ratios mapping directly to emotions
-        const EMOTION_GEAR_RATIOS = {
-            "JOY": 1.0,        // 1:1
-            "SORROW": 1.5,     // 3:2
-            "ANGER": 1.25,     // 5:4
-            "FEAR": 1.333,     // 4:3
-            "MELANCHOLY": 1.6, // 8:5
-            "EUPHORIA": 1.875, // 15:8
-            "SUSPENSE": 1.4,   // 7:5
-            "TRANQUILITY": 1.2,// 6:5
-            "CONFUSION": 1.75  // 7:4
+        // Emotion mapped directly to keycode modulos as physical understanding targets
+        const EMOTION_KEYCODES = {
+            "JOY": 32,         // keycode 'd'/'D'
+            "SORROW": 30,      // keycode 'a'/'A'
+            "ANGER": 13,       // return key
+            "FEAR": 27,        // escape key
+            "MELANCHOLY": 64,  // '@' symbol
+            "EUPHORIA": 77,    // 'm'/'M'
+            "SUSPENSE": 83,    // 's'/'S'
+            "TRANQUILITY": 84, // 't'/'T'
+            "CONFUSION": 63    // '?' symbol
         };
 
         let activeSpeakerId = 0;
@@ -523,42 +537,58 @@
                 evaluateConsensus();
             };
 
-            // Build Recognition rows displaying individual physical bear DAC input controllers
+            // Build Recognition rows splitting controllers into coarse (Quotient) & fine (Modulo) sliders
             recBoard.innerHTML = "";
             LAU_BEARS.forEach(b => {
                 const row = document.createElement("div");
                 row.className = "rec-row";
                 row.setAttribute("data-id", b.id);
                 
-                // Physical target speed is exponent * gear ratio
-                const initialVolts = Math.round(Number(b.exp) * EMOTION_GEAR_RATIOS[targetEmotion]);
+                const targetMod = EMOTION_KEYCODES[targetEmotion];
+                const initialQuotient = 3;
+                
                 row.innerHTML = `
                     <div class="rec-name-group">
                         <span class="rec-name" style="color:${b.color};">${b.name}</span>
-                        <span class="rec-dac-pi" id="rec-dac-pi-${b.id}">DAC Pi: ${initialVolts} (Modulo: ${initialVolts % Number(b.exp)})</span>
+                        <span class="rec-dac-pi" id="rec-dac-pi-${b.id}">Pi: ${initialQuotient * Number(b.exp) + targetMod}</span>
                     </div>
-                    <div>
-                        <input type="range" class="bear-dac-slider" data-id="${b.id}" min="100" max="5000" value="${initialVolts}" oninput="updateBearDacVal(${b.id}, this.value)">
+                    <div class="slider-controls">
+                        <div class="slider-row">
+                            <span>Coarse (Gear):</span>
+                            <input type="range" class="bear-quotient-slider" data-id="${b.id}" min="1" max="10" value="${initialQuotient}" oninput="updateBearCoarseFine(${b.id})">
+                            <span id="quotient-val-${b.id}">${initialQuotient}</span>
+                        </div>
+                        <div class="slider-row">
+                            <span>Fine (Modulo):</span>
+                            <input type="range" class="bear-modulo-slider" data-id="${b.id}" min="0" max="${Number(b.exp) - 1}" value="${targetMod}" oninput="updateBearCoarseFine(${b.id})">
+                            <span id="modulo-val-${b.id}">${targetMod}</span>
+                        </div>
                     </div>
                     <span class="rec-label mismatch">JOY</span>
                 `;
                 recBoard.appendChild(row);
             });
 
-            // Asynchronously load pre-existing physical DAC values from the server on startup
+            // Asynchronously load pre-existing physical DAC configurations from the server on startup
             fetch("/api/load-dialects")
                 .then(r => r.json())
                 .then(voltages => {
                     LAU_BEARS.forEach(b => {
                         if (voltages[b.name] !== undefined) {
-                            const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                            if (slider) {
-                                slider.value = voltages[b.name];
-                                updateBearDacVal(b.id, voltages[b.name]);
+                            const piVal = voltages[b.name];
+                            const quotient = Math.floor(piVal / Number(b.exp));
+                            const modulo = piVal % Number(b.exp);
+
+                            const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${b.id}"]`);
+                            const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                            if (qSlider && mSlider) {
+                                qSlider.value = quotient;
+                                mSlider.value = modulo;
+                                updateBearCoarseFine(b.id);
                             }
                         }
                     });
-                    logConsole(`[EVM] Loaded pre-existing P2P physical DAC calibrations from server.`);
+                    logConsole(`[EVM] Loaded pre-existing physical DAC calibrations from server.`);
                     evaluateConsensus();
                 })
                 .catch(err => {
@@ -567,19 +597,27 @@
                 });
         }
 
-        // Handle direct slider changes for individual bear DAC inputs
-        window.updateBearDacVal = (bearId, val) => {
+        // Reconstruct DAC Pi voltage dynamically from coarse and fine sliders
+        window.updateBearCoarseFine = (bearId) => {
             const b = LAU_BEARS[bearId];
-            const dacIndicator = document.getElementById(`rec-dac-pi-${bearId}`);
-            if (dacIndicator) {
-                dacIndicator.innerText = `DAC Pi: ${val} (Modulo: ${val % Number(b.exp)})`;
-            }
+            const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${bearId}"]`);
+            const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${bearId}"]`);
+            if (!qSlider || !mSlider) return;
+
+            const q = parseInt(qSlider.value);
+            const m = parseInt(mSlider.value);
+            const piVal = q * Number(b.exp) + m;
+
+            document.getElementById(`quotient-val-${bearId}`).innerText = q;
+            document.getElementById(`modulo-val-${bearId}`).innerText = m;
+            document.getElementById(`rec-dac-pi-${bearId}`).innerText = `Pi: ${piVal}`;
+
             evaluateConsensus();
         };
 
         // Build target emotion selectors
         const emoSelector = document.getElementById("emotion-selector");
-        Object.keys(EMOTION_GEAR_RATIOS).forEach(emo => {
+        Object.keys(EMOTION_KEYCODES).forEach(emo => {
             const btn = document.createElement("button");
             btn.className = "select-btn" + (emo === targetEmotion ? " active" : "");
             btn.innerText = emo;
@@ -589,20 +627,24 @@
                 targetEmotion = emo;
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
                 
-                // Align each bear's physical slider directly to the tonewheel speed for target emotion
+                const targetMod = EMOTION_KEYCODES[targetEmotion];
+                
+                // Align all bear modulo sliders directly to target keycode
                 LAU_BEARS.forEach(b => {
-                    const v_chord = Math.round(Number(b.exp) * EMOTION_GEAR_RATIOS[targetEmotion]);
-                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                    if (slider) {
-                        slider.value = v_chord;
-                        updateBearDacVal(b.id, v_chord);
+                    const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                    if (mSlider) {
+                        mSlider.value = targetMod;
+                        updateBearCoarseFine(b.id);
                     }
                 });
 
                 initAudio();
                 if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-                const speakerVal = Math.round(Number(LAU_BEARS[activeSpeakerId].exp) * EMOTION_GEAR_RATIOS[targetEmotion]);
-                playSpeakerChord(activeSpeakerId, speakerVal, audioCtx ? audioCtx.currentTime : 0);
+                
+                const speakerM = document.querySelector(`.bear-modulo-slider[data-id="${activeSpeakerId}"]`);
+                const speakerQ = document.querySelector(`.bear-quotient-slider[data-id="${activeSpeakerId}"]`);
+                const piVal = (speakerQ ? parseInt(speakerQ.value) : 3) * Number(LAU_BEARS[activeSpeakerId].exp) + (speakerM ? parseInt(speakerM.value) : targetMod);
+                playSpeakerChord(activeSpeakerId, piVal, audioCtx ? audioCtx.currentTime : 0);
                 
                 evaluateConsensus();
             };
@@ -613,8 +655,8 @@
             if (!audioCtx) return;
             const v = LAU_BEARS[voiceIdx];
             
-            // Frequencies are mapped physically to the input value directly
-            const freqL = inputVal;
+            // Scaled dynamic frequencies matching the fine-tuned physical input value
+            const freqL = (inputVal % 1500) + 120;
             const freqR = freqL * 1.5; 
             v.activeFreq = freqL; 
 
@@ -644,16 +686,18 @@
 
             let mismatchCount = 0;
             LAU_BEARS.forEach(observer => {
-                const observerSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
-                const observerPi = observerSlider ? parseInt(observerSlider.value) : inputVal;
-                
-                // Direct physical speed ratio: active frequency / physical capacity exponent
-                const obsRatio = observerPi / Number(observer.exp);
+                const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${observer.id}"]`);
+                const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${observer.id}"]`);
+                const q = qSlider ? parseInt(qSlider.value) : 3;
+                const m = mSlider ? parseInt(mSlider.value) : 0;
+                const piVal = q * Number(observer.exp) + m;
+
+                const obsModulo = piVal % Number(observer.exp);
 
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
-                Object.entries(EMOTION_GEAR_RATIOS).forEach(([emo, target_ratio]) => {
-                    const diff = Math.abs(target_ratio - obsRatio);
+                Object.entries(EMOTION_KEYCODES).forEach(([emo, target_code]) => {
+                    const diff = Math.abs(target_code - obsModulo);
                     if (diff < min_diff) {
                         min_diff = diff;
                         best_emo = emo;
@@ -679,19 +723,6 @@
             oscR.start(time);
             oscL.stop(time + 0.4);
             oscR.stop(time + 0.4);
-        }
-
-        function bigModExp(base, exp, mod) {
-            let res = 1n;
-            base = BigInt(base) % BigInt(mod);
-            exp = BigInt(exp);
-            const m = BigInt(mod);
-            while (exp > 0n) {
-                if (exp % 2n === 1n) res = (res * base) % m;
-                base = (base * base) % m;
-                exp = exp / 2n;
-            }
-            return res;
         }
 
         function initAudio() {
@@ -727,41 +758,27 @@
             osc.stop(time + 0.3);
         }
 
-        function classifyVoltageForBear(bearId, voltage) {
-            const observer = LAU_BEARS[bearId];
-            const ratio = voltage / Number(observer.exp);
-
-            let best_emo = "CONFUSION";
-            let min_diff = Infinity;
-            Object.entries(EMOTION_GEAR_RATIOS).forEach(([emo, target_ratio]) => {
-                const diff = Math.abs(target_ratio - ratio);
-                if (diff < min_diff) {
-                    min_diff = diff;
-                    best_emo = emo;
-                }
-            });
-            return best_emo;
-        }
-
         function evaluateConsensus() {
             if (LAU_BEARS.length === 0) return;
             
             let matches = 0;
             LAU_BEARS.forEach(observer => {
-                // Read observer's own physical DAC input slider value directly
-                const observerSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
-                const observerPi = observerSlider ? parseInt(observerSlider.value) : 440;
-                
-                const obsRatio = observerPi / Number(observer.exp);
+                const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${observer.id}"]`);
+                const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${observer.id}"]`);
+                const q = qSlider ? parseInt(qSlider.value) : 3;
+                const m = mSlider ? parseInt(mSlider.value) : 0;
+                const piVal = q * Number(observer.exp) + m;
+
+                const obsModulo = piVal % Number(observer.exp);
 
                 if (observer.id === activeSpeakerId) {
-                    telemetryRatio.innerText = obsRatio.toFixed(3);
+                    telemetryRatio.innerText = obsModulo;
                 }
 
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
-                Object.entries(EMOTION_GEAR_RATIOS).forEach(([emo, target_ratio]) => {
-                    const diff = Math.abs(target_ratio - obsRatio);
+                Object.entries(EMOTION_KEYCODES).forEach(([emo, target_code]) => {
+                    const diff = Math.abs(target_code - obsModulo);
                     if (diff < min_diff) {
                         min_diff = diff;
                         best_emo = emo;
@@ -792,7 +809,7 @@
                 if (isSweeping || isTwinning) {
                     stopSweep();
                     stopTwinning();
-                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} across all physical tonewheels!`);
+                    logConsole(`[SUCCESS] Consensus locked on target keycode mod ${targetEmotion} across all physical tonewheels!`);
                 }
             } else {
                 consensusStatus.className = "status-alert alert-growl";
@@ -810,8 +827,11 @@
         function saveTwinningVoltagesToDisk() {
             const payload = {};
             LAU_BEARS.forEach(b => {
-                const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                payload[b.name] = slider ? parseInt(slider.value) : 4423;
+                const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${b.id}"]`);
+                const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                const q = qSlider ? parseInt(qSlider.value) : 3;
+                const m = mSlider ? parseInt(mSlider.value) : 0;
+                payload[b.name] = q * Number(b.exp) + m;
             });
             
             fetch("/api/save-dialects", {
@@ -837,7 +857,7 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        // Twinning Loop using the clean tonewheel gear calibrations
+        // Twinning Loop sweeps modulo values directly to achieve instant keycode consensus
         function startTwinning() {
             initAudio();
             isTwinning = true;
@@ -845,33 +865,29 @@
             btnTwin.style.background = "#ef4444";
             
             twinPhase = 1; 
-            logConsole(`[TWINNING] Tuning active speaker (${LAU_BEARS[activeSpeakerId].name}) tonewheel gear...`);
+            logConsole(`[TWINNING] Auto-tuning active speaker (${LAU_BEARS[activeSpeakerId].name}) modulo register...`);
 
             twinInterval = setInterval(() => {
-                const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
-                if (!speakerSlider) return;
+                const speakerM = document.querySelector(`.bear-modulo-slider[data-id="${activeSpeakerId}"]`);
+                if (!speakerM) return;
                 
+                const targetMod = EMOTION_KEYCODES[targetEmotion];
+
                 if (twinPhase === 1) {
-                    const targetRatio = EMOTION_GEAR_RATIOS[targetEmotion];
-                    const targetVolts = Math.round(Number(LAU_BEARS[activeSpeakerId].exp) * targetRatio);
-                    
-                    speakerSlider.value = targetVolts;
-                    updateBearDacVal(activeSpeakerId, targetVolts);
+                    speakerM.value = targetMod;
+                    updateBearCoarseFine(activeSpeakerId);
                     
                     twinPhase = 2;
-                    logConsole(`[TWINNING] Phase 1 Success: Speaker matched. Tuning observers in parallel...`);
+                    logConsole(`[TWINNING] Speaker aligned to mod keycode ${targetMod}. Twinning observers in parallel...`);
                 } else if (twinPhase === 2) {
                     LAU_BEARS.forEach(observer => {
                         if (observer.id === activeSpeakerId) return; 
 
-                        const obsSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
-                        if (!obsSlider) return;
-
-                        const targetRatio = EMOTION_GEAR_RATIOS[targetEmotion];
-                        const targetVolts = Math.round(Number(observer.exp) * targetRatio);
-                        
-                        obsSlider.value = targetVolts;
-                        updateBearDacVal(observer.id, targetVolts);
+                        const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${observer.id}"]`);
+                        if (mSlider) {
+                            mSlider.value = targetMod;
+                            updateBearCoarseFine(observer.id);
+                        }
                     });
                 }
 
@@ -894,13 +910,12 @@
             
             sweepInterval = setInterval(() => {
                 LAU_BEARS.forEach(b => {
-                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                    if (slider) {
-                        let val = parseInt(slider.value);
-                        val += 15;
-                        if (val > 5000) val = 100;
-                        slider.value = val;
-                        updateBearDacVal(b.id, val);
+                    const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                    if (mSlider) {
+                        let val = parseInt(mSlider.value);
+                        val = (val + 7) % Number(b.exp);
+                        mSlider.value = val;
+                        updateBearCoarseFine(b.id);
                     }
                 });
                 evaluateConsensus();
@@ -936,10 +951,15 @@
                         const pi = Number(hashVal % 2000n) + 200; 
                         
                         LAU_BEARS.forEach(b => {
-                            const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                            if (slider) {
-                                slider.value = pi;
-                                updateBearDacVal(b.id, pi);
+                            const quotient = Math.floor(pi / Number(b.exp));
+                            const modulo = pi % Number(b.exp);
+
+                            const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${b.id}"]`);
+                            const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                            if (qSlider && mSlider) {
+                                qSlider.value = quotient;
+                                mSlider.value = modulo;
+                                updateBearCoarseFine(b.id);
                             }
                         });
                         
@@ -974,10 +994,15 @@
                 const pi = Math.floor(Math.random() * 2000) + 200;
                 
                 LAU_BEARS.forEach(b => {
-                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
-                    if (slider) {
-                        slider.value = pi;
-                        updateBearDacVal(b.id, pi);
+                    const quotient = Math.floor(pi / Number(b.exp));
+                    const modulo = pi % Number(b.exp);
+
+                    const qSlider = document.querySelector(`.bear-quotient-slider[data-id="${b.id}"]`);
+                    const mSlider = document.querySelector(`.bear-modulo-slider[data-id="${b.id}"]`);
+                    if (qSlider && mSlider) {
+                        qSlider.value = quotient;
+                        mSlider.value = modulo;
+                        updateBearCoarseFine(b.id);
                     }
                 });
 
@@ -1063,6 +1088,7 @@
             const cy = canvas.height / 2;
 
             // Background reference grid
+            ctx.shadowBlur = 0;
             ctx.strokeStyle = "rgba(239, 68, 68, 0.04)";
             ctx.beginPath();
             ctx.arc(cx, cy, 80 * scale, 0, 2 * Math.PI);
@@ -1071,13 +1097,16 @@
             if (LAU_BEARS.length > 0) {
                 const speaker = LAU_BEARS[activeSpeakerId];
                 
-                // Read physical speaker slider directly for hypotrochoid geometry mapping
-                const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${speaker.id}"]`);
-                const speakerPi = speakerSlider ? parseInt(speakerSlider.value) : 440;
+                // Read physical speaker sliders directly for hypotrochoid geometry mapping
+                const speakerQ = document.querySelector(`.bear-quotient-slider[data-id="${speaker.id}"]`);
+                const speakerM = document.querySelector(`.bear-modulo-slider[data-id="${speaker.id}"]`);
+                const q = speakerQ ? parseInt(speakerQ.value) : 3;
+                const m = speakerM ? parseInt(speakerM.value) : 0;
+                const speakerPi = q * Number(speaker.exp) + m;
 
                 const ratio = speakerPi / Number(speaker.exp);
                 const R_hyp = 45.0 * scale;
-                const r_hyp = (45.0 / ratio) * scale;
+                const r_hyp = (45.0 / (ratio || 1.0)) * scale;
                 const d_hyp = 15.0 * scale;
 
                 ctx.strokeStyle = speaker.color;
@@ -1133,7 +1162,7 @@
 
             LAU_BEARS.forEach(b => {
                 const x = ((b.pan + 1.0) / 2.0) * mapCanvas.width;
-                const normFreq = Math.max(0.0, Math.min(1.0, (b.activeFreq - 100) / 500));
+                const normFreq = Math.max(0.0, Math.min(1.0, (b.activeFreq - 100) / 1500));
                 const y = mapCanvas.height - (normFreq * mapCanvas.height);
 
                 mCtx.fillStyle = b.color;
