@@ -152,6 +152,11 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            padding: 10px;
+            border-radius: 8px;
         }
 
         .rec-row {
@@ -161,18 +166,18 @@
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
             border-radius: 8px;
-            padding: 12px 18px;
+            padding: 10px 14px;
         }
 
         .rec-name {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
         }
 
         .rec-label {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.85rem;
-            padding: 4px 10px;
+            font-size: 0.75rem;
+            padding: 3px 8px;
             border-radius: 4px;
             text-transform: uppercase;
         }
@@ -280,6 +285,17 @@
             flex-direction: column;
             gap: 6px;
         }
+
+        select.premium-dropdown {
+            width: 100%;
+            background: #0d0606;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 10px;
+            border-radius: 6px;
+            outline: none;
+        }
     </style>
 </head>
 <body>
@@ -311,28 +327,9 @@
                 <canvas id="oscilloscope"></canvas>
             </div>
 
-            <!-- Recognition Board -->
-            <div class="rec-board">
-                <div class="rec-row" data-id="0">
-                    <span class="rec-name" style="color:#ef4444;">Judge Bear (Alpha)</span>
-                    <span class="rec-label mismatch">JOY</span>
-                </div>
-                <div class="rec-row" data-id="1">
-                    <span class="rec-name" style="color:#d97706;">Witness A (Beta)</span>
-                    <span class="rec-label mismatch">JOY</span>
-                </div>
-                <div class="rec-row" data-id="2">
-                    <span class="rec-name" style="color:#3b82f6;">Witness B (Gamma)</span>
-                    <span class="rec-label mismatch">JOY</span>
-                </div>
-                <div class="rec-row" data-id="3">
-                    <span class="rec-name" style="color:#10b981;">Juror 1 (Delta)</span>
-                    <span class="rec-label mismatch">JOY</span>
-                </div>
-                <div class="rec-row" data-id="4">
-                    <span class="rec-name" style="color:#8b5cf6;">Juror 2 (Epsilon)</span>
-                    <span class="rec-label mismatch">JOY</span>
-                </div>
+            <!-- Dynamic Recognition Board -->
+            <div class="rec-board" id="recognition-board">
+                <!-- Built dynamically from the EVM JSON status -->
             </div>
 
             <div class="log-display" id="console-log">
@@ -357,9 +354,9 @@
 
             <div class="widget-card">
                 <h3>2. Active Speaker Node</h3>
-                <div class="selector-grid" id="speaker-selector">
-                    <!-- Speaker node buttons built dynamically -->
-                </div>
+                <select class="premium-dropdown" id="speaker-dropdown">
+                    <!-- Options loaded from EVM database -->
+                </select>
             </div>
 
             <div class="widget-card">
@@ -379,13 +376,9 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
-        const BEARS = [
-            {"id": 0, "abbr": "JDG", "name": "Judge Bear", "exp": 440n, "color": "#ef4444", "pan": 0.0},
-            {"id": 1, "abbr": "WTA", "name": "Witness A", "exp": 12000n, "color": "#d97706", "pan": -0.6},
-            {"id": 2, "abbr": "WTB", "name": "Witness B", "exp": 8877n, "color": "#3b82f6", "pan": 0.6},
-            {"id": 3, "abbr": "JR1", "name": "Juror 1", "exp": 4433n, "color": "#10b981", "pan": -0.8},
-            {"id": 4, "abbr": "JR2", "name": "Juror 2", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
-        ];
+        // Dynamic list of bears/LAU tokens discovered from the EVM config mapping
+        let LAU_BEARS = [];
+        let BEAR_DATABASES = [];
 
         const EMOTIONS = {
             "JOY": 1009,
@@ -415,8 +408,100 @@
         const telemetryBuf = document.getElementById("telemetry-buf");
         const telemetryEigen = document.getElementById("telemetry-eigen");
         const telemetryRatio = document.getElementById("telemetry-ratio");
+        const speakerDropdown = document.getElementById("speaker-dropdown");
+        const recBoard = document.getElementById("recognition-board");
 
-        // Build selectors
+        // Fetch dynamic contract list from EVM config
+        async function loadEVMContracts() {
+            try {
+                const res = await fetch("../config/nonukes_qings_status.json");
+                const data = await res.json();
+                
+                // Parse and filter verified LAUs
+                let count = 0;
+                data.forEach(item => {
+                    if (item.address) {
+                        // Generate dynamic exponent mapping based on address hash
+                        let hash = 0;
+                        for (let i = 0; i < item.address.length; i++) {
+                            hash = (hash << 5) - hash + item.address.charCodeAt(i);
+                        }
+                        const exp = BigInt(Math.abs(hash) % 10000 + 440);
+                        const hue = Math.abs(hash) % 360;
+                        
+                        LAU_BEARS.push({
+                            "id": count,
+                            "name": item.symbol || item.name || `LAU-${count}`,
+                            "address": item.address,
+                            "exp": exp,
+                            "color": `hsl(${hue}, 80%, 55%)`
+                        });
+                        count++;
+                    }
+                });
+
+                logConsole(`[EVM] Discovered ${LAU_BEARS.length} dynamic LAU nodes from storage.`);
+                buildUI();
+            } catch (err) {
+                // Fallback to baseline bears if fetch fails
+                LAU_BEARS = [
+                    {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444"},
+                    {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706"},
+                    {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6"},
+                    {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981"},
+                    {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6"}
+                ];
+                logConsole(`[EVM] Failed to load config. Swearing in 5 baseline bears.`);
+                buildUI();
+            }
+        }
+
+        function buildUI() {
+            // Build Speaker dropdown options
+            speakerDropdown.innerHTML = "";
+            LAU_BEARS.forEach(b => {
+                const opt = document.createElement("option");
+                opt.value = b.id;
+                opt.innerText = `${b.name} (${b.address.substring(0, 8)}...)`;
+                speakerDropdown.appendChild(opt);
+            });
+
+            speakerDropdown.onchange = () => {
+                activeSpeakerId = parseInt(speakerDropdown.value);
+                logConsole(`[Speaker] Active stream driver changed to: ${LAU_BEARS[activeSpeakerId].name}`);
+                evaluateConsensus();
+            };
+
+            // Build dynamic databases
+            BEAR_DATABASES = [];
+            LAU_BEARS.forEach(b => {
+                const db = {};
+                Object.entries(EMOTIONS).forEach(([emo, val]) => {
+                    const res = bigModExp(val, b.exp, MotzkinPrime);
+                    const R = Number(res % 50n) + 15.0;
+                    const r = Number(res % 25n) + 8.0;
+                    db[emo] = R / r;
+                });
+                BEAR_DATABASES.push(db);
+            });
+
+            // Build Recognition rows
+            recBoard.innerHTML = "";
+            LAU_BEARS.forEach(b => {
+                const row = document.createElement("div");
+                row.className = "rec-row";
+                row.setAttribute("data-id", b.id);
+                row.innerHTML = `
+                    <span class="rec-name" style="color:${b.color};">${b.name}</span>
+                    <span class="rec-label mismatch">JOY</span>
+                `;
+                recBoard.appendChild(row);
+            });
+
+            evaluateConsensus();
+        }
+
+        // Build target emotion selectors
         const emoSelector = document.getElementById("emotion-selector");
         Object.keys(EMOTIONS).forEach(emo => {
             const btn = document.createElement("button");
@@ -432,52 +517,10 @@
             emoSelector.appendChild(btn);
         });
 
-        const spkSelector = document.getElementById("speaker-selector");
-        BEARS.forEach(b => {
-            const btn = document.createElement("button");
-            btn.className = "select-btn" + (b.id === activeSpeakerId ? " active" : "");
-            btn.innerText = b.abbr;
-            btn.style.color = b.color;
-            btn.onclick = () => {
-                document.querySelectorAll("#speaker-selector .select-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                activeSpeakerId = b.id;
-                logConsole(`[Speaker] Active stream driver changed to: ${b.name}`);
-                evaluateConsensus();
-            };
-            spkSelector.appendChild(btn);
-        });
-
         dacSlider.oninput = () => {
             dacStreamVal.innerText = dacSlider.value;
             evaluateConsensus();
         };
-
-        function bigModExp(base, exp, mod) {
-            let res = 1n;
-            base = BigInt(base) % BigInt(mod);
-            exp = BigInt(exp);
-            const m = BigInt(mod);
-            while (exp > 0n) {
-                if (exp % 2n === 1n) res = (res * base) % m;
-                base = (base * base) % m;
-                exp = exp / 2n;
-            }
-            return res;
-        }
-
-        // Preload self-observation databases for all 5 bears
-        const BEAR_DATABASES = [];
-        BEARS.forEach(b => {
-            const db = {};
-            Object.entries(EMOTIONS).forEach(([emo, val]) => {
-                const res = bigModExp(val, b.exp, MotzkinPrime);
-                const R = Number(res % 50n) + 15.0;
-                const r = Number(res % 25n) + 8.0;
-                db[emo] = R / r;
-            });
-            BEAR_DATABASES.push(db);
-        });
 
         function initAudio() {
             if (audioCtx) return;
@@ -485,13 +528,6 @@
             audioBtn.innerText = "AUDIOPATHWAY ACTIVE";
             audioBtn.style.background = "rgba(16, 185, 129, 0.1)";
             audioBtn.style.color = "#10b981";
-        }
-
-        function logConsole(msg) {
-            const div = document.createElement("div");
-            div.innerText = msg;
-            consoleLog.appendChild(div);
-            consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
         function playGrowlSound(time) {
@@ -520,10 +556,10 @@
         }
 
         function evaluateConsensus() {
-            const speaker = BEARS[activeSpeakerId];
+            if (LAU_BEARS.length === 0) return;
+            const speaker = LAU_BEARS[activeSpeakerId];
             const voltage = parseInt(dacSlider.value);
             
-            // Speaker resolves rosette coordinate
             const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
             const r_spk = Number(res % 25n) + 8.0;
@@ -532,10 +568,9 @@
             telemetryRatio.innerText = activeRatio.toFixed(3);
 
             let matches = 0;
-            BEARS.forEach(observer => {
+            LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
                 
-                // Observer compares speaker's ratio to its own database
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
                 Object.entries(db).forEach(([emo, target_ratio]) => {
@@ -547,19 +582,20 @@
                 });
 
                 const row = document.querySelector(`.rec-row[data-id="${observer.id}"]`);
-                const label = row.querySelector(".rec-label");
-                label.innerText = best_emo;
+                if (row) {
+                    const label = row.querySelector(".rec-label");
+                    label.innerText = best_emo;
 
-                if (best_emo === targetEmotion) {
-                    label.className = "rec-label match";
-                    matches++;
-                } else {
-                    label.className = "rec-label mismatch";
+                    if (best_emo === targetEmotion) {
+                        label.className = "rec-label match";
+                        matches++;
+                    } else {
+                        label.className = "rec-label mismatch";
+                    }
                 }
             });
 
-            if (matches === 5) {
-                // Consensus reached
+            if (matches === LAU_BEARS.length) {
                 consensusStatus.className = "status-alert alert-harmony";
                 consensusStatus.innerText = "CHAMBER IN AGREEMENT (HARMONY LOCKED)";
                 bufValue = Math.max(0.0, bufValue - 0.08);
@@ -568,7 +604,6 @@
                     logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at voltage ${voltage}!`);
                 }
             } else {
-                // Discordance / Growling
                 consensusStatus.className = "status-alert alert-growl";
                 consensusStatus.innerText = "GROWLING ACTIVATED (33Hz EFFECT)";
                 bufValue = Math.min(2.0, bufValue + 0.04);
@@ -589,7 +624,7 @@
             
             sweepInterval = setInterval(() => {
                 let val = parseInt(dacSlider.value);
-                val += 179; // Sweep step size
+                val += 179;
                 if (val > 8000) val = 3000;
                 dacSlider.value = val;
                 dacStreamVal.innerText = val;
@@ -636,34 +671,37 @@
             ctx.arc(cx, cy, 80 * scale, 0, 2 * Math.PI);
             ctx.stroke();
 
-            const speaker = BEARS[activeSpeakerId];
-            ctx.strokeStyle = speaker.color;
-            ctx.shadowBlur = 8 * scale;
-            ctx.shadowColor = speaker.color;
-            ctx.lineWidth = 2;
+            if (LAU_BEARS.length > 0) {
+                const speaker = LAU_BEARS[activeSpeakerId];
+                ctx.strokeStyle = speaker.color;
+                ctx.shadowBlur = 8 * scale;
+                ctx.shadowColor = speaker.color;
+                ctx.lineWidth = 2;
 
-            ctx.beginPath();
-            const R = 42 * scale, r = 21 * scale, d = 12;
-            let first = true;
-            for (let theta = 0; theta < 4 * Math.PI; theta += 0.08) {
-                const x = cx + ((R - r) * Math.cos(theta + rot) + d * Math.cos(((R - r)/r)*theta));
-                const y = cy + ((R - r) * Math.sin(theta + rot) - d * Math.sin(((R - r)/r)*theta));
-                if (first) {
-                    ctx.moveTo(x, y);
-                    first = false;
-                } else {
-                    ctx.lineTo(x, y);
+                ctx.beginPath();
+                const R = 42 * scale, r = 21 * scale, d = 12;
+                let first = true;
+                for (let theta = 0; theta < 4 * Math.PI; theta += 0.08) {
+                    const x = cx + ((R - r) * Math.cos(theta + rot) + d * Math.cos(((R - r)/r)*theta));
+                    const y = cy + ((R - r) * Math.sin(theta + rot) - d * Math.sin(((R - r)/r)*theta));
+                    if (first) {
+                        ctx.moveTo(x, y);
+                        first = false;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
 
             rot += 0.02;
             requestAnimationFrame(draw);
         }
         draw();
 
-        evaluateConsensus();
+        // Initiate loading
+        loadEVMContracts();
     </script>
 </body>
 </html>
