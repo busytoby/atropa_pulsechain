@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consensus Twinning Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030202;
+            --panel-bg: rgba(10, 5, 5, 0.93);
+            --primary-glow: #ef4444;
+            --text-color: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: rgba(239, 68, 68, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.03);
+            --accent-emerald: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(239, 68, 68, 0.04) 0%, transparent 55%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 55%);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 24px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .dashboard-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .widget-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+        }
+
+        .widget-card h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+            padding-bottom: 8px;
+        }
+
+        #oscilloscope {
+            width: 100%;
+            height: 220px;
+            background: #000000;
+            border-radius: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.08);
+        }
+
+        /* Target selectors */
+        .selector-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .select-btn {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .select-btn:hover {
+            border-color: var(--primary-glow);
+            color: var(--text-color);
+        }
+
+        .select-btn.active {
+            background: var(--primary-glow);
+            border-color: var(--primary-glow);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* Recognition Matrix board */
+        .rec-board {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px 18px;
+        }
+
+        .rec-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .rec-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .rec-label.match {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .rec-label.mismatch {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--primary-glow);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Audio Controls */
+        .audio-status-banner {
+            padding: 12px 20px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-glow);
+            text-align: center;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+        }
+
+        .btn-sweep {
+            background: var(--accent-emerald);
+            color: #000;
+        }
+
+        .btn-sweep:hover {
+            box-shadow: 0 0 12px var(--accent-emerald);
+        }
+
+        /* Status alerts */
+        .status-alert {
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+        }
+
+        .alert-growl {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--primary-glow);
+            text-shadow: 0 0 5px rgba(239,68,68,0.3);
+        }
+
+        .alert-harmony {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+            text-shadow: 0 0 5px rgba(16,185,129,0.3);
+        }
+
+        .dac-control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .log-display {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            height: 110px;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Consensus Twinning DAC</h1>
+        <div id="audio-btn" class="audio-status-banner">TAP TO ACTIVATE AUDIOPATHWAY</div>
+    </header>
+
+    <div class="main-container">
+        <div class="dashboard-panel">
+            <div class="action-bar">
+                <button id="btn-sweep" class="control-btn btn-sweep">Start Auto-Sweep Training</button>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    Sweeping digital <span style="color:var(--primary-glow); font-family:monospace;"><256bit</span> integer stream input
+                </div>
+            </div>
+
+            <div class="dac-control-group">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">
+                    <span>DAC Digital Stream Input (Pi)</span>
+                    <span id="dac-stream-val" style="font-family:'Share Tech Mono', monospace; color:var(--primary-glow);">4000</span>
+                </div>
+                <input type="range" id="dac-slider" min="3000" max="8000" value="4000" style="width:100%;">
+            </div>
+
+            <!-- Visual Oscillator Spindle -->
+            <div>
+                <canvas id="oscilloscope"></canvas>
+            </div>
+
+            <!-- Recognition Board -->
+            <div class="rec-board">
+                <div class="rec-row" data-id="0">
+                    <span class="rec-name" style="color:#ef4444;">Judge Bear (Alpha)</span>
+                    <span class="rec-label mismatch">JOY</span>
+                </div>
+                <div class="rec-row" data-id="1">
+                    <span class="rec-name" style="color:#d97706;">Witness A (Beta)</span>
+                    <span class="rec-label mismatch">JOY</span>
+                </div>
+                <div class="rec-row" data-id="2">
+                    <span class="rec-name" style="color:#3b82f6;">Witness B (Gamma)</span>
+                    <span class="rec-label mismatch">JOY</span>
+                </div>
+                <div class="rec-row" data-id="3">
+                    <span class="rec-name" style="color:#10b981;">Juror 1 (Delta)</span>
+                    <span class="rec-label mismatch">JOY</span>
+                </div>
+                <div class="rec-row" data-id="4">
+                    <span class="rec-name" style="color:#8b5cf6;">Juror 2 (Epsilon)</span>
+                    <span class="rec-label mismatch">JOY</span>
+                </div>
+            </div>
+
+            <div class="log-display" id="console-log">
+                <div>[DAC] Preloaded P2P self-projection matrices. Swearing-in complete.</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="widget-card">
+                <h3>Consensus Status</h3>
+                <div class="status-alert alert-growl" id="consensus-status">
+                    GROWLING ACTIVATED (33Hz EFFECT)
+                </div>
+            </div>
+
+            <div class="widget-card">
+                <h3>1. Select Target Emotion</h3>
+                <div class="selector-grid" id="emotion-selector">
+                    <!-- Target emotion buttons built dynamically -->
+                </div>
+            </div>
+
+            <div class="widget-card">
+                <h3>2. Active Speaker Node</h3>
+                <div class="selector-grid" id="speaker-selector">
+                    <!-- Speaker node buttons built dynamically -->
+                </div>
+            </div>
+
+            <div class="widget-card">
+                <h3>Live Signal Telemetry</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.75rem; font-family:'Share Tech Mono', monospace;">
+                    <div>Blow-Up Factor:</div>
+                    <div id="telemetry-buf" style="color:var(--primary-glow); text-align:right;">0.00</div>
+                    <div>Eigenvalue limit:</div>
+                    <div id="telemetry-eigen" style="color:var(--accent-emerald); text-align:right;">1.0000</div>
+                    <div>DAC Target Ratio:</div>
+                    <div id="telemetry-ratio" style="color:var(--text-muted); text-align:right;">0.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MotzkinPrime = 953467954114363n;
+
+        const BEARS = [
+            {"id": 0, "abbr": "JDG", "name": "Judge Bear", "exp": 440n, "color": "#ef4444", "pan": 0.0},
+            {"id": 1, "abbr": "WTA", "name": "Witness A", "exp": 12000n, "color": "#d97706", "pan": -0.6},
+            {"id": 2, "abbr": "WTB", "name": "Witness B", "exp": 8877n, "color": "#3b82f6", "pan": 0.6},
+            {"id": 3, "abbr": "JR1", "name": "Juror 1", "exp": 4433n, "color": "#10b981", "pan": -0.8},
+            {"id": 4, "abbr": "JR2", "name": "Juror 2", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
+        ];
+
+        const EMOTIONS = {
+            "JOY": 1009,
+            "SORROW": 1543,
+            "ANGER": 2237,
+            "FEAR": 3109,
+            "MELANCHOLY": 4423,
+            "EUPHORIA": 5519,
+            "SUSPENSE": 6701,
+            "TRANQUILITY": 7883,
+            "CONFUSION": 8923
+        };
+
+        let activeSpeakerId = 0;
+        let targetEmotion = "MELANCHOLY";
+        let isSweeping = false;
+        let sweepInterval = null;
+        let audioCtx = null;
+        let bufValue = 0.0;
+
+        const btnSweep = document.getElementById("btn-sweep");
+        const dacSlider = document.getElementById("dac-slider");
+        const dacStreamVal = document.getElementById("dac-stream-val");
+        const audioBtn = document.getElementById("audio-btn");
+        const consensusStatus = document.getElementById("consensus-status");
+        const consoleLog = document.getElementById("console-log");
+        const telemetryBuf = document.getElementById("telemetry-buf");
+        const telemetryEigen = document.getElementById("telemetry-eigen");
+        const telemetryRatio = document.getElementById("telemetry-ratio");
+
+        // Build selectors
+        const emoSelector = document.getElementById("emotion-selector");
+        Object.keys(EMOTIONS).forEach(emo => {
+            const btn = document.createElement("button");
+            btn.className = "select-btn" + (emo === targetEmotion ? " active" : "");
+            btn.innerText = emo;
+            btn.onclick = () => {
+                document.querySelectorAll("#emotion-selector .select-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                targetEmotion = emo;
+                logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
+                evaluateConsensus();
+            };
+            emoSelector.appendChild(btn);
+        });
+
+        const spkSelector = document.getElementById("speaker-selector");
+        BEARS.forEach(b => {
+            const btn = document.createElement("button");
+            btn.className = "select-btn" + (b.id === activeSpeakerId ? " active" : "");
+            btn.innerText = b.abbr;
+            btn.style.color = b.color;
+            btn.onclick = () => {
+                document.querySelectorAll("#speaker-selector .select-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                activeSpeakerId = b.id;
+                logConsole(`[Speaker] Active stream driver changed to: ${b.name}`);
+                evaluateConsensus();
+            };
+            spkSelector.appendChild(btn);
+        });
+
+        dacSlider.oninput = () => {
+            dacStreamVal.innerText = dacSlider.value;
+            evaluateConsensus();
+        };
+
+        function bigModExp(base, exp, mod) {
+            let res = 1n;
+            base = BigInt(base) % BigInt(mod);
+            exp = BigInt(exp);
+            const m = BigInt(mod);
+            while (exp > 0n) {
+                if (exp % 2n === 1n) res = (res * base) % m;
+                base = (base * base) % m;
+                exp = exp / 2n;
+            }
+            return res;
+        }
+
+        // Preload self-observation databases for all 5 bears
+        const BEAR_DATABASES = [];
+        BEARS.forEach(b => {
+            const db = {};
+            Object.entries(EMOTIONS).forEach(([emo, val]) => {
+                const res = bigModExp(val, b.exp, MotzkinPrime);
+                const R = Number(res % 50n) + 15.0;
+                const r = Number(res % 25n) + 8.0;
+                db[emo] = R / r;
+            });
+            BEAR_DATABASES.push(db);
+        });
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioBtn.innerText = "AUDIOPATHWAY ACTIVE";
+            audioBtn.style.background = "rgba(16, 185, 129, 0.1)";
+            audioBtn.style.color = "#10b981";
+        }
+
+        function logConsole(msg) {
+            const div = document.createElement("div");
+            div.innerText = msg;
+            consoleLog.appendChild(div);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function playGrowlSound(time) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            osc.frequency.value = 180;
+            const modulator = audioCtx.createOscillator();
+            modulator.frequency.value = 33; // 33Hz Growl
+            const modGain = audioCtx.createGain();
+            modGain.gain.value = 0.5;
+            
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0.0, time);
+            mainGain.gain.linearRampToValueAtTime(0.12, time + 0.02);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+            
+            modulator.connect(modGain);
+            modGain.connect(osc.frequency);
+            osc.connect(mainGain);
+            mainGain.connect(audioCtx.destination);
+            
+            modulator.start(time);
+            osc.start(time);
+            modulator.stop(time + 0.3);
+            osc.stop(time + 0.3);
+        }
+
+        function evaluateConsensus() {
+            const speaker = BEARS[activeSpeakerId];
+            const voltage = parseInt(dacSlider.value);
+            
+            // Speaker resolves rosette coordinate
+            const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+            const R_spk = Number(res % 50n) + 15.0;
+            const r_spk = Number(res % 25n) + 8.0;
+            const activeRatio = R_spk / r_spk;
+
+            telemetryRatio.innerText = activeRatio.toFixed(3);
+
+            let matches = 0;
+            BEARS.forEach(observer => {
+                const db = BEAR_DATABASES[observer.id];
+                
+                // Observer compares speaker's ratio to its own database
+                let best_emo = "CONFUSION";
+                let min_diff = Infinity;
+                Object.entries(db).forEach(([emo, target_ratio]) => {
+                    const diff = Math.abs(target_ratio - activeRatio);
+                    if (diff < min_diff) {
+                        min_diff = diff;
+                        best_emo = emo;
+                    }
+                });
+
+                const row = document.querySelector(`.rec-row[data-id="${observer.id}"]`);
+                const label = row.querySelector(".rec-label");
+                label.innerText = best_emo;
+
+                if (best_emo === targetEmotion) {
+                    label.className = "rec-label match";
+                    matches++;
+                } else {
+                    label.className = "rec-label mismatch";
+                }
+            });
+
+            if (matches === 5) {
+                // Consensus reached
+                consensusStatus.className = "status-alert alert-harmony";
+                consensusStatus.innerText = "CHAMBER IN AGREEMENT (HARMONY LOCKED)";
+                bufValue = Math.max(0.0, bufValue - 0.08);
+                if (isSweeping) {
+                    stopSweep();
+                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at voltage ${voltage}!`);
+                }
+            } else {
+                // Discordance / Growling
+                consensusStatus.className = "status-alert alert-growl";
+                consensusStatus.innerText = "GROWLING ACTIVATED (33Hz EFFECT)";
+                bufValue = Math.min(2.0, bufValue + 0.04);
+                if (Math.random() < 0.25) {
+                    playGrowlSound(audioCtx ? audioCtx.currentTime : 0);
+                }
+            }
+
+            telemetryBuf.innerText = bufValue.toFixed(2);
+            telemetryEigen.innerText = (1.0 / (1.0 + bufValue)).toFixed(4);
+        }
+
+        function startSweep() {
+            initAudio();
+            isSweeping = true;
+            btnSweep.innerText = "Stop Auto-Sweep";
+            btnSweep.style.background = "#ef4444";
+            
+            sweepInterval = setInterval(() => {
+                let val = parseInt(dacSlider.value);
+                val += 179; // Sweep step size
+                if (val > 8000) val = 3000;
+                dacSlider.value = val;
+                dacStreamVal.innerText = val;
+                evaluateConsensus();
+            }, 300);
+        }
+
+        function stopSweep() {
+            isSweeping = false;
+            btnSweep.innerText = "Start Auto-Sweep Training";
+            btnSweep.style.background = "var(--accent-emerald)";
+            clearInterval(sweepInterval);
+        }
+
+        btnSweep.onclick = () => {
+            if (isSweeping) {
+                stopSweep();
+            } else {
+                startSweep();
+            }
+        };
+
+        audioBtn.onclick = () => {
+            initAudio();
+        };
+
+        // Bounding circle oscilloscope renderer
+        const canvas = document.getElementById("oscilloscope");
+        const ctx = canvas.getContext("2d");
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 220;
+
+        let rot = 0;
+        function draw() {
+            ctx.fillStyle = "#030202";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const scale = 1.0 / (1.0 + bufValue);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.strokeStyle = "rgba(239, 68, 68, 0.08)";
+            ctx.beginPath();
+            ctx.arc(cx, cy, 80 * scale, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            const speaker = BEARS[activeSpeakerId];
+            ctx.strokeStyle = speaker.color;
+            ctx.shadowBlur = 8 * scale;
+            ctx.shadowColor = speaker.color;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            const R = 42 * scale, r = 21 * scale, d = 12;
+            let first = true;
+            for (let theta = 0; theta < 4 * Math.PI; theta += 0.08) {
+                const x = cx + ((R - r) * Math.cos(theta + rot) + d * Math.cos(((R - r)/r)*theta));
+                const y = cy + ((R - r) * Math.sin(theta + rot) - d * Math.sin(((R - r)/r)*theta));
+                if (first) {
+                    ctx.moveTo(x, y);
+                    first = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            rot += 0.02;
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        evaluateConsensus();
+    </script>
+</body>
+</html>
