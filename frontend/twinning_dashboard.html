@@ -616,28 +616,39 @@
             oscR.frequency.exponentialRampToValueAtTime(freqR * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscR.connect(panner);
 
+            // Compute mismatch count for dynamic growl scaling
             const speaker = LAU_BEARS[activeSpeakerId];
             const res = bigModExp(inputVal, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
             const r_spk = Number(res % 25n) + 8.0;
             const activeRatio = R_spk / r_spk;
-            const db = BEAR_DATABASES[voiceIdx];
-            
-            let self_classified = "CONFUSION";
-            let min_diff = Infinity;
-            Object.entries(db).forEach(([emo, target_ratio]) => {
-                const diff = Math.abs(target_ratio - activeRatio);
-                if (diff < min_diff) {
-                    min_diff = diff;
-                    self_classified = emo;
+
+            let mismatchCount = 0;
+            LAU_BEARS.forEach(observer => {
+                const db = BEAR_DATABASES[observer.id];
+                const localOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                const translatedRatio = activeRatio * localOffset;
+                
+                let best_emo = "CONFUSION";
+                let min_diff = Infinity;
+                Object.entries(db).forEach(([emo, target_ratio]) => {
+                    const diff = Math.abs(target_ratio - translatedRatio);
+                    if (diff < min_diff) {
+                        min_diff = diff;
+                        best_emo = emo;
+                    }
+                });
+                if (best_emo !== targetEmotion) {
+                    mismatchCount++;
                 }
             });
 
-            if (self_classified !== targetEmotion) {
+            if (mismatchCount > 0) {
                 const modulator = audioCtx.createOscillator();
                 modulator.frequency.value = 33; 
                 const modGain = audioCtx.createGain();
-                modGain.gain.value = 0.5;
+                // Scale gain based on mismatch count (0.1 per mismatch, max 0.5)
+                modGain.gain.value = Math.min(0.5, mismatchCount * 0.1);
                 modulator.connect(modGain);
                 modGain.connect(mainGain.gain);
                 modulator.start(time);
@@ -800,29 +811,6 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        function startSweep() {
-            initAudio();
-            isSweeping = true;
-            btnSweep.innerText = "Stop Auto-Sweep";
-            btnSweep.style.background = "#ef4444";
-            
-            sweepInterval = setInterval(() => {
-                let val = parseInt(dacSlider.value);
-                val += 179;
-                if (val > 8000) val = 3000;
-                dacSlider.value = val;
-                dacStreamVal.innerText = val;
-                evaluateConsensus();
-            }, 300);
-        }
-
-        function stopSweep() {
-            isSweeping = false;
-            btnSweep.innerText = "Start Auto-Sweep Training";
-            btnSweep.style.background = "var(--accent-emerald)";
-            clearInterval(sweepInterval);
-        }
-
         // Active P2P Twinning Loop: mutate local observer translation offsets
         function startTwinning() {
             initAudio();
@@ -862,6 +850,29 @@
             btnTwin.innerText = "Auto-Twin Dialect";
             btnTwin.style.background = "#8b5cf6";
             clearInterval(twinInterval);
+        }
+
+        function startSweep() {
+            initAudio();
+            isSweeping = true;
+            btnSweep.innerText = "Stop Auto-Sweep";
+            btnSweep.style.background = "#ef4444";
+            
+            sweepInterval = setInterval(() => {
+                let val = parseInt(dacSlider.value);
+                val += 179;
+                if (val > 8000) val = 3000;
+                dacSlider.value = val;
+                dacStreamVal.innerText = val;
+                evaluateConsensus();
+            }, 300);
+        }
+
+        function stopSweep() {
+            isSweeping = false;
+            btnSweep.innerText = "Start Auto-Sweep Training";
+            btnSweep.style.background = "var(--accent-emerald)";
+            clearInterval(sweepInterval);
         }
 
         async function fetchLiveBlocks() {
@@ -981,13 +992,11 @@
             initAudio();
         };
 
-        // Oscilloscope Spindle Renderer
         const canvas = document.getElementById("oscilloscope");
         const ctx = canvas.getContext("2d");
         canvas.width = canvas.offsetWidth;
         canvas.height = 220;
 
-        // Binaural Map 2D spatial panner graph renderer
         const mapCanvas = document.getElementById("binaural-map");
         const mCtx = mapCanvas.getContext("2d");
         mapCanvas.width = mapCanvas.offsetWidth;
@@ -995,7 +1004,6 @@
 
         let rot = 0;
         function draw() {
-            // 1. Oscilloscope Draw
             ctx.fillStyle = "#030202";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1032,11 +1040,9 @@
                 ctx.shadowBlur = 0;
             }
 
-            // 2. Binaural Map Draw
             mCtx.fillStyle = "#000";
             mCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
             
-            // Draw axis lines
             mCtx.strokeStyle = "rgba(255, 255, 255, 0.05)";
             mCtx.beginPath();
             mCtx.moveTo(mapCanvas.width / 2, 0);
