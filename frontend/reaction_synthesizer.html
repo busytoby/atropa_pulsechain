@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaction Binaural Synthesizer Lead</title>
+    <title>Binaural React Sequencer - Teddy Bear Court of Law</title>
     <style>
         :root {
-            --bg-color: #030508;
-            --panel-bg: rgba(10, 15, 26, 0.7);
-            --primary-glow: #fbbf24;
+            --bg-color: #050303;
+            --panel-bg: rgba(12, 6, 6, 0.85);
+            --primary-glow: #ef4444;
             --text-color: #f3f4f6;
             --text-muted: #9ca3af;
-            --border-color: rgba(251, 191, 36, 0.15);
-            --npn-color: #f59e0b;
-            --pnp-color: #10b981;
+            --border-color: rgba(239, 68, 68, 0.15);
+            --accent-purple: #6d28d9;
         }
 
         body {
@@ -41,11 +40,11 @@
 
         header h1 {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: var(--primary-glow);
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+            text-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
         }
 
         .main-container {
@@ -64,7 +63,7 @@
             border-radius: 12px;
             padding: 24px;
             backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: column;
             gap: 24px;
@@ -81,119 +80,113 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
         }
 
         .widget-card h3 {
             margin-top: 0;
             margin-bottom: 15px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--primary-glow);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        .control-group label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        input[type="range"] {
+        #oscilloscope {
             width: 100%;
-            accent-color: var(--primary-glow);
-            background: rgba(255,255,255,0.05);
-            height: 6px;
-            border-radius: 3px;
-            outline: none;
-            border: none;
+            height: 240px;
+            background: #000000;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.1);
         }
 
-        .slider-meta {
+        /* Sequencer Matrix styling */
+        .sequencer-grid {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-            font-family: monospace;
-        }
-
-        /* Keyboard styling */
-        .keys-container {
-            display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
             background: rgba(0,0,0,0.4);
             padding: 15px;
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.03);
         }
 
-        .key {
-            width: 40px;
-            height: 150px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 0 0 4px 4px;
+        .seq-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .seq-label {
+            width: 110px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+
+        .seq-steps {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            flex-grow: 1;
+        }
+
+        .seq-step {
+            height: 28px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
             cursor: pointer;
-            margin: 0 2px;
-            position: relative;
-            z-index: 1;
-            transition: background 0.1s ease;
+            transition: all 0.15s ease;
         }
 
-        .key.black {
-            width: 26px;
-            height: 90px;
-            background: #111827;
-            border: 1px solid #000;
-            margin-left: -15px;
-            margin-right: -15px;
-            z-index: 2;
+        .seq-step.active {
+            background: var(--primary-glow);
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
         }
 
-        .key:active, .key.active {
-            background: var(--primary-glow) !important;
-            box-shadow: 0 0 15px var(--primary-glow);
-        }
-
-        .key.black:active, .key.black.active {
-            background: #d97706 !important;
-        }
-
-        /* Oscilloscope */
-        #oscilloscope {
-            width: 100%;
-            height: 200px;
-            background: #05070a;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
+        .seq-step.playhead {
+            border-color: #ffffff;
+            box-shadow: 0 0 8px #ffffff;
         }
 
         /* Audio Controls */
         .audio-status-banner {
             padding: 10px 15px;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.2);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
             border-radius: 6px;
             font-size: 0.8rem;
             color: var(--primary-glow);
             text-align: center;
             cursor: pointer;
             user-select: none;
-            transition: all 0.2s ease;
         }
 
-        .audio-status-banner:hover {
-            background: rgba(245, 158, 11, 0.15);
+        .transport-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
 
-        /* stats grid */
+        .control-btn {
+            background: var(--primary-glow);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .control-btn:hover {
+            opacity: 0.9;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -221,73 +214,61 @@
             font-size: 0.85rem;
             color: var(--primary-glow);
         }
-
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Reaction Binaural Synthesizer</h1>
+        <h1>Binaural React Sequencer</h1>
         <div id="audio-btn" class="audio-status-banner">TAP TO ACTIVATE AUDIOPATHWAY</div>
     </header>
 
     <div class="main-container">
         <div class="synth-panel">
+            <div class="transport-bar">
+                <button id="btn-play" class="control-btn" style="background:#10b981;">Play</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted);">Tempo</label>
+                    <input type="range" id="seq-tempo" min="60" max="150" value="80" style="width:120px;">
+                    <span id="tempo-val" style="font-family:monospace; font-size:0.8rem;">80 BPM</span>
+                </div>
+            </div>
+
             <div>
-                <h3 style="margin-top: 0; color: var(--primary-glow);">Binaural Phase Vectors</h3>
                 <canvas id="oscilloscope"></canvas>
             </div>
 
-            <!-- Keys keyboard -->
-            <div class="keys-container">
-                <div class="key" data-note="C4"></div>
-                <div class="key black" data-note="C#4"></div>
-                <div class="key" data-note="D4"></div>
-                <div class="key black" data-note="D#4"></div>
-                <div class="key" data-note="E4"></div>
-                <div class="key" data-note="F4"></div>
-                <div class="key black" data-note="F#4"></div>
-                <div class="key" data-note="G4"></div>
-                <div class="key black" data-note="G#4"></div>
-                <div class="key" data-note="A4"></div>
-                <div class="key black" data-note="A#4"></div>
-                <div class="key" data-note="B4"></div>
-                <div class="key" data-note="C5"></div>
+            <!-- Sequencer Matrix -->
+            <div class="sequencer-grid">
+                <div class="seq-row" data-voice="0">
+                    <div class="seq-label">Judge Bear</div>
+                    <div class="seq-steps"></div>
+                </div>
+                <div class="seq-row" data-voice="1">
+                    <div class="seq-label">Witness A</div>
+                    <div class="seq-steps"></div>
+                </div>
+                <div class="seq-row" data-voice="2">
+                    <div class="seq-label">Witness B</div>
+                    <div class="seq-steps"></div>
+                </div>
+                <div class="seq-row" data-voice="3">
+                    <div class="seq-label">Juror 1</div>
+                    <div class="seq-steps"></div>
+                </div>
+                <div class="seq-row" data-voice="4">
+                    <div class="seq-label">Juror 2</div>
+                    <div class="seq-steps"></div>
+                </div>
             </div>
         </div>
 
         <div class="sidebar">
             <div class="widget-card">
-                <h3>Reaction FUSE Constants</h3>
-                
-                <div class="control-group">
-                    <label>MotzkinPrime</label>
-                    <div class="stat-value">953467954114363</div>
-                </div>
-
-                <div class="control-group">
-                    <label>Base Input Offset (Base)</label>
-                    <input type="range" id="fuse-base" min="1000" max="50000" value="12000">
-                    <div class="slider-meta">
-                        <span>Narrow</span>
-                        <span id="base-val">12000</span>
-                        <span>Wide</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>Modulation Channel (Channel)</label>
-                    <input type="range" id="fuse-channel" min="10" max="1000" value="440">
-                    <div class="slider-meta">
-                        <span>Low</span>
-                        <span id="channel-val">440 Hz</span>
-                        <span>High</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>Tonewheel Pre-Mangler</label>
-                    <button id="btn-mangle" class="control-btn" style="background:#ef4444; border:none; padding:10px; width:100%; border-radius:6px; color:#fff; cursor:pointer; font-weight:bold; margin-top:5px;">Mangle: OFF</button>
+                <h3>Agreement Accumulator</h3>
+                <div class="control-group" style="text-align:center;">
+                    <div id="agreement-val" style="font-size:2rem; font-family:monospace; color:var(--primary-glow); text-shadow:0 0 10px rgba(239,68,68,0.5);">0.9481</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-top:4px;">Five-Voice Similitude Status</div>
                 </div>
             </div>
 
@@ -295,20 +276,12 @@
                 <h3>Live Register Telemetry</h3>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <label>Left (Eta)</label>
-                        <div class="stat-value" id="reg-eta">0</div>
+                        <label>Active Voice</label>
+                        <div class="stat-value" id="active-voice-name">None</div>
                     </div>
                     <div class="stat-card">
-                        <label>Right (Kappa)</label>
-                        <div class="stat-value" id="reg-kappa">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <label>Left Freq</label>
-                        <div class="stat-value" id="freq-l">0.0 Hz</div>
-                    </div>
-                    <div class="stat-card">
-                        <label>Right Freq</label>
-                        <div class="stat-value" id="freq-r">0.0 Hz</div>
+                        <label>State Superposition</label>
+                        <div class="stat-value" id="wave-psi">0.00</div>
                     </div>
                 </div>
             </div>
@@ -318,46 +291,50 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
-        // Web Audio API Context
+        // 5 Voice settings
+        const VOICES = [
+            {"name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0},
+            {"name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6},
+            {"name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6},
+            {"name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8},
+            {"name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
+        ];
+
+        // Web Audio Context
         let audioCtx = null;
-        let leftOsc = null;
-        let rightOsc = null;
-        let leftGain = null;
-        let rightGain = null;
-        let mainGain = null;
+        let playhead = 0;
+        let isPlaying = false;
+        let seqInterval = null;
 
-        const baseSlider = document.getElementById("fuse-base");
-        const baseVal = document.getElementById("base-val");
-        const channelSlider = document.getElementById("fuse-channel");
-        const channelVal = document.getElementById("channel-val");
-
-        const regEta = document.getElementById("reg-eta");
-        const regKappa = document.getElementById("reg-kappa");
-        const freqL = document.getElementById("freq-l");
-        const freqR = document.getElementById("freq-r");
-
+        const btnPlay = document.getElementById("btn-play");
+        const tempoSlider = document.getElementById("seq-tempo");
+        const tempoVal = document.getElementById("tempo-val");
         const audioBtn = document.getElementById("audio-btn");
-        const btnMangle = document.getElementById("btn-mangle");
-        
-        let mangleEnabled = false;
-        btnMangle.onclick = () => {
-            mangleEnabled = !mangleEnabled;
-            if (mangleEnabled) {
-                btnMangle.innerText = "Mangle: ON";
-                btnMangle.style.background = "#fbbf24";
-                btnMangle.style.color = "#030508";
-            } else {
-                btnMangle.innerText = "Mangle: OFF";
-                btnMangle.style.background = "#ef4444";
-                btnMangle.style.color = "#fff";
-            }
-        };
+        const activeVoiceName = document.getElementById("active-voice-name");
+        const wavePsi = document.getElementById("wave-psi");
 
-        // Note frequencies mapping
-        const notes = {
-            "C4": 261.63, "C#4": 277.18, "D4": 293.66, "D#4": 311.13, "E4": 329.63,
-            "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00,
-            "A#4": 466.16, "B4": 493.88, "C5": 523.25
+        // Build sequencer steps dynamically
+        document.querySelectorAll(".seq-row").forEach(row => {
+            const stepsDiv = row.querySelector(".seq-steps");
+            const voiceIdx = parseInt(row.getAttribute("data-voice"));
+            for (let i = 0; i < 16; i++) {
+                const step = document.createElement("div");
+                step.className = "seq-step";
+                // Preset some initial notes for a rhythmic court-of-law structure
+                if ((voiceIdx === 0 && i % 4 === 0) || (voiceIdx === 1 && i % 4 === 1) || (voiceIdx === 2 && i % 4 === 2)) {
+                    step.classList.add("active");
+                }
+                step.onclick = () => step.classList.toggle("active");
+                stepsDiv.appendChild(step);
+            }
+        });
+
+        tempoSlider.oninput = () => {
+            tempoVal.innerText = tempoSlider.value + " BPM";
+            if (isPlaying) {
+                stopSequencer();
+                startSequencer();
+            }
         };
 
         function bigModExp(base, exp, mod) {
@@ -373,181 +350,162 @@
             return res;
         }
 
-        // Initialize Audio Node graph
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            // Destination Gain
-            mainGain = audioCtx.createGain();
-            mainGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            mainGain.connect(audioCtx.destination);
-
-            // Left Channel
-            const leftPanner = audioCtx.createStereoPanner();
-            leftPanner.pan.setValueAtTime(-1, audioCtx.currentTime);
-            leftPanner.connect(mainGain);
-
-            leftGain = audioCtx.createGain();
-            leftGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-            leftGain.connect(leftPanner);
-
-            leftOsc = audioCtx.createOscillator();
-            leftOsc.type = "sine";
-            leftOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            leftOsc.connect(leftGain);
-            leftOsc.start();
-
-            // Right Channel
-            const rightPanner = audioCtx.createStereoPanner();
-            rightPanner.pan.setValueAtTime(1, audioCtx.currentTime);
-            rightPanner.connect(mainGain);
-
-            rightGain = audioCtx.createGain();
-            rightGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-            rightGain.connect(rightPanner);
-
-            rightOsc = audioCtx.createOscillator();
-            rightOsc.type = "sine";
-            rightOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            rightOsc.connect(rightGain);
-            rightOsc.start();
-
             audioBtn.innerText = "AUDIOPATHWAY ACTIVE";
             audioBtn.style.background = "rgba(16, 185, 129, 0.1)";
-            audioBtn.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            audioBtn.style.color = "var(--pnp-color)";
+            audioBtn.style.color = "#10b981";
         }
 
-        audioBtn.addEventListener("click", () => {
-            initAudio();
-            if (audioCtx && audioCtx.state === "suspended") {
-                audioCtx.resume();
-            }
-        });
-
-        // Reaction implementation
-        function triggerReactionNote(noteName) {
-            initAudio();
-            const f = notes[noteName];
-            let Pi = BigInt(Math.floor(f));
+        function playStepSound(voiceIdx, time) {
+            if (!audioCtx) return;
+            const v = VOICES[voiceIdx];
             
-            if (mangleEnabled) {
-                // Pre-circuit note mangling using time-dependent factor
-                const factor = BigInt(Math.floor(Math.sin(Date.now() / 200.0) * 4.0 + 5.0));
-                Pi = (Pi * factor) % MotzkinPrime;
-            }
+            // Derive frequencies using BigInt Yul equations
+            const Pi = BigInt(Math.floor(220 + voiceIdx * 80)); // base pitch
+            const Eta = bigModExp(Pi, v.exp, MotzkinPrime);
+            const Kappa = bigModExp(Pi, MotzkinPrime, v.exp);
             
-            const baseParam = BigInt(baseSlider.value);
-            const channelParam = BigInt(channelSlider.value);
+            const freqL = Number((Eta % 400n) + 150n);
+            const freqR = Number((Kappa % 400n) + 150n);
 
-            // React equations
-            const Eta = bigModExp(Pi, channelParam, baseParam);
-            const Kappa = bigModExp(Pi, baseParam, channelParam);
+            // Construct synthesis graph
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0.0, time);
+            mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+            mainGain.connect(audioCtx.destination);
 
-            // Map results to audible frequencies (keep within comfortable synth range: 100 - 900 Hz)
-            const targetLeftFreq = Number((Eta % 800n) + 100n);
-            const targetRightFreq = Number((Kappa % 800n) + 100n);
+            const panner = audioCtx.createStereoPanner();
+            panner.pan.setValueAtTime(v.pan, time);
+            panner.connect(mainGain);
 
-            // Telemetry values update
-            regEta.innerText = "0x" + Eta.toString(16).toUpperCase();
-            regKappa.innerText = "0x" + Kappa.toString(16).toUpperCase();
-            freqL.innerText = targetLeftFreq.toFixed(1) + " Hz";
-            freqR.innerText = targetRightFreq.toFixed(1) + " Hz";
+            const oscL = audioCtx.createOscillator();
+            oscL.type = "sine";
+            oscL.frequency.setValueAtTime(freqL, time);
+            oscL.connect(panner);
 
-            // Audio ramp
-            if (audioCtx) {
-                leftOsc.frequency.setTargetAtTime(targetLeftFreq, audioCtx.currentTime, 0.05);
-                rightOsc.frequency.setTargetAtTime(targetRightFreq, audioCtx.currentTime, 0.05);
-                leftGain.gain.setTargetAtTime(0.4, audioCtx.currentTime, 0.03);
-                rightGain.gain.setTargetAtTime(0.4, audioCtx.currentTime, 0.03);
-            }
+            const oscR = audioCtx.createOscillator();
+            oscR.type = "sawtooth"; // Rich harmonic substrate
+            oscR.frequency.setValueAtTime(freqR, time);
+            oscR.connect(panner);
+
+            oscL.start(time);
+            oscR.start(time);
+            oscL.stop(time + 0.4);
+            oscR.stop(time + 0.4);
+
+            // Telemetry update
+            activeVoiceName.innerText = v.name;
+            activeVoiceName.style.color = v.color;
+            wavePsi.innerText = (Number(Eta % 1000n) / 1000.0).toFixed(4);
         }
 
-        function releaseReactionNote() {
-            if (audioCtx) {
-                leftGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.15);
-                rightGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.15);
-            }
+        function startSequencer() {
+            isPlaying = true;
+            btnPlay.innerText = "Stop";
+            btnPlay.style.background = "#ef4444";
+
+            const stepDuration = 60.0 / parseInt(tempoSlider.value) / 4.0; // 16th notes
+            let nextStepTime = audioCtx.currentTime;
+
+            seqInterval = setInterval(() => {
+                if (audioCtx.currentTime >= nextStepTime - 0.05) {
+                    // Update visual playhead
+                    document.querySelectorAll(".seq-row").forEach((row, voiceIdx) => {
+                        const steps = row.querySelectorAll(".seq-step");
+                        steps.forEach((s, idx) => {
+                            if (idx === playhead) {
+                                s.classList.add("playhead");
+                                if (s.classList.contains("active")) {
+                                    playStepSound(voiceIdx, nextStepTime);
+                                }
+                            } else {
+                                s.classList.remove("playhead");
+                            }
+                        });
+                    });
+
+                    playhead = (playhead + 1) % 16;
+                    nextStepTime += stepDuration;
+                }
+            }, 25);
         }
 
-        // Setup sliders
-        baseSlider.addEventListener("input", () => {
-            baseVal.innerText = baseSlider.value;
-        });
+        function stopSequencer() {
+            isPlaying = false;
+            btnPlay.innerText = "Play";
+            btnPlay.style.background = "#10b981";
+            clearInterval(seqInterval);
+            document.querySelectorAll(".seq-step").forEach(s => s.classList.remove("playhead"));
+        }
 
-        channelSlider.addEventListener("input", () => {
-            channelVal.innerText = channelSlider.value + " Hz";
-        });
+        btnPlay.onclick = () => {
+            initAudio();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            if (isPlaying) {
+                stopSequencer();
+            } else {
+                startSequencer();
+            }
+        };
 
-        // Setup keyboard handlers
-        document.querySelectorAll(".key").forEach(key => {
-            const note = key.getAttribute("data-note");
-            key.addEventListener("mousedown", () => {
-                key.classList.add("active");
-                triggerReactionNote(note);
-            });
-            key.addEventListener("mouseup", () => {
-                key.classList.remove("active");
-                releaseReactionNote();
-            });
-            key.addEventListener("mouseleave", () => {
-                key.classList.remove("active");
-                releaseReactionNote();
-            });
-        });
+        audioBtn.onclick = () => {
+            initAudio();
+        };
 
-        // Visualization
+        // Canvas rosettes visualization
         const canvas = document.getElementById("oscilloscope");
         const ctx = canvas.getContext("2d");
         canvas.width = canvas.offsetWidth;
-        canvas.height = 200;
+        canvas.height = 240;
 
-        let timeOffset = 0;
-        function drawVisualization() {
-            ctx.fillStyle = "#05070a";
+        let rotVal = 0;
+        function drawVisuals() {
+            ctx.fillStyle = "#050303";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw center axes
-            ctx.strokeStyle = "rgba(255,255,255,0.03)";
+            // Draw spinning clockwork gears
+            ctx.strokeStyle = "rgba(239, 68, 68, 0.08)";
             ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 0);
-            ctx.lineTo(canvas.width / 2, canvas.height);
-            ctx.moveTo(0, canvas.height / 2);
-            ctx.lineTo(canvas.width, canvas.height / 2);
-            ctx.stroke();
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            for (let angle = 0; angle < 360; angle += 45) {
+                const rad = (angle * Math.PI) / 180 + rotVal;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(rad) * 80, cy + Math.sin(rad) * 80);
+                ctx.stroke();
+            }
 
-            // Lissajous projection derived from left and right frequencies
+            // Draw active rosettes
             ctx.strokeStyle = "var(--primary-glow)";
-            ctx.shadowColor = "var(--primary-glow)";
-            ctx.shadowBlur = 8;
             ctx.lineWidth = 2;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "var(--primary-glow)";
             ctx.beginPath();
 
-            const leftF = leftOsc ? leftOsc.frequency.value : 440;
-            const rightF = rightOsc ? rightOsc.frequency.value : 440;
-
-            const scaleX = canvas.width * 0.4;
-            const scaleY = canvas.height * 0.45;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            for (let i = 0; i <= 200; i++) {
-                const t = (i / 200) * 2.0 * Math.PI;
-                const x = centerX + Math.sin(t * (leftF / 100) + timeOffset) * scaleX;
-                const y = centerY + Math.cos(t * (rightF / 100)) * scaleY;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+            const R = 48, r = 24, d = 15;
+            let first = true;
+            for (let theta = 0; theta < 4 * Math.PI; theta += 0.08) {
+                const x = cx + ((R - r) * Math.cos(theta + rotVal) + d * Math.cos(((R - r)/r)*theta));
+                const y = cy + ((R - r) * Math.sin(theta + rotVal) - d * Math.sin(((R - r)/r)*theta));
+                if (first) {
+                    ctx.moveTo(x, y);
+                    first = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
             }
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            timeOffset += 0.02;
-            requestAnimationFrame(drawVisualization);
+            rotVal += 0.015;
+            requestAnimationFrame(drawVisuals);
         }
 
-        drawVisualization();
+        drawVisuals();
     </script>
 </body>
 </html>
