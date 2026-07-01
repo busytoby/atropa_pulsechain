@@ -5,7 +5,7 @@ import wave
 import struct
 import subprocess
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
 MotzkinPrime = 953467954114363
 
@@ -40,6 +40,7 @@ def render_frame(frame_idx, left_freq, right_freq, eta_val, kappa_val, note_name
     img = Image.new("RGBA", (640, 360), (3, 5, 8, 255))
     draw = ImageDraw.Draw(img)
 
+    # Grid background
     for x in range(0, 640, 40):
         draw.line([(x, 0), (x, 360)], fill=(251, 191, 36, 8), width=1)
     for y in range(0, 360, 40):
@@ -47,6 +48,7 @@ def render_frame(frame_idx, left_freq, right_freq, eta_val, kappa_val, note_name
 
     draw.rectangle([(10, 10), (630, 350)], outline=(251, 191, 36, 38), width=2)
     
+    # Text displays
     draw.text((20, 20), "THE TEDDY BEAR REACTION SYNTHESIZER RS-131", fill="#fbbf24")
     draw.text((20, 40), f"Lead Note: {note_name} | Bass Note: {current_bass}", fill="#9ca3af")
     draw.text((20, 60), f"Left Freq: {left_freq:.1f}Hz | Right Freq: {right_freq:.1f}Hz", fill="#9ca3af")
@@ -54,10 +56,6 @@ def render_frame(frame_idx, left_freq, right_freq, eta_val, kappa_val, note_name
     draw.text((20, 310), f"Eta Register (Left Path):  0x{eta_val:012X}", fill="#fbbf24")
     draw.text((20, 330), f"Kappa Register (Right Path): 0x{kappa_val:012X}", fill="#10b981")
 
-    # Pulse indicators for drum events
-    kick_pulse = 1.0 + 0.3 * current_kick
-    snare_pulse = 1.0 + 0.3 * current_snare
-    
     # Pulsing Teddy Bear geometry
     pulse = 1.0 + 0.15 * math.sin(frame_idx * 0.2) + 0.1 * current_kick
     bear_color = (251, 191, 36) if current_kick > 0.1 else (16, 185, 129)
@@ -70,10 +68,26 @@ def render_frame(frame_idx, left_freq, right_freq, eta_val, kappa_val, note_name
     draw.ellipse([(cx + 5 * pulse, cy - 10 * pulse), (cx + 15 * pulse, cy)], fill=bear_color)
     draw.polygon([(cx - 5 * pulse, cy + 5 * pulse), (cx + 5 * pulse, cy + 5 * pulse), (cx, cy + 12 * pulse)], fill=bear_color)
 
-    # Lissajous trajectory mapping active panned channels
-    pts = []
+    # 1. Render Complex Hypotrochoid behind the Lissajous wave (Auncient geometric signatures)
     centerX, centerY = 200, 180
-    scaleX, scaleY = 120, 100
+    R = 75.0 + (eta_val % 30)
+    r = 25.0 + (kappa_val % 15)
+    d = 20.0 + ((eta_val + kappa_val) % 25)
+    
+    hyp_pts = []
+    # Loop theta through multiple revolutions to form the spirograph rosette
+    for i in range(180):
+        theta = (i / 180.0) * 8.0 * math.pi
+        hx = centerX + (R - r) * math.cos(theta) + d * math.cos(((R - r) / r) * theta)
+        hy = centerY + (R - r) * math.sin(theta) - d * math.sin(((R - r) / r) * theta)
+        hyp_pts.append((hx, hy))
+
+    if len(hyp_pts) > 1:
+        draw.line(hyp_pts, fill=(16, 185, 129, 60), width=1)
+
+    # 2. Render Lissajous trajectory mapping active panned channels
+    pts = []
+    scaleX, scaleY = 110, 90
     for i in range(120):
         t = (i / 120.0) * 2.0 * math.pi
         x = centerX + math.sin(t * (left_freq / 100.0) + frame_idx * 0.05) * scaleX
@@ -142,7 +156,7 @@ def main():
                 env_std[:fade_len] = np.linspace(0, 1, fade_len)
                 env_std[-fade_len:] = np.linspace(1, 0, fade_len)
 
-            # 1. Synthesize Lead Reaction Instrument (Binaural)
+            # 1. Upgraded Lead Reaction Instrument (BJT Saturation & Harmonics)
             lead_note = lead_seq[step]
             if lead_note != "REST":
                 f_lead = note_to_freq(lead_note)
@@ -153,22 +167,31 @@ def main():
                     f_left = (Eta % 800) + 100
                     f_right = (Kappa % 800) + 100
 
-                    audio_data[start_sample:end_sample, 0] += np.sin(2 * np.pi * f_left * t_vals) * 0.25 * env_std
-                    audio_data[start_sample:end_sample, 1] += np.sin(2 * np.pi * f_right * t_vals) * 0.25 * env_std
+                    # Wave-shaped binaural triangle/sine combination
+                    phase_l = 2 * np.pi * f_left * t_vals
+                    phase_r = 2 * np.pi * f_right * t_vals
+                    
+                    wave_l = np.sin(phase_l) + 0.3 * np.sin(3 * phase_l) + 0.1 * np.sin(5 * phase_l)
+                    wave_r = np.sin(phase_r) + 0.3 * np.sin(3 * phase_r) + 0.1 * np.sin(5 * phase_r)
+                    
+                    # Apply hyperbolic tangent warm BJT clipping/drive
+                    wave_l = np.tanh(wave_l * 1.5) * 0.22
+                    wave_r = np.tanh(wave_r * 1.5) * 0.22
+
+                    audio_data[start_sample:end_sample, 0] += wave_l * env_std
+                    audio_data[start_sample:end_sample, 1] += wave_r * env_std
 
             # 2. Synthesize Bass Track
             bass_note = bass_seq[step]
             if bass_note != "REST":
                 f_bass = note_to_freq(bass_note)
                 if f_bass > 0:
-                    # Low bass sine wave with subtle triangle harmonic panned center
-                    wave_b = np.sin(2 * np.pi * f_bass * t_vals) * 0.35 + np.sin(4 * np.pi * f_bass * t_vals) * 0.05
+                    wave_b = np.sin(2 * np.pi * f_bass * t_vals) * 0.32 + np.sin(4 * np.pi * f_bass * t_vals) * 0.04
                     audio_data[start_sample:end_sample, 0] += wave_b * env_std
                     audio_data[start_sample:end_sample, 1] += wave_b * env_std
 
             # 3. Synthesize Kick Drum
             if kick_seq[step] == 1:
-                # Fast pitch sweep for standard analog kick transient
                 freq_sweep = 120.0 * np.exp(-t_vals * 40.0) + 40.0
                 phase_k = 2.0 * np.pi * np.cumsum(freq_sweep) / sample_rate
                 wave_k = np.sin(phase_k) * 0.6 * np.exp(-t_vals * 8.0)
@@ -177,13 +200,19 @@ def main():
 
             # 4. Synthesize Snare Drum
             if snare_seq[step] == 1:
-                # White noise burst with decaying envelope
                 noise = np.random.uniform(-1.0, 1.0, num_samps)
                 wave_s = noise * 0.3 * np.exp(-t_vals * 12.0)
                 audio_data[start_sample:end_sample, 0] += wave_s
                 audio_data[start_sample:end_sample, 1] += wave_s
 
-    # Normalize audio to prevent clipping
+    # 5. Upgraded Stereo Delay Loop (Return Echo Loop Simulation)
+    delay_samps = int(0.375 * sample_rate) # Dotted 8th note delay at 80 BPM
+    feedback = 0.32
+    for i in range(delay_samps, total_samples):
+        audio_data[i, 0] += audio_data[i - delay_samps, 1] * feedback
+        audio_data[i, 1] += audio_data[i - delay_samps, 0] * feedback
+
+    # Normalize audio
     max_val = np.max(np.abs(audio_data))
     if max_val > 0.95:
         audio_data = (audio_data / max_val) * 0.95
