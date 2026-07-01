@@ -674,7 +674,8 @@
             let mismatchCount = 0;
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
-                const localOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                // Speaker never applies offset to its own voice (local offset always 1.0)
+                const localOffset = (observer.id === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0);
                 const translatedRatio = activeRatio * localOffset;
                 
                 let best_emo = "CONFUSION";
@@ -764,7 +765,7 @@
             const activeRatio = R_spk / r_spk;
             
             const db = BEAR_DATABASES[bearId];
-            const localOffset = ACTIVE_TRANSLATION_OFFSETS[bearId] || 1.0;
+            const localOffset = (bearId === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[bearId] || 1.0);
             const translatedRatio = activeRatio * localOffset;
 
             let best_emo = "CONFUSION";
@@ -800,7 +801,8 @@
             let matches = 0;
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
-                const localOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                // Speaker never translates its own output (always 1.0 offset)
+                const localOffset = (observer.id === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0);
                 const translatedRatio = activeRatio * localOffset;
 
                 let best_emo = "CONFUSION";
@@ -995,7 +997,6 @@
                         }
                         const pi = Number(hashVal % 8500n) + 1000; 
                         
-                        // Push block stream voltages directly to all bear DAC inputs
                         LAU_BEARS.forEach(b => {
                             const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
                             if (slider) {
