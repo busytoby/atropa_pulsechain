@@ -581,7 +581,6 @@
             oscR.frequency.setValueAtTime(freqR, time);
             oscR.connect(panner);
 
-            // Add growl if not aligned
             const speaker = LAU_BEARS[activeSpeakerId];
             const res = bigModExp(inputVal, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
@@ -790,34 +789,38 @@
                         index++;
                     }, 1200);
                 } else {
-                    // Fallback: Emulate live block generation if RPC/server is offline or empty
-                    const mockBlock = Math.floor(Math.random() * 100000) + 26900000;
-                    const numTxs = Math.floor(Math.random() * 4) + 2;
-                    logConsole(`[BRIDGE] RPC offline or empty block. Emulating Block #${mockBlock} with ${numTxs} transactions.`);
-                    
-                    let index = 0;
-                    const interval = setInterval(() => {
-                        if (index >= numTxs || !isStreaming) {
-                            clearInterval(interval);
-                            return;
-                        }
-                        const pi = Math.floor(Math.random() * 5000) + 3000;
-                        const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
-                        
-                        dacSlider.value = pi;
-                        dacStreamVal.innerText = pi;
-                        logConsole(`  [Mock Tx] Hash: ${mockHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
-                        
-                        initAudio();
-                        playSpeakerChord(activeSpeakerId, pi, audioCtx ? audioCtx.currentTime : 0);
-                        evaluateConsensus();
-                        
-                        index++;
-                    }, 1200);
+                    triggerEmulation();
                 }
             } catch (err) {
                 console.error("Live stream error:", err);
+                triggerEmulation();
             }
+        }
+
+        function triggerEmulation() {
+            const mockBlock = Math.floor(Math.random() * 100000) + 26900000;
+            const numTxs = Math.floor(Math.random() * 4) + 2;
+            logConsole(`[BRIDGE] RPC offline or empty block. Emulating Block #${mockBlock} with ${numTxs} transactions.`);
+            
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= numTxs || !isStreaming) {
+                    clearInterval(interval);
+                    return;
+                }
+                const pi = Math.floor(Math.random() * 5000) + 3000;
+                const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                
+                dacSlider.value = pi;
+                dacStreamVal.innerText = pi;
+                logConsole(`  [Mock Tx] Hash: ${mockHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
+                
+                initAudio();
+                playSpeakerChord(activeSpeakerId, pi, audioCtx ? audioCtx.currentTime : 0);
+                evaluateConsensus();
+                
+                index++;
+            }, 1200);
         }
 
         function startStreaming() {
