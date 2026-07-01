@@ -344,9 +344,9 @@
             <div class="dac-control-group">
                 <div style="display:flex; justify-content:space-between; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">
                     <span>DAC Digital Stream Input (Pi)</span>
-                    <span id="dac-stream-val" style="font-family:'Share Tech Mono', monospace; color:var(--primary-glow);">4000</span>
+                    <span id="dac-stream-val" style="font-family:'Share Tech Mono', monospace; color:var(--primary-glow);">4423</span>
                 </div>
-                <input type="range" id="dac-slider" min="3000" max="8000" value="4000" style="width:100%;">
+                <input type="range" id="dac-slider" min="1000" max="9500" value="4423" style="width:100%;">
             </div>
 
             <!-- Visual Oscillator Spindle -->
@@ -420,16 +420,17 @@
         let BEAR_DATABASES = [];
         let ACTIVE_TRANSLATION_OFFSETS = [];
 
-        const EMOTIONS = {
-            "JOY": 1009,
-            "SORROW": 1543,
-            "ANGER": 2237,
-            "FEAR": 3109,
-            "MELANCHOLY": 4423,
-            "EUPHORIA": 5519,
-            "SUSPENSE": 6701,
-            "TRANQUILITY": 7883,
-            "CONFUSION": 8923
+        // Expanded multi-chord mapping per emotion providing a sufficient range for the Judge Bear
+        const EMOTIONS_RANGE = {
+            "JOY": [1009, 1087, 1153, 1229, 1301],
+            "SORROW": [1543, 1619, 1693, 1777, 1861],
+            "ANGER": [2237, 2311, 2389, 2459, 2521],
+            "FEAR": [3109, 3187, 3259, 3331, 3413],
+            "MELANCHOLY": [4423, 4493, 4567, 4639, 4721],
+            "EUPHORIA": [5519, 5591, 5659, 5741, 5813],
+            "SUSPENSE": [6701, 6779, 6857, 6917, 6997],
+            "TRANQUILITY": [7883, 7951, 8017, 8089, 8161],
+            "CONFUSION": [8923, 8999, 9091, 9173, 9241]
         };
 
         let activeSpeakerId = 0;
@@ -523,16 +524,18 @@
                 evaluateConsensus();
             };
 
-            // Build dynamic databases and reset translation offsets
+            // Build dynamic databases mapping to arrays of ratios per emotion
             BEAR_DATABASES = [];
             ACTIVE_TRANSLATION_OFFSETS = [];
             LAU_BEARS.forEach(b => {
                 const db = {};
-                Object.entries(EMOTIONS).forEach(([emo, val]) => {
-                    const res = bigModExp(val, b.exp, MotzkinPrime);
-                    const R = Number(res % 50n) + 15.0;
-                    const r = Number(res % 25n) + 8.0;
-                    db[emo] = R / r;
+                Object.entries(EMOTIONS_RANGE).forEach(([emo, vals]) => {
+                    db[emo] = vals.map(val => {
+                        const res = bigModExp(val, b.exp, MotzkinPrime);
+                        const R = Number(res % 50n) + 15.0;
+                        const r = Number(res % 25n) + 8.0;
+                        return R / r;
+                    });
                 });
                 BEAR_DATABASES.push(db);
                 ACTIVE_TRANSLATION_OFFSETS.push(1.0); 
@@ -573,7 +576,7 @@
 
         // Build target emotion selectors
         const emoSelector = document.getElementById("emotion-selector");
-        Object.keys(EMOTIONS).forEach(emo => {
+        Object.keys(EMOTIONS_RANGE).forEach(emo => {
             const btn = document.createElement("button");
             btn.className = "select-btn" + (emo === targetEmotion ? " active" : "");
             btn.innerText = emo;
@@ -583,7 +586,8 @@
                 targetEmotion = emo;
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
                 
-                const v_chord = EMOTIONS[targetEmotion];
+                // Select the primary reference chord for the target emotion
+                const v_chord = EMOTIONS_RANGE[targetEmotion][0];
                 dacSlider.value = v_chord;
                 dacStreamVal.innerText = v_chord;
                 
@@ -606,7 +610,7 @@
             
             const freqL = Number((Eta % 400n) + 150n);
             const freqR = Number((Kappa % 400n) + 150n);
-            v.activeFreq = freqL; // Store for 2D visual mapping
+            v.activeFreq = freqL; 
 
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
@@ -622,7 +626,6 @@
             oscL.type = "sine";
             oscL.frequency.setValueAtTime(freqL, time);
             
-            // Soft-body FET discharge cycle: modulate pitch slide envelope
             const fetDischargeDuration = 0.35 - (bufValue * 0.1); 
             oscL.frequency.exponentialRampToValueAtTime(freqL * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscL.connect(panner);
@@ -633,7 +636,7 @@
             oscR.frequency.exponentialRampToValueAtTime(freqR * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscR.connect(panner);
 
-            // Compute mismatch count for dynamic growl scaling
+            // Compute mismatch count for dynamic growl scaling against range array
             const speaker = LAU_BEARS[activeSpeakerId];
             const res = bigModExp(inputVal, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
@@ -648,12 +651,14 @@
                 
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
-                Object.entries(db).forEach(([emo, target_ratio]) => {
-                    const diff = Math.abs(target_ratio - translatedRatio);
-                    if (diff < min_diff) {
-                        min_diff = diff;
-                        best_emo = emo;
-                    }
+                Object.entries(db).forEach(([emo, target_ratios]) => {
+                    target_ratios.forEach(target_ratio => {
+                        const diff = Math.abs(target_ratio - translatedRatio);
+                        if (diff < min_diff) {
+                            min_diff = diff;
+                            best_emo = emo;
+                        }
+                    });
                 });
                 if (best_emo !== targetEmotion) {
                     mismatchCount++;
@@ -750,12 +755,14 @@
 
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
-                Object.entries(db).forEach(([emo, target_ratio]) => {
-                    const diff = Math.abs(target_ratio - translatedRatio);
-                    if (diff < min_diff) {
-                        min_diff = diff;
-                        best_emo = emo;
-                    }
+                Object.entries(db).forEach(([emo, target_ratios]) => {
+                    target_ratios.forEach(target_ratio => {
+                        const diff = Math.abs(target_ratio - translatedRatio);
+                        if (diff < min_diff) {
+                            min_diff = diff;
+                            best_emo = emo;
+                        }
+                    });
                 });
 
                 const row = document.querySelector(`.rec-row[data-id="${observer.id}"]`);
@@ -777,7 +784,6 @@
                 consensusStatus.innerText = "CHAMBER IN AGREEMENT (HARMONY LOCKED)";
                 bufValue = Math.max(0.0, bufValue - 0.08);
                 
-                // Automatically POST to /api/save-dialects on consensus lock
                 saveTwinningOffsetsToDisk();
 
                 if (isSweeping || isTwinning) {
@@ -846,7 +852,9 @@
 
                 LAU_BEARS.forEach(observer => {
                     const db = BEAR_DATABASES[observer.id];
-                    const target_ratio = db[targetEmotion];
+                    // Align offset to target the average of the target emotion's ratio range
+                    const target_ratios = db[targetEmotion];
+                    const target_ratio = target_ratios[0];
                     
                     const currentOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
                     const observedRatio = activeRatio * currentOffset;
@@ -877,7 +885,7 @@
             sweepInterval = setInterval(() => {
                 let val = parseInt(dacSlider.value);
                 val += 179;
-                if (val > 8000) val = 3000;
+                if (val > 9500) val = 1000;
                 dacSlider.value = val;
                 dacStreamVal.innerText = val;
                 evaluateConsensus();
@@ -910,7 +918,7 @@
                         for (let i = 0; i < txHash.length; i++) {
                             hashVal = (hashVal << 5n) - hashVal + BigInt(txHash.charCodeAt(i));
                         }
-                        const pi = Number(hashVal % 5000n) + 3000; 
+                        const pi = Number(hashVal % 8500n) + 1000; 
                         
                         dacSlider.value = pi;
                         dacStreamVal.innerText = pi;
@@ -942,7 +950,7 @@
                     clearInterval(interval);
                     return;
                 }
-                const pi = Math.floor(Math.random() * 5000) + 3000;
+                const pi = Math.floor(Math.random() * 8500) + 1000;
                 const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
                 
                 dacSlider.value = pi;
