@@ -556,6 +556,18 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
             return
+        elif self.path == '/api/load-dialects':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            dest_file = os.path.abspath(os.path.join('config', 'twinning_dialects.json'))
+            if os.path.exists(dest_file):
+                with open(dest_file, 'r') as f:
+                    self.wfile.write(f.read().encode('utf-8'))
+            else:
+                self.wfile.write(json.dumps({}).encode('utf-8'))
+            return
         elif self.path.startswith('/api/lau-registers'):
             from urllib.parse import urlparse, parse_qs
             query = urlparse(self.path).query

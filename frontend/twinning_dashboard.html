@@ -535,7 +535,7 @@
                     db[emo] = R / r;
                 });
                 BEAR_DATABASES.push(db);
-                ACTIVE_TRANSLATION_OFFSETS.push(1.0); // Reset translation offsets to 1.0 (no scaling)
+                ACTIVE_TRANSLATION_OFFSETS.push(1.0); 
             });
 
             // Build Recognition rows
@@ -551,7 +551,24 @@
                 recBoard.appendChild(row);
             });
 
-            evaluateConsensus();
+            // Asynchronously load pre-existing P2P dialect rules on startup
+            fetch("/api/load-dialects")
+                .then(r => r.json())
+                .then(offsets => {
+                    LAU_BEARS.forEach(b => {
+                        if (offsets[b.name] !== undefined) {
+                            ACTIVE_TRANSLATION_OFFSETS[b.id] = offsets[b.name];
+                        } else {
+                            ACTIVE_TRANSLATION_OFFSETS[b.id] = 1.0;
+                        }
+                    });
+                    logConsole(`[EVM] Loaded pre-existing P2P dialect rules from server.`);
+                    evaluateConsensus();
+                })
+                .catch(err => {
+                    logConsole(`[EVM] No pre-existing dialect rules found. Initializing nominal values.`);
+                    evaluateConsensus();
+                });
         }
 
         // Build target emotion selectors
@@ -647,7 +664,6 @@
                 const modulator = audioCtx.createOscillator();
                 modulator.frequency.value = 33; 
                 const modGain = audioCtx.createGain();
-                // Scale gain based on mismatch count (0.1 per mismatch, max 0.5)
                 modGain.gain.value = Math.min(0.5, mismatchCount * 0.1);
                 modulator.connect(modGain);
                 modGain.connect(mainGain.gain);
