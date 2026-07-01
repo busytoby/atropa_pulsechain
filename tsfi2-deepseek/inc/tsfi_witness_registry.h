@@ -16,6 +16,20 @@ typedef enum {
     STATE_UNKNOWN
 } tsfi_BearEmotionState;
 
+/* The 9 distinct chord communication emotions */
+typedef enum {
+    EMO_JOY = 0,
+    EMO_SORROW,
+    EMO_ANGER,
+    EMO_FEAR,
+    EMO_MELANCHOLY,
+    EMO_EUPHORIA,
+    EMO_SUSPENSE,
+    EMO_TRANQUILITY,
+    EMO_CONFUSION,
+    EMO_NONE
+} tsfi_SpecificEmotion;
+
 typedef enum {
     AESTHETIC_HARMONIOUS = 0,
     AESTHETIC_DISHARMONIOUS,
@@ -67,9 +81,8 @@ typedef struct {
     double BlowUpFactor;
     double ConstraintEigenvalue;
 
-    // Self-opinions and peer-opinions mapping
     double SelfOpinion;
-    double PeerOpinions[MAX_DELEGATES]; /* Index corresponds to registry slot */
+    double PeerOpinions[MAX_DELEGATES];
 } tsfi_DelegateRecord;
 
 typedef struct {
@@ -97,9 +110,15 @@ tsfi_AttestationPattern tsfi_cho_classify_attestation_pattern(const tsfi_Delegat
 
 void tsfi_cho_restrict_eigenvector_constraints(tsfi_DelegateRecord* bear, double instability);
 
-/*
- * Update the self or peer opinion based on interaction outcome.
- */
 void tsfi_cho_update_opinion(tsfi_DelegateRecord* local_bear, int peer_idx, bool is_harmonious);
+
+/*
+ * Multi-class classifier mapping specific hypotrochoid metrics (R, r, d) 
+ * to one of the 9 distinct emotions.
+ */
+tsfi_SpecificEmotion tsfi_cho_classify_specific_emotion(double R, double r, double d);
+
+/* Helper to get human-readable string representation of specific emotions */
+const char* tsfi_cho_emotion_to_string(tsfi_SpecificEmotion emo);
 
 #endif /* TSFI_WITNESS_REGISTRY_H */

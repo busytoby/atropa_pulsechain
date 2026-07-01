@@ -53,7 +53,6 @@ bool tsfi_cho_swear_in(tsfi_ChoRegistry* registry, const char* target_address, u
     delegate->BlowUpFactor = 0.0;
     delegate->ConstraintEigenvalue = 1.0;
     
-    // Default opinions start neutral at 0.5
     delegate->SelfOpinion = 0.5;
     for (int i = 0; i < MAX_DELEGATES; i++) {
         delegate->PeerOpinions[i] = 0.5;
@@ -212,11 +211,58 @@ void tsfi_cho_update_opinion(tsfi_DelegateRecord* local_bear, int peer_idx, bool
     if (!local_bear) return;
 
     double target_val = is_harmonious ? 1.0 : 0.0;
-    double alpha = 0.15; // Learning/Drift rate
+    double alpha = 0.15;
 
     if (peer_idx == -1) {
         local_bear->SelfOpinion += alpha * (target_val - local_bear->SelfOpinion);
     } else if (peer_idx >= 0 && peer_idx < MAX_DELEGATES) {
         local_bear->PeerOpinions[peer_idx] += alpha * (target_val - local_bear->PeerOpinions[peer_idx]);
+    }
+}
+
+tsfi_SpecificEmotion tsfi_cho_classify_specific_emotion(double R, double r, double d) {
+    double ratio = R / (r > 0.0 ? r : 1.0);
+    double fract = ratio - floor(ratio);
+
+    if (ratio >= 4.0) {
+        return EMO_JOY;
+    }
+    if (ratio < 1.3) {
+        return EMO_SORROW;
+    }
+    if (d > fabs(R - r)) {
+        return EMO_ANGER;
+    }
+    if (d < 2.0) {
+        return EMO_TRANQUILITY;
+    }
+    if (fract >= 0.45 && fract <= 0.55) {
+        return EMO_EUPHORIA;
+    }
+    if ((fract >= 0.25 && fract <= 0.35) || (fract >= 0.65 && fract <= 0.75)) {
+        return EMO_FEAR;
+    }
+    if (d > 10.0 && ratio < 2.0) {
+        return EMO_MELANCHOLY;
+    }
+    if (ratio >= 1.6 && ratio <= 1.8) {
+        return EMO_SUSPENSE;
+    }
+    
+    return EMO_CONFUSION;
+}
+
+const char* tsfi_cho_emotion_to_string(tsfi_SpecificEmotion emo) {
+    switch (emo) {
+        case EMO_JOY: return "JOY";
+        case EMO_SORROW: return "SORROW";
+        case EMO_ANGER: return "ANGER";
+        case EMO_FEAR: return "FEAR";
+        case EMO_MELANCHOLY: return "MELANCHOLY";
+        case EMO_EUPHORIA: return "EUPHORIA";
+        case EMO_SUSPENSE: return "SUSPENSE";
+        case EMO_TRANQUILITY: return "TRANQUILITY";
+        case EMO_CONFUSION: return "CONFUSION";
+        default: return "NONE";
     }
 }
