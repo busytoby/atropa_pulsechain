@@ -73,19 +73,41 @@ static void drawLine(uint8_t* pixels, int x0, int y0, int x1, int y1, uint8_t r,
     }
 }
 
-// 19D Lissajous LUT Mapping Function (emulated in C)
-static uint32_t getLissajousIndex(uint32_t gID, float phaseOffset, const ZMMRegs* regs) {
-    float fx = regs->channelFreq * 0.001f;
-    float fy = regs->foundationRail * 0.0001f;
-    float fz = regs->chinRail * 0.0001f;
+#define MotzkinPrime 953467954114363ULL
 
-    float t = (float)gID * 0.01f;
-    float x = sinf(fx * t + regs->basePhase + phaseOffset);
-    float y = sinf(fy * t + regs->poleSteer * 0.01f);
-    float z = sinf(fz * t);
+static uint64_t mod_exp_u64(uint64_t base, uint64_t exp, uint64_t mod) {
+    uint64_t res = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            __uint128_t temp = (__uint128_t)res * base;
+            res = (uint64_t)(temp % mod);
+        }
+        __uint128_t temp = (__uint128_t)base * base;
+        base = (uint64_t)(temp % mod);
+        exp /= 2;
+    }
+    return res;
+}
 
-    uint32_t index = (uint32_t)(fabsf(x * 1000.0f + y * 10000.0f + z * 100000.0f)) % 65536;
-    return index;
+// 19D Lissajous LUT Mapping Function resolving InPhase and QuadPhase components
+static void getLissajousCoordinates(float* out_x, float* out_y, uint32_t gID, float phaseOffset, const ZMMRegs* regs) {
+    uint64_t base = 1009; // Consensual base
+    uint64_t signal = 5;
+    
+    // Compute InPhase (I) and QuadPhase (Q) components
+    uint64_t amp = mod_exp_u64(base, signal, MotzkinPrime);
+    float scale = (float)(amp % 1000000ULL) / 1000000.0f;
+    
+    float omega = regs->channelFreq * 0.01f;
+    float t = (float)gID * 0.05f;
+    
+    float I = scale * cosf(omega * t + regs->basePhase + phaseOffset);
+    float Q = scale * sinf(omega * t + regs->basePhase + phaseOffset);
+    
+    // Projected Coordinate Mapping
+    *out_x = I * 3.5f;
+    *out_y = Q * 3.5f;
 }
 
 void render_frame(int frame, uint8_t *pixels) {
@@ -205,26 +227,29 @@ void render_frame(int frame, uint8_t *pixels) {
             colorModulation = fmaxf(0.0f, fminf(1.0f, 0.5f + sdBiasedVal * betaGain * 0.25f));
         }
 
-        // Segmented coordinate mapping
+        // Segmented coordinate mapping blended with Lissajous projections
         float x = 0.0f, y = 0.0f, z = 0.0f;
+        float lx = 0.0f, ly = 0.0f;
+        getLissajousCoordinates(&lx, &ly, gID, phaseOffset, &regs);
+        
         float angle = (float)gID * 0.15f + regs.basePhase;
 
         if (gID < 200) {
             // Body
             float r = 2.5f + geometryAmplitude * 0.5f;
-            x = r * cosf(angle) * sinf(angle * 0.5f);
-            y = r * sinf(angle) * sinf(angle * 0.5f) - 1.0f;
+            x = r * cosf(angle) * sinf(angle * 0.5f) + lx * 0.3f;
+            y = r * sinf(angle) * sinf(angle * 0.5f) - 1.0f + ly * 0.3f;
         } else if (gID < 350) {
             // Head
             float r = 1.8f + geometryAmplitude * 0.3f;
-            x = r * cosf(angle) * sinf(angle * 0.5f);
-            y = r * sinf(angle) * sinf(angle * 0.5f) + 1.8f;
+            x = r * cosf(angle) * sinf(angle * 0.5f) + lx * 0.2f;
+            y = r * sinf(angle) * sinf(angle * 0.5f) + 1.8f + ly * 0.2f;
         } else if (gID < 420) {
             // Ears
             float r = 0.6f + geometryAmplitude * 0.1f;
             float earSide = (gID % 2 == 0) ? 1.3f : -1.3f;
-            x = r * cosf(angle) * sinf(angle * 0.5f) + earSide;
-            y = r * sinf(angle) * sinf(angle * 0.5f) + 3.2f;
+            x = r * cosf(angle) * sinf(angle * 0.5f) + earSide + lx * 0.1f;
+            y = r * sinf(angle) * sinf(angle * 0.5f) + 3.2f + ly * 0.1f;
         } else {
             // Limbs
             float r = 0.7f + geometryAmplitude * 0.2f;
