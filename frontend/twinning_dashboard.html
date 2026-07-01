@@ -59,7 +59,7 @@
         .main-container {
             display: grid;
             grid-template-columns: 1fr 420px;
- gap: 24px;
+            gap: 24px;
             width: 100%;
             max-width: 1200px;
             padding: 24px;
@@ -160,11 +160,11 @@
         .rec-board {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            max-height: 260px;
+            gap: 14px;
+            max-height: 380px;
             overflow-y: auto;
             border: 1px solid var(--glass-border);
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
         }
 
@@ -175,18 +175,21 @@
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
             border-radius: 8px;
-            padding: 10px 14px;
+            padding: 14px 18px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .rec-name-group {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 4px;
+            min-width: 140px;
         }
 
         .rec-name {
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.8rem;
+            font-weight: 800;
         }
 
         .rec-dac-pi {
@@ -195,10 +198,15 @@
             color: var(--text-muted);
         }
 
+        .bear-dac-slider {
+            width: 130px;
+            accent-color: var(--primary-glow);
+        }
+
         .rec-label {
             font-family: 'Share Tech Mono', monospace;
             font-size: 0.75rem;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             text-transform: uppercase;
         }
@@ -301,16 +309,6 @@
             text-shadow: 0 0 5px rgba(16,185,129,0.3);
         }
 
-        .dac-control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: rgba(0,0,0,0.3);
-            padding: 16px;
-            border-radius: 10px;
-            border: 1px solid var(--glass-border);
-        }
-
         .log-display {
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.03);
@@ -353,20 +351,12 @@
                 <button id="btn-twin" class="control-btn btn-twin">Auto-Twin Dialect</button>
             </div>
 
-            <div class="dac-control-group">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">
-                    <span>Shared DAC Stream Input (Pi)</span>
-                    <span id="dac-stream-val" style="font-family:'Share Tech Mono', monospace; color:var(--primary-glow);">4423</span>
-                </div>
-                <input type="range" id="dac-slider" min="1000" max="9500" value="4423" style="width:100%;">
-            </div>
-
             <!-- Visual Oscillator Spindle -->
             <div>
                 <canvas id="oscilloscope"></canvas>
             </div>
 
-            <!-- Dynamic Recognition Board -->
+            <!-- Dynamic Recognition Board containing individual Bear DAC controllers -->
             <div class="rec-board" id="recognition-board">
                 <!-- Built dynamically from the EVM JSON status -->
             </div>
@@ -456,13 +446,11 @@
         let audioCtx = null;
         let bufValue = 0.0;
         
-        let twinPhase = 1; // 1 = Speaker Self-Calibration, 2 = Observer Twinning
+        let twinPhase = 1; 
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
         const btnTwin = document.getElementById("btn-twin");
-        const dacSlider = document.getElementById("dac-slider");
-        const dacStreamVal = document.getElementById("dac-stream-val");
         const audioBtn = document.getElementById("audio-btn");
         const consensusStatus = document.getElementById("consensus-status");
         const consoleLog = document.getElementById("console-log");
@@ -555,16 +543,21 @@
                 ACTIVE_TRANSLATION_OFFSETS.push(1.0); 
             });
 
-            // Build Recognition rows displaying individual bear DAC Pi settings (Pi % exp)
+            // Build Recognition rows displaying individual physical bear DAC input controllers
             recBoard.innerHTML = "";
             LAU_BEARS.forEach(b => {
                 const row = document.createElement("div");
                 row.className = "rec-row";
                 row.setAttribute("data-id", b.id);
+                
+                const initialVolts = EMOTIONS_RANGE[targetEmotion][0];
                 row.innerHTML = `
                     <div class="rec-name-group">
                         <span class="rec-name" style="color:${b.color};">${b.name}</span>
-                        <span class="rec-dac-pi" id="rec-dac-pi-${b.id}">DAC Pi: 0</span>
+                        <span class="rec-dac-pi" id="rec-dac-pi-${b.id}">DAC Pi: ${initialVolts} (Modulo: ${initialVolts % Number(b.exp)})</span>
+                    </div>
+                    <div>
+                        <input type="range" class="bear-dac-slider" data-id="${b.id}" min="1000" max="9500" value="${initialVolts}" oninput="updateBearDacVal(${b.id}, this.value)">
                     </div>
                     <span class="rec-label mismatch">JOY</span>
                 `;
@@ -591,6 +584,16 @@
                 });
         }
 
+        // Handle direct slider changes for individual bear DAC inputs
+        window.updateBearDacVal = (bearId, val) => {
+            const b = LAU_BEARS[bearId];
+            const dacIndicator = document.getElementById(`rec-dac-pi-${bearId}`);
+            if (dacIndicator) {
+                dacIndicator.innerText = `DAC Pi: ${val} (Modulo: ${val % Number(b.exp)})`;
+            }
+            evaluateConsensus();
+        };
+
         // Build target emotion selectors
         const emoSelector = document.getElementById("emotion-selector");
         Object.keys(EMOTIONS_RANGE).forEach(emo => {
@@ -604,9 +607,16 @@
                 logConsole(`[Target] Announced target emotion: ${targetEmotion}`);
                 
                 const v_chord = EMOTIONS_RANGE[targetEmotion][0];
-                dacSlider.value = v_chord;
-                dacStreamVal.innerText = v_chord;
                 
+                // Reset all bear DAC inputs to the selected chord
+                LAU_BEARS.forEach(b => {
+                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                    if (slider) {
+                        slider.value = v_chord;
+                        updateBearDacVal(b.id, v_chord);
+                    }
+                });
+
                 initAudio();
                 if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
                 playSpeakerChord(activeSpeakerId, v_chord, audioCtx ? audioCtx.currentTime : 0);
@@ -652,9 +662,11 @@
             oscR.frequency.exponentialRampToValueAtTime(freqR * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscR.connect(panner);
 
-            // Compute mismatch count for dynamic growl scaling against range array
+            // Compute active ratio based on speaker's own DAC input
+            const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
+            const speakerPi = speakerSlider ? parseInt(speakerSlider.value) : inputVal;
             const speaker = LAU_BEARS[activeSpeakerId];
-            const res = bigModExp(inputVal, speaker.exp, MotzkinPrime);
+            const res = bigModExp(speakerPi, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
             const r_spk = Number(res % 25n) + 8.0;
             const activeRatio = R_spk / r_spk;
@@ -697,11 +709,6 @@
             oscL.stop(time + 0.4);
             oscR.stop(time + 0.4);
         }
-
-        dacSlider.oninput = () => {
-            dacStreamVal.innerText = dacSlider.value;
-            evaluateConsensus();
-        };
 
         function bigModExp(base, exp, mod) {
             let res = 1n;
@@ -749,7 +756,6 @@
             osc.stop(time + 0.3);
         }
 
-        // Returns which emotion a given bear classifies a voltage as
         function classifyVoltageForBear(bearId, voltage) {
             const speaker = LAU_BEARS[bearId];
             const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
@@ -777,10 +783,14 @@
 
         function evaluateConsensus() {
             if (LAU_BEARS.length === 0) return;
-            const speaker = LAU_BEARS[activeSpeakerId];
-            const voltage = parseInt(dacSlider.value);
             
-            const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+            // Read active speaker's own physical DAC input slider value
+            const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
+            if (!speakerSlider) return;
+            const speakerVoltage = parseInt(speakerSlider.value);
+            const speaker = LAU_BEARS[activeSpeakerId];
+            
+            const res = bigModExp(speakerVoltage, speaker.exp, MotzkinPrime);
             const R_spk = Number(res % 50n) + 15.0;
             const r_spk = Number(res % 25n) + 8.0;
             const activeRatio = R_spk / r_spk;
@@ -804,12 +814,6 @@
                         }
                     });
                 });
-
-                const localPi = voltage % Number(observer.exp);
-                const dacIndicator = document.getElementById(`rec-dac-pi-${observer.id}`);
-                if (dacIndicator) {
-                    dacIndicator.innerText = `DAC Pi: ${localPi}`;
-                }
 
                 const row = document.querySelector(`.rec-row[data-id="${observer.id}"]`);
                 if (row) {
@@ -835,7 +839,7 @@
                 if (isSweeping || isTwinning) {
                     stopSweep();
                     stopTwinning();
-                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at voltage ${voltage}!`);
+                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at speaker Pi = ${speakerVoltage}!`);
                 }
             } else {
                 consensusStatus.className = "status-alert alert-growl";
@@ -879,9 +883,7 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        // Two-Phase Training Loop:
-        // Phase 1: Sweep until speaker (Judge) classifies the voltage as the target emotion
-        // Phase 2: Lock voltage and mutate observer translation offsets
+        // Two-Phase Training Loop modulating the speaker's own slider
         function startTwinning() {
             initAudio();
             isTwinning = true;
@@ -892,31 +894,32 @@
             logConsole(`[TWINNING] Phase 1: Sweeping to calibrate active speaker (${LAU_BEARS[activeSpeakerId].name}) own chord preference...`);
 
             twinInterval = setInterval(() => {
-                const speaker = LAU_BEARS[activeSpeakerId];
+                const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
+                if (!speakerSlider) return;
                 
                 if (twinPhase === 1) {
-                    let voltage = parseInt(dacSlider.value);
+                    let voltage = parseInt(speakerSlider.value);
                     const currentClassification = classifyVoltageForBear(activeSpeakerId, voltage);
                     
                     if (currentClassification === targetEmotion) {
                         twinPhase = 2;
                         logConsole(`[TWINNING] Phase 1 Success: Speaker calibrated at Pi = ${voltage}. Moving to Phase 2 (Observer Twinning)...`);
                     } else {
-                        // Increment and wrap to find a valid chord preference for the speaker
                         voltage += 71; 
                         if (voltage > 9500) voltage = 1000;
-                        dacSlider.value = voltage;
-                        dacStreamVal.innerText = voltage;
+                        speakerSlider.value = voltage;
+                        updateBearDacVal(activeSpeakerId, voltage);
                     }
                 } else if (twinPhase === 2) {
-                    const voltage = parseInt(dacSlider.value);
-                    const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+                    const speakerVoltage = parseInt(speakerSlider.value);
+                    const speaker = LAU_BEARS[activeSpeakerId];
+                    const res = bigModExp(speakerVoltage, speaker.exp, MotzkinPrime);
                     const R_spk = Number(res % 50n) + 15.0;
                     const r_spk = Number(res % 25n) + 8.0;
                     const activeRatio = R_spk / r_spk;
 
                     LAU_BEARS.forEach(observer => {
-                        if (observer.id === activeSpeakerId) return; // Speaker is the reference benchmark
+                        if (observer.id === activeSpeakerId) return; 
                         
                         const db = BEAR_DATABASES[observer.id];
                         const target_ratios = db[targetEmotion];
@@ -950,11 +953,16 @@
             btnSweep.style.background = "#ef4444";
             
             sweepInterval = setInterval(() => {
-                let val = parseInt(dacSlider.value);
-                val += 179;
-                if (val > 9500) val = 1000;
-                dacSlider.value = val;
-                dacStreamVal.innerText = val;
+                LAU_BEARS.forEach(b => {
+                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                    if (slider) {
+                        let val = parseInt(slider.value);
+                        val += 179;
+                        if (val > 9500) val = 1000;
+                        slider.value = val;
+                        updateBearDacVal(b.id, val);
+                    }
+                });
                 evaluateConsensus();
             }, 300);
         }
@@ -987,8 +995,15 @@
                         }
                         const pi = Number(hashVal % 8500n) + 1000; 
                         
-                        dacSlider.value = pi;
-                        dacStreamVal.innerText = pi;
+                        // Push block stream voltages directly to all bear DAC inputs
+                        LAU_BEARS.forEach(b => {
+                            const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                            if (slider) {
+                                slider.value = pi;
+                                updateBearDacVal(b.id, pi);
+                            }
+                        });
+                        
                         logConsole(`  [Tx] Hash: ${txHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
                         
                         initAudio();
@@ -1018,10 +1033,16 @@
                     return;
                 }
                 const pi = Math.floor(Math.random() * 8500) + 1000;
-                const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
                 
-                dacSlider.value = pi;
-                dacStreamVal.innerText = pi;
+                LAU_BEARS.forEach(b => {
+                    const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                    if (slider) {
+                        slider.value = pi;
+                        updateBearDacVal(b.id, pi);
+                    }
+                });
+
+                const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
                 logConsole(`  [Mock Tx] Hash: ${mockHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
                 
                 initAudio();
