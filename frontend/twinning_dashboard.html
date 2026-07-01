@@ -447,6 +447,7 @@
         let bufValue = 0.0;
         
         let twinPhase = 1; 
+        let sweepIndex = 0;
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
@@ -885,7 +886,7 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        // Two-Phase Training Loop modulating the speaker's own slider
+        // Two-Phase Training Loop modulating the speaker's own slider and only sweeping speaker-known chords
         function startTwinning() {
             initAudio();
             isTwinning = true;
@@ -893,6 +894,7 @@
             btnTwin.style.background = "#ef4444";
             
             twinPhase = 1; 
+            sweepIndex = 0;
             logConsole(`[TWINNING] Phase 1: Sweeping to calibrate active speaker (${LAU_BEARS[activeSpeakerId].name}) own chord preference...`);
 
             twinInterval = setInterval(() => {
@@ -900,15 +902,16 @@
                 if (!speakerSlider) return;
                 
                 if (twinPhase === 1) {
-                    let voltage = parseInt(speakerSlider.value);
+                    const allowedChords = EMOTIONS_RANGE[targetEmotion];
+                    const voltage = allowedChords[sweepIndex];
                     const currentClassification = classifyVoltageForBear(activeSpeakerId, voltage);
                     
                     if (currentClassification === targetEmotion) {
                         twinPhase = 2;
                         logConsole(`[TWINNING] Phase 1 Success: Speaker calibrated at Pi = ${voltage}. Moving to Phase 2 (Observer Twinning)...`);
                     } else {
-                        voltage += 71; 
-                        if (voltage > 9500) voltage = 1000;
+                        // Increment through indices of known chords only
+                        sweepIndex = (sweepIndex + 1) % allowedChords.length;
                         speakerSlider.value = voltage;
                         updateBearDacVal(activeSpeakerId, voltage);
                     }
