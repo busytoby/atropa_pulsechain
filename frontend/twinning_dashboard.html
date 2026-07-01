@@ -420,7 +420,6 @@
         ];
 
         let BEAR_DATABASES = [];
-        let ACTIVE_TRANSLATION_OFFSETS = [];
 
         // Expanded multi-chord mapping per emotion providing a sufficient range for the Judge Bear
         const EMOTIONS_RANGE = {
@@ -448,6 +447,7 @@
         
         let twinPhase = 1; 
         let sweepIndex = 0;
+        let observerSweepIndices = []; // Track sweep indices for observers in Phase 2
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
@@ -529,7 +529,6 @@
 
             // Build dynamic databases mapping to arrays of ratios per emotion
             BEAR_DATABASES = [];
-            ACTIVE_TRANSLATION_OFFSETS = [];
             LAU_BEARS.forEach(b => {
                 const db = {};
                 Object.entries(EMOTIONS_RANGE).forEach(([emo, vals]) => {
@@ -541,7 +540,6 @@
                     });
                 });
                 BEAR_DATABASES.push(db);
-                ACTIVE_TRANSLATION_OFFSETS.push(1.0); 
             });
 
             // Build Recognition rows displaying individual physical bear DAC input controllers
@@ -565,22 +563,24 @@
                 recBoard.appendChild(row);
             });
 
-            // Asynchronously load pre-existing P2P dialect rules on startup
+            // Asynchronously load pre-existing physical DAC values from the server on startup
             fetch("/api/load-dialects")
                 .then(r => r.json())
-                .then(offsets => {
+                .then(voltages => {
                     LAU_BEARS.forEach(b => {
-                        if (offsets[b.name] !== undefined) {
-                            ACTIVE_TRANSLATION_OFFSETS[b.id] = offsets[b.name];
-                        } else {
-                            ACTIVE_TRANSLATION_OFFSETS[b.id] = 1.0;
+                        if (voltages[b.name] !== undefined) {
+                            const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                            if (slider) {
+                                slider.value = voltages[b.name];
+                                updateBearDacVal(b.id, voltages[b.name]);
+                            }
                         }
                     });
-                    logConsole(`[EVM] Loaded pre-existing P2P dialect rules from server.`);
+                    logConsole(`[EVM] Loaded pre-existing P2P physical DAC calibrations from server.`);
                     evaluateConsensus();
                 })
                 .catch(err => {
-                    logConsole(`[EVM] No pre-existing dialect rules found. Initializing nominal values.`);
+                    logConsole(`[EVM] No pre-existing physical DAC rules found. Initializing nominal values.`);
                     evaluateConsensus();
                 });
         }
@@ -675,15 +675,21 @@
             let mismatchCount = 0;
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
-                // Speaker never applies offset to its own voice (local offset always 1.0)
-                const localOffset = (observer.id === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0);
-                const translatedRatio = activeRatio * localOffset;
                 
+                // Read observer's own physical DAC input slider value directly
+                const observerSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
+                const observerPi = observerSlider ? parseInt(observerSlider.value) : inputVal;
+                
+                const obsRes = bigModExp(observerPi, observer.exp, MotzkinPrime);
+                const R_obs = Number(obsRes % 50n) + 15.0;
+                const r_obs = Number(obsRes % 25n) + 8.0;
+                const obsRatio = R_obs / r_obs;
+
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
                 Object.entries(db).forEach(([emo, target_ratios]) => {
                     target_ratios.forEach(target_ratio => {
-                        const diff = Math.abs(target_ratio - translatedRatio);
+                        const diff = Math.abs(target_ratio - obsRatio);
                         if (diff < min_diff) {
                             min_diff = diff;
                             best_emo = emo;
@@ -766,14 +772,12 @@
             const activeRatio = R_spk / r_spk;
             
             const db = BEAR_DATABASES[bearId];
-            const localOffset = (bearId === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[bearId] || 1.0);
-            const translatedRatio = activeRatio * localOffset;
 
             let best_emo = "CONFUSION";
             let min_diff = Infinity;
             Object.entries(db).forEach(([emo, target_ratios]) => {
                 target_ratios.forEach(target_ratio => {
-                    const diff = Math.abs(target_ratio - translatedRatio);
+                    const diff = Math.abs(target_ratio - activeRatio);
                     if (diff < min_diff) {
                         min_diff = diff;
                         best_emo = emo;
@@ -786,31 +790,28 @@
         function evaluateConsensus() {
             if (LAU_BEARS.length === 0) return;
             
-            // Read active speaker's own physical DAC input slider value
-            const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
-            if (!speakerSlider) return;
-            const speakerVoltage = parseInt(speakerSlider.value);
-            const speaker = LAU_BEARS[activeSpeakerId];
-            
-            const res = bigModExp(speakerVoltage, speaker.exp, MotzkinPrime);
-            const R_spk = Number(res % 50n) + 15.0;
-            const r_spk = Number(res % 25n) + 8.0;
-            const activeRatio = R_spk / r_spk;
-
-            telemetryRatio.innerText = activeRatio.toFixed(3);
-
             let matches = 0;
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
-                // Speaker never translates its own output (always 1.0 offset)
-                const localOffset = (observer.id === activeSpeakerId) ? 1.0 : (ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0);
-                const translatedRatio = activeRatio * localOffset;
+                
+                // Read observer's own physical DAC input slider value directly
+                const observerSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
+                const observerPi = observerSlider ? parseInt(observerSlider.value) : 4423;
+                
+                const obsRes = bigModExp(observerPi, observer.exp, MotzkinPrime);
+                const R_obs = Number(obsRes % 50n) + 15.0;
+                const r_obs = Number(obsRes % 25n) + 8.0;
+                const obsRatio = R_obs / r_obs;
+
+                if (observer.id === activeSpeakerId) {
+                    telemetryRatio.innerText = obsRatio.toFixed(3);
+                }
 
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
                 Object.entries(db).forEach(([emo, target_ratios]) => {
                     target_ratios.forEach(target_ratio => {
-                        const diff = Math.abs(target_ratio - translatedRatio);
+                        const diff = Math.abs(target_ratio - obsRatio);
                         if (diff < min_diff) {
                             min_diff = diff;
                             best_emo = emo;
@@ -837,12 +838,12 @@
                 consensusStatus.innerText = "CHAMBER IN AGREEMENT (HARMONY LOCKED)";
                 bufValue = Math.max(0.0, bufValue - 0.08);
                 
-                saveTwinningOffsetsToDisk();
+                saveTwinningVoltagesToDisk();
 
                 if (isSweeping || isTwinning) {
                     stopSweep();
                     stopTwinning();
-                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at speaker Pi = ${speakerVoltage}!`);
+                    logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} across all physical bear DACs!`);
                 }
             } else {
                 consensusStatus.className = "status-alert alert-growl";
@@ -857,10 +858,11 @@
             telemetryEigen.innerText = (1.0 / (1.0 + bufValue)).toFixed(4);
         }
 
-        function saveTwinningOffsetsToDisk() {
+        function saveTwinningVoltagesToDisk() {
             const payload = {};
             LAU_BEARS.forEach(b => {
-                payload[b.name] = ACTIVE_TRANSLATION_OFFSETS[b.id] || 1.0;
+                const slider = document.querySelector(`.bear-dac-slider[data-id="${b.id}"]`);
+                payload[b.name] = slider ? parseInt(slider.value) : 4423;
             });
             
             fetch("/api/save-dialects", {
@@ -871,7 +873,7 @@
             .then(r => r.json())
             .then(res => {
                 if (res.success) {
-                    logConsole(`[EVM] Saved P2P dialect rules to disk (config/twinning_dialects.json).`);
+                    logConsole(`[EVM] Saved P2P physical DAC calibrations to disk.`);
                 }
             })
             .catch(err => {
@@ -886,7 +888,9 @@
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        // Two-Phase Training Loop modulating the speaker's own slider and only sweeping speaker-known chords
+        // Physical Self-Twinning Loop:
+        // Phase 1: Speaker sweeps its own physical DAC slider to identify target emotion
+        // Phase 2: Each observer bear sweeps its own physical DAC slider in parallel to identify target emotion
         function startTwinning() {
             initAudio();
             isTwinning = true;
@@ -895,7 +899,11 @@
             
             twinPhase = 1; 
             sweepIndex = 0;
-            logConsole(`[TWINNING] Phase 1: Sweeping to calibrate active speaker (${LAU_BEARS[activeSpeakerId].name}) own chord preference...`);
+            
+            // Initialize observer sweep indices
+            observerSweepIndices = LAU_BEARS.map(() => 0);
+
+            logConsole(`[TWINNING] Phase 1: Calibrating active speaker (${LAU_BEARS[activeSpeakerId].name}) physical DAC input...`);
 
             twinInterval = setInterval(() => {
                 const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${activeSpeakerId}"]`);
@@ -905,7 +913,6 @@
                     const allowedChords = EMOTIONS_RANGE[targetEmotion];
                     const voltage = allowedChords[sweepIndex];
                     
-                    // ALWAYS update slider and triggers before classification
                     speakerSlider.value = voltage;
                     updateBearDacVal(activeSpeakerId, voltage);
 
@@ -913,32 +920,28 @@
                     
                     if (currentClassification === targetEmotion) {
                         twinPhase = 2;
-                        logConsole(`[TWINNING] Phase 1 Success: Speaker calibrated at Pi = ${voltage}. Moving to Phase 2 (Observer Twinning)...`);
+                        logConsole(`[TWINNING] Phase 1 Success: Speaker calibrated at Pi = ${voltage}. Moving to Phase 2 (Observer Physical Self-Tuning)...`);
                     } else {
-                        // Increment through indices of known chords only
                         sweepIndex = (sweepIndex + 1) % allowedChords.length;
                     }
                 } else if (twinPhase === 2) {
-                    const speakerVoltage = parseInt(speakerSlider.value);
-                    const speaker = LAU_BEARS[activeSpeakerId];
-                    const res = bigModExp(speakerVoltage, speaker.exp, MotzkinPrime);
-                    const R_spk = Number(res % 50n) + 15.0;
-                    const r_spk = Number(res % 25n) + 8.0;
-                    const activeRatio = R_spk / r_spk;
-
+                    // Each observer bear sweeps its own slider to locate target emotion
                     LAU_BEARS.forEach(observer => {
                         if (observer.id === activeSpeakerId) return; 
-                        
-                        const db = BEAR_DATABASES[observer.id];
-                        const target_ratios = db[targetEmotion];
-                        const target_ratio = target_ratios[0];
-                        
-                        const currentOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
-                        const observedRatio = activeRatio * currentOffset;
-                        const error = target_ratio - observedRatio;
 
-                        if (Math.abs(error) > 0.02) {
-                            ACTIVE_TRANSLATION_OFFSETS[observer.id] = currentOffset + (error * 0.1);
+                        const obsSlider = document.querySelector(`.bear-dac-slider[data-id="${observer.id}"]`);
+                        if (!obsSlider) return;
+
+                        const currentVolts = parseInt(obsSlider.value);
+                        const currentClassification = classifyVoltageForBear(observer.id, currentVolts);
+
+                        if (currentClassification !== targetEmotion) {
+                            const obsChords = EMOTIONS_RANGE[targetEmotion];
+                            const nextIdx = (observerSweepIndices[observer.id] + 1) % obsChords.length;
+                            observerSweepIndices[observer.id] = nextIdx;
+                            
+                            obsSlider.value = obsChords[nextIdx];
+                            updateBearDacVal(observer.id, obsChords[nextIdx]);
                         }
                     });
                 }
