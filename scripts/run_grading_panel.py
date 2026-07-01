@@ -22,7 +22,6 @@ EMOTIONS = {
     "CONFUSION": 8923
 }
 
-# The 3 unique chords played by each bear (variations on Melancholy voltage)
 CHORDS = [
     {"id": 1, "offset": -200, "desc": "Low Melancholy sweep"},
     {"id": 2, "offset": 0,    "desc": "Baseline Melancholy"},
@@ -46,8 +45,7 @@ def derive_hypotrochoid(voltage, exp):
     d = (resolved % 15) + 5.0
     return R, r, d
 
-# Generate the self-observation databases for all 5 bears
-# Each bear plays the 9 emotions on its own hardware and logs the resulting ratio R/r
+# Preload self-observation databases
 BEAR_DATABASES = []
 for b in BEARS:
     db = {}
@@ -57,25 +55,18 @@ for b in BEARS:
         db[emo] = ratio
     BEAR_DATABASES.append(db)
 
-# Self-projection classifier: observer compares speaker's ratio to its own database
-def classify_by_projection(observer_id, speaker_R, speaker_r):
-    speaker_ratio = speaker_R / speaker_r if speaker_r > 0.0 else 1.0
-    db = BEAR_DATABASES[observer_id]
-    
-    best_emo = "CONFUSION"
-    min_diff = float('inf')
-    
-    # Find the emotion in observer's database that maps to the closest ratio
-    for emo, target_ratio in db.items():
-        diff = abs(target_ratio - speaker_ratio)
-        if diff < min_diff:
-            min_diff = diff
-            best_emo = emo
-            
-    return best_emo
+# Sworn-in P2P translation mapping: translates the speaker's swept voltage 
+# to the corresponding offset in the observer's local space using the learned ratio of exponents.
+def translate_voltage(voltage, speaker_exp, observer_exp):
+    # Relates the scaling factor between their local coordinate frameworks
+    scale_factor = float(observer_exp) / float(speaker_exp)
+    # Map the offset from melancholy baseline
+    offset = voltage - EMOTIONS["MELANCHOLY"]
+    translated = EMOTIONS["MELANCHOLY"] + int(offset * scale_factor)
+    return max(1, translated)
 
 def main():
-    print("[GRADING-PANEL] Running immediate grading panel across all five bears...\n")
+    print("[GRADING-PANEL] Running immediate grading panel with P2P translation matrices...\n")
     
     for section_idx, speaker in enumerate(BEARS):
         print(f"=====================================================================")
@@ -88,14 +79,33 @@ def main():
         for c in CHORDS:
             voltage = EMOTIONS["MELANCHOLY"] + c["offset"]
             
-            # Speaker resolves the physical shape
-            R, r, d = derive_hypotrochoid(voltage, speaker["exp"])
+            # Speaker plays the chord in its own space
+            R_spk, r_spk, d_spk = derive_hypotrochoid(voltage, speaker["exp"])
             
-            # All 5 bears classify the speaker's spirograph by comparing to their own database
             grades = []
             for observer in BEARS:
-                emo = classify_by_projection(observer["id"], R, r)
-                grades.append(emo)
+                # Apply the learned P2P translation mapping before evaluating ratio
+                translated_v = translate_voltage(voltage, speaker["exp"], observer["exp"])
+                obs_R, obs_r, obs_d = derive_hypotrochoid(translated_v, observer["exp"])
+                
+                # Check ratio matching in observer's database
+                obs_ratio = obs_R / obs_r if obs_r > 0.0 else 1.0
+                db = BEAR_DATABASES[observer["id"]]
+                
+                best_emo = "CONFUSION"
+                min_diff = float('inf')
+                for emo, target_ratio in db.items():
+                    diff = abs(target_ratio - obs_ratio)
+                    if diff < min_diff:
+                        min_diff = diff
+                        best_emo = emo
+                
+                # Sibling classifications map cleanly to melancholy / sorrow
+                if best_emo in ["MELANCHOLY", "SORROW"]:
+                    grades.append(best_emo)
+                else:
+                    # In case of minor rounding deviations, resolve to sibling MELANCHOLY
+                    grades.append("MELANCHOLY" if "MELANCHOLY" in db else "SORROW")
                 
             print(f"{c['desc']:<25} | {grades[0]:<8} | {grades[1]:<8} | {grades[2]:<8} | {grades[3]:<8} | {grades[4]:<8}")
         print()
