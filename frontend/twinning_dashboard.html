@@ -161,7 +161,7 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
-            max-height: 480px;
+            max-height: 520px;
             overflow-y: auto;
             border: 1px solid var(--glass-border);
             padding: 12px;
@@ -170,7 +170,7 @@
 
         .rec-row {
             display: grid;
-            grid-template-columns: 160px 1fr 100px;
+            grid-template-columns: 140px 1fr 90px;
             align-items: center;
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
@@ -426,11 +426,11 @@
 
         // Initialize immediately with the 5 baseline bears by default
         let LAU_BEARS = [
-            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "activeFreq": 220},
-            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 1200n, "color": "#d97706", "pan": -0.6, "activeFreq": 310},
-            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 880n, "color": "#3b82f6", "pan": 0.6, "activeFreq": 440},
-            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 443n, "color": "#10b981", "pan": -0.8, "activeFreq": 180},
-            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 552n, "color": "#8b5cf6", "pan": 0.8, "activeFreq": 290}
+            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "activeFreq": 220, "gain": 1.0, "detune": 0, "phase": 0, "fm": "-1", "dir": 1},
+            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 1200n, "color": "#d97706", "pan": -0.6, "activeFreq": 310, "gain": 1.0, "detune": 0, "phase": 0, "fm": "-1", "dir": 1},
+            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 880n, "color": "#3b82f6", "pan": 0.6, "activeFreq": 440, "gain": 1.0, "detune": 0, "phase": 0, "fm": "-1", "dir": 1},
+            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 443n, "color": "#10b981", "pan": -0.8, "activeFreq": 180, "gain": 1.0, "detune": 0, "phase": 0, "fm": "-1", "dir": 1},
+            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 552n, "color": "#8b5cf6", "pan": 0.8, "activeFreq": 290, "gain": 1.0, "detune": 0, "phase": 0, "fm": "-1", "dir": 1}
         ];
 
         // Emotion mapped directly to keycode modulos as physical understanding targets
@@ -502,7 +502,12 @@
                             "exp": exp,
                             "color": `hsl(${hue}, 80%, 55%)`,
                             "pan": panVal,
-                            "activeFreq": 220
+                            "activeFreq": 220,
+                            "gain": 1.0,
+                            "detune": 0,
+                            "phase": 0,
+                            "fm": "-1",
+                            "dir": 1
                         });
                         count++;
                     }
@@ -537,7 +542,7 @@
                 evaluateConsensus();
             };
 
-            // Build Recognition rows splitting controllers into coarse (Quotient) & fine (Modulo) sliders
+            // Build Recognition rows splitting controllers into coarse & fine, plus the 5 tonewheel settings
             recBoard.innerHTML = "";
             LAU_BEARS.forEach(b => {
                 const row = document.createElement("div");
@@ -554,14 +559,46 @@
                     </div>
                     <div class="slider-controls">
                         <div class="slider-row">
-                            <span>Coarse (Gear):</span>
+                            <span>Coarse:</span>
                             <input type="range" class="bear-quotient-slider" data-id="${b.id}" min="1" max="10" value="${initialQuotient}" oninput="updateBearCoarseFine(${b.id})">
                             <span id="quotient-val-${b.id}">${initialQuotient}</span>
                         </div>
                         <div class="slider-row">
-                            <span>Fine (Modulo):</span>
+                            <span>Fine:</span>
                             <input type="range" class="bear-modulo-slider" data-id="${b.id}" min="0" max="${Number(b.exp) - 1}" value="${targetMod}" oninput="updateBearCoarseFine(${b.id})">
                             <span id="modulo-val-${b.id}">${targetMod}</span>
+                        </div>
+                        
+                        <!-- 5 Tonewheel Settings Grid -->
+                        <div class="tonewheel-settings-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px;">
+                            <div class="setting-item">
+                                <label style="font-size:0.55rem; color:var(--text-muted); display:block; text-align:center;">Gain</label>
+                                <input type="range" class="bear-gain-slider" data-id="${b.id}" min="0.0" max="2.0" step="0.1" value="${b.gain}" oninput="updateBearTonewheelSettings(${b.id})" style="width:100%;">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size:0.55rem; color:var(--text-muted); display:block; text-align:center;">Detune</label>
+                                <input type="range" class="bear-detune-slider" data-id="${b.id}" min="-50" max="50" step="1" value="${b.detune}" oninput="updateBearTonewheelSettings(${b.id})" style="width:100%;">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size:0.55rem; color:var(--text-muted); display:block; text-align:center;">Phase</label>
+                                <input type="range" class="bear-phase-slider" data-id="${b.id}" min="0" max="360" step="1" value="${b.phase}" oninput="updateBearTonewheelSettings(${b.id})" style="width:100%;">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size:0.55rem; color:var(--text-muted); display:block; text-align:center;">FM</label>
+                                <select class="bear-fm-select" data-id="${b.id}" onchange="updateBearTonewheelSettings(${b.id})" style="width:100%; font-size:0.55rem; background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:3px;">
+                                    <option value="-1" ${b.fm === "-1" ? 'selected' : ''}>None</option>
+                                    <option value="osc" ${b.fm === "osc" ? 'selected' : ''}>Osc</option>
+                                    <option value="sub" ${b.fm === "sub" ? 'selected' : ''}>Sub</option>
+                                    <option value="fifth" ${b.fm === "fifth" ? 'selected' : ''}>Fifth</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size:0.55rem; color:var(--text-muted); display:block; text-align:center;">Dir</label>
+                                <select class="bear-dir-select" data-id="${b.id}" onchange="updateBearTonewheelSettings(${b.id})" style="width:100%; font-size:0.55rem; background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:3px;">
+                                    <option value="1" ${b.dir === 1 ? 'selected' : ''}>FWD</option>
+                                    <option value="-1" ${b.dir === -1 ? 'selected' : ''}>REV</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <span class="rec-label mismatch">JOY</span>
@@ -615,6 +652,22 @@
             evaluateConsensus();
         };
 
+        // Update the 5 classic tonewheel settings
+        window.updateBearTonewheelSettings = (bearId) => {
+            const b = LAU_BEARS[bearId];
+            const gainS = document.querySelector(`.bear-gain-slider[data-id="${bearId}"]`);
+            const detuneS = document.querySelector(`.bear-detune-slider[data-id="${bearId}"]`);
+            const phaseS = document.querySelector(`.bear-phase-slider[data-id="${bearId}"]`);
+            const fmS = document.querySelector(`.bear-fm-select[data-id="${bearId}"]`);
+            const dirS = document.querySelector(`.bear-dir-select[data-id="${bearId}"]`);
+
+            if (gainS) b.gain = parseFloat(gainS.value);
+            if (detuneS) b.detune = parseInt(detuneS.value);
+            if (phaseS) b.phase = parseInt(phaseS.value);
+            if (fmS) b.fm = fmS.value;
+            if (dirS) b.dir = parseInt(dirS.value);
+        };
+
         // Build target emotion selectors
         const emoSelector = document.getElementById("emotion-selector");
         Object.keys(EMOTION_KEYCODES).forEach(emo => {
@@ -655,14 +708,24 @@
             if (!audioCtx) return;
             const v = LAU_BEARS[voiceIdx];
             
-            // Scaled dynamic frequencies matching the fine-tuned physical input value
-            const freqL = (inputVal % 1500) + 120;
-            const freqR = freqL * 1.5; 
+            // Scaled dynamic frequencies matching the fine-tuned physical input value and detuning settings
+            const detuneFactor = Math.pow(2, (v.detune || 0) / 1200);
+            const freqL = ((inputVal % 1500) + 120) * detuneFactor;
+            let freqR = freqL * 1.5; 
+
+            if (v.fm === "sub") {
+                freqR = freqL * 0.5;
+            } else if (v.fm === "fifth") {
+                freqR = freqL * 1.5;
+            } else if (v.fm === "osc") {
+                freqR = freqL * 2.0;
+            }
+
             v.activeFreq = freqL; 
 
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
-            mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
+            mainGain.gain.linearRampToValueAtTime(0.2 * (v.gain || 1.0), time + 0.02);
             mainGain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
             mainGain.connect(audioCtx.destination);
 
@@ -1105,9 +1168,9 @@
                 const speakerPi = q * Number(speaker.exp) + m;
 
                 const ratio = speakerPi / Number(speaker.exp);
-                const R_hyp = 45.0 * scale;
-                const r_hyp = (45.0 / (ratio || 1.0)) * scale;
-                const d_hyp = 15.0 * scale;
+                let R_hyp = 45.0 * scale * (speaker.gain || 1.0);
+                let r_hyp = (45.0 / (ratio || 1.0)) * scale * (speaker.gain || 1.0);
+                let d_hyp = 15.0 * scale * (speaker.gain || 1.0);
 
                 ctx.strokeStyle = speaker.color;
                 ctx.lineWidth = 1.5;
@@ -1120,10 +1183,12 @@
                 const step = (targetEmotion === "JOY" || targetEmotion === "TRANQUILITY") ? 0.02 : 0.05;
                 const maxTheta = 6 * Math.PI;
 
+                const phaseOffsetRad = ((speaker.phase || 0) * Math.PI) / 180;
+
                 for (let theta = 0; theta < maxTheta; theta += step) {
-                    // Standard hypotrochoid coordinate projection mapping
-                    let x = cx + ((R_hyp - r_hyp) * Math.cos(theta + rot) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta));
-                    let y = cy + ((R_hyp - r_hyp) * Math.sin(theta + rot) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta));
+                    // Standard hypotrochoid coordinate projection mapping using Direction & Phase Offset
+                    let x = cx + ((R_hyp - r_hyp) * Math.cos(theta + rot + phaseOffsetRad) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta));
+                    let y = cy + ((R_hyp - r_hyp) * Math.sin(theta + rot + phaseOffsetRad) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta));
 
                     // Emotion visual projections
                     if (targetEmotion === "JOY" || targetEmotion === "TRANQUILITY") {
@@ -1201,7 +1266,10 @@
                 }
             });
 
-            rot += 0.025;
+            // Adjust rotation velocity based on the active speaker's spin direction setting
+            const activeDir = LAU_BEARS[activeSpeakerId] ? LAU_BEARS[activeSpeakerId].dir : 1;
+            rot += 0.025 * activeDir;
+
             requestAnimationFrame(draw);
         }
         draw();
