@@ -376,7 +376,6 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
-        // Dynamic list of bears/LAU tokens discovered from the EVM config mapping
         let LAU_BEARS = [];
         let BEAR_DATABASES = [];
 
@@ -414,14 +413,20 @@
         // Fetch dynamic contract list from EVM config
         async function loadEVMContracts() {
             try {
-                const res = await fetch("../config/nonukes_qings_status.json");
-                const data = await res.json();
+                // Try relative paths first, fallback to direct path matching local web root
+                let data = [];
+                try {
+                    const res = await fetch("../config/nonukes_qings_status.json");
+                    data = await res.json();
+                } catch (e) {
+                    const res = await fetch("/config/nonukes_qings_status.json");
+                    data = await res.json();
+                }
                 
                 // Parse and filter verified LAUs
                 let count = 0;
                 data.forEach(item => {
-                    if (item.address) {
-                        // Generate dynamic exponent mapping based on address hash
+                    if (item.address && item.exists) {
                         let hash = 0;
                         for (let i = 0; i < item.address.length; i++) {
                             hash = (hash << 5) - hash + item.address.charCodeAt(i);
@@ -440,10 +445,15 @@
                     }
                 });
 
+                if (LAU_BEARS.length === 0) {
+                    throw new Error("No active LAUs found in config.");
+                }
+
                 logConsole(`[EVM] Discovered ${LAU_BEARS.length} dynamic LAU nodes from storage.`);
                 buildUI();
             } catch (err) {
-                // Fallback to baseline bears if fetch fails
+                console.error(err);
+                // Fallback to baseline bears if fetch fails or is empty
                 LAU_BEARS = [
                     {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444"},
                     {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706"},
@@ -457,7 +467,6 @@
         }
 
         function buildUI() {
-            // Build Speaker dropdown options
             speakerDropdown.innerHTML = "";
             LAU_BEARS.forEach(b => {
                 const opt = document.createElement("option");
