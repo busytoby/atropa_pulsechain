@@ -376,7 +376,15 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
-        let LAU_BEARS = [];
+        // Initialize immediately with the 5 baseline bears by default
+        let LAU_BEARS = [
+            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444"},
+            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706"},
+            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6"},
+            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981"},
+            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6"}
+        ];
+
         let BEAR_DATABASES = [];
 
         const EMOTIONS = {
@@ -413,7 +421,6 @@
         // Fetch dynamic contract list from EVM config
         async function loadEVMContracts() {
             try {
-                // Try relative paths first, fallback to direct path matching local web root
                 let data = [];
                 try {
                     const res = await fetch("../config/nonukes_qings_status.json");
@@ -423,7 +430,7 @@
                     data = await res.json();
                 }
                 
-                // Parse and filter verified LAUs
+                let dynamic_bears = [];
                 let count = 0;
                 data.forEach(item => {
                     if (item.address && item.exists) {
@@ -434,7 +441,7 @@
                         const exp = BigInt(Math.abs(hash) % 10000 + 440);
                         const hue = Math.abs(hash) % 360;
                         
-                        LAU_BEARS.push({
+                        dynamic_bears.push({
                             "id": count,
                             "name": item.symbol || item.name || `LAU-${count}`,
                             "address": item.address,
@@ -445,23 +452,16 @@
                     }
                 });
 
-                if (LAU_BEARS.length === 0) {
-                    throw new Error("No active LAUs found in config.");
+                if (dynamic_bears.length > 0) {
+                    LAU_BEARS = dynamic_bears;
+                    logConsole(`[EVM] Discovered ${LAU_BEARS.length} dynamic LAU nodes from storage.`);
+                } else {
+                    logConsole(`[EVM] No active dynamic LAUs found in config. Using baseline bears.`);
                 }
-
-                logConsole(`[EVM] Discovered ${LAU_BEARS.length} dynamic LAU nodes from storage.`);
                 buildUI();
             } catch (err) {
                 console.error(err);
-                // Fallback to baseline bears if fetch fails or is empty
-                LAU_BEARS = [
-                    {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444"},
-                    {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706"},
-                    {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6"},
-                    {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981"},
-                    {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6"}
-                ];
-                logConsole(`[EVM] Failed to load config. Swearing in 5 baseline bears.`);
+                logConsole(`[EVM] Failed to load config. Using baseline bears fallback.`);
                 buildUI();
             }
         }
@@ -709,7 +709,8 @@
         }
         draw();
 
-        // Initiate loading
+        // Initial build before contracts are fetched asynchronously
+        buildUI();
         loadEVMContracts();
     </script>
 </body>
