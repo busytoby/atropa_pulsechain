@@ -297,6 +297,16 @@
                 </select>
             </div>
 
+            <div class="control-group">
+                <label for="effects-loop-slider">Effects Loop Feedback Routing (to Tonewheel)</label>
+                <input type="range" id="effects-loop-slider" min="0" max="100" value="30">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px;">
+                    <span>0% (Dry)</span>
+                    <span id="effects-loop-val" style="color: #fbbf24">30%</span>
+                    <span>100% (Wet)</span>
+                </div>
+            </div>
+
             <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
 
             <h3>Auncient State Registers</h3>
@@ -430,6 +440,8 @@
         const rBetaVal = document.getElementById("r-beta-val");
         const rCutoffSlider = document.getElementById("r-cutoff-slider");
         const rCutoffVal = document.getElementById("r-cutoff-val");
+        const effectsLoopSlider = document.getElementById("effects-loop-slider");
+        const effectsLoopVal = document.getElementById("effects-loop-val");
 
         const regBase = document.getElementById("reg-base");
         const regChannel = document.getElementById("reg-channel");
@@ -511,6 +523,34 @@
         drawbarSub.addEventListener("input", (e) => { valSub.innerText = e.target.value; });
         drawbarFund.addEventListener("input", (e) => { valFund.innerText = e.target.value; });
         drawbarHarm.addEventListener("input", (e) => { valHarm.innerText = e.target.value; });
+        effectsLoopSlider.addEventListener("input", (e) => { 
+            effectsLoopVal.innerText = e.target.value + "%"; 
+        });
+
+        // Compute the wavefield amplitude feedback at the focus target coordinate
+        function getFocusTargetAmplitude(timeSec, f0, wSub, wFund, wHarm) {
+            let totalAmp = 0;
+            emitters.forEach(emitter => {
+                const dist = Math.hypot(targetX - emitter.x, targetY - emitter.y);
+                const speedFactor = 0.015;
+                if (wSub > 0) {
+                    const omegaSub = 2.0 * Math.PI * (f0 * 0.5);
+                    const phaseSub = emitter.phase * 0.5 + (dist * omegaSub) / speedOfSound;
+                    totalAmp += Math.sin(phaseSub - omegaSub * timeSec * speedFactor) * (15.0 / Math.max(10.0, dist)) * wSub;
+                }
+                if (wFund > 0) {
+                    const omegaFund = 2.0 * Math.PI * f0;
+                    const phaseFund = emitter.phase + (dist * omegaFund) / speedOfSound;
+                    totalAmp += Math.sin(phaseFund - omegaFund * timeSec * speedFactor) * (15.0 / Math.max(10.0, dist)) * wFund;
+                }
+                if (wHarm > 0) {
+                    const omegaHarm = 2.0 * Math.PI * (f0 * 2.0);
+                    const phaseHarm = emitter.phase * 2.0 + (dist * omegaHarm) / speedOfSound;
+                    totalAmp += Math.sin(phaseHarm - omegaHarm * timeSec * speedFactor) * (15.0 / Math.max(10.0, dist)) * wHarm;
+                }
+            });
+            return totalAmp / (wSub + wFund + wHarm || 1.0);
+        }
 
         function calculateEmitterPhases(f0) {
             const k = (2.0 * Math.PI * f0) / speedOfSound;
@@ -966,7 +1006,9 @@
                 if (wFund > 0) { evalSigVal += Math.sin(2.0 * Math.PI * f0 * evalTime * 0.015) * wFund; }
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
-                const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
+                const effectsLoopGain = parseFloat(effectsLoopSlider.value) / 100.0;
+                const feedbackSig = getFocusTargetAmplitude(evalTime, f0, wSub, wFund, wHarm) * effectsLoopGain;
+                const normSig = Math.max(-1.0, Math.min(1.0, (evalSigVal / (wSub + wFund + wHarm || 1.0)) + feedbackSig));
                 const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
                 const y = height / 2 + biasedSig * 45;
                 if (i === 0) scopeCtx.moveTo(0, y);
@@ -984,7 +1026,9 @@
                 if (wFund > 0) { evalSigVal += Math.sin(2.0 * Math.PI * f0 * evalTime * 0.015) * wFund; }
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
-                const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
+                const effectsLoopGain = parseFloat(effectsLoopSlider.value) / 100.0;
+                const feedbackSig = getFocusTargetAmplitude(evalTime, f0, wSub, wFund, wHarm) * effectsLoopGain;
+                const normSig = Math.max(-1.0, Math.min(1.0, (evalSigVal / (wSub + wFund + wHarm || 1.0)) + feedbackSig));
                 const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
                 let npnCon = 0;
                 if (biasedSig > threshold) {
@@ -1006,7 +1050,9 @@
                 if (wFund > 0) { evalSigVal += Math.sin(2.0 * Math.PI * f0 * evalTime * 0.015) * wFund; }
                 if (wHarm > 0) { evalSigVal += Math.sin(2.0 * Math.PI * (f0 * 2.0) * evalTime * 0.015) * wHarm; }
                 
-                const normSig = Math.max(-1.0, Math.min(1.0, evalSigVal / (wSub + wFund + wHarm || 1.0)));
+                const effectsLoopGain = parseFloat(effectsLoopSlider.value) / 100.0;
+                const feedbackSig = getFocusTargetAmplitude(evalTime, f0, wSub, wFund, wHarm) * effectsLoopGain;
+                const normSig = Math.max(-1.0, Math.min(1.0, (evalSigVal / (wSub + wFund + wHarm || 1.0)) + feedbackSig));
                 const biasedSig = Math.max(-1.0, Math.min(1.0, normSig + biasValOffset));
                 let pnpCon = 0;
                 if (biasedSig < -threshold) {
@@ -1049,7 +1095,11 @@
                 if (wSub > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 0.5) * timeSec * 0.015) * wSub; }
                 if (wFund > 0) { instantSig += Math.sin(2.0 * Math.PI * f0 * timeSec * 0.015) * wFund; }
                 if (wHarm > 0) { instantSig += Math.sin(2.0 * Math.PI * (f0 * 2.0) * timeSec * 0.015) * wHarm; }
-                const normInstantSig = Math.max(-1.0, Math.min(1.0, instantSig / (wSub + wFund + wHarm || 1.0)));
+                
+                const effectsLoopGain = parseFloat(effectsLoopSlider.value) / 100.0;
+                const feedbackSig = getFocusTargetAmplitude(timeSec, f0, wSub, wFund, wHarm) * effectsLoopGain;
+
+                const normInstantSig = Math.max(-1.0, Math.min(1.0, (instantSig / (wSub + wFund + wHarm || 1.0)) + feedbackSig));
                 const biasedSig = Math.max(-1.0, Math.min(1.0, normInstantSig + biasOffset));
 
                 // Clear Background
