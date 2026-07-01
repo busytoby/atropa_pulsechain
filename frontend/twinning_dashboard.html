@@ -1117,13 +1117,33 @@
 
                 ctx.beginPath();
                 let first = true;
-                const step = 0.04;
+                const step = (targetEmotion === "JOY" || targetEmotion === "TRANQUILITY") ? 0.02 : 0.05;
                 const maxTheta = 6 * Math.PI;
 
                 for (let theta = 0; theta < maxTheta; theta += step) {
                     // Standard hypotrochoid coordinate projection mapping
                     let x = cx + ((R_hyp - r_hyp) * Math.cos(theta + rot) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta));
                     let y = cy + ((R_hyp - r_hyp) * Math.sin(theta + rot) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta));
+
+                    // Emotion visual projections
+                    if (targetEmotion === "JOY" || targetEmotion === "TRANQUILITY") {
+                        ctx.shadowBlur = 4 * scale;
+                        ctx.shadowColor = speaker.color;
+                    } else if (targetEmotion === "ANGER") {
+                        const spikiness = 12 * Math.abs((theta * 9.5) % 2 - 1);
+                        x += Math.cos(theta + rot) * spikiness;
+                        y += Math.sin(theta + rot) * spikiness;
+                    } else if (targetEmotion === "SORROW") {
+                        const droop = Math.sin(theta) * 14 * scale;
+                        y += Math.abs(droop);
+                    } else if (targetEmotion === "FEAR") {
+                        x += (Math.random() - 0.5) * 4.5;
+                        y += (Math.random() - 0.5) * 4.5;
+                    } else if (targetEmotion === "MELANCHOLY") {
+                        const melScale = 1.0 + Math.sin(theta * 2 + Date.now() / 600) * 0.1;
+                        x = cx + (x - cx) * melScale;
+                        y = cy + (y - cy) * melScale;
+                    }
 
                     // Inject turbulence / spatial noise jitter
                     if (turbulence > 0) {
@@ -1147,6 +1167,7 @@
                     }
                 }
                 ctx.stroke();
+                ctx.shadowBlur = 0;
             }
 
             mCtx.fillStyle = "#000";
