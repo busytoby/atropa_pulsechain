@@ -713,6 +713,54 @@
             ctx.lineTo(x1, y);
             ctx.stroke();
 
+            // Saturation feedback circuit connected between the LED/Diode quadratures
+            const satActive = Math.abs(signalVal) > 0.05;
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = satActive ? '#fbbf24' : 'rgba(255,255,255,0.1)';
+            if (satActive) {
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 6;
+            }
+
+            ctx.beginPath();
+            // Connect from positive branch intermediate node (between diode and LED at midX - 17)
+            ctx.moveTo(midX - 17, y - 25);
+            ctx.lineTo(midX - 17, y - 10);
+            ctx.lineTo(midX - 5, y - 10);
+            ctx.stroke();
+
+            // Draw saturation resistor (zigzag) between the nodes
+            ctx.beginPath();
+            ctx.moveTo(midX - 5, y - 10);
+            ctx.lineTo(midX - 3, y - 13);
+            ctx.lineTo(midX - 1, y - 7);
+            ctx.lineTo(midX + 1, y - 13);
+            ctx.lineTo(midX + 3, y - 7);
+            ctx.lineTo(midX + 5, y - 10);
+            ctx.stroke();
+
+            ctx.beginPath();
+            // Connect from negative branch intermediate node (between diode and LED at midX + 17)
+            ctx.moveTo(midX + 17, y + 25);
+            ctx.lineTo(midX + 17, y + 10);
+            ctx.lineTo(midX + 5, y + 10);
+            ctx.stroke();
+
+            // Draw a diagonal feedback link joining the two resistor ends
+            ctx.beginPath();
+            ctx.moveTo(midX + 5, y - 10);
+            ctx.lineTo(midX - 5, y + 10);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(midX - 5, y + 10);
+            ctx.lineTo(midX - 3, y + 7);
+            ctx.lineTo(midX - 1, y + 13);
+            ctx.lineTo(midX + 1, y + 7);
+            ctx.lineTo(midX + 3, y + 13);
+            ctx.lineTo(midX + 5, y + 10);
+            ctx.stroke();
+
             ctx.restore();
         }
 
