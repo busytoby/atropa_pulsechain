@@ -113,6 +113,15 @@
             border: 1px solid rgba(239, 68, 68, 0.08);
         }
 
+        #binaural-map {
+            width: 100%;
+            height: 160px;
+            background: #000000;
+            border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.08);
+            margin-top: 10px;
+        }
+
         /* Target selectors */
         .selector-grid {
             display: grid;
@@ -152,7 +161,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            max-height: 300px;
+            max-height: 260px;
             overflow-y: auto;
             border: 1px solid var(--glass-border);
             padding: 10px;
@@ -212,11 +221,12 @@
             display: flex;
             gap: 16px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .control-btn {
-            padding: 12px 24px;
-            font-size: 0.85rem;
+            padding: 12px 20px;
+            font-size: 0.8rem;
             font-weight: 800;
             text-transform: uppercase;
             border-radius: 6px;
@@ -242,6 +252,15 @@
 
         .btn-stream:hover {
             box-shadow: 0 0 12px #3b82f6;
+        }
+
+        .btn-twin {
+            background: #8b5cf6;
+            color: #fff;
+        }
+
+        .btn-twin:hover {
+            box-shadow: 0 0 12px #8b5cf6;
         }
 
         /* Status alerts */
@@ -319,9 +338,7 @@
             <div class="action-bar">
                 <button id="btn-sweep" class="control-btn btn-sweep">Start Auto-Sweep Training</button>
                 <button id="btn-stream" class="control-btn btn-stream">Stream Live Blocks</button>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">
-                    Sweeping digital <span style="color:var(--primary-glow); font-family:monospace;"><256bit</span> integer stream input
-                </div>
+                <button id="btn-twin" class="control-btn btn-twin">Auto-Twin Dialect</button>
             </div>
 
             <div class="dac-control-group">
@@ -353,6 +370,11 @@
                 <div class="status-alert alert-growl" id="consensus-status">
                     GROWLING ACTIVATED (33Hz EFFECT)
                 </div>
+            </div>
+
+            <div class="widget-card">
+                <h3>Binaural Panning Matrix</h3>
+                <canvas id="binaural-map"></canvas>
             </div>
 
             <div class="widget-card">
@@ -388,14 +410,15 @@
 
         // Initialize immediately with the 5 baseline bears by default
         let LAU_BEARS = [
-            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0},
-            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6},
-            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6},
-            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8},
-            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
+            {"id": 0, "name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0, "activeFreq": 220},
+            {"id": 1, "name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6, "activeFreq": 310},
+            {"id": 2, "name": "Witness B", "address": "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", "exp": 8877n, "color": "#3b82f6", "pan": 0.6, "activeFreq": 440},
+            {"id": 3, "name": "Juror 1", "address": "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", "exp": 4433n, "color": "#10b981", "pan": -0.8, "activeFreq": 180},
+            {"id": 4, "name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8, "activeFreq": 290}
         ];
 
         let BEAR_DATABASES = [];
+        let ACTIVE_TRANSLATION_OFFSETS = [];
 
         const EMOTIONS = {
             "JOY": 1009,
@@ -413,13 +436,16 @@
         let targetEmotion = "MELANCHOLY";
         let isSweeping = false;
         let isStreaming = false;
+        let isTwinning = false;
         let sweepInterval = null;
         let streamInterval = null;
+        let twinInterval = null;
         let audioCtx = null;
         let bufValue = 0.0;
 
         const btnSweep = document.getElementById("btn-sweep");
         const btnStream = document.getElementById("btn-stream");
+        const btnTwin = document.getElementById("btn-twin");
         const dacSlider = document.getElementById("dac-slider");
         const dacStreamVal = document.getElementById("dac-stream-val");
         const audioBtn = document.getElementById("audio-btn");
@@ -461,7 +487,8 @@
                             "address": item.address,
                             "exp": exp,
                             "color": `hsl(${hue}, 80%, 55%)`,
-                            "pan": panVal
+                            "pan": panVal,
+                            "activeFreq": 220
                         });
                         count++;
                     }
@@ -496,8 +523,9 @@
                 evaluateConsensus();
             };
 
-            // Build dynamic databases
+            // Build dynamic databases and reset translation offsets
             BEAR_DATABASES = [];
+            ACTIVE_TRANSLATION_OFFSETS = [];
             LAU_BEARS.forEach(b => {
                 const db = {};
                 Object.entries(EMOTIONS).forEach(([emo, val]) => {
@@ -507,6 +535,7 @@
                     db[emo] = R / r;
                 });
                 BEAR_DATABASES.push(db);
+                ACTIVE_TRANSLATION_OFFSETS.push(1.0); // Reset translation offsets to 1.0 (no scaling)
             });
 
             // Build Recognition rows
@@ -560,6 +589,7 @@
             
             const freqL = Number((Eta % 400n) + 150n);
             const freqR = Number((Kappa % 400n) + 150n);
+            v.activeFreq = freqL; // Store for 2D visual mapping
 
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
@@ -574,11 +604,16 @@
             const oscL = audioCtx.createOscillator();
             oscL.type = "sine";
             oscL.frequency.setValueAtTime(freqL, time);
+            
+            // Soft-body FET discharge cycle: modulate pitch slide envelope
+            const fetDischargeDuration = 0.35 - (bufValue * 0.1); 
+            oscL.frequency.exponentialRampToValueAtTime(freqL * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscL.connect(panner);
 
             const oscR = audioCtx.createOscillator();
             oscR.type = "sawtooth";
             oscR.frequency.setValueAtTime(freqR, time);
+            oscR.frequency.exponentialRampToValueAtTime(freqR * 0.8, time + Math.max(0.1, fetDischargeDuration));
             oscR.connect(panner);
 
             const speaker = LAU_BEARS[activeSpeakerId];
@@ -682,10 +717,14 @@
             LAU_BEARS.forEach(observer => {
                 const db = BEAR_DATABASES[observer.id];
                 
+                // Observers apply local P2P translation scaling offsets to align dialects
+                const localOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                const translatedRatio = activeRatio * localOffset;
+
                 let best_emo = "CONFUSION";
                 let min_diff = Infinity;
                 Object.entries(db).forEach(([emo, target_ratio]) => {
-                    const diff = Math.abs(target_ratio - activeRatio);
+                    const diff = Math.abs(target_ratio - translatedRatio);
                     if (diff < min_diff) {
                         min_diff = diff;
                         best_emo = emo;
@@ -710,8 +749,13 @@
                 consensusStatus.className = "status-alert alert-harmony";
                 consensusStatus.innerText = "CHAMBER IN AGREEMENT (HARMONY LOCKED)";
                 bufValue = Math.max(0.0, bufValue - 0.08);
-                if (isSweeping) {
+                
+                // Automatically POST to /api/save-dialects on consensus lock
+                saveTwinningOffsetsToDisk();
+
+                if (isSweeping || isTwinning) {
                     stopSweep();
+                    stopTwinning();
                     logConsole(`[SUCCESS] Consensus achieved on target ${targetEmotion} at voltage ${voltage}!`);
                 }
             } else {
@@ -725,6 +769,28 @@
 
             telemetryBuf.innerText = bufValue.toFixed(2);
             telemetryEigen.innerText = (1.0 / (1.0 + bufValue)).toFixed(4);
+        }
+
+        function saveTwinningOffsetsToDisk() {
+            const payload = {};
+            LAU_BEARS.forEach(b => {
+                payload[b.name] = ACTIVE_TRANSLATION_OFFSETS[b.id] || 1.0;
+            });
+            
+            fetch("/api/save-dialects", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    logConsole(`[EVM] Saved P2P dialect rules to disk (config/twinning_dialects.json).`);
+                }
+            })
+            .catch(err => {
+                console.error("Save dialects error:", err);
+            });
         }
 
         function logConsole(msg) {
@@ -755,6 +821,47 @@
             btnSweep.innerText = "Start Auto-Sweep Training";
             btnSweep.style.background = "var(--accent-emerald)";
             clearInterval(sweepInterval);
+        }
+
+        // Active P2P Twinning Loop: mutate local observer translation offsets
+        function startTwinning() {
+            initAudio();
+            isTwinning = true;
+            btnTwin.innerText = "Stop Auto-Twin";
+            btnTwin.style.background = "#ef4444";
+            logConsole(`[TWINNING] Auto-twinning active. Modulating observer translation offsets...`);
+
+            twinInterval = setInterval(() => {
+                const speaker = LAU_BEARS[activeSpeakerId];
+                const voltage = parseInt(dacSlider.value);
+                
+                const res = bigModExp(voltage, speaker.exp, MotzkinPrime);
+                const R_spk = Number(res % 50n) + 15.0;
+                const r_spk = Number(res % 25n) + 8.0;
+                const activeRatio = R_spk / r_spk;
+
+                LAU_BEARS.forEach(observer => {
+                    const db = BEAR_DATABASES[observer.id];
+                    const target_ratio = db[targetEmotion];
+                    
+                    const currentOffset = ACTIVE_TRANSLATION_OFFSETS[observer.id] || 1.0;
+                    const observedRatio = activeRatio * currentOffset;
+                    const error = target_ratio - observedRatio;
+
+                    if (Math.abs(error) > 0.02) {
+                        ACTIVE_TRANSLATION_OFFSETS[observer.id] = currentOffset + (error * 0.1);
+                    }
+                });
+
+                evaluateConsensus();
+            }, 200);
+        }
+
+        function stopTwinning() {
+            isTwinning = false;
+            btnTwin.innerText = "Auto-Twin Dialect";
+            btnTwin.style.background = "#8b5cf6";
+            clearInterval(twinInterval);
         }
 
         async function fetchLiveBlocks() {
@@ -845,6 +952,7 @@
                 stopSweep();
             } else {
                 if (isStreaming) stopStreaming();
+                if (isTwinning) stopTwinning();
                 startSweep();
             }
         };
@@ -854,7 +962,18 @@
                 stopStreaming();
             } else {
                 if (isSweeping) stopSweep();
+                if (isTwinning) stopTwinning();
                 startStreaming();
+            }
+        };
+
+        btnTwin.onclick = () => {
+            if (isTwinning) {
+                stopTwinning();
+            } else {
+                if (isSweeping) stopSweep();
+                if (isStreaming) stopStreaming();
+                startTwinning();
             }
         };
 
@@ -862,13 +981,21 @@
             initAudio();
         };
 
+        // Oscilloscope Spindle Renderer
         const canvas = document.getElementById("oscilloscope");
         const ctx = canvas.getContext("2d");
         canvas.width = canvas.offsetWidth;
         canvas.height = 220;
 
+        // Binaural Map 2D spatial panner graph renderer
+        const mapCanvas = document.getElementById("binaural-map");
+        const mCtx = mapCanvas.getContext("2d");
+        mapCanvas.width = mapCanvas.offsetWidth;
+        mapCanvas.height = 160;
+
         let rot = 0;
         function draw() {
+            // 1. Oscilloscope Draw
             ctx.fillStyle = "#030202";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -904,6 +1031,39 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
             }
+
+            // 2. Binaural Map Draw
+            mCtx.fillStyle = "#000";
+            mCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
+            
+            // Draw axis lines
+            mCtx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            mCtx.beginPath();
+            mCtx.moveTo(mapCanvas.width / 2, 0);
+            mCtx.lineTo(mapCanvas.width / 2, mapCanvas.height);
+            mCtx.moveTo(0, mapCanvas.height / 2);
+            mCtx.lineTo(mapCanvas.width, mapCanvas.height / 2);
+            mCtx.stroke();
+
+            LAU_BEARS.forEach(b => {
+                const x = ((b.pan + 1.0) / 2.0) * mapCanvas.width;
+                const normFreq = Math.max(0.0, Math.min(1.0, (b.activeFreq - 100) / 500));
+                const y = mapCanvas.height - (normFreq * mapCanvas.height);
+
+                mCtx.fillStyle = b.color;
+                mCtx.beginPath();
+                const pulseRadius = 6 + Math.sin(Date.now() / 150) * 2;
+                mCtx.arc(x, y, pulseRadius, 0, 2 * Math.PI);
+                mCtx.fill();
+
+                if (b.id === activeSpeakerId) {
+                    mCtx.strokeStyle = "#fff";
+                    mCtx.lineWidth = 1;
+                    mCtx.beginPath();
+                    mCtx.arc(x, y, pulseRadius + 6, 0, 2 * Math.PI);
+                    mCtx.stroke();
+                }
+            });
 
             rot += 0.02;
             requestAnimationFrame(draw);

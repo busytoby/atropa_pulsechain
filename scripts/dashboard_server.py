@@ -1544,7 +1544,28 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "File not found")
 
     def do_POST(self):
-        if self.path == '/api/nonukes/set-clipboard':
+        if self.path == '/api/save-dialects':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(post_data)
+                config_dir = os.path.abspath('config')
+                os.makedirs(config_dir, exist_ok=True)
+                dest_file = os.path.join(config_dir, 'twinning_dialects.json')
+                with open(dest_file, 'w') as f:
+                    json.dump(data, f, indent=2)
+                success = True
+                error_msg = ""
+            except Exception as e:
+                success = False
+                error_msg = str(e)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": success, "error": error_msg}).encode('utf-8'))
+            return
+        elif self.path == '/api/nonukes/set-clipboard':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length).decode('utf-8')
             try:
