@@ -349,6 +349,19 @@
 
             <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
 
+            <h3>Register Lock & ModExp Circuit</h3>
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="acc-lock-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="acc-lock-checkbox" style="margin-bottom: 0; cursor: pointer; color: #fbbf24;">LOCK ACCUMULATOR VALUES</label>
+            </div>
+            
+            <div class="stat-card" style="background: rgba(0,0,0,0.25); border: 1px dashed rgba(251, 191, 36, 0.3); padding: 12px; margin-top: 10px;">
+                <label style="color: #fbbf24; font-size: 0.75rem;">MODEXP: Anpn^Apnp mod Prime</label>
+                <div class="stat-value" id="modexp-val" style="font-size: 1.1rem; font-family: monospace; color: #fbbf24;">0x0</div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
+
             <h3>Transistor Dichotomy Probe</h3>
             <div class="control-group">
                 <label for="bias-slider">Manual Base Bias (V)</label>
@@ -452,6 +465,8 @@
         const accNPNVal = document.getElementById("acc-npn-val");
         const accPNPBar = document.getElementById("acc-pnp-bar");
         const accPNPVal = document.getElementById("acc-pnp-val");
+        const accLockCheckbox = document.getElementById("acc-lock-checkbox");
+        const modexpVal = document.getElementById("modexp-val");
 
         // Global accumulators
         let accNPNValue = 0.0;
@@ -1068,6 +1083,20 @@
             scopeCtx.restore();
         }
 
+        // 64-bit integer modular exponentiation in JavaScript
+        function bigModExp(base, exp, mod) {
+            let res = 1n;
+            base = BigInt(base) % BigInt(mod);
+            exp = BigInt(exp);
+            const m = BigInt(mod);
+            while (exp > 0n) {
+                if (exp % 2n === 1n) res = (res * base) % m;
+                base = (base * base) % m;
+                exp = exp / 2n;
+            }
+            return res;
+        }
+
         function updateRegisters(f0, signalVal) {
             regBase.innerText = emitters[0].phase.toFixed(2) + " rad";
             regChannel.innerText = f0.toFixed(2) + " Hz";
@@ -1141,13 +1170,23 @@
                 const rateNPN = idleRate + condNPN * 3.5; 
                 const ratePNP = idleRate + condPNP * 3.5;
 
-                accNPNValue = (accNPNValue + rateNPN) % 100.0;
-                accPNPValue = (accPNPValue + ratePNP) % 100.0;
+                // Apply register lock circuit
+                if (!accLockCheckbox.checked) {
+                    accNPNValue = (accNPNValue + rateNPN) % 100.0;
+                    accPNPValue = (accPNPValue + ratePNP) % 100.0;
+                }
 
                 accNPNBar.style.width = accNPNValue.toFixed(1) + "%";
                 accNPNVal.innerText = accNPNValue.toFixed(2);
                 accPNPBar.style.width = accPNPValue.toFixed(1) + "%";
                 accPNPVal.innerText = accPNPValue.toFixed(2);
+
+                // MODEXP calculation using locked accumulator coordinates
+                const prime = 953467954114363n;
+                const baseVal = BigInt(Math.floor(accNPNValue));
+                const expVal = BigInt(Math.floor(accPNPValue));
+                const result = bigModExp(baseVal, expVal, prime);
+                modexpVal.innerText = "0x" + result.toString(16).toUpperCase();
 
                 requestAnimationFrame(animationLoop);
             } catch (err) {
