@@ -904,6 +904,11 @@
                 if (twinPhase === 1) {
                     const allowedChords = EMOTIONS_RANGE[targetEmotion];
                     const voltage = allowedChords[sweepIndex];
+                    
+                    // ALWAYS update slider and triggers before classification
+                    speakerSlider.value = voltage;
+                    updateBearDacVal(activeSpeakerId, voltage);
+
                     const currentClassification = classifyVoltageForBear(activeSpeakerId, voltage);
                     
                     if (currentClassification === targetEmotion) {
@@ -912,8 +917,6 @@
                     } else {
                         // Increment through indices of known chords only
                         sweepIndex = (sweepIndex + 1) % allowedChords.length;
-                        speakerSlider.value = voltage;
-                        updateBearDacVal(activeSpeakerId, voltage);
                     }
                 } else if (twinPhase === 2) {
                     const speakerVoltage = parseInt(speakerSlider.value);
