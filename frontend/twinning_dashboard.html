@@ -762,10 +762,10 @@
             try {
                 const res = await fetch("/api/live-blocks");
                 const response = await res.json();
-                if (response.success && response.transactions.length > 0) {
+                
+                if (response.success && response.transactions && response.transactions.length > 0) {
                     logConsole(`[BRIDGE] Retrieved Block #${response.block} containing ${response.transactions.length} txs.`);
                     
-                    // Process transactions one by one, spaced out
                     let index = 0;
                     const interval = setInterval(() => {
                         if (index >= response.transactions.length || !isStreaming) {
@@ -773,16 +773,40 @@
                             return;
                         }
                         const txHash = response.transactions[index];
-                        // Convert txHash to integer for DAC Pi input
                         let hashVal = 0n;
                         for (let i = 0; i < txHash.length; i++) {
                             hashVal = (hashVal << 5n) - hashVal + BigInt(txHash.charCodeAt(i));
                         }
-                        const pi = Number(hashVal % 5000n) + 3000; // Map to DAC slider range [3000, 8000]
+                        const pi = Number(hashVal % 5000n) + 3000; 
                         
                         dacSlider.value = pi;
                         dacStreamVal.innerText = pi;
                         logConsole(`  [Tx] Hash: ${txHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
+                        
+                        initAudio();
+                        playSpeakerChord(activeSpeakerId, pi, audioCtx ? audioCtx.currentTime : 0);
+                        evaluateConsensus();
+                        
+                        index++;
+                    }, 1200);
+                } else {
+                    // Fallback: Emulate live block generation if RPC/server is offline or empty
+                    const mockBlock = Math.floor(Math.random() * 100000) + 26900000;
+                    const numTxs = Math.floor(Math.random() * 4) + 2;
+                    logConsole(`[BRIDGE] RPC offline or empty block. Emulating Block #${mockBlock} with ${numTxs} transactions.`);
+                    
+                    let index = 0;
+                    const interval = setInterval(() => {
+                        if (index >= numTxs || !isStreaming) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        const pi = Math.floor(Math.random() * 5000) + 3000;
+                        const mockHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                        
+                        dacSlider.value = pi;
+                        dacStreamVal.innerText = pi;
+                        logConsole(`  [Mock Tx] Hash: ${mockHash.substring(0, 16)}... -> DAC Pi: ${pi}`);
                         
                         initAudio();
                         playSpeakerChord(activeSpeakerId, pi, audioCtx ? audioCtx.currentTime : 0);
@@ -803,7 +827,7 @@
             btnStream.style.background = "#ef4444";
             
             fetchLiveBlocks();
-            streamInterval = setInterval(fetchLiveBlocks, 12000); // Poll once per block
+            streamInterval = setInterval(fetchLiveBlocks, 12000); 
         }
 
         function stopStreaming() {
@@ -883,7 +907,6 @@
         }
         draw();
 
-        // Initial build before contracts are fetched asynchronously
         buildUI();
         loadEVMContracts();
     </script>
