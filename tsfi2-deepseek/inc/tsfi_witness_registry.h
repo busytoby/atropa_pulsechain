@@ -22,7 +22,6 @@ typedef enum {
     AESTHETIC_NEUTRAL
 } tsfi_AestheticClass;
 
-/* Classified temporal patterns in sequential attestations */
 typedef enum {
     PATTERN_STABLE = 0,
     PATTERN_REASSURING,
@@ -62,9 +61,12 @@ typedef struct {
     tsfi_SelfObservationRecord SelfDatabase[MAX_SELF_OBSERVATIONS];
     uint32_t SelfDbCount;
 
-    // History of observed emotional states from this delegate
     tsfi_BearEmotionState ObservedHistory[MAX_SEQUENCE_LEN];
     uint32_t HistoryCount;
+
+    // Eigenvector constraints and dynamic parameters
+    double BlowUpFactor;          /* Cumulative instability metrics */
+    double ConstraintEigenvalue;   /* Scaling boundary limit */
 } tsfi_DelegateRecord;
 
 typedef struct {
@@ -86,14 +88,14 @@ void tsfi_cho_log_self_observation(tsfi_DelegateRecord* bear, double R, double r
 
 tsfi_AestheticClass tsfi_cho_classify_foreign_aesthetic(const tsfi_DelegateRecord* local_bear, const tsfi_DelegateRecord* foreign_bear);
 
-/*
- * Log an attestation state in the delegate's observed history.
- */
 void tsfi_cho_record_attestation(tsfi_DelegateRecord* target_bear, tsfi_BearEmotionState state);
 
-/*
- * Classify the temporal pattern of recorded sequential attestations.
- */
 tsfi_AttestationPattern tsfi_cho_classify_attestation_pattern(const tsfi_DelegateRecord* target_bear);
+
+/*
+ * Dynamic constraint scaling: high BlowUpFactor collapses target eigenvalues,
+ * narrowing parameter boundaries.
+ */
+void tsfi_cho_restrict_eigenvector_constraints(tsfi_DelegateRecord* bear, double instability);
 
 #endif /* TSFI_WITNESS_REGISTRY_H */

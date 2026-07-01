@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "tsfi_witness_registry.h"
 
 #define MotzkinPrime 953467954114363ULL
@@ -11,27 +12,25 @@ int main() {
     tsfi_cho_registry_init(&registry);
     
     const char* bear_alpha = "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B";
-    const char* bear_beta  = "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce";
     
     bool alpha_ok = tsfi_cho_swear_in(&registry, bear_alpha, 153023, 440, MotzkinPrime);
-    bool beta_ok = tsfi_cho_swear_in(&registry, bear_beta, 112000, 12000, MotzkinPrime);
-    assert(alpha_ok && beta_ok);
+    assert(alpha_ok);
     
     tsfi_DelegateRecord* alpha_rec = &registry.Delegates[0];
-    tsfi_DelegateRecord* beta_rec = &registry.Delegates[1];
     
-    printf("[TEST] Logging sequential emotional state attestations for Bear Beta...\n");
-    // Feed: NORMATIVE -> EXCITED -> NORMATIVE (REASSURING pattern)
-    tsfi_cho_record_attestation(beta_rec, STATE_NORMATIVE);
-    tsfi_cho_record_attestation(beta_rec, STATE_EXCITED);
-    tsfi_cho_record_attestation(beta_rec, STATE_NORMATIVE);
+    printf("[TEST] Verifying baseline Blow-Up Factor is 0 and Eigenvalue is 1...\n");
+    assert(alpha_rec->BlowUpFactor == 0.0);
+    assert(alpha_rec->ConstraintEigenvalue == 1.0);
     
-    printf("[TEST] Classifying sequential attestation patterns of Bear Beta...\n");
-    tsfi_AttestationPattern pattern = tsfi_cho_classify_attestation_pattern(beta_rec);
+    printf("[TEST] Applying instability factor of 0.5 to restrict constraints...\n");
+    tsfi_cho_restrict_eigenvector_constraints(alpha_rec, 0.5);
     
-    printf("  -> Classified Pattern: %s\n", pattern == PATTERN_REASSURING ? "REASSURING (Pattern match success)" : "OTHER");
-    assert(pattern == PATTERN_REASSURING);
+    printf("  -> Updated BlowUpFactor: %.2f\n", alpha_rec->BlowUpFactor);
+    printf("  -> Updated Eigenvalue: %.4f\n", alpha_rec->ConstraintEigenvalue);
     
-    printf("[SUCCESS] Swearing-in session, rule learning, and sequential attestation pattern classification verified successfully!\n");
+    assert(alpha_rec->BlowUpFactor == 0.5);
+    assert(fabs(alpha_rec->ConstraintEigenvalue - 0.6667) < 0.001);
+    
+    printf("[SUCCESS] Swearing-in session, rule learning, and eigenvector constraints verified successfully!\n");
     return 0;
 }

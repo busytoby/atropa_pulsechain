@@ -50,6 +50,8 @@ bool tsfi_cho_swear_in(tsfi_ChoRegistry* registry, const char* target_address, u
     delegate->ClassifiedState = STATE_NORMATIVE;
     delegate->SelfDbCount = 0;
     delegate->HistoryCount = 0;
+    delegate->BlowUpFactor = 0.0;
+    delegate->ConstraintEigenvalue = 1.0;
 
     registry->Count++;
     return true;
@@ -163,7 +165,6 @@ void tsfi_cho_record_attestation(tsfi_DelegateRecord* target_bear, tsfi_BearEmot
         target_bear->ObservedHistory[target_bear->HistoryCount] = state;
         target_bear->HistoryCount++;
     } else {
-        // Shift history to insert new state at end
         for (int i = 1; i < MAX_SEQUENCE_LEN; i++) {
             target_bear->ObservedHistory[i - 1] = target_bear->ObservedHistory[i];
         }
@@ -179,20 +180,26 @@ tsfi_AttestationPattern tsfi_cho_classify_attestation_pattern(const tsfi_Delegat
     tsfi_BearEmotionState s2 = target_bear->ObservedHistory[idx - 2];
     tsfi_BearEmotionState s3 = target_bear->ObservedHistory[idx - 1];
 
-    // Check for THREATENING escalation (STRESSED -> STRESSED -> EXCITED)
     if (s1 == STATE_STRESSED && s2 == STATE_STRESSED && s3 == STATE_EXCITED) {
         return PATTERN_THREATENING;
     }
 
-    // Check for REASSURING curve (NORMATIVE -> EXCITED -> NORMATIVE)
     if (s1 == STATE_NORMATIVE && s2 == STATE_EXCITED && s3 == STATE_NORMATIVE) {
         return PATTERN_REASSURING;
     }
 
-    // Check for STABLE line
     if (s1 == STATE_NORMATIVE && s2 == STATE_NORMATIVE && s3 == STATE_NORMATIVE) {
         return PATTERN_STABLE;
     }
 
     return PATTERN_CHAOTIC;
+}
+
+void tsfi_cho_restrict_eigenvector_constraints(tsfi_DelegateRecord* bear, double instability) {
+    if (!bear) return;
+
+    bear->BlowUpFactor += instability;
+    
+    // Constraint Eigenvalue contracts toward zero as BlowUpFactor increases
+    bear->ConstraintEigenvalue = 1.0 / (1.0 + bear->BlowUpFactor);
 }
