@@ -64,9 +64,12 @@ typedef struct {
     tsfi_BearEmotionState ObservedHistory[MAX_SEQUENCE_LEN];
     uint32_t HistoryCount;
 
-    // Eigenvector constraints and dynamic parameters
-    double BlowUpFactor;          /* Cumulative instability metrics */
-    double ConstraintEigenvalue;   /* Scaling boundary limit */
+    double BlowUpFactor;
+    double ConstraintEigenvalue;
+
+    // Self-opinions and peer-opinions mapping
+    double SelfOpinion;
+    double PeerOpinions[MAX_DELEGATES]; /* Index corresponds to registry slot */
 } tsfi_DelegateRecord;
 
 typedef struct {
@@ -92,10 +95,11 @@ void tsfi_cho_record_attestation(tsfi_DelegateRecord* target_bear, tsfi_BearEmot
 
 tsfi_AttestationPattern tsfi_cho_classify_attestation_pattern(const tsfi_DelegateRecord* target_bear);
 
-/*
- * Dynamic constraint scaling: high BlowUpFactor collapses target eigenvalues,
- * narrowing parameter boundaries.
- */
 void tsfi_cho_restrict_eigenvector_constraints(tsfi_DelegateRecord* bear, double instability);
+
+/*
+ * Update the self or peer opinion based on interaction outcome.
+ */
+void tsfi_cho_update_opinion(tsfi_DelegateRecord* local_bear, int peer_idx, bool is_harmonious);
 
 #endif /* TSFI_WITNESS_REGISTRY_H */

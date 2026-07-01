@@ -52,6 +52,12 @@ bool tsfi_cho_swear_in(tsfi_ChoRegistry* registry, const char* target_address, u
     delegate->HistoryCount = 0;
     delegate->BlowUpFactor = 0.0;
     delegate->ConstraintEigenvalue = 1.0;
+    
+    // Default opinions start neutral at 0.5
+    delegate->SelfOpinion = 0.5;
+    for (int i = 0; i < MAX_DELEGATES; i++) {
+        delegate->PeerOpinions[i] = 0.5;
+    }
 
     registry->Count++;
     return true;
@@ -199,7 +205,18 @@ void tsfi_cho_restrict_eigenvector_constraints(tsfi_DelegateRecord* bear, double
     if (!bear) return;
 
     bear->BlowUpFactor += instability;
-    
-    // Constraint Eigenvalue contracts toward zero as BlowUpFactor increases
     bear->ConstraintEigenvalue = 1.0 / (1.0 + bear->BlowUpFactor);
+}
+
+void tsfi_cho_update_opinion(tsfi_DelegateRecord* local_bear, int peer_idx, bool is_harmonious) {
+    if (!local_bear) return;
+
+    double target_val = is_harmonious ? 1.0 : 0.0;
+    double alpha = 0.15; // Learning/Drift rate
+
+    if (peer_idx == -1) {
+        local_bear->SelfOpinion += alpha * (target_val - local_bear->SelfOpinion);
+    } else if (peer_idx >= 0 && peer_idx < MAX_DELEGATES) {
+        local_bear->PeerOpinions[peer_idx] += alpha * (target_val - local_bear->PeerOpinions[peer_idx]);
+    }
 }

@@ -18,19 +18,20 @@ int main() {
     
     tsfi_DelegateRecord* alpha_rec = &registry.Delegates[0];
     
-    printf("[TEST] Verifying baseline Blow-Up Factor is 0 and Eigenvalue is 1...\n");
-    assert(alpha_rec->BlowUpFactor == 0.0);
-    assert(alpha_rec->ConstraintEigenvalue == 1.0);
+    printf("[TEST] Verifying baseline opinions start at 0.5...\n");
+    assert(alpha_rec->SelfOpinion == 0.5);
+    assert(alpha_rec->PeerOpinions[1] == 0.5);
     
-    printf("[TEST] Applying instability factor of 0.5 to restrict constraints...\n");
-    tsfi_cho_restrict_eigenvector_constraints(alpha_rec, 0.5);
+    printf("[TEST] Simulating dynamic self-opinion drift on disharmonious feedback...\n");
+    tsfi_cho_update_opinion(alpha_rec, -1, false);
+    printf("  -> Updated SelfOpinion: %.4f\n", alpha_rec->SelfOpinion);
+    assert(fabs(alpha_rec->SelfOpinion - 0.425) < 0.001);
     
-    printf("  -> Updated BlowUpFactor: %.2f\n", alpha_rec->BlowUpFactor);
-    printf("  -> Updated Eigenvalue: %.4f\n", alpha_rec->ConstraintEigenvalue);
+    printf("[TEST] Simulating dynamic peer-opinion drift on harmonious feedback...\n");
+    tsfi_cho_update_opinion(alpha_rec, 1, true);
+    printf("  -> Updated PeerOpinions[1]: %.4f\n", alpha_rec->PeerOpinions[1]);
+    assert(fabs(alpha_rec->PeerOpinions[1] - 0.575) < 0.001);
     
-    assert(alpha_rec->BlowUpFactor == 0.5);
-    assert(fabs(alpha_rec->ConstraintEigenvalue - 0.6667) < 0.001);
-    
-    printf("[SUCCESS] Swearing-in session, rule learning, and eigenvector constraints verified successfully!\n");
+    printf("[SUCCESS] Swearing-in session, rule learning, and opinion drift verified successfully!\n");
     return 0;
 }
