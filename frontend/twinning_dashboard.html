@@ -1133,33 +1133,63 @@
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            ctx.strokeStyle = "rgba(239, 68, 68, 0.08)";
+            // Background reference grid
+            ctx.strokeStyle = "rgba(239, 68, 68, 0.04)";
             ctx.beginPath();
             ctx.arc(cx, cy, 80 * scale, 0, 2 * Math.PI);
             ctx.stroke();
 
             if (LAU_BEARS.length > 0) {
                 const speaker = LAU_BEARS[activeSpeakerId];
+                
+                // Read physical speaker slider directly for hypotrochoid geometry mapping
+                const speakerSlider = document.querySelector(`.bear-dac-slider[data-id="${speaker.id}"]`);
+                const speakerPi = speakerSlider ? parseInt(speakerSlider.value) : 4423;
+
+                // Derive hypotrochoid geometry limits dynamically using modular arithmetic
+                const res = bigModExp(speakerPi, speaker.exp, MotzkinPrime);
+                const R_hyp = Number(res % 60n) + 35.0;
+                const r_hyp = Number(res % 30n) + 12.0;
+                const d_hyp = Number(res % 25n) + 6.0;
+
                 ctx.strokeStyle = speaker.color;
-                ctx.shadowBlur = 8 * scale;
-                ctx.shadowColor = speaker.color;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.5;
+
+                // Visual Turbulence modifier proportional to alignment discordance (bufValue)
+                const turbulence = bufValue * 12.0;
 
                 ctx.beginPath();
-                const R = 42 * scale, r = 21 * scale, d = 12;
                 let first = true;
-                for (let theta = 0; theta < 4 * Math.PI; theta += 0.08) {
-                    const x = cx + ((R - r) * Math.cos(theta + rot) + d * Math.cos(((R - r)/r)*theta));
-                    const y = cy + ((R - r) * Math.sin(theta + rot) - d * Math.sin(((R - r)/r)*theta));
+                const step = 0.04;
+                const maxTheta = 6 * Math.PI;
+
+                for (let theta = 0; theta < maxTheta; theta += step) {
+                    // Standard hypotrochoid coordinate projection mapping
+                    let x = cx + ((R_hyp - r_hyp) * Math.cos(theta + rot) + d_hyp * Math.cos(((R_hyp - r_hyp) / r_hyp) * theta));
+                    let y = cy + ((R_hyp - r_hyp) * Math.sin(theta + rot) - d_hyp * Math.sin(((R_hyp - r_hyp) / r_hyp) * theta));
+
+                    // Inject turbulence / spatial noise jitter
+                    if (turbulence > 0) {
+                        x += (Math.sin(theta * 10 + Date.now() / 80) * Math.random() * turbulence);
+                        y += (Math.cos(theta * 10 + Date.now() / 80) * Math.random() * turbulence);
+                    }
+
                     if (first) {
                         ctx.moveTo(x, y);
                         first = false;
                     } else {
                         ctx.lineTo(x, y);
                     }
+
+                    // Render detailed trajectory points / vertex particles along the path
+                    if (theta % 0.48 < step) {
+                        ctx.fillStyle = speaker.color;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 2.5 + Math.sin(Date.now() / 100) * 0.5, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
                 }
                 ctx.stroke();
-                ctx.shadowBlur = 0;
             }
 
             mCtx.fillStyle = "#000";
@@ -1193,7 +1223,7 @@
                 }
             });
 
-            rot += 0.02;
+            rot += 0.025;
             requestAnimationFrame(draw);
         }
         draw();
