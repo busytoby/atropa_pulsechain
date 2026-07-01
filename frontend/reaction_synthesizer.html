@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binaural React Sequencer - Teddy Bear Court of Law</title>
+    <title>Binaural React Sequencer - Chaotic State Space</title>
     <style>
         :root {
             --bg-color: #050303;
@@ -104,7 +104,7 @@
         .sequencer-grid {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
             background: rgba(0,0,0,0.4);
             padding: 15px;
             border-radius: 8px;
@@ -128,11 +128,19 @@
         .seq-steps {
             display: grid;
             grid-template-columns: repeat(16, 1fr);
-            gap: 4px;
+            gap: 6px;
             flex-grow: 1;
         }
 
+        .seq-step-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
         .seq-step {
+            width: 100%;
             height: 28px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -150,6 +158,18 @@
         .seq-step.playhead {
             border-color: #ffffff;
             box-shadow: 0 0 8px #ffffff;
+        }
+
+        .step-input {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--primary-glow);
+            font-family: monospace;
+            font-size: 0.65rem;
+            text-align: center;
+            border-radius: 2px;
+            padding: 2px 0;
         }
 
         /* Audio Controls */
@@ -219,7 +239,7 @@
 <body>
 
     <header>
-        <h1>Binaural React Sequencer</h1>
+        <h1>Chaotic Binaural React Sequencer</h1>
         <div id="audio-btn" class="audio-status-banner">TAP TO ACTIVATE AUDIOPATHWAY</div>
     </header>
 
@@ -291,7 +311,6 @@
     <script>
         const MotzkinPrime = 953467954114363n;
 
-        // 5 Voice settings
         const VOICES = [
             {"name": "Judge Bear", "address": "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", "exp": 440n, "color": "#ef4444", "pan": 0.0},
             {"name": "Witness A", "address": "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", "exp": 12000n, "color": "#d97706", "pan": -0.6},
@@ -300,7 +319,6 @@
             {"name": "Juror 2", "address": "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e", "exp": 5522n, "color": "#8b5cf6", "pan": 0.8}
         ];
 
-        // Web Audio Context
         let audioCtx = null;
         let playhead = 0;
         let isPlaying = false;
@@ -313,19 +331,33 @@
         const activeVoiceName = document.getElementById("active-voice-name");
         const wavePsi = document.getElementById("wave-psi");
 
-        // Build sequencer steps dynamically
+        // Build sequencer steps dynamically with raw integer input support
         document.querySelectorAll(".seq-row").forEach(row => {
             const stepsDiv = row.querySelector(".seq-steps");
             const voiceIdx = parseInt(row.getAttribute("data-voice"));
             for (let i = 0; i < 16; i++) {
+                const container = document.createElement("div");
+                container.className = "seq-step-container";
+
                 const step = document.createElement("div");
                 step.className = "seq-step";
-                // Preset some initial notes for a rhythmic court-of-law structure
+                
+                // Initialize default step states
                 if ((voiceIdx === 0 && i % 4 === 0) || (voiceIdx === 1 && i % 4 === 1) || (voiceIdx === 2 && i % 4 === 2)) {
                     step.classList.add("active");
                 }
                 step.onclick = () => step.classList.toggle("active");
-                stepsDiv.appendChild(step);
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.className = "step-input";
+                // Seed steps with chaotic prime / Fibonacci numbers to demonstrate non-linear synthesis
+                const seedVal = (i + 1) * 31 + voiceIdx * 97;
+                input.value = seedVal;
+
+                container.appendChild(step);
+                container.appendChild(input);
+                stepsDiv.appendChild(container);
             }
         });
 
@@ -358,19 +390,18 @@
             audioBtn.style.color = "#10b981";
         }
 
-        function playStepSound(voiceIdx, time) {
+        function playStepSound(voiceIdx, inputVal, time) {
             if (!audioCtx) return;
             const v = VOICES[voiceIdx];
             
-            // Derive frequencies using BigInt Yul equations
-            const Pi = BigInt(Math.floor(220 + voiceIdx * 80)); // base pitch
+            // Resolve custom input value directly through modular exponentiation equations
+            const Pi = BigInt(inputVal);
             const Eta = bigModExp(Pi, v.exp, MotzkinPrime);
             const Kappa = bigModExp(Pi, MotzkinPrime, v.exp);
             
             const freqL = Number((Eta % 400n) + 150n);
             const freqR = Number((Kappa % 400n) + 150n);
 
-            // Construct synthesis graph
             const mainGain = audioCtx.createGain();
             mainGain.gain.setValueAtTime(0.0, time);
             mainGain.gain.linearRampToValueAtTime(0.2, time + 0.02);
@@ -387,7 +418,7 @@
             oscL.connect(panner);
 
             const oscR = audioCtx.createOscillator();
-            oscR.type = "sawtooth"; // Rich harmonic substrate
+            oscR.type = "sawtooth";
             oscR.frequency.setValueAtTime(freqR, time);
             oscR.connect(panner);
 
@@ -396,7 +427,6 @@
             oscL.stop(time + 0.4);
             oscR.stop(time + 0.4);
 
-            // Telemetry update
             activeVoiceName.innerText = v.name;
             activeVoiceName.style.color = v.color;
             wavePsi.innerText = (Number(Eta % 1000n) / 1000.0).toFixed(4);
@@ -407,22 +437,25 @@
             btnPlay.innerText = "Stop";
             btnPlay.style.background = "#ef4444";
 
-            const stepDuration = 60.0 / parseInt(tempoSlider.value) / 4.0; // 16th notes
+            const stepDuration = 60.0 / parseInt(tempoSlider.value) / 4.0;
             let nextStepTime = audioCtx.currentTime;
 
             seqInterval = setInterval(() => {
                 if (audioCtx.currentTime >= nextStepTime - 0.05) {
-                    // Update visual playhead
                     document.querySelectorAll(".seq-row").forEach((row, voiceIdx) => {
-                        const steps = row.querySelectorAll(".seq-step");
-                        steps.forEach((s, idx) => {
+                        const containers = row.querySelectorAll(".seq-step-container");
+                        containers.forEach((c, idx) => {
+                            const step = c.querySelector(".seq-step");
+                            const input = c.querySelector(".step-input");
+                            
                             if (idx === playhead) {
-                                s.classList.add("playhead");
-                                if (s.classList.contains("active")) {
-                                    playStepSound(voiceIdx, nextStepTime);
+                                step.classList.add("playhead");
+                                if (step.classList.contains("active")) {
+                                    const val = parseInt(input.value) || 440;
+                                    playStepSound(voiceIdx, val, nextStepTime);
                                 }
                             } else {
-                                s.classList.remove("playhead");
+                                step.classList.remove("playhead");
                             }
                         });
                     });
@@ -466,7 +499,6 @@
             ctx.fillStyle = "#050303";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw spinning clockwork gears
             ctx.strokeStyle = "rgba(239, 68, 68, 0.08)";
             ctx.lineWidth = 1;
             const cx = canvas.width / 2;
@@ -479,7 +511,6 @@
                 ctx.stroke();
             }
 
-            // Draw active rosettes
             ctx.strokeStyle = "var(--primary-glow)";
             ctx.lineWidth = 2;
             ctx.shadowBlur = 8;
