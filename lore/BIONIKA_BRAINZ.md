@@ -17,3 +17,9 @@ Every transaction activity is bijectively mapped to a local parameter parameter 
 * **VM Register Context**: The control register managing the feedback loop threshold parameters within the ZMM VM memory controller.
 * **Mathematical Function**: The bijective mapping function $f: S_{\text{neural}} \leftrightarrow R_{\text{ACAB}}$ aligning model latent parameters to active Merkle root hashes.
 * **Visual / Geometric Manifestation**: Modulates the breathing cycle frequency ($f_{\text{breath}}$) and eye glow illumination intensity of the Vulkan-rendered stuffed teddy bear based on the derived activity root bytes.
+
+## 3. The Coaxial Cable Analogy
+Ultimately, the Bionika BrainZ acts as a high-fidelity coaxial cable:
+* **The Outer Shield:** The self-balancing 2-3 Merkle coordinate activity tree insulates cognitive state transitions from external block execution noise.
+* **The Core Conductor:** The GGUF metadata channel acts as the central conductor, routing high-density parameter signals directly to the local registers without leakage.
+* **Bijective Frequency Matching:** Maps the multi-channel frequency spectrum of neural thoughts directly to physical ledger actions.
