@@ -108,6 +108,7 @@ __pycache__/
 
 # Ignore build artifacts and generated run files
 libtsfi2.so
+/tests/bench_bionika_brainz
 /tests/test_zmm_svm
 /tests/test_zmm_async_pipeline
 /tests/test_zmm_async_network
