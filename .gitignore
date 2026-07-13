@@ -115,6 +115,7 @@ libtsfi2.so
 /tests/test_auncient_boot_transform_c
 /tests/test_auncient_diagnostics_c
 /tests/test_auncient_vmlinux_boot_c
+/tests/test_auncient_vmlinux_dir_listing
 /tests/test_ouroboros_benchmark_c
 /scripts/alsa_player
 /temp_frames/
