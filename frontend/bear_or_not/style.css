@@ -287,14 +287,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Jitter keyframes representing low-level hardware twitch register activity */
 @keyframes twitch-jitter {
     0% { transform: scale(var(--bear-scale, 1)) translate(0, 0) rotate(0deg); }
-    10% { transform: scale(var(--bear-scale, 1)) translate(-1px, -1px) rotate(-0.5deg); }
-    20% { transform: scale(var(--bear-scale, 1)) translate(1px, 0px) rotate(0.5deg); }
-    30% { transform: scale(var(--bear-scale, 1)) translate(-1px, 1px) rotate(0deg); }
-    40% { transform: scale(var(--bear-scale, 1)) translate(1px, -1px) rotate(0.5deg); }
-    50% { transform: scale(var(--bear-scale, 1)) translate(-1px, -1px) rotate(-0.5deg); }
-    60% { transform: scale(var(--bear-scale, 1)) translate(1px, 1px) rotate(0deg); }
-    70% { transform: scale(var(--bear-scale, 1)) translate(-1px, -1px) rotate(0.5deg); }
-    80% { transform: scale(var(--bear-scale, 1)) translate(1px, -1px) rotate(-0.5deg); }
-    90% { transform: scale(var(--bear-scale, 1)) translate(-1px, 1px) rotate(0deg); }
+    10% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, -0.4px) rotate(-0.1deg); }
+    20% { transform: scale(var(--bear-scale, 1)) translate(0.4px, 0px) rotate(0.1deg); }
+    30% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, 0.4px) rotate(0deg); }
+    40% { transform: scale(var(--bear-scale, 1)) translate(0.4px, -0.4px) rotate(0.1deg); }
+    50% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, -0.4px) rotate(-0.1deg); }
+    60% { transform: scale(var(--bear-scale, 1)) translate(0.4px, 0.4px) rotate(0deg); }
+    70% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, -0.4px) rotate(0.1deg); }
+    80% { transform: scale(var(--bear-scale, 1)) translate(0.4px, -0.4px) rotate(-0.1deg); }
+    90% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, 0.4px) rotate(0deg); }
     100% { transform: scale(var(--bear-scale, 1)) translate(0, 0) rotate(0deg); }
 }
