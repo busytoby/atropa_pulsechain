@@ -74,9 +74,10 @@ typedef struct {
     bool bass_mounted;
     bool growl_mounted;
     bool drums_mounted;
+    bool audio_stream_control_mounted;
 } RpcSynthMounts;
 
-static RpcSynthMounts g_rpc_mounts = { false, false, false, false };
+static RpcSynthMounts g_rpc_mounts = { false, false, false, false, false };
 static pa_simple *g_rpc_pulse_stream = NULL;
 
 static double rpc_note_to_frequency(const char *note) {
@@ -196,11 +197,43 @@ static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_grow
     free(buffer);
 }
 
+static int g_consecutive_verification_failures = 0;
+static bool g_is_session_locked_out = false;
+static int g_telemetry_23_log_count = 0;
+
 static int verify_23_tree_traversal_acl(int project, int programmer, int key_id) {
-    // 2-3 Tree Traversal paths simulated:
-    // Left choices: (project + programmer) % 3 == 0 -> Downgraded / Anonymous
-    // Middle choices: (project + programmer) % 3 == 1 -> User
-    // Right choices: (project + programmer) % 3 == 2 -> Admin (Key 11 is admin)
+    if (g_is_session_locked_out) {
+        printf("[LOCKOUT] Access blocked: Session locked out due to consecutive failures.\n");
+        return -1; // Locked out code
+    }
+
+    // BigModExp-based simulated validation signature check (derived from MotzkinPrime)
+    // Valid key path requires project/programmer alignment to be non-zero
+    uint64_t base = 3;
+    uint64_t secret = key_id;
+    uint64_t prime = 953467954114363ULL; // MotzkinPrime
+    
+    uint64_t signature = (base + secret + project + programmer) % prime;
+    bool signature_valid = (signature != 0 && key_id != 0);
+
+    // Logging to unified telemetry
+    if (g_telemetry_23_log_count < 10) {
+        g_telemetry_23_log_count++;
+        printf("[2-3 Telemetry Log] Traversal Step - Key: %d, PPN: [%d,%d] - Signature Valid: %s\n",
+               key_id, project, programmer, signature_valid ? "TRUE" : "FALSE");
+    }
+
+    if (!signature_valid) {
+        g_consecutive_verification_failures++;
+        if (g_consecutive_verification_failures >= 3) {
+            g_is_session_locked_out = true;
+            printf("[LOCKOUT] Lockout triggered: 3 consecutive verification failures reached.\n");
+        }
+        return 0; // Denied
+    }
+
+    g_consecutive_verification_failures = 0; // Reset on success
+
     if (key_id == 11) {
         return 2; // ADMIN
     }
@@ -949,6 +982,10 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             } else if (strcmp(target, "drums") == 0) {
                 g_rpc_mounts.drums_mounted = true;
                 snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted drums\", \"id\": %d}\n", id);
+            } else if (strcmp(target, "audio_stream_control") == 0) {
+                g_rpc_mounts.audio_stream_control_mounted = true;
+                printf("[PDP-11 MOUNT] Device audio_stream_control attached to channel input stream.\n");
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted audio_stream_control\", \"id\": %d}\n", id);
             } else {
                 snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Unknown instrument target\", \"id\": %d}\n", id);
             }
@@ -963,6 +1000,10 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         int key_id = extract_json_int(min_ptr, "\"key_id\"", 0);
 
         int acl_level = verify_23_tree_traversal_acl(project, programmer, key_id);
+        if (acl_level == -1) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: PEER_LOCKED_OUT_DUE_TO_CONSECUTIVE_FAILURES\", \"id\": %d}\n", id);
+            return 1;
+        }
         if (acl_level < 1) {
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: ACL_PERMISSION_DENIED\", \"id\": %d}\n", id);
             return 1;
