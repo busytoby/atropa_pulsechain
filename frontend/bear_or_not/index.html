@@ -64,9 +64,32 @@
                     </div>
                     <div class="progress-track"><div id="bar-scale" class="progress-fill accent"></div></div>
                 </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Twitch Jitter</span>
+                        <span id="lbl-twitch">10</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-twitch" class="progress-fill"></div></div>
+                </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Sickness Distortion</span>
+                        <span id="lbl-sickness">0</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-sickness" class="progress-fill" style="background: var(--danger);"></div></div>
+                </div>
             </div>
 
-            <button id="btn-evolve" class="btn btn-primary" style="margin-top: auto; background: linear-gradient(135deg, var(--accent), #047857);">🧬 EVOLVE GENOME</button>
+            <!-- Mutation Intensity Control -->
+            <div class="metric-bar" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="metric-info">
+                    <span>Genetic Mutation Intensity</span>
+                    <span id="lbl-mutation">30%</span>
+                </div>
+                <input type="range" id="slide-mutation" min="1" max="100" value="30" style="width: 100%; cursor: pointer;">
+            </div>
+
+            <button id="btn-evolve" class="btn btn-primary" style="margin-top: 1rem; background: linear-gradient(135deg, var(--accent), #047857);">🧬 EVOLVE GENOME</button>
         </section>
 
         <!-- Bottom Pane: ACAB Activity Logs & Leaderboard -->
