@@ -97,7 +97,13 @@ typedef struct {
     double growl_mod[MAX_STEPS];
     uint8_t drum_kick[MAX_STEPS];
     uint8_t drum_snare[MAX_STEPS];
-    int step_count;
+    int lead_count;
+    int bass_count;
+    int growl_count;
+    int gain_count;
+    int mod_count;
+    int kick_count;
+    int snare_count;
 } PatternData;
 
 // Synthesizes polyphonic multi-voice audio using the exact video-test math
@@ -233,18 +239,19 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (strstr(line, "\"sub_growl\"")) { parser_state = 30; continue; }
             if (strstr(line, "\"drums\"")) { parser_state = 40; continue; }
             
+            PatternData *pat = &patterns[current_pattern_idx];
+
             if (parser_state == 1 && strstr(line, "\"sequence\"")) { parser_state = 2; continue; }
             if (parser_state == 2) {
                 if (strstr(line, "]")) { parser_state = 0; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
                 while ((p = strchr(p, '"')) != NULL) {
                     char *end_ptr = strchr(p + 1, '"');
-                    if (end_ptr && pat->step_count < MAX_STEPS) {
+                    if (end_ptr && pat->lead_count < MAX_STEPS) {
                         size_t len = end_ptr - (p + 1);
-                        strncpy(pat->lead_notes[pat->step_count], p + 1, len);
-                        pat->lead_notes[pat->step_count][len] = '\0';
-                        pat->step_count++;
+                        strncpy(pat->lead_notes[pat->lead_count], p + 1, len);
+                        pat->lead_notes[pat->lead_count][len] = '\0';
+                        pat->lead_count++;
                         p = end_ptr + 1;
                     } else { break; }
                 }
@@ -254,21 +261,19 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 20) {
                 if (strstr(line, "]")) { parser_state = 0; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
                 while ((p = strchr(p, '"')) != NULL) {
                     char *end_ptr = strchr(p + 1, '"');
-                    if (end_ptr && count < MAX_STEPS) {
+                    if (end_ptr && pat->bass_count < MAX_STEPS) {
                         size_t len = end_ptr - (p + 1);
-                        strncpy(pat->bass_notes[count], p + 1, len);
-                        pat->bass_notes[count][len] = '\0';
-                        count++;
+                        strncpy(pat->bass_notes[pat->bass_count], p + 1, len);
+                        pat->bass_notes[pat->bass_count][len] = '\0';
+                        pat->bass_count++;
                         p = end_ptr + 1;
                     } else { break; }
                 }
             }
 
-            // 3. Sub-growl parsing (order-independent)
+            // Sub-growl parsing (order-independent, persistent indexing)
             if (parser_state == 30) {
                 if (strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
                 if (strstr(line, "\"modulation_rate\"")) { parser_state = 33; continue; }
@@ -277,15 +282,13 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 31) {
                 if (strstr(line, "]")) { parser_state = 30; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
                 while ((p = strchr(p, '"')) != NULL) {
                     char *end_ptr = strchr(p + 1, '"');
-                    if (end_ptr && count < MAX_STEPS) {
+                    if (end_ptr && pat->growl_count < MAX_STEPS) {
                         size_t len = end_ptr - (p + 1);
-                        strncpy(pat->growl_notes[count], p + 1, len);
-                        pat->growl_notes[count][len] = '\0';
-                        count++;
+                        strncpy(pat->growl_notes[pat->growl_count], p + 1, len);
+                        pat->growl_notes[pat->growl_count][len] = '\0';
+                        pat->growl_count++;
                         p = end_ptr + 1;
                     } else { break; }
                 }
@@ -293,12 +296,10 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 33) {
                 if (strstr(line, "]")) { parser_state = 30; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
-                while (p && count < MAX_STEPS) {
+                while (p && pat->mod_count < MAX_STEPS) {
                     char *val_ptr = strpbrk(p, "0123456789.");
                     if (val_ptr) {
-                        pat->growl_mod[count++] = atof(val_ptr);
+                        pat->growl_mod[pat->mod_count++] = atof(val_ptr);
                         p = strchr(val_ptr, ',');
                         if (p) p++;
                     } else { break; }
@@ -307,19 +308,17 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 35) {
                 if (strstr(line, "]")) { parser_state = 30; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
-                while (p && count < MAX_STEPS) {
+                while (p && pat->gain_count < MAX_STEPS) {
                     char *val_ptr = strpbrk(p, "0123456789.");
                     if (val_ptr) {
-                        pat->growl_gain[count++] = atof(val_ptr);
+                        pat->growl_gain[pat->gain_count++] = atof(val_ptr);
                         p = strchr(val_ptr, ',');
                         if (p) p++;
                     } else { break; }
                 }
             }
 
-            // 4. Drums parsing (order-independent)
+            // Drums parsing (order-independent, persistent indexing)
             if (parser_state == 40) {
                 if (strstr(line, "\"kick\"")) { parser_state = 41; continue; }
                 if (strstr(line, "\"snare\"")) { parser_state = 43; continue; }
@@ -327,12 +326,10 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 41) {
                 if (strstr(line, "]")) { parser_state = 40; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
-                while (p && count < MAX_STEPS) {
+                while (p && pat->kick_count < MAX_STEPS) {
                     char *val_ptr = strpbrk(p, "01");
                     if (val_ptr) {
-                        pat->drum_kick[count++] = (uint8_t)atoi(val_ptr);
+                        pat->drum_kick[pat->kick_count++] = (uint8_t)atoi(val_ptr);
                         p = val_ptr + 1;
                     } else { break; }
                 }
@@ -340,12 +337,10 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
             if (parser_state == 43) {
                 if (strstr(line, "]")) { parser_state = 40; continue; }
                 char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
-                while (p && count < MAX_STEPS) {
+                while (p && pat->snare_count < MAX_STEPS) {
                     char *val_ptr = strpbrk(p, "01");
                     if (val_ptr) {
-                        pat->drum_snare[count++] = (uint8_t)atoi(val_ptr);
+                        pat->drum_snare[pat->snare_count++] = (uint8_t)atoi(val_ptr);
                         p = val_ptr + 1;
                     } else { break; }
                 }
@@ -358,7 +353,7 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     for (int i = 0; i < arrangement_count; i++) {
         for (int j = 0; j < 4; j++) {
             if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
-                total_score_steps += patterns[j].step_count;
+                total_score_steps += patterns[j].lead_count;
             }
         }
     }
@@ -368,7 +363,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     double step_duration = 60.0 / 109.6 / 8.0; 
     uint32_t slot = get_ppn_slot(ppn);
 
-    // Bill gas
     uint64_t total_gas_cost = total_score_steps * UNIVERSAL_GAS_FEE;
     if (g_balances[slot] < total_gas_cost) {
         *out_err = "REVERT: INSUFFICIENT_GAS_FOR_SCORE_PLAYBACK";
@@ -377,13 +371,13 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     g_balances[slot] -= total_gas_cost;
     printf("   [Yul RTS] Charged %lu Gas. Remaining: %lu Gas\n", total_gas_cost, g_balances[slot]);
 
-    // Play the full modular polyphonic arrangement (no hard 32-step limit!)
+    // Play the full modular polyphonic arrangement
     int played_count = 0;
     for (int i = 0; i < arrangement_count; i++) {
         for (int j = 0; j < 4; j++) {
             if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
                 PatternData *pat = &patterns[j];
-                for (int s = 0; s < pat->step_count; s++) {
+                for (int s = 0; s < pat->lead_count; s++) {
                     double f_lead = note_to_frequency(pat->lead_notes[s]);
                     double f_bass = note_to_frequency(pat->bass_notes[s]);
                     double f_growl = note_to_frequency(pat->growl_notes[s]);
@@ -392,7 +386,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     bool kick = pat->drum_kick[s] > 0;
                     bool snare = pat->drum_snare[s] > 0;
                     
-                    // Throttle console print output to prevent visual print lock (Rule 11)
                     if (played_count % 16 == 0) {
                         printf("   [PolySynth] Playing Step %d/%d (Tempo Sync)...\n", played_count + 1, total_score_steps);
                     }
