@@ -28,6 +28,20 @@ Parses a tempo-synchronized `.bio` track layout, queries EDO-22 pitch scales, an
 * **Execution**: Streams synthesized audio packets to the local speaker systems using PulseAudio Simple API.
 * **Implementation**: [tsfi2-deepseek/src/tsfi_zmm_rpc.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_zmm_rpc.c#L1015-L1060)
 
+### C. Sysop Peer Observation (`sysop.observe_peers`)
+Queries the ring buffer logs capturing peer execution, thunk evaluations, and telemetry anomalies.
+* **Params**: `{"limit": <int>}`
+* **Result**: Array of peer observation log entries.
+
+### D. Sysop Command Injection (`sysop.inject_command`)
+Injects control signals directly into a target peer's VM execution state.
+* **Params**: `{"target_project": <int>, "target_programmer": <int>, "command": "<command_string>"}` (e.g. `CLEAR_LOCKOUT` to clear validation failure locks).
+
+### E. Fortell Memory Diagnostics (`fortell.detect_fault`)
+Executes loop fault diagnostics audits on the virtual memory layout space.
+* **Params**: `{"address": "<hex_address>", "size": <int>}`
+* **Result**: Diagnostic enum status indicating `FAULT_NONE`, `FAULT_OPEN`, or `FAULT_GROUND`.
+
 ---
 
 ## 3. Auncient VM Register Alignments
