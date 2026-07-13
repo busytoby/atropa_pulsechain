@@ -91,6 +91,21 @@ void execute_fourier_analysis(void) {
     if (audio_f) {
         fclose(audio_f);
     }
+
+    // 4. Render ASCII plot of reconstructed time-domain wave
+    printf("[INIT] Reconstructed Waveform ASCII Plot (Superposition of bins 2 & 5):\n");
+    for (int n = 0; n < DFT_SIZE; n++) {
+        double val = input_real[n];
+        int pos = (int)((val + 1.5) * 10.0);
+        if (pos < 0) pos = 0;
+        if (pos > 30) pos = 30;
+        
+        printf("  %02d: ", n);
+        for (int i = 0; i < pos; i++) {
+            printf(" ");
+        }
+        printf("*\n");
+    }
 }
 
 #ifndef TSFI_PROVENANCE_KEY
