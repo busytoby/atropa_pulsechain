@@ -25,58 +25,58 @@
             </div>
         </main>
 
-        <!-- Right Pane: Active Genome Metrics -->
+        <!-- Right Pane: Active Genome Controls -->
         <section class="card metrics-pane">
-            <h2>Active Genome Stats</h2>
+            <h2>Active Genome Controls</h2>
             <div class="metrics-group">
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Fur Color R</span>
                         <span id="lbl-fur-r">120</span>
                     </div>
-                    <div class="progress-track"><div id="bar-fur-r" class="progress-fill"></div></div>
+                    <input type="range" id="slide-fur-r" min="0" max="255" value="120" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Fur Color G</span>
                         <span id="lbl-fur-g">120</span>
                     </div>
-                    <div class="progress-track"><div id="bar-fur-g" class="progress-fill"></div></div>
+                    <input type="range" id="slide-fur-g" min="0" max="255" value="120" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Fur Color B</span>
                         <span id="lbl-fur-b">120</span>
                     </div>
-                    <div class="progress-track"><div id="bar-fur-b" class="progress-fill"></div></div>
+                    <input type="range" id="slide-fur-b" min="0" max="255" value="120" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Fur Length</span>
-                        <span id="lbl-fur-len">0.05m</span>
+                        <span id="lbl-fur-len">0.150m</span>
                     </div>
-                    <div class="progress-track"><div id="bar-fur-len" class="progress-fill accent"></div></div>
+                    <input type="range" id="slide-fur-len" min="10" max="250" value="150" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Scale</span>
-                        <span id="lbl-scale">0.80x</span>
+                        <span id="lbl-scale">1.20x</span>
                     </div>
-                    <div class="progress-track"><div id="bar-scale" class="progress-fill accent"></div></div>
+                    <input type="range" id="slide-scale" min="50" max="200" value="120" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Twitch Jitter</span>
                         <span id="lbl-twitch">10</span>
                     </div>
-                    <div class="progress-track"><div id="bar-twitch" class="progress-fill"></div></div>
+                    <input type="range" id="slide-twitch" min="0" max="255" value="10" style="width: 100%;">
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">
                         <span>Sickness Distortion</span>
                         <span id="lbl-sickness">0</span>
                     </div>
-                    <div class="progress-track"><div id="bar-sickness" class="progress-fill" style="background: var(--danger);"></div></div>
+                    <input type="range" id="slide-sickness" min="0" max="255" value="0" style="width: 100%;">
                 </div>
             </div>
 

@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sickness: document.getElementById('lbl-sickness'),
         mutation_label: document.getElementById('lbl-mutation'),
         mutation_slider: document.getElementById('slide-mutation'),
-        bar_r: document.getElementById('bar-fur-r'),
-        bar_g: document.getElementById('bar-fur-g'),
-        bar_b: document.getElementById('bar-fur-b'),
-        bar_len: document.getElementById('bar-fur-len'),
-        bar_scale: document.getElementById('bar-scale'),
-        bar_twitch: document.getElementById('bar-twitch'),
-        bar_sickness: document.getElementById('bar-sickness'),
+        slide_r: document.getElementById('slide-fur-r'),
+        slide_g: document.getElementById('slide-fur-g'),
+        slide_b: document.getElementById('slide-fur-b'),
+        slide_len: document.getElementById('slide-fur-len'),
+        slide_scale: document.getElementById('slide-scale'),
+        slide_twitch: document.getElementById('slide-twitch'),
+        slide_sickness: document.getElementById('slide-sickness'),
         btn_bear: document.getElementById('btn-bear'),
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
@@ -51,13 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.sickness.innerText = state.sickness_intensity;
         elements.mutation_label.innerText = state.mutation_intensity + '%';
 
-        elements.bar_r.style.width = (state.fur_r / 255 * 100) + '%';
-        elements.bar_g.style.width = (state.fur_g / 255 * 100) + '%';
-        elements.bar_b.style.width = (state.fur_b / 255 * 100) + '%';
-        elements.bar_len.style.width = (state.fur_len / 255 * 100) + '%';
-        elements.bar_scale.style.width = (state.scale / 200 * 100) + '%';
-        elements.bar_twitch.style.width = (state.twitch_intensity / 255 * 100) + '%';
-        elements.bar_sickness.style.width = (state.sickness_intensity / 255 * 100) + '%';
+        // Keep slider thumb positions synchronized with state
+        elements.slide_r.value = state.fur_r;
+        elements.slide_g.value = state.fur_g;
+        elements.slide_b.value = state.fur_b;
+        elements.slide_len.value = state.fur_len;
+        elements.slide_scale.value = state.scale;
+        elements.slide_twitch.value = state.twitch_intensity;
+        elements.slide_sickness.value = state.sickness_intensity;
 
         // Dynamically select the base image phenotype
         if (state.fur_r > 150) {
@@ -110,6 +111,15 @@ document.addEventListener('DOMContentLoaded', () => {
         state.mutation_intensity = parseInt(e.target.value);
         elements.mutation_label.innerText = state.mutation_intensity + '%';
     });
+
+    // Real-time Slider input bindings to immediately adjust visual rendering
+    elements.slide_r.addEventListener('input', (e) => { state.fur_r = parseInt(e.target.value); updateUI(); });
+    elements.slide_g.addEventListener('input', (e) => { state.fur_g = parseInt(e.target.value); updateUI(); });
+    elements.slide_b.addEventListener('input', (e) => { state.fur_b = parseInt(e.target.value); updateUI(); });
+    elements.slide_len.addEventListener('input', (e) => { state.fur_len = parseInt(e.target.value); updateUI(); });
+    elements.slide_scale.addEventListener('input', (e) => { state.scale = parseInt(e.target.value); updateUI(); });
+    elements.slide_twitch.addEventListener('input', (e) => { state.twitch_intensity = parseInt(e.target.value); updateUI(); });
+    elements.slide_sickness.addEventListener('input', (e) => { state.sickness_intensity = parseInt(e.target.value); updateUI(); });
 
     // Upvote Bear Action
     elements.btn_bear.addEventListener('click', () => {
