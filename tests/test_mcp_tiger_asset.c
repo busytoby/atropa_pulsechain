@@ -37,8 +37,8 @@ typedef struct {
 typedef struct {
     PPN      ppn;
     uint32_t key_id;
-    char     bio_file_path[128]; // Used for play payload
-    char     mount_target[32];   // Used for mount payload ("lead", "bass", etc.)
+    char     bio_file_path[128];
+    char     mount_target[32];
     uint32_t opcode;
 } TcpBioTxPacket;
 
@@ -167,7 +167,6 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
 
 // Parses and plays the full submitted .bio score on the synthesizer
 bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) {
-    // 1. Pre-Execution Mount Check
     if (!g_mounts.lead_mounted && !g_mounts.bass_mounted && !g_mounts.growl_mounted && !g_mounts.drums_mounted) {
         *out_err = "REVERT: NO_INSTRUMENTS_MOUNTED_ON_SYNTHESIZER";
         return false;
@@ -269,9 +268,14 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                 }
             }
 
-            if (parser_state == 30 && strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
+            // 3. Sub-growl parsing (order-independent)
+            if (parser_state == 30) {
+                if (strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
+                if (strstr(line, "\"modulation_rate\"")) { parser_state = 33; continue; }
+                if (strstr(line, "\"gain\"")) { parser_state = 35; continue; }
+            }
             if (parser_state == 31) {
-                if (strstr(line, "]")) { parser_state = 32; continue; }
+                if (strstr(line, "]")) { parser_state = 30; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
                 int count = 0;
@@ -286,24 +290,8 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     } else { break; }
                 }
             }
-            if (parser_state == 32 && strstr(line, "\"gain\"")) { parser_state = 33; continue; }
             if (parser_state == 33) {
-                if (strstr(line, "]")) { parser_state = 34; continue; }
-                char *p = line;
-                PatternData *pat = &patterns[current_pattern_idx];
-                int count = 0;
-                while (p && count < MAX_STEPS) {
-                    char *val_ptr = strpbrk(p, "0123456789.");
-                    if (val_ptr) {
-                        pat->growl_gain[count++] = atof(val_ptr);
-                        p = strchr(val_ptr, ',');
-                        if (p) p++;
-                    } else { break; }
-                }
-            }
-            if (parser_state == 34 && strstr(line, "\"modulation_rate\"")) { parser_state = 35; continue; }
-            if (parser_state == 35) {
-                if (strstr(line, "]")) { parser_state = 0; continue; }
+                if (strstr(line, "]")) { parser_state = 30; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
                 int count = 0;
@@ -316,10 +304,28 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     } else { break; }
                 }
             }
+            if (parser_state == 35) {
+                if (strstr(line, "]")) { parser_state = 30; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while (p && count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "0123456789.");
+                    if (val_ptr) {
+                        pat->growl_gain[count++] = atof(val_ptr);
+                        p = strchr(val_ptr, ',');
+                        if (p) p++;
+                    } else { break; }
+                }
+            }
 
-            if (parser_state == 40 && strstr(line, "\"kick\"")) { parser_state = 41; continue; }
+            // 4. Drums parsing (order-independent)
+            if (parser_state == 40) {
+                if (strstr(line, "\"kick\"")) { parser_state = 41; continue; }
+                if (strstr(line, "\"snare\"")) { parser_state = 43; continue; }
+            }
             if (parser_state == 41) {
-                if (strstr(line, "]")) { parser_state = 42; continue; }
+                if (strstr(line, "]")) { parser_state = 40; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
                 int count = 0;
@@ -331,9 +337,8 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     } else { break; }
                 }
             }
-            if (parser_state == 42 && strstr(line, "\"snare\"")) { parser_state = 43; continue; }
             if (parser_state == 43) {
-                if (strstr(line, "]")) { parser_state = 0; continue; }
+                if (strstr(line, "]")) { parser_state = 40; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
                 int count = 0;
@@ -372,13 +377,13 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     g_balances[slot] -= total_gas_cost;
     printf("   [Yul RTS] Charged %lu Gas. Remaining: %lu Gas\n", total_gas_cost, g_balances[slot]);
 
-    // Play the full modular polyphonic arrangement (first 32 steps for test length)
+    // Play the full modular polyphonic arrangement (no hard 32-step limit!)
     int played_count = 0;
-    for (int i = 0; i < arrangement_count && played_count < 32; i++) {
+    for (int i = 0; i < arrangement_count; i++) {
         for (int j = 0; j < 4; j++) {
             if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
                 PatternData *pat = &patterns[j];
-                for (int s = 0; s < pat->step_count && played_count < 32; s++) {
+                for (int s = 0; s < pat->step_count; s++) {
                     double f_lead = note_to_frequency(pat->lead_notes[s]);
                     double f_bass = note_to_frequency(pat->bass_notes[s]);
                     double f_growl = note_to_frequency(pat->growl_notes[s]);
@@ -387,8 +392,10 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     bool kick = pat->drum_kick[s] > 0;
                     bool snare = pat->drum_snare[s] > 0;
                     
-                    printf("   [PolySynth] Step %d: Lead=%.1f Bass=%.1f Growl=%.1f Kick=%d Snare=%d\n",
-                           played_count + 1, f_lead, f_bass, f_growl, kick, snare);
+                    // Throttle console print output to prevent visual print lock (Rule 11)
+                    if (played_count % 16 == 0) {
+                        printf("   [PolySynth] Playing Step %d/%d (Tempo Sync)...\n", played_count + 1, total_score_steps);
+                    }
                     
                     play_polyphonic_step(f_lead, f_bass, f_growl, g_val, m_val, kick, snare, step_duration);
                     played_count++;
@@ -403,7 +410,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
 bool process_transaction_rts(TcpBioTxPacket *tx, const char **out_err) {
     uint32_t slot = get_ppn_slot(tx->ppn);
     
-    // Gas check for single transactions
     if (g_balances[slot] < UNIVERSAL_GAS_FEE) {
         *out_err = "REVERT: INSUFFICIENT_GAS";
         return false;
@@ -478,6 +484,7 @@ void* mcp_server_thread(void *arg) {
 }
 
 int main(void) {
+    setvbuf(stdout, NULL, _IONBF, 0);
     printf("=============================================================\n");
     printf("AUNCIENT ZMM VM: MCP BIO ARRANGEMENT TRANSACTION SUBMISSION\n");
     printf("=============================================================\n");
@@ -544,7 +551,8 @@ int main(void) {
     printf("4. Transmitting BIO playback transaction package...\n");
     send(client_fd, &play_packet, sizeof(TcpBioTxPacket), 0);
     
-    usleep(5000000); 
+    // Wait for the full duration of the song playback thread (~135 seconds) to complete
+    usleep(135000000); 
 
     close(client_fd);
     pthread_join(server_tid, NULL);
