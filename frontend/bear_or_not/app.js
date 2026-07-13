@@ -107,19 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Evolve action (simulating predictive compiler calculations)
     elements.btn_evolve.addEventListener('click', () => {
-        // Boost details based on rating score
+        // Boost details based on rating score with pseudo-random genetic mutation variance
         if (state.score > 70) {
-            state.fur_r = 180; // Optimized crimson
-            state.fur_g = 20;
-            state.fur_b = 20;
-            state.fur_len = 180; // Longer filaments
-            state.scale = 135;
+            state.fur_r = 180 + Math.floor((Math.random() - 0.5) * 30);
+            state.fur_g = 20 + Math.floor(Math.random() * 20);
+            state.fur_b = 20 + Math.floor(Math.random() * 20);
+            state.fur_len = 180 + Math.floor((Math.random() - 0.5) * 40);
+            state.scale = 135 + Math.floor((Math.random() - 0.5) * 30);
         } else {
-            state.fur_r = 80;  // Optimized dark gray
-            state.fur_g = 80;
-            state.fur_b = 80;
-            state.fur_len = 45;  // Short filaments to speed up render
-            state.scale = 90;
+            state.fur_r = 80 + Math.floor((Math.random() - 0.5) * 20);
+            state.fur_g = 80 + Math.floor(Math.random() * 20);
+            state.fur_b = 80 + Math.floor(Math.random() * 20);
+            state.fur_len = 45 + Math.floor((Math.random() - 0.5) * 15);
+            state.scale = 90 + Math.floor((Math.random() - 0.5) * 15);
         }
 
         const mockHash = "0x" + Math.random().toString(16).slice(2, 10) + "ace8...";
