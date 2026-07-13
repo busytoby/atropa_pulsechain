@@ -126,6 +126,7 @@ libtsfi2.so
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
+/tests/test_auncient_gguf_metadata
 /tests/test_auncient_peer_discovery_c
 /tests/test_auncient_register_audit
 /tests/test_auncient_unified_peers
