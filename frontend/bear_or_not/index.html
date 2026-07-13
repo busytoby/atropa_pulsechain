@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- SVG displacement filter simulating physical fur edge displacement -->
+    <svg style="position: absolute; width: 0; height: 0;" width="0" height="0">
+        <filter id="fur-displacement">
+            <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" result="noise"></feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" id="displacement-map"></feDisplacementMap>
+        </filter>
+    </svg>
     <div class="dashboard">
         <header>
             <h1>BIONIKA BRAINZ</h1>

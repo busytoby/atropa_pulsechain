@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
         leaderboard: document.getElementById('leaderboard-body'),
-        bear_image: document.getElementById('bear-image')
+        bear_image: document.getElementById('bear-image'),
+        displacement_map: document.getElementById('displacement-map')
     };
 
     function updateUI() {
@@ -82,12 +83,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Map scaleVal CSS variable to drive the twitch jitter keyframe reference
         elements.bear_image.style.setProperty('--bear-scale', scaleVal);
 
-        // Map fur length to shadow contrast and depth detail instead of blurring the image
+        // Map fur length to shadow contrast, depth detail, and boundary displacement scale
         const furContrast = 85 + (state.fur_len / 250 * 35);
         const shadowSpread = (state.fur_len / 250) * 12;
+        const displacementScale = (state.fur_len / 250) * 8.5; // Up to 8.5px edge warp
 
-        // Dynamic Sickness Filter: pulsing toxic green chromatic glow shadow
-        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%) contrast(${furContrast}%) drop-shadow(0 0 ${shadowSpread}px rgba(0, 0, 0, 0.45))`;
+        if (elements.displacement_map) {
+            elements.displacement_map.setAttribute('scale', displacementScale);
+        }
+
+        // Dynamic Sickness Filter: pulsing toxic green chromatic glow shadow + SVG fur displacement warp
+        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%) contrast(${furContrast}%) drop-shadow(0 0 ${shadowSpread}px rgba(0, 0, 0, 0.45)) url(#fur-displacement)`;
         if (state.sickness_intensity > 0) {
             const glowRadius = Math.max(2, state.sickness_intensity / 10);
             filterStr += ` drop-shadow(0 0 ${glowRadius}px rgba(16, 185, 129, 0.75))`;
