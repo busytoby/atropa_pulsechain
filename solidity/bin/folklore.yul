@@ -735,8 +735,15 @@ object "cpu6502" {
                 // Enforce Rule 12 Child-Langmuir Ban
                 let a := sload(getUserSlot(0x80))
                 let x := sload(getUserSlot(0x81))
-                if and(eq(and(a, 0xFF), 0x32), eq(and(x, 0xFF), 0x99)) {
-                    sstore(getUserSlot(0x9001), 0x32)
+                let ban_a := sload(getUserSlot(54880)) // 54800 + 0x80
+                let ban_x := sload(getUserSlot(54960)) // 54800 + 0x81 (folklore maps 0x81)
+                
+                // Fallback to static rule if dynamic rules are not configured
+                if iszero(ban_a) { ban_a := 0x32 }
+                if iszero(ban_x) { ban_x := 0x99 }
+
+                if and(eq(and(a, 0xFF), ban_a), eq(and(x, 0xFF), ban_x)) {
+                    sstore(getUserSlot(0x9001), a)
                     sstore(getUserSlot(0x80), 0)
                 }
 
