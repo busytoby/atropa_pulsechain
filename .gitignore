@@ -117,6 +117,7 @@ libtsfi2.so
 /tests/test_auncient_child_langmuir_ban
 /tests/test_auncient_diagnostics_c
 /tests/test_auncient_dynamic_gas
+/tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_peer_discovery_c
 /tests/test_auncient_register_audit
 /tests/test_auncient_unified_peers
