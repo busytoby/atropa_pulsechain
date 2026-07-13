@@ -60,26 +60,24 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.slide_twitch.value = state.twitch_intensity;
         elements.slide_sickness.value = state.sickness_intensity;
 
-        // Dynamically select the base image phenotype
-        if (state.fur_r > 150) {
-            elements.bear_image.src = "assets/crimson_bear.jpg";
-        } else if (state.fur_r <= 110) {
-            elements.bear_image.src = "assets/gray_bear.jpg";
-        } else {
-            elements.bear_image.src = "assets/teddy_render.jpg";
-        }
+        // Use a single high-fidelity base image to allow smooth, continuous R-G-B color mixing
+        elements.bear_image.src = "assets/teddy_render.jpg";
 
         // Real-time Visual Modulation: map exact genome values to CSS filters and scaling
-        const hueShift = ((state.fur_r + state.fur_g + state.fur_b) * 1.5) % 360;
-        const satPercent = 60 + (state.fur_g / 255 * 80);
-        const brightPercent = 70 + (state.fur_b / 255 * 40);
+        // R, G, B are combined to calculate a smooth, continuous hue rotation angle
+        const hueShift = ((state.fur_r * 2.5 + state.fur_g - state.fur_b * 1.5) + 360) % 360;
+        const satPercent = 50 + (state.fur_g / 255 * 100);
+        const brightPercent = 70 + (state.fur_b / 255 * 50);
         const scaleVal = 0.75 + (state.scale / 250);
+        
+        // Map fur length to a subtle soft blur filter representing the fuzzy density of long fur filaments
+        const furBlur = (state.fur_len / 250) * 1.6;
 
         // Map scaleVal CSS variable to drive the twitch jitter keyframe reference
         elements.bear_image.style.setProperty('--bear-scale', scaleVal);
 
         // Dynamic Sickness Filter: pulsing toxic green chromatic glow shadow
-        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%)`;
+        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%) blur(${furBlur}px)`;
         if (state.sickness_intensity > 0) {
             const glowRadius = Math.max(2, state.sickness_intensity / 10);
             filterStr += ` drop-shadow(0 0 ${glowRadius}px rgba(16, 185, 129, 0.75))`;
