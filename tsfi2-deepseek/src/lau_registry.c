@@ -230,11 +230,11 @@ LauMetadata* lau_registry_find(void *payload) {
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
     if (fw) {
         LauMetadata *m = tsfi_registry_scan_zmm(&fw->manifold, payload);
-        if (m) return m->prev;
+        if (m) return m;
     }
     if (g_local_manifold) {
         LauMetadata *m = tsfi_registry_scan_zmm(g_local_manifold, payload);
-        if (m) return m->prev;
+        if (m) return m;
     }
     lau_spin_lock(&g_lock);
     LauMetadata *curr = g_head;

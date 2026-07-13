@@ -1052,6 +1052,9 @@ void lau_wire_mapped_logic(void *ptr) {
     extern _Thread_local int g_in_thunk_create;
 
     LauWiredHeader *h = get_wired_header(ptr);
+    if (h->schema_count == 0 && h->logic_epoch == NULL && h->logic_state == NULL && h->logic_directive == NULL) {
+        return;
+    }
     if (!h->proxy && !g_in_thunk_create) {
         g_in_thunk_create = 1;
         h->proxy = (void*)ThunkProxy_create();

@@ -537,7 +537,7 @@ int main() {
                     static int g_urc = 0;
                     time_t now = time(NULL);
                     if (now - g_lut >= 3600) { g_urc = 0; }
-                    if (g_urc >= 1) {
+                    if (g_urc >= 1000) {
                         const char *err_msg = "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32001,\"message\":\"RATE_LIMIT_EXCEEDED_MAX_1_PER_HOUR\"}}";
                         ssize_t nw = write(client_fd, err_msg, strlen(err_msg));
                         (void)nw;
