@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Phenotype parameter composition registry
         phenotypeDefinitions: {
             brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_render.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
-            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg", accessories: { glasses: false, bowtie: true, hat: false } },
-            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg", accessories: { glasses: true, bowtie: false, hat: false } }
+            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
+            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg", accessories: { glasses: false, bowtie: false, hat: false } }
         },
         score: 85,
         history: [
