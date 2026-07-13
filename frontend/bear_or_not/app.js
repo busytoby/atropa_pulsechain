@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         twitch_intensity: 10,
         sickness_intensity: 0,
         mutation_intensity: 30,
+        phenotype: "brown",
         score: 85,
         history: [
             { id: "0x89178a88...", event: "GENOME_INITIALIZED", score: "80", status: "active" },
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slide_scale: document.getElementById('slide-scale'),
         slide_twitch: document.getElementById('slide-twitch'),
         slide_sickness: document.getElementById('slide-sickness'),
+        select_phenotype: document.getElementById('select-phenotype'),
         btn_bear: document.getElementById('btn-bear'),
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
@@ -51,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.sickness.innerText = state.sickness_intensity;
         elements.mutation_label.innerText = state.mutation_intensity + '%';
 
-        // Keep slider thumb positions synchronized with state
+        // Keep slider thumb positions and dropdown selection synchronized with state
         elements.slide_r.value = state.fur_r;
         elements.slide_g.value = state.fur_g;
         elements.slide_b.value = state.fur_b;
@@ -59,9 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.slide_scale.value = state.scale;
         elements.slide_twitch.value = state.twitch_intensity;
         elements.slide_sickness.value = state.sickness_intensity;
+        elements.select_phenotype.value = state.phenotype;
 
-        // Use a single high-fidelity base image to allow smooth, continuous R-G-B color mixing
-        elements.bear_image.src = "assets/teddy_render.jpg";
+        // Use the procedurally selected base image phenotype
+        if (state.phenotype === 'crimson') {
+            elements.bear_image.src = "assets/crimson_bear.jpg";
+        } else if (state.phenotype === 'gray') {
+            elements.bear_image.src = "assets/gray_bear.jpg";
+        } else {
+            elements.bear_image.src = "assets/teddy_render.jpg";
+        }
 
         // Real-time Visual Modulation: map exact genome values to CSS filters and scaling
         // R, G, B are combined to calculate a smooth, continuous hue rotation angle
@@ -119,7 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.slide_twitch.addEventListener('input', (e) => { state.twitch_intensity = parseInt(e.target.value); updateUI(); });
     elements.slide_sickness.addEventListener('input', (e) => { state.sickness_intensity = parseInt(e.target.value); updateUI(); });
 
-    // Upvote Bear Action
+    // Bind Phenotype selector changes to update the base bear phenotype render instantly
+    elements.select_phenotype.addEventListener('change', (e) => {
+        state.phenotype = e.target.value;
+        updateUI();
+    });
     elements.btn_bear.addEventListener('click', () => {
         state.score += 5;
         if (state.score > 100) state.score = 100;
@@ -192,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.scale = data.scale;
                 state.twitch_intensity = data.twitch_intensity;
                 state.sickness_intensity = data.sickness_intensity;
+                state.phenotype = data.phenotype;
                 
                 state.history.unshift({
                     id: data.id,
@@ -207,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const m = state.mutation_intensity / 100;
                 const phenotypes = ['crimson', 'gray', 'brown'];
                 const chosen = phenotypes[Math.floor(Math.random() * phenotypes.length)];
+                state.phenotype = chosen;
 
                 if (chosen === 'crimson') {
                     state.fur_r = 180 + Math.floor((Math.random() - 0.5) * 40 * m);
