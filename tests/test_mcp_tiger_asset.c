@@ -360,7 +360,7 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
 
     printf("   [Yul RTS] Parsed Arrangement: %d patterns, %d steps.\n", arrangement_count, total_score_steps);
 
-    double step_duration = 60.0 / 109.6 / 8.0; 
+    double step_duration = 60.0 / 109.6 / 4.0; 
     uint32_t slot = get_ppn_slot(ppn);
 
     uint64_t total_gas_cost = total_score_steps * UNIVERSAL_GAS_FEE;
