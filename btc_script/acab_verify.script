@@ -1,0 +1,33 @@
+# Auncient Coaxial Activity Bus (ACAB) - Bitcoin Script Prover
+# Verifies a 2-level Merkle Coordinate Activity Proof on-chain.
+#
+# Witness Stack:
+#   <Sibling_Parent_0_1> (32 bytes)
+#   <Sibling_Leaf_3>      (32 bytes)
+#   <Leaf_Event_Data>    (Variable bytes)
+#
+
+# 1. Hash the Leaf Event Data to derive Leaf Hash L2
+OP_SHA256
+
+# 2. Concat L2 (top of stack) with Sibling Leaf 3 to derive Parent Hash 2-3
+# Sibling Leaf 3 is expected to be on the right side of L2
+# Stack: <Sibling_Parent_0_1> <Sibling_Leaf_3> <L2>
+OP_SWAP
+# Stack: <Sibling_Parent_0_1> <L2> <Sibling_Leaf_3>
+OP_CAT
+OP_SHA256
+# Stack: <Sibling_Parent_0_1> <Parent_2_3>
+
+# 3. Concat Sibling Parent 0-1 (left side) with Parent Hash 2-3 to derive Root Hash
+# Stack: <Sibling_Parent_0_1> <Parent_2_3>
+OP_SWAP
+# Stack: <Parent_2_3> <Sibling_Parent_0_1>
+OP_CAT
+OP_SHA256
+# Stack: <Computed_Root_Hash>
+
+# 4. Assert Computed Root matches expected Activity Root
+# Expected Root Hash: 89178a88a1b0f1b2481976423b3b2d46c5a752534b1d30238629788c3aa46c20
+<0x89178a88a1b0f1b2481976423b3b2d46c5a752534b1d30238629788c3aa46c20>
+OP_EQUALVERIFY
