@@ -366,11 +366,11 @@ static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err
     double step_duration = 60.0 / 109.6 / 4.0;
 
     int played_count = 0;
-    for (int i = 0; i < arrangement_count && played_count < 32; i++) {
+    for (int i = 0; i < arrangement_count; i++) {
         for (int j = 0; j < 4; j++) {
             if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
                 RpcPatternData *pat = &patterns[j];
-                for (int s = 0; s < pat->lead_count && played_count < 32; s++) {
+                for (int s = 0; s < pat->lead_count; s++) {
                     double f_lead = rpc_note_to_frequency(pat->lead_notes[s]);
                     double f_bass = rpc_note_to_frequency(pat->bass_notes[s]);
                     double f_growl = rpc_note_to_frequency(pat->growl_notes[s]);
