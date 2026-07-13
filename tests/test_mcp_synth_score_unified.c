@@ -12,12 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <pulse/simple.h>
-#include <pulse/error.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#include "../firmware/tsfi_lib/tsfi_alsa_synth.c"
 
 // Universal Opcode
 typedef enum {
@@ -35,46 +30,17 @@ typedef struct {
     PPN      ppn;
     uint32_t key_id;
     double   frequency;
+    double   duration;
     uint32_t opcode;
 } TcpTxPacket;
 
 // Global Gas Registry (Merkle 2-3 Tree representation)
 uint64_t g_balances[100];
 const uint64_t UNIVERSAL_GAS_FEE = 15;
-pa_simple *g_pulse_stream = NULL;
+ALSASynth g_synth_engine;
 
 uint32_t get_ppn_slot(PPN ppn) {
     return (ppn.project + ppn.programmer) % 100;
-}
-
-// Synthesizes and streams sine wave PCM samples standardly via PulseAudio
-void play_sound_pulse(double freq) {
-    if (!g_pulse_stream) return;
-    
-    uint32_t sample_rate = 44100;
-    double duration = 0.4;
-    uint32_t total_samples = (uint32_t)(sample_rate * duration);
-    
-    int16_t *buffer = malloc(total_samples * sizeof(int16_t));
-    if (!buffer) return;
-    
-    for (uint32_t i = 0; i < total_samples; i++) {
-        double t = (double)i / sample_rate;
-        double raw_val = sin(2.0 * M_PI * freq * t);
-        
-        // Anti-pop envelope
-        double envelope = 1.0;
-        if (i < 800) {
-            envelope = (double)i / 800.0;
-        } else if (i > total_samples - 800) {
-            envelope = (double)(total_samples - i) / 800.0;
-        }
-        buffer[i] = (int16_t)(raw_val * envelope * 16384.0);
-    }
-    
-    int error;
-    pa_simple_write(g_pulse_stream, buffer, total_samples * sizeof(int16_t), &error);
-    free(buffer);
 }
 
 // BTC Script 2-3 Operator execution engine
@@ -97,11 +63,19 @@ bool process_transaction_rts(TcpTxPacket *tx, const char **out_err) {
         return false;
     }
     
-    // 3. Route to Yul RTS Audio Output
+    // 3. Route to pre-existing ALSA Synthesizer Engine
     if (tx->opcode == YUL_OP_SYNTH_PLAY) {
-        printf("   [Yul RTS] BTC Script verified note. Freq: %.2f Hz. Balance: %lu Gas\n",
+        printf("   [Yul RTS] BTC Script verified note. Freq: %.2f Hz | Balance: %lu Gas\n",
                tx->frequency, g_balances[slot]);
-        play_sound_pulse(tx->frequency);
+               
+        // Set the synthesizer's dynamic frequency
+        alsa_synth_set_frequency(&g_synth_engine, tx->frequency);
+        
+        // Wait for note duration
+        usleep((useconds_t)(tx->duration * 1000000.0));
+        
+        // Return to silent / rest note state
+        alsa_synth_set_frequency(&g_synth_engine, 0.0);
         return true;
     }
     
@@ -143,18 +117,13 @@ void* mcp_server_thread(void *arg) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT ZMM VM: UNIFIED TCP/IP MCP BTC SYNTH SCORE TESTS\n");
+    printf("AUNCIENT ZMM VM: UNIFIED TCP/IP MCP SYNTH SCORE TESTS\n");
     printf("=============================================================\n");
 
-    // Initialize PulseAudio simple stream
-    pa_sample_spec ss;
-    ss.format = PA_SAMPLE_S16LE;
-    ss.rate = 44100;
-    ss.channels = 1;
-    int error;
-    g_pulse_stream = pa_simple_new(NULL, "ZMM_MCP_Unified", PA_STREAM_PLAYBACK, NULL, "Synthesizer", &ss, NULL, NULL, &error);
-    if (!g_pulse_stream) {
-        fprintf(stderr, "Failed to initialize PulseAudio: %s\n", pa_strerror(error));
+    // Initialize our pre-existing ALSA Synthesizer Engine
+    printf("1. Initializing ALSA Synthesizer Engine...\n");
+    if (!alsa_synth_init(&g_synth_engine, 0.0)) {
+        fprintf(stderr, "Failed to initialize ALSA Synthesizer.\n");
         return 1;
     }
 
@@ -178,6 +147,7 @@ int main(void) {
     
     if (connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         perror("Connection to MCP Server failed");
+        alsa_synth_stop(&g_synth_engine);
         return 1;
     }
 
@@ -187,6 +157,7 @@ int main(void) {
             .ppn = admin_ppn,
             .key_id = 11,
             .frequency = score[i],
+            .duration = 0.4,
             .opcode = YUL_OP_SYNTH_PLAY
         };
         send(client_fd, &packet, sizeof(TcpTxPacket), 0);
@@ -196,11 +167,8 @@ int main(void) {
     close(client_fd);
     pthread_join(server_tid, NULL);
 
-    // Clean up PulseAudio
-    if (g_pulse_stream) {
-        pa_simple_drain(g_pulse_stream, &error);
-        pa_simple_free(g_pulse_stream);
-    }
+    // Stop our pre-existing ALSA Synthesizer Engine
+    alsa_synth_stop(&g_synth_engine);
 
     printf("\nUnified execution completed successfully.\n");
     printf("=============================================================\n");
