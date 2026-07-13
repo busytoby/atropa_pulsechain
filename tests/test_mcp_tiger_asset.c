@@ -16,7 +16,7 @@
 
 // Universal Opcode
 typedef enum {
-    YUL_OP_SYNTH_PLAY = 0x65
+    YUL_OP_SYNTH_PLAY_BIO = 0x66
 } YulOpcode;
 
 // PPN Account Structure
@@ -25,14 +25,13 @@ typedef struct {
     uint16_t programmer;
 } PPN;
 
-// 2-Channel Network Transaction Packet
+// Transaction packet carrying the path to the .bio arrangement file
 typedef struct {
     PPN      ppn;
     uint32_t key_id;
-    double   frequency;
-    double   duration;
+    char     bio_file_path[128];
     uint32_t opcode;
-} TcpTxPacket;
+} TcpBioTxPacket;
 
 // Global Gas Registry (Merkle 2-3 Tree representation)
 uint64_t g_balances[100];
@@ -51,29 +50,94 @@ double note_to_frequency(const char *note) {
     if (strcmp(note, "C3") == 0) return 130.81;
     if (strcmp(note, "Eb3") == 0) return 155.56;
     if (strcmp(note, "G3") == 0) return 196.00;
-    return 0.0; // REST or unknown
+    return 0.0;
+}
+
+// Parses and plays the submitted .bio score on the synthesizer
+bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) {
+    FILE *f = fopen(file_path, "r");
+    if (!f) {
+        *out_err = "REVERT: FAILED_TO_OPEN_BIO_ASSET";
+        return false;
+    }
+
+    char line[256];
+    char notes_parsed[32][8];
+    int parsed_count = 0;
+    int parser_state = 0; // 0: patterns, 1: intro_riff, 2: lead, 3: sequence, 4: parse
+
+    while (fgets(line, sizeof(line), f)) {
+        if (parser_state == 0 && strstr(line, "\"patterns\"")) {
+            parser_state = 1;
+        } else if (parser_state == 1 && strstr(line, "\"intro_riff\"")) {
+            parser_state = 2;
+        } else if (parser_state == 2 && strstr(line, "\"lead\"")) {
+            parser_state = 3;
+        } else if (parser_state == 3 && strstr(line, "\"sequence\"")) {
+            parser_state = 4;
+            continue;
+        }
+        
+        if (parser_state == 4) {
+            if (strstr(line, "]")) {
+                break;
+            }
+            char *p = line;
+            while ((p = strchr(p, '"')) != NULL) {
+                char *end_ptr = strchr(p + 1, '"');
+                if (end_ptr && parsed_count < 32) {
+                    size_t len = end_ptr - (p + 1);
+                    strncpy(notes_parsed[parsed_count], p + 1, len);
+                    notes_parsed[parsed_count][len] = '\0';
+                    parsed_count++;
+                    p = end_ptr + 1;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    fclose(f);
+
+    printf("   [Yul RTS] Parsed %d lead steps from submitted arrangement.\n", parsed_count);
+
+    double step_duration = 60.0 / 109.6 / 8.0; 
+    uint32_t slot = get_ppn_slot(ppn);
+
+    // Charge gas for executing the score (15 gas tokens per note block)
+    uint64_t total_gas_cost = parsed_count * UNIVERSAL_GAS_FEE;
+    if (g_balances[slot] < total_gas_cost) {
+        *out_err = "REVERT: INSUFFICIENT_GAS_FOR_SCORE_PLAYBACK";
+        return false;
+    }
+    g_balances[slot] -= total_gas_cost;
+    printf("   [Yul RTS] Charged %lu Gas. Remaining: %lu Gas\n", total_gas_cost, g_balances[slot]);
+
+    // Play the parsed sequence
+    for (int i = 0; i < parsed_count; i++) {
+        double freq = note_to_frequency(notes_parsed[i]);
+        if (freq > 0.0) {
+            printf("   [Speaker] Note %d: %.2f Hz\n", i + 1, freq);
+        }
+        alsa_synth_set_frequency(&g_synth_engine, freq);
+        usleep((useconds_t)(step_duration * 1000000.0));
+    }
+    alsa_synth_set_frequency(&g_synth_engine, 0.0);
+    return true;
 }
 
 // BTC Script 2-3 Operator execution engine
-bool process_transaction_rts(TcpTxPacket *tx, const char **out_err) {
-    uint32_t slot = get_ppn_slot(tx->ppn);
-    uint64_t balance = g_balances[slot];
-    
-    if (balance < UNIVERSAL_GAS_FEE) {
-        *out_err = "REVERT: INSUFFICIENT_GAS_BALANCE";
+bool process_transaction_rts(TcpBioTxPacket *tx, const char **out_err) {
+    // Enforce Key ACL check (Key 11 is Admin PPN [1,2])
+    if (tx->key_id != 11 || tx->ppn.project != 1 || tx->ppn.programmer != 2) {
+        *out_err = "REVERT: ACL_PERMISSION_DENIED";
         return false;
     }
     
-    g_balances[slot] = balance - UNIVERSAL_GAS_FEE;
-    
-    if (tx->opcode == YUL_OP_SYNTH_PLAY) {
-        printf("   [Yul RTS] BTC Script verified note. Freq: %.2f Hz | Balance: %lu Gas\n",
-               tx->frequency, g_balances[slot]);
-               
-        alsa_synth_set_frequency(&g_synth_engine, tx->frequency);
-        usleep((useconds_t)(tx->duration * 1000000.0));
-        alsa_synth_set_frequency(&g_synth_engine, 0.0);
-        return true;
+    // Route to .bio parser/player
+    if (tx->opcode == YUL_OP_SYNTH_PLAY_BIO) {
+        printf("   [Yul RTS] BTC Script verified BIO transaction submission for: %s\n", tx->bio_file_path);
+        return play_bio_arrangement(tx->bio_file_path, tx->ppn, out_err);
     }
     
     *out_err = "REVERT: INVALID_OPCODE";
@@ -97,8 +161,8 @@ void* mcp_server_thread(void *arg) {
     
     int client_fd = accept(server_fd, NULL, NULL);
     
-    TcpTxPacket packet;
-    while (recv(client_fd, &packet, sizeof(TcpTxPacket), 0) > 0) {
+    TcpBioTxPacket packet;
+    while (recv(client_fd, &packet, sizeof(TcpBioTxPacket), 0) > 0) {
         const char *err = NULL;
         if (!process_transaction_rts(&packet, &err)) {
             printf("   [MCP Server] Transaction failed: %s\n", err);
@@ -112,7 +176,7 @@ void* mcp_server_thread(void *arg) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT ZMM VM: MCP ASSET SUBMISSION - EYE OF THE TIGER\n");
+    printf("AUNCIENT ZMM VM: MCP BIO ARRANGEMENT TRANSACTION SUBMISSION\n");
     printf("=============================================================\n");
 
     // Initialize ALSASynth
@@ -121,7 +185,7 @@ int main(void) {
         return 1;
     }
 
-    // Initialize user balances
+    // Initialize balances
     memset(g_balances, 0, sizeof(g_balances));
     PPN admin_ppn = { .project = 1, .programmer = 2 };
     g_balances[get_ppn_slot(admin_ppn)] = 1000; // Seed 1000 gas tokens
@@ -131,58 +195,8 @@ int main(void) {
     pthread_create(&server_tid, NULL, mcp_server_thread, NULL);
     usleep(100000);
 
-    // 2. Read and parse eye_of_the_tiger.bio asset file
-    printf("2. Loading Eye of the Tiger score asset file...\n");
-    FILE *f = fopen("assets/bionika/eye_of_the_tiger.bio", "r");
-    if (!f) {
-        perror("Failed to open assets/bionika/eye_of_the_tiger.bio");
-        alsa_synth_stop(&g_synth_engine);
-        return 1;
-    }
-
-    // Extract sequence array strings using state machine to skip arrangement
-    char line[256];
-    char notes_parsed[32][8];
-    int parsed_count = 0;
-    int parser_state = 0; // 0: find patterns, 1: find intro_riff, 2: find lead, 3: find sequence, 4: parse notes
-
-    while (fgets(line, sizeof(line), f)) {
-        if (parser_state == 0 && strstr(line, "\"patterns\"")) {
-            parser_state = 1;
-        } else if (parser_state == 1 && strstr(line, "\"intro_riff\"")) {
-            parser_state = 2;
-        } else if (parser_state == 2 && strstr(line, "\"lead\"")) {
-            parser_state = 3;
-        } else if (parser_state == 3 && strstr(line, "\"sequence\"")) {
-            parser_state = 4;
-            continue;
-        }
-        
-        if (parser_state == 4) {
-            if (strstr(line, "]")) {
-                break; // End of sequence
-            }
-            // Parse all tokens in double quotes on the current line
-            char *p = line;
-            while ((p = strchr(p, '"')) != NULL) {
-                char *end_ptr = strchr(p + 1, '"');
-                if (end_ptr && parsed_count < 32) {
-                    size_t len = end_ptr - (p + 1);
-                    strncpy(notes_parsed[parsed_count], p + 1, len);
-                    notes_parsed[parsed_count][len] = '\0';
-                    parsed_count++;
-                    p = end_ptr + 1;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    fclose(f);
-
-    printf("   ✓ Successfully parsed %d notes from asset file.\n", parsed_count);
-
-    // 3. Connect client and transmit score over TCP/IP
+    // 2. Connect client and submit .bio transaction over TCP/IP
+    printf("2. Client connecting to submit BIO arrangement transaction...\n");
     int client_fd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
@@ -195,30 +209,26 @@ int main(void) {
         return 1;
     }
 
-    // Tempo-based duration calculation (109.6 BPM, 16th notes = ~0.0684s duration)
-    double step_duration = 60.0 / 109.6 / 8.0; 
+    // Package the file path directly in the transaction packet
+    TcpBioTxPacket packet = {
+        .ppn = admin_ppn,
+        .key_id = 11,
+        .bio_file_path = "assets/bionika/eye_of_the_tiger.bio",
+        .opcode = YUL_OP_SYNTH_PLAY_BIO
+    };
 
-    // Play first 16 steps of the lead sequence from the asset
-    printf("3. Transmitting lead riff via TCP/IP transactions to MCP...\n");
-    for (int i = 0; i < 16; i++) {
-        double freq = note_to_frequency(notes_parsed[i]);
-        TcpTxPacket packet = {
-            .ppn = admin_ppn,
-            .key_id = 11,
-            .frequency = freq,
-            .duration = step_duration,
-            .opcode = YUL_OP_SYNTH_PLAY
-        };
-        send(client_fd, &packet, sizeof(TcpTxPacket), 0);
-        usleep((useconds_t)((step_duration + 0.01) * 1000000.0));
-    }
+    printf("3. Transmitting BIO transaction package over TCP/IP...\n");
+    send(client_fd, &packet, sizeof(TcpBioTxPacket), 0);
+    
+    // Wait for playback loop on server-side to finish
+    usleep(3000000); 
 
     close(client_fd);
     pthread_join(server_tid, NULL);
 
     alsa_synth_stop(&g_synth_engine);
 
-    printf("\nUnified asset score play completed successfully.\n");
+    printf("\nBIO arrangement play completed successfully.\n");
     printf("=============================================================\n");
     return 0;
 }
