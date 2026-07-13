@@ -1,4 +1,9 @@
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
 #include <unistd.h>
+#include <pulse/simple.h>
+#include <pulse/error.h>
+#include <math.h>
 #include "tsfi_zmm_rpc.h"
 #include "tsfi_opt_zmm.h"
 #include "tsfi_genetic.h"
@@ -58,6 +63,331 @@ static size_t decode_hex(const char *hex, uint8_t *out, size_t max) {
     return decoded;
 }
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define SAMPLE_RATE 8000
+
+typedef struct {
+    bool lead_mounted;
+    bool bass_mounted;
+    bool growl_mounted;
+    bool drums_mounted;
+} RpcSynthMounts;
+
+static RpcSynthMounts g_rpc_mounts = { false, false, false, false };
+static pa_simple *g_rpc_pulse_stream = NULL;
+
+static double rpc_note_to_frequency(const char *note) {
+    if (strcmp(note, "C2") == 0) return 65.41;
+    if (strcmp(note, "Bb1") == 0) return 58.27;
+    if (strcmp(note, "Ab1") == 0) return 51.91;
+    if (strcmp(note, "C3") == 0) return 130.81;
+    if (strcmp(note, "Eb3") == 0) return 155.56;
+    if (strcmp(note, "G3") == 0) return 196.00;
+    if (strcmp(note, "F3") == 0) return 174.61;
+    if (strcmp(note, "Ab3") == 0) return 207.65;
+    if (strcmp(note, "Bb3") == 0) return 233.08;
+    if (strcmp(note, "C4") == 0) return 261.63;
+    if (strcmp(note, "Eb4") == 0) return 311.13;
+    if (strcmp(note, "F4") == 0) return 349.23;
+    if (strcmp(note, "G4") == 0) return 392.00;
+    if (strcmp(note, "Ab4") == 0) return 415.30;
+    if (strcmp(note, "Bb4") == 0) return 466.16;
+    if (strcmp(note, "Ab0") == 0) return 25.96;
+    if (strcmp(note, "Bb0") == 0) return 29.14;
+    if (strcmp(note, "C1") == 0) return 32.70;
+    return 0.0;
+}
+
+#define MAX_ARRANGEMENT 64
+#define MAX_STEPS 32
+
+typedef struct {
+    char pattern_name[16];
+    char lead_notes[MAX_STEPS][8];
+    char bass_notes[MAX_STEPS][8];
+    char growl_notes[MAX_STEPS][8];
+    double growl_gain[MAX_STEPS];
+    double growl_mod[MAX_STEPS];
+    uint8_t drum_kick[MAX_STEPS];
+    uint8_t drum_snare[MAX_STEPS];
+    int lead_count;
+    int bass_count;
+    int growl_count;
+    int gain_count;
+    int mod_count;
+    int kick_count;
+    int snare_count;
+} RpcPatternData;
+
+static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_growl, double growl_gain, double growl_mod,
+                           bool has_kick, bool has_snare, double duration) {
+    uint32_t total_samples = (uint32_t)(SAMPLE_RATE * duration);
+    uint8_t *buffer = malloc(total_samples);
+    if (!buffer) return;
+
+    double kick_phase = 0.0;
+
+    for (uint32_t i = 0; i < total_samples; i++) {
+        double t = (double)i / SAMPLE_RATE;
+        double mix = 0.0;
+
+        if (f_lead > 0.0 && g_rpc_mounts.lead_mounted) {
+            double lead_saw = 0.15 * (2.0 * (t * f_lead - floor(t * f_lead)) - 1.0);
+            double lead_sq = 0.08 * (sin(2.0 * M_PI * f_lead * t) > 0.0 ? 1.0 : -1.0);
+            double lead_env = exp(-6.0 * t);
+            mix += (lead_saw + lead_sq) * lead_env * 0.5;
+        }
+
+        if (f_bass > 0.0 && g_rpc_mounts.bass_mounted) {
+            double bass_tri = 0.3 * (2.0 * fabs(2.0 * (t * f_bass - floor(t * f_bass + 0.5))) - 1.0);
+            double bass_env = exp(-4.0 * t);
+            mix += bass_tri * bass_env * 0.7;
+        }
+
+        if (f_growl > 0.0 && growl_gain > 0.0 && g_rpc_mounts.growl_mounted) {
+            double wobble = sin(2.0 * M_PI * growl_mod * t);
+            double growl_sig = 0.6 * sin(2.0 * M_PI * f_growl * t + 3.5 * wobble);
+            double growl_env = exp(-1.2 * t) * (1.0 - exp(-35.0 * t)) * (1.0 + 0.4 * wobble);
+            mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.95;
+        }
+
+        if (has_kick && g_rpc_mounts.drums_mounted) {
+            double kick_freq = 120.0 * exp(-35.0 * t) + 40.0;
+            kick_phase += 2.0 * M_PI * kick_freq / SAMPLE_RATE;
+            double kick_sig = 0.6 * sin(kick_phase) * exp(-8.0 * t);
+            mix += kick_sig * 0.8;
+        }
+
+        if (has_snare && g_rpc_mounts.drums_mounted) {
+            double rand_noise = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            double snare_noise = rand_noise * 0.15 * exp(-12.0 * t);
+            double snare_body = 0.35 * sin(2.0 * M_PI * 180.0 * t) * exp(-18.0 * t);
+            mix += (snare_noise + snare_body) * 0.45 * 0.7;
+        }
+
+        double master = tanh(mix * 0.8);
+        double val = 127.0 + 120.0 * master;
+        if (val < 0.0) val = 0.0;
+        if (val > 255.0) val = 255.0;
+        buffer[i] = (uint8_t)val;
+    }
+
+    if (g_rpc_pulse_stream) {
+        int error;
+        pa_simple_write(g_rpc_pulse_stream, buffer, total_samples, &error);
+    } else {
+        usleep((useconds_t)(duration * 1000000.0));
+    }
+    free(buffer);
+}
+
+static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err) {
+    FILE *f = fopen(file_path, "r");
+    if (!f) {
+        *out_err = "REVERT: FAILED_TO_OPEN_BIO_ASSET";
+        return false;
+    }
+
+    char arrangement_list[MAX_ARRANGEMENT][16];
+    int arrangement_count = 0;
+    
+    RpcPatternData patterns[4];
+    memset(patterns, 0, sizeof(patterns));
+    strcpy(patterns[0].pattern_name, "intro_riff");
+    strcpy(patterns[1].pattern_name, "verse");
+    strcpy(patterns[2].pattern_name, "pre_chorus");
+    strcpy(patterns[3].pattern_name, "chorus");
+
+    char line[256];
+    bool in_arrangement = false;
+    int current_pattern_idx = -1;
+    int parser_state = 0;
+
+    while (fgets(line, sizeof(line), f)) {
+        if (strstr(line, "\"arrangement\"")) {
+            in_arrangement = true;
+            continue;
+        }
+        if (in_arrangement) {
+            if (strstr(line, "]")) {
+                in_arrangement = false;
+                continue;
+            }
+            char *p = line;
+            while ((p = strchr(p, '"')) != NULL) {
+                char *end_ptr = strchr(p + 1, '"');
+                if (end_ptr && arrangement_count < MAX_ARRANGEMENT) {
+                    size_t len = end_ptr - (p + 1);
+                    strncpy(arrangement_list[arrangement_count], p + 1, len);
+                    arrangement_list[arrangement_count][len] = '\0';
+                    arrangement_count++;
+                    p = end_ptr + 1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < 4; i++) {
+            char search_str[256];
+            snprintf(search_str, sizeof(search_str), "\"%.15s\"", patterns[i].pattern_name);
+            if (strstr(line, search_str) && strstr(line, "{")) {
+                current_pattern_idx = i;
+                parser_state = 0;
+            }
+        }
+
+        if (current_pattern_idx != -1) {
+            if (strstr(line, "\"lead\"")) { parser_state = 1; continue; }
+            if (strstr(line, "\"bass\"")) { parser_state = 10; continue; }
+            if (strstr(line, "\"sub_growl\"")) { parser_state = 30; continue; }
+            if (strstr(line, "\"drums\"")) { parser_state = 40; continue; }
+            
+            RpcPatternData *pat = &patterns[current_pattern_idx];
+
+            if (parser_state == 1 && strstr(line, "\"sequence\"")) { parser_state = 2; continue; }
+            if (parser_state == 2) {
+                if (strstr(line, "]")) { parser_state = 0; continue; }
+                char *p = line;
+                while ((p = strchr(p, '"')) != NULL) {
+                    char *end_ptr = strchr(p + 1, '"');
+                    if (end_ptr && pat->lead_count < MAX_STEPS) {
+                        size_t len = end_ptr - (p + 1);
+                        strncpy(pat->lead_notes[pat->lead_count], p + 1, len);
+                        pat->lead_notes[pat->lead_count][len] = '\0';
+                        pat->lead_count++;
+                        p = end_ptr + 1;
+                    } else { break; }
+                }
+            }
+
+            if (parser_state == 10 && strstr(line, "\"sequence\"")) { parser_state = 20; continue; }
+            if (parser_state == 20) {
+                if (strstr(line, "]")) { parser_state = 0; continue; }
+                char *p = line;
+                while ((p = strchr(p, '"')) != NULL) {
+                    char *end_ptr = strchr(p + 1, '"');
+                    if (end_ptr && pat->bass_count < MAX_STEPS) {
+                        size_t len = end_ptr - (p + 1);
+                        strncpy(pat->bass_notes[pat->bass_count], p + 1, len);
+                        pat->bass_notes[pat->bass_count][len] = '\0';
+                        pat->bass_count++;
+                        p = end_ptr + 1;
+                    } else { break; }
+                }
+            }
+
+            if (parser_state == 30) {
+                if (strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
+                if (strstr(line, "\"modulation_rate\"")) { parser_state = 33; continue; }
+                if (strstr(line, "\"gain\"")) { parser_state = 35; continue; }
+            }
+            if (parser_state == 31) {
+                if (strstr(line, "]")) { parser_state = 30; continue; }
+                char *p = line;
+                while ((p = strchr(p, '"')) != NULL) {
+                    char *end_ptr = strchr(p + 1, '"');
+                    if (end_ptr && pat->growl_count < MAX_STEPS) {
+                        size_t len = end_ptr - (p + 1);
+                        strncpy(pat->growl_notes[pat->growl_count], p + 1, len);
+                        pat->growl_notes[pat->growl_count][len] = '\0';
+                        pat->growl_count++;
+                        p = end_ptr + 1;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 33) {
+                if (strstr(line, "]")) { parser_state = 30; continue; }
+                char *p = line;
+                while (p && pat->mod_count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "0123456789.");
+                    if (val_ptr) {
+                        pat->growl_mod[pat->mod_count++] = atof(val_ptr);
+                        p = strchr(val_ptr, ',');
+                        if (p) p++;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 35) {
+                if (strstr(line, "]")) { parser_state = 30; continue; }
+                char *p = line;
+                while (p && pat->gain_count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "0123456789.");
+                    if (val_ptr) {
+                        pat->growl_gain[pat->gain_count++] = atof(val_ptr);
+                        p = strchr(val_ptr, ',');
+                        if (p) p++;
+                    } else { break; }
+                }
+            }
+
+            if (parser_state == 40) {
+                if (strstr(line, "\"kick\"")) { parser_state = 41; continue; }
+                if (strstr(line, "\"snare\"")) { parser_state = 43; continue; }
+            }
+            if (parser_state == 41) {
+                if (strstr(line, "]")) { parser_state = 40; continue; }
+                char *p = line;
+                while (p && pat->kick_count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "01");
+                    if (val_ptr) {
+                        pat->drum_kick[pat->kick_count++] = (uint8_t)atoi(val_ptr);
+                        p = val_ptr + 1;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 43) {
+                if (strstr(line, "]")) { parser_state = 40; continue; }
+                char *p = line;
+                while (p && pat->snare_count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "01");
+                    if (val_ptr) {
+                        pat->drum_snare[pat->snare_count++] = (uint8_t)atoi(val_ptr);
+                        p = val_ptr + 1;
+                    } else { break; }
+                }
+            }
+        }
+    }
+    fclose(f);
+
+    int total_score_steps = 0;
+    for (int i = 0; i < arrangement_count; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
+                total_score_steps += patterns[j].lead_count;
+            }
+        }
+    }
+
+    double step_duration = 60.0 / 109.6 / 4.0;
+
+    int played_count = 0;
+    for (int i = 0; i < arrangement_count && played_count < 32; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
+                RpcPatternData *pat = &patterns[j];
+                for (int s = 0; s < pat->lead_count && played_count < 32; s++) {
+                    double f_lead = rpc_note_to_frequency(pat->lead_notes[s]);
+                    double f_bass = rpc_note_to_frequency(pat->bass_notes[s]);
+                    double f_growl = rpc_note_to_frequency(pat->growl_notes[s]);
+                    double g_val = pat->growl_gain[s];
+                    double m_val = pat->growl_mod[s];
+                    bool kick = pat->drum_kick[s] > 0;
+                    bool snare = pat->drum_snare[s] > 0;
+                    
+                    rpc_play_polyphonic_step(f_lead, f_bass, f_growl, g_val, m_val, kick, snare, step_duration);
+                    played_count++;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *output_buf, size_t out_max) {
     const char *p = json_in;
     
@@ -88,6 +418,8 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     char *method_get_receipt = strstr(p, "manifold.get_receipt");
     char *method_flow_choreography = strstr(p, "flow.trigger_choreography");
     char *method_dilemma_log = strstr(p, "wave512.dilemma_log");
+    char *method_mount_instrument = strstr(p, "manifold.mount_instrument");
+    char *method_play_bio = strstr(p, "manifold.play_bio");
 
     char *min_ptr = NULL;
     int method_type = 0; 
@@ -115,6 +447,8 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     if (method_get_receipt && (!min_ptr || method_get_receipt < min_ptr)) { min_ptr = method_get_receipt; method_type = 43; }
     if (method_flow_choreography && (!min_ptr || method_flow_choreography < min_ptr)) { min_ptr = method_flow_choreography; method_type = 27; }
     if (method_dilemma_log && (!min_ptr || method_dilemma_log < min_ptr)) { min_ptr = method_dilemma_log; method_type = 28; }
+    if (method_mount_instrument && (!min_ptr || method_mount_instrument < min_ptr)) { min_ptr = method_mount_instrument; method_type = 44; }
+    if (method_play_bio && (!min_ptr || method_play_bio < min_ptr)) { min_ptr = method_play_bio; method_type = 45; }
 
     char *method_mouse_move = strstr(p, "input.mouse_move");
     char *method_mouse_button = strstr(p, "input.mouse_button");
@@ -573,6 +907,75 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             }
         }
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Receipt not found\", \"id\": %d}\n", id);
+        return 1;
+    } else if (method_type == 44) { // manifold.mount_instrument
+        char target[64] = {0};
+        if (extract_json_string(min_ptr, "\"target\"", target, sizeof(target))) {
+            if (strcmp(target, "lead") == 0) {
+                g_rpc_mounts.lead_mounted = true;
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted lead\", \"id\": %d}\n", id);
+            } else if (strcmp(target, "bass") == 0) {
+                g_rpc_mounts.bass_mounted = true;
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted bass\", \"id\": %d}\n", id);
+            } else if (strcmp(target, "growl") == 0) {
+                g_rpc_mounts.growl_mounted = true;
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted growl\", \"id\": %d}\n", id);
+            } else if (strcmp(target, "drums") == 0) {
+                g_rpc_mounts.drums_mounted = true;
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted drums\", \"id\": %d}\n", id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Unknown instrument target\", \"id\": %d}\n", id);
+            }
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Missing target parameter\", \"id\": %d}\n", id);
+        }
+        return 1;
+    } else if (method_type == 45) { // manifold.play_bio
+        char path[256] = {0};
+        int project = extract_json_int(min_ptr, "\"project\"", 0);
+        int programmer = extract_json_int(min_ptr, "\"programmer\"", 0);
+        int key_id = extract_json_int(min_ptr, "\"key_id\"", 0);
+
+        if (key_id != 11 || project != 1 || programmer != 2) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: ACL_PERMISSION_DENIED\", \"id\": %d}\n", id);
+            return 1;
+        }
+
+        if (!g_rpc_mounts.lead_mounted && !g_rpc_mounts.bass_mounted && !g_rpc_mounts.growl_mounted && !g_rpc_mounts.drums_mounted) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: NO_INSTRUMENTS_MOUNTED_ON_SYNTHESIZER\", \"id\": %d}\n", id);
+            return 1;
+        }
+
+        if (extract_json_string(min_ptr, "\"path\"", path, sizeof(path))) {
+            if (!g_rpc_pulse_stream) {
+                pa_sample_spec ss;
+                ss.format = PA_SAMPLE_U8;
+                ss.rate = SAMPLE_RATE;
+                ss.channels = 1;
+                int error;
+                g_rpc_pulse_stream = pa_simple_new(NULL, "ZMM_MCP_PlayBio", PA_STREAM_PLAYBACK, NULL, "Synthesizer", &ss, NULL, NULL, &error);
+                if (!g_rpc_pulse_stream) {
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Failed to connect to PulseAudio\", \"id\": %d}\n", id);
+                    return 1;
+                }
+            }
+
+            const char *err = NULL;
+            if (rpc_play_bio_arrangement(path, &err)) {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\"}, \"id\": %d}\n", id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"%s\", \"id\": %d}\n", err, id);
+            }
+
+            if (g_rpc_pulse_stream) {
+                int error;
+                pa_simple_drain(g_rpc_pulse_stream, &error);
+                pa_simple_free(g_rpc_pulse_stream);
+                g_rpc_pulse_stream = NULL;
+            }
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Missing path parameter\", \"id\": %d}\n", id);
+        }
         return 1;
     } else if (method_type == 27) { // flow.trigger_choreography
         // Launch the Google Labs Flow unified masterpiece matrix in the background
