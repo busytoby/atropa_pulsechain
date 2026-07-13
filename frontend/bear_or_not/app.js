@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
         phenotype: "brown",
         // Phenotype parameter composition registry
         phenotypeDefinitions: {
-            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0 },
-            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0 },
-            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40 }
+            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_render.jpg" },
+            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg" },
+            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg" }
         },
         score: 85,
         history: [
@@ -70,14 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.slide_twitch.value = state.twitch_intensity;
         elements.slide_sickness.value = state.sickness_intensity;
         elements.select_phenotype.value = state.phenotype;
-
-        // Use the procedurally selected base image phenotype
-        if (state.phenotype === 'crimson') {
-            elements.bear_image.src = "assets/crimson_bear.jpg";
-        } else if (state.phenotype === 'gray') {
-            elements.bear_image.src = "assets/gray_bear.jpg";
+        // Use the procedurally selected base image phenotype containing distinct shapes & accessories
+        const currentConfig = state.phenotypeDefinitions[state.phenotype];
+        if (currentConfig && currentConfig.imageSrc) {
+            elements.bear_image.src = currentConfig.imageSrc;
         } else {
-            elements.bear_image.src = "assets/teddy_render.jpg";
+            if (state.phenotype === 'crimson') {
+                elements.bear_image.src = "assets/crimson_bear.jpg";
+            } else if (state.phenotype === 'gray') {
+                elements.bear_image.src = "assets/gray_bear.jpg";
+            } else {
+                elements.bear_image.src = "assets/teddy_render.jpg";
+            }
         }
 
         // Real-time Visual Modulation: map exact genome values to CSS filters and scaling
@@ -300,7 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
         opt.innerText = name;
         elements.select_phenotype.appendChild(opt);
 
-        // Update state to use new phenotype and save its parameter composition
+        // Update state to use new phenotype and save its complete parameter and accessory composition
+        const activeImage = elements.bear_image.getAttribute('src') || "assets/teddy_render.jpg";
         state.phenotypeDefinitions[cleanKey] = {
             fur_r: state.fur_r,
             fur_g: state.fur_g,
@@ -308,7 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fur_len: state.fur_len,
             scale: state.scale,
             twitch_intensity: state.twitch_intensity,
-            sickness_intensity: state.sickness_intensity
+            sickness_intensity: state.sickness_intensity,
+            imageSrc: activeImage
         };
         state.phenotype = cleanKey;
         
