@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btn_bear: document.getElementById('btn-bear'),
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
-        leaderboard: document.getElementById('leaderboard-body')
+        leaderboard: document.getElementById('leaderboard-body'),
+        bear_image: document.getElementById('bear-image')
     };
 
     function updateUI() {
@@ -43,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.bar_b.style.width = (state.fur_b / 255 * 100) + '%';
         elements.bar_len.style.width = (state.fur_len / 255 * 100) + '%';
         elements.bar_scale.style.width = (state.scale / 200 * 100) + '%';
+
+        // Dynamically shift the rendered bear image based on active genome color
+        if (state.fur_r === 180) {
+            elements.bear_image.src = "assets/crimson_bear.jpg";
+        } else if (state.fur_r === 100 || state.fur_r === 80) {
+            elements.bear_image.src = "assets/gray_bear.jpg";
+        } else {
+            elements.bear_image.src = "assets/teddy_render.jpg";
+        }
 
         // Render activity table
         elements.leaderboard.innerHTML = state.history.map(item => `
