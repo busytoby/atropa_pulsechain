@@ -24,7 +24,13 @@
         <!-- Left Pane: Visualizer & Actions -->
         <main class="card visualizer-pane">
             <div class="image-frame">
-                <img id="bear-image" src="assets/teddy_render.jpg" alt="Active Stuffed Teddy Bear Genome Render">
+                <div class="bear-container" style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+                    <img id="bear-image" src="assets/teddy_render.jpg" alt="Active Stuffed Teddy Bear Genome Render" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    <!-- Procedural Accessory Overlays -->
+                    <div id="acc-glasses" class="accessory-overlay glasses" style="display: none;"></div>
+                    <div id="acc-bowtie" class="accessory-overlay bowtie" style="display: none;"></div>
+                    <div id="acc-hat" class="accessory-overlay hat" style="display: none;"></div>
+                </div>
             </div>
             <div class="controls">
                 <button id="btn-bear" class="btn btn-primary">🐻 BEAR</button>
@@ -36,7 +42,7 @@
         <section class="card metrics-pane">
             <h2>Active Genome Controls</h2>
             <div class="metrics-group">
-                <!-- Base Phenotype Selection -->
+                <!-- Base Phenotype Selection & Accessories -->
                 <div class="metric-bar" style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                     <div class="metric-info">
                         <span>Base Phenotype</span>
@@ -47,6 +53,15 @@
                         <option value="gray">Gray Performance-Bear</option>
                     </select>
                     <button id="btn-create-phenotype" class="btn" style="background: linear-gradient(135deg, var(--primary), #7b2cbf); padding: 0.5rem; font-size: 0.9rem; border-radius: 8px; margin-top: 0.6rem; width: 100%; color: white;">✨ SAVE AS NEW PHENOTYPE</button>
+                    
+                    <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Select Accessories</span>
+                        <div style="display: flex; gap: 0.8rem; margin-top: 0.4rem; justify-content: space-between; font-size: 0.9rem;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;"><input type="checkbox" id="chk-glasses"> Visor</label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;"><input type="checkbox" id="chk-bowtie"> Bowtie</label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;"><input type="checkbox" id="chk-hat"> Cyber Hat</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="metric-bar">
                     <div class="metric-info">

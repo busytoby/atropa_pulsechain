@@ -10,11 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
         sickness_intensity: 0,
         mutation_intensity: 30,
         phenotype: "brown",
+        accessories: { glasses: false, bowtie: false, hat: false },
         // Phenotype parameter composition registry
         phenotypeDefinitions: {
-            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_render.jpg" },
-            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg" },
-            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg" }
+            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_render.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
+            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg", accessories: { glasses: false, bowtie: true, hat: false } },
+            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg", accessories: { glasses: true, bowtie: false, hat: false } }
         },
         score: 85,
         history: [
@@ -43,11 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
         slide_sickness: document.getElementById('slide-sickness'),
         select_phenotype: document.getElementById('select-phenotype'),
         btn_create_phenotype: document.getElementById('btn-create-phenotype'),
+        chk_glasses: document.getElementById('chk-glasses'),
+        chk_bowtie: document.getElementById('chk-bowtie'),
+        chk_hat: document.getElementById('chk-hat'),
+        overlay_glasses: document.getElementById('acc-glasses'),
+        overlay_bowtie: document.getElementById('acc-bowtie'),
+        overlay_hat: document.getElementById('acc-hat'),
         btn_bear: document.getElementById('btn-bear'),
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
         leaderboard: document.getElementById('leaderboard-body'),
         bear_image: document.getElementById('bear-image'),
+        bear_container: document.querySelector('.bear-container'),
         displacement_map: document.getElementById('displacement-map')
     };
 
@@ -70,6 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.slide_twitch.value = state.twitch_intensity;
         elements.slide_sickness.value = state.sickness_intensity;
         elements.select_phenotype.value = state.phenotype;
+
+        // Synchronize accessory checkboxes
+        elements.chk_glasses.checked = state.accessories.glasses;
+        elements.chk_bowtie.checked = state.accessories.bowtie;
+        elements.chk_hat.checked = state.accessories.hat;
+
+        // Display overlays based on active accessory composition
+        elements.overlay_glasses.style.display = state.accessories.glasses ? 'block' : 'none';
+        elements.overlay_bowtie.style.display = state.accessories.bowtie ? 'block' : 'none';
+        elements.overlay_hat.style.display = state.accessories.hat ? 'block' : 'none';
         // Use the procedurally selected base image phenotype containing distinct shapes & accessories
         const currentConfig = state.phenotypeDefinitions[state.phenotype];
         if (currentConfig && currentConfig.imageSrc) {
@@ -91,9 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const brightPercent = 70 + (state.fur_b / 255 * 50);
         const scaleVal = 0.75 + (state.scale / 250);
         
-        // Map scaleVal CSS variable to drive the twitch jitter keyframe reference
-        elements.bear_image.style.setProperty('--bear-scale', scaleVal);
-
         // Map fur length to shadow contrast, depth detail, and boundary displacement scale
         const furContrast = 85 + (state.fur_len / 250 * 35);
         const shadowSpread = (state.fur_len / 250) * 12;
@@ -114,15 +129,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // Dynamic Sickness Distortion: physical skew angle representing EVM hemisphere asymmetry
         const sicknessSkew = (state.sickness_intensity / 255) * 16; // Up to 16 deg skew
 
-        // Dynamic Twitch Animation: jitter frequency scales with twitch intensity
+        // Map scaleVal CSS variable to drive the twitch jitter keyframe reference on the container
+        elements.bear_container.style.setProperty('--bear-scale', scaleVal);
+
+        // Dynamic Sickness Distortion: physical skew angle representing EVM hemisphere asymmetry
+        const sicknessSkew = (state.sickness_intensity / 255) * 16; // Up to 16 deg skew
+
+        // Dynamic Twitch Animation on parent container to keep overlays perfectly synchronized
         if (state.twitch_intensity > 0) {
-            const jitterDuration = 0.15 + (255 - state.twitch_intensity) / 255 * 0.85; // Speed increases with twitch
-            elements.bear_image.style.animation = `twitch-jitter ${jitterDuration}s infinite linear`;
-            elements.bear_image.style.transform = `skewX(${sicknessSkew}deg)`;
+            const jitterDuration = 0.15 + (255 - state.twitch_intensity) / 255 * 0.85;
+            elements.bear_container.style.animation = `twitch-jitter ${jitterDuration}s infinite linear`;
+            elements.bear_container.style.transform = `skewX(${sicknessSkew}deg)`;
         } else {
-            elements.bear_image.style.animation = 'none';
-            elements.bear_image.style.transform = `scale(${scaleVal}) skewX(${sicknessSkew}deg)`;
+            elements.bear_container.style.animation = 'none';
+            elements.bear_container.style.transform = `scale(${scaleVal}) skewX(${sicknessSkew}deg)`;
         }
+        elements.bear_image.style.animation = 'none';
+        elements.bear_image.style.transform = 'none';
 
         // Render activity table
         elements.leaderboard.innerHTML = state.history.map(item => `
@@ -150,6 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.slide_twitch.addEventListener('input', (e) => { state.twitch_intensity = parseInt(e.target.value); updateUI(); });
     elements.slide_sickness.addEventListener('input', (e) => { state.sickness_intensity = parseInt(e.target.value); updateUI(); });
 
+    // Accessory selection bindings to instantly render vector graphics on body
+    elements.chk_glasses.addEventListener('change', (e) => { state.accessories.glasses = e.target.checked; updateUI(); });
+    elements.chk_bowtie.addEventListener('change', (e) => { state.accessories.bowtie = e.target.checked; updateUI(); });
+    elements.chk_hat.addEventListener('change', (e) => { state.accessories.hat = e.target.checked; updateUI(); });
+
     // Bind Phenotype selector changes to update the base bear phenotype render instantly
     elements.select_phenotype.addEventListener('change', (e) => {
         state.phenotype = e.target.value;
@@ -162,6 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
             state.scale = config.scale;
             state.twitch_intensity = config.twitch_intensity;
             state.sickness_intensity = config.sickness_intensity;
+            if (config.accessories) {
+                state.accessories = { ...config.accessories };
+            }
         }
         updateUI();
     });
@@ -314,7 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scale: state.scale,
             twitch_intensity: state.twitch_intensity,
             sickness_intensity: state.sickness_intensity,
-            imageSrc: activeImage
+            imageSrc: activeImage,
+            accessories: { ...state.accessories }
         };
         state.phenotype = cleanKey;
         

@@ -298,3 +298,41 @@ input[type="range"]::-webkit-slider-thumb:hover {
     90% { transform: scale(var(--bear-scale, 1)) translate(-0.4px, 0.4px) rotate(0deg); }
     100% { transform: scale(var(--bear-scale, 1)) translate(0, 0) rotate(0deg); }
 }
+
+/* Procedural vector accessory overlays */
+.accessory-overlay {
+    position: absolute;
+    z-index: 10;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.accessory-overlay.glasses {
+    top: 38%;
+    left: 31%;
+    width: 38%;
+    height: 10%;
+    background: rgba(0, 255, 100, 0.3);
+    border: 2px solid #00ff64;
+    box-shadow: 0 0 15px rgba(0, 255, 100, 0.6);
+    border-radius: 6px;
+    pointer-events: none;
+}
+.accessory-overlay.bowtie {
+    top: 68%;
+    left: 42%;
+    width: 16%;
+    height: 8%;
+    background: linear-gradient(135deg, #7b2cbf, #e0aaff);
+    clip-path: polygon(0% 0%, 100% 100%, 100% 0%, 0% 100%);
+    box-shadow: 0 0 10px rgba(123, 44, 191, 0.8);
+    pointer-events: none;
+}
+.accessory-overlay.hat {
+    top: 6%;
+    left: 40%;
+    width: 20%;
+    height: 22%;
+    background: linear-gradient(to top, #00f5d4, transparent);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    border-bottom: 3px solid #00f5d4;
+    pointer-events: none;
+}
