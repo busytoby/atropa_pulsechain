@@ -137,7 +137,7 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
             double wobble = sin(2.0 * M_PI * growl_mod * t);
             double growl_sig = 0.6 * sin(2.0 * M_PI * f_growl * t + 3.5 * wobble);
             double growl_env = exp(-1.2 * t) * (1.0 - exp(-35.0 * t)) * (1.0 + 0.4 * wobble);
-            mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.5;
+            mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.95;
         }
 
         // 4. Kick Drum (only if drums mounted)
@@ -155,7 +155,9 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
             mix += (snare_noise + snare_body) * 0.45 * 0.7;
         }
 
-        double val = 127.0 + 120.0 * mix;
+        // Apply dynamic waveshaping soft limiter (tanh) to prevent clipping/clashing
+        double master = tanh(mix * 0.8);
+        double val = 127.0 + 120.0 * master;
         if (val < 0.0) val = 0.0;
         if (val > 255.0) val = 255.0;
         buffer[i] = (uint8_t)val;
@@ -348,6 +350,12 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
         }
     }
     fclose(f);
+
+    for (int i = 0; i < 4; i++) {
+        printf("   [Parser Debug] Pattern '%s': lead_count=%d, bass_count=%d, growl_count=%d, gain_count=%d, mod_count=%d, kick_count=%d, snare_count=%d\n",
+               patterns[i].pattern_name, patterns[i].lead_count, patterns[i].bass_count, patterns[i].growl_count,
+               patterns[i].gain_count, patterns[i].mod_count, patterns[i].kick_count, patterns[i].snare_count);
+    }
 
     int total_score_steps = 0;
     for (int i = 0; i < arrangement_count; i++) {
