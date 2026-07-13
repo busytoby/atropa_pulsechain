@@ -45,3 +45,39 @@ The transaction pipeline maps network inputs to physical in-memory executions:
 ### Step 4: ZMM Execution
 * The TAC translates the D-channel opcode into a semantic Helmholtz command.
 * The command is written to `ws->current_directive` and processed instantly in-memory by the ZMM execution loop (`ws->step_safety_state()`), updating the state root.
+
+---
+
+## 3. RSTS/E-Style Multi-User Account Hierarchy (PPN & Keys)
+
+To support multiple ACLs per connection, caller identities are partitioned using a Project-Programmer Number (PPN) structure:
+
+```
+[ PPN Account: Project, Programmer ]
+                 |
+        _________________
+       /                 \
+  [ Key A (PKI) ]   [ Key B (PKI) ]
+```
+
+* **PPN Account:** A logical billing/permissions group. A single PPN may authorize multiple unique PKI keys.
+* **Key-Based Verification:** The system confirms the public key ID matches one of the active keys registered to the PPN prior to executing the state changes.
+* **Default 11 Key:** The default system administrative key (`Key 11`) is pre-authorized for the system manager PPN `[1, 1]`.
+
+---
+
+## 4. Helmholtz-Compatible Keyboard Monitor (KBM) Commands
+
+Standard RSTS/E KBM commands are routed through the Helmholtz semantic translation layer:
+* **`SYSTAT`:** Evaluates and writes the status of active card process slots, current execution epochs, and gas balances directly to the virtual system log.
+* **`FORCE <card_id> <directive>`:** Allows authorized administrators (PPN `[1, 1]` using `Key 11`) to override the instruction register of a specific card, forcing state transitions (e.g. `HELMHOLTZ_RESONATE`) during the next scheduling cycle.
+
+---
+
+## 5. Dynamic Capability Flags (MCP ACL)
+
+Specific capability privileges are distributed dynamically at the MCP layer, bypassing the need for core VM mutations:
+* **`can_bypass_gas`:** Allows execution of transactions with zero gas fees (used for administrative updates or bootstrapping).
+* **`can_write_any_storage`:** Grants administrative bypass to modify any account or slot index directly.
+* **`can_mount_devices`:** Authorizes mounting or modifying virtual disk device paths (e.g., `DK0:`).
+
