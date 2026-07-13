@@ -45,10 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.bar_len.style.width = (state.fur_len / 255 * 100) + '%';
         elements.bar_scale.style.width = (state.scale / 200 * 100) + '%';
 
-        // Dynamically shift the rendered bear image based on active genome color
-        if (state.fur_r === 180) {
+        // Dynamically shift the rendered bear image based on active genome color ranges
+        if (state.fur_r > 150) {
             elements.bear_image.src = "assets/crimson_bear.jpg";
-        } else if (state.fur_r === 100 || state.fur_r === 80) {
+        } else if (state.fur_r <= 110) {
             elements.bear_image.src = "assets/gray_bear.jpg";
         } else {
             elements.bear_image.src = "assets/teddy_render.jpg";
