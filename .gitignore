@@ -117,6 +117,7 @@ libtsfi2.so
 /tests/test_auncient_activity_bus
 /tests/test_auncient_alsa_synth_c
 /tests/test_auncient_btc_thunk
+/tests/test_auncient_btc_tree_tests
 /tests/test_auncient_child_langmuir_ban
 /tests/test_auncient_diagnostics_c
 /tests/test_auncient_dynamic_gas
