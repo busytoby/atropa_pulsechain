@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
         sickness_intensity: 0,
         mutation_intensity: 30,
         phenotype: "brown",
+        // Phenotype parameter composition registry
+        phenotypeDefinitions: {
+            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0 },
+            crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0 },
+            gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40 }
+        },
         score: 85,
         history: [
             { id: "0x89178a88...", event: "GENOME_INITIALIZED", score: "80", status: "active" },
@@ -143,6 +149,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bind Phenotype selector changes to update the base bear phenotype render instantly
     elements.select_phenotype.addEventListener('change', (e) => {
         state.phenotype = e.target.value;
+        const config = state.phenotypeDefinitions[state.phenotype];
+        if (config) {
+            state.fur_r = config.fur_r;
+            state.fur_g = config.fur_g;
+            state.fur_b = config.fur_b;
+            state.fur_len = config.fur_len;
+            state.scale = config.scale;
+            state.twitch_intensity = config.twitch_intensity;
+            state.sickness_intensity = config.sickness_intensity;
+        }
         updateUI();
     });
     elements.btn_bear.addEventListener('click', () => {
@@ -284,7 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
         opt.innerText = name;
         elements.select_phenotype.appendChild(opt);
 
-        // Update state to use new phenotype and log to ACAB history
+        // Update state to use new phenotype and save its parameter composition
+        state.phenotypeDefinitions[cleanKey] = {
+            fur_r: state.fur_r,
+            fur_g: state.fur_g,
+            fur_b: state.fur_b,
+            fur_len: state.fur_len,
+            scale: state.scale,
+            twitch_intensity: state.twitch_intensity,
+            sickness_intensity: state.sickness_intensity
+        };
         state.phenotype = cleanKey;
         
         const mockHash = "0x" + Math.random().toString(16).slice(2, 10) + "cf9b...";
