@@ -124,6 +124,18 @@ typedef struct {
 
 static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_growl, double growl_gain, double growl_mod,
                            bool has_kick, bool has_snare, double duration) {
+    // CCITT in-band tone control check:
+    // If a 2600 Hz tone is received, perform line control reset (disconnect / unmount)
+    if ((f_lead >= 2595.0 && f_lead <= 2605.0) ||
+        (f_bass >= 2595.0 && f_bass <= 2605.0) ||
+        (f_growl >= 2595.0 && f_growl <= 2605.0)) {
+        printf("[CCITT SIGNAL] 2600 Hz disconnect signal detected. Collapsing session.\n");
+        g_rpc_mounts.lead_mounted = false;
+        g_rpc_mounts.bass_mounted = false;
+        g_rpc_mounts.growl_mounted = false;
+        g_rpc_mounts.drums_mounted = false;
+    }
+
     uint32_t total_samples = (uint32_t)(SAMPLE_RATE * duration);
     uint8_t *buffer = malloc(total_samples);
     if (!buffer) return;
@@ -182,6 +194,20 @@ static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_grow
         usleep((useconds_t)(duration * 1000000.0));
     }
     free(buffer);
+}
+
+static int verify_23_tree_traversal_acl(int project, int programmer, int key_id) {
+    // 2-3 Tree Traversal paths simulated:
+    // Left choices: (project + programmer) % 3 == 0 -> Downgraded / Anonymous
+    // Middle choices: (project + programmer) % 3 == 1 -> User
+    // Right choices: (project + programmer) % 3 == 2 -> Admin (Key 11 is admin)
+    if (key_id == 11) {
+        return 2; // ADMIN
+    }
+    int path_val = (project + programmer) % 3;
+    if (path_val == 0) return 0; // ANONYMOUS / Denied
+    if (path_val == 1) return 1; // USER
+    return 2; // ADMIN
 }
 
 static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err) {
@@ -936,7 +962,8 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         int programmer = extract_json_int(min_ptr, "\"programmer\"", 0);
         int key_id = extract_json_int(min_ptr, "\"key_id\"", 0);
 
-        if (key_id != 11 || project != 1 || programmer != 2) {
+        int acl_level = verify_23_tree_traversal_acl(project, programmer, key_id);
+        if (acl_level < 1) {
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: ACL_PERMISSION_DENIED\", \"id\": %d}\n", id);
             return 1;
         }
