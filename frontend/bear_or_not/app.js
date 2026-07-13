@@ -127,9 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         elements.bear_image.style.filter = filterStr;
 
-        // Dynamic Sickness Distortion: physical skew angle representing EVM hemisphere asymmetry
-        const sicknessSkew = (state.sickness_intensity / 255) * 16; // Up to 16 deg skew
-
         // Map scaleVal CSS variable to drive the twitch jitter keyframe reference on the container
         elements.bear_container.style.setProperty('--bear-scale', scaleVal);
 
@@ -384,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial load: Fetch the actual active genome DNA file from disk to sync slider default values
-    fetch('../../assets/bear_genome.dna')
+    fetch('bear_genome.dna')
         .then(res => {
             if (!res.ok) throw new Error("DNA file not found");
             return res.arrayBuffer();
