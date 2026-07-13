@@ -114,6 +114,7 @@ libtsfi2.so
 /tests/test_auncient_mci_routing_c
 /tests/test_auncient_boot_transform_c
 /tests/test_auncient_alsa_synth_c
+/tests/test_auncient_child_langmuir_ban
 /tests/test_auncient_diagnostics_c
 /tests/test_auncient_register_audit
 /tests/test_auncient_vulkan_trap_c
