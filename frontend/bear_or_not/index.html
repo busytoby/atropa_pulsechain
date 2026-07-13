@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bionika BrainZ: Bear or Not Evolution Dashboard</title>
+    <meta name="description" content="Auncient self-balancing 2-3 Merkle coordinate activity tree GUI. Rank, vote, and evolve procedural teddy bears.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>BIONIKA BRAINZ</h1>
+            <p>Auncient Coaxial Activity Bus (ACAB) &bull; Stuffed Teddy Bear Evolution & Ranking</p>
+        </header>
+
+        <!-- Left Pane: Visualizer & Actions -->
+        <main class="card visualizer-pane">
+            <div class="image-frame">
+                <img id="bear-image" src="assets/teddy_render.jpg" alt="Active Stuffed Teddy Bear Genome Render">
+            </div>
+            <div class="controls">
+                <button id="btn-bear" class="btn btn-primary">🐻 BEAR</button>
+                <button id="btn-not-bear" class="btn btn-danger">❌ NOT BEAR (BAN)</button>
+            </div>
+        </main>
+
+        <!-- Right Pane: Active Genome Metrics -->
+        <section class="card metrics-pane">
+            <h2>Active Genome Stats</h2>
+            <div class="metrics-group">
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Fur Color R</span>
+                        <span id="lbl-fur-r">120</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-fur-r" class="progress-fill"></div></div>
+                </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Fur Color G</span>
+                        <span id="lbl-fur-g">120</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-fur-g" class="progress-fill"></div></div>
+                </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Fur Color B</span>
+                        <span id="lbl-fur-b">120</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-fur-b" class="progress-fill"></div></div>
+                </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Fur Length</span>
+                        <span id="lbl-fur-len">0.05m</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-fur-len" class="progress-fill accent"></div></div>
+                </div>
+                <div class="metric-bar">
+                    <div class="metric-info">
+                        <span>Scale</span>
+                        <span id="lbl-scale">0.80x</span>
+                    </div>
+                    <div class="progress-track"><div id="bar-scale" class="progress-fill accent"></div></div>
+                </div>
+            </div>
+
+            <button id="btn-evolve" class="btn btn-primary" style="margin-top: auto; background: linear-gradient(135deg, var(--accent), #047857);">🧬 EVOLVE GENOME</button>
+        </section>
+
+        <!-- Bottom Pane: ACAB Activity Logs & Leaderboard -->
+        <section class="card leaderboard">
+            <h2>ACAB Activity Log & Leaderboard</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Coordinate Hash / ID</th>
+                        <th>Activity Event</th>
+                        <th>Calculated Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Dynamic entries will load here -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
