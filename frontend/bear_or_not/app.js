@@ -107,19 +107,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Evolve action (simulating predictive compiler calculations)
     elements.btn_evolve.addEventListener('click', () => {
-        // Boost details based on rating score with pseudo-random genetic mutation variance
-        if (state.score > 70) {
-            state.fur_r = 180 + Math.floor((Math.random() - 0.5) * 30);
-            state.fur_g = 20 + Math.floor(Math.random() * 20);
-            state.fur_b = 20 + Math.floor(Math.random() * 20);
-            state.fur_len = 180 + Math.floor((Math.random() - 0.5) * 40);
-            state.scale = 135 + Math.floor((Math.random() - 0.5) * 30);
-        } else {
+        // Randomly select between the three visual bear phenotypes (Crimson, Gray, Brown) on each evolution click
+        const phenotypes = ['crimson', 'gray', 'brown'];
+        const chosen = phenotypes[Math.floor(Math.random() * phenotypes.length)];
+
+        if (chosen === 'crimson') {
+            state.fur_r = 180 + Math.floor((Math.random() - 0.5) * 20);
+            state.fur_g = 20 + Math.floor(Math.random() * 15);
+            state.fur_b = 20 + Math.floor(Math.random() * 15);
+            state.fur_len = 180 + Math.floor((Math.random() - 0.5) * 30);
+            state.scale = 135 + Math.floor((Math.random() - 0.5) * 20);
+        } else if (chosen === 'gray') {
             state.fur_r = 80 + Math.floor((Math.random() - 0.5) * 20);
-            state.fur_g = 80 + Math.floor(Math.random() * 20);
-            state.fur_b = 80 + Math.floor(Math.random() * 20);
-            state.fur_len = 45 + Math.floor((Math.random() - 0.5) * 15);
-            state.scale = 90 + Math.floor((Math.random() - 0.5) * 15);
+            state.fur_g = 80 + Math.floor(Math.random() * 15);
+            state.fur_b = 80 + Math.floor(Math.random() * 15);
+            state.fur_len = 45 + Math.floor((Math.random() - 0.5) * 10);
+            state.scale = 90 + Math.floor((Math.random() - 0.5) * 10);
+        } else {
+            // Default Brown/Original
+            state.fur_r = 125 + Math.floor((Math.random() - 0.5) * 15);
+            state.fur_g = 125 + Math.floor(Math.random() * 15);
+            state.fur_b = 125 + Math.floor(Math.random() * 15);
+            state.fur_len = 110 + Math.floor((Math.random() - 0.5) * 20);
+            state.scale = 105 + Math.floor((Math.random() - 0.5) * 15);
         }
 
         const mockHash = "0x" + Math.random().toString(16).slice(2, 10) + "ace8...";
