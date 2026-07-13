@@ -116,6 +116,7 @@ libtsfi2.so
 /tests/test_auncient_alsa_synth_c
 /tests/test_auncient_child_langmuir_ban
 /tests/test_auncient_diagnostics_c
+/tests/test_auncient_dynamic_gas
 /tests/test_auncient_register_audit
 /tests/test_auncient_vulkan_trap_c
 /tests/test_auncient_vmlinux_boot_c
