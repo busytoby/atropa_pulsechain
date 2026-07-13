@@ -50,16 +50,24 @@ uint32_t get_ppn_slot(PPN ppn) {
 
 // Map musical note strings to frequencies
 double note_to_frequency(const char *note) {
-    if (strcmp(note, "C4") == 0) return 261.63;
-    if (strcmp(note, "Bb3") == 0) return 233.08;
-    if (strcmp(note, "Ab3") == 0) return 207.65;
+    if (strcmp(note, "C2") == 0) return 65.41;
+    if (strcmp(note, "Bb1") == 0) return 58.27;
+    if (strcmp(note, "Ab1") == 0) return 51.91;
     if (strcmp(note, "C3") == 0) return 130.81;
     if (strcmp(note, "Eb3") == 0) return 155.56;
     if (strcmp(note, "G3") == 0) return 196.00;
     if (strcmp(note, "F3") == 0) return 174.61;
-    if (strcmp(note, "C2") == 0) return 65.41;
-    if (strcmp(note, "Bb1") == 0) return 58.27;
-    if (strcmp(note, "Ab1") == 0) return 51.91;
+    if (strcmp(note, "Ab3") == 0) return 207.65;
+    if (strcmp(note, "Bb3") == 0) return 233.08;
+    if (strcmp(note, "C4") == 0) return 261.63;
+    if (strcmp(note, "Eb4") == 0) return 311.13;
+    if (strcmp(note, "F4") == 0) return 349.23;
+    if (strcmp(note, "G4") == 0) return 392.00;
+    if (strcmp(note, "Ab4") == 0) return 415.30;
+    if (strcmp(note, "Bb4") == 0) return 466.16;
+    if (strcmp(note, "Ab0") == 0) return 25.96;
+    if (strcmp(note, "Bb0") == 0) return 29.14;
+    if (strcmp(note, "C1") == 0) return 32.70;
     return 0.0;
 }
 
@@ -71,37 +79,68 @@ typedef struct {
     char pattern_name[16];
     char lead_notes[MAX_STEPS][8];
     char bass_notes[MAX_STEPS][8];
+    char growl_notes[MAX_STEPS][8];
+    double growl_gain[MAX_STEPS];
+    double growl_mod[MAX_STEPS];
+    uint8_t drum_kick[MAX_STEPS];
+    uint8_t drum_snare[MAX_STEPS];
     int step_count;
 } PatternData;
 
-// Synthesizes a block using Lissajous mathematics and streams to U8 ALSA hardware
-void play_lissajous_step(double f_lead, double f_bass, double duration) {
+// Synthesizes polyphonic multi-voice audio using the exact video-test math
+void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double growl_gain, double growl_mod,
+                           bool has_kick, bool has_snare, double duration) {
     uint32_t total_samples = (uint32_t)(SAMPLE_RATE * duration);
     uint8_t *buffer = malloc(total_samples);
     if (!buffer) return;
 
-    // Lissajous mathematical parameters (Base phase offset and frequency mapping)
-    double phi_w = 0.5 * M_PI; // Phase offset
-
     for (uint32_t i = 0; i < total_samples; i++) {
         double t = (double)i / SAMPLE_RATE;
-        
-        // Base coordinate waves (X and Y projections)
-        double x_wave = sin(2.0 * M_PI * f_lead * t + phi_w);
-        double y_wave = sin(2.0 * M_PI * f_bass * t);
-        
-        // Lissajous modulation mapping to U8 (0-255)
-        double raw_val = x_wave * y_wave;
-        
-        // Anti-pop envelope
-        double envelope = 1.0;
-        if (i < 200) {
-            envelope = (double)i / 200.0;
-        } else if (i > total_samples - 200) {
-            envelope = (double)(total_samples - i) / 200.0;
+        double mix = 0.0;
+
+        // 1. Lead Channel: Saw + Square blend with exponential decay envelope
+        if (f_lead > 0.0) {
+            double lead_saw = 0.15 * (2.0 * (t * f_lead - floor(t * f_lead)) - 1.0);
+            double lead_sq = 0.08 * (sin(2.0 * M_PI * f_lead * t) > 0.0 ? 1.0 : -1.0);
+            double lead_env = exp(-6.0 * t);
+            mix += (lead_saw + lead_sq) * lead_env * 0.5;
         }
-        
-        buffer[i] = (uint8_t)(127.0 + 120.0 * raw_val * envelope);
+
+        // 2. Bass Channel: Triangle wave with exponential decay envelope
+        if (f_bass > 0.0) {
+            double bass_tri = 0.3 * (2.0 * fabs(2.0 * (t * f_bass - floor(t * f_bass + 0.5))) - 1.0);
+            double bass_env = exp(-4.0 * t);
+            mix += bass_tri * bass_env * 0.7;
+        }
+
+        // 3. Sub-Growl Channel: FM Wobble carrier wave
+        if (f_growl > 0.0 && growl_gain > 0.0) {
+            double wobble = sin(2.0 * M_PI * growl_mod * t);
+            double growl_sig = 0.6 * sin(2.0 * M_PI * f_growl * t + 3.5 * wobble);
+            double growl_env = exp(-1.2 * t) * (1.0 - exp(-35.0 * t)) * (1.0 + 0.4 * wobble);
+            mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.5;
+        }
+
+        // 4. Kick Drum: Pitch sweep sine wave
+        if (has_kick) {
+            double kick_freq = 120.0 * exp(-35.0 * t) + 40.0;
+            double kick_sig = 0.6 * sin(2.0 * M_PI * kick_freq * t) * exp(-8.0 * t);
+            mix += kick_sig * 0.8;
+        }
+
+        // 5. Snare Drum: White noise burst + body sine wave
+        if (has_snare) {
+            double rand_noise = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            double snare_noise = rand_noise * 0.15 * exp(-12.0 * t);
+            double snare_body = 0.35 * sin(2.0 * M_PI * 180.0 * t) * exp(-18.0 * t);
+            mix += (snare_noise + snare_body) * 0.45 * 0.7;
+        }
+
+        // Clamp mixed signal to U8 range (0 to 255)
+        double val = 127.0 + 120.0 * mix;
+        if (val < 0.0) val = 0.0;
+        if (val > 255.0) val = 255.0;
+        buffer[i] = (uint8_t)val;
     }
 
     if (g_pcm_handle) {
@@ -110,7 +149,6 @@ void play_lissajous_step(double f_lead, double f_bass, double duration) {
             snd_pcm_recover(g_pcm_handle, frames, 0);
         }
     } else {
-        // Emulator timing fallback
         usleep((useconds_t)(duration * 1000000.0));
     }
     
@@ -138,7 +176,7 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     char line[256];
     bool in_arrangement = false;
     int current_pattern_idx = -1;
-    int parser_state = 0; // 0: patterns, 1: lead/bass, 2: sequence
+    int parser_state = 0;
 
     while (fgets(line, sizeof(line), f)) {
         if (strstr(line, "\"arrangement\"")) {
@@ -175,25 +213,16 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
         }
 
         if (current_pattern_idx != -1) {
-            if (strstr(line, "\"lead\"")) {
-                parser_state = 1;
-                continue;
-            }
-            if (strstr(line, "\"bass\"")) {
-                parser_state = 10;
-                continue;
-            }
+            // Track routing state
+            if (strstr(line, "\"lead\"")) { parser_state = 1; continue; }
+            if (strstr(line, "\"bass\"")) { parser_state = 10; continue; }
+            if (strstr(line, "\"sub_growl\"")) { parser_state = 30; continue; }
+            if (strstr(line, "\"drums\"")) { parser_state = 40; continue; }
             
-            // Parse Lead Sequence
-            if (parser_state == 1 && strstr(line, "\"sequence\"")) {
-                parser_state = 2;
-                continue;
-            }
+            // 1. Lead parsing
+            if (parser_state == 1 && strstr(line, "\"sequence\"")) { parser_state = 2; continue; }
             if (parser_state == 2) {
-                if (strstr(line, "]")) {
-                    parser_state = 0;
-                    continue;
-                }
+                if (strstr(line, "]")) { parser_state = 0; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
                 while ((p = strchr(p, '"')) != NULL) {
@@ -204,36 +233,105 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                         pat->lead_notes[pat->step_count][len] = '\0';
                         pat->step_count++;
                         p = end_ptr + 1;
-                    } else {
-                        break;
-                    }
+                    } else { break; }
                 }
             }
 
-            // Parse Bass Sequence
-            if (parser_state == 10 && strstr(line, "\"sequence\"")) {
-                parser_state = 20;
-                continue;
-            }
+            // 2. Bass parsing
+            if (parser_state == 10 && strstr(line, "\"sequence\"")) { parser_state = 20; continue; }
             if (parser_state == 20) {
-                if (strstr(line, "]")) {
-                    parser_state = 0;
-                    continue;
-                }
+                if (strstr(line, "]")) { parser_state = 0; continue; }
                 char *p = line;
                 PatternData *pat = &patterns[current_pattern_idx];
-                int bass_count = 0;
+                int count = 0;
                 while ((p = strchr(p, '"')) != NULL) {
                     char *end_ptr = strchr(p + 1, '"');
-                    if (end_ptr && bass_count < MAX_STEPS) {
+                    if (end_ptr && count < MAX_STEPS) {
                         size_t len = end_ptr - (p + 1);
-                        strncpy(pat->bass_notes[bass_count], p + 1, len);
-                        pat->bass_notes[bass_count][len] = '\0';
-                        bass_count++;
+                        strncpy(pat->bass_notes[count], p + 1, len);
+                        pat->bass_notes[count][len] = '\0';
+                        count++;
                         p = end_ptr + 1;
-                    } else {
-                        break;
-                    }
+                    } else { break; }
+                }
+            }
+
+            // 3. Sub-growl parsing
+            if (parser_state == 30 && strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
+            if (parser_state == 31) {
+                if (strstr(line, "]")) { parser_state = 32; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while ((p = strchr(p, '"')) != NULL) {
+                    char *end_ptr = strchr(p + 1, '"');
+                    if (end_ptr && count < MAX_STEPS) {
+                        size_t len = end_ptr - (p + 1);
+                        strncpy(pat->growl_notes[count], p + 1, len);
+                        pat->growl_notes[count][len] = '\0';
+                        count++;
+                        p = end_ptr + 1;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 32 && strstr(line, "\"gain\"")) { parser_state = 33; continue; }
+            if (parser_state == 33) {
+                if (strstr(line, "]")) { parser_state = 34; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while (p && count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "0123456789.");
+                    if (val_ptr) {
+                        pat->growl_gain[count++] = atof(val_ptr);
+                        p = strchr(val_ptr, ',');
+                        if (p) p++;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 34 && strstr(line, "\"modulation_rate\"")) { parser_state = 35; continue; }
+            if (parser_state == 35) {
+                if (strstr(line, "]")) { parser_state = 0; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while (p && count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "0123456789.");
+                    if (val_ptr) {
+                        pat->growl_mod[count++] = atof(val_ptr);
+                        p = strchr(val_ptr, ',');
+                        if (p) p++;
+                    } else { break; }
+                }
+            }
+
+            // 4. Drums parsing
+            if (parser_state == 40 && strstr(line, "\"kick\"")) { parser_state = 41; continue; }
+            if (parser_state == 41) {
+                if (strstr(line, "]")) { parser_state = 42; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while (p && count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "01");
+                    if (val_ptr) {
+                        pat->drum_kick[count++] = (uint8_t)atoi(val_ptr);
+                        p = val_ptr + 1;
+                    } else { break; }
+                }
+            }
+            if (parser_state == 42 && strstr(line, "\"snare\"")) { parser_state = 43; continue; }
+            if (parser_state == 43) {
+                if (strstr(line, "]")) { parser_state = 0; continue; }
+                char *p = line;
+                PatternData *pat = &patterns[current_pattern_idx];
+                int count = 0;
+                while (p && count < MAX_STEPS) {
+                    char *val_ptr = strpbrk(p, "01");
+                    if (val_ptr) {
+                        pat->drum_snare[count++] = (uint8_t)atoi(val_ptr);
+                        p = val_ptr + 1;
+                    } else { break; }
                 }
             }
         }
@@ -263,22 +361,25 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
     g_balances[slot] -= total_gas_cost;
     printf("   [Yul RTS] Charged %lu Gas. Remaining: %lu Gas\n", total_gas_cost, g_balances[slot]);
 
-    // Play the full Lissajous arrangement (first 64 steps for test time)
+    // Play the full modular polyphonic arrangement (first 32 steps for test length)
     int played_count = 0;
-    for (int i = 0; i < arrangement_count && played_count < 64; i++) {
+    for (int i = 0; i < arrangement_count && played_count < 32; i++) {
         for (int j = 0; j < 4; j++) {
             if (strcmp(arrangement_list[i], patterns[j].pattern_name) == 0) {
                 PatternData *pat = &patterns[j];
-                for (int s = 0; s < pat->step_count && played_count < 64; s++) {
+                for (int s = 0; s < pat->step_count && played_count < 32; s++) {
                     double f_lead = note_to_frequency(pat->lead_notes[s]);
                     double f_bass = note_to_frequency(pat->bass_notes[s]);
+                    double f_growl = note_to_frequency(pat->growl_notes[s]);
+                    double g_val = pat->growl_gain[s];
+                    double m_val = pat->growl_mod[s];
+                    bool kick = pat->drum_kick[s] > 0;
+                    bool snare = pat->drum_snare[s] > 0;
                     
-                    if (f_lead > 0.0 || f_bass > 0.0) {
-                        printf("   [Lissajous Synth] Step %d: Lead %.2f Hz | Bass %.2f Hz\n",
-                               played_count + 1, f_lead, f_bass);
-                    }
+                    printf("   [PolySynth] Step %d: Lead=%.1f Bass=%.1f Growl=%.1f (G:%.1f, M:%.1f) Kick=%d Snare=%d\n",
+                           played_count + 1, f_lead, f_bass, f_growl, g_val, m_val, kick, snare);
                     
-                    play_lissajous_step(f_lead, f_bass, step_duration);
+                    play_polyphonic_step(f_lead, f_bass, f_growl, g_val, m_val, kick, snare, step_duration);
                     played_count++;
                 }
             }
