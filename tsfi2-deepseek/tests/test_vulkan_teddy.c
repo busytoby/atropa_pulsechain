@@ -4034,6 +4034,10 @@ typedef struct {
     uint8_t twitch_intensity;
 } TsfiTeddyDna;
 
+extern bool g_gguf_acab_found;
+extern uint8_t g_gguf_acab_root[32];
+bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount);
+
 static void reload_genome() {
     FILE *df = fopen("assets/bear_genome.dna", "rb");
     if (df) {
@@ -4054,6 +4058,17 @@ static void reload_genome() {
             dna_eye_b = (float)dna.eye_b / 255.0f;
         }
         fclose(df);
+    }
+
+    // Modulate rendering using GGUF ACAB memory root if present
+    tsfi_load_gguf_weights("assets/atropa.gguf", NULL, 0);
+    if (g_gguf_acab_found) {
+        dna_fur_r = (float)g_gguf_acab_root[0] / 255.0f;
+        dna_fur_g = (float)g_gguf_acab_root[1] / 255.0f;
+        dna_fur_b = (float)g_gguf_acab_root[2] / 255.0f;
+        sickness_intensity = (float)g_gguf_acab_root[3] / 255.0f;
+        printf("[ACAB MEMORY] Mapped GGUF ACAB root to Teddy Bear: R=%.2f, G=%.2f, B=%.2f\n", 
+               dna_fur_r, dna_fur_g, dna_fur_b);
     }
 }
 
