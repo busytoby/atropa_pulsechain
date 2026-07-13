@@ -1,4 +1,4 @@
-# Auncient VM: Ouroboros Feedback & Boot Manager Lore
+# Auncient VM: Ouroboros Feedback, Boot Manager & Peer Registry Lore
 
 This document records the architectural details and operational lore of the newly deployed **Auncient** subsystems.
 
@@ -20,3 +20,20 @@ To execute headless tasks safely without host environment pollution, the hypervi
 * **Reset Vector Interception:** The boot manager traps warm-resets at `$FF5C`, preserving active VM registers.
 * **Option 0:** Launches low-level hardware diagnostics (loopback, stake audits, Verlet FET discharge solver).
 * **Option 1:** Mounts an isolated rootfs structure via `unshare` and boots `/sbin/init` (the Helmholtz daemon) to perform system and directory space audits.
+
+## 5. Dynamic Context-Specific Gas Controller
+To protect VM resources from starvation attacks, the ZMM VM implements a dynamic gas scheduler:
+* **System Operations:** Run with infinite gas (`UINT64_MAX`), bypassing resource constraints.
+* **Untrusted MCP Peers:** Initialized with a minimal limit (`5000` gas). Exceeding this limit immediately rate-limits the session, intercepts the execution thread, and flags the connection for administrator review.
+
+## 6. Per-Cycle Register Auditor (Rule 12 Enforcer)
+The hypervisor performs in-line register auditing at every CPU execution boundary to prevent invalid states or banned calculations:
+* **Child-Langmuir Interception:** If a guest thread attempts to execute or calculate the banned space-charge power law formula ($J \propto V^{3/2}$), the auditor intercepts the register state.
+* **Accumulator Redirection:** Instantly zeroes out the guest accumulator and redirects the computed values to the quarantined non-preferential accumulator state model.
+
+## 7. Unified Peer Discovery Registry
+Under the Ouroboros routing framework, a "peer" represents any addressable communication target:
+* **MCP Hosts:** Network nodes (`peer_mcp://127.0.0.1:3000`).
+* **JIT Thunks:** Native C thunk functions (`peer_thunk://ALSA_AUDIO`).
+* **Registers:** Guest CPU registers (`peer_register://cpu6502/A`).
+* **Port Discovery:** A thread-safe directory structure (`tsfi_peer_discovery.c`) allows Yul code and thunk executors to register and query target handlers dynamically at runtime, enabling automated loopback connections.
