@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <math.h>
 #include <sys/reboot.h>
 #include <sys/mount.h>
 #include <stdint.h>
@@ -47,6 +48,43 @@ void check_disk_space(const char *path) {
     }
 }
 
+#define DFT_SIZE 16
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// Execute Discrete Fourier Transform (DFT) mapping spatial states to frequencies
+void execute_fourier_analysis(void) {
+    double input_real[DFT_SIZE];
+    double out_real[DFT_SIZE];
+    double out_imag[DFT_SIZE];
+    
+    // 1. Generate spatial signal (combination of frequency 2 and 5)
+    for (int n = 0; n < DFT_SIZE; n++) {
+        input_real[n] = sin(2.0 * M_PI * 2.0 * n / DFT_SIZE) + 0.5 * sin(2.0 * M_PI * 5.0 * n / DFT_SIZE);
+    }
+    
+    // 2. Perform DFT
+    for (int k = 0; k < DFT_SIZE; k++) {
+        out_real[k] = 0.0;
+        out_imag[k] = 0.0;
+        for (int n = 0; n < DFT_SIZE; n++) {
+            double angle = 2.0 * M_PI * k * n / DFT_SIZE;
+            out_real[k] += input_real[n] * cos(angle);
+            out_imag[k] -= input_real[n] * sin(angle);
+        }
+    }
+    
+    // 3. Print frequency coefficients
+    printf("[INIT] Fourier Spatial-to-Frequency Analysis (DFT Size: %d):\n", DFT_SIZE);
+    for (int k = 0; k < DFT_SIZE / 2 + 1; k++) {
+        double magnitude = sqrt(out_real[k] * out_real[k] + out_imag[k] * out_imag[k]);
+        if (magnitude > 1.0) {
+            printf("  - Frequency bin %d: Magnitude = %.2f (Active Peak)\n", k, magnitude);
+        }
+    }
+}
+
 #ifndef TSFI_PROVENANCE_KEY
 #define TSFI_PROVENANCE_KEY "SIG_2026_AUNCIENT_AFFIRMED"
 #endif
@@ -76,6 +114,7 @@ int main(void) {
     // 4. Verify local disk space and directory listings
     list_directory("/");
     check_disk_space("/");
+    execute_fourier_analysis();
 
     printf("[INIT] All headless tasks completed. System powering down...\n");
 
