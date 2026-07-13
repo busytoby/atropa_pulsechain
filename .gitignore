@@ -134,6 +134,7 @@ assets/syrinx/
 /scripts/manifold_interop_renderer
 /scripts/test_abi_dispatch
 /scripts/test_verlet
+/firmware/tsfi_lib/zmm_init
 
 # Ignore generated custom JPEG AI container format
 assets/**/*.jpai
