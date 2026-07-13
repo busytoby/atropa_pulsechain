@@ -299,10 +299,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     100% { transform: scale(var(--bear-scale, 1)) translate(0, 0) rotate(0deg); }
 }
 
+#bear-image {
+    position: relative;
+    z-index: 1;
+}
+
 /* Procedural vector accessory overlays */
 .accessory-overlay {
     position: absolute;
-    z-index: 10;
+    z-index: 20;
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .accessory-overlay.glasses {
