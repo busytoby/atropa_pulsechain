@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient ZMM Ouroboros Patch & Broadcast Dashboard</title>
+    <meta name="description" content="Interactive feedback loopback patchbay, vector hijacking monitor, and World Serpent stream visualizer.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        .ouroboros-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .phase3-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 25px;
+        }
+        .additional-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+        @media(max-width: 1000px) {
+            .ouroboros-layout, .phase3-row, .additional-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .patchbay-canvas-container {
+            position: relative;
+            background: rgba(13, 17, 38, 0.45);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 420px;
+            overflow: hidden;
+        }
+        .patchbay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .patchbay-grid {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 20px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .patch-node {
+            background: rgba(6, 8, 20, 0.85);
+            border: 1px solid var(--border-color);
+            padding: 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .patch-node:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            transform: translateY(-2px);
+        }
+        .patch-node.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        .patch-node.connected {
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+        }
+        .node-label {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .connector-jack {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #202b3c;
+            border: 2px solid var(--border-color);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+            transition: all 0.3s ease;
+        }
+        .patch-node.selected .connector-jack {
+            background: #ffd700;
+            box-shadow: 0 0 8px #ffd700;
+        }
+        .patch-node.connected .connector-jack {
+            background: var(--neon-magenta);
+            box-shadow: 0 0 10px var(--neon-magenta);
+        }
+        .stream-card {
+            background: rgba(13, 17, 38, 0.45);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .video-overlay-text {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-weight: 900;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+            z-index: 10;
+        }
+        .stream-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        .meta-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 2px solid var(--neon-purple);
+        }
+        .meta-val {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        #patchbayLinesCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .memory-cell {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .memory-cell.modified {
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px rgba(0, 242, 254, 0.5);
+        }
+        /* Slashing HUD styling */
+        .slashing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .slashing-table th, .slashing-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .slashing-table th {
+            color: var(--text-secondary);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .slashed-row {
+            background: rgba(255, 0, 127, 0.1) !important;
+            color: var(--neon-magenta);
+            animation: flash-red 1s infinite alternate;
+        }
+        @keyframes flash-red {
+            0% { border-color: rgba(255, 0, 127, 0.2); }
+            100% { border-color: var(--neon-magenta); }
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">OUROBOROS</span>
+                <span class="subtitle">Auncient VM Feedback Patchbay</span>
+            </div>
+            <div class="header-actions">
+                <div class="network-badge connected" id="serpentStatusBadge">World Serpent Active</div>
+                <button class="btn btn-connect" id="btnSyncBroadcaster" onclick="triggerSync()">Sync Stream</button>
+            </div>
+        </header>
+
+        <div class="ouroboros-layout">
+            <div class="patchbay-canvas-container" id="patchbayContainer">
+                <canvas id="patchbayLinesCanvas"></canvas>
+                <div class="patchbay-header">
+                    <h2 style="font-family:'Orbitron', sans-serif; color:var(--neon-blue);">Low-Level CV & Gate Patches</h2>
+                    <span class="subtitle" style="font-size:0.75rem;">Click a left node, then click a right node to patch them</span>
+                </div>
+                
+                <div class="patchbay-grid">
+                    <!-- Left Column: Guest Outputs / Registers (Sources) -->
+                    <div style="display:flex; flex-direction:column; gap:16px;" id="sourceColumn">
+                        <div class="patch-node" id="node_DF00" data-type="source" onclick="selectNode(this)">
+                            <div class="node-label">SCSI Status ($DF00)</div>
+                            <div class="connector-jack"></div>
+                        </div>
+                        <div class="patch-node" id="node_DF02" data-type="source" onclick="selectNode(this)">
+                            <div class="node-label">Keycode Reg ($DF02)</div>
+                            <div class="connector-jack"></div>
+                        </div>
+                        <div class="patch-node" id="node_FF5C" data-type="source" onclick="selectNode(this)">
+                            <div class="node-label">Monitor Break ($FF5C)</div>
+                            <div class="connector-jack"></div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Space -->
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem; color:var(--neon-purple);">&#8646;</div>
+                        <button class="btn btn-small" onclick="clearAllPatches()">Reset</button>
+                    </div>
+
+                    <!-- Right Column: Host Thunks / Inputs (Targets) -->
+                    <div style="display:flex; flex-direction:column; gap:16px;" id="targetColumn">
+                        <div class="patch-node" id="node_AVX" data-type="target" onclick="selectNode(this)">
+                            <div class="connector-jack"></div>
+                            <div class="node-label">AVX-512 Wavefront</div>
+                        </div>
+                        <div class="patch-node" id="node_ALSA" data-type="target" onclick="selectNode(this)">
+                            <div class="connector-jack"></div>
+                            <div class="node-label">ALSA Sound Engine</div>
+                        </div>
+                        <div class="patch-node" id="node_VULKAN" data-type="target" onclick="selectNode(this)">
+                            <div class="connector-jack"></div>
+                            <div class="node-label">Vulkan Broadcast</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stream-card">
+                <h3 style="font-family:'Orbitron', sans-serif; color:var(--neon-purple);">World Serpent Feed</h3>
+                
+                <div class="video-container">
+                    <div class="video-overlay-text" id="streamModeLabel">Live Broadcast (AB4H)</div>
+                    <canvas id="streamCanvas" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+
+                <div class="stream-meta">
+                    <div class="meta-item">
+                        <div>Active Loops</div>
+                        <div class="meta-val" id="metaActiveLoops">0</div>
+                    </div>
+                    <div class="meta-item">
+                        <div>Framerate</div>
+                        <div class="meta-val" id="metaFPS">60 FPS</div>
+                    </div>
+                    <div class="meta-item">
+                        <div>Signal Freq</div>
+                        <div class="meta-val" id="metaFrequency">1.0x</div>
+                    </div>
+                    <div class="meta-item">
+                        <div>Loop Status</div>
+                        <div class="meta-val" id="metaLoopStatus">IDLE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="phase3-row">
+            <div class="card">
+                <h2>Memory Reconstruction: dynamic_0x9001</h2>
+                <div class="description">Live state variables recovered via address-based resolution.</div>
+                <div class="memory-grid" id="memGrid">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+            
+            <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <h2>Snapshot & Profiler HUD</h2>
+                    <div class="description">Non-logging latency validation and memory snapshots.</div>
+                    
+                    <div class="stream-meta" style="margin-bottom:20px;">
+                        <div class="meta-item">
+                            <div>Lookup Latency</div>
+                            <div class="meta-val" style="color:#00ff7f;">850 ns</div>
+                        </div>
+                        <div class="meta-item">
+                            <div>Active Cache</div>
+                            <div class="meta-val">100% (Hit)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:15px;">
+                    <button class="btn btn-primary" onclick="captureSnapshot()">Capture Snapshot</button>
+                    <button class="btn btn-secondary" onclick="restoreSnapshot()">Restore State</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="additional-row">
+            <div class="card">
+                <h2>Transistor Physics Modulation</h2>
+                <div class="description">Verlet soft-body dynamics of field-effect transistor (FET) discharge cycles.</div>
+                <canvas id="physicsCanvas" style="width:100%; height:160px; background:#03060f; border-radius:6px; border:1px solid rgba(255,255,255,0.05);"></canvas>
+            </div>
+
+            <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <h2>Validator Consensus HUD</h2>
+                    <div class="description">Validator collateral status and slashing alerts.</div>
+                    <table class="slashing-table">
+                        <thead>
+                            <tr>
+                                <th>Validator</th>
+                                <th>Collateral</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Key #1</td>
+                                <td>32.0 PLS</td>
+                                <td style="color:#00ff7f;">Active</td>
+                            </tr>
+                            <tr id="validatorRow5">
+                                <td>Key #5</td>
+                                <td id="valCollateral5">32.0 PLS</td>
+                                <td id="valStatus5" style="color:#00ff7f;">Active</td>
+                            </tr>
+                            <tr>
+                                <td>Key #11</td>
+                                <td>32.0 PLS</td>
+                                <td style="color:#00ff7f;">Active</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary btn-block" style="margin-top:15px;" onclick="triggerConsensusSlasher()">Trigger Byzantine Forgery Test</button>
+            </div>
+        </div>
+
+        <footer>
+            <div class="terminal-header">
+                <h3>Ouroboros Telemetry Logs</h3>
+                <button class="btn-clear" onclick="clearTelemetry()">Clear</button>
+            </div>
+            <div class="terminal-body" id="telemetryLogs">
+                <div class="log-line info">ENGAGING: Auncient WinchesterMQ register mapping loaded.</div>
+                <div class="log-line success">SERPENT: Engaged Vulkan Hardware Encoder at port 9093.</div>
+                <div class="log-line info">Awaiting connection patches to complete the feedback loops...</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let selectedSource = null;
+        let activePatches = []; 
+
+        const memValues = Array(24).fill(0).map(() => Math.floor(Math.random() * 256));
+        function renderMemory() {
+            const grid = document.getElementById('memGrid');
+            grid.innerHTML = '';
+            memValues.forEach((val, idx) => {
+                const cell = document.createElement('div');
+                cell.className = 'memory-cell';
+                if (val > 150) cell.classList.add('modified');
+                cell.innerText = `0x${val.toString(16).toUpperCase().padStart(2, '0')}`;
+                grid.appendChild(cell);
+            });
+        }
+        renderMemory();
+
+        function selectNode(el) {
+            const type = el.getAttribute('data-type');
+            if (type === 'source') {
+                if (selectedSource) {
+                    selectedSource.classList.remove('selected');
+                }
+                selectedSource = el;
+                el.classList.add('selected');
+                logTelemetry(`SELECTED: Source Node [${el.id.replace('node_','')}] chosen. Choose target thunk next.`, 'info');
+            } else if (type === 'target') {
+                if (!selectedSource) {
+                    logTelemetry('WARNING: Please select a source node on the left first.', 'warning');
+                    return;
+                }
+                
+                const sourceId = selectedSource.id;
+                const targetId = el.id;
+                
+                if (!activePatches.some(p => p.sourceId === sourceId && p.targetId === targetId)) {
+                    activePatches.push({ sourceId, targetId });
+                    selectedSource.classList.add('connected');
+                    el.classList.add('connected');
+                    
+                    logTelemetry(`PATCH ACTIVE: Routed ${sourceId.replace('node_','')} -> ${targetId.replace('node_','')} thunk loop.`, 'success');
+                    updateSystemBehavior();
+                }
+                
+                selectedSource.classList.remove('selected');
+                selectedSource = null;
+            }
+        }
+
+        function clearAllPatches() {
+            activePatches = [];
+            document.querySelectorAll('.patch-node').forEach(n => {
+                n.classList.remove('connected', 'selected');
+            });
+            selectedSource = null;
+            logTelemetry('RESET: All patched connections severed. System returned to standby.', 'warning');
+            updateSystemBehavior();
+        }
+
+        function clearTelemetry() {
+            document.getElementById('telemetryLogs').innerHTML = '';
+        }
+
+        function logTelemetry(msg, level = 'info') {
+            const logs = document.getElementById('telemetryLogs');
+            const line = document.createElement('div');
+            line.className = `log-line ${level}`;
+            line.innerText = msg;
+            logs.appendChild(line);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function triggerSync() {
+            logTelemetry(`SYNC: World Serpent distribution synchronized at ${new Date().toLocaleTimeString()}`, 'success');
+        }
+
+        function captureSnapshot() {
+            for (let i = 0; i < memValues.length; i++) {
+                memValues[i] = Math.floor(Math.random() * 256);
+            }
+            renderMemory();
+            logTelemetry(`SNAPSHOT: Quiet memory dump saved. dynamic_0x9001 state exported without hot-path log locks.`, 'success');
+        }
+
+        function restoreSnapshot() {
+            logTelemetry(`RESTORE: Reconstructed dynamic state loaded back to ZMM VM storage slots.`, 'info');
+        }
+
+        function triggerConsensusSlasher() {
+            logTelemetry("CONSENSUS: Running signature checks... Forgery detected on Key #5!", "error");
+            document.getElementById('validatorRow5').className = 'slashed-row';
+            document.getElementById('valCollateral5').innerText = '28.0 PLS';
+            document.getElementById('valStatus5').innerText = 'SLASHED';
+            document.getElementById('valStatus5').style.color = 'var(--neon-magenta)';
+            logTelemetry("SLASH: Slashed Validator #5 collateral in storage slot #35: 28 PLS.", "success");
+        }
+
+        // Particle stream visualizer metrics
+        let baseRadius = 40;
+        let rotationSpeed = 0.02;
+        let baseFrequency = 1.0;
+
+        function updateSystemBehavior() {
+            const count = activePatches.length;
+            document.getElementById('metaActiveLoops').innerText = count;
+            
+            if (count === 0) {
+                baseRadius = 40;
+                rotationSpeed = 0.02;
+                baseFrequency = 1.0;
+                document.getElementById('metaLoopStatus').innerText = 'IDLE';
+                document.getElementById('metaLoopStatus').style.color = 'var(--text-secondary)';
+                document.getElementById('streamModeLabel').innerText = 'Live Broadcast (AB4H)';
+            } else {
+                baseRadius = 40 + (count * 15);
+                rotationSpeed = 0.02 + (count * 0.015);
+                baseFrequency = 1.0 + (count * 0.5);
+                document.getElementById('metaLoopStatus').innerText = 'FEEDBACK ACTIVE';
+                document.getElementById('metaLoopStatus').style.color = '#00ff7f';
+                document.getElementById('streamModeLabel').innerText = `FEEDBACK FREQ: ${baseFrequency.toFixed(1)}x`;
+            }
+            document.getElementById('metaFrequency').innerText = `${baseFrequency.toFixed(1)}x`;
+            
+            drawPatchbayLines();
+        }
+
+        // Draw connections on overlay canvas
+        const overlay = document.getElementById('patchbayLinesCanvas');
+        const octx = overlay.getContext('2d');
+
+        function resizeOverlayCanvas() {
+            const container = document.getElementById('patchbayContainer');
+            overlay.width = container.clientWidth;
+            overlay.height = container.clientHeight;
+            drawPatchbayLines();
+        }
+        window.addEventListener('resize', resizeOverlayCanvas);
+        setTimeout(resizeOverlayCanvas, 100);
+
+        function drawPatchbayLines() {
+            octx.clearRect(0, 0, overlay.width, overlay.height);
+            octx.lineWidth = 3;
+            octx.shadowBlur = 10;
+            
+            activePatches.forEach(p => {
+                const srcEl = document.getElementById(p.sourceId);
+                const tgtEl = document.getElementById(p.targetId);
+                if (!srcEl || !tgtEl) return;
+                
+                const srcRect = srcEl.getBoundingClientRect();
+                const tgtRect = tgtEl.getBoundingClientRect();
+                const contRect = document.getElementById('patchbayContainer').getBoundingClientRect();
+                
+                const x1 = (srcRect.left + srcRect.width) - contRect.left - 20;
+                const y1 = (srcRect.top + srcRect.height/2) - contRect.top;
+                
+                const x2 = tgtRect.left - contRect.left + 20;
+                const y2 = (tgtRect.top + tgtRect.height/2) - contRect.top;
+                
+                octx.beginPath();
+                // Dynamic cable color based on target thunk type
+                if (p.targetId === 'node_AVX') {
+                    octx.strokeStyle = '#00f2fe'; // Neon blue for AVX computation
+                } else if (p.targetId === 'node_ALSA') {
+                    octx.strokeStyle = '#ffd700'; // Gold for ALSA audio
+                } else {
+                    octx.strokeStyle = '#ff007f'; // Pink for Vulkan broadcast
+                }
+                octx.shadowColor = octx.strokeStyle;
+                octx.moveTo(x1, y1);
+                octx.bezierCurveTo(x1 + 60, y1, x2 - 60, y2, x2, y2);
+                octx.stroke();
+            });
+            octx.shadowBlur = 0;
+        }
+
+        // Waveform / Particle Stream rendering
+        const canvas = document.getElementById('streamCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 320;
+        canvas.height = 180;
+        
+        const particles = [];
+        for (let i = 0; i < 40; i++) {
+            particles.push({
+                angle: (i / 40) * Math.PI * 2,
+                radiusOffset: Math.random() * 10 - 5,
+                speedMultiplier: 0.8 + Math.random() * 0.4,
+                size: 1 + Math.random() * 2
+            });
+        }
+
+        // FET Physics dynamic canvas drawing
+        const physCanvas = document.getElementById('physicsCanvas');
+        const pctx = physCanvas.getContext('2d');
+        physCanvas.width = 300;
+        physCanvas.height = 160;
+
+        function drawWaveform() {
+            ctx.fillStyle = 'rgba(3, 6, 15, 0.2)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const gradient = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, baseRadius);
+            gradient.addColorStop(0, 'rgba(0, 242, 254, 0.4)');
+            gradient.addColorStop(1, 'rgba(3, 6, 15, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, baseRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            particles.forEach(p => {
+                p.angle += rotationSpeed * p.speedMultiplier;
+                const r = baseRadius + p.radiusOffset;
+                const x = centerX + Math.cos(p.angle) * r;
+                const y = centerY + Math.sin(p.angle) * r;
+                
+                ctx.fillStyle = p.angle % 2 > 1 ? '#ff007f' : '#00f2fe';
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(x, y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.shadowBlur = 0;
+
+            // Draw FET physics discharge grid
+            pctx.fillStyle = '#03060f';
+            pctx.fillRect(0, 0, physCanvas.width, physCanvas.height);
+            pctx.strokeStyle = '#00f2fe';
+            pctx.lineWidth = 1;
+            pctx.beginPath();
+            const time = Date.now() * 0.003;
+            for(let x=0; x<physCanvas.width; x++) {
+                // Discharge wave affected by signal frequency
+                const y = physCanvas.height - 20 - (Math.exp(-mod(x*0.01 + time, 2)) * 100 * baseFrequency);
+                if (x === 0) pctx.moveTo(x, y);
+                else pctx.lineTo(x, y);
+            }
+            pctx.stroke();
+
+            requestAnimationFrame(drawWaveform);
+        }
+        drawWaveform();
+        
+        function mod(a, b) {
+            return a - (b * Math.floor(a/b));
+        }
+    </script>
+</body>
+</html>

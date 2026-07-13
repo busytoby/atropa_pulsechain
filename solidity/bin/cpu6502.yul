@@ -1706,6 +1706,14 @@ object "CPU6502Emulator" {
                     setReg(0x85, operand)
                     branchTaken := 1
                 }
+                // JMP indirect
+                case 0x6C {
+                    let lowTarget := and(readMemory(operand), 0xFF)
+                    let highTarget := and(readMemory(add(operand, 1)), 0xFF)
+                    let targetAddress := or(shl(8, highTarget), lowTarget)
+                    setReg(0x85, targetAddress)
+                    branchTaken := 1
+                }
                 // JSR (Jump to Subroutine)
                 case 0x20 {
                     let currentPC := getReg(0x85)
@@ -2275,7 +2283,7 @@ object "CPU6502Emulator" {
                 // 3-byte opcodes
                 let is3Byte := or(
                     or(or(or(eq(op, 0xAD), eq(op, 0x8D)), or(eq(op, 0xAE), eq(op, 0x8E))),
-                       or(or(eq(op, 0x8C), eq(op, 0x4C)), or(eq(op, 0x20), or(eq(op, 0x2D), or(eq(op, 0xCD), or(eq(op, 0xEE), eq(op, 0xCE))))))),
+                        or(or(or(eq(op, 0x8C), eq(op, 0x4C)), eq(op, 0x6C)), or(eq(op, 0x20), or(eq(op, 0x2D), or(eq(op, 0xCD), or(eq(op, 0xEE), eq(op, 0xCE))))))),
                     or(or(eq(op, 0xBD), eq(op, 0xB9)), or(eq(op, 0x9D), eq(op, 0x99)))
                 )
                 

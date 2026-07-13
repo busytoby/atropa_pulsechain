@@ -40,13 +40,21 @@ ThunkProxy* ThunkProxy_create(void) {
     LauWiredHeader *h = get_wired_header_external(proxy->thunk_pool);
     if (h) h->proxy = proxy;
     
-    // Initial State: RWX for generation.
-    lau_mprotect(proxy->thunk_pool, PROT_READ | PROT_WRITE | PROT_EXEC);
+    // Initial State: RW (Read/Write) for generation.
+    lau_mprotect(proxy->thunk_pool, PROT_READ | PROT_WRITE);
     
     memset(proxy->thunk_pool, 0, pg);
     proxy->thunk_cursor = proxy->thunk_pool;
     proxy->pool_size = pg;
     return proxy;
+}
+
+static void thunk_make_writeable(ThunkProxy *p) {
+    lau_mprotect(p->thunk_pool, PROT_READ | PROT_WRITE);
+}
+
+static void thunk_make_executable(ThunkProxy *p) {
+    lau_mprotect(p->thunk_pool, PROT_READ | PROT_EXEC);
 }
 
 void thunk_check_bounds(ThunkProxy *p, size_t needed) {
@@ -57,6 +65,7 @@ void thunk_check_bounds(ThunkProxy *p, size_t needed) {
 }
 
 static void* emit_baked_core(ThunkProxy *p, void *fn, bool is_call, int argc, va_list args) {
+    thunk_make_writeable(p);
     thunk_check_bounds(p, (argc * 12) + 12 + 2);
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2; 
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
@@ -80,6 +89,7 @@ static void* emit_baked_core(ThunkProxy *p, void *fn, bool is_call, int argc, va
     *(u16_u*)meta = (uint16_t)(ptr_slot - (uint8_t*)start);
     p->thunk_cursor = c;
     __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
