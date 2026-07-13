@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slide_twitch: document.getElementById('slide-twitch'),
         slide_sickness: document.getElementById('slide-sickness'),
         select_phenotype: document.getElementById('select-phenotype'),
+        btn_create_phenotype: document.getElementById('btn-create-phenotype'),
         btn_bear: document.getElementById('btn-bear'),
         btn_not_bear: document.getElementById('btn-not-bear'),
         btn_evolve: document.getElementById('btn-evolve'),
@@ -100,13 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         elements.bear_image.style.filter = filterStr;
 
+        // Dynamic Sickness Distortion: physical skew angle representing EVM hemisphere asymmetry
+        const sicknessSkew = (state.sickness_intensity / 255) * 16; // Up to 16 deg skew
+
         // Dynamic Twitch Animation: jitter frequency scales with twitch intensity
         if (state.twitch_intensity > 0) {
             const jitterDuration = 0.15 + (255 - state.twitch_intensity) / 255 * 0.85; // Speed increases with twitch
             elements.bear_image.style.animation = `twitch-jitter ${jitterDuration}s infinite linear`;
+            elements.bear_image.style.transform = `skewX(${sicknessSkew}deg)`;
         } else {
             elements.bear_image.style.animation = 'none';
-            elements.bear_image.style.transform = `scale(${scaleVal})`;
+            elements.bear_image.style.transform = `scale(${scaleVal}) skewX(${sicknessSkew}deg)`;
         }
 
         // Render activity table
@@ -264,6 +269,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 updateUI();
             });
+    });
+
+    // Custom Phenotype Creation: save current slider config as a named option in selection dropdown
+    elements.btn_create_phenotype.addEventListener('click', () => {
+        const name = prompt("Enter a unique name for your new bear phenotype:");
+        if (!name) return;
+
+        const cleanKey = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        
+        // Add option to dropdown select DOM
+        const opt = document.createElement('option');
+        opt.value = cleanKey;
+        opt.innerText = name;
+        elements.select_phenotype.appendChild(opt);
+
+        // Update state to use new phenotype and log to ACAB history
+        state.phenotype = cleanKey;
+        
+        const mockHash = "0x" + Math.random().toString(16).slice(2, 10) + "cf9b...";
+        const createEvent = {
+            id: mockHash,
+            event: "CREATE_NEW_PHENOTYPE",
+            score: state.score.toString(),
+            status: "active",
+            name: name,
+            genome: { fur_r: state.fur_r, fur_g: state.fur_g, fur_b: state.fur_b, scale: state.scale, fur_len: state.fur_len }
+        };
+        state.history.unshift(createEvent);
+        updateUI();
+
+        // Commit new phenotype creation to backend ledger
+        fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createEvent)
+        }).catch(err => console.warn("Local fallback: backend ledger unreachable."));
     });
 
     // Initial load
