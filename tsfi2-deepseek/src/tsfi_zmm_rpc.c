@@ -201,6 +201,54 @@ static int g_consecutive_verification_failures = 0;
 static bool g_is_session_locked_out = false;
 static int g_telemetry_23_log_count = 0;
 
+#define MAX_REGISTERED_OPERATORS 8
+typedef struct {
+    int project;
+    int programmer;
+    int key_id;
+    int acl_level;
+    bool is_active;
+} ZmmOperatorEntry;
+
+static ZmmOperatorEntry g_operator_registry[MAX_REGISTERED_OPERATORS];
+static int g_operator_count = 0;
+
+static int verify_23_tree_traversal_acl(int project, int programmer, int key_id);
+
+static int register_zmm_operator_via_23_tree(int project, int programmer, int key_id) {
+    // Check if already registered
+    for (int i = 0; i < g_operator_count; i++) {
+        if (g_operator_registry[i].project == project &&
+            g_operator_registry[i].programmer == programmer &&
+            g_operator_registry[i].key_id == key_id) {
+            return g_operator_registry[i].acl_level;
+        }
+    }
+
+    // Requires validation through the 2-3 tree verification logic
+    int acl_level = verify_23_tree_traversal_acl(project, programmer, key_id);
+    if (acl_level == -1) {
+        return -1; // Locked out
+    }
+    if (acl_level <= 0) {
+        printf("[REGISTRY] Operator registration rejected: 2-3 tree validation failed.\n");
+        return 0; // Rejected
+    }
+
+    if (g_operator_count < MAX_REGISTERED_OPERATORS) {
+        ZmmOperatorEntry *op = &g_operator_registry[g_operator_count++];
+        op->project = project;
+        op->programmer = programmer;
+        op->key_id = key_id;
+        op->acl_level = acl_level;
+        op->is_active = true;
+        printf("[REGISTRY] Unified 2-3 Tree Registration Success: PPN [%d,%d] Key %d registered at ACL %d.\n",
+               project, programmer, key_id, acl_level);
+        return acl_level; // Success
+    }
+    return 0;
+}
+
 static int verify_23_tree_traversal_acl(int project, int programmer, int key_id) {
     if (g_is_session_locked_out) {
         printf("[LOCKOUT] Access blocked: Session locked out due to consecutive failures.\n");
@@ -999,7 +1047,7 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         int programmer = extract_json_int(min_ptr, "\"programmer\"", 0);
         int key_id = extract_json_int(min_ptr, "\"key_id\"", 0);
 
-        int acl_level = verify_23_tree_traversal_acl(project, programmer, key_id);
+        int acl_level = register_zmm_operator_via_23_tree(project, programmer, key_id);
         if (acl_level == -1) {
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: PEER_LOCKED_OUT_DUE_TO_CONSECUTIVE_FAILURES\", \"id\": %d}\n", id);
             return 1;
