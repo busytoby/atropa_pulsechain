@@ -10,12 +10,23 @@
 
 #define M_PI 3.14159265358979323846
 #define SAMPLE_RATE 8000
-#define FREQ_MARK 1200
-#define FREQ_SPACE 2200
-#define BIT_DURATION 0.0001
 #define ONE_MB (1024 * 1024)
 
-// Simple Run-Length Encoding (RLE) Compression
+// QAM-16 Constellation Lookups (4-bits -> I & Q amplitude pairs)
+// Eliminates trigonometric calculations to represent Yul CPU bound lookup tables
+typedef struct {
+    double I;
+    double Q;
+} QamConstellation;
+
+static const QamConstellation QAM16_LOOKUP[16] = {
+    {-3.0, -3.0}, {-3.0, -1.0}, {-3.0, 3.0}, {-3.0, 1.0},
+    {-1.0, -3.0}, {-1.0, -1.0}, {-1.0, 3.0}, {-1.0, 1.0},
+    {3.0, -3.0},  {3.0, -1.0},  {3.0, 3.0},  {3.0, 1.0},
+    {1.0, -3.0},  {1.0, -1.0},  {1.0, 3.0},  {1.0, 1.0}
+};
+
+// RLE Compression
 size_t rle_compress(const uint8_t *src, size_t src_len, uint8_t *dst) {
     size_t dst_idx = 0;
     size_t i = 0;
@@ -25,7 +36,7 @@ size_t rle_compress(const uint8_t *src, size_t src_len, uint8_t *dst) {
             run_len++;
         }
         if (run_len >= 4 || src[i] == 0xFE) {
-            dst[dst_idx++] = 0xFE; // RLE Marker
+            dst[dst_idx++] = 0xFE;
             dst[dst_idx++] = src[i];
             dst[dst_idx++] = (uint8_t)run_len;
         } else {
@@ -38,7 +49,7 @@ size_t rle_compress(const uint8_t *src, size_t src_len, uint8_t *dst) {
     return dst_idx;
 }
 
-// Simple Run-Length Encoding (RLE) Decompression
+// RLE Decompression
 size_t rle_decompress(const uint8_t *src, size_t src_len, uint8_t *dst) {
     size_t dst_idx = 0;
     size_t i = 0;
@@ -73,9 +84,9 @@ uint16_t calculate_crc16(const uint8_t *data, size_t len) {
     return crc;
 }
 
-// Simulates the combined RLE compression, ZMODEM framing, and FSK pipeline
-void run_fsk_zmodem_bench(const uint8_t *data, size_t size, const char *label) {
-    printf("Benchmarking 1MB of %s transfer (with RLE compression)...\n", label);
+// Simulates the combined RLE, ZMODEM framing, and QAM-16 lookup modulation
+void run_qam_zmodem_bench(const uint8_t *data, size_t size, const char *label) {
+    printf("Benchmarking 1MB of %s transfer (with RLE and QAM-16)...\n", label);
 
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -95,19 +106,29 @@ void run_fsk_zmodem_bench(const uint8_t *data, size_t size, const char *label) {
         size_t comp_len = rle_compress(data + offset, current_len, comp_buf);
         compressed_processed += comp_len;
 
-        // 2. ZMODEM framing logic: calculate CRC16 of compressed payload
+        // 2. ZMODEM framing: calculate CRC16
         uint16_t crc = calculate_crc16(comp_buf, comp_len);
         
-        // 3. Simulate FSK Modulation on the compressed stream
+        // 3. Simulate QAM-16 Modulation (packs 4 bits per symbol using pre-computed lookups)
         for (size_t i = 0; i < comp_len; i++) {
             uint8_t byte = comp_buf[i];
-            volatile double mix = 0.0;
-            for (int bit = 7; bit >= 0; bit--) {
-                bool is_one = (byte >> bit) & 1;
-                double freq = is_one ? FREQ_MARK : FREQ_SPACE;
-                mix += sin(2.0 * M_PI * freq * 0.001);
-            }
-            (void)mix;
+            
+            // Modulation: pack 8 bits into two 4-bit QAM-16 symbols
+            uint8_t symbol1 = byte >> 4;
+            uint8_t symbol2 = byte & 0x0F;
+            
+            // Constellation coordinate mapping (Simulating Yul register lookups)
+            volatile double i_val1 = QAM16_LOOKUP[symbol1].I;
+            volatile double q_val1 = QAM16_LOOKUP[symbol1].Q;
+            volatile double i_val2 = QAM16_LOOKUP[symbol2].I;
+            volatile double q_val2 = QAM16_LOOKUP[symbol2].Q;
+            
+            // Simulated carrier synthesis
+            volatile double sample1 = i_val1 * 0.707 - q_val1 * 0.707;
+            volatile double sample2 = i_val2 * 0.707 - q_val2 * 0.707;
+
+            (void)sample1;
+            (void)sample2;
         }
 
         // 4. ZMODEM receiver verification: check CRC16
@@ -139,7 +160,7 @@ void run_fsk_zmodem_bench(const uint8_t *data, size_t size, const char *label) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT ZMM VM: ZMODEM FSK RLE COMPRESSED BENCHMARK\n");
+    printf("AUNCIENT ZMM VM: ZMODEM QAM-16 COMPRESSED BENCHMARK\n");
     printf("=============================================================\n");
 
     // Initialize 1MB datasets
@@ -147,21 +168,19 @@ int main(void) {
     uint8_t *unicode_data = malloc(ONE_MB);
     assert(binary_data != NULL && unicode_data != NULL);
 
-    // Seed datasets: Unicode contains long repeating sequences of symbols to show compression benefits
     for (size_t i = 0; i < ONE_MB; i++) {
         binary_data[i] = (uint8_t)(rand() % 256);
-        // Periodic block repetitions simulating repeating Unicode fields
         unicode_data[i] = (i % 64 < 48) ? 'A' : (uint8_t)(rand() % 256);
     }
 
-    run_fsk_zmodem_bench(binary_data, ONE_MB, "binary");
-    run_fsk_zmodem_bench(unicode_data, ONE_MB, "Unicode");
+    run_qam_zmodem_bench(binary_data, ONE_MB, "binary");
+    run_qam_zmodem_bench(unicode_data, ONE_MB, "Unicode");
 
     free(binary_data);
     free(unicode_data);
 
     printf("=============================================================\n");
-    printf("AUNCIENT ZMODEM FSK COMPRESSED BENCHMARKS COMPLETED\n");
+    printf("AUNCIENT ZMODEM QAM-16 BENCHMARKS COMPLETED\n");
     printf("=============================================================\n");
     return 0;
 }
