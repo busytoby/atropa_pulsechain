@@ -35,7 +35,19 @@ int main(void) {
     // Run the unshare chroot container to boot /sbin/init
     int status = system("unshare -m -r /usr/sbin/chroot tmp/zmm_rootfs /sbin/init");
     assert(status == 0);
-    printf("   ✓ Virtual kernel execution terminated cleanly.\n\n");
+    printf("   ✓ Virtual kernel execution terminated cleanly.\n");
+
+    // Verify Fourier peaks written to shared rootfs file
+    FILE *af = fopen("tmp/zmm_rootfs/tmp/audio_freq", "r");
+    assert(af != NULL);
+    char freq_line[32];
+    double f1 = 0, f2 = 0;
+    if (fgets(freq_line, sizeof(freq_line), af)) f1 = atof(freq_line);
+    if (fgets(freq_line, sizeof(freq_line), af)) f2 = atof(freq_line);
+    fclose(af);
+    assert(f1 == 440.0);
+    assert(f2 == 1100.0);
+    printf("   ✓ Fourier audio peak routing verified successfully (440.0 Hz & 1100.0 Hz mapped).\n\n");
 
     // 3. Memory transformation test
     uint8_t guest_ram[4096];

@@ -75,13 +75,21 @@ void execute_fourier_analysis(void) {
         }
     }
     
-    // 3. Print frequency coefficients
+    // 3. Print frequency coefficients and write to audio state file
+    FILE *audio_f = fopen("/tmp/audio_freq", "w");
     printf("[INIT] Fourier Spatial-to-Frequency Analysis (DFT Size: %d):\n", DFT_SIZE);
     for (int k = 0; k < DFT_SIZE / 2 + 1; k++) {
         double magnitude = sqrt(out_real[k] * out_real[k] + out_imag[k] * out_imag[k]);
         if (magnitude > 1.0) {
-            printf("  - Frequency bin %d: Magnitude = %.2f (Active Peak)\n", k, magnitude);
+            double freq = k * 220.0;
+            printf("  - Frequency bin %d: Magnitude = %.2f -> Tone: %.1f Hz (Active Peak)\n", k, magnitude, freq);
+            if (audio_f) {
+                fprintf(audio_f, "%.1f\n", freq);
+            }
         }
+    }
+    if (audio_f) {
+        fclose(audio_f);
     }
 }
 
