@@ -54,3 +54,9 @@ To verify wave shape alignment, the guest prints a vertical ASCII plotter of the
 The connection interface to the ALSA modulator acts as a digital coaxial cable:
 * **High-Fidelity Shielding:** Insulates the raw frequency parameters from host thread interference, preventing environment-induced jitter.
 * **Point-to-Point Pipeline:** Directly maps the guest's analyzed Fourier peak variables to the host sound generator without format overhead or intermediary conversion stages, acting as a clean, physical patch channel.
+
+## 7. Ubiquitous Data Transfer & Frequency Multiplexing
+The coaxial audio pipeline acts as a general-purpose, ubiquitous data bus supporting all payload types:
+* **Serial Stream Bus:** Data bytes (such as contracts, log packets, or VM state maps) are serialized and transmitted sequentially via frequency or phase modulation patterns (e.g. FSK/PSK) over a single active carrier.
+* **Discrete Multi-Channel Parallel Bus:** The spectrum is divided into orthogonal frequency bins (discrete channels). Multiple separate data feeds are transmitted concurrently in superposition. The host performs a forward DFT on the composite wave to demultiplex and decode the original channel values (e.g., retrieving Channel A data from Bin 2 and Channel B data from Bin 5).
+* **Verification Proof:** The `tests/test_auncient_fourier_bus` verification suite compiles and runs this multi-channel parallel data bus, encoding character `'H'` on Bin 2 and value `123` on Bin 5, and successfully demuxing and decoding them.
