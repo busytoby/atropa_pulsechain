@@ -113,6 +113,8 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
     uint8_t *buffer = malloc(total_samples);
     if (!buffer) return;
 
+    double kick_phase = 0.0;
+
     for (uint32_t i = 0; i < total_samples; i++) {
         double t = (double)i / SAMPLE_RATE;
         double mix = 0.0;
@@ -140,10 +142,11 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
             mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.95;
         }
 
-        // 4. Kick Drum (only if drums mounted)
+        // 4. Kick Drum (only if drums mounted - using clean phase integration)
         if (has_kick && g_mounts.drums_mounted) {
             double kick_freq = 120.0 * exp(-35.0 * t) + 40.0;
-            double kick_sig = 0.6 * sin(2.0 * M_PI * kick_freq * t) * exp(-8.0 * t);
+            kick_phase += 2.0 * M_PI * kick_freq / SAMPLE_RATE;
+            double kick_sig = 0.6 * sin(kick_phase) * exp(-8.0 * t);
             mix += kick_sig * 0.8;
         }
 
