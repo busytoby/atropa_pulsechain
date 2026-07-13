@@ -49,3 +49,8 @@ To verify wave shape alignment, the guest prints a vertical ASCII plotter of the
 * **Dynamic Gas Limit:** `tests/test_auncient_dynamic_gas`
 * **Fourier Loopback:** `tests/test_auncient_fourier_alsa_feedback`
 * **Containerized Boot:** `tests/test_auncient_boot_transform_c`
+
+## 6. The ALSA Coaxial Pipe Analogy
+The connection interface to the ALSA modulator acts as a digital coaxial cable:
+* **High-Fidelity Shielding:** Insulates the raw frequency parameters from host thread interference, preventing environment-induced jitter.
+* **Point-to-Point Pipeline:** Directly maps the guest's analyzed Fourier peak variables to the host sound generator without format overhead or intermediary conversion stages, acting as a clean, physical patch channel.
