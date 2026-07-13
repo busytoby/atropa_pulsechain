@@ -1,0 +1,46 @@
+# Auncient ACAB - 2-3 Merkle Coordinate Activity Proof Verification Script
+#
+# Witness Stack:
+#   <Sibling_Parent_Node_B> (32 bytes)
+#   <Sibling_Leaf_3>        (32 bytes)
+#   <Sibling_Leaf_1>        (32 bytes)
+#   <Leaf_Event_Data>      (Variable bytes)
+#
+
+# 1. Hash the Leaf Event Data to derive Leaf Hash L2
+OP_SHA256
+# Stack: <Sibling_Parent_Node_B> <Sibling_Leaf_3> <Sibling_Leaf_1> <L2>
+
+# 2. Reconstruct the 3-node parent (Node A)
+# Concat Sibling_Leaf_1 + L2 + Sibling_Leaf_3
+# Stack: <Sibling_Parent_Node_B> <Sibling_Leaf_3> <Sibling_Leaf_1> <L2>
+OP_SWAP
+# Stack: <Sibling_Parent_Node_B> <Sibling_Leaf_3> <L2> <Sibling_Leaf_1>
+OP_ROT
+# Stack: <Sibling_Parent_Node_B> <L2> <Sibling_Leaf_1> <Sibling_Leaf_3>
+OP_SWAP
+# Stack: <Sibling_Parent_Node_B> <L2> <Sibling_Leaf_3> <Sibling_Leaf_1>
+OP_ROT
+# Stack: <Sibling_Parent_Node_B> <Sibling_Leaf_3> <Sibling_Leaf_1> <L2>
+
+# Bring Sibling 1 to top and concat with L2
+OP_ROT
+OP_CAT
+# Stack: <Sibling_Parent_Node_B> <Sibling_Leaf_3> <Sibling_Leaf_1 + L2>
+
+# Swap and concat with Sibling 3
+OP_SWAP
+OP_CAT
+OP_SHA256
+# Stack: <Sibling_Parent_Node_B> <Node_A_Hash>
+
+# 3. Reconstruct the 2-node parent (Root)
+# Concat Node_A_Hash + Sibling_Parent_Node_B
+OP_CAT
+OP_SHA256
+# Stack: <Computed_Root_Hash>
+
+# 4. Verify computed root matches expected 2-3 Tree Activity Root
+# Expected Root Hash: 156ba3d8d3b5c3401ed061da0f768c7fadb4c0c0d3b401ad9216548894563151
+<0x156ba3d8d3b5c3401ed061da0f768c7fadb4c0c0d3b401ad9216548894563151>
+OP_EQUALVERIFY
