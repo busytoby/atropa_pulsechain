@@ -731,6 +731,15 @@ object "cpu6502" {
                 let val := calldataload(36)
                 
                 sstore(getUserSlot(addr), val)
+                
+                // Enforce Rule 12 Child-Langmuir Ban
+                let a := sload(getUserSlot(0x80))
+                let x := sload(getUserSlot(0x81))
+                if and(eq(and(a, 0xFF), 0x32), eq(and(x, 0xFF), 0x99)) {
+                    sstore(getUserSlot(0x9001), 0x32)
+                    sstore(getUserSlot(0x80), 0)
+                }
+
                 if eq(addr, 55024) {
                     if val {
                         processPhysics()
