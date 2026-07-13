@@ -85,9 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.chk_hat.checked = state.accessories.hat;
 
         // Display overlays based on active accessory composition
-        elements.overlay_glasses.style.display = state.accessories.glasses ? 'block' : 'none';
-        elements.overlay_bowtie.style.display = state.accessories.bowtie ? 'block' : 'none';
-        elements.overlay_hat.style.display = state.accessories.hat ? 'block' : 'none';
+        elements.overlay_glasses.classList.toggle('active', !!state.accessories.glasses);
+        elements.overlay_bowtie.classList.toggle('active', !!state.accessories.bowtie);
+        elements.overlay_hat.classList.toggle('active', !!state.accessories.hat);
         // Use the procedurally selected base image phenotype containing distinct shapes & accessories
         const currentConfig = state.phenotypeDefinitions[state.phenotype];
         if (currentConfig && currentConfig.imageSrc) {
