@@ -70,6 +70,22 @@ static bool skip_gguf_value(FILE *f, uint32_t type) {
     return true;
 }
 
+static bool read_gguf_string(FILE *f, char *buf, size_t max_len) {
+    uint64_t len;
+    if (!read_u64(f, &len)) return false;
+    size_t to_read = len < max_len - 1 ? len : max_len - 1;
+    if (fread(buf, 1, to_read, f) != to_read) return false;
+    buf[to_read] = '\0';
+    if (len > to_read) {
+        fseek(f, len - to_read, SEEK_CUR);
+    }
+    return true;
+}
+
+// Global buffer to store extracted ACAB root from GGUF file
+uint8_t g_gguf_acab_root[32];
+bool g_gguf_acab_found = false;
+
 // Low-level GGUF binary parser to load real model weights into target buffers
 bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount) {
     FILE *f = fopen(filepath, "rb");
@@ -85,12 +101,32 @@ bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t ma
         return false;
     }
 
-    // Skip Key-Value metadata records
+    g_gguf_acab_found = false;
+    char key_buf[128];
+
+    // Read Key-Value metadata records
     for (uint64_t i = 0; i < header.kv_count; i++) {
-        if (!skip_gguf_string(f)) break;
+        if (!read_gguf_string(f, key_buf, sizeof(key_buf))) break;
         uint32_t val_type;
         if (!read_u32(f, &val_type)) break;
-        if (!skip_gguf_value(f, val_type)) break;
+        
+        if (strcmp(key_buf, "auncient.acab.root") == 0 && val_type == GGUF_TYPE_ARRAY) {
+            uint32_t arr_type;
+            uint64_t arr_len;
+            if (read_u32(f, &arr_type) && read_u64(f, &arr_len)) {
+                if (arr_type == GGUF_TYPE_UINT8 && arr_len == 32) {
+                    if (fread(g_gguf_acab_root, 1, 32, f) == 32) {
+                        g_gguf_acab_found = true;
+                    }
+                } else {
+                    for (uint64_t j = 0; j < arr_len; j++) {
+                        if (!skip_gguf_value(f, arr_type)) break;
+                    }
+                }
+            }
+        } else {
+            if (!skip_gguf_value(f, val_type)) break;
+        }
     }
 
     // Skip Tensor metadata records
