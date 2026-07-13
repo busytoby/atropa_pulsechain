@@ -113,6 +113,7 @@ libtsfi2.so
 /tests/test_zmm_async_network
 /tests/test_auncient_mci_routing_c
 /tests/test_auncient_boot_transform_c
+/tests/test_auncient_23_tree
 /tests/test_auncient_activity_bus
 /tests/test_auncient_alsa_synth_c
 /tests/test_auncient_child_langmuir_ban
