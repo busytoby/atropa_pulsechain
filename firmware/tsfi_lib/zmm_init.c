@@ -47,6 +47,10 @@ void check_disk_space(const char *path) {
     }
 }
 
+#ifndef TSFI_PROVENANCE_KEY
+#define TSFI_PROVENANCE_KEY "SIG_2026_AUNCIENT_AFFIRMED"
+#endif
+
 int main(void) {
     // 1. Mount virtual pseudo-filesystems needed by the kernel
     mount("sysfs", "/sys", "sysfs", 0, NULL);
@@ -54,6 +58,8 @@ int main(void) {
 
     printf("\n=============================================================\n");
     printf("AUNCIENT LINUX ROOT INIT: HELMHOLTZ DAEMON DEPLOYED\n");
+    printf("Provenance Signature: %s\n", TSFI_PROVENANCE_KEY);
+    printf("Compiler Timestamp:   %s %s\n", __DATE__, __TIME__);
     printf("=============================================================\n");
 
     // 2. Initialize the Helmholtz list operator
