@@ -79,14 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const brightPercent = 70 + (state.fur_b / 255 * 50);
         const scaleVal = 0.75 + (state.scale / 250);
         
-        // Map fur length to a subtle soft blur filter representing the fuzzy density of long fur filaments
-        const furBlur = (state.fur_len / 250) * 1.6;
-
         // Map scaleVal CSS variable to drive the twitch jitter keyframe reference
         elements.bear_image.style.setProperty('--bear-scale', scaleVal);
 
+        // Map fur length to shadow contrast and depth detail instead of blurring the image
+        const furContrast = 85 + (state.fur_len / 250 * 35);
+        const shadowSpread = (state.fur_len / 250) * 12;
+
         // Dynamic Sickness Filter: pulsing toxic green chromatic glow shadow
-        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%) blur(${furBlur}px)`;
+        let filterStr = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%) contrast(${furContrast}%) drop-shadow(0 0 ${shadowSpread}px rgba(0, 0, 0, 0.45))`;
         if (state.sickness_intensity > 0) {
             const glowRadius = Math.max(2, state.sickness_intensity / 10);
             filterStr += ` drop-shadow(0 0 ${glowRadius}px rgba(16, 185, 129, 0.75))`;
