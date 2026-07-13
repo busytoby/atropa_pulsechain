@@ -383,6 +383,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.warn("Local fallback: backend ledger unreachable."));
     });
 
-    // Initial load
-    updateUI();
+    // Initial load: Fetch the actual active genome DNA file from disk to sync slider default values
+    fetch('../../assets/bear_genome.dna')
+        .then(res => {
+            if (!res.ok) throw new Error("DNA file not found");
+            return res.arrayBuffer();
+        })
+        .then(buf => {
+            if (buf.byteLength >= 12) {
+                console.log("Found active genome DNA file on disk. Unpacking parameters...");
+                const view = new DataView(buf);
+                state.fur_r = view.getUint8(0);
+                state.fur_g = view.getUint8(1);
+                state.fur_b = view.getUint8(2);
+                state.sickness_intensity = view.getUint8(6);
+                state.scale = view.getUint8(7);
+                state.fur_len = view.getUint8(8);
+                state.twitch_intensity = view.getUint8(11);
+                
+                // Align phenotype based on color range
+                state.phenotype = state.fur_r > 150 ? "crimson" : (state.fur_r <= 110 ? "gray" : "brown");
+                console.log(`Unpacked: Color(${state.fur_r}, ${state.fur_g}, ${state.fur_b}) Scale(${state.scale}) Phenotype(${state.phenotype})`);
+            }
+            updateUI();
+        })
+        .catch(err => {
+            console.log("Using baseline default state genome parameters.");
+            updateUI();
+        });
 });
