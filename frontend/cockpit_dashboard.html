@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortell Systems Diagnostics - Sysop Cockpit</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: rgba(22, 27, 34, 0.7);
+            --border-color: rgba(48, 54, 61, 0.8);
+            --accent-green: #2ea043;
+            --accent-cyan: #00f0ff;
+            --accent-orange: #ff9f1c;
+            --accent-red: #ff3838;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --glow-green: rgba(46, 160, 67, 0.4);
+            --glow-cyan: rgba(0, 240, 255, 0.4);
+            --glow-orange: rgba(255, 159, 28, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .system-status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-badge {
+            background: rgba(46, 160, 67, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 0 10px var(--glow-green);
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 380px;
+            gap: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Panel Glassmorphism Styling */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Oscilloscope Canvas */
+        .canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background: #05070a;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            min-height: 250px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Active Channel Modules */
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .channel-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .channel-card.active {
+            border-color: var(--accent-green);
+            box-shadow: inset 0 0 8px rgba(46, 160, 67, 0.1);
+        }
+
+        .channel-card.selected {
+            border-color: var(--accent-cyan);
+            box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.1);
+        }
+
+        .channel-header {
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .channel-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+
+        .channel-card.active .channel-indicator {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+        }
+
+        /* ZMM Hardware Page Table Map */
+        .page-table-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            flex-grow: 1;
+        }
+
+        .page-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .page-cell:hover {
+            border-color: #ffffff;
+        }
+
+        .page-cell.allocated {
+            background: rgba(46, 160, 67, 0.3);
+            border-color: var(--accent-green);
+        }
+
+        .page-cell.reserved {
+            background: rgba(0, 240, 255, 0.3);
+            border-color: var(--accent-cyan);
+        }
+
+        .page-cell.system {
+            background: rgba(255, 56, 56, 0.3);
+            border-color: var(--accent-red);
+        }
+
+        /* Sysop Control Panel */
+        .sysop-panel {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 15px rgba(255, 159, 28, 0.15);
+        }
+
+        .sysop-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sysop-btn {
+            background: rgba(255, 159, 28, 0.1);
+            border: 1px solid var(--accent-orange);
+            color: var(--accent-orange);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .sysop-btn:hover {
+            background: var(--accent-orange);
+            color: #000000;
+            box-shadow: 0 0 10px var(--glow-orange);
+        }
+
+        .sysop-btn.danger {
+            background: rgba(255, 56, 56, 0.1);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .sysop-btn.danger:hover {
+            background: var(--accent-red);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 56, 56, 0.4);
+        }
+
+        /* Terminal Logging Panel */
+        .terminal-container {
+            flex-grow: 1;
+            background: #05070a;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 11px;
+            overflow-y: auto;
+            max-height: 250px;
+        }
+
+        .terminal-line {
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .terminal-line.info { color: var(--text-muted); }
+        .terminal-line.success { color: var(--accent-green); }
+        .terminal-line.warn { color: var(--accent-orange); }
+        .terminal-line.danger { color: var(--accent-red); }
+
+        /* Modal Overlay for input injection */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 1px solid var(--accent-orange);
+            border-radius: 8px;
+            width: 400px;
+            padding: 20px;
+            box-shadow: 0 0 20px var(--glow-orange);
+        }
+
+        .modal-header {
+            font-weight: bold;
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            background: #05070a;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: #ffffff;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .modal-btn.confirm {
+            background: var(--accent-orange);
+            border: 1px solid var(--accent-orange);
+            color: #000000;
+        }
+
+        .modal-btn.cancel {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>Fortell Systems Diagnostics</h1>
+            <p>Auncient VM Teleconferencing, Calibration & Sysop Cockpit Console</p>
+        </div>
+        <div class="system-status">
+            <span class="status-badge">System Status: Active</span>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Column 1: Signal & Oscilloscope -->
+        <div class="column">
+            <div class="panel" style="flex-grow: 1;">
+                <div class="panel-header">
+                    <span>Pilot Loopback Calibration</span>
+                    <span style="font-size: 11px; color: var(--accent-cyan);">Active Pilot Mode</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="scopeCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="panel" style="height: 250px;">
+                <div class="panel-header">
+                    <span>ZMM Hardware Page Table Map</span>
+                </div>
+                <div class="page-table-grid" id="pageTableGrid"></div>
+            </div>
+        </div>
+
+        <!-- Column 2: Channels grid -->
+        <div class="column">
+            <div class="panel" style="flex-grow: 1;">
+                <div class="panel-header">
+                    <span>Active Channel Modules</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">Total Channels: 16</span>
+                </div>
+                <div class="channel-grid" id="channelGrid"></div>
+            </div>
+        </div>
+
+        <!-- Column 3: Sysop Controls & Terminals -->
+        <div class="column">
+            <div class="panel sysop-panel">
+                <div class="panel-header">
+                    <span style="color: var(--accent-orange);">Sysop Control Panel</span>
+                </div>
+                <div class="sysop-buttons">
+                    <button class="sysop-btn" onclick="openInjectionModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.5 7.5"></path></svg>
+                        Inject Command
+                    </button>
+                    <button class="sysop-btn" onclick="observePeers()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                        Observe Peers
+                    </button>
+                    <button class="sysop-btn" onclick="clearLockouts()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        Clear Session Lockouts
+                    </button>
+                    <button class="sysop-btn danger" onclick="triggerMitigation()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        Initiate AI Mitigation
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel" style="flex-grow: 1;">
+                <div class="panel-header">
+                    <span>Real-Time Sysop Event Log Terminal</span>
+                </div>
+                <div class="terminal-container" id="terminalContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Injection Modal -->
+    <div class="modal" id="injectionModal">
+        <div class="modal-content">
+            <div class="modal-header">Inject Custom Command payload</div>
+            <input type="text" class="modal-input" id="commandInput" placeholder="e.g. SET_CHIN=42, FORCE_RESYNC">
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeInjectionModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="submitCommandInjection()">Inject</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initialize Active Channel Modules
+        const channelContainer = document.getElementById('channelGrid');
+        const channels = [];
+        for (let i = 1; i <= 16; i++) {
+            const card = document.createElement('div');
+            card.className = `channel-card ${i <= 8 ? 'active' : ''}`;
+            const freq = i % 2 === 0 ? 2200 : 1200;
+            const imp = i % 2 === 0 ? 75 : 50;
+            
+            card.innerHTML = `
+                <div class="channel-header">
+                    <span>CH-${String(i).padStart(2, '0')}</span>
+                    <span class="channel-indicator"></span>
+                </div>
+                <div style="margin-top: 5px; color: var(--text-muted);">
+                    Type: <span style="color: #ffffff;">DATA</span><br>
+                    Impedance: <span style="color: #ffffff;">${imp} &Omega;</span><br>
+                    Carrier: <span style="color: #ffffff;">${freq} Hz</span><br>
+                    Load: <span style="color: var(--accent-cyan);">42%</span>
+                </div>
+            `;
+            channelContainer.appendChild(card);
+            channels.push(card);
+        }
+
+        // 2. Initialize Page Table Cells
+        const ptGrid = document.getElementById('pageTableGrid');
+        for (let i = 0; i < 32; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'page-cell';
+            if (i < 4) cell.classList.add('system');
+            else if (i < 16) cell.classList.add('allocated');
+            else if (i < 24) cell.classList.add('reserved');
+            
+            cell.title = `ZMM Page: 0x${(i * 4096).toString(16).toUpperCase()}`;
+            ptGrid.appendChild(cell);
+        }
+
+        // 3. Live Oscilloscope Canvas Animation
+        const canvas = document.getElementById('scopeCanvas');
+        const ctx = canvas.getContext('2d');
+        let phase = 0;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawOscilloscope() {
+            ctx.fillStyle = '#05070a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(48, 54, 61, 0.3)';
+            ctx.lineWidth = 1;
+            const gridSpacing = 40;
+            for (let x = 0; x < canvas.width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw sine waves
+            ctx.strokeStyle = '#2ea043';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'var(--glow-green)';
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                const y = canvas.height / 3 + Math.sin(x * 0.02 + phase) * 40;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw second sine wave (high-frequency)
+            ctx.strokeStyle = '#00f0ff';
+            ctx.shadowColor = 'var(--glow-cyan)';
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                const y = (canvas.height / 3) * 2 + Math.sin(x * 0.04 - phase * 1.5) * 25;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.shadowBlur = 0; // Reset shadow
+            phase += 0.05;
+            requestAnimationFrame(drawOscilloscope);
+        }
+        drawOscilloscope();
+
+        // 4. Terminal Log System
+        const term = document.getElementById('terminalContainer');
+        function addLog(text, type = 'info') {
+            const time = new Date().toISOString().split('T')[1].slice(0, 8);
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.innerText = `[${time}] ${text}`;
+            term.appendChild(line);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // Add initial system logs
+        addLog("SYSTEM INITIALIZED: AUNCIENT VM KERNEL ACTIVE", "success");
+        addLog("WinchesterMQ SCSI loops online.", "info");
+        addLog("PPN-22 REGISTERED: ACL ADMIN PROVISIONED", "success");
+        addLog("Idle calibration: noise threshold resolved to 0.05", "info");
+
+        // Sysop Interactive callbacks
+        function openInjectionModal() {
+            document.getElementById('injectionModal').style.display = 'flex';
+        }
+
+        function closeInjectionModal() {
+            document.getElementById('injectionModal').style.display = 'none';
+        }
+
+        function submitCommandInjection() {
+            const cmd = document.getElementById('commandInput').value;
+            if (cmd) {
+                addLog(`[SYSOP COMMAND INJECT] Dispatched payload: '${cmd}' to PPN [11,1]`, "warn");
+                closeInjectionModal();
+            }
+        }
+
+        function observePeers() {
+            addLog("Executing Peer Observation sweep (Pair ID detection)...", "info");
+            setTimeout(() => {
+                addLog("Observe Success: 3 Active PPN clients detected (PPN 10:5, PPN 12:6, PPN 11:1).", "success");
+            }, 500);
+        }
+
+        function clearLockouts() {
+            addLog("[SYSOP OVERRIDE] Bypassing and clearing active session lockouts...", "warn");
+            setTimeout(() => {
+                addLog("Lockouts cleared. Resetting consecutive failure registers to 0.", "success");
+            }, 600);
+        }
+
+        function triggerMitigation() {
+            addLog("[AI AUTOMATION] Initiating quarantine sweep across unmapped Page Table memory spaces...", "danger");
+            setTimeout(() => {
+                addLog("Quarantine Success: Rogue page segments isolated.", "success");
+            }, 700);
+        }
+    </script>
+</body>
+</html>
