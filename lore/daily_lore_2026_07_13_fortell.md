@@ -2,7 +2,7 @@
 
 ## The Fortell Convergence and Per-Cycle Sysop Injection
 
-The convergence of historical telecommunications diagnostics and the **Auncient** guest virtual machine has reached a bijective state. By auditing the Teradyne Fortell operational paradigms (from *Phrack Issue 3, File 6*), we have mapped dynamic loop diagnostics directly onto the Yul execution layers.
+The convergence of historical telecommunications diagnostics and the **Auncient** guest virtual machine has reached a bijective state. By auditing the Teradyne Fortell operational paradigms (from historical telecommunications issue archives), we have mapped dynamic loop diagnostics directly onto the Yul execution layers.
 
 ### 1. Active Impedance and Steganographic Modulation
 Rather than treating the coaxial FSK/QAM transmission as a static payload carrier, the system now modulates line impedance dynamically (shifting between 50 Ohms at 1200 Hz for Binary, and 75 Ohms at 2200 Hz for Unicode) to match loop characteristics. 

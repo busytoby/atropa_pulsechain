@@ -1,8 +1,8 @@
 # Daily Lore: July 13, 2026 - Part II
 
-## Universal Information Services and ISDN Multiplexing (Phrack Issue 2, File 6)
+## Universal Information Services and ISDN Multiplexing (Issue 2, File 6)
 
-Reviewing Taran King's compilation of the AT&T Bell Laboratories Universal Information Services blueprints (from *Phrack Issue 2, File 6*), we have mapped the 2B+D ISDN signaling architecture to the guest virtual machine's coaxial interface.
+Reviewing Taran King's compilation of the AT&T Bell Laboratories Universal Information Services blueprints (from early digital network publications), we have mapped the 2B+D ISDN signaling architecture to the guest virtual machine's coaxial interface.
 
 ### 1. The 2B+D Virtual Channel Architecture
 Instead of using a single flat transmission frequency, the coaxial multiplexer splits each peer connection into three logical paths:
