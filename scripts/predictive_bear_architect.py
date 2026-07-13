@@ -19,38 +19,63 @@ def predict_and_compile_genome():
         except Exception as e:
             print(f"   - Warning: Failed to parse benchmark JSON: {e}")
 
-    # 2. Execute Predictive Parameter Optimization (Gradient descent simulation)
-    # If rendering speed is high, we can safely maximize visual complexity (fur length and twitch).
-    # If rendering speed is low, we scale down complexity to restore high FPS.
-    print("   - Calculating optimal genome parameters...")
-    if avg_fps > 5000.0:
-        # High FPS -> Boost visual detail (longer fur, high twitch scale)
-        fur_r = 180      # Rich Crimson
-        fur_g = 20       # Low green
-        fur_b = 20       # Low blue
-        eye_r = 0        # Emerald green eyes
-        eye_g = 255
-        eye_b = 0
-        sickness = 10    # Low sickness distortion
-        scale = 120      # Magnified scale
-        fur_length = 150 # Long fur filaments
-        light_angle = 180
-        breath_freq = 64
-        twitch = 120     # High animated twitch
-    else:
-        # Lower FPS -> Lower detail to preserve performance
-        fur_r = 120
-        fur_g = 120
-        fur_b = 120
-        eye_r = 255
-        eye_g = 0
-        eye_b = 0
+    # 2. Load user preference feedback coordinates from the ACAB ledger
+    ledger_path = "assets/bear_evolution_ledger.json"
+    upvotes = []
+    quarantines = []
+    if os.path.exists(ledger_path):
+        try:
+            with open(ledger_path, 'r') as f:
+                history = json.load(f)
+                for item in history:
+                    genome = item.get("genome")
+                    if not genome:
+                        continue
+                    if item.get("event") == "VOTE_UP_BEAR":
+                        upvotes.append(genome)
+                    elif item.get("event") == "VOTE_DOWN_QUARANTINE":
+                        quarantines.append(genome)
+            print(f"   - Read vote ledger. Upvotes: {len(upvotes)}, Bans: {len(quarantines)}")
+        except Exception as e:
+            print(f"   - Warning: Failed to parse vote ledger: {e}")
+
+    # 3. Calculate target parameters based on preference vectors
+    # Default parameters:
+    fur_r, fur_g, fur_b = 120, 120, 120
+    scale = 120
+    fur_length = 110
+    twitch = 40
+    sickness = 0
+
+    if upvotes:
+        # Move parameters towards the average of upvoted bears
+        fur_r = int(sum(u['fur_r'] for u in upvotes) / len(upvotes))
+        fur_g = int(sum(u['fur_g'] for u in upvotes) / len(upvotes))
+        fur_b = int(sum(u['fur_b'] for u in upvotes) / len(upvotes))
+        scale = int(sum(u.get('scale', 120) for u in upvotes) / len(upvotes))
+        # Visual refinement optimizations
+        fur_length = 160 # High quality fur
+        twitch = 80
         sickness = 0
-        scale = 80
-        fur_length = 50  # Short fur filaments to optimize raycasting
-        light_angle = 90
-        breath_freq = 32
-        twitch = 10
+        print(f"   - Evolving toward preference target: Color({fur_r},{fur_g},{fur_b}) Scale({scale})")
+    else:
+        # Static baseline fallback
+        fur_r, fur_g, fur_b = 130, 80, 50
+        scale = 110
+
+    if quarantines:
+        # Move away from banned gray/unhealthy bears
+        ban_r = sum(q['fur_r'] for q in quarantines) / len(quarantines)
+        if abs(fur_r - ban_r) < 30:
+            # Shift hue to avoid quarantine zone
+            fur_r = (fur_r + 80) % 256
+            fur_g = (fur_g + 50) % 256
+            print(f"   - Warning: Evading banned color boundary. Shifted to Color({fur_r},{fur_g},{fur_b})")
+
+    # Static eye parameters
+    eye_r, eye_g, eye_b = 0, 255, 0
+    light_angle = 180
+    breath_freq = 64
 
     # 3. Direct Genome Synthesis: Write the 12-byte TsfiTeddyDna structure
     # Structure mapping (12 bytes):
