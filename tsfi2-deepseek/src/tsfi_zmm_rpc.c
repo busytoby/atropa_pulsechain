@@ -201,6 +201,28 @@ static int g_consecutive_verification_failures = 0;
 static bool g_is_session_locked_out = false;
 static int g_telemetry_23_log_count = 0;
 
+// Fortell-inspired advanced memory diagnostics
+typedef enum {
+    FAULT_NONE = 0,
+    FAULT_OPEN,   // Unmapped memory region
+    FAULT_SHORT,  // Memory overlapping/cross-talk
+    FAULT_GROUND  // Completely zeroed/grounded register state
+} FortellMemoryFault;
+
+static __attribute__((unused)) FortellMemoryFault detect_fortell_memory_fault(void *ptr, size_t size) {
+    if (!ptr) return FAULT_OPEN;
+    uint8_t *bptr = (uint8_t *)ptr;
+    bool is_grounded = true;
+    for (size_t i = 0; i < size; i++) {
+        if (bptr[i] != 0) {
+            is_grounded = false;
+            break;
+        }
+    }
+    if (is_grounded) return FAULT_GROUND;
+    return FAULT_NONE;
+}
+
 #define MAX_REGISTERED_OPERATORS 8
 typedef struct {
     int project;
