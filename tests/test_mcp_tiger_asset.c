@@ -12,7 +12,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <alsa/asoundlib.h>
+#include <pulse/simple.h>
+#include <pulse/error.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -20,9 +21,10 @@
 
 #define SAMPLE_RATE 8000
 
-// Universal Opcode
+// Universal Opcodes
 typedef enum {
-    YUL_OP_SYNTH_PLAY_BIO = 0x66
+    YUL_OP_SYNTH_PLAY_BIO = 0x66,
+    YUL_OP_MOUNT_INSTRUMENT = 0x71
 } YulOpcode;
 
 // PPN Account Structure
@@ -31,18 +33,29 @@ typedef struct {
     uint16_t programmer;
 } PPN;
 
-// Transaction packet carrying the path to the .bio arrangement file
+// 2-Channel Network Transaction Packet
 typedef struct {
     PPN      ppn;
     uint32_t key_id;
-    char     bio_file_path[128];
+    char     bio_file_path[128]; // Used for play payload
+    char     mount_target[32];   // Used for mount payload ("lead", "bass", etc.)
     uint32_t opcode;
 } TcpBioTxPacket;
 
 // Global Gas Registry (Merkle 2-3 Tree representation)
 uint64_t g_balances[100];
 const uint64_t UNIVERSAL_GAS_FEE = 15;
-snd_pcm_t *g_pcm_handle = NULL;
+pa_simple *g_pulse_stream = NULL;
+
+// Instrument Mount State Registers
+typedef struct {
+    bool lead_mounted;
+    bool bass_mounted;
+    bool growl_mounted;
+    bool drums_mounted;
+} SynthMounts;
+
+SynthMounts g_mounts = { false, false, false, false };
 
 uint32_t get_ppn_slot(PPN ppn) {
     return (ppn.project + ppn.programmer) % 100;
@@ -98,56 +111,53 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
         double t = (double)i / SAMPLE_RATE;
         double mix = 0.0;
 
-        // 1. Lead Channel: Saw + Square blend with exponential decay envelope
-        if (f_lead > 0.0) {
+        // 1. Lead Channel (only if mounted)
+        if (f_lead > 0.0 && g_mounts.lead_mounted) {
             double lead_saw = 0.15 * (2.0 * (t * f_lead - floor(t * f_lead)) - 1.0);
             double lead_sq = 0.08 * (sin(2.0 * M_PI * f_lead * t) > 0.0 ? 1.0 : -1.0);
             double lead_env = exp(-6.0 * t);
             mix += (lead_saw + lead_sq) * lead_env * 0.5;
         }
 
-        // 2. Bass Channel: Triangle wave with exponential decay envelope
-        if (f_bass > 0.0) {
+        // 2. Bass Channel (only if mounted)
+        if (f_bass > 0.0 && g_mounts.bass_mounted) {
             double bass_tri = 0.3 * (2.0 * fabs(2.0 * (t * f_bass - floor(t * f_bass + 0.5))) - 1.0);
             double bass_env = exp(-4.0 * t);
             mix += bass_tri * bass_env * 0.7;
         }
 
-        // 3. Sub-Growl Channel: FM Wobble carrier wave
-        if (f_growl > 0.0 && growl_gain > 0.0) {
+        // 3. Sub-Growl Channel (only if mounted)
+        if (f_growl > 0.0 && growl_gain > 0.0 && g_mounts.growl_mounted) {
             double wobble = sin(2.0 * M_PI * growl_mod * t);
             double growl_sig = 0.6 * sin(2.0 * M_PI * f_growl * t + 3.5 * wobble);
             double growl_env = exp(-1.2 * t) * (1.0 - exp(-35.0 * t)) * (1.0 + 0.4 * wobble);
             mix += growl_sig * growl_env * (growl_gain * 2.2) * 0.5;
         }
 
-        // 4. Kick Drum: Pitch sweep sine wave
-        if (has_kick) {
+        // 4. Kick Drum (only if drums mounted)
+        if (has_kick && g_mounts.drums_mounted) {
             double kick_freq = 120.0 * exp(-35.0 * t) + 40.0;
             double kick_sig = 0.6 * sin(2.0 * M_PI * kick_freq * t) * exp(-8.0 * t);
             mix += kick_sig * 0.8;
         }
 
-        // 5. Snare Drum: White noise burst + body sine wave
-        if (has_snare) {
+        // 5. Snare Drum (only if drums mounted)
+        if (has_snare && g_mounts.drums_mounted) {
             double rand_noise = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             double snare_noise = rand_noise * 0.15 * exp(-12.0 * t);
             double snare_body = 0.35 * sin(2.0 * M_PI * 180.0 * t) * exp(-18.0 * t);
             mix += (snare_noise + snare_body) * 0.45 * 0.7;
         }
 
-        // Clamp mixed signal to U8 range (0 to 255)
         double val = 127.0 + 120.0 * mix;
         if (val < 0.0) val = 0.0;
         if (val > 255.0) val = 255.0;
         buffer[i] = (uint8_t)val;
     }
 
-    if (g_pcm_handle) {
-        snd_pcm_sframes_t frames = snd_pcm_writei(g_pcm_handle, buffer, total_samples);
-        if (frames < 0) {
-            snd_pcm_recover(g_pcm_handle, frames, 0);
-        }
+    if (g_pulse_stream) {
+        int error;
+        pa_simple_write(g_pulse_stream, buffer, total_samples, &error);
     } else {
         usleep((useconds_t)(duration * 1000000.0));
     }
@@ -157,6 +167,12 @@ void play_polyphonic_step(double f_lead, double f_bass, double f_growl, double g
 
 // Parses and plays the full submitted .bio score on the synthesizer
 bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) {
+    // 1. Pre-Execution Mount Check
+    if (!g_mounts.lead_mounted && !g_mounts.bass_mounted && !g_mounts.growl_mounted && !g_mounts.drums_mounted) {
+        *out_err = "REVERT: NO_INSTRUMENTS_MOUNTED_ON_SYNTHESIZER";
+        return false;
+    }
+
     FILE *f = fopen(file_path, "r");
     if (!f) {
         *out_err = "REVERT: FAILED_TO_OPEN_BIO_ASSET";
@@ -213,13 +229,11 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
         }
 
         if (current_pattern_idx != -1) {
-            // Track routing state
             if (strstr(line, "\"lead\"")) { parser_state = 1; continue; }
             if (strstr(line, "\"bass\"")) { parser_state = 10; continue; }
             if (strstr(line, "\"sub_growl\"")) { parser_state = 30; continue; }
             if (strstr(line, "\"drums\"")) { parser_state = 40; continue; }
             
-            // 1. Lead parsing
             if (parser_state == 1 && strstr(line, "\"sequence\"")) { parser_state = 2; continue; }
             if (parser_state == 2) {
                 if (strstr(line, "]")) { parser_state = 0; continue; }
@@ -237,7 +251,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                 }
             }
 
-            // 2. Bass parsing
             if (parser_state == 10 && strstr(line, "\"sequence\"")) { parser_state = 20; continue; }
             if (parser_state == 20) {
                 if (strstr(line, "]")) { parser_state = 0; continue; }
@@ -256,7 +269,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                 }
             }
 
-            // 3. Sub-growl parsing
             if (parser_state == 30 && strstr(line, "\"sequence\"")) { parser_state = 31; continue; }
             if (parser_state == 31) {
                 if (strstr(line, "]")) { parser_state = 32; continue; }
@@ -305,7 +317,6 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                 }
             }
 
-            // 4. Drums parsing
             if (parser_state == 40 && strstr(line, "\"kick\"")) { parser_state = 41; continue; }
             if (parser_state == 41) {
                 if (strstr(line, "]")) { parser_state = 42; continue; }
@@ -376,8 +387,8 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
                     bool kick = pat->drum_kick[s] > 0;
                     bool snare = pat->drum_snare[s] > 0;
                     
-                    printf("   [PolySynth] Step %d: Lead=%.1f Bass=%.1f Growl=%.1f (G:%.1f, M:%.1f) Kick=%d Snare=%d\n",
-                           played_count + 1, f_lead, f_bass, f_growl, g_val, m_val, kick, snare);
+                    printf("   [PolySynth] Step %d: Lead=%.1f Bass=%.1f Growl=%.1f Kick=%d Snare=%d\n",
+                           played_count + 1, f_lead, f_bass, f_growl, kick, snare);
                     
                     play_polyphonic_step(f_lead, f_bass, f_growl, g_val, m_val, kick, snare, step_duration);
                     played_count++;
@@ -390,8 +401,40 @@ bool play_bio_arrangement(const char *file_path, PPN ppn, const char **out_err) 
 
 // BTC Script 2-3 Operator execution engine
 bool process_transaction_rts(TcpBioTxPacket *tx, const char **out_err) {
+    uint32_t slot = get_ppn_slot(tx->ppn);
+    
+    // Gas check for single transactions
+    if (g_balances[slot] < UNIVERSAL_GAS_FEE) {
+        *out_err = "REVERT: INSUFFICIENT_GAS";
+        return false;
+    }
+    g_balances[slot] -= UNIVERSAL_GAS_FEE;
+
     if (tx->key_id != 11 || tx->ppn.project != 1 || tx->ppn.programmer != 2) {
         *out_err = "REVERT: ACL_PERMISSION_DENIED";
+        return false;
+    }
+    
+    if (tx->opcode == YUL_OP_MOUNT_INSTRUMENT) {
+        printf("   [Mount System] Mount request received for: %s\n", tx->mount_target);
+        if (strcmp(tx->mount_target, "lead") == 0) {
+            g_mounts.lead_mounted = true;
+            printf("   [Mount System] Installed LEAD synthesizer module. Remaining: %lu Gas\n", g_balances[slot]);
+            return true;
+        } else if (strcmp(tx->mount_target, "bass") == 0) {
+            g_mounts.bass_mounted = true;
+            printf("   [Mount System] Installed BASS synthesizer module. Remaining: %lu Gas\n", g_balances[slot]);
+            return true;
+        } else if (strcmp(tx->mount_target, "growl") == 0) {
+            g_mounts.growl_mounted = true;
+            printf("   [Mount System] Installed GROWL synthesizer module. Remaining: %lu Gas\n", g_balances[slot]);
+            return true;
+        } else if (strcmp(tx->mount_target, "drums") == 0) {
+            g_mounts.drums_mounted = true;
+            printf("   [Mount System] Installed DRUMS synthesizer module. Remaining: %lu Gas\n", g_balances[slot]);
+            return true;
+        }
+        *out_err = "REVERT: UNKNOWN_INSTRUMENT_MODULE";
         return false;
     }
     
@@ -439,20 +482,17 @@ int main(void) {
     printf("AUNCIENT ZMM VM: MCP BIO ARRANGEMENT TRANSACTION SUBMISSION\n");
     printf("=============================================================\n");
 
-    // Initialize ALSA U8 device at 8000 Hz
-    printf("1. Opening ALSA playback device (8000Hz, U8, Mono)...\n");
-    int err = snd_pcm_open(&g_pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
-    if (err < 0) {
-        fprintf(stderr, "[ALSA] Warning: Cannot open sound hardware (%s). Running in emulator mode.\n", snd_strerror(err));
-        g_pcm_handle = NULL;
-    } else {
-        err = snd_pcm_set_params(g_pcm_handle, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED,
-                                 1, SAMPLE_RATE, 1, 20000); // 20ms latency
-        if (err < 0) {
-            fprintf(stderr, "[ALSA] Error setting parameters: %s\n", snd_strerror(err));
-            snd_pcm_close(g_pcm_handle);
-            g_pcm_handle = NULL;
-        }
+    // Initialize PulseAudio Simple API stream (U8 format, 8000 Hz, Mono)
+    printf("1. Connecting to PulseAudio server (8000Hz, U8, Mono)...\n");
+    pa_sample_spec ss;
+    ss.format = PA_SAMPLE_U8;
+    ss.rate = SAMPLE_RATE;
+    ss.channels = 1;
+    int error;
+    g_pulse_stream = pa_simple_new(NULL, "ZMM_MCP_Tiger", PA_STREAM_PLAYBACK, NULL, "Synthesizer", &ss, NULL, NULL, &error);
+    if (!g_pulse_stream) {
+        fprintf(stderr, "Failed to connect to PulseAudio: %s\n", pa_strerror(error));
+        return 1;
     }
 
     // Initialize balances
@@ -475,28 +515,43 @@ int main(void) {
     
     if (connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         perror("Connection to MCP Server failed");
-        if (g_pcm_handle) snd_pcm_close(g_pcm_handle);
+        if (g_pulse_stream) pa_simple_free(g_pulse_stream);
         return 1;
     }
 
-    TcpBioTxPacket packet = {
+    // 3. Transmit Mount Transactions first (Mount lead, bass, growl, drums)
+    const char *instruments[] = { "lead", "bass", "growl", "drums" };
+    printf("3. Transmitting Instrument Mount Transactions over TCP/IP...\n");
+    for (int i = 0; i < 4; i++) {
+        TcpBioTxPacket mount_packet = {
+            .ppn = admin_ppn,
+            .key_id = 11,
+            .opcode = YUL_OP_MOUNT_INSTRUMENT
+        };
+        strcpy(mount_packet.mount_target, instruments[i]);
+        send(client_fd, &mount_packet, sizeof(TcpBioTxPacket), 0);
+        usleep(50000); // Space mount transactions out
+    }
+
+    // 4. Submit Play Transaction
+    TcpBioTxPacket play_packet = {
         .ppn = admin_ppn,
         .key_id = 11,
-        .bio_file_path = "assets/bionika/eye_of_the_tiger.bio",
         .opcode = YUL_OP_SYNTH_PLAY_BIO
     };
+    strcpy(play_packet.bio_file_path, "assets/bionika/eye_of_the_tiger.bio");
 
-    printf("3. Transmitting BIO transaction package over TCP/IP...\n");
-    send(client_fd, &packet, sizeof(TcpBioTxPacket), 0);
+    printf("4. Transmitting BIO playback transaction package...\n");
+    send(client_fd, &play_packet, sizeof(TcpBioTxPacket), 0);
     
     usleep(5000000); 
 
     close(client_fd);
     pthread_join(server_tid, NULL);
 
-    if (g_pcm_handle) {
-        snd_pcm_drain(g_pcm_handle);
-        snd_pcm_close(g_pcm_handle);
+    if (g_pulse_stream) {
+        pa_simple_drain(g_pulse_stream, &error);
+        pa_simple_free(g_pulse_stream);
     }
 
     printf("\nBIO arrangement play completed successfully.\n");
