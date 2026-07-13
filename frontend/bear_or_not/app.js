@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.chk_hat.checked = state.accessories.hat;
 
         // Display overlays based on active accessory composition
+        console.log("Rendering Accessories - Visor:", state.accessories.glasses, "Bowtie:", state.accessories.bowtie, "Hat:", state.accessories.hat);
         elements.overlay_glasses.classList.toggle('active', !!state.accessories.glasses);
         elements.overlay_bowtie.classList.toggle('active', !!state.accessories.bowtie);
         elements.overlay_hat.classList.toggle('active', !!state.accessories.hat);
@@ -174,9 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.slide_sickness.addEventListener('input', (e) => { state.sickness_intensity = parseInt(e.target.value); updateUI(); });
 
     // Accessory selection bindings to instantly render vector graphics on body
-    elements.chk_glasses.addEventListener('change', (e) => { state.accessories.glasses = e.target.checked; updateUI(); });
-    elements.chk_bowtie.addEventListener('change', (e) => { state.accessories.bowtie = e.target.checked; updateUI(); });
-    elements.chk_hat.addEventListener('change', (e) => { state.accessories.hat = e.target.checked; updateUI(); });
+    elements.chk_glasses.addEventListener('change', (e) => {
+        console.log("Visor checkbox changed:", e.target.checked);
+        state.accessories.glasses = e.target.checked;
+        updateUI();
+    });
+    elements.chk_bowtie.addEventListener('change', (e) => {
+        console.log("Bowtie checkbox changed:", e.target.checked);
+        state.accessories.bowtie = e.target.checked;
+        updateUI();
+    });
+    elements.chk_hat.addEventListener('change', (e) => {
+        console.log("Hat checkbox changed:", e.target.checked);
+        state.accessories.hat = e.target.checked;
+        updateUI();
+    });
 
     // Bind Phenotype selector changes to update the base bear phenotype render instantly
     elements.select_phenotype.addEventListener('change', (e) => {
