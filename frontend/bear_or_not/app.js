@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.bar_len.style.width = (state.fur_len / 255 * 100) + '%';
         elements.bar_scale.style.width = (state.scale / 200 * 100) + '%';
 
-        // Dynamically shift the rendered bear image based on active genome color ranges
+        // Dynamically select the base image phenotype
         if (state.fur_r > 150) {
             elements.bear_image.src = "assets/crimson_bear.jpg";
         } else if (state.fur_r <= 110) {
@@ -53,6 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             elements.bear_image.src = "assets/teddy_render.jpg";
         }
+
+        // Real-time Visual Modulation: map exact genome values to CSS filters and scaling
+        const hueShift = ((state.fur_r + state.fur_g + state.fur_b) * 1.5) % 360;
+        const satPercent = 60 + (state.fur_g / 255 * 80);
+        const brightPercent = 70 + (state.fur_b / 255 * 40);
+        const scaleVal = 0.75 + (state.scale / 250);
+
+        elements.bear_image.style.filter = `hue-rotate(${hueShift}deg) saturate(${satPercent}%) brightness(${brightPercent}%)`;
+        elements.bear_image.style.transform = `scale(${scaleVal})`;
 
         // Render activity table
         elements.leaderboard.innerHTML = state.history.map(item => `
