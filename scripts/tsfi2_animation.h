@@ -35,6 +35,8 @@ void tsfi2_draw_pixel(tsfi2_canvas_t *canvas, int x, int y, uint8_t r, uint8_t g
 void tsfi2_draw_line_aa(tsfi2_canvas_t *canvas, float x0, float y0, float x1, float y1, uint8_t r, uint8_t g, uint8_t b, float alpha);
 void tsfi2_draw_line_glow(tsfi2_canvas_t *canvas, float x0, float y0, float x1, float y1, uint8_t r, uint8_t g, uint8_t b);
 void tsfi2_draw_circle(tsfi2_canvas_t *canvas, int cx, int cy, int radius, uint8_t r, uint8_t g, uint8_t b, int fill);
+void tsfi2_draw_string(tsfi2_canvas_t *canvas, const char *text, int x, int y, int scale, uint8_t r, uint8_t g, uint8_t b);
+
 
 // Easing Functions for Animation
 float tsfi2_ease_linear(float t);

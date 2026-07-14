@@ -206,3 +206,41 @@ void tsfi2_project_3d_to_2d(const tsfi2_vec3_t *v, float angle, float scale, uin
     *sx = (int)(width / 2.0f + x_rot * scale);
     *sy = (int)(height / 2.0f + v->y * scale);
 }
+
+static const uint16_t C_FONT[128] = {
+    ['A'] = 0x2bdd, ['B'] = 0x6bad, ['C'] = 0x7927, ['D'] = 0x6dad, ['E'] = 0x79e7,
+    ['F'] = 0x79a4, ['G'] = 0x796f, ['H'] = 0x5fdd, ['I'] = 0x7497, ['J'] = 0x126a,
+    ['K'] = 0x5edd, ['L'] = 0x4927, ['M'] = 0x5f6d, ['N'] = 0x5f6d, ['O'] = 0x7b6f,
+    ['P'] = 0x7be4, ['Q'] = 0x7b79, ['R'] = 0x7bfd, ['S'] = 0x79cf, ['T'] = 0x7492,
+    ['U'] = 0x5b6f, ['V'] = 0x5b52, ['W'] = 0x5b7d, ['X'] = 0x5aad, ['Y'] = 0x5a92,
+    ['Z'] = 0x72a7, ['0'] = 0x7b6f, ['1'] = 0x2492, ['2'] = 0x73cf, ['3'] = 0x713f,
+    ['4'] = 0x5f21, ['5'] = 0x7cf7, ['6'] = 0x7ddf, ['7'] = 0x7148, ['8'] = 0x7ddf,
+    ['9'] = 0x7d9f, [' '] = 0x0000, [':'] = 0x00a0, ['+'] = 0x02e8, ['-'] = 0x00e0,
+    ['>'] = 0x4454, ['='] = 0x0e38, ['('] = 0x2922, [')'] = 0x2222
+};
+
+void tsfi2_draw_char(tsfi2_canvas_t *canvas, char c, int px, int py, int scale, uint8_t r, uint8_t g, uint8_t b) {
+    if (c >= 'a' && c <= 'z') c -= 32;
+    if (c < 0 || c >= 128) return;
+    uint16_t val = C_FONT[(int)c];
+    for (int row = 0; row < 5; row++) {
+        for (int col = 0; col < 3; col++) {
+            if ((val >> (14 - (row * 3 + col))) & 1) {
+                for (int dy = 0; dy < scale; dy++) {
+                    for (int dx = 0; dx < scale; dx++) {
+                        tsfi2_draw_pixel(canvas, px + col * scale + dx, py + row * scale + dy, r, g, b, 1.0f);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void tsfi2_draw_string(tsfi2_canvas_t *canvas, const char *text, int x, int y, int scale, uint8_t r, uint8_t g, uint8_t b) {
+    int i = 0;
+    while (text[i] != '\0') {
+        tsfi2_draw_char(canvas, text[i], x + i * 5 * scale, y, scale, r, g, b);
+        i++;
+    }
+}
+
