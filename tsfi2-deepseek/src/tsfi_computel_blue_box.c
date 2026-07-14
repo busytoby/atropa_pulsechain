@@ -1334,6 +1334,19 @@ bool blue_box_generate_erc20_tx(char *tx_buf, size_t max_len) {
 bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds) {
     uint32_t rate = blue_box_centrex_get_trunk_rate(trunk_id);
     uint32_t cost = (rate * active_seconds) / 60;
+    
+    // Scale cost based on live PLL hardware phase lock deviation (0xF125)
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t actual_pll_deviation = lau_yul_thunk_sload(0xF125);
+    int64_t s_dev = (int64_t)actual_pll_deviation;
+    uint64_t pll_abs = s_dev >= 0 ? (uint64_t)s_dev : (uint64_t)(-s_dev);
+    
+    if (pll_abs > 0) {
+        uint64_t multiplier = 1 + (pll_abs / 500000);
+        if (multiplier > 10) multiplier = 10;
+        cost *= multiplier;
+    }
+    
     if (current_block_state.gas_allowance >= cost) {
         current_block_state.gas_allowance -= cost;
         return true;
