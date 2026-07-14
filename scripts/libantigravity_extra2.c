@@ -55,3 +55,30 @@ float interop_transr_alignment_penalty(const float *M, const float *r, size_t en
     }
     return sum_sq;
 }
+
+int interop_coaxial_map_row_to_entity(const int *table_data, size_t row_stride, size_t row_idx, size_t col_idx, int *out_entity_id) {
+    if (!table_data || !out_entity_id) return -1;
+    *out_entity_id = table_data[row_idx * row_stride + col_idx];
+    return 0;
+}
+
+int interop_coaxial_semantic_join(const int *h_ids, const int *t_ids, size_t row_count, const float *embeddings, size_t dim, const float *r, float margin, int *out_matched_flags) {
+    if (!h_ids || !t_ids || row_count == 0 || !embeddings || dim == 0 || !r || !out_matched_flags) return -1;
+    int matched_count = 0;
+    for (size_t i = 0; i < row_count; i++) {
+        const float *h = embeddings + h_ids[i] * dim;
+        const float *t = embeddings + t_ids[i] * dim;
+        float dist_sq = 0.0f;
+        for (size_t j = 0; j < dim; j++) {
+            float diff = h[j] + r[j] - t[j];
+            dist_sq += diff * diff;
+        }
+        if (dist_sq <= margin) {
+            out_matched_flags[i] = 1;
+            matched_count++;
+        } else {
+            out_matched_flags[i] = 0;
+        }
+    }
+    return matched_count;
+}

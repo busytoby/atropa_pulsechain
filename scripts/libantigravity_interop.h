@@ -534,4 +534,7 @@ int interop_transr_matrix_norm_constraint(float *M, size_t ent_dim, size_t rel_d
 float interop_ctransr_score(const float *h, const float *M, const float *r_cluster, const float *t, size_t ent_dim, size_t rel_dim, int norm_type);
 float interop_transr_alignment_penalty(const float *M, const float *r, size_t ent_dim, size_t rel_dim);
 
+int interop_coaxial_map_row_to_entity(const int *table_data, size_t row_stride, size_t row_idx, size_t col_idx, int *out_entity_id);
+int interop_coaxial_semantic_join(const int *h_ids, const int *t_ids, size_t row_count, const float *embeddings, size_t dim, const float *r, float margin, int *out_matched_flags);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
