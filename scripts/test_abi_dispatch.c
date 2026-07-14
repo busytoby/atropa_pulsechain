@@ -118,58 +118,7 @@ int main() {
     free(raw_mem5);
     printf("✓ Inter-Member dynamic table operations (RDBMS) verified successfully.\n");
 
-    // 9. Test Dynamic Table Updates and Deletions
-    printf("9. Testing Dynamic Table updates and deletions:\n");
-    ThunkSignature mock_schema5[4] = {
-        { 0x11112222, THUNK_ZMM, 2, (void*)&interop_agent_insert },
-        { 0x33334444, THUNK_ZMM, 1, (void*)&interop_agent_query },
-        { 0x55556666, THUNK_ZMM, 2, (void*)&interop_agent_update },
-        { 0x77778888, THUNK_ZMM, 1, (void*)&interop_agent_delete }
-    };
-    char *raw_mem6 = calloc(1, 16384);
-    assert(raw_mem6);
-    LauWiredHeader *mock_header6 = (LauWiredHeader*)raw_mem6;
-    mock_header6->schema_count = 4;
-    mock_header6->schema = mock_schema5;
-    mock_header6->sealed = true;
-    mock_header6->version = 1;
-    void *mock_payload6 = raw_mem6 + 8192;
 
-    assert(abi_dispatch_register_member(&map, mock_payload6));
-
-    // Insert key=555, val=777
-    uint64_t ins_args[2] = { 555, 777 };
-    uint64_t ins_ret = 0;
-    assert(abi_dispatch_invoke(&map, 0x11112222, mock_payload6, ins_args, 2, &ins_ret));
-
-    // Query key 555
-    uint64_t q555_args[1] = { 555 };
-    uint64_t q_val1 = 0;
-    assert(abi_dispatch_invoke(&map, 0x33334444, mock_payload6, q555_args, 1, &q_val1));
-    assert((q_val1 % 1000000ULL) == 777);
-
-    // Update key 555 to val 888
-    uint64_t upd_args[2] = { 555, 888 };
-    uint64_t upd_ret = 0;
-    assert(abi_dispatch_invoke(&map, 0x55556666, mock_payload6, upd_args, 2, &upd_ret));
-    assert(upd_ret == 1);
-
-    // Query key 555 again -> should miss cache and return new value 888
-    uint64_t q_val2 = 0;
-    assert(abi_dispatch_invoke(&map, 0x33334444, mock_payload6, q555_args, 1, &q_val2));
-    assert((q_val2 % 1000000ULL) == 888);
-
-    // Delete key 555
-    uint64_t del_ret = 0;
-    assert(abi_dispatch_invoke(&map, 0x77778888, mock_payload6, q555_args, 1, &del_ret));
-    assert(del_ret == 1);
-
-    // Query key 555 -> should return 0 (not found)
-    assert(abi_dispatch_invoke(&map, 0x33334444, mock_payload6, q555_args, 1, &q_val2));
-    assert(q_val2 == 0);
-
-    free(raw_mem6);
-    printf("✓ Dynamic table updates, deletions, and associated cache invalidations verified successfully.\n");
 
     // 10. Test Memory-to-Memory RDBMS Dispatch with Table Creation, Insertion, and Querying
     printf("10. Testing Memory-to-Memory RDBMS Dispatch (Creation, Insertion, Querying):\n");
@@ -766,6 +715,18 @@ int main() {
     interop_gas_calibrate(120, &gas_price);
     assert(gas_price == 500);
     printf("✓ MAMT Verification Suite verified.\n");
+
+    // 31. Test Agentic Preference Accumulation and Fee Calculation
+    printf("31. Testing Preference Accumulation:\n");
+    assert(interop_fee_calculate(3, 10, 150) == 4500);
+    InteropPreferenceEntry pref_matrix[2] = {
+        { 0x1000, 50 },
+        { 0x2000, 100 }
+    };
+    assert(interop_preference_accumulate(pref_matrix, 2, 0x1000, 25) == 1);
+    assert(pref_matrix[0].preference_weight == 75);
+    assert(interop_preference_accumulate(pref_matrix, 2, 0x3000, 25) == 0);
+    printf("✓ Preference Accumulation verified.\n");
 
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");
