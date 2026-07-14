@@ -277,3 +277,17 @@ Each agent memory block is equipped with an agentic execution scheduler that coo
     $$f(C) = \begin{cases} \text{Invoke}(Sel, \text{Arg}) & \text{if } C \ge C_{\text{target}} \text{ and } \text{Active} \\ \text{NOP} & \text{otherwise} \end{cases}$$
 3.  **Verifiable State Commitments**:
     The state transition delta resulting from the deferred execution is logged on the Tape Table ($M_T$), contributing to the evolved state root hash settled on Bitcoin L1.
+
+---
+
+## 18. Merkle-Auncient Multicast Trees (MAMT)
+
+To secure the multi-dimensional tree topology of parent-child execution threads on-chain without flattening them into ZK-SNARK linear chains, CSML-L2 uses **Algebraic Vectorized Tree Covenant Checks**:
+
+1.  **Bijective Parent-Child Adduction**:
+    State parent-child transitions are verified using strict mathematical field adduction formulas:
+    $$\text{Adduct}(Child, Parent) = Child^{Secret} \pmod{MotzkinPrime}$$
+2.  **Multi-Lane Vectorized Schedulers**:
+    Scheduled transitions are dispatched concurrently across multiple SIMD tracks matching the tree topology.
+3.  **Adaptive Gas Calibration Loops**:
+    Host profiling metrics are logged dynamically in `gas_calibration_table`, allowing JIT compiler fee rates to scale automatically to match CPU load.
