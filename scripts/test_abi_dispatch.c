@@ -966,6 +966,14 @@ int main() {
     assert(path_out[0] == 0);
     printf("✓ Parallel PLL updates, decision frequency gating, and NTM gate paths verified.\n");
 
+    // 93-94. Test scheduler PMG task gating and PLL time-slice sync
+    assert(interop_scheduler_gate_task(&test_pmg, 6.0, 4) == 1);
+    assert(interop_scheduler_gate_task(&test_pmg, 2.0, 4) == 0);
+    double t_slice = 0.016;
+    interop_scheduler_sync_slice(&test_pll, 0.016, 0.020, &t_slice);
+    assert(t_slice > 0.001);
+    printf("✓ Scheduler PMG task gating and PLL time-slice sync verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

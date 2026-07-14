@@ -2044,3 +2044,19 @@ int interop_pmg_gate_search_ntm(const InteropPMG *pmgs, size_t count, double sig
     }
     return (int)paths;
 }
+
+int interop_scheduler_gate_task(const InteropPMG *pmg, double system_load, uint32_t task_complexity) {
+    if (!pmg) return 0;
+    int is_gated = (system_load >= pmg->threshold);
+    if (is_gated && task_complexity >= 3) {
+        return 1;
+    }
+    return 0;
+}
+
+void interop_scheduler_sync_slice(InteropPLL *pll, double target_frame_time, double actual_frame_time, double *time_slice) {
+    if (!pll || !time_slice) return;
+    interop_pll_update(pll, target_frame_time - actual_frame_time, 0.1, 1.5);
+    *time_slice += pll->frequency * 0.01;
+    if (*time_slice < 0.001) *time_slice = 0.001;
+}

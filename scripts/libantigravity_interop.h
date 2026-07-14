@@ -371,4 +371,7 @@ void interop_pll_update_avx512(InteropPLL *plls, const double *ref_phases, size_
 void interop_pll_decision_gate(InteropPLL *pll, const InteropMultiDecisionNode *nodes, uint32_t root_idx);
 int interop_pmg_gate_search_ntm(const InteropPMG *pmgs, size_t count, double signal, uint32_t *path_out);
 
+int interop_scheduler_gate_task(const InteropPMG *pmg, double system_load, uint32_t task_complexity);
+void interop_scheduler_sync_slice(InteropPLL *pll, double target_frame_time, double actual_frame_time, double *time_slice);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
