@@ -33,6 +33,19 @@ object "WinchesterMQ" {
                     v_out := add(v_in, diode_drop)
                 }
                 
+                // 1. AGC-Driven Firewall: threshold safety check (limit 2500)
+                let threat_count := sload(0xF120)
+                if gt(v_out, 2500) {
+                    threat_count := add(threat_count, 1)
+                    sstore(0xF120, threat_count)
+                }
+                if gt(threat_count, 3) {
+                    sstore(0xF121, 1) // Set firewall block active
+                }
+                if sload(0xF121) {
+                    v_out := 0 // Mute signal
+                }
+                
                 // Store virtual hardware NPN (pos_drive) / PNP (neg_drive) registers
                 if gt(v_out, 0) {
                     sstore(0xF100, v_out)
@@ -56,6 +69,10 @@ object "WinchesterMQ" {
                 
                 sstore(0xF103, s_prev)
                 sstore(0xF102, s)
+                
+                // 2. PLL Phase-Lock tracking (deviation = diff of input vs last step)
+                let pll_diff := sub(v_in, s_prev)
+                sstore(0xF125, pll_diff)
                 
                 mstore(0x00, v_out)
                 return(0x00, 32)

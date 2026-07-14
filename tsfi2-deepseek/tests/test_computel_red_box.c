@@ -178,6 +178,26 @@ int main(void) {
     assert(after_ouro != before_ouro);
     printf("[TEST] Closed-loop Ouroboros Feedback tick executed and verified successfully.\n");
 
+    // 18. Test AGC-Driven Firewall (Threshold Safety Block)
+    // Send 4 consecutive high-voltage signals (e.g. 5000) to trigger firewall threat count
+    yul_cd[35] = 0x88; // 5000 & 0xFF
+    yul_cd[34] = 0x13; // (5000 >> 8) & 0xFF
+    
+    for (int i = 0; i < 4; i++) {
+        yul_ret_len = 32;
+        lau_yul_thunk_execute("WinchesterMQ", yul_cd, 36, yul_ret, &yul_ret_len);
+    }
+    // The 4th call should trigger the firewall block, muting v_out to 0
+    uint32_t val_mute = ((uint32_t)yul_ret[30] << 8) | yul_ret[31];
+    assert(val_mute == 0);
+    printf("[TEST] AGC-driven Firewall triggered and successfully muted signal.\n");
+
+    // 19. Test PLL Phase-Lock tracking
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t pll_dev = lau_yul_thunk_sload(0xF125);
+    assert(pll_dev != 0);
+    printf("[TEST] PLL Phase-Lock tracking deviation registered: %lu.\n", pll_dev);
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
