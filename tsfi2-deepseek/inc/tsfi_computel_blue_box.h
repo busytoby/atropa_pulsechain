@@ -162,5 +162,8 @@ bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32
 bool blue_box_run_green_agent(uint32_t *action_out);
 bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out);
 bool blue_box_save_rdbms_tables(void);
+bool blue_box_add_validator_bid(uint32_t validator_id, uint32_t fee_rate, uint32_t latency_ms);
+bool blue_box_decay_validator_bids(void);
+bool blue_box_select_validator_route(uint32_t *validator_id_out);
 
 #endif

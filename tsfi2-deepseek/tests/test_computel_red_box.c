@@ -519,6 +519,20 @@ int main(void) {
     fclose(f_check);
     printf("[TEST] Green Box autonomous agent logic and RDBMS sync (disk serialization) verified.\n");
 
+    // 39. Test Dynamic Validator Bidding Registry and Selection
+    lau_yul_thunk_sstore(0xF180, 0);
+    assert(blue_box_add_validator_bid(1, 10, 45) == true);
+    assert(blue_box_add_validator_bid(2, 5, 50) == true);
+    assert(blue_box_add_validator_bid(3, 8, 45) == true);
+    
+    uint32_t selected_id = 0;
+    assert(blue_box_select_validator_route(&selected_id) == true);
+    assert(selected_id == 3);
+    
+    lau_yul_thunk_sstore(0xF180, 70000);
+    assert(blue_box_select_validator_route(&selected_id) == false);
+    printf("[TEST] Dynamic validator bidding and latency-prioritized routing verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

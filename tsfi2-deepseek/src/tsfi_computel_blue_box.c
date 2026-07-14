@@ -2119,3 +2119,92 @@ bool blue_box_save_rdbms_tables(void) {
     printf("[RDBMS DISK] Saved tables to assets/rdbms_tables.json\n");
     return true;
 }
+
+// 31. Dynamic Validator Bidding Registry
+#define MAX_VALIDATOR_BIDS 16
+
+typedef struct {
+    uint32_t validator_id;
+    uint32_t fee_rate;
+    uint32_t latency_ms;
+    uint64_t timestamp;
+} ValidatorBid;
+
+static ValidatorBid g_validator_bids[MAX_VALIDATOR_BIDS];
+static size_t g_validator_bid_count = 0;
+
+bool blue_box_add_validator_bid(uint32_t validator_id, uint32_t fee_rate, uint32_t latency_ms) {
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t current_time = lau_yul_thunk_sload(0xF180); // Using system tick count
+    
+    // Update existing bid if present
+    for (size_t i = 0; i < g_validator_bid_count; i++) {
+        if (g_validator_bids[i].validator_id == validator_id) {
+            g_validator_bids[i].fee_rate = fee_rate;
+            g_validator_bids[i].latency_ms = latency_ms;
+            g_validator_bids[i].timestamp = current_time;
+            printf("[VALIDATOR BID] Updated ID: %u (Fee: %u, Latency: %u ms)\n",
+                   validator_id, fee_rate, latency_ms);
+            return true;
+        }
+    }
+    
+    if (g_validator_bid_count >= MAX_VALIDATOR_BIDS) return false;
+    g_validator_bids[g_validator_bid_count].validator_id = validator_id;
+    g_validator_bids[g_validator_bid_count].fee_rate = fee_rate;
+    g_validator_bids[g_validator_bid_count].latency_ms = latency_ms;
+    g_validator_bids[g_validator_bid_count].timestamp = current_time;
+    g_validator_bid_count++;
+    
+    printf("[VALIDATOR BID] Added ID: %u (Fee: %u, Latency: %u ms)\n",
+           validator_id, fee_rate, latency_ms);
+    return true;
+}
+
+bool blue_box_decay_validator_bids(void) {
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t current_time = lau_yul_thunk_sload(0xF180);
+    
+    size_t i = 0;
+    while (i < g_validator_bid_count) {
+        if (current_time >= g_validator_bids[i].timestamp &&
+            current_time - g_validator_bids[i].timestamp > 60000) {
+            // Decayed/stale bid -> remove
+            printf("[VALIDATOR DECAY] Purged stale bid ID: %u (Time diff: %lu ms)\n",
+                   g_validator_bids[i].validator_id, current_time - g_validator_bids[i].timestamp);
+            for (size_t j = i; j < g_validator_bid_count - 1; j++) {
+                g_validator_bids[j] = g_validator_bids[j + 1];
+            }
+            g_validator_bid_count--;
+        } else {
+            i++;
+        }
+    }
+    return true;
+}
+
+bool blue_box_select_validator_route(uint32_t *validator_id_out) {
+    if (!validator_id_out) return false;
+    
+    // Purge stale entries first
+    blue_box_decay_validator_bids();
+    
+    if (g_validator_bid_count == 0) return false;
+    
+    // Selection algorithm: Prioritize low latency, fallback to lower fee
+    size_t best_idx = 0;
+    for (size_t i = 1; i < g_validator_bid_count; i++) {
+        if (g_validator_bids[i].latency_ms < g_validator_bids[best_idx].latency_ms) {
+            best_idx = i;
+        } else if (g_validator_bids[i].latency_ms == g_validator_bids[best_idx].latency_ms) {
+            if (g_validator_bids[i].fee_rate < g_validator_bids[best_idx].fee_rate) {
+                best_idx = i;
+            }
+        }
+    }
+    
+    *validator_id_out = g_validator_bids[best_idx].validator_id;
+    printf("[VALIDATOR SELECT] Best route selected: ID %u (Latency: %u ms, Fee: %u)\n",
+           *validator_id_out, g_validator_bids[best_idx].latency_ms, g_validator_bids[best_idx].fee_rate);
+    return true;
+}
