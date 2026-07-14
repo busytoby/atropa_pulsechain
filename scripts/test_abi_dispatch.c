@@ -1172,6 +1172,14 @@ int main() {
     remove(tm_file);
     printf("✓ Vectorized edge propagation, decision edge pruning, and NTM path optimizer verified.\n");
 
+    // 130. Verify DBLP knowledge graph import in assets
+    InteropQuadNode dblp_nodes[5];
+    assert(interop_quadtree_read("../assets/dblp_graph.dat.bin", dblp_nodes, 5) == 5);
+    assert(dblp_nodes[0].value == 50);
+    assert(dblp_nodes[1].value == 80);
+    assert(dblp_nodes[3].x_min == 0 && dblp_nodes[3].y_max == 1000);
+    printf("✓ DBLP knowledge graph binary asset read and parsed successfully.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
