@@ -56,3 +56,40 @@ bool generate_mf_tone(char digit, float *buffer, int num_samples) {
 
     return true;
 }
+
+/* Generates Red Box payphone coin tones (1700 Hz + 2200 Hz beeps) based on denomination:
+   5 (nickel: 1 beep), 10 (dime: 2 beeps), 25 (quarter: 5 beeps).
+   Returns the number of samples populated. */
+int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples) {
+    if (!buffer || max_samples <= 0) return 0;
+
+    int beeps = 0;
+    if (denomination == 5) beeps = 1;
+    else if (denomination == 10) beeps = 2;
+    else if (denomination == 25) beeps = 5;
+    else return 0;
+
+    int beep_samples = (int)(0.066f * SAMPLE_RATE); // 66 ms beep
+    int pause_samples = (int)(0.066f * SAMPLE_RATE); // 66 ms pause
+    int total_samples = beeps * (beep_samples + pause_samples);
+
+    if (total_samples > max_samples) return 0;
+
+    int offset = 0;
+    for (int b = 0; b < beeps; b++) {
+        // Generate Beep
+        for (int i = 0; i < beep_samples; i++) {
+            double t = (double)i / SAMPLE_RATE;
+            buffer[offset + i] = (float)((sin(2.0 * M_PI * 1700.0 * t) + sin(2.0 * M_PI * 2200.0 * t)) * 0.5);
+        }
+        offset += beep_samples;
+
+        // Generate Pause
+        for (int i = 0; i < pause_samples; i++) {
+            buffer[offset + i] = 0.0f;
+        }
+        offset += pause_samples;
+    }
+
+    return offset;
+}
