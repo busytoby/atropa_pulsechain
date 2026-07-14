@@ -2300,6 +2300,16 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
             fclose(fn);
             printf("[QUADTREE] Wrote node-specific state file: %s\n", node_path);
         }
+
+        // Append to relational RDBMS nodes table
+        FILE *fa = fopen("assets/rdbms_nodes_table.json", "a");
+        if (!fa) fa = fopen("../assets/rdbms_nodes_table.json", "a");
+        if (fa) {
+            fprintf(fa, "{\"table\": \"immutable_nodes\", \"row\": {\"root\": %lu, \"gas\": %lu, \"collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}}\n",
+                    next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
+            fclose(fa);
+            printf("[QUADTREE] Relational table row committed to assets/rdbms_nodes_table.json\n");
+        }
         printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.json. Root Hash: %lu\n", next_root);
     }
     
