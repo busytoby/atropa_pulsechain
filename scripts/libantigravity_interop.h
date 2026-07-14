@@ -541,4 +541,8 @@ float interop_ctransr_cluster_constraint(const float *M1, const float *M2, size_
 int interop_transr_scale_translation(float *r, size_t rel_dim, size_t ent_dim);
 float interop_transr_mrr_eval(const int *ranks, size_t count);
 
+size_t interop_transr_adaptive_dimension(size_t base_dim, size_t n_heads, size_t n_tails, size_t min_dim, size_t max_dim);
+int interop_transr_orthogonal_gradient_gate(const float *G, const float *v, float *out_G, size_t rel_dim, size_t ent_dim);
+float interop_transr_regularization(const float *M, size_t ent_dim, size_t rel_dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

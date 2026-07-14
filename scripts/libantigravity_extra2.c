@@ -112,3 +112,43 @@ float interop_transr_mrr_eval(const int *ranks, size_t count) {
     }
     return sum / (float)count;
 }
+
+size_t interop_transr_adaptive_dimension(size_t base_dim, size_t n_heads, size_t n_tails, size_t min_dim, size_t max_dim) {
+    float factor = sqrtf((float)(n_heads + n_tails) / 2.0f);
+    size_t dim = (size_t)(roundf((float)base_dim * factor));
+    if (dim < min_dim) return min_dim;
+    if (dim > max_dim) return max_dim;
+    return dim;
+}
+
+int interop_transr_orthogonal_gradient_gate(const float *G, const float *v, float *out_G, size_t rel_dim, size_t ent_dim) {
+    if (!G || !v || !out_G || rel_dim == 0 || ent_dim == 0) return -1;
+    float v_norm_sq = 0.0f;
+    for (size_t j = 0; j < ent_dim; j++) {
+        v_norm_sq += v[j] * v[j];
+    }
+    for (size_t i = 0; i < rel_dim; i++) {
+        float dot = 0.0f;
+        for (size_t j = 0; j < ent_dim; j++) {
+            dot += G[i * ent_dim + j] * v[j];
+        }
+        for (size_t j = 0; j < ent_dim; j++) {
+            if (v_norm_sq > 0.0f) {
+                out_G[i * ent_dim + j] = G[i * ent_dim + j] - (dot / v_norm_sq) * v[j];
+            } else {
+                out_G[i * ent_dim + j] = G[i * ent_dim + j];
+            }
+        }
+    }
+    return 0;
+}
+
+float interop_transr_regularization(const float *M, size_t ent_dim, size_t rel_dim) {
+    if (!M || ent_dim == 0 || rel_dim == 0) return 0.0f;
+    float sum_sq = 0.0f;
+    size_t total = ent_dim * rel_dim;
+    for (size_t i = 0; i < total; i++) {
+        sum_sq += M[i] * M[i];
+    }
+    return sum_sq;
+}
