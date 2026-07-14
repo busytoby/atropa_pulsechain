@@ -167,7 +167,59 @@ int main(void) {
     printf("   -> Ch 1 TDMA Slot Lock status: %lu\n", authorized_ch1);
     assert(authorized_ch0 == 1);
     assert(authorized_ch1 == 0);
-    printf("   ✓ TDMA proof check correctly rejected the mismatching key on Channel 1.\n");
+    printf("   ✓ TDMA proof check correctly rejected the mismatching key on Channel 1.\n\n");
+
+    // 4. Test WinchesterMQ EVM-side Ring-Buffer Queue
+    printf("4. Testing WinchesterMQ EVM-side Ring-Buffer Queue (pushEvent/popEvent):\n");
+    
+    // pushEvent calldata: selector 0x0ff22000
+    // calldata offsets:
+    // 4: priority = 100
+    // 36: type = 2
+    // 68: timestamp = 2026
+    // 100: data = 0xAA
+    uint8_t push_cd[132] = {0};
+    push_cd[0] = 0x0f; push_cd[1] = 0xf2; push_cd[2] = 0x20; push_cd[3] = 0x00; // selector
+    push_cd[35] = 100; // priority
+    push_cd[67] = 2;   // type
+    push_cd[99] = 2026 & 0xFF; push_cd[98] = (2026 >> 8) & 0xFF; // timestamp
+    push_cd[131] = 0xAA; // data
+    
+    uint8_t push_ret[32];
+    size_t push_ret_len = sizeof(push_ret);
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    bool push_ok = lau_yul_thunk_execute("WinchesterMQ", push_cd, sizeof(push_cd), push_ret, &push_ret_len);
+    assert(push_ok);
+    printf("   ✓ pushEvent executed successfully.\n");
+    
+    // popEvent calldata: selector 0x0ff23000
+    uint8_t pop_cd[4] = {0x0f, 0xf2, 0x30, 0x00};
+    uint8_t pop_ret[128];
+    size_t pop_ret_len = sizeof(pop_ret);
+    bool pop_ok = lau_yul_thunk_execute("WinchesterMQ", pop_cd, sizeof(pop_cd), pop_ret, &pop_ret_len);
+    assert(pop_ok);
+    assert(pop_ret_len == 128);
+    
+    // Decoded popped values (Yul stores returns as full 32-byte words)
+    uint64_t popped_priority = 0;
+    for (int i = 0; i < 32; i++) popped_priority = (popped_priority << 8) | pop_ret[i];
+    uint64_t popped_type = 0;
+    for (int i = 32; i < 64; i++) popped_type = (popped_type << 8) | pop_ret[i];
+    uint64_t popped_timestamp = 0;
+    for (int i = 64; i < 96; i++) popped_timestamp = (popped_timestamp << 8) | pop_ret[i];
+    uint64_t popped_data = 0;
+    for (int i = 96; i < 128; i++) popped_data = (popped_data << 8) | pop_ret[i];
+    
+    printf("   -> Popped Priority: %lu (Expected: 100)\n", popped_priority);
+    printf("   -> Popped Type: %lu (Expected: 2)\n", popped_type);
+    printf("   -> Popped Timestamp: %lu (Expected: 2026)\n", popped_timestamp);
+    printf("   -> Popped Data: 0x%lx (Expected: 0xAA)\n", popped_data);
+    
+    assert(popped_priority == 100);
+    assert(popped_type == 2);
+    assert(popped_timestamp == 2026);
+    assert(popped_data == 0xAA);
+    printf("   ✓ popEvent successfully retrieved and matched dynamic queue state.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");

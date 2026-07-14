@@ -31,6 +31,43 @@ object "WinchesterMQ" {
                 sstore(0xF151, f2)
                 return(0, 0)
             }
+            if eq(selector, 0x0ff22000) {
+                let priority := calldataload(4)
+                let ev_type := calldataload(36)
+                let ev_timestamp := calldataload(68)
+                let ev_data := calldataload(100)
+                let head := sload(0xF300)
+                let tail := sload(0xF301)
+                let size := sload(0xF302)
+                if lt(size, 16) {
+                    let slot := add(0xF310, mul(tail, 4))
+                    sstore(slot, priority)
+                    sstore(add(slot, 1), ev_type)
+                    sstore(add(slot, 2), ev_timestamp)
+                    sstore(add(slot, 3), ev_data)
+                    tail := mod(add(tail, 1), 16)
+                    sstore(0xF301, tail)
+                    sstore(0xF302, add(size, 1))
+                }
+                return(0, 0)
+            }
+            if eq(selector, 0x0ff23000) {
+                let head := sload(0xF300)
+                let tail := sload(0xF301)
+                let size := sload(0xF302)
+                if gt(size, 0) {
+                    let slot := add(0xF310, mul(head, 4))
+                    mstore(0x00, sload(slot))
+                    mstore(0x20, sload(add(slot, 1)))
+                    mstore(0x40, sload(add(slot, 2)))
+                    mstore(0x60, sload(add(slot, 3)))
+                    head := mod(add(head, 1), 16)
+                    sstore(0xF300, head)
+                    sstore(0xF302, sub(size, 1))
+                    return(0x00, 128)
+                }
+                return(0, 0)
+            }
             if eq(selector, 0xe399f0e0) {
                 let v_in := calldataload(4)
                 sstore(0xF199, v_in)

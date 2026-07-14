@@ -24,9 +24,9 @@ typedef struct {
     uint8_t data[32];       // Associated data (e.g. collision mask or keycode)
 } CoordinatedEvent;
 
-// Min-Heap (Priority Queue) structure
-typedef struct {
-    CoordinatedEvent data[MAX_HEAP_SIZE];
+// Min-Heap (Priority Queue) structure aligned to 64-byte cache boundaries
+typedef struct __attribute__((aligned(64))) {
+    CoordinatedEvent data[MAX_HEAP_SIZE] __attribute__((aligned(64)));
     uint32_t size;
 } PriorityQueue;
 
@@ -51,8 +51,9 @@ static uint64_t pmg_mod_pow(uint64_t base, uint64_t exp, uint64_t modulus) {
     return result;
 }
 
-// Push event into Min-Heap
-static bool pq_push(PriorityQueue *pq, CoordinatedEvent event) {
+// Push event into Min-Heap (optimized with vectorization hints and aggressive inlining)
+__attribute__((hot, always_inline))
+static inline bool pq_push(PriorityQueue *restrict pq, CoordinatedEvent event) {
     if (pq->size >= MAX_HEAP_SIZE) return false;
     uint32_t i = pq->size;
     pq->data[i] = event;
@@ -71,8 +72,9 @@ static bool pq_push(PriorityQueue *pq, CoordinatedEvent event) {
     return true;
 }
 
-// Pop event from Min-Heap
-static bool pq_pop(PriorityQueue *pq, CoordinatedEvent *out_event) {
+// Pop event from Min-Heap (optimized with vectorization hints and aggressive inlining)
+__attribute__((hot, always_inline))
+static inline bool pq_pop(PriorityQueue *restrict pq, CoordinatedEvent *restrict out_event) {
     if (pq->size == 0) return false;
     *out_event = pq->data[0];
     pq->size--;
