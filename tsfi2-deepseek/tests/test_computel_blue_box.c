@@ -474,6 +474,19 @@ int main(void) {
     blue_box_centrex_add_unicode_forward("SOS", "救急");
     assert(blue_box_centrex_resolve_unicode_route("SOS") == 808);
 
+    // 29. Test RDBMS Unicode Description & Synthesizer Frequency Persistence
+    extern void blue_box_set_block_unicode_synth(const char *desc, float freq);
+    extern bool blue_box_save_state_to_disk(const char *filepath);
+    extern bool blue_box_load_state_from_disk(const char *filepath);
+    blue_box_init_block(99, NULL);
+    blue_box_set_block_unicode_synth("MF_SYNTH_2600HZ", 2600.0f);
+    assert(blue_box_commit_block() == true);
+    assert(blue_box_save_state_to_disk("assets/rdbms_test.dat") == true);
+    assert(blue_box_load_state_from_disk("assets/rdbms_test.dat") == true);
+    BlueBoxBlockState loaded_block = blue_box_get_block_state();
+    assert(strcmp(loaded_block.unicode_desc, "MF_SYNTH_2600HZ") == 0);
+    assert(loaded_block.synth_frequency == 2600.0f);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -484,6 +497,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, and Centrex Recursive Forwarding tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, Centrex Recursive Forwarding, and RDBMS Metadata Persistence tests passed successfully.\n");
     return 0;
 }

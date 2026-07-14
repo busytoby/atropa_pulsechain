@@ -443,11 +443,13 @@ typedef struct {
     uint64_t session_key;
     uint32_t gas_allowance;
     bool is_committed;
+    char unicode_desc[64];
+    float synth_frequency;
     uint32_t checksum;
 } BlueBoxBlockState;
 #pragma pack(pop)
 
-static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, 0, false, 0};
+static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, 0, false, "", 0.0f, 0};
 
 void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.block_number = block_number;
@@ -456,6 +458,8 @@ void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.session_key = 0xDEADC0DE95346795ULL;
     current_block_state.gas_allowance = 500000;
     current_block_state.is_committed = false;
+    current_block_state.unicode_desc[0] = '\0';
+    current_block_state.synth_frequency = 0.0f;
     current_block_state.checksum = 0;
     if (initial_hash) {
         for (int i = 0; i < 32; i++) {
@@ -466,6 +470,16 @@ void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
             current_block_state.state_hash[i] = 0;
         }
     }
+}
+
+void blue_box_set_block_unicode_synth(const char *desc, float freq) {
+    if (desc) {
+        strncpy(current_block_state.unicode_desc, desc, sizeof(current_block_state.unicode_desc) - 1);
+        current_block_state.unicode_desc[sizeof(current_block_state.unicode_desc) - 1] = '\0';
+    } else {
+        current_block_state.unicode_desc[0] = '\0';
+    }
+    current_block_state.synth_frequency = freq;
 }
 
 void blue_box_register_block_trunk(uint32_t trunk_id) {
