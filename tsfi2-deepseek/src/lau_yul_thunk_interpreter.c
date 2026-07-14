@@ -33,6 +33,32 @@ typedef struct LauMemoNode {
 static LauMemoNode *s_thunk_memo_bst_root = NULL;
 static pthread_mutex_t s_thunk_memo_bst_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static char s_execution_call_stack[16][64];
+static int s_execution_call_stack_depth = 0;
+
+typedef struct {
+    char parent[64];
+    char child[64];
+} ContractDependency;
+
+static ContractDependency s_dependencies[256];
+static int s_dependency_count = 0;
+
+static void register_dependency(const char *parent, const char *child) {
+    for (int i = 0; i < s_dependency_count; i++) {
+        if (strcmp(s_dependencies[i].parent, parent) == 0 && strcmp(s_dependencies[i].child, child) == 0) {
+            return;
+        }
+    }
+    if (s_dependency_count < 256) {
+        strncpy(s_dependencies[s_dependency_count].parent, parent, 63);
+        s_dependencies[s_dependency_count].parent[63] = '\0';
+        strncpy(s_dependencies[s_dependency_count].child, child, 63);
+        s_dependencies[s_dependency_count].child[63] = '\0';
+        s_dependency_count++;
+    }
+}
+
 static LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash) {
     if (!root) return NULL;
     if (hash == root->signature_hash) {
@@ -166,8 +192,10 @@ uint64_t current_time_ms(void) {
 
 static void bst_invalidate_contract(LauMemoNode *node, const char *name) {
     if (!node) return;
-    if (strcmp(node->contract_name, name) == 0) {
+    if (strcmp(node->contract_name, name) == 0 && !node->stale) {
         node->stale = true;
+        if (node->calldata_ptr) { lau_free(node->calldata_ptr); node->calldata_ptr = NULL; }
+        if (node->retval_ptr) { lau_free(node->retval_ptr); node->retval_ptr = NULL; }
     }
     bst_invalidate_contract(node->left, name);
     bst_invalidate_contract(node->right, name);
@@ -176,7 +204,29 @@ static void bst_invalidate_contract(LauMemoNode *node, const char *name) {
 void lau_yul_thunk_cache_invalidate(const char *name) {
     pthread_mutex_lock(&s_thunk_memo_bst_mutex);
     bst_invalidate_contract(s_thunk_memo_bst_root, name);
+    for (int i = 0; i < s_dependency_count; i++) {
+        if (strcmp(s_dependencies[i].child, name) == 0) {
+            bst_invalidate_contract(s_thunk_memo_bst_root, s_dependencies[i].parent);
+        }
+    }
     pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+}
+
+static int count_active_nodes(LauMemoNode *node) {
+    if (!node) return 0;
+    return (node->stale ? 0 : 1) + count_active_nodes(node->left) + count_active_nodes(node->right);
+}
+
+static void evict_lru_node(LauMemoNode *node, LauMemoNode **lru_found, uint64_t *oldest_time) {
+    if (!node) return;
+    if (!node->stale) {
+        if (node->created_time_ms < *oldest_time) {
+            *oldest_time = node->created_time_ms;
+            *lru_found = node;
+        }
+    }
+    evict_lru_node(node->left, lru_found, oldest_time);
+    evict_lru_node(node->right, lru_found, oldest_time);
 }
 
 typedef struct {
@@ -1053,6 +1103,13 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         return false;
     }
 
+    if (s_execution_call_stack_depth > 0 && s_execution_call_stack_depth < 16) {
+        register_dependency(s_execution_call_stack[s_execution_call_stack_depth - 1], name);
+    }
+    if (s_execution_call_stack_depth < 16) {
+        strncpy(s_execution_call_stack[s_execution_call_stack_depth++], name, 63);
+    }
+
     uint64_t hash = bst_fnv1a_hash(name, calldata, calldatasize);
 
     bool skip_cache = (strcmp(name, "cpu6502") == 0 || strcmp(name, "WinchesterMQ") == 0);
@@ -1081,6 +1138,9 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
             if (meta_match) {
                 g_thunk_cache_hits++;
                 found->cache_hits++;
+                found->ttl_ms += 1000;
+                if (found->ttl_ms > 30000) found->ttl_ms = 30000;
+                found->created_time_ms = current_time_ms();
                 if (retval && retval_len) {
                     size_t out_len = found->retval_len;
                     if (*retval_len < out_len) out_len = *retval_len;
@@ -1092,6 +1152,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         }
         pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
         if (cache_hit) {
+            if (s_execution_call_stack_depth > 0) s_execution_call_stack_depth--;
             pthread_mutex_unlock(&g_thunk_execute_mutex);
             return true;
         }
@@ -1161,6 +1222,16 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                 new_node->left = NULL;
                 new_node->right = NULL;
                 
+                if (count_active_nodes(s_thunk_memo_bst_root) >= 64) {
+                    LauMemoNode *lru_node = NULL;
+                    uint64_t oldest = -1ULL;
+                    evict_lru_node(s_thunk_memo_bst_root, &lru_node, &oldest);
+                    if (lru_node) {
+                        lru_node->stale = true;
+                        if (lru_node->calldata_ptr) { lau_free(lru_node->calldata_ptr); lru_node->calldata_ptr = NULL; }
+                        if (lru_node->retval_ptr) { lau_free(lru_node->retval_ptr); lru_node->retval_ptr = NULL; }
+                    }
+                }
                 s_thunk_memo_bst_root = avl_insert(s_thunk_memo_bst_root, new_node);
             }
             pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
@@ -1186,6 +1257,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         lau_yul_thunk_sstore(130, new_y);
     }
 
+    if (s_execution_call_stack_depth > 0) s_execution_call_stack_depth--;
     pthread_mutex_unlock(&g_thunk_execute_mutex);
     return success;
 }
