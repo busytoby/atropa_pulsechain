@@ -257,11 +257,39 @@ int main(int argc, char *argv[]) {
 
     uint64_t ranked_addr = 0, ranked_score = 0;
     parse_vm_uint256(vm.output_buffer, 0, &ranked_addr);
-    parse_vm_uint256(vm.output_buffer, 10, &ranked_score); // Score index starts after the 10 address elements (offset 320 bytes)
+    parse_vm_uint256(vm.output_buffer, 10, &ranked_score);
 
     printf("[ZMM TEST] Top 1 Leaderboard Entry -> Address: 0x%lx, Score: %lu\n", ranked_addr, ranked_score);
     assert(ranked_addr == 0x4cc);
     assert(ranked_score == (crows_hypo + crows_epi));
+
+    // Perform secondary React call to accumulate
+    printf("[ZMM TEST] Performing secondary React(CROWS) call to double bars...\n");
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"YueReactSimulator\", \"7ac9e05f000000000000000000000000203e366a1821570b2f84ff5ae8b3bdeb48dc4fa1\"");
+
+    // Query YueReactSimulator again to verify accumulation
+    printf("[ZMM TEST] Querying YueReactSimulator Bar(CROWS) post accumulation...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"YueReactSimulator\", \"0ebc8577000000000000000000000000203e366a1821570b2f84ff5ae8b3bdeb48dc4fa1\"");
+    uint64_t crows_hypo_acc = 0, crows_epi_acc = 0;
+    parse_vm_uint256(vm.output_buffer, 0, &crows_hypo_acc);
+    parse_vm_uint256(vm.output_buffer, 1, &crows_epi_acc);
+    printf("   CROWS Accumulated Hypobar: %lu, Epibar: %lu (Sum: %lu)\n", crows_hypo_acc, crows_epi_acc, crows_hypo_acc + crows_epi_acc);
+
+    assert(crows_hypo_acc == expected_crows_hypo * 2);
+    assert(crows_epi_acc == expected_crows_epi * 2);
+
+    // Verify updated rankings
+    printf("[ZMM TEST] Calling updateAndGetRankings post accumulation...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"crows_rank\", \"e003a27b00000000000000000000000000000000000000000000000000000000000004cc0000000000000000000000000000000000000000000000000000000000000300000000000000000000000000203e366a1821570b2f84ff5ae8b3bdeb48dc4fa1\"");
+    parse_vm_uint256(vm.output_buffer, 0, &ranked_addr);
+    parse_vm_uint256(vm.output_buffer, 10, &ranked_score);
+    printf("[ZMM TEST] Accumulated Top 1 Leaderboard Entry -> Address: 0x%lx, Score: %lu\n", ranked_addr, ranked_score);
+    assert(ranked_addr == 0x4cc);
+    assert(ranked_score == (crows_hypo_acc + crows_epi_acc));
 
     printf("[SUCCESS] Verified CrowsRank leaderboard updates and opt-in gates successfully.\n");
 

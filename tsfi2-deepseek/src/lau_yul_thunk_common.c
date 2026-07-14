@@ -471,7 +471,7 @@ u256_t context_sload(YulEvmContext *ctx, u256_t key) {
 
 void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
-    printf("[DEBUG_SSTORE] Contract 0x%lx writing key 0x%lx to val 0x%lx. storage_count before: %d\n", ctx->self_address, key.d[0], val.d[0], ctx->storage_count);
+    // printf("[DEBUG_SSTORE] Contract 0x%lx writing key 0x%lx to val 0x%lx. storage_count before: %d\n", ctx->self_address, key.d[0], val.d[0], ctx->storage_count);
     for (int i = 0; i < ctx->storage_count; i++) {
         if (u256_eq_internal(ctx->storage_keys[i], ns_key)) {
             ctx->storage_addrs[i] = ctx->self_address;
