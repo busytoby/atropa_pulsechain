@@ -476,16 +476,30 @@ int main(void) {
 
     // 29. Test RDBMS Unicode Description & Synthesizer Frequency Persistence
     extern void blue_box_set_block_unicode_synth(const char *desc, float freq);
-    extern bool blue_box_save_state_to_disk(const char *filepath);
+    extern bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expected_parent_block, const uint8_t *expected_parent_hash);
     extern bool blue_box_load_state_from_disk(const char *filepath);
+    assert(blue_box_load_state_from_disk("assets/rdbms_test.dat") == true);
+    BlueBoxBlockState parent_block = blue_box_get_block_state();
+
     blue_box_init_block(99, NULL);
     blue_box_set_block_unicode_synth("MF_SYNTH_2600HZ", 2600.0f);
-    assert(blue_box_commit_block() == true);
-    assert(blue_box_save_state_to_disk("assets/rdbms_test.dat") == true);
+    assert(blue_box_commit_and_persist_with_guard("assets/rdbms_test.dat", 202, parent_block.state_hash) == true);
     assert(blue_box_load_state_from_disk("assets/rdbms_test.dat") == true);
     BlueBoxBlockState loaded_block = blue_box_get_block_state();
     assert(strcmp(loaded_block.unicode_desc, "MF_SYNTH_2600HZ") == 0);
     assert(loaded_block.synth_frequency == 2600.0f);
+
+    // 30. Test RDBMS querying over Unicode Descriptions & Synthesizer Frequencies
+    extern uint32_t calculate_crc32(const uint8_t *data, size_t length);
+    uint32_t query_res[10];
+    uint32_t q_count = blue_box_query_blocks("assets/rdbms_test.dat", "synth_frequency", "=", 2600, query_res, 10);
+    assert(q_count == 1);
+    assert(query_res[0] == 203);
+
+    uint32_t desc_hash = calculate_crc32((const uint8_t *)"MF_SYNTH_2600HZ", strlen("MF_SYNTH_2600HZ"));
+    q_count = blue_box_query_blocks("assets/rdbms_test.dat", "unicode_desc", "=", desc_hash, query_res, 10);
+    assert(q_count == 1);
+    assert(query_res[0] == 203);
 
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
@@ -497,6 +511,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, Centrex Recursive Forwarding, and RDBMS Metadata Persistence tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, Centrex Recursive Forwarding, RDBMS Metadata Persistence, and RDBMS Metadata Query tests passed successfully.\n");
     return 0;
 }

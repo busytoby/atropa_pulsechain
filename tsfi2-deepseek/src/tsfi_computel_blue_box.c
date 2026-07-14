@@ -419,7 +419,7 @@ const char *blue_box_get_immutable_address(uint32_t trunk_id) {
     return NULL;
 }
 
-static uint32_t calculate_crc32(const uint8_t *data, size_t length) {
+uint32_t calculate_crc32(const uint8_t *data, size_t length) {
     uint32_t crc = 0xFFFFFFFFU;
     for (size_t i = 0; i < length; i++) {
         crc ^= data[i];
@@ -879,6 +879,16 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
             field_val = state.nonce;
         } else if (strcmp(field, "gas_allowance") == 0) {
             field_val = state.gas_allowance;
+        } else if (strcmp(field, "synth_frequency") == 0) {
+            field_val = (uint64_t)state.synth_frequency;
+        } else if (strcmp(field, "unicode_desc") == 0) {
+            if (strcmp(op, "=") == 0) {
+                if (calculate_crc32((const uint8_t *)state.unicode_desc, strlen(state.unicode_desc)) == value) {
+                    results_out[count++] = state.block_number;
+                }
+                continue;
+            }
+            continue;
         } else {
             continue; // unsupported column
         }
