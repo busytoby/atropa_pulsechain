@@ -288,7 +288,14 @@ void tsfi_bn_div_avx512(TSFiBigInt *q, TSFiBigInt *r, const TSFiBigInt *a, const
     memset(&rem, 0, sizeof(rem));
     memset(&quo, 0, sizeof(quo));
     
-    int total_bits = a->active_limbs * TSFI_LIMB_BITS;
+    int total_bits = 0;
+    if (a->active_limbs > 0) {
+        int highest_idx = (int)a->active_limbs - 1;
+        while (highest_idx > 0 && a->limbs[highest_idx] == 0) highest_idx--;
+        if (a->limbs[highest_idx] > 0) {
+            total_bits = highest_idx * TSFI_LIMB_BITS + (64 - __builtin_clzll(a->limbs[highest_idx]));
+        }
+    }
     for (int i = total_bits - 1; i >= 0; i--) {
         uint64_t carry = (a->limbs[i / TSFI_LIMB_BITS] >> (i % TSFI_LIMB_BITS)) & 1;
         uint64_t r_carry = carry;

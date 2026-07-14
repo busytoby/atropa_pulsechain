@@ -215,9 +215,27 @@ void lau_registry_remove(LauMetadata *m) {
         else g_head = curr->next;
         if (curr->next) safe_update_ptr(&curr->next->prev, curr->prev, curr->next->current_prot);
     }
-    if (g_local_manifold) manifold_remove(g_local_manifold, m->actual_start);
+    if (g_local_manifold) {
+        manifold_remove(g_local_manifold, m->actual_start);
+        uint32_t count = atomic_load(&g_local_manifold->count);
+        for (uint32_t i = 0; i < count; i++) {
+            if (g_local_manifold->search_index[i] == (uintptr_t)m->actual_start) {
+                fprintf(stderr, "RMRS CRITICAL: Duplicate or orphaned copy of %p found in local manifold!\n", m->actual_start);
+                abort();
+            }
+        }
+    }
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
-    if (fw) manifold_remove(&fw->manifold, m->actual_start);
+    if (fw) {
+        manifold_remove(&fw->manifold, m->actual_start);
+        uint32_t count = atomic_load(&fw->manifold.count);
+        for (uint32_t i = 0; i < count; i++) {
+            if (fw->manifold.search_index[i] == (uintptr_t)m->actual_start) {
+                fprintf(stderr, "RMRS CRITICAL: Duplicate or orphaned copy of %p found in firmware manifold!\n", m->actual_start);
+                abort();
+            }
+        }
+    }
     lau_spin_unlock(&g_lock);
     size_t size = m->alloc_size & 0x007FFFFFFFFFFFFFULL;
     uint32_t flags = (m->alloc_size & (1ULL << 55)) ? LAU_TELEM_FLAG_SEALED : 0;
