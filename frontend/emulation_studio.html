@@ -323,9 +323,12 @@
             <div class="panel">
                 <h2>🌀 TARG MERCENARY GRID</h2>
                 <canvas id="vectorCanvas" class="vector-canvas"></canvas>
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 5px;">
                     <span id="mercenaryCoords" style="font-family: 'Fira Code', monospace; font-size: 0.95rem; color: var(--glow-cyan);">POS: X=0, Y=0, Z=0</span>
                     <span style="font-size: 0.8rem; color: #94a3b8;">Use W/A/S/D or arrow keys to navigate the grid</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" id="btnToggleVoxelView" onclick="toggleVoxelView()" style="flex: 1; border-color: var(--glow-cyan); color: var(--glow-cyan);">🌌 Toggle SVDAG Voxel View</button>
                 </div>
             </div>
 
@@ -373,6 +376,16 @@
                                 <button class="btn" style="background: #1e293b; border: none; padding: 5px; font-size: 0.72rem; font-family: monospace; font-weight: bold; cursor: pointer;" onclick="triggerBreeding()">🎲 Random Mutate</button>
                             </div>
                         </div>
+                        
+                        <!-- Character Preservation & Soul Mapping -->
+                        <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(57, 255, 20, 0.03); border: 1px solid rgba(57, 255, 20, 0.2); border-radius: 8px; padding: 10px; width: 100%; box-sizing: border-box; margin-top: 5px;">
+                            <strong style="color: var(--glow-green); font-size: 0.75rem; font-family: monospace;">🔒 CHARACTER SOUL PRESERVATION:</strong>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="preservationWallet" class="input-glow" placeholder="Enter Wallet Address..." style="flex: 1; background: #02040a; color: #fff; border: 1px solid rgba(57,255,20,0.3); border-radius: 3.5px; font-family: monospace; font-size: 0.72rem; padding: 4px; box-sizing: border-box; width: 60%;" value="0x70997970C51812dc3A010C7d01b50e0d17dc79F9">
+                                <button class="btn" style="background: var(--glow-green); border: none; padding: 4px 8px; font-size: 0.72rem; font-family: monospace; font-weight: bold; cursor: pointer; color: #000; border-radius: 3px;" onclick="loadPreservedSoul()">🔒 Query Soul</button>
+                            </div>
+                            <div id="soulPreservationStatus" style="font-size: 0.72rem; color: var(--vaesen-muted); font-family: monospace; margin-top: 4px;">No active Soul lookup.</div>
+                        </div>
                     </div>
                 </div>
                 <div class="sliders-grid">
@@ -418,6 +431,40 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <button class="btn" style="border-color: var(--glow-cyan); color: var(--glow-cyan);" onclick="syncAllSystems()">🌌 Sync All Systems</button>
                     <button class="btn" style="border-color: #ef4444; color: #ef4444;" onclick="clearLogs()">🧹 Clear Console Logs</button>
+                </div>
+            </div>
+
+            <!-- Panel 5: Computel Blue Box & Trunk Monitor -->
+            <div class="panel">
+                <h2>📟 COMPUTEL BLUE BOX & TRUNK MONITOR</h2>
+                <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-family: 'Fira Code', monospace; color: var(--glow-gold); font-weight: bold;">[TRUNK STATE MATRIX]</span>
+                        <span class="badge" id="trunkActiveCount" style="background: var(--glow-magenta); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">ACTIVE: 0</span>
+                    </div>
+                    <div id="trunkStatusGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-family: 'Fira Code', monospace; font-size: 0.75rem;">
+                        <!-- JS generated trunks -->
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerSfSeizure()">⚡ 2600 Hz SF SEIZURE</button>
+                    <div style="background: #020617; border: 1px solid #141d33; padding: 8px 12px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 0.95rem; color: #fff; flex: 1; display: flex; align-items: center; justify-content: center;" id="dialDisplay">READY</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                    <button class="btn btn-secondary" onclick="dialMf('1')">1</button>
+                    <button class="btn btn-secondary" onclick="dialMf('2')">2</button>
+                    <button class="btn btn-secondary" onclick="dialMf('3')">3</button>
+                    <button class="btn btn-secondary" onclick="dialMf('4')">4</button>
+                    <button class="btn btn-secondary" onclick="dialMf('5')">5</button>
+                    <button class="btn btn-secondary" onclick="dialMf('6')">6</button>
+                    <button class="btn btn-secondary" onclick="dialMf('7')">7</button>
+                    <button class="btn btn-secondary" onclick="dialMf('8')">8</button>
+                    <button class="btn btn-secondary" onclick="dialMf('9')">9</button>
+                    <button class="btn" style="border-color: var(--glow-cyan); color: var(--glow-cyan);" onclick="dialMf('K')">KP</button>
+                    <button class="btn btn-secondary" onclick="dialMf('0')">0</button>
+                    <button class="btn" style="border-color: var(--glow-magenta); color: var(--glow-magenta);" onclick="dialMf('S')">ST</button>
                 </div>
             </div>
         </div>
@@ -497,6 +544,125 @@
             }
         }
 
+        let voxelViewActive = false;
+        let pmgNodes = [];
+
+        function toggleVoxelView() {
+            voxelViewActive = !voxelViewActive;
+            const btn = document.getElementById("btnToggleVoxelView");
+            if (voxelViewActive) {
+                btn.innerText = "🌀 Switch to Standard Grid";
+                btn.style.borderColor = "var(--glow-magenta)";
+                btn.style.color = "var(--glow-magenta)";
+                logEvent("SVDAG Voxel View Activated. Procedural Map Generation (PMG) depth is locked at 3.");
+            } else {
+                btn.innerText = "🌌 Toggle SVDAG Voxel View";
+                btn.style.borderColor = "var(--glow-cyan)";
+                btn.style.color = "var(--glow-cyan)";
+                logEvent("Standard Distorted Map Grid restored.");
+            }
+            drawGrid();
+        }
+
+        function initSvdagNodes() {
+            pmgNodes = [];
+            for (let i = 0; i < 24; i++) {
+                pmgNodes.push({
+                    x: (Math.random() - 0.5) * 160,
+                    y: (Math.random() - 0.5) * 80,
+                    z: 50 + Math.random() * 120,
+                    size: 8 + Math.random() * 12
+                });
+            }
+        }
+
+        function project3D(x, y, z, width, height) {
+            const fov = 150;
+            const scale = fov / (z + 100);
+            return {
+                x: width / 2 + x * scale,
+                y: height / 2 + y * scale,
+                size: scale
+            };
+        }
+
+        function drawVoxelsAndFetDischarges(w, h) {
+            if (pmgNodes.length === 0) initSvdagNodes();
+            vCtx.strokeStyle = "rgba(0, 240, 255, 0.15)";
+            vCtx.strokeRect(20, 20, w - 40, h - 40);
+
+            pmgNodes.sort((a, b) => b.z - a.z);
+
+            for (let node of pmgNodes) {
+                node.z -= 0.6;
+                if (node.z < 10) {
+                    node.z = 170;
+                    node.x = (Math.random() - 0.5) * 160;
+                    node.y = (Math.random() - 0.5) * 80;
+                }
+
+                const proj = project3D(node.x, node.y, node.z, w, h);
+                const s = node.size * proj.size * 0.4;
+                
+                vCtx.strokeStyle = `rgba(57, 255, 20, ${Math.max(0.1, 1 - node.z / 170)})`;
+                vCtx.fillStyle = `rgba(6, 40, 15, ${Math.max(0.05, 0.35 - node.z / 170)})`;
+                
+                vCtx.beginPath();
+                vCtx.rect(proj.x - s, proj.y - s, s * 2, s * 2);
+                vCtx.fill();
+                vCtx.stroke();
+
+                vCtx.beginPath();
+                vCtx.strokeStyle = "rgba(0, 240, 255, 0.08)";
+                vCtx.moveTo(w/2, h/2);
+                vCtx.lineTo(proj.x, proj.y);
+                vCtx.stroke();
+            }
+
+            vCtx.shadowBlur = 10;
+            vCtx.shadowColor = "#39ff14";
+            vCtx.strokeStyle = "#ffffff";
+            vCtx.lineWidth = 1.8;
+
+            if (Math.random() > 0.6) {
+                const n1 = pmgNodes[Math.floor(Math.random() * pmgNodes.length)];
+                const n2 = pmgNodes[Math.floor(Math.random() * pmgNodes.length)];
+                const p1 = project3D(n1.x, n1.y, n1.z, w, h);
+                const p2 = project3D(n2.x, n2.y, n2.z, w, h);
+
+                vCtx.beginPath();
+                vCtx.moveTo(p1.x, p1.y);
+                
+                const segments = 4;
+                for (let k = 1; k < segments; k++) {
+                    const ratio = k / segments;
+                    const rx = p1.x + (p2.x - p1.x) * ratio + (Math.random() - 0.5) * 15;
+                    const ry = p1.y + (p2.y - p1.y) * ratio + (Math.random() - 0.5) * 15;
+                    vCtx.lineTo(rx, ry);
+                }
+                vCtx.lineTo(p2.x, p2.y);
+                vCtx.stroke();
+
+                if (Math.random() > 0.95) {
+                    logEvent(`Germanium-FET Gate Discharge: Voltage threshold breached. V=1.15V.`);
+                }
+            }
+
+            const pProj = project3D((playerX - 120) * 1.5, playerY * 1.5, playerZ, w, h);
+            vCtx.strokeStyle = "#ff007f";
+            vCtx.shadowColor = "#ff007f";
+            vCtx.lineWidth = 2.0;
+            vCtx.beginPath();
+            vCtx.arc(pProj.x, pProj.y, 14 * pProj.size * 0.4, 0, Math.PI * 2);
+            vCtx.stroke();
+
+            vCtx.beginPath();
+            vCtx.moveTo(pProj.x - 8, pProj.y); vCtx.lineTo(pProj.x + 8, pProj.y);
+            vCtx.moveTo(pProj.x, pProj.y - 8); vCtx.lineTo(pProj.x, pProj.y + 8);
+            vCtx.stroke();
+            vCtx.shadowBlur = 0;
+        }
+
         // --- TARG MERCENARY GRID ---
         const vCanvas = document.getElementById("vectorCanvas");
         const vCtx = vCanvas.getContext("2d");
@@ -514,6 +680,11 @@
             const w = vCanvas.width = vCanvas.offsetWidth;
             const h = vCanvas.height = vCanvas.offsetHeight;
             vCtx.clearRect(0, 0, w, h);
+
+            if (voxelViewActive) {
+                drawVoxelsAndFetDischarges(w, h);
+                return;
+            }
 
             // Vector matrix lines - color shifts as ammeter heats up
             const tempDiff = ammeter_T - 293.15;
@@ -1125,6 +1296,167 @@
             logEvent(`Teddy Bear DNA: Mutated genome to ${document.getElementById("dnaHexDisplay").innerText}`);
         }
 
+        function loadPreservedSoul() {
+            const wallet = document.getElementById("preservationWallet").value.trim();
+            if (!wallet) return alert("Please enter a wallet address.");
+            
+            let cleanWallet = wallet.toLowerCase().replace("0x", "");
+            let soulSeed = 0;
+            for (let i = 0; i < cleanWallet.length; i++) {
+                soulSeed = (soulSeed * 31 + cleanWallet.charCodeAt(i)) % 999999999;
+            }
+            
+            const soulHash = "0x" + soulSeed.toString(16).padEnd(40, 'a').substring(0, 42);
+            document.getElementById("soulPreservationStatus").innerHTML = `
+                <span style="color: var(--glow-green);">✔ Soul Resolved:</span> <span style="color: #fff;">${soulHash.substring(0, 8)}...${soulHash.substring(34)}</span><br>
+                <span style="color: var(--glow-green);">✔ State Restored:</span> Slot 4000000 loaded.
+            `;
+            
+            logEvent(`Character Soul Resolved: LAU(${wallet}).Saat(1) -> Soul ${soulHash}`);
+            
+            const r = (soulSeed % 180) + 75;
+            const g = ((soulSeed >> 4) % 180) + 75;
+            const b = ((soulSeed >> 8) % 180) + 75;
+            const sick = (soulSeed >> 12) % 100;
+            const scale = ((soulSeed >> 16) % 100) + 50;
+            const furLen = ((soulSeed >> 20) % 150) + 30;
+            
+            document.getElementById("sldFurR").value = r;
+            document.getElementById("sldFurG").value = g;
+            document.getElementById("sldFurB").value = b;
+            document.getElementById("sldSickness").value = sick;
+            document.getElementById("sldScale").value = scale;
+            document.getElementById("sldFurLength").value = furLen;
+            
+            updateBearGene('fur_r', r);
+            updateBearGene('fur_g', g);
+            updateBearGene('fur_b', b);
+            updateBearGene('sickness', sick);
+            updateBearGene('scale', scale);
+            updateBearGene('fur_length', furLen);
+            
+            logEvent(`Character Preserved Genome restored successfully.`);
+        }
+
+        // --- BLUE BOX & TRUNK MONITOR ---
+        const trunks = Array.from({length: 16}, (_, i) => ({
+            id: 800 + i,
+            isBusy: i === 5 || i === 8, // mock some busy trunks
+            freq: i === 5 ? "1200 Hz" : (i === 8 ? "2200 Hz" : "Idle")
+        }));
+
+        let audioCtx = null;
+        let dialBuffer = "";
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playDualTone(f1, f2, duration = 0.35) {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
+            osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioCtx.currentTime + duration);
+            osc2.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSingleTone(freq, duration = 0.5) {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const mfFreqs = {
+            '1': [700, 900], '2': [700, 1100], '3': [900, 1100],
+            '4': [700, 1300], '5': [900, 1300], '6': [1100, 1300],
+            '7': [700, 1500], '8': [900, 1500], '9': [1100, 1500],
+            '0': [1300, 1500], 'K': [1100, 1700], 'S': [1500, 1700]
+        };
+
+        function renderTrunks() {
+            const grid = document.getElementById("trunkStatusGrid");
+            grid.innerHTML = "";
+            let activeCount = 0;
+
+            trunks.forEach(t => {
+                if (t.isBusy) activeCount++;
+                const statusColor = t.isBusy ? "var(--glow-magenta)" : "var(--glow-green)";
+                const statusText = t.isBusy ? `BUSY (${t.freq})` : "IDLE";
+                grid.innerHTML += `
+                    <div style="border: 1px solid rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; background: rgba(15,23,42,0.4); display: flex; flex-direction: column; gap: 2px;">
+                        <span style="color: #94a3b8; font-size: 0.7rem;">TRUNK ${t.id}</span>
+                        <span style="color: ${statusColor}; font-weight: bold; font-size: 0.75rem;">${statusText}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById("trunkActiveCount").innerText = `ACTIVE: ${activeCount}`;
+        }
+
+        function triggerSfSeizure() {
+            playSingleTone(2600, 0.6);
+            logEvent("Computel Blue Box: Emitted 2600 Hz SF Seizure tone. Tandem seized.");
+            document.getElementById("dialDisplay").innerText = "SEIZED";
+            dialBuffer = "";
+        }
+
+        function dialMf(digit) {
+            const pair = mfFreqs[digit];
+            if (pair) {
+                playDualTone(pair[0], pair[1], 0.18);
+                dialBuffer += digit;
+                document.getElementById("dialDisplay").innerText = dialBuffer;
+                logEvent(`Computel Blue Box: Dialed MF '${digit}' (${pair[0]}+${pair[1]} Hz)`);
+
+                // Simple simulated tandem switch check
+                if (dialBuffer.endsWith("S") && dialBuffer.startsWith("K")) {
+                    const trunkNum = parseInt(dialBuffer.substring(1, 4));
+                    if (trunkNum >= 800 && trunkNum < 816) {
+                        const target = trunks.find(t => t.id === trunkNum);
+                        if (target) {
+                            target.isBusy = true;
+                            target.freq = "MF Session";
+                            renderTrunks();
+                            logEvent(`Computel Tandem Switch: Bridged line successfully to Trunk ${trunkNum}!`);
+                        }
+                    }
+                    dialBuffer = "";
+                }
+            }
+        }
+
         // --- CONSOLIDATED SYNCHRONIZATION ---
         function syncAllSystems() {
             // Feed Targ Mercenary grid position to Teddy Bear Scale
@@ -1145,6 +1477,7 @@
             updateDnaHexDisplay();
             drawGrid();
             drawBear();
+            renderTrunks();
             // Animation tick
             setInterval(drawBear, 50);
             logEvent("Studio fully active.");
