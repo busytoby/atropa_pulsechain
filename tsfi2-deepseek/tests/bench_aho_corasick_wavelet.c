@@ -134,7 +134,10 @@ int new_tsfi_node() {
         wavelet_capacity = (wavelet_capacity == 0) ? 1024 : wavelet_capacity * 2;
         wavelet_map = realloc(wavelet_map, wavelet_capacity * sizeof(TsfiWavelet*));
     }
-    TsfiWavelet *W = tsfi_STAT(&arena, TSFI_WAVELET_PRIME);
+    TsfiWavelet *W = (TsfiWavelet*)(arena.base_ptr + arena.offset);
+    arena.offset += 128; // Compact 128-byte allocation to optimize memory footprint
+    W->Prime = TSFI_WAVELET_PRIME;
+    W->total_size = 128;
     W->telemetry.unique_id = wavelet_count;
     
     int32_t *next = get_wavelet_next(W);

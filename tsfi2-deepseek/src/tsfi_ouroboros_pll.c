@@ -102,7 +102,12 @@ void tsfi_ouroboros_pll_tick(uint64_t base) {
     uint64_t pos = lau_yul_thunk_sload(0xF100);
     uint64_t neg = lau_yul_thunk_sload(0xF101);
     
-    double phase_error = (double)pos - (double)neg;
+    // Simulate small thermal clock jitter dither using a fast deterministic LCG
+    static uint32_t jitter_seed = 0x5EEDULL;
+    jitter_seed = jitter_seed * 1103515245ULL + 12345ULL;
+    double jitter = ((double)(jitter_seed % 200) - 100.0) / 100.0; // Small dither in range [-1.0, 1.0]
+    
+    double phase_error = ((double)pos - (double)neg) + jitter;
     s_integral_error += phase_error;
     
     double kp = 0.15;
@@ -159,24 +164,26 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
     CoordinatedEvent popped;
     while (pq_pop(&pq, &popped)) {
         if (popped.type == EVENT_PMG_COLLISION) {
-            // TDMA Proof verification: Compute coordinate distance and assert lock keys
-            uint64_t px = lau_yul_thunk_sload(0xF200);
-            uint64_t py = lau_yul_thunk_sload(0xF201);
-            uint64_t mx = lau_yul_thunk_sload(0xF202);
-            uint64_t my = lau_yul_thunk_sload(0xF203);
-            
-            uint64_t dx = px >= mx ? px - mx : mx - px;
-            uint64_t dy = py >= my ? py - my : my - py;
-            uint64_t distance = dx + dy;
-            
-            uint64_t expected_key = lau_yul_thunk_sload(0xF205);
-            uint64_t calculated = pmg_mod_pow(base, distance, MOTZKIN_PRIME);
-            
-            if (calculated == expected_key && expected_key > 0) {
-                // If TDMA proof matches, authorize the slot state
-                lau_yul_thunk_sstore(0xF208, 1); // Enable TDMA slot lock
-            } else {
-                lau_yul_thunk_sstore(0xF208, 0); // Reject/Revoke TDMA slot lock
+            // TDMA Proof verification: Compute coordinate distance and assert lock keys for channels 0-3
+            for (int ch = 0; ch < 4; ch++) {
+                uint64_t offset = ch * 0x20;
+                uint64_t px = lau_yul_thunk_sload(0xF200 + offset);
+                uint64_t py = lau_yul_thunk_sload(0xF201 + offset);
+                uint64_t mx = lau_yul_thunk_sload(0xF202 + offset);
+                uint64_t my = lau_yul_thunk_sload(0xF203 + offset);
+                
+                uint64_t dx = px >= mx ? px - mx : mx - px;
+                uint64_t dy = py >= my ? py - my : my - py;
+                uint64_t distance = dx + dy;
+                
+                uint64_t expected_key = lau_yul_thunk_sload(0xF205 + offset);
+                uint64_t calculated = pmg_mod_pow(base, distance, MOTZKIN_PRIME);
+                
+                if (calculated == expected_key && expected_key > 0) {
+                    lau_yul_thunk_sstore(0xF208 + offset, 1); // Enable TDMA slot lock for player channel
+                } else {
+                    lau_yul_thunk_sstore(0xF208 + offset, 0); // Reject/Revoke TDMA slot lock for player channel
+                }
             }
         } else if (popped.type == EVENT_PLL_DRIFT) {
             // Operate the PLL filter clock adjustment

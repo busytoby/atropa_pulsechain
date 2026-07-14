@@ -127,31 +127,47 @@ int main(void) {
     // Base frequency is 3, expected key = 3^4 = 81
     lau_yul_thunk_sstore(0xF205, 81);
     
-    // Trigger PMG collision register mask
+    // Set up Channel 1 coordinates: Player(15, 25), Missile(18, 28) => Distance = |15-18| + |25-28| = 6
+    // Expected key = 3^6 = 729
+    lau_yul_thunk_sstore(0xF220, 15);
+    lau_yul_thunk_sstore(0xF221, 25);
+    lau_yul_thunk_sstore(0xF222, 18);
+    lau_yul_thunk_sstore(0xF223, 28);
+    lau_yul_thunk_sstore(0xF225, 729);
+
+    // Trigger PMG collision register mask (with bit 0 and bit 1 active)
     lau_yul_thunk_sstore(0xF210, 0x1F);
-    
-    printf("   ✓ PMG state loaded: Player(10,20), Missile(12,22), Expected Key: 81\n\n");
 
-    // 2. Execute integrated tick with VALID key
-    printf("2. Running integrated scheduler tick with VALID TDMA proof key...\n");
+    printf("   ✓ PMG state loaded:\n");
+    printf("     - Ch 0: Player(10,20), Missile(12,22), Expected Key: 81\n");
+    printf("     - Ch 1: Player(15,25), Missile(18,28), Expected Key: 729\n\n");
+
+    // 2. Execute integrated tick with VALID TDMA proof keys
+    printf("2. Running integrated scheduler tick with VALID TDMA proof keys...\n");
     tsfi_ouroboros_run_integrated_tick(10, 3);
     
-    uint64_t authorized = lau_yul_thunk_sload(0xF208);
-    printf("   -> TDMA Slot Lock status: %lu\n", authorized);
-    assert(authorized == 1);
-    printf("   ✓ TDMA proof check correctly authorized the lock.\n\n");
+    uint64_t authorized_ch0 = lau_yul_thunk_sload(0xF208);
+    uint64_t authorized_ch1 = lau_yul_thunk_sload(0xF228);
+    printf("   -> Ch 0 TDMA Slot Lock status: %lu\n", authorized_ch0);
+    printf("   -> Ch 1 TDMA Slot Lock status: %lu\n", authorized_ch1);
+    assert(authorized_ch0 == 1);
+    assert(authorized_ch1 == 1);
+    printf("   ✓ TDMA proof check correctly authorized both channels' locks.\n\n");
 
-    // 3. Execute integrated tick with INVALID key
-    printf("3. Running integrated scheduler tick with INVALID TDMA proof key...\n");
+    // 3. Execute integrated tick with INVALID keys
+    printf("3. Running integrated scheduler tick with INVALID TDMA proof keys...\n");
     
-    // Set incorrect expected key
-    lau_yul_thunk_sstore(0xF205, 999);
+    // Set incorrect expected key for Channel 1
+    lau_yul_thunk_sstore(0xF225, 999);
     tsfi_ouroboros_run_integrated_tick(10, 3);
     
-    authorized = lau_yul_thunk_sload(0xF208);
-    printf("   -> TDMA Slot Lock status: %lu\n", authorized);
-    assert(authorized == 0);
-    printf("   ✓ TDMA proof check correctly rejected the mismatching key.\n");
+    authorized_ch0 = lau_yul_thunk_sload(0xF208);
+    authorized_ch1 = lau_yul_thunk_sload(0xF228);
+    printf("   -> Ch 0 TDMA Slot Lock status: %lu\n", authorized_ch0);
+    printf("   -> Ch 1 TDMA Slot Lock status: %lu\n", authorized_ch1);
+    assert(authorized_ch0 == 1);
+    assert(authorized_ch1 == 0);
+    printf("   ✓ TDMA proof check correctly rejected the mismatching key on Channel 1.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
