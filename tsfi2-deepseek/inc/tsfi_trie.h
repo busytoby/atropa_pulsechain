@@ -2,11 +2,15 @@
 #define TSFI_TRIE_H
 
 #include <stdbool.h>
+#include <stdint.h>
+
+#define MOTZKIN_PRIME 953467954114363ULL
 
 typedef struct tsfi_trie_node {
     char ch;
     bool is_end;
     char *phoneme;
+    uint64_t accumulator;
     struct tsfi_trie_node *sibling; // Next child of the parent
     struct tsfi_trie_node *child;   // First child of this node
 } tsfi_trie_node;
@@ -19,6 +23,9 @@ void tsfi_trie_insert(tsfi_trie_node *root, const char *word, const char *phonem
 
 // Lookup exact word pronunciation in the Trie
 const char* tsfi_trie_lookup(tsfi_trie_node *root, const char *word);
+
+// Retrieve the calculated path accumulator value after lookup
+uint64_t tsfi_trie_get_accumulator(tsfi_trie_node *root, const char *word);
 
 // Find the longest matching prefix for text-to-phoneme tokenization
 const char* tsfi_trie_longest_prefix(tsfi_trie_node *root, const char *text, int *prefix_len);

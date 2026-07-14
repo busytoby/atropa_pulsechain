@@ -73,7 +73,17 @@ int main(void) {
     verify_bst_inorder(balanced_root, last_key_bal);
     printf("  [PASS] Balanced BST inorder traversal validated.\n");
 
-    // 6. Cleanup
+    // 6. Test Non-preferential path accumulator updates
+    printf("[CONVERT] Testing non-preferential path accumulator resolution...\n");
+    uint64_t acc_apple = tsfi_trie_get_accumulator(trie_root, "apple");
+    printf("  - Accumulator value for 'apple': %lu\n", acc_apple);
+    assert(acc_apple > 0);
+    
+    // Sum of ASCII values for 'apple': 'a'=97, 'p'=112, 'p'=112, 'l'=108, 'e'=101
+    // 97 + 112 + 112 + 108 + 101 = 530
+    assert(acc_apple == 530);
+
+    // 7. Cleanup
     tsfi_trie_destroy(trie_root);
     tsfi_string_bst_destroy(bst_root);
     tsfi_string_bst_destroy(balanced_root);

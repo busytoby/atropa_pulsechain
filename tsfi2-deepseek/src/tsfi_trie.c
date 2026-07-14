@@ -8,6 +8,7 @@ tsfi_trie_node* tsfi_trie_create_node(char ch) {
         node->ch = ch;
         node->is_end = false;
         node->phoneme = NULL;
+        node->accumulator = 0;
         node->sibling = NULL;
         node->child = NULL;
     }
@@ -47,6 +48,7 @@ void tsfi_trie_insert(tsfi_trie_node *root, const char *word, const char *phonem
         if (!next) {
             next = add_child(curr, ch);
         }
+        next->accumulator = (curr->accumulator + (uint8_t)ch) % MOTZKIN_PRIME;
         curr = next;
     }
     
@@ -72,6 +74,22 @@ const char* tsfi_trie_lookup(tsfi_trie_node *root, const char *word) {
     }
     
     return curr->is_end ? curr->phoneme : NULL;
+}
+
+uint64_t tsfi_trie_get_accumulator(tsfi_trie_node *root, const char *word) {
+    if (!root || !word) return 0;
+    
+    tsfi_trie_node *curr = root;
+    size_t len = strlen(word);
+    
+    for (size_t i = 0; i < len; i++) {
+        curr = find_child(curr, word[i]);
+        if (!curr) {
+            return 0;
+        }
+    }
+    
+    return curr->accumulator;
 }
 
 const char* tsfi_trie_longest_prefix(tsfi_trie_node *root, const char *text, int *prefix_len) {
