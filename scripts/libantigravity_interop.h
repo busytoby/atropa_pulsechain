@@ -337,4 +337,8 @@ void interop_tm_ntm_prune(InteropTMTransition *transitions, size_t *count);
 void interop_tm_bounds_sort(uint64_t *coords, size_t count);
 uint64_t interop_tm_minkowski_hull(const uint64_t *coords, size_t count);
 
+int interop_tm_cnn_convolve(const uint8_t *input, size_t width, size_t height, const int8_t *kernel, uint8_t *output);
+void interop_tm_cnn_activate(uint8_t *features, size_t count, uint8_t threshold);
+int interop_tm_cnn_pool(const uint8_t *features, size_t width, size_t height, uint8_t *pooled_out);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

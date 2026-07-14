@@ -1890,3 +1890,48 @@ uint64_t interop_tm_minkowski_hull(const uint64_t *coords, size_t count) {
     }
     return max_dist;
 }
+
+int interop_tm_cnn_convolve(const uint8_t *input, size_t width, size_t height, const int8_t *kernel, uint8_t *output) {
+    if (!input || !kernel || !output || width < 3 || height < 3) return -1;
+    for (size_t y = 1; y < height - 1; y++) {
+        for (size_t x = 1; x < width - 1; x++) {
+            int32_t sum = 0;
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    sum += input[(y + ky) * width + (x + kx)] * kernel[(ky + 1) * 3 + (kx + 1)];
+                }
+            }
+            if (sum < 0) sum = 0;
+            if (sum > 255) sum = 255;
+            output[y * width + x] = (uint8_t)sum;
+        }
+    }
+    return 0;
+}
+
+void interop_tm_cnn_activate(uint8_t *features, size_t count, uint8_t threshold) {
+    if (!features) return;
+    for (size_t i = 0; i < count; i++) {
+        features[i] = (features[i] >= threshold) ? features[i] : 0;
+    }
+}
+
+int interop_tm_cnn_pool(const uint8_t *features, size_t width, size_t height, uint8_t *pooled_out) {
+    if (!features || !pooled_out || width < 2 || height < 2) return -1;
+    size_t out_w = width / 2;
+    size_t out_h = height / 2;
+    for (size_t y = 0; y < out_h; y++) {
+        for (size_t x = 0; x < out_w; x++) {
+            uint8_t val0 = features[(y * 2) * width + (x * 2)];
+            uint8_t val1 = features[(y * 2) * width + (x * 2 + 1)];
+            uint8_t val2 = features[(y * 2 + 1) * width + (x * 2)];
+            uint8_t val3 = features[(y * 2 + 1) * width + (x * 2 + 1)];
+            uint8_t max = val0;
+            if (val1 > max) max = val1;
+            if (val2 > max) max = val2;
+            if (val3 > max) max = val3;
+            pooled_out[y * out_w + x] = max;
+        }
+    }
+    return 0;
+}

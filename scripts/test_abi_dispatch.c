@@ -886,6 +886,21 @@ int main() {
     assert(interop_tm_minkowski_hull(b_coords, 2) == 113400ULL);
     printf("✓ NTM pruning, bounds sorting, and Minkowski hull verified.\n");
 
+    // 77-79. Test CNN matrix convolution, threshold activation, and pooling
+    uint8_t cnn_input[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    int8_t cnn_kernel[9] = { 0, 0, 0, 0, 1, 0, 0, 0, 0 };
+    uint8_t cnn_output[9] = {0};
+    assert(interop_tm_cnn_convolve(cnn_input, 3, 3, cnn_kernel, cnn_output) == 0);
+    assert(cnn_output[4] == 5);
+    uint8_t act_features[3] = { 10, 50, 100 };
+    interop_tm_cnn_activate(act_features, 3, 50);
+    assert(act_features[0] == 0 && act_features[1] == 50);
+    uint8_t pool_input[4] = { 10, 20, 30, 40 };
+    uint8_t pool_output[1] = {0};
+    assert(interop_tm_cnn_pool(pool_input, 2, 2, pool_output) == 0);
+    assert(pool_output[0] == 40);
+    printf("✓ CNN convolution, activation, and pooling verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
