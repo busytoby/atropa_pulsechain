@@ -6,6 +6,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
 #include "abi_dispatch_map.h"
 #include "../tsfi2-deepseek/inc/lau_memory.h"
 
@@ -2108,4 +2109,35 @@ void interop_sparse_learn_gate_vaesen(InteropSparseWeight *weights, size_t count
             weights[i].active = 1;
         }
     }
+}
+
+int interop_coaxial_empathy_cluster(const InteropVaesenScores *profiles, size_t count, InteropVaesenScores *centroids, size_t k, uint32_t *assign) {
+    if (!profiles || count == 0 || !centroids || k == 0 || !assign) return -1;
+    for (size_t i = 0; i < count; i++) {
+        double md = 1e9;
+        uint32_t bc = 0;
+        for (size_t j = 0; j < k; j++) {
+            double dist = fabs(profiles[i].impact - centroids[j].impact) +
+                          fabs(profiles[i].fear - centroids[j].fear) +
+                          fabs(profiles[i].lust - centroids[j].lust) +
+                          fabs(profiles[i].doubt - centroids[j].doubt) +
+                          fabs(profiles[i].shame - centroids[j].shame);
+            if (dist < md) {
+                md = dist;
+                bc = (uint32_t)j;
+            }
+        }
+        assign[i] = bc;
+    }
+    return 0;
+}
+
+int interop_tm_empathy_gate_route(const char *filepath, const InteropVaesenScores *scores, const InteropVaesenScores *limit, uint32_t *final_state) {
+    if (!filepath || !scores || !limit || !final_state) return -1;
+    if (scores->doubt > limit->doubt || scores->shame > limit->shame) {
+        *final_state = 2;
+        return 0;
+    }
+    uint8_t tape[4] = { 'a', 'x', 0, 0 };
+    return interop_tm_execute_ntm(filepath, tape, 4, 10, final_state);
 }

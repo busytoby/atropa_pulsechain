@@ -1000,14 +1000,37 @@ int main() {
 
     // 101. Test Vaesen-gated sparse learning
     InteropSparseWeight sw[2] = {
-        { 0.8f, 1, { 0.5f, 0.1f, 0.7f, 0.0f } },
-        { 0.9f, 1, { 0.2f, 0.8f, 0.1f, 0.0f } }
+        { 0.8f, 1, { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f } },
+        { 0.9f, 1, { 0.2f, 0.8f, 0.1f, 0.0f, 0.0f } }
     };
-    InteropVaesenScores th = { 0.4f, 0.5f, 0.6f, 0.0f };
+    InteropVaesenScores th = { 0.4f, 0.5f, 0.6f, 0.0f, 0.0f };
     interop_sparse_learn_gate_vaesen(sw, 2, &th);
     assert(sw[0].active == 1);
     assert(sw[1].active == 0);
     printf("✓ Vaesen score gated sparse learning verified.\n");
+
+    // 102. Test coaxial empathy sharding clustering
+    InteropVaesenScores profiles[2] = {
+        { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f },
+        { 0.2f, 0.8f, 0.1f, 0.0f, 0.0f }
+    };
+    InteropVaesenScores centroids[2] = {
+        { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f },
+        { 0.2f, 0.8f, 0.1f, 0.0f, 0.0f }
+    };
+    uint32_t emp_assign[2] = {0};
+    assert(interop_coaxial_empathy_cluster(profiles, 2, centroids, 2, emp_assign) == 0);
+    assert(emp_assign[0] == 0 && emp_assign[1] == 1);
+
+    // 103. Test NTM empathy route gating
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    InteropVaesenScores route_scores = { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f };
+    InteropVaesenScores limit = { 1.0f, 1.0f, 1.0f, 0.5f, 0.5f };
+    uint32_t final_emp_state = 0;
+    assert(interop_tm_empathy_gate_route(tm_file, &route_scores, &limit, &final_emp_state) == 1);
+    assert(final_emp_state == 1);
+    remove(tm_file);
+    printf("✓ Empathy sharding clustering and NTM emotional route gating verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

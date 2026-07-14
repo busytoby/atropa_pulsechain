@@ -387,6 +387,7 @@ typedef struct {
     float fear;
     float lust;
     float doubt;
+    float shame;
 } InteropVaesenScores;
 
 typedef struct {
@@ -396,5 +397,7 @@ typedef struct {
 } InteropSparseWeight;
 
 void interop_sparse_learn_gate_vaesen(InteropSparseWeight *weights, size_t count, const InteropVaesenScores *thresholds);
+int interop_coaxial_empathy_cluster(const InteropVaesenScores *profiles, size_t count, InteropVaesenScores *centroids, size_t k, uint32_t *assign);
+int interop_tm_empathy_gate_route(const char *filepath, const InteropVaesenScores *scores, const InteropVaesenScores *limit, uint32_t *final_state);
 
 #endif // LIBANTIGRAVITY_INTEROP_H
