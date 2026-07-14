@@ -1667,3 +1667,24 @@ float interop_transh_constraint_penalty(const float *w, const float *d, size_t d
     }
     return C * (pen1 + pen2);
 }
+
+float interop_transh_adaptive_margin(float base_margin, float t_avg, float h_avg) {
+    float val = (t_avg + h_avg) / 2.0f;
+    if (val <= 1.0f) return base_margin;
+    return base_margin * (1.0f + logf(val));
+}
+
+int interop_transh_normalize_projection(float *proj_emb, size_t dim) {
+    if (!proj_emb || dim == 0) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum_sq += proj_emb[i] * proj_emb[i];
+    }
+    float norm = sqrtf(sum_sq);
+    if (norm > 1.0f) {
+        for (size_t i = 0; i < dim; i++) {
+            proj_emb[i] /= norm;
+        }
+    }
+    return 0;
+}
