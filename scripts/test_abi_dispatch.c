@@ -818,6 +818,28 @@ int main() {
     remove(tm_file);
     printf("✓ Turing Machine binary media compilation and execution verified.\n");
 
+    // 66. Test multi-tape Turing Machine execution
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t tape1[4] = { 'a', 'x', '0', '0' };
+    uint8_t tape2[4] = { '0', '0', '0', '0' };
+    uint32_t mt_final = 0;
+    int mt_steps = interop_tm_execute_multitape(tm_file, tape1, 4, tape2, 4, 10, &mt_final);
+    assert(mt_steps == 1);
+    assert(tape2[0] == 'b');
+    remove(tm_file);
+
+    // 67. Test Turing Machine-based Quadtree Decompression
+    InteropQuadNode rle_nodes[2] = {
+        { 0, 0, 100, 100, 999, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { 0, 0, 50, 50, 999, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    assert(interop_quadtree_write_rle(q_file, rle_nodes, 2) == 0);
+    InteropQuadNode decomp_nodes[2];
+    assert(interop_tm_decompress_quadtree(q_file, decomp_nodes, 2) == 2);
+    assert(decomp_nodes[0].value == 888);
+    remove(q_file);
+    printf("✓ Multi-tape Turing Machine and TM-based quadtree decompression verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

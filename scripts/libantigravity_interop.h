@@ -322,5 +322,7 @@ typedef struct {
 
 int interop_tm_compile(const char *filepath, const InteropTMHeader *header, const InteropTMTransition *transitions);
 int interop_tm_execute(const char *filepath, uint8_t *tape, size_t tape_len, size_t max_steps, uint32_t *final_state);
+int interop_tm_execute_multitape(const char *filepath, uint8_t *tape1, size_t len1, uint8_t *tape2, size_t len2, size_t max_steps, uint32_t *final_state);
+int interop_tm_decompress_quadtree(const char *rle_filepath, InteropQuadNode *nodes_out, size_t max_nodes);
 
 #endif // LIBANTIGRAVITY_INTEROP_H

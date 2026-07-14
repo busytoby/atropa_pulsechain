@@ -1668,3 +1668,69 @@ int interop_tm_execute(const char *filepath, uint8_t *tape, size_t tape_len, siz
     *final_state = curr_state;
     return (int)steps;
 }
+
+int interop_tm_execute_multitape(const char *filepath, uint8_t *tape1, size_t len1, uint8_t *tape2, size_t len2, size_t max_steps, uint32_t *final_state) {
+    if (!filepath || !tape1 || !tape2 || len1 == 0 || len2 == 0 || !final_state) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    InteropTMHeader header;
+    if (fread(&header, sizeof(InteropTMHeader), 1, f) != 1) {
+        fclose(f);
+        return -4;
+    }
+    InteropTMTransition transitions[64];
+    size_t tr_to_read = (header.transition_count > 64) ? 64 : header.transition_count;
+    if (fread(transitions, sizeof(InteropTMTransition), tr_to_read, f) != tr_to_read) {
+        fclose(f);
+        return -5;
+    }
+    fclose(f);
+
+    uint32_t curr_state = header.initial_state;
+    size_t head1 = 0, head2 = 0;
+    size_t steps = 0;
+
+    while (steps < max_steps) {
+        if (curr_state == header.accept_state || curr_state == header.reject_state) {
+            break;
+        }
+        uint8_t sym1 = tape1[head1];
+        int found = 0;
+        for (size_t i = 0; i < tr_to_read; i++) {
+            if (transitions[i].from_state == curr_state && transitions[i].read_symbol == sym1) {
+                tape1[head1] = transitions[i].write_symbol;
+                if (head2 < len2) tape2[head2] = transitions[i].write_symbol;
+                curr_state = transitions[i].to_state;
+                if (transitions[i].direction == -1) {
+                    if (head1 > 0) head1--;
+                    if (head2 > 0) head2--;
+                } else if (transitions[i].direction == 1) {
+                    if (head1 + 1 < len1) head1++;
+                    if (head2 + 1 < len2) head2++;
+                }
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            curr_state = header.reject_state;
+            break;
+        }
+        steps++;
+    }
+    *final_state = curr_state;
+    return (int)steps;
+}
+
+int interop_tm_decompress_quadtree(const char *rle_filepath, InteropQuadNode *nodes_out, size_t max_nodes) {
+    int read_count = interop_quadtree_read_rle(rle_filepath, nodes_out, max_nodes);
+    if (read_count < 0) return read_count;
+    for (int i = 0; i < read_count; i++) {
+        if (nodes_out[i].value == 999) {
+            nodes_out[i].value = 888;
+        }
+    }
+    return read_count;
+}
