@@ -25,4 +25,15 @@ tsfi_qing_bst_node* tsfi_qing_bst_populate(void);
 // Free all nodes in the BST
 void tsfi_qing_bst_destroy(tsfi_qing_bst_node *root);
 
+extern tsfi_qing_bst_node *g_runtime_qing_bst;
+
+// Thread-safe concurrent read BST lookup
+CachedContract* tsfi_qing_bst_find_safe(uint64_t virtual_address);
+
+// Thread-safe concurrent write BST invalidation
+void tsfi_qing_bst_invalidate_safe(void);
+
+// Thread-safe concurrent write BST initialization
+void tsfi_qing_bst_populate_safe(void);
+
 #endif // TSFI_QING_BST_H

@@ -1,6 +1,7 @@
 #include "tsfi_qing_bst.h"
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 static inline int max_val(int a, int b) {
     return (a > b) ? a : b;
@@ -120,4 +121,31 @@ void tsfi_qing_bst_destroy(tsfi_qing_bst_node *root) {
     tsfi_qing_bst_destroy(root->left);
     tsfi_qing_bst_destroy(root->right);
     free(root);
+}
+
+tsfi_qing_bst_node *g_runtime_qing_bst = NULL;
+static pthread_rwlock_t g_bst_rwlock = PTHREAD_RWLOCK_INITIALIZER;
+
+CachedContract* tsfi_qing_bst_find_safe(uint64_t virtual_address) {
+    pthread_rwlock_rdlock(&g_bst_rwlock);
+    CachedContract *res = tsfi_qing_bst_find(g_runtime_qing_bst, virtual_address);
+    pthread_rwlock_unlock(&g_bst_rwlock);
+    return res;
+}
+
+void tsfi_qing_bst_invalidate_safe(void) {
+    pthread_rwlock_wrlock(&g_bst_rwlock);
+    if (g_runtime_qing_bst) {
+        tsfi_qing_bst_destroy(g_runtime_qing_bst);
+        g_runtime_qing_bst = NULL;
+    }
+    pthread_rwlock_unlock(&g_bst_rwlock);
+}
+
+void tsfi_qing_bst_populate_safe(void) {
+    pthread_rwlock_wrlock(&g_bst_rwlock);
+    if (!g_runtime_qing_bst) {
+        g_runtime_qing_bst = tsfi_qing_bst_populate();
+    }
+    pthread_rwlock_unlock(&g_bst_rwlock);
 }
