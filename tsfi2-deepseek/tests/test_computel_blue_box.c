@@ -304,11 +304,36 @@ int main(void) {
     
     blue_box_free_23_tree(tree_root);
 
+    // 17. Test RDBMS DML (Update & Delete) and RBT Optimized query lookups
+    matched = blue_box_query_blocks("rdbms_test.dat", "block_number", "=", 200, results, 10);
+    assert(matched == 1);
+    assert(results[0] == 200);
+    
+    // Update Gas allowance of block 201 to 999999
+    bool update_ok = blue_box_update_block_gas("rdbms_test.dat", 201, 999999);
+    assert(update_ok == true);
+    
+    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
+    assert(matched == 1);
+    assert(results[0] == 201);
+    
+    // Delete block 201 (soft delete)
+    bool delete_ok = blue_box_delete_block("rdbms_test.dat", 201);
+    assert(delete_ok == true);
+    
+    // Block 201 should no longer be returned by query scans
+    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
+    assert(matched == 0);
+    
+    matched = blue_box_query_blocks("rdbms_test.dat", "block_number", ">", 200, results, 10);
+    assert(matched == 1); // Only block 202 matches now since 201 is deleted
+    assert(results[0] == 202);
+
     remove("rdbms_test.dat");
     remove("rdbms_test.dat.hist");
     remove("rbt_reload_test.dat");
     remove("rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, and 2-3 Tree Awareness tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, and RDBMS DML tests passed successfully.\n");
     return 0;
 }

@@ -648,6 +648,16 @@ bool blue_box_decode_access_code(const char *dial_sequence) {
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
 
+    // RBT-Optimized Primary Key query lookup
+    if (strcmp(field, "block_number") == 0 && strcmp(op, "=") == 0) {
+        TwoThreeNode *node = blue_box_rbt_lookup((uint32_t)value);
+        if (node) {
+            results_out[0] = (uint32_t)value;
+            return 1;
+        }
+        return 0;
+    }
+
     char hist_path[512];
     snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
     FILE *hf = fopen(hist_path, "rb");
@@ -659,7 +669,7 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
 
     while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1 && count < max_results) {
         uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
-        if (calc != state.checksum) continue;
+        if (calc != state.checksum || !state.is_committed) continue;
 
         uint64_t field_val = 0;
         if (strcmp(field, "block_number") == 0) {
@@ -692,6 +702,78 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
 
     fclose(hf);
     return count;
+}
+
+bool blue_box_update_block_gas(const char *filepath, uint32_t block_number, uint32_t new_gas) {
+    if (!filepath) return false;
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "r+b");
+    if (!hf) return false;
+
+    flock(fileno(hf), LOCK_EX);
+    BlueBoxBlockState state;
+    bool found = false;
+    long offset = 0;
+
+    while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
+        uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        if (calc == state.checksum && state.block_number == block_number && state.is_committed) {
+            state.gas_allowance = new_gas;
+            state.checksum = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+            fseek(hf, offset, SEEK_SET);
+            fwrite(&state, sizeof(BlueBoxBlockState), 1, hf);
+            found = true;
+            break;
+        }
+        offset = ftell(hf);
+    }
+    fclose(hf);
+
+    if (found) {
+        TwoThreeNode *node = blue_box_rbt_lookup(block_number);
+        if (node) {
+            char payload[128];
+            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", state.nonce, new_gas);
+            if (node->is_leaf) {
+                if (node->keys[0] == block_number) {
+                    strcpy(node->values[0], payload);
+                } else if (node->num_keys == 2 && node->keys[1] == block_number) {
+                    strcpy(node->values[1], payload);
+                }
+                blue_box_update_node_hash(node);
+            }
+        }
+    }
+    return found;
+}
+
+bool blue_box_delete_block(const char *filepath, uint32_t block_number) {
+    if (!filepath) return false;
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "r+b");
+    if (!hf) return false;
+
+    flock(fileno(hf), LOCK_EX);
+    BlueBoxBlockState state;
+    bool found = false;
+    long offset = 0;
+
+    while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
+        uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        if (calc == state.checksum && state.block_number == block_number && state.is_committed) {
+            state.is_committed = false;
+            state.checksum = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+            fseek(hf, offset, SEEK_SET);
+            fwrite(&state, sizeof(BlueBoxBlockState), 1, hf);
+            found = true;
+            break;
+        }
+        offset = ftell(hf);
+    }
+    fclose(hf);
+    return found;
 }
 
 static void rbt_index_23_node(TwoThreeNode *node) {
