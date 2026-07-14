@@ -730,3 +730,30 @@ int interop_conv_search_query(const char *query_text, const char *entity_names, 
     interop_conv_update_context(context_history, history_len, max_history, match_dst_id);
     return interop_conv_serialize_path(start_entity_id, target_rel, match_dst_id, out_response, max_resp_len);
 }
+
+int interop_qa_verify_fact(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, int o, int *out_exists) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !out_exists) return -1;
+    *out_exists = 0;
+    for (size_t e = 0; e < num_edges; e++) {
+        if (edges_src[e] == s && edges_rel[e] == p && edges_dst[e] == o) {
+            *out_exists = 1;
+            break;
+        }
+    }
+    return 0;
+}
+
+int interop_qa_multi_hop_query(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed, const int *path_rels, size_t path_len, int *out_dsts, size_t max_dsts, size_t *out_count) {
+    return interop_graph_path_walk(edges_src, edges_rel, edges_dst, num_edges, seed, path_rels, path_len, out_dsts, max_dsts, out_count);
+}
+
+int interop_qa_get_contract_attribute(const uint8_t *state_payload, size_t payload_size, size_t offset, uint64_t *out_attribute) {
+    if (!state_payload || payload_size == 0 || !out_attribute) return -1;
+    if (offset + 8 > payload_size) return -2;
+    uint64_t val = 0;
+    for (int i = 0; i < 8; i++) {
+        val |= ((uint64_t)state_payload[offset + i]) << (i * 8);
+    }
+    *out_attribute = val;
+    return 0;
+}
