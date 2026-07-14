@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "libantigravity_interop.h"
 
 float interop_transr_score(const float *h, const float *M, const float *r, const float *t, size_t ent_dim, size_t rel_dim, int norm_type) {
@@ -646,4 +647,59 @@ int interop_graph_semantic_select(const float *h, const float *r, const float *a
     }
     *out_count = count;
     return 0;
+}
+
+int interop_conv_update_context(int *context_history, size_t *history_len, size_t max_history, int new_entity_id) {
+    if (!context_history || !history_len || max_history == 0) return -1;
+    size_t curr_len = *history_len;
+    size_t new_len = (curr_len < max_history) ? (curr_len + 1) : max_history;
+    for (size_t i = new_len - 1; i > 0; i--) {
+        context_history[i] = context_history[i - 1];
+    }
+    context_history[0] = new_entity_id;
+    *history_len = new_len;
+    return 0;
+}
+
+int interop_conv_link_entity(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id) {
+    if (!query_tokens || !entity_names || !entity_ids || !out_entity_id || num_entities == 0) return -1;
+    const char *p = entity_names;
+    for (size_t idx = 0; idx < num_entities; idx++) {
+        const char *end = p;
+        while (*end != '\0' && *end != ',') {
+            end++;
+        }
+        size_t len = end - p;
+        if (len > 0) {
+            int match = 0;
+            const char *q = query_tokens;
+            while (*q != '\0') {
+                int possible_match = 1;
+                for (size_t i = 0; i < len; i++) {
+                    if (q[i] == '\0' || p[i] != q[i]) {
+                        possible_match = 0;
+                        break;
+                    }
+                }
+                if (possible_match) {
+                    match = 1;
+                    break;
+                }
+                q++;
+            }
+            if (match) {
+                *out_entity_id = entity_ids[idx];
+                return 0;
+            }
+        }
+        if (*end == '\0') break;
+        p = end + 1;
+    }
+    return -2;
+}
+
+int interop_conv_serialize_path(int src_id, int rel_id, int dst_id, char *out_buffer, size_t max_len) {
+    if (!out_buffer || max_len == 0) return -1;
+    int written = snprintf(out_buffer, max_len, "Entity_%d via relation_%d maps to entity_%d.", src_id, rel_id, dst_id);
+    return (written > 0 && (size_t)written < max_len) ? 0 : -2;
 }

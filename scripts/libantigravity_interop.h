@@ -573,4 +573,8 @@ int interop_graph_path_walk(const int *edges_src, const int *edges_rel, const in
 int interop_graph_subgraph_extract(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed_entity, size_t hops, int *out_subgraph_edges, size_t max_subgraph, size_t *out_count);
 int interop_graph_semantic_select(const float *h, const float *r, const float *all_entities, size_t num_entities, size_t dim, float threshold, int *out_entity_indices, size_t max_out, size_t *out_count);
 
+int interop_conv_update_context(int *context_history, size_t *history_len, size_t max_history, int new_entity_id);
+int interop_conv_link_entity(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id);
+int interop_conv_serialize_path(int src_id, int rel_id, int dst_id, char *out_buffer, size_t max_len);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
