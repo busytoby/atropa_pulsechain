@@ -21,6 +21,7 @@ typedef struct LauMemoNode {
     size_t calldatasize;
     void *retval_ptr;
     size_t retval_len;
+    int height;
     struct LauMemoNode *left;
     struct LauMemoNode *right;
 } LauMemoNode;
@@ -35,14 +36,66 @@ static LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash) {
     return bst_find(root->right, hash);
 }
 
-static LauMemoNode* bst_insert(LauMemoNode *root, LauMemoNode *node) {
-    if (!root) return node;
-    if (node->signature_hash < root->signature_hash) {
-        root->left = bst_insert(root->left, node);
+static int node_height(LauMemoNode *n) {
+    return n ? n->height : 0;
+}
+
+static int max_val(int a, int b) {
+    return a > b ? a : b;
+}
+
+static int get_balance(LauMemoNode *n) {
+    return n ? node_height(n->left) - node_height(n->right) : 0;
+}
+
+static LauMemoNode* rotate_right(LauMemoNode *y) {
+    LauMemoNode *x = y->left;
+    LauMemoNode *T2 = x->right;
+    x->right = y;
+    y->left = T2;
+    y->height = max_val(node_height(y->left), node_height(y->right)) + 1;
+    x->height = max_val(node_height(x->left), node_height(x->right)) + 1;
+    return x;
+}
+
+static LauMemoNode* rotate_left(LauMemoNode *x) {
+    LauMemoNode *y = x->right;
+    LauMemoNode *T2 = y->left;
+    y->left = x;
+    x->right = T2;
+    x->height = max_val(node_height(x->left), node_height(x->right)) + 1;
+    y->height = max_val(node_height(y->left), node_height(y->right)) + 1;
+    return y;
+}
+
+static LauMemoNode* avl_insert(LauMemoNode *node, LauMemoNode *new_node) {
+    if (!node) return new_node;
+    if (new_node->signature_hash < node->signature_hash) {
+        node->left = avl_insert(node->left, new_node);
+    } else if (new_node->signature_hash > node->signature_hash) {
+        node->right = avl_insert(node->right, new_node);
     } else {
-        root->right = bst_insert(root->right, node);
+        return node;
     }
-    return root;
+    
+    node->height = max_val(node_height(node->left), node_height(node->right)) + 1;
+    int balance = get_balance(node);
+    
+    if (balance > 1 && new_node->signature_hash < node->left->signature_hash) {
+        return rotate_right(node);
+    }
+    if (balance < -1 && new_node->signature_hash > node->right->signature_hash) {
+        return rotate_left(node);
+    }
+    if (balance > 1 && new_node->signature_hash > node->left->signature_hash) {
+        node->left = rotate_left(node->left);
+        return rotate_right(node);
+    }
+    if (balance < -1 && new_node->signature_hash < node->right->signature_hash) {
+        node->right = rotate_right(node->right);
+        return rotate_left(node);
+    }
+    return node;
 }
 
 uint64_t bst_fnv1a_hash(const char *name, const uint8_t *calldata, size_t calldatasize) {
@@ -990,10 +1043,11 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                     new_node->retval_ptr = NULL;
                     new_node->retval_len = 0;
                 }
+                new_node->height = 1;
                 new_node->left = NULL;
                 new_node->right = NULL;
                 
-                s_thunk_memo_bst_root = bst_insert(s_thunk_memo_bst_root, new_node);
+                s_thunk_memo_bst_root = avl_insert(s_thunk_memo_bst_root, new_node);
             }
             pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
         }

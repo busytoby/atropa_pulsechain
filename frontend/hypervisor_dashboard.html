@@ -471,6 +471,31 @@
                 </div>
             </div>
 
+            <!-- BFT Validator Consensus Registry Panel -->
+            <div class="report-section" style="margin-top: 15px;">
+                <div class="card" style="overflow-x: auto;">
+                    <div class="panel-title">
+                        <span>ConsensusPKI BFT Validator Registry</span>
+                        <span class="pulse-badge">Consensus Active</span>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Validator Index</th>
+                                <th>Validator PKI Address</th>
+                                <th>Registered Stake Weight (Anvil)</th>
+                                <th>Consensus Participation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validatorTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--neon-blue);">Awaiting validator keys synchronization...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Lore & SHIO Diagnostics Section -->
             <div class="report-section" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
                 <!-- ZMM Manifold Visualizer -->
@@ -1329,6 +1354,27 @@
                         html += `PC [0x${step.pc.toString(16).toUpperCase()}] => <span style="color: var(--neon-magenta); font-weight: bold;">${opName}</span> (0x${step.op.toString(16).padStart(2, '0').toUpperCase()})<br>`;
                     });
                     traceDiv.innerHTML = html;
+                }
+
+                // Update BFT Validators Table
+                if (data && data.validators) {
+                    const tbody = document.getElementById("validatorTableBody");
+                    if (data.validators.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No validators registered on ConsensusPKI.</td></tr>`;
+                    } else {
+                        let html = "";
+                        data.validators.forEach((val, idx) => {
+                            html += `
+                                <tr>
+                                    <td><strong style="color: var(--neon-blue); font-family: monospace;">[${idx}]</strong></td>
+                                    <td style="font-family: monospace;">${val.address}</td>
+                                    <td style="color: var(--neon-purple); font-weight: bold;">${val.stake.toLocaleString()} Weight</td>
+                                    <td><span style="color: #00ff7f;">✔ ACTIVE</span></td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
                 }
             } catch (e) {
                 console.error("Failed to update cache metrics:", e);

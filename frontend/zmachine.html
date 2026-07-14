@@ -1452,6 +1452,28 @@ Connect your wallet to retrieve the active story ROM.</div>
                 termScreen.innerText += `\n> ${input}`;
                 termScreen.scrollTop = termScreen.scrollHeight;
 
+                // Coordinated Event Sync with WinchesterMQ Scheduler
+                try {
+                    let hexCmd = "0x";
+                    for (let i = 0; i < input.length && i < 32; i++) {
+                        hexCmd += input.charCodeAt(i).toString(16).padStart(2, '0');
+                    }
+                    while (hexCmd.length < 66) hexCmd += "00";
+                    
+                    fetch("/api/inject-event", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            priority: 25,
+                            type: 4,
+                            timestamp: Math.floor(Date.now() / 1000) % 100000,
+                            data: hexCmd
+                        })
+                    });
+                } catch (err) {
+                    console.warn("WinchesterMQ event sync failed:", err);
+                }
+
                 await executeCommand(input);
             }
         });

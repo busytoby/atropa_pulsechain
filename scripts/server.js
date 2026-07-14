@@ -1052,6 +1052,10 @@ const server = http.createServer(async (req, res) => {
             let cache_lookups = 0;
             let evm_queue = { head: 0, tail: 0, size: 0, lock: 0 };
             let host_heap = [];
+            let yul_trace = [];
+            let adaptive_tick_rate = 1000;
+            let scsi_tx_count = 0;
+            let scsi_parity_errors = 0;
             if (mcpOnline) {
                 try {
                     const r = await runZmmCommand('{"jsonrpc":"2.0", "method":"wave512.telemetry", "id": 999}');
@@ -1060,10 +1064,37 @@ const server = http.createServer(async (req, res) => {
                         cache_lookups = r.result.cache_lookups || 0;
                         evm_queue = r.result.evm_queue || evm_queue;
                         host_heap = r.result.host_heap || host_heap;
+                        yul_trace = r.result.yul_trace || [];
+                        adaptive_tick_rate = r.result.adaptive_tick_rate || 1000;
+                        scsi_tx_count = r.result.scsi_tx_count || 0;
+                        scsi_parity_errors = r.result.scsi_parity_errors || 0;
                     }
                 } catch (e) {
                     console.error("[SERVER] Failed to query cache telemetry:", e.message);
                 }
+            }
+            let validators = [];
+            try {
+                const configPath = path.join(__dirname, "../atropa_pulsechain_config.json");
+                if (fs.existsSync(configPath)) {
+                    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+                    const pkiAddr = config.networks.localhost.consensusPkiAddress;
+                    if (pkiAddr) {
+                        const { ethers } = require("ethers");
+                        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                        for (let i = 0; i < 11; i++) {
+                            const addrHex = await provider.getStorage(pkiAddr, 10 + i);
+                            const stakeHex = await provider.getStorage(pkiAddr, 30 + i);
+                            const addr = "0x" + addrHex.slice(26);
+                            const stake = parseInt(stakeHex, 16) || 0;
+                            if (parseInt(addrHex, 16) !== 0) {
+                                validators.push({ address: addr, stake: stake });
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore if not deployed or no connection
             }
             res.writeHead(200, {
                 "Content-Type": "application/json",
@@ -1079,7 +1110,12 @@ const server = http.createServer(async (req, res) => {
                 cache_hits: cache_hits,
                 cache_lookups: cache_lookups,
                 evm_queue: evm_queue,
-                host_heap: host_heap
+                host_heap: host_heap,
+                yul_trace: yul_trace,
+                adaptive_tick_rate: adaptive_tick_rate,
+                scsi_tx_count: scsi_tx_count,
+                scsi_parity_errors: scsi_parity_errors,
+                validators: validators
             }));
         });
         return;
