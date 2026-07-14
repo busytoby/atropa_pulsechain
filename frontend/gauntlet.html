@@ -416,6 +416,9 @@ Status: Awaiting hero to join the battle.</div>
         const keyboard = {};
         window.addEventListener("keydown", e => {
             if (document.activeElement && document.activeElement.id === "z-input") return;
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                e.preventDefault();
+            }
             keyboard[e.code] = true;
         });
         window.addEventListener("keyup", e => {
