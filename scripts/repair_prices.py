@@ -1,7 +1,7 @@
 import json
 import os
 
-PRICE_CACHE_FILE = "price_cache.json"
+PRICE_CACHE_FILE = "assets/price_cache.json"
 RESOLVED_FILE = "resolved_swaps.json"
 UNRESOLVED_FILE = "unresolved_swaps.json"
 

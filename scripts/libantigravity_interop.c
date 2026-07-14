@@ -1094,3 +1094,34 @@ int interop_coaxial_cluster(const uint64_t *coords, size_t count, uint64_t *cent
     }
     return 0;
 }
+
+static int interop_coaxial_cluster_helper(const void *inputs, size_t count, size_t elem_size, int is_hashes, uint32_t *assign, size_t k) {
+    uint64_t temp_coords[48] = {0};
+    uint64_t temp_cents[48] = {0};
+    size_t n = (count > 16) ? 16 : count;
+    for (size_t i = 0; i < n; i++) {
+        uint64_t val = (elem_size == 4) ? ((const uint32_t*)inputs)[i] : ((const uint64_t*)inputs)[i];
+        temp_coords[i * 3 + 0] = val;
+        if (is_hashes) temp_coords[i * 3 + 1] = val % 953467954114363ULL;
+    }
+    for (size_t j = 0; j < k; j++) {
+        uint64_t val = (elem_size == 4) ? ((const uint32_t*)inputs)[j % count] : ((const uint64_t*)inputs)[j % count];
+        temp_cents[j * 3 + 0] = val;
+    }
+    return interop_coaxial_cluster(temp_coords, n, temp_cents, k, assign);
+}
+
+int interop_mamt_cluster(const uint64_t *hashes, size_t count, uint32_t *lanes, size_t k) {
+    if (!hashes || count == 0 || !lanes || k == 0) return -1;
+    return interop_coaxial_cluster_helper(hashes, count, 8, 1, lanes, k);
+}
+
+int interop_ac_cache_cluster(const uint32_t *freqs, size_t count, uint32_t *lines, size_t k) {
+    if (!freqs || count == 0 || !lines || k == 0) return -1;
+    return interop_coaxial_cluster_helper(freqs, count, 4, 0, lines, k);
+}
+
+int interop_preference_cluster(const uint64_t *prefs, size_t count, uint32_t *shards, size_t k) {
+    if (!prefs || count == 0 || !shards || k == 0) return -1;
+    return interop_coaxial_cluster_helper(prefs, count, 8, 0, shards, k);
+}

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // ZMM Register Types
 typedef enum {
@@ -56,6 +57,11 @@ typedef struct {
     void (*kernel_low_density)(void*, ZmmSynapse*);
     void (*kernel_high_density)(void*, ZmmSynapse*);
 
+    // Memoization Cache (Bijective Helmholtz Thunk Support)
+    bool cache_valid;
+    float cached_input[32 * 16];
+    float cached_output[32 * 16];
+    float cached_density;
 } TsfiZmmManifest;
 
 // Dynamic Dispatcher with Synaptic Adaptation

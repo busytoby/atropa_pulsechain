@@ -58,21 +58,39 @@ void tsfi_dispatch_zmm_dynamic(TsfiZmmManifest *m) {
         }
     }
 
-    // --- PHASE 2: EXECUTION ---
-    uint64_t loops = (m->persistent_cycles > 0) ? m->persistent_cycles : 1;
-    for (uint64_t c = 0; c < loops; c++) {
-        if (m->micro_kernel) m->micro_kernel(reg_file, &m->synapse);
-        if (m->density_kernel) m->density_kernel(reg_file, &m->synapse);
-
-        // Synaptic Feedback: Dynamic Reconfiguration
-        if (__builtin_expect(m->synapse.request_kernel_swap != 0, 0)) {
-            if (m->synapse.request_kernel_swap > 0 && m->kernel_high_density) {
-                m->micro_kernel = m->kernel_high_density;
-            } else if (m->synapse.request_kernel_swap < 0 && m->kernel_low_density) {
-                m->micro_kernel = m->kernel_low_density;
-            }
-            m->synapse.request_kernel_swap = 0;
+    // --- PHASE 1B: MEMOIZATION CACHE CHECK ---
+    bool cache_hit = false;
+    if (m->cache_valid) {
+        if (memcmp(reg_file, m->cached_input, 32 * 16 * sizeof(float)) == 0) {
+            memcpy(reg_file, m->cached_output, 32 * 16 * sizeof(float));
+            m->synapse.mass_density = m->cached_density;
+            cache_hit = true;
         }
+    }
+
+    if (!cache_hit) {
+        memcpy(m->cached_input, reg_file, 32 * 16 * sizeof(float));
+
+        // --- PHASE 2: EXECUTION ---
+        uint64_t loops = (m->persistent_cycles > 0) ? m->persistent_cycles : 1;
+        for (uint64_t c = 0; c < loops; c++) {
+            if (m->micro_kernel) m->micro_kernel(reg_file, &m->synapse);
+            if (m->density_kernel) m->density_kernel(reg_file, &m->synapse);
+
+            // Synaptic Feedback: Dynamic Reconfiguration
+            if (__builtin_expect(m->synapse.request_kernel_swap != 0, 0)) {
+                if (m->synapse.request_kernel_swap > 0 && m->kernel_high_density) {
+                    m->micro_kernel = m->kernel_high_density;
+                } else if (m->synapse.request_kernel_swap < 0 && m->kernel_low_density) {
+                    m->micro_kernel = m->kernel_low_density;
+                }
+                m->synapse.request_kernel_swap = 0;
+            }
+        }
+
+        memcpy(m->cached_output, reg_file, 32 * 16 * sizeof(float));
+        m->cached_density = m->synapse.mass_density;
+        m->cache_valid = true;
     }
 
     // --- PHASE 3: STORAGE ---

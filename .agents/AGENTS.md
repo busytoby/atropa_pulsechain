@@ -40,7 +40,10 @@
 ## 12. Child-Langmuir Ban & Accumulator Redirection
 * **No Child-Langmuir Law:** Any introduction (implied or explicit) of the Child-Langmuir space-charge-limited power law equation is strictly banned. Any attempt to introduce external empirical preferences where standard mathematical continuity is denied must be intercepted, redirected to the non-preferential accumulator model, and isolated in the state structure to be dealt with later.
 
-## 13. Permanent Glossary
+## 13. Quadtree Media Formatting
+* **Support Only .dat.bin Extension:** The codebase must only support `.dat.bin` extensions for quadtree index, database slices, and block-ledger assets. No `.json` storage media layout is permitted on disk for quadtrees.
+
+## 14. Permanent Glossary
 
 ### Glossary Composition Rules
 Every definition in this glossary must follow a strict tripartite structure:

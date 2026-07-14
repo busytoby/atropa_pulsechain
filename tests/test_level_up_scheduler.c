@@ -103,6 +103,23 @@ extern uint64_t lau_yul_thunk_sload(uint64_t key);
 extern void lau_yul_thunk_sstore(uint64_t key, uint64_t val);
 
 int main(void) {
+    // Back up evm_storage.json to a temp backup file to preserve the database across test runs
+    FILE *f_in = fopen("evm_storage.json", "r");
+    if (!f_in) f_in = fopen("../evm_storage.json", "r");
+    if (f_in) {
+        FILE *f_out = fopen("evm_storage_tmp_backup.json", "w");
+        if (f_out) {
+            char ch;
+            while ((ch = fgetc(f_in)) != EOF) {
+                fputc(ch, f_out);
+            }
+            fclose(f_out);
+        }
+        fclose(f_in);
+    }
+
+
+
     printf("=============================================================\n");
     printf("AUNCIENT ZMM VM: LEVEL UP COORDINATED SCHEDULER TESTS\n");
     printf("=============================================================\n");
@@ -170,6 +187,11 @@ int main(void) {
     printf("   ✓ TDMA proof check correctly rejected the mismatching key on Channel 1.\n\n");
 
     // 4. Test WinchesterMQ EVM-side Ring-Buffer Queue
+    g_yul_evm_context.self_address = 0x200;
+    lau_yul_thunk_sstore(0xF300, 0);
+    lau_yul_thunk_sstore(0xF301, 0);
+    lau_yul_thunk_sstore(0xF302, 0);
+    lau_yul_thunk_sstore(0xF303, 0);
     printf("4. Testing WinchesterMQ EVM-side Ring-Buffer Queue (pushEvent/popEvent):\n");
     
     // pushEvent calldata: selector 0x0ff22000
@@ -420,32 +442,22 @@ int main(void) {
 
     // 12. Test FNV-1a Cryptographic Security Gating (Tamper Detection)
     printf("12. Testing FNV-1a Cryptographic Security Gating (Tamper Detection):\n");
-    char snapshot_file[128] = "assets/rdbms_storage_28376944200.json";
+    char snapshot_file[128] = "assets/rdbms_storage_28376944200.dat.bin";
     FILE *f_snap = fopen(snapshot_file, "r");
     if (!f_snap) {
-        strcpy(snapshot_file, "../assets/rdbms_storage_28376944200.json");
+        strcpy(snapshot_file, "../assets/rdbms_storage_28376944200.dat.bin");
     } else {
         fclose(f_snap);
     }
     
-    // Parse file and rewrite it with an invalid signature
-    FILE *f_read = fopen(snapshot_file, "r");
-    assert(f_read);
-    char file_lines[65536] = {0};
-    char line[1024];
-    while (fgets(line, sizeof(line), f_read)) {
-        if (strncmp(line, "// SIG:", 7) == 0) {
-            strcat(file_lines, "// SIG: 9999999999\n"); // Tampered signature value
-        } else {
-            strcat(file_lines, line);
-        }
-    }
-    fclose(f_read);
-    
-    FILE *f_write = fopen(snapshot_file, "w");
-    assert(f_write);
-    fputs(file_lines, f_write);
-    fclose(f_write);
+    // Open snapshot file, read signature, and overwrite it with tampered signature value
+    FILE *f_rw = fopen(snapshot_file, "r+b");
+    assert(f_rw);
+    // Seek past magic (4 bytes)
+    fseek(f_rw, 4, SEEK_SET);
+    uint64_t bad_sig = 9999999999ULL;
+    fwrite(&bad_sig, sizeof(uint64_t), 1, f_rw);
+    fclose(f_rw);
     
     // Overwrite evm_storage.json with an empty mapping to clear state
     FILE *f_empty = fopen("evm_storage.json", "w");
@@ -454,7 +466,7 @@ int main(void) {
     fprintf(f_empty, "{\n  \"storage\": []\n}\n");
     fclose(f_empty);
     
-    // Call rehydrate (should reject loading from assets/rdbms_storage_28376944200.json)
+    // Call rehydrate (should reject loading from assets/rdbms_storage_28376944200.dat.bin)
     blue_box_rehydrate_quadtree_states();
     
     // Read evm_storage.json back and check that it remained empty (keys did not load)
@@ -462,8 +474,9 @@ int main(void) {
     if (!f_check) f_check = fopen("../evm_storage.json", "r");
     assert(f_check);
     bool found_keys = false;
-    while (fgets(line, sizeof(line), f_check)) {
-        if (strstr(line, "key") && strstr(line, "val")) {
+    char check_line[1024];
+    while (fgets(check_line, sizeof(check_line), f_check)) {
+        if (strstr(check_line, "key") && strstr(check_line, "val")) {
             found_keys = true;
             break;
         }
@@ -471,6 +484,54 @@ int main(void) {
     fclose(f_check);
     assert(!found_keys);
     printf("    ✓ Successfully verified that tampered storage snapshots are blocked and rejected.\n\n");
+
+    // 13. Test State-Dependent Memoization Cache Invalidation
+    printf("13. Testing State-Dependent Memoization Cache Invalidation:\n");
+    extern uint64_t g_thunk_cache_hits;
+    extern uint64_t g_thunk_cache_lookups;
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
+    
+    uint8_t cdata_mock[4] = {0x11, 0x2d, 0xf4, 0x9e};
+    uint8_t ret_mock[256];
+    size_t ret_len_mock = sizeof(ret_mock);
+    
+    uint64_t initial_hits = g_thunk_cache_hits;
+    
+    // First execution: Loads from storage (read_storage flag set to true)
+    bool exec1 = lau_yul_thunk_execute("musicMaker", cdata_mock, sizeof(cdata_mock), ret_mock, &ret_len_mock);
+    assert(exec1);
+    
+    // Second execution: Same inputs, expect cache hit
+    ret_len_mock = sizeof(ret_mock);
+    bool exec2 = lau_yul_thunk_execute("musicMaker", cdata_mock, sizeof(cdata_mock), ret_mock, &ret_len_mock);
+    assert(exec2);
+    assert(g_thunk_cache_hits == initial_hits + 1);
+    
+    // Trigger storage write to update state
+    lau_yul_thunk_sstore(0xF122, 999);
+    
+    // Third execution: Same inputs, but expect cache miss because cache is invalidated by storage write
+    ret_len_mock = sizeof(ret_mock);
+    bool exec3 = lau_yul_thunk_execute("musicMaker", cdata_mock, sizeof(cdata_mock), ret_mock, &ret_len_mock);
+    assert(exec3);
+    assert(g_thunk_cache_hits == initial_hits + 1); // Hit count did not increase
+    printf("    ✓ Successfully verified that storage mutations trigger clean invalidation of state-dependent cache nodes.\n\n");
+
+    // Restore evm_storage.json from the temp backup file to avoid leaving database corrupt
+    FILE *f_res = fopen("evm_storage_tmp_backup.json", "r");
+    if (f_res) {
+        FILE *f_dst = fopen("evm_storage.json", "w");
+        if (!f_dst) f_dst = fopen("../evm_storage.json", "w");
+        if (f_dst) {
+            char ch;
+            while ((ch = fgetc(f_res)) != EOF) {
+                fputc(ch, f_dst);
+            }
+            fclose(f_dst);
+        }
+        fclose(f_res);
+        remove("evm_storage_tmp_backup.json");
+    }
 
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");

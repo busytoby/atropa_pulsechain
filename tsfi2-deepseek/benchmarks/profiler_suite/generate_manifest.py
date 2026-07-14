@@ -106,6 +106,12 @@ def main():
                 "target": "<= 50000.0 ns",
                 "verified_actual": f"{data.get('rdbms_operator', {}).get('verification_latency_ns', 0.0):.2f} ns",
                 "status": "PASS" if data.get('rdbms_operator', {}).get('verification_latency_ns', 0.0) <= 50000.0 else "FAIL"
+            },
+            "agentic_dispatch": {
+                "metric": "Agentic Dispatch Cache Hit Latency",
+                "target": "<= 100.0 ns",
+                "verified_actual": f"{data.get('agentic_dispatch', {}).get('cache_hit_latency_ns', 0.0):.2f} ns",
+                "status": "PASS" if data.get('agentic_dispatch', {}).get('cache_hit_latency_ns', 0.0) <= 100.0 else "FAIL"
             }
         }
     }

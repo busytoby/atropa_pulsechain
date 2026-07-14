@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdatomic.h>
+#include <stddef.h>
 
 #define DISPATCH_MAP_SIZE 256
 #define EMPTY_SELECTOR 0x00000000
@@ -13,7 +14,7 @@ typedef struct {
     _Atomic uintptr_t ip_offset; // VM Instruction Pointer offset
 } DispatchEntry;
 
-typedef struct {
+typedef struct ABIDispatchMap {
     DispatchEntry entries[DISPATCH_MAP_SIZE];
 } ABIDispatchMap;
 
@@ -25,5 +26,9 @@ bool abi_dispatch_register(ABIDispatchMap *map, uint32_t selector, uintptr_t ip_
 
 // Lookup the instruction pointer offset for a method selector (Lock-free)
 bool abi_dispatch_lookup(const ABIDispatchMap *map, uint32_t selector, uintptr_t *out_ip_offset);
+
+// General member dispatch functions
+bool abi_dispatch_register_member(ABIDispatchMap *map, void *lau_payload);
+bool abi_dispatch_invoke(const ABIDispatchMap *map, uint32_t selector, void *lau_payload, const uint64_t *args, size_t arg_count, uint64_t *out_val);
 
 #endif // ABI_DISPATCH_MAP_H

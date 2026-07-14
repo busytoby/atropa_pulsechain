@@ -652,6 +652,24 @@ int main() {
     assert(ce[3] == 100);
     printf("✓ Coaxial Clustering verified.\n");
 
+    // 36-38. Test MAMT, AC cache, preference sharding clustering
+    printf("36-38. Testing Domain-Specific Clustering:\n");
+    uint64_t m_hashes[2] = { 0x11111111ULL, 0x99999999ULL };
+    uint32_t m_lanes[2] = {0};
+    assert(interop_mamt_cluster(m_hashes, 2, m_lanes, 2) == 0);
+    assert(m_lanes[0] == 0 && m_lanes[1] == 1);
+
+    uint32_t c_freqs[2] = { 10, 1000 };
+    uint32_t c_lines[2] = {0};
+    assert(interop_ac_cache_cluster(c_freqs, 2, c_lines, 2) == 0);
+    assert(c_lines[0] == 0 && c_lines[1] == 1);
+
+    uint64_t p_prefs[2] = { 5, 500 };
+    uint32_t p_shards[2] = {0};
+    assert(interop_preference_cluster(p_prefs, 2, p_shards, 2) == 0);
+    assert(p_shards[0] == 0 && p_shards[1] == 1);
+    printf("✓ MAMT, AC Cache, and Preference clustering verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

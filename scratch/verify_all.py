@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PORT = 8089
 SERVER_URL = f"http://localhost:{PORT}"
-PRICE_CACHE_FILE = os.path.join(PROJECT_ROOT, "price_cache.json")
+PRICE_CACHE_FILE = os.path.join(PROJECT_ROOT, "assets/price_cache.json")
 UNRESOLVED_FILE = os.path.join(PROJECT_ROOT, "unresolved_swaps.json")
 RESOLVED_FILE = os.path.join(PROJECT_ROOT, "resolved_swaps.json")
 POOLS_FILE = os.path.join(PROJECT_ROOT, "nonukes_pools.json")
@@ -82,7 +82,7 @@ def run_tests():
     
     # 1. Backups
     backups = {}
-    files_to_backup = ["price_cache.json"]
+    files_to_backup = ["assets/price_cache.json"]
     import glob
     for fpath in glob.glob(os.path.join(PROJECT_ROOT, "treasury_tokens_*.json")):
         files_to_backup.append(os.path.basename(fpath))
@@ -148,9 +148,9 @@ def run_tests():
                 print(f"    Error detail: {details_res[:200]}")
 
         # Restore price_cache
-        if backups["price_cache.json"] is not None:
+        if backups.get("assets/price_cache.json") is not None:
             with open(PRICE_CACHE_FILE, "w", encoding="utf-8") as f:
-                f.write(backups["price_cache.json"])
+                f.write(backups["assets/price_cache.json"])
         else:
             if os.path.exists(PRICE_CACHE_FILE):
                 os.remove(PRICE_CACHE_FILE)

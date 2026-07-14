@@ -37,6 +37,7 @@ typedef struct {
     YulEventLog logs[64];
     int log_count;
     bool is_initcode;
+    bool storage_read_occurred;
 } YulEvmContext;
 
 extern _Thread_local YulEvmContext g_yul_evm_context;

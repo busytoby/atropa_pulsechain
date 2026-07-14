@@ -455,6 +455,7 @@ static u256_t get_namespaced_key(uint64_t self_addr, u256_t key) {
 bool g_initcode_running = false;
 
 u256_t context_sload(YulEvmContext *ctx, u256_t key) {
+    ctx->storage_read_occurred = true;
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     for (int i = 0; i < ctx->storage_count; i++) {
         if (u256_eq_internal(ctx->storage_keys[i], ns_key)) {

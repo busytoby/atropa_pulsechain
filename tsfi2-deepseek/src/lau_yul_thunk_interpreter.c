@@ -25,6 +25,7 @@ typedef struct LauMemoNode {
     uint64_t created_time_ms;
     uint64_t ttl_ms;
     bool stale;
+    bool read_storage;
     uint64_t cache_hits;
     struct LauMemoNode *left;
     struct LauMemoNode *right;
@@ -57,6 +58,13 @@ static void register_dependency(const char *parent, const char *child) {
         s_dependencies[s_dependency_count].child[63] = '\0';
         s_dependency_count++;
     }
+}
+
+static LauMemoNode* bst_find_any(LauMemoNode *root, uint64_t hash) {
+    if (!root) return NULL;
+    if (hash == root->signature_hash) return root;
+    if (hash < root->signature_hash) return bst_find_any(root->left, hash);
+    return bst_find_any(root->right, hash);
 }
 
 static LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash) {
@@ -294,7 +302,7 @@ void lau_yul_thunk_cache_rehydrate(void) {
                         memcpy(new_node->calldata_ptr, calldata, calldatasize);
                         new_node->calldatasize = calldatasize;
                         if (retval_len > 0) {
-                            new_node->retval_ptr = lau_malloc(retval_len);
+                            new_node->retval_ptr = lau_malloc_wired(retval_len);
                             memcpy(new_node->retval_ptr, retval, retval_len);
                             new_node->retval_len = retval_len;
                             LauWiredHeader *h = (LauWiredHeader*)((char*)new_node->retval_ptr - 8192);
@@ -338,6 +346,23 @@ static void bst_invalidate_contract(LauMemoNode *node, const char *name) {
     }
     bst_invalidate_contract(node->left, name);
     bst_invalidate_contract(node->right, name);
+}
+
+static void bst_invalidate_storage_dependent(LauMemoNode *node) {
+    if (!node) return;
+    if (node->read_storage && !node->stale) {
+        node->stale = true;
+        if (node->calldata_ptr) { lau_free(node->calldata_ptr); node->calldata_ptr = NULL; }
+        if (node->retval_ptr) { lau_free(node->retval_ptr); node->retval_ptr = NULL; }
+    }
+    bst_invalidate_storage_dependent(node->left);
+    bst_invalidate_storage_dependent(node->right);
+}
+
+void lau_yul_thunk_cache_invalidate_storage(void) {
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    bst_invalidate_storage_dependent(s_thunk_memo_bst_root);
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
 }
 
 void lau_yul_thunk_cache_invalidate(const char *name) {
@@ -1303,6 +1328,12 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         }
     }
 
+    extern bool g_storage_dirty;
+    if (g_storage_dirty) {
+        extern void persist_reconciliation_data(void);
+        persist_reconciliation_data();
+        g_storage_dirty = false;
+    }
     g_transaction_diyat_tax_total = 0;
     g_yul_evm_context.log_count = 0;
 
@@ -1317,6 +1348,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     g_yul_evm_context.caller_address.d[1] = 0;
     g_yul_evm_context.caller_address.d[2] = 0;
     g_yul_evm_context.caller_address.d[3] = 0;
+    g_yul_evm_context.storage_read_occurred = false;
     bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size, name);
 
     if (success) {
@@ -1324,6 +1356,8 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         if (g_storage_dirty) {
             persist_reconciliation_data();
             g_storage_dirty = false;
+            extern void lau_yul_thunk_cache_invalidate_storage(void);
+            lau_yul_thunk_cache_invalidate_storage();
         }
         if (retval && retval_len) {
             size_t out_size = g_yul_evm_context.return_size < *retval_len ? g_yul_evm_context.return_size : *retval_len;
@@ -1334,8 +1368,33 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         // Cache outputs for read-only dynamic thunk evaluations (skip if storage mutations occurred)
         if (!skip_cache && !had_dirty_storage && !g_yul_evm_context.reverted) {
             pthread_mutex_lock(&s_thunk_memo_bst_mutex);
-            LauMemoNode *existing = bst_find(s_thunk_memo_bst_root, hash);
-            if (!existing) {
+            LauMemoNode *existing = bst_find_any(s_thunk_memo_bst_root, hash);
+            if (existing) {
+                existing->stale = false;
+                existing->created_time_ms = current_time_ms();
+                existing->read_storage = g_yul_evm_context.storage_read_occurred;
+                if (existing->calldata_ptr) { lau_free(existing->calldata_ptr); existing->calldata_ptr = NULL; }
+                existing->calldata_ptr = lau_malloc(calldatasize);
+                memcpy(existing->calldata_ptr, calldata, calldatasize);
+                existing->calldatasize = calldatasize;
+                if (existing->retval_ptr) { lau_free(existing->retval_ptr); existing->retval_ptr = NULL; }
+                if (retval && retval_len && *retval_len > 0) {
+                    existing->retval_ptr = lau_malloc_wired(*retval_len);
+                    memcpy(existing->retval_ptr, retval, *retval_len);
+                    existing->retval_len = *retval_len;
+                    LauWiredHeader *h = (LauWiredHeader*)((char*)existing->retval_ptr - 8192);
+                    if (h) {
+                        h->version = 1;
+                        h->system_id = 42;
+                        h->sealed = true;
+                    }
+                } else {
+                    existing->retval_ptr = NULL;
+                    existing->retval_len = 0;
+                }
+                extern void write_thunk_to_disk(LauMemoNode *node);
+                write_thunk_to_disk(existing);
+            } else {
                 LauMemoNode *new_node = (LauMemoNode*)lau_malloc(sizeof(LauMemoNode));
                 new_node->signature_hash = hash;
                 strncpy(new_node->contract_name, name, 63);
@@ -1344,7 +1403,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                 memcpy(new_node->calldata_ptr, calldata, calldatasize);
                 new_node->calldatasize = calldatasize;
                 if (retval && retval_len && *retval_len > 0) {
-                    new_node->retval_ptr = lau_malloc(*retval_len);
+                    new_node->retval_ptr = lau_malloc_wired(*retval_len);
                     memcpy(new_node->retval_ptr, retval, *retval_len);
                     new_node->retval_len = *retval_len;
                     
@@ -1363,6 +1422,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                 new_node->created_time_ms = current_time_ms();
                 new_node->ttl_ms = 5000;
                 new_node->stale = false;
+                new_node->read_storage = g_yul_evm_context.storage_read_occurred;
                 new_node->cache_hits = 0;
                 new_node->left = NULL;
                 new_node->right = NULL;
@@ -1420,6 +1480,8 @@ void lau_yul_thunk_sstore(uint64_t key, uint64_t value) {
     }
     context_sstore(&g_yul_evm_context, key_u256, val);
     g_yul_evm_context.self_address = prev_addr;
+    extern void lau_yul_thunk_cache_invalidate_storage(void);
+    lau_yul_thunk_cache_invalidate_storage();
 }
 
 uint64_t lau_yul_thunk_sload(uint64_t key) {

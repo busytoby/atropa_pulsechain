@@ -1,5 +1,6 @@
 #include "abi_dispatch_map.h"
 #include <string.h>
+#include "../tsfi2-deepseek/inc/lau_memory.h"
 
 void abi_dispatch_init(ABIDispatchMap *map) {
     if (!map) return;
@@ -79,4 +80,63 @@ bool abi_dispatch_lookup(const ABIDispatchMap *map, uint32_t selector, uintptr_t
     }
 
     return false; // Probed entire map, not found
+}
+
+bool abi_dispatch_register_member(ABIDispatchMap *map, void *lau_payload) {
+    if (!map || !lau_payload) return false;
+
+    // Resolve the reflection header
+    LauWiredHeader *h = (LauWiredHeader*)((char*)lau_payload - 8192);
+
+    // Iterate and bind all signature mapping slots
+    bool all_ok = true;
+    for (int i = 0; i < h->schema_count; i++) {
+        uint32_t selector = (uint32_t)h->schema[i].offset;
+        uintptr_t ip_offset = (uintptr_t)h->schema[i].target_fn;
+
+        if (!abi_dispatch_register(map, selector, ip_offset)) {
+            all_ok = false;
+        }
+    }
+    return all_ok;
+}
+
+static inline uint64_t hash_agent_state(const LauWiredHeader *h, uint32_t selector, const uint64_t *args, size_t arg_count) {
+    (void)h;
+    uint64_t hash = 14695981039346656037ULL;
+    const uint64_t prime = 1099511628211ULL;
+
+    hash ^= selector; hash *= prime;
+    for (size_t i = 0; i < arg_count; i++) {
+        hash ^= args[i]; hash *= prime;
+    }
+
+    return hash;
+}
+
+bool abi_dispatch_invoke(const ABIDispatchMap *map, uint32_t selector, void *lau_payload, const uint64_t *args, size_t arg_count, uint64_t *out_val) {
+    uintptr_t func_ptr = 0;
+    if (!abi_dispatch_lookup(map, selector, &func_ptr)) {
+        return false; // Selector not found
+    }
+
+    LauWiredHeader *h = (LauWiredHeader*)((char*)lau_payload - 8192);
+
+    uint64_t inv_hash = hash_agent_state(h, selector, args, arg_count);
+
+    if (h->cache_valid && h->cache_input_hash == inv_hash && h->cache_state_epoch == h->counter) {
+        *out_val = h->cache_output_val;
+        return true; // Helmholtz cache hit
+    }
+
+    typedef uint64_t (*LauMethod)(void*, const uint64_t*, size_t);
+    uint64_t result = ((LauMethod)func_ptr)(lau_payload, args, arg_count);
+
+    h->cache_input_hash = inv_hash;
+    h->cache_output_val = result;
+    h->cache_state_epoch = h->counter;
+    h->cache_valid = 1;
+
+    *out_val = result;
+    return true;
 }

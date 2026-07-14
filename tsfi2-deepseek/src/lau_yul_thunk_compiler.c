@@ -95,6 +95,7 @@ static void load_reconciliation_data(void) {
                 if (addr_str[0] != '\0') {
                     sscanf(addr_str, "%lx", &addr);
                 }
+
                 if (g_yul_evm_context.storage_count < 32768) {
                     g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = key;
                     g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = val;

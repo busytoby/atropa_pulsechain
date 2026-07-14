@@ -157,7 +157,7 @@ PKMINTER_ABI = [
 
 # Files to store state
 UNRESOLVED_FILE = "unresolved_swaps.json"
-PRICE_CACHE_FILE = "price_cache.json"
+PRICE_CACHE_FILE = "assets/price_cache.json"
 RESOLVED_FILE = "resolved_swaps.json"
 TREASURY_TOKENS_FILE = "treasury_tokens.json"
 NONUKES_POOLS_FILE = "nonukes_pools.json"

@@ -317,7 +317,7 @@ async function handleRequest(req) {
                 try {
                     const args = params.arguments || {};
                     const symbolFilter = args.symbol ? args.symbol.toUpperCase() : null;
-                    const cachePath = path.join(__dirname, "../price_cache.json");
+                    const cachePath = path.join(__dirname, "../assets/price_cache.json");
                     const prices = [];
                     
                     if (fs.existsSync(cachePath)) {

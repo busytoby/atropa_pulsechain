@@ -8,6 +8,7 @@
 #include <sys/file.h>
 #include <openssl/sha.h>
 #include "tsfi_zmm_rpc.h"
+#include "lau_yul_thunk.h"
 
 /*
  * Auncient Computel Single-Frequency (SF) & Multi-Frequency (MF) Switch Controller
@@ -2233,8 +2234,8 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
     
     if (mode == 0) {
         // Mode 0: PostgreSQL Mutable spatial index mode (Overwrites in-place)
-        FILE *f = fopen("assets/rdbms_tables.json", "w");
-        if (!f) f = fopen("../assets/rdbms_tables.json", "w");
+        FILE *f = fopen("assets/rdbms_tables.dat.bin", "w");
+        if (!f) f = fopen("../assets/rdbms_tables.dat.bin", "w");
         if (!f) return false;
         
         fprintf(f, "{\n  \"quadrants\": {\n");
@@ -2245,7 +2246,7 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
                 g_mode, rate, last_action, total_collected);
         fprintf(f, "  }\n}\n");
         fclose(f);
-        printf("[QUADTREE] Wrote mutable spatial quadrants to assets/rdbms_tables.json\n");
+        printf("[QUADTREE] Wrote mutable spatial quadrants to assets/rdbms_tables.dat.bin\n");
     } else {
         // Compute new Merkle State Proof Root Hash: H(prev_root + current_states)
         uint64_t prev_root = lau_yul_thunk_sload(0xF1B5);
@@ -2275,8 +2276,8 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         uint64_t r23_2 = lau_yul_thunk_sload(0xF1C8);
         uint64_t r23_3 = lau_yul_thunk_sload(0xF1C9);
 
-        FILE *f = fopen("assets/rdbms_ledger.json", "a");
-        if (!f) f = fopen("../assets/rdbms_ledger.json", "a");
+        FILE *f = fopen("assets/rdbms_ledger.dat.bin", "a");
+        if (!f) f = fopen("../assets/rdbms_ledger.dat.bin", "a");
         if (!f) return false;
         
         lau_yul_thunk_sstore(0xF1B5, next_root);
@@ -2289,12 +2290,12 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         // Output specific file for this preserved node atomically using WAL temporary file pattern
         char node_path[128];
         char temp_node_path[128];
-        snprintf(node_path, sizeof(node_path), "assets/rdbms_ledger_%lu.json", next_root);
-        snprintf(temp_node_path, sizeof(temp_node_path), "assets/temp_ledger_%lu.json", next_root);
+        snprintf(node_path, sizeof(node_path), "assets/rdbms_ledger_%lu.dat.bin", next_root);
+        snprintf(temp_node_path, sizeof(temp_node_path), "assets/temp_ledger_%lu.dat.bin", next_root);
         FILE *fn = fopen(temp_node_path, "w");
         if (!fn) {
-            snprintf(node_path, sizeof(node_path), "../assets/rdbms_ledger_%lu.json", next_root);
-            snprintf(temp_node_path, sizeof(temp_node_path), "../assets/temp_ledger_%lu.json", next_root);
+            snprintf(node_path, sizeof(node_path), "../assets/rdbms_ledger_%lu.dat.bin", next_root);
+            snprintf(temp_node_path, sizeof(temp_node_path), "../assets/temp_ledger_%lu.dat.bin", next_root);
             fn = fopen(temp_node_path, "w");
         }
         if (fn) {
@@ -2305,54 +2306,62 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
             printf("[QUADTREE] Wrote node-specific state file atomically: %s\n", node_path);
         }
 
-        // Copy current evm_storage.json to block specific storage snapshot atomically using WAL temporary file pattern
+        // Copy current storage to block specific binary DAT media snapshot atomically using WAL temporary file pattern
         extern void persist_reconciliation_data(void);
         persist_reconciliation_data();
         char storage_path[128];
         char temp_storage_path[128];
-        snprintf(storage_path, sizeof(storage_path), "assets/rdbms_storage_%lu.json", next_root);
-        snprintf(temp_storage_path, sizeof(temp_storage_path), "assets/temp_storage_%lu.json", next_root);
-        FILE *fs_src = fopen("evm_storage.json", "r");
-        if (!fs_src) fs_src = fopen("tsfi2-deepseek/evm_storage.json", "r");
-        if (fs_src) {
-            FILE *fs_dst = fopen(temp_storage_path, "w");
-            if (!fs_dst) {
-                snprintf(storage_path, sizeof(storage_path), "../assets/rdbms_storage_%lu.json", next_root);
-                snprintf(temp_storage_path, sizeof(temp_storage_path), "../assets/temp_storage_%lu.json", next_root);
-                fs_dst = fopen(temp_storage_path, "w");
-            }
-            if (fs_dst) {
-                char ch;
-                while ((ch = fgetc(fs_src)) != EOF) {
-                    fputc(ch, fs_dst);
-                }
-                fclose(fs_dst);
+        snprintf(storage_path, sizeof(storage_path), "assets/rdbms_storage_%lu.dat.bin", next_root);
+        snprintf(temp_storage_path, sizeof(temp_storage_path), "assets/temp_storage_%lu.dat.bin", next_root);
+        FILE *fs_dst = fopen(temp_storage_path, "wb");
+        if (!fs_dst) {
+            snprintf(storage_path, sizeof(storage_path), "../assets/rdbms_storage_%lu.dat.bin", next_root);
+            snprintf(temp_storage_path, sizeof(temp_storage_path), "../assets/temp_storage_%lu.dat.bin", next_root);
+            fs_dst = fopen(temp_storage_path, "wb");
+        }
+        if (fs_dst) {
+            fwrite("QTDM", 1, 4, fs_dst);
+            
+            // FNV-1a calculation
+            uint64_t computed = 14695981039346656037ULL;
+            for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
+                computed ^= g_yul_evm_context.storage_keys[i].d[0]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_keys[i].d[1]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_keys[i].d[2]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_keys[i].d[3]; computed *= 1099511628211ULL;
                 
-                // Calculate FNV-1a signature on the temp file and append it
-                uint64_t dummy = 0;
-                extern uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected);
-                uint64_t computed = compute_storage_fnv1a(temp_storage_path, &dummy);
-                FILE *fs_sig = fopen(temp_storage_path, "a");
-                if (fs_sig) {
-                    fprintf(fs_sig, "// SIG: %lu\n", computed);
-                    fclose(fs_sig);
-                }
-                rename(temp_storage_path, storage_path);
-                printf("[QUADTREE] Wrote block-specific storage snapshot atomically with FNV-1a signature: %s\n", storage_path);
+                computed ^= g_yul_evm_context.storage_vals[i].d[0]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_vals[i].d[1]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_vals[i].d[2]; computed *= 1099511628211ULL;
+                computed ^= g_yul_evm_context.storage_vals[i].d[3]; computed *= 1099511628211ULL;
+                
+                computed ^= g_yul_evm_context.storage_addrs[i]; computed *= 1099511628211ULL;
             }
-            fclose(fs_src);
+            
+            fwrite(&computed, sizeof(uint64_t), 1, fs_dst);
+            uint32_t count = g_yul_evm_context.storage_count;
+            fwrite(&count, sizeof(uint32_t), 1, fs_dst);
+            
+            for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
+                fwrite(&g_yul_evm_context.storage_keys[i], sizeof(u256_t), 1, fs_dst);
+                fwrite(&g_yul_evm_context.storage_vals[i], sizeof(u256_t), 1, fs_dst);
+                fwrite(&g_yul_evm_context.storage_addrs[i], sizeof(uint64_t), 1, fs_dst);
+            }
+            fclose(fs_dst);
+            rename(temp_storage_path, storage_path);
+            printf("[QUADTREE] Wrote block-specific storage snapshot atomically with FNV-1a signature: %s\n", storage_path);
         }
 
         // Append to relational RDBMS nodes table
-        FILE *fa = fopen("assets/rdbms_nodes_table.json", "a");
-        if (!fa) fa = fopen("../assets/rdbms_nodes_table.json", "a");
+        FILE *fa = fopen("assets/rdbms_nodes_table.dat.bin", "a");
+        if (!fa) fa = fopen("../assets/rdbms_nodes_table.dat.bin", "a");
         if (fa) {
             fprintf(fa, "{\"table\": \"immutable_nodes\", \"row\": {\"root\": %lu, \"gas\": %lu, \"collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}}\n",
                     next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
             fclose(fa);
-            printf("[QUADTREE] Relational table row committed to assets/rdbms_nodes_table.json\n");
+            printf("[QUADTREE] Relational table row committed to assets/rdbms_nodes_table.dat.bin\n");
         }
-        printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.json. Root Hash: %lu\n", next_root);
+        printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.dat.bin. Root Hash: %lu\n", next_root);
     }
     
     lau_yul_thunk_sstore(0xF19F, 1); // Set serialization status active
@@ -2376,7 +2385,7 @@ void blue_box_rehydrate_quadtree_states(void) {
     time_t newest_time = 0;
 
     while ((dir = readdir(d)) != NULL) {
-        if (strncmp(dir->d_name, "rdbms_ledger_", 13) == 0 && strstr(dir->d_name, ".json")) {
+        if (strncmp(dir->d_name, "rdbms_ledger_", 13) == 0 && strstr(dir->d_name, ".dat.bin")) {
             char filepath[512];
             snprintf(filepath, sizeof(filepath), "%s/%s", dir_path, dir->d_name);
             struct stat st;
@@ -2438,38 +2447,66 @@ void blue_box_rehydrate_quadtree_states(void) {
 
                     // Copy block specific storage snapshot back to evm_storage.json
                     char src_path[128];
-                    snprintf(src_path, sizeof(src_path), "assets/rdbms_storage_%lu.json", next_root);
-                    FILE *fs_src = fopen(src_path, "r");
+                    snprintf(src_path, sizeof(src_path), "assets/rdbms_storage_%lu.dat.bin", next_root);
+                    FILE *fs_src = fopen(src_path, "rb");
                     if (!fs_src) {
-                        snprintf(src_path, sizeof(src_path), "../assets/rdbms_storage_%lu.json", next_root);
-                        fs_src = fopen(src_path, "r");
+                        snprintf(src_path, sizeof(src_path), "../assets/rdbms_storage_%lu.dat.bin", next_root);
+                        fs_src = fopen(src_path, "rb");
                     }
                     if (fs_src) {
-                        fclose(fs_src);
-                        uint64_t expected_sig = 0;
-                        extern uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected);
-                        uint64_t computed_sig = compute_storage_fnv1a(src_path, &expected_sig);
-                        if (expected_sig == 0 || computed_sig != expected_sig) {
-                            printf("[QUADTREE] [SECURITY] Storage snapshot FNV-1a verification FAILED for %s! Expected: %lu, Computed: %lu. Restoring aborted!\n", 
-                                   src_path, expected_sig, computed_sig);
-                        } else {
-                            FILE *fs_src_valid = fopen(src_path, "r");
-                            if (fs_src_valid) {
-                                FILE *fs_dst = fopen("evm_storage.json", "w");
-                                if (!fs_dst) fs_dst = fopen("tsfi2-deepseek/evm_storage.json", "w");
-                                if (fs_dst) {
-                                    char ch;
-                                    while ((ch = fgetc(fs_src_valid)) != EOF) {
-                                        fputc(ch, fs_dst);
-                                    }
-                                    fclose(fs_dst);
-                                    printf("[QUADTREE] [REHYDRATE] Securely verified and restored evm_storage.json snapshot for root %lu\n", next_root);
-                                    
-                                    extern void reload_evm_storage_from_json(void);
-                                    reload_evm_storage_from_json();
+                        char magic[4];
+                        uint64_t sig = 0;
+                        uint32_t count = 0;
+                        if (fread(magic, 1, 4, fs_src) == 4 && memcmp(magic, "QTDM", 4) == 0 &&
+                            fread(&sig, sizeof(uint64_t), 1, fs_src) == 1 &&
+                            fread(&count, sizeof(uint32_t), 1, fs_src) == 1) {
+                            
+                            u256_t *keys = malloc(sizeof(u256_t) * count);
+                            u256_t *vals = malloc(sizeof(u256_t) * count);
+                            uint64_t *addrs = malloc(sizeof(uint64_t) * count);
+                            bool read_ok = true;
+                            uint64_t computed = 14695981039346656037ULL;
+                            for (uint32_t i = 0; i < count; i++) {
+                                if (fread(&keys[i], sizeof(u256_t), 1, fs_src) != 1 ||
+                                    fread(&vals[i], sizeof(u256_t), 1, fs_src) != 1 ||
+                                    fread(&addrs[i], sizeof(uint64_t), 1, fs_src) != 1) {
+                                    read_ok = false;
+                                    break;
                                 }
-                                fclose(fs_src_valid);
+                                computed ^= keys[i].d[0]; computed *= 1099511628211ULL;
+                                computed ^= keys[i].d[1]; computed *= 1099511628211ULL;
+                                computed ^= keys[i].d[2]; computed *= 1099511628211ULL;
+                                computed ^= keys[i].d[3]; computed *= 1099511628211ULL;
+                                
+                                computed ^= vals[i].d[0]; computed *= 1099511628211ULL;
+                                computed ^= vals[i].d[1]; computed *= 1099511628211ULL;
+                                computed ^= vals[i].d[2]; computed *= 1099511628211ULL;
+                                computed ^= vals[i].d[3]; computed *= 1099511628211ULL;
+                                
+                                computed ^= addrs[i]; computed *= 1099511628211ULL;
                             }
+                            fclose(fs_src);
+                            
+                            if (read_ok && computed == sig) {
+                                g_yul_evm_context.storage_count = count;
+                                for (uint32_t i = 0; i < count; i++) {
+                                    g_yul_evm_context.storage_keys[i] = keys[i];
+                                    g_yul_evm_context.storage_vals[i] = vals[i];
+                                    g_yul_evm_context.storage_addrs[i] = addrs[i];
+                                }
+                                extern void persist_reconciliation_data(void);
+                                persist_reconciliation_data();
+                                printf("[QUADTREE] [REHYDRATE] Securely verified and restored evm_storage.json snapshot for root %lu\n", next_root);
+                                extern void reload_evm_storage_from_json(void);
+                                reload_evm_storage_from_json();
+                            } else {
+                                printf("[QUADTREE] [SECURITY] Storage snapshot FNV-1a verification FAILED for %s! Computed: %lu, Signature in header: %lu\n", src_path, computed, sig);
+                            }
+                            free(keys);
+                            free(vals);
+                            free(addrs);
+                        } else {
+                            fclose(fs_src);
                         }
                     }
                 }

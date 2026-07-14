@@ -38,6 +38,10 @@ THRESHOLDS = {
     },
     "rdbms_operator": {
         "verification_latency_ns": {"max": 50000.0, "desc": "RDBMS Operator Verification Latency"}
+    },
+    "agentic_dispatch": {
+        "cache_hit_latency_ns": {"max": 100.0, "desc": "Agentic Dispatch Cache Hit Latency"},
+        "cache_miss_latency_ns": {"max": 500.0, "desc": "Agentic Dispatch Cache Miss Latency"}
     }
 }
 

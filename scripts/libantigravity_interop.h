@@ -257,5 +257,8 @@ typedef struct {
 uint64_t interop_knn_distance(const uint64_t *coord1, const uint64_t *coord2);
 int interop_knn_search(const InteropKNNAgent *agents, size_t count, const uint64_t *query_coord, uint64_t *out_neighbors, size_t k);
 int interop_coaxial_cluster(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign);
+int interop_mamt_cluster(const uint64_t *hashes, size_t count, uint32_t *lanes, size_t k);
+int interop_ac_cache_cluster(const uint32_t *freqs, size_t count, uint32_t *lines, size_t k);
+int interop_preference_cluster(const uint64_t *prefs, size_t count, uint32_t *shards, size_t k);
 
 #endif // LIBANTIGRAVITY_INTEROP_H

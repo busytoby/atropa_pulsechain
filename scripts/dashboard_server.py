@@ -10,7 +10,7 @@ import glob
 
 PORT = int(os.environ.get("PORT", 8080))
 http.server.BaseHTTPRequestHandler.max_line_size = 1048576
-PRICE_CACHE_FILE = "price_cache.json"
+PRICE_CACHE_FILE = "assets/price_cache.json"
 UNRESOLVED_FILE = "unresolved_swaps.json"
 RESOLVED_FILE = "resolved_swaps.json"
 
@@ -871,9 +871,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 return
             
             cached_prices = {}
-            if os.path.exists("price_cache.json"):
+            if os.path.exists(PRICE_CACHE_FILE):
                 try:
-                    with open("price_cache.json", "r") as f:
+                    with open(PRICE_CACHE_FILE, "r") as f:
                         cached_prices = json.load(f)
                 except Exception:
                     pass
@@ -985,9 +985,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             cached_prices = {}
             price_cache_corrupt = False
-            if os.path.exists("price_cache.json"):
+            if os.path.exists(PRICE_CACHE_FILE):
                 try:
-                    with open("price_cache.json", "r") as f:
+                    with open(PRICE_CACHE_FILE, "r") as f:
                         cached_prices = json.load(f)
                 except Exception:
                     price_cache_corrupt = True

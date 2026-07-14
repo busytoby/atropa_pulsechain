@@ -26,6 +26,8 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_winchester_mq.c -o tests/bench_winchester_mq -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_operator_status_rdbms.c -o tests/bench_operator_status_rdbms -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread -lpulse -lpulse-simple
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_agentic_dispatch.c -o tests/bench_agentic_dispatch -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."
@@ -71,9 +73,16 @@ echo "[RUN] WinchesterMQ Virtual Hardware Benchmark..."
 echo "[RUN] RDBMS Operator Status Dual Stack Benchmark..."
 ./tests/bench_operator_status_rdbms > "${TMP_DIR}/bench_rdbms_op.log"
 
+# 13. Run Agentic Dispatch Benchmark
+echo "[RUN] In-Memory Agentic Dispatch Benchmark..."
+./tests/bench_agentic_dispatch > "${TMP_DIR}/bench_agentic.log"
+
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
 # Parse values
+AGENTIC_HIT=$(grep -oP 'Agentic Dispatch Cache Hit Latency: \K[0-9\.]+' "${TMP_DIR}/bench_agentic.log" || echo "0.0")
+AGENTIC_MISS=$(grep -oP 'Agentic Dispatch Cache Miss Latency: \K[0-9\.]+' "${TMP_DIR}/bench_agentic.log" || echo "0.0")
+
 AC_MEM=$(grep -oP 'Memory Used: \K[0-9]+' "${TMP_DIR}/bench_ac.log" | tail -n1 || echo "0")
 AC_BUILD=$(grep -oP 'Build Time: \K[0-9]+' "${TMP_DIR}/bench_ac.log" | tail -n1 || echo "0")
 AC_SEARCH=$(grep -oP 'Search Time: \K[0-9]+' "${TMP_DIR}/bench_ac.log" | tail -n1 || echo "0")
@@ -175,6 +184,10 @@ cat <<EOF > "${OUTPUT_JSON}"
   },
   "rdbms_operator": {
     "verification_latency_ns": ${RDBMS_OP_LATENCY}
+  },
+  "agentic_dispatch": {
+    "cache_hit_latency_ns": ${AGENTIC_HIT},
+    "cache_miss_latency_ns": ${AGENTIC_MISS}
   }
 }
 EOF

@@ -100,7 +100,14 @@ typedef struct LauWiredHeader {
     void (*layer0_teardown)(void*);
     int schema_count;
     const ThunkSignature* schema;
-    uint8_t _pad_align[1504]; // Shifted to reach 8192
+
+    // Member-Level Helmholtz Cache
+    uint64_t cache_input_hash;
+    uint64_t cache_output_val;
+    int cache_state_epoch;
+    int cache_valid;
+
+    uint8_t _pad_align[1480]; // Shifted to reach 8192
     LauFooter footer;
     uint8_t payload[]; // Anchored at 8192
     } LauWiredHeader;
