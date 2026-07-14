@@ -192,6 +192,8 @@ int main(void) {
     // Clean up
     peer_a.is_running = false;
     peer_b.is_running = false;
+    shutdown(peer_a.socket_fd, SHUT_RDWR);
+    shutdown(peer_b.socket_fd, SHUT_RDWR);
     close(peer_a.socket_fd);
     close(peer_b.socket_fd);
     close(server_listen);
