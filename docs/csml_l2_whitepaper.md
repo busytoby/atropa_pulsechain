@@ -68,7 +68,37 @@ The Bitcoin witness script validates the FNV-1a hash of the delta array, reducin
 
 ---
 
-## 5. **Auncient** Register Manifestations
+## 5. WinchesterMQ SCSI Handshake State Machine
+
+The WinchesterMQ virtual hardware SCSI handshake loops (`WinchesterMQ.yul`) act as the physical link-layer bridge for L2 state transitions. The handshake protocol progresses through four distinct phases:
+$$\Phi_{\text{SCSI}} \in \{\text{BusFree}, \text{Command}, \text{DataTransfer}, \text{Status}\}$$
+
+During execution, the SCSI LUN and phase registers modulate the translation coordinates ($X_{trans}, Y_{trans}, Z_{trans}$) of the rendering camera projection:
+$$V_{camera} = \Phi_{\text{SCSI}} \cdot \text{Pole} \pmod{\text{MotzkinPrime}}$$
+
+This bridges low-level hardware interrupt queues directly to visual coordinate projections, providing a geometric signature of execution.
+
+---
+
+## 6. Unified State Retention Logs
+
+Every database mutation is sequentially compiled into a verifiable, Merkle-like transition ledger. Each entry is structurally formatted:
+$$\text{BlockHeader}_i = \text{FNV1a}(\text{PrevHash}_{i-1} \parallel \text{Selector} \parallel \text{ArgsHash} \parallel \text{StateRoot})$$
+
+The bottom-up audit validation algorithm guarantees that any post-facto mutation or deletion of historical transactions breaks the cryptographic FNV-1a chain links, rendering the entire state evolution proof invalid.
+
+---
+
+## 7. Non-Preferential Accumulator States
+
+Any introduction of empirical space-charge-limited power laws (such as the Child-Langmuir law, which is strictly banned within this architecture) is intercepted at the compiler boundary. The compiler isolates these external empirical variables and redirects them to a non-preferential accumulator vector:
+$$V_{\text{accum}, t+1} = V_{\text{accum}, t} + \text{InputVariable}$$
+
+This guarantees mathematical continuity across the state-transition pipeline, preventing empirical model bias from corrupting L2 state execution logic.
+
+---
+
+## 8. **Auncient** Register Manifestations
 
 Every transaction step is modulated by the cryptographic and visual registers of the **Auncient** Wavelet layout:
 
@@ -87,7 +117,7 @@ Every transaction step is modulated by the cryptographic and visual registers of
 
 ---
 
-## 6. State-Space Complexity and Fee Bounds
+## 9. State-Space Complexity and Fee Bounds
 
 To establish scalability, we analyze the cost function of Layer-2 rollups. Let $N$ be the number of transactions batched off-chain. Let $\text{Gas}_{\text{Base}}$ represent the base evaluation gas cost of the guest VM, and $\text{Witness}_{\text{BTC}}$ represent the byte size of the BTC transaction input witness.
 
@@ -101,7 +131,7 @@ Unlike the space-charge-limited power laws of physical conductors (e.g. the Chil
 
 ---
 
-## 7. The RDBMS-PLL Synchronization Protocol
+## 10. The RDBMS-PLL Synchronization Protocol
 
 To ensure consistency between guest user spaces and host hypervisors, the Phase-Locked Loop (PLL) synchronizer tracks replication state offsets:
 
