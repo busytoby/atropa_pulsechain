@@ -28,14 +28,17 @@ def analyze_codebase():
                     if m in declared:
                         implemented.add(m)
                     
-    # 3. Extract verified functions from test file
+    # 3. Extract verified functions from test files
     tested = set()
-    if os.path.exists(test_c):
-        with open(test_c, 'r') as f:
-            content = f.read()
-            for func in declared:
-                if func in content:
-                    tested.add(func)
+    test_contents = []
+    for t_file in ['scripts/test_abi_dispatch.c', 'scripts/test_abi_dispatch_extra.c']:
+        if os.path.exists(t_file):
+            with open(t_file, 'r') as f:
+                test_contents.append(f.read())
+    combined_content = "\n".join(test_contents)
+    for func in declared:
+        if func in combined_content:
+            tested.add(func)
                     
     untested = implemented - tested
     

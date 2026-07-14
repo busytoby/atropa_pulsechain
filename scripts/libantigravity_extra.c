@@ -1445,3 +1445,52 @@ float interop_transe_nmr_score(const int *ranks, const int *pool_sizes, size_t r
     }
     return nmr_sum / (float)rank_count;
 }
+
+int interop_transe_self_adversarial_weight(const float *neg_scores, float alpha, float *out_weights, size_t count) {
+    if (!neg_scores || !out_weights || count == 0) return -1;
+    float sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        out_weights[i] = expf(alpha * neg_scores[i]);
+        sum += out_weights[i];
+    }
+    if (sum > 0.0f) {
+        for (size_t i = 0; i < count; i++) {
+            out_weights[i] /= sum;
+        }
+    } else {
+        for (size_t i = 0; i < count; i++) {
+            out_weights[i] = 1.0f / (float)count;
+        }
+    }
+    return 0;
+}
+
+float interop_transe_hits_at_k(const int *ranks, size_t rank_count, int k) {
+    if (!ranks || rank_count == 0 || k <= 0) return 0.0f;
+    size_t hits = 0;
+    for (size_t i = 0; i < rank_count; i++) {
+        if (ranks[i] > 0 && ranks[i] <= k) {
+            hits++;
+        }
+    }
+    return (float)hits / (float)rank_count;
+}
+
+float interop_transe_accumulator_k(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim) {
+    if (!prophet_emb || !prophecy_emb || count == 0 || dim == 0) return 0.0f;
+    float cumulative_deviation = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        float l2_sq = 0.0f;
+        for (size_t j = 0; j < dim; j++) {
+            float diff = prophet_emb[i * dim + j] - prophecy_emb[i * dim + j];
+            l2_sq += diff * diff;
+        }
+        cumulative_deviation += sqrtf(l2_sq);
+    }
+    return cumulative_deviation;
+}
+
+int interop_transe_verify_prophecy(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim, float threshold) {
+    float deviation = interop_transe_accumulator_k(prophet_emb, prophecy_emb, count, dim);
+    return (deviation <= threshold) ? 1 : 0;
+}

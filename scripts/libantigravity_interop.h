@@ -500,4 +500,10 @@ float interop_transe_mrr_score(const int *ranks, size_t rank_count);
 float interop_transe_bern_probability(float t_avg, float h_avg);
 float interop_transe_nmr_score(const int *ranks, const int *pool_sizes, size_t rank_count);
 
+int interop_transe_self_adversarial_weight(const float *neg_scores, float alpha, float *out_weights, size_t count);
+float interop_transe_hits_at_k(const int *ranks, size_t rank_count, int k);
+
+float interop_transe_accumulator_k(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim);
+int interop_transe_verify_prophecy(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim, float threshold);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
