@@ -173,4 +173,7 @@ assets/*.jpai
 # Ignore test_animation binary and outputs
 /scripts/test_animation
 /assets/test_animation_out.ppm
+/scripts/tsfi2_demo_papers
+/assets/papers_demo.mp4
+
 
