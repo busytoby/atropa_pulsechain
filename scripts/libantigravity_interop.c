@@ -1059,3 +1059,38 @@ int interop_knn_search(const InteropKNNAgent *agents, size_t count, const uint64
     }
     return (int)k;
 }
+
+int interop_coaxial_cluster(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign) {
+    if (!coords || count == 0 || !centroids || k == 0 || !assign) return -1;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t md = 0xFFFFFFFFFFFFFFFFULL;
+        uint32_t bc = 0;
+        for (size_t j = 0; j < k; j++) {
+            uint64_t dist = interop_knn_distance(&coords[i * 3], &centroids[j * 3]);
+            if (dist < md) {
+                md = dist;
+                bc = (uint32_t)j;
+            }
+        }
+        assign[i] = bc;
+    }
+    uint64_t ct[16] = {0};
+    uint64_t sm[16][3] = {{0}};
+    for (size_t i = 0; i < count; i++) {
+        uint32_t c = assign[i];
+        if (c < 16) {
+            sm[c][0] += coords[i * 3 + 0];
+            sm[c][1] += coords[i * 3 + 1];
+            sm[c][2] += coords[i * 3 + 2];
+            ct[c]++;
+        }
+    }
+    for (size_t j = 0; j < k; j++) {
+        if (j < 16 && ct[j] > 0) {
+            centroids[j * 3 + 0] = sm[j][0] / ct[j];
+            centroids[j * 3 + 1] = sm[j][1] / ct[j];
+            centroids[j * 3 + 2] = sm[j][2] / ct[j];
+        }
+    }
+    return 0;
+}

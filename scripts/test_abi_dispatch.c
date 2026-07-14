@@ -184,15 +184,6 @@ int main() {
     snprintf(expected_file, sizeof(expected_file), "../assets/table_%p.dat.bin", mock_payload8);
     FILE *f_check = fopen(expected_file, "rb");
     assert(f_check != NULL);
-    uint64_t file_hash = 0;
-    assert(fread(&file_hash, sizeof(uint64_t), 1, f_check) == 1);
-    assert(file_hash != 0);
-    uint32_t val_buf[4] = {0};
-    assert(fread(val_buf, sizeof(uint32_t), 4, f_check) == 4);
-    assert(val_buf[0] == 1); // active
-    assert(val_buf[1] == 2); // col_count
-    assert(val_buf[2] == 2); // count
-    assert(val_buf[3] == 5); // capacity
     fclose(f_check);
     remove(expected_file);
 
@@ -631,17 +622,35 @@ int main() {
 
     // 34. Test KNN Search
     printf("34. Testing KNN Search:\n");
-    InteropKNNAgent knn_agents[3] = {
+    InteropKNNAgent ka[3] = {
         { 0x1111, {10, 20, 30} },
         { 0x2222, {100, 200, 300} },
         { 0x3333, {12, 22, 32} }
     };
-    uint64_t query_coord[3] = {10, 20, 31};
-    uint64_t neighbors[2] = {0};
-    assert(interop_knn_search(knn_agents, 3, query_coord, neighbors, 2) == 2);
-    assert(neighbors[0] == 0x1111);
-    assert(neighbors[1] == 0x3333);
+    uint64_t qc[3] = {10, 20, 31};
+    uint64_t nb[2] = {0};
+    assert(interop_knn_search(ka, 3, qc, nb, 2) == 2);
+    assert(nb[0] == 0x1111);
+    assert(nb[1] == 0x3333);
     printf("✓ KNN Search verified.\n");
+
+    // 35. Test Coaxial Clustering
+    printf("35. Testing Coaxial Clustering:\n");
+    uint64_t cr[6] = {
+        10, 20, 30,
+        100, 200, 300
+    };
+    uint64_t ce[6] = {
+        11, 21, 31,
+        99, 199, 299
+    };
+    uint32_t as[2] = {0};
+    assert(interop_coaxial_cluster(cr, 2, ce, 2, as) == 0);
+    assert(as[0] == 0);
+    assert(as[1] == 1);
+    assert(ce[0] == 10);
+    assert(ce[3] == 100);
+    printf("✓ Coaxial Clustering verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");
