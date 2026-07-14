@@ -811,8 +811,23 @@ void blue_box_centrex_add_unicode_alias(const char *unicode_name, uint32_t targe
 
 uint32_t blue_box_centrex_resolve_unicode_route(const char *unicode_name) {
     if (!unicode_name) return 0;
-    uint32_t hash = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
-    return blue_box_centrex_lookup(hash);
+    uint32_t current = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
+    for (int depth = 0; depth < 8; depth++) {
+        uint32_t resolved = blue_box_centrex_lookup(current);
+        if (resolved == 0) return 0;
+        if (resolved >= 800 && resolved < 832) {
+            return resolved; // found physical target trunk
+        }
+        current = resolved; // keep resolving next hop
+    }
+    return 0; // recursion limit reached
+}
+
+void blue_box_centrex_add_unicode_forward(const char *src_name, const char *dest_name) {
+    if (!src_name || !dest_name) return;
+    uint32_t src_hash = calculate_crc32((const uint8_t *)src_name, strlen(src_name));
+    uint32_t dest_hash = calculate_crc32((const uint8_t *)dest_name, strlen(dest_name));
+    centrex_avl = avl_insert(centrex_avl, src_hash, dest_hash);
 }
 
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
