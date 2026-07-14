@@ -300,6 +300,24 @@ int main(void) {
     assert(abs_val < 0.05); 
     printf("[TEST] Trunk Line Splitting & 2600 Hz Notch Filter verified.\n");
 
+    // 27. Test BGP Peer Table Management & Precedence Routing
+    bool peer_ok = blue_box_add_bgp_peer(0x0A000001, 65001, 3, 20);
+    assert(peer_ok == true);
+    peer_ok = blue_box_add_bgp_peer(0x0A000002, 65002, 1, 45);
+    assert(peer_ok == true);
+    
+    uint32_t peer_prec = 0, peer_lat = 0;
+    bool peer_found = blue_box_get_bgp_peer(0x0A000001, &peer_prec, &peer_lat);
+    assert(peer_found == true);
+    assert(peer_prec == 3);
+    assert(peer_lat == 20);
+    
+    uint32_t ips[5];
+    uint32_t match_count = blue_box_query_bgp_peers_by_precedence(1, ips, 5);
+    assert(match_count == 1);
+    assert(ips[0] == 0x0A000002);
+    printf("[TEST] BGP Peer Table inserts and precedence-level queries verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

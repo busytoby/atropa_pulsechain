@@ -145,5 +145,8 @@ bool blue_box_dial_mf_digit(char digit);
 bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count);
 bool blue_box_trigger_wink(uint32_t duration_ms);
 bool blue_box_apply_notch_filter(const float *samples_in, float *samples_out, size_t count, bool split_active);
+bool blue_box_add_bgp_peer(uint32_t peer_ip, uint16_t peer_as, uint32_t precedence, uint32_t latency_ms);
+bool blue_box_get_bgp_peer(uint32_t peer_ip, uint32_t *precedence_out, uint32_t *latency_out);
+uint32_t blue_box_query_bgp_peers_by_precedence(uint32_t precedence, uint32_t *ips_out, uint32_t max_results);
 
 #endif

@@ -1638,3 +1638,62 @@ bool blue_box_apply_notch_filter(const float *samples_in, float *samples_out, si
     
     return true;
 }
+
+// 17. BGP Peer Table Management & Precedence Routing
+#define MAX_BGP_PEERS 32
+
+typedef struct {
+    uint32_t peer_ip;
+    uint16_t peer_as;
+    uint32_t precedence;
+    uint32_t latency_ms;
+} BGPPeer;
+
+static BGPPeer g_bgp_peers[MAX_BGP_PEERS];
+static size_t g_bgp_peer_count = 0;
+
+bool blue_box_add_bgp_peer(uint32_t peer_ip, uint16_t peer_as, uint32_t precedence, uint32_t latency_ms) {
+    // Check if peer already exists, update if so
+    for (size_t i = 0; i < g_bgp_peer_count; i++) {
+        if (g_bgp_peers[i].peer_ip == peer_ip) {
+            g_bgp_peers[i].peer_as = peer_as;
+            g_bgp_peers[i].precedence = precedence;
+            g_bgp_peers[i].latency_ms = latency_ms;
+            printf("[BGP PEER] Updated peer IP: 0x%X (AS: %u, Precedence: %u, Latency: %u ms)\n",
+                   peer_ip, peer_as, precedence, latency_ms);
+            return true;
+        }
+    }
+    if (g_bgp_peer_count >= MAX_BGP_PEERS) return false;
+    g_bgp_peers[g_bgp_peer_count].peer_ip = peer_ip;
+    g_bgp_peers[g_bgp_peer_count].peer_as = peer_as;
+    g_bgp_peers[g_bgp_peer_count].precedence = precedence;
+    g_bgp_peers[g_bgp_peer_count].latency_ms = latency_ms;
+    g_bgp_peer_count++;
+    printf("[BGP PEER] Added new peer IP: 0x%X (AS: %u, Precedence: %u, Latency: %u ms)\n",
+           peer_ip, peer_as, precedence, latency_ms);
+    return true;
+}
+
+bool blue_box_get_bgp_peer(uint32_t peer_ip, uint32_t *precedence_out, uint32_t *latency_out) {
+    if (!precedence_out || !latency_out) return false;
+    for (size_t i = 0; i < g_bgp_peer_count; i++) {
+        if (g_bgp_peers[i].peer_ip == peer_ip) {
+            *precedence_out = g_bgp_peers[i].precedence;
+            *latency_out = g_bgp_peers[i].latency_ms;
+            return true;
+        }
+    }
+    return false;
+}
+
+uint32_t blue_box_query_bgp_peers_by_precedence(uint32_t precedence, uint32_t *ips_out, uint32_t max_results) {
+    if (!ips_out || max_results == 0) return 0;
+    uint32_t count = 0;
+    for (size_t i = 0; i < g_bgp_peer_count && count < max_results; i++) {
+        if (g_bgp_peers[i].precedence == precedence) {
+            ips_out[count++] = g_bgp_peers[i].peer_ip;
+        }
+    }
+    return count;
+}
