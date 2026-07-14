@@ -240,6 +240,31 @@ int main(void) {
     assert(symmetry > 0.0f);
     printf("[TEST] Visual Coverage (%.4f) & Symmetry (%.4f) telemetry verification passed.\n", coverage, symmetry);
 
+    // 23. Test MF Dialing Sequence State Machine & Router
+    bool d_kp = blue_box_dial_mf_digit('K');
+    assert(d_kp == true);
+    uint64_t reg_state = lau_yul_thunk_sload(0xF130);
+    assert(reg_state == 1);
+    
+    blue_box_dial_mf_digit('8');
+    blue_box_dial_mf_digit('0');
+    blue_box_dial_mf_digit('8');
+    uint64_t reg_hash = lau_yul_thunk_sload(0xF131);
+    assert(reg_hash == 808);
+    
+    bool d_st = blue_box_dial_mf_digit('S');
+    assert(d_st == true);
+    reg_state = lau_yul_thunk_sload(0xF130);
+    assert(reg_state == 2);
+    printf("[TEST] MF Dialing sequence state machine (KP + 808 + ST) verified in VM registers.\n");
+    
+    // 24. Test Formant Vowel Vocable Synthesizer
+    float vowel_samples[160];
+    bool vowel_ok = blue_box_synthesize_vowel('A', vowel_samples, 160);
+    assert(vowel_ok == true);
+    assert(vowel_samples[0] == 0.0f);
+    printf("[TEST] Formant Vowel Vocable Synthesizer ('A' formants F1/F2/F3) verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

@@ -1530,3 +1530,66 @@ bool blue_box_evaluate_visual_coverage(const float *x_coords, const float *y_coo
     *symmetry_out = (float)sym_hits / (GRID_SIZE * (GRID_SIZE / 2));
     return true;
 }
+
+// 13. MF Dialing Sequence State Machine & Router
+static uint32_t g_mf_state = 0; // 0 = idle, 1 = dialing, 2 = routed
+static char g_mf_buffer[32] = {0};
+
+bool blue_box_dial_mf_digit(char digit) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    if (digit == 'K') { // Keypulse (KP) initiates dialing
+        g_mf_state = 1;
+        memset(g_mf_buffer, 0, sizeof(g_mf_buffer));
+        lau_yul_thunk_sstore(0xF130, 1);
+        lau_yul_thunk_sstore(0xF131, 0);
+        printf("[MF STATE] KP tone received. Resetting digit dialing buffer.\n");
+        return true;
+    }
+    if (g_mf_state == 1) {
+        if (digit >= '0' && digit <= '9') {
+            size_t len = strlen(g_mf_buffer);
+            if (len < sizeof(g_mf_buffer) - 1) {
+                g_mf_buffer[len] = digit;
+                // Accumulate hash in VM storage
+                uint64_t hash = 0;
+                for (size_t i = 0; g_mf_buffer[i]; i++) {
+                    hash = hash * 10 + (g_mf_buffer[i] - '0');
+                }
+                lau_yul_thunk_sstore(0xF131, hash);
+                printf("[MF STATE] Digit '%c' appended. Buffer: %s (VM Hash: %lu)\n", digit, g_mf_buffer, hash);
+            }
+            return true;
+        }
+        if (digit == 'S') { // Start (ST) terminates and routes
+            g_mf_state = 2;
+            lau_yul_thunk_sstore(0xF130, 2);
+            printf("[MF STATE] ST tone received. Dialing complete. Routing trunk call to: %s\n", g_mf_buffer);
+            return true;
+        }
+    }
+    return false;
+}
+
+// 14. Formant Vowel Vocable Synthesizer
+bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count) {
+    if (!samples_out || count == 0) return false;
+    
+    // Formant definitions: F1, F2, F3 frequencies per vowel vocable
+    uint32_t f1 = 0, f2 = 0, f3 = 0;
+    switch (vowel) {
+        case 'A': f1 = 730;  f2 = 1090; f3 = 2440; break;
+        case 'E': f1 = 530;  f2 = 1840; f3 = 2480; break;
+        case 'I': f1 = 270;  f2 = 2290; f3 = 3010; break;
+        case 'O': f1 = 570;  f2 = 840;  f3 = 2410; break;
+        case 'U': f1 = 300;  f2 = 870;  f3 = 2240; break;
+        default: return false;
+    }
+    
+    double fs = 8000.0;
+    for (size_t n = 0; n < count; n++) {
+        double t = (double)n / fs;
+        // Superpose the three formants to synthesize human vocable
+        samples_out[n] = 0.33f * (sin(2.0 * M_PI * f1 * t) + sin(2.0 * M_PI * f2 * t) + sin(2.0 * M_PI * f3 * t));
+    }
+    return true;
+}

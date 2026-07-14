@@ -141,5 +141,7 @@ void blue_box_ouroboros_tick(void);
 bool blue_box_verify_dual_stack(const uint8_t *sig, size_t sig_len, const uint8_t *pubkey, size_t pubkey_len, uint64_t max_pll_deviation);
 bool blue_box_generate_tone(uint32_t freq1, uint32_t freq2, float *samples_out, size_t count);
 bool blue_box_evaluate_visual_coverage(const float *x_coords, const float *y_coords, size_t count, float *coverage_out, float *symmetry_out);
+bool blue_box_dial_mf_digit(char digit);
+bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count);
 
 #endif
