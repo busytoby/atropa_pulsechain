@@ -414,6 +414,18 @@ Status: Awaiting hero to join the battle.</div>
         let particles = [];
         let friendlyNpcs = [];
         let adversaryNpcs = [];
+        
+        const myPlayerId = Math.random().toString(36).substring(2, 11);
+        const CHAR_TYPES = ["Warrior", "Valkyrie", "Wizard", "Elf"];
+        const myCharType = CHAR_TYPES[Math.floor(Math.random() * CHAR_TYPES.length)];
+        const charColors = {
+            "Warrior": "#2979ff",
+            "Valkyrie": "#ff1744",
+            "Wizard": "#ffd600",
+            "Elf": "#00e676"
+        };
+        let otherPlayers = {};
+        let multiplayerTimer = 0;
 
         const keyboard = {};
         window.addEventListener("keydown", e => {
@@ -634,6 +646,7 @@ Status: Awaiting hero to join the battle.</div>
             particles = [];
             friendlyNpcs = [];
             adversaryNpcs = [];
+            otherPlayers = {};
             document.getElementById("btnStart").innerText = "Start Game";
         }
 
@@ -919,6 +932,12 @@ Status: Awaiting hero to join the battle.</div>
 
         function update() {
             if (!gameActive) return;
+
+            multiplayerTimer++;
+            if (multiplayerTimer > 6) {
+                multiplayerTimer = 0;
+                syncMultiplayerState();
+            }
 
             // Health drains slowly (1 point per 6 frames, classic arcade)
             health -= 0.15;
@@ -1246,6 +1265,27 @@ Status: Awaiting hero to join the battle.</div>
                 ctx.stroke();
             });
 
+            // Draw Other Multiplayer Peers
+            for (let pid in otherPlayers) {
+                const op = otherPlayers[pid];
+                ctx.strokeStyle = charColors[op.charType] || "#ffffff";
+                ctx.shadowColor = charColors[op.charType] || "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(op.x, op.y - 12);
+                ctx.lineTo(op.x + 12, op.y);
+                ctx.lineTo(op.x, op.y + 12);
+                ctx.lineTo(op.x - 12, op.y);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.font = "9px Orbitron";
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.fillText(`${op.charType} (${Math.round(op.health)})`, op.x, op.y - 16);
+                ctx.textAlign = "left";
+            }
+
             // Draw player axes
             axes.forEach(ax => {
                 drawVectorLine(ax.x, ax.y, ax.x - ax.vx, ax.y - ax.vy, "#ffd600", 3, 4);
@@ -1401,6 +1441,31 @@ Status: Awaiting hero to join the battle.</div>
             "function approve(address spender, uint256 amount) public returns (bool)",
             "function allowance(address owner, address spender) public view returns (uint256)"
         ];
+
+        async function syncMultiplayerState() {
+            try {
+                const res = await fetch("/api/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: myPlayerId,
+                        x: player.x,
+                        y: player.y,
+                        charType: myCharType,
+                        health: health,
+                        score: score,
+                        time: Date.now()
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    delete data[myPlayerId];
+                    otherPlayers = data;
+                }
+            } catch (e) {
+                console.warn("Multiplayer sync failed:", e);
+            }
+        }
 
         async function connectWallet() {
             if (typeof window.ethereum === "undefined") {
