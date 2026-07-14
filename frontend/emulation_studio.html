@@ -445,6 +445,9 @@
                     <div id="trunkStatusGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-family: 'Fira Code', monospace; font-size: 0.75rem;">
                         <!-- JS generated trunks -->
                     </div>
+                    <div style="font-family: 'Fira Code', monospace; font-size: 0.8rem; color: var(--glow-cyan); margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px;" id="blueboxBlockDisplay">
+                        BLOCK: 0 | HASH: 00000000...
+                    </div>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -1412,6 +1415,32 @@
             '0': [1300, 1500], 'K': [1100, 1700], 'S': [1500, 1700]
         };
 
+        let activeBlockNum = 0;
+        let activeParentHash = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        async function syncBlueBoxWithServer(action, extra = {}) {
+            try {
+                const payload = Object.assign({ action: action }, extra);
+                const response = await fetch('/api/bluebox', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await response.json();
+                if (res && res.block_number !== undefined) {
+                    activeBlockNum = res.block_number;
+                    activeParentHash = res.state_hash;
+                    document.getElementById("blueboxBlockDisplay").innerText = `BLOCK: ${activeBlockNum} | HASH: ${activeParentHash.substring(0, 16)}...`;
+                } else if (res && res.state) {
+                    activeBlockNum = res.state.block_number;
+                    activeParentHash = res.state.state_hash;
+                    document.getElementById("blueboxBlockDisplay").innerText = `BLOCK: ${activeBlockNum} | HASH: ${activeParentHash.substring(0, 16)}...`;
+                }
+            } catch (e) {
+                console.warn("Server bluebox state unreachable. Operating in local sandbox.", e);
+            }
+        }
+
         function renderTrunks() {
             const grid = document.getElementById("trunkStatusGrid");
             grid.innerHTML = "";
@@ -1437,6 +1466,7 @@
             logEvent("Computel Blue Box: Emitted 2600 Hz SF Seizure tone. Tandem seized.");
             document.getElementById("dialDisplay").innerText = "SEIZED";
             dialBuffer = "";
+            syncBlueBoxWithServer('query');
         }
 
         function dialMf(digit) {
@@ -1447,7 +1477,6 @@
                 document.getElementById("dialDisplay").innerText = dialBuffer;
                 logEvent(`Computel Blue Box: Dialed MF '${digit}' (${pair[0]}+${pair[1]} Hz)`);
 
-                // Simple simulated tandem switch check
                 if (dialBuffer.endsWith("S") && dialBuffer.startsWith("K")) {
                     const trunkNum = parseInt(dialBuffer.substring(1, 4));
                     if (trunkNum >= 800 && trunkNum < 816) {
@@ -1457,11 +1486,17 @@
                             target.freq = "MF Session";
                             renderTrunks();
                             logEvent(`Computel Tandem Switch: Bridged line successfully to Trunk ${trunkNum}!`);
+                            syncBlueBoxWithServer('commit', {
+                                block_number: activeBlockNum + 1,
+                                parent_hash: activeParentHash,
+                                active_trunk: trunkNum
+                            });
                         }
                     }
                     dialBuffer = "";
                 }
             }
+        }
         function playRedBoxCoin(denom) {
             let beeps = 0;
             if (denom === 5) beeps = 1;
@@ -1501,6 +1536,7 @@
             drawGrid();
             drawBear();
             renderTrunks();
+            syncBlueBoxWithServer('query');
             // Animation tick
             setInterval(drawBear, 50);
             logEvent("Studio fully active.");
