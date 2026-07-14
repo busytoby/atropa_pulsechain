@@ -291,3 +291,19 @@ To secure the multi-dimensional tree topology of parent-child execution threads 
     Scheduled transitions are dispatched concurrently across multiple SIMD tracks matching the tree topology.
 3.  **Adaptive Gas Calibration Loops**:
     Host profiling metrics are logged dynamically in `gas_calibration_table`, allowing JIT compiler fee rates to scale automatically to match CPU load.
+
+---
+
+## 19. Accumulator-Gated Decision Trees
+
+For stateful branching execution pathways, CSML-L2 implements accumulator-gated decision trees:
+
+1.  **Accumulator Gated Traversal**:
+    Branching decisions are resolved by comparing accumulator values against node thresholds:
+    $$\text{Branch}(d) = \begin{cases} \text{Left} & \text{if } V_{\text{accum}} \ge T_d \\ \text{Right} & \text{otherwise} \end{cases}$$
+2.  **State-Proof Multi-Branch Path Hashing (MBPH)**:
+    Traversed decision paths are serialized and hashed as an FNV-1a cascade, creating a verifiable $O(1)$ path proof.
+3.  **Bit-Packed Decision Nodes**:
+    Node structures (threshold, children pointers, selector) are compressed into compact 64-bit aligned blocks.
+4.  **Adaptive Branch Gas Gating**:
+    Gas consumption scales based on branching depth, deterring denial-of-service profiling exploits.
