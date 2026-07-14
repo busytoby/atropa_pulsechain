@@ -128,7 +128,7 @@ Implements Kermit-style file transfer protocols directly over the RDBMS-PLL phas
 Implements a Universal Turing Machine (UTM) interpreter directly over the coaxial RDBMS structures. The infinite tape register is mapped onto `trie_route_table` (MT-01), the transition state rules onto `jit_reflection_table` (MT-06), and the control head pointer onto `cpu_snapshot_table` (MT-09). Using `interop_turing_run_step`, cells are read, rules matched, tape values updated, and head movements tracked, proving that the RDBMS-PLL-DAT Media layout is **fully Turing-complete**.
 
 ### K. Lock-Free SPSC Coaxial Ring Queue
-Provides a high-throughput, Single-Producer Single-Consumer (SPSC) ring queue implementation (`InteropCoaxialQueue`) mapping queue buffers directly inside the coaxial shared memory segment. Items are enqueued (`interop_queue_push`) and dequeued (`interop_queue_pop`) using atomic load-acquire and store-release semantics, eliminating thread locking overhead.
+Provides a high-throughput, Single-Producer Single-Consumer (SPSC) ring queue implementation (`InteropCoaxialQueue`) mapping queue buffers directly inside the coaxial shared memory segment. Items are enqueued (`interop_queue_push`) and deleted (`interop_queue_pop`) using atomic load-acquire and store-release semantics, eliminating thread locking overhead.
 
 ### L. Bitcoin Covenant State Evolution Verification
 Integrates Bitcoin-style covenant rules to verify state-to-state evolution of the Universal Turing Machine database. Rather than tracking sequential transaction histories in blocks, state coordinates are cryptographically anchored using FNV-1a block checksum hash links (`InteropCovenantState`). A state change transaction spent via UTXO execution is validated using `interop_covenant_verify_evolution`, proving correctness of state-to-state mutations and establishing immutable decentralization guarantees.
@@ -144,6 +144,9 @@ Secures the off-chain rollup pipeline against invalid state assertions. The `int
 
 ### P. Parallel Vectorized FNV-1a Checksums (SIMD-Equivalent Hashing)
 Uses parallel multi-lane word unrolling (`fnv1a_hash_vectorized`) to compute data table checksums across four 64-bit vector lanes, removing CPU profiling bottlenecks during deep state table serialization.
+
+### Q. Bidirectional Host Response Verification
+Validates execution status and return values transmitted by the host VM back to the L1 Bitcoin chain. The `interop_covenant_verify_response` API evaluates exit codes and return values inside UTXO spending validations.
 
 ---
 
@@ -161,7 +164,7 @@ Performance metrics compiled using the standalone compilation profiler (`benchma
 
 ## 7. Verification Harness
 
-To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, Yul virtual contract covenant deployments, Layer-2 Rollup batches, Optimistic Fraud Proofs, and Parallel Vectorized Hashing:
+To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, Yul virtual contract covenant deployments, Layer-2 Rollup batches, Optimistic Fraud Proofs, Parallel Vectorized Hashing, and Bidirectional Host Responses:
 
 ```bash
 cd scripts

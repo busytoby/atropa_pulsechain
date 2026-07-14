@@ -805,6 +805,16 @@ int main() {
     free(temp_b_tape_mem);
     free(state1_tape_mem);
 
+    // 27. Test Bidirectional Host Response Handshake
+    printf("27. Testing Host Response:\n");
+    InteropTuringResponse mock_response;
+    mock_response.exit_code = 0;
+    mock_response.return_value = 999;
+    mock_response.next_state_hash = 0x88888888ULL;
+    assert(interop_covenant_verify_response(&mock_response, 0x88888888ULL, 0, 999) == 1);
+    assert(interop_covenant_verify_response(&mock_response, 0x88888888ULL, 1, 999) == -3);
+    printf("✓ Host Response verified.\n");
+
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");
 

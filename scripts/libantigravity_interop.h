@@ -196,4 +196,13 @@ int interop_covenant_verify_batch(InteropRollupBatch *batch, InteropTuringState 
 int interop_covenant_prove_fraud(uint64_t disputed_prev_hash, uint64_t asserted_next_hash, InteropTuringState *turing, InteropCoaxialTable *tape, const InteropCoaxialTable *rules);
 uint64_t fnv1a_hash_vectorized(uint64_t initial_hash, const void *data, size_t len);
 
+typedef struct {
+    uint32_t exit_code;
+    uint32_t padding;
+    uint64_t return_value;
+    uint64_t next_state_hash;
+} InteropTuringResponse;
+
+int interop_covenant_verify_response(const InteropTuringResponse *response, uint64_t expected_hash, uint32_t expected_exit_code, uint64_t expected_return);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

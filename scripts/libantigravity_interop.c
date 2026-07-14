@@ -846,3 +846,11 @@ int interop_covenant_prove_fraud(uint64_t disputed_prev_hash, uint64_t asserted_
     }
     return 0;
 }
+
+int interop_covenant_verify_response(const InteropTuringResponse *response, uint64_t expected_hash, uint32_t expected_exit_code, uint64_t expected_return) {
+    if (!response) return -1;
+    if (response->next_state_hash != expected_hash) return -2;
+    if (response->exit_code != expected_exit_code) return -3;
+    if (response->return_value != expected_return) return -4;
+    return 1;
+}
