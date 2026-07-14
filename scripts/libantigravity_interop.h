@@ -506,4 +506,8 @@ float interop_transe_hits_at_k(const int *ranks, size_t rank_count, int k);
 float interop_transe_accumulator_k(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim);
 int interop_transe_verify_prophecy(const float *prophet_emb, const float *prophecy_emb, size_t count, size_t dim, float threshold);
 
+int interop_transe_adaptive_horizon(float variance, float beta, int base_k, int min_k, int max_k);
+int interop_transe_momentum_correct(float *prophet, const float *prophecy, size_t dim, float gamma);
+int interop_graph_synthesize_prophecy(const InteropQuadNode *nodes, size_t node_count, const float *graph_embeddings, float *out_prophecy, size_t dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

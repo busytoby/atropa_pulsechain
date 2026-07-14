@@ -1494,3 +1494,40 @@ int interop_transe_verify_prophecy(const float *prophet_emb, const float *prophe
     float deviation = interop_transe_accumulator_k(prophet_emb, prophecy_emb, count, dim);
     return (deviation <= threshold) ? 1 : 0;
 }
+
+int interop_transe_adaptive_horizon(float variance, float beta, int base_k, int min_k, int max_k) {
+    float scale = 1.0f - tanhf(beta * variance);
+    int new_k = (int)(base_k * scale);
+    if (new_k < min_k) new_k = min_k;
+    if (new_k > max_k) new_k = max_k;
+    return new_k;
+}
+
+int interop_transe_momentum_correct(float *prophet, const float *prophecy, size_t dim, float gamma) {
+    if (!prophet || !prophecy || dim == 0) return -1;
+    for (size_t i = 0; i < dim; i++) {
+        prophet[i] = (1.0f - gamma) * prophet[i] + gamma * prophecy[i];
+    }
+    return 0;
+}
+
+int interop_graph_synthesize_prophecy(const InteropQuadNode *nodes, size_t node_count, const float *graph_embeddings, float *out_prophecy, size_t dim) {
+    if (!nodes || !graph_embeddings || !out_prophecy || node_count == 0 || dim == 0) return -1;
+    memset(out_prophecy, 0, dim * sizeof(float));
+    float weight_sum = 0.0f;
+    for (size_t i = 0; i < node_count; i++) {
+        float node_val = (float)nodes[i].value;
+        if (node_val > 0.0f) {
+            weight_sum += node_val;
+            for (size_t j = 0; j < dim; j++) {
+                out_prophecy[j] += node_val * graph_embeddings[i * dim + j];
+            }
+        }
+    }
+    if (weight_sum > 0.0f) {
+        for (size_t j = 0; j < dim; j++) {
+            out_prophecy[j] /= weight_sum;
+        }
+    }
+    return 0;
+}
