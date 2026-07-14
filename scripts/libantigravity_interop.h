@@ -422,4 +422,21 @@ int interop_rdbms_autocomplete_trie(const char *prefix, char *out_suggestion, si
 uint32_t interop_rdbms_route_suggestion(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t load_factor);
 int interop_rdbms_validate_sql_ntm(const char *filepath, uint8_t *sql_tape, size_t len, uint32_t *final_state);
 
+typedef struct {
+    uint32_t neuron_id;
+    float state;
+    InteropVaesenScores vaesen;
+} InteropOuroborosNeuron;
+
+typedef struct {
+    uint32_t src_id;
+    uint32_t dest_id;
+    float weight;
+    uint32_t active;
+} InteropOuroborosSynapse;
+
+void interop_ouroboros_forward(InteropOuroborosNeuron *neurons, size_t neuron_count, const InteropOuroborosSynapse *synapses, size_t synapse_count);
+void interop_ouroboros_gate_loops(InteropOuroborosSynapse *synapses, size_t synapse_count, const InteropOuroborosNeuron *neurons, size_t neuron_count, float max_doubt, float max_shame);
+int interop_ouroboros_validate_cycle_ntm(const char *filepath, uint8_t *cycle_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

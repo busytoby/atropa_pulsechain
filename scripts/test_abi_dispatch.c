@@ -1092,6 +1092,27 @@ int main() {
     remove(tm_file);
     printf("✓ Trie autocomplete, suggestion routing, and NTM SQL validation verified.\n");
 
+    // 115-117. Test Ouroboros forward pass, loop gating, and cycle validation
+    InteropOuroborosNeuron test_neurons[2] = {
+        { 0, 1.0f, { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f } },
+        { 1, 0.0f, { 0.5f, 0.1f, 0.7f, 0.0f, 0.0f } }
+    };
+    InteropOuroborosSynapse test_synapses[1] = {
+        { 0, 1, 2.5f, 1 }
+    };
+    interop_ouroboros_forward(test_neurons, 2, test_synapses, 1);
+    assert(test_neurons[1].state == 2.5f);
+    test_neurons[0].vaesen.doubt = 0.8f;
+    interop_ouroboros_gate_loops(test_synapses, 1, test_neurons, 2, 0.5f, 0.5f);
+    assert(test_synapses[0].active == 0);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t cycle_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t cycle_state = 0;
+    assert(interop_ouroboros_validate_cycle_ntm(tm_file, cycle_tape, 4, &cycle_state) == 1);
+    assert(cycle_state == 1);
+    remove(tm_file);
+    printf("✓ Ouroboros forward pass, loop gating, and cycle validation verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

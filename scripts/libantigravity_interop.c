@@ -2236,3 +2236,36 @@ uint32_t interop_rdbms_route_suggestion(const InteropMultiDecisionNode *nodes, u
 int interop_rdbms_validate_sql_ntm(const char *filepath, uint8_t *sql_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, sql_tape, len, 20, final_state);
 }
+
+void interop_ouroboros_forward(InteropOuroborosNeuron *neurons, size_t neuron_count, const InteropOuroborosSynapse *synapses, size_t synapse_count) {
+    if (!neurons || !synapses || neuron_count == 0 || synapse_count == 0) return;
+    float *acc = (float *)calloc(neuron_count, sizeof(float));
+    if (!acc) return;
+    for (size_t i = 0; i < synapse_count; i++) {
+        if (synapses[i].active && synapses[i].src_id < neuron_count && synapses[i].dest_id < neuron_count) {
+            acc[synapses[i].dest_id] += neurons[synapses[i].src_id].state * synapses[i].weight;
+        }
+    }
+    for (size_t i = 0; i < neuron_count; i++) {
+        neurons[i].state = acc[i];
+    }
+    free(acc);
+}
+
+void interop_ouroboros_gate_loops(InteropOuroborosSynapse *synapses, size_t synapse_count, const InteropOuroborosNeuron *neurons, size_t neuron_count, float max_doubt, float max_shame) {
+    if (!synapses || !neurons || neuron_count == 0) return;
+    for (size_t i = 0; i < synapse_count; i++) {
+        uint32_t src = synapses[i].src_id;
+        uint32_t dest = synapses[i].dest_id;
+        if (src < neuron_count && dest < neuron_count) {
+            if (neurons[src].vaesen.doubt > max_doubt || neurons[src].vaesen.shame > max_shame ||
+                neurons[dest].vaesen.doubt > max_doubt || neurons[dest].vaesen.shame > max_shame) {
+                synapses[i].active = 0;
+            }
+        }
+    }
+}
+
+int interop_ouroboros_validate_cycle_ntm(const char *filepath, uint8_t *cycle_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, cycle_tape, len, 20, final_state);
+}
