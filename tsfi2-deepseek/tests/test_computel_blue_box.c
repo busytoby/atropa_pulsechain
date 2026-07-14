@@ -453,6 +453,14 @@ int main(void) {
     assert(comp_out[2] == 2 && comp_out[3] == 0xBB);
     assert(comp_out[4] == 5 && comp_out[5] == 0xCC);
 
+    // 26. Test Citrix Delta-Modulation Audio/Tone Compression
+    extern size_t blue_box_citrix_compress_audio(const float *samples, size_t count, uint8_t *compressed_out, size_t max_out);
+    float test_audio[5] = {0.1f, 0.2f, 0.3f, 0.2f, 0.1f};
+    uint8_t comp_aud[32];
+    size_t aud_len = blue_box_citrix_compress_audio(test_audio, 5, comp_aud, sizeof(comp_aud));
+    assert(aud_len == 5);
+    assert(comp_aud[0] == 12);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -463,6 +471,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, and Citrix Frame Compression tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, and Citrix Audio Compression tests passed successfully.\n");
     return 0;
 }

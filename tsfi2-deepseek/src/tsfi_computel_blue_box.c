@@ -1168,3 +1168,16 @@ size_t blue_box_citrix_compress_frame(const uint8_t *fb, size_t size, uint8_t *c
     }
     return write_idx;
 }
+
+size_t blue_box_citrix_compress_audio(const float *samples, size_t count, uint8_t *compressed_out, size_t max_out) {
+    if (!samples || count == 0 || !compressed_out || max_out == 0) return 0;
+    size_t write_bytes = 0;
+    float last_val = 0.0f;
+    for (size_t i = 0; i < count && write_bytes < max_out; i++) {
+        float delta = samples[i] - last_val;
+        int8_t step = (int8_t)(delta * 127.0f);
+        compressed_out[write_bytes++] = (uint8_t)step;
+        last_val = last_val + ((float)step / 127.0f);
+    }
+    return write_bytes;
+}
