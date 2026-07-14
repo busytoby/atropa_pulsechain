@@ -602,4 +602,8 @@ int interop_logic_check_consistency(const int *edges_src, const int *edges_rel, 
 int interop_poly_relation_compose_verify(const float *r1, const float *r2, const float *r3, size_t dim, float threshold, int *out_verified);
 int interop_poly_relation_inverse_verify(const float *r1, const float *r2, size_t dim, float threshold, int *out_verified);
 
+int interop_logic_forall_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_satisfied);
+int interop_logic_exists_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_satisfied);
+int interop_logic_not_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, int o, int *out_satisfied);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

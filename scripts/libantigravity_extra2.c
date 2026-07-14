@@ -1079,3 +1079,65 @@ int interop_poly_relation_inverse_verify(const float *r1, const float *r2, size_
     *out_verified = (dist < threshold) ? 1 : 0;
     return 0;
 }
+
+int interop_logic_forall_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_satisfied) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !entity_ids || !entity_types || num_entities == 0 || !out_satisfied) return -1;
+    *out_satisfied = 1;
+    int found_any = 0;
+    for (size_t i = 0; i < num_edges; i++) {
+        if (edges_src[i] == s && edges_rel[i] == p) {
+            found_any = 1;
+            int dst = edges_dst[i];
+            int type_match = 0;
+            for (size_t idx = 0; idx < num_entities; idx++) {
+                if (entity_ids[idx] == dst) {
+                    if (entity_types[idx] == expected_type) {
+                        type_match = 1;
+                    }
+                    break;
+                }
+            }
+            if (!type_match) {
+                *out_satisfied = 0;
+                return 0;
+            }
+        }
+    }
+    if (!found_any) {
+        *out_satisfied = 1;
+    }
+    return 0;
+}
+
+int interop_logic_exists_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_satisfied) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !entity_ids || !entity_types || num_entities == 0 || !out_satisfied) return -1;
+    *out_satisfied = 0;
+    for (size_t i = 0; i < num_edges; i++) {
+        if (edges_src[i] == s && edges_rel[i] == p) {
+            int dst = edges_dst[i];
+            for (size_t idx = 0; idx < num_entities; idx++) {
+                if (entity_ids[idx] == dst) {
+                    if (entity_types[idx] == expected_type) {
+                        *out_satisfied = 1;
+                        return 0;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int interop_logic_not_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, int o, int *out_satisfied) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !out_satisfied) return -1;
+    int exists = 0;
+    for (size_t i = 0; i < num_edges; i++) {
+        if (edges_src[i] == s && edges_rel[i] == p && edges_dst[i] == o) {
+            exists = 1;
+            break;
+        }
+    }
+    *out_satisfied = exists ? 0 : 1;
+    return 0;
+}
