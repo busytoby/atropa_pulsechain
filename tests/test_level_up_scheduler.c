@@ -95,9 +95,12 @@ bool pq_pop(PriorityQueue *pq, CoordinatedEvent *out_event) {
 }
 
 #include "tsfi_zmm_vm.h"
+#include "lau_yul_thunk.h"
 
 extern void blue_box_init_block(uint64_t block_num, const uint8_t *state_root_hash);
-extern void tsfi_ouroboros_pll_tick(uint64_t base);
+extern void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base);
+extern uint64_t lau_yul_thunk_sload(uint64_t key);
+extern void lau_yul_thunk_sstore(uint64_t key, uint64_t val);
 
 int main(void) {
     printf("=============================================================\n");
@@ -108,82 +111,48 @@ int main(void) {
     static TsfiZmmVmState vm_state;
     tsfi_zmm_vm_init(&vm_state);
     blue_box_init_block(1, NULL);
+    g_yul_evm_context.self_address = 0x200;
 
-    PriorityQueue pq;
-    pq_init(&pq);
-
-    // Setup coordinates/masks simulating PLL and PMG telemetry data
-    uint8_t pmg_collision_data[32] = {0};
-    pmg_collision_data[0] = 0x1F; // Atari collision register mask
-
-    uint8_t pll_drift_data[32] = {0};
-    pll_drift_data[0] = 0x90; // Drift deviation metric
-
-    uint8_t storage_data[32] = {0};
-    strcpy((char*)storage_data, "OUROBOROS_STACK_PUSH");
-
-    // 1. Push events with differing priorities representing game clock alignments
-    printf("1. Enqueuing system events into Priority Queue...\n");
+    // 1. Configure PMG positions and collision registers
+    printf("1. Configuring PMG coordinates and collision data:\n");
     
-    // PMG Collision: Immediate high priority (value 1)
-    CoordinatedEvent ev_pmg = {
-        .priority = 1,
-        .type = EVENT_PMG_COLLISION,
-        .timestamp = 100000,
-    };
-    memcpy(ev_pmg.data, pmg_collision_data, 32);
-    assert(pq_push(&pq, ev_pmg));
+    // Player position (10, 20)
+    lau_yul_thunk_sstore(0xF200, 10);
+    lau_yul_thunk_sstore(0xF201, 20);
     
-    // Storage sync: Medium priority (value 10)
-    CoordinatedEvent ev_storage = {
-        .priority = 10,
-        .type = EVENT_STACK_STORAGE_SYNC,
-        .timestamp = 100010,
-    };
-    memcpy(ev_storage.data, storage_data, 32);
-    assert(pq_push(&pq, ev_storage));
+    // Missile position (12, 22) => Distance = |10-12| + |20-22| = 4
+    lau_yul_thunk_sstore(0xF202, 12);
+    lau_yul_thunk_sstore(0xF203, 22);
+    
+    // Base frequency is 3, expected key = 3^4 = 81
+    lau_yul_thunk_sstore(0xF205, 81);
+    
+    // Trigger PMG collision register mask
+    lau_yul_thunk_sstore(0xF210, 0x1F);
+    
+    printf("   ✓ PMG state loaded: Player(10,20), Missile(12,22), Expected Key: 81\n\n");
 
-    // PLL Drift adjustment: Lower priority (value 5)
-    CoordinatedEvent ev_pll = {
-        .priority = 5,
-        .type = EVENT_PLL_DRIFT,
-        .timestamp = 100005,
-    };
-    memcpy(ev_pll.data, pll_drift_data, 32);
-    assert(pq_push(&pq, ev_pll));
+    // 2. Execute integrated tick with VALID key
+    printf("2. Running integrated scheduler tick with VALID TDMA proof key...\n");
+    tsfi_ouroboros_run_integrated_tick(10, 3);
     
-    printf("   ✓ Events enqueued successfully.\n\n");
+    uint64_t authorized = lau_yul_thunk_sload(0xF208);
+    printf("   -> TDMA Slot Lock status: %lu\n", authorized);
+    assert(authorized == 1);
+    printf("   ✓ TDMA proof check correctly authorized the lock.\n\n");
 
-    // 2. Pop events and verify prioritization ordering (Min-Heap: 1 -> 5 -> 10)
-    printf("2. Processing event queue in priority sequence:\n");
-    CoordinatedEvent popped;
+    // 3. Execute integrated tick with INVALID key
+    printf("3. Running integrated scheduler tick with INVALID TDMA proof key...\n");
     
-    // Expected 1: EVENT_PMG_COLLISION
-    assert(pq_pop(&pq, &popped));
-    printf("   -> Pop 1: Priority %u | Type %d | Timestamp %lu | Mask: 0x%02X\n", 
-           popped.priority, popped.type, popped.timestamp, popped.data[0]);
-    assert(popped.type == EVENT_PMG_COLLISION);
-    assert(popped.priority == 1);
+    // Set incorrect expected key
+    lau_yul_thunk_sstore(0xF205, 999);
+    tsfi_ouroboros_run_integrated_tick(10, 3);
     
-    // Expected 2: EVENT_PLL_DRIFT (Triggers Ouroboros Clock Filter update)
-    assert(pq_pop(&pq, &popped));
-    printf("   -> Pop 2: Priority %u | Type %d | Timestamp %lu | Drift: 0x%02X\n", 
-           popped.priority, popped.type, popped.timestamp, popped.data[0]);
-    assert(popped.type == EVENT_PLL_DRIFT);
-    assert(popped.priority == 5);
-    
-    printf("      [SCHEDULER] Dispatching Loop Filter calculation to Ouroboros PLL...\n");
-    tsfi_ouroboros_pll_tick(3);
-    printf("      [SCHEDULER] PLL loop filter tick executed successfully.\n");
-    
-    // Expected 3: EVENT_STACK_STORAGE_SYNC
-    assert(pq_pop(&pq, &popped));
-    printf("   -> Pop 3: Priority %u | Type %d | Timestamp %lu | Sync Command: '%s'\n", 
-           popped.priority, popped.type, popped.timestamp, (char*)popped.data);
-    assert(popped.type == EVENT_STACK_STORAGE_SYNC);
-    assert(popped.priority == 10);
+    authorized = lau_yul_thunk_sload(0xF208);
+    printf("   -> TDMA Slot Lock status: %lu\n", authorized);
+    assert(authorized == 0);
+    printf("   ✓ TDMA proof check correctly rejected the mismatching key.\n");
 
-    printf("\n   ✓ Queue popping follows Min-Heap bounds correctly!\n");
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

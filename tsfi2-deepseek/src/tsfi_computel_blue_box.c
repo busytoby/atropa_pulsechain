@@ -1418,9 +1418,9 @@ bool blue_box_send_udp_billing_alert(uint32_t port) {
 
 // 9. Closed-Loop Ouroboros Feedback
 void blue_box_ouroboros_tick(void) {
-    extern void tsfi_ouroboros_pll_tick(uint64_t base);
+    extern void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base);
     uint64_t base = current_block_state.nonce ? current_block_state.nonce : 3;
-    tsfi_ouroboros_pll_tick(base);
+    tsfi_ouroboros_run_integrated_tick(1, base);
 }
 
 // 10. BTC Script Dual Stack verification (A side standard crypto, B side PLL hardware telemetry)

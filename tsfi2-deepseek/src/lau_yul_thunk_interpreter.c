@@ -814,6 +814,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     memcpy(g_yul_evm_context.calldata, calldata, size_to_copy);
     g_yul_evm_context.calldatasize = size_to_copy;
 
+    uint64_t prev_self_address = g_yul_evm_context.self_address;
     g_yul_evm_context.self_address = c->virtual_address;
     g_yul_evm_context.caller_address.d[0] = 0x4cc;
     g_yul_evm_context.caller_address.d[1] = 0;
@@ -834,6 +835,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     } else {
         if (retval_len) *retval_len = 0;
     }
+    g_yul_evm_context.self_address = prev_self_address;
 
     if (success && strcmp(name, "cpu6502") == 0) {
         /* Simulate FET discharge decay on registers A, X, Y (addresses 128, 129, 130) */
@@ -860,13 +862,23 @@ void lau_yul_thunk_sstore(uint64_t key, uint64_t value) {
     key_u256.d[0] = key;
     u256_t val = {{0}};
     val.d[0] = value;
+    uint64_t prev_addr = g_yul_evm_context.self_address;
+    if (key >= 0xF000) {
+        g_yul_evm_context.self_address = 0x200;
+    }
     context_sstore(&g_yul_evm_context, key_u256, val);
+    g_yul_evm_context.self_address = prev_addr;
 }
 
 uint64_t lau_yul_thunk_sload(uint64_t key) {
     u256_t key_u256 = {{0}};
     key_u256.d[0] = key;
+    uint64_t prev_addr = g_yul_evm_context.self_address;
+    if (key >= 0xF000) {
+        g_yul_evm_context.self_address = 0x200;
+    }
     u256_t val = context_sload(&g_yul_evm_context, key_u256);
+    g_yul_evm_context.self_address = prev_addr;
     return val.d[0];
 }
 
