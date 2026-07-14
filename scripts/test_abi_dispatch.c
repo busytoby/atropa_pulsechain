@@ -693,6 +693,22 @@ int main() {
     assert(interop_fee_decision_evaluate(nodes, 0, 150) == 0xAAAA);
     printf("✓ MAMT, AC Cache, and Fee decision trees verified.\n");
 
+    // 45-47. Test AVX-512 distance, multi-decision node, and re-seeding
+    uint64_t c1[3] = {10, 20, 30};
+    uint64_t c2[3] = {12, 22, 32};
+    assert(interop_knn_distance_avx512(c1, c2) == 6);
+    InteropMultiDecisionNode mn[2] = {
+        { {100, 200, 300}, {1, 1, 1, 1} },
+        { {0xCCCC, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    assert(interop_multi_decision_evaluate(mn, 0, 50) == 0xCCCC);
+    uint64_t cr_res[6] = {10, 20, 30, 10, 20, 30};
+    uint64_t ce_res[6] = {10, 20, 30, 99, 99, 99};
+    uint32_t as_res[2] = {0};
+    assert(interop_coaxial_cluster(cr_res, 2, ce_res, 2, as_res) == 0);
+    assert(ce_res[3] == 11);
+    printf("✓ AVX-512 KNN, multi-decision, and centroid re-seeding verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

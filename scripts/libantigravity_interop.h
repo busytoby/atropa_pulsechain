@@ -269,4 +269,12 @@ uint32_t interop_mamt_decision_evaluate(const InteropDecisionNode *nodes, uint32
 uint32_t interop_ac_cache_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t frequency);
 uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t complexity);
 
+typedef struct {
+    uint32_t thresholds[3];
+    uint32_t children[4];
+} InteropMultiDecisionNode;
+
+uint32_t interop_multi_decision_evaluate(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t accumulator_val);
+uint64_t interop_knn_distance_avx512(const uint64_t *coord1, const uint64_t *coord2);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

@@ -1086,10 +1086,22 @@ int interop_coaxial_cluster(const uint64_t *coords, size_t count, uint64_t *cent
         }
     }
     for (size_t j = 0; j < k; j++) {
-        if (j < 16 && ct[j] > 0) {
-            centroids[j * 3 + 0] = sm[j][0] / ct[j];
-            centroids[j * 3 + 1] = sm[j][1] / ct[j];
-            centroids[j * 3 + 2] = sm[j][2] / ct[j];
+        if (j < 16) {
+            if (ct[j] > 0) {
+                centroids[j * 3 + 0] = sm[j][0] / ct[j];
+                centroids[j * 3 + 1] = sm[j][1] / ct[j];
+                centroids[j * 3 + 2] = sm[j][2] / ct[j];
+            } else {
+                size_t max_c = 0;
+                for (size_t m = 0; m < k; m++) {
+                    if (ct[m] > ct[max_c]) max_c = m;
+                }
+                if (ct[max_c] > 1) {
+                    centroids[j * 3 + 0] = centroids[max_c * 3 + 0] + 1;
+                    centroids[j * 3 + 1] = centroids[max_c * 3 + 1] + 1;
+                    centroids[j * 3 + 2] = centroids[max_c * 3 + 2] + 1;
+                }
+            }
         }
     }
     return 0;
@@ -1183,4 +1195,38 @@ uint32_t interop_ac_cache_decision_evaluate(const InteropDecisionNode *nodes, ui
 
 uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t complexity) {
     return interop_decision_tree_evaluate(nodes, root_idx, complexity);
+}
+
+uint32_t interop_multi_decision_evaluate(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t accumulator_val) {
+    if (!nodes) return 0xFFFFFFFF;
+    uint32_t curr = root_idx;
+    while (1) {
+        if (nodes[curr].children[0] == 0xFFFFFFFF) {
+            return nodes[curr].thresholds[0];
+        }
+        if (accumulator_val < nodes[curr].thresholds[0]) {
+            curr = nodes[curr].children[0];
+        } else if (accumulator_val < nodes[curr].thresholds[1]) {
+            curr = nodes[curr].children[1];
+        } else if (accumulator_val < nodes[curr].thresholds[2]) {
+            curr = nodes[curr].children[2];
+        } else {
+            curr = nodes[curr].children[3];
+        }
+    }
+}
+
+uint64_t interop_knn_distance_avx512(const uint64_t *coord1, const uint64_t *coord2) {
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+    __m256i v1 = _mm256_loadu_si256((const __m256i*)coord1);
+    __m256i v2 = _mm256_loadu_si256((const __m256i*)coord2);
+    __m256i diff = _mm256_sub_epi64(v1, v2);
+    __m256i sign = _mm256_cmpgt_epi64(_mm256_setzero_si256(), diff);
+    __m256i abs_diff = _mm256_sub_epi64(_mm256_xor_si256(diff, sign), sign);
+    uint64_t res[4];
+    _mm256_storeu_si256((__m256i*)res, abs_diff);
+    return (res[0] + res[1] + res[2]) % 953467954114363ULL;
+#else
+    return interop_knn_distance(coord1, coord2);
+#endif
 }
