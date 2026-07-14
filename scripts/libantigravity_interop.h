@@ -591,4 +591,8 @@ int interop_conv_parse_relation(const char *query_tokens, const char *relation_n
 int interop_conv_resolve_coref(const int *context_history, size_t history_len, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_resolved_id);
 int interop_conv_link_entity_fuzzy(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id);
 
+int interop_poly_add_sub_mod(const uint64_t *a, const uint64_t *b, size_t deg_a, size_t deg_b, uint64_t prime, int is_sub, uint64_t *out_c, size_t *out_deg);
+int interop_poly_multiply_mod(const uint64_t *a, const uint64_t *b, size_t deg_a, size_t deg_b, uint64_t prime, uint64_t *out_c, size_t *out_deg);
+int interop_poly_euclidean_verify(const uint64_t *a, size_t deg_a, const uint64_t *b, size_t deg_b, const uint64_t *q, size_t deg_q, const uint64_t *r, size_t deg_r, uint64_t prime, int *out_verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

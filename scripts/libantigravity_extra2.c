@@ -873,3 +873,89 @@ int interop_conv_link_entity_fuzzy(const char *query_tokens, const char *entity_
     }
     return -2;
 }
+
+int interop_poly_add_sub_mod(const uint64_t *a, const uint64_t *b, size_t deg_a, size_t deg_b, uint64_t prime, int is_sub, uint64_t *out_c, size_t *out_deg) {
+    if (!a || !b || !out_c || !out_deg || prime == 0) return -1;
+    size_t max_deg = (deg_a > deg_b) ? deg_a : deg_b;
+    size_t final_deg = 0;
+    for (size_t i = 0; i <= max_deg; i++) {
+        uint64_t val_a = (i <= deg_a) ? a[i] : 0;
+        uint64_t val_b = (i <= deg_b) ? b[i] : 0;
+        uint64_t val_c;
+        if (is_sub) {
+            if (val_a >= val_b) {
+                val_c = (val_a - val_b) % prime;
+            } else {
+                val_c = (prime - ((val_b - val_a) % prime)) % prime;
+            }
+        } else {
+            val_c = (val_a + val_b) % prime;
+        }
+        out_c[i] = val_c;
+        if (val_c > 0) {
+            final_deg = i;
+        }
+    }
+    *out_deg = final_deg;
+    return 0;
+}
+
+int interop_poly_multiply_mod(const uint64_t *a, const uint64_t *b, size_t deg_a, size_t deg_b, uint64_t prime, uint64_t *out_c, size_t *out_deg) {
+    if (!a || !b || !out_c || !out_deg || prime == 0) return -1;
+    size_t max_out_deg = deg_a + deg_b;
+    for (size_t i = 0; i <= max_out_deg; i++) {
+        out_c[i] = 0;
+    }
+    for (size_t i = 0; i <= deg_a; i++) {
+        for (size_t j = 0; j <= deg_b; j++) {
+            uint64_t term = (a[i] * b[j]) % prime;
+            out_c[i + j] = (out_c[i + j] + term) % prime;
+        }
+    }
+    size_t final_deg = 0;
+    for (size_t i = 0; i <= max_out_deg; i++) {
+        if (out_c[i] > 0) {
+            final_deg = i;
+        }
+    }
+    *out_deg = final_deg;
+    return 0;
+}
+
+int interop_poly_euclidean_verify(const uint64_t *a, size_t deg_a, const uint64_t *b, size_t deg_b, const uint64_t *q, size_t deg_q, const uint64_t *r, size_t deg_r, uint64_t prime, int *out_verified) {
+    if (!a || !b || !q || !r || !out_verified || prime == 0) return -1;
+    size_t qb_max_deg = deg_q + deg_b;
+    uint64_t *qb = calloc(qb_max_deg + 1, sizeof(uint64_t));
+    if (!qb) return -1;
+    size_t qb_deg = 0;
+    if (interop_poly_multiply_mod(q, b, deg_q, deg_b, prime, qb, &qb_deg) != 0) {
+        free(qb);
+        return -1;
+    }
+    size_t rhs_max_deg = (qb_deg > deg_r) ? qb_deg : deg_r;
+    uint64_t *rhs = calloc(rhs_max_deg + 1, sizeof(uint64_t));
+    if (!rhs) {
+        free(qb);
+        return -1;
+    }
+    size_t rhs_deg = 0;
+    if (interop_poly_add_sub_mod(qb, r, qb_deg, deg_r, prime, 0, rhs, &rhs_deg) != 0) {
+        free(qb);
+        free(rhs);
+        return -1;
+    }
+    int verified = 1;
+    size_t max_compare_deg = (deg_a > rhs_deg) ? deg_a : rhs_deg;
+    for (size_t i = 0; i <= max_compare_deg; i++) {
+        uint64_t val_a = (i <= deg_a) ? a[i] : 0;
+        uint64_t val_rhs = (i <= rhs_deg) ? rhs[i] : 0;
+        if (val_a != val_rhs) {
+            verified = 0;
+            break;
+        }
+    }
+    *out_verified = verified;
+    free(qb);
+    free(rhs);
+    return 0;
+}
