@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 159);
-    assert(code_nodes[1].value == 159);
+    assert(code_nodes[0].value == 160);
+    assert(code_nodes[1].value == 160);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1316,6 +1316,20 @@ int main() {
     assert(pref_edges[0].weight == 1.5f);
     assert(pref_edges[1].weight == 1.0f);
     printf("✓ Author/publication graph preference updates verified.\n");
+
+    // 139. Verify consolidated ledger stream updates with preference author biases
+    InteropCoaxialTable comb_table;
+    interop_coaxial_init_table(&comb_table, 4, 4);
+    interop_coaxial_insert(&comb_table, (uint64_t[]){0, 100, 200, 1000}, 4);
+    interop_coaxial_insert(&comb_table, (uint64_t[]){0, 300, 400, 1000}, 4);
+    InteropGraphEdge comb_edges[2];
+    size_t comb_count = 0;
+    uint32_t comb_pref[1] = { 100 };
+    assert(interop_graph_replay_and_bias(comb_edges, 2, &comb_count, &comb_table, comb_pref, 1, 2.0f) == 0);
+    assert(comb_count == 2);
+    assert(comb_edges[0].src_agent_id == 100 && comb_edges[0].weight == 2.0f);
+    assert(comb_edges[1].src_agent_id == 300 && comb_edges[1].weight == 1.0f);
+    printf("✓ Consolidated graph stream updates with author preferences verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

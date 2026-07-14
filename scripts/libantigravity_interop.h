@@ -481,4 +481,6 @@ int interop_graph_replay_ledger(InteropGraphEdge *edges, size_t max_edges, size_
 
 void interop_graph_apply_author_bias(InteropGraphEdge *edges, size_t count, const uint32_t *preferred_authors, size_t pref_count, float bias_factor);
 
+int interop_graph_replay_and_bias(InteropGraphEdge *edges, size_t max_edges, size_t *out_edge_count, const InteropCoaxialTable *event_table, const uint32_t *preferred_authors, size_t pref_count, float bias_factor);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
