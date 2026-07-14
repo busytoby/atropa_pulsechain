@@ -54,7 +54,7 @@ To support concurrent contract execution, the UTM is extended to support $K$ ind
 $$\text{CompositeState} = \sum_{k=1}^K M_{T}^{(k)}$$
 
 To minimize the data witness footprint on the Bitcoin blockchain, we employ **State-Delta Serialization**. Rather than committing the entire tape table serialization, we define the state transition purely as a unified, multi-tape state-delta commitment ($\Delta_{\text{composite}}$) representing the sum of mutations across all $K$ tracks:
-$$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, j}) \\}$$
+$$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, j}) \}$$
 
 The on-chain verifier applies this delta to verify correctness:
 $$\text{CompositeState}_{t+1} = \text{ApplyDelta}(\text{CompositeState}_t, \Delta_{\text{composite}})$$
@@ -190,3 +190,25 @@ Stateful assets, such as token representations, are managed via Yul-compiled cov
     $$\text{Tape}[Addr_A] = B_{\text{initial}} - \text{Amount}$$
     $$\text{Tape}[Addr_B] = B_{\text{current}} + \text{Amount}$$
 4.  **Audit & Reconstruct**: Replaying the serialized delta outputs (Tx1: Mint, Tx2: Transfer) in chronologic sequence reconstructs the identical account balances and matches the final state root hash, verifying complete ledger availability.
+
+---
+
+## 13. Advanced Cryptographic Pipelines
+
+To optimize throughput and verify large-scale operations on-chain, CSML-L2 utilizes three advanced cryptographic mechanisms:
+
+### A. Merkle-Patricia Trie (MPT) State Roots
+Rather than hashing the entire Tape Table ($M_T$) line-by-line, the tape space is structured as a Merkle-Patricia Trie. Individual account balances are mapped to leaf paths. The trie produces a single root hash commitment:
+$$\text{StateRoot} = \text{MPT.Root}(M_T)$$
+
+This enables the verification of single-state membership (e.g. validating a transfer balance for a single user) on-chain using $O(\log N)$ sibling membership proofs, avoiding the need to load the entire database state table.
+
+### B. Vectorized SIMD Keccak-256 State Transitions
+To accelerate transitions on high-frequency channels, the serial FNV-1a cascade is replaced with vectorized Keccak-256 hashing. Using 256-bit AVX2 or 512-bit AVX-512 vector lanes, multiple block transitions are processed in parallel:
+$$\text{Lane}_i = \text{Keccak256}(\text{Block}_i) \quad \forall i \in \{0, 1, 2, 3\}$$
+
+This leverages hardware parallelism to bypass CPU profiling limits during deep execution step logs.
+
+### C. Recursive Fraud Proof Bundling
+For optimistic dispute resolutions, intermediate execution states are recursively grouped into Merkle trees of execution steps. Disputes on step correctness do not require verifying all $S$ transitions. Instead, the disputer submits a membership proof targeting the exact step of error, resolving state conflicts in log time:
+$$\text{DisputeComplexity} = O(\log S)$$
