@@ -100,6 +100,47 @@ class UnifiedGauntletHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(f"Error: {str(e)}".encode('utf-8'))
                 return
 
+        elif parsed_url.path == '/api/kermit':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                payload = json.loads(post_data.decode('utf-8'))
+                seq = payload.get('seq', 0)
+                type_char = payload.get('type', 'D')
+                data_hex = payload.get('data', '')
+                data = bytes.fromhex(data_hex)
+                client_chk = payload.get('checksum', 0)
+                
+                # Verify checksum
+                def compute_kermit_checksum(s, tc, d):
+                    sum_val = s + ord(tc) + len(d)
+                    for b in d:
+                        sum_val += b
+                    return ((sum_val & 0x3F) + 32)
+                
+                srv_chk = compute_kermit_checksum(seq, type_char, data)
+                if client_chk != srv_chk:
+                    # Return NAK
+                    ack_chk = compute_kermit_checksum(seq, 'N', b'')
+                    res = {'seq': seq, 'type': 'N', 'data': '', 'checksum': ack_chk, 'status': 'NAK - Checksum Error'}
+                else:
+                    # Success -> Return ACK ('Y')
+                    ack_chk = compute_kermit_checksum(seq, 'Y', b'')
+                    res = {'seq': seq, 'type': 'Y', 'data': '', 'checksum': ack_chk, 'status': 'ACK'}
+                    print(f"[Auncient Server] Kermit Packet SEQ {seq} verified and ACKed.")
+                
+                response_data = json.dumps(res)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(response_data.encode('utf-8'))
+                return
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(f"Error: {str(e)}".encode('utf-8'))
+                return
+
         super().do_POST()
 
     def translate_path(self, path):

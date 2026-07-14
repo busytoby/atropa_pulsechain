@@ -535,12 +535,71 @@ generate_artifacts: bin/test_vulkan_teddy
 tests/test_ac_compositor_interop: tests/test_ac_compositor_interop.c tests/libmozilla_interop.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop
+tests/test_computel_carrier_monitor: tests/test_computel_carrier_monitor.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_trunk_selector: tests/test_computel_trunk_selector.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_dtmf_decoder: tests/test_computel_dtmf_decoder.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_dtmf_loopback: tests/test_computel_dtmf_loopback.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_dtmf_sequencer: tests/test_computel_dtmf_sequencer.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_yul_firewall: tests/test_computel_yul_firewall.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_dtmf_progress_tones: tests/test_computel_dtmf_progress_tones.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_rotary_decoder: tests/test_computel_rotary_decoder.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_secure_kermit: tests/test_computel_secure_kermit.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_udp_mcp: tests/test_computel_udp_mcp.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_advanced_kermit: tests/test_computel_advanced_kermit.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_controller_thunk: tests/test_computel_controller_thunk.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_dmt_udp_benchmark: tests/test_computel_dmt_udp_benchmark.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_fsk_modulator: tests/test_computel_fsk_modulator.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_computel_secure_tty: tests/test_computel_secure_tty.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
 	./tests/test_ac_compositor_interop
+	./tests/test_computel_carrier_monitor
+	./tests/test_computel_trunk_selector
+	./tests/test_computel_dtmf_decoder
+	./tests/test_computel_dtmf_loopback
+	./tests/test_computel_dtmf_sequencer
+	./tests/test_computel_yul_firewall
+	./tests/test_computel_dtmf_progress_tones
+	./tests/test_computel_rotary_decoder
+	./tests/test_computel_secure_kermit
+	./tests/test_computel_udp_mcp
+	./tests/test_computel_advanced_kermit
+	./tests/test_computel_controller_thunk
+	./tests/test_computel_dmt_udp_benchmark
+	./tests/test_computel_fsk_modulator
+	./tests/test_computel_secure_tty
 
 .PHONY: profile
 profile:
 	bash benchmarks/profiler_suite/run_benchmarks.sh
-
