@@ -457,3 +457,57 @@ int interop_index_lsh_hash(const float *v, const float *projection_planes, size_
     *out_hash = hash;
     return 0;
 }
+
+int interop_zmm_parse_hex_address(const char *address_hex, uint8_t *out_address) {
+    if (!address_hex || !out_address) return -1;
+    size_t start = 0;
+    if (address_hex[0] == '0' && (address_hex[1] == 'x' || address_hex[1] == 'X')) {
+        start = 2;
+    }
+    for (size_t i = 0; i < 20; i++) {
+        char high = address_hex[start + i * 2];
+        char low = address_hex[start + i * 2 + 1];
+        if (high == '\0' || low == '\0') return -1;
+        uint8_t byte_val = 0;
+        if (high >= '0' && high <= '9') byte_val += (high - '0') << 4;
+        else if (high >= 'a' && high <= 'f') byte_val += (high - 'a' + 10) << 4;
+        else if (high >= 'A' && high <= 'F') byte_val += (high - 'A' + 10) << 4;
+        else return -1;
+        if (low >= '0' && low <= '9') byte_val += (low - '0');
+        else if (low >= 'a' && low <= 'f') byte_val += (low - 'a' + 10);
+        else if (low >= 'A' && low <= 'F') byte_val += (low - 'A' + 10);
+        else return -1;
+        out_address[i] = byte_val;
+    }
+    return 0;
+}
+
+int interop_zmm_resolve_contract_address(const uint8_t *address, const uint8_t *registry_addresses, const uint64_t *page_indices, size_t count, uint64_t *out_page_idx) {
+    if (!address || !registry_addresses || !page_indices || !out_page_idx || count == 0) return -1;
+    for (size_t idx = 0; idx < count; idx++) {
+        int match = 1;
+        for (size_t b = 0; b < 20; b++) {
+            if (registry_addresses[idx * 20 + b] != address[b]) {
+                match = 0;
+                break;
+            }
+        }
+        if (match) {
+            *out_page_idx = page_indices[idx];
+            return 0;
+        }
+    }
+    return -2;
+}
+
+int interop_zmm_verify_contract_state(const uint8_t *address, const uint8_t *state_payload, size_t size, uint32_t expected_checksum) {
+    if (!address || !state_payload || size == 0) return -1;
+    uint32_t checksum = 5381;
+    for (size_t i = 0; i < 20; i++) {
+        checksum = ((checksum << 5) + checksum) + address[i];
+    }
+    for (size_t i = 0; i < size; i++) {
+        checksum = ((checksum << 5) + checksum) + state_payload[i];
+    }
+    return (checksum == expected_checksum) ? 1 : 0;
+}

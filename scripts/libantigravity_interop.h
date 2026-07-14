@@ -565,4 +565,8 @@ int interop_index_ivf_assign(const float *query, const float *centroids, size_t 
 int interop_index_pq_quantize(const float *sub_vec, const float *codebook, size_t num_codes, size_t sub_dim, int *out_code);
 int interop_index_lsh_hash(const float *v, const float *projection_planes, size_t dim, size_t num_planes, uint32_t *out_hash);
 
+int interop_zmm_parse_hex_address(const char *address_hex, uint8_t *out_address);
+int interop_zmm_resolve_contract_address(const uint8_t *address, const uint8_t *registry_addresses, const uint64_t *page_indices, size_t count, uint64_t *out_page_idx);
+int interop_zmm_verify_contract_state(const uint8_t *address, const uint8_t *state_payload, size_t size, uint32_t expected_checksum);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
