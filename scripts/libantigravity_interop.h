@@ -577,4 +577,6 @@ int interop_conv_update_context(int *context_history, size_t *history_len, size_
 int interop_conv_link_entity(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id);
 int interop_conv_serialize_path(int src_id, int rel_id, int dst_id, char *out_buffer, size_t max_len);
 
+int interop_conv_search_query(const char *query_text, const char *entity_names, const int *entity_ids, size_t num_entities, const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int *context_history, size_t *history_len, size_t max_history, int target_rel, char *out_response, size_t max_resp_len);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

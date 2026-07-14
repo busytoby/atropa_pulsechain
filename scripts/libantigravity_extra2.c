@@ -703,3 +703,30 @@ int interop_conv_serialize_path(int src_id, int rel_id, int dst_id, char *out_bu
     int written = snprintf(out_buffer, max_len, "Entity_%d via relation_%d maps to entity_%d.", src_id, rel_id, dst_id);
     return (written > 0 && (size_t)written < max_len) ? 0 : -2;
 }
+
+int interop_conv_search_query(const char *query_text, const char *entity_names, const int *entity_ids, size_t num_entities, const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int *context_history, size_t *history_len, size_t max_history, int target_rel, char *out_response, size_t max_resp_len) {
+    if (!query_text || !entity_names || !entity_ids || num_entities == 0 || !edges_src || !edges_rel || !edges_dst || num_edges == 0 || !context_history || !history_len || max_history == 0 || !out_response || max_resp_len == 0) return -1;
+    int start_entity_id = -1;
+    int link_res = interop_conv_link_entity(query_text, entity_names, entity_ids, num_entities, &start_entity_id);
+    if (link_res != 0) {
+        if (*history_len > 0) {
+            start_entity_id = context_history[0];
+        } else {
+            return -2;
+        }
+    } else {
+        interop_conv_update_context(context_history, history_len, max_history, start_entity_id);
+    }
+    int match_dst_id = -1;
+    for (size_t e = 0; e < num_edges; e++) {
+        if (edges_src[e] == start_entity_id && edges_rel[e] == target_rel) {
+            match_dst_id = edges_dst[e];
+            break;
+        }
+    }
+    if (match_dst_id == -1) {
+        return -3;
+    }
+    interop_conv_update_context(context_history, history_len, max_history, match_dst_id);
+    return interop_conv_serialize_path(start_entity_id, target_rel, match_dst_id, out_response, max_resp_len);
+}
