@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
+#include <sys/file.h>
 
 /*
  * Auncient Computel Single-Frequency (SF) & Multi-Frequency (MF) Switch Controller
@@ -164,6 +166,7 @@ bool blue_box_save_state_to_disk(const char *filepath) {
     if (!filepath) return false;
     FILE *f = fopen(filepath, "wb");
     if (!f) return false;
+    flock(fileno(f), LOCK_EX);
     size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
     fclose(f);
     return written == 1;
@@ -173,7 +176,55 @@ bool blue_box_load_state_from_disk(const char *filepath) {
     if (!filepath) return false;
     FILE *f = fopen(filepath, "rb");
     if (!f) return false;
+    flock(fileno(f), LOCK_SH);
     size_t read = fread(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
     fclose(f);
     return read == 1;
+}
+
+bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expected_parent_block, const uint8_t *expected_parent_hash) {
+    if (!filepath || !expected_parent_hash) return false;
+
+    FILE *f = fopen(filepath, "r+b");
+    if (!f) {
+        f = fopen(filepath, "wb");
+        if (!f) return false;
+        flock(fileno(f), LOCK_EX);
+        for (int i = 0; i < 32; i++) {
+            current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
+        }
+        current_block_state.is_committed = true;
+        size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
+        fclose(f);
+        return written == 1;
+    }
+
+    flock(fileno(f), LOCK_EX);
+
+    BlueBoxBlockState disk_state;
+    if (fread(&disk_state, sizeof(BlueBoxBlockState), 1, f) != 1) {
+        fclose(f);
+        return false;
+    }
+
+    if (disk_state.block_number != expected_parent_block) {
+        fclose(f);
+        return false;
+    }
+    if (memcmp(disk_state.state_hash, expected_parent_hash, 32) != 0) {
+        fclose(f);
+        return false;
+    }
+
+    current_block_state.block_number = expected_parent_block + 1;
+    for (int i = 0; i < 32; i++) {
+        current_block_state.state_hash[i] = disk_state.state_hash[i] ^ (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
+    }
+    current_block_state.is_committed = true;
+
+    rewind(f);
+    size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
+    fclose(f);
+
+    return written == 1;
 }

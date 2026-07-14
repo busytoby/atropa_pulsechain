@@ -93,6 +93,44 @@ int main(void) {
     // Clean up temporary test file
     remove("blue_box_test.dat");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, and disk serialization tests passed successfully.\n");
+    // 9. Test Ordered Hash Validation Guards and Commit Persist
+    uint8_t init_hash[32] = {1, 2, 3, 4};
+    blue_box_init_block(10, init_hash);
+    blue_box_register_block_trunk(805);
+    
+    // First commit - creates the file
+    bool persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 0, zero_hash);
+    assert(persist_ok == true);
+    
+    BlueBoxBlockState saved_state = blue_box_get_block_state();
+    assert(saved_state.is_committed == true);
+
+    // Try committing out-of-order block (expected 11, but passing 12)
+    blue_box_init_block(99, zero_hash);
+    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 12, saved_state.state_hash);
+    assert(persist_ok == false);
+
+    // Try committing with correct block but incorrect parent hash
+    uint8_t wrong_hash[32] = {9, 9, 9};
+    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 10, wrong_hash);
+    assert(persist_ok == false);
+
+    // Commit correctly (parent block 10, correct parent hash)
+    blue_box_init_block(0, zero_hash); // reset local memory
+    blue_box_register_block_trunk(815);
+    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 10, saved_state.state_hash);
+    assert(persist_ok == true);
+
+    // Read back and assert evolved block number 11
+    BlueBoxBlockState final_state;
+    FILE *ft = fopen("blue_box_guard_test.dat", "rb");
+    assert(ft != NULL);
+    assert(fread(&final_state, sizeof(BlueBoxBlockState), 1, ft) == 1);
+    fclose(ft);
+    assert(final_state.block_number == 11);
+    
+    remove("blue_box_guard_test.dat");
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, disk serialization, and hash validation guards passed successfully.\n");
     return 0;
 }
