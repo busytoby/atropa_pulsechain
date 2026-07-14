@@ -365,17 +365,30 @@ int main(int argc, char **argv) {
 
     char *trie_ph_allocated[64];
     int trie_ph_count = 0;
-    char *res_copy_ptr = NULL;
+    char *word_str_copy = NULL;
+    char *res_copy_ptrs[64];
+    int res_copy_count = 0;
+
     if (phoneme_count == 1) {
-        const char *trie_res = tsfi_trie_lookup(trie_dict, phonemes[0]);
-        if (trie_res) {
-            printf("[C_SPEECH] Grapheme Trie hit! Translated '%s' to phonemes: '%s'\n", phonemes[0], trie_res);
-            res_copy_ptr = strdup(trie_res);
-            char *tok = strtok(res_copy_ptr, " ");
-            while (tok && trie_ph_count < 64) {
-                trie_ph_allocated[trie_ph_count++] = tok;
-                tok = strtok(NULL, " ");
+        word_str_copy = strdup(phonemes[0]);
+        char *outer_saveptr = NULL;
+        char *word = strtok_r(word_str_copy, " ,.?!;:", &outer_saveptr);
+        while (word && trie_ph_count < 64) {
+            const char *trie_res = tsfi_trie_lookup(trie_dict, word);
+            if (trie_res) {
+                printf("[C_SPEECH] Sentence Trie lookup: '%s' -> '%s'\n", word, trie_res);
+                char *res_copy = strdup(trie_res);
+                res_copy_ptrs[res_copy_count++] = res_copy;
+                char *inner_saveptr = NULL;
+                char *tok = strtok_r(res_copy, " ", &inner_saveptr);
+                while (tok && trie_ph_count < 64) {
+                    trie_ph_allocated[trie_ph_count++] = tok;
+                    tok = strtok_r(NULL, " ", &inner_saveptr);
+                }
+            } else {
+                printf("[C_SPEECH] Sentence Trie miss for word: '%s'\n", word);
             }
+            word = strtok_r(NULL, " ,.?!;:", &outer_saveptr);
         }
     }
 
@@ -561,8 +574,11 @@ int main(int argc, char **argv) {
     }
 
     tsfi_trie_destroy(trie_dict);
-    if (res_copy_ptr) {
-        free(res_copy_ptr);
+    for (int i = 0; i < res_copy_count; i++) {
+        free(res_copy_ptrs[i]);
+    }
+    if (word_str_copy) {
+        free(word_str_copy);
     }
     tsfi_zmm_vm_destroy(&vm);
     printf("=== C SPEECH GENERATION CONTROLLER INTEGRATION SUCCESS ===\n");
