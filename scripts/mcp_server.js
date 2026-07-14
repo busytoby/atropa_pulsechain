@@ -153,6 +153,24 @@ const tools = [
             },
             required: ["image_path", "question"]
         }
+    },
+    {
+        name: "ask_question",
+        description: "Submit a question or query string to the interop knowledge graph Question Answering (QA) and conversational query engine.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                queryText: {
+                    type: "string",
+                    description: "The natural language question or query string (e.g. 'Who is Vitalik?')"
+                },
+                targetRel: {
+                    type: "number",
+                    description: "The target relation ID path to search for (e.g. 50)"
+                }
+            },
+            required: ["queryText"]
+        }
     }
 ];
 
@@ -597,6 +615,36 @@ async function handleRequest(req) {
                             {
                                 type: "text",
                                 text: `Failed to query Moondream VLM: ${err.message}`
+                            }
+                        ]
+                    });
+                }
+            } else if (params.name === "ask_question") {
+                try {
+                    const args = params.arguments || {};
+                    const queryText = args.queryText;
+                    const targetRel = args.targetRel !== undefined ? args.targetRel : 50;
+                    if (!queryText) {
+                        throw new Error("Missing queryText parameter");
+                    }
+                    const { execFileSync } = require("child_process");
+                    const cliPath = path.join(__dirname, "interop_cli");
+                    const stdout = execFileSync(cliPath, [queryText, targetRel.toString()], { encoding: "utf8" });
+                    sendResponse(id, {
+                        content: [
+                            {
+                                type: "text",
+                                text: stdout.trim()
+                            }
+                        ]
+                    });
+                } catch (err) {
+                    sendResponse(id, {
+                        isError: true,
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to execute question answering query: ${err.message}`
                             }
                         ]
                     });
