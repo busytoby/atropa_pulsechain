@@ -2302,6 +2302,70 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
     return true;
 }
 
+#include <dirent.h>
+#include <sys/stat.h>
+
+void blue_box_rehydrate_quadtree_states(void) {
+    const char *dir_path = "assets";
+    DIR *d = opendir(dir_path);
+    if (!d) {
+        dir_path = "../assets";
+        d = opendir(dir_path);
+    }
+    if (!d) return;
+
+    struct dirent *dir;
+    char newest_file[256] = "";
+    time_t newest_time = 0;
+
+    while ((dir = readdir(d)) != NULL) {
+        if (strncmp(dir->d_name, "rdbms_ledger_", 13) == 0 && strstr(dir->d_name, ".json")) {
+            char filepath[512];
+            snprintf(filepath, sizeof(filepath), "%s/%s", dir_path, dir->d_name);
+            struct stat st;
+            if (stat(filepath, &st) == 0) {
+                if (st.st_mtime > newest_time) {
+                    newest_time = st.st_mtime;
+                    strncpy(newest_file, filepath, sizeof(newest_file) - 1);
+                    newest_file[sizeof(newest_file) - 1] = '\0';
+                }
+            }
+        }
+    }
+    closedir(d);
+
+    if (newest_file[0] != '\0') {
+        FILE *f = fopen(newest_file, "r");
+        if (f) {
+            char buf[1024];
+            if (fgets(buf, sizeof(buf), f)) {
+                uint64_t next_root = 0;
+                uint64_t gas = 0;
+                uint64_t collected = 0;
+
+                char *p_root = strstr(buf, "\"block_root_hash\":");
+                char *p_gas = strstr(buf, "\"gas\":");
+                char *p_col = strstr(buf, "\"total_collected\":");
+
+                if (p_root) sscanf(p_root, "\"block_root_hash\": %lu", &next_root);
+                if (p_gas) sscanf(p_gas, "\"gas\": %lu", &gas);
+                if (p_col) sscanf(p_col, "\"total_collected\": %lu", &collected);
+
+                if (next_root > 0) {
+                    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+                    lau_yul_thunk_sstore(0xF1B5, next_root);
+                    lau_yul_thunk_sstore(0xF199, gas);
+                    lau_yul_thunk_sstore(0xF186, collected);
+                    lau_yul_thunk_sstore(0xF18E, 1); // Ledger mode active
+                    printf("[QUADTREE] [REHYDRATE] Restored latest block ledger state: root=%lu, gas=%lu, collected=%lu\n",
+                           next_root, gas, collected);
+                }
+            }
+            fclose(f);
+        }
+    }
+}
+
 bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len) {
     extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
     (void)new_row_data;

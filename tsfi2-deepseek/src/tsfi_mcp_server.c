@@ -461,6 +461,10 @@ int main() {
     tsfi_io_printf(stderr, "[ZMM_VM] Binding zmachineParser to zmachine...\n");
     tsfi_zmm_vm_exec(&state, "YULEXEC \"zmachine\", \"7e1ef7e90000000000000000000000000000000000000000000000000000000000000006\"");
 
+    // Rehydrate Quadtree ledger storage states from node ledger files
+    extern void blue_box_rehydrate_quadtree_states(void);
+    blue_box_rehydrate_quadtree_states();
+
     size_t cap = 1024 * 1024 * 4; 
     char *input = (char*)lau_malloc(cap);
     char *output = (char*)lau_malloc(cap);
