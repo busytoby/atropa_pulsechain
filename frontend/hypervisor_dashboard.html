@@ -336,11 +336,85 @@
                         </tbody>
                     </table>
                 </div>
-
                 <!-- Console Stream -->
                 <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
                     <div class="panel-title">Telemetry Console Feed</div>
                     <div class="console-output" id="consoleLogs">Telemetry system ready. Click "Run Validation Suite" to execute live handshake.</div>
+                </div>
+            </div>
+
+            <!-- Scheduler Coordinated Telemetry Panel -->
+            <div class="report-section" style="grid-template-columns: repeat(2, 1fr); display: grid; gap: 20px; margin-top: 15px;">
+                <!-- EVM WinchesterMQ Ring-Buffer Queue Gauge -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>WinchesterMQ EVM Ring-Buffer</span>
+                        <span class="pulse-badge" id="evmSpilloverState" style="background: rgba(0, 242, 254, 0.08); border-color: var(--neon-blue); color: var(--neon-blue);">Normal</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-around; padding: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--neon-blue);" id="evmQueueSize">0 / 16</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Occupancy</div>
+                        </div>
+                        <div style="font-size: 0.9rem; line-height: 1.6; color: #8c9ba5;">
+                            • Head Pointer: <span style="font-family: monospace; color: var(--neon-purple);" id="evmQueueHead">0</span><br>
+                            • Tail Pointer: <span style="font-family: monospace; color: var(--neon-purple);" id="evmQueueTail">0</span><br>
+                            • Mutex Lock Slot (F303): <span style="font-family: monospace;" id="evmQueueLock">FREE</span>
+                        </div>
+                    </div>
+                    <!-- Visual Progress Bar -->
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 6px; height: 12px; overflow: hidden; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
+                        <div id="evmQueueBar" style="background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+
+                <!-- Host Min-Heap Coordinated Scheduler -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>Host Min-Heap Scheduler Queue</span>
+                        <span class="pulse-badge" style="background: rgba(0, 255, 127, 0.08); border-color: #00ff7f; color: #00ff7f;">Active heap</span>
+                    </div>
+                    <div style="max-height: 180px; overflow-y: auto;" id="hostHeapEvents">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 20px; font-size: 0.9rem;">
+                            No active scheduler items on host Min-Heap.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tick Budget and Event Log Section -->
+            <div class="report-section" style="grid-template-columns: 1fr 2fr; display: grid; gap: 20px; margin-top: 15px;">
+                <!-- Tick Budget Card -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>Tick Dispatch Budget</span>
+                        <span class="pulse-badge">Budget: 3</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; color: #8c9ba5;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Max Dispatch Rate:</span>
+                            <strong style="color: var(--neon-blue);">3 events / tick</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Remaining in Heap:</span>
+                            <strong id="heapRemainingCount" style="color: var(--neon-purple);">0</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Starvation Prevention:</span>
+                            <strong style="color: #00ff7f;">Active (Aging)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scheduler Event Log Card -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>Scheduler Execution History</span>
+                        <span class="pulse-badge">Live Stream</span>
+                    </div>
+                    <div id="schedulerLogStream" style="font-family: monospace; font-size: 0.8rem; background: rgba(5,7,18,0.6); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto; line-height: 1.5; color: #8c9ba5;">
+                        <span style="color: var(--text-secondary);">[STDBY] Awaiting scheduler dispatch loop validation runs...</span>
+                    </div>
                 </div>
             </div>
 
@@ -1080,6 +1154,89 @@
                     document.getElementById("jitCacheLookups").innerText = lookups.toLocaleString();
                     document.getElementById("jitLatencySavings").innerText = savings + " ms";
                     document.getElementById("jitCacheEfficiency").innerText = rate + "%";
+                }
+
+                // Update EVM Ring-Buffer stats
+                if (data && data.evm_queue) {
+                    const head = data.evm_queue.head || 0;
+                    const tail = data.evm_queue.tail || 0;
+                    const size = data.evm_queue.size || 0;
+                    const lock = data.evm_queue.lock || 0;
+                    
+                    document.getElementById("evmQueueSize").innerText = `${size} / 16`;
+                    document.getElementById("evmQueueHead").innerText = head;
+                    document.getElementById("evmQueueTail").innerText = tail;
+                    document.getElementById("evmQueueLock").innerText = lock > 0 ? "LOCKED (F303)" : "FREE";
+                    document.getElementById("evmQueueLock").style.color = lock > 0 ? "var(--neon-magenta)" : "#00ff7f";
+                    
+                    const pct = (size / 16) * 100;
+                    document.getElementById("evmQueueBar").style.width = `${pct}%`;
+                    
+                    const spilloverBadge = document.getElementById("evmSpilloverState");
+                    if (size >= 16) {
+                        spilloverBadge.innerText = "SPILLOVER ACTIVE";
+                        spilloverBadge.style.background = "rgba(255, 0, 127, 0.08)";
+                        spilloverBadge.style.borderColor = "var(--neon-magenta)";
+                        spilloverBadge.style.color = "var(--neon-magenta)";
+                    } else {
+                        spilloverBadge.innerText = "Normal";
+                        spilloverBadge.style.background = "rgba(0, 242, 254, 0.08)";
+                        spilloverBadge.style.borderColor = "var(--neon-blue)";
+                        spilloverBadge.style.color = "var(--neon-blue)";
+                    }
+                }
+                
+                // Update Host Min-Heap grid/list representation
+                if (data && data.host_heap) {
+                    const heapDiv = document.getElementById("hostHeapEvents");
+                    const remainingSpan = document.getElementById("heapRemainingCount");
+                    remainingSpan.innerText = data.host_heap.length;
+                    
+                    if (data.host_heap.length === 0) {
+                        heapDiv.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 20px; font-size: 0.9rem;">No active scheduler items on host Min-Heap.</div>`;
+                    } else {
+                        let html = `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+                        data.host_heap.forEach((ev, idx) => {
+                            let typeStr = "UNKNOWN";
+                            if (ev.type === 1) typeStr = "PLL_DRIFT";
+                            else if (ev.type === 2) typeStr = "PMG_COLLISION";
+                            else if (ev.type === 3) typeStr = "STACK_STORAGE_SYNC";
+                            else if (ev.type === 4) typeStr = "GUEST_CONTRACT_CALL";
+                            
+                            html += `
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div>
+                                        <span style="color: var(--neon-blue); font-weight: bold; font-family: monospace;">[${idx}] ${typeStr}</span>
+                                        <span style="font-size: 0.75rem; color: #8c9ba5; margin-left: 8px;">Time: ${ev.timestamp}</span>
+                                    </div>
+                                    <span style="background: rgba(197, 160, 89, 0.1); border: 1px solid var(--neon-purple); border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; font-family: 'Orbitron', sans-serif; color: var(--neon-purple);">Pri: ${ev.priority}</span>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                        heapDiv.innerHTML = html;
+                    }
+                    
+                    // Add dispatch logs dynamically if heap state has items
+                    if (data.host_heap.length > 0) {
+                        const logDiv = document.getElementById("schedulerLogStream");
+                        if (logDiv.innerHTML.includes("Awaiting scheduler")) {
+                            logDiv.innerHTML = "";
+                        }
+                        const timeStr = new Date().toLocaleTimeString();
+                        data.host_heap.forEach(ev => {
+                            let typeStr = "UNKNOWN";
+                            if (ev.type === 1) typeStr = "PLL_DRIFT";
+                            else if (ev.type === 2) typeStr = "PMG_COLLISION";
+                            else if (ev.type === 3) typeStr = "STACK_STORAGE_SYNC";
+                            else if (ev.type === 4) typeStr = "GUEST_CONTRACT_CALL";
+                            
+                            const logLine = `[${timeStr}] Sorted Min-Heap event type: ${typeStr} (priority: ${ev.priority}) aged dynamically.<br>`;
+                            if (!logDiv.innerHTML.includes(logLine)) {
+                                logDiv.innerHTML = logLine + logDiv.innerHTML;
+                            }
+                        });
+                    }
                 }
             } catch (e) {
                 console.error("Failed to update cache metrics:", e);

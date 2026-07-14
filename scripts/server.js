@@ -1002,12 +1002,16 @@ const server = http.createServer(async (req, res) => {
         Promise.all([checkMcp, checkScan]).then(async ([mcpOnline, scanOnline]) => {
             let cache_hits = 0;
             let cache_lookups = 0;
+            let evm_queue = { head: 0, tail: 0, size: 0, lock: 0 };
+            let host_heap = [];
             if (mcpOnline) {
                 try {
                     const r = await runZmmCommand('{"jsonrpc":"2.0", "method":"wave512.telemetry", "id": 999}');
                     if (r && r.result) {
                         cache_hits = r.result.cache_hits || 0;
                         cache_lookups = r.result.cache_lookups || 0;
+                        evm_queue = r.result.evm_queue || evm_queue;
+                        host_heap = r.result.host_heap || host_heap;
                     }
                 } catch (e) {
                     console.error("[SERVER] Failed to query cache telemetry:", e.message);
@@ -1025,7 +1029,9 @@ const server = http.createServer(async (req, res) => {
                     pulsex_scan_daemon: scanOnline
                 },
                 cache_hits: cache_hits,
-                cache_lookups: cache_lookups
+                cache_lookups: cache_lookups,
+                evm_queue: evm_queue,
+                host_heap: host_heap
             }));
         });
         return;

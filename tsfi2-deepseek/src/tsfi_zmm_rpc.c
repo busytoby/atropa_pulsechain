@@ -1129,8 +1129,24 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     } else if (method_type == 29) { // wave512.telemetry
         extern uint64_t g_thunk_cache_hits;
         extern uint64_t g_thunk_cache_lookups;
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu}, \"id\": %d}\n", 
-                 (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups, id);
+        extern uint64_t lau_yul_thunk_sload(uint64_t key);
+        extern int tsfi_ouroboros_serialize_pq(char *buf, size_t max_len);
+        
+        uint64_t head = lau_yul_thunk_sload(0xF300);
+        uint64_t tail = lau_yul_thunk_sload(0xF301);
+        uint64_t size = lau_yul_thunk_sload(0xF302);
+        uint64_t lock = lau_yul_thunk_sload(0xF303);
+        
+        char pq_buf[1536];
+        tsfi_ouroboros_serialize_pq(pq_buf, sizeof(pq_buf));
+        
+        snprintf(output_buf, out_max, 
+                 "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu, "
+                 "\"evm_queue\": {\"head\": %lu, \"tail\": %lu, \"size\": %lu, \"lock\": %lu}, "
+                 "\"host_heap\": %s}, \"id\": %d}\n", 
+                 (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups,
+                 (unsigned long)head, (unsigned long)tail, (unsigned long)size, (unsigned long)lock,
+                 pq_buf, id);
         return 1;
     } else if (method_type == 30) { // input.mouse_move
         int x = extract_json_int(min_ptr, "\"x\"", 0);

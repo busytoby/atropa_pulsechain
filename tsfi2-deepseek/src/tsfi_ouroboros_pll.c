@@ -327,3 +327,20 @@ uint32_t tsfi_ouroboros_get_pq_priority(uint32_t index) {
     if (index >= s_scheduler_pq.size) return 0;
     return s_scheduler_pq.data[index].priority;
 }
+
+int tsfi_ouroboros_serialize_pq(char *buf, size_t max_len) {
+    int n = snprintf(buf, max_len, "[");
+    char *ptr = buf + n;
+    size_t rem = max_len - n;
+    for (uint32_t i = 0; i < s_scheduler_pq.size; i++) {
+        CoordinatedEvent *ev = &s_scheduler_pq.data[i];
+        int bytes = snprintf(ptr, rem, "{\"priority\": %u, \"type\": %d, \"timestamp\": %lu}%s",
+                             ev->priority, ev->type, (unsigned long)ev->timestamp,
+                             (i < s_scheduler_pq.size - 1 ? ", " : ""));
+        ptr += bytes;
+        rem -= bytes;
+        if (rem < 64) break;
+    }
+    snprintf(ptr, rem, "]");
+    return 1;
+}
