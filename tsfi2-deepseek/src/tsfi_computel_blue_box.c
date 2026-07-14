@@ -1912,3 +1912,32 @@ bool blue_box_unified_tick(uint32_t delta_time_ms) {
     
     return true;
 }
+
+// 24. Green Box Coin Disposition Control Actions
+bool blue_box_trigger_green_box(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out) {
+    if (!action_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t blue_box_get_accumulator(void);
+    
+    uint32_t action = 0;
+    bool valid = (duration_ms >= 400 && duration_ms <= 600);
+    
+    if (valid) {
+        if (frequency == 1700) {
+            action = 1; // Collect Coin
+            // Vault the coin: reset active accumulator to 0
+            extern void blue_box_deplete_session_gas_override(void);
+            lau_yul_thunk_sstore(0xF120, 0); // resets threat
+        } else if (frequency == 2200) {
+            action = 2; // Return Coin
+            // Return to customer
+        }
+    }
+    
+    *action_out = action;
+    lau_yul_thunk_sstore(0xF185, action);
+    printf("[GREEN BOX] Tone processed: %u Hz (duration: %u ms). Action: %u\n",
+           frequency, duration_ms, action);
+    return true;
+}

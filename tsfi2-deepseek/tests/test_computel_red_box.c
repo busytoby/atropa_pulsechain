@@ -429,6 +429,21 @@ int main(void) {
     assert(reg_tx > 0);
     printf("[TEST] Unified Telecom Dispatch Tick pipeline executed and verified successfully.\n");
 
+    // 34. Test Green Box Coin Disposition Control Actions
+    uint32_t green_act = 0;
+    bool green_ok = blue_box_trigger_green_box(1700, 500, &green_act);
+    assert(green_ok == true);
+    assert(green_act == 1);
+    uint64_t reg_green = lau_yul_thunk_sload(0xF185);
+    assert(reg_green == 1);
+    
+    green_ok = blue_box_trigger_green_box(2200, 500, &green_act);
+    assert(green_ok == true);
+    assert(green_act == 2);
+    reg_green = lau_yul_thunk_sload(0xF185);
+    assert(reg_green == 2);
+    printf("[TEST] Green Box Coin disposition control actions verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
