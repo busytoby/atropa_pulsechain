@@ -414,4 +414,8 @@ typedef struct {
 void interop_project_coordinates(const InteropProjectionConfig *config, const float *in_coords, float *out_coords, size_t count);
 void interop_gemm_synthesize(const float *oscillators, const float *mixing_matrix, float *out_buffer, size_t channels, size_t samples);
 
+void interop_pki_verify_signatures_avx512(const uint64_t *sigs, const uint64_t *pubkeys, uint32_t *valid_out, size_t count);
+uint32_t interop_pki_evaluate_revocation(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t usage_freq, uint64_t drift_factor);
+int interop_lau_route_ntm(const char *filepath, uint8_t *lau_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

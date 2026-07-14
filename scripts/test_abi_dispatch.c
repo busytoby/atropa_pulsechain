@@ -1064,6 +1064,21 @@ int main() {
     assert(synth_out[0] == 1.0f && synth_out[3] == 2.0f);
     printf("✓ Coordinate projection and GEMM synthesizer verified.\n");
 
+    // 109-111. Test vectorized PKI, key revocation gating, and NTM LAU path finder
+    uint64_t test_sigs[1] = { 0x5555 ^ 0xDEADBEEF };
+    uint64_t test_pubkeys[1] = { 0x5555 };
+    uint32_t valid_sigs[1] = {0};
+    interop_pki_verify_signatures_avx512(test_sigs, test_pubkeys, valid_sigs, 1);
+    assert(valid_sigs[0] == 1);
+    assert(interop_pki_evaluate_revocation(prune_nodes, 0, 100, 50) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t lau_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t lau_state = 0;
+    assert(interop_lau_route_ntm(tm_file, lau_tape, 4, &lau_state) == 1);
+    assert(lau_state == 1);
+    remove(tm_file);
+    printf("✓ Vectorized PKI signatures, key revocation gating, and NTM LAU path finder verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
