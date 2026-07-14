@@ -1488,3 +1488,79 @@ int interop_vm_recursive_verify(const InteropNestedVM *nested, int target_depth,
     }
     return interop_stack_vm_verify(&(curr->vm), exp_stack, exp_len, NULL, 0, out_verified);
 }
+
+static int get_hadamard_element(int i, int j) {
+    int val = i & j;
+    int pop = 0;
+    while (val) {
+        if (val & 1) pop++;
+        val >>= 1;
+    }
+    return (pop % 2 == 0) ? 1 : -1;
+}
+
+int interop_hadamard_verlet_decouple(const float *k_matrix, size_t size, float *out_diagonalized) {
+    if (!k_matrix || !out_diagonalized || size == 0) return -1;
+    if ((size & (size - 1)) != 0) return -2;
+    for (size_t i = 0; i < size; i++) {
+        for (size_t j = 0; j < size; j++) {
+            float sum = 0.0f;
+            for (size_t p = 0; p < size; p++) {
+                for (size_t q = 0; q < size; q++) {
+                    int h1 = get_hadamard_element(p, i);
+                    int h2 = get_hadamard_element(q, j);
+                    sum += h1 * k_matrix[p * size + q] * h2;
+                }
+            }
+            out_diagonalized[i * size + j] = sum / (float)size;
+        }
+    }
+    return 0;
+}
+
+int interop_hadamard_nonlinearity_audit(const int *boolean_function, size_t num_vars, int *out_nonlinearity) {
+    if (!boolean_function || !out_nonlinearity || num_vars == 0) return -1;
+    size_t size = 1ULL << num_vars;
+    float *f_sign = malloc(size * sizeof(float));
+    if (!f_sign) return -2;
+    for (size_t i = 0; i < size; i++) {
+        f_sign[i] = 1.0f - 2.0f * (float)boolean_function[i];
+    }
+    float *wht = calloc(size, sizeof(float));
+    if (!wht) {
+        free(f_sign);
+        return -2;
+    }
+    float max_abs = 0.0f;
+    for (size_t i = 0; i < size; i++) {
+        float sum = 0.0f;
+        for (size_t j = 0; j < size; j++) {
+            sum += get_hadamard_element(i, j) * f_sign[j];
+        }
+        wht[i] = sum;
+        float abs_val = sum < 0 ? -sum : sum;
+        if (abs_val > max_abs) {
+            max_abs = abs_val;
+        }
+    }
+    *out_nonlinearity = (int)((1ULL << (num_vars - 1)) - (max_abs / 2.0f));
+    free(f_sign);
+    free(wht);
+    return 0;
+}
+
+int interop_hadamard_bibd_schedule(size_t order, int *out_schedule, size_t *out_rows, size_t *out_cols) {
+    if (!out_schedule || !out_rows || !out_cols || order < 4) return -1;
+    if ((order & (order - 1)) != 0) return -2;
+    size_t n = order;
+    size_t v = n - 1;
+    *out_rows = v;
+    *out_cols = v;
+    for (size_t i = 1; i < n; i++) {
+        for (size_t j = 1; j < n; j++) {
+            int h = get_hadamard_element(i, j);
+            out_schedule[(i - 1) * v + (j - 1)] = (h == -1) ? 1 : 0;
+        }
+    }
+    return 0;
+}

@@ -70,4 +70,31 @@ void run_extra_verification_tests2(void) {
     int gp_bc[6] = { 1, 1, 1, 10, 6 };
     assert(interop_vm_recursive_execute(&gp, gp_bc, 5) != 0);
     printf("✓ Nested deep emulation verification halts cleanly.\n");
+
+    // 245. Verify Hadamard Verlet decouple matrix transformation
+    float k_matrix[4] = { 4.0f, 2.0f, 2.0f, 4.0f };
+    float k_diag[4] = { 0.0f };
+    assert(interop_hadamard_verlet_decouple(k_matrix, 2, k_diag) == 0);
+    assert(fabsf(k_diag[0] - 6.0f) < 1e-5f);
+    assert(fabsf(k_diag[1] - 0.0f) < 1e-5f);
+    assert(fabsf(k_diag[2] - 0.0f) < 1e-5f);
+    assert(fabsf(k_diag[3] - 2.0f) < 1e-5f);
+    printf("✓ Hadamard Verlet decoupler verification verified.\n");
+
+    // 246. Verify Hadamard cryptographic nonlinearity audit
+    int f_and[4] = { 0, 0, 0, 1 };
+    int nonlin = -1;
+    assert(interop_hadamard_nonlinearity_audit(f_and, 2, &nonlin) == 0);
+    assert(nonlin == 1);
+    printf("✓ Hadamard cryptographic nonlinearity audit verified.\n");
+
+    // 247. Verify Hadamard BIBD schedule generator
+    int bibd_sched[9] = {0};
+    size_t rows = 0, cols = 0;
+    assert(interop_hadamard_bibd_schedule(4, bibd_sched, &rows, &cols) == 0);
+    assert(rows == 3 && cols == 3);
+    assert(bibd_sched[0] == 1 && bibd_sched[1] == 0 && bibd_sched[2] == 1);
+    assert(bibd_sched[3] == 0 && bibd_sched[4] == 1 && bibd_sched[5] == 1);
+    assert(bibd_sched[6] == 1 && bibd_sched[7] == 1 && bibd_sched[8] == 0);
+    printf("✓ Hadamard BIBD schedule generator verified.\n");
 }
