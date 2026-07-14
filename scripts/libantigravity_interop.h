@@ -595,4 +595,8 @@ int interop_poly_add_sub_mod(const uint64_t *a, const uint64_t *b, size_t deg_a,
 int interop_poly_multiply_mod(const uint64_t *a, const uint64_t *b, size_t deg_a, size_t deg_b, uint64_t prime, uint64_t *out_c, size_t *out_deg);
 int interop_poly_euclidean_verify(const uint64_t *a, size_t deg_a, const uint64_t *b, size_t deg_b, const uint64_t *q, size_t deg_q, const uint64_t *r, size_t deg_r, uint64_t prime, int *out_verified);
 
+int interop_logic_infer_rule(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int r1, int r2, int r3, int *out_new_src, int *out_new_dst, size_t max_new, size_t *out_count);
+int interop_logic_deductive_closure(int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges, const int *r1_rules, const int *r2_rules, const int *r3_rules, size_t num_rules);
+int interop_logic_check_consistency(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int *out_consistent);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

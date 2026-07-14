@@ -959,3 +959,99 @@ int interop_poly_euclidean_verify(const uint64_t *a, size_t deg_a, const uint64_
     free(rhs);
     return 0;
 }
+
+int interop_logic_infer_rule(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int r1, int r2, int r3, int *out_new_src, int *out_new_dst, size_t max_new, size_t *out_count) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !out_new_src || !out_new_dst || max_new == 0 || !out_count) return -1;
+    size_t count = 0;
+    for (size_t i = 0; i < num_edges; i++) {
+        if (edges_rel[i] != r1) continue;
+        int u = edges_src[i];
+        int v = edges_dst[i];
+        for (size_t j = 0; j < num_edges; j++) {
+            if (edges_rel[j] != r2 || edges_src[j] != v) continue;
+            int w = edges_dst[j];
+            int already_exists = 0;
+            for (size_t k = 0; k < num_edges; k++) {
+                if (edges_src[k] == u && edges_rel[k] == r3 && edges_dst[k] == w) {
+                    already_exists = 1;
+                    break;
+                }
+            }
+            if (!already_exists) {
+                int in_out = 0;
+                for (size_t k = 0; k < count; k++) {
+                    if (out_new_src[k] == u && out_new_dst[k] == w) {
+                        in_out = 1;
+                        break;
+                    }
+                }
+                if (!in_out && count < max_new) {
+                    out_new_src[count] = u;
+                    out_new_dst[count] = w;
+                    count++;
+                }
+            }
+        }
+    }
+    *out_count = count;
+    return 0;
+}
+
+int interop_logic_deductive_closure(int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges, const int *r1_rules, const int *r2_rules, const int *r3_rules, size_t num_rules) {
+    if (!edges_src || !edges_rel || !edges_dst || !num_edges || max_edges == 0 || !r1_rules || !r2_rules || !r3_rules || num_rules == 0) return -1;
+    int added_any = 1;
+    while (added_any) {
+        added_any = 0;
+        size_t current_num = *num_edges;
+        for (size_t r = 0; r < num_rules; r++) {
+            int r1 = r1_rules[r];
+            int r2 = r2_rules[r];
+            int r3 = r3_rules[r];
+            int temp_src[100];
+            int temp_dst[100];
+            size_t temp_cnt = 0;
+            if (interop_logic_infer_rule(edges_src, edges_rel, edges_dst, current_num, r1, r2, r3, temp_src, temp_dst, 100, &temp_cnt) == 0) {
+                for (size_t i = 0; i < temp_cnt; i++) {
+                    if (*num_edges < max_edges) {
+                        edges_src[*num_edges] = temp_src[i];
+                        edges_rel[*num_edges] = r3;
+                        edges_dst[*num_edges] = temp_dst[i];
+                        (*num_edges)++;
+                        added_any = 1;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int interop_logic_check_consistency(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int *out_consistent) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !asymmetric_rels || num_asym == 0 || !out_consistent) return -1;
+    *out_consistent = 1;
+    for (size_t i = 0; i < num_edges; i++) {
+        int r = edges_rel[i];
+        int u = edges_src[i];
+        int v = edges_dst[i];
+        int is_asym = 0;
+        for (size_t idx = 0; idx < num_asym; idx++) {
+            if (asymmetric_rels[idx] == r) {
+                is_asym = 1;
+                break;
+            }
+        }
+        if (is_asym) {
+            if (u == v) {
+                *out_consistent = 0;
+                return 0;
+            }
+            for (size_t j = 0; j < num_edges; j++) {
+                if (edges_rel[j] == r && edges_src[j] == v && edges_dst[j] == u) {
+                    *out_consistent = 0;
+                    return 0;
+                }
+            }
+        }
+    }
+    return 0;
+}
