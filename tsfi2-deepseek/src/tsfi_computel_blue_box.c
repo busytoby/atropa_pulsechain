@@ -801,3 +801,50 @@ void blue_box_bind_23_tree(TwoThreeNode *root) {
         rbt_index_23_node(root);
     }
 }
+
+static bool in_transaction = false;
+static BlueBoxBlockState transaction_buffer[RBT_MAX_NODES];
+static uint32_t transaction_buffer_count = 0;
+
+void blue_box_begin_transaction() {
+    in_transaction = true;
+    transaction_buffer_count = 0;
+}
+
+bool blue_box_add_to_transaction(const BlueBoxBlockState *state) {
+    if (!in_transaction || transaction_buffer_count >= RBT_MAX_NODES || !state) return false;
+    transaction_buffer[transaction_buffer_count++] = *state;
+    return true;
+}
+
+bool blue_box_commit_transaction(const char *filepath) {
+    if (!in_transaction || !filepath) return false;
+
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "ab");
+    if (!hf) return false;
+
+    flock(fileno(hf), LOCK_EX);
+
+    for (uint32_t i = 0; i < transaction_buffer_count; i++) {
+        BlueBoxBlockState *state = &transaction_buffer[i];
+        state->checksum = calculate_crc32((const uint8_t *)state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        fwrite(state, sizeof(BlueBoxBlockState), 1, hf);
+
+        char payload[128];
+        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", state->nonce, state->gas_allowance);
+        TwoThreeNode *tt_node = blue_box_create_leaf(state->block_number, payload, 0, NULL);
+        blue_box_rbt_insert(state->block_number, tt_node);
+    }
+
+    fclose(hf);
+    in_transaction = false;
+    transaction_buffer_count = 0;
+    return true;
+}
+
+void blue_box_rollback_transaction() {
+    in_transaction = false;
+    transaction_buffer_count = 0;
+}

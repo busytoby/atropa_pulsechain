@@ -329,11 +329,46 @@ int main(void) {
     assert(matched == 1); // Only block 202 matches now since 201 is deleted
     assert(results[0] == 202);
 
+    // 18. Test RDBMS Transactions (Begin, Commit, Rollback)
+    remove("txn_test.dat");
+    remove("txn_test.dat.hist");
+    
+    blue_box_begin_transaction();
+    BlueBoxBlockState tstate1 = { .block_number = 500, .gas_allowance = 55555, .nonce = 1, .is_committed = true };
+    BlueBoxBlockState tstate2 = { .block_number = 501, .gas_allowance = 66666, .nonce = 2, .is_committed = true };
+    
+    bool txn_ok = blue_box_add_to_transaction(&tstate1);
+    assert(txn_ok == true);
+    txn_ok = blue_box_add_to_transaction(&tstate2);
+    assert(txn_ok == true);
+    
+    // Commit transaction
+    commit_ok = blue_box_commit_transaction("txn_test.dat");
+    assert(commit_ok == true);
+    
+    // Query committed transaction blocks
+    matched = blue_box_query_blocks("txn_test.dat", "gas_allowance", "=", 55555, results, 10);
+    assert(matched == 1);
+    assert(results[0] == 500);
+    
+    // Test Rollback
+    blue_box_begin_transaction();
+    BlueBoxBlockState tstate3 = { .block_number = 502, .gas_allowance = 77777, .nonce = 3, .is_committed = true };
+    txn_ok = blue_box_add_to_transaction(&tstate3);
+    assert(txn_ok == true);
+    blue_box_rollback_transaction();
+    
+    // 502 should not be written
+    matched = blue_box_query_blocks("txn_test.dat", "gas_allowance", "=", 77777, results, 10);
+    assert(matched == 0);
+    
+    remove("txn_test.dat");
+    remove("txn_test.dat.hist");
     remove("rdbms_test.dat");
     remove("rdbms_test.dat.hist");
     remove("rbt_reload_test.dat");
     remove("rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, and RDBMS DML tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, and Relational Transaction tests passed successfully.\n");
     return 0;
 }
