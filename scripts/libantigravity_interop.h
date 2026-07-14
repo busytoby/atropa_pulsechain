@@ -348,4 +348,19 @@ void interop_tm_cnn_attention_avx512(const float *q, const float *k, const float
 void interop_tm_cnn_gate_weights(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *features, uint32_t *gates, size_t count);
 void interop_tm_cnn_minkowski_attention(const uint64_t *q_coords, const uint64_t *k_coords, size_t count, uint32_t p, uint64_t *weights);
 
+typedef struct {
+    double phase;
+    double frequency;
+    double error;
+} InteropPLL;
+
+typedef struct {
+    double amplitude;
+    double threshold;
+    int gated;
+} InteropPMG;
+
+void interop_pll_update(InteropPLL *pll, double reference_phase, double dt, double loop_gain);
+int interop_pmg_gate(InteropPMG *pmg, double signal);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

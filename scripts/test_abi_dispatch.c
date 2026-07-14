@@ -933,6 +933,17 @@ int main() {
     assert(mink_weights[0] == 0);
     printf("✓ Vectorized attention, weight gating, and Minkowski attention weights verified.\n");
 
+    // 85. Test PLL Phase Lock loop
+    InteropPLL test_pll = { 0.0, 10.0, 0.0 };
+    interop_pll_update(&test_pll, 1.0, 0.1, 2.0);
+    assert(test_pll.frequency > 10.0);
+
+    // 86. Test PMG Amplitude Gating
+    InteropPMG test_pmg = { 0.0, 5.0, 0 };
+    assert(interop_pmg_gate(&test_pmg, 2.0) == 1);
+    assert(interop_pmg_gate(&test_pmg, 6.0) == 0);
+    printf("✓ PLL tracking loop and PMG gating verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

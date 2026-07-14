@@ -1980,3 +1980,17 @@ void interop_tm_cnn_minkowski_attention(const uint64_t *q_coords, const uint64_t
         weights[i] = interop_knn_distance_minkowski(&q_coords[i * 3], &k_coords[i * 3], p);
     }
 }
+
+void interop_pll_update(InteropPLL *pll, double reference_phase, double dt, double loop_gain) {
+    if (!pll) return;
+    pll->error = reference_phase - pll->phase;
+    pll->frequency += loop_gain * pll->error * dt;
+    pll->phase += pll->frequency * dt;
+}
+
+int interop_pmg_gate(InteropPMG *pmg, double signal) {
+    if (!pmg) return 0;
+    pmg->amplitude = signal;
+    pmg->gated = (signal >= pmg->threshold) ? 0 : 1;
+    return pmg->gated;
+}
