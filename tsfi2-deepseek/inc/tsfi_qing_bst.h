@@ -8,6 +8,7 @@
 typedef struct tsfi_qing_bst_node {
     uint64_t virtual_address;
     CachedContract *contract;
+    int height;
     struct tsfi_qing_bst_node *left;
     struct tsfi_qing_bst_node *right;
 } tsfi_qing_bst_node;
