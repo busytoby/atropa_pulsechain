@@ -1748,3 +1748,32 @@ uint32_t blue_box_select_gguf_layer_peer(const char *layer_name) {
     }
     return best_peer_ip;
 }
+
+// 19. Black Box Line Voltage & Billing Status Simulation
+bool blue_box_simulate_black_box(float resistance_ohms, uint32_t *voltage_out, bool *billing_active_out) {
+    if (!voltage_out || !billing_active_out) return false;
+    
+    // V_loop = 48V * R / (R + 1000)
+    float v_loop = 48.0f * resistance_ohms / (resistance_ohms + 1000.0f);
+    uint32_t v_rounded = (uint32_t)(v_loop + 0.5f);
+    *voltage_out = v_rounded;
+    
+    // Black Box threshold window: 10V to 12V suppresses answer-supervision (no billing)
+    bool billing_active = true;
+    if (v_loop >= 10.0f && v_loop <= 12.0f) {
+        billing_active = false;
+    } else if (v_loop < 10.0f) {
+        // Under 10V is considered on-hook / line-dropped
+        billing_active = false;
+    }
+    
+    *billing_active_out = billing_active;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    lau_yul_thunk_sstore(0xF150, v_rounded);
+    lau_yul_thunk_sstore(0xF151, billing_active ? 1 : 0);
+    
+    printf("[BLACK BOX] Clamped resistance: %.1f ohms. Voltage: %u V. Billing active: %s\n",
+           resistance_ohms, v_rounded, billing_active ? "YES" : "NO");
+    return true;
+}

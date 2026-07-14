@@ -328,6 +328,28 @@ int main(void) {
     assert(selected_peer == 0x0A000001);
     printf("[TEST] GGUF Layer BGP cost-vector routing path selection verified.\n");
 
+    // 29. Test Black Box Line Voltage Clamping & Billing Status
+    uint32_t volt = 0;
+    bool bill_act = true;
+    bool bb_ok = blue_box_simulate_black_box(300.0f, &volt, &bill_act);
+    assert(bb_ok == true);
+    assert(volt == 11);
+    assert(bill_act == false);
+    uint64_t reg_volt = lau_yul_thunk_sload(0xF150);
+    uint64_t reg_bill = lau_yul_thunk_sload(0xF151);
+    assert(reg_volt == 11);
+    assert(reg_bill == 0);
+    
+    bb_ok = blue_box_simulate_black_box(2000.0f, &volt, &bill_act);
+    assert(bb_ok == true);
+    assert(volt == 32);
+    assert(bill_act == true);
+    reg_volt = lau_yul_thunk_sload(0xF150);
+    reg_bill = lau_yul_thunk_sload(0xF151);
+    assert(reg_volt == 32);
+    assert(reg_bill == 1);
+    printf("[TEST] Black Box Line Voltage clamping and answer-supervision billing bypass verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
