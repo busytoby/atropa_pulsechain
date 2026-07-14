@@ -17,15 +17,15 @@ make bin/test_vulkan_teddy > /dev/null 2>&1
 make libtsfi2.so > /dev/null 2>&1
 
 
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native -fopenmp tests/bench_aho_corasick_wavelet.c -o tests/bench_aho_corasick_wavelet -L. -ltsfi2 -lm -lrt -lpthread -ldl -lgomp -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_yang_fast.c -o tests/bench_yang_fast -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_merkle_level10_throughput.c -o tests/bench_merkle_level10_throughput -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_deepseek_mla.c -o tests/bench_deepseek_mla -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_already_there.c -o tests/bench_already_there -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_zero_overhead.c -o tests/bench_zero_overhead -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_winchester_mq.c -o tests/bench_winchester_mq -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_operator_status_rdbms.c -o tests/bench_operator_status_rdbms -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native -fopenmp tests/bench_aho_corasick_wavelet.c -o tests/bench_aho_corasick_wavelet -L. -ltsfi2 -lm -lrt -lpthread -ldl -lgomp -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_yang_fast.c -o tests/bench_yang_fast -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_merkle_level10_throughput.c -o tests/bench_merkle_level10_throughput -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_deepseek_mla.c -o tests/bench_deepseek_mla -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_already_there.c -o tests/bench_already_there -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_zero_overhead.c -o tests/bench_zero_overhead -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_winchester_mq.c -o tests/bench_winchester_mq -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_operator_status_rdbms.c -o tests/bench_operator_status_rdbms -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread -lpulse -lpulse-simple
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."

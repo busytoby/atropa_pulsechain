@@ -102,13 +102,21 @@ void tsfi_ouroboros_pll_tick(uint64_t base) {
     uint64_t pos = lau_yul_thunk_sload(0xF100);
     uint64_t neg = lau_yul_thunk_sload(0xF101);
     
+    double raw_diff = (double)pos - (double)neg;
+    double diff_abs = raw_diff >= 0.0 ? raw_diff : -raw_diff;
+    double dither_scale = (diff_abs < 10.0) ? 0.1 : 1.0; // Scale dither down when locked
+    
     // Simulate small thermal clock jitter dither using a fast deterministic LCG
     static uint32_t jitter_seed = 0x5EEDULL;
     jitter_seed = jitter_seed * 1103515245ULL + 12345ULL;
-    double jitter = ((double)(jitter_seed % 200) - 100.0) / 100.0; // Small dither in range [-1.0, 1.0]
+    double jitter = (((double)(jitter_seed % 200) - 100.0) / 100.0) * dither_scale;
     
-    double phase_error = ((double)pos - (double)neg) + jitter;
+    double phase_error = raw_diff + jitter;
     s_integral_error += phase_error;
+    
+    // PI integrator anti-windup guard clamp
+    if (s_integral_error > 1000.0) s_integral_error = 1000.0;
+    if (s_integral_error < -1000.0) s_integral_error = -1000.0;
     
     double kp = 0.15;
     double ki = 0.05;
