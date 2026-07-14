@@ -1180,18 +1180,23 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         extern int lau_yul_thunk_cache_balance(void);
         int avl_height = lau_yul_thunk_cache_height();
         int avl_balance = lau_yul_thunk_cache_balance();
+        char stats_buf[1024] = "[]";
+        extern int lau_yul_thunk_get_cache_stats(char *buf, size_t max_len);
+        lau_yul_thunk_get_cache_stats(stats_buf, sizeof(stats_buf));
         
         snprintf(output_buf, out_max, 
                  "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu, "
                  "\"evm_queue\": {\"head\": %lu, \"tail\": %lu, \"size\": %lu, \"lock\": %lu}, "
                  "\"host_heap\": %s, \"yul_trace\": %s, \"adaptive_tick_rate\": %lu, "
                  "\"scsi_tx_count\": %lu, \"scsi_parity_errors\": %lu, "
-                 "\"avl_height\": %d, \"avl_balance\": %d, \"scsi_signals\": %lu}, \"id\": %d}\n", 
+                 "\"avl_height\": %d, \"avl_balance\": %d, \"scsi_signals\": %lu, "
+                 "\"contract_cache_stats\": %s}, \"id\": %d}\n", 
                  (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups,
                  (unsigned long)head, (unsigned long)tail, (unsigned long)size, (unsigned long)lock,
                  pq_buf, trace_buf, (unsigned long)adaptive_tick,
                  (unsigned long)scsi_tx, (unsigned long)scsi_err,
-                 avl_height, avl_balance, (unsigned long)scsi_signals, id);
+                 avl_height, avl_balance, (unsigned long)scsi_signals,
+                 stats_buf, id);
         return 1;
     } else if (method_type == 33) { // wave512.inject_event
         uint32_t priority = (uint32_t)extract_json_int(min_ptr, "\"priority\"", 10);

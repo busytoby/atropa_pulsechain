@@ -549,6 +549,31 @@
                 </div>
             </div>
 
+            <!-- AVL Cache Contract Breakdown Panel -->
+            <div class="report-section" style="margin-top: 15px;">
+                <div class="card" style="overflow-x: auto;">
+                    <div class="panel-title">
+                        <span>AVL Cache Contract Breakdown</span>
+                        <span class="pulse-badge">Live Stats</span>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Contract Name</th>
+                                <th>Cache Hits</th>
+                                <th>Total Lookups</th>
+                                <th>Hit Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractStatsTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--neon-blue);">Awaiting thunk execution metrics...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Lore & SHIO Diagnostics Section -->
             <div class="report-section" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
                 <!-- ZMM Manifold Visualizer -->
@@ -1453,6 +1478,28 @@
                                     <td style="font-family: monospace;">${val.address}</td>
                                     <td style="color: var(--neon-purple); font-weight: bold;">${val.stake.toLocaleString()} Weight</td>
                                     <td><span style="color: #00ff7f;">✔ ACTIVE</span></td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+                }
+
+                // Update AVL Cache Contract Breakdown Table
+                if (data && data.contract_cache_stats) {
+                    const tbody = document.getElementById("contractStatsTableBody");
+                    if (data.contract_cache_stats.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No cache statistics recorded. Run thunks to populate.</td></tr>`;
+                    } else {
+                        let html = "";
+                        data.contract_cache_stats.forEach(stat => {
+                            const ratio = stat.lookups > 0 ? ((stat.hits / stat.lookups) * 100).toFixed(1) : "0.0";
+                            html += `
+                                <tr>
+                                    <td><strong style="color: var(--neon-blue); font-family: monospace;">${stat.name}</strong></td>
+                                    <td>${stat.hits}</td>
+                                    <td>${stat.lookups}</td>
+                                    <td style="color: #00ff7f; font-weight: bold;">${ratio}%</td>
                                 </tr>
                             `;
                         });

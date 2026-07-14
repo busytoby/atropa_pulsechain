@@ -22,6 +22,10 @@ typedef struct LauMemoNode {
     void *retval_ptr;
     size_t retval_len;
     int height;
+    uint64_t created_time_ms;
+    uint64_t ttl_ms;
+    bool stale;
+    uint64_t cache_hits;
     struct LauMemoNode *left;
     struct LauMemoNode *right;
 } LauMemoNode;
@@ -31,7 +35,14 @@ static pthread_mutex_t s_thunk_memo_bst_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash) {
     if (!root) return NULL;
-    if (hash == root->signature_hash) return root;
+    if (hash == root->signature_hash) {
+        extern uint64_t current_time_ms(void);
+        if (root->stale) return NULL;
+        if (root->created_time_ms + root->ttl_ms < current_time_ms()) {
+            return NULL;
+        }
+        return root;
+    }
     if (hash < root->signature_hash) return bst_find(root->left, hash);
     return bst_find(root->right, hash);
 }
@@ -144,6 +155,83 @@ int lau_yul_thunk_cache_balance(void) {
     }
     pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
     return balance;
+}
+
+#include <sys/time.h>
+uint64_t current_time_ms(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+static void bst_invalidate_contract(LauMemoNode *node, const char *name) {
+    if (!node) return;
+    if (strcmp(node->contract_name, name) == 0) {
+        node->stale = true;
+    }
+    bst_invalidate_contract(node->left, name);
+    bst_invalidate_contract(node->right, name);
+}
+
+void lau_yul_thunk_cache_invalidate(const char *name) {
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    bst_invalidate_contract(s_thunk_memo_bst_root, name);
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+}
+
+typedef struct {
+    char name[64];
+    uint64_t hits;
+    uint64_t lookups;
+} ContractStats;
+
+static void accumulate_stats(LauMemoNode *node, ContractStats *arr, int *count, int max_contracts) {
+    if (!node) return;
+    int found_idx = -1;
+    for (int i = 0; i < *count; i++) {
+        if (strcmp(arr[i].name, node->contract_name) == 0) {
+            found_idx = i;
+            break;
+        }
+    }
+    if (found_idx == -1 && *count < max_contracts) {
+        found_idx = *count;
+        strncpy(arr[found_idx].name, node->contract_name, 63);
+        arr[found_idx].name[63] = '\0';
+        arr[found_idx].hits = 0;
+        arr[found_idx].lookups = 0;
+        (*count)++;
+    }
+    if (found_idx != -1) {
+        arr[found_idx].hits += node->cache_hits;
+        arr[found_idx].lookups += (node->cache_hits + 1);
+    }
+    accumulate_stats(node->left, arr, count, max_contracts);
+    accumulate_stats(node->right, arr, count, max_contracts);
+}
+
+int lau_yul_thunk_get_cache_stats(char *buf, size_t max_len) {
+    ContractStats stats[32];
+    int count = 0;
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    accumulate_stats(s_thunk_memo_bst_root, stats, &count, 32);
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+
+    size_t offset = 0;
+    int n = snprintf(buf + offset, max_len - offset, "[");
+    if (n > 0) offset += n;
+
+    for (int i = 0; i < count; i++) {
+        n = snprintf(buf + offset, max_len - offset, 
+                     "{\"name\":\"%s\",\"hits\":%lu,\"lookups\":%lu}%s",
+                     stats[i].name, stats[i].hits, stats[i].lookups,
+                     (i == count - 1) ? "" : ",");
+        if (n > 0) offset += n;
+        if (offset >= max_len - 64) break;
+    }
+
+    snprintf(buf + offset, max_len - offset, "]");
+    return count;
 }
 
 uint64_t g_thunk_cache_hits = 0;
@@ -620,6 +708,8 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 u256_t key = ctx->stack[--ctx->stack_ptr];
                 u256_t val = ctx->stack[--ctx->stack_ptr];
                 context_sstore(ctx, key, val);
+                extern void lau_yul_thunk_cache_invalidate(const char *name);
+                lau_yul_thunk_cache_invalidate(name);
                 break;
             }
             case 0x56: { // JUMP
@@ -990,6 +1080,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
             
             if (meta_match) {
                 g_thunk_cache_hits++;
+                found->cache_hits++;
                 if (retval && retval_len) {
                     size_t out_len = found->retval_len;
                     if (*retval_len < out_len) out_len = *retval_len;
@@ -1063,6 +1154,10 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                     new_node->retval_len = 0;
                 }
                 new_node->height = 1;
+                new_node->created_time_ms = current_time_ms();
+                new_node->ttl_ms = 5000;
+                new_node->stale = false;
+                new_node->cache_hits = 0;
                 new_node->left = NULL;
                 new_node->right = NULL;
                 
