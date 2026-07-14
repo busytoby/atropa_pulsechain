@@ -292,3 +292,47 @@ tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
     fclose(fp);
     return dat;
 }
+
+int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script_out) {
+    if (!dat || !key || !script_out) return -1;
+    int state = 0;
+    int len = 0;
+    
+    while (*key != '\0') {
+        int b = dat->base[state];
+        if (b == 0) return -1;
+        
+        int next = b + (unsigned char)*key;
+        if (next >= dat->capacity || dat->check[next] != state) {
+            return -1;
+        }
+        
+        int char_val = (unsigned char)*key;
+        int check_val = dat->check[next];
+        
+        script_out[len++] = 0x04;
+        memcpy(script_out + len, &b, 4);
+        len += 4;
+        
+        script_out[len++] = 0x04;
+        memcpy(script_out + len, &char_val, 4);
+        len += 4;
+        
+        script_out[len++] = 0x93;
+        
+        script_out[len++] = 0x04;
+        memcpy(script_out + len, &check_val, 4);
+        len += 4;
+        
+        script_out[len++] = 0x04;
+        memcpy(script_out + len, &state, 4);
+        len += 4;
+        
+        script_out[len++] = 0x88;
+        
+        state = next;
+        key++;
+    }
+    
+    return len;
+}
