@@ -1183,3 +1183,24 @@ void fnv1a_hash_cascade_avx512(const uint64_t *initial_hashes, const uint64_t *d
     }
 #endif
 }
+
+int interop_graph_query_sparql(const InteropGraphEdge *edges, size_t e_count, const char *sparql_pattern, uint32_t *out_src_ids, uint32_t *out_dest_ids, size_t max_results) {
+    if (!edges || !sparql_pattern || !out_src_ids || !out_dest_ids || max_results == 0 || e_count == 0) return -1;
+    uint32_t target_rel = 0xFFFFFFFF;
+    if (strstr(sparql_pattern, "dblp:coAuthor") != NULL) {
+        target_rel = 0;
+    } else if (strstr(sparql_pattern, "dblp:authored") != NULL) {
+        target_rel = 1;
+    } else {
+        return 0;
+    }
+    size_t found = 0;
+    for (size_t i = 0; i < e_count && found < max_results; i++) {
+        if (edges[i].active && edges[i].relationship_type == target_rel) {
+            out_src_ids[found] = edges[i].src_agent_id;
+            out_dest_ids[found] = edges[i].dest_agent_id;
+            found++;
+        }
+    }
+    return (int)found;
+}

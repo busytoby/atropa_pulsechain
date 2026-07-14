@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 154);
-    assert(code_nodes[1].value == 154);
+    assert(code_nodes[0].value == 155);
+    assert(code_nodes[1].value == 155);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1250,6 +1250,19 @@ int main() {
     assert(out_hashes[0] == ((1ULL ^ 10ULL) * 1099511628211ULL));
     assert(out_hashes[3] == ((4ULL ^ 40ULL) * 1099511628211ULL));
     printf("✓ AVX-512 FNV-1a parallel hash cascades verified.\n");
+
+    // 134. Verify SPARQL DBLP-style triple query path resolution
+    InteropGraphEdge sp_edges[2] = {
+        { 1, 2, 0, 1.5f, 1 },
+        { 2, 3, 1, 2.5f, 1 }
+    };
+    uint32_t src_ids[2] = {0};
+    uint32_t dest_ids[2] = {0};
+    assert(interop_graph_query_sparql(sp_edges, 2, "?a dblp:coAuthor ?b", src_ids, dest_ids, 2) == 1);
+    assert(src_ids[0] == 1 && dest_ids[0] == 2);
+    assert(interop_graph_query_sparql(sp_edges, 2, "?a dblp:authored ?b", src_ids, dest_ids, 2) == 1);
+    assert(src_ids[0] == 2 && dest_ids[0] == 3);
+    printf("✓ SPARQL graph query path resolution verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

@@ -471,4 +471,6 @@ int interop_graph_optimize_paths_ntm(const char *filepath, uint8_t *path_tape, s
 
 void fnv1a_hash_cascade_avx512(const uint64_t *initial_hashes, const uint64_t *data_blocks, size_t block_len, uint64_t *out_hashes);
 
+int interop_graph_query_sparql(const InteropGraphEdge *edges, size_t e_count, const char *sparql_pattern, uint32_t *out_src_ids, uint32_t *out_dest_ids, size_t max_results);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
