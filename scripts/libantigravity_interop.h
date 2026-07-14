@@ -610,4 +610,6 @@ int interop_trace_log_action(int subject_id, int relation_id, int object_id, uin
 int interop_trace_query_history(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int s, int r, int o, int *out_src, int *out_rel, int *out_dst, size_t max_results, size_t *out_count);
 int interop_trace_verify_rule(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int trigger_rel, int target_rel, int *out_satisfied);
 
+int interop_wm_transition_verify(const float *h, const float *r, const float *t, size_t dim, float sem_threshold, const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int subject_id, int relation_id, int object_id, uint64_t timestamp, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log, int *out_verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

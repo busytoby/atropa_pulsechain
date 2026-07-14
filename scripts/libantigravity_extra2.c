@@ -1193,3 +1193,30 @@ int interop_trace_verify_rule(const int *log_src, const int *log_rel, const int 
     }
     return 0;
 }
+
+int interop_wm_transition_verify(const float *h, const float *r, const float *t, size_t dim, float sem_threshold, const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int subject_id, int relation_id, int object_id, uint64_t timestamp, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log, int *out_verified) {
+    if (!h || !r || !t || dim == 0 || !out_verified) return -1;
+    *out_verified = 0;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = h[i] + r[i] - t[i];
+        sum_sq += diff * diff;
+    }
+    float dist = sqrtf(sum_sq);
+    if (dist >= sem_threshold) {
+        return 0;
+    }
+    if (edges_src && edges_rel && edges_dst && num_edges > 0 && asymmetric_rels && num_asym > 0) {
+        int logic_consistent = -1;
+        if (interop_logic_check_consistency(edges_src, edges_rel, edges_dst, num_edges, asymmetric_rels, num_asym, &logic_consistent) != 0 || logic_consistent == 0) {
+            return 0;
+        }
+    }
+    if (log_src && log_rel && log_dst && log_ts && log_count && max_log > 0) {
+        if (interop_trace_log_action(subject_id, relation_id, object_id, timestamp, log_src, log_rel, log_dst, log_ts, log_count, max_log) != 0) {
+            return 0;
+        }
+    }
+    *out_verified = 1;
+    return 0;
+}
