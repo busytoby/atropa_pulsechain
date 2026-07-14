@@ -27,13 +27,15 @@ static const float mf_freqs_f2[12] = {900.0f, 1100.0f, 1100.0f, 1300.0f, 1300.0f
 // Map characters: '1'-'9', '0', 'K' (KP), 'S' (ST)
 static const char mf_char_map[12] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'K', 'S'};
 
+struct TwoThreeNode;
+
 #define RBT_MAX_NODES 256
 
 typedef enum { RBT_RED, RBT_BLACK } RbtColor;
 
 typedef struct RbtNode {
     uint32_t block_number;
-    uint8_t state_hash[32];
+    struct TwoThreeNode *two_three_node;
     RbtColor color;
     struct RbtNode *left;
     struct RbtNode *right;
@@ -44,11 +46,11 @@ static RbtNode rbt_node_pool[RBT_MAX_NODES];
 static uint32_t rbt_node_count = 0;
 static RbtNode *rbt_root = NULL;
 
-static RbtNode* rbt_alloc_node(uint32_t block_number, const uint8_t *state_hash) {
+static RbtNode* rbt_alloc_node(uint32_t block_number, struct TwoThreeNode *two_three_node) {
     if (rbt_node_count >= RBT_MAX_NODES) return NULL;
     RbtNode *node = &rbt_node_pool[rbt_node_count++];
     node->block_number = block_number;
-    memcpy(node->state_hash, state_hash, 32);
+    node->two_three_node = two_three_node;
     node->color = RBT_RED;
     node->left = NULL;
     node->right = NULL;
@@ -119,8 +121,8 @@ static void rbt_insert_fixup(RbtNode **root, RbtNode *z) {
     (*root)->color = RBT_BLACK;
 }
 
-void blue_box_rbt_insert(uint32_t block_number, const uint8_t *state_hash) {
-    RbtNode *z = rbt_alloc_node(block_number, state_hash);
+void blue_box_rbt_insert(uint32_t block_number, struct TwoThreeNode *two_three_node) {
+    RbtNode *z = rbt_alloc_node(block_number, two_three_node);
     if (!z) return;
 
     RbtNode *y = NULL;
@@ -144,10 +146,10 @@ void blue_box_rbt_insert(uint32_t block_number, const uint8_t *state_hash) {
     rbt_insert_fixup(&rbt_root, z);
 }
 
-const uint8_t* blue_box_rbt_lookup(uint32_t block_number) {
+struct TwoThreeNode* blue_box_rbt_lookup(uint32_t block_number) {
     RbtNode *x = rbt_root;
     while (x != NULL) {
-        if (block_number == x->block_number) return x->state_hash;
+        if (block_number == x->block_number) return x->two_three_node;
         if (block_number < x->block_number) x = x->left;
         else x = x->right;
     }
@@ -525,7 +527,10 @@ bool blue_box_load_state_from_disk(const char *filepath) {
         while (fread(&hist_state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
             uint32_t hist_calc = calculate_crc32((const uint8_t *)&hist_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
             if (hist_calc == hist_state.checksum) {
-                blue_box_rbt_insert(hist_state.block_number, hist_state.state_hash);
+                char payload[128];
+                snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", hist_state.nonce, hist_state.gas_allowance);
+                TwoThreeNode *tt_node = blue_box_create_leaf(hist_state.block_number, payload, 0, NULL);
+                blue_box_rbt_insert(hist_state.block_number, tt_node);
             }
         }
         fclose(hf);
@@ -552,7 +557,10 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
         fclose(f);
         if (written == 1) {
             append_history_record(filepath, &current_block_state);
-            blue_box_rbt_insert(current_block_state.block_number, current_block_state.state_hash);
+            char payload[128];
+            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", current_block_state.nonce, current_block_state.gas_allowance);
+            TwoThreeNode *tt_node = blue_box_create_leaf(current_block_state.block_number, payload, 0, NULL);
+            blue_box_rbt_insert(current_block_state.block_number, tt_node);
             return true;
         }
         return false;
@@ -597,7 +605,10 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
 
     if (written == 1) {
         append_history_record(filepath, &current_block_state);
-        blue_box_rbt_insert(current_block_state.block_number, current_block_state.state_hash);
+        char payload[128];
+        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", current_block_state.nonce, current_block_state.gas_allowance);
+        TwoThreeNode *tt_node = blue_box_create_leaf(current_block_state.block_number, payload, 0, NULL);
+        blue_box_rbt_insert(current_block_state.block_number, tt_node);
         return true;
     }
     return false;

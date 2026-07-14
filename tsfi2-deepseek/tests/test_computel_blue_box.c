@@ -176,28 +176,32 @@ int main(void) {
     assert((state.active_trunk_mask & (1U << 31)) == 0);
 
     // 13. Test Red-Black Tree Immutability Indexing
-    uint8_t hash1[32] = {0xAA};
-    uint8_t hash2[32] = {0xBB};
-    uint8_t hash3[32] = {0xCC};
+    TwoThreeNode *tt1 = blue_box_create_leaf(10, "RbtData_10", 0, NULL);
+    TwoThreeNode *tt2 = blue_box_create_leaf(5, "RbtData_5", 0, NULL);
+    TwoThreeNode *tt3 = blue_box_create_leaf(15, "RbtData_15", 0, NULL);
     
-    blue_box_rbt_insert(10, hash1);
-    blue_box_rbt_insert(5, hash2);
-    blue_box_rbt_insert(15, hash3);
+    blue_box_rbt_insert(10, tt1);
+    blue_box_rbt_insert(5, tt2);
+    blue_box_rbt_insert(15, tt3);
     
-    const uint8_t *found_hash = blue_box_rbt_lookup(10);
-    assert(found_hash != NULL);
-    assert(found_hash[0] == 0xAA);
+    TwoThreeNode *found_node = blue_box_rbt_lookup(10);
+    assert(found_node != NULL);
+    assert(strcmp(blue_box_retrieve_23_data(found_node, 10), "RbtData_10") == 0);
     
-    found_hash = blue_box_rbt_lookup(5);
-    assert(found_hash != NULL);
-    assert(found_hash[0] == 0xBB);
+    found_node = blue_box_rbt_lookup(5);
+    assert(found_node != NULL);
+    assert(strcmp(blue_box_retrieve_23_data(found_node, 5), "RbtData_5") == 0);
     
-    found_hash = blue_box_rbt_lookup(15);
-    assert(found_hash != NULL);
-    assert(found_hash[0] == 0xCC);
+    found_node = blue_box_rbt_lookup(15);
+    assert(found_node != NULL);
+    assert(strcmp(blue_box_retrieve_23_data(found_node, 15), "RbtData_15") == 0);
     
-    found_hash = blue_box_rbt_lookup(999);
-    assert(found_hash == NULL);
+    found_node = blue_box_rbt_lookup(999);
+    assert(found_node == NULL);
+    
+    blue_box_free_23_tree(tt1);
+    blue_box_free_23_tree(tt2);
+    blue_box_free_23_tree(tt3);
 
     // 14. Test Red-Black Tree Persistent Reload from Disk
     remove("rbt_reload_test.dat");
@@ -225,13 +229,18 @@ int main(void) {
     bool load_rbt_ok = blue_box_load_state_from_disk("rbt_reload_test.dat");
     assert(load_rbt_ok == true);
     
-    const uint8_t *h100 = blue_box_rbt_lookup(100);
+    TwoThreeNode *h100 = blue_box_rbt_lookup(100);
     assert(h100 != NULL);
-    assert(memcmp(h100, b100_state.state_hash, 32) == 0);
+    const char *data100 = blue_box_retrieve_23_data(h100, 100);
+    assert(data100 != NULL);
+    assert(strstr(data100, "nonce:") != NULL);
     
-    const uint8_t *h101 = blue_box_rbt_lookup(101);
+    TwoThreeNode *h101 = blue_box_rbt_lookup(101);
     assert(h101 != NULL);
-    assert(memcmp(h101, b101_state.state_hash, 32) == 0);
+    assert(h101->keys[0] == b101_state.block_number);
+    const char *data101 = blue_box_retrieve_23_data(h101, 101);
+    assert(data101 != NULL);
+    assert(strstr(data101, "nonce:") != NULL);
     
     // 15. Test Query RDBMS Engine
     remove("rdbms_test.dat");
