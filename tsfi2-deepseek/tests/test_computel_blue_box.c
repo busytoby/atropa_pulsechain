@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include "../src/tsfi_computel_blue_box.c"
 
 int main(void) {
@@ -41,6 +42,18 @@ int main(void) {
     samples = generate_red_box_coin_tone(10, large_coin_buf, 3000);
     assert(samples == 2112);
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF and Red Box coin modulation tests passed successfully.\n");
+    // 6. Test Immutable ZMM Address Storage contained within Blue Box
+    const char *addr800 = blue_box_get_immutable_address(800);
+    assert(addr800 != NULL);
+    assert(strcmp(addr800, "dynamic_0x0000000000000000000000000000000000000800") == 0);
+
+    const char *addr805 = blue_box_get_immutable_address(805);
+    assert(addr805 != NULL);
+    assert(strcmp(addr805, "dynamic_0x0000000000000000000000000000000000000805") == 0);
+
+    const char *addr_invalid = blue_box_get_immutable_address(999);
+    assert(addr_invalid == NULL);
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, and immutable address storage tests passed successfully.\n");
     return 0;
 }

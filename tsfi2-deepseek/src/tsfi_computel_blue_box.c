@@ -23,6 +23,29 @@ static const float mf_freqs_f2[12] = {900.0f, 1100.0f, 1100.0f, 1300.0f, 1300.0f
 // Map characters: '1'-'9', '0', 'K' (KP), 'S' (ST)
 static const char mf_char_map[12] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'K', 'S'};
 
+typedef struct {
+    uint32_t trunk_id;
+    const char *address;
+} ImmutableBlueBoxStorageEntry;
+
+static const ImmutableBlueBoxStorageEntry immutable_storage[] = {
+    {800, "dynamic_0x0000000000000000000000000000000000000800"},
+    {801, "dynamic_0x0000000000000000000000000000000000000801"},
+    {805, "dynamic_0x0000000000000000000000000000000000000805"},
+    {808, "dynamic_0x0000000000000000000000000000000000000808"},
+    {815, "dynamic_0x0000000000000000000000000000000000000815"}
+};
+
+const char *blue_box_get_immutable_address(uint32_t trunk_id) {
+    int entries = sizeof(immutable_storage) / sizeof(immutable_storage[0]);
+    for (int i = 0; i < entries; i++) {
+        if (immutable_storage[i].trunk_id == trunk_id) {
+            return immutable_storage[i].address;
+        }
+    }
+    return NULL;
+}
+
 /* Generates 2600 Hz SF tone to seize simulated trunk line */
 void generate_sf_seizure(float *buffer, int num_samples) {
     if (!buffer || num_samples <= 0) return;
