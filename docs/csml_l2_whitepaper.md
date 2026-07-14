@@ -37,38 +37,36 @@ To bridge Bitcoin's native stack operations with L2 state-space tape mutations, 
 
 Stack pointers `SP_Left` and `SP_Right` track the stack boundaries. We map standard Bitcoin stack operators directly onto L2 mutations:
 *   **`OP_DUP`**: Reads top of $S_L$ and pushes the duplicate value onto the tape at index $H-1$.
+    $$\text{Tape}_{t+1}[H-1] = \text{Tape}_t[H-1], \quad \text{SP}_{\text{Left}, t+1} = \text{SP}_{\text{Left}, t} + 1$$
 *   **`OP_SWAP`**: Exchanges values at $H-1$ and $H$.
+    $$\text{Tape}_{t+1}[H-1] = \text{Tape}_t[H], \quad \text{Tape}_{t+1}[H] = \text{Tape}_t[H-1]$$
 *   **`OP_ADD`**: Pops the top values of $S_L$ and $S_R$, computes their sum, and writes it to $H$.
+    $$\text{Tape}_{t+1}[H] = \text{Tape}_t[H-1] + \text{Tape}_t[H] \pmod{2^{64}}$$
+    $$\text{SP}_{\text{Left}, t+1} = \text{SP}_{\text{Left}, t} - 1, \quad \text{SP}_{\text{Right}, t+1} = \text{SP}_{\text{Right}, t}$$
 
 This dual-stack architecture maps native stack sequences to 1D tape transitions, ensuring 1-to-1 operational equivalence.
 
 ---
 
-## 3. Multi-Tape State Parallelism
+## 3. Multi-Tape Parallelism & Delta Serialization
 
 To support concurrent contract execution, the UTM is extended to support $K$ independent, parallel tape execution tracks:
 $$\text{CompositeState} = \sum_{k=1}^K M_{T}^{(k)}$$
 
-The vectorized hashing loop (`fnv1a_hash_vectorized`) processes the records of all $K$ parallel tapes across independent vector lanes, generating a single unified root hash commitment:
-$$\text{CompositeRoot} = \bigoplus_{k=1}^K \text{VectorHash}(M_{T}^{(k)})$$
-
-This unified proof verifies multiple concurrent smart contract transitions under a single Bitcoin block spend.
-
----
-
-## 4. State-Delta Serialization (Rollup Commitments)
-
-To minimize the data witness footprint on the Bitcoin blockchain, we employ **State-Delta Serialization**. Rather than committing the entire tape table serialization, we define the state transition purely as a set of mutated cells ($\Delta$):
-$$\Delta = \{ (idx_j, \gamma_{new, j}) \mid \text{Tape}_{t+1}[idx_j] \ne \text{Tape}_t[idx_j] \}$$
+To minimize the data witness footprint on the Bitcoin blockchain, we employ **State-Delta Serialization**. Rather than committing the entire tape table serialization, we define the state transition purely as a unified, multi-tape state-delta commitment ($\Delta_{\text{composite}}$) representing the sum of mutations across all $K$ tracks:
+$$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, j}) \}$$
 
 The on-chain verifier applies this delta to verify correctness:
-$$\text{Tape}_{t+1} = \text{ApplyDelta}(\text{Tape}_t, \Delta)$$
+$$\text{CompositeState}_{t+1} = \text{ApplyDelta}(\text{CompositeState}_t, \Delta_{\text{composite}})$$
 
-The Bitcoin witness script validates the FNV-1a hash of the delta array, reducing on-chain requirements from $O(\text{TapeSize})$ to $O(\text{MutatedCells})$.
+The vectorized hashing loop (`fnv1a_hash_vectorized`) processes the records of all $K$ parallel tapes across independent vector lanes, generating a single unified root hash commitment of the composite delta:
+$$\text{CompositeRoot} = \bigoplus_{k=1}^K \text{VectorHash}(\Delta_{\text{composite}}^{(k)})$$
+
+This reduces the verification complexity to a single $O(\sum \Delta_k)$ evaluation on Bitcoin.
 
 ---
 
-## 5. WinchesterMQ SCSI Handshake State Machine
+## 4. WinchesterMQ SCSI Handshake State Machine
 
 The WinchesterMQ virtual hardware SCSI handshake loops (`WinchesterMQ.yul`) act as the physical link-layer bridge for L2 state transitions. The handshake protocol progresses through four distinct phases:
 $$\Phi_{\text{SCSI}} \in \{\text{BusFree}, \text{Command}, \text{DataTransfer}, \text{Status}\}$$
@@ -80,7 +78,7 @@ This bridges low-level hardware interrupt queues directly to visual coordinate p
 
 ---
 
-## 6. Unified State Retention Logs
+## 5. Unified State Retention Logs
 
 Every database mutation is sequentially compiled into a verifiable, Merkle-like transition ledger. Each entry is structurally formatted:
 $$\text{BlockHeader}_i = \text{FNV1a}(\text{PrevHash}_{i-1} \parallel \text{Selector} \parallel \text{ArgsHash} \parallel \text{StateRoot})$$
@@ -89,7 +87,7 @@ The bottom-up audit validation algorithm guarantees that any post-facto mutation
 
 ---
 
-## 7. Non-Preferential Accumulator States
+## 6. Non-Preferential Accumulator States
 
 Any introduction of empirical space-charge-limited power laws (such as the Child-Langmuir law, which is strictly banned within this architecture) is intercepted at the compiler boundary. The compiler isolates these external empirical variables and redirects them to a non-preferential accumulator vector:
 $$V_{\text{accum}, t+1} = V_{\text{accum}, t} + \text{InputVariable}$$
@@ -98,7 +96,7 @@ This guarantees mathematical continuity across the state-transition pipeline, pr
 
 ---
 
-## 8. **Auncient** Register Manifestations
+## 7. **Auncient** Register Manifestations
 
 Every transaction step is modulated by the cryptographic and visual registers of the **Auncient** Wavelet layout:
 
@@ -117,7 +115,7 @@ Every transaction step is modulated by the cryptographic and visual registers of
 
 ---
 
-## 9. State-Space Complexity and Fee Bounds
+## 8. State-Space Complexity and Fee Bounds
 
 To establish scalability, we analyze the cost function of Layer-2 rollups. Let $N$ be the number of transactions batched off-chain. Let $\text{Gas}_{\text{Base}}$ represent the base evaluation gas cost of the guest VM, and $\text{Witness}_{\text{BTC}}$ represent the byte size of the BTC transaction input witness.
 
@@ -131,7 +129,7 @@ Unlike the space-charge-limited power laws of physical conductors (e.g. the Chil
 
 ---
 
-## 10. The RDBMS-PLL Synchronization Protocol
+## 9. The RDBMS-PLL Synchronization Protocol
 
 To ensure consistency between guest user spaces and host hypervisors, the Phase-Locked Loop (PLL) synchronizer tracks replication state offsets:
 
