@@ -169,3 +169,8 @@ assets/syrinx/
 # Ignore generated custom JPEG AI container format
 assets/**/*.jpai
 assets/*.jpai
+
+# Ignore test_animation binary and outputs
+/scripts/test_animation
+/assets/test_animation_out.ppm
+
