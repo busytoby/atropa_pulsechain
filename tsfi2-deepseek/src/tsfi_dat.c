@@ -1,0 +1,145 @@
+#include "tsfi_dat.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define DAT_INITIAL_CAPACITY 8192
+
+static void resize_dat(tsfi_dat *dat, int min_capacity) {
+    int old_cap = dat->capacity;
+    int new_cap = old_cap;
+    while (new_cap < min_capacity) {
+        new_cap *= 2;
+    }
+    
+    dat->base = (int*)realloc(dat->base, new_cap * sizeof(int));
+    dat->check = (int*)realloc(dat->check, new_cap * sizeof(int));
+    dat->values = (char**)realloc(dat->values, new_cap * sizeof(char*));
+    
+    for (int i = old_cap; i < new_cap; i++) {
+        dat->base[i] = 0;
+        dat->check[i] = -1;
+        dat->values[i] = NULL;
+    }
+    dat->capacity = new_cap;
+}
+
+// Helper to find a suitable base value for a set of children character branches
+static int find_base(tsfi_dat *dat, int *children, int child_count) {
+    if (child_count == 0) return 1;
+    
+    int b = 1;
+    while (true) {
+        bool ok = true;
+        for (int i = 0; i < child_count; i++) {
+            int target = b + children[i];
+            if (target >= dat->capacity) {
+                resize_dat(dat, target + 1);
+            }
+            if (dat->check[target] != -1) {
+                ok = false;
+                break;
+            }
+        }
+        if (ok) return b;
+        b++;
+    }
+}
+
+// Recursive function to map standard Trie nodes into base/check arrays
+static void dat_compile_node(tsfi_dat *dat, tsfi_trie_node *trie_node, int dat_state) {
+    if (!trie_node) return;
+
+    // Collect all children transition characters
+    int children_chars[256];
+    tsfi_trie_node *children_nodes[256];
+    int child_count = 0;
+
+    tsfi_trie_node *child = trie_node->child;
+    while (child && child_count < 256) {
+        children_chars[child_count] = (unsigned char)child->ch;
+        children_nodes[child_count] = child;
+        child_count++;
+        child = child->sibling;
+    }
+
+    if (child_count > 0) {
+        // Find a valid base offset
+        int b = find_base(dat, children_chars, child_count);
+        dat->base[dat_state] = b;
+
+        // Set check values to reserve slots
+        for (int i = 0; i < child_count; i++) {
+            int next_state = b + children_chars[i];
+            dat->check[next_state] = dat_state;
+            if (children_nodes[i]->is_end && children_nodes[i]->phoneme) {
+                dat->values[next_state] = strdup(children_nodes[i]->phoneme);
+            }
+        }
+
+        // Recursively compile children
+        for (int i = 0; i < child_count; i++) {
+            int next_state = b + children_chars[i];
+            dat_compile_node(dat, children_nodes[i], next_state);
+        }
+    }
+}
+
+tsfi_dat* tsfi_dat_compile(tsfi_trie_node *trie_root) {
+    if (!trie_root) return NULL;
+
+    tsfi_dat *dat = (tsfi_dat*)malloc(sizeof(tsfi_dat));
+    if (!dat) return NULL;
+
+    dat->capacity = DAT_INITIAL_CAPACITY;
+    dat->base = (int*)malloc(dat->capacity * sizeof(int));
+    dat->check = (int*)malloc(dat->capacity * sizeof(int));
+    dat->values = (char**)malloc(dat->capacity * sizeof(char*));
+
+    for (int i = 0; i < dat->capacity; i++) {
+        dat->base[i] = 0;
+        dat->check[i] = -1;
+        dat->values[i] = NULL;
+    }
+
+    // Set root node (state 0)
+    dat->check[0] = 0;
+
+    // Compile from root (state 0)
+    dat_compile_node(dat, trie_root, 0);
+
+    return dat;
+}
+
+const char* tsfi_dat_search(tsfi_dat *dat, const char *key) {
+    if (!dat || !key || *key == '\0') return NULL;
+
+    int state = 0;
+    while (*key != '\0') {
+        int b = dat->base[state];
+        if (b == 0) return NULL; // No outbound transitions
+
+        int next = b + (unsigned char)*key;
+        if (next >= dat->capacity || dat->check[next] != state) {
+            return NULL; // Transition collision or out of bounds
+        }
+        state = next;
+        key++;
+    }
+
+    return dat->values[state];
+}
+
+void tsfi_dat_destroy(tsfi_dat *dat) {
+    if (!dat) return;
+
+    for (int i = 0; i < dat->capacity; i++) {
+        if (dat->values[i]) {
+            free(dat->values[i]);
+        }
+    }
+    free(dat->base);
+    free(dat->check);
+    free(dat->values);
+    free(dat);
+}
