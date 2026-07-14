@@ -1294,6 +1294,10 @@ Status: Awaiting hero to join the battle.</div>
 
         async function connectWallet() {
             if (typeof window.ethereum === "undefined") {
+                if (confirm("MetaMask/Web3 wallet not detected. Enable Simulated Local Wallet (Demo/Offline Mode)?")) {
+                    enableSimulatedWallet();
+                    return;
+                }
                 alert("MetaMask or compatible Web3 wallet not found!");
                 return;
             }
@@ -1321,6 +1325,54 @@ Status: Awaiting hero to join the battle.</div>
                 console.error("Wallet connection failed:", e);
                 alert("Failed to connect wallet: " + e.message);
             }
+        }
+
+        function enableSimulatedWallet() {
+            walletAddress = "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7";
+            onChainMode = true;
+            chainNonce = 1;
+            
+            const mockStorage = {
+                55051: 32,
+                55052: 32,
+                55053: 2000,
+                55054: 0,
+            };
+            
+            folkloreContract = {
+                poke: async (addr, val) => {
+                    mockStorage[addr] = val;
+                    console.log(`[Simulated Web3] poke(${addr}, ${val})`);
+                    logEvent(`[Web3 Tx] poke addr ${addr} -> value ${val}`);
+                    return { wait: async () => {} };
+                },
+                peek: async (addr) => {
+                    const val = mockStorage[addr] || 0;
+                    console.log(`[Simulated Web3] peek(${addr}) -> ${val}`);
+                    return val;
+                }
+            };
+            
+            speechContract = {
+                speak: async (msg) => {
+                    console.log(`[Simulated Speech] ${msg}`);
+                }
+            };
+            
+            tokenContract = {
+                allowance: async () => 1000000n,
+                approve: async () => true
+            };
+            
+            document.getElementById("walletAddress").innerText = "SIMULATED_WALLET";
+            document.getElementById("chainStatus").style.display = "block";
+            document.getElementById("btnConnect").innerText = "Demo Connected";
+            
+            const statusSpan = document.getElementById("diyatStatus");
+            statusSpan.innerText = "Approved (Simulated)";
+            statusSpan.style.color = "#00e676";
+            
+            logEvent("Simulated Web3 Wallet connected for offline play.");
         }
 
         async function checkAllowance() {
