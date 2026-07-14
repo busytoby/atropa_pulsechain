@@ -48,19 +48,38 @@ const char *blue_box_get_immutable_address(uint32_t trunk_id) {
     return NULL;
 }
 
+static uint32_t calculate_crc32(const uint8_t *data, size_t length) {
+    uint32_t crc = 0xFFFFFFFFU;
+    for (size_t i = 0; i < length; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xEDB88320U;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return ~crc;
+}
+
 typedef struct {
     uint32_t block_number;
     uint8_t state_hash[32];
     uint32_t active_trunk_mask;
+    uint32_t nonce;
     bool is_committed;
+    uint32_t checksum;
 } BlueBoxBlockState;
 
-static BlueBoxBlockState current_block_state = {0, {0}, 0, false};
+static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, false, 0};
 
 void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.block_number = block_number;
     current_block_state.active_trunk_mask = 0;
+    current_block_state.nonce = 0;
     current_block_state.is_committed = false;
+    current_block_state.checksum = 0;
     if (initial_hash) {
         for (int i = 0; i < 32; i++) {
             current_block_state.state_hash[i] = initial_hash[i];
@@ -83,7 +102,9 @@ bool blue_box_commit_block(void) {
     for (int i = 0; i < 32; i++) {
         current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
     }
+    current_block_state.nonce++;
     current_block_state.is_committed = true;
+    current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
     return true;
 }
 
@@ -167,6 +188,7 @@ bool blue_box_save_state_to_disk(const char *filepath) {
     FILE *f = fopen(filepath, "wb");
     if (!f) return false;
     flock(fileno(f), LOCK_EX);
+    current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
     size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
     fclose(f);
     return written == 1;
@@ -179,7 +201,9 @@ bool blue_box_load_state_from_disk(const char *filepath) {
     flock(fileno(f), LOCK_SH);
     size_t read = fread(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
     fclose(f);
-    return read == 1;
+    if (read != 1) return false;
+    uint32_t calc = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+    return calc == current_block_state.checksum;
 }
 
 bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expected_parent_block, const uint8_t *expected_parent_hash) {
@@ -193,7 +217,9 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
         for (int i = 0; i < 32; i++) {
             current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
         }
+        current_block_state.nonce++;
         current_block_state.is_committed = true;
+        current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
         size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
         fclose(f);
         return written == 1;
@@ -205,6 +231,12 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     if (fread(&disk_state, sizeof(BlueBoxBlockState), 1, f) != 1) {
         fclose(f);
         return false;
+    }
+
+    uint32_t disk_calc = calculate_crc32((const uint8_t *)&disk_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+    if (disk_calc != disk_state.checksum) {
+        fclose(f);
+        return false; // disk state corrupted
     }
 
     if (disk_state.block_number != expected_parent_block) {
@@ -220,7 +252,9 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     for (int i = 0; i < 32; i++) {
         current_block_state.state_hash[i] = disk_state.state_hash[i] ^ (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
     }
+    current_block_state.nonce = disk_state.nonce + 1;
     current_block_state.is_committed = true;
+    current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
 
     rewind(f);
     size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
