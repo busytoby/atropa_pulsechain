@@ -2320,7 +2320,17 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
                     fputc(ch, fs_dst);
                 }
                 fclose(fs_dst);
-                printf("[QUADTREE] Wrote block-specific storage snapshot: %s\n", storage_path);
+                
+                // Calculate FNV-1a signature and append it
+                uint64_t dummy = 0;
+                extern uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected);
+                uint64_t computed = compute_storage_fnv1a(storage_path, &dummy);
+                FILE *fs_sig = fopen(storage_path, "a");
+                if (fs_sig) {
+                    fprintf(fs_sig, "// SIG: %lu\n", computed);
+                    fclose(fs_sig);
+                }
+                printf("[QUADTREE] Wrote block-specific storage snapshot with FNV-1a signature: %s\n", storage_path);
             }
             fclose(fs_src);
         }
@@ -2427,26 +2437,58 @@ void blue_box_rehydrate_quadtree_states(void) {
                         fs_src = fopen(src_path, "r");
                     }
                     if (fs_src) {
-                        FILE *fs_dst = fopen("evm_storage.json", "w");
-                        if (!fs_dst) fs_dst = fopen("tsfi2-deepseek/evm_storage.json", "w");
-                        if (fs_dst) {
-                            char ch;
-                            while ((ch = fgetc(fs_src)) != EOF) {
-                                fputc(ch, fs_dst);
-                            }
-                            fclose(fs_dst);
-                            printf("[QUADTREE] [REHYDRATE] Restored evm_storage.json snapshot for root %lu\n", next_root);
-                            
-                            extern void reload_evm_storage_from_json(void);
-                            reload_evm_storage_from_json();
-                        }
                         fclose(fs_src);
+                        uint64_t expected_sig = 0;
+                        extern uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected);
+                        uint64_t computed_sig = compute_storage_fnv1a(src_path, &expected_sig);
+                        if (expected_sig == 0 || computed_sig != expected_sig) {
+                            printf("[QUADTREE] [SECURITY] Storage snapshot FNV-1a verification FAILED for %s! Expected: %lu, Computed: %lu. Restoring aborted!\n", 
+                                   src_path, expected_sig, computed_sig);
+                        } else {
+                            FILE *fs_src_valid = fopen(src_path, "r");
+                            if (fs_src_valid) {
+                                FILE *fs_dst = fopen("evm_storage.json", "w");
+                                if (!fs_dst) fs_dst = fopen("tsfi2-deepseek/evm_storage.json", "w");
+                                if (fs_dst) {
+                                    char ch;
+                                    while ((ch = fgetc(fs_src_valid)) != EOF) {
+                                        fputc(ch, fs_dst);
+                                    }
+                                    fclose(fs_dst);
+                                    printf("[QUADTREE] [REHYDRATE] Securely verified and restored evm_storage.json snapshot for root %lu\n", next_root);
+                                    
+                                    extern void reload_evm_storage_from_json(void);
+                                    reload_evm_storage_from_json();
+                                }
+                                fclose(fs_src_valid);
+                            }
+                        }
                     }
                 }
             }
             fclose(f);
         }
     }
+}
+
+uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected) {
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    uint64_t hash = 14695981039346656037ULL;
+    char line[1024];
+    *out_expected = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "// SIG:", 7) == 0) {
+            sscanf(line, "// SIG: %lu", out_expected);
+            break;
+        }
+        for (size_t i = 0; line[i] != '\0'; i++) {
+            hash ^= (uint8_t)line[i];
+            hash *= 1099511628211ULL;
+        }
+    }
+    fclose(f);
+    return hash;
 }
 
 bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len) {
