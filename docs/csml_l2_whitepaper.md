@@ -29,7 +29,46 @@ Since the transition rules are loaded dynamically from the rules table ($M_R$), 
 
 ---
 
-## 2. **Auncient** Register Manifestations
+## 2. Hybrid Turing-Stack Automaton
+
+To bridge Bitcoin's native stack operations with L2 state-space tape mutations, we formalize the **Hybrid Turing-Stack Automaton**. We partition the tape table ($M_T$) into a tape segment and two pushdown stacks:
+*   **Left Stack ($S_L$)**: Coordinates below the current head: $i < H$.
+*   **Right Stack ($S_R$)**: Coordinates at or above the current head: $i \ge H$.
+
+Stack pointers `SP_Left` and `SP_Right` track the stack boundaries. We map standard Bitcoin stack operators directly onto L2 mutations:
+*   **`OP_DUP`**: Reads top of $S_L$ and pushes the duplicate value onto the tape at index $H-1$.
+*   **`OP_SWAP`**: Exchanges values at $H-1$ and $H$.
+*   **`OP_ADD`**: Pops the top values of $S_L$ and $S_R$, computes their sum, and writes it to $H$.
+
+This dual-stack architecture maps native stack sequences to 1D tape transitions, ensuring 1-to-1 operational equivalence.
+
+---
+
+## 3. Multi-Tape State Parallelism
+
+To support concurrent contract execution, the UTM is extended to support $K$ independent, parallel tape execution tracks:
+$$\text{CompositeState} = \sum_{k=1}^K M_{T}^{(k)}$$
+
+The vectorized hashing loop (`fnv1a_hash_vectorized`) processes the records of all $K$ parallel tapes across independent vector lanes, generating a single unified root hash commitment:
+$$\text{CompositeRoot} = \bigoplus_{k=1}^K \text{VectorHash}(M_{T}^{(k)})$$
+
+This unified proof verifies multiple concurrent smart contract transitions under a single Bitcoin block spend.
+
+---
+
+## 4. State-Delta Serialization (Rollup Commitments)
+
+To minimize the data witness footprint on the Bitcoin blockchain, we employ **State-Delta Serialization**. Rather than committing the entire tape table serialization, we define the state transition purely as a set of mutated cells ($\Delta$):
+$$\Delta = \{ (idx_j, \gamma_{new, j}) \mid \text{Tape}_{t+1}[idx_j] \ne \text{Tape}_t[idx_j] \}$$
+
+The on-chain verifier applies this delta to verify correctness:
+$$\text{Tape}_{t+1} = \text{ApplyDelta}(\text{Tape}_t, \Delta)$$
+
+The Bitcoin witness script validates the FNV-1a hash of the delta array, reducing on-chain requirements from $O(\text{TapeSize})$ to $O(\text{MutatedCells})$.
+
+---
+
+## 5. **Auncient** Register Manifestations
 
 Every transaction step is modulated by the cryptographic and visual registers of the **Auncient** Wavelet layout:
 
@@ -48,7 +87,7 @@ Every transaction step is modulated by the cryptographic and visual registers of
 
 ---
 
-## 3. State-Space Complexity and Fee Bounds
+## 6. State-Space Complexity and Fee Bounds
 
 To establish scalability, we analyze the cost function of Layer-2 rollups. Let $N$ be the number of transactions batched off-chain. Let $\text{Gas}_{\text{Base}}$ represent the base evaluation gas cost of the guest VM, and $\text{Witness}_{\text{BTC}}$ represent the byte size of the BTC transaction input witness.
 
@@ -62,7 +101,7 @@ Unlike the space-charge-limited power laws of physical conductors (e.g. the Chil
 
 ---
 
-## 4. The RDBMS-PLL Synchronization Protocol
+## 7. The RDBMS-PLL Synchronization Protocol
 
 To ensure consistency between guest user spaces and host hypervisors, the Phase-Locked Loop (PLL) synchronizer tracks replication state offsets:
 
