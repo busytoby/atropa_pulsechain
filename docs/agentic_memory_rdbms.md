@@ -136,6 +136,15 @@ Integrates Bitcoin-style covenant rules to verify state-to-state evolution of th
 ### M. Yul Virtual Contract Covenant Deployer
 Enables the deployment of low-level Yul virtual contracts directly via Bitcoin covenant witness data payloads. The deployer function `interop_covenant_deploy_yul` compiles Yul transition tuple instructions directly into the coaxial machine's transition rules table, enabling stateful covenant computing environments.
 
+### N. Layer-2 Rollup Batch Verification
+Accelerates transaction processing speed by verifying batched sequences of state mutations. The `interop_covenant_verify_batch` API executes a set of Turing steps against the dynamic tables, producing a single final state evolution hash from a unified transition witness to reduce on-chain block footprint.
+
+### O. Optimistic Fraud Proof Engine
+Secures the off-chain rollup pipeline against invalid state assertions. The `interop_covenant_prove_fraud` API executes contested state transitions on-chain, proving state updates are fraudulent if the asserted hash deviates from the calculated step output.
+
+### P. Parallel Vectorized FNV-1a Checksums (SIMD-Equivalent Hashing)
+Uses parallel multi-lane word unrolling (`fnv1a_hash_vectorized`) to compute data table checksums across four 64-bit vector lanes, removing CPU profiling bottlenecks during deep state table serialization.
+
 ---
 
 ## 6. Performance Benchmarks
@@ -152,59 +161,10 @@ Performance metrics compiled using the standalone compilation profiler (`benchma
 
 ## 7. Verification Harness
 
-To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, and Yul virtual contract covenant deployments:
+To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, Yul virtual contract covenant deployments, Layer-2 Rollup batches, Optimistic Fraud Proofs, and Parallel Vectorized Hashing:
 
 ```bash
 cd scripts
 gcc -Wall -Wextra -Werror -std=c11 -I../tsfi2-deepseek/inc -o test_abi_dispatch test_abi_dispatch.c abi_dispatch_map.c libantigravity_interop.c
 ./test_abi_dispatch
-```
-
-### Expected Output:
-```
-=== TESTING LOCK-FREE ABI DISPATCH MAP ===
-✓ Registered selectors successfully.
-✓ Lookups resolved to correct offsets.
-✓ Non-existent selector lookup failed correctly.
-✓ Overwriting selector offset resolved successfully.
-5. Testing General ABI Dispatch registration for wired members:
-6. Testing General ABI Dispatch invocation for wired members:
-✓ Dynamic member Helmholtz cache hits and counter invalidations verified.
-7. Testing Dynamic Table operations inside agent memory:
-✓ Dynamic table query caching and invalidation verified successfully.
-8. Testing Inter-Member dynamic table operations (RDBMS):
-✓ Inter-Member dynamic table operations (RDBMS) verified successfully.
-9. Testing Dynamic Table updates and deletions:
-✓ Dynamic table updates, deletions, and associated cache invalidations verified successfully.
-10. Testing Memory-to-Memory RDBMS Dispatch (Creation, Insertion, Querying):
-✓ Memory-to-Memory RDBMS dispatch (create, insert, query) verified successfully.
-11. Testing Guest-VM WinchesterMQ SCSI RDBMS Handshake Loop:
-✓ Guest-VM SCSI LUN RDBMS loop handshake verified successfully.
-12. Testing Verifiable Transaction Audit Log (Provable Immutability):
-✓ Successfully detected and rejected tampered audit log payload.
-✓ Verifiable transaction audit logging and chain integrity checks completed successfully.
-13. Testing Coaxial Shared Memory Ledger (Zero-Copy Offset Swap & Lock):
-✓ Zero-Copy relative offset RCU swap and spinlocks verified successfully.
-14. Testing System-Wide Coaxial Shared Memory Ledger (Trie/WMQ/Gas):
-✓ System-Wide dynamic coaxial shared tables initialized and verified successfully.
-15. Testing Extended Coaxial Dynamic Tables (IPC/VRAM/JIT):
-✓ Extended dynamic coaxial shared tables verified successfully.
-16. Testing Peer, Radio, and CPU dynamic coaxial tables:
-✓ Peer, Radio, and CPU Dynamic Coaxial Tables verified successfully.
-17. Testing Live Unix Domain Socket Loopback Bridge:
-✓ Live Unix Domain Socket Loopback Bridge verified successfully.
-18. Testing RDBMS-PLL Phase Lock State Synchronizer:
-✓ RDBMS-PLL database phase state synchronization verified successfully.
-19. Testing Kermit-over-PLL Media File Transfer (MEDIA DAT):
-✓ Kermit-over-PLL Media transfer and DAT verification completed successfully.
-20. Testing Turing Complete RDBMS-PLL-DAT Media State Transitions:
-✓ Turing Complete database state machine executed and verified successfully.
-21. Testing Lock-Free SPSC Coaxial Ring Queue:
-✓ Lock-Free SPSC Coaxial Ring Queue verified successfully.
-22. Testing Bitcoin-Style State Evolution Covenant:
-✓ Bitcoin-Style State Evolution Covenant verified successfully.
-23. Testing Yul Contract Deployment via Bitcoin Covenant:
-✓ Yul virtual contract successfully deployed and verified via Bitcoin covenant.
-✓ Registered schema signatures successfully from mock wired memory member.
-=== ALL LOCK-FREE ABI DISPATCH MAP TESTS PASSED ===
 ```

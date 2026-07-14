@@ -765,3 +765,84 @@ int interop_covenant_deploy_yul(InteropCoaxialTable *rules_table, const uint64_t
     }
     return 1;
 }
+
+uint64_t fnv1a_hash_vectorized(uint64_t initial_hash, const void *data, size_t len) {
+    uint64_t h0 = initial_hash;
+    uint64_t h1 = initial_hash ^ 14695981039346656037ULL;
+    uint64_t h2 = initial_hash ^ 1099511628211ULL;
+    uint64_t h3 = initial_hash ^ 0x5555555555555555ULL;
+    const uint64_t *words = (const uint64_t*)data;
+    size_t num_words = len / 8;
+    size_t i = 0;
+    for (; i + 4 <= num_words; i += 4) {
+        h0 ^= words[i];
+        h1 ^= words[i+1];
+        h2 ^= words[i+2];
+        h3 ^= words[i+3];
+        h0 *= 1099511628211ULL;
+        h1 *= 1099511628211ULL;
+        h2 *= 1099511628211ULL;
+        h3 *= 1099511628211ULL;
+    }
+    uint64_t final_hash = h0 ^ h1 ^ h2 ^ h3;
+    for (; i < num_words; i++) {
+        final_hash ^= words[i];
+        final_hash *= 1099511628211ULL;
+    }
+    const uint8_t *bytes = (const uint8_t*)&words[num_words];
+    size_t rem_bytes = len % 8;
+    for (size_t b = 0; b < rem_bytes; b++) {
+        final_hash ^= bytes[b];
+        final_hash *= 1099511628211ULL;
+    }
+    return final_hash;
+}
+
+int interop_covenant_verify_batch(InteropRollupBatch *batch, InteropTuringState *turing, InteropCoaxialTable *tape, const InteropCoaxialTable *rules, uint64_t expected_end_hash) {
+    if (!batch || !turing || !tape || !rules) return -1;
+    uint32_t active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    char *base = (char*)tape;
+    uint64_t *rows = (uint64_t*)(base + active_offset);
+    uint64_t current_hash = fnv1a_hash_vectorized(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (current_hash != batch->start_state_hash) {
+        return -2;
+    }
+    for (uint32_t s = 0; s < batch->step_count; s++) {
+        if (interop_turing_run_step(turing, tape, rules) != 1) {
+            return -4;
+        }
+    }
+    active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    rows = (uint64_t*)(base + active_offset);
+    uint64_t end_hash = fnv1a_hash_vectorized(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (end_hash != expected_end_hash) {
+        return -3;
+    }
+    batch->end_state_hash = end_hash;
+    return 1;
+}
+
+int interop_covenant_prove_fraud(uint64_t disputed_prev_hash, uint64_t asserted_next_hash, InteropTuringState *turing, InteropCoaxialTable *tape, const InteropCoaxialTable *rules) {
+    if (!turing || !tape || !rules) return -1;
+    uint32_t active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    char *base = (char*)tape;
+    uint64_t *rows = (uint64_t*)(base + active_offset);
+    uint64_t current_hash = fnv1a_hash_vectorized(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (current_hash != disputed_prev_hash) {
+        return 0;
+    }
+    if (interop_turing_run_step(turing, tape, rules) != 1) {
+        return -2;
+    }
+    active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    rows = (uint64_t*)(base + active_offset);
+    uint64_t correct_next_hash = fnv1a_hash_vectorized(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (correct_next_hash != asserted_next_hash) {
+        return 1;
+    }
+    return 0;
+}

@@ -726,6 +726,85 @@ int main() {
     free(yul_tape_mem);
     printf("✓ Yul virtual contract successfully deployed and verified via Bitcoin covenant.\n");
 
+    // 24. Test Vectorized Parallel FNV-1a Hashing
+    printf("24. Testing Vectorized Parallel FNV-1a Hashing:\n");
+    const char *hash_test_str = "Vectorized FNV-1a Hashing Parallel Tracks Verification String Payload";
+    uint64_t vectorized_hash = fnv1a_hash_vectorized(14695981039346656037ULL, hash_test_str, strlen(hash_test_str));
+    assert(vectorized_hash != 0);
+    printf("✓ Vectorized Parallel FNV-1a Hashing verified successfully.\n");
+
+    // 25. Test Layer-2 Rollup Batching
+    printf("25. Testing Layer-2 Rollup Batching:\n");
+    char *batch_tape_mem = calloc(1, 16384);
+    char *batch_rules_mem = calloc(1, 16384);
+    assert(batch_tape_mem && batch_rules_mem);
+    InteropCoaxialTable *b_tape = (InteropCoaxialTable*)batch_tape_mem;
+    InteropCoaxialTable *b_rules = (InteropCoaxialTable*)batch_rules_mem;
+    interop_coaxial_init_table(b_tape, 10, 2);
+    interop_coaxial_init_table(b_rules, 10, 2);
+    uint64_t r1_key = ((uint64_t)0 << 32) | 0;
+    uint64_t r1_val = ((uint64_t)1 << 32) | ((uint64_t)7 << 16) | 1;
+    uint64_t r1_data[2] = { r1_key, r1_val };
+    assert(interop_coaxial_insert(b_rules, r1_data, 2) == 1);
+    uint64_t r2_key = ((uint64_t)1 << 32) | 0;
+    uint64_t r2_val = ((uint64_t)2 << 32) | ((uint64_t)8 << 16) | 1;
+    uint64_t r2_data[2] = { r2_key, r2_val };
+    assert(interop_coaxial_insert(b_rules, r2_data, 2) == 1);
+    uint64_t b_init_cell[2] = { 0, 0 };
+    assert(interop_coaxial_insert(b_tape, b_init_cell, 2) == 1);
+    uint32_t b_active_offset = __atomic_load_n(&b_tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t b_count = __atomic_load_n(&b_tape->count, __ATOMIC_ACQUIRE);
+    char *b_base = (char*)b_tape;
+    uint64_t *b_rows = (uint64_t*)(b_base + b_active_offset);
+    uint64_t b_start_hash = fnv1a_hash_vectorized(14695981039346656037ULL, b_rows, b_count * b_tape->col_count * sizeof(uint64_t));
+    char *temp_b_tape_mem = calloc(1, 16384);
+    assert(temp_b_tape_mem);
+    InteropCoaxialTable *temp_b_tape = (InteropCoaxialTable*)temp_b_tape_mem;
+    interop_coaxial_init_table(temp_b_tape, 10, 2);
+    assert(interop_coaxial_insert(temp_b_tape, b_init_cell, 2) == 1);
+    InteropTuringState temp_b_turing;
+    interop_turing_init(&temp_b_turing);
+    assert(interop_turing_run_step(&temp_b_turing, temp_b_tape, b_rules) == 1);
+    assert(interop_turing_run_step(&temp_b_turing, temp_b_tape, b_rules) == 1);
+    uint32_t tb_offset = __atomic_load_n(&temp_b_tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t tb_count = __atomic_load_n(&temp_b_tape->count, __ATOMIC_ACQUIRE);
+    char *tb_base = (char*)temp_b_tape;
+    uint64_t *tb_rows = (uint64_t*)(tb_base + tb_offset);
+    uint64_t expected_end_hash = fnv1a_hash_vectorized(14695981039346656037ULL, tb_rows, tb_count * temp_b_tape->col_count * sizeof(uint64_t));
+    InteropRollupBatch batch;
+    batch.start_state_hash = b_start_hash;
+    batch.step_count = 2;
+    InteropTuringState real_b_turing;
+    interop_turing_init(&real_b_turing);
+    assert(interop_covenant_verify_batch(&batch, &real_b_turing, b_tape, b_rules, expected_end_hash) == 1);
+    assert(batch.end_state_hash == expected_end_hash);
+    assert(real_b_turing.current_state == 2);
+    printf("✓ Layer-2 Rollup Batching verified successfully.\n");
+
+    // 26. Test Optimistic Fraud Proofs
+    printf("26. Testing Optimistic Fraud Proofs:\n");
+    char *state1_tape_mem = calloc(1, 16384);
+    assert(state1_tape_mem);
+    InteropCoaxialTable *state1_tape = (InteropCoaxialTable*)state1_tape_mem;
+    interop_coaxial_init_table(state1_tape, 10, 2);
+    assert(interop_coaxial_insert(state1_tape, b_init_cell, 2) == 1);
+    InteropTuringState s1_turing;
+    interop_turing_init(&s1_turing);
+    assert(interop_turing_run_step(&s1_turing, state1_tape, b_rules) == 1);
+    uint32_t s1_offset = __atomic_load_n(&state1_tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t s1_count = __atomic_load_n(&state1_tape->count, __ATOMIC_ACQUIRE);
+    char *s1_base = (char*)state1_tape;
+    uint64_t *s1_rows = (uint64_t*)(s1_base + s1_offset);
+    uint64_t state1_hash = fnv1a_hash_vectorized(14695981039346656037ULL, s1_rows, s1_count * state1_tape->col_count * sizeof(uint64_t));
+    int fraud_result = interop_covenant_prove_fraud(state1_hash, 0x999999, &s1_turing, state1_tape, b_rules);
+    assert(fraud_result == 1);
+    printf("✓ Optimistic Fraud Proofs verified successfully.\n");
+
+    free(batch_tape_mem);
+    free(batch_rules_mem);
+    free(temp_b_tape_mem);
+    free(state1_tape_mem);
+
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");
 
