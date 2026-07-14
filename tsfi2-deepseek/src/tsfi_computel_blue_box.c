@@ -108,6 +108,20 @@ bool blue_box_commit_block(void) {
     return true;
 }
 
+static uint64_t MotzkinPrime = 953467954114363ULL;
+static uint64_t accumulator_register = 0;
+
+void blue_box_accumulate_state(uint64_t input_signal) {
+    accumulator_register = (accumulator_register + input_signal) % MotzkinPrime;
+    for (int i = 0; i < 8; i++) {
+        current_block_state.state_hash[i] ^= (uint8_t)(accumulator_register >> (i * 8));
+    }
+}
+
+uint64_t blue_box_get_accumulator(void) {
+    return accumulator_register;
+}
+
 BlueBoxBlockState blue_box_get_block_state(void) {
     return current_block_state;
 }

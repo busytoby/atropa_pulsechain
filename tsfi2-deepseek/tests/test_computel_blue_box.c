@@ -131,6 +131,17 @@ int main(void) {
     
     remove("blue_box_guard_test.dat");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, disk serialization, and hash validation guards passed successfully.\n");
+    // 10. Test Non-Preferential Accumulator System
+    blue_box_init_block(50, zero_hash);
+    blue_box_accumulate_state(1000000000000000ULL);
+    uint64_t accumulated = blue_box_get_accumulator();
+    // 1000000000000000 % 953467954114363 = 46532045885637
+    assert(accumulated == 46532045885637ULL);
+    
+    // Check that state hash has evolved
+    state = blue_box_get_block_state();
+    assert(state.state_hash[0] != 0);
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, and accumulator tests passed successfully.\n");
     return 0;
 }
