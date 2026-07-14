@@ -1842,3 +1842,51 @@ int interop_tm_winchester_resolve_collision(const char *filepath, uint32_t state
     if (steps >= 0 && final_state == 1) return 0;
     return -1;
 }
+
+void interop_tm_ntm_prune(InteropTMTransition *transitions, size_t *count) {
+    if (!transitions || !count || *count == 0) return;
+    size_t unique = 0;
+    for (size_t i = 0; i < *count; i++) {
+        int duplicate = 0;
+        for (size_t j = 0; j < unique; j++) {
+            if (transitions[i].from_state == transitions[j].from_state &&
+                transitions[i].read_symbol == transitions[j].read_symbol &&
+                transitions[i].to_state == transitions[j].to_state &&
+                transitions[i].direction == transitions[j].direction) {
+                duplicate = 1;
+                break;
+            }
+        }
+        if (!duplicate) {
+            transitions[unique++] = transitions[i];
+        }
+    }
+    *count = unique;
+}
+
+void interop_tm_bounds_sort(uint64_t *coords, size_t count) {
+    if (!coords || count < 2) return;
+    for (size_t i = 0; i < count; i++) {
+        for (size_t j = i + 1; j < count; j++) {
+            if (coords[i * 3] > coords[j * 3]) {
+                for (int k = 0; k < 3; k++) {
+                    uint64_t tmp = coords[i * 3 + k];
+                    coords[i * 3 + k] = coords[j * 3 + k];
+                    coords[j * 3 + k] = tmp;
+                }
+            }
+        }
+    }
+}
+
+uint64_t interop_tm_minkowski_hull(const uint64_t *coords, size_t count) {
+    if (!coords || count == 0) return 0;
+    uint64_t max_dist = 0;
+    for (size_t i = 0; i < count; i++) {
+        for (size_t j = i + 1; j < count; j++) {
+            uint64_t d = interop_knn_distance_minkowski(&coords[i * 3], &coords[j * 3], 2);
+            if (d > max_dist) max_dist = d;
+        }
+    }
+    return max_dist;
+}

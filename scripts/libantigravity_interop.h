@@ -333,4 +333,8 @@ int interop_tm_interpolate_quadtree(const InteropQuadNode *src, size_t src_count
 int interop_tm_yul_parse(const char *filepath, const uint8_t *yul_bytecode, size_t bytecode_len);
 int interop_tm_winchester_resolve_collision(const char *filepath, uint32_t state1, uint32_t state2);
 
+void interop_tm_ntm_prune(InteropTMTransition *transitions, size_t *count);
+void interop_tm_bounds_sort(uint64_t *coords, size_t count);
+uint64_t interop_tm_minkowski_hull(const uint64_t *coords, size_t count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

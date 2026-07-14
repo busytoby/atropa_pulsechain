@@ -871,6 +871,21 @@ int main() {
     remove(tm_file);
     printf("✓ TM upsampling, Yul parsing, and Winchester collision recovery verified.\n");
 
+    // 74-76. Test NTM path pruning, bounds sorting, and Minkowski hull
+    InteropTMTransition prune_trs[3] = {
+        { 0, 'a', 'b', 1, 0, 1 },
+        { 0, 'a', 'b', 1, 0, 1 },
+        { 1, 'x', 'y', 0, 0, 1 }
+    };
+    size_t tr_count = 3;
+    interop_tm_ntm_prune(prune_trs, &tr_count);
+    assert(tr_count == 2);
+    uint64_t b_coords[6] = { 100, 200, 300, 10, 20, 30 };
+    interop_tm_bounds_sort(b_coords, 2);
+    assert(b_coords[0] == 10);
+    assert(interop_tm_minkowski_hull(b_coords, 2) == 113400ULL);
+    printf("✓ NTM pruning, bounds sorting, and Minkowski hull verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
