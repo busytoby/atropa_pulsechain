@@ -1312,3 +1312,71 @@ int interop_poly_trace_load(const char *path, uint64_t *pe_a, size_t *deg_a, uin
     fclose(f);
     return 0;
 }
+
+int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len) {
+    if (!vm || !bytecode || len == 0) return -1;
+    vm->pc = 0;
+    vm->halted = 0;
+    while ((size_t)vm->pc < len && !vm->halted) {
+        int op = bytecode[vm->pc];
+        vm->pc++;
+        switch (op) {
+            case 1:
+                if ((size_t)vm->pc >= len) return -2;
+                if (vm->stack_len >= 64) return -3;
+                vm->stack[vm->stack_len++] = bytecode[vm->pc++];
+                break;
+            case 2:
+                if (vm->stack_len < 2) return -4;
+                {
+                    int b = vm->stack[--vm->stack_len];
+                    int a = vm->stack[--vm->stack_len];
+                    vm->stack[vm->stack_len++] = a + b;
+                }
+                break;
+            case 3:
+                if (vm->stack_len < 2) return -4;
+                {
+                    int b = vm->stack[--vm->stack_len];
+                    int a = vm->stack[--vm->stack_len];
+                    vm->stack[vm->stack_len++] = a - b;
+                }
+                break;
+            case 4:
+                if (vm->stack_len < 1) return -4;
+                if (vm->altstack_len >= 64) return -3;
+                vm->altstack[vm->altstack_len++] = vm->stack[--vm->stack_len];
+                break;
+            case 5:
+                if (vm->altstack_len < 1) return -4;
+                if (vm->stack_len >= 64) return -3;
+                vm->stack[vm->stack_len++] = vm->altstack[--vm->altstack_len];
+                break;
+            case 6:
+                vm->halted = 1;
+                break;
+            default:
+                return -5;
+        }
+    }
+    return 0;
+}
+
+int interop_stack_vm_verify(const InteropStackVM *vm, const int *exp_stack, size_t exp_stack_len, const int *exp_altstack, size_t exp_altstack_len, int *out_verified) {
+    if (!vm || !out_verified) return -1;
+    *out_verified = 0;
+    if (vm->stack_len != exp_stack_len) return 0;
+    if (exp_stack) {
+        for (size_t i = 0; i < exp_stack_len; i++) {
+            if (vm->stack[i] != exp_stack[i]) return 0;
+        }
+    }
+    if (vm->altstack_len != exp_altstack_len) return 0;
+    if (exp_altstack) {
+        for (size_t i = 0; i < exp_altstack_len; i++) {
+            if (vm->altstack[i] != exp_altstack[i]) return 0;
+        }
+    }
+    *out_verified = 1;
+    return 0;
+}

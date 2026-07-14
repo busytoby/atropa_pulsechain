@@ -616,4 +616,16 @@ int interop_wm_trace_load(const char *path, int *log_src, int *log_rel, int *log
 int interop_logic_trace_load(const char *path, int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges);
 int interop_poly_trace_load(const char *path, uint64_t *pe_a, size_t *deg_a, uint64_t *pe_b, size_t *deg_b, uint64_t *pe_q, size_t *deg_q, uint64_t *pe_r, size_t *deg_r, int *verified);
 
+typedef struct {
+    int stack[64];
+    size_t stack_len;
+    int altstack[64];
+    size_t altstack_len;
+    int pc;
+    int halted;
+} InteropStackVM;
+
+int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len);
+int interop_stack_vm_verify(const InteropStackVM *vm, const int *exp_stack, size_t exp_stack_len, const int *exp_altstack, size_t exp_altstack_len, int *out_verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
