@@ -2085,39 +2085,12 @@ bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out) {
     return true;
 }
 
-// 30. Save RDBMS Tables to Disk
+bool blue_box_write_quadtree_to_disk(uint32_t mode);
+
 bool blue_box_save_rdbms_tables(void) {
-    FILE *f = fopen("assets/rdbms_tables.json", "w");
-    if (!f) {
-        f = fopen("../assets/rdbms_tables.json", "w");
-    }
-    if (!f) return false;
-    
     extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    fprintf(f, "{\n  \"bgp_peers\": [\n");
-    for (size_t i = 0; i < g_bgp_peer_count; i++) {
-        fprintf(f, "    {\"peer_ip\": %u, \"peer_as\": %u, \"precedence\": %u, \"latency_ms\": %u}%s\n",
-                g_bgp_peers[i].peer_ip, g_bgp_peers[i].peer_as,
-                g_bgp_peers[i].precedence, g_bgp_peers[i].latency_ms,
-                (i + 1 < g_bgp_peer_count) ? "," : "");
-    }
-    
-    uint64_t mode = lau_yul_thunk_sload(0xF18E);
-    uint64_t rate = lau_yul_thunk_sload(0xF196);
-    uint64_t last_action = lau_yul_thunk_sload(0xF185);
-    uint64_t total_collected = lau_yul_thunk_sload(0xF186);
-    
-    fprintf(f, "  ],\n  \"green_box_agent_profile\": {\n");
-    fprintf(f, "    \"mode\": %lu,\n", mode);
-    fprintf(f, "    \"diyat_rate\": %lu,\n", rate);
-    fprintf(f, "    \"last_action\": %lu,\n", last_action);
-    fprintf(f, "    \"total_collected\": %lu\n", total_collected);
-    fprintf(f, "  }\n}\n");
-    
-    fclose(f);
-    printf("[RDBMS DISK] Saved tables to assets/rdbms_tables.json\n");
-    return true;
+    uint64_t mode = lau_yul_thunk_sload(0xF1B7);
+    return blue_box_write_quadtree_to_disk((uint32_t)mode);
 }
 
 // 31. Dynamic Validator Bidding Registry
@@ -2263,5 +2236,54 @@ bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds
     
     printf("[OCC GAS] Commit Success. New Balance: %lu, New Version: %lu\n",
            balance, current_version + 1);
+    return true;
+}
+
+// 33. Quadtree RDBMS Serialization (Postgres Mutable vs Block Ledger)
+bool blue_box_write_quadtree_to_disk(uint32_t mode) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    // We fetch our telemetry and profile states
+    uint64_t g_mode = lau_yul_thunk_sload(0xF18E);
+    uint64_t rate = lau_yul_thunk_sload(0xF196);
+    uint64_t last_action = lau_yul_thunk_sload(0xF185);
+    uint64_t total_collected = lau_yul_thunk_sload(0xF186);
+    uint64_t gas_allowance = lau_yul_thunk_sload(0xF199);
+    
+    if (mode == 0) {
+        // Mode 0: PostgreSQL Mutable spatial index mode (Overwrites in-place)
+        FILE *f = fopen("assets/rdbms_tables.json", "w");
+        if (!f) f = fopen("../assets/rdbms_tables.json", "w");
+        if (!f) return false;
+        
+        fprintf(f, "{\n  \"quadrants\": {\n");
+        fprintf(f, "    \"NW_blue\": {\"bgp_peers_count\": %lu},\n", (unsigned long)g_bgp_peer_count);
+        fprintf(f, "    \"NE_red\": {\"gas_allowance\": %lu},\n", gas_allowance);
+        fprintf(f, "    \"SW_black\": {\"diode_drop\": 700},\n");
+        fprintf(f, "    \"SE_green\": {\"mode\": %lu, \"diyat_rate\": %lu, \"last_action\": %lu, \"total_collected\": %lu}\n",
+                g_mode, rate, last_action, total_collected);
+        fprintf(f, "  }\n}\n");
+        fclose(f);
+        printf("[QUADTREE] Wrote mutable spatial quadrants to assets/rdbms_tables.json\n");
+    } else {
+        // Mode 1: Immutable Block Ledger mode (Append-only Merkle-DAG block history)
+        FILE *f = fopen("assets/rdbms_ledger.json", "a");
+        if (!f) f = fopen("../assets/rdbms_ledger.json", "a");
+        if (!f) return false;
+        
+        // Compute new Merkle State Proof Root Hash: H(prev_root + current_states)
+        uint64_t prev_root = lau_yul_thunk_sload(0xF1B5);
+        uint64_t next_root = ((prev_root * 33 + gas_allowance) * 33 + total_collected) % MotzkinPrime;
+        lau_yul_thunk_sstore(0xF1B5, next_root);
+        
+        // Append structured transaction record block to ledger file
+        fprintf(f, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu}, \"mode\": \"ledger\"}\n",
+                next_root, gas_allowance, total_collected);
+        fclose(f);
+        printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.json. Root Hash: %lu\n", next_root);
+    }
+    
+    lau_yul_thunk_sstore(0xF19F, 1); // Set serialization status active
     return true;
 }

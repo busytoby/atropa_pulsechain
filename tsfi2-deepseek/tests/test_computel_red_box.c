@@ -557,6 +557,30 @@ int main(void) {
     assert(lau_yul_thunk_sload(0xF1B0) == 2);
     printf("[TEST] OCC lock-free gas depletion validation and conflict handling verified.\n");
 
+    // 41. Test Quadtree Postgres Mutable vs Block Ledger Modes
+    lau_yul_thunk_sstore(0xF1B7, 0);
+    lau_yul_thunk_sstore(0xF199, 500);
+    assert(blue_box_save_rdbms_tables() == true);
+    assert(lau_yul_thunk_sload(0xF19F) == 1);
+    
+    FILE *f_check_mut = fopen("assets/rdbms_tables.json", "r");
+    if (!f_check_mut) f_check_mut = fopen("../assets/rdbms_tables.json", "r");
+    assert(f_check_mut != NULL);
+    fclose(f_check_mut);
+    
+    lau_yul_thunk_sstore(0xF1B7, 1);
+    lau_yul_thunk_sstore(0xF1B5, 12345);
+    assert(blue_box_save_rdbms_tables() == true);
+    
+    uint64_t next_root = lau_yul_thunk_sload(0xF1B5);
+    assert(next_root != 12345);
+    
+    FILE *f_check_ledger = fopen("assets/rdbms_ledger.json", "r");
+    if (!f_check_ledger) f_check_ledger = fopen("../assets/rdbms_ledger.json", "r");
+    assert(f_check_ledger != NULL);
+    fclose(f_check_ledger);
+    printf("[TEST] Quadtree Postgres mutable index vs Merkle block ledger modes verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
