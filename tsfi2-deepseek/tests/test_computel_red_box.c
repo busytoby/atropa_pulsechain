@@ -350,6 +350,29 @@ int main(void) {
     assert(reg_bill == 1);
     printf("[TEST] Black Box Line Voltage clamping and answer-supervision billing bypass verified.\n");
 
+    // 30. Test Hook Flash Signaling Detection & Flash Counting
+    bool flash_det = false;
+    uint32_t flash_cnt = 0;
+    bool hf_ok = blue_box_trigger_hook_flash(700, &flash_det, &flash_cnt);
+    assert(hf_ok == true);
+    assert(flash_det == true);
+    assert(flash_cnt == 1);
+    uint64_t reg_flash_det = lau_yul_thunk_sload(0xF152);
+    uint64_t reg_flash_cnt = lau_yul_thunk_sload(0xF153);
+    assert(reg_flash_det == 1);
+    assert(reg_flash_cnt == 1);
+    
+    hf_ok = blue_box_trigger_hook_flash(200, &flash_det, &flash_cnt);
+    assert(hf_ok == true);
+    assert(flash_det == false);
+    assert(flash_cnt == 1);
+    
+    hf_ok = blue_box_trigger_hook_flash(1200, &flash_det, &flash_cnt);
+    assert(hf_ok == true);
+    assert(flash_det == false);
+    assert(flash_cnt == 0);
+    printf("[TEST] Hook Flash timing window and session flash registers verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

@@ -151,5 +151,6 @@ uint32_t blue_box_query_bgp_peers_by_precedence(uint32_t precedence, uint32_t *i
 bool blue_box_add_gguf_layer_route(const char *layer_name, uint32_t peer_ip, uint32_t size_bytes);
 uint32_t blue_box_select_gguf_layer_peer(const char *layer_name);
 bool blue_box_simulate_black_box(float resistance_ohms, uint32_t *voltage_out, bool *billing_active_out);
+bool blue_box_trigger_hook_flash(uint32_t duration_ms, bool *flash_detected_out, uint32_t *flash_count_out);
 
 #endif

@@ -1777,3 +1777,28 @@ bool blue_box_simulate_black_box(float resistance_ohms, uint32_t *voltage_out, b
            resistance_ohms, v_rounded, billing_active ? "YES" : "NO");
     return true;
 }
+
+// 20. Hook Flash Signaling detection and flash counting
+static uint32_t g_hook_flash_count = 0;
+
+bool blue_box_trigger_hook_flash(uint32_t duration_ms, bool *flash_detected_out, uint32_t *flash_count_out) {
+    if (!flash_detected_out || !flash_count_out) return false;
+    
+    bool detected = (duration_ms >= 500 && duration_ms <= 1000);
+    if (detected) {
+        g_hook_flash_count++;
+    } else if (duration_ms > 1000) {
+        g_hook_flash_count = 0; // complete disconnect
+    }
+    
+    *flash_detected_out = detected;
+    *flash_count_out = g_hook_flash_count;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    lau_yul_thunk_sstore(0xF152, detected ? 1 : 0);
+    lau_yul_thunk_sstore(0xF153, g_hook_flash_count);
+    
+    printf("[HOOK FLASH] Pulse processed (duration: %u ms). Detected: %s. Total Flashes: %u\n",
+           duration_ms, detected ? "YES" : "NO", g_hook_flash_count);
+    return true;
+}
