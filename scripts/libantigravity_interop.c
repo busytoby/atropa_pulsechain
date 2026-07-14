@@ -1804,3 +1804,41 @@ int interop_tm_winchester_handshake(const char *filepath, uint32_t scsi_register
     if (steps >= 0 && final_state == 1) return 0;
     return -1;
 }
+
+int interop_tm_interpolate_quadtree(const InteropQuadNode *src, size_t src_count, InteropQuadNode *dst, size_t max_dst) {
+    if (!src || !dst || src_count == 0 || max_dst < src_count * 4) return -1;
+    for (size_t i = 0; i < src_count; i++) {
+        uint32_t val = src[i].value;
+        for (int j = 0; j < 4; j++) {
+            dst[i * 4 + j].x_min = src[i].x_min;
+            dst[i * 4 + j].y_min = src[i].y_min;
+            dst[i * 4 + j].x_max = src[i].x_max;
+            dst[i * 4 + j].y_max = src[i].y_max;
+            dst[i * 4 + j].value = val;
+            dst[i * 4 + j].children[0] = 0xFFFFFFFF;
+            dst[i * 4 + j].children[1] = 0xFFFFFFFF;
+            dst[i * 4 + j].children[2] = 0xFFFFFFFF;
+            dst[i * 4 + j].children[3] = 0xFFFFFFFF;
+        }
+    }
+    return (int)(src_count * 4);
+}
+
+int interop_tm_yul_parse(const char *filepath, const uint8_t *yul_bytecode, size_t bytecode_len) {
+    uint8_t tape1[256];
+    uint8_t tape2[256] = {0};
+    size_t len = (bytecode_len > 256) ? 256 : bytecode_len;
+    memcpy(tape1, yul_bytecode, len);
+    uint32_t final_state = 0;
+    int steps = interop_tm_execute_multitape(filepath, tape1, len, tape2, 256, 10, &final_state);
+    if (steps >= 0 && final_state != 2) return 0;
+    return -1;
+}
+
+int interop_tm_winchester_resolve_collision(const char *filepath, uint32_t state1, uint32_t state2) {
+    uint8_t tape[4] = { (uint8_t)state1, (uint8_t)state2, 0, 0 };
+    uint32_t final_state = 0;
+    int steps = interop_tm_execute_ntm(filepath, tape, 4, 10, &final_state);
+    if (steps >= 0 && final_state == 1) return 0;
+    return -1;
+}

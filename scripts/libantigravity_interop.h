@@ -329,4 +329,8 @@ int interop_tm_execute_ntm(const char *filepath, uint8_t *tape, size_t tape_len,
 int interop_tm_subsample_quadtree(const InteropQuadNode *src, size_t src_count, InteropQuadNode *dst);
 int interop_tm_winchester_handshake(const char *filepath, uint32_t scsi_register_state);
 
+int interop_tm_interpolate_quadtree(const InteropQuadNode *src, size_t src_count, InteropQuadNode *dst, size_t max_dst);
+int interop_tm_yul_parse(const char *filepath, const uint8_t *yul_bytecode, size_t bytecode_len);
+int interop_tm_winchester_resolve_collision(const char *filepath, uint32_t state1, uint32_t state2);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

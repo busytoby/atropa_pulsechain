@@ -860,6 +860,17 @@ int main() {
     remove(tm_file);
     printf("✓ NTM path solver, TM subsampling, and Winchester handshake verified.\n");
 
+    // 71-73. Test TM upsampling, Yul parsing, and Winchester collision recovery
+    InteropQuadNode interp_dst[4];
+    assert(interop_tm_interpolate_quadtree(sub_dst, 1, interp_dst, 4) == 4);
+    assert(interp_dst[0].value == 25);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t code_buf[4] = { 'a', 'x', 0, 0 };
+    assert(interop_tm_yul_parse(tm_file, code_buf, 4) == 0);
+    assert(interop_tm_winchester_resolve_collision(tm_file, 'a', 'x') == 0);
+    remove(tm_file);
+    printf("✓ TM upsampling, Yul parsing, and Winchester collision recovery verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
