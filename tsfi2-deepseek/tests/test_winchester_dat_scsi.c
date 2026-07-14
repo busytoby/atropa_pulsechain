@@ -43,7 +43,7 @@ int main(void) {
     printf("  [PASS] Handshake DAT compiled successfully.\n");
 
     // 2. Initialize low-level registers as described in glossary
-    unsigned long long base_reg = 2; // Base B for modular calculations
+    unsigned long long base_reg = 3; // Base B (changed to 3 to prevent Dynamo modular division collapse to 0)
     unsigned long long secret_reg = 137;
     unsigned long long signal_reg = 440;
     unsigned long long identity_reg = 99;
