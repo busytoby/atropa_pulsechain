@@ -497,4 +497,7 @@ int interop_rotate_complex_hadamard(const float *h_real, const float *h_imag, co
 float interop_transe_regularization_penalty(const float *emb, size_t dim, float lambda_val);
 float interop_transe_mrr_score(const int *ranks, size_t rank_count);
 
+float interop_transe_bern_probability(float t_avg, float h_avg);
+float interop_transe_nmr_score(const int *ranks, const int *pool_sizes, size_t rank_count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

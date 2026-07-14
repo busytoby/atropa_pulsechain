@@ -1184,8 +1184,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 169);
-    assert(code_nodes[1].value == 169);
+    assert(code_nodes[0].value == 171);
+    assert(code_nodes[1].value == 171);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1399,6 +1399,20 @@ int main() {
     float mrr = interop_transe_mrr_score(sample_ranks, 3);
     assert(mrr >= 0.58f && mrr <= 0.59f);
     printf("✓ TransE MRR validation score verified.\n");
+
+    // 149. Verify TransE bern probability selection
+    float p_bern = interop_transe_bern_probability(3.0f, 1.0f);
+    assert(p_bern == 0.75f);
+    float p_zero = interop_transe_bern_probability(0.0f, 0.0f);
+    assert(p_zero == 0.5f);
+    printf("✓ TransE Bern relation probability selection verified.\n");
+
+    // 150. Verify TransE NMR validation metric
+    int test_ranks[2] = { 2, 5 };
+    int pool_sizes[2] = { 10, 20 };
+    float nmr = interop_transe_nmr_score(test_ranks, pool_sizes, 2);
+    assert(nmr >= 0.224f && nmr <= 0.226f);
+    printf("✓ TransE NMR validation score metric verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

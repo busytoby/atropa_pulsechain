@@ -1428,3 +1428,20 @@ float interop_transe_mrr_score(const int *ranks, size_t rank_count) {
     }
     return mrr_sum / (float)rank_count;
 }
+
+float interop_transe_bern_probability(float t_avg, float h_avg) {
+    float den = t_avg + h_avg;
+    if (den <= 0.0f) return 0.5f;
+    return t_avg / den;
+}
+
+float interop_transe_nmr_score(const int *ranks, const int *pool_sizes, size_t rank_count) {
+    if (!ranks || !pool_sizes || rank_count == 0) return 0.0f;
+    float nmr_sum = 0.0f;
+    for (size_t i = 0; i < rank_count; i++) {
+        if (pool_sizes[i] > 0) {
+            nmr_sum += (float)ranks[i] / (float)pool_sizes[i];
+        }
+    }
+    return nmr_sum / (float)rank_count;
+}
