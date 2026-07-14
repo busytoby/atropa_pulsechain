@@ -178,6 +178,8 @@ To rebuild the database table state:
     $$\text{Tape}_{k}[idx] = \gamma_{\text{new}}$$
 4.  **Cryptographic Verification**: Re-evaluate the vectorized FNV-1a checksum of the tape and assert it matches the corresponding `next_state_hash` committed on-chain.
 
+Once the state machine tape is successfully reconstructed, external client applications perform read-only Solidity-style ABI queries directly against the recovered data frame. Because the reconstructed database tape matches the cryptographic state hash committed on-chain, all query results (such as verifying account balances or storage states) are mathematically guaranteed to be correct without requiring on-chain transaction execution.
+
 ---
 
 ## 12. Stateful Token Mint & Transfer Verification
