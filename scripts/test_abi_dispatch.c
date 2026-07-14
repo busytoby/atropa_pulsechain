@@ -901,6 +901,22 @@ int main() {
     assert(pool_output[0] == 40);
     printf("✓ CNN convolution, activation, and pooling verified.\n");
 
+    // 80. Test Encoder-Only TM Model Simulation
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t enc_only_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t enc_only_state = 0;
+    assert(interop_tm_model_encoder_only(tm_file, enc_only_tape, 4, &enc_only_state) == 1);
+    assert(enc_only_state == 1);
+
+    // 81. Test Encoder-Decoder TM Model Simulation
+    uint8_t dec_tape[4] = { 0 };
+    uint32_t enc_dec_state = 0;
+    enc_only_tape[0] = 'a';
+    assert(interop_tm_model_encoder_decoder(tm_file, enc_only_tape, 4, dec_tape, 4, &enc_dec_state) == 1);
+    assert(dec_tape[0] == 'b');
+    remove(tm_file);
+    printf("✓ Encoder-only and encoder-decoder model simulations verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

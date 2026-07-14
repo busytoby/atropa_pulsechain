@@ -1935,3 +1935,11 @@ int interop_tm_cnn_pool(const uint8_t *features, size_t width, size_t height, ui
     }
     return 0;
 }
+
+int interop_tm_model_encoder_only(const char *filepath, uint8_t *tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute(filepath, tape, len, 20, final_state);
+}
+
+int interop_tm_model_encoder_decoder(const char *filepath, uint8_t *encoder_tape, size_t enc_len, uint8_t *decoder_tape, size_t dec_len, uint32_t *final_state) {
+    return interop_tm_execute_multitape(filepath, encoder_tape, enc_len, decoder_tape, dec_len, 20, final_state);
+}

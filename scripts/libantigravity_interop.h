@@ -341,4 +341,7 @@ int interop_tm_cnn_convolve(const uint8_t *input, size_t width, size_t height, c
 void interop_tm_cnn_activate(uint8_t *features, size_t count, uint8_t threshold);
 int interop_tm_cnn_pool(const uint8_t *features, size_t width, size_t height, uint8_t *pooled_out);
 
+int interop_tm_model_encoder_only(const char *filepath, uint8_t *tape, size_t len, uint32_t *final_state);
+int interop_tm_model_encoder_decoder(const char *filepath, uint8_t *encoder_tape, size_t enc_len, uint8_t *decoder_tape, size_t dec_len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
