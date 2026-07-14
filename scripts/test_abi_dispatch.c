@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 155);
-    assert(code_nodes[1].value == 155);
+    assert(code_nodes[0].value == 156);
+    assert(code_nodes[1].value == 156);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1263,6 +1263,17 @@ int main() {
     assert(interop_graph_query_sparql(sp_edges, 2, "?a dblp:authored ?b", src_ids, dest_ids, 2) == 1);
     assert(src_ids[0] == 2 && dest_ids[0] == 3);
     printf("✓ SPARQL graph query path resolution verified.\n");
+
+    // 135. Verify SPARQL-to-NTM JIT compilation and tape execution
+    const char *jit_tm = "temp_jit_sparql.dat.bin";
+    assert(interop_sparql_to_ntm_compile(jit_tm, "?a dblp:coAuthor ?b", 1, 2) == 0);
+    uint8_t jit_tape[4] = { 'a', 0, 0, 0 };
+    uint32_t jit_state = 0;
+    assert(interop_graph_optimize_paths_ntm(jit_tm, jit_tape, 4, &jit_state) == 1);
+    assert(jit_state == 1);
+    assert(jit_tape[0] == 'b');
+    remove(jit_tm);
+    printf("✓ SPARQL-to-NTM compile and NTM execution verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

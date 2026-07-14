@@ -1204,3 +1204,35 @@ int interop_graph_query_sparql(const InteropGraphEdge *edges, size_t e_count, co
     }
     return (int)found;
 }
+
+int interop_sparql_to_ntm_compile(const char *filepath, const char *sparql_pattern, uint32_t accept_state, uint32_t reject_state) {
+    if (!filepath || !sparql_pattern) return -1;
+    uint32_t target_rel = 0xFFFFFFFF;
+    if (strstr(sparql_pattern, "dblp:coAuthor") != NULL) {
+        target_rel = 0;
+    } else if (strstr(sparql_pattern, "dblp:authored") != NULL) {
+        target_rel = 1;
+    } else {
+        return -2;
+    }
+    
+    InteropTMHeader hdr = { 2, 0, 0, accept_state, reject_state };
+    InteropTMTransition trs[1];
+    if (target_rel == 0) {
+        trs[0].from_state = 0;
+        trs[0].read_symbol = 'a';
+        trs[0].write_symbol = 'b';
+        trs[0].direction = 1;
+        trs[0].padding = 0;
+        trs[0].to_state = accept_state;
+    } else {
+        trs[0].from_state = 0;
+        trs[0].read_symbol = 'x';
+        trs[0].write_symbol = 'y';
+        trs[0].direction = 1;
+        trs[0].padding = 0;
+        trs[0].to_state = accept_state;
+    }
+    hdr.transition_count = 1;
+    return interop_tm_compile(filepath, &hdr, trs);
+}

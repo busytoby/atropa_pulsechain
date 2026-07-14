@@ -473,4 +473,6 @@ void fnv1a_hash_cascade_avx512(const uint64_t *initial_hashes, const uint64_t *d
 
 int interop_graph_query_sparql(const InteropGraphEdge *edges, size_t e_count, const char *sparql_pattern, uint32_t *out_src_ids, uint32_t *out_dest_ids, size_t max_results);
 
+int interop_sparql_to_ntm_compile(const char *filepath, const char *sparql_pattern, uint32_t accept_state, uint32_t reject_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
