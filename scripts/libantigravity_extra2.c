@@ -793,3 +793,83 @@ int interop_transd_project_matrix(const float *h, const float *h_p, const float 
     }
     return 0;
 }
+
+int interop_conv_parse_relation(const char *query_tokens, const char *relation_names, const int *relation_ids, size_t num_relations, int *out_relation_id) {
+    if (!query_tokens || !relation_names || !relation_ids || !out_relation_id || num_relations == 0) return -1;
+    const char *p = relation_names;
+    for (size_t idx = 0; idx < num_relations; idx++) {
+        const char *end = p;
+        while (*end != '\0' && *end != ',') {
+            end++;
+        }
+        size_t len = end - p;
+        if (len > 0) {
+            int match = 0;
+            const char *q = query_tokens;
+            while (*q != '\0') {
+                int possible_match = 1;
+                for (size_t i = 0; i < len; i++) {
+                    if (q[i] == '\0' || p[i] != q[i]) {
+                        possible_match = 0;
+                        break;
+                    }
+                }
+                if (possible_match) {
+                    match = 1;
+                    break;
+                }
+                q++;
+            }
+            if (match) {
+                *out_relation_id = relation_ids[idx];
+                return 0;
+            }
+        }
+        if (*end == '\0') break;
+        p = end + 1;
+    }
+    return -2;
+}
+
+int interop_conv_resolve_coref(const int *context_history, size_t history_len, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_resolved_id) {
+    if (!context_history || history_len == 0 || !entity_ids || !entity_types || !out_resolved_id || num_entities == 0) return -1;
+    for (size_t h = 0; h < history_len; h++) {
+        int ent_id = context_history[h];
+        for (size_t idx = 0; idx < num_entities; idx++) {
+            if (entity_ids[idx] == ent_id && entity_types[idx] == expected_type) {
+                *out_resolved_id = ent_id;
+                return 0;
+            }
+        }
+    }
+    return -2;
+}
+
+int interop_conv_link_entity_fuzzy(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id) {
+    if (!query_tokens || !entity_names || !entity_ids || !out_entity_id || num_entities == 0) return -1;
+    const char *p = entity_names;
+    for (size_t idx = 0; idx < num_entities; idx++) {
+        const char *end = p;
+        while (*end != '\0' && *end != ',') {
+            end++;
+        }
+        size_t len = end - p;
+        if (len >= 3) {
+            size_t match_count = 0;
+            const char *q = query_tokens;
+            while (*q != '\0') {
+                if (*q == p[match_count]) {
+                    match_count++;
+                    if (match_count == len || match_count >= 4) {
+                        *out_entity_id = entity_ids[idx];
+                        return 0;
+                    }
+                }
+                q++;
+            }
+        }
+        if (*end == '\0') break;
+        p = end + 1;
+    }
+    return -2;
+}

@@ -587,4 +587,8 @@ int interop_transh_project_hyperplane(const float *h, const float *w_r, size_t d
 int interop_qa_classify_triple(const float *h, const float *r, const float *t, size_t dim, float threshold, int *out_valid);
 int interop_transd_project_matrix(const float *h, const float *h_p, const float *r_p, size_t dim, float *out_h_proj);
 
+int interop_conv_parse_relation(const char *query_tokens, const char *relation_names, const int *relation_ids, size_t num_relations, int *out_relation_id);
+int interop_conv_resolve_coref(const int *context_history, size_t history_len, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_resolved_id);
+int interop_conv_link_entity_fuzzy(const char *query_tokens, const char *entity_names, const int *entity_ids, size_t num_entities, int *out_entity_id);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
