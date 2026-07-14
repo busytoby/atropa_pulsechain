@@ -2360,3 +2360,25 @@ bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_ro
            next_root, disk_ok);
     return disk_ok;
 }
+
+// 36. Ternary-to-Quaternary state translation (2-3 tree to Quadtree)
+bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_root_1, uint64_t r23_root_2, uint64_t r23_root_3, uint64_t *r_quad_out) {
+    if (!r_quad_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    
+    // Hash-map: Combine 2-3 tree roots into a quaternary root hash
+    uint64_t val = r23_root_0;
+    val = (val * 33 + r23_root_1) % MotzkinPrime;
+    val = (val * 33 + r23_root_2) % MotzkinPrime;
+    val = (val * 33 + r23_root_3) % MotzkinPrime;
+    
+    *r_quad_out = val;
+    
+    // Commit alignment metrics to VM registers
+    lau_yul_thunk_sstore(0xF1C5, r23_root_0); // Log root segment
+    lau_yul_thunk_sstore(0xF1C6, 1);            // Conversion Status: Aligned (1)
+    
+    printf("[BTC CONVERT] 2-3 Tree state mapped to Quadtree root: %lu\n", val);
+    return true;
+}

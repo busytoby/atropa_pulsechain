@@ -4,3 +4,5 @@
 {"block_root_hash": 1197039000, "state": {"gas": 300, "total_collected": 300}, "mode": "ledger"}
 {"block_root_hash": 13460205, "state": {"gas": 500, "total_collected": 0}, "mode": "ledger"}
 {"block_root_hash": 1197039000, "state": {"gas": 300, "total_collected": 300}, "mode": "ledger"}
+{"block_root_hash": 13460205, "state": {"gas": 500, "total_collected": 0}, "mode": "ledger"}
+{"block_root_hash": 1197039000, "state": {"gas": 300, "total_collected": 300}, "mode": "ledger"}

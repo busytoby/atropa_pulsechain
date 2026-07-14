@@ -620,6 +620,14 @@ int main(void) {
     assert(lau_yul_thunk_sload(0xF1C2) == 1);
     printf("[TEST] Transactional commit of Quadtree via Bitcoin Script verified.\n");
 
+    // 44. Test 2-3 Tree to Quadtree state translation conversion
+    uint64_t r_quad = 0;
+    assert(blue_box_verify_23_to_quad_conversion(100, 200, 300, 400, &r_quad) == true);
+    assert(r_quad == 3821800);
+    assert(lau_yul_thunk_sload(0xF1C5) == 100);
+    assert(lau_yul_thunk_sload(0xF1C6) == 1);
+    printf("[TEST] Ternary 2-3 Tree to Quadtree RDBMS conversion verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
