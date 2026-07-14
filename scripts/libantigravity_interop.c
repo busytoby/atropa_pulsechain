@@ -2269,3 +2269,24 @@ void interop_ouroboros_gate_loops(InteropOuroborosSynapse *synapses, size_t syna
 int interop_ouroboros_validate_cycle_ntm(const char *filepath, uint8_t *cycle_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, cycle_tape, len, 20, final_state);
 }
+
+void interop_ouroboros_vector_hebbian_avx512(InteropOuroborosSynapse *synapses, const InteropOuroborosNeuron *neurons, size_t synapse_count, size_t neuron_count, float eta) {
+    if (!synapses || !neurons || synapse_count == 0 || neuron_count == 0) return;
+    for (size_t i = 0; i < synapse_count; i++) {
+        uint32_t src = synapses[i].src_id;
+        uint32_t dest = synapses[i].dest_id;
+        if (src < neuron_count && dest < neuron_count) {
+            synapses[i].weight += eta * neurons[src].state * neurons[dest].state;
+        }
+    }
+}
+
+uint32_t interop_ouroboros_classify_synapse(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const InteropOuroborosNeuron *src_node, const InteropOuroborosNeuron *dest_node) {
+    if (!nodes || !src_node || !dest_node) return 0;
+    uint64_t combined_doubt = (uint64_t)((src_node->vaesen.doubt + dest_node->vaesen.doubt) * 100.0f);
+    return interop_multi_decision_evaluate(nodes, root_idx, combined_doubt);
+}
+
+int interop_ouroboros_optimize_synapses_ntm(const char *filepath, uint8_t *layout_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, layout_tape, len, 20, final_state);
+}

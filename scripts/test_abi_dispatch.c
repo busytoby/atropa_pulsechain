@@ -1113,6 +1113,23 @@ int main() {
     remove(tm_file);
     printf("✓ Ouroboros forward pass, loop gating, and cycle validation verified.\n");
 
+    // 118-120. Test Ouroboros learning, decision pruning, and layout optimization
+    test_synapses[0].weight = 1.0f;
+    test_neurons[0].state = 2.0f;
+    test_neurons[1].state = 3.0f;
+    interop_ouroboros_vector_hebbian_avx512(test_synapses, test_neurons, 1, 2, 0.5f);
+    assert(test_synapses[0].weight == 4.0f);
+    test_neurons[0].vaesen.doubt = 0.5f;
+    test_neurons[1].vaesen.doubt = 1.0f;
+    assert(interop_ouroboros_classify_synapse(prune_nodes, 0, &test_neurons[0], &test_neurons[1]) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t layout_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t layout_state = 0;
+    assert(interop_ouroboros_optimize_synapses_ntm(tm_file, layout_tape, 4, &layout_state) == 1);
+    assert(layout_state == 1);
+    remove(tm_file);
+    printf("✓ Vectorized learning, decision pruning, and NTM layout optimizer verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

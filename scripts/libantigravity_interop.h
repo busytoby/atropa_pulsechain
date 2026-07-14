@@ -439,4 +439,8 @@ void interop_ouroboros_forward(InteropOuroborosNeuron *neurons, size_t neuron_co
 void interop_ouroboros_gate_loops(InteropOuroborosSynapse *synapses, size_t synapse_count, const InteropOuroborosNeuron *neurons, size_t neuron_count, float max_doubt, float max_shame);
 int interop_ouroboros_validate_cycle_ntm(const char *filepath, uint8_t *cycle_tape, size_t len, uint32_t *final_state);
 
+void interop_ouroboros_vector_hebbian_avx512(InteropOuroborosSynapse *synapses, const InteropOuroborosNeuron *neurons, size_t synapse_count, size_t neuron_count, float eta);
+uint32_t interop_ouroboros_classify_synapse(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const InteropOuroborosNeuron *src_node, const InteropOuroborosNeuron *dest_node);
+int interop_ouroboros_optimize_synapses_ntm(const char *filepath, uint8_t *layout_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
