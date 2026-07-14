@@ -1323,7 +1323,11 @@ Status: Awaiting hero to join the battle.</div>
                 checkAllowance();
             } catch (e) {
                 console.error("Wallet connection failed:", e);
-                alert("Failed to connect wallet: " + e.message);
+                if (confirm("Web3 connection failed: " + e.message + "\n\nWould you like to enable Simulated Local Wallet (Demo/Offline Mode) instead?")) {
+                    enableSimulatedWallet();
+                } else {
+                    alert("Failed to connect wallet: " + e.message);
+                }
             }
         }
 
