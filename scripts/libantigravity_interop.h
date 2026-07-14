@@ -525,4 +525,7 @@ float interop_transh_constraint_penalty(const float *w, const float *d, size_t d
 float interop_transh_adaptive_margin(float base_margin, float t_avg, float h_avg);
 int interop_transh_normalize_projection(float *proj_emb, size_t dim);
 
+int interop_transh_scale_gradient(const float *grad, const float *w, float *out_grad, size_t dim, float alpha);
+float interop_transh_mrr_score(const int *ranks, size_t count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

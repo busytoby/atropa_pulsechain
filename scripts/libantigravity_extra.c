@@ -1688,3 +1688,26 @@ int interop_transh_normalize_projection(float *proj_emb, size_t dim) {
     }
     return 0;
 }
+
+int interop_transh_scale_gradient(const float *grad, const float *w, float *out_grad, size_t dim, float alpha) {
+    if (!grad || !w || !out_grad || dim == 0) return -1;
+    float dot = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        dot += w[i] * grad[i];
+    }
+    for (size_t i = 0; i < dim; i++) {
+        out_grad[i] = grad[i] - (1.0f - alpha) * dot * w[i];
+    }
+    return 0;
+}
+
+float interop_transh_mrr_score(const int *ranks, size_t count) {
+    if (!ranks || count == 0) return 0.0f;
+    float sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        if (ranks[i] > 0) {
+            sum += 1.0f / (float)ranks[i];
+        }
+    }
+    return sum / (float)count;
+}
