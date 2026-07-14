@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 156);
-    assert(code_nodes[1].value == 156);
+    assert(code_nodes[0].value == 157);
+    assert(code_nodes[1].value == 157);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1274,6 +1274,24 @@ int main() {
     assert(jit_tape[0] == 'b');
     remove(jit_tm);
     printf("✓ SPARQL-to-NTM compile and NTM execution verified.\n");
+
+    // 136. Verify Ouroboros network optimization loop
+    InteropOuroborosNeuron o_neurons[2] = {
+        { 0, 1.0f, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f} },
+        { 1, 2.0f, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f} }
+    };
+    InteropOuroborosSynapse o_synapses[2] = {
+        { 0, 0, 1.0f, 1 },
+        { 0, 1, 1.5f, 1 }
+    };
+    InteropMultiDecisionNode o_prune[3] = {
+        { {100, 200, 300}, {1, 2, 2, 2} },
+        { {0xAAAA, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { {0xBBBB, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    interop_ouroboros_optimize_network(o_neurons, 2, o_synapses, 2, o_prune, 0, 0.1f);
+    assert(o_synapses[1].weight > 1.5f);
+    printf("✓ Ouroboros network optimization loop verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

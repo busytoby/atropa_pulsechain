@@ -1236,3 +1236,21 @@ int interop_sparql_to_ntm_compile(const char *filepath, const char *sparql_patte
     hdr.transition_count = 1;
     return interop_tm_compile(filepath, &hdr, trs);
 }
+
+void interop_ouroboros_optimize_network(InteropOuroborosNeuron *neurons, size_t neuron_count, InteropOuroborosSynapse *synapses, size_t synapse_count, const InteropMultiDecisionNode *prune_nodes, uint32_t prune_root, float learning_rate) {
+    if (!neurons || !synapses || neuron_count == 0 || synapse_count == 0 || !prune_nodes) return;
+    
+    interop_ouroboros_forward(neurons, neuron_count, synapses, synapse_count);
+    interop_ouroboros_vector_hebbian_avx512(synapses, neurons, synapse_count, neuron_count, learning_rate);
+    
+    for (size_t i = 0; i < synapse_count; i++) {
+        uint32_t src = synapses[i].src_id;
+        uint32_t dest = synapses[i].dest_id;
+        if (src < neuron_count && dest < neuron_count) {
+            uint32_t decision = interop_ouroboros_classify_synapse(prune_nodes, prune_root, &neurons[src], &neurons[dest]);
+            if (decision == 0xBBBB) {
+                synapses[i].active = 0;
+            }
+        }
+    }
+}
