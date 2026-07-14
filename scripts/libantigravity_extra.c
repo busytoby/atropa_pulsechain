@@ -1393,3 +1393,18 @@ int interop_transe_orthogonal_projection(const float *x, const float *w, float *
     }
     return 0;
 }
+
+float interop_transe_soft_margin_penalty(float score, float margin) {
+    float val = score - margin;
+    // log1p(exp(x)) computation using math.h
+    return logf(1.0f + expf(val));
+}
+
+int interop_rotate_complex_hadamard(const float *h_real, const float *h_imag, const float *r_real, const float *r_imag, float *out_real, float *out_imag, size_t dim) {
+    if (!h_real || !h_imag || !r_real || !r_imag || !out_real || !out_imag || dim == 0) return -1;
+    for (size_t i = 0; i < dim; i++) {
+        out_real[i] = h_real[i] * r_real[i] - h_imag[i] * r_imag[i];
+        out_imag[i] = h_real[i] * r_imag[i] + h_imag[i] * r_real[i];
+    }
+    return 0;
+}

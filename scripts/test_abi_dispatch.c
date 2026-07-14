@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -1183,8 +1184,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 165);
-    assert(code_nodes[1].value == 165);
+    assert(code_nodes[0].value == 167);
+    assert(code_nodes[1].value == 167);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1371,6 +1372,22 @@ int main() {
     assert(interop_transe_orthogonal_projection(x_proj, w_proj, out_proj, 3) == 0);
     assert(out_proj[0] == 1.0f && out_proj[1] == 0.0f && out_proj[2] == 3.0f);
     printf("✓ TransE/H hyperplane projection verified.\n");
+
+    // 145. Verify TransE soft margin penalty
+    assert(interop_transe_soft_margin_penalty(1.0f, 1.0f) == logf(2.0f));
+    printf("✓ TransE soft margin penalty verified.\n");
+
+    // 146. Verify RotatE complex Hadamard multiplication
+    float h_re[2] = { 1.0f, 2.0f };
+    float h_im[2] = { 3.0f, 4.0f };
+    float r_re[2] = { 0.5f, 0.6f };
+    float r_im[2] = { 0.8f, 0.7f };
+    float out_re[2] = { 0.0f };
+    float out_im[2] = { 0.0f };
+    assert(interop_rotate_complex_hadamard(h_re, h_im, r_re, r_im, out_re, out_im, 2) == 0);
+    assert(out_re[0] >= -1.91f && out_re[0] <= -1.89f);
+    assert(out_im[0] >= 2.29f && out_im[0] <= 2.31f);
+    printf("✓ RotatE complex multiplication verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

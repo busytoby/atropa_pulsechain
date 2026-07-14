@@ -491,4 +491,7 @@ int interop_transe_normalize_embedding(float *emb, size_t dim);
 int interop_transe_predict_rank(const float *h, const float *r, const float *t_correct, const float *t_candidates, size_t candidate_count, size_t dim, int norm_type);
 int interop_transe_orthogonal_projection(const float *x, const float *w, float *out_x, size_t dim);
 
+float interop_transe_soft_margin_penalty(float score, float margin);
+int interop_rotate_complex_hadamard(const float *h_real, const float *h_imag, const float *r_real, const float *r_imag, float *out_real, float *out_imag, size_t dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
