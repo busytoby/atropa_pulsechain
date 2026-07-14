@@ -418,6 +418,60 @@ int main(void) {
     printf("    ✓ Successfully rehydrated 2-3 Tree root segments from assets: Segments=[%lu,%lu,%lu,%lu]\n\n",
            recovered_r23_0, recovered_r23_1, recovered_r23_2, recovered_r23_3);
 
+    // 12. Test FNV-1a Cryptographic Security Gating (Tamper Detection)
+    printf("12. Testing FNV-1a Cryptographic Security Gating (Tamper Detection):\n");
+    char snapshot_file[128] = "assets/rdbms_storage_28376944200.json";
+    FILE *f_snap = fopen(snapshot_file, "r");
+    if (!f_snap) {
+        strcpy(snapshot_file, "../assets/rdbms_storage_28376944200.json");
+    } else {
+        fclose(f_snap);
+    }
+    
+    // Parse file and rewrite it with an invalid signature
+    FILE *f_read = fopen(snapshot_file, "r");
+    assert(f_read);
+    char file_lines[65536] = {0};
+    char line[1024];
+    while (fgets(line, sizeof(line), f_read)) {
+        if (strncmp(line, "// SIG:", 7) == 0) {
+            strcat(file_lines, "// SIG: 9999999999\n"); // Tampered signature value
+        } else {
+            strcat(file_lines, line);
+        }
+    }
+    fclose(f_read);
+    
+    FILE *f_write = fopen(snapshot_file, "w");
+    assert(f_write);
+    fputs(file_lines, f_write);
+    fclose(f_write);
+    
+    // Overwrite evm_storage.json with an empty mapping to clear state
+    FILE *f_empty = fopen("evm_storage.json", "w");
+    if (!f_empty) f_empty = fopen("../evm_storage.json", "w");
+    assert(f_empty);
+    fprintf(f_empty, "{\n  \"storage\": []\n}\n");
+    fclose(f_empty);
+    
+    // Call rehydrate (should reject loading from assets/rdbms_storage_28376944200.json)
+    blue_box_rehydrate_quadtree_states();
+    
+    // Read evm_storage.json back and check that it remained empty (keys did not load)
+    FILE *f_check = fopen("evm_storage.json", "r");
+    if (!f_check) f_check = fopen("../evm_storage.json", "r");
+    assert(f_check);
+    bool found_keys = false;
+    while (fgets(line, sizeof(line), f_check)) {
+        if (strstr(line, "key") && strstr(line, "val")) {
+            found_keys = true;
+            break;
+        }
+    }
+    fclose(f_check);
+    assert(!found_keys);
+    printf("    ✓ Successfully verified that tampered storage snapshots are blocked and rejected.\n\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
