@@ -308,6 +308,11 @@
                 </div>
             </div>
 
+            <!-- JIT Cache Node Sweep Action Row -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: 10px; padding-right: 5px;">
+                <button class="btn btn-connect" onclick="clearJitCacheSweep()" style="background: rgba(255, 0, 127, 0.1) !important; border-color: var(--neon-magenta) !important; color: var(--neon-magenta) !important; font-size: 0.8rem; padding: 6px 12px; cursor: pointer;">🧹 Clear JIT Cache Node Sweep</button>
+            </div>
+
             <!-- Comparison Table Panel -->
             <div class="report-section">
                 <div class="card" style="overflow-x: auto;">
@@ -359,7 +364,9 @@
                         <div style="font-size: 0.9rem; line-height: 1.6; color: #8c9ba5;">
                             • Head Pointer: <span style="font-family: monospace; color: var(--neon-purple);" id="evmQueueHead">0</span><br>
                             • Tail Pointer: <span style="font-family: monospace; color: var(--neon-purple);" id="evmQueueTail">0</span><br>
-                            • Mutex Lock Slot (F303): <span style="font-family: monospace;" id="evmQueueLock">FREE</span>
+                            • Mutex Lock Slot (F303): <span style="font-family: monospace;" id="evmQueueLock">FREE</span><br>
+                            • SCSI Tx Count (F304): <span style="font-family: monospace; color: var(--neon-blue);" id="scsiTxCount">0</span><br>
+                            • SCSI Parity Errors (F305): <span style="font-family: monospace; color: var(--neon-magenta);" id="scsiParityErrors">0</span>
                         </div>
                     </div>
                     <!-- Visual Progress Bar -->
@@ -1230,6 +1237,9 @@
                         spilloverBadge.style.borderColor = "var(--neon-blue)";
                         spilloverBadge.style.color = "var(--neon-blue)";
                     }
+                    
+                    document.getElementById("scsiTxCount").innerText = data.scsi_tx_count || 0;
+                    document.getElementById("scsiParityErrors").innerText = data.scsi_parity_errors || 0;
                 }
                 
                 // Update Host Min-Heap grid/list representation
@@ -1347,6 +1357,21 @@
                 }
             } catch (e) {
                 appendLog("[INJECT] Error connecting to injector API: " + e.message, "var(--neon-magenta)");
+            }
+        }
+
+        async function clearJitCacheSweep() {
+            appendLog("[CACHE] Initiating garbage sweep quarantine drain...", "var(--neon-magenta)");
+            try {
+                const res = await fetch("/api/clear-cache", { method: "POST" }).then(r => r.json());
+                if (res && res.success) {
+                    appendLog("[CACHE] Dynamic BST cache entries successfully swept and deallocated.", "#00ff7f");
+                    await updateCacheMetrics();
+                } else {
+                    appendLog("[CACHE] Garbage sweep failed.", "var(--neon-magenta)");
+                }
+            } catch (e) {
+                appendLog("[CACHE] Sweep connection error: " + e.message, "var(--neon-magenta)");
             }
         }
 

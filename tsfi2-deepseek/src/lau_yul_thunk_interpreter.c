@@ -45,6 +45,35 @@ static LauMemoNode* bst_insert(LauMemoNode *root, LauMemoNode *node) {
     return root;
 }
 
+uint64_t bst_fnv1a_hash(const char *name, const uint8_t *calldata, size_t calldatasize) {
+    uint64_t hash = 14695981039346656037ULL;
+    for (size_t i = 0; name[i] != '\0'; i++) {
+        hash ^= (uint64_t)name[i];
+        hash *= 1099511628211ULL;
+    }
+    for (size_t i = 0; i < calldatasize; i++) {
+        hash ^= (uint64_t)calldata[i];
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+static void bst_free_subtree(LauMemoNode *node) {
+    if (!node) return;
+    bst_free_subtree(node->left);
+    bst_free_subtree(node->right);
+    if (node->calldata_ptr) lau_free(node->calldata_ptr);
+    if (node->retval_ptr) lau_free(node->retval_ptr);
+    lau_free(node);
+}
+
+void lau_yul_thunk_cache_clear(void) {
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    bst_free_subtree(s_thunk_memo_bst_root);
+    s_thunk_memo_bst_root = NULL;
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+}
+
 uint64_t g_thunk_cache_hits = 0;
 uint64_t g_thunk_cache_lookups = 0;
 
@@ -862,9 +891,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         return false;
     }
 
-    uint32_t hash = 5381;
-    for (size_t i = 0; name[i] != '\0'; i++) hash = ((hash << 5) + hash) + name[i];
-    for (size_t i = 0; i < calldatasize; i++) hash = ((hash << 5) + hash) + calldata[i];
+    uint64_t hash = bst_fnv1a_hash(name, calldata, calldatasize);
 
     bool skip_cache = (strcmp(name, "cpu6502") == 0 || strcmp(name, "WinchesterMQ") == 0);
     bool cache_hit = false;

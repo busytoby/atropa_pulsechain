@@ -1173,14 +1173,18 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(t_ptr, t_rem, "]");
         
         uint64_t adaptive_tick = tsfi_ouroboros_get_adaptive_tick_rate();
+        uint64_t scsi_tx = lau_yul_thunk_sload(0xF304);
+        uint64_t scsi_err = lau_yul_thunk_sload(0xF305);
         
         snprintf(output_buf, out_max, 
                  "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu, "
                  "\"evm_queue\": {\"head\": %lu, \"tail\": %lu, \"size\": %lu, \"lock\": %lu}, "
-                 "\"host_heap\": %s, \"yul_trace\": %s, \"adaptive_tick_rate\": %lu}, \"id\": %d}\n", 
+                 "\"host_heap\": %s, \"yul_trace\": %s, \"adaptive_tick_rate\": %lu, "
+                 "\"scsi_tx_count\": %lu, \"scsi_parity_errors\": %lu}, \"id\": %d}\n", 
                  (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups,
                  (unsigned long)head, (unsigned long)tail, (unsigned long)size, (unsigned long)lock,
-                 pq_buf, trace_buf, (unsigned long)adaptive_tick, id);
+                 pq_buf, trace_buf, (unsigned long)adaptive_tick,
+                 (unsigned long)scsi_tx, (unsigned long)scsi_err, id);
         return 1;
     } else if (method_type == 33) { // wave512.inject_event
         uint32_t priority = (uint32_t)extract_json_int(min_ptr, "\"priority\"", 10);
@@ -1205,6 +1209,11 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": %s}, \"id\": %d}\n", 
                  push_ok ? "true" : "false", id);
+        return 1;
+    } else if (method_type == 34) { // wave512.clear_cache
+        extern void lau_yul_thunk_cache_clear(void);
+        lau_yul_thunk_cache_clear();
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
         return 1;
     } else if (method_type == 30) { // input.mouse_move
         int x = extract_json_int(min_ptr, "\"x\"", 0);

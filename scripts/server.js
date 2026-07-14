@@ -932,6 +932,25 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     }
+    if (req.url === "/api/clear-cache" && req.method === "POST") {
+        try {
+            const r = await runZmmCommand(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "wave512.clear_cache",
+                params: {},
+                id: 999
+            }));
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({ success: !!(r && r.result && r.result.success) }));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
     // GET/POST API endpoints for dilemma logging
     if (req.url === "/api/dilemma-log" && req.method === "POST") {
         let body = "";

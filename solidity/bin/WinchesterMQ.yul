@@ -200,6 +200,16 @@ object "WinchesterMQ" {
             if eq(selector, 0x98d400c0) {
                 let val := and(calldataload(4), 0xFF)
                 storeTransient(0x20, val) // Store in transient Data Port register
+                
+                // Track SCSI hardware stats in EVM storage slots
+                let txCount := sload(0xF304)
+                sstore(0xF304, add(txCount, 1))
+                
+                // Emulate SCSI Parity check: trigger parity error if byte is exactly 0xFF
+                if eq(val, 0xFF) {
+                    let errCount := sload(0xF305)
+                    sstore(0xF305, add(errCount, 1))
+                }
                 return(0, 0)
             }
 
