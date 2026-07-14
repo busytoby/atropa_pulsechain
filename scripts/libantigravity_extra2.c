@@ -203,3 +203,35 @@ int interop_rbgraph_validate_properties(const int *node_colors, const int *paren
     if (root_bh < 0) return 0;
     return 1;
 }
+
+int interop_ctransr_adaptive_split_check(const float *scores, size_t count, float threshold) {
+    if (!scores || count <= 1) return 0;
+    float sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        sum += scores[i];
+    }
+    float mean = sum / (float)count;
+    float var_sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        float diff = scores[i] - mean;
+        var_sum += diff * diff;
+    }
+    float variance = var_sum / (float)count;
+    return (variance > threshold) ? 1 : 0;
+}
+
+int interop_transr_project_bounds(float *v, size_t dim, float radius) {
+    if (!v || dim == 0 || radius <= 0.0f) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum_sq += v[i] * v[i];
+    }
+    float norm = sqrtf(sum_sq);
+    if (norm > radius) {
+        float scale = radius / norm;
+        for (size_t i = 0; i < dim; i++) {
+            v[i] *= scale;
+        }
+    }
+    return 0;
+}

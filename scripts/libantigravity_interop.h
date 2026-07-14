@@ -548,4 +548,7 @@ float interop_transr_regularization(const float *M, size_t ent_dim, size_t rel_d
 int interop_rbgraph_validate_properties(const int *node_colors, const int *parent_indices, size_t count);
 int interop_rbgraph_resolve_black_height(const int *node_colors, const int *parent_indices, size_t count, size_t node_idx);
 
+int interop_ctransr_adaptive_split_check(const float *scores, size_t count, float threshold);
+int interop_transr_project_bounds(float *v, size_t dim, float radius);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
