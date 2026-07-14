@@ -411,6 +411,12 @@ int main(void) {
     uint64_t val_avg = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "AVG");
     assert(val_avg == 294444);
 
+    // 21. Test AVL Tree Sorting query results
+    matched = blue_box_query_blocks_sorted("assets/wal_test.dat", "block_number", ">", 0, "gas_allowance", results, 10);
+    assert(matched == 2);
+    assert(results[0] == 601);
+    assert(results[1] == 600);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -421,6 +427,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, and Aggregation tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, and AVL Tree Sorting tests passed successfully.\n");
     return 0;
 }

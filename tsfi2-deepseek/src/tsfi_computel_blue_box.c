@@ -940,3 +940,155 @@ uint64_t blue_box_aggregate_blocks(const char *filepath, const char *field, cons
     if (strcmp(agg_func, "COUNT") == 0) return count;
     return 0;
 }
+
+typedef struct AvlNode {
+    uint32_t val;
+    uint32_t block_number;
+    int height;
+    struct AvlNode *left;
+    struct AvlNode *right;
+} AvlNode;
+
+static int avl_height(AvlNode *n) {
+    return n ? n->height : 0;
+}
+
+static int avl_balance(AvlNode *n) {
+    return n ? avl_height(n->left) - avl_height(n->right) : 0;
+}
+
+static AvlNode* avl_right_rotate(AvlNode *y) {
+    AvlNode *x = y->left;
+    AvlNode *T2 = x->right;
+    x->right = y;
+    y->left = T2;
+    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
+    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
+    return x;
+}
+
+static AvlNode* avl_left_rotate(AvlNode *x) {
+    AvlNode *y = x->right;
+    AvlNode *T2 = y->left;
+    y->left = x;
+    x->right = T2;
+    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
+    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
+    return y;
+}
+
+static AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
+    if (!node) {
+        AvlNode *n = (AvlNode*)calloc(1, sizeof(AvlNode));
+        n->val = val;
+        n->block_number = block_number;
+        n->height = 1;
+        return n;
+    }
+    if (val < node->val) {
+        node->left = avl_insert(node->left, val, block_number);
+    } else {
+        node->right = avl_insert(node->right, val, block_number);
+    }
+
+    node->height = 1 + (avl_height(node->left) > avl_height(node->right) ? avl_height(node->left) : avl_height(node->right));
+    int balance = avl_balance(node);
+
+    if (balance > 1 && val < node->left->val) {
+        return avl_right_rotate(node);
+    }
+    if (balance < -1 && val >= node->right->val) {
+        return avl_left_rotate(node);
+    }
+    if (balance > 1 && val >= node->left->val) {
+        node->left = avl_left_rotate(node->left);
+        return avl_right_rotate(node);
+    }
+    if (balance < -1 && val < node->right->val) {
+        node->right = avl_right_rotate(node->right);
+        return avl_left_rotate(node);
+    }
+    return node;
+}
+
+static void avl_inorder(AvlNode *root, uint32_t *arr, uint32_t *idx, uint32_t max_len) {
+    if (!root || *idx >= max_len) return;
+    avl_inorder(root->left, arr, idx, max_len);
+    if (*idx < max_len) {
+        arr[(*idx)++] = root->block_number;
+    }
+    avl_inorder(root->right, arr, idx, max_len);
+}
+
+static void avl_free(AvlNode *root) {
+    if (!root) return;
+    avl_free(root->left);
+    avl_free(root->right);
+    free(root);
+}
+
+uint32_t blue_box_query_blocks_sorted(const char *filepath, const char *field, const char *op, uint64_t value, const char *sort_field, uint32_t *results_out, uint32_t max_results) {
+    if (!filepath || !field || !op || !results_out || max_results == 0 || !sort_field) return 0;
+
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "rb");
+    if (!hf) return 0;
+
+    flock(fileno(hf), LOCK_SH);
+    BlueBoxBlockState state;
+    uint32_t match_count = 0;
+    AvlNode *sort_tree = NULL;
+
+    while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
+        uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        if (calc != state.checksum || !state.is_committed) continue;
+
+        uint64_t field_val = 0;
+        if (strcmp(field, "block_number") == 0) {
+            field_val = state.block_number;
+        } else if (strcmp(field, "active_trunk_mask") == 0) {
+            field_val = state.active_trunk_mask;
+        } else if (strcmp(field, "nonce") == 0) {
+            field_val = state.nonce;
+        } else if (strcmp(field, "gas_allowance") == 0) {
+            field_val = state.gas_allowance;
+        } else {
+            continue;
+        }
+
+        bool match = false;
+        if (strcmp(op, "=") == 0) {
+            match = (field_val == value);
+        } else if (strcmp(op, ">") == 0) {
+            match = (field_val > value);
+        } else if (strcmp(op, "<") == 0) {
+            match = (field_val < value);
+        } else if (strcmp(op, "&") == 0) {
+            match = ((field_val & value) == value);
+        }
+
+        if (match) {
+            uint32_t sort_val = 0;
+            if (strcmp(sort_field, "block_number") == 0) {
+                sort_val = state.block_number;
+            } else if (strcmp(sort_field, "active_trunk_mask") == 0) {
+                sort_val = state.active_trunk_mask;
+            } else if (strcmp(sort_field, "nonce") == 0) {
+                sort_val = state.nonce;
+            } else if (strcmp(sort_field, "gas_allowance") == 0) {
+                sort_val = state.gas_allowance;
+            }
+            sort_tree = avl_insert(sort_tree, sort_val, state.block_number);
+            match_count++;
+        }
+    }
+    fclose(hf);
+
+    if (match_count == 0) return 0;
+
+    uint32_t idx = 0;
+    avl_inorder(sort_tree, results_out, &idx, max_results);
+    avl_free(sort_tree);
+    return idx;
+}
