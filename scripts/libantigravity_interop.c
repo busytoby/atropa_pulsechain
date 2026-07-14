@@ -79,7 +79,7 @@ int interop_mq_ack_phase2(InteropLUN *lun) {
     return -2;
 }
 
-static uint64_t fnv1a_hash_cascade(uint64_t initial_hash, const void *data, size_t len) {
+uint64_t fnv1a_hash_cascade(uint64_t initial_hash, const void *data, size_t len) {
     uint64_t hash = initial_hash;
     const uint64_t *words = (const uint64_t*)data;
     size_t num_words = len / 8;
@@ -720,5 +720,37 @@ int interop_queue_pop(InteropCoaxialQueue *q, void *out_item) {
     const char *src = base + q->data_offset + (head * q->item_size);
     memcpy(out_item, src, q->item_size);
     __atomic_store_n(&q->head, (head + 1) % q->capacity, __ATOMIC_RELEASE);
+    return 1;
+}
+
+void interop_covenant_init(InteropCovenantState *cov, uint64_t prev_hash) {
+    if (!cov) return;
+    cov->prev_state_hash = prev_hash;
+    cov->next_state_hash = 0;
+    cov->tx_input_witness = 0;
+}
+
+int interop_covenant_verify_evolution(InteropCovenantState *cov, InteropTuringState *turing, InteropCoaxialTable *tape, const InteropCoaxialTable *rules, uint64_t expected_next_hash) {
+    if (!cov || !turing || !tape || !rules) return -1;
+    uint32_t active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    char *base = (char*)tape;
+    uint64_t *rows = (uint64_t*)(base + active_offset);
+    uint64_t current_tape_hash = fnv1a_hash_cascade(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (current_tape_hash != cov->prev_state_hash) {
+        return -2;
+    }
+    if (interop_turing_run_step(turing, tape, rules) != 1) {
+        return -4;
+    }
+    active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    rows = (uint64_t*)(base + active_offset);
+    uint64_t evolved_tape_hash = fnv1a_hash_cascade(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (evolved_tape_hash != expected_next_hash) {
+        return -3;
+    }
+    cov->next_state_hash = evolved_tape_hash;
+    cov->tx_input_witness = expected_next_hash ^ current_tape_hash;
     return 1;
 }

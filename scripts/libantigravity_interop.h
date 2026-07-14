@@ -172,4 +172,16 @@ void interop_queue_init(InteropCoaxialQueue *q, uint32_t capacity, uint32_t item
 int interop_queue_push(InteropCoaxialQueue *q, const void *item);
 int interop_queue_pop(InteropCoaxialQueue *q, void *out_item);
 
+// Bitcoin-style Covenant state evolution definitions
+typedef struct {
+    uint64_t prev_state_hash;
+    uint64_t next_state_hash;
+    uint64_t tx_input_witness;
+} InteropCovenantState;
+
+void interop_covenant_init(InteropCovenantState *cov, uint64_t prev_hash);
+int interop_covenant_verify_evolution(InteropCovenantState *cov, InteropTuringState *turing, InteropCoaxialTable *tape, const InteropCoaxialTable *rules, uint64_t expected_next_hash);
+
+uint64_t fnv1a_hash_cascade(uint64_t initial_hash, const void *data, size_t len);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
