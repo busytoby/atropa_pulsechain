@@ -158,5 +158,6 @@ bool blue_box_unified_tick(uint32_t delta_time_ms);
 bool blue_box_trigger_green_box(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out);
 bool blue_box_green_box_to_erc20(uint32_t action, char *payload_out, size_t max_len);
 bool blue_box_trigger_green_box_diyat(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out);
+bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32_t *freq_lock_out);
 
 #endif

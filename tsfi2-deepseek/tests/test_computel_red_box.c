@@ -477,6 +477,19 @@ int main(void) {
     assert(total_gas == 1095);
     printf("[TEST] Green Box Coin disposition with Diyat fee splitting verified.\n");
 
+    // 37. Test QING Coaxial Session and PLL Broadcast Synchronization
+    lau_yul_thunk_sstore(0xF18C, 100);
+    uint32_t freq_lock = 0;
+    bool sync_ok = blue_box_sync_qing_coaxial(5, 1000, &freq_lock);
+    assert(sync_ok == true);
+    assert(freq_lock == 1050);
+    
+    uint64_t reg_users = lau_yul_thunk_sload(0xF18B);
+    uint64_t reg_pll_lock = lau_yul_thunk_sload(0xF125);
+    assert(reg_users == 5);
+    assert(reg_pll_lock == 1050);
+    printf("[TEST] QING Coaxial session and PLL broadcast sync verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

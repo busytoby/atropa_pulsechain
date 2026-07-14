@@ -2010,3 +2010,24 @@ bool blue_box_trigger_green_box_diyat(uint32_t frequency, uint32_t duration_ms, 
            frequency, action, lau_yul_thunk_sload(0xF195), current_block_state.gas_allowance);
     return true;
 }
+
+// 27. QING Coaxial Session and PLL Broadcast Synchronization
+bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32_t *freq_lock_out) {
+    if (!freq_lock_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint64_t mod_index = lau_yul_thunk_sload(0xF18C);
+    if (mod_index == 0) mod_index = 100; // Default modulation index
+    
+    uint64_t freq_lock = pilot_freq * (100 + user_count) / 100;
+    *freq_lock_out = (uint32_t)freq_lock;
+    
+    lau_yul_thunk_sstore(0xF18B, user_count);
+    lau_yul_thunk_sstore(0xF125, freq_lock); // Sets target lock deviation
+    
+    printf("[QING SYNC] Users: %u. Pilot Freq: %u Hz. Locked Freq: %lu Hz. Mod Index: %lu\n",
+           user_count, pilot_freq, freq_lock, mod_index);
+    return true;
+}
