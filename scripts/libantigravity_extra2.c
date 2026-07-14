@@ -757,3 +757,39 @@ int interop_qa_get_contract_attribute(const uint8_t *state_payload, size_t paylo
     *out_attribute = val;
     return 0;
 }
+
+int interop_transh_project_hyperplane(const float *h, const float *w_r, size_t dim, float *out_h_proj) {
+    if (!h || !w_r || !out_h_proj || dim == 0) return -1;
+    float dot = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        dot += w_r[i] * h[i];
+    }
+    for (size_t i = 0; i < dim; i++) {
+        out_h_proj[i] = h[i] - dot * w_r[i];
+    }
+    return 0;
+}
+
+int interop_qa_classify_triple(const float *h, const float *r, const float *t, size_t dim, float threshold, int *out_valid) {
+    if (!h || !r || !t || !out_valid || dim == 0) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = h[i] + r[i] - t[i];
+        sum_sq += diff * diff;
+    }
+    float dist = sqrtf(sum_sq);
+    *out_valid = (dist < threshold) ? 1 : 0;
+    return 0;
+}
+
+int interop_transd_project_matrix(const float *h, const float *h_p, const float *r_p, size_t dim, float *out_h_proj) {
+    if (!h || !h_p || !r_p || !out_h_proj || dim == 0) return -1;
+    float dot = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        dot += h_p[i] * h[i];
+    }
+    for (size_t i = 0; i < dim; i++) {
+        out_h_proj[i] = r_p[i] * dot + h[i];
+    }
+    return 0;
+}

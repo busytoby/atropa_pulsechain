@@ -583,4 +583,8 @@ int interop_qa_verify_fact(const int *edges_src, const int *edges_rel, const int
 int interop_qa_multi_hop_query(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed, const int *path_rels, size_t path_len, int *out_dsts, size_t max_dsts, size_t *out_count);
 int interop_qa_get_contract_attribute(const uint8_t *state_payload, size_t payload_size, size_t offset, uint64_t *out_attribute);
 
+int interop_transh_project_hyperplane(const float *h, const float *w_r, size_t dim, float *out_h_proj);
+int interop_qa_classify_triple(const float *h, const float *r, const float *t, size_t dim, float threshold, int *out_valid);
+int interop_transd_project_matrix(const float *h, const float *h_p, const float *r_p, size_t dim, float *out_h_proj);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
