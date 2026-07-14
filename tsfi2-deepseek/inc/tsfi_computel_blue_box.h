@@ -132,5 +132,10 @@ void blue_box_accumulate_coin(int denomination);
 bool blue_box_generate_erc20_tx(char *tx_buf, size_t max_len);
 bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds);
 bool blue_box_validate_slug(const float *samples, int num_samples);
+void blue_box_rotate_key_on_coin(int denomination);
+bool blue_box_negotiate_tariff(uint32_t trunk_id, uint32_t *rate_out);
+bool blue_box_send_udp_tone(uint32_t port, const float *samples, size_t count);
+bool blue_box_kermit_send_udp(uint32_t port, const uint8_t *packet, size_t len);
+bool blue_box_send_udp_billing_alert(uint32_t port);
 
 #endif

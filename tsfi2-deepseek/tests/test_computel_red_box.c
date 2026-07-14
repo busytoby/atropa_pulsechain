@@ -115,6 +115,36 @@ int main(void) {
     assert(strstr(conf_tx, "\"amount\":960") != NULL);
     printf("[TEST] Conference Session Billing Tx generated: %s\n", conf_tx);
 
+    // 11. Test Session Key Rotation on Coin Drop
+    uint64_t before_rotate = current_block_state.session_key;
+    blue_box_accumulate_coin(25); // Drop Quarter
+    assert(current_block_state.session_key != before_rotate);
+    printf("[TEST] Session key rotated on coin drop successfully: %lu.\n", current_block_state.session_key);
+
+    // 12. Test On-Chain Tariff Negotiation
+    uint32_t negotiated_rate = 0;
+    bool tariff_ok = blue_box_negotiate_tariff(805, &negotiated_rate); // Trunk 805 rate: 60 + 5 * 5 = 85
+    assert(tariff_ok == true);
+    assert(negotiated_rate == 85);
+    assert(blue_box_centrex_get_trunk_rate(805) == 85);
+    printf("[TEST] On-chain tariff negotiation completed successfully: rate %u units/min.\n", negotiated_rate);
+
+    // 13. Test UDP Tone Streaming
+    bool udp_tone_ok = blue_box_send_udp_tone(5005, buffer, 500);
+    assert(udp_tone_ok == true);
+    printf("[TEST] UDP Tone Streaming successfully simulated.\n");
+
+    // 14. Test Kermit-over-UDP Packetization
+    uint8_t kerm_data[4] = {0x01, 0x02, 0x03, 0x04};
+    bool udp_kerm_ok = blue_box_kermit_send_udp(5006, kerm_data, 4);
+    assert(udp_kerm_ok == true);
+    printf("[TEST] Kermit-over-UDP packet transmission simulated successfully.\n");
+
+    // 15. Test UDP Billing Alert
+    bool udp_alert_ok = blue_box_send_udp_billing_alert(5007);
+    assert(udp_alert_ok == true);
+    printf("[TEST] UDP Billing Alert dispatch simulated successfully.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

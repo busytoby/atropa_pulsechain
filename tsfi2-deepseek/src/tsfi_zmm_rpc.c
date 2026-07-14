@@ -583,10 +583,12 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
     char *method_mouse_button = strstr(p, "input.mouse_button");
     char *method_keyboard = strstr(p, "input.keyboard");
 
+    char *method_tariffs_query = strstr(p, "tariffs_query");
+
     if (method_mouse_move && (!min_ptr || method_mouse_move < min_ptr)) { min_ptr = method_mouse_move; method_type = 30; }
     if (method_mouse_button && (!min_ptr || method_mouse_button < min_ptr)) { min_ptr = method_mouse_button; method_type = 31; }
     if (method_keyboard && (!min_ptr || method_keyboard < min_ptr)) { min_ptr = method_keyboard; method_type = 32; }
-
+    if (method_tariffs_query && (!min_ptr || method_tariffs_query < min_ptr)) { min_ptr = method_tariffs_query; method_type = 50; }
 
     if (!min_ptr) return 0;
 
@@ -1253,6 +1255,14 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
 
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Keyboard event OK\", \"id\": %d}\n", id);
+    } else if (method_type == 50) { // tariffs_query
+        int trunk_id = extract_json_int(min_ptr, "\"trunk_id\"", 800);
+        // Calculate simulated tariff rate: base rate 60 + trunk offset * 5
+        uint32_t rate = 60;
+        if (trunk_id >= 800 && trunk_id <= 831) {
+            rate = 60 + (trunk_id - 800) * 5;
+        }
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"rate\": %u}, \"id\": %d}\n", rate, id);
         return 1;
     }
 

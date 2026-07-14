@@ -1304,12 +1304,19 @@ uint32_t blue_box_centrex_get_trunk_rate(uint32_t trunk_id) {
 }
 
 // 2. Multi-Coin Accumulation
+void blue_box_rotate_key_on_coin(int denomination) {
+    uint64_t multiplier = 1103515245ULL;
+    uint64_t increment = 12345ULL;
+    current_block_state.session_key = ((current_block_state.session_key ^ (uint64_t)denomination) * multiplier + increment) & 0xFFFFFFFFFFFFFFFFULL;
+}
+
 void blue_box_accumulate_coin(int denomination) {
     uint64_t coin_val = (uint64_t)denomination;
     accumulator_register = (accumulator_register * 33 + coin_val) % MotzkinPrime;
     for (int i = 0; i < 8; i++) {
         current_block_state.state_hash[i] ^= (uint8_t)(accumulator_register >> (i * 8));
     }
+    blue_box_rotate_key_on_coin(denomination);
 }
 
 // 3. Signed ERC20 Transaction Bridge
@@ -1335,4 +1342,63 @@ bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds) {
         current_block_state.active_trunk_mask &= ~(1U << (trunk_id - 800)); // Disconnect
         return false;
     }
+}
+
+// 5. On-Chain Tariff Negotiation
+bool blue_box_negotiate_tariff(uint32_t trunk_id, uint32_t *rate_out) {
+    if (!rate_out) return false;
+    char json_in[256];
+    snprintf(json_in, sizeof(json_in), "{\"jsonrpc\":\"2.0\",\"method\":\"tariffs_query\",\"params\":{\"trunk_id\":%u},\"id\":1}", trunk_id);
+    char rpc_out[1024];
+    int ok = blue_box_dispatch_zmm_rpc(json_in, rpc_out, sizeof(rpc_out));
+    if (ok == 1) {
+        uint32_t rate = 0;
+        char *result_ptr = strstr(rpc_out, "\"rate\"");
+        if (result_ptr) {
+            result_ptr = strchr(result_ptr, ':');
+            if (result_ptr) {
+                rate = (uint32_t)atoi(result_ptr + 1);
+                *rate_out = rate;
+                blue_box_centrex_set_trunk_rate(trunk_id, rate);
+                return true;
+            }
+        }
+    }
+    // Fallback
+    *rate_out = blue_box_centrex_get_trunk_rate(trunk_id);
+    return true;
+}
+
+// 6. UDP Tone Streaming
+bool blue_box_send_udp_tone(uint32_t port, const float *samples, size_t count) {
+    if (!samples || count == 0 || port == 0) return false;
+    uint8_t comp_buf[4096];
+    size_t comp_size = blue_box_citrix_compress_audio(samples, count, comp_buf, sizeof(comp_buf));
+    if (comp_size == 0) return false;
+    
+    // Simulate raw socket transmit loops
+    printf("[UDP STREAM] Port %u: Transmitted %lu compressed audio bytes.\n", port, comp_size);
+    return true;
+}
+
+// 7. Kermit-over-UDP Packetization
+bool blue_box_kermit_send_udp(uint32_t port, const uint8_t *packet, size_t len) {
+    if (!packet || len == 0 || port == 0) return false;
+    // Prepend Kermit over UDP magic word (0x4B55 = "KU")
+    uint8_t udp_payload[2048];
+    if (len + 2 > sizeof(udp_payload)) return false;
+    udp_payload[0] = 0x4B; // 'K'
+    udp_payload[1] = 0x55; // 'U'
+    memcpy(udp_payload + 2, packet, len);
+    printf("[UDP KERMIT] Port %u: Transmitted %lu bytes payload.\n", port, len + 2);
+    return true;
+}
+
+// 8. Real-time UDP Billing Alert
+bool blue_box_send_udp_billing_alert(uint32_t port) {
+    if (port == 0) return false;
+    char alert_buf[256];
+    if (!blue_box_generate_erc20_tx(alert_buf, sizeof(alert_buf))) return false;
+    printf("[UDP BILLING] Port %u: Dispatched alert: %s\n", port, alert_buf);
+    return true;
 }
