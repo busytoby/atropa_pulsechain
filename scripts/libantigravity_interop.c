@@ -940,3 +940,71 @@ void interop_gas_calibrate(uint32_t cache_misses, uint32_t *gas_price) {
         *gas_price = 100;
     }
 }
+
+uint64_t interop_fee_calculate(uint32_t poly_degree, uint32_t cell_count, uint32_t gas_price) {
+    uint64_t weight = (uint64_t)poly_degree * cell_count;
+    return weight * gas_price;
+}
+
+int interop_preference_accumulate(InteropPreferenceEntry *entries, size_t count, uint64_t target, uint64_t weight) {
+    if (!entries || count == 0) return -1;
+    uint64_t mod = 953467954114363ULL;
+    for (size_t i = 0; i < count; i++) {
+        if (entries[i].target_agent_addr == target) {
+            entries[i].preference_weight = (entries[i].preference_weight + weight) % mod;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int interop_reentrancy_lock(uint32_t *bitmap, uint32_t depth) {
+    if (!bitmap || depth >= 32) return -1;
+    uint32_t mask = 1U << depth;
+    uint32_t expected = __atomic_load_n(bitmap, __ATOMIC_ACQUIRE);
+    do {
+        if (expected & mask) {
+            return 0;
+        }
+    } while (!__atomic_compare_exchange_n(bitmap, &expected, expected | mask, 1, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
+    return 1;
+}
+
+void interop_reentrancy_unlock(uint32_t *bitmap, uint32_t depth) {
+    if (!bitmap || depth >= 32) return;
+    uint32_t mask = 1U << depth;
+    __atomic_fetch_and(bitmap, ~mask, __ATOMIC_RELEASE);
+}
+
+int interop_scheduler_tick_prioritized(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals, const uint32_t *priorities) {
+    if (!scheds || count == 0) return 0;
+    int triggered_count = 0;
+    for (size_t i = 0; i < count; i++) {
+        if (priorities && priorities[i] >= 10) {
+            uint64_t val = 0;
+            if (interop_scheduler_tick(&scheds[i], current_epoch, &val)) {
+                if (triggered_vals) {
+                    triggered_vals[triggered_count] = val;
+                }
+                triggered_count++;
+            }
+        }
+    }
+    for (size_t i = 0; i < count; i++) {
+        if (!priorities || priorities[i] < 10) {
+            uint64_t val = 0;
+            if (interop_scheduler_tick(&scheds[i], current_epoch, &val)) {
+                if (triggered_vals) {
+                    triggered_vals[triggered_count] = val;
+                }
+                triggered_count++;
+            }
+        }
+    }
+    return triggered_count;
+}
+
+int interop_sdsa_verify_alignment(const void *data) {
+    if (!data) return 0;
+    return (((uintptr_t)data & 63ULL) == 0);
+}

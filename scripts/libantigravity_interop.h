@@ -227,4 +227,17 @@ int interop_mamt_verify(uint64_t child, uint64_t parent, uint64_t secret);
 int interop_scheduler_tick_multilane(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals);
 void interop_gas_calibrate(uint32_t cache_misses, uint32_t *gas_price);
 
+typedef struct {
+    uint64_t target_agent_addr;
+    uint64_t preference_weight;
+} InteropPreferenceEntry;
+
+uint64_t interop_fee_calculate(uint32_t poly_degree, uint32_t cell_count, uint32_t gas_price);
+int interop_preference_accumulate(InteropPreferenceEntry *entries, size_t count, uint64_t target, uint64_t weight);
+
+int interop_reentrancy_lock(uint32_t *bitmap, uint32_t depth);
+void interop_reentrancy_unlock(uint32_t *bitmap, uint32_t depth);
+int interop_scheduler_tick_prioritized(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals, const uint32_t *priorities);
+int interop_sdsa_verify_alignment(const void *data);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
