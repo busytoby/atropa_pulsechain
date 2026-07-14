@@ -208,3 +208,24 @@ tsfi_trie_node* tsfi_trie_init_topic_router(void) {
 const char* tsfi_trie_resolve_topic(tsfi_trie_node *router, const char *topic) {
     return search_wildcard(router, topic);
 }
+
+tsfi_trie_node* tsfi_trie_init_formant_router(void) {
+    tsfi_trie_node *root = tsfi_trie_create_node('\0');
+    if (!root) return NULL;
+
+    // Schema: "F1,F2,F3,zero_mix,voicing_strength"
+    tsfi_trie_insert(root, "aa", "730.0,1090.0,2440.0,0.0,0.85");
+    tsfi_trie_insert(root, "er", "350.0,1050.0,1500.0,0.0,0.85");
+    tsfi_trie_insert(root, "m", "250.0,1000.0,2400.0,1.0,0.45");
+
+    return root;
+}
+
+int tsfi_trie_resolve_formant(tsfi_trie_node *router, const char *phoneme, double *f1, double *f2, double *f3, double *zero_mix, double *voicing) {
+    const char *val = tsfi_trie_lookup(router, phoneme);
+    if (!val) return 0;
+    if (sscanf(val, "%lf,%lf,%lf,%lf,%lf", f1, f2, f3, zero_mix, voicing) == 5) {
+        return 1;
+    }
+    return 0;
+}

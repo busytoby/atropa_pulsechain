@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include "tsfi_trie_dispatcher.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -125,6 +126,16 @@ int main() {
     Antiformant zero;
     antiformant_init(&zero, 800.0, 0.95);
 
+    // Initialize the Phoneme Formant Parameter Trie Router
+    tsfi_trie_node *formant_router = tsfi_trie_init_formant_router();
+    double aa_f1 = 0, aa_f2 = 0, aa_f3 = 0, aa_zero = 0, aa_voice = 0;
+    double er_f1 = 0, er_f2 = 0, er_f3 = 0, er_zero = 0, er_voice = 0;
+    double m_f1 = 0, m_f2 = 0, m_f3 = 0, m_zero = 0, m_voice = 0;
+
+    tsfi_trie_resolve_formant(formant_router, "aa", &aa_f1, &aa_f2, &aa_f3, &aa_zero, &aa_voice);
+    tsfi_trie_resolve_formant(formant_router, "er", &er_f1, &er_f2, &er_f3, &er_zero, &er_voice);
+    tsfi_trie_resolve_formant(formant_router, "m", &m_f1, &m_f2, &m_f3, &m_zero, &m_voice);
+
     FILE *fp = fopen("arm_synthesis.wav", "wb");
     if (!fp) {
         perror("Failed to open output file");
@@ -143,38 +154,44 @@ int main() {
 
     for (int t = 0; t < TOTAL_SAMPLES; t++) {
         // --- 1. Formant Trajectory Interpolation ---
-        double f1_tgt = 730.0, f2_tgt = 1090.0, f3_tgt = 2440.0;
+        double f1_tgt = aa_f1, f2_tgt = aa_f2, f3_tgt = aa_f3;
         double zero_mix = 0.0; // Only activate zero during /m/
+        double voicing_strength = aa_voice;
 
         if (t < 1200) {
             // /a/ vowel stage (0 - 150 ms)
-            f1_tgt = 730.0;
-            f2_tgt = 1090.0;
-            f3_tgt = 2440.0;
+            f1_tgt = aa_f1;
+            f2_tgt = aa_f2;
+            f3_tgt = aa_f3;
+            voicing_strength = aa_voice;
         } else if (t < 1600) {
             // Transition /a/ to /r/ (150 - 200 ms) using smooth cubic spline interpolation
             double ratio = (t - 1200) / 400.0;
-            f1_tgt = cubic_interpolate(730.0, 350.0, ratio);
-            f2_tgt = cubic_interpolate(1090.0, 1050.0, ratio);
-            f3_tgt = cubic_interpolate(2440.0, 1500.0, ratio);
+            f1_tgt = cubic_interpolate(aa_f1, er_f1, ratio);
+            f2_tgt = cubic_interpolate(aa_f2, er_f2, ratio);
+            f3_tgt = cubic_interpolate(aa_f3, er_f3, ratio);
+            voicing_strength = cubic_interpolate(aa_voice, er_voice, ratio);
         } else if (t < 2000) {
             // /r/ glide stage (200 - 250 ms)
-            f1_tgt = 350.0;
-            f2_tgt = 1050.0;
-            f3_tgt = 1500.0; // Classic low F3 for rhotic
+            f1_tgt = er_f1;
+            f2_tgt = er_f2;
+            f3_tgt = er_f3;
+            voicing_strength = er_voice;
         } else if (t < 2400) {
             // Transition /r/ to /m/ (250 - 300 ms) using smooth cubic spline interpolation
             double ratio = (t - 2000) / 400.0;
-            f1_tgt = cubic_interpolate(350.0, 250.0, ratio);
-            f2_tgt = cubic_interpolate(1050.0, 1000.0, ratio);
-            f3_tgt = cubic_interpolate(1500.0, 2400.0, ratio);
-            zero_mix = ratio; // Fade in nasal zero
+            f1_tgt = cubic_interpolate(er_f1, m_f1, ratio);
+            f2_tgt = cubic_interpolate(er_f2, m_f2, ratio);
+            f3_tgt = cubic_interpolate(er_f3, m_f3, ratio);
+            voicing_strength = cubic_interpolate(er_voice, m_voice, ratio);
+            zero_mix = ratio * m_zero; // Fade in nasal zero
         } else {
             // /m/ nasal stage (300 - 450 ms)
-            f1_tgt = 250.0;
-            f2_tgt = 1000.0;
-            f3_tgt = 2400.0;
-            zero_mix = 1.0;
+            f1_tgt = m_f1;
+            f2_tgt = m_f2;
+            f3_tgt = m_f3;
+            voicing_strength = m_voice;
+            zero_mix = m_zero;
         }
 
         // Apply parameter updates to resonators
@@ -201,7 +218,6 @@ int main() {
         double noise_hp = 0.8 * noise - 0.8 * last_noise;
         last_noise = noise;
 
-        double voicing_strength = (t < 2000) ? 0.85 : 0.45;
         double excitation = voicing_strength * pulse_lp + (1.0 - voicing_strength) * noise_hp;
 
         // --- 3. Filtering Network ---
@@ -236,6 +252,8 @@ int main() {
     fwrite(pcm_buffer, sizeof(int16_t), TOTAL_SAMPLES, fp);
     fclose(fp);
     free(pcm_buffer);
+
+    tsfi_trie_destroy(formant_router);
 
     printf("[ARM_SYNTH] Completed. Wrote 450 ms of synthesized speech to 'arm_synthesis.wav'\n");
     return 0;

@@ -48,4 +48,10 @@ tsfi_trie_node* tsfi_trie_init_topic_router(void);
 // Resolve a specific topic to its routing destination using wildcard matches
 const char* tsfi_trie_resolve_topic(tsfi_trie_node *router, const char *topic);
 
+// Initialize phoneme-to-formant parameter Trie router
+tsfi_trie_node* tsfi_trie_init_formant_router(void);
+
+// Resolve phoneme target parameters (F1, F2, F3, zero_mix, voicing_strength) using Trie lookup
+int tsfi_trie_resolve_formant(tsfi_trie_node *router, const char *phoneme, double *f1, double *f2, double *f3, double *zero_mix, double *voicing);
+
 #endif // TSFI_TRIE_DISPATCHER_H
