@@ -10,6 +10,7 @@ In early telecommunication routing, a **Conferencing Bridge** combined multiple 
 * **Passive Resistor Networks**: Summed incoming signal amplitudes while preventing feedback loops (cross-talk) back to individual talkers.
 * **REST/QING Bridge Convergence**: Every **QING** contract (e.g. `03_qing.sol`) represents an on-chain coordinator associated with specific geographical latitudes and longitudes. Consequently, every QING natively qualifies as a cryptographic conference bridge.
 * **Synchronization Pipelines**: In our multiplayer teleconferencing engine, active peer nodes query the local QING's signature method (`Waat()`) to authorize their connection. The `/api/sync` registry sums these authorized coordinate streams into a unified coaxial state broadcast, bridging local spatial zones on-chain.
+* **Yue Bar Superiority**: The Yue bar width determines participant superiority. The calculated balance width qualifies the user as a superior participant, granting priority during state broadcasts.
 
 ---
 
@@ -23,8 +24,10 @@ Switching networks establish paths between virtual inputs and outputs using hist
 
 ### B. Trunk Lines as Inter-Ledger Bridges
 * **Trunking**: High-capacity lines carrying multiplexed signals between distinct telephone offices.
-* **Coaxial Inter-Ledger Bridges**: Represents the channels linking partition-level high-impedance ledgers (e.g. Gauntlet state logs) back to the main blockchain network, ensuring state synchronization.
+* **Coaxial Inter-Ledger Bridges**: Represents the channels linking partition-level high-impedance ledgers (e.g. Gauntlet state logs) back to the main blockchain network, ensuring state synchronization. These trunking lines pass directly to the 2-3 tree structures to support state telemetry and multi-tenant firewalling.
+
+---
 
 ### C. Step-by-Step (Strowger) Switches as Register Wipers
 * **Step Wipers**: Responded directly to incoming electrical dial pulses, advancing mechanical wipers grid-by-grid to locate destination contacts.
-* **Direct Register Stepping**: Modeled by the **Auncient** guest virtual machine's cycle-level state execution. Incoming signal codes (such as direction code variables) directly step the VM's register pointers (e.g. player coordinate words) on-cycle, eliminating static lookup arrays.
+* **Direct Register Stepping**: Modeled by the **Auncient** guest virtual machine's cycle-level state execution. Incoming signal codes (such as direction code variables) directly step the VM's register pointers (e.g. player coordinate words) on-cycle, eliminating static lookup arrays. The switches themselves can be controlled and operated dynamically via our standard main Helmholtz control systems.
