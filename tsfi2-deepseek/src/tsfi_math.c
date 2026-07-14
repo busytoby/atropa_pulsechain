@@ -91,10 +91,11 @@ void tsfi_bn_free(TSFiBigInt *bn) {
 }
 
 void tsfi_bn_randomize(TSFiBigInt *bn) {
-    for (int i = 0; i < TSFI_NUM_LIMBS; i++) {
+    memset(bn->limbs, 0, sizeof(bn->limbs));
+    for (int i = 0; i < 8; i++) {
         bn->limbs[i] = (uint64_t)rand() & TSFI_LIMB_MASK;
     }
-    bn->active_limbs = TSFI_NUM_LIMBS;
+    tsfi_bn_trim(bn);
 }
 
 void tsfi_bn_from_bytes(TSFiBigInt *bn, const uint8_t *bytes, size_t len) {
