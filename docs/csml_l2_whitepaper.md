@@ -248,3 +248,17 @@ We establish full operational compatibility between Bitcoin and Ethereum environ
     State transitions update the `trie_route_table` (EVM Merkle-Patricia trie) mapped inside the shared memory segment.
 3.  **Bitcoin Consensus Settlement**:
     Transitions are verified off-chain and secured via Bitcoin covenant rules on L1, proving that Bitcoin can host stateful, Solidity-compliant smart contract scopes with base layer security guarantees.
+
+---
+
+## 16. Queue Automaton & Tag System Mappings
+
+Standard FIFO queue machine operations are mapped directly onto the 1D tape table structure $M_T$, showing that bounded queue networks act as deterministic Turing tapes.
+
+The queue is bounded by Read and Write head coordinates on the tape:
+1.  **Dequeue (Pop)**: Reads the symbol $\gamma$ at coordinate $H_{\text{Read}}$ and advances the read boundary:
+    $$H_{\text{Read}, t+1} = H_{\text{Read}, t} + 1$$
+2.  **Enqueue (Push)**: Appends a symbol string $\beta$ at the write boundary $H_{\text{Write}}$ and updates the pointer:
+    $$M_T[H_{\text{Write}, t} + i] = \beta_i, \quad H_{\text{Write}, t+1} = H_{\text{Write}, t} + |\beta|$$
+
+This maps the infinite queue layout directly onto 1D tape coordinates index structures, proving that the lock-free queue (`InteropCoaxialQueue`) resolves to a valid Turing execution tape.
