@@ -877,14 +877,28 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
             found->calldatasize == calldatasize &&
             memcmp(found->calldata_ptr, calldata, calldatasize) == 0) {
             
-            g_thunk_cache_hits++;
-            if (retval && retval_len) {
-                size_t out_len = found->retval_len;
-                if (*retval_len < out_len) out_len = *retval_len;
-                memcpy(retval, found->retval_ptr, out_len);
-                *retval_len = out_len;
+            // Resolve wired header parameters from the allocated lau_memory payload
+            bool meta_match = true;
+            if (found->retval_ptr) {
+                LauWiredHeader *h = (LauWiredHeader*)((char*)found->retval_ptr - 8192);
+                if (h) {
+                    // Filter: Require sealed results, version matching system parameters
+                    if (!h->sealed || h->version != 1 || h->system_id != 42) {
+                        meta_match = false;
+                    }
+                }
             }
-            cache_hit = true;
+            
+            if (meta_match) {
+                g_thunk_cache_hits++;
+                if (retval && retval_len) {
+                    size_t out_len = found->retval_len;
+                    if (*retval_len < out_len) out_len = *retval_len;
+                    memcpy(retval, found->retval_ptr, out_len);
+                    *retval_len = out_len;
+                }
+                cache_hit = true;
+            }
         }
         pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
         if (cache_hit) {
@@ -937,6 +951,14 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                     new_node->retval_ptr = lau_malloc(*retval_len);
                     memcpy(new_node->retval_ptr, retval, *retval_len);
                     new_node->retval_len = *retval_len;
+                    
+                    // Populate known LauWiredHeader data members to assist in search & selection
+                    LauWiredHeader *h = (LauWiredHeader*)((char*)new_node->retval_ptr - 8192);
+                    if (h) {
+                        h->version = 1;
+                        h->system_id = 42;
+                        h->sealed = true;
+                    }
                 } else {
                     new_node->retval_ptr = NULL;
                     new_node->retval_len = 0;
