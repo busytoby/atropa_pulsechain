@@ -19,6 +19,11 @@ object "WinchesterMQ" {
         code {
             if lt(calldatasize(), 4) { revert(0, 0) }
             let selector := shr(224, calldataload(0))
+            if eq(selector, 0x3c130093) {
+                sstore(0xF120, 0)
+                sstore(0xF121, 0)
+                return(0, 0)
+            }
             if eq(selector, 0xe399f0e0) {
                 let v_in := calldataload(4)
                 sstore(0xF199, v_in)

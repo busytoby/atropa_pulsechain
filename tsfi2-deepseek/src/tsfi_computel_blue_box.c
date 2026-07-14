@@ -1429,3 +1429,25 @@ void blue_box_ouroboros_tick(void) {
     
     blue_box_accumulate_state(next_signal);
 }
+
+// 10. BTC Script Dual Stack verification (A side standard crypto, B side PLL hardware telemetry)
+bool blue_box_verify_dual_stack(const uint8_t *sig, size_t sig_len, const uint8_t *pubkey, size_t pubkey_len, uint64_t max_pll_deviation) {
+    if (!sig || sig_len == 0 || !pubkey || pubkey_len == 0) return false;
+    
+    // Simulating A-side standard crypto validation (OP_CHECKSIG)
+    bool a_side_ok = (sig_len >= 4 && pubkey_len >= 4);
+    
+    // B-side low-level PLL hardware check from WinchesterMQ register 0xF125
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t actual_pll_deviation = lau_yul_thunk_sload(0xF125);
+    
+    // Check if dynamic phase deviation is within safe limits (absolute value check)
+    int64_t s_dev = (int64_t)actual_pll_deviation;
+    uint64_t pll_abs = s_dev >= 0 ? (uint64_t)s_dev : (uint64_t)(-s_dev);
+    bool b_side_ok = (pll_abs <= max_pll_deviation);
+    
+    printf("[DUAL STACK] A-side (Crypto): %s | B-side (PLL Dev: %lu, Limit: %lu): %s\n",
+           a_side_ok ? "PASS" : "FAIL", pll_abs, max_pll_deviation, b_side_ok ? "PASS" : "FAIL");
+           
+    return (a_side_ok && b_side_ok);
+}

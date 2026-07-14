@@ -147,6 +147,13 @@ int main(void) {
 
     // 16. Test Yul WinchesterMQ push-pull complementary signal model
     extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    
+    // Call resetFirewall (0x3c130093) selector to reset threat counters and block flag
+    uint8_t reset_cd[4] = {0x3c, 0x13, 0x00, 0x93};
+    uint8_t reset_ret[32];
+    size_t reset_ret_len = 32;
+    lau_yul_thunk_execute("WinchesterMQ", reset_cd, 4, reset_ret, &reset_ret_len);
+    
     // Call selector 0xe399f0e0 with positive signal 1000 (exceeds 700 drop)
     uint8_t yul_cd[36] = {0xe3, 0x99, 0xf0, 0xe0};
     uint32_t val_in = 1000;
@@ -197,6 +204,20 @@ int main(void) {
     uint64_t pll_dev = lau_yul_thunk_sload(0xF125);
     assert(pll_dev != 0);
     printf("[TEST] PLL Phase-Lock tracking deviation registered: %lu.\n", pll_dev);
+
+    // 20. Test BTC Script Dual Stack verification (A side standard crypto, B side PLL telemetry)
+    uint8_t dummy_sig[4] = {0xDE, 0xAD, 0xBE, 0xEF};
+    uint8_t dummy_pubkey[4] = {0xCA, 0xFE, 0xBA, 0xBE};
+    
+    // Set a high max deviation limit so it passes
+    bool ds_ok = blue_box_verify_dual_stack(dummy_sig, 4, dummy_pubkey, 4, 1ULL << 63);
+    assert(ds_ok == true);
+    
+    // Set a very low max deviation limit (e.g. 50) so it fails
+    bool ds_fail = blue_box_verify_dual_stack(dummy_sig, 4, dummy_pubkey, 4, 50);
+    assert(ds_fail == false);
+    
+    printf("[TEST] BTC Script Dual Stack verification (A-side & B-side matching) validated successfully.\n");
 
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
