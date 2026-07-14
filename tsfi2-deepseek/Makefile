@@ -580,7 +580,10 @@ tests/test_computel_fsk_modulator: tests/test_computel_fsk_modulator.c
 tests/test_computel_secure_tty: tests/test_computel_secure_tty.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty
+tests/test_computel_blue_box: tests/test_computel_blue_box.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
 	./tests/test_ac_compositor_interop
@@ -599,6 +602,7 @@ test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_a
 	./tests/test_computel_dmt_udp_benchmark
 	./tests/test_computel_fsk_modulator
 	./tests/test_computel_secure_tty
+	./tests/test_computel_blue_box
 
 .PHONY: profile
 profile:
