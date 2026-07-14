@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <sys/file.h>
+#include <openssl/sha.h>
 
 /*
  * Auncient Computel Single-Frequency (SF) & Multi-Frequency (MF) Switch Controller
@@ -151,6 +153,152 @@ const uint8_t* blue_box_rbt_lookup(uint32_t block_number) {
     }
     return NULL;
 }
+
+#define TWO_THREE_HASH_SIZE 32
+
+typedef struct TwoThreeNode {
+    bool is_leaf;
+    int num_keys;
+    uint32_t keys[2];
+    char values[2][128]; // basic table data
+    uint8_t node_hash[TWO_THREE_HASH_SIZE];
+    struct TwoThreeNode *children[3];
+} TwoThreeNode;
+
+static TwoThreeNode *blue_box_tree_root = NULL;
+
+static void blue_box_sha256(const void *data, size_t len, uint8_t *out) {
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, data, len);
+    SHA256_Final(out, &ctx);
+}
+
+TwoThreeNode* blue_box_create_leaf(uint32_t key1, const char *val1, uint32_t key2, const char *val2) {
+    TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
+    node->is_leaf = true;
+    node->num_keys = val2 ? 2 : 1;
+    node->keys[0] = key1;
+    strcpy(node->values[0], val1);
+    if (val2) {
+        node->keys[1] = key2;
+        strcpy(node->values[1], val2);
+    }
+    uint8_t temp[256];
+    int len = snprintf((char*)temp, sizeof(temp), "%u:%s:%u:%s", 
+                       node->keys[0], node->values[0], 
+                       val2 ? node->keys[1] : 0, val2 ? node->values[1] : "");
+    blue_box_sha256(temp, len, node->node_hash);
+    return node;
+}
+
+TwoThreeNode* blue_box_create_internal(TwoThreeNode *c1, TwoThreeNode *c2, TwoThreeNode *c3) {
+    TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
+    node->is_leaf = false;
+    node->children[0] = c1;
+    node->children[1] = c2;
+    if (c3) {
+        node->children[2] = c3;
+        node->num_keys = 2;
+        node->keys[0] = c2->keys[0];
+        node->keys[1] = c3->keys[0];
+        uint8_t concat[TWO_THREE_HASH_SIZE * 3];
+        memcpy(concat, c1->node_hash, TWO_THREE_HASH_SIZE);
+        memcpy(concat + TWO_THREE_HASH_SIZE, c2->node_hash, TWO_THREE_HASH_SIZE);
+        memcpy(concat + TWO_THREE_HASH_SIZE * 2, c3->node_hash, TWO_THREE_HASH_SIZE);
+        blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 3, node->node_hash);
+    } else {
+        node->num_keys = 1;
+        node->keys[0] = c2->keys[0];
+        uint8_t concat[TWO_THREE_HASH_SIZE * 2];
+        memcpy(concat, c1->node_hash, TWO_THREE_HASH_SIZE);
+        memcpy(concat + TWO_THREE_HASH_SIZE, c2->node_hash, TWO_THREE_HASH_SIZE);
+        blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 2, node->node_hash);
+    }
+    return node;
+}
+
+void blue_box_update_node_hash(TwoThreeNode *node) {
+    if (!node) return;
+    if (node->is_leaf) {
+        uint8_t temp[256];
+        int len = snprintf((char*)temp, sizeof(temp), "%u:%s:%u:%s", 
+                           node->keys[0], node->values[0], 
+                           node->num_keys == 2 ? node->keys[1] : 0, 
+                           node->num_keys == 2 ? node->values[1] : "");
+        blue_box_sha256(temp, len, node->node_hash);
+    } else {
+        if (node->children[2]) {
+            uint8_t concat[TWO_THREE_HASH_SIZE * 3];
+            memcpy(concat, node->children[0]->node_hash, TWO_THREE_HASH_SIZE);
+            memcpy(concat + TWO_THREE_HASH_SIZE, node->children[1]->node_hash, TWO_THREE_HASH_SIZE);
+            memcpy(concat + TWO_THREE_HASH_SIZE * 2, node->children[2]->node_hash, TWO_THREE_HASH_SIZE);
+            blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 3, node->node_hash);
+        } else {
+            uint8_t concat[TWO_THREE_HASH_SIZE * 2];
+            memcpy(concat, node->children[0]->node_hash, TWO_THREE_HASH_SIZE);
+            memcpy(concat + TWO_THREE_HASH_SIZE, node->children[1]->node_hash, TWO_THREE_HASH_SIZE);
+            blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 2, node->node_hash);
+        }
+    }
+}
+
+const char* blue_box_retrieve_23_data(TwoThreeNode *node, uint32_t key) {
+    if (!node) return NULL;
+    if (node->is_leaf) {
+        if (node->keys[0] == key) return node->values[0];
+        if (node->num_keys == 2 && node->keys[1] == key) return node->values[1];
+        return NULL;
+    }
+    if (key < node->keys[0]) {
+        return blue_box_retrieve_23_data(node->children[0], key);
+    } else if (node->num_keys == 1 || key < node->keys[1]) {
+        return blue_box_retrieve_23_data(node->children[1], key);
+    } else {
+        return blue_box_retrieve_23_data(node->children[2], key);
+    }
+}
+
+bool blue_box_store_23_data(TwoThreeNode *node, uint32_t key, const char *new_value) {
+    if (!node) return false;
+    if (node->is_leaf) {
+        if (node->keys[0] == key) {
+            strcpy(node->values[0], new_value);
+            blue_box_update_node_hash(node);
+            return true;
+        }
+        if (node->num_keys == 2 && node->keys[1] == key) {
+            strcpy(node->values[1], new_value);
+            blue_box_update_node_hash(node);
+            return true;
+        }
+        return false;
+    }
+    bool updated = false;
+    if (key < node->keys[0]) {
+        updated = blue_box_store_23_data(node->children[0], key, new_value);
+    } else if (node->num_keys == 1 || key < node->keys[1]) {
+        updated = blue_box_store_23_data(node->children[1], key, new_value);
+    } else {
+        updated = blue_box_store_23_data(node->children[2], key, new_value);
+    }
+    if (updated) {
+        blue_box_update_node_hash(node);
+    }
+    return updated;
+}
+
+void blue_box_free_23_tree(TwoThreeNode *node) {
+    if (!node) return;
+    if (!node->is_leaf) {
+        blue_box_free_23_tree(node->children[0]);
+        blue_box_free_23_tree(node->children[1]);
+        blue_box_free_23_tree(node->children[2]);
+    }
+    free(node);
+}
+
+void blue_box_bind_23_tree(TwoThreeNode *root);
 
 typedef struct {
     uint32_t trunk_id;
@@ -533,4 +681,11 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
 
     fclose(hf);
     return count;
+}
+
+void blue_box_bind_23_tree(TwoThreeNode *root) {
+    blue_box_tree_root = root;
+    if (root) {
+        memcpy(current_block_state.state_hash, root->node_hash, 32);
+    }
 }

@@ -271,11 +271,35 @@ int main(void) {
     assert(matched == 1);
     assert(results[0] == 202);
     
+    // 16. Test Blue Box 2-3 Tree Node Awareness and Binding
+    TwoThreeNode *t1 = blue_box_create_leaf(100, "NodeData_100", 200, "NodeData_200");
+    TwoThreeNode *t2 = blue_box_create_leaf(300, "NodeData_300", 0, NULL);
+    TwoThreeNode *tree_root = blue_box_create_internal(t1, t2, NULL);
+    
+    // Bind root of 2-3 tree to Blue Box current state hash
+    blue_box_bind_23_tree(tree_root);
+    state = blue_box_get_block_state();
+    assert(memcmp(state.state_hash, tree_root->node_hash, 32) == 0);
+    
+    // Retrieve via Blue Box function
+    const char *ret = blue_box_retrieve_23_data(tree_root, 200);
+    assert(ret != NULL);
+    assert(strcmp(ret, "NodeData_200") == 0);
+    
+    // Update data at key and assert Blue Box state_hash is synced to the new root hash
+    blue_box_store_23_data(tree_root, 200, "Updated_NodeData_200");
+    blue_box_bind_23_tree(tree_root);
+    
+    state = blue_box_get_block_state();
+    assert(memcmp(state.state_hash, tree_root->node_hash, 32) == 0);
+    
+    blue_box_free_23_tree(tree_root);
+
     remove("rdbms_test.dat");
     remove("rdbms_test.dat.hist");
     remove("rbt_reload_test.dat");
     remove("rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, and Query RDBMS tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, and 2-3 Tree Awareness tests passed successfully.\n");
     return 0;
 }
