@@ -54,7 +54,7 @@ To support concurrent contract execution, the UTM is extended to support $K$ ind
 $$\text{CompositeState} = \sum_{k=1}^K M_{T}^{(k)}$$
 
 To minimize the data witness footprint on the Bitcoin blockchain, we employ **State-Delta Serialization**. Rather than committing the entire tape table serialization, we define the state transition purely as a unified, multi-tape state-delta commitment ($\Delta_{\text{composite}}$) representing the sum of mutations across all $K$ tracks:
-$$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, j}) \}$$
+$$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, j}) \\}$$
 
 The on-chain verifier applies this delta to verify correctness:
 $$\text{CompositeState}_{t+1} = \text{ApplyDelta}(\text{CompositeState}_t, \Delta_{\text{composite}})$$
@@ -178,4 +178,15 @@ To rebuild the database table state:
     $$\text{Tape}_{k}[idx] = \gamma_{\text{new}}$$
 4.  **Cryptographic Verification**: Re-evaluate the vectorized FNV-1a checksum of the tape and assert it matches the corresponding `next_state_hash` committed on-chain.
 
-This guarantees that the complete L2 database state is securely preserved and recoverable directly from Bitcoin's history, eliminating data availability dependencies on off-chain storage.
+---
+
+## 12. Stateful Token Mint & Transfer Verification
+
+Stateful assets, such as token representations, are managed via Yul-compiled covenant rules mapping account balances to tape indexes. We prove this capabilities via a complete transaction lifecycle:
+
+1.  **Genesis / Deploy**: The token contract is deployed, initializing a clean tape.
+2.  **Mint**: A mint transaction is published on-chain. The host VM parses the witness rules, writes a starting balance ($B_{\text{initial}}$) to the tape index matching Address `A`, and commits the mutated state root hash.
+3.  **Transfer**: A transfer transaction moves balance from Address `A` to Address `B` (another Bitcoin wallet mapping):
+    $$\text{Tape}[Addr_A] = B_{\text{initial}} - \text{Amount}$$
+    $$\text{Tape}[Addr_B] = B_{\text{current}} + \text{Amount}$$
+4.  **Audit & Reconstruct**: Replaying the serialized delta outputs (Tx1: Mint, Tx2: Transfer) in chronologic sequence reconstructs the identical account balances and matches the final state root hash, verifying complete ledger availability.
