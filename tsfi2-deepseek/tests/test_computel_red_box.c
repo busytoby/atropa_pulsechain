@@ -373,6 +373,38 @@ int main(void) {
     assert(flash_cnt == 0);
     printf("[TEST] Hook Flash timing window and session flash registers verified.\n");
 
+    // 31. Test AI Agent Black Box Driver
+    uint32_t temp_volt = 0;
+    bool temp_bill = false;
+    blue_box_simulate_black_box(2000.0f, &temp_volt, &temp_bill);
+    assert(temp_bill == true);
+    
+    uint32_t ai_cmd = 0;
+    bool ai_ok = blue_box_run_ai_driver(true, &ai_cmd);
+    assert(ai_ok == true);
+    assert(ai_cmd == 1);
+    
+    uint64_t reg_ai_enable = lau_yul_thunk_sload(0xF155);
+    uint64_t reg_ai_cmd = lau_yul_thunk_sload(0xF156);
+    uint64_t reg_bill_after = lau_yul_thunk_sload(0xF151);
+    uint64_t reg_volt_after = lau_yul_thunk_sload(0xF150);
+    assert(reg_ai_enable == 1);
+    assert(reg_ai_cmd == 1);
+    assert(reg_bill_after == 0);
+    assert(reg_volt_after == 11);
+    printf("[TEST] AI Agent Driver automated billing suppression verified.\n");
+
+    // 32. Test AI Speech Sequencer
+    char speech_seq[16];
+    bool speech_ok = blue_box_run_ai_speech_sequencer(2, speech_seq, sizeof(speech_seq));
+    assert(speech_ok == true);
+    assert(strcmp(speech_seq, "OI") == 0);
+    uint64_t reg_speech_state = lau_yul_thunk_sload(0xF170);
+    uint64_t reg_speech_vowel = lau_yul_thunk_sload(0xF171);
+    assert(reg_speech_state == 2);
+    assert(reg_speech_vowel == (uint64_t)'O');
+    printf("[TEST] AI Speech Sequencer vowel transition pipelines verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

@@ -1802,3 +1802,73 @@ bool blue_box_trigger_hook_flash(uint32_t duration_ms, bool *flash_detected_out,
            duration_ms, detected ? "YES" : "NO", g_hook_flash_count);
     return true;
 }
+
+// 21. AI Driver Telemetry Monitor and Automated Control Loop
+bool blue_box_run_ai_driver(bool enable_ai, uint32_t *command_out) {
+    if (!command_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    lau_yul_thunk_sstore(0xF155, enable_ai ? 1 : 0);
+    
+    if (!enable_ai) {
+        *command_out = 0;
+        lau_yul_thunk_sstore(0xF156, 0);
+        return true;
+    }
+    
+    // Telemetry read
+    uint64_t reg_bill = lau_yul_thunk_sload(0xF151);
+    uint64_t reg_flash_cnt = lau_yul_thunk_sload(0xF153);
+    
+    uint32_t cmd = 0;
+    if (reg_bill == 1) {
+        // Countermeasure: suppress billing by clamping loop resistance
+        cmd = 1;
+        uint32_t volt = 0;
+        bool bill_act = true;
+        blue_box_simulate_black_box(300.0f, &volt, &bill_act);
+    } else if (reg_bill == 0 && reg_flash_cnt == 0) {
+        // Suppressed, but route flash required to verify routing
+        cmd = 2;
+        bool flash_det = false;
+        uint32_t flash_cnt = 0;
+        blue_box_trigger_hook_flash(700, &flash_det, &flash_cnt);
+    } else {
+        cmd = 0; // Idle / system stable
+    }
+    
+    *command_out = cmd;
+    lau_yul_thunk_sstore(0xF156, cmd);
+    printf("[AI DRIVER] Active: YES. Decision: Command %u executed.\n", cmd);
+    return true;
+}
+
+// 22. AI Speech Sequencer
+bool blue_box_run_ai_speech_sequencer(uint32_t state, char *vowel_sequence_out, size_t max_len) {
+    if (!vowel_sequence_out || max_len < 4) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    
+    lau_yul_thunk_sstore(0xF170, state);
+    
+    const char *seq = "";
+    switch (state) {
+        case 1: seq = "AE"; break; // Greeting
+        case 2: seq = "OI"; break; // Alert
+        case 3: seq = "AO"; break; // Confirmation
+        default: seq = ""; break;
+    }
+    
+    strncpy(vowel_sequence_out, seq, max_len - 1);
+    vowel_sequence_out[max_len - 1] = '\0';
+    
+    // Store the first vowel code in VM register 0xF171
+    lau_yul_thunk_sstore(0xF171, vowel_sequence_out[0] ? (uint64_t)vowel_sequence_out[0] : 0);
+    
+    printf("[AI SPEECH] State: %u. Sequence: \"%s\". Primary Vowel Token: '%c' (VM: %lu)\n",
+           state, vowel_sequence_out, vowel_sequence_out[0] ? vowel_sequence_out[0] : ' ',
+           vowel_sequence_out[0] ? (uint64_t)vowel_sequence_out[0] : 0);
+    return true;
+}
