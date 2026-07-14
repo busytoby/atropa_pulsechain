@@ -171,6 +171,13 @@ int main(void) {
     assert(val_out == 300);
     printf("[TEST] Yul WinchesterMQ unified NPN/PNP hardware crossover simulation verified: %u.\n", val_out);
 
+    // 17. Test Closed-Loop Ouroboros Feedback
+    uint64_t before_ouro = blue_box_get_accumulator();
+    blue_box_ouroboros_tick();
+    uint64_t after_ouro = blue_box_get_accumulator();
+    assert(after_ouro != before_ouro);
+    printf("[TEST] Closed-loop Ouroboros Feedback tick executed and verified successfully.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

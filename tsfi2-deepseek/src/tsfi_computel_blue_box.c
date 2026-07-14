@@ -1402,3 +1402,30 @@ bool blue_box_send_udp_billing_alert(uint32_t port) {
     printf("[UDP BILLING] Port %u: Dispatched alert: %s\n", port, alert_buf);
     return true;
 }
+
+// 9. Closed-Loop Ouroboros Feedback
+void blue_box_ouroboros_tick(void) {
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    uint64_t pos = lau_yul_thunk_sload(0xF100);
+    uint64_t neg = lau_yul_thunk_sload(0xF101);
+    
+    int64_t feedback = (int64_t)pos - (int64_t)neg;
+    uint64_t base = current_block_state.nonce ? current_block_state.nonce : 3;
+    uint64_t signal = feedback > 0 ? (uint64_t)feedback : (uint64_t)(-feedback);
+    if (signal == 0) signal = 1;
+    
+    uint64_t next_signal = (signal * base) % 953467954114363ULL; // MotzkinPrime
+    
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    uint8_t yul_cd[36] = {0xe3, 0x99, 0xf0, 0xe0};
+    yul_cd[35] = (uint8_t)(next_signal & 0xFF);
+    yul_cd[34] = (uint8_t)((next_signal >> 8) & 0xFF);
+    yul_cd[33] = (uint8_t)((next_signal >> 16) & 0xFF);
+    yul_cd[32] = (uint8_t)((next_signal >> 24) & 0xFF);
+    
+    uint8_t yul_ret[32];
+    size_t yul_ret_len = 32;
+    lau_yul_thunk_execute("WinchesterMQ", yul_cd, 36, yul_ret, &yul_ret_len);
+    
+    blue_box_accumulate_state(next_signal);
+}

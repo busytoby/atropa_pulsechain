@@ -137,5 +137,6 @@ bool blue_box_negotiate_tariff(uint32_t trunk_id, uint32_t *rate_out);
 bool blue_box_send_udp_tone(uint32_t port, const float *samples, size_t count);
 bool blue_box_kermit_send_udp(uint32_t port, const uint8_t *packet, size_t len);
 bool blue_box_send_udp_billing_alert(uint32_t port);
+void blue_box_ouroboros_tick(void);
 
 #endif
