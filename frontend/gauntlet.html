@@ -1511,11 +1511,19 @@ Status: Awaiting hero to join the battle.</div>
                     
                     document.getElementById("chainHealth").innerText = chainH;
                     
-                    if (chainX > 0 && chainY > 0) {
-                        player.x = chainX;
-                        player.y = chainY;
-                        health = chainH;
-                        keysCount = chainKeys;
+                    if (walletAddress !== "SIMULATED_WALLET") {
+                        if (chainX > 0 && chainY > 0) {
+                            player.x = chainX;
+                            player.y = chainY;
+                            health = chainH;
+                            keysCount = chainKeys;
+                        }
+                    } else {
+                        // Keep simulated storage matched with local smooth movement
+                        folkloreContract.poke(55051, Math.floor(player.x));
+                        folkloreContract.poke(55052, Math.floor(player.y));
+                        folkloreContract.poke(55053, Math.floor(health));
+                        folkloreContract.poke(55054, keysCount);
                     }
                 }).catch(err => {
                     console.warn("On-chain tick failed:", err.message);
