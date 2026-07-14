@@ -2382,3 +2382,49 @@ bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_roo
     printf("[BTC CONVERT] 2-3 Tree state mapped to Quadtree root: %lu\n", val);
     return true;
 }
+
+// 37. Geometry-Based Threat Protection
+bool blue_box_verify_geometry_threat_protection(float coverage, float symmetry) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    // Check if coverage or symmetry falls below safe operational limits
+    if (coverage < 0.01f || symmetry < 0.95f) {
+        uint64_t threats = lau_yul_thunk_sload(0xF120);
+        threats++;
+        lau_yul_thunk_sstore(0xF120, threats);
+        
+        if (threats >= 3) {
+            lau_yul_thunk_sstore(0xF121, 1); // Set firewall block active (mute)
+            printf("[SECURITY FIREWALL] Threat limit exceeded. Connection muted.\n");
+        }
+    }
+    return true;
+}
+
+// 38. PLL-Driven Coalition Dynamics & Multi-Tenant Conference Security
+bool blue_box_verify_pll_coalition_security(uint32_t pilot_freq, uint32_t target_freq, uint32_t *session_key_out) {
+    if (!session_key_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    // Read current PLL locked deviation register
+    uint64_t deviation = lau_yul_thunk_sload(0xF125);
+    
+    // Lock threshold set at deviation <= 100
+    if (deviation <= 100) {
+        // Generate and rotate session key
+        uint64_t key = ((uint64_t)pilot_freq * 33 + target_freq) * 33 % MotzkinPrime;
+        *session_key_out = (uint32_t)key;
+        
+        lau_yul_thunk_sstore(0xF1D0, key); // Save rotated session key
+        lau_yul_thunk_sstore(0xF1D1, 1);   // Security Status: Locked/Secure (1)
+        printf("[CONFERENCE SECURE] PLL Locked. Rotated Session Key: %lu\n", key);
+        return true;
+    } else {
+        lau_yul_thunk_sstore(0xF1D1, 0);   // Security Status: Desynced/Unsecure (0)
+        printf("[CONFERENCE SECURE] PLL Desynced (Deviation: %lu). Secure tunnel offline.\n", deviation);
+        return false;
+    }
+}

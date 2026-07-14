@@ -628,6 +628,31 @@ int main(void) {
     assert(lau_yul_thunk_sload(0xF1C6) == 1);
     printf("[TEST] Ternary 2-3 Tree to Quadtree RDBMS conversion verified.\n");
 
+    // 45. Test Geometry-Based Threat Protection
+    lau_yul_thunk_sstore(0xF120, 0);
+    lau_yul_thunk_sstore(0xF121, 0);
+    assert(blue_box_verify_geometry_threat_protection(0.005f, 0.90f) == true);
+    assert(lau_yul_thunk_sload(0xF120) == 1);
+    assert(lau_yul_thunk_sload(0xF121) == 0);
+    assert(blue_box_verify_geometry_threat_protection(0.005f, 0.90f) == true);
+    assert(blue_box_verify_geometry_threat_protection(0.005f, 0.90f) == true);
+    assert(lau_yul_thunk_sload(0xF120) == 3);
+    assert(lau_yul_thunk_sload(0xF121) == 1);
+    printf("[TEST] Geometry-Based Threat Protection and firewall trigger verified.\n");
+    
+    // 46. Test PLL-Driven Coalition Dynamics & Conference Security
+    lau_yul_thunk_sstore(0xF125, 50);
+    uint32_t session_key = 0;
+    assert(blue_box_verify_pll_coalition_security(1000, 1050, &session_key) == true);
+    assert(session_key == 1123650);
+    assert(lau_yul_thunk_sload(0xF1D0) == 1123650);
+    assert(lau_yul_thunk_sload(0xF1D1) == 1);
+    
+    lau_yul_thunk_sstore(0xF125, 200);
+    assert(blue_box_verify_pll_coalition_security(1000, 1050, &session_key) == false);
+    assert(lau_yul_thunk_sload(0xF1D1) == 0);
+    printf("[TEST] PLL-Driven multi-tenant conference security key rotation verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

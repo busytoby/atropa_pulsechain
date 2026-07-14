@@ -170,5 +170,7 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode);
 bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len);
 bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_root, const uint8_t *witness, size_t witness_len);
 bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_root_1, uint64_t r23_root_2, uint64_t r23_root_3, uint64_t *r_quad_out);
+bool blue_box_verify_geometry_threat_protection(float coverage, float symmetry);
+bool blue_box_verify_pll_coalition_security(uint32_t pilot_freq, uint32_t target_freq, uint32_t *session_key_out);
 
 #endif
