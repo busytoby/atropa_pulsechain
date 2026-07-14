@@ -1734,3 +1734,73 @@ int interop_tm_decompress_quadtree(const char *rle_filepath, InteropQuadNode *no
     }
     return read_count;
 }
+
+static int ntm_dfs(const InteropTMTransition *transitions, size_t count, uint32_t curr_state, uint8_t *tape, size_t head_pos, size_t tape_len, size_t step, size_t max_steps, uint32_t accept_state, uint32_t reject_state, uint32_t *final_state) {
+    if (curr_state == accept_state) {
+        *final_state = curr_state;
+        return (int)step;
+    }
+    if (curr_state == reject_state || step >= max_steps) return -1;
+    uint8_t curr_sym = tape[head_pos];
+    for (size_t i = 0; i < count; i++) {
+        if (transitions[i].from_state == curr_state && transitions[i].read_symbol == curr_sym) {
+            uint8_t prev = tape[head_pos];
+            tape[head_pos] = transitions[i].write_symbol;
+            size_t next_head = head_pos;
+            if (transitions[i].direction == -1 && head_pos > 0) next_head--;
+            else if (transitions[i].direction == 1 && head_pos + 1 < tape_len) next_head++;
+            int res = ntm_dfs(transitions, count, transitions[i].to_state, tape, next_head, tape_len, step + 1, max_steps, accept_state, reject_state, final_state);
+            if (res >= 0) return res;
+            tape[head_pos] = prev;
+        }
+    }
+    return -1;
+}
+
+int interop_tm_execute_ntm(const char *filepath, uint8_t *tape, size_t tape_len, size_t max_steps, uint32_t *final_state) {
+    if (!filepath || !tape || tape_len == 0 || !final_state) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    InteropTMHeader header;
+    if (fread(&header, sizeof(InteropTMHeader), 1, f) != 1) {
+        fclose(f);
+        return -4;
+    }
+    InteropTMTransition transitions[64];
+    size_t tr_to_read = (header.transition_count > 64) ? 64 : header.transition_count;
+    if (fread(transitions, sizeof(InteropTMTransition), tr_to_read, f) != tr_to_read) {
+        fclose(f);
+        return -5;
+    }
+    fclose(f);
+    int res = ntm_dfs(transitions, tr_to_read, header.initial_state, tape, 0, tape_len, 0, max_steps, header.accept_state, header.reject_state, final_state);
+    if (res < 0) {
+        *final_state = header.reject_state;
+        return 0;
+    }
+    return res;
+}
+
+int interop_tm_subsample_quadtree(const InteropQuadNode *src, size_t src_count, InteropQuadNode *dst) {
+    if (!src || !dst || src_count < 4) return -1;
+    dst[0].x_min = src[0].x_min;
+    dst[0].y_min = src[0].y_min;
+    dst[0].x_max = src[3].x_max;
+    dst[0].y_max = src[3].y_max;
+    dst[0].value = (src[0].value + src[1].value + src[2].value + src[3].value) / 4;
+    dst[0].children[0] = 0xFFFFFFFF;
+    dst[0].children[1] = 0xFFFFFFFF;
+    dst[0].children[2] = 0xFFFFFFFF;
+    dst[0].children[3] = 0xFFFFFFFF;
+    return 1;
+}
+
+int interop_tm_winchester_handshake(const char *filepath, uint32_t scsi_register_state) {
+    uint8_t tape[4] = { (uint8_t)scsi_register_state, 0, 0, 0 };
+    uint32_t final_state = 0;
+    int steps = interop_tm_execute(filepath, tape, 4, 10, &final_state);
+    if (steps >= 0 && final_state == 1) return 0;
+    return -1;
+}

@@ -325,4 +325,8 @@ int interop_tm_execute(const char *filepath, uint8_t *tape, size_t tape_len, siz
 int interop_tm_execute_multitape(const char *filepath, uint8_t *tape1, size_t len1, uint8_t *tape2, size_t len2, size_t max_steps, uint32_t *final_state);
 int interop_tm_decompress_quadtree(const char *rle_filepath, InteropQuadNode *nodes_out, size_t max_nodes);
 
+int interop_tm_execute_ntm(const char *filepath, uint8_t *tape, size_t tape_len, size_t max_steps, uint32_t *final_state);
+int interop_tm_subsample_quadtree(const InteropQuadNode *src, size_t src_count, InteropQuadNode *dst);
+int interop_tm_winchester_handshake(const char *filepath, uint32_t scsi_register_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

@@ -840,6 +840,26 @@ int main() {
     remove(q_file);
     printf("✓ Multi-tape Turing Machine and TM-based quadtree decompression verified.\n");
 
+    // 68-70. Test NTM execution, subsampling, and Winchester handshake
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t ntm_tape[4] = { 'a', 'x', '0', '0' };
+    uint32_t ntm_final = 0;
+    int ntm_steps = interop_tm_execute_ntm(tm_file, ntm_tape, 4, 10, &ntm_final);
+    assert(ntm_steps == 1);
+    assert(ntm_final == 1);
+    InteropQuadNode sub_src[4] = {
+        { 0, 0, 10, 10, 10, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { 10, 0, 20, 10, 20, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { 0, 10, 10, 20, 30, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { 10, 10, 20, 20, 40, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    InteropQuadNode sub_dst[1];
+    assert(interop_tm_subsample_quadtree(sub_src, 4, sub_dst) == 1);
+    assert(sub_dst[0].value == 25);
+    assert(interop_tm_winchester_handshake(tm_file, 'a') == 0);
+    remove(tm_file);
+    printf("✓ NTM path solver, TM subsampling, and Winchester handshake verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
