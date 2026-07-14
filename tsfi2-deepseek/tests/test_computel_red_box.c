@@ -318,6 +318,16 @@ int main(void) {
     assert(ips[0] == 0x0A000002);
     printf("[TEST] BGP Peer Table inserts and precedence-level queries verified.\n");
 
+    // 28. Test GGUF Layer BGP Routing
+    bool route_ok = blue_box_add_gguf_layer_route("blk.0.self_attn", 0x0A000001, 5000000);
+    assert(route_ok == true);
+    route_ok = blue_box_add_gguf_layer_route("blk.0.self_attn", 0x0A000002, 10000000);
+    assert(route_ok == true);
+    
+    uint32_t selected_peer = blue_box_select_gguf_layer_peer("blk.0.self_attn");
+    assert(selected_peer == 0x0A000001);
+    printf("[TEST] GGUF Layer BGP cost-vector routing path selection verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

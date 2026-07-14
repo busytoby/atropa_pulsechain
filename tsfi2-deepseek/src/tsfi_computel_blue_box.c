@@ -1697,3 +1697,54 @@ uint32_t blue_box_query_bgp_peers_by_precedence(uint32_t precedence, uint32_t *i
     }
     return count;
 }
+
+// 18. GGUF BGP Layer Routing
+typedef struct {
+    char layer_name[64];
+    uint32_t peer_ip;
+    uint32_t size_bytes;
+} GGUFLayerRoute;
+
+#define MAX_GGUF_ROUTES 64
+static GGUFLayerRoute g_gguf_routes[MAX_GGUF_ROUTES];
+static size_t g_gguf_route_count = 0;
+
+bool blue_box_add_gguf_layer_route(const char *layer_name, uint32_t peer_ip, uint32_t size_bytes) {
+    if (!layer_name || g_gguf_route_count >= MAX_GGUF_ROUTES) return false;
+    for (size_t i = 0; i < g_gguf_route_count; i++) {
+        if (strcmp(g_gguf_routes[i].layer_name, layer_name) == 0 && g_gguf_routes[i].peer_ip == peer_ip) {
+            g_gguf_routes[i].size_bytes = size_bytes;
+            return true;
+        }
+    }
+    strncpy(g_gguf_routes[g_gguf_route_count].layer_name, layer_name, 63);
+    g_gguf_routes[g_gguf_route_count].layer_name[63] = '\0';
+    g_gguf_routes[g_gguf_route_count].peer_ip = peer_ip;
+    g_gguf_routes[g_gguf_route_count].size_bytes = size_bytes;
+    g_gguf_route_count++;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    lau_yul_thunk_sstore(0xF160, g_gguf_route_count);
+    return true;
+}
+
+uint32_t blue_box_select_gguf_layer_peer(const char *layer_name) {
+    if (!layer_name) return 0;
+    uint32_t best_peer_ip = 0;
+    double best_cost = 1e18;
+    
+    for (size_t i = 0; i < g_gguf_route_count; i++) {
+        if (strcmp(g_gguf_routes[i].layer_name, layer_name) == 0) {
+            uint32_t prec = 0, lat = 0;
+            if (!blue_box_get_bgp_peer(g_gguf_routes[i].peer_ip, &prec, &lat)) {
+                lat = 100;
+            }
+            double cost = (double)lat + ((double)g_gguf_routes[i].size_bytes / 100000.0);
+            if (cost < best_cost) {
+                best_cost = cost;
+                best_peer_ip = g_gguf_routes[i].peer_ip;
+            }
+        }
+    }
+    return best_peer_ip;
+}
