@@ -235,3 +235,71 @@ int interop_transr_project_bounds(float *v, size_t dim, float radius) {
     }
     return 0;
 }
+
+int interop_transd_score(const float *h, const float *hp, const float *t, const float *tp, const float *r, const float *rp, size_t ent_dim, size_t rel_dim, float *out_score) {
+    if (!h || !hp || !t || !tp || !r || !rp || !out_score || ent_dim == 0 || rel_dim == 0) return -1;
+    float hp_dot_h = 0.0f;
+    for (size_t i = 0; i < ent_dim; i++) {
+        hp_dot_h += hp[i] * h[i];
+    }
+    float tp_dot_t = 0.0f;
+    for (size_t i = 0; i < ent_dim; i++) {
+        tp_dot_t += tp[i] * t[i];
+    }
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < rel_dim; i++) {
+        float h_perp_i = hp_dot_h * rp[i];
+        if (i < ent_dim) {
+            h_perp_i += h[i];
+        }
+        float t_perp_i = tp_dot_t * rp[i];
+        if (i < ent_dim) {
+            t_perp_i += t[i];
+        }
+        float diff = h_perp_i + r[i] - t_perp_i;
+        sum_sq += diff * diff;
+    }
+    *out_score = sqrtf(sum_sq);
+    return 0;
+}
+
+int interop_transd_normalize_entity(float *e, float *ep, size_t dim) {
+    if (!e || !ep || dim == 0) return -1;
+    float sum_e = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum_e += e[i] * e[i];
+    }
+    float norm_e = sqrtf(sum_e);
+    if (norm_e > 1.0f) {
+        for (size_t i = 0; i < dim; i++) {
+            e[i] /= norm_e;
+        }
+    }
+    float sum_ep = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum_ep += ep[i] * ep[i];
+    }
+    float norm_ep = sqrtf(sum_ep);
+    if (norm_ep > 1.0f) {
+        for (size_t i = 0; i < dim; i++) {
+            ep[i] /= norm_ep;
+        }
+    }
+    return 0;
+}
+
+int interop_transd_scale_relation(float *r, size_t dim, float radius) {
+    if (!r || dim == 0 || radius <= 0.0f) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum_sq += r[i] * r[i];
+    }
+    float norm = sqrtf(sum_sq);
+    if (norm > radius) {
+        float scale = radius / norm;
+        for (size_t i = 0; i < dim; i++) {
+            r[i] *= scale;
+        }
+    }
+    return 0;
+}

@@ -551,4 +551,8 @@ int interop_rbgraph_resolve_black_height(const int *node_colors, const int *pare
 int interop_ctransr_adaptive_split_check(const float *scores, size_t count, float threshold);
 int interop_transr_project_bounds(float *v, size_t dim, float radius);
 
+int interop_transd_score(const float *h, const float *hp, const float *t, const float *tp, const float *r, const float *rp, size_t ent_dim, size_t rel_dim, float *out_score);
+int interop_transd_normalize_entity(float *e, float *ep, size_t dim);
+int interop_transd_scale_relation(float *r, size_t dim, float radius);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
