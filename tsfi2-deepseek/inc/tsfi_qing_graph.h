@@ -49,11 +49,19 @@ typedef struct tsfi_23_node {
             uint32_t checksum;
         } fw;
     } payload;
-    struct tsfi_23_node *children[3];
+    uint64_t keys[2];
+    int key_count;
+    struct tsfi_23_node *children[4]; // Expanded to 4 to support splits
     int child_count;
 } tsfi_23_node;
 
 // Search for a contract address recursively starting from a 2-3 tree node
 CachedContract* tsfi_23_node_search(tsfi_23_node *node, uint64_t virtual_address);
+
+// Free 2-3 tree nodes recursively
+void tsfi_23_node_destroy(tsfi_23_node *root);
+
+// Add a child to a 2-3 tree node, performing a split if child count exceeds 3
+tsfi_23_node* tsfi_23_node_add_child(tsfi_23_node *parent, tsfi_23_node *child, tsfi_23_node **new_sibling_out);
 
 #endif // TSFI_QING_GRAPH_H

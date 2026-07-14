@@ -89,3 +89,46 @@ CachedContract* tsfi_23_node_search(tsfi_23_node *node, uint64_t virtual_address
 
     return NULL;
 }
+
+void tsfi_23_node_destroy(tsfi_23_node *root) {
+    if (!root) return;
+    for (int i = 0; i < root->child_count; i++) {
+        tsfi_23_node_destroy(root->children[i]);
+    }
+    free(root);
+}
+
+tsfi_23_node* tsfi_23_node_add_child(tsfi_23_node *parent, tsfi_23_node *child, tsfi_23_node **new_sibling_out) {
+    if (!parent || !child) return parent;
+
+    // Place child temporarily
+    parent->children[parent->child_count++] = child;
+
+    // Check if we overflowed (4 children in a 2-3 tree node is invalid, triggers split)
+    if (parent->child_count == 4) {
+        tsfi_23_node *sibling = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
+        if (sibling) {
+            sibling->type = parent->type;
+            sibling->key_count = 0;
+            sibling->child_count = 2;
+            sibling->children[0] = parent->children[2];
+            sibling->children[1] = parent->children[3];
+            sibling->children[2] = NULL;
+            sibling->children[3] = NULL;
+
+            parent->children[2] = NULL;
+            parent->children[3] = NULL;
+            parent->child_count = 2;
+
+            if (new_sibling_out) {
+                *new_sibling_out = sibling;
+            }
+        }
+    } else {
+        if (new_sibling_out) {
+            *new_sibling_out = NULL;
+        }
+    }
+
+    return parent;
+}

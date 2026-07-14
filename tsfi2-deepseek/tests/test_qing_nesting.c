@@ -82,13 +82,42 @@ int main(void) {
     assert(strcmp(recursive_res->name, "deep_nested_qing") == 0);
     printf("  [PASS] Successfully retrieved deep nested Qing 0x999 via recursive search.\n");
 
+    // 5. Verify Dynamic 2-3 Tree Node Split
+    printf("[NEST] Verifying 2-3 Tree Node Split mechanics...\n");
+    tsfi_23_node *split_test_root = create_node(NODE_TYPE_RAW_DATA);
+    tsfi_23_node *c_child1 = create_node(NODE_TYPE_RAW_DATA);
+    tsfi_23_node *c_child2 = create_node(NODE_TYPE_RAW_DATA);
+    tsfi_23_node *c_child3 = create_node(NODE_TYPE_RAW_DATA);
+    tsfi_23_node *c_child4 = create_node(NODE_TYPE_RAW_DATA);
+
+    tsfi_23_node *sibling_out = NULL;
+    tsfi_23_node_add_child(split_test_root, c_child1, &sibling_out);
+    assert(sibling_out == NULL);
+    assert(split_test_root->child_count == 1);
+
+    tsfi_23_node_add_child(split_test_root, c_child2, &sibling_out);
+    assert(sibling_out == NULL);
+    assert(split_test_root->child_count == 2);
+
+    tsfi_23_node_add_child(split_test_root, c_child3, &sibling_out);
+    assert(sibling_out == NULL);
+    assert(split_test_root->child_count == 3);
+
+    // Adding 4th child triggers split
+    tsfi_23_node_add_child(split_test_root, c_child4, &sibling_out);
+    assert(sibling_out != NULL);
+    assert(split_test_root->child_count == 2);
+    assert(sibling_out->child_count == 2);
+    printf("  [PASS] Successfully verified 2-3 tree split and child balancing.\n");
+
     // Cleanup
     tsfi_qing_graph_destroy(qing_nodes);
     tsfi_qing_graph_destroy(nested_qing_nodes);
-    free(deep_nested_child);
-    free(child_left);
-    free(child_right);
-    free(root);
+    
+    // Deep recursive destruction
+    tsfi_23_node_destroy(root);
+    tsfi_23_node_destroy(split_test_root);
+    tsfi_23_node_destroy(sibling_out);
 
     printf("=== ALL NESTING TESTS PASSED ===\n");
     return 0;
