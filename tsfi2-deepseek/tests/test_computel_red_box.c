@@ -537,6 +537,26 @@ int main(void) {
     assert(selected_id == 99);
     printf("[TEST] Dynamic validator bidding, adaptive decay, and fallback routing verified.\n");
 
+    // 40. Test OCC Lock-Free Red Box Gas Depletion
+    lau_yul_thunk_sstore(0xF199, 1000);
+    lau_yul_thunk_sstore(0xF1B2, 10);
+    
+    bool conflict = false;
+    bool occ_ok = blue_box_deplete_session_gas_occ(808, 1, 10, &conflict);
+    assert(occ_ok == true);
+    assert(conflict == false);
+    assert(lau_yul_thunk_sload(0xF199) == 940);
+    assert(lau_yul_thunk_sload(0xF1B2) == 11);
+    assert(lau_yul_thunk_sload(0xF1B0) == 1);
+    
+    occ_ok = blue_box_deplete_session_gas_occ(808, 1, 10, &conflict);
+    assert(occ_ok == false);
+    assert(conflict == true);
+    assert(lau_yul_thunk_sload(0xF199) == 940);
+    assert(lau_yul_thunk_sload(0xF1B2) == 11);
+    assert(lau_yul_thunk_sload(0xF1B0) == 2);
+    printf("[TEST] OCC lock-free gas depletion validation and conflict handling verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

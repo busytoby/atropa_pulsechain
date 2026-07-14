@@ -2224,3 +2224,44 @@ bool blue_box_select_validator_route(uint32_t *validator_id_out) {
            *validator_id_out, g_validator_bids[best_idx].latency_ms, g_validator_bids[best_idx].fee_rate);
     return true;
 }
+
+// 32. OCC Lock-Free Red Box Gas Depletion
+bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds, uint64_t expected_version, bool *conflict_occurred_out) {
+    if (!conflict_occurred_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint64_t current_version = lau_yul_thunk_sload(0xF1B2);
+    if (current_version != expected_version) {
+        // Version mismatch -> Conflict occurred!
+        *conflict_occurred_out = true;
+        lau_yul_thunk_sstore(0xF1B0, 2); // OCC Status: Aborted (2)
+        printf("[OCC GAS] Conflict detected! Expected: %lu, Current: %lu. Aborting transaction.\n",
+               expected_version, current_version);
+        return false;
+    }
+    
+    // Calculate depletion
+    uint32_t rate = blue_box_centrex_get_trunk_rate(trunk_id);
+    uint32_t total_deplete = rate * active_seconds;
+    
+    uint64_t balance = lau_yul_thunk_sload(0xF199);
+    if (balance > total_deplete) {
+        balance -= total_deplete;
+    } else {
+        balance = 0;
+    }
+    
+    // Commit updates atomically (simulated CAS success)
+    lau_yul_thunk_sstore(0xF199, balance);
+    lau_yul_thunk_sstore(0xF1B2, current_version + 1);
+    lau_yul_thunk_sstore(0xF1B0, 1); // OCC Status: Validated/Committed (1)
+    
+    current_block_state.gas_allowance = (uint32_t)balance;
+    *conflict_occurred_out = false;
+    
+    printf("[OCC GAS] Commit Success. New Balance: %lu, New Version: %lu\n",
+           balance, current_version + 1);
+    return true;
+}

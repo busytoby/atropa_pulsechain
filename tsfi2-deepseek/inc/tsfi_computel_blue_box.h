@@ -165,5 +165,6 @@ bool blue_box_save_rdbms_tables(void);
 bool blue_box_add_validator_bid(uint32_t validator_id, uint32_t fee_rate, uint32_t latency_ms);
 bool blue_box_decay_validator_bids(void);
 bool blue_box_select_validator_route(uint32_t *validator_id_out);
+bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds, uint64_t expected_version, bool *conflict_occurred_out);
 
 #endif
