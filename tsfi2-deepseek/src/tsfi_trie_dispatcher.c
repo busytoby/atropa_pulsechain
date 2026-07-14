@@ -139,3 +139,72 @@ const char* tsfi_trie_resolve_contract_namespace(tsfi_trie_node *router, const c
     int matched_len = 0;
     return tsfi_trie_longest_prefix(router, contract_address, &matched_len);
 }
+
+tsfi_trie_node* tsfi_trie_init_ligature_router(void) {
+    tsfi_trie_node *root = tsfi_trie_create_node('\0');
+    if (!root) return NULL;
+
+    tsfi_trie_insert(root, "fi", "101");
+    tsfi_trie_insert(root, "fl", "102");
+    tsfi_trie_insert(root, "ffi", "103");
+    tsfi_trie_insert(root, "ffl", "104");
+
+    return root;
+}
+
+int tsfi_trie_resolve_ligature(tsfi_trie_node *router, const char *sequence) {
+    const char *val = tsfi_trie_lookup(router, sequence);
+    if (val) {
+        return atoi(val);
+    }
+    return 0;
+}
+
+static const char* search_wildcard(tsfi_trie_node *node, const char *topic) {
+    if (!node) return NULL;
+    if (*topic == '\0') {
+        if (node->is_end) return node->phoneme;
+        tsfi_trie_node *wc = node->child;
+        while (wc) {
+            if (wc->ch == '*') {
+                return wc->phoneme;
+            }
+            wc = wc->sibling;
+        }
+        return NULL;
+    }
+
+    tsfi_trie_node *curr = node->child;
+    while (curr) {
+        if (curr->ch == *topic) {
+            const char *res = search_wildcard(curr, topic + 1);
+            if (res) return res;
+        }
+        if (curr->ch == '*') {
+            const char *next_dot = strchr(topic, '.');
+            if (next_dot) {
+                const char *res = search_wildcard(curr, next_dot);
+                if (res) return res;
+            } else {
+                if (curr->is_end) return curr->phoneme;
+            }
+        }
+        curr = curr->sibling;
+    }
+    return NULL;
+}
+
+tsfi_trie_node* tsfi_trie_init_topic_router(void) {
+    tsfi_trie_node *root = tsfi_trie_create_node('\0');
+    if (!root) return NULL;
+
+    tsfi_trie_insert(root, "telemetry.audio.*", "audio_destination");
+    tsfi_trie_insert(root, "telemetry.system.*", "system_destination");
+    tsfi_trie_insert(root, "telemetry.video.*", "video_destination");
+
+    return root;
+}
+
+const char* tsfi_trie_resolve_topic(tsfi_trie_node *router, const char *topic) {
+    return search_wildcard(router, topic);
+}

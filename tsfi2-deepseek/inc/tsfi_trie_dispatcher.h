@@ -36,4 +36,16 @@ tsfi_trie_node* tsfi_trie_init_contract_namespace_router(void);
 // Resolve contract address namespace (e.g. dynamic_*, sys_*, usr_*) using prefix match
 const char* tsfi_trie_resolve_contract_namespace(tsfi_trie_node *router, const char *contract_address);
 
+// Initialize font ligature Trie router
+tsfi_trie_node* tsfi_trie_init_ligature_router(void);
+
+// Resolve font ligature mapping (returns glyph index or 0 if not found)
+int tsfi_trie_resolve_ligature(tsfi_trie_node *router, const char *sequence);
+
+// Initialize telemetry topic wildcard Trie router
+tsfi_trie_node* tsfi_trie_init_topic_router(void);
+
+// Resolve a specific topic to its routing destination using wildcard matches
+const char* tsfi_trie_resolve_topic(tsfi_trie_node *router, const char *topic);
+
 #endif // TSFI_TRIE_DISPATCHER_H

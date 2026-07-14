@@ -98,12 +98,48 @@ int main(void) {
     assert(ns_fail == NULL);
     printf("  [PASS] Unmatched contract 'random_addr' prefix correctly returned NULL.\n");
 
-    // 7. Cleanup
+    // 7. Verify Font Ligature Router
+    printf("[ROUTER] Verifying Font Ligature Router...\n");
+    tsfi_trie_node *ligature_router = tsfi_trie_init_ligature_router();
+    assert(ligature_router != NULL);
+
+    int lig1 = tsfi_trie_resolve_ligature(ligature_router, "fi");
+    assert(lig1 == 101);
+    printf("  [PASS] Sequence 'fi' resolved to glyph index: %d\n", lig1);
+
+    int lig2 = tsfi_trie_resolve_ligature(ligature_router, "ffi");
+    assert(lig2 == 103);
+    printf("  [PASS] Sequence 'ffi' resolved to glyph index: %d\n", lig2);
+
+    int lig_fail = tsfi_trie_resolve_ligature(ligature_router, "xyz");
+    assert(lig_fail == 0);
+    printf("  [PASS] Sequence 'xyz' resolved to fallback glyph index: %d\n", lig_fail);
+
+    // 8. Verify Telemetry Topic Wildcard Router
+    printf("[ROUTER] Verifying Telemetry Topic Wildcard Router...\n");
+    tsfi_trie_node *topic_router = tsfi_trie_init_topic_router();
+    assert(topic_router != NULL);
+
+    const char *dest1 = tsfi_trie_resolve_topic(topic_router, "telemetry.audio.latency");
+    assert(dest1 != NULL && strcmp(dest1, "audio_destination") == 0);
+    printf("  [PASS] Topic 'telemetry.audio.latency' routed to destination: %s\n", dest1);
+
+    const char *dest2 = tsfi_trie_resolve_topic(topic_router, "telemetry.system.cpu");
+    assert(dest2 != NULL && strcmp(dest2, "system_destination") == 0);
+    printf("  [PASS] Topic 'telemetry.system.cpu' routed to destination: %s\n", dest2);
+
+    const char *dest_fail = tsfi_trie_resolve_topic(topic_router, "billing.deposit");
+    assert(dest_fail == NULL);
+    printf("  [PASS] Unmatched topic 'billing.deposit' correctly returned NULL.\n");
+
+    // 9. Cleanup
     tsfi_trie_destroy(rpc_router);
     tsfi_trie_destroy(abi_router);
     tsfi_trie_destroy(scsi_router);
     tsfi_trie_destroy(cidr_router);
     tsfi_trie_destroy(namespace_router);
+    tsfi_trie_destroy(ligature_router);
+    tsfi_trie_destroy(topic_router);
 
     printf("=== ALL MULTI-PURPOSE TRIE ROUTING TESTS PASSED ===\n");
     return 0;
