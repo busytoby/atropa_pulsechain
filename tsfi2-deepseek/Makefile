@@ -72,6 +72,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zener.o \
             $(OBJ_DIR)/drm-lease-v1-protocol.o \
             $(OBJ_DIR)/tsfi_computel_blue_box.o \
+            $(OBJ_DIR)/tsfi_ouroboros_pll.o \
             $(OBJ_DIR)/tsfi_sort.o \
             $(OBJ_DIR)/tsfi_qing_bst.o \
             $(OBJ_DIR)/tsfi_qing_graph.o \
