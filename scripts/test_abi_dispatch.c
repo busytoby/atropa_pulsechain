@@ -740,6 +740,18 @@ int main() {
     assert(h_cents[0] == 10 && h_cents[3] == 100);
     printf("✓ AVX-512 LSH, sorted decision, and hierarchical clustering verified.\n");
 
+    // 54-56. Test AVX-512 vector search, Minkowski distance, and adaptive cluster splits
+    uint32_t ths[4] = { 10, 20, 30, 40 };
+    assert(interop_decision_vector_search_avx512(ths, 4, 25) == 2);
+    assert(interop_knn_distance_minkowski(c1, c2, 2) == 12);
+    uint64_t ad_coords[6] = { 10, 20, 30, 9999, 9999, 9999 };
+    uint64_t ad_cents[45] = { 10, 20, 30 };
+    uint32_t ad_k = 1;
+    uint32_t ad_assign[2] = {0};
+    assert(interop_coaxial_cluster_adaptive(ad_coords, 2, ad_cents, &ad_k, ad_assign) == 0);
+    assert(ad_k == 2);
+    printf("✓ Decision vector search, Minkowski distance, and adaptive splits verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

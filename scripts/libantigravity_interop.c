@@ -1362,3 +1362,56 @@ int interop_coaxial_cluster_hierarchical(const uint64_t *coords, size_t count, u
     }
     return 0;
 }
+
+uint32_t interop_decision_vector_search_avx512(const uint32_t *thresholds, size_t count, uint32_t query_val) {
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+    // SIMD vector register thresholds search
+    size_t i = 0;
+    for (; i < (count & ~15ULL); i += 16) {
+        __m512i vth = _mm512_loadu_si512((const __m512i*)&thresholds[i]);
+        __m512i vq = _mm512_set1_epi32((int)query_val);
+        __mmask16 mask = _mm512_cmpgt_epu32_mask(vth, vq);
+        if (mask != 0) {
+            return (uint32_t)(i + __builtin_ctz(mask));
+        }
+    }
+    for (; i < count; i++) {
+        if (query_val < thresholds[i]) return (uint32_t)i;
+    }
+    return (uint32_t)count;
+#else
+    for (size_t i = 0; i < count; i++) {
+        if (query_val < thresholds[i]) return (uint32_t)i;
+    }
+    return (uint32_t)count;
+#endif
+}
+
+uint64_t interop_knn_distance_minkowski(const uint64_t *coord1, const uint64_t *coord2, uint32_t p) {
+    if (!coord1 || !coord2 || p == 0) return 0;
+    uint64_t sum = 0;
+    for (int i = 0; i < 3; i++) {
+        uint64_t diff = (coord1[i] > coord2[i]) ? (coord1[i] - coord2[i]) : (coord2[i] - coord1[i]);
+        uint64_t term = 1;
+        for (uint32_t j = 0; j < p; j++) {
+            term = (term * diff) % 953467954114363ULL;
+        }
+        sum = (sum + term) % 953467954114363ULL;
+    }
+    return sum;
+}
+
+int interop_coaxial_cluster_adaptive(const uint64_t *coords, size_t count, uint64_t *centroids, uint32_t *k_io, uint32_t *assign) {
+    if (!coords || count == 0 || !centroids || !k_io || !assign) return -1;
+    uint32_t k = *k_io;
+    int res = interop_coaxial_cluster(coords, count, centroids, k, assign);
+    if (res != 0) return res;
+    uint64_t dist = interop_knn_distance(&coords[0], &centroids[0]);
+    if (dist > 1000 && k < 15) {
+        centroids[k * 3 + 0] = coords[0] + 1;
+        centroids[k * 3 + 1] = coords[1] + 1;
+        centroids[k * 3 + 2] = coords[2] + 1;
+        (*k_io)++;
+    }
+    return 0;
+}
