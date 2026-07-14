@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <math.h>
+#include <stdlib.h>
 #include "libantigravity_interop.h"
 
 float interop_transr_score(const float *h, const float *M, const float *r, const float *t, size_t ent_dim, size_t rel_dim, int norm_type) {
@@ -301,5 +302,85 @@ int interop_transd_scale_relation(float *r, size_t dim, float radius) {
             r[i] *= scale;
         }
     }
+    return 0;
+}
+
+int interop_transm_score(const float *h, const float *t, const float *r, float wr, size_t dim, float *out_score) {
+    if (!h || !t || !r || !out_score || dim == 0 || wr <= 0.0f) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = h[i] + r[i] - t[i];
+        sum_sq += diff * diff;
+    }
+    *out_score = sqrtf(sum_sq) / wr;
+    return 0;
+}
+
+int interop_transa_score(const float *h, const float *t, const float *r, const float *w, size_t dim, float *out_score) {
+    if (!h || !t || !r || !w || !out_score || dim == 0) return -1;
+    float sum = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = h[i] + r[i] - t[i];
+        sum += w[i] * (diff < 0.0f ? -diff : diff);
+    }
+    *out_score = sum;
+    return 0;
+}
+
+int interop_transf_score(const float *h, const float *t, const float *r, size_t dim, float *out_score) {
+    if (!h || !t || !r || !out_score || dim == 0) return -1;
+    float sum = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum += (h[i] + r[i]) * t[i] + (t[i] - r[i]) * h[i];
+    }
+    *out_score = sum;
+    return 0;
+}
+
+int interop_transg_score(const float *h, const float *t, const float *r_clusters, const float *weights, size_t num_clusters, size_t dim, float *out_score) {
+    if (!h || !t || !r_clusters || !weights || !out_score || num_clusters == 0 || dim == 0) return -1;
+    float score = 0.0f;
+    for (size_t m = 0; m < num_clusters; m++) {
+        float sum_sq = 0.0f;
+        for (size_t i = 0; i < dim; i++) {
+            float diff = h[i] + r_clusters[m * dim + i] - t[i];
+            sum_sq += diff * diff;
+        }
+        score += weights[m] * sqrtf(sum_sq);
+    }
+    *out_score = score;
+    return 0;
+}
+
+int interop_transsparse_score(const float *h, const float *t, const float *M_vals, const int *M_cols, const int *M_row_ptrs, size_t dim, float *out_score) {
+    if (!h || !t || !M_vals || !M_cols || !M_row_ptrs || !out_score || dim == 0) return -1;
+    float *proj_h = calloc(dim, sizeof(float));
+    float *proj_t = calloc(dim, sizeof(float));
+    if (!proj_h || !proj_t) {
+        free(proj_h);
+        free(proj_t);
+        return -1;
+    }
+    for (size_t r = 0; r < dim; r++) {
+        int start = M_row_ptrs[r];
+        int end = M_row_ptrs[r + 1];
+        float sum_h = 0.0f;
+        float sum_t = 0.0f;
+        for (int idx = start; idx < end; idx++) {
+            int c = M_cols[idx];
+            sum_h += M_vals[idx] * h[c];
+            sum_t += M_vals[idx] * t[c];
+        }
+        proj_h[r] = sum_h;
+        proj_t[r] = sum_t;
+    }
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = proj_h[i] - proj_t[i];
+        sum_sq += diff * diff;
+    }
+    *out_score = sqrtf(sum_sq);
+    free(proj_h);
+    free(proj_t);
     return 0;
 }

@@ -555,4 +555,10 @@ int interop_transd_score(const float *h, const float *hp, const float *t, const 
 int interop_transd_normalize_entity(float *e, float *ep, size_t dim);
 int interop_transd_scale_relation(float *r, size_t dim, float radius);
 
+int interop_transm_score(const float *h, const float *t, const float *r, float wr, size_t dim, float *out_score);
+int interop_transa_score(const float *h, const float *t, const float *r, const float *w, size_t dim, float *out_score);
+int interop_transf_score(const float *h, const float *t, const float *r, size_t dim, float *out_score);
+int interop_transg_score(const float *h, const float *t, const float *r_clusters, const float *weights, size_t num_clusters, size_t dim, float *out_score);
+int interop_transsparse_score(const float *h, const float *t, const float *M_vals, const int *M_cols, const int *M_row_ptrs, size_t dim, float *out_score);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
