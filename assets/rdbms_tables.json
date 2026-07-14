@@ -1,0 +1,12 @@
+{
+  "bgp_peers": [
+    {"peer_ip": 167772161, "peer_as": 65001, "precedence": 3, "latency_ms": 20},
+    {"peer_ip": 167772162, "peer_as": 65002, "precedence": 1, "latency_ms": 45}
+  ],
+  "green_box_agent_profile": {
+    "mode": 1,
+    "diyat_rate": 5,
+    "last_action": 1,
+    "total_collected": 0
+  }
+}

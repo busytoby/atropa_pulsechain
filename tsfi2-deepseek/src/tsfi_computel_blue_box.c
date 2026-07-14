@@ -2060,6 +2060,8 @@ bool blue_box_run_green_agent(uint32_t *action_out) {
 }
 
 // 29. Green Box Agent RDBMS Sync
+bool blue_box_save_rdbms_tables(void);
+
 bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out) {
     if (!hash_out) return false;
     
@@ -2077,5 +2079,43 @@ bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out) {
     lau_yul_thunk_sstore(0xF192, hash);
     printf("[GREEN RDBMS] Sync complete. Mode: %lu. Rate: %lu. Action: %lu. Hash: %lu\n",
            mode, rate, last_action, hash);
+           
+    // Serialize and save tables to disk
+    blue_box_save_rdbms_tables();
+    return true;
+}
+
+// 30. Save RDBMS Tables to Disk
+bool blue_box_save_rdbms_tables(void) {
+    FILE *f = fopen("assets/rdbms_tables.json", "w");
+    if (!f) {
+        f = fopen("../assets/rdbms_tables.json", "w");
+    }
+    if (!f) return false;
+    
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    fprintf(f, "{\n  \"bgp_peers\": [\n");
+    for (size_t i = 0; i < g_bgp_peer_count; i++) {
+        fprintf(f, "    {\"peer_ip\": %u, \"peer_as\": %u, \"precedence\": %u, \"latency_ms\": %u}%s\n",
+                g_bgp_peers[i].peer_ip, g_bgp_peers[i].peer_as,
+                g_bgp_peers[i].precedence, g_bgp_peers[i].latency_ms,
+                (i + 1 < g_bgp_peer_count) ? "," : "");
+    }
+    
+    uint64_t mode = lau_yul_thunk_sload(0xF18E);
+    uint64_t rate = lau_yul_thunk_sload(0xF196);
+    uint64_t last_action = lau_yul_thunk_sload(0xF185);
+    uint64_t total_collected = lau_yul_thunk_sload(0xF186);
+    
+    fprintf(f, "  ],\n  \"green_box_agent_profile\": {\n");
+    fprintf(f, "    \"mode\": %lu,\n", mode);
+    fprintf(f, "    \"diyat_rate\": %lu,\n", rate);
+    fprintf(f, "    \"last_action\": %lu,\n", last_action);
+    fprintf(f, "    \"total_collected\": %lu\n", total_collected);
+    fprintf(f, "  }\n}\n");
+    
+    fclose(f);
+    printf("[RDBMS DISK] Saved tables to assets/rdbms_tables.json\n");
     return true;
 }

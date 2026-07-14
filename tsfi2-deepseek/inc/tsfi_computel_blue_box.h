@@ -161,5 +161,6 @@ bool blue_box_trigger_green_box_diyat(uint32_t frequency, uint32_t duration_ms, 
 bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32_t *freq_lock_out);
 bool blue_box_run_green_agent(uint32_t *action_out);
 bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out);
+bool blue_box_save_rdbms_tables(void);
 
 #endif

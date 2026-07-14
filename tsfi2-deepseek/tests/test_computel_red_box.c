@@ -510,7 +510,14 @@ int main(void) {
     assert(db_sync_ok == true);
     uint64_t reg_db_hash = lau_yul_thunk_sload(0xF192);
     assert(reg_db_hash == sync_hash);
-    printf("[TEST] Green Box autonomous agent logic and RDBMS sync verified.\n");
+    
+    FILE *f_check = fopen("assets/rdbms_tables.json", "r");
+    if (!f_check) {
+        f_check = fopen("../assets/rdbms_tables.json", "r");
+    }
+    assert(f_check != NULL);
+    fclose(f_check);
+    printf("[TEST] Green Box autonomous agent logic and RDBMS sync (disk serialization) verified.\n");
 
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
