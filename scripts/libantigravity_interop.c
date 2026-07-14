@@ -854,3 +854,22 @@ int interop_covenant_verify_response(const InteropTuringResponse *response, uint
     if (response->return_value != expected_return) return -4;
     return 1;
 }
+
+int interop_covenant_replay_log(InteropCoaxialTable *tape, const InteropStateDelta *deltas, size_t delta_count, uint64_t expected_hash) {
+    if (!tape || !deltas || delta_count == 0) return -1;
+    for (size_t i = 0; i < delta_count; i++) {
+        uint64_t row_pair[2] = { deltas[i].cell_index, deltas[i].cell_value };
+        if (interop_coaxial_insert(tape, row_pair, 2) != 1) {
+            return -2;
+        }
+    }
+    uint32_t active_offset = __atomic_load_n(&tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t count = __atomic_load_n(&tape->count, __ATOMIC_ACQUIRE);
+    char *base = (char*)tape;
+    uint64_t *rows = (uint64_t*)(base + active_offset);
+    uint64_t final_hash = fnv1a_hash_vectorized(14695981039346656037ULL, rows, count * tape->col_count * sizeof(uint64_t));
+    if (final_hash != expected_hash) {
+        return -3;
+    }
+    return 1;
+}

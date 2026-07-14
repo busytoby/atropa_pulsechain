@@ -205,4 +205,11 @@ typedef struct {
 
 int interop_covenant_verify_response(const InteropTuringResponse *response, uint64_t expected_hash, uint32_t expected_exit_code, uint64_t expected_return);
 
+typedef struct {
+    uint64_t cell_index;
+    uint64_t cell_value;
+} InteropStateDelta;
+
+int interop_covenant_replay_log(InteropCoaxialTable *tape, const InteropStateDelta *deltas, size_t delta_count, uint64_t expected_hash);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

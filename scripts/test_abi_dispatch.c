@@ -815,6 +815,36 @@ int main() {
     assert(interop_covenant_verify_response(&mock_response, 0x88888888ULL, 1, 999) == -3);
     printf("✓ Host Response verified.\n");
 
+    // 28. Test Log Replay State Reconstruction
+    printf("28. Testing Log Replay State Reconstruction:\n");
+    char *replay_tape_mem = calloc(1, 16384);
+    assert(replay_tape_mem);
+    InteropCoaxialTable *replay_tape = (InteropCoaxialTable*)replay_tape_mem;
+    interop_coaxial_init_table(replay_tape, 5, 2);
+    InteropStateDelta deltas[2] = {
+        { 0, 777 },
+        { 1, 888 }
+    };
+    char *expected_tape_mem = calloc(1, 16384);
+    assert(expected_tape_mem);
+    InteropCoaxialTable *expected_tape = (InteropCoaxialTable*)expected_tape_mem;
+    interop_coaxial_init_table(expected_tape, 5, 2);
+    uint64_t r1[2] = { 0, 777 };
+    uint64_t r2[2] = { 1, 888 };
+    assert(interop_coaxial_insert(expected_tape, r1, 2) == 1);
+    assert(interop_coaxial_insert(expected_tape, r2, 2) == 1);
+    uint32_t exp_offset = __atomic_load_n(&expected_tape->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t exp_count = __atomic_load_n(&expected_tape->count, __ATOMIC_ACQUIRE);
+    char *exp_base = (char*)expected_tape;
+    uint64_t *exp_rows = (uint64_t*)(exp_base + exp_offset);
+    uint64_t expected_final_hash = fnv1a_hash_vectorized(14695981039346656037ULL, exp_rows, exp_count * expected_tape->col_count * sizeof(uint64_t));
+    assert(interop_covenant_replay_log(replay_tape, deltas, 2, expected_final_hash) == 1);
+    assert(interop_coaxial_select(replay_tape, 0) == 777);
+    assert(interop_coaxial_select(replay_tape, 1) == 888);
+    free(replay_tape_mem);
+    free(expected_tape_mem);
+    printf("✓ Log Replay State Reconstruction verified.\n");
+
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");
 

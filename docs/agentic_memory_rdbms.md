@@ -148,6 +148,9 @@ Uses parallel multi-lane word unrolling (`fnv1a_hash_vectorized`) to compute dat
 ### Q. Bidirectional Host Response Verification
 Validates execution status and return values transmitted by the host VM back to the L1 Bitcoin chain. The `interop_covenant_verify_response` API evaluates exit codes and return values inside UTXO spending validations.
 
+### R. State-Reconstruction Log Replay
+Enables the deterministic recovery and reconstruction of the `.dat.bin` Turing machine state tape from sequential transaction delta logs. The `interop_covenant_replay_log` API parses state deltas, applies them to the tape, and cryptographically verifies the resulting evolved FNV-1a hash matches the on-chain root commitment.
+
 ---
 
 ## 6. Performance Benchmarks
@@ -164,7 +167,7 @@ Performance metrics compiled using the standalone compilation profiler (`benchma
 
 ## 7. Verification Harness
 
-To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, Yul virtual contract covenant deployments, Layer-2 Rollup batches, Optimistic Fraud Proofs, Parallel Vectorized Hashing, and Bidirectional Host Responses:
+To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, Yul virtual contract covenant deployments, Layer-2 Rollup batches, Optimistic Fraud Proofs, Parallel Vectorized Hashing, Bidirectional Host Responses, and State Reconstruction Replays:
 
 ```bash
 cd scripts
