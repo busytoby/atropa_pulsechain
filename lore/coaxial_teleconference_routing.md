@@ -15,8 +15,16 @@ In early telecommunication routing, a **Conferencing Bridge** combined multiple 
 
 ## 2. Line Switching & Routing Loops
 
-Switching networks (Step-by-Step, Crossbar, and Electronic Switching Systems) established paths between ports using specific signaling logic:
-* **Control Handshakes**: Dial pulses modulated loop currents to step physical wipers or trigger crossbar points.
-* **ISDN Channel Routing**: In the **Auncient** guest system, these pathways are modeled via virtual channels:
-  1. **Line Tapping**: Passive high-impedance taps monitor signal amplitudes on B channels to verify data integrity.
-  2. **Inter-Channel Signaling**: The D channel handles the control handshake signaling needed to dynamically re-route peer slots during collision events, mimicking early ESS trunk routing.
+Switching networks establish paths between virtual inputs and outputs using historical telco paradigms:
+
+### A. Crossbar Switching as Memory Page Tables
+* **Crossbar Matrix**: Connects $N$ inputs to $M$ outputs by activating horizontal and vertical selection bars.
+* **VM Page Table Mapping**: Mapped to our virtual hardware's crossbar page table layouts. Instead of copying buffers, the ZMM VM activates/deactivates page pointers to route memory packets between isolated peer slots.
+
+### B. Trunk Lines as Inter-Ledger Bridges
+* **Trunking**: High-capacity lines carrying multiplexed signals between distinct telephone offices.
+* **Coaxial Inter-Ledger Bridges**: Represents the channels linking partition-level high-impedance ledgers (e.g. Gauntlet state logs) back to the main blockchain network, ensuring state synchronization.
+
+### C. Step-by-Step (Strowger) Switches as Register Wipers
+* **Step Wipers**: Responded directly to incoming electrical dial pulses, advancing mechanical wipers grid-by-grid to locate destination contacts.
+* **Direct Register Stepping**: Modeled by the **Auncient** guest virtual machine's cycle-level state execution. Incoming signal codes (such as direction code variables) directly step the VM's register pointers (e.g. player coordinate words) on-cycle, eliminating static lookup arrays.
