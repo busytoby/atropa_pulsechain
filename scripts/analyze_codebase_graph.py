@@ -31,7 +31,7 @@ def analyze_codebase():
     # 3. Extract verified functions from test files
     tested = set()
     test_contents = []
-    for t_file in ['scripts/test_abi_dispatch.c', 'scripts/test_abi_dispatch_extra.c']:
+    for t_file in ['scripts/test_abi_dispatch.c', 'scripts/test_abi_dispatch_extra.c', 'scripts/test_abi_dispatch_extra2.c']:
         if os.path.exists(t_file):
             with open(t_file, 'r') as f:
                 test_contents.append(f.read())

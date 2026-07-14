@@ -1380,3 +1380,81 @@ int interop_stack_vm_verify(const InteropStackVM *vm, const int *exp_stack, size
     *out_verified = 1;
     return 0;
 }
+
+int interop_yul_translate_opcode(int yul_op, int *out_stack_op) {
+    if (!out_stack_op) return -1;
+    switch (yul_op) {
+        case 100: *out_stack_op = 1; break;
+        case 101: *out_stack_op = 2; break;
+        case 102: *out_stack_op = 3; break;
+        case 103: *out_stack_op = 4; break;
+        case 104: *out_stack_op = 5; break;
+        case 105: *out_stack_op = 6; break;
+        default: return -2;
+    }
+    return 0;
+}
+
+int interop_yul_execute_object(InteropStackVM *vm, const int *yul_instructions, size_t len, int *memory_pages, size_t *mem_count, size_t max_mem) {
+    if (!vm || !yul_instructions || len == 0) return -1;
+    size_t yul_pc = 0;
+    vm->halted = 0;
+    while (yul_pc < len && !vm->halted) {
+        int op = yul_instructions[yul_pc];
+        yul_pc++;
+        int stack_op = 0;
+        if (interop_yul_translate_opcode(op, &stack_op) == 0) {
+            int single_instr[2];
+            single_instr[0] = stack_op;
+            if (stack_op == 1) {
+                if (yul_pc >= len) return -2;
+                single_instr[1] = yul_instructions[yul_pc++];
+                if (interop_stack_vm_execute(vm, single_instr, 2) != 0) return -3;
+            } else {
+                if (interop_stack_vm_execute(vm, single_instr, 1) != 0) return -3;
+            }
+        } else if (op == 106) {
+            if (vm->stack_len < 2) return -4;
+            int val = vm->stack[--vm->stack_len];
+            int addr = vm->stack[--vm->stack_len];
+            if (memory_pages && mem_count && max_mem > 0) {
+                int found = 0;
+                for (size_t i = 0; i < *mem_count; i++) {
+                    if (memory_pages[2 * i] == addr) {
+                        memory_pages[2 * i + 1] = val;
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) {
+                    if (*mem_count < max_mem) {
+                        size_t idx = *mem_count;
+                        memory_pages[2 * idx] = addr;
+                        memory_pages[2 * idx + 1] = val;
+                        (*mem_count)++;
+                    } else {
+                        return -5;
+                    }
+                }
+            }
+        } else {
+            return -6;
+        }
+    }
+    vm->pc = (int)yul_pc;
+    return 0;
+}
+
+int interop_yul_verify_memory(const int *memory_pages, size_t mem_count, int target_addr, int expected_val, int *out_verified) {
+    if (!memory_pages || mem_count == 0 || !out_verified) return -1;
+    *out_verified = 0;
+    for (size_t i = 0; i < mem_count; i++) {
+        if (memory_pages[2 * i] == target_addr) {
+            if (memory_pages[2 * i + 1] == expected_val) {
+                *out_verified = 1;
+            }
+            break;
+        }
+    }
+    return 0;
+}
