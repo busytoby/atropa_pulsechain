@@ -1,10 +1,7 @@
+#include "tsfi_computel_blue_box.h"
 #include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <assert.h>
-#include <math.h>
 #include <string.h>
-#include "../src/tsfi_computel_blue_box.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Blue Box SF/MF test suite...\n");
@@ -501,6 +498,18 @@ int main(void) {
     assert(q_count == 1);
     assert(query_res[0] == 203);
 
+    // 31. Test Goertzel Tone Detection & Accumulator Integration
+    printf("[TEST] Verifying Goertzel Tone Detection and Accumulator Integration...\n");
+    float tone_buf[320];
+    extern bool blue_box_detect_and_accumulate(const float *samples, int num_samples);
+    
+    // Generate SF 2600 Hz tone on buffer
+    generate_sf_seizure(tone_buf, 320);
+    uint64_t prev_acc = blue_box_get_accumulator();
+    bool detected = blue_box_detect_and_accumulate(tone_buf, 320);
+    assert(detected == true);
+    assert(blue_box_get_accumulator() != prev_acc); // Accumulator must transition
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -511,6 +520,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, Centrex Recursive Forwarding, RDBMS Metadata Persistence, and RDBMS Metadata Query tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, Centrex Unicode Dialing, Centrex Recursive Forwarding, RDBMS Metadata Persistence, RDBMS Metadata Query, and Goertzel Tone Detection tests passed successfully.\n");
     return 0;
 }

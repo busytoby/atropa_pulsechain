@@ -201,6 +201,72 @@ static int handle_load_command(WaveSystem *ws, const char *param) {
     return 0;
 }
 
+extern bool blue_box_decode_access_code(const char *dial_sequence);
+extern void blue_box_centrex_add_alias(uint32_t alias_code, uint32_t target_trunk);
+extern uint32_t blue_box_centrex_resolve_route(uint32_t dial_code);
+extern void blue_box_centrex_add_unicode_alias(const char *unicode_name, uint32_t target_trunk);
+extern uint32_t blue_box_centrex_resolve_unicode_route(const char *unicode_name);
+
+static int handle_dial_command(WaveSystem *ws, const char *new_d) {
+    (void)ws;
+    char seq[256];
+    if (sscanf(new_d, "DIAL %255s", seq) == 1) {
+        bool ok = blue_box_decode_access_code(seq);
+        tsfi_io_printf(stdout, "[BLUE_BOX] Dial sequence '%s' executed. Result: %s\n", seq, ok ? "SUCCESS" : "FAILED");
+    } else {
+        tsfi_io_printf(stdout, "[BLUE_BOX] Usage: 0.0 DIAL <sequence>\n");
+    }
+    return 0;
+}
+
+static int handle_alias_command(WaveSystem *ws, const char *new_d) {
+    (void)ws;
+    char name[256];
+    uint32_t trunk = 0;
+    if (sscanf(new_d, "ALIAS %255s %u", name, &trunk) == 2) {
+        bool is_num = true;
+        for (int i = 0; name[i] != '\0'; i++) {
+            if (name[i] < '0' || name[i] > '9') {
+                is_num = false;
+                break;
+            }
+        }
+        if (is_num) {
+            blue_box_centrex_add_alias((uint32_t)atoi(name), trunk);
+        } else {
+            blue_box_centrex_add_unicode_alias(name, trunk);
+        }
+        tsfi_io_printf(stdout, "[CENTREX] Alias registered: %s -> %u\n", name, trunk);
+    } else {
+        tsfi_io_printf(stdout, "[CENTREX] Usage: 0.0 ALIAS <name> <trunk>\n");
+    }
+    return 0;
+}
+
+static int handle_resolve_command(WaveSystem *ws, const char *new_d) {
+    (void)ws;
+    char name[256];
+    if (sscanf(new_d, "RESOLVE %255s", name) == 1) {
+        bool is_num = true;
+        for (int i = 0; name[i] != '\0'; i++) {
+            if (name[i] < '0' || name[i] > '9') {
+                is_num = false;
+                break;
+            }
+        }
+        uint32_t trunk = 0;
+        if (is_num) {
+            trunk = blue_box_centrex_resolve_route((uint32_t)atoi(name));
+        } else {
+            trunk = blue_box_centrex_resolve_unicode_route(name);
+        }
+        tsfi_io_printf(stdout, "[CENTREX] Resolved route: %s -> %u\n", name, trunk);
+    } else {
+        tsfi_io_printf(stdout, "[CENTREX] Usage: 0.0 RESOLVE <name>\n");
+    }
+    return 0;
+}
+
 int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     // --- ALLIGATOR MANDATORY AUDIT BYPASSED FOR OPERATIONAL SIMULATOR ---
     (void)ws;
@@ -240,6 +306,15 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         if (strcmp(new_d, "PROMOTE_PLANE_71") == 0) {
             return handle_promote_plane71_command(ws);
+        }
+        if (strncmp(new_d, "DIAL", 4) == 0) {
+            return handle_dial_command(ws, new_d);
+        }
+        if (strncmp(new_d, "ALIAS", 5) == 0) {
+            return handle_alias_command(ws, new_d);
+        }
+        if (strncmp(new_d, "RESOLVE", 7) == 0) {
+            return handle_resolve_command(ws, new_d);
         }
         // Default behavior if previous commands not matched
         return handle_default_command(ws, new_i, new_d);

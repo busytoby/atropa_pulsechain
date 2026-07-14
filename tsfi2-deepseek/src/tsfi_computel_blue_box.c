@@ -29,24 +29,13 @@ static const float mf_freqs_f2[12] = {900.0f, 1100.0f, 1100.0f, 1300.0f, 1300.0f
 // Map characters: '1'-'9', '0', 'K' (KP), 'S' (ST)
 static const char mf_char_map[12] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'K', 'S'};
 
-struct TwoThreeNode;
+#include "tsfi_computel_blue_box.h"
 
-#define RBT_MAX_NODES 256
 
-typedef enum { RBT_RED, RBT_BLACK } RbtColor;
-
-typedef struct RbtNode {
-    uint32_t block_number;
-    struct TwoThreeNode *two_three_node;
-    RbtColor color;
-    struct RbtNode *left;
-    struct RbtNode *right;
-    struct RbtNode *parent;
-} RbtNode;
 
 static RbtNode rbt_node_pool[RBT_MAX_NODES];
-static uint32_t rbt_node_count = 0;
-static RbtNode *rbt_root = NULL;
+uint32_t rbt_node_count = 0;
+RbtNode *rbt_root = NULL;
 
 static RbtNode* rbt_alloc_node(uint32_t block_number, struct TwoThreeNode *two_three_node) {
     if (rbt_node_count >= RBT_MAX_NODES) return NULL;
@@ -158,16 +147,7 @@ struct TwoThreeNode* blue_box_rbt_lookup(uint32_t block_number) {
     return NULL;
 }
 
-#define TWO_THREE_HASH_SIZE 32
 
-typedef struct TwoThreeNode {
-    bool is_leaf;
-    int num_keys;
-    uint32_t keys[2];
-    char values[2][128]; // basic table data
-    uint8_t node_hash[TWO_THREE_HASH_SIZE];
-    struct TwoThreeNode *children[3];
-} TwoThreeNode;
 
 static TwoThreeNode *blue_box_tree_root = NULL;
 
@@ -302,13 +282,7 @@ void blue_box_free_23_tree(TwoThreeNode *node) {
     free(node);
 }
 
-typedef struct AvlNode {
-    uint32_t val;
-    uint32_t block_number;
-    int height;
-    struct AvlNode *left;
-    struct AvlNode *right;
-} AvlNode;
+
 
 static int avl_height(AvlNode *n) {
     return n ? n->height : 0;
@@ -338,7 +312,7 @@ static AvlNode* avl_left_rotate(AvlNode *x) {
     return y;
 }
 
-static AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
+AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
     if (!node) {
         AvlNode *n = (AvlNode*)calloc(1, sizeof(AvlNode));
         n->val = val;
@@ -392,7 +366,7 @@ static void avl_free(AvlNode *root) {
     free(root);
 }
 
-static AvlNode *centrex_avl = NULL;
+AvlNode *centrex_avl = NULL;
 
 void blue_box_bind_23_tree(TwoThreeNode *root);
 
@@ -434,22 +408,9 @@ uint32_t calculate_crc32(const uint8_t *data, size_t length) {
     return ~crc;
 }
 
-#pragma pack(push, 1)
-typedef struct {
-    uint32_t block_number;
-    uint8_t state_hash[32];
-    uint32_t active_trunk_mask;
-    uint32_t nonce;
-    uint64_t session_key;
-    uint32_t gas_allowance;
-    bool is_committed;
-    char unicode_desc[64];
-    float synth_frequency;
-    uint32_t checksum;
-} BlueBoxBlockState;
-#pragma pack(pop)
 
-static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, 0, false, "", 0.0f, 0};
+
+BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, 0, false, "", 0.0f, 0};
 
 void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.block_number = block_number;
@@ -519,16 +480,23 @@ BlueBoxBlockState blue_box_get_block_state(void) {
     return current_block_state;
 }
 
-/* Generates 2600 Hz SF tone to seize simulated trunk line */
+static double sf_phase = 0.0;
+static double mf_phase_f1 = 0.0;
+static double mf_phase_f2 = 0.0;
+static double red_box_phase_f1 = 0.0;
+static double red_box_phase_f2 = 0.0;
+
+/* Generates 2600 Hz SF tone to seize simulated trunk line - phase continuous */
 void generate_sf_seizure(float *buffer, int num_samples) {
     if (!buffer || num_samples <= 0) return;
     for (int i = 0; i < num_samples; i++) {
-        double t = (double)i / SAMPLE_RATE;
-        buffer[i] = (float)sin(2.0 * M_PI * 2600.0 * t);
+        buffer[i] = (float)sin(sf_phase);
+        sf_phase += 2.0 * M_PI * 2600.0 / SAMPLE_RATE;
+        if (sf_phase > 2.0 * M_PI) sf_phase -= 2.0 * M_PI;
     }
 }
 
-/* Generates MF tones to route calls inside tandem trunk switch matrices */
+/* Generates MF tones to route calls inside tandem trunk switch matrices - phase continuous */
 bool generate_mf_tone(char digit, float *buffer, int num_samples) {
     if (!buffer || num_samples <= 0) return false;
 
@@ -546,16 +514,17 @@ bool generate_mf_tone(char digit, float *buffer, int num_samples) {
     float f2 = mf_freqs_f2[idx];
 
     for (int i = 0; i < num_samples; i++) {
-        double t = (double)i / SAMPLE_RATE;
-        buffer[i] = (float)((sin(2.0 * M_PI * f1 * t) + sin(2.0 * M_PI * f2 * t)) * 0.5);
+        buffer[i] = (float)((sin(mf_phase_f1) + sin(mf_phase_f2)) * 0.5);
+        mf_phase_f1 += 2.0 * M_PI * f1 / SAMPLE_RATE;
+        mf_phase_f2 += 2.0 * M_PI * f2 / SAMPLE_RATE;
+        if (mf_phase_f1 > 2.0 * M_PI) mf_phase_f1 -= 2.0 * M_PI;
+        if (mf_phase_f2 > 2.0 * M_PI) mf_phase_f2 -= 2.0 * M_PI;
     }
 
     return true;
 }
 
-/* Generates Red Box payphone coin tones (1700 Hz + 2200 Hz beeps) based on denomination:
-   5 (nickel: 1 beep), 10 (dime: 2 beeps), 25 (quarter: 5 beeps).
-   Returns the number of samples populated. */
+/* Generates Red Box payphone coin tones (1700 Hz + 2200 Hz beeps) - phase continuous */
 int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples) {
     if (!buffer || max_samples <= 0) return 0;
 
@@ -575,8 +544,18 @@ int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples)
     for (int b = 0; b < beeps; b++) {
         // Generate Beep
         for (int i = 0; i < beep_samples; i++) {
-            double t = (double)i / SAMPLE_RATE;
-            buffer[offset + i] = (float)((sin(2.0 * M_PI * 1700.0 * t) + sin(2.0 * M_PI * 2200.0 * t)) * 0.5);
+            float decay = (float)exp(-3.0 * (double)i / beep_samples);
+            buffer[offset + i] = (float)((sin(red_box_phase_f1) + sin(red_box_phase_f2)) * 0.5 * decay);
+            
+            // Emulate transient gong chirp in first 40 samples
+            if (i < 40) {
+                buffer[offset + i] += (float)(((double)rand() / RAND_MAX) * 0.15);
+            }
+
+            red_box_phase_f1 += 2.0 * M_PI * 1700.0 / SAMPLE_RATE;
+            red_box_phase_f2 += 2.0 * M_PI * 2200.0 / SAMPLE_RATE;
+            if (red_box_phase_f1 > 2.0 * M_PI) red_box_phase_f1 -= 2.0 * M_PI;
+            if (red_box_phase_f2 > 2.0 * M_PI) red_box_phase_f2 -= 2.0 * M_PI;
         }
         offset += beep_samples;
 
@@ -588,6 +567,81 @@ int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples)
     }
 
     return offset;
+}
+
+static bool goertzel_detect(const float *samples, int num_samples, float target_freq) {
+    float s_prev = 0.0f;
+    float s_prev2 = 0.0f;
+    float normalized_freq = target_freq / SAMPLE_RATE;
+    float coeff = 2.0f * (float)cos(2.0 * M_PI * normalized_freq);
+    for (int i = 0; i < num_samples; i++) {
+        float s = samples[i] + coeff * s_prev - s_prev2;
+        s_prev2 = s_prev;
+        s_prev = s;
+    }
+    float power = s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2;
+    return (power > (float)num_samples * 0.1f);
+}
+
+bool blue_box_validate_slug(const float *samples, int num_samples) {
+    if (!samples || num_samples < 200) return false;
+    
+    // 1. Transient check (Variance in the first 40 samples to detect impact chirp)
+    float sum = 0.0f;
+    for (int i = 0; i < 40; i++) sum += samples[i];
+    float mean = sum / 40.0f;
+    float variance = 0.0f;
+    for (int i = 0; i < 40; i++) {
+        float diff = samples[i] - mean;
+        variance += diff * diff;
+    }
+    variance /= 40.0f;
+    if (variance < 0.001f) return false; // Fail if flat/electronic sine wave
+
+    // 2. Exponential Decay check (amplitude comparison)
+    float amp_start = 0.0f;
+    float amp_end = 0.0f;
+    int half = num_samples / 2;
+    for (int i = 0; i < half; i++) {
+        amp_start += (float)fabs(samples[i]);
+        amp_end += (float)fabs(samples[i + half]);
+    }
+    if (amp_start == 0.0f) return false;
+    float ratio = amp_end / amp_start;
+    
+    // Metallic damping ratio must be between 0.1 and 0.85
+    if (ratio < 0.1f || ratio > 0.85f) {
+        return false;
+    }
+    return true;
+}
+
+bool blue_box_detect_and_accumulate(const float *samples, int num_samples) {
+    if (!samples || num_samples <= 0) return false;
+    
+    // Skip SF 2600Hz lines from slug validation; only validate coin tones
+    if (goertzel_detect(samples, num_samples, 2600.0f)) {
+        blue_box_accumulate_state(2600);
+        return true;
+    }
+    
+    if (num_samples >= 200) {
+        if (!blue_box_validate_slug(samples, num_samples)) {
+            // Flag fraud by zeroing active trunk mask
+            current_block_state.active_trunk_mask = 0;
+            return false;
+        }
+    }
+
+    float targets[6] = {700.0f, 900.0f, 1100.0f, 1300.0f, 1500.0f, 1700.0f};
+    uint64_t found_mask = 0;
+    for (int i = 0; i < 6; i++) {
+        if (goertzel_detect(samples, num_samples, targets[i])) {
+            found_mask |= (1ULL << i);
+            blue_box_accumulate_state((uint64_t)targets[i]);
+        }
+    }
+    return found_mask != 0;
 }
 
 static void append_history_record(const char *filepath, const BlueBoxBlockState *state) {
@@ -612,7 +666,7 @@ bool blue_box_save_state_to_disk(const char *filepath) {
     return written == 1;
 }
 
-static void blue_box_recover_wal(const char *filepath) {
+void blue_box_recover_wal(const char *filepath) {
     char wal_path[512];
     snprintf(wal_path, sizeof(wal_path), "%s.wal", filepath);
     FILE *wf = fopen(wal_path, "rb");
@@ -662,7 +716,7 @@ bool blue_box_load_state_from_disk(const char *filepath) {
             uint32_t hist_calc = calculate_crc32((const uint8_t *)&hist_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
             if (hist_calc == hist_state.checksum) {
                 char payload[128];
-                snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", hist_state.nonce, hist_state.gas_allowance);
+                snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", hist_state.nonce, hist_state.gas_allowance, hist_state.unicode_desc, hist_state.synth_frequency);
                 TwoThreeNode *tt_node = blue_box_create_leaf(hist_state.block_number, payload, 0, NULL);
                 blue_box_rbt_insert(hist_state.block_number, tt_node);
             }
@@ -692,7 +746,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
         if (written == 1) {
             append_history_record(filepath, &current_block_state);
             char payload[128];
-            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", current_block_state.nonce, current_block_state.gas_allowance);
+            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", current_block_state.nonce, current_block_state.gas_allowance, current_block_state.unicode_desc, current_block_state.synth_frequency);
             TwoThreeNode *tt_node = blue_box_create_leaf(current_block_state.block_number, payload, 0, NULL);
             blue_box_rbt_insert(current_block_state.block_number, tt_node);
             return true;
@@ -740,7 +794,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     if (written == 1) {
         append_history_record(filepath, &current_block_state);
         char payload[128];
-        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", current_block_state.nonce, current_block_state.gas_allowance);
+        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", current_block_state.nonce, current_block_state.gas_allowance, current_block_state.unicode_desc, current_block_state.synth_frequency);
         TwoThreeNode *tt_node = blue_box_create_leaf(current_block_state.block_number, payload, 0, NULL);
         blue_box_rbt_insert(current_block_state.block_number, tt_node);
         return true;
@@ -943,7 +997,7 @@ bool blue_box_update_block_gas(const char *filepath, uint32_t block_number, uint
         TwoThreeNode *node = blue_box_rbt_lookup(block_number);
         if (node) {
             char payload[128];
-            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", state.nonce, new_gas);
+            snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", state.nonce, new_gas, state.unicode_desc, state.synth_frequency);
             if (node->is_leaf) {
                 if (node->keys[0] == block_number) {
                     strcpy(node->values[0], payload);
@@ -1056,7 +1110,7 @@ bool blue_box_commit_transaction(const char *filepath) {
         fwrite(state, sizeof(BlueBoxBlockState), 1, hf);
 
         char payload[128];
-        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u", state->nonce, state->gas_allowance);
+        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", state->nonce, state->gas_allowance, state->unicode_desc, state->synth_frequency);
         TwoThreeNode *tt_node = blue_box_create_leaf(state->block_number, payload, 0, NULL);
         blue_box_rbt_insert(state->block_number, tt_node);
     }
@@ -1231,4 +1285,54 @@ size_t blue_box_citrix_compress_audio(const float *samples, size_t count, uint8_
         last_val = last_val + ((float)step / 127.0f);
     }
     return write_bytes;
+}
+
+// 1. Dynamic Rate Matrix
+static uint32_t trunk_rates[32] = {0}; // Maps trunk 800-831 to rates (0-31 offset)
+
+void blue_box_centrex_set_trunk_rate(uint32_t trunk_id, uint32_t rate_per_min) {
+    if (trunk_id >= 800 && trunk_id <= 831) {
+        trunk_rates[trunk_id - 800] = rate_per_min;
+    }
+}
+
+uint32_t blue_box_centrex_get_trunk_rate(uint32_t trunk_id) {
+    if (trunk_id >= 800 && trunk_id <= 831) {
+        return trunk_rates[trunk_id - 800];
+    }
+    return 0;
+}
+
+// 2. Multi-Coin Accumulation
+void blue_box_accumulate_coin(int denomination) {
+    uint64_t coin_val = (uint64_t)denomination;
+    accumulator_register = (accumulator_register * 33 + coin_val) % MotzkinPrime;
+    for (int i = 0; i < 8; i++) {
+        current_block_state.state_hash[i] ^= (uint8_t)(accumulator_register >> (i * 8));
+    }
+}
+
+// 3. Signed ERC20 Transaction Bridge
+bool blue_box_generate_erc20_tx(char *tx_buf, size_t max_len) {
+    if (!tx_buf || max_len < 256) return false;
+    snprintf(tx_buf, max_len, 
+             "{\"jsonrpc\":\"2.0\",\"method\":\"erc20_transfer\",\"params\":{\"amount\":%u,\"sig_hash\":\"%02x%02x%02x%02x\"},\"id\":1}",
+             current_block_state.gas_allowance, 
+             current_block_state.state_hash[0], current_block_state.state_hash[1],
+             current_block_state.state_hash[2], current_block_state.state_hash[3]);
+    return true;
+}
+
+// 4. Real-time Balance Depletion
+bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds) {
+    uint32_t rate = blue_box_centrex_get_trunk_rate(trunk_id);
+    uint32_t cost = (rate * active_seconds) / 60;
+    if (current_block_state.gas_allowance >= cost) {
+        current_block_state.gas_allowance -= cost;
+        return true;
+    } else {
+        current_block_state.gas_allowance = 0;
+        current_block_state.active_trunk_mask &= ~(1U << (trunk_id - 800)); // Disconnect
+        return false;
+    }
 }

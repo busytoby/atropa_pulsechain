@@ -70,7 +70,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_lc_tank.o \
             $(OBJ_DIR)/tsfi_ammeter.o \
             $(OBJ_DIR)/tsfi_zener.o \
-            $(OBJ_DIR)/drm-lease-v1-protocol.o
+            $(OBJ_DIR)/drm-lease-v1-protocol.o \
+            $(OBJ_DIR)/tsfi_computel_blue_box.o \
+            $(OBJ_DIR)/tsfi_zmm_rpc.o
 
 # --- Plugin Objects ---
 VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR)/vulkan_render.o \
@@ -580,10 +582,13 @@ tests/test_computel_fsk_modulator: tests/test_computel_fsk_modulator.c
 tests/test_computel_secure_tty: tests/test_computel_secure_tty.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-tests/test_computel_blue_box: tests/test_computel_blue_box.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_zmm_rpc.o $(OBJ_DIR)/vulkan_init.o
+tests/test_computel_blue_box: tests/test_computel_blue_box.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box
+tests/test_computel_red_box: tests/test_computel_red_box.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
 	./tests/test_ac_compositor_interop
@@ -603,6 +608,7 @@ test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_a
 	./tests/test_computel_fsk_modulator
 	./tests/test_computel_secure_tty
 	./tests/test_computel_blue_box
+	./tests/test_computel_red_box
 
 .PHONY: profile
 profile:

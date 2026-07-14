@@ -50,6 +50,14 @@ int main(int argc, char **argv) {
             nanosleep(&req, NULL);
         }
 
+        // Test new Helmholtz TTY commands for remote Blue Box operation
+        printf("[TEST] Testing DIAL, ALIAS, and RESOLVE TTY commands...\n");
+        TSFiFST(ws, "0.0 ALIAS 911 808");
+        TSFiFST(ws, "0.0 RESOLVE 911");
+        TSFiFST(ws, "0.0 ALIAS 救急 818");
+        TSFiFST(ws, "0.0 RESOLVE 救急");
+        TSFiFST(ws, "0.0 DIAL *99*1#");
+
         // Close the window using the firmware directive
         TSFiFST(ws, "1.0 CLOSE_WINDOW");
     }
