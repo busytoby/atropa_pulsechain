@@ -2290,3 +2290,19 @@ uint32_t interop_ouroboros_classify_synapse(const InteropMultiDecisionNode *node
 int interop_ouroboros_optimize_synapses_ntm(const char *filepath, uint8_t *layout_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, layout_tape, len, 20, final_state);
 }
+
+void interop_rdbms_sync_slots_avx512(uint32_t *target_slots, const uint32_t *source_data, size_t count) {
+    if (!target_slots || !source_data || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        target_slots[i] = source_data[i];
+    }
+}
+
+uint32_t interop_rdbms_route_query(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t lock_count, uint64_t queue_depth) {
+    if (!nodes) return 0;
+    return interop_multi_decision_evaluate(nodes, root_idx, lock_count + queue_depth);
+}
+
+int interop_rdbms_resolve_locks_ntm(const char *filepath, uint8_t *lock_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, lock_tape, len, 20, final_state);
+}

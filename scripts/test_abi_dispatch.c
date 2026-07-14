@@ -1130,6 +1130,20 @@ int main() {
     remove(tm_file);
     printf("✓ Vectorized learning, decision pruning, and NTM layout optimizer verified.\n");
 
+    // 121-123. Test database slot sync, query routing, and NTM lock resolving
+    uint32_t target_slots[2] = { 0, 0 };
+    uint32_t source_data[2] = { 77, 88 };
+    interop_rdbms_sync_slots_avx512(target_slots, source_data, 2);
+    assert(target_slots[0] == 77 && target_slots[1] == 88);
+    assert(interop_rdbms_route_query(prune_nodes, 0, 100, 50) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t lock_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t lock_state = 0;
+    assert(interop_rdbms_resolve_locks_ntm(tm_file, lock_tape, 4, &lock_state) == 1);
+    assert(lock_state == 1);
+    remove(tm_file);
+    printf("✓ Vectorized database slots sync, query decision routing, and lock resolving verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
