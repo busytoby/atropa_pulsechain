@@ -917,6 +917,22 @@ int main() {
     remove(tm_file);
     printf("✓ Encoder-only and encoder-decoder model simulations verified.\n");
 
+    // 82-84. Test Vectorized Attention, Decision Gated Weights, and Minkowski Attention Weights
+    float att_q[2] = { 1.0f, 2.0f };
+    float att_k[2] = { 3.0f, 4.0f };
+    float att_v[2] = { 0.5f, 0.2f };
+    float att_out[2] = { 0.0f };
+    interop_tm_cnn_attention_avx512(att_q, att_k, att_v, 2, att_out);
+    assert(att_out[0] == 3.5f);
+    uint64_t cnn_feats[2] = { 150, 250 };
+    uint32_t cnn_gates[2] = { 0 };
+    interop_tm_cnn_gate_weights(prune_nodes, 0, cnn_feats, cnn_gates, 2);
+    assert(cnn_gates[0] == 0xAAAA);
+    uint64_t mink_weights[2] = {0};
+    interop_tm_cnn_minkowski_attention(b_coords, b_coords, 2, 2, mink_weights);
+    assert(mink_weights[0] == 0);
+    printf("✓ Vectorized attention, weight gating, and Minkowski attention weights verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

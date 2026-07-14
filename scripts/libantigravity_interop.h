@@ -344,4 +344,8 @@ int interop_tm_cnn_pool(const uint8_t *features, size_t width, size_t height, ui
 int interop_tm_model_encoder_only(const char *filepath, uint8_t *tape, size_t len, uint32_t *final_state);
 int interop_tm_model_encoder_decoder(const char *filepath, uint8_t *encoder_tape, size_t enc_len, uint8_t *decoder_tape, size_t dec_len, uint32_t *final_state);
 
+void interop_tm_cnn_attention_avx512(const float *q, const float *k, const float *v, size_t count, float *out);
+void interop_tm_cnn_gate_weights(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *features, uint32_t *gates, size_t count);
+void interop_tm_cnn_minkowski_attention(const uint64_t *q_coords, const uint64_t *k_coords, size_t count, uint32_t p, uint64_t *weights);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

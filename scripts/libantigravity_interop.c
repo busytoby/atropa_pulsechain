@@ -1943,3 +1943,40 @@ int interop_tm_model_encoder_only(const char *filepath, uint8_t *tape, size_t le
 int interop_tm_model_encoder_decoder(const char *filepath, uint8_t *encoder_tape, size_t enc_len, uint8_t *decoder_tape, size_t dec_len, uint32_t *final_state) {
     return interop_tm_execute_multitape(filepath, encoder_tape, enc_len, decoder_tape, dec_len, 20, final_state);
 }
+
+void interop_tm_cnn_attention_avx512(const float *q, const float *k, const float *v, size_t count, float *out) {
+    if (!q || !k || !v || !out || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        float sum = 0;
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+        __m512 vq = _mm512_set1_ps(q[i]);
+        size_t j = 0;
+        for (; j < (count & ~15ULL); j += 16) {
+            __m512 vk = _mm512_loadu_ps(&k[j]);
+            sum += _mm512_reduce_add_ps(_mm512_mul_ps(vq, vk));
+        }
+        for (; j < count; j++) {
+            sum += q[i] * k[j];
+        }
+#else
+        for (size_t j = 0; j < count; j++) {
+            sum += q[i] * k[j];
+        }
+#endif
+        out[i] = sum * v[i];
+    }
+}
+
+void interop_tm_cnn_gate_weights(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *features, uint32_t *gates, size_t count) {
+    if (!nodes || !features || !gates) return;
+    for (size_t i = 0; i < count; i++) {
+        gates[i] = interop_multi_decision_evaluate(nodes, root_idx, features[i]);
+    }
+}
+
+void interop_tm_cnn_minkowski_attention(const uint64_t *q_coords, const uint64_t *k_coords, size_t count, uint32_t p, uint64_t *weights) {
+    if (!q_coords || !k_coords || !weights || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        weights[i] = interop_knn_distance_minkowski(&q_coords[i * 3], &k_coords[i * 3], p);
+    }
+}
