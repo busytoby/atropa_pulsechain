@@ -1531,3 +1531,97 @@ int interop_graph_synthesize_prophecy(const InteropQuadNode *nodes, size_t node_
     }
     return 0;
 }
+
+int interop_speech_synthesize_phoneme(float base_freq, float duration, float *out_wave, size_t sample_rate) {
+    if (!out_wave || duration <= 0.0f || sample_rate == 0) return -1;
+    size_t sample_count = (size_t)(duration * (float)sample_rate);
+    for (size_t i = 0; i < sample_count; i++) {
+        float t = (float)i / (float)sample_rate;
+        out_wave[i] = sinf(2.0f * 3.14159265f * base_freq * t);
+    }
+    return 0;
+}
+
+int interop_graph_resolve_speech_profile(const InteropQuadNode *nodes, size_t count, float *out_voice_params) {
+    if (!nodes || !out_voice_params || count == 0) return -1;
+    float val_sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        val_sum += (float)nodes[i].value;
+    }
+    out_voice_params[0] = val_sum / (float)count;
+    out_voice_params[1] = val_sum * 0.01f;
+    return 0;
+}
+
+int interop_speech_apply_formant_filter(const float *in_audio, float *out_audio, size_t count, float f1, float bw) {
+    if (!in_audio || !out_audio || count == 0) return -1;
+    (void)f1; (void)bw;
+    float y1 = 0.0f, y2 = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        float out = in_audio[i] + 0.5f * y1 - 0.2f * y2;
+        out_audio[i] = out;
+        y2 = y1;
+        y1 = out;
+    }
+    return 0;
+}
+
+int interop_speech_calculate_voice_stability(const float *pitch_periods, size_t count, float *out_jitter, float *out_shimmer) {
+    if (!pitch_periods || !out_jitter || !out_shimmer || count < 2) return -1;
+    float jitter_sum = 0.0f;
+    for (size_t i = 0; i < count - 1; i++) {
+        jitter_sum += fabsf(pitch_periods[i] - pitch_periods[i + 1]);
+    }
+    *out_jitter = jitter_sum / (float)(count - 1);
+    *out_shimmer = jitter_sum * 0.1f;
+    return 0;
+}
+
+int interop_speech_coarticulate_transition(const float *formants_a, const float *formants_b, float *out_formants, size_t dim, float t) {
+    if (!formants_a || !formants_b || !out_formants || dim == 0) return -1;
+    for (size_t i = 0; i < dim; i++) {
+        float f_a = formants_a[i];
+        float f_b = formants_b[i];
+        float m = 0.5f * (f_a + f_b);
+        out_formants[i] = (1.0f - t)*(1.0f - t)*f_a + 2.0f*(1.0f - t)*t*m + t*t*f_b;
+    }
+    return 0;
+}
+
+float interop_speech_speaker_distance(const float *voice_a, const float *voice_b, size_t dim) {
+    if (!voice_a || !voice_b || dim == 0) return 0.0f;
+    float dot = 0.0f, norm_a = 0.0f, norm_b = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        dot += voice_a[i] * voice_b[i];
+        norm_a += voice_a[i] * voice_a[i];
+        norm_b += voice_b[i] * voice_b[i];
+    }
+    if (norm_a <= 0.0f || norm_b <= 0.0f) return 1.0f;
+    return 1.0f - (dot / (sqrtf(norm_a) * sqrtf(norm_b)));
+}
+
+float interop_speech_path_mrr(const int *phoneme_ranks, size_t count) {
+    if (!phoneme_ranks || count == 0) return 0.0f;
+    float sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        if (phoneme_ranks[i] > 0) {
+            sum += 1.0f / (float)phoneme_ranks[i];
+        }
+    }
+    return sum / (float)count;
+}
+
+int interop_speech_normalize_audio_frames(float *audio_frames, size_t count) {
+    if (!audio_frames || count == 0) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        sum_sq += audio_frames[i] * audio_frames[i];
+    }
+    float rms = sqrtf(sum_sq / (float)count);
+    if (rms > 0.0f) {
+        for (size_t i = 0; i < count; i++) {
+            audio_frames[i] /= rms;
+        }
+    }
+    return 0;
+}

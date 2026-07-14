@@ -510,4 +510,13 @@ int interop_transe_adaptive_horizon(float variance, float beta, int base_k, int 
 int interop_transe_momentum_correct(float *prophet, const float *prophecy, size_t dim, float gamma);
 int interop_graph_synthesize_prophecy(const InteropQuadNode *nodes, size_t node_count, const float *graph_embeddings, float *out_prophecy, size_t dim);
 
+int interop_speech_synthesize_phoneme(float base_freq, float duration, float *out_wave, size_t sample_rate);
+int interop_graph_resolve_speech_profile(const InteropQuadNode *nodes, size_t count, float *out_voice_params);
+int interop_speech_apply_formant_filter(const float *in_audio, float *out_audio, size_t count, float f1, float bw);
+int interop_speech_calculate_voice_stability(const float *pitch_periods, size_t count, float *out_jitter, float *out_shimmer);
+int interop_speech_coarticulate_transition(const float *formants_a, const float *formants_b, float *out_formants, size_t dim, float t);
+float interop_speech_speaker_distance(const float *voice_a, const float *voice_b, size_t dim);
+float interop_speech_path_mrr(const int *phoneme_ranks, size_t count);
+int interop_speech_normalize_audio_frames(float *audio_frames, size_t count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
