@@ -803,6 +803,18 @@ uint32_t blue_box_centrex_resolve_route(uint32_t dial_code) {
     return resolved ? resolved : dial_code;
 }
 
+void blue_box_centrex_add_unicode_alias(const char *unicode_name, uint32_t target_trunk) {
+    if (!unicode_name) return;
+    uint32_t hash = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
+    centrex_avl = avl_insert(centrex_avl, hash, target_trunk);
+}
+
+uint32_t blue_box_centrex_resolve_unicode_route(const char *unicode_name) {
+    if (!unicode_name) return 0;
+    uint32_t hash = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
+    return blue_box_centrex_lookup(hash);
+}
+
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
 

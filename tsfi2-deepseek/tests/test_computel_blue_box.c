@@ -461,6 +461,14 @@ int main(void) {
     assert(aud_len == 5);
     assert(comp_aud[0] == 12);
 
+    // 27. Test Centrex Multicultural Unicode Dial alias resolution
+    extern void blue_box_centrex_add_unicode_alias(const char *unicode_name, uint32_t target_trunk);
+    extern uint32_t blue_box_centrex_resolve_unicode_route(const char *unicode_name);
+    blue_box_centrex_add_unicode_alias("救急", 808);
+    assert(blue_box_centrex_resolve_unicode_route("救急") == 808);
+    blue_box_centrex_add_unicode_alias("Dispatcher", 800);
+    assert(blue_box_centrex_resolve_unicode_route("Dispatcher") == 800);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -471,6 +479,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, and Citrix Audio Compression tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, Citrix Frame Compression, Citrix Audio Compression, and Centrex Unicode Dialing tests passed successfully.\n");
     return 0;
 }
