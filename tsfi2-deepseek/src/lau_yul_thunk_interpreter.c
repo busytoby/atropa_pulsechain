@@ -1,4 +1,5 @@
 #include "lau_yul_thunk_internal.h"
+#include "lau_memory.h"
 #include "tsfi_qing_bst.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,18 +14,36 @@ static uint64_t g_dyn_addr_counter = 0x9000000000000000ULL;
 
 static pthread_mutex_t g_thunk_execute_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct {
+typedef struct LauMemoNode {
+    uint64_t signature_hash;
     char contract_name[64];
-    uint8_t calldata[512];
+    void *calldata_ptr;
     size_t calldatasize;
-    uint8_t retval[512];
+    void *retval_ptr;
     size_t retval_len;
-    bool occupied;
-} ThunkCacheEntry;
+    struct LauMemoNode *left;
+    struct LauMemoNode *right;
+} LauMemoNode;
 
-#define THUNK_CACHE_SIZE 1024
-static ThunkCacheEntry s_thunk_memo_cache[THUNK_CACHE_SIZE];
-static pthread_mutex_t s_thunk_memo_mutex = PTHREAD_MUTEX_INITIALIZER;
+static LauMemoNode *s_thunk_memo_bst_root = NULL;
+static pthread_mutex_t s_thunk_memo_bst_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash) {
+    if (!root) return NULL;
+    if (hash == root->signature_hash) return root;
+    if (hash < root->signature_hash) return bst_find(root->left, hash);
+    return bst_find(root->right, hash);
+}
+
+static LauMemoNode* bst_insert(LauMemoNode *root, LauMemoNode *node) {
+    if (!root) return node;
+    if (node->signature_hash < root->signature_hash) {
+        root->left = bst_insert(root->left, node);
+    } else {
+        root->right = bst_insert(root->right, node);
+    }
+    return root;
+}
 
 uint64_t g_thunk_cache_hits = 0;
 uint64_t g_thunk_cache_lookups = 0;
@@ -846,29 +865,32 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     uint32_t hash = 5381;
     for (size_t i = 0; name[i] != '\0'; i++) hash = ((hash << 5) + hash) + name[i];
     for (size_t i = 0; i < calldatasize; i++) hash = ((hash << 5) + hash) + calldata[i];
-    uint32_t idx = hash % THUNK_CACHE_SIZE;
 
     bool skip_cache = (strcmp(name, "cpu6502") == 0 || strcmp(name, "WinchesterMQ") == 0);
+    bool cache_hit = false;
     if (!skip_cache) {
-        pthread_mutex_lock(&s_thunk_memo_mutex);
+        pthread_mutex_lock(&s_thunk_memo_bst_mutex);
         g_thunk_cache_lookups++;
-        if (s_thunk_memo_cache[idx].occupied &&
-            strcmp(s_thunk_memo_cache[idx].contract_name, name) == 0 &&
-            s_thunk_memo_cache[idx].calldatasize == calldatasize &&
-            memcmp(s_thunk_memo_cache[idx].calldata, calldata, calldatasize) == 0) {
+        LauMemoNode *found = bst_find(s_thunk_memo_bst_root, hash);
+        if (found &&
+            strcmp(found->contract_name, name) == 0 &&
+            found->calldatasize == calldatasize &&
+            memcmp(found->calldata_ptr, calldata, calldatasize) == 0) {
             
             g_thunk_cache_hits++;
             if (retval && retval_len) {
-                size_t out_len = s_thunk_memo_cache[idx].retval_len;
+                size_t out_len = found->retval_len;
                 if (*retval_len < out_len) out_len = *retval_len;
-                memcpy(retval, s_thunk_memo_cache[idx].retval, out_len);
+                memcpy(retval, found->retval_ptr, out_len);
                 *retval_len = out_len;
             }
-            pthread_mutex_unlock(&s_thunk_memo_mutex);
+            cache_hit = true;
+        }
+        pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+        if (cache_hit) {
             pthread_mutex_unlock(&g_thunk_execute_mutex);
             return true;
         }
-        pthread_mutex_unlock(&s_thunk_memo_mutex);
     }
 
     g_transaction_diyat_tax_total = 0;
@@ -901,21 +923,30 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         
         // Cache outputs for read-only dynamic thunk evaluations (skip if storage mutations occurred)
         if (!skip_cache && !had_dirty_storage && !g_yul_evm_context.reverted) {
-            pthread_mutex_lock(&s_thunk_memo_mutex);
-            strncpy(s_thunk_memo_cache[idx].contract_name, name, 63);
-            s_thunk_memo_cache[idx].contract_name[63] = '\0';
-            size_t csize = calldatasize < 512 ? calldatasize : 512;
-            memcpy(s_thunk_memo_cache[idx].calldata, calldata, csize);
-            s_thunk_memo_cache[idx].calldatasize = csize;
-            if (retval && retval_len) {
-                size_t rsize = *retval_len < 512 ? *retval_len : 512;
-                memcpy(s_thunk_memo_cache[idx].retval, retval, rsize);
-                s_thunk_memo_cache[idx].retval_len = rsize;
-            } else {
-                s_thunk_memo_cache[idx].retval_len = 0;
+            pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+            LauMemoNode *existing = bst_find(s_thunk_memo_bst_root, hash);
+            if (!existing) {
+                LauMemoNode *new_node = (LauMemoNode*)lau_malloc(sizeof(LauMemoNode));
+                new_node->signature_hash = hash;
+                strncpy(new_node->contract_name, name, 63);
+                new_node->contract_name[63] = '\0';
+                new_node->calldata_ptr = lau_malloc(calldatasize);
+                memcpy(new_node->calldata_ptr, calldata, calldatasize);
+                new_node->calldatasize = calldatasize;
+                if (retval && retval_len && *retval_len > 0) {
+                    new_node->retval_ptr = lau_malloc(*retval_len);
+                    memcpy(new_node->retval_ptr, retval, *retval_len);
+                    new_node->retval_len = *retval_len;
+                } else {
+                    new_node->retval_ptr = NULL;
+                    new_node->retval_len = 0;
+                }
+                new_node->left = NULL;
+                new_node->right = NULL;
+                
+                s_thunk_memo_bst_root = bst_insert(s_thunk_memo_bst_root, new_node);
             }
-            s_thunk_memo_cache[idx].occupied = true;
-            pthread_mutex_unlock(&s_thunk_memo_mutex);
+            pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
         }
     } else {
         if (retval_len) *retval_len = 0;
