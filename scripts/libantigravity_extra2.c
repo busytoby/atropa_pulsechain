@@ -384,3 +384,76 @@ int interop_transsparse_score(const float *h, const float *t, const float *M_val
     free(proj_t);
     return 0;
 }
+
+int interop_index_ivf_assign(const float *query, const float *centroids, size_t num_centroids, size_t dim, int *out_centroid_indices, size_t top_c) {
+    if (!query || !centroids || !out_centroid_indices || num_centroids == 0 || dim == 0 || top_c == 0 || top_c > num_centroids) return -1;
+    float *distances = calloc(num_centroids, sizeof(float));
+    int *indices = calloc(num_centroids, sizeof(int));
+    if (!distances || !indices) {
+        free(distances);
+        free(indices);
+        return -1;
+    }
+    for (size_t c = 0; c < num_centroids; c++) {
+        float sum_sq = 0.0f;
+        for (size_t i = 0; i < dim; i++) {
+            float diff = query[i] - centroids[c * dim + i];
+            sum_sq += diff * diff;
+        }
+        distances[c] = sum_sq;
+        indices[c] = (int)c;
+    }
+    for (size_t i = 0; i < num_centroids - 1; i++) {
+        for (size_t j = 0; j < num_centroids - i - 1; j++) {
+            if (distances[j] > distances[j + 1]) {
+                float tmp_dist = distances[j];
+                distances[j] = distances[j + 1];
+                distances[j + 1] = tmp_dist;
+                int tmp_idx = indices[j];
+                indices[j] = indices[j + 1];
+                indices[j + 1] = tmp_idx;
+            }
+        }
+    }
+    for (size_t i = 0; i < top_c; i++) {
+        out_centroid_indices[i] = indices[i];
+    }
+    free(distances);
+    free(indices);
+    return 0;
+}
+
+int interop_index_pq_quantize(const float *sub_vec, const float *codebook, size_t num_codes, size_t sub_dim, int *out_code) {
+    if (!sub_vec || !codebook || !out_code || num_codes == 0 || sub_dim == 0) return -1;
+    float min_dist = 1e30f;
+    int best_code = -1;
+    for (size_t c = 0; c < num_codes; c++) {
+        float sum_sq = 0.0f;
+        for (size_t i = 0; i < sub_dim; i++) {
+            float diff = sub_vec[i] - codebook[c * sub_dim + i];
+            sum_sq += diff * diff;
+        }
+        if (sum_sq < min_dist) {
+            min_dist = sum_sq;
+            best_code = (int)c;
+        }
+    }
+    *out_code = best_code;
+    return 0;
+}
+
+int interop_index_lsh_hash(const float *v, const float *projection_planes, size_t dim, size_t num_planes, uint32_t *out_hash) {
+    if (!v || !projection_planes || !out_hash || dim == 0 || num_planes == 0 || num_planes > 32) return -1;
+    uint32_t hash = 0;
+    for (size_t p = 0; p < num_planes; p++) {
+        float dot = 0.0f;
+        for (size_t i = 0; i < dim; i++) {
+            dot += v[i] * projection_planes[p * dim + i];
+        }
+        if (dot >= 0.0f) {
+            hash |= (1U << p);
+        }
+    }
+    *out_hash = hash;
+    return 0;
+}

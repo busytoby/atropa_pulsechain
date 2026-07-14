@@ -561,4 +561,8 @@ int interop_transf_score(const float *h, const float *t, const float *r, size_t 
 int interop_transg_score(const float *h, const float *t, const float *r_clusters, const float *weights, size_t num_clusters, size_t dim, float *out_score);
 int interop_transsparse_score(const float *h, const float *t, const float *M_vals, const int *M_cols, const int *M_row_ptrs, size_t dim, float *out_score);
 
+int interop_index_ivf_assign(const float *query, const float *centroids, size_t num_centroids, size_t dim, int *out_centroid_indices, size_t top_c);
+int interop_index_pq_quantize(const float *sub_vec, const float *codebook, size_t num_codes, size_t sub_dim, int *out_code);
+int interop_index_lsh_hash(const float *v, const float *projection_planes, size_t dim, size_t num_planes, uint32_t *out_hash);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
