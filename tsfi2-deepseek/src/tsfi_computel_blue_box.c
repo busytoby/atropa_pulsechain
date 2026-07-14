@@ -2276,10 +2276,25 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         
         lau_yul_thunk_sstore(0xF1B5, next_root);
         
-        // Append structured transaction record block to ledger file
+        // Append structured transaction record block to global ledger file
         fprintf(f, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu}, \"mode\": \"ledger\"}\n",
                 next_root, gas_allowance, total_collected);
         fclose(f);
+        
+        // Output specific file for this preserved node
+        char node_path[128];
+        snprintf(node_path, sizeof(node_path), "assets/rdbms_ledger_%lu.json", next_root);
+        FILE *fn = fopen(node_path, "w");
+        if (!fn) {
+            snprintf(node_path, sizeof(node_path), "../assets/rdbms_ledger_%lu.json", next_root);
+            fn = fopen(node_path, "w");
+        }
+        if (fn) {
+            fprintf(fn, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu}, \"mode\": \"ledger\"}\n",
+                    next_root, gas_allowance, total_collected);
+            fclose(fn);
+            printf("[QUADTREE] Wrote node-specific state file: %s\n", node_path);
+        }
         printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.json. Root Hash: %lu\n", next_root);
     }
     
