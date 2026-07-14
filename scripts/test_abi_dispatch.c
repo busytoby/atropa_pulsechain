@@ -1144,6 +1144,21 @@ int main() {
     remove(tm_file);
     printf("✓ Vectorized database slots sync, query decision routing, and lock resolving verified.\n");
 
+    // 124-126. Test knowledge graph RDBMS sync, route tracing, and path validation
+    InteropGraphNode gn[1] = { { 77, 0, 1 } };
+    InteropGraphEdge ge[1] = { { 77, 88, 0, 2.5f, 1 } };
+    assert(interop_graph_sync_rdbms(gn, 1, ge, 1) == 0);
+    float route_weight = 0.0f;
+    assert(interop_graph_route_signal(ge, 1, 77, 88, &route_weight) == 0);
+    assert(route_weight == 2.5f);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t path_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t path_state = 0;
+    assert(interop_graph_validate_path_ntm(tm_file, path_tape, 4, &path_state) == 1);
+    assert(path_state == 1);
+    remove(tm_file);
+    printf("✓ Graph RDBMS sync, signal routing traversal, and path validation verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

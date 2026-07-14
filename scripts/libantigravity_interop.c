@@ -2306,3 +2306,25 @@ uint32_t interop_rdbms_route_query(const InteropMultiDecisionNode *nodes, uint32
 int interop_rdbms_resolve_locks_ntm(const char *filepath, uint8_t *lock_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, lock_tape, len, 20, final_state);
 }
+
+int interop_graph_sync_rdbms(const InteropGraphNode *nodes, size_t n_count, const InteropGraphEdge *edges, size_t e_count) {
+    if (!nodes || !edges) return -1;
+    (void)n_count;
+    (void)e_count;
+    return 0;
+}
+
+int interop_graph_route_signal(const InteropGraphEdge *edges, size_t e_count, uint32_t src_id, uint32_t dest_id, float *out_weight) {
+    if (!edges || !out_weight || e_count == 0) return -1;
+    for (size_t i = 0; i < e_count; i++) {
+        if (edges[i].active && edges[i].src_agent_id == src_id && edges[i].dest_agent_id == dest_id) {
+            *out_weight = edges[i].weight;
+            return 0;
+        }
+    }
+    return -2;
+}
+
+int interop_graph_validate_path_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, path_tape, len, 20, final_state);
+}

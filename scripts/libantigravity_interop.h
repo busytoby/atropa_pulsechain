@@ -447,4 +447,22 @@ void interop_rdbms_sync_slots_avx512(uint32_t *target_slots, const uint32_t *sou
 uint32_t interop_rdbms_route_query(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t lock_count, uint64_t queue_depth);
 int interop_rdbms_resolve_locks_ntm(const char *filepath, uint8_t *lock_tape, size_t len, uint32_t *final_state);
 
+typedef struct {
+    uint32_t agent_id;
+    uint32_t role;
+    uint32_t active;
+} InteropGraphNode;
+
+typedef struct {
+    uint32_t src_agent_id;
+    uint32_t dest_agent_id;
+    uint32_t relationship_type;
+    float weight;
+    uint32_t active;
+} InteropGraphEdge;
+
+int interop_graph_sync_rdbms(const InteropGraphNode *nodes, size_t n_count, const InteropGraphEdge *edges, size_t e_count);
+int interop_graph_route_signal(const InteropGraphEdge *edges, size_t e_count, uint32_t src_id, uint32_t dest_id, float *out_weight);
+int interop_graph_validate_path_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
