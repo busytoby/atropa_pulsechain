@@ -175,6 +175,15 @@ object "WinchesterMQ" {
                     processAckLow()
                 }
 
+                // Sync SCSI control lines to storage slot 0xF306
+                let outSigs := 0
+                if loadTransient(0) { outSigs := or(outSigs, 0x01) }
+                if loadTransient(1) { outSigs := or(outSigs, 0x02) }
+                if loadTransient(2) { outSigs := or(outSigs, 0x04) }
+                if loadTransient(3) { outSigs := or(outSigs, 0x08) }
+                if loadTransient(4) { outSigs := or(outSigs, 0x10) }
+                sstore(0xF306, outSigs)
+
                 return(0, 0)
             }
 

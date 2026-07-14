@@ -289,7 +289,7 @@
             </div>
 
             <!-- JIT Memoization & Cache Telemetry -->
-            <div class="metrics-grid" style="margin-top: -5px;">
+            <div class="metrics-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: -5px;">
                 <div class="metric-card">
                     <div class="metric-title">JIT Cache Hits</div>
                     <div class="metric-value status-pass" id="jitCacheHits">0</div>
@@ -305,6 +305,10 @@
                 <div class="metric-card">
                     <div class="metric-title">Cache Efficiency</div>
                     <div class="metric-value" style="color: #00ff7f;" id="jitCacheEfficiency">0.0%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">AVL Tree Height</div>
+                    <div class="metric-value" style="color: var(--neon-magenta);" id="avlTreeHeight">0</div>
                 </div>
             </div>
 
@@ -369,6 +373,29 @@
                             • SCSI Parity Errors (F305): <span style="font-family: monospace; color: var(--neon-magenta);" id="scsiParityErrors">0</span>
                         </div>
                     </div>
+                    <!-- SCSI Signal Status LEDs -->
+                    <div style="display: flex; gap: 10px; justify-content: space-around; background: rgba(5,7,18,0.4); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span id="ledBSY" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
+                            <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">BSY</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span id="ledREQ" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
+                            <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">REQ</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span id="ledCD" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
+                            <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">C/D</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span id="ledIO" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
+                            <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">I/O</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span id="ledMSG" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
+                            <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">MSG</span>
+                        </div>
+                    </div>
                     <!-- Visual Progress Bar -->
                     <div style="background: rgba(255,255,255,0.05); border-radius: 6px; height: 12px; overflow: hidden; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
                         <div id="evmQueueBar" style="background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
@@ -413,6 +440,12 @@
                         <div style="display: flex; justify-content: space-between;">
                             <span>Adaptive Tick Rate:</span>
                             <strong id="adaptiveTickRate" style="color: var(--neon-blue);">1000 ms</strong>
+                        </div>
+                        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                            <div style="font-size: 0.75rem; color: #8c9ba5; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">Adaptive PLL Sparkline</div>
+                            <svg id="tickRateSparkline" viewBox="0 0 200 40" style="width: 100%; height: 40px; background: rgba(5,7,18,0.5); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); overflow: visible;">
+                                <path id="sparklinePath" d="M 0,20" fill="none" stroke="var(--neon-blue)" stroke-width="1.5" stroke-linecap="round"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -625,6 +658,7 @@
 
     <script>
         const logsDiv = document.getElementById("consoleLogs");
+        let tickRateHistory = [];
 
         function appendLog(msg, color = "#a2b4c0") {
             logsDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 4px;">&gt; ${msg}</div>`;
@@ -1225,13 +1259,13 @@
                     const hits = data.cache_hits || 0;
                     const lookups = data.cache_lookups || 0;
                     const rate = lookups > 0 ? ((hits / lookups) * 100).toFixed(1) : "0.0";
-                    // 150 ns = 0.00015 ms of saving per thunk bypass
                     const savings = (hits * 0.00015).toFixed(5);
                     
                     document.getElementById("jitCacheHits").innerText = hits.toLocaleString();
                     document.getElementById("jitCacheLookups").innerText = lookups.toLocaleString();
                     document.getElementById("jitLatencySavings").innerText = savings + " ms";
                     document.getElementById("jitCacheEfficiency").innerText = rate + "%";
+                    document.getElementById("avlTreeHeight").innerText = data.avl_height || 0;
                 }
 
                 // Update EVM Ring-Buffer stats
@@ -1265,6 +1299,18 @@
                     
                     document.getElementById("scsiTxCount").innerText = data.scsi_tx_count || 0;
                     document.getElementById("scsiParityErrors").innerText = data.scsi_parity_errors || 0;
+
+                    const sigs = data.scsi_signals || 0;
+                    document.getElementById("ledBSY").style.background = (sigs & 0x01) ? "#00ff7f" : "#444";
+                    document.getElementById("ledBSY").style.boxShadow = (sigs & 0x01) ? "0 0 8px #00ff7f" : "none";
+                    document.getElementById("ledREQ").style.background = (sigs & 0x02) ? "#00f2fe" : "#444";
+                    document.getElementById("ledREQ").style.boxShadow = (sigs & 0x02) ? "0 0 8px #00f2fe" : "none";
+                    document.getElementById("ledCD").style.background = (sigs & 0x04) ? "#ff007f" : "#444";
+                    document.getElementById("ledCD").style.boxShadow = (sigs & 0x04) ? "0 0 8px #ff007f" : "none";
+                    document.getElementById("ledIO").style.background = (sigs & 0x08) ? "#7f00ff" : "#444";
+                    document.getElementById("ledIO").style.boxShadow = (sigs & 0x08) ? "0 0 8px #7f00ff" : "none";
+                    document.getElementById("ledMSG").style.background = (sigs & 0x10) ? "#ffaa00" : "#444";
+                    document.getElementById("ledMSG").style.boxShadow = (sigs & 0x10) ? "0 0 8px #ffaa00" : "none";
                 }
                 
                 // Update Host Min-Heap grid/list representation
@@ -1322,7 +1368,23 @@
                 
                 // Update Adaptive Tick Rate Display
                 if (data && data.adaptive_tick_rate !== undefined) {
-                    document.getElementById("adaptiveTickRate").innerText = `${data.adaptive_tick_rate} ms`;
+                    const tickVal = data.adaptive_tick_rate;
+                    document.getElementById("adaptiveTickRate").innerText = `${tickVal} ms`;
+
+                    tickRateHistory.push(tickVal);
+                    if (tickRateHistory.length > 20) tickRateHistory.shift();
+
+                    let points = [];
+                    for (let i = 0; i < tickRateHistory.length; i++) {
+                        const x = (i / 19) * 200;
+                        let y = 35;
+                        if (tickRateHistory[i] === 500) y = 20;
+                        else if (tickRateHistory[i] === 1000) y = 5;
+                        points.push(`${x},${y}`);
+                    }
+                    if (points.length > 0) {
+                        document.getElementById("sparklinePath").setAttribute("d", "M " + points.join(" L "));
+                    }
                 }
 
                 // Update Yul bytecode execution step trace

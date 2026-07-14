@@ -127,6 +127,13 @@ void lau_yul_thunk_cache_clear(void) {
     pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
 }
 
+int lau_yul_thunk_cache_height(void) {
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    int h = s_thunk_memo_bst_root ? s_thunk_memo_bst_root->height : 0;
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+    return h;
+}
+
 uint64_t g_thunk_cache_hits = 0;
 uint64_t g_thunk_cache_lookups = 0;
 

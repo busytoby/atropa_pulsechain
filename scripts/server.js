@@ -1056,6 +1056,8 @@ const server = http.createServer(async (req, res) => {
             let adaptive_tick_rate = 1000;
             let scsi_tx_count = 0;
             let scsi_parity_errors = 0;
+            let avl_height = 0;
+            let scsi_signals = 0;
             if (mcpOnline) {
                 try {
                     const r = await runZmmCommand('{"jsonrpc":"2.0", "method":"wave512.telemetry", "id": 999}');
@@ -1068,6 +1070,8 @@ const server = http.createServer(async (req, res) => {
                         adaptive_tick_rate = r.result.adaptive_tick_rate || 1000;
                         scsi_tx_count = r.result.scsi_tx_count || 0;
                         scsi_parity_errors = r.result.scsi_parity_errors || 0;
+                        avl_height = r.result.avl_height || 0;
+                        scsi_signals = r.result.scsi_signals || 0;
                     }
                 } catch (e) {
                     console.error("[SERVER] Failed to query cache telemetry:", e.message);
@@ -1115,6 +1119,8 @@ const server = http.createServer(async (req, res) => {
                 adaptive_tick_rate: adaptive_tick_rate,
                 scsi_tx_count: scsi_tx_count,
                 scsi_parity_errors: scsi_parity_errors,
+                avl_height: avl_height,
+                scsi_signals: scsi_signals,
                 validators: validators
             }));
         });
