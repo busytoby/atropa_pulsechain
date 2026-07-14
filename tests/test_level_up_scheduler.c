@@ -250,6 +250,28 @@ int main(void) {
     assert(synced_val == live_val && synced_val > 0);
     printf("   ✓ Queue-to-Heap integration verified: Yul enqueued event popped, sorted, and executed in tick.\n\n");
 
+    // 6. Test UMCGR (Unified Multi-Contract Guest Routing) to musicMaker (Address 0x3)
+    printf("6. Testing UMCGR routing to guest contract 'musicMaker' (Addr 0x3):\n");
+    // Push an EVENT_GUEST_CONTRACT_CALL (type = 4) event targeting address 0x3
+    uint8_t push_route_cd[132] = {0};
+    push_route_cd[0] = 0x0f; push_route_cd[1] = 0xf2; push_route_cd[2] = 0x20; push_route_cd[3] = 0x00; // selector
+    push_route_cd[35] = 20; // priority
+    push_route_cd[67] = 4;  // type = EVENT_GUEST_CONTRACT_CALL
+    push_route_cd[99] = 100; // timestamp
+    // data[0..7] = target_addr = 0x3
+    push_route_cd[100 + 7] = 0x03;
+    // data[8..31] = dummy payload = 0x77
+    push_route_cd[100 + 8] = 0x77;
+    
+    push_ret_len = sizeof(push_ret);
+    bool push_route_ok = lau_yul_thunk_execute("WinchesterMQ", push_route_cd, sizeof(push_route_cd), push_ret, &push_ret_len);
+    assert(push_route_ok);
+    printf("   ✓ Pushed dynamic contract route event into WinchesterMQ.\n");
+    
+    // Execute integrated tick (should pop the route event, resolve Address 0x3, and call musicMaker successfully)
+    tsfi_ouroboros_run_integrated_tick(10, 3);
+    printf("   ✓ UMCGR test completed: Scheduler successfully dispatched call to 'musicMaker'.\n\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

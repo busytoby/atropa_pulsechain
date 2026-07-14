@@ -14,7 +14,8 @@ static double s_integral_error = 0.0;
 typedef enum {
     EVENT_PLL_DRIFT = 1,
     EVENT_PMG_COLLISION = 2,
-    EVENT_STACK_STORAGE_SYNC = 3
+    EVENT_STACK_STORAGE_SYNC = 3,
+    EVENT_GUEST_CONTRACT_CALL = 4
 } EventType;
 
 // Event Payload structure coordinating PLL, PMG, and Stack Storage
@@ -235,6 +236,29 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
             // Synchronize stacked registers (using F185 instead of F180 to avoid corrupting system ticks)
             uint64_t live_pll = lau_yul_thunk_sload(0xF125);
             lau_yul_thunk_sstore(0xF185, live_pll);
+        } else if (popped.type == EVENT_GUEST_CONTRACT_CALL) {
+            // Extract guest contract address from the first 8 bytes of data
+            uint64_t target_addr = 0;
+            for (int i = 0; i < 8; i++) {
+                target_addr = (target_addr << 8) | popped.data[i];
+            }
+            
+            // Build calldata: generic execution selector (0xe399f0e0) + dynamic 24-byte payload
+            uint8_t guest_cd[32] = {0xe3, 0x99, 0xf0, 0xe0};
+            memcpy(&guest_cd[4], &popped.data[8], 24);
+            
+            uint8_t guest_ret[32];
+            size_t guest_ret_len = sizeof(guest_ret);
+            
+            // Resolve contract by target address
+            const char* target_name = NULL;
+            if (target_addr == 2) target_name = "graphicsSystem";
+            else if (target_addr == 3) target_name = "musicMaker";
+            else if (target_addr == 4) target_name = "diskSystem";
+            
+            if (target_name) {
+                lau_yul_thunk_execute(target_name, guest_cd, sizeof(guest_cd), guest_ret, &guest_ret_len);
+            }
         }
     }
 }
