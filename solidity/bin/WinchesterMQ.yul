@@ -32,6 +32,8 @@ object "WinchesterMQ" {
                 return(0, 0)
             }
             if eq(selector, 0x0ff22000) {
+                if sload(0xF303) { revert(0, 0) }
+                sstore(0xF303, 1)
                 let priority := calldataload(4)
                 let ev_type := calldataload(36)
                 let ev_timestamp := calldataload(68)
@@ -49,9 +51,12 @@ object "WinchesterMQ" {
                     sstore(0xF301, tail)
                     sstore(0xF302, add(size, 1))
                 }
+                sstore(0xF303, 0)
                 return(0, 0)
             }
             if eq(selector, 0x0ff23000) {
+                if sload(0xF303) { revert(0, 0) }
+                sstore(0xF303, 1)
                 let head := sload(0xF300)
                 let tail := sload(0xF301)
                 let size := sload(0xF302)
@@ -64,8 +69,10 @@ object "WinchesterMQ" {
                     head := mod(add(head, 1), 16)
                     sstore(0xF300, head)
                     sstore(0xF302, sub(size, 1))
+                    sstore(0xF303, 0)
                     return(0x00, 128)
                 }
+                sstore(0xF303, 0)
                 return(0, 0)
             }
             if eq(selector, 0xe399f0e0) {

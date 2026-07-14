@@ -147,11 +147,65 @@ void tsfi_ouroboros_pll_tick(uint64_t base) {
     blue_box_accumulate_state(next_signal);
 }
 
+// Static persistent scheduler queue
+static PriorityQueue s_scheduler_pq = { .size = 0 };
+
+// Perform aging on all events remaining in the queue to prevent starvation
+static void pq_age(PriorityQueue *pq) {
+    for (uint32_t i = 0; i < pq->size; i++) {
+        if (pq->data[i].priority > 1) {
+            pq->data[i].priority--; // Boost precedence
+        }
+    }
+    // Re-heapify to maintain min-heap invariant after modifying priorities
+    if (pq->size > 1) {
+        for (int i = (int)(pq->size / 2) - 1; i >= 0; i--) {
+            uint32_t parent = (uint32_t)i;
+            while (2 * parent + 1 < pq->size) {
+                uint32_t left = 2 * parent + 1;
+                uint32_t right = 2 * parent + 2;
+                uint32_t smallest = left;
+                if (right < pq->size && pq->data[right].priority < pq->data[left].priority) {
+                    smallest = right;
+                }
+                if (pq->data[smallest].priority < pq->data[parent].priority) {
+                    CoordinatedEvent temp = pq->data[parent];
+                    pq->data[parent] = pq->data[smallest];
+                    pq->data[smallest] = temp;
+                    parent = smallest;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// Host-side wrapper that handles queue overflow spillover
+bool tsfi_ouroboros_push_event(uint32_t priority, uint32_t type, uint64_t timestamp, const uint8_t *data) {
+    uint64_t size = lau_yul_thunk_sload(0xF302);
+    if (size >= 16) {
+        // Spill over directly to persistent host queue
+        CoordinatedEvent ev = { .priority = priority, .type = (EventType)type, .timestamp = timestamp };
+        memcpy(ev.data, data, 32);
+        return pq_push(&s_scheduler_pq, ev);
+    }
+    
+    // Otherwise, push to EVM ring-buffer
+    uint8_t push_cd[132] = {0};
+    push_cd[0] = 0x0f; push_cd[1] = 0xf2; push_cd[2] = 0x20; push_cd[3] = 0x00;
+    push_cd[35] = priority;
+    push_cd[67] = type;
+    push_cd[99] = timestamp & 0xFF; push_cd[98] = (timestamp >> 8) & 0xFF;
+    memcpy(&push_cd[100], data, 32);
+    
+    uint8_t push_ret[32];
+    size_t push_ret_len = sizeof(push_ret);
+    return lau_yul_thunk_execute("WinchesterMQ", push_cd, sizeof(push_cd), push_ret, &push_ret_len);
+}
+
 // Integrated Scheduler execution driving PLL loop filter ticks and TDMA proofs
 void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
-    PriorityQueue pq;
-    pq.size = 0;
-    
     // 1. Read dynamic telemetry to construct priorities
     uint64_t collision_mask = lau_yul_thunk_sload(0xF210); // PMG collision mask
     uint64_t drift_metric = lau_yul_thunk_sload(0xF125);
@@ -185,28 +239,30 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
         ev_yul.timestamp = p_timestamp;
         memcpy(ev_yul.data, &pop_ret[96], 32);
         
-        pq_push(&pq, ev_yul);
+        pq_push(&s_scheduler_pq, ev_yul);
     }
     
     // Enqueue PMG event if active collision is detected
     if (collision_mask > 0) {
         CoordinatedEvent ev = { .priority = 1, .type = EVENT_PMG_COLLISION, .timestamp = delta_time_ms };
         ev.data[0] = (uint8_t)(collision_mask & 0xFF);
-        pq_push(&pq, ev);
+        pq_push(&s_scheduler_pq, ev);
     }
     
     // Enqueue PLL drift updates
     CoordinatedEvent ev_pll = { .priority = 5, .type = EVENT_PLL_DRIFT, .timestamp = delta_time_ms };
     ev_pll.data[0] = (uint8_t)(drift_metric & 0xFF);
-    pq_push(&pq, ev_pll);
+    pq_push(&s_scheduler_pq, ev_pll);
     
     // Enqueue Stack storage sync
     CoordinatedEvent ev_sync = { .priority = 10, .type = EVENT_STACK_STORAGE_SYNC, .timestamp = delta_time_ms };
-    pq_push(&pq, ev_sync);
+    pq_push(&s_scheduler_pq, ev_sync);
     
-    // 2. Dispatch events
+    // 2. Dispatch events (up to a budget of 3 events per tick to trigger dynamic priority aging)
     CoordinatedEvent popped;
-    while (pq_pop(&pq, &popped)) {
+    uint32_t budget = 3;
+    while (budget > 0 && pq_pop(&s_scheduler_pq, &popped)) {
+        budget--;
         if (popped.type == EVENT_PMG_COLLISION) {
             // TDMA Proof verification: Compute coordinate distance and assert lock keys for channels 0-3
             for (int ch = 0; ch < 4; ch++) {
@@ -261,4 +317,18 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
             }
         }
     }
+    
+    // Perform dynamic priority aging on remaining events to prevent starvation
+    if (s_scheduler_pq.size > 0) {
+        pq_age(&s_scheduler_pq);
+    }
+}
+
+uint32_t tsfi_ouroboros_get_pq_size(void) {
+    return s_scheduler_pq.size;
+}
+
+uint32_t tsfi_ouroboros_get_pq_priority(uint32_t index) {
+    if (index >= s_scheduler_pq.size) return 0;
+    return s_scheduler_pq.data[index].priority;
 }

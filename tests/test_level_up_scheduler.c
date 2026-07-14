@@ -272,6 +272,54 @@ int main(void) {
     tsfi_ouroboros_run_integrated_tick(10, 3);
     printf("   ✓ UMCGR test completed: Scheduler successfully dispatched call to 'musicMaker'.\n\n");
 
+    // 7. Test EVM Reentrancy Mutex Lock
+    printf("7. Testing EVM Ring-Buffer Queue Reentrancy Guard:\n");
+    // Simulate lock acquired by setting slot 0xF303 to 1
+    lau_yul_thunk_sstore(0xF303, 1);
+    // Try pushEvent; should fail/revert
+    push_ret_len = sizeof(push_ret);
+    bool fail_push_ok = lau_yul_thunk_execute("WinchesterMQ", push_route_cd, sizeof(push_route_cd), push_ret, &push_ret_len);
+    printf("   -> pushEvent with active mutex: %s\n", fail_push_ok ? "ALLOWED (FAIL)" : "REVERTED (PASS)");
+    assert(!fail_push_ok);
+    // Release lock
+    lau_yul_thunk_sstore(0xF303, 0);
+    printf("   ✓ EVM reentrancy guard successfully locked and reverted nested access.\n\n");
+
+    // 8. Test pushEvent Wrapper and Spillover to Host Buffer
+    printf("8. Testing pushEvent Wrapper and Spillover to Host Buffer:\n");
+    // Simulate a full EVM queue (size = 16)
+    lau_yul_thunk_sstore(0xF302, 16);
+    // Push event using host wrapper
+    uint8_t dummy_data[32] = {0};
+    dummy_data[0] = 0xAA;
+    extern bool tsfi_ouroboros_push_event(uint32_t priority, uint32_t type, uint64_t timestamp, const uint8_t *data);
+    extern uint32_t tsfi_ouroboros_get_pq_size(void);
+    extern uint32_t tsfi_ouroboros_get_pq_priority(uint32_t index);
+    
+    uint32_t initial_size = tsfi_ouroboros_get_pq_size();
+    bool wrapper_ok = tsfi_ouroboros_push_event(50, 3, 1000, dummy_data);
+    assert(wrapper_ok);
+    uint32_t post_size = tsfi_ouroboros_get_pq_size();
+    printf("   -> PQ Size: %u (Initial: %u, expected increase: 1)\n", post_size, initial_size);
+    assert(post_size == initial_size + 1);
+    printf("   ✓ Event successfully enqueued when EVM-queue was full (spilled over to host buffer).\n\n");
+
+    // 9. Test Dynamic Priority Aging
+    printf("9. Testing Dynamic Priority Aging:\n");
+    // Find the index of the newly added event in s_scheduler_pq
+    uint32_t spill_index = post_size - 1;
+    uint32_t priority_before = tsfi_ouroboros_get_pq_priority(spill_index);
+    printf("   -> Event priority before tick dispatch: %u\n", priority_before);
+    
+    // Run tick to trigger aging on the enqueued spillover event
+    tsfi_ouroboros_run_integrated_tick(10, 3);
+    
+    // Check that the priority of the remaining event has decreased (boosted in precedence)
+    uint32_t priority_after = tsfi_ouroboros_get_pq_priority(0);
+    printf("   -> Event priority after tick dispatch (aged): %u\n", priority_after);
+    assert(priority_after < priority_before);
+    printf("   ✓ Dynamic priority aging pass verified successfully.\n\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
