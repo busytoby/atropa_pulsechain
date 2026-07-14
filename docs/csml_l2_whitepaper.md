@@ -59,10 +59,7 @@ $$\Delta_{\text{composite}} = \bigcup_{k=1}^K \{ (k, idx_j, \gamma_{\text{new}, 
 The on-chain verifier applies this delta to verify correctness:
 $$\text{CompositeState}_{t+1} = \text{ApplyDelta}(\text{CompositeState}_t, \Delta_{\text{composite}})$$
 
-The vectorized hashing loop (`fnv1a_hash_vectorized`) processes the records of all $K$ parallel tapes across independent vector lanes, generating a single unified root hash commitment of the composite delta:
-$$\text{CompositeRoot} = \bigoplus_{k=1}^K \text{VectorHash}(\Delta_{\text{composite}}^{(k)})$$
-
-This reduces the verification complexity to a single $O(\sum \Delta_k)$ evaluation on Bitcoin.
+The Bitcoin witness script validates the FNV-1a hash of the delta array, reducing on-chain requirements from $O(\text{TapeSize})$ to $O(\text{MutatedCells})$.
 
 ---
 
@@ -153,3 +150,17 @@ To ensure consistency between guest user spaces and host hypervisors, the Phase-
 ```
 
 Reconstructed binary files are transmitted via Kermit-over-PLL, divided into relational packet tuples, and serialized to disk as binary MEDIA DAT assets (`.dat.bin`), matching the physical storage specifications.
+
+---
+
+## 10. Bidirectional Host Response Handshake
+
+To finalize the execution sequence, the L2 state-transition protocol enforces a **Two-Phase Host Response Handshake**. A call transaction dispatched on Bitcoin (initiating off-chain VM execution) must trigger a matching response transaction published by the host VM back to the L1 chain.
+
+The host transaction outputs an `InteropTuringResponse` proof logging the VM exit status:
+$$\text{ResponseWitness} = (\text{ExitCode}, \text{ReturnValue}, \text{NextStateHash})$$
+
+Bitcoin UTXO spending scripts verify this response proof, validating that:
+1. The exit status confirms error-free execution: $\text{ExitCode} == 0$.
+2. The state tape hash matches the expected transitioned result.
+3. Any returned variables are extracted correctly, enabling trustless execution outputs on-chain.
