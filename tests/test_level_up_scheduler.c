@@ -94,10 +94,20 @@ bool pq_pop(PriorityQueue *pq, CoordinatedEvent *out_event) {
     return true;
 }
 
+#include "tsfi_zmm_vm.h"
+
+extern void blue_box_init_block(uint64_t block_num, const uint8_t *state_root_hash);
+extern void tsfi_ouroboros_pll_tick(uint64_t base);
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT ZMM VM: LEVEL UP COORDINATED SCHEDULER TESTS\n");
     printf("=============================================================\n");
+
+    // Initialize Yul compiler and VM state context
+    static TsfiZmmVmState vm_state;
+    tsfi_zmm_vm_init(&vm_state);
+    blue_box_init_block(1, NULL);
 
     PriorityQueue pq;
     pq_init(&pq);
@@ -155,12 +165,16 @@ int main(void) {
     assert(popped.type == EVENT_PMG_COLLISION);
     assert(popped.priority == 1);
     
-    // Expected 2: EVENT_PLL_DRIFT
+    // Expected 2: EVENT_PLL_DRIFT (Triggers Ouroboros Clock Filter update)
     assert(pq_pop(&pq, &popped));
     printf("   -> Pop 2: Priority %u | Type %d | Timestamp %lu | Drift: 0x%02X\n", 
            popped.priority, popped.type, popped.timestamp, popped.data[0]);
     assert(popped.type == EVENT_PLL_DRIFT);
     assert(popped.priority == 5);
+    
+    printf("      [SCHEDULER] Dispatching Loop Filter calculation to Ouroboros PLL...\n");
+    tsfi_ouroboros_pll_tick(3);
+    printf("      [SCHEDULER] PLL loop filter tick executed successfully.\n");
     
     // Expected 3: EVENT_STACK_STORAGE_SYNC
     assert(pq_pop(&pq, &popped));
@@ -173,5 +187,6 @@ int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
+    tsfi_zmm_vm_destroy(&vm_state);
     return 0;
 }

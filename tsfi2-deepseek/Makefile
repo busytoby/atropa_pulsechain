@@ -642,7 +642,7 @@ tests/test_mcp_tcp_proxy: ../tests/test_mcp_tcp_proxy.c
 tests/test_mcp_multiplexed_encrypted_proxy: ../tests/test_mcp_multiplexed_encrypted_proxy.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-tests/test_level_up_scheduler: ../tests/test_level_up_scheduler.c
+tests/test_level_up_scheduler: ../tests/test_level_up_scheduler.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box tests/test_pdp11_mounts tests/test_pdp11_encrypted_tunnel tests/test_mcp_tcp_proxy tests/test_mcp_multiplexed_encrypted_proxy tests/test_level_up_scheduler
