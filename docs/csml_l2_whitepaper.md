@@ -262,3 +262,18 @@ The queue is bounded by Read and Write head coordinates on the tape:
     $$M_T[H_{\text{Write}, t} + i] = \beta_i, \quad H_{\text{Write}, t+1} = H_{\text{Write}, t} + |\beta|$$
 
 This maps the infinite queue layout directly onto 1D tape coordinates index structures, proving that the lock-free queue (`InteropCoaxialQueue`) resolves to a valid Turing execution tape.
+
+---
+
+## 17. Auncient Agent-Level State Schedulers
+
+Each agent memory block is equipped with an agentic execution scheduler that coordinates deferred action triggers mapped to future state counter epochs:
+
+1.  **Deferred Dispatch Mapping**:
+    An execution payload registers a deferred Solidity ABI method invocation $Sel$ to a future target counter epoch $C_{\text{target}}$:
+    $$\text{ScheduleTuple} = (C_{\text{target}}, Sel, \text{Arg})$$
+2.  **Tick Validation Logic**:
+    At each execution cycle, before routing the primary Solidity selector, the dispatcher checks:
+    $$f(C) = \begin{cases} \text{Invoke}(Sel, \text{Arg}) & \text{if } C \ge C_{\text{target}} \text{ and } \text{Active} \\ \text{NOP} & \text{otherwise} \end{cases}$$
+3.  **Verifiable State Commitments**:
+    The state transition delta resulting from the deferred execution is logged on the Tape Table ($M_T$), contributing to the evolved state root hash settled on Bitcoin L1.
