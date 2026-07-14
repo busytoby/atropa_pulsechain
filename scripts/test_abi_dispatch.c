@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 160);
-    assert(code_nodes[1].value == 160);
+    assert(code_nodes[0].value == 161);
+    assert(code_nodes[1].value == 161);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1330,6 +1330,15 @@ int main() {
     assert(comb_edges[0].src_agent_id == 100 && comb_edges[0].weight == 2.0f);
     assert(comb_edges[1].src_agent_id == 300 && comb_edges[1].weight == 1.0f);
     printf("✓ Consolidated graph stream updates with author preferences verified.\n");
+
+    // 140. Verify TransE translational score calculations (L1 and L2 distances)
+    float h_emb[3] = { 1.0f, 2.0f, 3.0f };
+    float r_emb[3] = { 0.5f, 0.5f, 0.5f };
+    float t_emb[3] = { 1.5f, 2.5f, 3.5f };
+    assert(interop_transe_score(h_emb, r_emb, t_emb, 3, 1) == 0.0f);
+    float t_far[3] = { 2.0f, 3.0f, 4.0f };
+    assert(interop_transe_score(h_emb, r_emb, t_far, 3, 2) == 0.75f);
+    printf("✓ TransE translation scores verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

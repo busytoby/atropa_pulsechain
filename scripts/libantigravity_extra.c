@@ -1324,3 +1324,17 @@ int interop_graph_replay_and_bias(InteropGraphEdge *edges, size_t max_edges, siz
     interop_graph_apply_author_bias(edges, *out_edge_count, preferred_authors, pref_count, bias_factor);
     return 0;
 }
+
+float interop_transe_score(const float *h, const float *r, const float *t, size_t dim, int norm_type) {
+    if (!h || !r || !t || dim == 0) return -1.0f;
+    float diff_sum = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = (h[i] + r[i]) - t[i];
+        if (norm_type == 1) {
+            diff_sum += (diff < 0.0f) ? -diff : diff;
+        } else {
+            diff_sum += diff * diff;
+        }
+    }
+    return diff_sum;
+}

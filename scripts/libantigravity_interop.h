@@ -483,4 +483,6 @@ void interop_graph_apply_author_bias(InteropGraphEdge *edges, size_t count, cons
 
 int interop_graph_replay_and_bias(InteropGraphEdge *edges, size_t max_edges, size_t *out_edge_count, const InteropCoaxialTable *event_table, const uint32_t *preferred_authors, size_t pref_count, float bias_factor);
 
+float interop_transe_score(const float *h, const float *r, const float *t, size_t dim, int norm_type);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
