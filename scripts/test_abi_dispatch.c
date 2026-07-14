@@ -1180,6 +1180,14 @@ int main() {
     assert(dblp_nodes[3].x_min == 0 && dblp_nodes[3].y_max == 1000);
     printf("✓ DBLP knowledge graph binary asset read and parsed successfully.\n");
 
+    // 131. Verify codebase dependency graph import in assets
+    InteropQuadNode code_nodes[5];
+    assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
+    assert(code_nodes[0].value == 154);
+    assert(code_nodes[1].value == 146);
+    assert(code_nodes[2].value == 8);
+    printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
