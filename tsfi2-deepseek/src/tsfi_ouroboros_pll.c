@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_HEAP_SIZE 64
 #define MOTZKIN_PRIME 953467954114363ULL
@@ -153,6 +154,38 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
     // 1. Read dynamic telemetry to construct priorities
     uint64_t collision_mask = lau_yul_thunk_sload(0xF210); // PMG collision mask
     uint64_t drift_metric = lau_yul_thunk_sload(0xF125);
+    
+    // Pop dynamic events from WinchesterMQ Yul ring-buffer queue and push to scheduler heap
+    while (1) {
+        uint8_t pop_cd[4] = {0x0f, 0xf2, 0x30, 0x00};
+        uint8_t pop_ret[128];
+        size_t pop_ret_len = sizeof(pop_ret);
+        bool pop_ok = lau_yul_thunk_execute("WinchesterMQ", pop_cd, sizeof(pop_cd), pop_ret, &pop_ret_len);
+        if (!pop_ok || pop_ret_len < 128) {
+            break;
+        }
+        
+        // Decoded popped values (Yul returns as 32-byte big-endian words)
+        uint64_t p_priority = 0;
+        for (int i = 0; i < 32; i++) p_priority = (p_priority << 8) | pop_ret[i];
+        uint64_t p_type = 0;
+        for (int i = 32; i < 64; i++) p_type = (p_type << 8) | pop_ret[i];
+        uint64_t p_timestamp = 0;
+        for (int i = 64; i < 96; i++) p_timestamp = (p_timestamp << 8) | pop_ret[i];
+        
+        // Check if a valid event was popped (priority > 0)
+        if (p_priority == 0) {
+            break;
+        }
+        
+        CoordinatedEvent ev_yul;
+        ev_yul.priority = p_priority;
+        ev_yul.type = (uint32_t)p_type;
+        ev_yul.timestamp = p_timestamp;
+        memcpy(ev_yul.data, &pop_ret[96], 32);
+        
+        pq_push(&pq, ev_yul);
+    }
     
     // Enqueue PMG event if active collision is detected
     if (collision_mask > 0) {

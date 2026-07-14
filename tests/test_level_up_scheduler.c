@@ -219,7 +219,36 @@ int main(void) {
     assert(popped_type == 2);
     assert(popped_timestamp == 2026);
     assert(popped_data == 0xAA);
-    printf("   ✓ popEvent successfully retrieved and matched dynamic queue state.\n");
+    printf("   ✓ popEvent successfully retrieved and matched dynamic queue state.\n\n");
+
+    // 5. Test integrated Queue-to-Heap pipeline
+    printf("5. Testing Queue-Heap Integration pipeline:\n");
+    // Clear slot 0xF185 first
+    lau_yul_thunk_sstore(0xF185, 0);
+    // Set dummy drift telemetry in 0xF125
+    lau_yul_thunk_sstore(0xF125, 42);
+    
+    // Push an EVENT_STACK_STORAGE_SYNC (type = 10) event with priority = 12 into WinchesterMQ
+    uint8_t push_sync_cd[132] = {0};
+    push_sync_cd[0] = 0x0f; push_sync_cd[1] = 0xf2; push_sync_cd[2] = 0x20; push_sync_cd[3] = 0x00; // selector
+    push_sync_cd[35] = 12; // priority
+    push_sync_cd[67] = 10; // type = EVENT_STACK_STORAGE_SYNC
+    push_sync_cd[99] = 100; // timestamp
+    
+    push_ret_len = sizeof(push_ret);
+    bool push_sync_ok = lau_yul_thunk_execute("WinchesterMQ", push_sync_cd, sizeof(push_sync_cd), push_ret, &push_ret_len);
+    assert(push_sync_ok);
+    printf("   ✓ Pushed EVM-side stack sync event into WinchesterMQ.\n");
+    
+    // Execute integrated tick
+    tsfi_ouroboros_run_integrated_tick(10, 3);
+    
+    // Check that 0xF185 was successfully populated with the live telemetry value from 0xF125
+    uint64_t live_val = lau_yul_thunk_sload(0xF125);
+    uint64_t synced_val = lau_yul_thunk_sload(0xF185);
+    printf("   -> Synced value at 0xF185: %lu (Live telemetry at 0xF125: %lu)\n", synced_val, live_val);
+    assert(synced_val == live_val && synced_val > 0);
+    printf("   ✓ Queue-to-Heap integration verified: Yul enqueued event popped, sorted, and executed in tick.\n\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
