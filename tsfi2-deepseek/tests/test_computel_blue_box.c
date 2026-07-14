@@ -362,6 +362,42 @@ int main(void) {
     matched = blue_box_query_blocks("assets/txn_test.dat", "gas_allowance", "=", 77777, results, 10);
     assert(matched == 0);
     
+    // 19. Test RDBMS Write-Ahead Log (WAL) Crash Recovery
+    remove("assets/wal_test.dat");
+    remove("assets/wal_test.dat.hist");
+    remove("assets/wal_test.dat.wal");
+    
+    // Write baseline state
+    blue_box_init_block(600, zero_hash);
+    r_ok = blue_box_commit_and_persist_with_guard("assets/wal_test.dat", 0, zero_hash);
+    assert(r_ok == true);
+    
+    // Simulate crash by writing directly to .wal file
+    FILE *wf = fopen("assets/wal_test.dat.wal", "wb");
+    assert(wf != NULL);
+    BlueBoxBlockState wal_state = { .block_number = 601, .gas_allowance = 88888, .nonce = 1, .is_committed = true };
+    wal_state.checksum = calculate_crc32((const uint8_t *)&wal_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+    fwrite(&wal_state, sizeof(BlueBoxBlockState), 1, wf);
+    fclose(wf);
+    
+    // Re-load state from disk - should trigger WAL recovery, appending 601 to history and RBT
+    rbt_root = NULL;
+    rbt_node_count = 0;
+    bool load_wal_ok = blue_box_load_state_from_disk("assets/wal_test.dat");
+    assert(load_wal_ok == true);
+    
+    // Verify recovered block
+    matched = blue_box_query_blocks("assets/wal_test.dat", "gas_allowance", "=", 88888, results, 10);
+    assert(matched == 1);
+    assert(results[0] == 601);
+    
+    // WAL file should have been deleted
+    wf = fopen("assets/wal_test.dat.wal", "rb");
+    assert(wf == NULL);
+
+    remove("assets/wal_test.dat");
+    remove("assets/wal_test.dat.hist");
+    remove("assets/wal_test.dat.wal");
     remove("assets/txn_test.dat");
     remove("assets/txn_test.dat.hist");
     remove("assets/rdbms_test.dat");
@@ -369,6 +405,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, and Relational Transaction tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, and WAL Recovery tests passed successfully.\n");
     return 0;
 }

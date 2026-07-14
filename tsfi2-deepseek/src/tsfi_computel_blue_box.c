@@ -504,8 +504,34 @@ bool blue_box_save_state_to_disk(const char *filepath) {
     return written == 1;
 }
 
+static void blue_box_recover_wal(const char *filepath) {
+    char wal_path[512];
+    snprintf(wal_path, sizeof(wal_path), "%s.wal", filepath);
+    FILE *wf = fopen(wal_path, "rb");
+    if (!wf) return;
+
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "ab");
+    if (hf) {
+        flock(fileno(hf), LOCK_EX);
+        flock(fileno(wf), LOCK_SH);
+        BlueBoxBlockState state;
+        while (fread(&state, sizeof(BlueBoxBlockState), 1, wf) == 1) {
+            uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+            if (calc == state.checksum) {
+                fwrite(&state, sizeof(BlueBoxBlockState), 1, hf);
+            }
+        }
+        fclose(hf);
+    }
+    fclose(wf);
+    remove(wal_path);
+}
+
 bool blue_box_load_state_from_disk(const char *filepath) {
     if (!filepath) return false;
+    blue_box_recover_wal(filepath);
     FILE *f = fopen(filepath, "rb");
     if (!f) return false;
     flock(fileno(f), LOCK_SH);
@@ -820,6 +846,21 @@ bool blue_box_add_to_transaction(const BlueBoxBlockState *state) {
 bool blue_box_commit_transaction(const char *filepath) {
     if (!in_transaction || !filepath) return false;
 
+    // 1. Write transactional block states to WAL first
+    char wal_path[512];
+    snprintf(wal_path, sizeof(wal_path), "%s.wal", filepath);
+    FILE *wf = fopen(wal_path, "wb");
+    if (wf) {
+        flock(fileno(wf), LOCK_EX);
+        for (uint32_t i = 0; i < transaction_buffer_count; i++) {
+            BlueBoxBlockState *state = &transaction_buffer[i];
+            state->checksum = calculate_crc32((const uint8_t *)state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+            fwrite(state, sizeof(BlueBoxBlockState), 1, wf);
+        }
+        fclose(wf);
+    }
+
+    // 2. Write to main history ledger
     char hist_path[512];
     snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
     FILE *hf = fopen(hist_path, "ab");
@@ -829,7 +870,6 @@ bool blue_box_commit_transaction(const char *filepath) {
 
     for (uint32_t i = 0; i < transaction_buffer_count; i++) {
         BlueBoxBlockState *state = &transaction_buffer[i];
-        state->checksum = calculate_crc32((const uint8_t *)state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
         fwrite(state, sizeof(BlueBoxBlockState), 1, hf);
 
         char payload[128];
@@ -839,6 +879,10 @@ bool blue_box_commit_transaction(const char *filepath) {
     }
 
     fclose(hf);
+
+    // 3. Commit complete, release/delete WAL log
+    remove(wal_path);
+
     in_transaction = false;
     transaction_buffer_count = 0;
     return true;
