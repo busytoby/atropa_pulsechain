@@ -212,4 +212,14 @@ typedef struct {
 
 int interop_covenant_replay_log(InteropCoaxialTable *tape, const InteropStateDelta *deltas, size_t delta_count, uint64_t expected_hash);
 
+typedef struct {
+    uint32_t scheduled_epoch;
+    uint32_t scheduled_selector;
+    uint64_t scheduled_arg;
+    int is_active;
+} InteropAgentScheduler;
+
+int interop_scheduler_register(InteropAgentScheduler *sched, uint32_t epoch, uint32_t selector, uint64_t arg);
+int interop_scheduler_tick(InteropAgentScheduler *sched, uint32_t current_epoch, uint64_t *triggered_val);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

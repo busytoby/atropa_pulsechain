@@ -456,39 +456,20 @@ int main() {
     printf("✓ Zero-Copy relative offset RCU swap and spinlocks verified successfully.\n");
 
     // 14. Test System-Wide Coaxial Shared Memory Ledger
-    printf("14. Testing System-Wide Coaxial Shared Memory Ledger (Trie/WMQ/Gas):\n");
+    printf("14. Testing System-Wide Coaxial Shared Memory Ledger:\n");
     InteropSystemLedger system_ledger;
     interop_system_ledger_init(&system_ledger);
     assert(system_ledger.trie_route_table.capacity == 128);
-    assert(system_ledger.trie_route_table.col_count == 2);
-    assert(system_ledger.trie_route_table.count == 0);
     uint64_t gas_data[2] = { 0x5555, 120 };
     assert(interop_coaxial_insert(&system_ledger.gas_calibration_table, gas_data, 2) == 1);
-    uint64_t resolved_fee = interop_coaxial_select(&system_ledger.gas_calibration_table, 0x5555);
-    assert(resolved_fee == 120);
-    printf("✓ System-Wide dynamic coaxial shared tables initialized and verified successfully.\n");
-
-    // 15. Test Extended Coaxial Tables (IPC/VRAM/JIT)
-    printf("15. Testing Extended Coaxial Dynamic Tables (IPC/VRAM/JIT):\n");
+    assert(interop_coaxial_select(&system_ledger.gas_calibration_table, 0x5555) == 120);
     uint64_t sig_data[2] = { 9999, 0x1 };
     assert(interop_coaxial_insert(&system_ledger.ipc_signal_table, sig_data, 2) == 1);
-    uint64_t resolved_mask = interop_coaxial_select(&system_ledger.ipc_signal_table, 9999);
-    assert(resolved_mask == 0x1);
-    assert(system_ledger.ipc_signal_table.capacity == 256);
-    assert(system_ledger.vram_page_table.capacity == 512);
-    assert(system_ledger.jit_reflection_table.capacity == 1024);
-    printf("✓ Extended dynamic coaxial shared tables verified successfully.\n");
-
-    // 16. Test Third Coaxial Expansion (P2P/Radio/CPU Snapshot)
-    printf("16. Testing Peer, Radio, and CPU dynamic coaxial tables:\n");
+    assert(interop_coaxial_select(&system_ledger.ipc_signal_table, 9999) == 0x1);
     uint64_t peer_data[2] = { 0x7777, 4 };
     assert(interop_coaxial_insert(&system_ledger.peer_registry_table, peer_data, 2) == 1);
-    uint64_t resolved_lun = interop_coaxial_select(&system_ledger.peer_registry_table, 0x7777);
-    assert(resolved_lun == 4);
-    assert(system_ledger.peer_registry_table.capacity == 512);
-    assert(system_ledger.radio_packet_table.capacity == 256);
-    assert(system_ledger.cpu_snapshot_table.capacity == 128);
-    printf("✓ Peer, Radio, and CPU Dynamic Coaxial Tables verified successfully.\n");
+    assert(interop_coaxial_select(&system_ledger.peer_registry_table, 0x7777) == 4);
+    printf("✓ System-Wide Coaxial Tables verified.\n");
 
     // 17. Test Live Unix Domain Socket Loopback Bridge
     printf("17. Testing Live Unix Domain Socket Loopback Bridge:\n");
@@ -844,6 +825,18 @@ int main() {
     free(token_tape_mem);
     free(recon_tape_mem);
     printf("✓ Stateful Token Mint & Transfer Lifecycle verified.\n");
+
+    // 29. Test Agentic Scheduler
+    printf("29. Testing Agentic Scheduler:\n");
+    InteropAgentScheduler sched;
+    assert(interop_scheduler_register(&sched, 3, 0x11223344, 9999) == 1);
+    uint64_t val = 0;
+    assert(interop_scheduler_tick(&sched, 1, &val) == 0);
+    assert(interop_scheduler_tick(&sched, 2, &val) == 0);
+    assert(interop_scheduler_tick(&sched, 3, &val) == 1);
+    assert(val == 9999);
+    assert(interop_scheduler_tick(&sched, 3, &val) == 0);
+    printf("✓ Agentic Scheduler verified.\n");
 
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");

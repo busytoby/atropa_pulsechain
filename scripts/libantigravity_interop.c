@@ -873,3 +873,24 @@ int interop_covenant_replay_log(InteropCoaxialTable *tape, const InteropStateDel
     }
     return 1;
 }
+
+int interop_scheduler_register(InteropAgentScheduler *sched, uint32_t epoch, uint32_t selector, uint64_t arg) {
+    if (!sched) return -1;
+    sched->scheduled_epoch = epoch;
+    sched->scheduled_selector = selector;
+    sched->scheduled_arg = arg;
+    sched->is_active = 1;
+    return 1;
+}
+
+int interop_scheduler_tick(InteropAgentScheduler *sched, uint32_t current_epoch, uint64_t *triggered_val) {
+    if (!sched || !sched->is_active) return 0;
+    if (current_epoch >= sched->scheduled_epoch) {
+        if (triggered_val) {
+            *triggered_val = sched->scheduled_arg;
+        }
+        sched->is_active = 0;
+        return 1;
+    }
+    return 0;
+}
