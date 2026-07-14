@@ -400,4 +400,8 @@ void interop_sparse_learn_gate_vaesen(InteropSparseWeight *weights, size_t count
 int interop_coaxial_empathy_cluster(const InteropVaesenScores *profiles, size_t count, InteropVaesenScores *centroids, size_t k, uint32_t *assign);
 int interop_tm_empathy_gate_route(const char *filepath, const InteropVaesenScores *scores, const InteropVaesenScores *limit, uint32_t *final_state);
 
+void interop_gemm_avx512(const float *a, const float *b, float *c, size_t m, size_t n, size_t k);
+uint32_t interop_zmm_select_thunk(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint32_t opcode, uint32_t reg_complexity);
+int interop_tm_yul_optimize(const char *filepath, uint8_t *instruction_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

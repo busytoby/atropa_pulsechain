@@ -1032,6 +1032,21 @@ int main() {
     remove(tm_file);
     printf("✓ Empathy sharding clustering and NTM emotional route gating verified.\n");
 
+    // 104-106. Test GEMM, thunk selection, and Yul compiler optimization
+    float gemm_a[4] = { 1.0f, 2.0f, 3.0f, 4.0f };
+    float gemm_b[4] = { 2.0f, 0.0f, 0.0f, 2.0f };
+    float gemm_c[4] = { 0.0f };
+    interop_gemm_avx512(gemm_a, gemm_b, gemm_c, 2, 2, 2);
+    assert(gemm_c[0] == 2.0f && gemm_c[3] == 8.0f);
+    assert(interop_zmm_select_thunk(prune_nodes, 0, 100, 50) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t code_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t opt_state = 0;
+    assert(interop_tm_yul_optimize(tm_file, code_tape, 4, &opt_state) == 1);
+    assert(opt_state == 1);
+    remove(tm_file);
+    printf("✓ GEMM, thunk selection, and Yul optimizer verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
