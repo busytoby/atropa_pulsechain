@@ -8,6 +8,8 @@ typedef struct {
     int *check;
     char **values;
     int capacity;
+    char *tail;
+    int tail_size;
 } tsfi_dat;
 
 // Compile a standard Trie into a Double-Array Trie (DAT) structure

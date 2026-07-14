@@ -47,16 +47,59 @@ static int find_base(tsfi_dat *dat, int *children, int child_count) {
     }
 }
 
+static int add_to_tail(tsfi_dat *dat, const char *suffix) {
+    int idx = dat->tail_size;
+    int len = (int)strlen(suffix) + 1;
+    dat->tail = (char*)realloc(dat->tail, dat->tail_size + len);
+    memcpy(dat->tail + dat->tail_size, suffix, len);
+    dat->tail_size += len;
+    return idx;
+}
+
+static bool is_single_path(tsfi_trie_node *node, char *suffix_out) {
+    int len = 0;
+    tsfi_trie_node *curr = node;
+    while (curr) {
+        if (curr->sibling || (curr->child && curr->child->sibling)) {
+            return false;
+        }
+        suffix_out[len++] = curr->ch;
+        curr = curr->child;
+    }
+    suffix_out[len] = '\0';
+    return true;
+}
+
 // Recursive function to map standard Trie nodes into base/check arrays
 static void dat_compile_node(tsfi_dat *dat, tsfi_trie_node *trie_node, int dat_state) {
     if (!trie_node) return;
+
+    // Check for tail compression opportunity:
+    // If the node has exactly one child, and that child leads to a single unbranched path,
+    // compress the suffix into the tail array!
+    tsfi_trie_node *child = trie_node->child;
+    if (child && !child->sibling) {
+        char suffix[256];
+        if (is_single_path(child, suffix)) {
+            int tail_idx = add_to_tail(dat, suffix);
+            // Store negative offset index (shifted by 1 to avoid -0 conflict)
+            dat->base[dat_state] = -(tail_idx + 1);
+            // Associate value with this parent state
+            tsfi_trie_node *leaf = child;
+            while (leaf->child) leaf = leaf->child;
+            if (leaf->is_end && leaf->phoneme) {
+                dat->values[dat_state] = strdup(leaf->phoneme);
+            }
+            return;
+        }
+    }
 
     // Collect all children transition characters
     int children_chars[256];
     tsfi_trie_node *children_nodes[256];
     int child_count = 0;
 
-    tsfi_trie_node *child = trie_node->child;
+    child = trie_node->child;
     while (child && child_count < 256) {
         children_chars[child_count] = (unsigned char)child->ch;
         children_nodes[child_count] = child;
@@ -96,6 +139,8 @@ tsfi_dat* tsfi_dat_compile(tsfi_trie_node *trie_root) {
     dat->base = (int*)malloc(dat->capacity * sizeof(int));
     dat->check = (int*)malloc(dat->capacity * sizeof(int));
     dat->values = (char**)malloc(dat->capacity * sizeof(char*));
+    dat->tail = NULL;
+    dat->tail_size = 0;
 
     for (int i = 0; i < dat->capacity; i++) {
         dat->base[i] = 0;
@@ -118,6 +163,14 @@ const char* tsfi_dat_search(tsfi_dat *dat, const char *key) {
     int state = 0;
     while (*key != '\0') {
         int b = dat->base[state];
+        if (b < 0) {
+            // Suffix Tail Comparison
+            int tail_idx = -b - 1;
+            if (strcmp(key, dat->tail + tail_idx) == 0) {
+                return dat->values[state];
+            }
+            return NULL;
+        }
         if (b == 0) return NULL; // No outbound transitions
 
         int next = b + (unsigned char)*key;
@@ -142,6 +195,9 @@ void tsfi_dat_destroy(tsfi_dat *dat) {
     free(dat->base);
     free(dat->check);
     free(dat->values);
+    if (dat->tail) {
+        free(dat->tail);
+    }
     free(dat);
 }
 

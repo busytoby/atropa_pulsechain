@@ -1,6 +1,7 @@
 #include "tsfi_trie.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 tsfi_trie_node* tsfi_trie_create_node(char ch) {
     tsfi_trie_node *node = (tsfi_trie_node*)malloc(sizeof(tsfi_trie_node));
