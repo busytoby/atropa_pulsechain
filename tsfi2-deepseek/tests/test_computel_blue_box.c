@@ -431,6 +431,11 @@ int main(void) {
     assert(keys[1] == 72);
     assert(vals[1] == 1);
 
+    // 23. Test Centrex Virtual Dial Alias Resolution
+    blue_box_centrex_add_alias(911, 808);
+    assert(blue_box_centrex_resolve_route(911) == 808);
+    assert(blue_box_centrex_resolve_route(800) == 800);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -441,6 +446,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, and Centrex AVL tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, and Centrex Route Resolution tests passed successfully.\n");
     return 0;
 }

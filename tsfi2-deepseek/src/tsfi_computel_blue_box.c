@@ -792,6 +792,15 @@ uint32_t blue_box_centrex_get_sorted_routes(uint32_t *keys_out, uint32_t *vals_o
     return idx;
 }
 
+void blue_box_centrex_add_alias(uint32_t alias_code, uint32_t target_trunk) {
+    centrex_avl = avl_insert(centrex_avl, alias_code, target_trunk);
+}
+
+uint32_t blue_box_centrex_resolve_route(uint32_t dial_code) {
+    uint32_t resolved = blue_box_centrex_lookup(dial_code);
+    return resolved ? resolved : dial_code;
+}
+
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
 
