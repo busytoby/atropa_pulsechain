@@ -31,9 +31,20 @@ int main(void) {
     tsfi_dat *dat = tsfi_dat_compile(trie);
     assert(dat != NULL);
 
+    // Find expected final state dynamically
+    int expected_final_state = 0;
+    int state = 0;
+    const char *key = "sh";
+    while (*key != '\0') {
+        int next = dat->base[state] + (unsigned char)*key;
+        state = next;
+        key++;
+    }
+    expected_final_state = state;
+
     // 2. Generate Bitcoin Script for key "sh"
     uint8_t script[512];
-    int script_len = tsfi_dat_generate_btc_script(dat, "sh", script);
+    int script_len = tsfi_dat_generate_btc_script(dat, "sh", expected_final_state, script);
     assert(script_len > 0);
     printf("[BTC_DAT] Generated multi-step script for 'sh' (%d bytes)\n", script_len);
     fflush(stdout);
@@ -47,13 +58,12 @@ int main(void) {
     printf("  [PASS] Multi-step script evaluated successfully!\n");
     fflush(stdout);
 
-    // Confirm final state corresponds to key lookup path
+    // Confirm final state corresponds to boolean true (1)
     if (stack.top >= 0) {
-        int final_state = 0;
-        memcpy(&final_state, stack.elements[stack.top].data, 4);
-        printf("[BTC_DAT] Final state in stack: %d\n", final_state);
+        int final_val = stack.elements[stack.top].data[0];
+        printf("[BTC_DAT] Final stack evaluation value: %d (Expected: 1 for True)\n", final_val);
         fflush(stdout);
-        assert(final_state > 0);
+        assert(final_val == 1);
     }
 
     // Verify stack contains exactly one element (no intermediate states preserved)

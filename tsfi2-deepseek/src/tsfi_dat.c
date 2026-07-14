@@ -293,7 +293,7 @@ tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
     return dat;
 }
 
-int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script_out) {
+int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, int expected_final_state, uint8_t *script_out) {
     if (!dat || !key || !script_out) return -1;
     int state = 0;
     int len = 0;
@@ -342,6 +342,13 @@ int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script
         key++;
         step++;
     }
+    
+    // Append final verification: PUSH expected_final_state, then OP_EQUAL
+    script_out[len++] = 0x04;
+    memcpy(script_out + len, &expected_final_state, 4);
+    len += 4;
+    
+    script_out[len++] = 0x87; // OP_EQUAL
     
     return len;
 }

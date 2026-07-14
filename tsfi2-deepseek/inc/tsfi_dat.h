@@ -38,6 +38,6 @@ int tsfi_dat_save_bin(tsfi_dat *dat, const char *filepath);
 tsfi_dat* tsfi_dat_load_bin(const char *filepath);
 
 // Generate a Bitcoin Script validating the multi-step DAT traversal path for a key
-int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script_out);
+int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, int expected_final_state, uint8_t *script_out);
 
 #endif // TSFI_DAT_H
