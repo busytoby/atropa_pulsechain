@@ -146,6 +146,16 @@ int main(void) {
     // Verify session key rotation
     assert(state.session_key != 0xDEADC0DE95346795ULL);
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, and accumulator tests passed successfully.\n");
+    // 11. Test Payload Encryption
+    uint8_t payload[16] = "TestTreePayload";
+    uint8_t original[16] = "TestTreePayload";
+    blue_box_crypt_payload(payload, 16);
+    // Payload should be altered
+    assert(memcmp(payload, original, 16) != 0);
+    // Decrypting should return the original text
+    blue_box_crypt_payload(payload, 16);
+    assert(memcmp(payload, original, 16) == 0);
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, and payload crypt tests passed successfully.\n");
     return 0;
 }

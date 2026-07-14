@@ -282,3 +282,14 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
 
     return written == 1;
 }
+
+void blue_box_crypt_payload(uint8_t *payload, size_t length) {
+    if (!payload || length == 0) return;
+    uint64_t temp_key = current_block_state.session_key;
+    for (size_t i = 0; i < length; i++) {
+        if (i % 8 == 0 && i > 0) {
+            temp_key = (temp_key * 1103515245ULL + 12345ULL) & 0xFFFFFFFFFFFFFFFFULL;
+        }
+        payload[i] ^= (uint8_t)(temp_key >> ((i % 8) * 8));
+    }
+}
