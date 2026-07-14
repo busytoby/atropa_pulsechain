@@ -412,6 +412,8 @@ Status: Awaiting hero to join the battle.</div>
         let spawners = [];
         let items = [];
         let particles = [];
+        let friendlyNpcs = [];
+        let adversaryNpcs = [];
 
         const keyboard = {};
         window.addEventListener("keydown", e => {
@@ -485,6 +487,12 @@ Status: Awaiting hero to join the battle.</div>
             spawners = [];
             items = [];
             axes = [];
+            friendlyNpcs = [
+                { x: TILE_SIZE * 3.5, y: TILE_SIZE * 3.5, radius: 10, speed: 2.2, vx: 0, vy: 0, shootCooldown: 0 }
+            ];
+            adversaryNpcs = [
+                { x: TILE_SIZE * (GRID_W - 2.5), y: TILE_SIZE * (GRID_H - 2.5), radius: 12, speed: 2, vx: 0, vy: 0, shootCooldown: 0 }
+            ];
 
             // Spawners
             const spawnerCount = 3 + Math.floor(Math.random() * 4);
@@ -624,6 +632,8 @@ Status: Awaiting hero to join the battle.</div>
             items = [];
             axes = [];
             particles = [];
+            friendlyNpcs = [];
+            adversaryNpcs = [];
             document.getElementById("btnStart").innerText = "Start Game";
         }
 
@@ -998,6 +1008,18 @@ Status: Awaiting hero to join the battle.</div>
                     }
                 }
 
+                // Collision with player (if enemy projectile)
+                if (ax.isEnemy) {
+                    if (Math.hypot(ax.x - player.x, ax.y - player.y) < player.radius + 4) {
+                        health -= 60;
+                        player.flashFrames = 10;
+                        playSynthSound(130, 'sawtooth', 0.2);
+                        logEvent(`[Ledger] Committed Tx: RIVAL_HIT | Health: ${health}`);
+                        axes.splice(i, 1);
+                        continue;
+                    }
+                }
+
                 // Collision with enemies
                 let hit = false;
                 for (let j = enemies.length - 1; j >= 0; j--) {
@@ -1064,6 +1086,63 @@ Status: Awaiting hero to join the battle.</div>
                     playSynthSound(110, 'sawtooth', 0.25);
                     enemies.splice(i, 1);
                     logEvent(`[Ledger] Committed Tx: PLAYER_DAMAGE | Health: ${health}`);
+                }
+            }
+
+            // Update Friendly NPCs (AI tracking closest enemy or spawner)
+            for (let i = friendlyNpcs.length - 1; i >= 0; i--) {
+                const fn = friendlyNpcs[i];
+                let target = null;
+                if (enemies.length > 0) target = enemies[0];
+                else if (spawners.length > 0) target = spawners[0];
+
+                if (target) {
+                    const angle = Math.atan2(target.y - fn.y, target.x - fn.x);
+                    fn.x += Math.cos(angle) * fn.speed;
+                    fn.y += Math.sin(angle) * fn.speed;
+                    resolveGridCollisions(fn);
+
+                    // Shoot at target
+                    fn.shootCooldown--;
+                    if (fn.shootCooldown <= 0) {
+                        axes.push({
+                            x: fn.x,
+                            y: fn.y,
+                            vx: Math.cos(angle) * 5.5,
+                            vy: Math.sin(angle) * 5.5,
+                            life: 70
+                        });
+                        fn.shootCooldown = 40;
+                    }
+                }
+            }
+
+            // Update Adversary NPCs (AI tracking player and shooting at them)
+            for (let i = adversaryNpcs.length - 1; i >= 0; i--) {
+                const an = adversaryNpcs[i];
+                const angle = Math.atan2(player.y - an.y, player.x - an.x);
+                an.x += Math.cos(angle) * an.speed;
+                an.y += Math.sin(angle) * an.speed;
+                resolveGridCollisions(an);
+
+                // Shoot at player
+                an.shootCooldown--;
+                if (an.shootCooldown <= 0) {
+                    axes.push({
+                        x: an.x,
+                        y: an.y,
+                        vx: Math.cos(angle) * 4.8,
+                        vy: Math.sin(angle) * 4.8,
+                        life: 60,
+                        isEnemy: true
+                    });
+                    an.shootCooldown = 50;
+                }
+
+                // Melee collision with player
+                if (Math.hypot(player.x - an.x, player.y - an.y) < player.radius + 10) {
+                    health -= 8;
+                    player.flashFrames = 5;
                 }
             }
 
@@ -1138,6 +1217,34 @@ Status: Awaiting hero to join the battle.</div>
             ctx.lineTo(px - 12, py);
             ctx.closePath();
             ctx.stroke();
+
+            // Draw Friendly NPCs (Gold diamonds)
+            friendlyNpcs.forEach(fn => {
+                ctx.strokeStyle = "#ffd600";
+                ctx.shadowColor = "#ffd600";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(fn.x, fn.y - 10);
+                ctx.lineTo(fn.x + 10, fn.y);
+                ctx.lineTo(fn.x, fn.y + 10);
+                ctx.lineTo(fn.x - 10, fn.y);
+                ctx.closePath();
+                ctx.stroke();
+            });
+
+            // Draw Adversary NPCs (Red/Orange diamonds)
+            adversaryNpcs.forEach(an => {
+                ctx.strokeStyle = "#ff3d00";
+                ctx.shadowColor = "#ff3d00";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(an.x, an.y - 12);
+                ctx.lineTo(an.x + 12, an.y);
+                ctx.lineTo(an.x, an.y + 12);
+                ctx.lineTo(an.x - 12, an.y);
+                ctx.closePath();
+                ctx.stroke();
+            });
 
             // Draw player axes
             axes.forEach(ax => {
