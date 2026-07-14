@@ -54,7 +54,7 @@ int main(void) {
     printf("✓ State transition successfully verified and logged.\n");
 
     // Persist verified traces to wm_trace.dat.bin (adhering to Rule 13)
-    const char *out_path = "../assets/wm_trace.dat.bin";
+    const char *out_path = "assets/wm_trace.dat.bin";
     FILE *f = fopen(out_path, "wb");
     if (!f) {
         fprintf(stderr, "Error: Could not open output file %s for writing\n", out_path);

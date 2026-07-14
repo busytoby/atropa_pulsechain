@@ -39,7 +39,7 @@ int main(void) {
     printf("✓ Saturated graph contains %zu edges.\n", num_edges);
 
     // Persist to logic_trace.dat.bin (Rule 13)
-    const char *out_path = "../assets/logic_trace.dat.bin";
+    const char *out_path = "assets/logic_trace.dat.bin";
     FILE *f = fopen(out_path, "wb");
     if (!f) {
         fprintf(stderr, "Error: Could not open output file %s for writing\n", out_path);
