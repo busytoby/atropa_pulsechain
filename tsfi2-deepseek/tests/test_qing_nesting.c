@@ -110,14 +110,57 @@ int main(void) {
     assert(sibling_out->child_count == 2);
     printf("  [PASS] Successfully verified 2-3 tree split and child balancing.\n");
 
+    // 6. Verify Dynamic B-Tree Ordered Insert & Root Splits
+    printf("[NEST] Verifying 2-3 Tree dynamic ordered key insertion & split propagation...\n");
+    tsfi_23_node *dynamic_root = NULL;
+    
+    // We will insert 4 keys
+    dynamic_root = tsfi_23_insert(dynamic_root, 10, NODE_TYPE_RAW_DATA, (void*)0x10);
+    dynamic_root = tsfi_23_insert(dynamic_root, 20, NODE_TYPE_RAW_DATA, (void*)0x20);
+    dynamic_root = tsfi_23_insert(dynamic_root, 30, NODE_TYPE_RAW_DATA, (void*)0x30);
+    
+    // At this point, it's a leaf node with 3 keys, so the insert of 30 triggers a split.
+    // The root should split, making key count in root 1, and creating child nodes.
+    assert(dynamic_root != NULL);
+    assert(dynamic_root->is_leaf == 0);
+    assert(dynamic_root->key_count == 1);
+    assert(dynamic_root->keys[0] == 20); // 20 pushed up as parent split key
+
+    // Insert 4th key
+    dynamic_root = tsfi_23_insert(dynamic_root, 40, NODE_TYPE_RAW_DATA, (void*)0x40);
+
+    // Let's search for keys recursively down this dynamic 2-3 tree
+    CachedContract mock_c;
+    strcpy(mock_c.name, "dynamic_nested_contract");
+    mock_c.virtual_address = 0x888ULL;
+
+    // Nest our mock contract under one of the payloads to prove hybrid lookup
+    tsfi_qing_graph_node hybrid_qing_nodes[TSFI_NET_COUNT];
+    tsfi_qing_graph_init(hybrid_qing_nodes);
+    hybrid_qing_nodes[TSFI_NET_ZMM].bst_root = tsfi_qing_bst_insert(hybrid_qing_nodes[TSFI_NET_ZMM].bst_root, mock_c.virtual_address, &mock_c);
+
+    tsfi_23_node *hybrid_node = create_node(NODE_TYPE_QING_GRAPH);
+    hybrid_node->payload.qing_graph = &hybrid_qing_nodes[TSFI_NET_ZMM];
+
+    // Attach hybrid node as child to dynamic root
+    dynamic_root->children[dynamic_root->child_count++] = hybrid_node;
+
+    // Search hybrid nested contract
+    CachedContract *hybrid_res = tsfi_23_node_search(dynamic_root, 0x888ULL);
+    assert(hybrid_res != NULL);
+    assert(strcmp(hybrid_res->name, "dynamic_nested_contract") == 0);
+    printf("  [PASS] Successfully verified dynamic split key insertion and recursive hybrid searches.\n");
+
     // Cleanup
     tsfi_qing_graph_destroy(qing_nodes);
     tsfi_qing_graph_destroy(nested_qing_nodes);
+    tsfi_qing_graph_destroy(hybrid_qing_nodes);
     
     // Deep recursive destruction
     tsfi_23_node_destroy(root);
     tsfi_23_node_destroy(split_test_root);
     tsfi_23_node_destroy(sibling_out);
+    tsfi_23_node_destroy(dynamic_root);
 
     printf("=== ALL NESTING TESTS PASSED ===\n");
     return 0;

@@ -132,3 +132,116 @@ tsfi_23_node* tsfi_23_node_add_child(tsfi_23_node *parent, tsfi_23_node *child, 
 
     return parent;
 }
+
+static tsfi_23_node* insert_internal(tsfi_23_node *node, uint64_t key, tsfi_node_type type, void *payload, uint64_t *pushed_key, tsfi_23_node **pushed_child) {
+    if (node->is_leaf) {
+        int i = node->key_count - 1;
+        while (i >= 0 && node->keys[i] > key) {
+            node->keys[i + 1] = node->keys[i];
+            node->payloads[i + 1] = node->payloads[i];
+            i--;
+        }
+        node->keys[i + 1] = key;
+        node->payloads[i + 1] = payload;
+        node->key_count++;
+
+        if (node->key_count == 3) {
+            tsfi_23_node *sibling = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
+            if (sibling) {
+                sibling->type = type;
+                sibling->is_leaf = 1;
+                sibling->key_count = 1;
+                sibling->child_count = 0;
+                sibling->keys[0] = node->keys[2];
+                sibling->payloads[0] = node->payloads[2];
+
+                node->key_count = 1;
+                *pushed_key = node->keys[1];
+                *pushed_child = sibling;
+            }
+            return node;
+        }
+        *pushed_child = NULL;
+        return node;
+    }
+
+    int child_idx = 0;
+    if (key > node->keys[0]) {
+        child_idx = 1;
+        if (node->key_count == 2 && key > node->keys[1]) {
+            child_idx = 2;
+        }
+    }
+
+    uint64_t mid_key;
+    tsfi_23_node *new_sibling = NULL;
+    insert_internal(node->children[child_idx], key, type, payload, &mid_key, &new_sibling);
+
+    if (new_sibling) {
+        int i = node->key_count - 1;
+        while (i >= 0 && node->keys[i] > mid_key) {
+            node->keys[i + 1] = node->keys[i];
+            node->children[i + 2] = node->children[i + 1];
+            i--;
+        }
+        node->keys[i + 1] = mid_key;
+        node->children[i + 2] = new_sibling;
+        node->key_count++;
+        node->child_count++;
+
+        if (node->key_count == 3) {
+            tsfi_23_node *sibling = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
+            if (sibling) {
+                sibling->type = node->type;
+                sibling->is_leaf = 0;
+                sibling->key_count = 1;
+                sibling->child_count = 2;
+                sibling->keys[0] = node->keys[2];
+                sibling->children[0] = node->children[2];
+                sibling->children[1] = node->children[3];
+
+                node->key_count = 1;
+                node->child_count = 2;
+                *pushed_key = node->keys[1];
+                *pushed_child = sibling;
+            }
+            return node;
+        }
+    }
+    *pushed_child = NULL;
+    return node;
+}
+
+tsfi_23_node* tsfi_23_insert(tsfi_23_node *root, uint64_t key, tsfi_node_type type, void *payload) {
+    if (!root) {
+        tsfi_23_node *node = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
+        if (node) {
+            node->type = type;
+            node->is_leaf = 1;
+            node->key_count = 1;
+            node->child_count = 0;
+            node->keys[0] = key;
+            node->payloads[0] = payload;
+        }
+        return node;
+    }
+
+    uint64_t pushed_key;
+    tsfi_23_node *pushed_child = NULL;
+    root = insert_internal(root, key, type, payload, &pushed_key, &pushed_child);
+
+    if (pushed_child) {
+        tsfi_23_node *new_root = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
+        if (new_root) {
+            new_root->type = root->type;
+            new_root->is_leaf = 0;
+            new_root->key_count = 1;
+            new_root->child_count = 2;
+            new_root->keys[0] = pushed_key;
+            new_root->children[0] = root;
+            new_root->children[1] = pushed_child;
+        }
+        return new_root;
+    }
+    return root;
+}

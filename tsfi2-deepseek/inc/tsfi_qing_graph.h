@@ -49,10 +49,12 @@ typedef struct tsfi_23_node {
             uint32_t checksum;
         } fw;
     } payload;
-    uint64_t keys[2];
+    uint64_t keys[3];    // Holds up to 3 keys during insert overflow
+    void *payloads[3];   // Holds corresponding payloads
     int key_count;
     struct tsfi_23_node *children[4]; // Expanded to 4 to support splits
     int child_count;
+    int is_leaf;
 } tsfi_23_node;
 
 // Search for a contract address recursively starting from a 2-3 tree node
@@ -63,5 +65,8 @@ void tsfi_23_node_destroy(tsfi_23_node *root);
 
 // Add a child to a 2-3 tree node, performing a split if child count exceeds 3
 tsfi_23_node* tsfi_23_node_add_child(tsfi_23_node *parent, tsfi_23_node *child, tsfi_23_node **new_sibling_out);
+
+// Dynamic 2-3 tree ordered insertion helper
+tsfi_23_node* tsfi_23_insert(tsfi_23_node *root, uint64_t key, tsfi_node_type type, void *payload);
 
 #endif // TSFI_QING_GRAPH_H
