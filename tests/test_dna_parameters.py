@@ -81,8 +81,8 @@ class TestDnaParameters(unittest.TestCase):
                 self.assertTrue(os.path.exists(dna_path), f"Failed to generate {dna_path} for preset {preset_name}")
                 
                 # Calculate expected size:
-                # 8 bytes header + (10800 frames * 31 bytes/frame) = 334808 bytes
-                expected_size = 334808
+                # 16 bytes header + (10800 frames * 31 bytes/frame) = 334816 bytes
+                expected_size = 334816
                 actual_size = os.path.getsize(dna_path)
                 self.assertEqual(actual_size, expected_size, 
                                  f"DNA binary size mismatch for {preset_name}. Expected {expected_size} bytes, got {actual_size} bytes.")
