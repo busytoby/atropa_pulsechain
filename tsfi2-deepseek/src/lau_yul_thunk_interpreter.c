@@ -194,11 +194,14 @@ uint64_t current_time_ms(void) {
 
 void write_thunk_to_disk(LauMemoNode *node) {
     char filepath[128];
+    char temp_path[128];
     snprintf(filepath, sizeof(filepath), "assets/thunk_cache_%lu.json", node->signature_hash);
-    FILE *f = fopen(filepath, "w");
+    snprintf(temp_path, sizeof(temp_path), "assets/temp_thunk_%lu.json", node->signature_hash);
+    FILE *f = fopen(temp_path, "w");
     if (!f) {
         snprintf(filepath, sizeof(filepath), "../assets/thunk_cache_%lu.json", node->signature_hash);
-        f = fopen(filepath, "w");
+        snprintf(temp_path, sizeof(temp_path), "../assets/temp_thunk_%lu.json", node->signature_hash);
+        f = fopen(temp_path, "w");
     }
     if (f) {
         fprintf(f, "{\"signature_hash\": %lu, \"contract_name\": \"%s\", \"ttl_ms\": %lu, \"cache_hits\": %lu, \"calldata\": \"",
@@ -212,6 +215,7 @@ void write_thunk_to_disk(LauMemoNode *node) {
         }
         fprintf(f, "\"}\n");
         fclose(f);
+        rename(temp_path, filepath);
     }
 }
 

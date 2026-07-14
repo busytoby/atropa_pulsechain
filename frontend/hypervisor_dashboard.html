@@ -690,6 +690,20 @@
                 </div>
             </div>
 
+            <!-- EDO-22 Tonal Waveform Orbit Visualizer -->
+            <div class="report-section" style="margin-top: 15px;">
+                <div class="card" style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                    <div class="panel-title" style="width: 100%;">
+                        <span>EDO-22 Tonal Waveform Orbit (Live Yue Sequencer)</span>
+                        <span class="pulse-badge">Live Lissajous Matrix</span>
+                    </div>
+                    <canvas id="yueCanvas" width="800" height="250" style="background: #000; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; width: 100%; box-shadow: inset 0 0 20px rgba(0,255,255,0.15);"></canvas>
+                    <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: var(--text-secondary); text-align: center;">
+                        Renders real-time harmonic waveforms mapping cumulative <strong style="color: var(--neon-magenta);">Epibar (X-Axis)</strong> and <strong style="color: var(--neon-blue);">Hypobar (Y-Axis)</strong> tone vector trajectories in EDO-22 pitch space.
+                    </div>
+                </div>
+            </div>
+
             <!-- Loaded Yul Thunks Discovery -->
             <div class="card" style="overflow-x: auto;">
                 <div class="panel-title">
@@ -1657,12 +1671,68 @@
             }
         }
 
+        // Live EDO-22 Waveform Orbit Visualizer
+        let yueCanvas = document.getElementById("yueCanvas");
+        let yueCtx = yueCanvas ? yueCanvas.getContext("2d") : null;
+        let yueAngle = 0;
+        let lastF1 = 2;
+        let lastF2 = 3;
+
+        function drawYueWaveform() {
+            if (!yueCanvas || !yueCtx) return;
+            // Clear with slight trailing alpha for bloom effect
+            yueCtx.fillStyle = "rgba(0, 0, 0, 0.08)";
+            yueCtx.fillRect(0, 0, yueCanvas.width, yueCanvas.height);
+
+            // Fetch latest ledger data to modulate frequencies
+            let f1 = lastF1;
+            let f2 = lastF2;
+            const nodesTable = document.getElementById("ledgerNodesTableBody");
+            if (nodesTable && nodesTable.rows && nodesTable.rows.length > 0 && nodesTable.rows[0].cells.length >= 4) {
+                const hashStr = nodesTable.rows[0].cells[1].textContent;
+                const hash = parseInt(hashStr) || 0;
+                if (hash > 0) {
+                    f1 = (hash % 7) + 2;
+                    f2 = ((hash >> 8) % 11) + 2;
+                }
+            }
+            lastF1 = f1;
+            lastF2 = f2;
+
+            const cx = yueCanvas.width / 2;
+            const cy = yueCanvas.height / 2;
+            const radiusX = Math.min(cx - 30, 250);
+            const radiusY = cy - 20;
+
+            yueCtx.beginPath();
+            yueCtx.lineWidth = 2;
+            let grad = yueCtx.createLinearGradient(0, 0, yueCanvas.width, 0);
+            grad.addColorStop(0, "var(--neon-magenta)");
+            grad.addColorStop(0.5, "var(--neon-blue)");
+            grad.addColorStop(1, "#00ff7f");
+            yueCtx.strokeStyle = grad;
+
+            for (let t = 0; t < Math.PI * 2; t += 0.01) {
+                const x = cx + radiusX * Math.sin(f1 * t + yueAngle);
+                const y = cy + radiusY * Math.cos(f2 * t);
+                if (t === 0) {
+                    yueCtx.moveTo(x, y);
+                } else {
+                    yueCtx.lineTo(x, y);
+                }
+            }
+            yueCtx.stroke();
+            yueAngle += 0.02;
+            requestAnimationFrame(drawYueWaveform);
+        }
+
         // On Load
         window.addEventListener("DOMContentLoaded", async () => {
             initTable();
             await loadConfig();
             await loadThunkObjects();
             await updateCacheMetrics();
+            drawYueWaveform();
             setInterval(updateCacheMetrics, 3000);
         });
     </script>

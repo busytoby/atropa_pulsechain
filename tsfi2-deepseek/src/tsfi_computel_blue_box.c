@@ -2286,33 +2286,40 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
                 next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
         fclose(f);
         
-        // Output specific file for this preserved node
+        // Output specific file for this preserved node atomically using WAL temporary file pattern
         char node_path[128];
+        char temp_node_path[128];
         snprintf(node_path, sizeof(node_path), "assets/rdbms_ledger_%lu.json", next_root);
-        FILE *fn = fopen(node_path, "w");
+        snprintf(temp_node_path, sizeof(temp_node_path), "assets/temp_ledger_%lu.json", next_root);
+        FILE *fn = fopen(temp_node_path, "w");
         if (!fn) {
             snprintf(node_path, sizeof(node_path), "../assets/rdbms_ledger_%lu.json", next_root);
-            fn = fopen(node_path, "w");
+            snprintf(temp_node_path, sizeof(temp_node_path), "../assets/temp_ledger_%lu.json", next_root);
+            fn = fopen(temp_node_path, "w");
         }
         if (fn) {
             fprintf(fn, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}, \"mode\": \"ledger\"}\n",
                     next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
             fclose(fn);
-            printf("[QUADTREE] Wrote node-specific state file: %s\n", node_path);
+            rename(temp_node_path, node_path);
+            printf("[QUADTREE] Wrote node-specific state file atomically: %s\n", node_path);
         }
 
-        // Copy current evm_storage.json to block specific storage snapshot
+        // Copy current evm_storage.json to block specific storage snapshot atomically using WAL temporary file pattern
         extern void persist_reconciliation_data(void);
         persist_reconciliation_data();
         char storage_path[128];
+        char temp_storage_path[128];
         snprintf(storage_path, sizeof(storage_path), "assets/rdbms_storage_%lu.json", next_root);
+        snprintf(temp_storage_path, sizeof(temp_storage_path), "assets/temp_storage_%lu.json", next_root);
         FILE *fs_src = fopen("evm_storage.json", "r");
         if (!fs_src) fs_src = fopen("tsfi2-deepseek/evm_storage.json", "r");
         if (fs_src) {
-            FILE *fs_dst = fopen(storage_path, "w");
+            FILE *fs_dst = fopen(temp_storage_path, "w");
             if (!fs_dst) {
                 snprintf(storage_path, sizeof(storage_path), "../assets/rdbms_storage_%lu.json", next_root);
-                fs_dst = fopen(storage_path, "w");
+                snprintf(temp_storage_path, sizeof(temp_storage_path), "../assets/temp_storage_%lu.json", next_root);
+                fs_dst = fopen(temp_storage_path, "w");
             }
             if (fs_dst) {
                 char ch;
@@ -2321,16 +2328,17 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
                 }
                 fclose(fs_dst);
                 
-                // Calculate FNV-1a signature and append it
+                // Calculate FNV-1a signature on the temp file and append it
                 uint64_t dummy = 0;
                 extern uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected);
-                uint64_t computed = compute_storage_fnv1a(storage_path, &dummy);
-                FILE *fs_sig = fopen(storage_path, "a");
+                uint64_t computed = compute_storage_fnv1a(temp_storage_path, &dummy);
+                FILE *fs_sig = fopen(temp_storage_path, "a");
                 if (fs_sig) {
                     fprintf(fs_sig, "// SIG: %lu\n", computed);
                     fclose(fs_sig);
                 }
-                printf("[QUADTREE] Wrote block-specific storage snapshot with FNV-1a signature: %s\n", storage_path);
+                rename(temp_storage_path, storage_path);
+                printf("[QUADTREE] Wrote block-specific storage snapshot atomically with FNV-1a signature: %s\n", storage_path);
             }
             fclose(fs_src);
         }
