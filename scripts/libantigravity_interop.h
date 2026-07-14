@@ -265,4 +265,8 @@ int interop_mamt_knn_search(const uint64_t *leaves, size_t count, const uint64_t
 int interop_ac_cache_knn_search(const uint32_t *freqs, size_t count, uint32_t query_freq, uint32_t *out_freqs, size_t k);
 int interop_preference_knn_search(const uint64_t *prefs, size_t count, uint64_t query_pref, uint64_t *out_prefs, size_t k);
 
+uint32_t interop_mamt_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t hash_val);
+uint32_t interop_ac_cache_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t frequency);
+uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t complexity);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

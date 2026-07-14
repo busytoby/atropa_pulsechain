@@ -686,6 +686,13 @@ int main() {
     assert(p_out[0] == 5);
     printf("✓ MAMT, AC Cache, and Preference KNN search verified.\n");
 
+    // 42-44. Test MAMT, AC cache, fee decision trees
+    printf("42-44. Testing Domain-Specific Decision Trees:\n");
+    assert(interop_mamt_decision_evaluate(nodes, 0, 150) == 0xAAAA);
+    assert(interop_ac_cache_decision_evaluate(nodes, 0, 50) == 0xBBBB);
+    assert(interop_fee_decision_evaluate(nodes, 0, 150) == 0xAAAA);
+    printf("✓ MAMT, AC Cache, and Fee decision trees verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

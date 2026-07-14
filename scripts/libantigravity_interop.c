@@ -1172,3 +1172,15 @@ int interop_preference_knn_search(const uint64_t *prefs, size_t count, uint64_t 
     uint64_t query_coord[3] = { query_pref, 0, 0 };
     return interop_knn_search(agents, n, query_coord, out_prefs, k);
 }
+
+uint32_t interop_mamt_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t hash_val) {
+    return interop_decision_tree_evaluate(nodes, root_idx, hash_val);
+}
+
+uint32_t interop_ac_cache_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t frequency) {
+    return interop_decision_tree_evaluate(nodes, root_idx, frequency);
+}
+
+uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t complexity) {
+    return interop_decision_tree_evaluate(nodes, root_idx, complexity);
+}
