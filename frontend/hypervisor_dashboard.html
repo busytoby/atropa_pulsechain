@@ -403,6 +403,10 @@
                             <span>Starvation Prevention:</span>
                             <strong style="color: #00ff7f;">Active (Aging)</strong>
                         </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Adaptive Tick Rate:</span>
+                            <strong id="adaptiveTickRate" style="color: var(--neon-blue);">1000 ms</strong>
+                        </div>
                     </div>
                 </div>
 
@@ -414,6 +418,48 @@
                     </div>
                     <div id="schedulerLogStream" style="font-family: monospace; font-size: 0.8rem; background: rgba(5,7,18,0.6); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto; line-height: 1.5; color: #8c9ba5;">
                         <span style="color: var(--text-secondary);">[STDBY] Awaiting scheduler dispatch loop validation runs...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Diagnostics: Event Injector & Opcode Step Trace -->
+            <div class="report-section" style="grid-template-columns: 1fr 2fr; display: grid; gap: 20px; margin-top: 15px;">
+                <!-- Event Injector Card -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="panel-title">
+                        <span>Dynamic Event Injector</span>
+                        <span class="pulse-badge" style="background: rgba(0, 242, 254, 0.08); border-color: var(--neon-blue); color: var(--neon-blue);">Manual Tx</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                        <label style="color: #8c9ba5;">Priority (Lower = Higher):</label>
+                        <input type="number" id="injectPriority" value="10" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                        
+                        <label style="color: #8c9ba5;">Event Type:</label>
+                        <select id="injectType" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                            <option value="1">PLL_DRIFT (1)</option>
+                            <option value="2">PMG_COLLISION (2)</option>
+                            <option value="3">STACK_STORAGE_SYNC (3)</option>
+                            <option value="4">GUEST_CONTRACT_CALL (4)</option>
+                        </select>
+                        
+                        <label style="color: #8c9ba5;">Timestamp:</label>
+                        <input type="number" id="injectTimestamp" value="100" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                        
+                        <label style="color: #8c9ba5;">Payload Data (Hex):</label>
+                        <input type="text" id="injectData" value="0xAA00000000000000000000000000000000000000000000000000000000000003" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px; font-family: monospace;">
+                        
+                        <button class="btn btn-connect" onclick="injectEvent()" style="margin-top: 5px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)) !important;">⚡ Inject Event</button>
+                    </div>
+                </div>
+
+                <!-- JIT Opcode Step Trace Inspector Card -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel-title">
+                        <span>JIT Opcode Step Trace Inspector</span>
+                        <span class="pulse-badge" style="background: rgba(255, 0, 127, 0.08); border-color: var(--neon-magenta); color: var(--neon-magenta);">Trace Buffer</span>
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.8rem; background: rgba(5,7,18,0.6); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); height: 260px; overflow-y: auto; line-height: 1.6; color: #8c9ba5;" id="yulOpcodeTrace">
+                        <span style="color: var(--text-secondary);">[STDBY] No active bytecode execution steps tracked yet. Trigger dynamic thunks to view.</span>
                     </div>
                 </div>
             </div>
@@ -1238,8 +1284,69 @@
                         });
                     }
                 }
+                
+                // Update Adaptive Tick Rate Display
+                if (data && data.adaptive_tick_rate !== undefined) {
+                    document.getElementById("adaptiveTickRate").innerText = `${data.adaptive_tick_rate} ms`;
+                }
+
+                // Update Yul bytecode execution step trace
+                if (data && data.yul_trace && data.yul_trace.length > 0) {
+                    const traceDiv = document.getElementById("yulOpcodeTrace");
+                    const opMap = {
+                        0x00: "STOP", 0x01: "ADD", 0x02: "MUL", 0x03: "SUB", 0x04: "DIV", 0x05: "SDIV",
+                        0x06: "MOD", 0x07: "SMOD", 0x08: "ADDMOD", 0x09: "MULMOD", 0x0a: "EXP", 0x0b: "SIGNEXTEND",
+                        0x10: "LT", 0x11: "GT", 0x12: "SLT", 0x13: "SGT", 0x14: "EQ", 0x15: "ISZERO",
+                        0x16: "AND", 0x17: "OR", 0x18: "XOR", 0x19: "NOT", 0x1a: "BYTE", 0x1b: "SHL", 0x1c: "SHR", 0x1d: "SAR",
+                        0x20: "SHA3", 0x30: "ADDRESS", 0x31: "BALANCE", 0x32: "ORIGIN", 0x33: "CALLER", 0x34: "CALLVALUE",
+                        0x35: "CALLDATALOAD", 0x36: "CALLDATASIZE", 0x37: "CALLDATACOPY", 0x38: "CODESIZE", 0x39: "CODECOPY",
+                        0x3a: "GASPRICE", 0x3b: "EXTCODESIZE", 0x3c: "EXTCODECOPY", 0x3d: "RETURNDATASIZE", 0x3e: "RETURNDATACOPY",
+                        0x3f: "EXTCODEHASH", 0x40: "BLOCKHASH", 0x41: "COINBASE", 0x42: "TIMESTAMP", 0x43: "NUMBER",
+                        0x44: "DIFFICULTY", 0x45: "GASLIMIT", 0x46: "CHAINID", 0x47: "SELFBALANCE", 0x48: "BASEFEE",
+                        0x50: "POP", 0x51: "MLOAD", 0x52: "MSTORE", 0x53: "MSTORE8", 0x54: "SLOAD", 0x55: "SSTORE",
+                        0x56: "JUMP", 0x57: "JUMPI", 0x58: "PC", 0x59: "MSIZE", 0x5a: "GAS", 0x5b: "JUMPDEST",
+                        0xf0: "CREATE", 0xf1: "CALL", 0xf2: "CALLCODE", 0xf3: "RETURN", 0xf4: "DELEGATECALL",
+                        0xf5: "CREATE2", 0xfa: "STATICCALL", 0xfd: "REVERT", 0xfe: "INVALID", 0xff: "SELFDESTRUCT"
+                    };
+                    
+                    let html = "";
+                    data.yul_trace.forEach(step => {
+                        let opName = opMap[step.op] || "UNKNOWN";
+                        if (step.op >= 0x60 && step.op <= 0x7f) opName = `PUSH${step.op - 0x5f}`;
+                        else if (step.op >= 0x80 && step.op <= 0x8f) opName = `DUP${step.op - 0x7f}`;
+                        else if (step.op >= 0x90 && step.op <= 0x9f) opName = `SWAP${step.op - 0x8f}`;
+                        
+                        html += `PC [0x${step.pc.toString(16).toUpperCase()}] => <span style="color: var(--neon-magenta); font-weight: bold;">${opName}</span> (0x${step.op.toString(16).padStart(2, '0').toUpperCase()})<br>`;
+                    });
+                    traceDiv.innerHTML = html;
+                }
             } catch (e) {
                 console.error("Failed to update cache metrics:", e);
+            }
+        }
+
+        async function injectEvent() {
+            const priority = parseInt(document.getElementById("injectPriority").value) || 10;
+            const type = parseInt(document.getElementById("injectType").value) || 1;
+            const timestamp = parseInt(document.getElementById("injectTimestamp").value) || 0;
+            const data = document.getElementById("injectData").value || "0x00";
+            
+            appendLog(`[INJECT] Sending manually construct transaction: priority=${priority}, type=${type}...`, "var(--neon-purple)");
+            try {
+                const res = await fetch("/api/inject-event", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ priority, type, timestamp, data })
+                }).then(r => r.json());
+                
+                if (res && res.success) {
+                    appendLog("[INJECT] Event accepted and synchronized successfully.", "#00ff7f");
+                    await updateCacheMetrics();
+                } else {
+                    appendLog("[INJECT] Event injection failed or rejected by scheduler lock.", "var(--neon-magenta)");
+                }
+            } catch (e) {
+                appendLog("[INJECT] Error connecting to injector API: " + e.message, "var(--neon-magenta)");
             }
         }
 

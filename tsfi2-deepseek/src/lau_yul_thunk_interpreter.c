@@ -29,6 +29,17 @@ static pthread_mutex_t s_thunk_memo_mutex = PTHREAD_MUTEX_INITIALIZER;
 uint64_t g_thunk_cache_hits = 0;
 uint64_t g_thunk_cache_lookups = 0;
 
+typedef struct {
+    uint64_t pc;
+    uint8_t op;
+} YulTraceStep;
+
+#define TRACE_HISTORY_SIZE 32
+YulTraceStep s_yul_trace_history[TRACE_HISTORY_SIZE];
+uint32_t s_yul_trace_count = 0;
+uint32_t s_yul_trace_head = 0;
+pthread_mutex_t s_yul_trace_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
 
 static u256_t load_calldata_32(YulEvmContext *ctx, uint64_t offset) {
@@ -92,6 +103,16 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
 
     while (pc < size) {
         uint8_t op = bytecode[pc];
+        if (name && strcmp(name, "cpu6502") != 0) {
+            pthread_mutex_lock(&s_yul_trace_mutex);
+            s_yul_trace_history[s_yul_trace_head].pc = pc;
+            s_yul_trace_history[s_yul_trace_head].op = op;
+            s_yul_trace_head = (s_yul_trace_head + 1) % TRACE_HISTORY_SIZE;
+            if (s_yul_trace_count < TRACE_HISTORY_SIZE) {
+                s_yul_trace_count++;
+            }
+            pthread_mutex_unlock(&s_yul_trace_mutex);
+        }
         if (op >= 0x60 && op <= 0x7f) { // PUSH1..PUSH32
             int push_bytes = op - 0x5f;
             u256_t val = {{0}};

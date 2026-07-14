@@ -89,6 +89,7 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "flow.trigger_choreography", "27");
     root = tsfi_tst_insert(root, "wave512.dilemma_log", "28");
     root = tsfi_tst_insert(root, "wave512.telemetry", "29");
+    root = tsfi_tst_insert(root, "wave512.inject_event", "33");
     root = tsfi_tst_insert(root, "manifold.load_dna_llm", "41");
     root = tsfi_tst_insert(root, "manifold.query_llm", "42");
     root = tsfi_tst_insert(root, "manifold.get_receipt", "43");

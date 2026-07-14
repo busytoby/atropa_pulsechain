@@ -344,3 +344,14 @@ int tsfi_ouroboros_serialize_pq(char *buf, size_t max_len) {
     snprintf(ptr, rem, "]");
     return 1;
 }
+
+uint64_t tsfi_ouroboros_get_adaptive_tick_rate(void) {
+    uint64_t deviation = lau_yul_thunk_sload(0xF125);
+    if (deviation < 10) {
+        return 1000; // Slow tick rate (1000ms) when phase-locked
+    } else if (deviation < 50) {
+        return 500;  // Medium tick rate (500ms)
+    } else {
+        return 100;  // Fast tick rate (100ms) during drift to recover locks rapidly
+    }
+}

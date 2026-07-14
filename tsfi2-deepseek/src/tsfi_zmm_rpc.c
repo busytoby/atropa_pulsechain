@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 #define MAX_DILEMMA_LOGS 128
 typedef struct {
@@ -1131,6 +1132,17 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         extern uint64_t g_thunk_cache_lookups;
         extern uint64_t lau_yul_thunk_sload(uint64_t key);
         extern int tsfi_ouroboros_serialize_pq(char *buf, size_t max_len);
+        extern uint64_t tsfi_ouroboros_get_adaptive_tick_rate(void);
+        
+        typedef struct {
+            uint64_t pc;
+            uint8_t op;
+        } YulTraceStepLocal;
+        
+        extern YulTraceStepLocal s_yul_trace_history[];
+        extern uint32_t s_yul_trace_count;
+        extern uint32_t s_yul_trace_head;
+        extern pthread_mutex_t s_yul_trace_mutex;
         
         uint64_t head = lau_yul_thunk_sload(0xF300);
         uint64_t tail = lau_yul_thunk_sload(0xF301);
@@ -1140,13 +1152,59 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         char pq_buf[1536];
         tsfi_ouroboros_serialize_pq(pq_buf, sizeof(pq_buf));
         
+        char trace_buf[1536] = "[";
+        char *t_ptr = trace_buf + 1;
+        size_t t_rem = sizeof(trace_buf) - 2;
+        
+        pthread_mutex_lock(&s_yul_trace_mutex);
+        uint32_t t_count = s_yul_trace_count;
+        uint32_t t_head = s_yul_trace_head;
+        pthread_mutex_unlock(&s_yul_trace_mutex);
+        
+        for (uint32_t i = 0; i < t_count; i++) {
+            uint32_t idx = (t_head + 32 - t_count + i) % 32;
+            int n = snprintf(t_ptr, t_rem, "{\"pc\": %lu, \"op\": %u}%s",
+                             (unsigned long)s_yul_trace_history[idx].pc, s_yul_trace_history[idx].op,
+                             (i < t_count - 1 ? ", " : ""));
+            t_ptr += n;
+            t_rem -= n;
+            if (t_rem < 64) break;
+        }
+        snprintf(t_ptr, t_rem, "]");
+        
+        uint64_t adaptive_tick = tsfi_ouroboros_get_adaptive_tick_rate();
+        
         snprintf(output_buf, out_max, 
                  "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu, "
                  "\"evm_queue\": {\"head\": %lu, \"tail\": %lu, \"size\": %lu, \"lock\": %lu}, "
-                 "\"host_heap\": %s}, \"id\": %d}\n", 
+                 "\"host_heap\": %s, \"yul_trace\": %s, \"adaptive_tick_rate\": %lu}, \"id\": %d}\n", 
                  (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups,
                  (unsigned long)head, (unsigned long)tail, (unsigned long)size, (unsigned long)lock,
-                 pq_buf, id);
+                 pq_buf, trace_buf, (unsigned long)adaptive_tick, id);
+        return 1;
+    } else if (method_type == 33) { // wave512.inject_event
+        uint32_t priority = (uint32_t)extract_json_int(min_ptr, "\"priority\"", 10);
+        uint32_t type = (uint32_t)extract_json_int(min_ptr, "\"type\"", 1);
+        uint64_t timestamp = (uint64_t)extract_json_int(min_ptr, "\"timestamp\"", 0);
+        
+        char hex_data[128] = "";
+        uint8_t data[32] = {0};
+        if (extract_json_string(min_ptr, "\"data\"", hex_data, sizeof(hex_data))) {
+            char *p = hex_data;
+            if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
+            for (int i = 0; i < 32 && *p && *(p+1); i++) {
+                unsigned int byte;
+                sscanf(p, "%2x", &byte);
+                data[i] = (uint8_t)byte;
+                p += 2;
+            }
+        }
+        
+        extern bool tsfi_ouroboros_push_event(uint32_t priority, uint32_t type, uint64_t timestamp, const uint8_t *data);
+        bool push_ok = tsfi_ouroboros_push_event(priority, type, timestamp, data);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": %s}, \"id\": %d}\n", 
+                 push_ok ? "true" : "false", id);
         return 1;
     } else if (method_type == 30) { // input.mouse_move
         int x = extract_json_int(min_ptr, "\"x\"", 0);

@@ -903,6 +903,35 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     }
+    if (req.url === "/api/inject-event" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", async () => {
+            try {
+                const data = JSON.parse(body);
+                const r = await runZmmCommand(JSON.stringify({
+                    jsonrpc: "2.0",
+                    method: "wave512.inject_event",
+                    params: {
+                        priority: parseInt(data.priority) || 10,
+                        type: parseInt(data.type) || 1,
+                        timestamp: parseInt(data.timestamp) || 0,
+                        data: data.data || "0x00"
+                    },
+                    id: 998
+                }));
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify({ success: !!(r && r.result && r.result.success) }));
+            } catch (err) {
+                res.writeHead(400, { "Content-Type": "text/plain" });
+                res.end("Bad request: " + err.message);
+            }
+        });
+        return;
+    }
     // GET/POST API endpoints for dilemma logging
     if (req.url === "/api/dilemma-log" && req.method === "POST") {
         let body = "";
