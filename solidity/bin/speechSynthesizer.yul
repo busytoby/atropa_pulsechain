@@ -1565,6 +1565,11 @@ object "SpeechSynthesizer" {
                 mstore(0x4200, 0)
 
                 for { let f := 0 } lt(f, numFrames) { f := add(f, 1) } {
+                    mstore(0x4500, currentPitch)
+                    mstore(0x4520, currentEnergy)
+                    for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                        mstore(add(0x4400, mul(i, 32)), mload(add(0x4300, mul(i, 32))))
+                    }
                     let wordIdx := div(mul(f, 8), 32)
                     let byteOffsetInWord := mod(mul(f, 8), 32)
                     let calldataWord := calldataload(add(add(36, bytesOffset), mul(wordIdx, 32)))
@@ -1626,71 +1631,85 @@ object "SpeechSynthesizer" {
                         let pitchFactor := add(850, div(mul(j0, 15), 10))
                         let activeTargetPitch := div(mul(targetPitch, pitchFactor), 1000)
 
-                        // Smoothly interpolate parameters (1/64 transition rate)
-                        currentPitch := add(currentPitch, sdiv(sub(activeTargetPitch, currentPitch), 64))
-                        currentEnergy := add(currentEnergy, sdiv(sub(targetEnergy, currentEnergy), 64))
+                        // Step 1: Parameter transition interpolation
+                        mstore(0x4540, div(mul(u, 128), upsampleFactor)) // frac
+                        
+                        currentPitch := div(add(mul(mload(0x4500), sub(128, mload(0x4540))), mul(activeTargetPitch, mload(0x4540))), 128)
+                        currentEnergy := div(add(mul(mload(0x4520), sub(128, mload(0x4540))), mul(m0, mload(0x4540))), 128)
                         for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
-                            let curK := mload(add(0x4300, mul(i, 32)))
+                            let prevK := mload(add(0x4400, mul(i, 32)))
                             let targetK := mload(add(0x4000, mul(i, 32)))
-                            curK := add(curK, sdiv(sub(targetK, curK), 64))
+                            let curK := div(add(mul(prevK, sub(128, mload(0x4540))), mul(targetK, mload(0x4540))), 128)
                             mstore(add(0x4300, mul(i, 32)), curK)
                         }
 
                         let excitation := 0
                         // Voiced vs Unvoiced based on target energy (m0) threshold
-                        if gt(targetEnergy, 30) {
+                        if gt(m0, 30) {
                             phase := add(phase, 1)
 
-                            // Step 1: LFSR Noise step
+                            // Step 2: LFSR Noise step
                             let bit := and(seed, 1)
                             seed := shr(1, seed)
                             if bit { seed := xor(seed, 0xB400) }
                             let noise := sub(mod(seed, 200), 100) // [-100, 100]
 
-                            // Step 2: Pitch Jitter (FM) using seed state
+                            // Step 3: Pitch Jitter (FM) using seed state
                             // Modulate currentPitch by [-1%, +1%]
                             let jitterPercent := sub(mod(seed, 21), 10) // [-10, 10]
                             let jitteredPitch := add(currentPitch, sdiv(mul(currentPitch, jitterPercent), 1000))
                             let period := sdiv(16000, jitteredPitch)
                             if iszero(period) { period := 72 }
 
-                            // Step 3: Amplitude Shimmer (AM)
+                            // Step 4: Amplitude Shimmer (AM)
                             // Modulate amplitude by [-8%, +8%]
                             let shimmerPercent := sub(mod(seed, 17), 8) // [-8, 8]
                             let shimmerFactor := add(100, shimmerPercent) // [92, 108]%
 
                             let tMod := mod(phase, period)
-                            let Tp := div(mul(period, 40), 100)
-                            let Tn := div(mul(period, 16), 100)
-                            let pulse := 0
+                            mstore(0x45a0, div(mul(period, 40), 100)) // Tp
+                            mstore(0x45c0, div(mul(period, 16), 100)) // Tn
+                            mstore(0x45e0, 0) // pulse
                             
-                            if lt(tMod, Tp) {
-                                let ph := div(mul(tMod, 100), Tp)
-                                let ph2 := div(mul(ph, ph), 100)
-                                let ph3 := div(mul(ph2, ph), 100)
-                                pulse := sub(mul(3, ph2), mul(2, ph3))
+                            // Liljencrants-Fant (LF) glottal pulse rise & decay approximation
+                            if lt(tMod, mload(0x45a0)) {
+                                let ph := div(mul(tMod, 128), mload(0x45a0))
+                                let rise := add(ph, div(mul(ph, ph), 256))
+                                let ph_sq := div(mul(ph, ph), 128)
+                                let ph_cube := div(mul(ph_sq, ph), 128)
+                                let sin_approx := sub(mul(3, ph_sq), mul(2, ph_cube))
+                                mstore(0x45e0, div(mul(rise, sin_approx), 128))
                             }
-                            if and(iszero(lt(tMod, Tp)), lt(tMod, add(Tp, Tn))) {
-                                let ph := div(mul(sub(tMod, Tp), 100), Tn)
-                                let ph2 := div(mul(ph, ph), 100)
-                                pulse := sub(100, ph2)
+                            if and(iszero(lt(tMod, mload(0x45a0))), lt(tMod, add(mload(0x45a0), mload(0x45c0)))) {
+                                let ph := div(mul(sub(tMod, mload(0x45a0)), 128), mload(0x45c0))
+                                let decay := sub(128, ph)
+                                if slt(decay, 0) { decay := 0 }
+                                mstore(0x45e0, div(mul(100, decay), 128))
                             }
                             
                             // Apply shimmer factor to pulse
-                            pulse := div(mul(pulse, shimmerFactor), 100)
+                            mstore(0x45e0, div(mul(mload(0x45e0), shimmerFactor), 100))
 
-                            // Step 4: Mix pulse and noise dynamically (MELP dynamic mixed excitation)
-                            let voicingStrength := 50
-                            if gt(targetEnergy, 35) {
-                                voicingStrength := add(50, div(mul(sub(targetEnergy, 35), 40), 45))
+                            // Step 5: Multi-Band Mixed Excitation (MBE) Filter
+                            mstore(0x4600, 50) // voicingStrength
+                            if gt(m0, 35) {
+                                mstore(0x4600, add(50, div(mul(sub(m0, 35), 40), 45)))
                             }
-                            if gt(voicingStrength, 90) { voicingStrength := 90 }
+                            if gt(mload(0x4600), 90) { mstore(0x4600, 90) }
 
-                            let pulseScaled := sdiv(mul(sub(pulse, 29), voicingStrength), 10)
-                            let noiseScaled := sdiv(mul(noise, sub(100, voicingStrength)), 10)
+                            let lastPulse := mload(0x4220)
+                            let pulseLP := sdiv(add(mload(0x45e0), lastPulse), 2)
+                            mstore(0x4220, mload(0x45e0))
+
+                            let lastNoise := mload(0x4240)
+                            let noiseHP := sdiv(sub(noise, lastNoise), 2)
+                            mstore(0x4240, noise)
+
+                            let pulseScaled := sdiv(mul(pulseLP, mload(0x4600)), 10)
+                            let noiseScaled := sdiv(mul(noiseHP, sub(100, mload(0x4600))), 10)
                             excitation := add(pulseScaled, noiseScaled)
                         }
-                        if iszero(gt(targetEnergy, 30)) {
+                        if iszero(gt(m0, 30)) {
                             let bit := and(seed, 1)
                             seed := shr(1, seed)
                             if bit { seed := xor(seed, 0xB400) }
