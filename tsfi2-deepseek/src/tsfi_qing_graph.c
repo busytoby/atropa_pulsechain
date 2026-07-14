@@ -71,3 +71,21 @@ void tsfi_qing_graph_destroy(tsfi_qing_graph_node nodes[TSFI_NET_COUNT]) {
         }
     }
 }
+
+CachedContract* tsfi_23_node_search(tsfi_23_node *node, uint64_t virtual_address) {
+    if (!node) return NULL;
+
+    // 1. If it's a Qing graph node, search local BST (and route search if needed)
+    if (node->type == NODE_TYPE_QING_GRAPH && node->payload.qing_graph) {
+        CachedContract *res = tsfi_qing_bst_find(node->payload.qing_graph->bst_root, virtual_address);
+        if (res) return res;
+    }
+
+    // 2. Recursively search children nodes in the 2-3 Tree
+    for (int i = 0; i < node->child_count; i++) {
+        CachedContract *child_res = tsfi_23_node_search(node->children[i], virtual_address);
+        if (child_res) return child_res;
+    }
+
+    return NULL;
+}

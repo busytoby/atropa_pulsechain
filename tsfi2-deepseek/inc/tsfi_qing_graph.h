@@ -30,4 +30,30 @@ CachedContract* tsfi_qing_graph_route_find(tsfi_qing_graph_node nodes[TSFI_NET_C
 // Free all resources in the graph
 void tsfi_qing_graph_destroy(tsfi_qing_graph_node nodes[TSFI_NET_COUNT]);
 
+typedef enum {
+    NODE_TYPE_QING_GRAPH,
+    NODE_TYPE_RAW_DATA,
+    NODE_TYPE_FIRMWARE
+} tsfi_node_type;
+
+typedef struct tsfi_23_node {
+    tsfi_node_type type;
+    union {
+        tsfi_qing_graph_node *qing_graph;
+        struct {
+            uint64_t key;
+            uint64_t val;
+        } raw;
+        struct {
+            char name[64];
+            uint32_t checksum;
+        } fw;
+    } payload;
+    struct tsfi_23_node *children[3];
+    int child_count;
+} tsfi_23_node;
+
+// Search for a contract address recursively starting from a 2-3 tree node
+CachedContract* tsfi_23_node_search(tsfi_23_node *node, uint64_t virtual_address);
+
 #endif // TSFI_QING_GRAPH_H

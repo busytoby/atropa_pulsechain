@@ -4,28 +4,7 @@
 #include <assert.h>
 #include "tsfi_qing_graph.h"
 
-typedef enum {
-    NODE_TYPE_QING_GRAPH,
-    NODE_TYPE_RAW_DATA,
-    NODE_TYPE_FIRMWARE
-} tsfi_node_type;
 
-typedef struct tsfi_23_node {
-    tsfi_node_type type;
-    union {
-        tsfi_qing_graph_node *qing_graph;
-        struct {
-            uint64_t key;
-            uint64_t val;
-        } raw;
-        struct {
-            char name[64];
-            uint32_t checksum;
-        } fw;
-    } payload;
-    struct tsfi_23_node *children[3];
-    int child_count;
-} tsfi_23_node;
 
 static tsfi_23_node* create_node(tsfi_node_type type) {
     tsfi_23_node *node = (tsfi_23_node*)malloc(sizeof(tsfi_23_node));
@@ -57,6 +36,18 @@ int main(void) {
     child_left->payload.raw.val = 0x1234ULL;
     root->children[root->child_count++] = child_left;
 
+    // Left child has a nested child that contains a Qing graph node!
+    tsfi_qing_graph_node nested_qing_nodes[TSFI_NET_COUNT];
+    tsfi_qing_graph_init(nested_qing_nodes);
+    CachedContract c2;
+    strcpy(c2.name, "deep_nested_qing");
+    c2.virtual_address = 0x999ULL;
+    nested_qing_nodes[TSFI_NET_ZMM].bst_root = tsfi_qing_bst_insert(nested_qing_nodes[TSFI_NET_ZMM].bst_root, c2.virtual_address, &c2);
+
+    tsfi_23_node *deep_nested_child = create_node(NODE_TYPE_QING_GRAPH);
+    deep_nested_child->payload.qing_graph = &nested_qing_nodes[TSFI_NET_ZMM];
+    child_left->children[child_left->child_count++] = deep_nested_child;
+
     // Right child: Firmware node (non-Qing)
     tsfi_23_node *child_right = create_node(NODE_TYPE_FIRMWARE);
     strcpy(child_right->payload.fw.name, "Heltec_Ook_LoRa");
@@ -84,8 +75,17 @@ int main(void) {
     printf("  [PASS] Successfully verified firmware payloads (Name: %s, Checksum: 0x%X).\n", 
            root->children[1]->payload.fw.name, root->children[1]->payload.fw.checksum);
 
+    // 4. Verify Recursive Search down the 2-3 tree
+    printf("[NEST] Verifying recursive search down the 2-3 Tree...\n");
+    CachedContract *recursive_res = tsfi_23_node_search(root, 0x999ULL);
+    assert(recursive_res != NULL);
+    assert(strcmp(recursive_res->name, "deep_nested_qing") == 0);
+    printf("  [PASS] Successfully retrieved deep nested Qing 0x999 via recursive search.\n");
+
     // Cleanup
     tsfi_qing_graph_destroy(qing_nodes);
+    tsfi_qing_graph_destroy(nested_qing_nodes);
+    free(deep_nested_child);
     free(child_left);
     free(child_right);
     free(root);
