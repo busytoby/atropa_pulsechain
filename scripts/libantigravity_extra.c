@@ -1300,3 +1300,20 @@ int interop_graph_replay_ledger(InteropGraphEdge *edges, size_t max_edges, size_
     *out_edge_count = edges_added;
     return 0;
 }
+
+void interop_graph_apply_author_bias(InteropGraphEdge *edges, size_t count, const uint32_t *preferred_authors, size_t pref_count, float bias_factor) {
+    if (!edges || count == 0 || !preferred_authors || pref_count == 0) return;
+    
+    for (size_t i = 0; i < count; i++) {
+        int preferred = 0;
+        for (size_t k = 0; k < pref_count; k++) {
+            if (edges[i].src_agent_id == preferred_authors[k] || edges[i].dest_agent_id == preferred_authors[k]) {
+                preferred = 1;
+                break;
+            }
+        }
+        if (preferred && edges[i].active) {
+            edges[i].weight *= bias_factor;
+        }
+    }
+}

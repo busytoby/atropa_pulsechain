@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 158);
-    assert(code_nodes[1].value == 158);
+    assert(code_nodes[0].value == 159);
+    assert(code_nodes[1].value == 159);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1305,6 +1305,17 @@ int main() {
     assert(rep_edges[0].src_agent_id == 10 && rep_edges[0].weight == 1.5f);
     assert(rep_edges[1].src_agent_id == 20 && rep_edges[1].weight == 2.5f);
     printf("✓ Temporal graph stream replay verified.\n");
+
+    // 138. Verify preference updates for certain authors or publications
+    InteropGraphEdge pref_edges[2] = {
+        { 10, 20, 0, 1.0f, 1 },
+        { 30, 40, 0, 1.0f, 1 }
+    };
+    uint32_t preferred_authors[1] = { 10 };
+    interop_graph_apply_author_bias(pref_edges, 2, preferred_authors, 1, 1.5f);
+    assert(pref_edges[0].weight == 1.5f);
+    assert(pref_edges[1].weight == 1.0f);
+    printf("✓ Author/publication graph preference updates verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");
