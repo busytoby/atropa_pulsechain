@@ -27,7 +27,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_operator_status_rdbms.c -o tests/bench_operator_status_rdbms -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread -lpulse -lpulse-simple
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_agentic_dispatch.c -o tests/bench_agentic_dispatch -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
-gcc -Wall -Wextra -Werror -O3 -g -march=native -Iinc -Isrc tests/bench_knowledge_graph.c ../scripts/libantigravity_interop.c ../scripts/abi_dispatch_map.c -o tests/bench_knowledge_graph -lm -lrt -lpthread
+gcc -Wall -Wextra -Werror -O3 -g -march=native -Iinc -Isrc tests/bench_knowledge_graph.c ../scripts/libantigravity_interop.c ../scripts/libantigravity_extra.c ../scripts/abi_dispatch_map.c -o tests/bench_knowledge_graph -lm -lrt -lpthread
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."

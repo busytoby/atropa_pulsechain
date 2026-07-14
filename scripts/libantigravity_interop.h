@@ -469,4 +469,6 @@ void interop_graph_propagate_weights_avx512(InteropGraphEdge *edges, size_t coun
 uint32_t interop_graph_classify_edge(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const InteropGraphEdge *edge);
 int interop_graph_optimize_paths_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state);
 
+void fnv1a_hash_cascade_avx512(const uint64_t *initial_hashes, const uint64_t *data_blocks, size_t block_len, uint64_t *out_hashes);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

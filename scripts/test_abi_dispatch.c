@@ -1242,6 +1242,15 @@ int main() {
     assert(interop_coaxial_bridge_poll(-1, &c_bridge_table) == -1);
     printf("✓ Registry, agent updates, WinchesterMQ phase actions, and bridge polling verified.\n");
 
+    // 133. Verify AVX-512 FNV-1a Hash Cascade parallel execution
+    uint64_t init_hashes[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    uint64_t data_blocks[8] = { 10, 20, 30, 40, 50, 60, 70, 80 };
+    uint64_t out_hashes[8] = {0};
+    fnv1a_hash_cascade_avx512(init_hashes, data_blocks, 1, out_hashes);
+    assert(out_hashes[0] == ((1ULL ^ 10ULL) * 1099511628211ULL));
+    assert(out_hashes[3] == ((4ULL ^ 40ULL) * 1099511628211ULL));
+    printf("✓ AVX-512 FNV-1a parallel hash cascades verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
