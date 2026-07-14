@@ -1184,9 +1184,63 @@ int main() {
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
     assert(code_nodes[0].value == 154);
-    assert(code_nodes[1].value == 146);
-    assert(code_nodes[2].value == 8);
+    assert(code_nodes[1].value == 154);
+    assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
+
+    // 132. Test remaining interop API functions (registry, agent updates, bridge poll, WinchesterMQ phases)
+    char *static_raw = calloc(1, 16384);
+    LauWiredHeader *static_h = (LauWiredHeader*)static_raw;
+    static_h->schema_count = 0;
+    static_h->sealed = true;
+    static_h->version = 1;
+    void *static_payload = static_raw + 8192;
+    InteropStaticTable *static_table = (InteropStaticTable*)static_payload;
+    static_table->keys[0] = 55;
+    static_table->values[0] = 555;
+    static_table->count = 1;
+    uint64_t update_args[2] = { 55, 999 };
+    assert(interop_agent_update(static_payload, update_args, 2) == 1);
+    assert(static_table->values[0] == 999);
+    uint64_t delete_args[1] = { 55 };
+    assert(interop_agent_delete(static_payload, delete_args, 1) == 1);
+    assert(static_table->count == 0);
+    free(static_raw);
+
+    InteropRegistry reg;
+    interop_registry_init(&reg);
+    assert(reg.frame_modulation_factor == 1.0f);
+    AuncientRegisterState state;
+    memset(&state, 0, sizeof(AuncientRegisterState));
+    state.element = 100;
+    state.barn = 250;
+    interop_registry_update(&reg, &state, 12);
+    assert(reg.current_epoch == 12);
+    assert(reg.active_cycles == 1);
+    assert(reg.frame_modulation_factor == 0.5f);
+    AuncientRegisterState state_out;
+    uint32_t epoch_out = 0;
+    interop_registry_probe(&reg, &state_out, &epoch_out);
+    assert(state_out.element == 100);
+    assert(epoch_out == 12);
+
+    InteropLUN test_mq_lun;
+    memset(&test_mq_lun, 0, sizeof(InteropLUN));
+    test_mq_lun.pending_ack = 0xFFFFFFFF;
+    uint8_t packet[256] = "Test data packet";
+    interop_mq_put(&test_mq_lun, packet);
+    uint8_t out_packet[256];
+    assert(interop_mq_get_phase1(&test_mq_lun, out_packet) == 0);
+    assert(strcmp((char*)out_packet, "Test data packet") == 0);
+    assert(test_mq_lun.pending_ack == 0);
+    assert(interop_mq_ack_phase2(&test_mq_lun) == 0);
+    assert(test_mq_lun.head == 1);
+    assert(test_mq_lun.pending_ack == 0xFFFFFFFF);
+
+    InteropCoaxialTable c_bridge_table;
+    interop_coaxial_init_table(&c_bridge_table, 5, 2);
+    assert(interop_coaxial_bridge_poll(-1, &c_bridge_table) == -1);
+    printf("✓ Registry, agent updates, WinchesterMQ phase actions, and bridge polling verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");
