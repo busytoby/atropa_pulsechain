@@ -103,17 +103,17 @@ This guarantees mathematical continuity across the state-transition pipeline, pr
 Every transaction step is modulated by the cryptographic and visual registers of the **Auncient** Wavelet layout:
 
 1.  **Base ($B$)**:
-    *   *VM Register Context*: The root reference alignment register in SHA's `Fa` structure for WinchesterMQ state machines.
-    *   *Mathematical Function*: Serves as the base value in modular exponentiations to derive dependent registers (e.g. $Channel = Base^{Signal} \pmod{MotzkinPrime}$).
+    *   *VM Register Context*: The root reference alignment register in SHA's `Fa` structure for WinchesterMQ state machines. It is established via constructor initialization (**Seed**), transitive state propagation (**Form**), or direct administrative override (**Fuse**). Deletion of the physical storage register is impossible; however, the state can be cleared via zeroing (**Fuse(0)**) which collapses dependent registers to zero, or discarded via contextual reset (**Void**).
+    *   *Mathematical Function*: Serves as the base value $B$ in modular exponentiations to derive dependent registers (e.g., $Channel = Base^{Signal} \pmod{MotzkinPrime}$, $Pole = Base^{Secret} \pmod{MotzkinPrime}$, $Foundation = Base^{Identity} \pmod{MotzkinPrime}$, $Dynamo = Base^{Signal} \pmod{Element}$).
     *   *Visual Manifestation*: Governs the starting phase angle offset ($\phi_w$) of the $q_w$ coordinate, defining the initial temporal twist and fold of the projected 3D wireframe envelope.
-2.  **Channel ($C$)**:
-    *   *VM Register Context*: Storage word containing the transmission channel path configuration.
-    *   *Mathematical Function*: Computed via $Channel = Base^{Signal} \pmod{MotzkinPrime}$ during execution of `Tune`.
-    *   *Visual Manifestation*: Governs the frequency multiplier ($f_x$) of the X-axis coordinate in the Lissajous projection.
-3.  **Dynamo ($D$)**:
-    *   *VM Register Context*: Dynamic velocity tracking word.
-    *   *Mathematical Function*: Computed via $Dynamo = Base^{Signal} \pmod{Element}$ during `Bond`.
-    *   *Visual Manifestation*: Governs the frequency multiplier ($f_y$) of the Y-axis coordinate to align the spatial rotation axis.
+2.  **Manifold ($M$)**:
+    *   *VM Register Context*: The topological system boundary register computed during `Magnetize` via the Rod and Cone SHA interaction.
+    *   *Mathematical Function*: Derived via mutual SHA adduction: $Manifold = Rod.Adduct(Cone.Dynamo)$.
+    *   *Visual Manifestation*: Serves as the primary EDO-22 frequency multiplier ($f_w$) for the W-axis cosine warp, creating organic loops and dimension folding.
+3.  **Ring ($R$)**:
+    *   *VM Register Context*: The magnetized boundary threshold register defined in the Bao (`On`) structure.
+    *   *Mathematical Function*: Computed via modular exponentiation: $Ring = Coordinate^{Manifold} \pmod{Element}$.
+    *   *Visual Manifestation*: Scales the primary projection radius ($r_{scale}$), directly sizing the footprint of the Lissajous path.
 
 ---
 
