@@ -661,6 +661,17 @@ int main() {
     assert(interop_sdsa_verify_alignment((void*)15) == 0);
     printf("✓ SDSA, prioritized scheduling, and re-entrancy locks verified.\n");
 
+    // 33. Test Accumulator-Gated Decision Tree
+    printf("33. Testing Accumulator-Gated Decision Tree:\n");
+    InteropDecisionNode nodes[3] = {
+        { 100, 1, 2, 0 },
+        { 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xAAAA },
+        { 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xBBBB }
+    };
+    assert(interop_decision_tree_evaluate(nodes, 0, 150) == 0xAAAA);
+    assert(interop_decision_tree_evaluate(nodes, 0, 50) == 0xBBBB);
+    printf("✓ Accumulator-Gated Decision Tree verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

@@ -240,4 +240,13 @@ void interop_reentrancy_unlock(uint32_t *bitmap, uint32_t depth);
 int interop_scheduler_tick_prioritized(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals, const uint32_t *priorities);
 int interop_sdsa_verify_alignment(const void *data);
 
+typedef struct {
+    uint64_t threshold;
+    uint32_t left_child_idx;
+    uint32_t right_child_idx;
+    uint32_t branch_selector;
+} InteropDecisionNode;
+
+uint32_t interop_decision_tree_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t accumulator_val);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

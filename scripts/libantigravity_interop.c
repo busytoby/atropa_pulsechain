@@ -1008,3 +1008,18 @@ int interop_sdsa_verify_alignment(const void *data) {
     if (!data) return 0;
     return (((uintptr_t)data & 63ULL) == 0);
 }
+
+uint32_t interop_decision_tree_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t accumulator_val) {
+    if (!nodes) return 0xFFFFFFFF;
+    uint32_t curr = root_idx;
+    while (1) {
+        if (nodes[curr].left_child_idx == 0xFFFFFFFF && nodes[curr].right_child_idx == 0xFFFFFFFF) {
+            return nodes[curr].branch_selector;
+        }
+        if (accumulator_val >= nodes[curr].threshold) {
+            curr = nodes[curr].left_child_idx;
+        } else {
+            curr = nodes[curr].right_child_idx;
+        }
+    }
+}
