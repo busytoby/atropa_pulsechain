@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <math.h>
+#include <immintrin.h>
 #include "abi_dispatch_map.h"
 #include "../tsfi2-deepseek/inc/lau_memory.h"
 

@@ -27,7 +27,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_operator_status_rdbms.c -o tests/bench_operator_status_rdbms -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread -lpulse -lpulse-simple
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_agentic_dispatch.c -o tests/bench_agentic_dispatch -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse -lpulse-simple -Wl,-rpath,.
-
+gcc -Wall -Wextra -Werror -O3 -g -march=native -Iinc -Isrc tests/bench_knowledge_graph.c ../scripts/libantigravity_interop.c ../scripts/abi_dispatch_map.c -o tests/bench_knowledge_graph -lm -lrt -lpthread
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."
@@ -77,6 +77,10 @@ echo "[RUN] RDBMS Operator Status Dual Stack Benchmark..."
 echo "[RUN] In-Memory Agentic Dispatch Benchmark..."
 ./tests/bench_agentic_dispatch > "${TMP_DIR}/bench_agentic.log"
 
+# 14. Run Knowledge Graph Benchmark
+echo "[RUN] Knowledge Graph & Ouroboros Benchmark..."
+./tests/bench_knowledge_graph > "${TMP_DIR}/bench_graph.log"
+
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
 # Parse values
@@ -119,6 +123,10 @@ AC_COMP_GAIN=$(grep -oP 'Speedup Gain: \K[0-9\.]+' "${TMP_DIR}/bench_ac_composit
 WMQ_LATENCY=$(grep -oP 'WinchesterMQ Latency: \K[0-9\.]+' "${TMP_DIR}/bench_wmq.log" || echo "0.0")
 
 RDBMS_OP_LATENCY=$(grep -oP 'RDBMS Operator Status Latency: \K[0-9\.]+' "${TMP_DIR}/bench_rdbms_op.log" || echo "0.0")
+
+GRAPH_PROP=$(grep -oP 'AVX-512 Weight Propagation Latency: \K[0-9\.]+' "${TMP_DIR}/bench_graph.log" || echo "0.0")
+GRAPH_PRUNE=$(grep -oP 'Decision Tree Edge Pruning Latency: \K[0-9\.]+' "${TMP_DIR}/bench_graph.log" || echo "0.0")
+GRAPH_NTM=$(grep -oP 'NTM Path Optimization Latency: \K[0-9\.]+' "${TMP_DIR}/bench_graph.log" || echo "0.0")
 
 # Read Vulkan details if JSON file exists (which was written by vulkan teddy bear benchmark run)
 VK_JSON="${PROFILER_DIR}/benchmark_results.json"
@@ -188,6 +196,11 @@ cat <<EOF > "${OUTPUT_JSON}"
   "agentic_dispatch": {
     "cache_hit_latency_ns": ${AGENTIC_HIT},
     "cache_miss_latency_ns": ${AGENTIC_MISS}
+  },
+  "knowledge_graph": {
+    "propagate_latency_ns": ${GRAPH_PROP},
+    "prune_latency_ns": ${GRAPH_PRUNE},
+    "ntm_latency_ns": ${GRAPH_NTM}
   }
 }
 EOF

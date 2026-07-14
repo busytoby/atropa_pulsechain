@@ -42,6 +42,11 @@ THRESHOLDS = {
     "agentic_dispatch": {
         "cache_hit_latency_ns": {"max": 100.0, "desc": "Agentic Dispatch Cache Hit Latency"},
         "cache_miss_latency_ns": {"max": 500.0, "desc": "Agentic Dispatch Cache Miss Latency"}
+    },
+    "knowledge_graph": {
+        "propagate_latency_ns": {"max": 1000.0, "desc": "Knowledge Graph Propagation Latency"},
+        "prune_latency_ns": {"max": 1000.0, "desc": "Knowledge Graph Pruning Latency"},
+        "ntm_latency_ns": {"max": 15000.0, "desc": "Knowledge Graph NTM Optimization Latency"}
     }
 }
 
