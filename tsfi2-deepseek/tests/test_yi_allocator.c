@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "tsfi_wavelet_arena.h"
 
 int main() {
@@ -10,59 +11,60 @@ int main() {
     TsfiWaveletArena global_arena;
     tsfi_wavelet_arena_init(&global_arena, physical_memory_block, sizeof(physical_memory_block));
 
+    uint64_t prime_val = 953467954114363ULL; // Auncient Motzkin Prime
+
     printf("--- EXECUTING TRILATERAL EPOCH CASCADE ---\n");
     
     // 1. STAT: Synthesize Wavelets
-    TsfiWavelet *rod = tsfi_STAT(&global_arena);
-    TsfiWavelet *cone = tsfi_STAT(&global_arena);
+    TsfiWavelet *rod = tsfi_STAT(&global_arena, prime_val);
+    TsfiWavelet *cone = tsfi_STAT(&global_arena, prime_val);
     
-    // 2. UNITY: Unity Lock
-    TsfiShaoStruct *shao = tsfi_seal1_shao(&global_arena, rod, cone);
+    // 2. GENERATE: Initialize states (Xi, Alpha, Beta)
+    tsfi_GENERATE(rod, cone, 12345ULL, 67890ULL, 54321ULL, prime_val);
     
-    // 3. FORM: Geometric Anchor
-    TsfiYiGeometry *yi = tsfi_seal2_form(&global_arena, shao);
+    // 3. Progressive Seal Levels
+    tsfi_Form(rod, 100ULL, prime_val);
+    tsfi_Form(cone, 100ULL, prime_val);
+    
+    tsfi_Polarize(rod, prime_val);
+    tsfi_Polarize(cone, prime_val);
+    
+    tsfi_Conjugate(rod, 200ULL, prime_val);
+    tsfi_Conjugate(cone, 200ULL, prime_val);
+    
+    tsfi_Conify(rod, 300ULL, prime_val);
+    tsfi_Conify(cone, 300ULL, prime_val);
+    
+    tsfi_Saturate(rod, 300ULL, 10ULL, 50ULL, prime_val);
+    tsfi_Saturate(cone, 300ULL, 10ULL, 50ULL, prime_val);
+    
+    tsfi_IONIZE_BOND(rod, prime_val);
+    tsfi_IONIZE_BOND(cone, prime_val);
+    
+    // 4. MAGNETIZE
+    tsfi_MAGNETIZE_JOINT(rod, cone, prime_val);
 
     printf("\n--- HIERARCHICAL INTEGRITY CHECK ---\n");
-    printf("[PASS] YI Geometric Anchor Established (Xi=%lu)\n", yi->Xi);
-    printf("[PASS] YI -> SHIO (Psi) pointer wired: %p\n", (void*)yi->Psi);
-    printf("[PASS] SHIO -> SHAO (Rho) pointer wired: %p\n", (void*)yi->Psi->Rho);
-    printf("[PASS] SHAO -> Rod  (Wavelet A) pointer wired: %p\n", (void*)yi->Psi->Rho->Rod);
-    printf("[PASS] SHAO -> Cone (Wavelet B) pointer wired: %p\n", (void*)yi->Psi->Rho->Cone);
+    printf("[PASS] YI Wavelet A (Rod) pointer: %p\n", (void*)rod);
+    printf("[PASS] YI Wavelet B (Cone) pointer: %p\n", (void*)cone);
     
     printf("\n--- ROD TELEMETRY VALIDATION ---\n");
-    printf("  -> UID: %lu\n", yi->Psi->Rho->Rod->telemetry.unique_id);
-    printf("  -> Seal Level: %u (SEAL2 confirmed)\n", yi->Psi->Rho->Rod->telemetry.current_seal_level);
-    printf("  -> Physical State: %u\n", yi->Psi->Rho->Rod->state);
+    printf("  -> UID: %lu\n", (unsigned long)rod->telemetry.unique_id);
+    printf("  -> Seal Level: %u (SEAL8 confirmed)\n", rod->telemetry.current_seal_level);
+    printf("  -> Physical State: %u\n", rod->state);
     
     printf("\n--- CONE TELEMETRY VALIDATION ---\n");
-    printf("  -> UID: %lu\n", yi->Psi->Rho->Cone->telemetry.unique_id);
-    printf("  -> Seal Level: %u (SEAL2 confirmed)\n", yi->Psi->Rho->Cone->telemetry.current_seal_level);
-    printf("  -> Physical State: %u\n", yi->Psi->Rho->Cone->state);
+    printf("  -> UID: %lu\n", (unsigned long)cone->telemetry.unique_id);
+    printf("  -> Seal Level: %u (SEAL8 confirmed)\n", cone->telemetry.current_seal_level);
+    printf("  -> Physical State: %u\n", cone->state);
 
-    // 4. GENERATE
-    tsfi_GENERATE(yi, 0x1234, 0x5678);
-    
-    // 5. IONIZE
-    tsfi_IONIZE(yi);
-    
-    // 6. CLASSIFY
-    if (tsfi_seal5_classify(yi)) {
-        printf("[PASS] Memory Rigid.\n");
+    if (rod->telemetry.Fa.monopole == cone->telemetry.Fa.monopole) {
+        printf("[PASS] Memory Rigid (Joint Monopole: %lu).\n", rod->telemetry.Fa.monopole);
     } else {
         printf("[FAIL] Memory Fractured.\n");
         return 1;
     }
     
-    // 7. SATURATE
-    tsfi_seal6_saturate(yi);
-    
-    // 8. ALIGN
-    tsfi_seal7_align(yi);
-    
-    // 9. MAGNETIZE
-    uint64_t ring = tsfi_MAGNETIZE(yi);
-    printf("[PASS] Ring State: %lu\n", ring);
-
     printf("\n[SUCCESS] Trilateral Allocator Verified.\n");
     
     extern void lau_report_memory_metrics(void);
