@@ -2165,13 +2165,19 @@ bool blue_box_decay_validator_bids(void) {
     extern uint64_t lau_yul_thunk_sload(uint64_t key);
     uint64_t current_time = lau_yul_thunk_sload(0xF180);
     
+    // Read activity threshold and dynamically scale decay window
+    uint64_t threshold = lau_yul_thunk_sload(0xF197);
+    if (threshold == 0) threshold = 2; // Default threshold of 2 active bids
+    
+    uint64_t decay_limit = (g_validator_bid_count >= threshold) ? 60000 : 300000; // 1 min or 5 mins
+    
     size_t i = 0;
     while (i < g_validator_bid_count) {
         if (current_time >= g_validator_bids[i].timestamp &&
-            current_time - g_validator_bids[i].timestamp > 60000) {
+            current_time - g_validator_bids[i].timestamp > decay_limit) {
             // Decayed/stale bid -> remove
-            printf("[VALIDATOR DECAY] Purged stale bid ID: %u (Time diff: %lu ms)\n",
-                   g_validator_bids[i].validator_id, current_time - g_validator_bids[i].timestamp);
+            printf("[VALIDATOR DECAY] Purged stale bid ID: %u (Time diff: %lu ms, Limit: %lu ms)\n",
+                   g_validator_bids[i].validator_id, current_time - g_validator_bids[i].timestamp, decay_limit);
             for (size_t j = i; j < g_validator_bid_count - 1; j++) {
                 g_validator_bids[j] = g_validator_bids[j + 1];
             }
@@ -2189,7 +2195,17 @@ bool blue_box_select_validator_route(uint32_t *validator_id_out) {
     // Purge stale entries first
     blue_box_decay_validator_bids();
     
-    if (g_validator_bid_count == 0) return false;
+    if (g_validator_bid_count == 0) {
+        // Fallback to default validator ID in register 0xF198
+        extern uint64_t lau_yul_thunk_sload(uint64_t key);
+        uint64_t fallback_id = lau_yul_thunk_sload(0xF198);
+        if (fallback_id != 0) {
+            *validator_id_out = (uint32_t)fallback_id;
+            printf("[VALIDATOR SELECT] Empty table. Fallback route selected: ID %u\n", *validator_id_out);
+            return true;
+        }
+        return false;
+    }
     
     // Selection algorithm: Prioritize low latency, fallback to lower fee
     size_t best_idx = 0;
