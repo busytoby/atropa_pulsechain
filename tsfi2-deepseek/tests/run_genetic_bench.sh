@@ -4,7 +4,7 @@
 # Configuration
 CFLAGS="-Iinc -O3 -march=native -pthread -flax-vector-conversions -fopenmp -D_POSIX_C_SOURCE=200809L -g -DTSFI_DEBUG"
 OBJS="$(find obj -name "*.o" ! -name "main.o" ! -name "node_interop.o" | tr '\n' ' ')"
-LDFLAGS="-ldl -rdynamic -lm -lwayland-client -lvulkan -lrt -lpthread -lasound -lssl -lcrypto -ljpeg -fopenmp -lgomp"
+LDFLAGS="-ldl -rdynamic -lm -lwayland-client -lvulkan -lrt -lpthread -lasound -lssl -lcrypto -ljpeg -fopenmp -lgomp -lpulse-simple -lpulse"
 
 # Colors
 RESET="\033[0m"
