@@ -82,3 +82,33 @@ int interop_coaxial_semantic_join(const int *h_ids, const int *t_ids, size_t row
     }
     return matched_count;
 }
+
+float interop_ctransr_cluster_constraint(const float *M1, const float *M2, size_t dim) {
+    if (!M1 || !M2 || dim == 0) return 0.0f;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = M1[i] - M2[i];
+        sum_sq += diff * diff;
+    }
+    return sum_sq;
+}
+
+int interop_transr_scale_translation(float *r, size_t rel_dim, size_t ent_dim) {
+    if (!r || ent_dim == 0 || rel_dim == 0) return -1;
+    float scale = sqrtf((float)rel_dim / (float)ent_dim);
+    for (size_t i = 0; i < rel_dim; i++) {
+        r[i] *= scale;
+    }
+    return 0;
+}
+
+float interop_transr_mrr_eval(const int *ranks, size_t count) {
+    if (!ranks || count == 0) return 0.0f;
+    float sum = 0.0f;
+    for (size_t i = 0; i < count; i++) {
+        if (ranks[i] > 0) {
+            sum += 1.0f / (float)ranks[i];
+        }
+    }
+    return sum / (float)count;
+}
