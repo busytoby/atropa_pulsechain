@@ -134,6 +134,7 @@ int main(void) {
     // 10. Test Non-Preferential Accumulator System
     blue_box_init_block(50, zero_hash);
     blue_box_accumulate_state(1000000000000000ULL);
+    blue_box_commit_block();
     uint64_t accumulated = blue_box_get_accumulator();
     // 1000000000000000 % 953467954114363 = 46532045885637
     assert(accumulated == 46532045885637ULL);
@@ -141,6 +142,9 @@ int main(void) {
     // Check that state hash has evolved
     state = blue_box_get_block_state();
     assert(state.state_hash[0] != 0);
+
+    // Verify session key rotation
+    assert(state.session_key != 0xDEADC0DE95346795ULL);
 
     printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, and accumulator tests passed successfully.\n");
     return 0;

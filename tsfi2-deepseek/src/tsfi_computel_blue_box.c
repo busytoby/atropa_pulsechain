@@ -68,16 +68,18 @@ typedef struct {
     uint8_t state_hash[32];
     uint32_t active_trunk_mask;
     uint32_t nonce;
+    uint64_t session_key;
     bool is_committed;
     uint32_t checksum;
 } BlueBoxBlockState;
 
-static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, false, 0};
+static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, false, 0};
 
 void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.block_number = block_number;
     current_block_state.active_trunk_mask = 0;
     current_block_state.nonce = 0;
+    current_block_state.session_key = 0xDEADC0DE95346795ULL;
     current_block_state.is_committed = false;
     current_block_state.checksum = 0;
     if (initial_hash) {
@@ -103,6 +105,8 @@ bool blue_box_commit_block(void) {
         current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
     }
     current_block_state.nonce++;
+    // Shared session keys rotate using an LCG multiplier sequence
+    current_block_state.session_key = (current_block_state.session_key * 1103515245ULL + 12345ULL) & 0xFFFFFFFFFFFFFFFFULL;
     current_block_state.is_committed = true;
     current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
     return true;
@@ -232,6 +236,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
             current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
         }
         current_block_state.nonce++;
+        current_block_state.session_key = (current_block_state.session_key * 1103515245ULL + 12345ULL) & 0xFFFFFFFFFFFFFFFFULL;
         current_block_state.is_committed = true;
         current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
         size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
@@ -267,6 +272,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
         current_block_state.state_hash[i] = disk_state.state_hash[i] ^ (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
     }
     current_block_state.nonce = disk_state.nonce + 1;
+    current_block_state.session_key = (disk_state.session_key * 1103515245ULL + 12345ULL) & 0xFFFFFFFFFFFFFFFFULL;
     current_block_state.is_committed = true;
     current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
 
