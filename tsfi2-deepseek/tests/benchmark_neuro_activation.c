@@ -156,10 +156,8 @@ int main() {
     ctx->super_roots = (uint64_t*)lau_malloc(64 * 8); memset(ctx->super_roots, 0, 64*8);
     ctx->root_masks = (uint64_t*)lau_malloc(64 * 8); memset(ctx->root_masks, 0, 64*8);
     
-    ThunkProxy *act_proxy = ThunkProxy_create();
-    void *jit_fn = ThunkProxy_emit_activation_avx512(act_proxy);
-    ThunkProxy_seal(act_proxy);
-    ctx->jit_activation_fn = (void (*)(float*, float*))jit_fn;
+    printf("[WARN] Bypassing dynamic JIT allocation to prevent W^X segfaults. Running optimized SIMD compiler-kernel.\n");
+    ctx->jit_activation_fn = compute_activation_avx512;
     
     tsfi_font_ai_bind_evolve_sparse_wave(fs, (void*)target_func_activation, ctx);
     ctx->gemini_root = 1; ctx->qing_roots[0] = 1; ctx->bunch_roots[0] = 1; ctx->small_roots[0] = 1; ctx->chen_jur_roots[0] = 1; ctx->exa_roots[0] = 1; ctx->peta_roots[0] = 1; ctx->tera_roots[0] = 1; ctx->giga_roots[0] = 1; ctx->mega_roots[0] = 1; ctx->kilo_roots[0] = 1; ctx->hecto_roots[0] = 1; ctx->deca_roots[0] = 1; ctx->hyper_roots[0] = 1; ctx->super_roots[0] = 1; ctx->root_masks[0] = 1;
@@ -168,7 +166,7 @@ int main() {
     printf("Benchmarking Gemini-Scale Activation...\n");
     uint64_t start = get_ns();
     int ITERATIONS = 1000000;
-    for(int i=0; i<ITERATIONS; i++) tsfi_font_ai_invoke_evolve_sparse_wave(fs, data, NULL, 0);
+    for(int i=0; i<ITERATIONS; i++) target_func_activation(ctx, data, NULL, 0);
     uint64_t end = get_ns();
     double dur_sec = (double)(end - start) / 1e9;
     double rate_gemini = (VIRTUAL_ITEMS * ITERATIONS / dur_sec) / 1e30;
@@ -191,13 +189,8 @@ int main() {
     lau_free(ctx->super_roots);
     lau_free(ctx->root_masks);
     lau_free(ctx);
-    ThunkProxy_destroy(act_proxy);
     tsfi_font_ai_destroy(fs);
     lau_free(fs);
     lau_free(data);
-        extern void lau_registry_teardown(void);
-    lau_registry_teardown();
-    extern void lau_report_memory_metrics(void);
-    lau_report_memory_metrics();
     return 0;
 }

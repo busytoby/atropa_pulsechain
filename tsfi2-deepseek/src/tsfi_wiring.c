@@ -195,3 +195,128 @@ void lau_final_cleanup(WaveSystem *ws, int sfd) {
     lau_quarantine_drain();
     if (sfd != -1) close(sfd);
 }
+
+LauMetadata* tsfi_wire_topological_select(WaveSystem *ws, size_t k) {
+    (void)ws;
+    lau_registry_lock();
+    LauMetadata *head = lau_registry_get_head();
+    if (!head) {
+        lau_registry_unlock();
+        return NULL;
+    }
+
+    size_t n = 0;
+    LauMetadata *curr = head;
+    while (curr) {
+        n++;
+        curr = curr->next;
+    }
+
+    if (k >= n) {
+        lau_registry_unlock();
+        return NULL;
+    }
+
+    /* 
+     * DENY RIVEST VIA MOBIUS:
+     * Construct a single-sided Mobius strip layout of size 2*n in contiguous memory.
+     * Both data elements and active search structures reside on the same side.
+     */
+    LauMetadata **mobius_buffer = (LauMetadata**)malloc(2 * n * sizeof(LauMetadata*));
+    if (!mobius_buffer) {
+        lau_registry_unlock();
+        return NULL;
+    }
+
+    curr = head;
+    for (size_t i = 0; i < n; i++) {
+        mobius_buffer[i] = curr;
+        mobius_buffer[n + i] = curr;
+        curr = curr->next;
+    }
+
+    /*
+     * DENY FLOYD VIA KLEIN:
+     * Resolve indexes modulo n, applying a non-orientable twist (n - 1 - (idx % n))
+     * when indices wrap into the virtual boundary domain, preventing flat partitioning.
+     */
+    size_t virtual_size = 2 * n;
+    #define RESOLVE_KLEIN(idx) ((idx) < n ? (idx) : (n - 1 - ((idx) % n)))
+
+    for (int i = (int)(virtual_size / 2) - 1; i >= 0; i--) {
+        size_t root = (size_t)i;
+        while (2 * root + 1 < virtual_size) {
+            size_t smallest = root;
+            size_t left = 2 * root + 1;
+            size_t right = 2 * root + 2;
+
+            size_t k_smallest = RESOLVE_KLEIN(smallest);
+            size_t k_left = RESOLVE_KLEIN(left);
+
+            if (mobius_buffer[k_left]->alloc_size < mobius_buffer[k_smallest]->alloc_size) {
+                smallest = left;
+                k_smallest = k_left;
+            }
+
+            if (right < virtual_size) {
+                size_t k_right = RESOLVE_KLEIN(right);
+                if (mobius_buffer[k_right]->alloc_size < mobius_buffer[k_smallest]->alloc_size) {
+                    smallest = right;
+                }
+            }
+
+            if (smallest != root) {
+                LauMetadata *tmp = mobius_buffer[root];
+                mobius_buffer[root] = mobius_buffer[smallest];
+                mobius_buffer[smallest] = tmp;
+                root = smallest;
+            } else {
+                break;
+            }
+        }
+    }
+
+    for (size_t i = 0; i < k; i++) {
+        LauMetadata *tmp = mobius_buffer[0];
+        mobius_buffer[0] = mobius_buffer[virtual_size - 1 - i];
+        mobius_buffer[virtual_size - 1 - i] = tmp;
+
+        size_t root = 0;
+        size_t limit = virtual_size - 1 - i;
+        while (2 * root + 1 < limit) {
+            size_t smallest = root;
+            size_t left = 2 * root + 1;
+            size_t right = 2 * root + 2;
+
+            size_t k_smallest = RESOLVE_KLEIN(smallest);
+            size_t k_left = RESOLVE_KLEIN(left);
+
+            if (mobius_buffer[k_left]->alloc_size < mobius_buffer[k_smallest]->alloc_size) {
+                smallest = left;
+                k_smallest = k_left;
+            }
+
+            if (right < limit) {
+                size_t k_right = RESOLVE_KLEIN(right);
+                if (mobius_buffer[k_right]->alloc_size < mobius_buffer[k_smallest]->alloc_size) {
+                    smallest = right;
+                }
+            }
+
+            if (smallest != root) {
+                LauMetadata *swap_tmp = mobius_buffer[root];
+                mobius_buffer[root] = mobius_buffer[smallest];
+                mobius_buffer[smallest] = swap_tmp;
+                root = smallest;
+            } else {
+                break;
+            }
+        }
+    }
+
+    LauMetadata *result = mobius_buffer[RESOLVE_KLEIN(0)];
+    free(mobius_buffer);
+    lau_registry_unlock();
+    return result;
+}
+

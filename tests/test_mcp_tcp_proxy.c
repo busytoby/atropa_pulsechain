@@ -97,7 +97,8 @@ void *peer_b_mcp_handler(void *arg) {
                 ssize_t svc_n = recv(svc_fd, svc_resp, sizeof(svc_resp), 0);
                 if (svc_n > 0) {
                     // Send response back to Peer A over MCP channel
-                    write(g_mcp_pipe_b_to_a[1], svc_resp, svc_n);
+                    ssize_t w = write(g_mcp_pipe_b_to_a[1], svc_resp, svc_n);
+                    (void)w;
                 }
             }
             close(svc_fd);
@@ -134,7 +135,8 @@ void *peer_a_proxy_listener(void *arg) {
             ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
             if (n > 0) {
                 // 1. Forward client request to Peer B over MCP channel
-                write(g_mcp_pipe_a_to_b[1], buf, n);
+                ssize_t w = write(g_mcp_pipe_a_to_b[1], buf, n);
+                (void)w;
                 
                 // 2. Wait for response from Peer B over MCP channel
                 char mcp_resp[512];

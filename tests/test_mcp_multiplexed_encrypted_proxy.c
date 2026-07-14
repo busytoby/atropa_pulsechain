@@ -130,7 +130,8 @@ void *peer_b_mcp_handler(void *arg) {
             if (n <= 0) break;
             
             // Read Encrypted payload
-            read(g_mcp_pipe_a_to_b[0], recv_packet, header.payload_len);
+            ssize_t rd_len = read(g_mcp_pipe_a_to_b[0], recv_packet, header.payload_len);
+            (void)rd_len;
             
             // Decrypt request
             uint8_t plaintext[512];
@@ -164,8 +165,10 @@ void *peer_b_mcp_handler(void *arg) {
                     memcpy(res_header.iv, res_iv, AES_IV_SIZE);
                     
                     // Send back to Peer A
-                    write(g_mcp_pipe_b_to_a[1], &res_header, sizeof(res_header));
-                    write(g_mcp_pipe_b_to_a[1], enc_resp, enc_resp_len);
+                    ssize_t w1 = write(g_mcp_pipe_b_to_a[1], &res_header, sizeof(res_header));
+                    ssize_t w2 = write(g_mcp_pipe_b_to_a[1], enc_resp, enc_resp_len);
+                    (void)w1;
+                    (void)w2;
                 }
             }
             close(svc_fd);
@@ -191,7 +194,8 @@ void *peer_a_demuxer_thread(void *arg) {
             ssize_t n = read(g_mcp_pipe_b_to_a[0], &header, sizeof(header));
             if (n <= 0) break;
             
-            read(g_mcp_pipe_b_to_a[0], recv_packet, header.payload_len);
+            ssize_t rd_len = read(g_mcp_pipe_b_to_a[0], recv_packet, header.payload_len);
+            (void)rd_len;
             
             // Decrypt response payload
             uint8_t plaintext[512];
@@ -265,8 +269,10 @@ void *peer_a_proxy_listener(void *arg) {
                 memcpy(header.iv, req_iv, AES_IV_SIZE);
                 
                 // Write out over MCP channel
-                write(g_mcp_pipe_a_to_b[1], &header, sizeof(header));
-                write(g_mcp_pipe_a_to_b[1], enc_req, enc_len);
+                ssize_t w1 = write(g_mcp_pipe_a_to_b[1], &header, sizeof(header));
+                ssize_t w2 = write(g_mcp_pipe_a_to_b[1], enc_req, enc_len);
+                (void)w1;
+                (void)w2;
             } else {
                 close(client_fd);
             }

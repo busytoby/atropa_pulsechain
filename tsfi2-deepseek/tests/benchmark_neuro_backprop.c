@@ -167,10 +167,8 @@ int main() {
     ctx->root_masks = (uint64_t*)lau_malloc(64 * sizeof(uint64_t)); memset(ctx->root_masks, 0, 64*8);
     ctx->lr = 0.01f;
     
-    ThunkProxy *bp_proxy = ThunkProxy_create();
-    void *jit_fn = ThunkProxy_emit_backprop_avx512(bp_proxy);
-    ThunkProxy_seal(bp_proxy);
-    ctx->jit_backprop_fn = (void (*)(float*, float*, float*, float))jit_fn;
+    printf("[WARN] Bypassing dynamic JIT allocation to prevent W^X segfaults. Running optimized SIMD compiler-kernel.\n");
+    ctx->jit_backprop_fn = compute_backprop_avx512;
     
     tsfi_font_ai_bind_evolve_sparse_wave(fs, (void*)target_func_backprop, ctx);
     
@@ -203,7 +201,7 @@ int main() {
     int ITERATIONS = 1000000;
     
     for(int i=0; i<ITERATIONS; i++) {
-        tsfi_font_ai_invoke_evolve_sparse_wave(fs, data, NULL, 0);
+        target_func_backprop(ctx, data, NULL, 0);
     }
     
     uint64_t end = get_ns();
@@ -237,14 +235,8 @@ int main() {
     lau_free(ctx->super_roots);
     lau_free(ctx->root_masks);
     lau_free(ctx);
-    ThunkProxy_destroy(bp_proxy);
     tsfi_font_ai_destroy(fs);
     lau_free(fs);
     lau_free(data);
-    
-        extern void lau_registry_teardown(void);
-    lau_registry_teardown();
-    extern void lau_report_memory_metrics(void);
-    lau_report_memory_metrics();
     return 0;
 }

@@ -772,25 +772,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
 }
 
 bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len) {
-    if (name && strcmp(name, "WinchesterMQ") == 0 && calldata && calldatasize >= 4) {
-        static uint8_t g_wmq_command = 0;
-        uint32_t selector = ((uint32_t)calldata[0] << 24) | ((uint32_t)calldata[1] << 16) | ((uint32_t)calldata[2] << 8) | calldata[3];
-        if (selector == 0x98d400c0) {
-            if (calldatasize >= 36) g_wmq_command = calldata[35];
-            if (retval && retval_len) { memset(retval, 0, *retval_len); *retval_len = 32; }
-            return true;
-        } else if (selector == 0xccb077a0) {
-            if (retval && retval_len) { memset(retval, 0, *retval_len); *retval_len = 32; }
-            return true;
-        } else if (selector == 0x52d400d0) {
-            if (retval && retval_len) { memset(retval, 0, *retval_len); retval[0] = g_wmq_command; *retval_len = 32; }
-            return true;
-        } else if (selector == 0x00c7ee22) {
-            g_wmq_command = 0;
-            if (retval && retval_len) { memset(retval, 0, *retval_len); *retval_len = 32; }
-            return true;
-        }
-    }
+    // Passthrough to execute the full Yul VM state machine for WinchesterMQ to keep state compatibility with SCSI tests
     pthread_mutex_lock(&g_thunk_execute_mutex);
     CachedContract *c = NULL;
     uint64_t search_addr = 0;
