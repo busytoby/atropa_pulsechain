@@ -54,6 +54,25 @@ int main(void) {
     const char *addr_invalid = blue_box_get_immutable_address(999);
     assert(addr_invalid == NULL);
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, and immutable address storage tests passed successfully.\n");
+    // 7. Test Block State Management inside Blue Box
+    uint8_t zero_hash[32] = {0};
+    blue_box_init_block(42, zero_hash);
+    BlueBoxBlockState state = blue_box_get_block_state();
+    assert(state.block_number == 42);
+    assert(state.is_committed == false);
+
+    blue_box_register_block_trunk(800);
+    blue_box_register_block_trunk(808);
+    state = blue_box_get_block_state();
+    // 800 - 800 = 0 -> bit 0. 808 - 800 = 8 -> bit 8.
+    // 1 << 0 | 1 << 8 = 1 | 256 = 257.
+    assert(state.active_trunk_mask == 257);
+
+    bool commit_ok = blue_box_commit_block();
+    assert(commit_ok == true);
+    state = blue_box_get_block_state();
+    assert(state.is_committed == true);
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, and block state management tests passed successfully.\n");
     return 0;
 }

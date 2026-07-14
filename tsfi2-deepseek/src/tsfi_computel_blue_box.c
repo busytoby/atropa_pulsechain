@@ -46,6 +46,49 @@ const char *blue_box_get_immutable_address(uint32_t trunk_id) {
     return NULL;
 }
 
+typedef struct {
+    uint32_t block_number;
+    uint8_t state_hash[32];
+    uint32_t active_trunk_mask;
+    bool is_committed;
+} BlueBoxBlockState;
+
+static BlueBoxBlockState current_block_state = {0, {0}, 0, false};
+
+void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
+    current_block_state.block_number = block_number;
+    current_block_state.active_trunk_mask = 0;
+    current_block_state.is_committed = false;
+    if (initial_hash) {
+        for (int i = 0; i < 32; i++) {
+            current_block_state.state_hash[i] = initial_hash[i];
+        }
+    } else {
+        for (int i = 0; i < 32; i++) {
+            current_block_state.state_hash[i] = 0;
+        }
+    }
+}
+
+void blue_box_register_block_trunk(uint32_t trunk_id) {
+    if (trunk_id >= 800 && trunk_id < 832) {
+        current_block_state.active_trunk_mask |= (1U << (trunk_id - 800));
+    }
+}
+
+bool blue_box_commit_block(void) {
+    if (current_block_state.is_committed) return false;
+    for (int i = 0; i < 32; i++) {
+        current_block_state.state_hash[i] ^= (uint8_t)(current_block_state.active_trunk_mask >> (i % 8));
+    }
+    current_block_state.is_committed = true;
+    return true;
+}
+
+BlueBoxBlockState blue_box_get_block_state(void) {
+    return current_block_state;
+}
+
 /* Generates 2600 Hz SF tone to seize simulated trunk line */
 void generate_sf_seizure(float *buffer, int num_samples) {
     if (!buffer || num_samples <= 0) return;
