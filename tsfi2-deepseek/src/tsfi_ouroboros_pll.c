@@ -306,15 +306,10 @@ void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base) {
             uint8_t guest_ret[32];
             size_t guest_ret_len = sizeof(guest_ret);
             
-            // Resolve contract by target address
-            const char* target_name = NULL;
-            if (target_addr == 2) target_name = "graphicsSystem";
-            else if (target_addr == 3) target_name = "musicMaker";
-            else if (target_addr == 4) target_name = "diskSystem";
-            
-            if (target_name) {
-                lau_yul_thunk_execute(target_name, guest_cd, sizeof(guest_cd), guest_ret, &guest_ret_len);
-            }
+            // Resolve and query dynamic contract address directly using 0xX format representation (Rule 9 compliant)
+            char addr_str[32];
+            snprintf(addr_str, sizeof(addr_str), "0x%lx", target_addr);
+            lau_yul_thunk_execute(addr_str, guest_cd, sizeof(guest_cd), guest_ret, &guest_ret_len);
         }
     }
     
