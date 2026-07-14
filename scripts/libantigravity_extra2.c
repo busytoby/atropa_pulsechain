@@ -511,3 +511,139 @@ int interop_zmm_verify_contract_state(const uint8_t *address, const uint8_t *sta
     }
     return (checksum == expected_checksum) ? 1 : 0;
 }
+
+int interop_graph_path_walk(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed_entity, const int *relation_path, size_t path_len, int *out_dst, size_t max_dst, size_t *out_count) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !relation_path || path_len == 0 || !out_dst || max_dst == 0 || !out_count) return -1;
+    int *current_states = calloc(num_edges + 1, sizeof(int));
+    int *next_states = calloc(num_edges + 1, sizeof(int));
+    if (!current_states || !next_states) {
+        free(current_states);
+        free(next_states);
+        return -1;
+    }
+    size_t current_count = 0;
+    current_states[current_count++] = seed_entity;
+    for (size_t p = 0; p < path_len; p++) {
+        int target_rel = relation_path[p];
+        size_t next_count = 0;
+        for (size_t s = 0; s < current_count; s++) {
+            int u = current_states[s];
+            for (size_t e = 0; e < num_edges; e++) {
+                if (edges_src[e] == u && edges_rel[e] == target_rel) {
+                    int v = edges_dst[e];
+                    int exists = 0;
+                    for (size_t n = 0; n < next_count; n++) {
+                        if (next_states[n] == v) {
+                            exists = 1;
+                            break;
+                        }
+                    }
+                    if (!exists && next_count < num_edges) {
+                        next_states[next_count++] = v;
+                    }
+                }
+            }
+        }
+        if (next_count == 0) {
+            *out_count = 0;
+            free(current_states);
+            free(next_states);
+            return 0;
+        }
+        int *temp = current_states;
+        current_states = next_states;
+        next_states = temp;
+        current_count = next_count;
+    }
+    size_t copy_limit = (current_count < max_dst) ? current_count : max_dst;
+    for (size_t i = 0; i < copy_limit; i++) {
+        out_dst[i] = current_states[i];
+    }
+    *out_count = current_count;
+    free(current_states);
+    free(next_states);
+    return 0;
+}
+
+int interop_graph_subgraph_extract(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed_entity, size_t hops, int *out_subgraph_edges, size_t max_subgraph, size_t *out_count) {
+    if (!edges_src || !edges_rel || !edges_dst || num_edges == 0 || !out_subgraph_edges || max_subgraph == 0 || !out_count) return -1;
+    int *visited_entities = calloc(num_edges + 1, sizeof(int));
+    int *new_entities = calloc(num_edges + 1, sizeof(int));
+    if (!visited_entities || !new_entities) {
+        free(visited_entities);
+        free(new_entities);
+        return -1;
+    }
+    size_t visited_count = 0;
+    visited_entities[visited_count++] = seed_entity;
+    size_t subgraph_count = 0;
+    for (size_t h = 0; h < hops; h++) {
+        size_t new_count = 0;
+        for (size_t s = 0; s < visited_count; s++) {
+            int u = visited_entities[s];
+            for (size_t e = 0; e < num_edges; e++) {
+                if (edges_src[e] == u) {
+                    int v = edges_dst[e];
+                    int edge_already_added = 0;
+                    for (size_t idx = 0; idx < subgraph_count; idx++) {
+                        if (out_subgraph_edges[idx] == (int)e) {
+                            edge_already_added = 1;
+                            break;
+                        }
+                    }
+                    if (!edge_already_added && subgraph_count < max_subgraph) {
+                        out_subgraph_edges[subgraph_count++] = (int)e;
+                    }
+                    int already_visited = 0;
+                    for (size_t idx = 0; idx < visited_count; idx++) {
+                        if (visited_entities[idx] == v) {
+                            already_visited = 1;
+                            break;
+                        }
+                    }
+                    int already_new = 0;
+                    for (size_t idx = 0; idx < new_count; idx++) {
+                        if (new_entities[idx] == v) {
+                            already_new = 1;
+                            break;
+                        }
+                    }
+                    if (!already_visited && !already_new && new_count < num_edges) {
+                        new_entities[new_count++] = v;
+                    }
+                }
+            }
+        }
+        if (new_count == 0) break;
+        for (size_t i = 0; i < new_count; i++) {
+            if (visited_count < num_edges + 1) {
+                visited_entities[visited_count++] = new_entities[i];
+            }
+        }
+    }
+    *out_count = subgraph_count;
+    free(visited_entities);
+    free(new_entities);
+    return 0;
+}
+
+int interop_graph_semantic_select(const float *h, const float *r, const float *all_entities, size_t num_entities, size_t dim, float threshold, int *out_entity_indices, size_t max_out, size_t *out_count) {
+    if (!h || !r || !all_entities || num_entities == 0 || dim == 0 || !out_entity_indices || max_out == 0 || !out_count) return -1;
+    size_t count = 0;
+    for (size_t idx = 0; idx < num_entities; idx++) {
+        float sum_sq = 0.0f;
+        for (size_t i = 0; i < dim; i++) {
+            float expected_t_i = h[i] + r[i];
+            float diff = expected_t_i - all_entities[idx * dim + i];
+            sum_sq += diff * diff;
+        }
+        float distance = sqrtf(sum_sq);
+        if (distance < threshold) {
+            if (count < max_out) {
+                out_entity_indices[count++] = (int)idx;
+            }
+        }
+    }
+    *out_count = count;
+    return 0;
+}

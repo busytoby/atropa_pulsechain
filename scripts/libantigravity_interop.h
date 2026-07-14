@@ -569,4 +569,8 @@ int interop_zmm_parse_hex_address(const char *address_hex, uint8_t *out_address)
 int interop_zmm_resolve_contract_address(const uint8_t *address, const uint8_t *registry_addresses, const uint64_t *page_indices, size_t count, uint64_t *out_page_idx);
 int interop_zmm_verify_contract_state(const uint8_t *address, const uint8_t *state_payload, size_t size, uint32_t expected_checksum);
 
+int interop_graph_path_walk(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed_entity, const int *relation_path, size_t path_len, int *out_dst, size_t max_dst, size_t *out_count);
+int interop_graph_subgraph_extract(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int seed_entity, size_t hops, int *out_subgraph_edges, size_t max_subgraph, size_t *out_count);
+int interop_graph_semantic_select(const float *h, const float *r, const float *all_entities, size_t num_entities, size_t dim, float threshold, int *out_entity_indices, size_t max_out, size_t *out_count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
