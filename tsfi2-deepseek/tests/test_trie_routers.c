@@ -62,10 +62,48 @@ int main(void) {
     assert(scsi_fail == NULL);
     printf("  [PASS] Unmatched SCSI command prefix returned NULL.\n");
 
-    // 5. Cleanup
+    // 5. Verify IP CIDR Router
+    printf("[ROUTER] Verifying IP CIDR Router...\n");
+    tsfi_trie_node *cidr_router = tsfi_trie_init_cidr_router();
+    assert(cidr_router != NULL);
+    tsfi_trie_add_cidr_route(cidr_router, "192.168.1.0/24", "AS_LOCAL");
+    tsfi_trie_add_cidr_route(cidr_router, "10.0.0.0/8", "AS_BACKBONE");
+
+    const char *route1 = tsfi_trie_route_ip(cidr_router, "192.168.1.53");
+    assert(route1 != NULL && strcmp(route1, "AS_LOCAL") == 0);
+    printf("  [PASS] IP '192.168.1.53' correctly routed to: %s\n", route1);
+
+    const char *route2 = tsfi_trie_route_ip(cidr_router, "10.250.0.1");
+    assert(route2 != NULL && strcmp(route2, "AS_BACKBONE") == 0);
+    printf("  [PASS] IP '10.250.0.1' correctly routed to: %s\n", route2);
+
+    const char *route_fail = tsfi_trie_route_ip(cidr_router, "8.8.8.8");
+    assert(route_fail == NULL);
+    printf("  [PASS] Unmatched IP '8.8.8.8' correctly returned NULL.\n");
+
+    // 6. Verify Contract Namespace Router
+    printf("[ROUTER] Verifying Contract Namespace Router...\n");
+    tsfi_trie_node *namespace_router = tsfi_trie_init_contract_namespace_router();
+    assert(namespace_router != NULL);
+
+    const char *ns1 = tsfi_trie_resolve_contract_namespace(namespace_router, "dynamic_0x7f03a45a");
+    assert(ns1 != NULL && strcmp(ns1, "dynamic_contract") == 0);
+    printf("  [PASS] Contract 'dynamic_0x7f03a45a' prefix matched to: %s\n", ns1);
+
+    const char *ns2 = tsfi_trie_resolve_contract_namespace(namespace_router, "sys_get_time");
+    assert(ns2 != NULL && strcmp(ns2, "system_contract") == 0);
+    printf("  [PASS] Contract 'sys_get_time' prefix matched to: %s\n", ns2);
+
+    const char *ns_fail = tsfi_trie_resolve_contract_namespace(namespace_router, "random_addr");
+    assert(ns_fail == NULL);
+    printf("  [PASS] Unmatched contract 'random_addr' prefix correctly returned NULL.\n");
+
+    // 7. Cleanup
     tsfi_trie_destroy(rpc_router);
     tsfi_trie_destroy(abi_router);
     tsfi_trie_destroy(scsi_router);
+    tsfi_trie_destroy(cidr_router);
+    tsfi_trie_destroy(namespace_router);
 
     printf("=== ALL MULTI-PURPOSE TRIE ROUTING TESTS PASSED ===\n");
     return 0;

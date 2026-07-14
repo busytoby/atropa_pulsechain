@@ -21,4 +21,19 @@ tsfi_trie_node* tsfi_trie_init_scsi_router(void);
 // Resolve low-level SCSI handshake actions using Trie prefix match
 const char* tsfi_trie_resolve_scsi(tsfi_trie_node *router, const char *scsi_cmd);
 
+// Initialize IP CIDR Trie router for network route optimization
+tsfi_trie_node* tsfi_trie_init_cidr_router(void);
+
+// Insert a network route (e.g. "192.168.1.0/24") into the CIDR router
+void tsfi_trie_add_cidr_route(tsfi_trie_node *router, const char *cidr, const char *as_path);
+
+// Match an IP address to its longest matching CIDR prefix route
+const char* tsfi_trie_route_ip(tsfi_trie_node *router, const char *ip_str);
+
+// Initialize the ZMM interpreter contract namespace address router
+tsfi_trie_node* tsfi_trie_init_contract_namespace_router(void);
+
+// Resolve contract address namespace (e.g. dynamic_*, sys_*, usr_*) using prefix match
+const char* tsfi_trie_resolve_contract_namespace(tsfi_trie_node *router, const char *contract_address);
+
 #endif // TSFI_TRIE_DISPATCHER_H

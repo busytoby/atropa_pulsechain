@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 tsfi_trie_node* tsfi_trie_init_rpc_router(void) {
     tsfi_trie_node *root = tsfi_trie_create_node('\0');
@@ -72,4 +73,69 @@ tsfi_trie_node* tsfi_trie_init_scsi_router(void) {
 const char* tsfi_trie_resolve_scsi(tsfi_trie_node *router, const char *scsi_cmd) {
     int matched_len = 0;
     return tsfi_trie_longest_prefix(router, scsi_cmd, &matched_len);
+}
+
+static uint32_t parse_ip(const char *ip_str) {
+    int a, b, c, d;
+    if (sscanf(ip_str, "%d.%d.%d.%d", &a, &b, &c, &d) == 4) {
+        return ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)c << 8) | (uint32_t)d;
+    }
+    return 0;
+}
+
+static void ip_to_bin_str(uint32_t ip, int prefix_len, char *out_str) {
+    for (int i = 0; i < prefix_len; i++) {
+        out_str[i] = ((ip >> (31 - i)) & 1) ? '1' : '0';
+    }
+    out_str[prefix_len] = '\0';
+}
+
+tsfi_trie_node* tsfi_trie_init_cidr_router(void) {
+    return tsfi_trie_create_node('\0');
+}
+
+void tsfi_trie_add_cidr_route(tsfi_trie_node *router, const char *cidr, const char *as_path) {
+    char ip_part[64];
+    int prefix_len = 32;
+    const char *slash = strchr(cidr, '/');
+    if (slash) {
+        size_t len = slash - cidr;
+        if (len < sizeof(ip_part)) {
+            strncpy(ip_part, cidr, len);
+            ip_part[len] = '\0';
+            prefix_len = atoi(slash + 1);
+        }
+    } else {
+        strncpy(ip_part, cidr, sizeof(ip_part) - 1);
+        ip_part[sizeof(ip_part) - 1] = '\0';
+    }
+
+    uint32_t ip = parse_ip(ip_part);
+    char bin_str[64];
+    ip_to_bin_str(ip, prefix_len, bin_str);
+    tsfi_trie_insert(router, bin_str, as_path);
+}
+
+const char* tsfi_trie_route_ip(tsfi_trie_node *router, const char *ip_str) {
+    uint32_t ip = parse_ip(ip_str);
+    char bin_str[64];
+    ip_to_bin_str(ip, 32, bin_str);
+    int matched_len = 0;
+    return tsfi_trie_longest_prefix(router, bin_str, &matched_len);
+}
+
+tsfi_trie_node* tsfi_trie_init_contract_namespace_router(void) {
+    tsfi_trie_node *root = tsfi_trie_create_node('\0');
+    if (!root) return NULL;
+
+    tsfi_trie_insert(root, "dynamic_", "dynamic_contract");
+    tsfi_trie_insert(root, "sys_", "system_contract");
+    tsfi_trie_insert(root, "usr_", "user_contract");
+
+    return root;
+}
+
+const char* tsfi_trie_resolve_contract_namespace(tsfi_trie_node *router, const char *contract_address) {
+    int matched_len = 0;
+    return tsfi_trie_longest_prefix(router, contract_address, &matched_len);
 }
