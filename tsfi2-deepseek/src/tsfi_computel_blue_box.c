@@ -2321,3 +2321,42 @@ bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t o
     printf("[BTC SCRIPT] Transition verified. New Row committed (length: %zu).\n", new_len);
     return true;
 }
+
+// 35. Commit Quadtree via Bitcoin Script validation
+bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_root, const uint8_t *witness, size_t witness_len) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint64_t active_root = lau_yul_thunk_sload(0xF1B5);
+    if (active_root != old_root) {
+        printf("[BTC COMMIT] State collision. expected root: %lu, Active root: %lu\n", old_root, active_root);
+        return false;
+    }
+    
+    // Validate witness transition: H(old_root + delta) == next_root
+    // We fetch delta from witness data bytes
+    uint64_t delta = 0;
+    if (witness_len >= 8) {
+        for (size_t i = 0; i < 8; i++) {
+            delta = (delta << 8) | witness[i];
+        }
+    }
+    
+    uint64_t computed_hash = ((old_root * 33 + delta) * 33 + delta) % MotzkinPrime;
+    if (computed_hash != next_root) {
+        printf("[BTC COMMIT] Script transaction proof failed validation.\n");
+        return false;
+    }
+    
+    // Commit to registers
+    lau_yul_thunk_sstore(0xF1B5, next_root);      // Update Merkle Root
+    lau_yul_thunk_sstore(0xF1C3, next_root);      // Update Committed Root
+    lau_yul_thunk_sstore(0xF1C2, 1);              // Set Commit Trigger Active
+    
+    // Serialize new state to block ledger on disk
+    bool disk_ok = blue_box_write_quadtree_to_disk(1); // Block Ledger Mode
+    
+    printf("[BTC COMMIT] Transaction successfully committed. New Root: %lu (disk status: %d)\n",
+           next_root, disk_ok);
+    return disk_ok;
+}

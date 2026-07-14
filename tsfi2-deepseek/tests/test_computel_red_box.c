@@ -605,6 +605,21 @@ int main(void) {
     assert(lau_yul_thunk_sload(0xF1C1) == 0);
     printf("[TEST] Bitcoin Script-style table row transition proofs verified.\n");
 
+    // 43. Test transactional commit of Quadtree state via Bitcoin Script validation
+    uint64_t initial_root = 1000;
+    lau_yul_thunk_sstore(0xF1B5, initial_root);
+    lau_yul_thunk_sstore(0xF199, 300);
+    lau_yul_thunk_sstore(0xF186, 300);
+    
+    uint64_t expected_next = ((initial_root * 33 + 300) * 33 + 300) % 953467954114363ULL;
+    uint8_t commit_witness[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x2C};
+    
+    assert(blue_box_commit_quadtree_via_btc_script(initial_root, expected_next, commit_witness, 8) == true);
+    assert(lau_yul_thunk_sload(0xF1B5) == 1197039000);
+    assert(lau_yul_thunk_sload(0xF1C3) == expected_next);
+    assert(lau_yul_thunk_sload(0xF1C2) == 1);
+    printf("[TEST] Transactional commit of Quadtree via Bitcoin Script verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

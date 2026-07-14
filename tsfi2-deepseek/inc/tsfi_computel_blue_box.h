@@ -168,5 +168,6 @@ bool blue_box_select_validator_route(uint32_t *validator_id_out);
 bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds, uint64_t expected_version, bool *conflict_occurred_out);
 bool blue_box_write_quadtree_to_disk(uint32_t mode);
 bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len);
+bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_root, const uint8_t *witness, size_t witness_len);
 
 #endif
