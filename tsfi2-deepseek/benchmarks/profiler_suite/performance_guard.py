@@ -35,6 +35,9 @@ THRESHOLDS = {
     },
     "winchester_mq": {
         "execution_latency_ns": {"max": 15000.0, "desc": "WinchesterMQ Yul Thunk Latency"}
+    },
+    "rdbms_operator": {
+        "verification_latency_ns": {"max": 50000.0, "desc": "RDBMS Operator Verification Latency"}
     }
 }
 

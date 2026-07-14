@@ -100,6 +100,12 @@ def main():
                 "target": "<= 15000.0 ns",
                 "verified_actual": f"{data.get('winchester_mq', {}).get('execution_latency_ns', 0.0):.2f} ns",
                 "status": "PASS" if data.get('winchester_mq', {}).get('execution_latency_ns', 0.0) <= 15000.0 else "FAIL"
+            },
+            "rdbms_operator": {
+                "metric": "RDBMS Operator Verification Latency",
+                "target": "<= 50000.0 ns",
+                "verified_actual": f"{data.get('rdbms_operator', {}).get('verification_latency_ns', 0.0):.2f} ns",
+                "status": "PASS" if data.get('rdbms_operator', {}).get('verification_latency_ns', 0.0) <= 50000.0 else "FAIL"
             }
         }
     }
