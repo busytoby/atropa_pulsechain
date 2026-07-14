@@ -2270,6 +2270,11 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         s_last_next = next_root;
         s_has_cache = true;
         
+        uint64_t r23_0 = lau_yul_thunk_sload(0xF1C5);
+        uint64_t r23_1 = lau_yul_thunk_sload(0xF1C7);
+        uint64_t r23_2 = lau_yul_thunk_sload(0xF1C8);
+        uint64_t r23_3 = lau_yul_thunk_sload(0xF1C9);
+
         FILE *f = fopen("assets/rdbms_ledger.json", "a");
         if (!f) f = fopen("../assets/rdbms_ledger.json", "a");
         if (!f) return false;
@@ -2277,8 +2282,8 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         lau_yul_thunk_sstore(0xF1B5, next_root);
         
         // Append structured transaction record block to global ledger file
-        fprintf(f, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu}, \"mode\": \"ledger\"}\n",
-                next_root, gas_allowance, total_collected);
+        fprintf(f, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}, \"mode\": \"ledger\"}\n",
+                next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
         fclose(f);
         
         // Output specific file for this preserved node
@@ -2290,8 +2295,8 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
             fn = fopen(node_path, "w");
         }
         if (fn) {
-            fprintf(fn, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu}, \"mode\": \"ledger\"}\n",
-                    next_root, gas_allowance, total_collected);
+            fprintf(fn, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}, \"mode\": \"ledger\"}\n",
+                    next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
             fclose(fn);
             printf("[QUADTREE] Wrote node-specific state file: %s\n", node_path);
         }
@@ -2342,14 +2347,26 @@ void blue_box_rehydrate_quadtree_states(void) {
                 uint64_t next_root = 0;
                 uint64_t gas = 0;
                 uint64_t collected = 0;
+                uint64_t r23_0 = 0;
+                uint64_t r23_1 = 0;
+                uint64_t r23_2 = 0;
+                uint64_t r23_3 = 0;
 
                 char *p_root = strstr(buf, "\"block_root_hash\":");
                 char *p_gas = strstr(buf, "\"gas\":");
                 char *p_col = strstr(buf, "\"total_collected\":");
+                char *p_r23_0 = strstr(buf, "\"r23_0\":");
+                char *p_r23_1 = strstr(buf, "\"r23_1\":");
+                char *p_r23_2 = strstr(buf, "\"r23_2\":");
+                char *p_r23_3 = strstr(buf, "\"r23_3\":");
 
                 if (p_root) sscanf(p_root, "\"block_root_hash\": %lu", &next_root);
                 if (p_gas) sscanf(p_gas, "\"gas\": %lu", &gas);
                 if (p_col) sscanf(p_col, "\"total_collected\": %lu", &collected);
+                if (p_r23_0) sscanf(p_r23_0, "\"r23_0\": %lu", &r23_0);
+                if (p_r23_1) sscanf(p_r23_1, "\"r23_1\": %lu", &r23_1);
+                if (p_r23_2) sscanf(p_r23_2, "\"r23_2\": %lu", &r23_2);
+                if (p_r23_3) sscanf(p_r23_3, "\"r23_3\": %lu", &r23_3);
 
                 if (next_root > 0) {
                     extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
@@ -2357,8 +2374,15 @@ void blue_box_rehydrate_quadtree_states(void) {
                     lau_yul_thunk_sstore(0xF199, gas);
                     lau_yul_thunk_sstore(0xF186, collected);
                     lau_yul_thunk_sstore(0xF18E, 1); // Ledger mode active
-                    printf("[QUADTREE] [REHYDRATE] Restored latest block ledger state: root=%lu, gas=%lu, collected=%lu\n",
-                           next_root, gas, collected);
+                    
+                    lau_yul_thunk_sstore(0xF1C5, r23_0);
+                    lau_yul_thunk_sstore(0xF1C7, r23_1);
+                    lau_yul_thunk_sstore(0xF1C8, r23_2);
+                    lau_yul_thunk_sstore(0xF1C9, r23_3);
+                    lau_yul_thunk_sstore(0xF1C6, 1);  // Conversion Status: Aligned (1)
+                    
+                    printf("[QUADTREE] [REHYDRATE] Restored latest block ledger state: root=%lu, gas=%lu, collected=%lu, 2-3 Tree Segments=[%lu,%lu,%lu,%lu]\n",
+                           next_root, gas, collected, r23_0, r23_1, r23_2, r23_3);
                 }
             }
             fclose(f);
@@ -2454,8 +2478,11 @@ bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_roo
     *r_quad_out = val;
     
     // Commit alignment metrics to VM registers
-    lau_yul_thunk_sstore(0xF1C5, r23_root_0); // Log root segment
-    lau_yul_thunk_sstore(0xF1C6, 1);            // Conversion Status: Aligned (1)
+    lau_yul_thunk_sstore(0xF1C5, r23_root_0); // Segment 0
+    lau_yul_thunk_sstore(0xF1C7, r23_root_1); // Segment 1
+    lau_yul_thunk_sstore(0xF1C8, r23_root_2); // Segment 2
+    lau_yul_thunk_sstore(0xF1C9, r23_root_3); // Segment 3
+    lau_yul_thunk_sstore(0xF1C6, 1);          // Conversion Status: Aligned (1)
     
     printf("[BTC CONVERT] 2-3 Tree state mapped to Quadtree root: %lu\n", val);
     return true;
