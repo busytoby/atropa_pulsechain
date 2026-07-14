@@ -694,9 +694,28 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
     return count;
 }
 
+static void rbt_index_23_node(TwoThreeNode *node) {
+    if (!node) return;
+    if (node->is_leaf) {
+        blue_box_rbt_insert(node->keys[0], node);
+        if (node->num_keys == 2) {
+            blue_box_rbt_insert(node->keys[1], node);
+        }
+    } else {
+        rbt_index_23_node(node->children[0]);
+        rbt_index_23_node(node->children[1]);
+        if (node->children[2]) {
+            rbt_index_23_node(node->children[2]);
+        }
+    }
+}
+
 void blue_box_bind_23_tree(TwoThreeNode *root) {
     blue_box_tree_root = root;
     if (root) {
         memcpy(current_block_state.state_hash, root->node_hash, 32);
+        rbt_node_count = 0;
+        rbt_root = NULL;
+        rbt_index_23_node(root);
     }
 }
