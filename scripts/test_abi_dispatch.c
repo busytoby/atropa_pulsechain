@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 157);
-    assert(code_nodes[1].value == 157);
+    assert(code_nodes[0].value == 158);
+    assert(code_nodes[1].value == 158);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1292,6 +1292,19 @@ int main() {
     interop_ouroboros_optimize_network(o_neurons, 2, o_synapses, 2, o_prune, 0, 0.1f);
     assert(o_synapses[1].weight > 1.5f);
     printf("✓ Ouroboros network optimization loop verified.\n");
+
+    // 137. Verify temporal graph state versioning and stream replays
+    InteropCoaxialTable ev_table;
+    interop_coaxial_init_table(&ev_table, 4, 4);
+    interop_coaxial_insert(&ev_table, (uint64_t[]){0, 10, 20, 1500}, 4);
+    interop_coaxial_insert(&ev_table, (uint64_t[]){0, 20, 30, 2500}, 4);
+    InteropGraphEdge rep_edges[2];
+    size_t rep_count = 0;
+    assert(interop_graph_replay_ledger(rep_edges, 2, &rep_count, &ev_table) == 0);
+    assert(rep_count == 2);
+    assert(rep_edges[0].src_agent_id == 10 && rep_edges[0].weight == 1.5f);
+    assert(rep_edges[1].src_agent_id == 20 && rep_edges[1].weight == 2.5f);
+    printf("✓ Temporal graph stream replay verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

@@ -1254,3 +1254,49 @@ void interop_ouroboros_optimize_network(InteropOuroborosNeuron *neurons, size_t 
         }
     }
 }
+
+int interop_graph_replay_ledger(InteropGraphEdge *edges, size_t max_edges, size_t *out_edge_count, const InteropCoaxialTable *event_table) {
+    if (!edges || !out_edge_count || !event_table || max_edges == 0) return -1;
+    
+    uint32_t active_offset = __atomic_load_n(&event_table->rows_offset, __ATOMIC_ACQUIRE);
+    uint32_t count = __atomic_load_n(&event_table->count, __ATOMIC_ACQUIRE);
+    char *base = (char*)event_table;
+    uint64_t *rows = (uint64_t*)(base + active_offset);
+    
+    size_t edges_added = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        uint64_t event_type = rows[i * event_table->col_count + 0];
+        uint64_t src_id = rows[i * event_table->col_count + 1];
+        uint64_t dest_id = rows[i * event_table->col_count + 2];
+        uint64_t scaled_weight = rows[i * event_table->col_count + 3];
+        
+        if (event_type == 0) {
+            int found = 0;
+            for (size_t k = 0; k < edges_added; k++) {
+                if (edges[k].src_agent_id == src_id && edges[k].dest_agent_id == dest_id) {
+                    edges[k].weight = (float)scaled_weight / 1000.0f;
+                    edges[k].active = 1;
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found && edges_added < max_edges) {
+                edges[edges_added].src_agent_id = src_id;
+                edges[edges_added].dest_agent_id = dest_id;
+                edges[edges_added].relationship_type = 0;
+                edges[edges_added].weight = (float)scaled_weight / 1000.0f;
+                edges[edges_added].active = 1;
+                edges_added++;
+            }
+        } else if (event_type == 1) {
+            for (size_t k = 0; k < edges_added; k++) {
+                if (edges[k].src_agent_id == src_id && edges[k].dest_agent_id == dest_id) {
+                    edges[k].active = 0;
+                    break;
+                }
+            }
+        }
+    }
+    *out_edge_count = edges_added;
+    return 0;
+}

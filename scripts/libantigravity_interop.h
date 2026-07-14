@@ -477,4 +477,6 @@ int interop_sparql_to_ntm_compile(const char *filepath, const char *sparql_patte
 
 void interop_ouroboros_optimize_network(InteropOuroborosNeuron *neurons, size_t neuron_count, InteropOuroborosSynapse *synapses, size_t synapse_count, const InteropMultiDecisionNode *prune_nodes, uint32_t prune_root, float learning_rate);
 
+int interop_graph_replay_ledger(InteropGraphEdge *edges, size_t max_edges, size_t *out_edge_count, const InteropCoaxialTable *event_table);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
