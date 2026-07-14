@@ -606,4 +606,8 @@ int interop_logic_forall_verify(const int *edges_src, const int *edges_rel, cons
 int interop_logic_exists_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, const int *entity_ids, const int *entity_types, size_t num_entities, int expected_type, int *out_satisfied);
 int interop_logic_not_verify(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, int s, int p, int o, int *out_satisfied);
 
+int interop_trace_log_action(int subject_id, int relation_id, int object_id, uint64_t timestamp, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log);
+int interop_trace_query_history(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int s, int r, int o, int *out_src, int *out_rel, int *out_dst, size_t max_results, size_t *out_count);
+int interop_trace_verify_rule(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int trigger_rel, int target_rel, int *out_satisfied);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

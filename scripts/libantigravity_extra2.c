@@ -1141,3 +1141,55 @@ int interop_logic_not_verify(const int *edges_src, const int *edges_rel, const i
     *out_satisfied = exists ? 0 : 1;
     return 0;
 }
+
+int interop_trace_log_action(int subject_id, int relation_id, int object_id, uint64_t timestamp, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log) {
+    if (!log_src || !log_rel || !log_dst || !log_ts || !log_count || max_log == 0) return -1;
+    size_t count = *log_count;
+    if (count >= max_log) return -2;
+    log_src[count] = subject_id;
+    log_rel[count] = relation_id;
+    log_dst[count] = object_id;
+    log_ts[count] = timestamp;
+    *log_count = count + 1;
+    return 0;
+}
+
+int interop_trace_query_history(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int s, int r, int o, int *out_src, int *out_rel, int *out_dst, size_t max_results, size_t *out_count) {
+    if (!log_src || !log_rel || !log_dst || log_count == 0 || !out_src || !out_rel || !out_dst || max_results == 0 || !out_count) return -1;
+    size_t count = 0;
+    for (size_t i = 0; i < log_count; i++) {
+        if (s != -1 && log_src[i] != s) continue;
+        if (r != -1 && log_rel[i] != r) continue;
+        if (o != -1 && log_dst[i] != o) continue;
+        if (count < max_results) {
+            out_src[count] = log_src[i];
+            out_rel[count] = log_rel[i];
+            out_dst[count] = log_dst[i];
+            count++;
+        }
+    }
+    *out_count = count;
+    return 0;
+}
+
+int interop_trace_verify_rule(const int *log_src, const int *log_rel, const int *log_dst, size_t log_count, int trigger_rel, int target_rel, int *out_satisfied) {
+    if (!log_src || !log_rel || !log_dst || log_count == 0 || !out_satisfied) return -1;
+    *out_satisfied = 1;
+    for (size_t i = 0; i < log_count; i++) {
+        if (log_rel[i] == trigger_rel) {
+            int y = log_dst[i];
+            int found = 0;
+            for (size_t j = 0; j < log_count; j++) {
+                if (log_src[j] == y && log_rel[j] == target_rel) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                *out_satisfied = 0;
+                return 0;
+            }
+        }
+    }
+    return 0;
+}
