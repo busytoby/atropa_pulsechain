@@ -233,9 +233,49 @@ int main(void) {
     assert(h101 != NULL);
     assert(memcmp(h101, b101_state.state_hash, 32) == 0);
     
+    // 15. Test Query RDBMS Engine
+    remove("rdbms_test.dat");
+    remove("rdbms_test.dat.hist");
+    
+    // Write 3 evolution blocks
+    blue_box_init_block(200, zero_hash);
+    blue_box_decode_access_code("*99*123#"); // Gas allowance = 750000
+    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 0, zero_hash);
+    assert(r_ok == true);
+    
+    BlueBoxBlockState b200 = blue_box_get_block_state();
+    
+    blue_box_init_block(0, zero_hash);
+    blue_box_register_block_trunk(805); // active_trunk_mask = (1 << 5)
+    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 200, b200.state_hash);
+    assert(r_ok == true);
+    
+    BlueBoxBlockState b201 = blue_box_get_block_state();
+    
+    blue_box_init_block(0, zero_hash);
+    blue_box_decode_access_code("*72"); // active_trunk_mask |= (1 << 31)
+    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 201, b201.state_hash);
+    assert(r_ok == true);
+    
+    // Execute query scans
+    uint32_t results[10] = {0};
+    uint32_t matched = blue_box_query_blocks("rdbms_test.dat", "block_number", ">", 200, results, 10);
+    assert(matched == 2);
+    assert(results[0] == 201);
+    assert(results[1] == 202);
+    
+    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 750000, results, 10);
+    assert(matched == 3); // all evolved blocks inherited 750000 gas
+    
+    matched = blue_box_query_blocks("rdbms_test.dat", "active_trunk_mask", "&", (1U << 31), results, 10);
+    assert(matched == 1);
+    assert(results[0] == 202);
+    
+    remove("rdbms_test.dat");
+    remove("rdbms_test.dat.hist");
     remove("rbt_reload_test.dat");
     remove("rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, and Red-Black Tree tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, and Query RDBMS tests passed successfully.\n");
     return 0;
 }

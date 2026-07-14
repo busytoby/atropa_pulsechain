@@ -485,3 +485,52 @@ bool blue_box_decode_access_code(const char *dial_sequence) {
     }
     return false;
 }
+
+uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
+    if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
+
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "rb");
+    if (!hf) return 0;
+
+    flock(fileno(hf), LOCK_SH);
+    BlueBoxBlockState state;
+    uint32_t count = 0;
+
+    while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1 && count < max_results) {
+        uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        if (calc != state.checksum) continue;
+
+        uint64_t field_val = 0;
+        if (strcmp(field, "block_number") == 0) {
+            field_val = state.block_number;
+        } else if (strcmp(field, "active_trunk_mask") == 0) {
+            field_val = state.active_trunk_mask;
+        } else if (strcmp(field, "nonce") == 0) {
+            field_val = state.nonce;
+        } else if (strcmp(field, "gas_allowance") == 0) {
+            field_val = state.gas_allowance;
+        } else {
+            continue; // unsupported column
+        }
+
+        bool match = false;
+        if (strcmp(op, "=") == 0) {
+            match = (field_val == value);
+        } else if (strcmp(op, ">") == 0) {
+            match = (field_val > value);
+        } else if (strcmp(op, "<") == 0) {
+            match = (field_val < value);
+        } else if (strcmp(op, "&") == 0) {
+            match = ((field_val & value) == value);
+        }
+
+        if (match) {
+            results_out[count++] = state.block_number;
+        }
+    }
+
+    fclose(hf);
+    return count;
+}
