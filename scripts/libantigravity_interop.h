@@ -303,4 +303,24 @@ void interop_rle_decode_avx512(const uint32_t *runs, const uint32_t *values, siz
 void interop_multi_decision_prune(InteropMultiDecisionNode *nodes, size_t count);
 int interop_coaxial_cluster_minkowski(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign, uint32_t p);
 
+typedef struct {
+    uint32_t from_state;
+    uint8_t read_symbol;
+    uint8_t write_symbol;
+    int8_t direction;
+    uint8_t padding;
+    uint32_t to_state;
+} InteropTMTransition;
+
+typedef struct {
+    uint32_t state_count;
+    uint32_t transition_count;
+    uint32_t initial_state;
+    uint32_t accept_state;
+    uint32_t reject_state;
+} InteropTMHeader;
+
+int interop_tm_compile(const char *filepath, const InteropTMHeader *header, const InteropTMTransition *transitions);
+int interop_tm_execute(const char *filepath, uint8_t *tape, size_t tape_len, size_t max_steps, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

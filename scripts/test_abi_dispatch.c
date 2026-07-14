@@ -801,6 +801,23 @@ int main() {
     assert(interop_coaxial_cluster_minkowski(w_coords, 2, mink_cents, 2, w_assign, 2) == 0);
     printf("✓ Vectorized RLE decode, decision tree pruning, and Minkowski clustering verified.\n");
 
+    // 64-65. Test Turing Machine compile & execute on binary media
+    InteropTMHeader tm_hdr = { 3, 2, 0, 1, 2 };
+    InteropTMTransition tm_trs[2] = {
+        { 0, 'a', 'b', 1, 0, 1 },
+        { 1, 'x', 'y', 0, 0, 1 }
+    };
+    const char *tm_file = "../assets/tm_binary.dat.bin";
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t tape[4] = { 'a', 'x', '0', '0' };
+    uint32_t tm_final = 0;
+    int steps_run = interop_tm_execute(tm_file, tape, 4, 10, &tm_final);
+    assert(steps_run == 1);
+    assert(tape[0] == 'b');
+    assert(tm_final == 1);
+    remove(tm_file);
+    printf("✓ Turing Machine binary media compilation and execution verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

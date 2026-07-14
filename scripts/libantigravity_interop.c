@@ -1604,3 +1604,67 @@ int interop_coaxial_cluster_minkowski(const uint64_t *coords, size_t count, uint
     }
     return 0;
 }
+
+int interop_tm_compile(const char *filepath, const InteropTMHeader *header, const InteropTMTransition *transitions) {
+    if (!filepath || !header || !transitions) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return -3;
+    fwrite(header, sizeof(InteropTMHeader), 1, f);
+    fwrite(transitions, sizeof(InteropTMTransition), header->transition_count, f);
+    fclose(f);
+    return 0;
+}
+
+int interop_tm_execute(const char *filepath, uint8_t *tape, size_t tape_len, size_t max_steps, uint32_t *final_state) {
+    if (!filepath || !tape || tape_len == 0 || !final_state) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    InteropTMHeader header;
+    if (fread(&header, sizeof(InteropTMHeader), 1, f) != 1) {
+        fclose(f);
+        return -4;
+    }
+    InteropTMTransition transitions[64];
+    size_t tr_to_read = (header.transition_count > 64) ? 64 : header.transition_count;
+    if (fread(transitions, sizeof(InteropTMTransition), tr_to_read, f) != tr_to_read) {
+        fclose(f);
+        return -5;
+    }
+    fclose(f);
+
+    uint32_t curr_state = header.initial_state;
+    size_t head_pos = 0;
+    size_t steps = 0;
+
+    while (steps < max_steps) {
+        if (curr_state == header.accept_state || curr_state == header.reject_state) {
+            break;
+        }
+        uint8_t curr_sym = tape[head_pos];
+        int found = 0;
+        for (size_t i = 0; i < tr_to_read; i++) {
+            if (transitions[i].from_state == curr_state && transitions[i].read_symbol == curr_sym) {
+                tape[head_pos] = transitions[i].write_symbol;
+                curr_state = transitions[i].to_state;
+                if (transitions[i].direction == -1 && head_pos > 0) {
+                    head_pos--;
+                } else if (transitions[i].direction == 1 && head_pos + 1 < tape_len) {
+                    head_pos++;
+                }
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            curr_state = header.reject_state;
+            break;
+        }
+        steps++;
+    }
+    *final_state = curr_state;
+    return (int)steps;
+}
