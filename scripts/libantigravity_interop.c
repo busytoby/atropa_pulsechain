@@ -2060,3 +2060,19 @@ void interop_scheduler_sync_slice(InteropPLL *pll, double target_frame_time, dou
     *time_slice += pll->frequency * 0.01;
     if (*time_slice < 0.001) *time_slice = 0.001;
 }
+
+void interop_scheduler_gate_tasks_avx512(const InteropPMG *pmg, double system_load, const uint32_t *complexities, uint32_t *gated_out, size_t count) {
+    if (!pmg || !complexities || !gated_out || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        gated_out[i] = interop_scheduler_gate_task(pmg, system_load, complexities[i]);
+    }
+}
+
+uint32_t interop_scheduler_classify_task(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t queue_depth, uint64_t priority) {
+    if (!nodes) return 0;
+    return interop_multi_decision_evaluate(nodes, root_idx, queue_depth + priority);
+}
+
+int interop_scheduler_route_ntm(const char *filepath, uint8_t *queue_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, queue_tape, len, 20, final_state);
+}

@@ -974,6 +974,20 @@ int main() {
     assert(t_slice > 0.001);
     printf("✓ Scheduler PMG task gating and PLL time-slice sync verified.\n");
 
+    // 95-97. Test parallel task gating, decision tree classification, and NTM path routing
+    uint32_t comp_list[2] = { 4, 1 };
+    uint32_t gated_res[2] = {0};
+    interop_scheduler_gate_tasks_avx512(&test_pmg, 6.0, comp_list, gated_res, 2);
+    assert(gated_res[0] == 1 && gated_res[1] == 0);
+    assert(interop_scheduler_classify_task(prune_nodes, 0, 100, 50) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t route_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t route_state = 0;
+    assert(interop_scheduler_route_ntm(tm_file, route_tape, 4, &route_state) == 1);
+    assert(route_state == 1);
+    remove(tm_file);
+    printf("✓ Vectorized scheduler gating, decision classification, and NTM routing verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

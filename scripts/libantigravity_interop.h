@@ -374,4 +374,8 @@ int interop_pmg_gate_search_ntm(const InteropPMG *pmgs, size_t count, double sig
 int interop_scheduler_gate_task(const InteropPMG *pmg, double system_load, uint32_t task_complexity);
 void interop_scheduler_sync_slice(InteropPLL *pll, double target_frame_time, double actual_frame_time, double *time_slice);
 
+void interop_scheduler_gate_tasks_avx512(const InteropPMG *pmg, double system_load, const uint32_t *complexities, uint32_t *gated_out, size_t count);
+uint32_t interop_scheduler_classify_task(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t queue_depth, uint64_t priority);
+int interop_scheduler_route_ntm(const char *filepath, uint8_t *queue_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
