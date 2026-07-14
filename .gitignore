@@ -156,6 +156,7 @@ assets/syrinx/
 /scripts/wm_toy
 /scripts/logic_toy
 /scripts/poly_toy
+/scripts/demo_all
 /assets/wm_trace.dat.bin
 /assets/logic_trace.dat.bin
 /assets/poly_trace.dat.bin
