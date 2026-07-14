@@ -25,6 +25,133 @@ static const float mf_freqs_f2[12] = {900.0f, 1100.0f, 1100.0f, 1300.0f, 1300.0f
 // Map characters: '1'-'9', '0', 'K' (KP), 'S' (ST)
 static const char mf_char_map[12] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'K', 'S'};
 
+#define RBT_MAX_NODES 256
+
+typedef enum { RBT_RED, RBT_BLACK } RbtColor;
+
+typedef struct RbtNode {
+    uint32_t block_number;
+    uint8_t state_hash[32];
+    RbtColor color;
+    struct RbtNode *left;
+    struct RbtNode *right;
+    struct RbtNode *parent;
+} RbtNode;
+
+static RbtNode rbt_node_pool[RBT_MAX_NODES];
+static uint32_t rbt_node_count = 0;
+static RbtNode *rbt_root = NULL;
+
+static RbtNode* rbt_alloc_node(uint32_t block_number, const uint8_t *state_hash) {
+    if (rbt_node_count >= RBT_MAX_NODES) return NULL;
+    RbtNode *node = &rbt_node_pool[rbt_node_count++];
+    node->block_number = block_number;
+    memcpy(node->state_hash, state_hash, 32);
+    node->color = RBT_RED;
+    node->left = NULL;
+    node->right = NULL;
+    node->parent = NULL;
+    return node;
+}
+
+static void rbt_left_rotate(RbtNode **root, RbtNode *x) {
+    RbtNode *y = x->right;
+    x->right = y->left;
+    if (y->left != NULL) y->left->parent = x;
+    y->parent = x->parent;
+    if (x->parent == NULL) *root = y;
+    else if (x == x->parent->left) x->parent->left = y;
+    else x->parent->right = y;
+    y->left = x;
+    x->parent = y;
+}
+
+static void rbt_right_rotate(RbtNode **root, RbtNode *y) {
+    RbtNode *x = y->left;
+    y->left = x->right;
+    if (x->right != NULL) x->right->parent = y;
+    x->parent = y->parent;
+    if (y->parent == NULL) *root = x;
+    else if (y == y->parent->left) y->parent->left = x;
+    else y->parent->right = x;
+    x->right = y;
+    y->parent = x;
+}
+
+static void rbt_insert_fixup(RbtNode **root, RbtNode *z) {
+    while (z != *root && z->parent->color == RBT_RED) {
+        if (z->parent == z->parent->parent->left) {
+            RbtNode *y = z->parent->parent->right;
+            if (y != NULL && y->color == RBT_RED) {
+                z->parent->color = RBT_BLACK;
+                y->color = RBT_BLACK;
+                z->parent->parent->color = RBT_RED;
+                z = z->parent->parent;
+            } else {
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    rbt_left_rotate(root, z);
+                }
+                z->parent->color = RBT_BLACK;
+                z->parent->parent->color = RBT_RED;
+                rbt_right_rotate(root, z->parent->parent);
+            }
+        } else {
+            RbtNode *y = z->parent->parent->left;
+            if (y != NULL && y->color == RBT_RED) {
+                z->parent->color = RBT_BLACK;
+                y->color = RBT_BLACK;
+                z->parent->parent->color = RBT_RED;
+                z = z->parent->parent;
+            } else {
+                if (z == z->parent->left) {
+                    z = z->parent;
+                    rbt_right_rotate(root, z);
+                }
+                z->parent->color = RBT_BLACK;
+                z->parent->parent->color = RBT_RED;
+                rbt_left_rotate(root, z->parent->parent);
+            }
+        }
+    }
+    (*root)->color = RBT_BLACK;
+}
+
+void blue_box_rbt_insert(uint32_t block_number, const uint8_t *state_hash) {
+    RbtNode *z = rbt_alloc_node(block_number, state_hash);
+    if (!z) return;
+
+    RbtNode *y = NULL;
+    RbtNode *x = rbt_root;
+
+    while (x != NULL) {
+        y = x;
+        if (z->block_number < x->block_number) x = x->left;
+        else x = x->right;
+    }
+
+    z->parent = y;
+    if (y == NULL) {
+        rbt_root = z;
+    } else if (z->block_number < y->block_number) {
+        y->left = z;
+    } else {
+        y->right = z;
+    }
+
+    rbt_insert_fixup(&rbt_root, z);
+}
+
+const uint8_t* blue_box_rbt_lookup(uint32_t block_number) {
+    RbtNode *x = rbt_root;
+    while (x != NULL) {
+        if (block_number == x->block_number) return x->state_hash;
+        if (block_number < x->block_number) x = x->left;
+        else x = x->right;
+    }
+    return NULL;
+}
+
 typedef struct {
     uint32_t trunk_id;
     const char *address;
@@ -63,23 +190,27 @@ static uint32_t calculate_crc32(const uint8_t *data, size_t length) {
     return ~crc;
 }
 
+#pragma pack(push, 1)
 typedef struct {
     uint32_t block_number;
     uint8_t state_hash[32];
     uint32_t active_trunk_mask;
     uint32_t nonce;
     uint64_t session_key;
+    uint32_t gas_allowance;
     bool is_committed;
     uint32_t checksum;
 } BlueBoxBlockState;
+#pragma pack(pop)
 
-static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, false, 0};
+static BlueBoxBlockState current_block_state = {0, {0}, 0, 0, 0, 0, false, 0};
 
 void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     current_block_state.block_number = block_number;
     current_block_state.active_trunk_mask = 0;
     current_block_state.nonce = 0;
     current_block_state.session_key = 0xDEADC0DE95346795ULL;
+    current_block_state.gas_allowance = 500000;
     current_block_state.is_committed = false;
     current_block_state.checksum = 0;
     if (initial_hash) {
@@ -273,6 +404,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     }
     current_block_state.nonce = disk_state.nonce + 1;
     current_block_state.session_key = (disk_state.session_key * 1103515245ULL + 12345ULL) & 0xFFFFFFFFFFFFFFFFULL;
+    current_block_state.gas_allowance = disk_state.gas_allowance;
     current_block_state.is_committed = true;
     current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
 
@@ -292,4 +424,24 @@ void blue_box_crypt_payload(uint8_t *payload, size_t length) {
         }
         payload[i] ^= (uint8_t)(temp_key >> ((i % 8) * 8));
     }
+}
+
+bool blue_box_decode_access_code(const char *dial_sequence) {
+    if (!dial_sequence) return false;
+    if (strncmp(dial_sequence, "*99*", 4) == 0) {
+        size_t len = strlen(dial_sequence);
+        if (len > 5 && dial_sequence[len - 1] == '#') {
+            current_block_state.gas_allowance += 250000;
+            return true;
+        }
+    }
+    if (strcmp(dial_sequence, "*72") == 0) {
+        current_block_state.active_trunk_mask |= (1U << 31);
+        return true;
+    }
+    if (strcmp(dial_sequence, "*73") == 0) {
+        current_block_state.active_trunk_mask &= ~(1U << 31);
+        return true;
+    }
+    return false;
 }

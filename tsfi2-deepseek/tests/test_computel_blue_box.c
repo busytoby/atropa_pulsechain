@@ -156,6 +156,47 @@ int main(void) {
     blue_box_crypt_payload(payload, 16);
     assert(memcmp(payload, original, 16) == 0);
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, and payload crypt tests passed successfully.\n");
+    // 12. Test Access Codes (MAX Pay Codes & Centrex Features)
+    uint32_t prev_gas = state.gas_allowance;
+    bool pay_ok = blue_box_decode_access_code("*99*847321#");
+    assert(pay_ok == true);
+    state = blue_box_get_block_state();
+    assert(state.gas_allowance == prev_gas + 250000);
+
+    bool forward_ok = blue_box_decode_access_code("*72");
+    assert(forward_ok == true);
+    state = blue_box_get_block_state();
+    assert((state.active_trunk_mask & (1U << 31)) != 0);
+
+    bool cancel_ok = blue_box_decode_access_code("*73");
+    assert(cancel_ok == true);
+    state = blue_box_get_block_state();
+    assert((state.active_trunk_mask & (1U << 31)) == 0);
+
+    // 13. Test Red-Black Tree Immutability Indexing
+    uint8_t hash1[32] = {0xAA};
+    uint8_t hash2[32] = {0xBB};
+    uint8_t hash3[32] = {0xCC};
+    
+    blue_box_rbt_insert(10, hash1);
+    blue_box_rbt_insert(5, hash2);
+    blue_box_rbt_insert(15, hash3);
+    
+    const uint8_t *found_hash = blue_box_rbt_lookup(10);
+    assert(found_hash != NULL);
+    assert(found_hash[0] == 0xAA);
+    
+    found_hash = blue_box_rbt_lookup(5);
+    assert(found_hash != NULL);
+    assert(found_hash[0] == 0xBB);
+    
+    found_hash = blue_box_rbt_lookup(15);
+    assert(found_hash != NULL);
+    assert(found_hash[0] == 0xCC);
+    
+    found_hash = blue_box_rbt_lookup(999);
+    assert(found_hash == NULL);
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, and Red-Black Tree tests passed successfully.\n");
     return 0;
 }
