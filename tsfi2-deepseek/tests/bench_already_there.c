@@ -64,10 +64,8 @@ int main() {
 
     printf("  Efficiency Gain: %.2fx\n", (t1-t0)/(t3-t2));
 
-    lau_free(nodes);
-    lau_free(atoms);
-        extern void lau_registry_teardown(void);
-    lau_registry_teardown();
+    extern void lau_free_all_active(void);
+    lau_free_all_active();
     extern void lau_report_memory_metrics(void);
     lau_report_memory_metrics();
     return 0;

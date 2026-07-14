@@ -14,6 +14,8 @@ cd "${WORKSPACE_DIR}"
 # 1. Ensure binaries are built
 echo "[BUILD] Compiling profiler binaries..."
 make bin/test_vulkan_teddy > /dev/null 2>&1
+make libtsfi2.so > /dev/null 2>&1
+
 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native -fopenmp tests/bench_aho_corasick_wavelet.c -o tests/bench_aho_corasick_wavelet -L. -ltsfi2 -lm -lrt -lpthread -ldl -lgomp -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_yang_fast.c -o tests/bench_yang_fast -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
@@ -21,6 +23,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_deepseek_mla.c -o tests/bench_deepseek_mla -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_already_there.c -o tests/bench_already_there -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_zero_overhead.c -o tests/bench_zero_overhead -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_winchester_mq.c -o tests/bench_winchester_mq -L. -ltsfi2 -lm -lrt -lpthread -ldl -Wl,-rpath,.
 gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -59,6 +62,10 @@ bash tests/run_genetic_bench.sh > "${TMP_DIR}/bench_genetic.log"
 echo "[RUN] Aho-Corasick Compositor Cache Interop Benchmark..."
 ./tests/bench_ac_compositor_interop > "${TMP_DIR}/bench_ac_compositor.log"
 
+# 11. Run WinchesterMQ Virtual Hardware Benchmark
+echo "[RUN] WinchesterMQ Virtual Hardware Benchmark..."
+./tests/bench_winchester_mq > "${TMP_DIR}/bench_wmq.log"
+
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
 # Parse values
@@ -94,6 +101,8 @@ AC_COMP_BUILD=$(grep -oP 'Build Time: \K[0-9\.]+' "${TMP_DIR}/bench_ac_composito
 AC_COMP_LATENCY=$(grep -oP 'Lookup Latency: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "0.0")
 AC_COMP_THROUGH=$(grep -oP 'Throughput: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "0.0")
 AC_COMP_GAIN=$(grep -oP 'Speedup Gain: \K[0-9\.]+' "${TMP_DIR}/bench_ac_compositor.log" || echo "1.0")
+
+WMQ_LATENCY=$(grep -oP 'WinchesterMQ Latency: \K[0-9\.]+' "${TMP_DIR}/bench_wmq.log" || echo "0.0")
 
 # Read Vulkan details if JSON file exists (which was written by vulkan teddy bear benchmark run)
 VK_JSON="${PROFILER_DIR}/benchmark_results.json"
@@ -153,6 +162,9 @@ cat <<EOF > "${OUTPUT_JSON}"
     "lookup_latency_ns": ${AC_COMP_LATENCY},
     "throughput_m_lookups_sec": ${AC_COMP_THROUGH},
     "speedup_gain_x": ${AC_COMP_GAIN}
+  },
+  "winchester_mq": {
+    "execution_latency_ns": ${WMQ_LATENCY}
   }
 }
 EOF

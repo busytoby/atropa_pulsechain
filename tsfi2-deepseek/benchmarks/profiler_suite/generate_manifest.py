@@ -94,6 +94,12 @@ def main():
                 "target": "<= 100.0 us",
                 "verified_actual": f"{zero_poll_latency:.2f} us",
                 "status": "PASS" if zero_poll_latency <= 100.0 else "FAIL"
+            },
+            "winchester_mq": {
+                "metric": "WinchesterMQ Yul Thunk Latency",
+                "target": "<= 15000.0 ns",
+                "verified_actual": f"{data.get('winchester_mq', {}).get('execution_latency_ns', 0.0):.2f} ns",
+                "status": "PASS" if data.get('winchester_mq', {}).get('execution_latency_ns', 0.0) <= 15000.0 else "FAIL"
             }
         }
     }

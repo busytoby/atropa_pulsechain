@@ -90,6 +90,9 @@ all: tsfi2 bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+libtsfi2.so: $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
 bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(OBJ_DIR)/Genesis_rtl.o $(OBJ_DIR)/Dai_rtl.o $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -Isrc/firmware -o $@ $^ $(LDFLAGS)
 
