@@ -894,3 +894,49 @@ int interop_scheduler_tick(InteropAgentScheduler *sched, uint32_t current_epoch,
     }
     return 0;
 }
+
+uint64_t interop_mamt_adduct(uint64_t child, uint64_t secret) {
+    uint64_t base = child;
+    uint64_t exp = secret;
+    uint64_t mod = 953467954114363ULL;
+    uint64_t result = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = ((unsigned __int128)result * base) % mod;
+        }
+        base = ((unsigned __int128)base * base) % mod;
+        exp = exp / 2;
+    }
+    return result;
+}
+
+int interop_mamt_verify(uint64_t child, uint64_t parent, uint64_t secret) {
+    return (interop_mamt_adduct(child, secret) == parent);
+}
+
+int interop_scheduler_tick_multilane(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals) {
+    if (!scheds || count == 0) return 0;
+    int triggered_count = 0;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t val = 0;
+        if (interop_scheduler_tick(&scheds[i], current_epoch, &val)) {
+            if (triggered_vals) {
+                triggered_vals[triggered_count] = val;
+            }
+            triggered_count++;
+        }
+    }
+    return triggered_count;
+}
+
+void interop_gas_calibrate(uint32_t cache_misses, uint32_t *gas_price) {
+    if (!gas_price) return;
+    if (cache_misses > 100) {
+        *gas_price = 500;
+    } else if (cache_misses > 10) {
+        *gas_price = 200;
+    } else {
+        *gas_price = 100;
+    }
+}

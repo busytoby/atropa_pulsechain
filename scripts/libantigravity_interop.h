@@ -222,4 +222,9 @@ typedef struct {
 int interop_scheduler_register(InteropAgentScheduler *sched, uint32_t epoch, uint32_t selector, uint64_t arg);
 int interop_scheduler_tick(InteropAgentScheduler *sched, uint32_t current_epoch, uint64_t *triggered_val);
 
+uint64_t interop_mamt_adduct(uint64_t child, uint64_t secret);
+int interop_mamt_verify(uint64_t child, uint64_t parent, uint64_t secret);
+int interop_scheduler_tick_multilane(InteropAgentScheduler *scheds, size_t count, uint32_t current_epoch, uint64_t *triggered_vals);
+void interop_gas_calibrate(uint32_t cache_misses, uint32_t *gas_price);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
