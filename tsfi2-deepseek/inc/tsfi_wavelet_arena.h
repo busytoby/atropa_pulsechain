@@ -49,9 +49,18 @@ static inline void tsfi_wavelet_arena_init(TsfiWaveletArena *arena, uint8_t *pre
     arena->capacity = physical_size;
     arena->offset = 0;
     arena->wavelet_uid_counter = 1000;
+    if (pre_mapped_memory && physical_size > 0) {
+        long page_size = sysconf(_SC_PAGESIZE);
+        uintptr_t start = (uintptr_t)pre_mapped_memory & ~(page_size - 1);
+        uintptr_t end = ((uintptr_t)pre_mapped_memory + physical_size + page_size - 1) & ~(page_size - 1);
+        int ret = mprotect((void*)start, end - start, PROT_READ | PROT_WRITE | PROT_EXEC);
+        if (ret != 0) {
+            perror("[JIT] mprotect failed");
+        }
+    }
 }
 
-#define TSFI_WAVELET_LEAF_SIZE 128
+#define TSFI_WAVELET_LEAF_SIZE sizeof(TsfiWavelet)
 
 #define TSFI_WAVELET_PRIME 953473ULL
 #define MOTZKIN_PRIME 953467954114363ULL
@@ -126,6 +135,12 @@ typedef struct __attribute__((packed)) TsfiWavelet {
                     uint8_t dummy[32];
                     union {
                         TsfiPrivateHeader private_header;
+                        struct {
+                            char owner[32];
+                            uint64_t quota;
+                            uint64_t role;
+                            uint64_t balances[1];
+                        };
                         TsfiEntropyDai entropy_dai;
                         struct {
                             uint64_t ichidai;
@@ -141,11 +156,22 @@ typedef struct __attribute__((packed)) TsfiWavelet {
             };
             uint64_t Prime; // Contextual modulus for wired operations
             uint8_t total_size;
-            uint8_t state;
+            uint32_t state;
         };
         uint8_t payload[128]; // Overlaps entire struct, allowing full 128-byte access
     };
+    void (*Connect)(struct TsfiWavelet *other);
+    void (*Evolve)(...);
+    uint8_t jit_thunk_code[48];
 } TsfiWavelet;
+
+// Rigid serialization format of Sheaf for persistence audits
+typedef struct {
+    uint64_t Receipt;
+    uint32_t count;
+    uint32_t state;
+    uint32_t member_offsets[32];
+} TsfiSheafRigid;
 
 // Role Definitions (Bijective Intent)
 #define TSFI_ROLE_NONE       0
@@ -177,13 +203,18 @@ static inline void tsfi_CreateSheaf(TsfiSheaf *S, TsfiWavelet **list, uint32_t c
 static inline void tsfi_ReduceSheaf(TsfiSheaf *S, uint64_t Prime) {
     if (!S || S->count == 0) return;
     bool all_magnetized = true;
+    bool all_symmetric = true;
+    uint32_t target_state = S->members[0]->state;
     for (uint32_t i = 0; i < S->count; i++) {
         if (S->members[i]->state < 9) all_magnetized = false;
+        if (S->members[i]->state != target_state) all_symmetric = false;
     }
     
-    if (all_magnetized) {
+    if (all_magnetized && all_symmetric) {
         S->latch_q = 1; S->latch_q_bar = 1;
-        S->Receipt = (S->members[0]->telemetry.Fa.monopole ^ Prime) + S->count;
+        uint64_t state_sum = 0;
+        for (uint32_t i = 0; i < S->count; i++) state_sum += S->members[i]->state;
+        S->Receipt = (S->members[0]->telemetry.Fa.monopole ^ Prime) + S->count + state_sum;
         S->state = 1; // Rigid
     } else {
         S->latch_q = 0; S->latch_q_bar = 0;
@@ -199,8 +230,64 @@ static inline void tsfi_sheaf_print(TsfiSheaf *S, const char *label) {
 
 static inline void tsfi_EvolveDai(TsfiWavelet *W, int selection, uint64_t Prime);
 
+static inline void tsfi_EvolveDaiImpl(TsfiWavelet *W, int selection) {
+    tsfi_EvolveDai(W, selection, W->Prime);
+}
+static inline void tsfi_ConnectImpl(TsfiWavelet *other) {
+    (void)other;
+}
+static inline void tsfi_RewireWavelet(TsfiWavelet *W) {
+    if (!W) return;
+    uint8_t *code = W->jit_thunk_code;
+    uintptr_t w_val = (uintptr_t)W;
+    uintptr_t impl_val = (uintptr_t)tsfi_EvolveDaiImpl;
+    int idx = 0;
+    // movabs $W, %rax
+    code[idx++] = 0x48; code[idx++] = 0xb8;
+    memcpy(&code[idx], &w_val, 8); idx += 8;
+    // cmp %rax, %rdi
+    code[idx++] = 0x48; code[idx++] = 0x39; code[idx++] = 0xc7;
+    // je offset (jump over mov %rdi, %rsi [3 bytes] and mov %rax, %rdi [3 bytes])
+    code[idx++] = 0x74; code[idx++] = 0x06;
+    // mov %rdi, %rsi
+    code[idx++] = 0x48; code[idx++] = 0x89; code[idx++] = 0xfe;
+    // mov %rax, %rdi
+    code[idx++] = 0x48; code[idx++] = 0x89; code[idx++] = 0xc7;
+    // movabs $impl, %rax
+    code[idx++] = 0x48; code[idx++] = 0xb8;
+    memcpy(&code[idx], &impl_val, 8); idx += 8;
+    // jmp *%rax
+    code[idx++] = 0xff; code[idx++] = 0xe0;
+
+    W->Evolve = (__typeof__(W->Evolve))code;
+    W->Connect = (__typeof__(W->Connect))tsfi_ConnectImpl;
+}
+
 static inline void tsfi_WireEvolveMethod(TsfiWavelet *W) {
-    if (W->telemetry.current_seal_level < 12) return;
+    tsfi_RewireWavelet(W);
+}
+
+static inline void tsfi_ProjectSheaf(TsfiSheafRigid *R, TsfiSheaf *S, TsfiWaveletArena *arena) {
+    if (!R || !S || !arena) return;
+    R->Receipt = S->Receipt;
+    R->count = S->count;
+    R->state = S->state;
+    for (uint32_t i = 0; i < S->count; i++) {
+        R->member_offsets[i] = (uint32_t)((uint8_t*)S->members[i] - arena->base_ptr);
+    }
+}
+
+static inline void tsfi_RestoreSheaf(TsfiSheaf *S, TsfiSheafRigid *R, TsfiWaveletArena *arena) {
+    if (!S || !R || !arena) return;
+    S->Receipt = R->Receipt;
+    S->count = R->count;
+    S->state = R->state;
+    S->latch_q = (R->state == 1) ? 1 : 0;
+    S->latch_q_bar = S->latch_q;
+    for (uint32_t i = 0; i < R->count; i++) {
+        S->members[i] = (TsfiWavelet*)(arena->base_ptr + R->member_offsets[i]);
+        tsfi_WireEvolveMethod(S->members[i]);
+    }
 }
 
 static inline void tsfi_AttachField(TsfiWavelet *W, const char *type, const char *name, const char *value) {
@@ -217,6 +304,7 @@ static inline TsfiWavelet* tsfi_STAT(TsfiWaveletArena *arena, uint64_t Prime) {
     memset(W, 0, TSFI_WAVELET_LEAF_SIZE);
     W->telemetry.unique_id = arena->wavelet_uid_counter++;
     W->Prime = Prime;
+    tsfi_RewireWavelet(W);
     W->state = WAVELET_STATE_STAT;
     W->total_size = TSFI_WAVELET_LEAF_SIZE;
     arena->offset += TSFI_WAVELET_LEAF_SIZE;
@@ -330,7 +418,11 @@ static inline void tsfi_EvolveDai(TsfiWavelet *W, int selection, uint64_t Prime)
         W->daiichi = (W->telemetry.Dynamo ^ 0xAAA) % Prime;
     }
     W->telemetry.current_seal_level = 13;
-    W->state = WAVELET_STATE_EVOLVE_DAI;
+    if (W->state < WAVELET_STATE_EVOLVE_DAI) {
+        W->state = WAVELET_STATE_EVOLVE_DAI;
+    } else {
+        W->state++;
+    }
 }
 
 static inline void tsfi_wavelet_print(TsfiWavelet *B, const char *label) {
