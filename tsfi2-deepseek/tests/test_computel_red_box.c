@@ -265,6 +265,41 @@ int main(void) {
     assert(vowel_samples[0] == 0.0f);
     printf("[TEST] Formant Vowel Vocable Synthesizer ('A' formants F1/F2/F3) verified.\n");
 
+    // 25. Test Wink-Start Handshaking State Machine
+    bool wink_valid = blue_box_trigger_wink(200);
+    assert(wink_valid == true);
+    uint64_t reg_wink = lau_yul_thunk_sload(0xF135);
+    assert(reg_wink == 1);
+    
+    bool wink_invalid = blue_box_trigger_wink(500);
+    assert(wink_invalid == false);
+    reg_wink = lau_yul_thunk_sload(0xF135);
+    assert(reg_wink == 0);
+    printf("[TEST] Wink-Start handshaking pulse limits verified in VM registers.\n");
+    
+    // 26. Test Trunk Line Splitting & 2600 Hz Notch Filter
+    float raw_samples[160];
+    float filtered_samples[160];
+    for (int i = 0; i < 160; i++) {
+        raw_samples[i] = sin(2.0 * M_PI * 2600.0 * i / 8000.0);
+    }
+    
+    bool split_ok = blue_box_apply_notch_filter(raw_samples, filtered_samples, 160, false);
+    assert(split_ok == true);
+    uint64_t reg_split = lau_yul_thunk_sload(0xF136);
+    assert(reg_split == 0);
+    assert(filtered_samples[10] == raw_samples[10]);
+    
+    split_ok = blue_box_apply_notch_filter(raw_samples, filtered_samples, 160, true);
+    assert(split_ok == true);
+    reg_split = lau_yul_thunk_sload(0xF136);
+    assert(reg_split == 1);
+    // Double precision absolute check for attenuation
+    double f_val = (double)filtered_samples[150];
+    double abs_val = f_val >= 0.0 ? f_val : -f_val;
+    assert(abs_val < 0.05); 
+    printf("[TEST] Trunk Line Splitting & 2600 Hz Notch Filter verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

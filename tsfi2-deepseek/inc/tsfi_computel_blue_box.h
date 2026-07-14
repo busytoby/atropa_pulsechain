@@ -143,5 +143,7 @@ bool blue_box_generate_tone(uint32_t freq1, uint32_t freq2, float *samples_out, 
 bool blue_box_evaluate_visual_coverage(const float *x_coords, const float *y_coords, size_t count, float *coverage_out, float *symmetry_out);
 bool blue_box_dial_mf_digit(char digit);
 bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count);
+bool blue_box_trigger_wink(uint32_t duration_ms);
+bool blue_box_apply_notch_filter(const float *samples_in, float *samples_out, size_t count, bool split_active);
 
 #endif

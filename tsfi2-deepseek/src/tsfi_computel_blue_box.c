@@ -1593,3 +1593,48 @@ bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count) {
     }
     return true;
 }
+
+// 15. Wink-Start Handshaking State Machine
+bool blue_box_trigger_wink(uint32_t duration_ms) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    bool valid = (duration_ms >= 150 && duration_ms <= 300);
+    lau_yul_thunk_sstore(0xF135, valid ? 1 : 0);
+    printf("[WINK] Wink pulse processed (duration: %u ms). Valid: %s\n", duration_ms, valid ? "YES" : "NO");
+    return valid;
+}
+
+// 16. Trunk Line Splitting & 2600 Hz Notch Filter
+bool blue_box_apply_notch_filter(const float *samples_in, float *samples_out, size_t count, bool split_active) {
+    if (!samples_in || !samples_out || count == 0) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    lau_yul_thunk_sstore(0xF136, split_active ? 1 : 0);
+    
+    if (!split_active) {
+        memcpy(samples_out, samples_in, count * sizeof(float));
+        return true;
+    }
+    
+    // 2600 Hz notch filter parameters at 8000 Hz sample rate
+    double w0 = 2.0 * M_PI * 2600.0 / 8000.0;
+    double cos_w0 = cos(w0);
+    double r = 0.85;
+    
+    // Filter memory state (2 delays)
+    float x1 = 0.0f, x2 = 0.0f;
+    float y1 = 0.0f, y2 = 0.0f;
+    
+    for (size_t n = 0; n < count; n++) {
+        float x = samples_in[n];
+        float y = (float)(x - 2.0 * cos_w0 * x1 + x2 + 2.0 * r * cos_w0 * y1 - r * r * y2);
+        
+        x2 = x1;
+        x1 = x;
+        y2 = y1;
+        y1 = y;
+        
+        samples_out[n] = y;
+    }
+    
+    return true;
+}
