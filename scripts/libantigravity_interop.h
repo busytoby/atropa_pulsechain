@@ -295,5 +295,9 @@ typedef struct {
 int interop_quadtree_write(const char *filepath, const InteropQuadNode *nodes, size_t count);
 int interop_quadtree_read(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes);
 uint32_t interop_quadtree_query(const InteropQuadNode *nodes, uint32_t root_idx, uint32_t x, uint32_t y);
+int interop_quadtree_quadrant_check_avx512(const uint32_t *x_mins, const uint32_t *x_maxs, const uint32_t *y_mins, const uint32_t *y_maxs, uint32_t x, uint32_t y);
+int interop_quadtree_write_rle(const char *filepath, const InteropQuadNode *nodes, size_t count);
+int interop_quadtree_read_rle(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes);
+void interop_quadtree_veb_align(const InteropQuadNode *src, InteropQuadNode *dst, size_t count);
 
 #endif // LIBANTIGRAVITY_INTEROP_H

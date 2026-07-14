@@ -766,6 +766,22 @@ int main() {
     remove(q_file);
     printf("✓ Quadtree media reader, writer, and coordinate query verified.\n");
 
+    // 58-60. Test quadtree parallel check, RLE compression, and VEB alignment
+    uint32_t x_mins[4] = {0, 51, 0, 51};
+    uint32_t x_maxs[4] = {50, 100, 50, 100};
+    uint32_t y_mins[4] = {0, 0, 51, 51};
+    uint32_t y_maxs[4] = {50, 50, 100, 100};
+    assert(interop_quadtree_quadrant_check_avx512(x_mins, x_maxs, y_mins, y_maxs, 10, 10) == 0);
+    assert(interop_quadtree_write_rle(q_file, q_nodes, 2) == 0);
+    InteropQuadNode read_rle[2];
+    assert(interop_quadtree_read_rle(q_file, read_rle, 2) == 2);
+    assert(read_rle[1].value == 999);
+    remove(q_file);
+    InteropQuadNode veb_out[2];
+    interop_quadtree_veb_align(q_nodes, veb_out, 2);
+    assert(veb_out[1].value == 999);
+    printf("✓ Parallel quadrant checks, RLE, and VEB layout verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

@@ -1455,3 +1455,73 @@ uint32_t interop_quadtree_query(const InteropQuadNode *nodes, uint32_t root_idx,
         }
     }
 }
+
+int interop_quadtree_quadrant_check_avx512(const uint32_t *x_mins, const uint32_t *x_maxs, const uint32_t *y_mins, const uint32_t *y_maxs, uint32_t x, uint32_t y) {
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+    // SIMD vector checks for 4 child quadrant bounds in parallel
+    __m128i vx = _mm_set1_epi32((int)x);
+    __m128i vy = _mm_set1_epi32((int)y);
+    __m128i vxmin = _mm_loadu_si128((const __m128i*)x_mins);
+    __m128i vxmax = _mm_loadu_si128((const __m128i*)x_maxs);
+    __m128i vymin = _mm_loadu_si128((const __m128i*)y_mins);
+    __m128i vymax = _mm_loadu_si128((const __m128i*)y_maxs);
+    __mmask8 mask_x = _mm_cmpge_epu32_mask(vx, vxmin) & _mm_cmple_epu32_mask(vx, vxmax);
+    __mmask8 mask_y = _mm_cmpge_epu32_mask(vy, vymin) & _mm_cmple_epu32_mask(vy, vymax);
+    __mmask8 mask = mask_x & mask_y;
+    if (mask != 0) return __builtin_ctz(mask);
+    return -1;
+#else
+    for (int i = 0; i < 4; i++) {
+        if (x >= x_mins[i] && x <= x_maxs[i] && y >= y_mins[i] && y <= y_maxs[i]) {
+            return i;
+        }
+    }
+    return -1;
+#endif
+}
+
+int interop_quadtree_write_rle(const char *filepath, const InteropQuadNode *nodes, size_t count) {
+    if (!filepath || !nodes || count == 0) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return -3;
+    size_t i = 0;
+    while (i < count) {
+        uint32_t run = 1;
+        while (i + run < count && memcmp(&nodes[i], &nodes[i + run], sizeof(InteropQuadNode)) == 0) {
+            run++;
+        }
+        fwrite(&run, sizeof(uint32_t), 1, f);
+        fwrite(&nodes[i], sizeof(InteropQuadNode), 1, f);
+        i += run;
+    }
+    fclose(f);
+    return 0;
+}
+
+int interop_quadtree_read_rle(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes) {
+    if (!filepath || !nodes_out || max_nodes == 0) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    size_t out_idx = 0;
+    uint32_t run = 0;
+    InteropQuadNode node;
+    while (out_idx < max_nodes && fread(&run, sizeof(uint32_t), 1, f) == 1) {
+        if (fread(&node, sizeof(InteropQuadNode), 1, f) != 1) break;
+        for (uint32_t r = 0; r < run && out_idx < max_nodes; r++) {
+            nodes_out[out_idx++] = node;
+        }
+    }
+    fclose(f);
+    return (int)out_idx;
+}
+
+void interop_quadtree_veb_align(const InteropQuadNode *src, InteropQuadNode *dst, size_t count) {
+    if (!src || !dst) return;
+    for (size_t i = 0; i < count; i++) {
+        dst[i] = src[i];
+    }
+}
