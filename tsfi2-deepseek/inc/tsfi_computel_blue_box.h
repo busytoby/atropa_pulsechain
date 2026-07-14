@@ -154,5 +154,6 @@ bool blue_box_simulate_black_box(float resistance_ohms, uint32_t *voltage_out, b
 bool blue_box_trigger_hook_flash(uint32_t duration_ms, bool *flash_detected_out, uint32_t *flash_count_out);
 bool blue_box_run_ai_driver(bool enable_ai, uint32_t *command_out);
 bool blue_box_run_ai_speech_sequencer(uint32_t state, char *vowel_sequence_out, size_t max_len);
+bool blue_box_unified_tick(uint32_t delta_time_ms);
 
 #endif
