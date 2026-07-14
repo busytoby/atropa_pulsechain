@@ -2031,3 +2031,51 @@ bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32
            user_count, pilot_freq, freq_lock, mod_index);
     return true;
 }
+
+// 28. Green Box Autonomous Agent
+bool blue_box_run_green_agent(uint32_t *action_out) {
+    if (!action_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint64_t wink = lau_yul_thunk_sload(0xF135);
+    uint64_t mute = lau_yul_thunk_sload(0xF121);
+    uint64_t notch = lau_yul_thunk_sload(0xF136);
+    
+    uint32_t action = 0;
+    if (wink == 1 && mute == 0 && notch == 0) {
+        action = 1; // Auto-Collect
+    } else {
+        action = 2; // Auto-Refund
+    }
+    
+    *action_out = action;
+    lau_yul_thunk_sstore(0xF185, action);
+    lau_yul_thunk_sstore(0xF191, action == 1 ? 2 : 3); // State: Auto-Collect (2) or Auto-Refund (3)
+    
+    printf("[GREEN AGENT] Wink: %lu. Mute: %lu. Notch: %lu. Action: %u. State: %lu\n",
+           wink, mute, notch, action, lau_yul_thunk_sload(0xF191));
+    return true;
+}
+
+// 29. Green Box Agent RDBMS Sync
+bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out) {
+    if (!hash_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint64_t mode = lau_yul_thunk_sload(0xF18E);
+    uint64_t rate = lau_yul_thunk_sload(0xF196);
+    uint64_t last_action = lau_yul_thunk_sload(0xF185);
+    
+    // Compute relational state verification hash
+    uint64_t hash = ((mode * 33 + rate) * 33 + last_action) % MotzkinPrime;
+    *hash_out = hash;
+    
+    lau_yul_thunk_sstore(0xF192, hash);
+    printf("[GREEN RDBMS] Sync complete. Mode: %lu. Rate: %lu. Action: %lu. Hash: %lu\n",
+           mode, rate, last_action, hash);
+    return true;
+}

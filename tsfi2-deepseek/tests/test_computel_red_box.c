@@ -490,6 +490,28 @@ int main(void) {
     assert(reg_pll_lock == 1050);
     printf("[TEST] QING Coaxial session and PLL broadcast sync verified.\n");
 
+    // 38. Test Green Box Autonomous Agent and RDBMS Synchronization
+    lau_yul_thunk_sstore(0xF135, 1);
+    lau_yul_thunk_sstore(0xF121, 0);
+    lau_yul_thunk_sstore(0xF136, 0);
+    lau_yul_thunk_sstore(0xF18E, 1);
+    lau_yul_thunk_sstore(0xF196, 5);
+    
+    uint32_t agent_act = 0;
+    bool agent_ok = blue_box_run_green_agent(&agent_act);
+    assert(agent_ok == true);
+    assert(agent_act == 1);
+    
+    uint64_t reg_agent_state = lau_yul_thunk_sload(0xF191);
+    assert(reg_agent_state == 2);
+    
+    uint64_t sync_hash = 0;
+    bool db_sync_ok = blue_box_sync_green_agent_rdbms(&sync_hash);
+    assert(db_sync_ok == true);
+    uint64_t reg_db_hash = lau_yul_thunk_sload(0xF192);
+    assert(reg_db_hash == sync_hash);
+    printf("[TEST] Green Box autonomous agent logic and RDBMS sync verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
