@@ -6,6 +6,7 @@
 #include <alsa/asoundlib.h>
 #include "tsfi_zmm_vm.h"
 #include "tsfi_wire_firmware.h"
+#include "tsfi_trie.h"
 
 // Emulate the 3 physical analog stages and protection layers at machine-code speeds
 static void emulate_analog_pipeline(float *samples, int num_samples) {
@@ -353,6 +354,38 @@ int main(int argc, char **argv) {
         }
     }
 
+    tsfi_trie_node *trie_dict = tsfi_trie_create_node('\0');
+    tsfi_trie_insert(trie_dict, "heloom", "ee oo m");
+    tsfi_trie_insert(trie_dict, "helooms", "ee oo m oo s");
+    tsfi_trie_insert(trie_dict, "hello", "ee oo m oo s");
+    tsfi_trie_insert(trie_dict, "karateka", "ee oo m oo s");
+    tsfi_trie_insert(trie_dict, "crows", "ee oo m");
+    tsfi_trie_insert(trie_dict, "eight", "ee oo m oo s");
+    tsfi_trie_insert(trie_dict, "eighty", "ee oo m oo s");
+
+    char *trie_ph_allocated[64];
+    int trie_ph_count = 0;
+    char *res_copy_ptr = NULL;
+    if (phoneme_count == 1) {
+        const char *trie_res = tsfi_trie_lookup(trie_dict, phonemes[0]);
+        if (trie_res) {
+            printf("[C_SPEECH] Grapheme Trie hit! Translated '%s' to phonemes: '%s'\n", phonemes[0], trie_res);
+            res_copy_ptr = strdup(trie_res);
+            char *tok = strtok(res_copy_ptr, " ");
+            while (tok && trie_ph_count < 64) {
+                trie_ph_allocated[trie_ph_count++] = tok;
+                tok = strtok(NULL, " ");
+            }
+        }
+    }
+
+    if (trie_ph_count > 0) {
+        phoneme_count = trie_ph_count;
+        for (int i = 0; i < phoneme_count; i++) {
+            phonemes[i] = trie_ph_allocated[i];
+        }
+    }
+
     printf("[C_SPEECH] Generating speech for voice: '%s' with %d phonemes\n", voice, phoneme_count);
     printf("[C_SPEECH] Using Speaker Coefficients: [%d, %d, %d, %d, %d, %d, %d, %d]\n",
            embedding[0], embedding[1], embedding[2], embedding[3],
@@ -527,6 +560,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    tsfi_trie_destroy(trie_dict);
+    if (res_copy_ptr) {
+        free(res_copy_ptr);
+    }
     tsfi_zmm_vm_destroy(&vm);
     printf("=== C SPEECH GENERATION CONTROLLER INTEGRATION SUCCESS ===\n");
     return 0;
