@@ -1,4 +1,5 @@
 #include "tsfi_dat.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -197,4 +198,97 @@ const char* tsfi_dat_resolve_scsi(tsfi_dat *router, const char *scsi_cmd) {
         scsi_cmd++;
     }
     return last_val;
+}
+
+int tsfi_dat_save_bin(tsfi_dat *dat, const char *filepath) {
+    if (!dat || !filepath) return -1;
+    FILE *fp = fopen(filepath, "wb");
+    if (!fp) return -1;
+
+    // Header
+    fwrite("TDAT", 1, 4, fp);
+    fwrite(&(dat->capacity), sizeof(int), 1, fp);
+
+    // Arrays
+    fwrite(dat->base, sizeof(int), dat->capacity, fp);
+    fwrite(dat->check, sizeof(int), dat->capacity, fp);
+
+    // Values (payload strings)
+    for (int i = 0; i < dat->capacity; i++) {
+        if (dat->values[i]) {
+            uint8_t exists = 1;
+            fwrite(&exists, 1, 1, fp);
+            uint16_t len = (uint16_t)strlen(dat->values[i]);
+            fwrite(&len, sizeof(uint16_t), 1, fp);
+            fwrite(dat->values[i], 1, len, fp);
+        } else {
+            uint8_t exists = 0;
+            fwrite(&exists, 1, 1, fp);
+        }
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
+    if (!filepath) return NULL;
+    FILE *fp = fopen(filepath, "rb");
+    if (!fp) return NULL;
+
+    char magic[4];
+    if (fread(magic, 1, 4, fp) != 4 || strncmp(magic, "TDAT", 4) != 0) {
+        fclose(fp);
+        return NULL;
+    }
+
+    tsfi_dat *dat = (tsfi_dat*)malloc(sizeof(tsfi_dat));
+    if (!dat) {
+        fclose(fp);
+        return NULL;
+    }
+
+    if (fread(&(dat->capacity), sizeof(int), 1, fp) != 1) {
+        free(dat);
+        fclose(fp);
+        return NULL;
+    }
+
+    dat->base = (int*)malloc(dat->capacity * sizeof(int));
+    dat->check = (int*)malloc(dat->capacity * sizeof(int));
+    dat->values = (char**)malloc(dat->capacity * sizeof(char*));
+
+    if (fread(dat->base, sizeof(int), dat->capacity, fp) != (size_t)dat->capacity ||
+        fread(dat->check, sizeof(int), dat->capacity, fp) != (size_t)dat->capacity) {
+        free(dat->base);
+        free(dat->check);
+        free(dat->values);
+        free(dat);
+        fclose(fp);
+        return NULL;
+    }
+
+    for (int i = 0; i < dat->capacity; i++) {
+        uint8_t exists;
+        if (fread(&exists, 1, 1, fp) != 1) {
+            exists = 0;
+        }
+        if (exists) {
+            uint16_t len;
+            if (fread(&len, sizeof(uint16_t), 1, fp) != 1) {
+                dat->values[i] = NULL;
+                continue;
+            }
+            dat->values[i] = (char*)malloc(len + 1);
+            if (fread(dat->values[i], 1, len, fp) != len) {
+                // error recovery
+            }
+            dat->values[i][len] = '\0';
+        } else {
+            dat->values[i] = NULL;
+        }
+    }
+
+    fclose(fp);
+    return dat;
 }

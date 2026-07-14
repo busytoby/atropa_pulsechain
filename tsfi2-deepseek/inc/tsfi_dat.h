@@ -31,4 +31,10 @@ tsfi_dat* tsfi_dat_init_scsi_router(void);
 // Resolve SCSI command using DAT prefix match
 const char* tsfi_dat_resolve_scsi(tsfi_dat *router, const char *scsi_cmd);
 
+// Save Double-Array Trie to a raw binary file
+int tsfi_dat_save_bin(tsfi_dat *dat, const char *filepath);
+
+// Load Double-Array Trie from a raw binary file
+tsfi_dat* tsfi_dat_load_bin(const char *filepath);
+
 #endif // TSFI_DAT_H

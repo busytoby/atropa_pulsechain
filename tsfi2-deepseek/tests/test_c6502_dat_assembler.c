@@ -80,6 +80,19 @@ int main(void) {
     tsfi_dat *assembler_dat = tsfi_dat_compile(trie);
     assert(assembler_dat != NULL);
 
+    // Save compiled DAT to raw binary file
+    printf("[DAT_ASM] Saving compiled DAT to c6502_opcodes.dat.bin...\n");
+    int save_ok = tsfi_dat_save_bin(assembler_dat, "c6502_opcodes.dat.bin");
+    assert(save_ok == 0);
+
+    // Destroy current in-memory DAT
+    tsfi_dat_destroy(assembler_dat);
+
+    // Load DAT back from binary file
+    printf("[DAT_ASM] Loading DAT back from c6502_opcodes.dat.bin...\n");
+    assembler_dat = tsfi_dat_load_bin("c6502_opcodes.dat.bin");
+    assert(assembler_dat != NULL);
+
     // 3. Assemble program:
     // LDA #$05
     // ADC #$03
@@ -95,7 +108,7 @@ int main(void) {
     uint8_t bin_code[128];
     int bin_len = 0;
 
-    printf("[DAT_ASM] Assembling source statements...\n");
+    printf("[DAT_ASM] Assembling source statements using loaded binary DAT...\n");
     for (int i = 0; i < 4; i++) {
         int bytes = assemble_line(assembler_dat, assembly_src[i], bin_code + bin_len);
         assert(bytes > 0);
