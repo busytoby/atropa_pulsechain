@@ -456,6 +456,27 @@ int main(void) {
     assert(strstr(payload_refund, "erc20_refund") != NULL);
     printf("[TEST] Green Box ERC20 compatible transaction thunks generated and verified.\n");
 
+    // 36. Test Green Box Coin Disposition with Diyat fee splitting
+    lau_yul_thunk_sstore(0xF195, 0);
+    lau_yul_thunk_sstore(0xF196, 5);
+    lau_yul_thunk_sstore(0xF187, 0);
+    lau_yul_thunk_sstore(0xF199, 1000);
+    current_block_state.gas_allowance = 100;
+    
+    uint32_t diyat_act = 0;
+    bool diyat_ok = blue_box_trigger_green_box_diyat(2200, 500, &diyat_act);
+    assert(diyat_ok == true);
+    assert(diyat_act == 2);
+    
+    uint64_t fee_pool = lau_yul_thunk_sload(0xF195);
+    uint64_t refund_pool = lau_yul_thunk_sload(0xF187);
+    uint64_t total_gas = lau_yul_thunk_sload(0xF199);
+    
+    assert(fee_pool == 5);
+    assert(refund_pool == 95);
+    assert(total_gas == 1095);
+    printf("[TEST] Green Box Coin disposition with Diyat fee splitting verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

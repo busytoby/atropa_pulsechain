@@ -1964,3 +1964,49 @@ bool blue_box_green_box_to_erc20(uint32_t action, char *payload_out, size_t max_
              
     return true;
 }
+
+// 26. Green Box Coin Disposition with Diyat fee calculations
+bool blue_box_trigger_green_box_diyat(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out) {
+    if (!action_out) return false;
+    
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    
+    uint32_t action = 0;
+    bool valid = (duration_ms >= 400 && duration_ms <= 600);
+    
+    if (valid) {
+        if (frequency == 1700) {
+            action = 1; // Collect
+            uint64_t session_gas = current_block_state.gas_allowance;
+            uint64_t vault = lau_yul_thunk_sload(0xF186);
+            lau_yul_thunk_sstore(0xF186, vault + session_gas);
+            current_block_state.gas_allowance = 0;
+            lau_yul_thunk_sstore(0xF199, 0);
+        } else if (frequency == 2200) {
+            action = 2; // Return
+            uint64_t session_gas = current_block_state.gas_allowance;
+            uint64_t rate = lau_yul_thunk_sload(0xF196);
+            if (rate == 0) rate = 5; // Default 5%
+            
+            uint64_t fee = (session_gas * rate) / 100;
+            uint64_t refund = session_gas - fee;
+            
+            uint64_t fee_pool = lau_yul_thunk_sload(0xF195);
+            uint64_t refund_pool = lau_yul_thunk_sload(0xF187);
+            
+            lau_yul_thunk_sstore(0xF195, fee_pool + fee);
+            lau_yul_thunk_sstore(0xF187, refund_pool + refund);
+            
+            uint64_t total_gas = lau_yul_thunk_sload(0xF199);
+            lau_yul_thunk_sstore(0xF199, total_gas + refund);
+            current_block_state.gas_allowance = total_gas + refund;
+        }
+    }
+    
+    *action_out = action;
+    lau_yul_thunk_sstore(0xF185, action);
+    printf("[GREEN BOX DIYAT] Tone: %u Hz. Action: %u. Fee Pool: %lu. Allowance: %u\n",
+           frequency, action, lau_yul_thunk_sload(0xF195), current_block_state.gas_allowance);
+    return true;
+}
