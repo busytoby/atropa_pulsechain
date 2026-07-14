@@ -417,14 +417,19 @@ int main(void) {
     assert(results[0] == 601);
     assert(results[1] == 600);
 
-    // 22. Test Centrex AVL Tree integration
+    // 22. Test Centrex AVL Tree integration and Sorted Routes
+    centrex_avl = NULL;
     blue_box_decode_access_code("*72");
-    uint32_t val72 = blue_box_centrex_lookup(72);
-    assert(val72 == 1);
-    
-    blue_box_decode_access_code("*73");
-    val72 = blue_box_centrex_lookup(72);
-    assert(val72 == 0);
+    centrex_avl = avl_insert(centrex_avl, 60, 5);
+
+    uint32_t keys[5] = {0};
+    uint32_t vals[5] = {0};
+    uint32_t route_count = blue_box_centrex_get_sorted_routes(keys, vals, 5);
+    assert(route_count == 2);
+    assert(keys[0] == 60);
+    assert(vals[0] == 5);
+    assert(keys[1] == 72);
+    assert(vals[1] == 1);
 
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");

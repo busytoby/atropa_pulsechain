@@ -775,6 +775,23 @@ uint32_t blue_box_centrex_lookup(uint32_t dial_code) {
     return 0;
 }
 
+static void avl_inorder_routes(AvlNode *root, uint32_t *keys, uint32_t *vals, uint32_t *idx, uint32_t max_len) {
+    if (!root || *idx >= max_len) return;
+    avl_inorder_routes(root->left, keys, vals, idx, max_len);
+    if (*idx < max_len) {
+        keys[*idx] = root->val;
+        vals[*idx] = root->block_number;
+        (*idx)++;
+    }
+    avl_inorder_routes(root->right, keys, vals, idx, max_len);
+}
+
+uint32_t blue_box_centrex_get_sorted_routes(uint32_t *keys_out, uint32_t *vals_out, uint32_t max_results) {
+    uint32_t idx = 0;
+    avl_inorder_routes(centrex_avl, keys_out, vals_out, &idx, max_results);
+    return idx;
+}
+
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
 
