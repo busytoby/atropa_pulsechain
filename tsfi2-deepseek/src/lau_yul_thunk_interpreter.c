@@ -134,6 +134,18 @@ int lau_yul_thunk_cache_height(void) {
     return h;
 }
 
+int lau_yul_thunk_cache_balance(void) {
+    pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+    int balance = 0;
+    if (s_thunk_memo_bst_root) {
+        int lh = s_thunk_memo_bst_root->left ? s_thunk_memo_bst_root->left->height : 0;
+        int rh = s_thunk_memo_bst_root->right ? s_thunk_memo_bst_root->right->height : 0;
+        balance = lh - rh;
+    }
+    pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+    return balance;
+}
+
 uint64_t g_thunk_cache_hits = 0;
 uint64_t g_thunk_cache_lookups = 0;
 

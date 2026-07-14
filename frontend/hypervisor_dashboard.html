@@ -289,7 +289,7 @@
             </div>
 
             <!-- JIT Memoization & Cache Telemetry -->
-            <div class="metrics-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: -5px;">
+            <div class="metrics-grid" style="grid-template-columns: repeat(6, 1fr); margin-top: -5px;">
                 <div class="metric-card">
                     <div class="metric-title">JIT Cache Hits</div>
                     <div class="metric-value status-pass" id="jitCacheHits">0</div>
@@ -309,6 +309,10 @@
                 <div class="metric-card">
                     <div class="metric-title">AVL Tree Height</div>
                     <div class="metric-value" style="color: var(--neon-magenta);" id="avlTreeHeight">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">AVL Balance Factor</div>
+                    <div class="metric-value" style="color: #00ff7f;" id="avlTreeBalance">0</div>
                 </div>
             </div>
 
@@ -394,6 +398,22 @@
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <span id="ledMSG" style="width: 8px; height: 8px; border-radius: 50%; background: #444; box-shadow: 0 0 4px #000; transition: background 0.2s;"></span>
                             <span style="font-size: 0.75rem; color: #8c9ba5; font-family: monospace;">MSG</span>
+                        </div>
+                    </div>
+                    <!-- SCSI Signal Manual Overrides -->
+                    <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 5px;">
+                        <div style="font-size: 0.75rem; color: #8c9ba5; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">SCSI Manual Handshake Override</div>
+                        <div style="display: flex; gap: 15px; align-items: center; justify-content: space-between;">
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="chkSEL" style="cursor: pointer;"> SEL (Bit 0)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="chkRST" style="cursor: pointer;"> RST (Bit 1)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="chkACK" style="cursor: pointer;"> ACK (Bit 2)
+                            </label>
+                            <button class="btn btn-connect" onclick="commitScsiOverride()" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(0, 242, 254, 0.1) !important; border-color: var(--neon-blue) !important; color: var(--neon-blue) !important; cursor: pointer;">Write Bus</button>
                         </div>
                     </div>
                     <!-- Visual Progress Bar -->
@@ -1266,6 +1286,7 @@
                     document.getElementById("jitLatencySavings").innerText = savings + " ms";
                     document.getElementById("jitCacheEfficiency").innerText = rate + "%";
                     document.getElementById("avlTreeHeight").innerText = data.avl_height || 0;
+                    document.getElementById("avlTreeBalance").innerText = data.avl_balance !== undefined ? data.avl_balance : 0;
                 }
 
                 // Update EVM Ring-Buffer stats
@@ -1480,6 +1501,30 @@
                 }
             } catch (e) {
                 appendLog("[CACHE] Sweep connection error: " + e.message, "var(--neon-magenta)");
+            }
+        }
+
+        async function commitScsiOverride() {
+            const sel = document.getElementById("chkSEL").checked ? 1 : 0;
+            const rst = document.getElementById("chkRST").checked ? 1 : 0;
+            const ack = document.getElementById("chkACK").checked ? 1 : 0;
+            const sigs = (ack << 2) | (rst << 1) | sel;
+            
+            appendLog(`[SCSI] Writing manual signal override: signals=${sigs}...`, "var(--neon-purple)");
+            try {
+                const res = await fetch("/api/scsi-override", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ signals: sigs })
+                }).then(r => r.json());
+                if (res && res.success) {
+                    appendLog("[SCSI] Handshake signals synced to bus.", "#00ff7f");
+                    await updateCacheMetrics();
+                } else {
+                    appendLog("[SCSI] Handshake override rejected.", "var(--neon-magenta)");
+                }
+            } catch (e) {
+                appendLog("[SCSI] Override connection error: " + e.message, "var(--neon-magenta)");
             }
         }
 

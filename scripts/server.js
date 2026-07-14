@@ -951,6 +951,36 @@ const server = http.createServer(async (req, res) => {
         }
         return;
     }
+    if (req.url === "/api/scsi-override" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk.toString());
+        req.on("end", async () => {
+            try {
+                const data = JSON.parse(body);
+                const sigs = parseInt(data.signals) || 0;
+                const r = await runZmmCommand(JSON.stringify({
+                    jsonrpc: "2.0",
+                    method: "wave512.inject_event",
+                    params: {
+                        priority: 5,
+                        type: 4,
+                        timestamp: 0,
+                        data: "0x0000000000000200485301a0" + sigs.toString(16).padStart(40, '0')
+                    },
+                    id: 996
+                }));
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify({ success: !!(r && r.result && r.result.success) }));
+            } catch (err) {
+                res.writeHead(400, { "Content-Type": "text/plain" });
+                res.end("Bad request: " + err.message);
+            }
+        });
+        return;
+    }
     // GET/POST API endpoints for dilemma logging
     if (req.url === "/api/dilemma-log" && req.method === "POST") {
         let body = "";
@@ -1057,6 +1087,7 @@ const server = http.createServer(async (req, res) => {
             let scsi_tx_count = 0;
             let scsi_parity_errors = 0;
             let avl_height = 0;
+            let avl_balance = 0;
             let scsi_signals = 0;
             if (mcpOnline) {
                 try {
@@ -1071,6 +1102,7 @@ const server = http.createServer(async (req, res) => {
                         scsi_tx_count = r.result.scsi_tx_count || 0;
                         scsi_parity_errors = r.result.scsi_parity_errors || 0;
                         avl_height = r.result.avl_height || 0;
+                        avl_balance = r.result.avl_balance || 0;
                         scsi_signals = r.result.scsi_signals || 0;
                     }
                 } catch (e) {
@@ -1120,6 +1152,7 @@ const server = http.createServer(async (req, res) => {
                 scsi_tx_count: scsi_tx_count,
                 scsi_parity_errors: scsi_parity_errors,
                 avl_height: avl_height,
+                avl_balance: avl_balance,
                 scsi_signals: scsi_signals,
                 validators: validators
             }));
