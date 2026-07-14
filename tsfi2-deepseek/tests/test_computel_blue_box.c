@@ -74,7 +74,7 @@ int main(void) {
     assert(state.is_committed == true);
 
     // 8. Test State Serialization (Save/Load to Disk)
-    bool save_ok = blue_box_save_state_to_disk("blue_box_test.dat");
+    bool save_ok = blue_box_save_state_to_disk("assets/blue_box_test.dat");
     assert(save_ok == true);
 
     // Mangle current state in memory
@@ -83,7 +83,7 @@ int main(void) {
     assert(state.block_number == 99);
 
     // Restore from disk
-    bool load_ok = blue_box_load_state_from_disk("blue_box_test.dat");
+    bool load_ok = blue_box_load_state_from_disk("assets/blue_box_test.dat");
     assert(load_ok == true);
     state = blue_box_get_block_state();
     assert(state.block_number == 42);
@@ -91,8 +91,8 @@ int main(void) {
     assert(state.is_committed == true);
 
     // Clean up temporary test file
-    remove("blue_box_test.dat");
-    remove("blue_box_test.dat.hist");
+    remove("assets/blue_box_test.dat");
+    remove("assets/blue_box_test.dat.hist");
 
     // 9. Test Ordered Hash Validation Guards and Commit Persist
     uint8_t init_hash[32] = {1, 2, 3, 4};
@@ -100,7 +100,7 @@ int main(void) {
     blue_box_register_block_trunk(805);
     
     // First commit - creates the file
-    bool persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 0, zero_hash);
+    bool persist_ok = blue_box_commit_and_persist_with_guard("assets/blue_box_guard_test.dat", 0, zero_hash);
     assert(persist_ok == true);
     
     BlueBoxBlockState saved_state = blue_box_get_block_state();
@@ -108,30 +108,30 @@ int main(void) {
 
     // Try committing out-of-order block (expected 11, but passing 12)
     blue_box_init_block(99, zero_hash);
-    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 12, saved_state.state_hash);
+    persist_ok = blue_box_commit_and_persist_with_guard("assets/blue_box_guard_test.dat", 12, saved_state.state_hash);
     assert(persist_ok == false);
 
     // Try committing with correct block but incorrect parent hash
     uint8_t wrong_hash[32] = {9, 9, 9};
-    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 10, wrong_hash);
+    persist_ok = blue_box_commit_and_persist_with_guard("assets/blue_box_guard_test.dat", 10, wrong_hash);
     assert(persist_ok == false);
 
     // Commit correctly (parent block 10, correct parent hash)
     blue_box_init_block(0, zero_hash); // reset local memory
     blue_box_register_block_trunk(815);
-    persist_ok = blue_box_commit_and_persist_with_guard("blue_box_guard_test.dat", 10, saved_state.state_hash);
+    persist_ok = blue_box_commit_and_persist_with_guard("assets/blue_box_guard_test.dat", 10, saved_state.state_hash);
     assert(persist_ok == true);
 
     // Read back and assert evolved block number 11
     BlueBoxBlockState final_state;
-    FILE *ft = fopen("blue_box_guard_test.dat", "rb");
+    FILE *ft = fopen("assets/blue_box_guard_test.dat", "rb");
     assert(ft != NULL);
     assert(fread(&final_state, sizeof(BlueBoxBlockState), 1, ft) == 1);
     fclose(ft);
     assert(final_state.block_number == 11);
     
-    remove("blue_box_guard_test.dat");
-    remove("blue_box_guard_test.dat.hist");
+    remove("assets/blue_box_guard_test.dat");
+    remove("assets/blue_box_guard_test.dat.hist");
 
     // 10. Test Non-Preferential Accumulator System
     blue_box_init_block(50, zero_hash);
@@ -204,18 +204,18 @@ int main(void) {
     blue_box_free_23_tree(tt3);
 
     // 14. Test Red-Black Tree Persistent Reload from Disk
-    remove("rbt_reload_test.dat");
-    remove("rbt_reload_test.dat.hist");
+    remove("assets/rbt_reload_test.dat");
+    remove("assets/rbt_reload_test.dat.hist");
     
     blue_box_init_block(100, zero_hash);
-    bool r_ok = blue_box_commit_and_persist_with_guard("rbt_reload_test.dat", 0, zero_hash);
+    bool r_ok = blue_box_commit_and_persist_with_guard("assets/rbt_reload_test.dat", 0, zero_hash);
     assert(r_ok == true);
     
     BlueBoxBlockState b100_state = blue_box_get_block_state();
     
     blue_box_init_block(0, zero_hash);
     blue_box_register_block_trunk(808);
-    r_ok = blue_box_commit_and_persist_with_guard("rbt_reload_test.dat", 100, b100_state.state_hash);
+    r_ok = blue_box_commit_and_persist_with_guard("assets/rbt_reload_test.dat", 100, b100_state.state_hash);
     assert(r_ok == true);
     
     BlueBoxBlockState b101_state = blue_box_get_block_state();
@@ -226,7 +226,7 @@ int main(void) {
     blue_box_init_block(999, zero_hash);
     
     // Load and check if RBT gets rebuilt automatically from history ledger
-    bool load_rbt_ok = blue_box_load_state_from_disk("rbt_reload_test.dat");
+    bool load_rbt_ok = blue_box_load_state_from_disk("assets/rbt_reload_test.dat");
     assert(load_rbt_ok == true);
     
     TwoThreeNode *h100 = blue_box_rbt_lookup(100);
@@ -243,40 +243,40 @@ int main(void) {
     assert(strstr(data101, "nonce:") != NULL);
     
     // 15. Test Query RDBMS Engine
-    remove("rdbms_test.dat");
-    remove("rdbms_test.dat.hist");
+    remove("assets/rdbms_test.dat");
+    remove("assets/rdbms_test.dat.hist");
     
     // Write 3 evolution blocks
     blue_box_init_block(200, zero_hash);
     blue_box_decode_access_code("*99*123#"); // Gas allowance = 750000
-    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 0, zero_hash);
+    r_ok = blue_box_commit_and_persist_with_guard("assets/rdbms_test.dat", 0, zero_hash);
     assert(r_ok == true);
     
     BlueBoxBlockState b200 = blue_box_get_block_state();
     
     blue_box_init_block(0, zero_hash);
     blue_box_register_block_trunk(805); // active_trunk_mask = (1 << 5)
-    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 200, b200.state_hash);
+    r_ok = blue_box_commit_and_persist_with_guard("assets/rdbms_test.dat", 200, b200.state_hash);
     assert(r_ok == true);
     
     BlueBoxBlockState b201 = blue_box_get_block_state();
     
     blue_box_init_block(0, zero_hash);
     blue_box_decode_access_code("*72"); // active_trunk_mask |= (1 << 31)
-    r_ok = blue_box_commit_and_persist_with_guard("rdbms_test.dat", 201, b201.state_hash);
+    r_ok = blue_box_commit_and_persist_with_guard("assets/rdbms_test.dat", 201, b201.state_hash);
     assert(r_ok == true);
     
     // Execute query scans
     uint32_t results[10] = {0};
-    uint32_t matched = blue_box_query_blocks("rdbms_test.dat", "block_number", ">", 200, results, 10);
+    uint32_t matched = blue_box_query_blocks("assets/rdbms_test.dat", "block_number", ">", 200, results, 10);
     assert(matched == 2);
     assert(results[0] == 201);
     assert(results[1] == 202);
     
-    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 750000, results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "gas_allowance", "=", 750000, results, 10);
     assert(matched == 3); // all evolved blocks inherited 750000 gas
     
-    matched = blue_box_query_blocks("rdbms_test.dat", "active_trunk_mask", "&", (1U << 31), results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "active_trunk_mask", "&", (1U << 31), results, 10);
     assert(matched == 1);
     assert(results[0] == 202);
     
@@ -305,33 +305,33 @@ int main(void) {
     blue_box_free_23_tree(tree_root);
 
     // 17. Test RDBMS DML (Update & Delete) and RBT Optimized query lookups
-    matched = blue_box_query_blocks("rdbms_test.dat", "block_number", "=", 200, results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "block_number", "=", 200, results, 10);
     assert(matched == 1);
     assert(results[0] == 200);
     
     // Update Gas allowance of block 201 to 999999
-    bool update_ok = blue_box_update_block_gas("rdbms_test.dat", 201, 999999);
+    bool update_ok = blue_box_update_block_gas("assets/rdbms_test.dat", 201, 999999);
     assert(update_ok == true);
     
-    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
     assert(matched == 1);
     assert(results[0] == 201);
     
     // Delete block 201 (soft delete)
-    bool delete_ok = blue_box_delete_block("rdbms_test.dat", 201);
+    bool delete_ok = blue_box_delete_block("assets/rdbms_test.dat", 201);
     assert(delete_ok == true);
     
     // Block 201 should no longer be returned by query scans
-    matched = blue_box_query_blocks("rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "gas_allowance", "=", 999999, results, 10);
     assert(matched == 0);
     
-    matched = blue_box_query_blocks("rdbms_test.dat", "block_number", ">", 200, results, 10);
+    matched = blue_box_query_blocks("assets/rdbms_test.dat", "block_number", ">", 200, results, 10);
     assert(matched == 1); // Only block 202 matches now since 201 is deleted
     assert(results[0] == 202);
 
     // 18. Test RDBMS Transactions (Begin, Commit, Rollback)
-    remove("txn_test.dat");
-    remove("txn_test.dat.hist");
+    remove("assets/txn_test.dat");
+    remove("assets/txn_test.dat.hist");
     
     blue_box_begin_transaction();
     BlueBoxBlockState tstate1 = { .block_number = 500, .gas_allowance = 55555, .nonce = 1, .is_committed = true };
@@ -343,11 +343,11 @@ int main(void) {
     assert(txn_ok == true);
     
     // Commit transaction
-    commit_ok = blue_box_commit_transaction("txn_test.dat");
+    commit_ok = blue_box_commit_transaction("assets/txn_test.dat");
     assert(commit_ok == true);
     
     // Query committed transaction blocks
-    matched = blue_box_query_blocks("txn_test.dat", "gas_allowance", "=", 55555, results, 10);
+    matched = blue_box_query_blocks("assets/txn_test.dat", "gas_allowance", "=", 55555, results, 10);
     assert(matched == 1);
     assert(results[0] == 500);
     
@@ -359,15 +359,15 @@ int main(void) {
     blue_box_rollback_transaction();
     
     // 502 should not be written
-    matched = blue_box_query_blocks("txn_test.dat", "gas_allowance", "=", 77777, results, 10);
+    matched = blue_box_query_blocks("assets/txn_test.dat", "gas_allowance", "=", 77777, results, 10);
     assert(matched == 0);
     
-    remove("txn_test.dat");
-    remove("txn_test.dat.hist");
-    remove("rdbms_test.dat");
-    remove("rdbms_test.dat.hist");
-    remove("rbt_reload_test.dat");
-    remove("rbt_reload_test.dat.hist");
+    remove("assets/txn_test.dat");
+    remove("assets/txn_test.dat.hist");
+    remove("assets/rdbms_test.dat");
+    remove("assets/rdbms_test.dat.hist");
+    remove("assets/rbt_reload_test.dat");
+    remove("assets/rbt_reload_test.dat.hist");
 
     printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, and Relational Transaction tests passed successfully.\n");
     return 0;
