@@ -545,4 +545,7 @@ size_t interop_transr_adaptive_dimension(size_t base_dim, size_t n_heads, size_t
 int interop_transr_orthogonal_gradient_gate(const float *G, const float *v, float *out_G, size_t rel_dim, size_t ent_dim);
 float interop_transr_regularization(const float *M, size_t ent_dim, size_t rel_dim);
 
+int interop_rbgraph_validate_properties(const int *node_colors, const int *parent_indices, size_t count);
+int interop_rbgraph_resolve_black_height(const int *node_colors, const int *parent_indices, size_t count, size_t node_idx);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

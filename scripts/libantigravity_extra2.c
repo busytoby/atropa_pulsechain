@@ -152,3 +152,54 @@ float interop_transr_regularization(const float *M, size_t ent_dim, size_t rel_d
     }
     return sum_sq;
 }
+
+int interop_rbgraph_resolve_black_height(const int *node_colors, const int *parent_indices, size_t count, size_t node_idx) {
+    if (!node_colors || !parent_indices || node_idx >= count) return -1;
+    int is_leaf = 1;
+    for (size_t i = 0; i < count; i++) {
+        if (parent_indices[i] == (int)node_idx) {
+            is_leaf = 0;
+            break;
+        }
+    }
+    if (is_leaf) return 0;
+    int child_height = -2;
+    for (size_t i = 0; i < count; i++) {
+        if (parent_indices[i] == (int)node_idx) {
+            int h = interop_rbgraph_resolve_black_height(node_colors, parent_indices, count, i);
+            if (h < 0) return -1;
+            int path_h = h + (node_colors[i] == 0 ? 1 : 0);
+            if (child_height == -2) {
+                child_height = path_h;
+            } else if (child_height != path_h) {
+                return -1;
+            }
+        }
+    }
+    return child_height;
+}
+
+int interop_rbgraph_validate_properties(const int *node_colors, const int *parent_indices, size_t count) {
+    if (!node_colors || !parent_indices || count == 0) return -1;
+    int root_count = 0;
+    int root_idx = -1;
+    for (size_t i = 0; i < count; i++) {
+        if (parent_indices[i] < 0) {
+            root_count++;
+            root_idx = (int)i;
+        }
+    }
+    if (root_count != 1) return 0;
+    if (node_colors[root_idx] != 0) return 0;
+    for (size_t i = 0; i < count; i++) {
+        if (node_colors[i] == 1) {
+            int parent = parent_indices[i];
+            if (parent >= 0 && parent < (int)count) {
+                if (node_colors[parent] == 1) return 0;
+            }
+        }
+    }
+    int root_bh = interop_rbgraph_resolve_black_height(node_colors, parent_indices, count, (size_t)root_idx);
+    if (root_bh < 0) return 0;
+    return 1;
+}
