@@ -988,6 +988,16 @@ int main() {
     remove(tm_file);
     printf("✓ Vectorized scheduler gating, decision classification, and NTM routing verified.\n");
 
+    // 98-100. Test vectorized LSH projection, decision pruning, and Minkowski LSH hashing
+    uint64_t lsh_coords[3] = { 10, 20, 30 };
+    uint64_t lsh_hashes[1] = {0};
+    interop_lsh_project_avx512_keys(lsh_coords, 1, lsh_hashes);
+    assert(lsh_hashes[0] < 4);
+    uint64_t prune_query[3] = { 50, 50, 50 };
+    assert(interop_knn_prune_candidates(prune_nodes, 0, prune_query) == 0xAAAA);
+    assert(interop_lsh_hash_minkowski(lsh_coords, 2) < 4);
+    printf("✓ Vectorized LSH projection, decision pruning, and Minkowski LSH hashing verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

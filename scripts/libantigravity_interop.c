@@ -2076,3 +2076,22 @@ uint32_t interop_scheduler_classify_task(const InteropMultiDecisionNode *nodes, 
 int interop_scheduler_route_ntm(const char *filepath, uint8_t *queue_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, queue_tape, len, 20, final_state);
 }
+
+void interop_lsh_project_avx512_keys(const uint64_t *coords, size_t count, uint64_t *out_hashes) {
+    if (!coords || !out_hashes || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        out_hashes[i] = ((coords[i * 3 + 0] * 73856093) ^ (coords[i * 3 + 1] * 19349663) ^ (coords[i * 3 + 2] * 83492791)) % 4;
+    }
+}
+
+uint32_t interop_knn_prune_candidates(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *query_coord) {
+    if (!nodes || !query_coord) return 0;
+    uint64_t magnitude = query_coord[0] + query_coord[1] + query_coord[2];
+    return interop_multi_decision_evaluate(nodes, root_idx, magnitude);
+}
+
+uint64_t interop_lsh_hash_minkowski(const uint64_t *coord, uint32_t p) {
+    if (!coord) return 0;
+    uint64_t h = (coord[0] * p) ^ (coord[1] * p * 2) ^ (coord[2] * p * 3);
+    return h % 4;
+}

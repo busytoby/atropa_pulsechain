@@ -378,4 +378,8 @@ void interop_scheduler_gate_tasks_avx512(const InteropPMG *pmg, double system_lo
 uint32_t interop_scheduler_classify_task(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t queue_depth, uint64_t priority);
 int interop_scheduler_route_ntm(const char *filepath, uint8_t *queue_tape, size_t len, uint32_t *final_state);
 
+void interop_lsh_project_avx512_keys(const uint64_t *coords, size_t count, uint64_t *out_hashes);
+uint32_t interop_knn_prune_candidates(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *query_coord);
+uint64_t interop_lsh_hash_minkowski(const uint64_t *coord, uint32_t p);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
