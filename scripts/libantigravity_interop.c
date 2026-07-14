@@ -1023,3 +1023,39 @@ uint32_t interop_decision_tree_evaluate(const InteropDecisionNode *nodes, uint32
         }
     }
 }
+
+uint64_t interop_knn_distance(const uint64_t *coord1, const uint64_t *coord2) {
+    if (!coord1 || !coord2) return 0xFFFFFFFFFFFFFFFFULL;
+    uint64_t diff0 = (coord1[0] > coord2[0]) ? (coord1[0] - coord2[0]) : (coord2[0] - coord1[0]);
+    uint64_t diff1 = (coord1[1] > coord2[1]) ? (coord1[1] - coord2[1]) : (coord2[1] - coord1[1]);
+    uint64_t diff2 = (coord1[2] > coord2[2]) ? (coord1[2] - coord2[2]) : (coord2[2] - coord1[2]);
+    uint64_t mod = 953467954114363ULL;
+    return (diff0 + diff1 + diff2) % mod;
+}
+
+int interop_knn_search(const InteropKNNAgent *agents, size_t count, const uint64_t *query_coord, uint64_t *out_neighbors, size_t k) {
+    if (!agents || count == 0 || !query_coord || !out_neighbors || k == 0) return -1;
+    if (k > count) k = count;
+    uint64_t distances[64];
+    size_t indices[64];
+    size_t n = (count > 64) ? 64 : count;
+    for (size_t i = 0; i < n; i++) {
+        distances[i] = interop_knn_distance(agents[i].coord, query_coord);
+        indices[i] = i;
+    }
+    for (size_t i = 0; i < n - 1; i++) {
+        size_t min_idx = i;
+        for (size_t j = i + 1; j < n; j++) {
+            if (distances[indices[j]] < distances[indices[min_idx]]) {
+                min_idx = j;
+            }
+        }
+        size_t temp = indices[i];
+        indices[i] = indices[min_idx];
+        indices[min_idx] = temp;
+    }
+    for (size_t i = 0; i < k; i++) {
+        out_neighbors[i] = agents[indices[i]].agent_addr;
+    }
+    return (int)k;
+}

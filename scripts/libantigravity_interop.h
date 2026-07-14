@@ -249,4 +249,12 @@ typedef struct {
 
 uint32_t interop_decision_tree_evaluate(const InteropDecisionNode *nodes, uint32_t root_idx, uint64_t accumulator_val);
 
+typedef struct {
+    uint64_t agent_addr;
+    uint64_t coord[3];
+} InteropKNNAgent;
+
+uint64_t interop_knn_distance(const uint64_t *coord1, const uint64_t *coord2);
+int interop_knn_search(const InteropKNNAgent *agents, size_t count, const uint64_t *query_coord, uint64_t *out_neighbors, size_t k);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
