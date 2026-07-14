@@ -752,6 +752,20 @@ int main() {
     assert(ad_k == 2);
     printf("✓ Decision vector search, Minkowski distance, and adaptive splits verified.\n");
 
+    // 57. Test Quadtree Media file read, write, query
+    InteropQuadNode q_nodes[2] = {
+        { 0, 0, 100, 100, 0, {1, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { 0, 0, 50, 50, 999, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    const char *q_file = "../assets/test_quad.dat.bin";
+    assert(interop_quadtree_write(q_file, q_nodes, 2) == 0);
+    InteropQuadNode read_q[2];
+    assert(interop_quadtree_read(q_file, read_q, 2) == 2);
+    assert(read_q[1].value == 999);
+    assert(interop_quadtree_query(read_q, 0, 10, 10) == 999);
+    remove(q_file);
+    printf("✓ Quadtree media reader, writer, and coordinate query verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

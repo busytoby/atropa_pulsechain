@@ -286,4 +286,14 @@ uint32_t interop_decision_vector_search_avx512(const uint32_t *thresholds, size_
 uint64_t interop_knn_distance_minkowski(const uint64_t *coord1, const uint64_t *coord2, uint32_t p);
 int interop_coaxial_cluster_adaptive(const uint64_t *coords, size_t count, uint64_t *centroids, uint32_t *k_io, uint32_t *assign);
 
+typedef struct {
+    uint32_t x_min, y_min, x_max, y_max;
+    uint32_t value;
+    uint32_t children[4];
+} InteropQuadNode;
+
+int interop_quadtree_write(const char *filepath, const InteropQuadNode *nodes, size_t count);
+int interop_quadtree_read(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes);
+uint32_t interop_quadtree_query(const InteropQuadNode *nodes, uint32_t root_idx, uint32_t x, uint32_t y);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

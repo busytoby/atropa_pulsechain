@@ -1415,3 +1415,43 @@ int interop_coaxial_cluster_adaptive(const uint64_t *coords, size_t count, uint6
     }
     return 0;
 }
+
+int interop_quadtree_write(const char *filepath, const InteropQuadNode *nodes, size_t count) {
+    if (!filepath || !nodes || count == 0) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return -3;
+    fwrite(nodes, sizeof(InteropQuadNode), count, f);
+    fclose(f);
+    return 0;
+}
+
+int interop_quadtree_read(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes) {
+    if (!filepath || !nodes_out || max_nodes == 0) return -1;
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    size_t read_bytes = fread(nodes_out, sizeof(InteropQuadNode), max_nodes, f);
+    fclose(f);
+    return (int)read_bytes;
+}
+
+uint32_t interop_quadtree_query(const InteropQuadNode *nodes, uint32_t root_idx, uint32_t x, uint32_t y) {
+    if (!nodes) return 0xFFFFFFFF;
+    uint32_t curr = root_idx;
+    while (1) {
+        if (x < nodes[curr].x_min || x > nodes[curr].x_max || y < nodes[curr].y_min || y > nodes[curr].y_max) {
+            return 0xFFFFFFFF;
+        }
+        if (nodes[curr].children[0] == 0xFFFFFFFF) return nodes[curr].value;
+        uint32_t x_mid = nodes[curr].x_min + (nodes[curr].x_max - nodes[curr].x_min) / 2;
+        uint32_t y_mid = nodes[curr].y_min + (nodes[curr].y_max - nodes[curr].y_min) / 2;
+        if (x <= x_mid) {
+            curr = (y <= y_mid) ? nodes[curr].children[0] : nodes[curr].children[2];
+        } else {
+            curr = (y <= y_mid) ? nodes[curr].children[1] : nodes[curr].children[3];
+        }
+    }
+}
