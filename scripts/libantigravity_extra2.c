@@ -1220,3 +1220,95 @@ int interop_wm_transition_verify(const float *h, const float *r, const float *t,
     *out_verified = 1;
     return 0;
 }
+
+int interop_wm_trace_load(const char *path, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log) {
+    if (!path || !log_src || !log_rel || !log_dst || !log_ts || !log_count || max_log == 0) return -1;
+    FILE *f = fopen(path, "rb");
+    if (!f) return -2;
+    uint32_t count_val = 0;
+    if (fread(&count_val, sizeof(uint32_t), 1, f) != 1) {
+        fclose(f);
+        return -3;
+    }
+    size_t loaded = 0;
+    for (uint32_t i = 0; i < count_val; i++) {
+        struct {
+            int s;
+            int r;
+            int o;
+            uint64_t ts;
+        } rec;
+        if (fread(&rec, 24, 1, f) != 1) {
+            break;
+        }
+        if (loaded < max_log) {
+            log_src[loaded] = rec.s;
+            log_rel[loaded] = rec.r;
+            log_dst[loaded] = rec.o;
+            log_ts[loaded] = rec.ts;
+            loaded++;
+        }
+    }
+    fclose(f);
+    *log_count = loaded;
+    return 0;
+}
+
+int interop_logic_trace_load(const char *path, int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges) {
+    if (!path || !edges_src || !edges_rel || !edges_dst || !num_edges || max_edges == 0) return -1;
+    FILE *f = fopen(path, "rb");
+    if (!f) return -2;
+    uint32_t count_val = 0;
+    if (fread(&count_val, sizeof(uint32_t), 1, f) != 1) {
+        fclose(f);
+        return -3;
+    }
+    size_t loaded = 0;
+    for (uint32_t i = 0; i < count_val; i++) {
+        struct {
+            int s;
+            int r;
+            int o;
+        } rec;
+        if (fread(&rec, 12, 1, f) != 1) {
+            break;
+        }
+        if (loaded < max_edges) {
+            edges_src[loaded] = rec.s;
+            edges_rel[loaded] = rec.r;
+            edges_dst[loaded] = rec.o;
+            loaded++;
+        }
+    }
+    fclose(f);
+    *num_edges = loaded;
+    return 0;
+}
+
+int interop_poly_trace_load(const char *path, uint64_t *pe_a, size_t *deg_a, uint64_t *pe_b, size_t *deg_b, uint64_t *pe_q, size_t *deg_q, uint64_t *pe_r, size_t *deg_r, int *verified) {
+    if (!path || !pe_a || !deg_a || !pe_b || !deg_b || !pe_q || !deg_q || !pe_r || !deg_r || !verified) return -1;
+    FILE *f = fopen(path, "rb");
+    if (!f) return -2;
+    uint32_t da, db, dq, dr;
+    if (fread(&da, sizeof(uint32_t), 1, f) != 1 ||
+        fread(&db, sizeof(uint32_t), 1, f) != 1 ||
+        fread(&dq, sizeof(uint32_t), 1, f) != 1 ||
+        fread(&dr, sizeof(uint32_t), 1, f) != 1) {
+        fclose(f);
+        return -3;
+    }
+    *deg_a = da;
+    *deg_b = db;
+    *deg_q = dq;
+    *deg_r = dr;
+    if (fread(pe_a, sizeof(uint64_t), da + 1, f) != (size_t)(da + 1) ||
+        fread(pe_b, sizeof(uint64_t), db + 1, f) != (size_t)(db + 1) ||
+        fread(pe_q, sizeof(uint64_t), dq + 1, f) != (size_t)(dq + 1) ||
+        fread(pe_r, sizeof(uint64_t), dr + 1, f) != (size_t)(dr + 1) ||
+        fread(verified, sizeof(int), 1, f) != 1) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    return 0;
+}

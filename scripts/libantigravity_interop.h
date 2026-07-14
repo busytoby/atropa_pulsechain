@@ -612,4 +612,8 @@ int interop_trace_verify_rule(const int *log_src, const int *log_rel, const int 
 
 int interop_wm_transition_verify(const float *h, const float *r, const float *t, size_t dim, float sem_threshold, const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int subject_id, int relation_id, int object_id, uint64_t timestamp, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log, int *out_verified);
 
+int interop_wm_trace_load(const char *path, int *log_src, int *log_rel, int *log_dst, uint64_t *log_ts, size_t *log_count, size_t max_log);
+int interop_logic_trace_load(const char *path, int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges);
+int interop_poly_trace_load(const char *path, uint64_t *pe_a, size_t *deg_a, uint64_t *pe_b, size_t *deg_b, uint64_t *pe_q, size_t *deg_q, uint64_t *pe_r, size_t *deg_r, int *verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
