@@ -5,6 +5,7 @@
 #include <pulse/error.h>
 #include <math.h>
 #include "tsfi_zmm_rpc.h"
+#include "tsfi_trie_dispatcher.h"
 #include "tsfi_opt_zmm.h"
 #include "tsfi_genetic.h"
 #include "tsfi_svdag.h"
@@ -517,80 +518,39 @@ static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err
     return true;
 }
 
+static void extract_json_method(const char *json, char *method_out, size_t max_len) {
+    method_out[0] = '\0';
+    const char *m_key = strstr(json, "\"method\"");
+    if (!m_key) return;
+    const char *colon = strchr(m_key, ':');
+    if (!colon) return;
+    const char *start = strchr(colon, '"');
+    if (!start) return;
+    start++;
+    const char *end = strchr(start, '"');
+    if (!end) return;
+    size_t len = end - start;
+    if (len >= max_len) len = max_len - 1;
+    strncpy(method_out, start, len);
+    method_out[len] = '\0';
+}
+
 int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *output_buf, size_t out_max) {
-    const char *p = json_in;
-    
-    char *method_run = strstr(p, "wave512.run");
-    char *method_reset = strstr(p, "wave512.reset");
-    char *method_inspect = strstr(p, "wave512.inspect");
-    char *method_scramble = strstr(p, "wave512.scramble");
-    char *method_attach = strstr(p, "wave512.attach");
-    char *method_genetic_bench = strstr(p, "genetic.benchmark");
-    char *method_establish_llm = strstr(p, "genetic.establish_llm");
-    char *method_autonomous_opt = strstr(p, "genetic.autonomous_optimize");
-    
+    static tsfi_trie_node *g_rpc_trie_router = NULL;
+    if (!g_rpc_trie_router) {
+        g_rpc_trie_router = tsfi_trie_init_rpc_router();
+        tsfi_trie_insert(g_rpc_trie_router, "input.mouse_move", "30");
+        tsfi_trie_insert(g_rpc_trie_router, "input.mouse_button", "31");
+        tsfi_trie_insert(g_rpc_trie_router, "input.keyboard", "32");
+        tsfi_trie_insert(g_rpc_trie_router, "tariffs_query", "50");
+    }
 
-    // Shell Methods
-    char *method_read_file = strstr(p, "shell.read_file");
-    char *method_motzkin = strstr(p, "math.motzkin");
+    char method_name[128];
+    extract_json_method(json_in, method_name, sizeof(method_name));
+    int method_type = tsfi_trie_resolve_rpc(g_rpc_trie_router, method_name);
+    if (method_type == 0) return 0;
 
-    // Manifold/Flow Methods
-    char *method_swap_asset = strstr(p, "manifold.swap_asset");
-    char *method_set_kernel = strstr(p, "manifold.set_kernel");
-    char *method_set_mask = strstr(p, "manifold.set_active_mask");
-    char *method_set_secret = strstr(p, "manifold.set_secret");
-    char *method_dispatch = strstr(p, "manifold.dispatch");
-    char *method_inspect_slots = strstr(p, "manifold.inspect_slots");
-    char *method_upload_asset = strstr(p, "manifold.upload_asset");
-    char *method_load_dna = strstr(p, "manifold.load_dna_llm");
-    char *method_query_llm = strstr(p, "manifold.query_llm");
-    char *method_get_receipt = strstr(p, "manifold.get_receipt");
-    char *method_flow_choreography = strstr(p, "flow.trigger_choreography");
-    char *method_dilemma_log = strstr(p, "wave512.dilemma_log");
-    char *method_mount_instrument = strstr(p, "manifold.mount_instrument");
-    char *method_play_bio = strstr(p, "manifold.play_bio");
-
-    char *min_ptr = NULL;
-    int method_type = 0; 
-    
-    if (method_run && (!min_ptr || method_run < min_ptr)) { min_ptr = method_run; method_type = 1; }
-    if (method_reset && (!min_ptr || method_reset < min_ptr)) { min_ptr = method_reset; method_type = 2; }
-    if (method_inspect && (!min_ptr || method_inspect < min_ptr)) { min_ptr = method_inspect; method_type = 3; }
-    if (method_scramble && (!min_ptr || method_scramble < min_ptr)) { min_ptr = method_scramble; method_type = 4; }
-    if (method_attach && (!min_ptr || method_attach < min_ptr)) { min_ptr = method_attach; method_type = 5; }
-    if (method_genetic_bench && (!min_ptr || method_genetic_bench < min_ptr)) { min_ptr = method_genetic_bench; method_type = 6; }
-    if (method_establish_llm && (!min_ptr || method_establish_llm < min_ptr)) { min_ptr = method_establish_llm; method_type = 11; }
-    if (method_autonomous_opt && (!min_ptr || method_autonomous_opt < min_ptr)) { min_ptr = method_autonomous_opt; method_type = 19; }
-    if (method_read_file && (!min_ptr || method_read_file < min_ptr)) { min_ptr = method_read_file; method_type = 10; }
-    if (method_motzkin && (!min_ptr || method_motzkin < min_ptr)) { min_ptr = method_motzkin; method_type = 12; }
-    
-    if (method_swap_asset && (!min_ptr || method_swap_asset < min_ptr)) { min_ptr = method_swap_asset; method_type = 20; }
-    if (method_set_kernel && (!min_ptr || method_set_kernel < min_ptr)) { min_ptr = method_set_kernel; method_type = 21; }
-    if (method_set_mask && (!min_ptr || method_set_mask < min_ptr)) { min_ptr = method_set_mask; method_type = 22; }
-    if (method_set_secret && (!min_ptr || method_set_secret < min_ptr)) { min_ptr = method_set_secret; method_type = 23; }
-    if (method_dispatch && (!min_ptr || method_dispatch < min_ptr)) { min_ptr = method_dispatch; method_type = 24; }
-    if (method_inspect_slots && (!min_ptr || method_inspect_slots < min_ptr)) { min_ptr = method_inspect_slots; method_type = 25; }
-    if (method_upload_asset && (!min_ptr || method_upload_asset < min_ptr)) { min_ptr = method_upload_asset; method_type = 26; }
-    if (method_load_dna && (!min_ptr || method_load_dna < min_ptr)) { min_ptr = method_load_dna; method_type = 41; }
-    if (method_query_llm && (!min_ptr || method_query_llm < min_ptr)) { min_ptr = method_query_llm; method_type = 42; }
-    if (method_get_receipt && (!min_ptr || method_get_receipt < min_ptr)) { min_ptr = method_get_receipt; method_type = 43; }
-    if (method_flow_choreography && (!min_ptr || method_flow_choreography < min_ptr)) { min_ptr = method_flow_choreography; method_type = 27; }
-    if (method_dilemma_log && (!min_ptr || method_dilemma_log < min_ptr)) { min_ptr = method_dilemma_log; method_type = 28; }
-    if (method_mount_instrument && (!min_ptr || method_mount_instrument < min_ptr)) { min_ptr = method_mount_instrument; method_type = 44; }
-    if (method_play_bio && (!min_ptr || method_play_bio < min_ptr)) { min_ptr = method_play_bio; method_type = 45; }
-
-    char *method_mouse_move = strstr(p, "input.mouse_move");
-    char *method_mouse_button = strstr(p, "input.mouse_button");
-    char *method_keyboard = strstr(p, "input.keyboard");
-
-    char *method_tariffs_query = strstr(p, "tariffs_query");
-
-    if (method_mouse_move && (!min_ptr || method_mouse_move < min_ptr)) { min_ptr = method_mouse_move; method_type = 30; }
-    if (method_mouse_button && (!min_ptr || method_mouse_button < min_ptr)) { min_ptr = method_mouse_button; method_type = 31; }
-    if (method_keyboard && (!min_ptr || method_keyboard < min_ptr)) { min_ptr = method_keyboard; method_type = 32; }
-    if (method_tariffs_query && (!min_ptr || method_tariffs_query < min_ptr)) { min_ptr = method_tariffs_query; method_type = 50; }
-
-    if (!min_ptr) return 0;
+    char *min_ptr = (char*)json_in;
 
     int id = 1;
     char *id_ptr = strstr(min_ptr, "\"id\"");
