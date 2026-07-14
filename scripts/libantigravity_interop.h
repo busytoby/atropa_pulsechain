@@ -418,4 +418,8 @@ void interop_pki_verify_signatures_avx512(const uint64_t *sigs, const uint64_t *
 uint32_t interop_pki_evaluate_revocation(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t usage_freq, uint64_t drift_factor);
 int interop_lau_route_ntm(const char *filepath, uint8_t *lau_tape, size_t len, uint32_t *final_state);
 
+int interop_rdbms_autocomplete_trie(const char *prefix, char *out_suggestion, size_t max_len);
+uint32_t interop_rdbms_route_suggestion(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t load_factor);
+int interop_rdbms_validate_sql_ntm(const char *filepath, uint8_t *sql_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

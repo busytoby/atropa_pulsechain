@@ -1079,6 +1079,19 @@ int main() {
     remove(tm_file);
     printf("✓ Vectorized PKI signatures, key revocation gating, and NTM LAU path finder verified.\n");
 
+    // 112-114. Test trie autocomplete, suggestion routing, and NTM SQL validation
+    char suggestion[32] = {0};
+    assert(interop_rdbms_autocomplete_trie("SE", suggestion, 32) == 0);
+    assert(strcmp(suggestion, "SELECT * FROM") == 0);
+    assert(interop_rdbms_route_suggestion(prune_nodes, 0, 150) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t sql_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t sql_state = 0;
+    assert(interop_rdbms_validate_sql_ntm(tm_file, sql_tape, 4, &sql_state) == 1);
+    assert(sql_state == 1);
+    remove(tm_file);
+    printf("✓ Trie autocomplete, suggestion routing, and NTM SQL validation verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

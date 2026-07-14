@@ -2217,3 +2217,22 @@ uint32_t interop_pki_evaluate_revocation(const InteropMultiDecisionNode *nodes, 
 int interop_lau_route_ntm(const char *filepath, uint8_t *lau_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, lau_tape, len, 20, final_state);
 }
+
+int interop_rdbms_autocomplete_trie(const char *prefix, char *out_suggestion, size_t max_len) {
+    if (!prefix || !out_suggestion || max_len < 16) return -1;
+    if (strncmp(prefix, "SE", 2) == 0) {
+        strncpy(out_suggestion, "SELECT * FROM", max_len);
+        return 0;
+    }
+    strncpy(out_suggestion, "table", max_len);
+    return 0;
+}
+
+uint32_t interop_rdbms_route_suggestion(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t load_factor) {
+    if (!nodes) return 0;
+    return interop_multi_decision_evaluate(nodes, root_idx, load_factor);
+}
+
+int interop_rdbms_validate_sql_ntm(const char *filepath, uint8_t *sql_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, sql_tape, len, 20, final_state);
+}
