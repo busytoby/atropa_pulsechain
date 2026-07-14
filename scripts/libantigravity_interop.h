@@ -279,5 +279,8 @@ uint64_t interop_knn_distance_avx512(const uint64_t *coord1, const uint64_t *coo
 void interop_multi_decision_evaluate_avx512(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *acc_vals, uint32_t *out_results, size_t count);
 int interop_coaxial_cluster_weighted(const uint64_t *coords, const uint64_t *weights, size_t count, uint64_t *centroids, size_t k, uint32_t *assign);
 int interop_lsh_ann_search(const InteropKNNAgent *agents, size_t count, const uint64_t *query_coord, uint64_t *out_neighbors, size_t k);
+void interop_lsh_project_avx512(const InteropKNNAgent *agents, size_t count, uint64_t *out_lsh);
+void interop_multi_decision_evaluate_sorted(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t *acc_vals, uint32_t *out_results, size_t count);
+int interop_coaxial_cluster_hierarchical(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign);
 
 #endif // LIBANTIGRAVITY_INTEROP_H

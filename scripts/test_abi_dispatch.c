@@ -725,6 +725,21 @@ int main() {
     assert(interop_lsh_ann_search(ka, 3, qc, lsh_out, 2) != -1);
     printf("✓ Batch AVX decision, weighted clustering, and LSH ANN search verified.\n");
 
+    // 51-53. Test AVX-512 LSH, sorted decision, and hierarchical clustering
+    uint64_t lsh_proj_res[3] = {0};
+    interop_lsh_project_avx512(ka, 3, lsh_proj_res);
+    assert(lsh_proj_res[0] != 0xFFFFFFFF);
+    uint64_t sorted_acc[2] = {90, 50};
+    uint32_t sorted_res[2] = {0};
+    interop_multi_decision_evaluate_sorted(mn, 0, sorted_acc, sorted_res, 2);
+    assert(sorted_res[1] == 0xCCCC);
+    uint64_t h_coords[6] = {10, 20, 30, 100, 200, 300};
+    uint64_t h_cents[6] = {11, 21, 31, 99, 199, 299};
+    uint32_t h_assign[2] = {0};
+    assert(interop_coaxial_cluster_hierarchical(h_coords, 2, h_cents, 2, h_assign) == 0);
+    assert(h_cents[0] == 10 && h_cents[3] == 100);
+    printf("✓ AVX-512 LSH, sorted decision, and hierarchical clustering verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

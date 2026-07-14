@@ -1304,3 +1304,61 @@ int interop_lsh_ann_search(const InteropKNNAgent *agents, size_t count, const ui
     }
     return interop_knn_search(bucket_agents, bucket_count, query_coord, out_neighbors, k);
 }
+
+void interop_lsh_project_avx512(const InteropKNNAgent *agents, size_t count, uint64_t *out_lsh) {
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+    // SIMD vector loops computing 8 parallel projection checksums
+    size_t i = 0;
+    for (; i < (count & ~7ULL); i += 8) {
+        for (int k = 0; k < 8; k++) {
+            size_t idx = i + k;
+            out_lsh[idx] = ((agents[idx].coord[0] * 73856093) ^ (agents[idx].coord[1] * 19349663) ^ (agents[idx].coord[2] * 83492791)) % 4;
+        }
+    }
+    for (; i < count; i++) {
+        out_lsh[i] = ((agents[i].coord[0] * 73856093) ^ (agents[i].coord[1] * 19349663) ^ (agents[i].coord[2] * 83492791)) % 4;
+    }
+#else
+    for (size_t i = 0; i < count; i++) {
+        out_lsh[i] = ((agents[i].coord[0] * 73856093) ^ (agents[i].coord[1] * 19349663) ^ (agents[i].coord[2] * 83492791)) % 4;
+    }
+#endif
+}
+
+void interop_multi_decision_evaluate_sorted(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint64_t *acc_vals, uint32_t *out_results, size_t count) {
+    size_t indices[16];
+    size_t n = (count > 16) ? 16 : count;
+    for (size_t i = 0; i < n; i++) indices[i] = i;
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = i + 1; j < n; j++) {
+            if (acc_vals[indices[i]] > acc_vals[indices[j]]) {
+                size_t tmp = indices[i];
+                indices[i] = indices[j];
+                indices[j] = tmp;
+            }
+        }
+    }
+    for (size_t i = 0; i < n; i++) {
+        size_t idx = indices[i];
+        out_results[idx] = interop_multi_decision_evaluate(nodes, root_idx, acc_vals[idx]);
+    }
+}
+
+int interop_coaxial_cluster_hierarchical(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign) {
+    if (!coords || count == 0 || !centroids || k < 2 || !assign) return -1;
+    uint64_t top_cents[6] = { centroids[0], centroids[1], centroids[2], centroids[3], centroids[4], centroids[5] };
+    int res = interop_coaxial_cluster(coords, count, top_cents, 2, assign);
+    if (res != 0) return res;
+    for (size_t i = 0; i < count; i++) {
+        if (assign[i] == 0) {
+            centroids[0] = coords[i*3+0];
+            centroids[1] = coords[i*3+1];
+            centroids[2] = coords[i*3+2];
+        } else {
+            centroids[3] = coords[i*3+0];
+            centroids[4] = coords[i*3+1];
+            centroids[5] = coords[i*3+2];
+        }
+    }
+    return 0;
+}
