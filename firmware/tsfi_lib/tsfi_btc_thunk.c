@@ -100,6 +100,44 @@ bool btc_thunk_execute(const uint8_t *script, size_t script_len, BtcStack *stack
                     if (memcmp(a.data, b.data, a.len) != 0) return false;
                     break;
                 }
+                case 0x87: { // OP_EQUAL
+                    StackElement a, b;
+                    if (!stack_pop(stack, &a)) return false;
+                    if (!stack_pop(stack, &b)) return false;
+                    uint8_t res = (a.len == b.len && memcmp(a.data, b.data, a.len) == 0) ? 1 : 0;
+                    if (!stack_push(stack, &res, 1)) return false;
+                    break;
+                }
+                case 0x93: { // OP_ADD
+                    StackElement a, b;
+                    if (!stack_pop(stack, &a)) return false;
+                    if (!stack_pop(stack, &b)) return false;
+                    
+                    int val_a = 0, val_b = 0;
+                    if (a.len == 1) val_a = a.data[0];
+                    else if (a.len == 4) memcpy(&val_a, a.data, 4);
+                    
+                    if (b.len == 1) val_b = b.data[0];
+                    else if (b.len == 4) memcpy(&val_b, b.data, 4);
+                    
+                    int sum = val_a + val_b;
+                    uint8_t res[4];
+                    memcpy(res, &sum, 4);
+                    if (!stack_push(stack, res, 4)) return false;
+                    break;
+                }
+                case 0x79: { // OP_PICK
+                    StackElement n_el;
+                    if (!stack_pop(stack, &n_el)) return false;
+                    int n = 0;
+                    if (n_el.len == 1) n = n_el.data[0];
+                    else if (n_el.len == 4) memcpy(&n, n_el.data, 4);
+                    
+                    if (stack->top < n) return false;
+                    StackElement target = stack->elements[stack->top - n];
+                    if (!stack_push(stack, target.data, target.len)) return false;
+                    break;
+                }
                 default:
                     return false; // Unknown opcode
             }
