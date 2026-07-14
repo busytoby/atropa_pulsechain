@@ -43,6 +43,11 @@ def analyze_codebase():
     print(f"  Implemented APIs:     {len(implemented)}")
     print(f"  Tested/Verified APIs: {len(tested)}")
     print(f"  Untested/Gaps:        {len(untested)}")
+    if untested:
+        print("\nUntested API Functions:")
+        for fn in sorted(untested):
+            print(f"  - {fn}")
+        print()
     
     # 4. Serialize metrics into a standard binary quadtree asset
     # Node 0 (Root)
