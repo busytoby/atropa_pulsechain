@@ -1335,6 +1335,15 @@ Status: Awaiting hero to join the battle.</div>
             walletAddress = "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7";
             onChainMode = true;
             chainNonce = 1;
+            config = {
+                networks: {
+                    localhost: {
+                        folkloreAddress: "0x0000000000000000000000000000000000000000",
+                        speechSynthesizerAddress: "0x0000000000000000000000000000000000000000",
+                        diyatAddress: "0xa0825618B8D73CDE626Fee738c927b26d7e5ee09"
+                    }
+                }
+            };
             
             const mockStorage = {
                 55051: 32,
