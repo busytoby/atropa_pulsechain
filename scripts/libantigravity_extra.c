@@ -1625,3 +1625,45 @@ int interop_speech_normalize_audio_frames(float *audio_frames, size_t count) {
     }
     return 0;
 }
+
+float interop_transh_score(const float *h, const float *w, const float *d, const float *t, size_t dim, int norm_type) {
+    if (!h || !w || !d || !t || dim == 0) return 0.0f;
+    float w_dot_h = 0.0f;
+    float w_dot_t = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        w_dot_h += w[i] * h[i];
+        w_dot_t += w[i] * t[i];
+    }
+    float score = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float h_proj = h[i] - w_dot_h * w[i];
+        float t_proj = t[i] - w_dot_t * w[i];
+        float diff = h_proj + d[i] - t_proj;
+        if (norm_type == 1) {
+            score += fabsf(diff);
+        } else {
+            score += diff * diff;
+        }
+    }
+    return score;
+}
+
+float interop_transh_constraint_penalty(const float *w, const float *d, size_t dim, float C) {
+    if (!w || !d || dim == 0) return 0.0f;
+    float w_norm_sq = 0.0f;
+    float d_norm_sq = 0.0f;
+    float w_dot_d = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        w_norm_sq += w[i] * w[i];
+        d_norm_sq += d[i] * d[i];
+        w_dot_d += w[i] * d[i];
+    }
+    float term1 = w_norm_sq - 1.0f;
+    float pen1 = term1 * term1;
+    float pen2 = 0.0f;
+    if (d_norm_sq > 0.0f) {
+        float term2 = w_dot_d / sqrtf(d_norm_sq);
+        pen2 = term2 * term2;
+    }
+    return C * (pen1 + pen2);
+}

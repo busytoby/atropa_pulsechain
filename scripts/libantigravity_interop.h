@@ -519,4 +519,7 @@ float interop_speech_speaker_distance(const float *voice_a, const float *voice_b
 float interop_speech_path_mrr(const int *phoneme_ranks, size_t count);
 int interop_speech_normalize_audio_frames(float *audio_frames, size_t count);
 
+float interop_transh_score(const float *h, const float *w, const float *d, const float *t, size_t dim, int norm_type);
+float interop_transh_constraint_penalty(const float *w, const float *d, size_t dim, float C);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
