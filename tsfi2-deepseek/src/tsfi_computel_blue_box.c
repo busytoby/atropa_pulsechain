@@ -892,3 +892,51 @@ void blue_box_rollback_transaction() {
     in_transaction = false;
     transaction_buffer_count = 0;
 }
+
+uint64_t blue_box_aggregate_blocks(const char *filepath, const char *field, const char *agg_func) {
+    if (!filepath || !field || !agg_func) return 0;
+
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "rb");
+    if (!hf) return 0;
+
+    flock(fileno(hf), LOCK_SH);
+    BlueBoxBlockState state;
+    uint64_t sum = 0;
+    uint64_t count = 0;
+    uint64_t min_val = 0xFFFFFFFFFFFFFFFFULL;
+    uint64_t max_val = 0;
+
+    while (fread(&state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
+        uint32_t calc = calculate_crc32((const uint8_t *)&state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+        if (calc != state.checksum || !state.is_committed) continue;
+
+        uint64_t field_val = 0;
+        if (strcmp(field, "block_number") == 0) {
+            field_val = state.block_number;
+        } else if (strcmp(field, "active_trunk_mask") == 0) {
+            field_val = state.active_trunk_mask;
+        } else if (strcmp(field, "nonce") == 0) {
+            field_val = state.nonce;
+        } else if (strcmp(field, "gas_allowance") == 0) {
+            field_val = state.gas_allowance;
+        } else {
+            continue;
+        }
+
+        sum += field_val;
+        count++;
+        if (field_val < min_val) min_val = field_val;
+        if (field_val > max_val) max_val = field_val;
+    }
+    fclose(hf);
+
+    if (count == 0) return 0;
+    if (strcmp(agg_func, "SUM") == 0) return sum;
+    if (strcmp(agg_func, "AVG") == 0) return sum / count;
+    if (strcmp(agg_func, "MIN") == 0) return min_val;
+    if (strcmp(agg_func, "MAX") == 0) return max_val;
+    if (strcmp(agg_func, "COUNT") == 0) return count;
+    return 0;
+}

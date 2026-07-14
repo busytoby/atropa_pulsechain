@@ -395,6 +395,22 @@ int main(void) {
     wf = fopen("assets/wal_test.dat.wal", "rb");
     assert(wf == NULL);
 
+    // 20. Test RDBMS Analytical Aggregations (SUM, AVG, MIN, MAX, COUNT)
+    uint64_t val_sum = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "SUM");
+    assert(val_sum == 588888);
+    
+    uint64_t val_count = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "COUNT");
+    assert(val_count == 2);
+    
+    uint64_t val_max = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "MAX");
+    assert(val_max == 500000);
+    
+    uint64_t val_min = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "MIN");
+    assert(val_min == 88888);
+    
+    uint64_t val_avg = blue_box_aggregate_blocks("assets/wal_test.dat", "gas_allowance", "AVG");
+    assert(val_avg == 294444);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -405,6 +421,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, and WAL Recovery tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, and Aggregation tests passed successfully.\n");
     return 0;
 }
