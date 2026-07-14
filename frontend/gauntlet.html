@@ -281,6 +281,10 @@
             Diyat Tax: <span id="diyatStatus" style="color: #ffd600; font-weight: bold;">Not Approved</span>
         </div>
 
+        <div id="isdnTelemetry" style="font-size: 0.8rem; color: #a5d6a7; margin-top: 8px; font-family: monospace; text-align: center; border: 1px solid rgba(0, 230, 118, 0.2); padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.4); width: 100%; display: none;">
+            [ISDN Teleconference Telemetry] Level Spawners Active: <span id="telSpawners">0</span> | Destroyed Total: <span id="telDestroyed">0</span> | Accumulator Jitter: <span id="telJitter">0.00</span> ms² | Latency Offset: <span id="telLatency">0.00</span> ms
+        </div>
+
         <div class="controls-info">
             <strong>[W / A / S / D]</strong> Move Warrior &nbsp;|&nbsp; 
             <strong>[ARROW KEYS]</strong> Shoot Axes &nbsp;|&nbsp;
@@ -426,6 +430,13 @@ Status: Awaiting hero to join the battle.</div>
         };
         let otherPlayers = {};
         let multiplayerTimer = 0;
+        let pendingSpawnerDestructionCount = 0;
+        let dungeonSeed = 42.0;
+        let lastGeneratedLevel = 1;
+        function seededRandom() {
+            let x = Math.sin(dungeonSeed++) * 10000;
+            return x - Math.floor(x);
+        }
 
         const keyboard = {};
         window.addEventListener("keydown", e => {
@@ -453,7 +464,10 @@ Status: Awaiting hero to join the battle.</div>
         }
 
         // Generate Dungeon
-        function generateDungeonLevel() {
+        function generateDungeonLevel(seed) {
+            if (seed !== undefined) {
+                dungeonSeed = seed;
+            }
             map = [];
             // Border walls
             for (let y = 0; y < GRID_H; y++) {
@@ -468,12 +482,12 @@ Status: Awaiting hero to join the battle.</div>
             }
 
             // Procedural wall segments
-            const segmentCount = 12 + Math.floor(Math.random() * 8);
+            const segmentCount = 12 + Math.floor(seededRandom() * 8);
             for (let s = 0; s < segmentCount; s++) {
-                const wx = 2 + Math.floor(Math.random() * (GRID_W - 4));
-                const wy = 2 + Math.floor(Math.random() * (GRID_H - 4));
-                const dir = Math.random() > 0.5; // horizontal/vertical
-                const len = 2 + Math.floor(Math.random() * 3);
+                const wx = 2 + Math.floor(seededRandom() * (GRID_W - 4));
+                const wy = 2 + Math.floor(seededRandom() * (GRID_H - 4));
+                const dir = seededRandom() > 0.5; // horizontal/vertical
+                const len = 2 + Math.floor(seededRandom() * 3);
                 for (let i = 0; i < len; i++) {
                     if (dir) {
                         if (wx + i < GRID_W - 1) map[wy][wx + i] = 1;
@@ -507,18 +521,18 @@ Status: Awaiting hero to join the battle.</div>
             ];
 
             // Spawners
-            const spawnerCount = 3 + Math.floor(Math.random() * 4);
+            const spawnerCount = 3 + Math.floor(seededRandom() * 4);
             for (let i = 0; i < spawnerCount; i++) {
                 let spawned = false;
                 while (!spawned) {
-                    const sx = 4 + Math.floor(Math.random() * (GRID_W - 6));
-                    const sy = 4 + Math.floor(Math.random() * (GRID_H - 6));
+                    const sx = 4 + Math.floor(seededRandom() * (GRID_W - 6));
+                    const sy = 4 + Math.floor(seededRandom() * (GRID_H - 6));
                     if (map[sy][sx] === 0) {
                         spawners.push({
                             x: sx * TILE_SIZE + TILE_SIZE / 2,
                             y: sy * TILE_SIZE + TILE_SIZE / 2,
                             health: 100,
-                            spawnTimer: Math.random() * 90
+                            spawnTimer: seededRandom() * 90
                         });
                         spawned = true;
                     }
@@ -526,13 +540,13 @@ Status: Awaiting hero to join the battle.</div>
             }
 
             // Keys
-            const keyCount = 2 + Math.floor(Math.random() * 3);
+            const keyCount = 2 + Math.floor(seededRandom() * 3);
             for (let i = 0; i < keyCount; i++) {
                 spawnItem("key", "#ffd600");
             }
 
             // Foods (Health restoration)
-            const foodCount = 1 + Math.floor(Math.random() * 3);
+            const foodCount = 1 + Math.floor(seededRandom() * 3);
             for (let i = 0; i < foodCount; i++) {
                 spawnItem("food", "#ff6d00");
             }
@@ -540,8 +554,8 @@ Status: Awaiting hero to join the battle.</div>
             // Exit Portal
             let portalPlaced = false;
             while (!portalPlaced) {
-                const px = GRID_W - 3 - Math.floor(Math.random() * 2);
-                const py = GRID_H - 3 - Math.floor(Math.random() * 2);
+                const px = GRID_W - 3 - Math.floor(seededRandom() * 2);
+                const py = GRID_H - 3 - Math.floor(seededRandom() * 2);
                 if (map[py][px] === 0) {
                     items.push({
                         type: "exit",
@@ -557,8 +571,8 @@ Status: Awaiting hero to join the battle.</div>
         function spawnItem(type, color) {
             let placed = false;
             while (!placed) {
-                const rx = 3 + Math.floor(Math.random() * (GRID_W - 5));
-                const ry = 3 + Math.floor(Math.random() * (GRID_H - 5));
+                const rx = 3 + Math.floor(seededRandom() * (GRID_W - 5));
+                const ry = 3 + Math.floor(seededRandom() * (GRID_H - 5));
                 if (map[ry][rx] === 0) {
                     items.push({
                         type: type,
@@ -1077,6 +1091,7 @@ Status: Awaiting hero to join the battle.</div>
                                 spawners.splice(j, 1);
                                 score += 200;
                                 sulfurHarvested += 2; // Spawners harvest sulfur
+                                pendingSpawnerDestructionCount++;
                                 saveHarvestedReagents();
                                 logEvent(`[Ledger] Committed Tx: SPAWNER_DESTROY | Score: ${score}`);
                             }
@@ -1181,10 +1196,9 @@ Status: Awaiting hero to join the battle.</div>
                         items.splice(i, 1);
                     } else if (it.type === "exit") {
                         if (keysCount > 0) {
-                            // Proceed to next level
+                            keysCount--;
                             currentLevel++;
-                            playSynthSound(1000, 'triangle', 0.5, 2000);
-                            generateDungeonLevel();
+                            // map generation will trigger on the next sync return with server-side random seed
                         }
                     }
                 }
@@ -1444,6 +1458,9 @@ Status: Awaiting hero to join the battle.</div>
 
         async function syncMultiplayerState() {
             try {
+                let spawnerDestroyedThisTick = pendingSpawnerDestructionCount;
+                pendingSpawnerDestructionCount = 0;
+
                 const res = await fetch("/api/sync", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -1454,13 +1471,33 @@ Status: Awaiting hero to join the battle.</div>
                         charType: myCharType,
                         health: health,
                         score: score,
+                        level: currentLevel,
+                        spawnersDestroyedThisTick: spawnerDestroyedThisTick,
                         time: Date.now()
                     })
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    delete data[myPlayerId];
-                    otherPlayers = data;
+                    if (data.players) {
+                        delete data.players[myPlayerId];
+                        otherPlayers = data.players;
+                    }
+                    if (data.global) {
+                        // Coordinated Level Advancement
+                        if (data.global.level > currentLevel || lastGeneratedLevel !== data.global.level) {
+                            currentLevel = data.global.level;
+                            lastGeneratedLevel = data.global.level;
+                            playSynthSound(1000, 'triangle', 0.5, 2000);
+                            generateDungeonLevel(data.global.mapSeed);
+                        }
+                        
+                        // Update HUD Telemetry
+                        document.getElementById("isdnTelemetry").style.display = "block";
+                        document.getElementById("telSpawners").innerText = data.global.spawnersActive;
+                        document.getElementById("telDestroyed").innerText = data.global.destroyedSpawnersTotal;
+                        document.getElementById("telJitter").innerText = data.global.accumulatorJitter.toFixed(2);
+                        document.getElementById("telLatency").innerText = data.global.accumulatorLatency.toFixed(2);
+                    }
                 }
             } catch (e) {
                 console.warn("Multiplayer sync failed:", e);
