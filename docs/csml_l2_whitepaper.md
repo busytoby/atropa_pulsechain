@@ -235,3 +235,16 @@ The RDBMS runtime exposes a C API endpoint that extracts $O(\log N)$ sibling nod
 $$\text{SiblingNodes} = \text{mpt_get_proof}(M_T, \text{Key})$$
 
 Clients use this endpoint to fetch proof segments, allowing lightweight nodes to verify storage balances locally against the committed `next_state_hash` without local storage index overhead.
+
+---
+
+## 15. Cross-Chain BTC-ETH Compatibility Proofs
+
+We establish full operational compatibility between Bitcoin and Ethereum environments without bridging assets or using trust-compromised wrapped wrappers:
+
+1.  **Solidity ABI Execution over UTXO**:
+    The system resolves Solidity-style ABI selector dispatches (e.g. `0xbbbbbbbb` query method calls) directly against the local, reconstructed Tape Table.
+2.  **Shared Memory EVM Indexing**:
+    State transitions update the `trie_route_table` (EVM Merkle-Patricia trie) mapped inside the shared memory segment.
+3.  **Bitcoin Consensus Settlement**:
+    Transitions are verified off-chain and secured via Bitcoin covenant rules on L1, proving that Bitcoin can host stateful, Solidity-compliant smart contract scopes with base layer security guarantees.
