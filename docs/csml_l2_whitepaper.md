@@ -214,3 +214,24 @@ This leverages hardware parallelism to bypass CPU profiling limits during deep e
 ### C. Recursive Fraud Proof Bundling
 For optimistic dispute resolutions, intermediate execution states are recursively grouped into Merkle trees of execution steps. Disputes on step correctness do not require verifying all $S$ transitions. Instead, the disputer submits a membership proof targeting the exact step of error, resolving state conflicts in log time:
 $$\text{DisputeComplexity} = O(\log S)$$
+
+---
+
+## 14. Network Optimization Frameworks
+
+For real-world deployment, the network incorporates three high-performance optimization layers:
+
+### A. UTXO Batch State Transition Pipeline
+To aggregate state transitions and lower transaction overhead, multiple parallel state-delta streams are bundled into a single UTXO transaction. The host consolidates these logs, publishing a single combined commitment representing multiple asynchronous operations, reducing base L1 network load.
+
+### B. Compact Binary Delta Encoding
+State deltas are serialized using a variable-length integer encoding (Varint) scheme:
+$$\text{PackedDelta} = \text{Varint}(k) \parallel \text{Varint}(idx) \parallel \text{Varint}(\gamma)$$
+
+This minimizes the byte count of witness inputs pushed onto the L1 chain, maximizing batch capacity inside Bitcoin's block weight limits.
+
+### C. Merkle Proof API Hook
+The RDBMS runtime exposes a C API endpoint that extracts $O(\log N)$ sibling nodes from the state trie:
+$$\text{SiblingNodes} = \text{mpt_get_proof}(M_T, \text{Key})$$
+
+Clients use this endpoint to fetch proof segments, allowing lightweight nodes to verify storage balances locally against the committed `next_state_hash` without local storage index overhead.
