@@ -632,4 +632,13 @@ int interop_yul_translate_opcode(int yul_op, int *out_stack_op);
 int interop_yul_execute_object(InteropStackVM *vm, const int *yul_instructions, size_t len, int *memory_pages, size_t *mem_count, size_t max_mem);
 int interop_yul_verify_memory(const int *memory_pages, size_t mem_count, int target_addr, int expected_val, int *out_verified);
 
+typedef struct InteropNestedVM {
+    InteropStackVM vm;
+    struct InteropNestedVM *child;
+    int depth;
+} InteropNestedVM;
+
+int interop_vm_recursive_execute(InteropNestedVM *nested, const int *bytecode, size_t len);
+int interop_vm_recursive_verify(const InteropNestedVM *nested, int target_depth, const int *exp_stack, size_t exp_len, int *out_verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

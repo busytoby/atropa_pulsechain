@@ -1458,3 +1458,33 @@ int interop_yul_verify_memory(const int *memory_pages, size_t mem_count, int tar
     }
     return 0;
 }
+
+int interop_vm_recursive_execute(InteropNestedVM *nested, const int *bytecode, size_t len) {
+    if (!nested || !bytecode || len == 0) return -1;
+    int status = interop_stack_vm_execute(&(nested->vm), bytecode, len);
+    if (status != 0) return status;
+    if (nested->child) {
+        int *child_bytecode = malloc(nested->vm.stack_len * sizeof(int));
+        if (!child_bytecode) return -2;
+        for (size_t i = 0; i < nested->vm.stack_len; i++) {
+            child_bytecode[i] = nested->vm.stack[i];
+        }
+        status = interop_vm_recursive_execute(nested->child, child_bytecode, nested->vm.stack_len);
+        free(child_bytecode);
+        if (status != 0) return status;
+    }
+    return 0;
+}
+
+int interop_vm_recursive_verify(const InteropNestedVM *nested, int target_depth, const int *exp_stack, size_t exp_len, int *out_verified) {
+    if (!nested || !out_verified) return -1;
+    const InteropNestedVM *curr = nested;
+    while (curr && curr->depth != target_depth) {
+        curr = curr->child;
+    }
+    if (!curr) {
+        *out_verified = 0;
+        return 0;
+    }
+    return interop_stack_vm_verify(&(curr->vm), exp_stack, exp_len, NULL, 0, out_verified);
+}

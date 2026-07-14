@@ -39,4 +39,35 @@ void run_extra_verification_tests2(void) {
     assert(interop_yul_verify_memory(memory_pages, mem_count, 100, 999, &pl_verified) == 0);
     assert(pl_verified == 0);
     printf("✓ Yul EVM compatibility memory proof verified.\n");
+
+    // 242. Verify recursive VM stack execution
+    InteropNestedVM parent, child;
+    memset(&parent, 0, sizeof(InteropNestedVM));
+    memset(&child, 0, sizeof(InteropNestedVM));
+    parent.depth = 2;
+    parent.child = &child;
+    child.depth = 1;
+    int recursive_bc[9] = { 1, 1, 1, 10, 1, 20, 2, 6 };
+    assert(interop_vm_recursive_execute(&parent, recursive_bc, 8) == 0);
+    assert(parent.vm.stack_len == 2 && parent.vm.stack[1] == 30);
+    assert(child.vm.stack_len == 1 && child.vm.stack[0] == 30);
+    printf("✓ Recursive VM execution across virtualization levels verified.\n");
+
+    // 243. Verify recursive VM state depth matching
+    int rec_verified = -1;
+    int exp_child_stack[1] = { 30 };
+    assert(interop_vm_recursive_verify(&parent, 1, exp_child_stack, 1, &rec_verified) == 0);
+    assert(rec_verified == 1);
+    printf("✓ Recursive VM state depth matching verified.\n");
+
+    // 244. Verify nested deep emulation execution halts cleanly
+    InteropNestedVM gp;
+    memset(&gp, 0, sizeof(InteropNestedVM));
+    gp.depth = 3;
+    gp.child = &parent;
+    parent.vm.stack_len = 0;
+    child.vm.stack_len = 0;
+    int gp_bc[6] = { 1, 1, 1, 10, 6 };
+    assert(interop_vm_recursive_execute(&gp, gp_bc, 5) != 0);
+    printf("✓ Nested deep emulation verification halts cleanly.\n");
 }
