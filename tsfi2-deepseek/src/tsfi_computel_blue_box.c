@@ -2301,6 +2301,30 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
             printf("[QUADTREE] Wrote node-specific state file: %s\n", node_path);
         }
 
+        // Copy current evm_storage.json to block specific storage snapshot
+        extern void persist_reconciliation_data(void);
+        persist_reconciliation_data();
+        char storage_path[128];
+        snprintf(storage_path, sizeof(storage_path), "assets/rdbms_storage_%lu.json", next_root);
+        FILE *fs_src = fopen("evm_storage.json", "r");
+        if (!fs_src) fs_src = fopen("tsfi2-deepseek/evm_storage.json", "r");
+        if (fs_src) {
+            FILE *fs_dst = fopen(storage_path, "w");
+            if (!fs_dst) {
+                snprintf(storage_path, sizeof(storage_path), "../assets/rdbms_storage_%lu.json", next_root);
+                fs_dst = fopen(storage_path, "w");
+            }
+            if (fs_dst) {
+                char ch;
+                while ((ch = fgetc(fs_src)) != EOF) {
+                    fputc(ch, fs_dst);
+                }
+                fclose(fs_dst);
+                printf("[QUADTREE] Wrote block-specific storage snapshot: %s\n", storage_path);
+            }
+            fclose(fs_src);
+        }
+
         // Append to relational RDBMS nodes table
         FILE *fa = fopen("assets/rdbms_nodes_table.json", "a");
         if (!fa) fa = fopen("../assets/rdbms_nodes_table.json", "a");
@@ -2393,6 +2417,31 @@ void blue_box_rehydrate_quadtree_states(void) {
                     
                     printf("[QUADTREE] [REHYDRATE] Restored latest block ledger state: root=%lu, gas=%lu, collected=%lu, 2-3 Tree Segments=[%lu,%lu,%lu,%lu]\n",
                            next_root, gas, collected, r23_0, r23_1, r23_2, r23_3);
+
+                    // Copy block specific storage snapshot back to evm_storage.json
+                    char src_path[128];
+                    snprintf(src_path, sizeof(src_path), "assets/rdbms_storage_%lu.json", next_root);
+                    FILE *fs_src = fopen(src_path, "r");
+                    if (!fs_src) {
+                        snprintf(src_path, sizeof(src_path), "../assets/rdbms_storage_%lu.json", next_root);
+                        fs_src = fopen(src_path, "r");
+                    }
+                    if (fs_src) {
+                        FILE *fs_dst = fopen("evm_storage.json", "w");
+                        if (!fs_dst) fs_dst = fopen("tsfi2-deepseek/evm_storage.json", "w");
+                        if (fs_dst) {
+                            char ch;
+                            while ((ch = fgetc(fs_src)) != EOF) {
+                                fputc(ch, fs_dst);
+                            }
+                            fclose(fs_dst);
+                            printf("[QUADTREE] [REHYDRATE] Restored evm_storage.json snapshot for root %lu\n", next_root);
+                            
+                            extern void reload_evm_storage_from_json(void);
+                            reload_evm_storage_from_json();
+                        }
+                        fclose(fs_src);
+                    }
                 }
             }
             fclose(f);

@@ -109,6 +109,11 @@ static void load_reconciliation_data(void) {
     fclose(fp);
 }
 
+void reload_evm_storage_from_json(void) {
+    g_yul_evm_context.storage_count = 0;
+    load_reconciliation_data();
+}
+
 static void write_abi_arg(uint8_t *dest, uint64_t val) {
     memset(dest, 0, 32);
     for (int i = 0; i < 8; i++) {
