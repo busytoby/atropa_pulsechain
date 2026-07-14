@@ -304,6 +304,61 @@ static int is_numeric(const char *str) {
     return 1;
 }
 
+static int fallback_g2p(const char *word, char **trie_ph_allocated, int *trie_ph_count, char **res_copy_ptrs, int *res_copy_count) {
+    int start_count = *trie_ph_count;
+    size_t len = strlen(word);
+    for (size_t i = 0; i < len && (*trie_ph_count) < 64; ) {
+        // Look ahead for common double character clusters
+        if (i + 1 < len) {
+            if (word[i] == 's' && word[i+1] == 'h') {
+                char *ph = strdup("sh");
+                res_copy_ptrs[(*res_copy_count)++] = ph;
+                trie_ph_allocated[(*trie_ph_count)++] = ph;
+                i += 2;
+                continue;
+            }
+            if (word[i] == 'e' && word[i+1] == 'e') {
+                char *ph = strdup("ee");
+                res_copy_ptrs[(*res_copy_count)++] = ph;
+                trie_ph_allocated[(*trie_ph_count)++] = ph;
+                i += 2;
+                continue;
+            }
+            if (word[i] == 'o' && word[i+1] == 'o') {
+                char *ph = strdup("oo");
+                res_copy_ptrs[(*res_copy_count)++] = ph;
+                trie_ph_allocated[(*trie_ph_count)++] = ph;
+                i += 2;
+                continue;
+            }
+        }
+        // Single character rules
+        char ch = word[i];
+        char *ph = NULL;
+        if (ch == 'e') {
+            ph = strdup("ee");
+        } else if (ch == 'o') {
+            ph = strdup("oo");
+        } else if (ch == 'm') {
+            ph = strdup("m");
+        } else if (ch == 's') {
+            ph = strdup("s");
+        } else if (ch == 'i' || ch == 'a' || ch == 'y') {
+            ph = strdup("ee");
+        } else if (ch == 'u' || ch == 'w') {
+            ph = strdup("oo");
+        } else if (ch == 'n' || ch == 't' || ch == 'd' || ch == 'l' || ch == 'r' || ch == 'h') {
+            ph = strdup("m");
+        }
+        if (ph) {
+            res_copy_ptrs[(*res_copy_count)++] = ph;
+            trie_ph_allocated[(*trie_ph_count)++] = ph;
+        }
+        i++;
+    }
+    return (*trie_ph_count) - start_count;
+}
+
 int main(int argc, char **argv) {
     printf("=== TSFi C Speech Generation Controller Integration ===\n");
     tsfi_wire_firmware_init();
@@ -386,7 +441,8 @@ int main(int argc, char **argv) {
                     tok = strtok_r(NULL, " ", &inner_saveptr);
                 }
             } else {
-                printf("[C_SPEECH] Sentence Trie miss for word: '%s'\n", word);
+                printf("[C_SPEECH] Sentence Trie miss for word: '%s' -> Applying G2P Fallback rules\n", word);
+                fallback_g2p(word, trie_ph_allocated, &trie_ph_count, res_copy_ptrs, &res_copy_count);
             }
             word = strtok_r(NULL, " ,.?!;:", &outer_saveptr);
         }
