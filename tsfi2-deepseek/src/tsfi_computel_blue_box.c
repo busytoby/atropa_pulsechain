@@ -1,3 +1,4 @@
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -6,6 +7,7 @@
 #include <string.h>
 #include <sys/file.h>
 #include <openssl/sha.h>
+#include "tsfi_zmm_rpc.h"
 
 /*
  * Auncient Computel Single-Frequency (SF) & Multi-Frequency (MF) Switch Controller
@@ -1137,4 +1139,15 @@ uint32_t blue_box_query_blocks_sorted(const char *filepath, const char *field, c
     avl_inorder(sort_tree, results_out, &idx, max_results);
     avl_free(sort_tree);
     return idx;
+}
+
+static TsfiZmmVmState blue_box_zmm_state;
+static bool blue_box_zmm_initialized = false;
+
+int blue_box_dispatch_zmm_rpc(const char *json_in, char *output_buf, size_t out_max) {
+    if (!blue_box_zmm_initialized) {
+        tsfi_zmm_vm_init(&blue_box_zmm_state);
+        blue_box_zmm_initialized = true;
+    }
+    return tsfi_zmm_rpc_dispatch(&blue_box_zmm_state, json_in, output_buf, out_max);
 }

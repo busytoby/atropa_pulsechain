@@ -436,6 +436,13 @@ int main(void) {
     assert(blue_box_centrex_resolve_route(911) == 808);
     assert(blue_box_centrex_resolve_route(800) == 800);
 
+    // 24. Test Blue Box direct access to ZMM Central Dispatcher
+    extern int blue_box_dispatch_zmm_rpc(const char *json_in, char *output_buf, size_t out_max);
+    char rpc_out[1024];
+    int rpc_ok = blue_box_dispatch_zmm_rpc("{\"method\": \"wave512.inspect\", \"id\": 1}", rpc_out, sizeof(rpc_out));
+    assert(rpc_ok == 1);
+    assert(strstr(rpc_out, "density") != NULL);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -446,6 +453,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, and Centrex Route Resolution tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, and ZMM Dispatch tests passed successfully.\n");
     return 0;
 }
