@@ -1346,15 +1346,25 @@ Status: Awaiting hero to join the battle.</div>
             };
             
             const mockStorage = {
-                55051: 32,
-                55052: 32,
+                55051: 100,
+                55052: 100,
                 55053: 2000,
                 55054: 0,
+                55059: 0
             };
             
             folkloreContract = {
                 poke: async (addr, val) => {
                     mockStorage[addr] = val;
+                    if (addr === 55024) {
+                        const dir = mockStorage[55059] || 0;
+                        const speed = 12;
+                        if (dir === 1) mockStorage[55052] -= speed;
+                        if (dir === 2) mockStorage[55052] += speed;
+                        if (dir === 3) mockStorage[55051] -= speed;
+                        if (dir === 4) mockStorage[55051] += speed;
+                        mockStorage[55059] = 0;
+                    }
                     console.log(`[Simulated Web3] poke(${addr}, ${val})`);
                     logEvent(`[Web3 Tx] poke addr ${addr} -> value ${val}`);
                     return { wait: async () => {} };
