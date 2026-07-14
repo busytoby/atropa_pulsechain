@@ -300,6 +300,98 @@ void blue_box_free_23_tree(TwoThreeNode *node) {
     free(node);
 }
 
+typedef struct AvlNode {
+    uint32_t val;
+    uint32_t block_number;
+    int height;
+    struct AvlNode *left;
+    struct AvlNode *right;
+} AvlNode;
+
+static int avl_height(AvlNode *n) {
+    return n ? n->height : 0;
+}
+
+static int avl_balance(AvlNode *n) {
+    return n ? avl_height(n->left) - avl_height(n->right) : 0;
+}
+
+static AvlNode* avl_right_rotate(AvlNode *y) {
+    AvlNode *x = y->left;
+    AvlNode *T2 = x->right;
+    x->right = y;
+    y->left = T2;
+    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
+    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
+    return x;
+}
+
+static AvlNode* avl_left_rotate(AvlNode *x) {
+    AvlNode *y = x->right;
+    AvlNode *T2 = y->left;
+    y->left = x;
+    x->right = T2;
+    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
+    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
+    return y;
+}
+
+static AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
+    if (!node) {
+        AvlNode *n = (AvlNode*)calloc(1, sizeof(AvlNode));
+        n->val = val;
+        n->block_number = block_number;
+        n->height = 1;
+        return n;
+    }
+    if (val == node->val) {
+        node->block_number = block_number;
+        return node;
+    }
+    if (val < node->val) {
+        node->left = avl_insert(node->left, val, block_number);
+    } else {
+        node->right = avl_insert(node->right, val, block_number);
+    }
+
+    node->height = 1 + (avl_height(node->left) > avl_height(node->right) ? avl_height(node->left) : avl_height(node->right));
+    int balance = avl_balance(node);
+
+    if (balance > 1 && val < node->left->val) {
+        return avl_right_rotate(node);
+    }
+    if (balance < -1 && val >= node->right->val) {
+        return avl_left_rotate(node);
+    }
+    if (balance > 1 && val >= node->left->val) {
+        node->left = avl_left_rotate(node->left);
+        return avl_right_rotate(node);
+    }
+    if (balance < -1 && val < node->right->val) {
+        node->right = avl_right_rotate(node->right);
+        return avl_left_rotate(node);
+    }
+    return node;
+}
+
+static void avl_inorder(AvlNode *root, uint32_t *arr, uint32_t *idx, uint32_t max_len) {
+    if (!root || *idx >= max_len) return;
+    avl_inorder(root->left, arr, idx, max_len);
+    if (*idx < max_len) {
+        arr[(*idx)++] = root->block_number;
+    }
+    avl_inorder(root->right, arr, idx, max_len);
+}
+
+static void avl_free(AvlNode *root) {
+    if (!root) return;
+    avl_free(root->left);
+    avl_free(root->right);
+    free(root);
+}
+
+static AvlNode *centrex_avl = NULL;
+
 void blue_box_bind_23_tree(TwoThreeNode *root);
 
 typedef struct {
@@ -661,14 +753,26 @@ bool blue_box_decode_access_code(const char *dial_sequence) {
         }
     }
     if (strcmp(dial_sequence, "*72") == 0) {
+        centrex_avl = avl_insert(centrex_avl, 72, 1);
         current_block_state.active_trunk_mask |= (1U << 31);
         return true;
     }
     if (strcmp(dial_sequence, "*73") == 0) {
+        centrex_avl = avl_insert(centrex_avl, 72, 0);
         current_block_state.active_trunk_mask &= ~(1U << 31);
         return true;
     }
     return false;
+}
+
+uint32_t blue_box_centrex_lookup(uint32_t dial_code) {
+    AvlNode *x = centrex_avl;
+    while (x != NULL) {
+        if (dial_code == x->val) return x->block_number;
+        if (dial_code < x->val) x = x->left;
+        else x = x->right;
+    }
+    return 0;
 }
 
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
@@ -941,91 +1045,7 @@ uint64_t blue_box_aggregate_blocks(const char *filepath, const char *field, cons
     return 0;
 }
 
-typedef struct AvlNode {
-    uint32_t val;
-    uint32_t block_number;
-    int height;
-    struct AvlNode *left;
-    struct AvlNode *right;
-} AvlNode;
-
-static int avl_height(AvlNode *n) {
-    return n ? n->height : 0;
-}
-
-static int avl_balance(AvlNode *n) {
-    return n ? avl_height(n->left) - avl_height(n->right) : 0;
-}
-
-static AvlNode* avl_right_rotate(AvlNode *y) {
-    AvlNode *x = y->left;
-    AvlNode *T2 = x->right;
-    x->right = y;
-    y->left = T2;
-    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
-    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
-    return x;
-}
-
-static AvlNode* avl_left_rotate(AvlNode *x) {
-    AvlNode *y = x->right;
-    AvlNode *T2 = y->left;
-    y->left = x;
-    x->right = T2;
-    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
-    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
-    return y;
-}
-
-static AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
-    if (!node) {
-        AvlNode *n = (AvlNode*)calloc(1, sizeof(AvlNode));
-        n->val = val;
-        n->block_number = block_number;
-        n->height = 1;
-        return n;
-    }
-    if (val < node->val) {
-        node->left = avl_insert(node->left, val, block_number);
-    } else {
-        node->right = avl_insert(node->right, val, block_number);
-    }
-
-    node->height = 1 + (avl_height(node->left) > avl_height(node->right) ? avl_height(node->left) : avl_height(node->right));
-    int balance = avl_balance(node);
-
-    if (balance > 1 && val < node->left->val) {
-        return avl_right_rotate(node);
-    }
-    if (balance < -1 && val >= node->right->val) {
-        return avl_left_rotate(node);
-    }
-    if (balance > 1 && val >= node->left->val) {
-        node->left = avl_left_rotate(node->left);
-        return avl_right_rotate(node);
-    }
-    if (balance < -1 && val < node->right->val) {
-        node->right = avl_right_rotate(node->right);
-        return avl_left_rotate(node);
-    }
-    return node;
-}
-
-static void avl_inorder(AvlNode *root, uint32_t *arr, uint32_t *idx, uint32_t max_len) {
-    if (!root || *idx >= max_len) return;
-    avl_inorder(root->left, arr, idx, max_len);
-    if (*idx < max_len) {
-        arr[(*idx)++] = root->block_number;
-    }
-    avl_inorder(root->right, arr, idx, max_len);
-}
-
-static void avl_free(AvlNode *root) {
-    if (!root) return;
-    avl_free(root->left);
-    avl_free(root->right);
-    free(root);
-}
+// Redundant bottom AVL declarations removed to consolidate at the top.
 
 uint32_t blue_box_query_blocks_sorted(const char *filepath, const char *field, const char *op, uint64_t value, const char *sort_field, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0 || !sort_field) return 0;

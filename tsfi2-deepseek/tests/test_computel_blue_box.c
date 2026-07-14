@@ -417,6 +417,15 @@ int main(void) {
     assert(results[0] == 601);
     assert(results[1] == 600);
 
+    // 22. Test Centrex AVL Tree integration
+    blue_box_decode_access_code("*72");
+    uint32_t val72 = blue_box_centrex_lookup(72);
+    assert(val72 == 1);
+    
+    blue_box_decode_access_code("*73");
+    val72 = blue_box_centrex_lookup(72);
+    assert(val72 == 0);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -427,6 +436,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, and AVL Tree Sorting tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, and Centrex AVL tests passed successfully.\n");
     return 0;
 }
