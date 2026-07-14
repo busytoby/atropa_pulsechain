@@ -981,6 +981,48 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     }
+    if (req.url === "/api/ledger-nodes" && req.method === "GET") {
+        try {
+            const fs = require("fs");
+            const path = require("path");
+            let assetsDir = path.join(__dirname, "../assets");
+            if (!fs.existsSync(assetsDir)) {
+                assetsDir = path.join(__dirname, "assets");
+            }
+            let nodes = [];
+            if (fs.existsSync(assetsDir)) {
+                const files = fs.readdirSync(assetsDir);
+                files.forEach(file => {
+                    if (file.startsWith("rdbms_ledger_") && file.endsWith(".json")) {
+                        const filePath = path.join(assetsDir, file);
+                        try {
+                            const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
+                            const stat = fs.statSync(filePath);
+                            nodes.push({
+                                filename: file,
+                                root_hash: content.block_root_hash || 0,
+                                gas: content.state ? content.state.gas : 0,
+                                total_collected: content.state ? content.state.total_collected : 0,
+                                modified: stat.mtime
+                            });
+                        } catch (pe) {
+                            console.error("[SERVER] Failed to parse node ledger file:", file, pe.message);
+                        }
+                    }
+                });
+            }
+            nodes.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify(nodes));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
     // GET/POST API endpoints for dilemma logging
     if (req.url === "/api/dilemma-log" && req.method === "POST") {
         let body = "";

@@ -574,6 +574,32 @@
                 </div>
             </div>
 
+            <!-- Preserved Immutable Ledgers Panel -->
+            <div class="report-section" style="margin-top: 15px;">
+                <div class="card" style="overflow-x: auto;">
+                    <div class="panel-title">
+                        <span>Preserved Immutable Ledgers (Assets Ledger Nodes)</span>
+                        <span class="pulse-badge">Node Files</span>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ledger Filename</th>
+                                <th>Root Hash</th>
+                                <th>Gas Allowance</th>
+                                <th>Total Collected</th>
+                                <th>Last Preserved Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerNodesTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--neon-blue);">Awaiting ledger nodes scan...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Lore & SHIO Diagnostics Section -->
             <div class="report-section" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
                 <!-- ZMM Manifold Visualizer -->
@@ -1506,6 +1532,7 @@
                         tbody.innerHTML = html;
                     }
                 }
+                await loadLedgerNodes();
             } catch (e) {
                 console.error("Failed to update cache metrics:", e);
             }
@@ -1572,6 +1599,33 @@
                 }
             } catch (e) {
                 appendLog("[SCSI] Override connection error: " + e.message, "var(--neon-magenta)");
+            }
+        }
+
+        async function loadLedgerNodes() {
+            const tbody = document.getElementById("ledgerNodesTableBody");
+            try {
+                const res = await fetch("/api/ledger-nodes");
+                const nodes = await res.json();
+                tbody.innerHTML = "";
+                if (nodes && nodes.length > 0) {
+                    nodes.forEach(node => {
+                        const dateStr = new Date(node.modified).toLocaleString();
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong style="color: var(--neon-blue); font-family: monospace;">${node.filename}</strong></td>
+                                <td style="font-family: monospace; color: var(--neon-purple);">${node.root_hash}</td>
+                                <td>${node.gas.toLocaleString()}</td>
+                                <td>${node.total_collected.toLocaleString()}</td>
+                                <td style="color: #8c9ba5;">${dateStr}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No preserved ledger nodes found in assets.</td></tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--neon-magenta);">Failed to load ledger nodes: ${e.message}</td></tr>`;
             }
         }
 

@@ -190,6 +190,141 @@ uint64_t current_time_ms(void) {
     return (uint64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
+#include <dirent.h>
+
+void write_thunk_to_disk(LauMemoNode *node) {
+    char filepath[128];
+    snprintf(filepath, sizeof(filepath), "assets/thunk_cache_%lu.json", node->signature_hash);
+    FILE *f = fopen(filepath, "w");
+    if (!f) {
+        snprintf(filepath, sizeof(filepath), "../assets/thunk_cache_%lu.json", node->signature_hash);
+        f = fopen(filepath, "w");
+    }
+    if (f) {
+        fprintf(f, "{\"signature_hash\": %lu, \"contract_name\": \"%s\", \"ttl_ms\": %lu, \"cache_hits\": %lu, \"calldata\": \"",
+                node->signature_hash, node->contract_name, node->ttl_ms, node->cache_hits);
+        for (size_t i = 0; i < node->calldatasize; i++) {
+            fprintf(f, "%02x", ((uint8_t*)node->calldata_ptr)[i]);
+        }
+        fprintf(f, "\", \"retval\": \"");
+        for (size_t i = 0; i < node->retval_len; i++) {
+            fprintf(f, "%02x", ((uint8_t*)node->retval_ptr)[i]);
+        }
+        fprintf(f, "\"}\n");
+        fclose(f);
+    }
+}
+
+static uint8_t hex_to_byte(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
+    if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
+    return 0;
+}
+
+static void parse_hex_string(const char *hex, uint8_t *bytes, size_t *len) {
+    size_t l = strlen(hex);
+    *len = l / 2;
+    for (size_t i = 0; i < *len; i++) {
+        bytes[i] = (hex_to_byte(hex[2*i]) << 4) | hex_to_byte(hex[2*i+1]);
+    }
+}
+
+static bool s_cache_rehydrated = false;
+
+void lau_yul_thunk_cache_rehydrate(void) {
+    const char *dir_path = "assets";
+    DIR *d = opendir(dir_path);
+    if (!d) {
+        dir_path = "../assets";
+        d = opendir(dir_path);
+    }
+    if (!d) return;
+
+    struct dirent *dir;
+    while ((dir = readdir(d)) != NULL) {
+        if (strncmp(dir->d_name, "thunk_cache_", 12) == 0 && strstr(dir->d_name, ".json")) {
+            char filepath[512];
+            snprintf(filepath, sizeof(filepath), "%s/%s", dir_path, dir->d_name);
+            FILE *f = fopen(filepath, "r");
+            if (f) {
+                char buf[4096];
+                if (fgets(buf, sizeof(buf), f)) {
+                    uint64_t sig_hash = 0;
+                    char name[64] = "";
+                    uint64_t ttl = 0;
+                    uint64_t hits = 0;
+                    char calldata_hex[1024] = "";
+                    char retval_hex[1024] = "";
+                    
+                    char *p_sig = strstr(buf, "\"signature_hash\":");
+                    char *p_name = strstr(buf, "\"contract_name\":");
+                    char *p_ttl = strstr(buf, "\"ttl_ms\":");
+                    char *p_hits = strstr(buf, "\"cache_hits\":");
+                    char *p_call = strstr(buf, "\"calldata\":");
+                    char *p_ret = strstr(buf, "\"retval\":");
+                    
+                    if (p_sig) sscanf(p_sig, "\"signature_hash\": %lu", &sig_hash);
+                    if (p_name) sscanf(p_name, "\"contract_name\": \"%[^\"]\"", name);
+                    if (p_ttl) sscanf(p_ttl, "\"ttl_ms\": %lu", &ttl);
+                    if (p_hits) sscanf(p_hits, "\"cache_hits\": %lu", &hits);
+                    if (p_call) sscanf(p_call, "\"calldata\": \"%[^\"]\"", calldata_hex);
+                    if (p_ret) sscanf(p_ret, "\"retval\": \"%[^\"]\"", retval_hex);
+                    
+                    uint8_t calldata[512];
+                    size_t calldatasize = 0;
+                    parse_hex_string(calldata_hex, calldata, &calldatasize);
+                    
+                    uint8_t retval[512];
+                    size_t retval_len = 0;
+                    parse_hex_string(retval_hex, retval, &retval_len);
+                    
+                    extern uint64_t bst_fnv1a_hash(const char *n, const uint8_t *cd, size_t size);
+                    uint64_t computed = bst_fnv1a_hash(name, calldata, calldatasize);
+                    if (computed == sig_hash) {
+                        LauMemoNode *new_node = (LauMemoNode*)lau_malloc(sizeof(LauMemoNode));
+                        new_node->signature_hash = sig_hash;
+                        strncpy(new_node->contract_name, name, 63);
+                        new_node->contract_name[63] = '\0';
+                        new_node->calldata_ptr = lau_malloc(calldatasize);
+                        memcpy(new_node->calldata_ptr, calldata, calldatasize);
+                        new_node->calldatasize = calldatasize;
+                        if (retval_len > 0) {
+                            new_node->retval_ptr = lau_malloc(retval_len);
+                            memcpy(new_node->retval_ptr, retval, retval_len);
+                            new_node->retval_len = retval_len;
+                            LauWiredHeader *h = (LauWiredHeader*)((char*)new_node->retval_ptr - 8192);
+                            if (h) {
+                                h->version = 1;
+                                h->system_id = 42;
+                                h->sealed = true;
+                            }
+                        } else {
+                            new_node->retval_ptr = NULL;
+                            new_node->retval_len = 0;
+                        }
+                        new_node->height = 1;
+                        new_node->created_time_ms = current_time_ms();
+                        new_node->ttl_ms = ttl;
+                        new_node->stale = false;
+                        new_node->cache_hits = hits;
+                        new_node->left = NULL;
+                        new_node->right = NULL;
+                        
+                        pthread_mutex_lock(&s_thunk_memo_bst_mutex);
+                        extern LauMemoNode* avl_insert(LauMemoNode *root, LauMemoNode *node);
+                        s_thunk_memo_bst_root = avl_insert(s_thunk_memo_bst_root, new_node);
+                        pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
+                        printf("[QUADTREE] [REHYDRATE] Restored witness-validated cache node: hash=%lu, contract=%s\n", sig_hash, name);
+                    }
+                }
+                fclose(f);
+            }
+        }
+    }
+    closedir(d);
+}
+
 static void bst_invalidate_contract(LauMemoNode *node, const char *name) {
     if (!node) return;
     if (strcmp(node->contract_name, name) == 0 && !node->stale) {
@@ -1103,6 +1238,12 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         return false;
     }
 
+    if (!s_cache_rehydrated) {
+        s_cache_rehydrated = true;
+        extern void lau_yul_thunk_cache_rehydrate(void);
+        lau_yul_thunk_cache_rehydrate();
+    }
+
     if (s_execution_call_stack_depth > 0 && s_execution_call_stack_depth < 16) {
         register_dependency(s_execution_call_stack[s_execution_call_stack_depth - 1], name);
     }
@@ -1233,6 +1374,8 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
                     }
                 }
                 s_thunk_memo_bst_root = avl_insert(s_thunk_memo_bst_root, new_node);
+                extern void write_thunk_to_disk(LauMemoNode *node);
+                write_thunk_to_disk(new_node);
             }
             pthread_mutex_unlock(&s_thunk_memo_bst_mutex);
         }
