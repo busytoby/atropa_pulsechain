@@ -782,6 +782,25 @@ int main() {
     assert(veb_out[1].value == 999);
     printf("✓ Parallel quadrant checks, RLE, and VEB layout verified.\n");
 
+    // 61-63. Test RLE vector decoding, decision pruning, and Minkowski clustering
+    uint32_t runs[2] = { 2, 3 };
+    uint32_t values[2] = { 10, 20 };
+    uint32_t decoded[5] = {0};
+    interop_rle_decode_avx512(runs, values, 2, decoded);
+    assert(decoded[0] == 10 && decoded[4] == 20);
+    InteropMultiDecisionNode prune_nodes[5] = {
+        { {100, 200, 300}, {1, 2, 3, 4} },
+        { {0xAAAA, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { {0xAAAA, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { {0xAAAA, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} },
+        { {0xAAAA, 0, 0}, {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF} }
+    };
+    interop_multi_decision_prune(prune_nodes, 5);
+    assert(prune_nodes[0].children[0] == 0xFFFFFFFF);
+    uint64_t mink_cents[6] = { 10, 20, 30, 999, 999, 999 };
+    assert(interop_coaxial_cluster_minkowski(w_coords, 2, mink_cents, 2, w_assign, 2) == 0);
+    printf("✓ Vectorized RLE decode, decision tree pruning, and Minkowski clustering verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

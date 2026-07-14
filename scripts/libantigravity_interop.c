@@ -1525,3 +1525,82 @@ void interop_quadtree_veb_align(const InteropQuadNode *src, InteropQuadNode *dst
         dst[i] = src[i];
     }
 }
+
+void interop_rle_decode_avx512(const uint32_t *runs, const uint32_t *values, size_t count, uint32_t *out) {
+    size_t out_idx = 0;
+    for (size_t i = 0; i < count; i++) {
+        uint32_t run = runs[i];
+        uint32_t val = values[i];
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+        // Broadcast optimization
+        __m512i vval = _mm512_set1_epi32((int)val);
+        while (run >= 16) {
+            _mm512_storeu_si512((__m512i*)&out[out_idx], vval);
+            out_idx += 16;
+            run -= 16;
+        }
+#endif
+        for (uint32_t r = 0; r < run; r++) {
+            out[out_idx++] = val;
+        }
+    }
+}
+
+void interop_multi_decision_prune(InteropMultiDecisionNode *nodes, size_t count) {
+    if (!nodes) return;
+    for (size_t i = 0; i < count; i++) {
+        uint32_t c0 = nodes[i].children[0];
+        uint32_t c1 = nodes[i].children[1];
+        uint32_t c2 = nodes[i].children[2];
+        uint32_t c3 = nodes[i].children[3];
+        if (c0 != 0xFFFFFFFF && c1 != 0xFFFFFFFF && c2 != 0xFFFFFFFF && c3 != 0xFFFFFFFF) {
+            if (nodes[c0].children[0] == 0xFFFFFFFF &&
+                nodes[c1].children[0] == 0xFFFFFFFF &&
+                nodes[c2].children[0] == 0xFFFFFFFF &&
+                nodes[c3].children[0] == 0xFFFFFFFF) {
+                uint32_t val0 = nodes[c0].thresholds[0];
+                if (val0 == nodes[c1].thresholds[0] &&
+                    val0 == nodes[c2].thresholds[0] &&
+                    val0 == nodes[c3].thresholds[0]) {
+                    nodes[i].thresholds[0] = val0;
+                    nodes[i].children[0] = 0xFFFFFFFF;
+                }
+            }
+        }
+    }
+}
+
+int interop_coaxial_cluster_minkowski(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign, uint32_t p) {
+    if (!coords || count == 0 || !centroids || k == 0 || !assign || p == 0) return -1;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t md = 0xFFFFFFFFFFFFFFFFULL;
+        uint32_t bc = 0;
+        for (size_t j = 0; j < k; j++) {
+            uint64_t dist = interop_knn_distance_minkowski(&coords[i * 3], &centroids[j * 3], p);
+            if (dist < md) {
+                md = dist;
+                bc = (uint32_t)j;
+            }
+        }
+        assign[i] = bc;
+    }
+    uint64_t ct[16] = {0};
+    uint64_t sm[16][3] = {{0}};
+    for (size_t i = 0; i < count; i++) {
+        uint32_t c = assign[i];
+        if (c < 16) {
+            sm[c][0] += coords[i * 3 + 0];
+            sm[c][1] += coords[i * 3 + 1];
+            sm[c][2] += coords[i * 3 + 2];
+            ct[c]++;
+        }
+    }
+    for (size_t j = 0; j < k; j++) {
+        if (j < 16 && ct[j] > 0) {
+            centroids[j * 3 + 0] = sm[j][0] / ct[j];
+            centroids[j * 3 + 1] = sm[j][1] / ct[j];
+            centroids[j * 3 + 2] = sm[j][2] / ct[j];
+        }
+    }
+    return 0;
+}

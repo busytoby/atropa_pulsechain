@@ -299,5 +299,8 @@ int interop_quadtree_quadrant_check_avx512(const uint32_t *x_mins, const uint32_
 int interop_quadtree_write_rle(const char *filepath, const InteropQuadNode *nodes, size_t count);
 int interop_quadtree_read_rle(const char *filepath, InteropQuadNode *nodes_out, size_t max_nodes);
 void interop_quadtree_veb_align(const InteropQuadNode *src, InteropQuadNode *dst, size_t count);
+void interop_rle_decode_avx512(const uint32_t *runs, const uint32_t *values, size_t count, uint32_t *out);
+void interop_multi_decision_prune(InteropMultiDecisionNode *nodes, size_t count);
+int interop_coaxial_cluster_minkowski(const uint64_t *coords, size_t count, uint64_t *centroids, size_t k, uint32_t *assign, uint32_t p);
 
 #endif // LIBANTIGRAVITY_INTEROP_H
