@@ -320,6 +320,33 @@ int main(void) {
     assert(priority_after < priority_before);
     printf("   ✓ Dynamic priority aging pass verified successfully.\n\n");
 
+    // 10. Test JIT Binary Search Tree Cache & Dynamic Memory Mapping
+    printf("10. Testing JIT Binary Search Tree Cache & Dynamic Memory Mapping:\n");
+    extern uint64_t g_thunk_cache_hits;
+    extern uint64_t g_thunk_cache_lookups;
+    uint64_t hits_before = g_thunk_cache_hits;
+    uint64_t lookups_before = g_thunk_cache_lookups;
+    
+    // Call musicMaker first time to populate cache
+    uint8_t mm_cd[4] = {0x11, 0x2d, 0xf4, 0x9e};
+    uint8_t mm_ret[32] = {0};
+    size_t mm_ret_len = sizeof(mm_ret);
+    bool mm_ok = lau_yul_thunk_execute("musicMaker", mm_cd, sizeof(mm_cd), mm_ret, &mm_ret_len);
+    assert(mm_ok);
+    
+    // Call musicMaker a second time with exact same calldata to trigger cache hit
+    mm_ret_len = sizeof(mm_ret);
+    bool mm_cache_ok = lau_yul_thunk_execute("musicMaker", mm_cd, sizeof(mm_cd), mm_ret, &mm_ret_len);
+    assert(mm_cache_ok);
+    
+    uint64_t hits_after = g_thunk_cache_hits;
+    uint64_t lookups_after = g_thunk_cache_lookups;
+    printf("    -> Cache hits: %lu (Before: %lu)\n", hits_after, hits_before);
+    printf("    -> Cache lookups: %lu (Before: %lu)\n", lookups_after, lookups_before);
+    assert(lookups_after > lookups_before);
+    assert(hits_after > hits_before);
+    printf("    ✓ BST-based lau_memory cache hit verified successfully.\n\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
