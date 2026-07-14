@@ -443,6 +443,16 @@ int main(void) {
     assert(rpc_ok == 1);
     assert(strstr(rpc_out, "density") != NULL);
 
+    // 25. Test Citrix RLE Framebuffer Compression
+    extern size_t blue_box_citrix_compress_frame(const uint8_t *fb, size_t size, uint8_t *compressed_out, size_t max_out);
+    uint8_t test_fb[10] = {0xAA, 0xAA, 0xAA, 0xBB, 0xBB, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC};
+    uint8_t comp_out[32];
+    size_t comp_len = blue_box_citrix_compress_frame(test_fb, 10, comp_out, sizeof(comp_out));
+    assert(comp_len == 6);
+    assert(comp_out[0] == 3 && comp_out[1] == 0xAA);
+    assert(comp_out[2] == 2 && comp_out[3] == 0xBB);
+    assert(comp_out[4] == 5 && comp_out[5] == 0xCC);
+
     remove("assets/wal_test.dat");
     remove("assets/wal_test.dat.hist");
     remove("assets/wal_test.dat.wal");
@@ -453,6 +463,6 @@ int main(void) {
     remove("assets/rbt_reload_test.dat");
     remove("assets/rbt_reload_test.dat.hist");
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, and ZMM Dispatch tests passed successfully.\n");
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, Red-Black Tree, Query RDBMS, 2-3 Tree Awareness, RDBMS DML, Relational Transaction, WAL Recovery, Aggregation, AVL Tree Sorting, Centrex AVL, Centrex Route Resolution, ZMM Dispatch, and Citrix Frame Compression tests passed successfully.\n");
     return 0;
 }

@@ -1151,3 +1151,20 @@ int blue_box_dispatch_zmm_rpc(const char *json_in, char *output_buf, size_t out_
     }
     return tsfi_zmm_rpc_dispatch(&blue_box_zmm_state, json_in, output_buf, out_max);
 }
+
+size_t blue_box_citrix_compress_frame(const uint8_t *fb, size_t size, uint8_t *compressed_out, size_t max_out) {
+    if (!fb || size == 0 || !compressed_out || max_out == 0) return 0;
+    size_t write_idx = 0;
+    size_t read_idx = 0;
+    while (read_idx < size && write_idx + 2 < max_out) {
+        uint8_t val = fb[read_idx];
+        uint8_t run_len = 1;
+        while (read_idx + run_len < size && fb[read_idx + run_len] == val && run_len < 255) {
+            run_len++;
+        }
+        compressed_out[write_idx++] = run_len;
+        compressed_out[write_idx++] = val;
+        read_idx += run_len;
+    }
+    return write_idx;
+}
