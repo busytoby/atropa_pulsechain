@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 161);
-    assert(code_nodes[1].value == 161);
+    assert(code_nodes[0].value == 163);
+    assert(code_nodes[1].value == 163);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1339,6 +1339,18 @@ int main() {
     float t_far[3] = { 2.0f, 3.0f, 4.0f };
     assert(interop_transe_score(h_emb, r_emb, t_far, 3, 2) == 0.75f);
     printf("✓ TransE translation scores verified.\n");
+
+    // 141. Verify TransE margin ranking loss
+    assert(interop_transe_margin_loss(1.0f, 3.0f, 1.5f) == 0.0f);
+    assert(interop_transe_margin_loss(2.0f, 1.0f, 1.0f) == 2.0f);
+    printf("✓ TransE margin ranking loss verified.\n");
+
+    // 142. Verify TransE entity embedding L2 normalization
+    float raw_emb[3] = { 3.0f, 4.0f, 0.0f };
+    assert(interop_transe_normalize_embedding(raw_emb, 3) == 0);
+    assert(raw_emb[0] >= 0.59f && raw_emb[0] <= 0.61f);
+    assert(raw_emb[1] >= 0.79f && raw_emb[1] <= 0.81f);
+    printf("✓ TransE entity embedding normalization verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

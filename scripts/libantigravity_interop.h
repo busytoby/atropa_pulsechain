@@ -485,4 +485,7 @@ int interop_graph_replay_and_bias(InteropGraphEdge *edges, size_t max_edges, siz
 
 float interop_transe_score(const float *h, const float *r, const float *t, size_t dim, int norm_type);
 
+float interop_transe_margin_loss(float pos_score, float neg_score, float margin);
+int interop_transe_normalize_embedding(float *emb, size_t dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

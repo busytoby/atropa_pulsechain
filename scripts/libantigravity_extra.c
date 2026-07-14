@@ -1338,3 +1338,33 @@ float interop_transe_score(const float *h, const float *r, const float *t, size_
     }
     return diff_sum;
 }
+
+float interop_transe_margin_loss(float pos_score, float neg_score, float margin) {
+    float loss = margin + pos_score - neg_score;
+    return (loss < 0.0f) ? 0.0f : loss;
+}
+
+int interop_transe_normalize_embedding(float *emb, size_t dim) {
+    if (!emb || dim == 0) return -1;
+    float sum = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum += emb[i] * emb[i];
+    }
+    if (sum == 0.0f) return -2;
+    
+    float xhalf = 0.5f * sum;
+    union {
+        float f;
+        int i;
+    } u;
+    u.f = sum;
+    u.i = 0x5f3759df - (u.i >> 1);
+    float inv_norm = u.f;
+    inv_norm = inv_norm * (1.5f - xhalf * inv_norm * inv_norm);
+    inv_norm = inv_norm * (1.5f - xhalf * inv_norm * inv_norm);
+    
+    for (size_t i = 0; i < dim; i++) {
+        emb[i] *= inv_norm;
+    }
+    return 0;
+}
