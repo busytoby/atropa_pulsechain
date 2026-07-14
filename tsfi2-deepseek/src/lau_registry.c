@@ -322,12 +322,12 @@ LauMetadata* tsfi_registry_scan_zmm(LauRegistryManifold *m, void *ptr) {
     for (uint32_t i = 0; i + 7 < count; i += 8) {
         __m512i v_index = _mm512_loadu_si512(&m->search_index[i]);
         __mmask8 mask = _mm512_cmpeq_epu64_mask(v_index, v_target);
-        if (mask) { LauMetadata *res = &m->slots[i + __builtin_ctz(mask)]; if (res->actual_start) return res; }
+        if (mask) { LauMetadata *res = &m->slots[i + __builtin_ctz(mask)]; if (res->actual_start) return res->prev; }
     }
     for (uint32_t j = 0; j < count; j++) {
         uintptr_t start = m->search_index[j];
         size_t size = m->slots[j].alloc_size & 0x007FFFFFFFFFFFFFULL;
-        if (start != 0 && target >= start && target < start + size) return &m->slots[j];
+        if (start != 0 && target >= start && target < start + size) return m->slots[j].prev;
     }
     return NULL;
 }
