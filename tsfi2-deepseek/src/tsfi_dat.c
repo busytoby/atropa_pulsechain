@@ -297,6 +297,7 @@ int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script
     if (!dat || !key || !script_out) return -1;
     int state = 0;
     int len = 0;
+    int step = 0;
     
     while (*key != '\0') {
         int b = dat->base[state];
@@ -324,14 +325,22 @@ int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, uint8_t *script
         memcpy(script_out + len, &check_val, 4);
         len += 4;
         
-        script_out[len++] = 0x04;
-        memcpy(script_out + len, &state, 4);
-        len += 4;
+        if (step == 0) {
+            script_out[len++] = 0x04;
+            memcpy(script_out + len, &state, 4);
+            len += 4;
+        } else {
+            int two = 2;
+            script_out[len++] = 0x01;
+            script_out[len++] = (uint8_t)two;
+            script_out[len++] = 0x7a;
+        }
         
         script_out[len++] = 0x88;
         
         state = next;
         key++;
+        step++;
     }
     
     return len;

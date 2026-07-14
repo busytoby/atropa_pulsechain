@@ -52,8 +52,14 @@ int main(void) {
         int final_state = 0;
         memcpy(&final_state, stack.elements[stack.top].data, 4);
         printf("[BTC_DAT] Final state in stack: %d\n", final_state);
+        fflush(stdout);
         assert(final_state > 0);
     }
+
+    // Verify stack contains exactly one element (no intermediate states preserved)
+    printf("[BTC_DAT] Final stack depth: %d\n", stack.top + 1);
+    fflush(stdout);
+    assert(stack.top == 0);
 
     // Clean up
     tsfi_trie_destroy(trie);

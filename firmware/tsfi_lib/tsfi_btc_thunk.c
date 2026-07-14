@@ -138,6 +138,21 @@ bool btc_thunk_execute(const uint8_t *script, size_t script_len, BtcStack *stack
                     if (!stack_push(stack, target.data, target.len)) return false;
                     break;
                 }
+                case 0x7a: { // OP_ROLL
+                    StackElement n_el;
+                    if (!stack_pop(stack, &n_el)) return false;
+                    int n = 0;
+                    if (n_el.len == 1) n = n_el.data[0];
+                    else if (n_el.len == 4) memcpy(&n, n_el.data, 4);
+                    
+                    if (stack->top < n) return false;
+                    StackElement target = stack->elements[stack->top - n];
+                    for (int idx = stack->top - n; idx < stack->top; idx++) {
+                        stack->elements[idx] = stack->elements[idx + 1];
+                    }
+                    stack->elements[stack->top] = target;
+                    break;
+                }
                 default:
                     return false; // Unknown opcode
             }
