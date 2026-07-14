@@ -528,4 +528,7 @@ int interop_transh_normalize_projection(float *proj_emb, size_t dim);
 int interop_transh_scale_gradient(const float *grad, const float *w, float *out_grad, size_t dim, float alpha);
 float interop_transh_mrr_score(const int *ranks, size_t count);
 
+float interop_transr_score(const float *h, const float *M, const float *r, const float *t, size_t ent_dim, size_t rel_dim, int norm_type);
+int interop_transr_matrix_norm_constraint(float *M, size_t ent_dim, size_t rel_dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

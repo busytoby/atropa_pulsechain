@@ -19,7 +19,7 @@ def analyze_codebase():
                 
     # 2. Extract implemented functions from C source files
     implemented = set()
-    for c_file in ['scripts/libantigravity_interop.c', 'scripts/libantigravity_extra.c']:
+    for c_file in ['scripts/libantigravity_interop.c', 'scripts/libantigravity_extra.c', 'scripts/libantigravity_extra2.c']:
         if os.path.exists(c_file):
             with open(c_file, 'r') as f:
                 content = f.read()
