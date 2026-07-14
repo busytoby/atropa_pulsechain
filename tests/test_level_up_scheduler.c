@@ -347,6 +347,57 @@ int main(void) {
     assert(hits_after > hits_before);
     printf("    ✓ BST-based lau_memory cache hit verified successfully.\n\n");
 
+    // 11. Test 2-3 Tree Segment Persistence & Rehydration
+    printf("11. Testing 2-3 Tree Segment Persistence & Rehydration:\n");
+    uint64_t r_quad = 0;
+    extern bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_root_1, uint64_t r23_root_2, uint64_t r23_root_3, uint64_t *r_quad_out);
+    extern bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_root, const uint8_t *witness, size_t witness_len);
+    extern void blue_box_rehydrate_quadtree_states(void);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+
+    // Force active root to 0
+    lau_yul_thunk_sstore(0xF1B5, 0);
+
+    // Convert segments: 700, 800, 900, 1000
+    bool conv_ok = blue_box_verify_23_to_quad_conversion(700, 800, 900, 1000, &r_quad);
+    assert(conv_ok);
+
+    // Commit via BTC script with valid witness delta computed via modular inverse of 34 using uint128 to avoid overflow
+    unsigned __int128 delta_128 = (unsigned __int128)r_quad * 869338428751331ULL;
+    uint64_t delta = (uint64_t)(delta_128 % 953467954114363ULL);
+    uint8_t witness_dummy[8];
+    for (int i = 0; i < 8; i++) {
+        witness_dummy[i] = (delta >> (56 - i * 8)) & 0xFF;
+    }
+    bool commit_ok = blue_box_commit_quadtree_via_btc_script(0, r_quad, witness_dummy, sizeof(witness_dummy));
+    assert(commit_ok);
+
+    // Now clear out the storage keys to simulate a crash/reboot
+    lau_yul_thunk_sstore(0xF1B5, 0);
+    lau_yul_thunk_sstore(0xF1C5, 0);
+    lau_yul_thunk_sstore(0xF1C7, 0);
+    lau_yul_thunk_sstore(0xF1C8, 0);
+    lau_yul_thunk_sstore(0xF1C9, 0);
+
+    // Call rehydrate
+    blue_box_rehydrate_quadtree_states();
+
+    // Verify values were loaded back from node ledger file
+    uint64_t recovered_root = lau_yul_thunk_sload(0xF1B5);
+    uint64_t recovered_r23_0 = lau_yul_thunk_sload(0xF1C5);
+    uint64_t recovered_r23_1 = lau_yul_thunk_sload(0xF1C7);
+    uint64_t recovered_r23_2 = lau_yul_thunk_sload(0xF1C8);
+    uint64_t recovered_r23_3 = lau_yul_thunk_sload(0xF1C9);
+
+    assert(recovered_root == 28376944299ULL);
+    assert(recovered_r23_0 == 700);
+    assert(recovered_r23_1 == 800);
+    assert(recovered_r23_2 == 900);
+    assert(recovered_r23_3 == 1000);
+    printf("    ✓ Successfully rehydrated 2-3 Tree root segments from assets: Segments=[%lu,%lu,%lu,%lu]\n\n",
+           recovered_r23_0, recovered_r23_1, recovered_r23_2, recovered_r23_3);
+
     printf("=============================================================\n");
     printf("AUNCIENT LEVEL UP SCHEDULER TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

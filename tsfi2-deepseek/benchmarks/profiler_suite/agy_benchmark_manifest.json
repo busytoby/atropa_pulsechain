@@ -3,15 +3,15 @@
   "product_suite": "TSFi2 RDNA4 Simulation Engine",
   "engine_version": "4.1",
   "provenance": {
-    "git_commit": "046ba35ffe59bcba1a5bea4a10eb0e03f0e0fff7",
-    "timestamp": "2026-07-14T18:32:31Z",
+    "git_commit": "d2641cb4b7d857a9897020ba39d6a790890b29aa",
+    "timestamp": "2026-07-14T18:33:00Z",
     "licensing": "ATROPA/DYSNOMIA"
   },
   "system_policy_guards": {
     "vulkan_teddy_bear": {
       "metric": "Headless Vulkan Teddy Bear FPS",
       "target": ">= 3000.0 FPS",
-      "verified_actual": "3,594.66 FPS",
+      "verified_actual": "6,501.22 FPS",
       "status": "PASS"
     },
     "wavelet_arena_memory": {
@@ -23,26 +23,26 @@
     "aho_corasick_compositor": {
       "metric": "Aho-Corasick Compositor Latency",
       "target": "<= 1000.0 ns",
-      "verified_actual": "236.89 ns",
+      "verified_actual": "233.16 ns",
       "status": "PASS"
     },
     "yang_synthesis": {
       "metric": "AVX-512 Yang Synthesis Rate",
       "target": ">= 20000.0 Waveforms/sec",
-      "verified_actual": "29,776.85 Waveforms/sec",
+      "verified_actual": "24,201.57 Waveforms/sec",
       "status": "PASS"
     },
     "merkle_reduction": {
       "metric": "Helmholtz Reduction Throughput",
       "target": ">= 4000.0 ns",
-      "verified_actual": "4590.94 ns",
+      "verified_actual": "4375.66 ns",
       "status": "PASS"
     },
     "deepseek_mla": {
       "metric": "DeepSeek MLA Kernels Rate",
       "target": ">= 90.0 MPasses/sec",
-      "verified_actual": "120.48 MPasses/sec",
-      "status": "PASS"
+      "verified_actual": "71.43 MPasses/sec",
+      "status": "FAIL"
     },
     "architectural_supremacy": {
       "metric": "Field vs Pointer Efficiency Gain",
@@ -53,19 +53,19 @@
     "zero_polling": {
       "metric": "Zero-Polling Hardware Latency",
       "target": "<= 100.0 us",
-      "verified_actual": "61.79 us",
+      "verified_actual": "61.78 us",
       "status": "PASS"
     },
     "winchester_mq": {
       "metric": "WinchesterMQ Yul Thunk Latency",
       "target": "<= 15000.0 ns",
-      "verified_actual": "92.42 ns",
+      "verified_actual": "95.34 ns",
       "status": "PASS"
     },
     "rdbms_operator": {
       "metric": "RDBMS Operator Verification Latency",
       "target": "<= 50000.0 ns",
-      "verified_actual": "98.62 ns",
+      "verified_actual": "105.69 ns",
       "status": "PASS"
     }
   }
