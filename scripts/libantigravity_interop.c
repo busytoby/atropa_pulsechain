@@ -2163,3 +2163,41 @@ uint32_t interop_zmm_select_thunk(const InteropMultiDecisionNode *nodes, uint32_
 int interop_tm_yul_optimize(const char *filepath, uint8_t *instruction_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, instruction_tape, len, 20, final_state);
 }
+
+void interop_project_coordinates(const InteropProjectionConfig *config, const float *in_coords, float *out_coords, size_t count) {
+    if (!config || !in_coords || !out_coords) return;
+    for (size_t i = 0; i < count; i++) {
+        float x = in_coords[i * 3 + 0];
+        float y = in_coords[i * 3 + 1];
+        float z = in_coords[i * 3 + 2];
+        if (config->mode == 0) {
+            out_coords[i * 3 + 0] = sinf(x + config->phase);
+            out_coords[i * 3 + 1] = sinf(y + config->phase);
+            out_coords[i * 3 + 2] = sinf(z + config->phase);
+        } else if (config->mode == 1) {
+            out_coords[i * 3 + 0] = x * config->projection_matrix[0] + y * config->projection_matrix[1] + z * config->projection_matrix[2];
+            out_coords[i * 3 + 1] = x * config->projection_matrix[3] + y * config->projection_matrix[4] + z * config->projection_matrix[5];
+            out_coords[i * 3 + 2] = x * config->projection_matrix[6] + y * config->projection_matrix[7] + z * config->projection_matrix[8];
+        } else {
+            float lx = sinf(x + config->phase);
+            float ly = sinf(y + config->phase);
+            float lz = sinf(z + config->phase);
+            out_coords[i * 3 + 0] = lx * config->projection_matrix[0] + ly * config->projection_matrix[1] + lz * config->projection_matrix[2];
+            out_coords[i * 3 + 1] = lx * config->projection_matrix[3] + ly * config->projection_matrix[4] + lz * config->projection_matrix[5];
+            out_coords[i * 3 + 2] = lx * config->projection_matrix[6] + ly * config->projection_matrix[7] + lz * config->projection_matrix[8];
+        }
+    }
+}
+
+void interop_gemm_synthesize(const float *oscillators, const float *mixing_matrix, float *out_buffer, size_t channels, size_t samples) {
+    if (!oscillators || !mixing_matrix || !out_buffer) return;
+    for (size_t c = 0; c < channels; c++) {
+        for (size_t s = 0; s < samples; s++) {
+            float val = 0.0f;
+            for (size_t src = 0; src < channels; src++) {
+                val += oscillators[src * samples + s] * mixing_matrix[c * channels + src];
+            }
+            out_buffer[c * samples + s] = val;
+        }
+    }
+}

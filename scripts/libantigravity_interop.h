@@ -404,4 +404,14 @@ void interop_gemm_avx512(const float *a, const float *b, float *c, size_t m, siz
 uint32_t interop_zmm_select_thunk(const InteropMultiDecisionNode *nodes, uint32_t root_idx, uint32_t opcode, uint32_t reg_complexity);
 int interop_tm_yul_optimize(const char *filepath, uint8_t *instruction_tape, size_t len, uint32_t *final_state);
 
+typedef struct {
+    uint32_t mode;
+    float projection_matrix[9];
+    float phase;
+    float frequency;
+} InteropProjectionConfig;
+
+void interop_project_coordinates(const InteropProjectionConfig *config, const float *in_coords, float *out_coords, size_t count);
+void interop_gemm_synthesize(const float *oscillators, const float *mixing_matrix, float *out_buffer, size_t channels, size_t samples);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

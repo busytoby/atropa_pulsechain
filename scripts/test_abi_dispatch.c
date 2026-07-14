@@ -1047,6 +1047,23 @@ int main() {
     remove(tm_file);
     printf("✓ GEMM, thunk selection, and Yul optimizer verified.\n");
 
+    // 107-108. Test coordinate projection and GEMM wave synthesis
+    InteropProjectionConfig proj_cfg = {
+        1,
+        { 2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f },
+        0.0f, 0.0f
+    };
+    float in_coords[3] = { 1.0f, 2.0f, 3.0f };
+    float out_coords[3] = { 0.0f };
+    interop_project_coordinates(&proj_cfg, in_coords, out_coords, 1);
+    assert(out_coords[0] == 2.0f && out_coords[2] == 6.0f);
+    float osc_data[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
+    float mix_mat[4] = { 2.0f, 0.0f, 0.0f, 2.0f };
+    float synth_out[4] = { 0.0f };
+    interop_gemm_synthesize(osc_data, mix_mat, synth_out, 2, 2);
+    assert(synth_out[0] == 1.0f && synth_out[3] == 2.0f);
+    printf("✓ Coordinate projection and GEMM synthesizer verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
