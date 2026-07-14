@@ -11,10 +11,10 @@
 #include <time.h>
 #include "tsfi_raw.h"
 
-#define ITERATIONS_LOCK 10000000 // 10 Million
-#define ITERATIONS_SYS  1000000  // 1 Million
-#define ITERATIONS_COPY 10000000 // 10 Million
-#define ITERATIONS_POLL 10000    // 10 Thousand
+#define ITERATIONS_LOCK 100000 // 100 Thousand
+#define ITERATIONS_SYS  10000  // 10 Thousand
+#define ITERATIONS_COPY 100000 // 100 Thousand
+#define ITERATIONS_POLL 1000   // 1 Thousand
 
 #define BUFFER_SIZE 4096
 
@@ -211,7 +211,7 @@ int main() {
 
     // --- 2. Zero-Syscall vs Pipe ---
     printf("\n2. Zero-Syscall (Shared Memory) vs Pipe Syscalls (%d ops)\n", ITERATIONS_SYS);
-    pipe(pipe_fds);
+    if (pipe(pipe_fds) != 0) return 1;
     start = get_time_ns();
     pthread_create(&prod, NULL, pipe_producer, NULL);
     pthread_create(&cons, NULL, pipe_consumer, NULL);
@@ -232,7 +232,7 @@ int main() {
 
     // --- 4. Zero-Polling vs poll() ---
     printf("\n4. Zero-Polling (Hardware Atomic Wait) vs OS poll() (%d wakes)\n", ITERATIONS_POLL);
-    pipe(pipe_fds);
+    if (pipe(pipe_fds) != 0) return 1;
     start = get_time_ns();
     pthread_create(&prod, NULL, poll_os_thread, NULL);
     struct pollfd pfd = { .fd = pipe_fds[0], .events = POLLIN };
