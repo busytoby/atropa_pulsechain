@@ -1941,3 +1941,26 @@ bool blue_box_trigger_green_box(uint32_t frequency, uint32_t duration_ms, uint32
            frequency, duration_ms, action);
     return true;
 }
+
+// 25. Green Box ERC20 compatible transaction thunk bridge
+bool blue_box_green_box_to_erc20(uint32_t action, char *payload_out, size_t max_len) {
+    if (!payload_out || max_len < 256) return false;
+    
+    const char *method = "";
+    if (action == 1) {
+        method = "erc20_collect";
+    } else if (action == 2) {
+        method = "erc20_refund";
+    } else {
+        return false;
+    }
+    
+    snprintf(payload_out, max_len,
+             "{\"jsonrpc\":\"2.0\",\"method\":\"%s\",\"params\":{\"amount\":%u,\"sig_hash\":\"%02x%02x%02x%02x\"},\"id\":1}",
+             method,
+             current_block_state.gas_allowance,
+             current_block_state.state_hash[4], current_block_state.state_hash[5],
+             current_block_state.state_hash[6], current_block_state.state_hash[7]);
+             
+    return true;
+}

@@ -444,6 +444,18 @@ int main(void) {
     assert(reg_green == 2);
     printf("[TEST] Green Box Coin disposition control actions verified.\n");
 
+    // 35. Test Green Box ERC20 compatible transaction thunks
+    char payload_collect[256];
+    char payload_refund[256];
+    bool g_tx_ok = blue_box_green_box_to_erc20(1, payload_collect, sizeof(payload_collect));
+    assert(g_tx_ok == true);
+    assert(strstr(payload_collect, "erc20_collect") != NULL);
+    
+    g_tx_ok = blue_box_green_box_to_erc20(2, payload_refund, sizeof(payload_refund));
+    assert(g_tx_ok == true);
+    assert(strstr(payload_refund, "erc20_refund") != NULL);
+    printf("[TEST] Green Box ERC20 compatible transaction thunks generated and verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
