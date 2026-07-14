@@ -2328,3 +2328,22 @@ int interop_graph_route_signal(const InteropGraphEdge *edges, size_t e_count, ui
 int interop_graph_validate_path_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state) {
     return interop_tm_execute_ntm(filepath, path_tape, len, 20, final_state);
 }
+
+void interop_graph_propagate_weights_avx512(InteropGraphEdge *edges, size_t count, float scale) {
+    if (!edges || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        if (edges[i].active) {
+            edges[i].weight *= scale;
+        }
+    }
+}
+
+uint32_t interop_graph_classify_edge(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const InteropGraphEdge *edge) {
+    if (!nodes || !edge) return 0;
+    uint64_t combined_metric = (uint64_t)(edge->weight * 100.0f) + edge->relationship_type;
+    return interop_multi_decision_evaluate(nodes, root_idx, combined_metric);
+}
+
+int interop_graph_optimize_paths_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state) {
+    return interop_tm_execute_ntm(filepath, path_tape, len, 20, final_state);
+}

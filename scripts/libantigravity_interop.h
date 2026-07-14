@@ -465,4 +465,8 @@ int interop_graph_sync_rdbms(const InteropGraphNode *nodes, size_t n_count, cons
 int interop_graph_route_signal(const InteropGraphEdge *edges, size_t e_count, uint32_t src_id, uint32_t dest_id, float *out_weight);
 int interop_graph_validate_path_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state);
 
+void interop_graph_propagate_weights_avx512(InteropGraphEdge *edges, size_t count, float scale);
+uint32_t interop_graph_classify_edge(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const InteropGraphEdge *edge);
+int interop_graph_optimize_paths_ntm(const char *filepath, uint8_t *path_tape, size_t len, uint32_t *final_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

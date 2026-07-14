@@ -1159,6 +1159,19 @@ int main() {
     remove(tm_file);
     printf("✓ Graph RDBMS sync, signal routing traversal, and path validation verified.\n");
 
+    // 127-129. Test graph weight propagation, edge pruning, and path optimization
+    ge[0].weight = 2.0f;
+    interop_graph_propagate_weights_avx512(ge, 1, 3.0f);
+    assert(ge[0].weight == 6.0f);
+    assert(interop_graph_classify_edge(prune_nodes, 0, &ge[0]) == 0xAAAA);
+    assert(interop_tm_compile(tm_file, &tm_hdr, tm_trs) == 0);
+    uint8_t route_opt_tape[4] = { 'a', 'x', 0, 0 };
+    uint32_t route_opt_state = 0;
+    assert(interop_graph_optimize_paths_ntm(tm_file, route_opt_tape, 4, &route_opt_state) == 1);
+    assert(route_opt_state == 1);
+    remove(tm_file);
+    printf("✓ Vectorized edge propagation, decision edge pruning, and NTM path optimizer verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
