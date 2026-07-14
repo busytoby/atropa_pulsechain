@@ -1005,6 +1005,14 @@ Status: Awaiting hero to join the battle.</div>
                         leadHarvested += 1; // Harvest lead on enemy kill
                         saveHarvestedReagents();
                         hit = true;
+                        
+                        // EDO-22 chiptune frequency calculation based on relative position
+                        let pitchIndex = Math.floor(Math.abs(ax.x - enemy.x)) % 22;
+                        let edo22Freq = Math.round(220 * Math.pow(2, pitchIndex / 22.0));
+                        playSynthSound(edo22Freq, 'sine', 0.1);
+                        
+                        // Immutable transaction log commit
+                        logEvent(`[Ledger] Committed Tx: GHOST_SLAY | Score: ${score}`);
                         break;
                     }
                 }
@@ -1016,11 +1024,17 @@ Status: Awaiting hero to join the battle.</div>
                         if (Math.hypot(ax.x - spawner.x, ax.y - spawner.y) < 20) {
                             spawner.health -= 25;
                             hit = true;
+                            
+                            let pitchIndex = Math.floor(Math.abs(ax.x - spawner.x)) % 22;
+                            let edo22Freq = Math.round(220 * Math.pow(2, pitchIndex / 22.0));
+                            playSynthSound(edo22Freq, 'triangle', 0.15);
+
                             if (spawner.health <= 0) {
                                 spawners.splice(j, 1);
                                 score += 200;
                                 sulfurHarvested += 2; // Spawners harvest sulfur
                                 saveHarvestedReagents();
+                                logEvent(`[Ledger] Committed Tx: SPAWNER_DESTROY | Score: ${score}`);
                             }
                             break;
                         }
@@ -1043,8 +1057,10 @@ Status: Awaiting hero to join the battle.</div>
                 // Collision with player
                 if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < player.radius + enemy.radius) {
                     health -= 150; // Heavy health hit
-                    playSynthSound(100, 'sawtooth', 0.25);
+                    player.flashFrames = 10; // Trigger collision flash
+                    playSynthSound(110, 'sawtooth', 0.25);
                     enemies.splice(i, 1);
+                    logEvent(`[Ledger] Committed Tx: PLAYER_DAMAGE | Health: ${health}`);
                 }
             }
 
@@ -1099,12 +1115,18 @@ Status: Awaiting hero to join the battle.</div>
         }
 
         function drawEntities() {
-            // Draw player (blue vector diamond)
+            // Draw player (blue vector diamond, flashes red on damage)
             const px = player.x;
             const py = player.y;
             ctx.shadowBlur = 6;
-            ctx.shadowColor = "var(--warrior-blue)";
-            ctx.strokeStyle = "var(--warrior-blue)";
+            if (player.flashFrames && player.flashFrames > 0) {
+                ctx.shadowColor = "#ff1744";
+                ctx.strokeStyle = "#ff1744";
+                player.flashFrames--;
+            } else {
+                ctx.shadowColor = "var(--warrior-blue)";
+                ctx.strokeStyle = "var(--warrior-blue)";
+            }
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(px, py - 12);
