@@ -153,6 +153,8 @@ assets/syrinx/
 /scripts/test_abi_dispatch
 /scripts/test_verlet
 /scripts/interop_cli
+/scripts/wm_toy
+/assets/wm_trace.dat.bin
 /firmware/tsfi_lib/zmm_init
 
 # Ignore generated custom JPEG AI container format
