@@ -110,3 +110,122 @@ void tsfi_trie_destroy(tsfi_trie_node *root) {
     }
     free(root);
 }
+
+static inline int get_str_height(tsfi_string_bst_node *n) {
+    return n ? n->height : 0;
+}
+
+static inline int get_str_balance(tsfi_string_bst_node *n) {
+    return n ? (get_str_height(n->left) - get_str_height(n->right)) : 0;
+}
+
+static tsfi_string_bst_node* rotate_str_right(tsfi_string_bst_node *y) {
+    tsfi_string_bst_node *x = y->left;
+    tsfi_string_bst_node *T2 = x->right;
+
+    x->right = y;
+    y->left = T2;
+
+    y->height = 1 + (get_str_height(y->left) > get_str_height(y->right) ? get_str_height(y->left) : get_str_height(y->right));
+    x->height = 1 + (get_str_height(x->left) > get_str_height(x->right) ? get_str_height(x->left) : get_str_height(x->right));
+
+    return x;
+}
+
+static tsfi_string_bst_node* rotate_str_left(tsfi_string_bst_node *x) {
+    tsfi_string_bst_node *y = x->right;
+    tsfi_string_bst_node *T2 = y->left;
+
+    y->left = x;
+    x->right = T2;
+
+    x->height = 1 + (get_str_height(x->left) > get_str_height(x->right) ? get_str_height(x->left) : get_str_height(x->right));
+    y->height = 1 + (get_str_height(y->left) > get_str_height(y->right) ? get_str_height(y->left) : get_str_height(y->right));
+
+    return y;
+}
+
+tsfi_string_bst_node* tsfi_string_bst_insert(tsfi_string_bst_node *node, const char *key, const char *value) {
+    if (!node) {
+        tsfi_string_bst_node *new_node = (tsfi_string_bst_node*)malloc(sizeof(tsfi_string_bst_node));
+        if (new_node) {
+            new_node->key = strdup(key);
+            new_node->value = strdup(value);
+            new_node->height = 1;
+            new_node->left = NULL;
+            new_node->right = NULL;
+        }
+        return new_node;
+    }
+
+    int cmp = strcmp(key, node->key);
+    if (cmp < 0) {
+        node->left = tsfi_string_bst_insert(node->left, key, value);
+    } else if (cmp > 0) {
+        node->right = tsfi_string_bst_insert(node->right, key, value);
+    } else {
+        free(node->value);
+        node->value = strdup(value);
+        return node;
+    }
+
+    node->height = 1 + (get_str_height(node->left) > get_str_height(node->right) ? get_str_height(node->left) : get_str_height(node->right));
+
+    int balance = get_str_balance(node);
+
+    if (balance > 1 && strcmp(key, node->left->key) < 0) {
+        return rotate_str_right(node);
+    }
+    if (balance < -1 && strcmp(key, node->right->key) > 0) {
+        return rotate_str_left(node);
+    }
+    if (balance > 1 && strcmp(key, node->left->key) > 0) {
+        node->left = rotate_str_left(node->left);
+        return rotate_str_right(node);
+    }
+    if (balance < -1 && strcmp(key, node->right->key) < 0) {
+        node->right = rotate_str_right(node->right);
+        return rotate_str_left(node);
+    }
+
+    return node;
+}
+
+const char* tsfi_string_bst_find(tsfi_string_bst_node *root, const char *key) {
+    if (!root) return NULL;
+    int cmp = strcmp(key, root->key);
+    if (cmp < 0) return tsfi_string_bst_find(root->left, key);
+    if (cmp > 0) return tsfi_string_bst_find(root->right, key);
+    return root->value;
+}
+
+void tsfi_string_bst_destroy(tsfi_string_bst_node *root) {
+    if (!root) return;
+    tsfi_string_bst_destroy(root->left);
+    tsfi_string_bst_destroy(root->right);
+    free(root->key);
+    free(root->value);
+    free(root);
+}
+
+static void trie_to_bst_dfs(tsfi_trie_node *trie_node, char *buffer, int depth, tsfi_string_bst_node **bst_root) {
+    if (!trie_node) return;
+
+    buffer[depth] = trie_node->ch;
+    buffer[depth + 1] = '\0';
+
+    if (trie_node->is_end) {
+        *bst_root = tsfi_string_bst_insert(*bst_root, buffer, trie_node->phoneme);
+    }
+
+    trie_to_bst_dfs(trie_node->child, buffer, depth + 1, bst_root);
+    trie_to_bst_dfs(trie_node->sibling, buffer, depth, bst_root);
+}
+
+tsfi_string_bst_node* tsfi_trie_to_string_bst(tsfi_trie_node *trie_root) {
+    if (!trie_root) return NULL;
+    tsfi_string_bst_node *bst_root = NULL;
+    char buffer[256];
+    trie_to_bst_dfs(trie_root->child, buffer, 0, &bst_root);
+    return bst_root;
+}
