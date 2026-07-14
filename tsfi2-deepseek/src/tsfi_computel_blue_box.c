@@ -332,6 +332,17 @@ int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples)
     return offset;
 }
 
+static void append_history_record(const char *filepath, const BlueBoxBlockState *state) {
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "ab");
+    if (hf) {
+        flock(fileno(hf), LOCK_EX);
+        fwrite(state, sizeof(BlueBoxBlockState), 1, hf);
+        fclose(hf);
+    }
+}
+
 bool blue_box_save_state_to_disk(const char *filepath) {
     if (!filepath) return false;
     FILE *f = fopen(filepath, "wb");
@@ -352,7 +363,26 @@ bool blue_box_load_state_from_disk(const char *filepath) {
     fclose(f);
     if (read != 1) return false;
     uint32_t calc = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
-    return calc == current_block_state.checksum;
+    if (calc != current_block_state.checksum) return false;
+
+    // Rebuild the Red-Black Tree index from history ledger on launch
+    char hist_path[512];
+    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
+    FILE *hf = fopen(hist_path, "rb");
+    if (hf) {
+        flock(fileno(hf), LOCK_SH);
+        BlueBoxBlockState hist_state;
+        rbt_node_count = 0;
+        rbt_root = NULL;
+        while (fread(&hist_state, sizeof(BlueBoxBlockState), 1, hf) == 1) {
+            uint32_t hist_calc = calculate_crc32((const uint8_t *)&hist_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
+            if (hist_calc == hist_state.checksum) {
+                blue_box_rbt_insert(hist_state.block_number, hist_state.state_hash);
+            }
+        }
+        fclose(hf);
+    }
+    return true;
 }
 
 bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expected_parent_block, const uint8_t *expected_parent_hash) {
@@ -372,7 +402,12 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
         current_block_state.checksum = calculate_crc32((const uint8_t *)&current_block_state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
         size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
         fclose(f);
-        return written == 1;
+        if (written == 1) {
+            append_history_record(filepath, &current_block_state);
+            blue_box_rbt_insert(current_block_state.block_number, current_block_state.state_hash);
+            return true;
+        }
+        return false;
     }
 
     flock(fileno(f), LOCK_EX);
@@ -412,7 +447,12 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
     fclose(f);
 
-    return written == 1;
+    if (written == 1) {
+        append_history_record(filepath, &current_block_state);
+        blue_box_rbt_insert(current_block_state.block_number, current_block_state.state_hash);
+        return true;
+    }
+    return false;
 }
 
 void blue_box_crypt_payload(uint8_t *payload, size_t length) {

@@ -92,6 +92,7 @@ int main(void) {
 
     // Clean up temporary test file
     remove("blue_box_test.dat");
+    remove("blue_box_test.dat.hist");
 
     // 9. Test Ordered Hash Validation Guards and Commit Persist
     uint8_t init_hash[32] = {1, 2, 3, 4};
@@ -130,6 +131,7 @@ int main(void) {
     assert(final_state.block_number == 11);
     
     remove("blue_box_guard_test.dat");
+    remove("blue_box_guard_test.dat.hist");
 
     // 10. Test Non-Preferential Accumulator System
     blue_box_init_block(50, zero_hash);
@@ -196,6 +198,43 @@ int main(void) {
     
     found_hash = blue_box_rbt_lookup(999);
     assert(found_hash == NULL);
+
+    // 14. Test Red-Black Tree Persistent Reload from Disk
+    remove("rbt_reload_test.dat");
+    remove("rbt_reload_test.dat.hist");
+    
+    blue_box_init_block(100, zero_hash);
+    bool r_ok = blue_box_commit_and_persist_with_guard("rbt_reload_test.dat", 0, zero_hash);
+    assert(r_ok == true);
+    
+    BlueBoxBlockState b100_state = blue_box_get_block_state();
+    
+    blue_box_init_block(0, zero_hash);
+    blue_box_register_block_trunk(808);
+    r_ok = blue_box_commit_and_persist_with_guard("rbt_reload_test.dat", 100, b100_state.state_hash);
+    assert(r_ok == true);
+    
+    BlueBoxBlockState b101_state = blue_box_get_block_state();
+    
+    // Mangle memory state and RBT index
+    rbt_root = NULL;
+    rbt_node_count = 0;
+    blue_box_init_block(999, zero_hash);
+    
+    // Load and check if RBT gets rebuilt automatically from history ledger
+    bool load_rbt_ok = blue_box_load_state_from_disk("rbt_reload_test.dat");
+    assert(load_rbt_ok == true);
+    
+    const uint8_t *h100 = blue_box_rbt_lookup(100);
+    assert(h100 != NULL);
+    assert(memcmp(h100, b100_state.state_hash, 32) == 0);
+    
+    const uint8_t *h101 = blue_box_rbt_lookup(101);
+    assert(h101 != NULL);
+    assert(memcmp(h101, b101_state.state_hash, 32) == 0);
+    
+    remove("rbt_reload_test.dat");
+    remove("rbt_reload_test.dat.hist");
 
     printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, serialization, validation guards, accumulator, payload crypt, access codes, and Red-Black Tree tests passed successfully.\n");
     return 0;
