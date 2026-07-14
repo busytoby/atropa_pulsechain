@@ -2247,14 +2247,33 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
         fclose(f);
         printf("[QUADTREE] Wrote mutable spatial quadrants to assets/rdbms_tables.json\n");
     } else {
-        // Mode 1: Immutable Block Ledger mode (Append-only Merkle-DAG block history)
+        // Compute new Merkle State Proof Root Hash: H(prev_root + current_states)
+        uint64_t prev_root = lau_yul_thunk_sload(0xF1B5);
+        uint64_t next_root = ((prev_root * 33 + gas_allowance) * 33 + total_collected) % MotzkinPrime;
+        
+        static uint64_t s_last_gas = 0;
+        static uint64_t s_last_collected = 0;
+        static uint64_t s_last_prev = 0;
+        static uint64_t s_last_next = 0;
+        static bool s_has_cache = false;
+        
+        if (s_has_cache && gas_allowance == s_last_gas && total_collected == s_last_collected && prev_root == s_last_prev) {
+            lau_yul_thunk_sstore(0xF1B5, s_last_next);
+            lau_yul_thunk_sstore(0xF19F, 1);
+            printf("[QUADTREE] [MEMO] Redundant state commit bypassed. Next Root retrieved: %lu\n", s_last_next);
+            return true;
+        }
+        
+        s_last_gas = gas_allowance;
+        s_last_collected = total_collected;
+        s_last_prev = prev_root;
+        s_last_next = next_root;
+        s_has_cache = true;
+        
         FILE *f = fopen("assets/rdbms_ledger.json", "a");
         if (!f) f = fopen("../assets/rdbms_ledger.json", "a");
         if (!f) return false;
         
-        // Compute new Merkle State Proof Root Hash: H(prev_root + current_states)
-        uint64_t prev_root = lau_yul_thunk_sload(0xF1B5);
-        uint64_t next_root = ((prev_root * 33 + gas_allowance) * 33 + total_collected) % MotzkinPrime;
         lau_yul_thunk_sstore(0xF1B5, next_root);
         
         // Append structured transaction record block to ledger file
