@@ -3,15 +3,15 @@
   "product_suite": "TSFi2 RDNA4 Simulation Engine",
   "engine_version": "4.1",
   "provenance": {
-    "git_commit": "4c1229ef0a4b1789f6901d0eff50cd487a21d1da",
-    "timestamp": "2026-07-14T20:52:02Z",
+    "git_commit": "9ef1f2fd4f923a885db645f0b88c467c0614c1c6",
+    "timestamp": "2026-07-14T20:52:50Z",
     "licensing": "ATROPA/DYSNOMIA"
   },
   "system_policy_guards": {
     "vulkan_teddy_bear": {
       "metric": "Headless Vulkan Teddy Bear FPS",
       "target": ">= 3000.0 FPS",
-      "verified_actual": "6,553.64 FPS",
+      "verified_actual": "4,271.18 FPS",
       "status": "PASS"
     },
     "wavelet_arena_memory": {
@@ -23,55 +23,55 @@
     "aho_corasick_compositor": {
       "metric": "Aho-Corasick Compositor Latency",
       "target": "<= 1000.0 ns",
-      "verified_actual": "234.75 ns",
+      "verified_actual": "236.31 ns",
       "status": "PASS"
     },
     "yang_synthesis": {
       "metric": "AVX-512 Yang Synthesis Rate",
       "target": ">= 20000.0 Waveforms/sec",
-      "verified_actual": "23,651.76 Waveforms/sec",
+      "verified_actual": "20,908.03 Waveforms/sec",
       "status": "PASS"
     },
     "merkle_reduction": {
       "metric": "Helmholtz Reduction Throughput",
       "target": ">= 4000.0 ns",
-      "verified_actual": "4337.68 ns",
+      "verified_actual": "4422.18 ns",
       "status": "PASS"
     },
     "deepseek_mla": {
       "metric": "DeepSeek MLA Kernels Rate",
       "target": ">= 90.0 MPasses/sec",
-      "verified_actual": "102.59 MPasses/sec",
+      "verified_actual": "113.59 MPasses/sec",
       "status": "PASS"
     },
     "architectural_supremacy": {
       "metric": "Field vs Pointer Efficiency Gain",
       "target": ">= 1.20x",
-      "verified_actual": "1.44x",
+      "verified_actual": "1.45x",
       "status": "PASS"
     },
     "zero_polling": {
       "metric": "Zero-Polling Hardware Latency",
       "target": "<= 100.0 us",
-      "verified_actual": "61.69 us",
+      "verified_actual": "61.85 us",
       "status": "PASS"
     },
     "winchester_mq": {
       "metric": "WinchesterMQ Yul Thunk Latency",
       "target": "<= 15000.0 ns",
-      "verified_actual": "94.88 ns",
+      "verified_actual": "91.60 ns",
       "status": "PASS"
     },
     "rdbms_operator": {
       "metric": "RDBMS Operator Verification Latency",
       "target": "<= 50000.0 ns",
-      "verified_actual": "124.69 ns",
+      "verified_actual": "203.00 ns",
       "status": "PASS"
     },
     "agentic_dispatch": {
       "metric": "Agentic Dispatch Cache Hit Latency",
       "target": "<= 100.0 ns",
-      "verified_actual": "1.29 ns",
+      "verified_actual": "1.27 ns",
       "status": "PASS"
     }
   }

@@ -261,4 +261,8 @@ int interop_mamt_cluster(const uint64_t *hashes, size_t count, uint32_t *lanes, 
 int interop_ac_cache_cluster(const uint32_t *freqs, size_t count, uint32_t *lines, size_t k);
 int interop_preference_cluster(const uint64_t *prefs, size_t count, uint32_t *shards, size_t k);
 
+int interop_mamt_knn_search(const uint64_t *leaves, size_t count, const uint64_t *query_hash, uint64_t *out_leaves, size_t k);
+int interop_ac_cache_knn_search(const uint32_t *freqs, size_t count, uint32_t query_freq, uint32_t *out_freqs, size_t k);
+int interop_preference_knn_search(const uint64_t *prefs, size_t count, uint64_t query_pref, uint64_t *out_prefs, size_t k);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

@@ -1125,3 +1125,50 @@ int interop_preference_cluster(const uint64_t *prefs, size_t count, uint32_t *sh
     if (!prefs || count == 0 || !shards || k == 0) return -1;
     return interop_coaxial_cluster_helper(prefs, count, 8, 0, shards, k);
 }
+
+int interop_mamt_knn_search(const uint64_t *leaves, size_t count, const uint64_t *query_hash, uint64_t *out_leaves, size_t k) {
+    if (!leaves || count == 0 || !query_hash || !out_leaves || k == 0) return -1;
+    InteropKNNAgent agents[16];
+    size_t n = (count > 16) ? 16 : count;
+    for (size_t i = 0; i < n; i++) {
+        agents[i].agent_addr = leaves[i];
+        agents[i].coord[0] = leaves[i];
+        agents[i].coord[1] = leaves[i] % 953467954114363ULL;
+        agents[i].coord[2] = 0;
+    }
+    uint64_t query_coord[3] = { *query_hash, *query_hash % 953467954114363ULL, 0 };
+    return interop_knn_search(agents, n, query_coord, out_leaves, k);
+}
+
+int interop_ac_cache_knn_search(const uint32_t *freqs, size_t count, uint32_t query_freq, uint32_t *out_freqs, size_t k) {
+    if (!freqs || count == 0 || !out_freqs || k == 0) return -1;
+    InteropKNNAgent agents[16];
+    size_t n = (count > 16) ? 16 : count;
+    for (size_t i = 0; i < n; i++) {
+        agents[i].agent_addr = freqs[i];
+        agents[i].coord[0] = freqs[i];
+        agents[i].coord[1] = 0;
+        agents[i].coord[2] = 0;
+    }
+    uint64_t query_coord[3] = { query_freq, 0, 0 };
+    uint64_t temp_out[16];
+    int res = interop_knn_search(agents, n, query_coord, temp_out, k);
+    if (res > 0) {
+        for (int i = 0; i < res; i++) out_freqs[i] = (uint32_t)temp_out[i];
+    }
+    return res;
+}
+
+int interop_preference_knn_search(const uint64_t *prefs, size_t count, uint64_t query_pref, uint64_t *out_prefs, size_t k) {
+    if (!prefs || count == 0 || !out_prefs || k == 0) return -1;
+    InteropKNNAgent agents[16];
+    size_t n = (count > 16) ? 16 : count;
+    for (size_t i = 0; i < n; i++) {
+        agents[i].agent_addr = prefs[i];
+        agents[i].coord[0] = prefs[i];
+        agents[i].coord[1] = 0;
+        agents[i].coord[2] = 0;
+    }
+    uint64_t query_coord[3] = { query_pref, 0, 0 };
+    return interop_knn_search(agents, n, query_coord, out_prefs, k);
+}

@@ -670,6 +670,22 @@ int main() {
     assert(p_shards[0] == 0 && p_shards[1] == 1);
     printf("✓ MAMT, AC Cache, and Preference clustering verified.\n");
 
+    // 39-41. Test MAMT, AC cache, preference sharding KNN search
+    printf("39-41. Testing Domain-Specific KNN Search:\n");
+    uint64_t q_h = 0x11111111ULL;
+    uint64_t m_out[2] = {0};
+    assert(interop_mamt_knn_search(m_hashes, 2, &q_h, m_out, 2) == 2);
+    assert(m_out[0] == 0x11111111ULL);
+
+    uint32_t c_out[2] = {0};
+    assert(interop_ac_cache_knn_search(c_freqs, 2, 10, c_out, 2) == 2);
+    assert(c_out[0] == 10);
+
+    uint64_t p_out[2] = {0};
+    assert(interop_preference_knn_search(p_prefs, 2, 5, p_out, 2) == 2);
+    assert(p_out[0] == 5);
+    printf("✓ MAMT, AC Cache, and Preference KNN search verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
