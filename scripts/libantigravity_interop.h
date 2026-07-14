@@ -599,4 +599,7 @@ int interop_logic_infer_rule(const int *edges_src, const int *edges_rel, const i
 int interop_logic_deductive_closure(int *edges_src, int *edges_rel, int *edges_dst, size_t *num_edges, size_t max_edges, const int *r1_rules, const int *r2_rules, const int *r3_rules, size_t num_rules);
 int interop_logic_check_consistency(const int *edges_src, const int *edges_rel, const int *edges_dst, size_t num_edges, const int *asymmetric_rels, size_t num_asym, int *out_consistent);
 
+int interop_poly_relation_compose_verify(const float *r1, const float *r2, const float *r3, size_t dim, float threshold, int *out_verified);
+int interop_poly_relation_inverse_verify(const float *r1, const float *r2, size_t dim, float threshold, int *out_verified);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

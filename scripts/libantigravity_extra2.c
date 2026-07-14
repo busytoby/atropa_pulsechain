@@ -1055,3 +1055,27 @@ int interop_logic_check_consistency(const int *edges_src, const int *edges_rel, 
     }
     return 0;
 }
+
+int interop_poly_relation_compose_verify(const float *r1, const float *r2, const float *r3, size_t dim, float threshold, int *out_verified) {
+    if (!r1 || !r2 || !r3 || !out_verified || dim == 0) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = r1[i] + r2[i] - r3[i];
+        sum_sq += diff * diff;
+    }
+    float dist = sqrtf(sum_sq);
+    *out_verified = (dist < threshold) ? 1 : 0;
+    return 0;
+}
+
+int interop_poly_relation_inverse_verify(const float *r1, const float *r2, size_t dim, float threshold, int *out_verified) {
+    if (!r1 || !r2 || !out_verified || dim == 0) return -1;
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        float diff = r1[i] + r2[i];
+        sum_sq += diff * diff;
+    }
+    float dist = sqrtf(sum_sq);
+    *out_verified = (dist < threshold) ? 1 : 0;
+    return 0;
+}
