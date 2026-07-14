@@ -145,6 +145,32 @@ int main(void) {
     assert(udp_alert_ok == true);
     printf("[TEST] UDP Billing Alert dispatch simulated successfully.\n");
 
+    // 16. Test Yul WinchesterMQ push-pull complementary signal model
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    // Call selector 0xe399f0e0 with positive signal 1000 (exceeds 700 drop)
+    uint8_t yul_cd[36] = {0xe3, 0x99, 0xf0, 0xe0};
+    uint32_t val_in = 1000;
+    // Pack 1000 as big-endian 32-byte argument
+    yul_cd[35] = (uint8_t)(val_in & 0xFF);
+    yul_cd[34] = (uint8_t)((val_in >> 8) & 0xFF);
+    
+    printf("[DEBUG] yul_cd bytes: ");
+    for (int i = 0; i < 36; i++) printf("%02x ", yul_cd[i]);
+    printf("\n");
+    
+    uint8_t yul_ret[32];
+    size_t yul_ret_len = 32;
+    bool yul_ok = lau_yul_thunk_execute("WinchesterMQ", yul_cd, 36, yul_ret, &yul_ret_len);
+    assert(yul_ok == true);
+    
+    // The expected output is v_in - diode_drop = 1000 - 700 = 300
+    uint32_t val_out = ((uint32_t)yul_ret[30] << 8) | yul_ret[31];
+    printf("[DEBUG] val_out = %u, yul_ret bytes: ", val_out);
+    for (int i = 0; i < 32; i++) printf("%02x ", yul_ret[i]);
+    printf("\n");
+    assert(val_out == 300);
+    printf("[TEST] Yul WinchesterMQ unified NPN/PNP hardware crossover simulation verified: %u.\n", val_out);
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

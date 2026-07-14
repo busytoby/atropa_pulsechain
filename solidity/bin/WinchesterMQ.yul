@@ -19,6 +19,47 @@ object "WinchesterMQ" {
         code {
             if lt(calldatasize(), 4) { revert(0, 0) }
             let selector := shr(224, calldataload(0))
+            if eq(selector, 0xe399f0e0) {
+                let v_in := calldataload(4)
+                sstore(0xF199, v_in)
+                let v_out := 0
+                let diode_drop := 700 // 0.7V bias drop in milli-units
+                
+                if gt(v_in, diode_drop) {
+                    v_out := sub(v_in, diode_drop)
+                }
+                let neg_limit := sub(0, diode_drop)
+                if slt(v_in, neg_limit) {
+                    v_out := add(v_in, diode_drop)
+                }
+                
+                // Store virtual hardware NPN (pos_drive) / PNP (neg_drive) registers
+                if gt(v_out, 0) {
+                    sstore(0xF100, v_out)
+                    sstore(0xF101, 0)
+                }
+                if lt(v_out, 0) {
+                    sstore(0xF100, 0)
+                    sstore(0xF101, sub(0, v_out))
+                }
+                if eq(v_out, 0) {
+                    sstore(0xF100, 0)
+                    sstore(0xF101, 0)
+                }
+                
+                // Pure Yul Goertzel recursion step (coeff = 1.854 -> scaled by 10000)
+                let s_prev := sload(0xF102)
+                let s_prev2 := sload(0xF103)
+                let coeff := 18540
+                let s_term := div(mul(coeff, s_prev), 10000)
+                let s := sub(add(v_out, s_term), s_prev2)
+                
+                sstore(0xF103, s_prev)
+                sstore(0xF102, s)
+                
+                mstore(0x00, v_out)
+                return(0x00, 32)
+            }
 
             // ----------------------------------------------------------------
             // METHOD 1: writeSignalsOut(uint8 signals) -> void
