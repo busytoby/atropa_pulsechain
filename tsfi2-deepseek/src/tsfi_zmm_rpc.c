@@ -6,6 +6,7 @@
 #include <math.h>
 #include "tsfi_zmm_rpc.h"
 #include "tsfi_trie_dispatcher.h"
+#include "tsfi_tst.h"
 #include "tsfi_opt_zmm.h"
 #include "tsfi_genetic.h"
 #include "tsfi_svdag.h"
@@ -536,18 +537,18 @@ static void extract_json_method(const char *json, char *method_out, size_t max_l
 }
 
 int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *output_buf, size_t out_max) {
-    static tsfi_trie_node *g_rpc_trie_router = NULL;
-    if (!g_rpc_trie_router) {
-        g_rpc_trie_router = tsfi_trie_init_rpc_router();
-        tsfi_trie_insert(g_rpc_trie_router, "input.mouse_move", "30");
-        tsfi_trie_insert(g_rpc_trie_router, "input.mouse_button", "31");
-        tsfi_trie_insert(g_rpc_trie_router, "input.keyboard", "32");
-        tsfi_trie_insert(g_rpc_trie_router, "tariffs_query", "50");
+    static tsfi_tst_node *g_rpc_tst_router = NULL;
+    if (!g_rpc_tst_router) {
+        g_rpc_tst_router = tsfi_tst_init_rpc_router();
+        g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "input.mouse_move", "30");
+        g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "input.mouse_button", "31");
+        g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "input.keyboard", "32");
+        g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "tariffs_query", "50");
     }
 
     char method_name[128];
     extract_json_method(json_in, method_name, sizeof(method_name));
-    int method_type = tsfi_trie_resolve_rpc(g_rpc_trie_router, method_name);
+    int method_type = tsfi_tst_resolve_rpc(g_rpc_tst_router, method_name);
     if (method_type == 0) return 0;
 
     char *min_ptr = (char*)json_in;

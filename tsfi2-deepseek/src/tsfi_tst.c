@@ -65,3 +65,42 @@ void tsfi_tst_destroy(tsfi_tst_node *node) {
     }
     free(node);
 }
+
+tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
+    tsfi_tst_node *root = NULL;
+
+    root = tsfi_tst_insert(root, "wave512.run", "1");
+    root = tsfi_tst_insert(root, "wave512.reset", "2");
+    root = tsfi_tst_insert(root, "wave512.inspect", "3");
+    root = tsfi_tst_insert(root, "wave512.scramble", "4");
+    root = tsfi_tst_insert(root, "wave512.attach", "5");
+    root = tsfi_tst_insert(root, "genetic.benchmark", "6");
+    root = tsfi_tst_insert(root, "shell.read_file", "10");
+    root = tsfi_tst_insert(root, "genetic.establish_llm", "11");
+    root = tsfi_tst_insert(root, "math.motzkin", "12");
+    root = tsfi_tst_insert(root, "genetic.autonomous_optimize", "19");
+    root = tsfi_tst_insert(root, "manifold.swap_asset", "20");
+    root = tsfi_tst_insert(root, "manifold.set_kernel", "21");
+    root = tsfi_tst_insert(root, "manifold.set_active_mask", "22");
+    root = tsfi_tst_insert(root, "manifold.set_secret", "23");
+    root = tsfi_tst_insert(root, "manifold.dispatch", "24");
+    root = tsfi_tst_insert(root, "manifold.inspect_slots", "25");
+    root = tsfi_tst_insert(root, "manifold.upload_asset", "26");
+    root = tsfi_tst_insert(root, "flow.trigger_choreography", "27");
+    root = tsfi_tst_insert(root, "wave512.dilemma_log", "28");
+    root = tsfi_tst_insert(root, "manifold.load_dna_llm", "41");
+    root = tsfi_tst_insert(root, "manifold.query_llm", "42");
+    root = tsfi_tst_insert(root, "manifold.get_receipt", "43");
+    root = tsfi_tst_insert(root, "manifold.mount_instrument", "44");
+    root = tsfi_tst_insert(root, "manifold.play_bio", "45");
+
+    return root;
+}
+
+int tsfi_tst_resolve_rpc(tsfi_tst_node *router, const char *method_name) {
+    const char *val = tsfi_tst_search(router, method_name);
+    if (val) {
+        return atoi(val);
+    }
+    return 0;
+}

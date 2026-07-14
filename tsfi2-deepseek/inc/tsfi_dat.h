@@ -19,4 +19,16 @@ const char* tsfi_dat_search(tsfi_dat *dat, const char *key);
 // Free all resources allocated in the DAT
 void tsfi_dat_destroy(tsfi_dat *dat);
 
+// Initialize Font Ligature DAT router
+tsfi_dat* tsfi_dat_init_ligature_router(void);
+
+// Resolve font ligature using DAT
+int tsfi_dat_resolve_ligature(tsfi_dat *router, const char *sequence);
+
+// Initialize SCSI command DAT router
+tsfi_dat* tsfi_dat_init_scsi_router(void);
+
+// Resolve SCSI command using DAT prefix match
+const char* tsfi_dat_resolve_scsi(tsfi_dat *router, const char *scsi_cmd);
+
 #endif // TSFI_DAT_H

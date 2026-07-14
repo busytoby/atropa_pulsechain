@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include "tsfi_trie_dispatcher.h"
+#include "tsfi_dat.h"
 
 int main(void) {
     printf("=== TSFi Multi-Purpose Trie Dispatchers Verification ===\n");
@@ -11,10 +12,12 @@ int main(void) {
     tsfi_trie_node *rpc_router = tsfi_trie_init_rpc_router();
     tsfi_trie_node *abi_router = tsfi_trie_init_abi_router();
     tsfi_trie_node *scsi_router = tsfi_trie_init_scsi_router();
+    tsfi_dat *scsi_dat = tsfi_dat_init_scsi_router();
 
     assert(rpc_router != NULL);
     assert(abi_router != NULL);
     assert(scsi_router != NULL);
+    assert(scsi_dat != NULL);
 
     // 2. Verify RPC Router
     printf("[ROUTER] Verifying JSON-RPC Method Dispatcher...\n");
@@ -47,20 +50,30 @@ int main(void) {
     printf("  [PASS] Invalid ABI selector correctly returned NULL.\n");
 
     // 4. Verify SCSI Prefix Router
-    printf("[ROUTER] Verifying SCSI command prefix Dispatcher...\n");
+    printf("[ROUTER] Verifying SCSI command prefix Dispatcher (Trie & DAT)...\n");
     const char *scsi_action1 = tsfi_trie_resolve_scsi(scsi_router, "SCSI_INQUIRY_LUN0");
     assert(scsi_action1 != NULL);
     assert(strcmp(scsi_action1, "handshake_inquiry") == 0);
-    printf("  [PASS] 'SCSI_INQUIRY_LUN0' prefix matched to action: %s\n", scsi_action1);
+    printf("  [PASS] Trie 'SCSI_INQUIRY_LUN0' prefix matched to action: %s\n", scsi_action1);
 
     const char *scsi_action2 = tsfi_trie_resolve_scsi(scsi_router, "SCSI_READ_BLOCK_100");
     assert(scsi_action2 != NULL);
     assert(strcmp(scsi_action2, "handshake_read") == 0);
-    printf("  [PASS] 'SCSI_READ_BLOCK_100' prefix matched to action: %s\n", scsi_action2);
+    printf("  [PASS] Trie 'SCSI_READ_BLOCK_100' prefix matched to action: %s\n", scsi_action2);
 
-    const char *scsi_fail = tsfi_trie_resolve_scsi(scsi_router, "SCSI_UNKNOWN_OPCODE");
-    assert(scsi_fail == NULL);
-    printf("  [PASS] Unmatched SCSI command prefix returned NULL.\n");
+    const char *scsi_dat1 = tsfi_dat_resolve_scsi(scsi_dat, "SCSI_INQUIRY_LUN0");
+    assert(scsi_dat1 != NULL);
+    assert(strcmp(scsi_dat1, "handshake_inquiry") == 0);
+    printf("  [PASS] DAT 'SCSI_INQUIRY_LUN0' prefix matched to action: %s\n", scsi_dat1);
+
+    const char *scsi_dat2 = tsfi_dat_resolve_scsi(scsi_dat, "SCSI_READ_BLOCK_100");
+    assert(scsi_dat2 != NULL);
+    assert(strcmp(scsi_dat2, "handshake_read") == 0);
+    printf("  [PASS] DAT 'SCSI_READ_BLOCK_100' prefix matched to action: %s\n", scsi_dat2);
+
+    const char *scsi_dat_fail = tsfi_dat_resolve_scsi(scsi_dat, "SCSI_UNKNOWN_OPCODE");
+    assert(scsi_dat_fail == NULL);
+    printf("  [PASS] DAT Unmatched SCSI command prefix returned NULL.\n");
 
     // 5. Verify IP CIDR Router
     printf("[ROUTER] Verifying IP CIDR Router...\n");
@@ -99,21 +112,28 @@ int main(void) {
     printf("  [PASS] Unmatched contract 'random_addr' prefix correctly returned NULL.\n");
 
     // 7. Verify Font Ligature Router
-    printf("[ROUTER] Verifying Font Ligature Router...\n");
+    printf("[ROUTER] Verifying Font Ligature Router (Trie & DAT)...\n");
     tsfi_trie_node *ligature_router = tsfi_trie_init_ligature_router();
     assert(ligature_router != NULL);
 
     int lig1 = tsfi_trie_resolve_ligature(ligature_router, "fi");
     assert(lig1 == 101);
-    printf("  [PASS] Sequence 'fi' resolved to glyph index: %d\n", lig1);
+    printf("  [PASS] Trie Sequence 'fi' resolved to glyph index: %d\n", lig1);
 
-    int lig2 = tsfi_trie_resolve_ligature(ligature_router, "ffi");
-    assert(lig2 == 103);
-    printf("  [PASS] Sequence 'ffi' resolved to glyph index: %d\n", lig2);
+    tsfi_dat *ligature_dat = tsfi_dat_init_ligature_router();
+    assert(ligature_dat != NULL);
 
-    int lig_fail = tsfi_trie_resolve_ligature(ligature_router, "xyz");
-    assert(lig_fail == 0);
-    printf("  [PASS] Sequence 'xyz' resolved to fallback glyph index: %d\n", lig_fail);
+    int d_lig1 = tsfi_dat_resolve_ligature(ligature_dat, "fi");
+    assert(d_lig1 == 101);
+    printf("  [PASS] DAT Sequence 'fi' resolved to glyph index: %d\n", d_lig1);
+
+    int d_lig2 = tsfi_dat_resolve_ligature(ligature_dat, "ffi");
+    assert(d_lig2 == 103);
+    printf("  [PASS] DAT Sequence 'ffi' resolved to glyph index: %d\n", d_lig2);
+
+    int d_lig_fail = tsfi_dat_resolve_ligature(ligature_dat, "xyz");
+    assert(d_lig_fail == 0);
+    printf("  [PASS] DAT Sequence 'xyz' resolved to fallback glyph index: %d\n", d_lig_fail);
 
     // 8. Verify Telemetry Topic Wildcard Router
     printf("[ROUTER] Verifying Telemetry Topic Wildcard Router...\n");
@@ -136,9 +156,11 @@ int main(void) {
     tsfi_trie_destroy(rpc_router);
     tsfi_trie_destroy(abi_router);
     tsfi_trie_destroy(scsi_router);
+    tsfi_dat_destroy(scsi_dat);
     tsfi_trie_destroy(cidr_router);
     tsfi_trie_destroy(namespace_router);
     tsfi_trie_destroy(ligature_router);
+    tsfi_dat_destroy(ligature_dat);
     tsfi_trie_destroy(topic_router);
 
     printf("=== ALL MULTI-PURPOSE TRIE ROUTING TESTS PASSED ===\n");

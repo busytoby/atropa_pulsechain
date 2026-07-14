@@ -143,3 +143,58 @@ void tsfi_dat_destroy(tsfi_dat *dat) {
     free(dat->values);
     free(dat);
 }
+
+tsfi_dat* tsfi_dat_init_ligature_router(void) {
+    tsfi_trie_node *temp = tsfi_trie_create_node('\0');
+    if (!temp) return NULL;
+
+    tsfi_trie_insert(temp, "fi", "101");
+    tsfi_trie_insert(temp, "fl", "102");
+    tsfi_trie_insert(temp, "ffi", "103");
+    tsfi_trie_insert(temp, "ffl", "104");
+
+    tsfi_dat *dat = tsfi_dat_compile(temp);
+    tsfi_trie_destroy(temp);
+    return dat;
+}
+
+int tsfi_dat_resolve_ligature(tsfi_dat *router, const char *sequence) {
+    const char *val = tsfi_dat_search(router, sequence);
+    if (val) {
+        return atoi(val);
+    }
+    return 0;
+}
+
+tsfi_dat* tsfi_dat_init_scsi_router(void) {
+    tsfi_trie_node *temp = tsfi_trie_create_node('\0');
+    if (!temp) return NULL;
+
+    tsfi_trie_insert(temp, "SCSI_INQUIRY", "handshake_inquiry");
+    tsfi_trie_insert(temp, "SCSI_READ", "handshake_read");
+    tsfi_trie_insert(temp, "SCSI_WRITE", "handshake_write");
+
+    tsfi_dat *dat = tsfi_dat_compile(temp);
+    tsfi_trie_destroy(temp);
+    return dat;
+}
+
+const char* tsfi_dat_resolve_scsi(tsfi_dat *router, const char *scsi_cmd) {
+    if (!router || !scsi_cmd) return NULL;
+    int state = 0;
+    const char *last_val = NULL;
+    while (*scsi_cmd != '\0') {
+        int b = router->base[state];
+        if (b == 0) break;
+        int next = b + (unsigned char)*scsi_cmd;
+        if (next >= router->capacity || router->check[next] != state) {
+            break;
+        }
+        state = next;
+        if (router->values[state]) {
+            last_val = router->values[state];
+        }
+        scsi_cmd++;
+    }
+    return last_val;
+}

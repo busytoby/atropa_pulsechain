@@ -21,4 +21,10 @@ const char* tsfi_tst_search(tsfi_tst_node *root, const char *key);
 // Free all resources allocated in TST
 void tsfi_tst_destroy(tsfi_tst_node *root);
 
+// Initialize JSON-RPC method router using TST
+tsfi_tst_node* tsfi_tst_init_rpc_router(void);
+
+// Resolve RPC method name to its code number
+int tsfi_tst_resolve_rpc(tsfi_tst_node *router, const char *method_name);
+
 #endif // TSFI_TST_H
