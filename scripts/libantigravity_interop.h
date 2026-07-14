@@ -363,4 +363,8 @@ typedef struct {
 void interop_pll_update(InteropPLL *pll, double reference_phase, double dt, double loop_gain);
 int interop_pmg_gate(InteropPMG *pmg, double signal);
 
+int interop_rdbms_sync_pmg(uint32_t agent_id, const InteropPMG *pmg);
+int interop_rdbms_sync_pll(uint32_t agent_id, const InteropPLL *pll);
+int interop_zmm_dispatch_controller(uint32_t target_agent_id, uint32_t command, uint64_t *reg_state);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

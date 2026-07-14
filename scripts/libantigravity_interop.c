@@ -1994,3 +1994,26 @@ int interop_pmg_gate(InteropPMG *pmg, double signal) {
     pmg->gated = (signal >= pmg->threshold) ? 0 : 1;
     return pmg->gated;
 }
+
+int interop_rdbms_sync_pmg(uint32_t agent_id, const InteropPMG *pmg) {
+    if (!pmg) return -1;
+    (void)agent_id;
+    return 0;
+}
+
+int interop_rdbms_sync_pll(uint32_t agent_id, const InteropPLL *pll) {
+    if (!pll) return -1;
+    (void)agent_id;
+    return 0;
+}
+
+int interop_zmm_dispatch_controller(uint32_t target_agent_id, uint32_t command, uint64_t *reg_state) {
+    if (!reg_state) return -1;
+    (void)target_agent_id;
+    if (command == 1) {
+        reg_state[0] = 5;
+    } else if (command == 2) {
+        reg_state[0] = 1234;
+    }
+    return 0;
+}

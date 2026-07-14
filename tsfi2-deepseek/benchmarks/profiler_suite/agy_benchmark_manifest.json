@@ -3,15 +3,15 @@
   "product_suite": "TSFi2 RDNA4 Simulation Engine",
   "engine_version": "4.1",
   "provenance": {
-    "git_commit": "00c6ed30b5af879a564aa728824ff65ac2a5ddb1",
-    "timestamp": "2026-07-14T21:06:28Z",
+    "git_commit": "b77dafbccae4a5dc64b8dcb04f34ab157c0b8cb1",
+    "timestamp": "2026-07-14T21:07:13Z",
     "licensing": "ATROPA/DYSNOMIA"
   },
   "system_policy_guards": {
     "vulkan_teddy_bear": {
       "metric": "Headless Vulkan Teddy Bear FPS",
       "target": ">= 3000.0 FPS",
-      "verified_actual": "4,572.50 FPS",
+      "verified_actual": "6,509.02 FPS",
       "status": "PASS"
     },
     "wavelet_arena_memory": {
@@ -23,25 +23,25 @@
     "aho_corasick_compositor": {
       "metric": "Aho-Corasick Compositor Latency",
       "target": "<= 1000.0 ns",
-      "verified_actual": "234.42 ns",
+      "verified_actual": "235.29 ns",
       "status": "PASS"
     },
     "yang_synthesis": {
       "metric": "AVX-512 Yang Synthesis Rate",
       "target": ">= 20000.0 Waveforms/sec",
-      "verified_actual": "26,646.77 Waveforms/sec",
+      "verified_actual": "27,675.68 Waveforms/sec",
       "status": "PASS"
     },
     "merkle_reduction": {
       "metric": "Helmholtz Reduction Throughput",
       "target": ">= 4000.0 ns",
-      "verified_actual": "4382.36 ns",
+      "verified_actual": "4474.93 ns",
       "status": "PASS"
     },
     "deepseek_mla": {
       "metric": "DeepSeek MLA Kernels Rate",
       "target": ">= 90.0 MPasses/sec",
-      "verified_actual": "72.05 MPasses/sec",
+      "verified_actual": "79.18 MPasses/sec",
       "status": "FAIL"
     },
     "architectural_supremacy": {
@@ -59,19 +59,19 @@
     "winchester_mq": {
       "metric": "WinchesterMQ Yul Thunk Latency",
       "target": "<= 15000.0 ns",
-      "verified_actual": "98.86 ns",
+      "verified_actual": "207.44 ns",
       "status": "PASS"
     },
     "rdbms_operator": {
       "metric": "RDBMS Operator Verification Latency",
       "target": "<= 50000.0 ns",
-      "verified_actual": "97.69 ns",
+      "verified_actual": "105.98 ns",
       "status": "PASS"
     },
     "agentic_dispatch": {
       "metric": "Agentic Dispatch Cache Hit Latency",
       "target": "<= 100.0 ns",
-      "verified_actual": "1.29 ns",
+      "verified_actual": "1.28 ns",
       "status": "PASS"
     }
   }

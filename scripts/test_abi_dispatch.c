@@ -944,6 +944,14 @@ int main() {
     assert(interop_pmg_gate(&test_pmg, 6.0) == 0);
     printf("✓ PLL tracking loop and PMG gating verified.\n");
 
+    // 87-89. Test RDBMS PMG/PLL sync and ZMM controller agent dispatch
+    assert(interop_rdbms_sync_pmg(77, &test_pmg) == 0);
+    assert(interop_rdbms_sync_pll(88, &test_pll) == 0);
+    uint64_t reg_state[1] = {0};
+    assert(interop_zmm_dispatch_controller(99, 2, reg_state) == 0);
+    assert(reg_state[0] == 1234);
+    printf("✓ RDBMS sync and ZMM controller dispatch verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
