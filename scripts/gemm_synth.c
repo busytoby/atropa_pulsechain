@@ -10,7 +10,7 @@
 #endif
 
 #define SAMPLE_RATE 44100
-#define DURATION 10.0
+#define DURATION 120.0
 #define NUM_SAMPLES ((size_t)(SAMPLE_RATE * DURATION))
 #define CHANNELS 7
 
