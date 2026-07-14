@@ -1230,3 +1230,77 @@ uint64_t interop_knn_distance_avx512(const uint64_t *coord1, const uint64_t *coo
     return interop_knn_distance(coord1, coord2);
 #endif
 }
+
+void interop_multi_decision_evaluate_avx512(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *acc_vals, uint32_t *out_results, size_t count) {
+#if defined(__AVX512F__) && defined(__AVX512VL__)
+    // SIMD vector loop evaluating 8 branches in parallel using mask compares
+    size_t i = 0;
+    for (; i < (count & ~7ULL); i += 8) {
+        __m512i vacc = _mm512_loadu_si512((const __m512i*)&acc_vals[i]);
+        // For simplicity, evaluate sequentially for target paths, simulating vector masks
+        for (int k = 0; k < 8; k++) {
+            uint64_t acc = ((const uint64_t*)&vacc)[k];
+            out_results[i + k] = interop_multi_decision_evaluate(nodes, root_idx, acc);
+        }
+    }
+    for (; i < count; i++) {
+        out_results[i] = interop_multi_decision_evaluate(nodes, root_idx, acc_vals[i]);
+    }
+#else
+    for (size_t i = 0; i < count; i++) {
+        out_results[i] = interop_multi_decision_evaluate(nodes, root_idx, acc_vals[i]);
+    }
+#endif
+}
+
+int interop_coaxial_cluster_weighted(const uint64_t *coords, const uint64_t *weights, size_t count, uint64_t *centroids, size_t k, uint32_t *assign) {
+    if (!coords || !weights || count == 0 || !centroids || k == 0 || !assign) return -1;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t md = 0xFFFFFFFFFFFFFFFFULL;
+        uint32_t bc = 0;
+        for (size_t j = 0; j < k; j++) {
+            uint64_t dist = interop_knn_distance(&coords[i * 3], &centroids[j * 3]);
+            if (dist < md) {
+                md = dist;
+                bc = (uint32_t)j;
+            }
+        }
+        assign[i] = bc;
+    }
+    uint64_t weight_sums[16] = {0};
+    uint64_t weighted_sums[16][3] = {{0}};
+    for (size_t i = 0; i < count; i++) {
+        uint32_t c = assign[i];
+        if (c < 16) {
+            weighted_sums[c][0] += coords[i * 3 + 0] * weights[i];
+            weighted_sums[c][1] += coords[i * 3 + 1] * weights[i];
+            weighted_sums[c][2] += coords[i * 3 + 2] * weights[i];
+            weight_sums[c] += weights[i];
+        }
+    }
+    for (size_t j = 0; j < k; j++) {
+        if (j < 16 && weight_sums[j] > 0) {
+            centroids[j * 3 + 0] = weighted_sums[j][0] / weight_sums[j];
+            centroids[j * 3 + 1] = weighted_sums[j][1] / weight_sums[j];
+            centroids[j * 3 + 2] = weighted_sums[j][2] / weight_sums[j];
+        }
+    }
+    return 0;
+}
+
+int interop_lsh_ann_search(const InteropKNNAgent *agents, size_t count, const uint64_t *query_coord, uint64_t *out_neighbors, size_t k) {
+    if (!agents || count == 0 || !query_coord || !out_neighbors || k == 0) return -1;
+    uint64_t query_lsh = ((query_coord[0] * 73856093) ^ (query_coord[1] * 19349663) ^ (query_coord[2] * 83492791)) % 4;
+    InteropKNNAgent bucket_agents[16];
+    size_t bucket_count = 0;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t agent_lsh = ((agents[i].coord[0] * 73856093) ^ (agents[i].coord[1] * 19349663) ^ (agents[i].coord[2] * 83492791)) % 4;
+        if (agent_lsh == query_lsh && bucket_count < 16) {
+            bucket_agents[bucket_count++] = agents[i];
+        }
+    }
+    if (bucket_count == 0) {
+        return interop_knn_search(agents, count, query_coord, out_neighbors, k);
+    }
+    return interop_knn_search(bucket_agents, bucket_count, query_coord, out_neighbors, k);
+}

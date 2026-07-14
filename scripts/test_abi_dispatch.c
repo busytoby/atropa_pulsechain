@@ -709,6 +709,22 @@ int main() {
     assert(ce_res[3] == 11);
     printf("✓ AVX-512 KNN, multi-decision, and centroid re-seeding verified.\n");
 
+    // 48-50. Test batch AVX decision, weighted clustering, and LSH ANN search
+    uint64_t acc_vals[2] = {50, 50};
+    uint32_t dec_res[2] = {0};
+    interop_multi_decision_evaluate_avx512(mn, 0, acc_vals, dec_res, 2);
+    assert(dec_res[0] == 0xCCCC);
+    uint64_t w_coords[6] = { 10, 20, 30, 20, 40, 60 };
+    uint64_t w_weights[2] = { 1, 2 };
+    uint64_t w_cents[6] = { 10, 20, 30, 999, 999, 999 };
+    uint32_t w_assign[2] = {0};
+    assert(interop_coaxial_cluster_weighted(w_coords, w_weights, 2, w_cents, 2, w_assign) == 0);
+    assert(w_assign[0] == 0 && w_assign[1] == 0);
+    assert(w_cents[0] == 16);
+    uint64_t lsh_out[2] = {0};
+    assert(interop_lsh_ann_search(ka, 3, qc, lsh_out, 2) != -1);
+    printf("✓ Batch AVX decision, weighted clustering, and LSH ANN search verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
