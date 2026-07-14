@@ -164,3 +164,18 @@ Bitcoin UTXO spending scripts verify this response proof, validating that:
 1. The exit status confirms error-free execution: $\text{ExitCode} == 0$.
 2. The state tape hash matches the expected transitioned result.
 3. Any returned variables are extracted correctly, enabling trustless execution outputs on-chain.
+
+---
+
+## 11. State Reconstruction via Transaction Log Replay
+
+A critical security property of the CSML-L2 architecture is that the complete state tape database (`.dat.bin` frame) is deterministically reconstructible from the sequential history of the Bitcoin transaction logs. 
+
+To rebuild the database table state:
+1.  **Initialize Genesis State**: The replayer instantiates a zeroed Tape Table ($M_{T, 0}$).
+2.  **Scan Transaction Log History**: Parse block transaction outputs to retrieve sequential `InteropStateDelta` lists.
+3.  **Apply Deltas**: Sequentially write each delta tuple to the tape coordinates:
+    $$\text{Tape}_{k}[idx] = \gamma_{\text{new}}$$
+4.  **Cryptographic Verification**: Re-evaluate the vectorized FNV-1a checksum of the tape and assert it matches the corresponding `next_state_hash` committed on-chain.
+
+This guarantees that the complete L2 database state is securely preserved and recoverable directly from Bitcoin's history, eliminating data availability dependencies on off-chain storage.
