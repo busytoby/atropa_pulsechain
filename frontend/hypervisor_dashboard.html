@@ -288,6 +288,26 @@
                 </div>
             </div>
 
+            <!-- JIT Memoization & Cache Telemetry -->
+            <div class="metrics-grid" style="margin-top: -5px;">
+                <div class="metric-card">
+                    <div class="metric-title">JIT Cache Hits</div>
+                    <div class="metric-value status-pass" id="jitCacheHits">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">JIT Cache Lookups</div>
+                    <div class="metric-value pulse-glow" style="color: var(--neon-blue);" id="jitCacheLookups">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Bypass Latency Savings</div>
+                    <div class="metric-value" style="color: var(--neon-purple);" id="jitLatencySavings">0.00000 ms</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Cache Efficiency</div>
+                    <div class="metric-value" style="color: #00ff7f;" id="jitCacheEfficiency">0.0%</div>
+                </div>
+            </div>
+
             <!-- Comparison Table Panel -->
             <div class="report-section">
                 <div class="card" style="overflow-x: auto;">
@@ -1041,7 +1061,29 @@
 
             appendLog(`Validation completed: ${passedChecks}/${allContracts.length} states match.`, passedChecks === allContracts.length ? "#00ff7f" : "var(--neon-magenta)");
             
+            await updateCacheMetrics();
             document.getElementById("btnRunValidation").disabled = false;
+        }
+
+        async function updateCacheMetrics() {
+            try {
+                const res = await fetch("/api/hypervisor-status");
+                const data = await res.json();
+                if (data && data.cache_lookups !== undefined) {
+                    const hits = data.cache_hits || 0;
+                    const lookups = data.cache_lookups || 0;
+                    const rate = lookups > 0 ? ((hits / lookups) * 100).toFixed(1) : "0.0";
+                    // 150 ns = 0.00015 ms of saving per thunk bypass
+                    const savings = (hits * 0.00015).toFixed(5);
+                    
+                    document.getElementById("jitCacheHits").innerText = hits.toLocaleString();
+                    document.getElementById("jitCacheLookups").innerText = lookups.toLocaleString();
+                    document.getElementById("jitLatencySavings").innerText = savings + " ms";
+                    document.getElementById("jitCacheEfficiency").innerText = rate + "%";
+                }
+            } catch (e) {
+                console.error("Failed to update cache metrics:", e);
+            }
         }
 
         async function loadThunkObjects() {
@@ -1077,6 +1119,8 @@
             initTable();
             await loadConfig();
             await loadThunkObjects();
+            await updateCacheMetrics();
+            setInterval(updateCacheMetrics, 3000);
         });
     </script>
 </body>

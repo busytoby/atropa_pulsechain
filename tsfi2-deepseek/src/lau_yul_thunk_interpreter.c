@@ -13,6 +13,22 @@ static uint64_t g_dyn_addr_counter = 0x9000000000000000ULL;
 
 static pthread_mutex_t g_thunk_execute_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+typedef struct {
+    char contract_name[64];
+    uint8_t calldata[512];
+    size_t calldatasize;
+    uint8_t retval[512];
+    size_t retval_len;
+    bool occupied;
+} ThunkCacheEntry;
+
+#define THUNK_CACHE_SIZE 1024
+static ThunkCacheEntry s_thunk_memo_cache[THUNK_CACHE_SIZE];
+static pthread_mutex_t s_thunk_memo_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+uint64_t g_thunk_cache_hits = 0;
+uint64_t g_thunk_cache_lookups = 0;
+
 static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
 
 static u256_t load_calldata_32(YulEvmContext *ctx, uint64_t offset) {
@@ -806,6 +822,34 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         return false;
     }
 
+    uint32_t hash = 5381;
+    for (size_t i = 0; name[i] != '\0'; i++) hash = ((hash << 5) + hash) + name[i];
+    for (size_t i = 0; i < calldatasize; i++) hash = ((hash << 5) + hash) + calldata[i];
+    uint32_t idx = hash % THUNK_CACHE_SIZE;
+
+    bool skip_cache = (strcmp(name, "cpu6502") == 0 || strcmp(name, "WinchesterMQ") == 0);
+    if (!skip_cache) {
+        pthread_mutex_lock(&s_thunk_memo_mutex);
+        g_thunk_cache_lookups++;
+        if (s_thunk_memo_cache[idx].occupied &&
+            strcmp(s_thunk_memo_cache[idx].contract_name, name) == 0 &&
+            s_thunk_memo_cache[idx].calldatasize == calldatasize &&
+            memcmp(s_thunk_memo_cache[idx].calldata, calldata, calldatasize) == 0) {
+            
+            g_thunk_cache_hits++;
+            if (retval && retval_len) {
+                size_t out_len = s_thunk_memo_cache[idx].retval_len;
+                if (*retval_len < out_len) out_len = *retval_len;
+                memcpy(retval, s_thunk_memo_cache[idx].retval, out_len);
+                *retval_len = out_len;
+            }
+            pthread_mutex_unlock(&s_thunk_memo_mutex);
+            pthread_mutex_unlock(&g_thunk_execute_mutex);
+            return true;
+        }
+        pthread_mutex_unlock(&s_thunk_memo_mutex);
+    }
+
     g_transaction_diyat_tax_total = 0;
     g_yul_evm_context.log_count = 0;
 
@@ -823,6 +867,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size, name);
 
     if (success) {
+        bool had_dirty_storage = g_storage_dirty;
         if (g_storage_dirty) {
             persist_reconciliation_data();
             g_storage_dirty = false;
@@ -831,6 +876,25 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
             size_t out_size = g_yul_evm_context.return_size < *retval_len ? g_yul_evm_context.return_size : *retval_len;
             memcpy(retval, g_yul_evm_context.return_data, out_size);
             *retval_len = out_size;
+        }
+        
+        // Cache outputs for read-only dynamic thunk evaluations (skip if storage mutations occurred)
+        if (!skip_cache && !had_dirty_storage && !g_yul_evm_context.reverted) {
+            pthread_mutex_lock(&s_thunk_memo_mutex);
+            strncpy(s_thunk_memo_cache[idx].contract_name, name, 63);
+            s_thunk_memo_cache[idx].contract_name[63] = '\0';
+            size_t csize = calldatasize < 512 ? calldatasize : 512;
+            memcpy(s_thunk_memo_cache[idx].calldata, calldata, csize);
+            s_thunk_memo_cache[idx].calldatasize = csize;
+            if (retval && retval_len) {
+                size_t rsize = *retval_len < 512 ? *retval_len : 512;
+                memcpy(s_thunk_memo_cache[idx].retval, retval, rsize);
+                s_thunk_memo_cache[idx].retval_len = rsize;
+            } else {
+                s_thunk_memo_cache[idx].retval_len = 0;
+            }
+            s_thunk_memo_cache[idx].occupied = true;
+            pthread_mutex_unlock(&s_thunk_memo_mutex);
         }
     } else {
         if (retval_len) *retval_len = 0;

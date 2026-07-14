@@ -1126,6 +1126,12 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(optr, rem, "], \"id\": %d}\n", id);
             return 1;
         }
+    } else if (method_type == 29) { // wave512.telemetry
+        extern uint64_t g_thunk_cache_hits;
+        extern uint64_t g_thunk_cache_lookups;
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu}, \"id\": %d}\n", 
+                 (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups, id);
+        return 1;
     } else if (method_type == 30) { // input.mouse_move
         int x = extract_json_int(min_ptr, "\"x\"", 0);
         int y = extract_json_int(min_ptr, "\"y\"", 0);
