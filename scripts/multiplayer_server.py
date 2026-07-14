@@ -141,6 +141,56 @@ class UnifiedGauntletHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(f"Error: {str(e)}".encode('utf-8'))
                 return
 
+        elif parsed_url.path == '/api/bluebox':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                payload = json.loads(post_data.decode('utf-8'))
+                action = payload.get('action', 'query')
+                
+                global server_bluebox_state
+                if 'server_bluebox_state' not in globals():
+                    server_bluebox_state = {
+                        'block_number': 0,
+                        'state_hash': '00' * 32,
+                        'nonce': 0,
+                        'is_committed': False
+                    }
+                
+                if action == 'query':
+                    res = server_bluebox_state
+                elif action == 'commit':
+                    block_num = payload.get('block_number', 0)
+                    parent_hash = payload.get('parent_hash', '')
+                    active_trunk = payload.get('active_trunk', 800)
+                    
+                    if block_num != server_bluebox_state['block_number'] + 1:
+                        res = {'status': 'error', 'message': 'Out of order block sequence'}
+                    else:
+                        server_bluebox_state['block_number'] = block_num
+                        server_bluebox_state['nonce'] += 1
+                        server_bluebox_state['is_committed'] = True
+                        
+                        h_bytes = bytearray.fromhex(server_bluebox_state['state_hash'])
+                        for i in range(len(h_bytes)):
+                            h_bytes[i] ^= (active_trunk & 0xFF)
+                        server_bluebox_state['state_hash'] = h_bytes.hex()
+                        res = {'status': 'success', 'state': server_bluebox_state}
+                else:
+                    res = {'status': 'error', 'message': 'Unknown action'}
+                
+                response_data = json.dumps(res)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(response_data.encode('utf-8'))
+                return
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(f"Error: {str(e)}".encode('utf-8'))
+                return
+
         super().do_POST()
 
     def translate_path(self, path):
