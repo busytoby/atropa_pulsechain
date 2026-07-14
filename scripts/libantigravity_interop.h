@@ -382,4 +382,19 @@ void interop_lsh_project_avx512_keys(const uint64_t *coords, size_t count, uint6
 uint32_t interop_knn_prune_candidates(const InteropMultiDecisionNode *nodes, uint32_t root_idx, const uint64_t *query_coord);
 uint64_t interop_lsh_hash_minkowski(const uint64_t *coord, uint32_t p);
 
+typedef struct {
+    float impact;
+    float fear;
+    float lust;
+    float doubt;
+} InteropVaesenScores;
+
+typedef struct {
+    float weight;
+    uint32_t active;
+    InteropVaesenScores vaesen;
+} InteropSparseWeight;
+
+void interop_sparse_learn_gate_vaesen(InteropSparseWeight *weights, size_t count, const InteropVaesenScores *thresholds);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

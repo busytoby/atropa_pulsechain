@@ -998,6 +998,17 @@ int main() {
     assert(interop_lsh_hash_minkowski(lsh_coords, 2) < 4);
     printf("✓ Vectorized LSH projection, decision pruning, and Minkowski LSH hashing verified.\n");
 
+    // 101. Test Vaesen-gated sparse learning
+    InteropSparseWeight sw[2] = {
+        { 0.8f, 1, { 0.5f, 0.1f, 0.7f, 0.0f } },
+        { 0.9f, 1, { 0.2f, 0.8f, 0.1f, 0.0f } }
+    };
+    InteropVaesenScores th = { 0.4f, 0.5f, 0.6f, 0.0f };
+    interop_sparse_learn_gate_vaesen(sw, 2, &th);
+    assert(sw[0].active == 1);
+    assert(sw[1].active == 0);
+    printf("✓ Vaesen score gated sparse learning verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 

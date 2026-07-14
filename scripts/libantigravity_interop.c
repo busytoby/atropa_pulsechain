@@ -2095,3 +2095,17 @@ uint64_t interop_lsh_hash_minkowski(const uint64_t *coord, uint32_t p) {
     uint64_t h = (coord[0] * p) ^ (coord[1] * p * 2) ^ (coord[2] * p * 3);
     return h % 4;
 }
+
+void interop_sparse_learn_gate_vaesen(InteropSparseWeight *weights, size_t count, const InteropVaesenScores *thresholds) {
+    if (!weights || !thresholds) return;
+    for (size_t i = 0; i < count; i++) {
+        if (weights[i].vaesen.impact < thresholds->impact ||
+            weights[i].vaesen.fear > thresholds->fear ||
+            weights[i].vaesen.lust < thresholds->lust) {
+            weights[i].active = 0;
+            weights[i].weight = 0.0f;
+        } else {
+            weights[i].active = 1;
+        }
+    }
+}
