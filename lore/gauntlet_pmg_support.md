@@ -50,3 +50,35 @@ let collisionMask := staticcall(gas(), pmgAddress, 0xd4bc89f1, 0, 0, 0)
 To prevent visual flickering, Gauntlet implements page-flipping during the Vertical Blank Interrupt (VBI):
 * **Page Base Register (`PMBASE`)**: Swapped between alternate buffer pages (`0x4000` and `0x6000`).
 * **Frame Sync**: Player and Missile graphics frames are written to the inactive page, then flipped during vertical blanking, guaranteeing artifact-free 60 FPS animation.
+
+---
+
+## 5. EDO-22 Acoustic Space Audio Synthesis
+
+To support retro chiptune sound synthesis during projectile impact events, audio frequencies are calculated dynamically using **EDO-22** (Equal Division of the Octave) formulas:
+$$F = 220 \times 2^{\frac{d \pmod{22}}{22}}$$
+Where $d$ is the relative pixel distance offset between the projectile missile position and the target spawner/enemy Playfield element. This ensures cryptographically verifiable acoustic feedback loops.
+
+---
+
+## 6. PMG Collision Flash & Damage Effects
+
+When player-to-playfield/enemy collisions occur on-cycle, visual registers update the player's vector envelope:
+* **`player.flashFrames`**: Set to `10` frames upon receiving damage.
+* **Color Modulation**: Modulates the vector diamond border stroke from `var(--warrior-blue)` to the GTIA red alert color (`#ff1744`) until the counter reaches zero.
+
+---
+
+## 7. Immutable Ledger State Logging
+
+State snapshots containing the level index, score, health values, coordinates, and collision register states are hashed and logged to the immutable ledger partition:
+* **Ledger Validation**: Historical blocks are chained using parent-child hash verification links ($Hash = H(Index + PrevHash + State)$).
+* **Tamper Prevention**: Any retroactive modifications to previous game frames instantly break the ledger validation chain.
+
+---
+
+## 8. Simulated Web3 / Demo Mode
+
+For offline testing without a local **Auncient** RPC devnet:
+* **Local Provider Mocking**: Bypasses connection errors by creating a virtual signer, allowing game coordinates to be read/written smoothly without DOM reflow stutters.
+* **Variable Alignment**: Uses `"SIMULATED_WALLET"` as the address marker to disable grid-snapping, ensuring 60fps client-side keyboard updates.
