@@ -531,4 +531,7 @@ float interop_transh_mrr_score(const int *ranks, size_t count);
 float interop_transr_score(const float *h, const float *M, const float *r, const float *t, size_t ent_dim, size_t rel_dim, int norm_type);
 int interop_transr_matrix_norm_constraint(float *M, size_t ent_dim, size_t rel_dim);
 
+float interop_ctransr_score(const float *h, const float *M, const float *r_cluster, const float *t, size_t ent_dim, size_t rel_dim, int norm_type);
+float interop_transr_alignment_penalty(const float *M, const float *r, size_t ent_dim, size_t rel_dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
