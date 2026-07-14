@@ -367,4 +367,8 @@ int interop_rdbms_sync_pmg(uint32_t agent_id, const InteropPMG *pmg);
 int interop_rdbms_sync_pll(uint32_t agent_id, const InteropPLL *pll);
 int interop_zmm_dispatch_controller(uint32_t target_agent_id, uint32_t command, uint64_t *reg_state);
 
+void interop_pll_update_avx512(InteropPLL *plls, const double *ref_phases, size_t count, double dt, double loop_gain);
+void interop_pll_decision_gate(InteropPLL *pll, const InteropMultiDecisionNode *nodes, uint32_t root_idx);
+int interop_pmg_gate_search_ntm(const InteropPMG *pmgs, size_t count, double signal, uint32_t *path_out);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

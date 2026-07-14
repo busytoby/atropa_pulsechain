@@ -2017,3 +2017,30 @@ int interop_zmm_dispatch_controller(uint32_t target_agent_id, uint32_t command, 
     }
     return 0;
 }
+
+void interop_pll_update_avx512(InteropPLL *plls, const double *ref_phases, size_t count, double dt, double loop_gain) {
+    if (!plls || !ref_phases || count == 0) return;
+    for (size_t i = 0; i < count; i++) {
+        interop_pll_update(&plls[i], ref_phases[i], dt, loop_gain);
+    }
+}
+
+void interop_pll_decision_gate(InteropPLL *pll, const InteropMultiDecisionNode *nodes, uint32_t root_idx) {
+    if (!pll || !nodes) return;
+    uint64_t scaled_error = (uint64_t)(pll->error < 0 ? -pll->error * 1000.0 : pll->error * 1000.0);
+    uint32_t decision = interop_multi_decision_evaluate(nodes, root_idx, scaled_error);
+    if (decision == 0xAAAA) {
+        pll->frequency += 10.0 * pll->error;
+    }
+}
+
+int interop_pmg_gate_search_ntm(const InteropPMG *pmgs, size_t count, double signal, uint32_t *path_out) {
+    if (!pmgs || !path_out || count == 0) return -1;
+    size_t paths = 0;
+    for (size_t i = 0; i < count; i++) {
+        if (signal >= pmgs[i].threshold) {
+            path_out[paths++] = (uint32_t)i;
+        }
+    }
+    return (int)paths;
+}

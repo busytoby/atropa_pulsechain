@@ -952,6 +952,20 @@ int main() {
     assert(reg_state[0] == 1234);
     printf("✓ RDBMS sync and ZMM controller dispatch verified.\n");
 
+    // 90-92. Test parallel PLL, decision gating frequency locks, and NTM gate searches
+    InteropPLL test_plls[2] = { {0.0, 10.0, 0.0}, {1.0, 5.0, 0.0} };
+    double ref_phases[2] = { 1.0, 2.0 };
+    interop_pll_update_avx512(test_plls, ref_phases, 2, 0.1, 2.0);
+    assert(test_plls[0].frequency > 10.0);
+    test_pll.error = 0.15;
+    interop_pll_decision_gate(&test_pll, prune_nodes, 0);
+    assert(test_pll.frequency > 10.0);
+    InteropPMG test_pmgs[2] = { {0.0, 5.0, 0}, {0.0, 8.0, 0} };
+    uint32_t path_out[2] = {0};
+    assert(interop_pmg_gate_search_ntm(test_pmgs, 2, 6.0, path_out) == 1);
+    assert(path_out[0] == 0);
+    printf("✓ Parallel PLL updates, decision frequency gating, and NTM gate paths verified.\n");
+
     free(raw_mem);
     printf("✓ Schema verified.\n");
 
