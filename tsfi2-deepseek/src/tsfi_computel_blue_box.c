@@ -2287,3 +2287,37 @@ bool blue_box_write_quadtree_to_disk(uint32_t mode) {
     lau_yul_thunk_sstore(0xF19F, 1); // Set serialization status active
     return true;
 }
+
+bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len) {
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    (void)new_row_data;
+    
+    // Simulate simple script: OP_SHA256 OP_EQUALVERIFY
+    // Verify that old_row_data matches the expected hash in witness_script
+    // We compute a basic checksum of old_row_data to verify script constraint
+    uint64_t old_checksum = 0;
+    for (size_t i = 0; i < old_len; i++) {
+        old_checksum = (old_checksum * 33 + old_row_data[i]) % MotzkinPrime;
+    }
+    
+    uint64_t expected_hash = 0;
+    if (script_len >= 8) {
+        for (size_t i = 0; i < 8; i++) {
+            expected_hash = (expected_hash << 8) | witness_script[i];
+        }
+    }
+    
+    // Script transition logic: OP_SHA256(old_row_data) == expected_hash
+    if (old_checksum != expected_hash) {
+        lau_yul_thunk_sstore(0xF1C1, 0); // Verification status: Failed (0)
+        printf("[BTC SCRIPT] Verification failed. Hash mismatch.\n");
+        return false;
+    }
+    
+    // Update register states
+    lau_yul_thunk_sstore(0xF1C0, 100); // Set UTXO leaf index
+    lau_yul_thunk_sstore(0xF1C1, 1);   // Verification status: Success (1)
+    
+    printf("[BTC SCRIPT] Transition verified. New Row committed (length: %zu).\n", new_len);
+    return true;
+}

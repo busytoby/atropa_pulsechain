@@ -581,6 +581,30 @@ int main(void) {
     fclose(f_check_ledger);
     printf("[TEST] Quadtree Postgres mutable index vs Merkle block ledger modes verified.\n");
 
+    // 42. Test Bitcoin Script transition verification
+    uint8_t old_row[4] = {0x01, 0x02, 0x03, 0x04};
+    uint8_t new_row[4] = {0x05, 0x06, 0x07, 0x08};
+    
+    uint64_t old_checksum = 0;
+    for (size_t i = 0; i < 4; i++) {
+        old_checksum = (old_checksum * 33 + old_row[i]) % 953467954114363ULL;
+    }
+    
+    uint8_t script[8];
+    for (int i = 7; i >= 0; i--) {
+        script[i] = (uint8_t)(old_checksum & 0xFF);
+        old_checksum >>= 8;
+    }
+    
+    assert(blue_box_verify_btc_script_transition(old_row, 4, script, 8, new_row, 4) == true);
+    assert(lau_yul_thunk_sload(0xF1C0) == 100);
+    assert(lau_yul_thunk_sload(0xF1C1) == 1);
+    
+    script[0] ^= 0xFF;
+    assert(blue_box_verify_btc_script_transition(old_row, 4, script, 8, new_row, 4) == false);
+    assert(lau_yul_thunk_sload(0xF1C1) == 0);
+    printf("[TEST] Bitcoin Script-style table row transition proofs verified.\n");
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }
