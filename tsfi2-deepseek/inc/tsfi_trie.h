@@ -47,4 +47,7 @@ void tsfi_string_bst_destroy(tsfi_string_bst_node *root);
 // Convert a Trie into an alphabetically sorted AVL BST
 tsfi_string_bst_node* tsfi_trie_to_string_bst(tsfi_trie_node *trie_root);
 
+// Convert a Trie into an alphabetically sorted perfectly balanced BST using sorting and selection
+tsfi_string_bst_node* tsfi_trie_to_string_bst_balanced(tsfi_trie_node *trie_root);
+
 #endif // TSFI_TRIE_H

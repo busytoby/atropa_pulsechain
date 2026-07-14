@@ -59,9 +59,24 @@ int main(void) {
     verify_bst_inorder(bst_root, last_key);
     printf("  [PASS] In-order traversal validated alphabetically ascending keys.\n");
 
-    // 5. Cleanup
+    // 5. Test Balanced Construction using Sort & Select
+    printf("[CONVERT] Testing balanced Trie-to-BST conversion...\n");
+    tsfi_string_bst_node *balanced_root = tsfi_trie_to_string_bst_balanced(trie_root);
+    assert(balanced_root != NULL);
+    
+    // Check balanced height (for 5 elements, max balanced BST height is 3)
+    printf("  - Balanced BST Height: %d\n", balanced_root->height);
+    assert(balanced_root->height <= 3);
+    
+    printf("[CONVERT] Verifying balanced BST sorting order...\n");
+    char last_key_bal[256] = {0};
+    verify_bst_inorder(balanced_root, last_key_bal);
+    printf("  [PASS] Balanced BST inorder traversal validated.\n");
+
+    // 6. Cleanup
     tsfi_trie_destroy(trie_root);
     tsfi_string_bst_destroy(bst_root);
+    tsfi_string_bst_destroy(balanced_root);
 
     printf("=== ALL TRIE-TO-BST CONVERSION TESTS PASSED ===\n");
     return 0;

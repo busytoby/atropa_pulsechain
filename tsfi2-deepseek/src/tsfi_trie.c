@@ -229,3 +229,108 @@ tsfi_string_bst_node* tsfi_trie_to_string_bst(tsfi_trie_node *trie_root) {
     trie_to_bst_dfs(trie_root->child, buffer, 0, &bst_root);
     return bst_root;
 }
+
+typedef struct {
+    char *key;
+    char *val;
+} tsfi_trie_entry;
+
+static void trie_count_entries(tsfi_trie_node *node, size_t *count) {
+    if (!node) return;
+    if (node->is_end) (*count)++;
+    trie_count_entries(node->child, count);
+    trie_count_entries(node->sibling, count);
+}
+
+static void trie_collect_entries(tsfi_trie_node *node, char *buffer, int depth, tsfi_trie_entry *entries, size_t *index) {
+    if (!node) return;
+    buffer[depth] = node->ch;
+    buffer[depth + 1] = '\0';
+    if (node->is_end) {
+        entries[*index].key = strdup(buffer);
+        entries[*index].val = strdup(node->phoneme);
+        (*index)++;
+    }
+    trie_collect_entries(node->child, buffer, depth + 1, entries, index);
+    trie_collect_entries(node->sibling, buffer, depth, entries, index);
+}
+
+static void swap_entries(tsfi_trie_entry *a, tsfi_trie_entry *b) {
+    tsfi_trie_entry temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+static size_t partition_entries(tsfi_trie_entry *arr, size_t low, size_t high) {
+    size_t mid = low + (high - low) / 2;
+    if (strcmp(arr[low].key, arr[mid].key) > 0) swap_entries(&arr[low], &arr[mid]);
+    if (strcmp(arr[low].key, arr[high].key) > 0) swap_entries(&arr[low], &arr[high]);
+    if (strcmp(arr[mid].key, arr[high].key) > 0) swap_entries(&arr[mid], &arr[high]);
+    
+    tsfi_trie_entry pivot = arr[mid];
+    swap_entries(&arr[mid], &arr[high]);
+    
+    size_t i = low;
+    for (size_t j = low; j < high; j++) {
+        if (strcmp(arr[j].key, pivot.key) < 0) {
+            swap_entries(&arr[i], &arr[j]);
+            i++;
+        }
+    }
+    swap_entries(&arr[i], &arr[high]);
+    return i;
+}
+
+static void sort_entries(tsfi_trie_entry *arr, size_t low, size_t high) {
+    if (low < high) {
+        size_t p = partition_entries(arr, low, high);
+        if (p > 0) sort_entries(arr, low, p - 1);
+        sort_entries(arr, p + 1, high);
+    }
+}
+
+static tsfi_string_bst_node* build_balanced_bst_from_sorted(tsfi_trie_entry *arr, int low, int high) {
+    if (low > high) return NULL;
+    
+    int mid = low + (high - low) / 2;
+    
+    tsfi_string_bst_node *node = (tsfi_string_bst_node*)malloc(sizeof(tsfi_string_bst_node));
+    if (node) {
+        node->key = strdup(arr[mid].key);
+        node->value = strdup(arr[mid].val);
+        node->left = build_balanced_bst_from_sorted(arr, low, mid - 1);
+        node->right = build_balanced_bst_from_sorted(arr, mid + 1, high);
+        
+        int hl = node->left ? node->left->height : 0;
+        int hr = node->right ? node->right->height : 0;
+        node->height = 1 + (hl > hr ? hl : hr);
+    }
+    return node;
+}
+
+tsfi_string_bst_node* tsfi_trie_to_string_bst_balanced(tsfi_trie_node *trie_root) {
+    if (!trie_root) return NULL;
+    
+    size_t count = 0;
+    trie_count_entries(trie_root->child, &count);
+    if (count == 0) return NULL;
+    
+    tsfi_trie_entry *entries = (tsfi_trie_entry*)malloc(count * sizeof(tsfi_trie_entry));
+    size_t index = 0;
+    char buffer[256];
+    trie_collect_entries(trie_root->child, buffer, 0, entries, &index);
+    
+    if (count > 1) {
+        sort_entries(entries, 0, count - 1);
+    }
+    
+    tsfi_string_bst_node *bst_root = build_balanced_bst_from_sorted(entries, 0, (int)count - 1);
+    
+    for (size_t i = 0; i < count; i++) {
+        free(entries[i].key);
+        free(entries[i].val);
+    }
+    free(entries);
+    
+    return bst_root;
+}
