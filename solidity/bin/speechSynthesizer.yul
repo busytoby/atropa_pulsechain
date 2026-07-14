@@ -1740,10 +1740,15 @@ object "SpeechSynthesizer" {
                         // Scale to 16-bit PCM range
                         let sampleVal := mul(forward, 3)
 
-                        // Step 5: Spectral Tilt Filter (1st-order Low Pass)
-                        // smoothed = sampleVal * 70 / 100 + lastOut * 30 / 100
+                        // Step 5: Adaptive Spectral Tilt Filter (1st-order Low Pass)
                         let lastOut := mload(0x4200)
-                        let smoothed := add(sdiv(mul(sampleVal, 70), 100), sdiv(mul(lastOut, 30), 100))
+                        let coeff1 := 70
+                        let coeff2 := 30
+                        if iszero(gt(targetEnergy, 30)) {
+                            coeff1 := 95
+                            coeff2 := 5
+                        }
+                        let smoothed := add(sdiv(mul(sampleVal, coeff1), 100), sdiv(mul(lastOut, coeff2), 100))
                         mstore(0x4200, smoothed)
                         sampleVal := smoothed
 
