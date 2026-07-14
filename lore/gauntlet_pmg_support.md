@@ -82,3 +82,12 @@ State snapshots containing the level index, score, health values, coordinates, a
 For offline testing without a local **Auncient** RPC devnet:
 * **Local Provider Mocking**: Bypasses connection errors by creating a virtual signer, allowing game coordinates to be read/written smoothly without DOM reflow stutters.
 * **Variable Alignment**: Uses `"SIMULATED_WALLET"` as the address marker to disable grid-snapping, ensuring 60fps client-side keyboard updates.
+
+---
+
+## 9. Coaxial Multiplayer Teleconferencing Layer
+
+To support multiple simultaneous players on the **Auncient** coaxial system, Gauntlet integrates a distributed state synchronization mechanism:
+* **REST Synchronization Node (`/api/sync`)**: Served by a lightweight, stateful python backend. Clients POST their real-time coordinates, health values, scores, and character types, and receive the consolidated positions of all active peers.
+* **Autonomous Peer Pruning**: The server automatically drops inactive players from the telemetry matrix if no synchronization packets are received within a 5-second window.
+* **Dynamic Character Selection**: Each connection selects a unique hero class (Warrior, Valkyrie, Wizard, Elf), dynamically mapping to distinct GTIA visual colors (Blue, Red, Yellow, Green) and rendering peer indicators directly on the vector CRT screen.
