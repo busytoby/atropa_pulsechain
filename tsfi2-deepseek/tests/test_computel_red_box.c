@@ -219,6 +219,27 @@ int main(void) {
     
     printf("[TEST] BTC Script Dual Stack verification (A-side & B-side matching) validated successfully.\n");
 
+    // 21. Test MF/FSK Tone Generator
+    float tone_samples[160];
+    bool tone_ok = blue_box_generate_tone(700, 900, tone_samples, 160);
+    assert(tone_ok == true);
+    assert(tone_samples[0] == 0.0);
+    uint64_t reg_f1 = lau_yul_thunk_sload(0xF150);
+    uint64_t reg_f2 = lau_yul_thunk_sload(0xF151);
+    assert(reg_f1 == 700);
+    assert(reg_f2 == 900);
+    printf("[TEST] MF/FSK Tone Generator validated and verified in VM registers.\n");
+    
+    // 22. Test Visual Coverage & Symmetry Telemetry Classifier
+    float x_coords[5] = {-0.5f, 0.0f, 0.5f, -0.5f, 0.5f};
+    float y_coords[5] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float coverage = 0.0f, symmetry = 0.0f;
+    bool visual_ok = blue_box_evaluate_visual_coverage(x_coords, y_coords, 5, &coverage, &symmetry);
+    assert(visual_ok == true);
+    assert(coverage > 0.0f);
+    assert(symmetry > 0.0f);
+    printf("[TEST] Visual Coverage (%.4f) & Symmetry (%.4f) telemetry verification passed.\n", coverage, symmetry);
+
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
 }

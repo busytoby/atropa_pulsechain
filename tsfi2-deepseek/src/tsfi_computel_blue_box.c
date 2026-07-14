@@ -1464,3 +1464,69 @@ bool blue_box_verify_dual_stack(const uint8_t *sig, size_t sig_len, const uint8_
            
     return (a_side_ok && b_side_ok);
 }
+
+// 11. MF/FSK Tone Generator & Dynamic Vocable Synthesis
+bool blue_box_generate_tone(uint32_t freq1, uint32_t freq2, float *samples_out, size_t count) {
+    if (!samples_out || count == 0) return false;
+    
+    // Write frequencies to WinchesterMQ VM registers via generateTone thunk selector
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    uint8_t tone_cd[68] = {0x0f, 0xf1, 0x10, 0x00};
+    // Pack freq1 and freq2 as big-endian 32-byte arguments
+    tone_cd[35] = (uint8_t)(freq1 & 0xFF);
+    tone_cd[34] = (uint8_t)((freq1 >> 8) & 0xFF);
+    tone_cd[33] = (uint8_t)((freq1 >> 16) & 0xFF);
+    tone_cd[32] = (uint8_t)((freq1 >> 24) & 0xFF);
+    tone_cd[67] = (uint8_t)(freq2 & 0xFF);
+    tone_cd[66] = (uint8_t)((freq2 >> 8) & 0xFF);
+    tone_cd[65] = (uint8_t)((freq2 >> 16) & 0xFF);
+    tone_cd[64] = (uint8_t)((freq2 >> 24) & 0xFF);
+    
+    uint8_t tone_ret[32];
+    size_t tone_ret_len = 32;
+    lau_yul_thunk_execute("WinchesterMQ", tone_cd, 68, tone_ret, &tone_ret_len);
+    
+    // Synthesize dual sine wave audio samples
+    double fs = 8000.0; // Standard telephony sampling rate (8 kHz)
+    for (size_t n = 0; n < count; n++) {
+        double t = (double)n / fs;
+        samples_out[n] = 0.5 * (sin(2.0 * M_PI * freq1 * t) + sin(2.0 * M_PI * freq2 * t));
+    }
+    return true;
+}
+
+// 12. Visual Coverage & Symmetry Telemetry Classifier
+bool blue_box_evaluate_visual_coverage(const float *x_coords, const float *y_coords, size_t count, float *coverage_out, float *symmetry_out) {
+    if (!x_coords || !y_coords || count == 0 || !coverage_out || !symmetry_out) return false;
+    
+    #define GRID_SIZE 80
+    uint8_t grid[GRID_SIZE][GRID_SIZE];
+    memset(grid, 0, sizeof(grid));
+    
+    size_t active_pixels = 0;
+    for (size_t i = 0; i < count; i++) {
+        // Normalize coordinates from [-1.0, 1.0] to [0, GRID_SIZE-1]
+        int px = (int)((x_coords[i] + 1.0f) * 0.5f * (GRID_SIZE - 1));
+        int py = (int)((y_coords[i] + 1.0f) * 0.5f * (GRID_SIZE - 1));
+        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
+            if (grid[py][px] == 0) {
+                grid[py][px] = 1;
+                active_pixels++;
+            }
+        }
+    }
+    
+    *coverage_out = (float)active_pixels / (GRID_SIZE * GRID_SIZE);
+    
+    // Evaluate symmetry by reflecting along the vertical Y-axis reflection plane
+    size_t sym_hits = 0;
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE / 2; x++) {
+            if (grid[y][x] == grid[y][GRID_SIZE - 1 - x]) {
+                sym_hits++;
+            }
+        }
+    }
+    *symmetry_out = (float)sym_hits / (GRID_SIZE * (GRID_SIZE / 2));
+    return true;
+}
