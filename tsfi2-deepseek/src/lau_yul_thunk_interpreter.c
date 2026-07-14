@@ -1,4 +1,5 @@
 #include "lau_yul_thunk_internal.h"
+#include "tsfi_qing_bst.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -597,11 +598,12 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 u256_t addr_val = ctx->stack[--ctx->stack_ptr];
                 uint64_t search_addr = addr_val.d[0];
                 size_t code_sz = 0;
-                for (int i = 0; i < g_cached_contracts_count; i++) {
-                    if (g_cached_contracts[i].virtual_address == search_addr) {
-                        code_sz = g_cached_contracts[i].size;
-                        break;
-                    }
+                if (!g_runtime_qing_bst) {
+                    g_runtime_qing_bst = tsfi_qing_bst_populate();
+                }
+                CachedContract *c_match = tsfi_qing_bst_find(g_runtime_qing_bst, search_addr);
+                if (c_match) {
+                    code_sz = c_match->size;
                 }
                 u256_t sz_val = {{ code_sz, 0, 0, 0 }};
                 ctx->stack[ctx->stack_ptr++] = sz_val;
@@ -657,6 +659,10 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                 c->virtual_address = new_address;
                                 snprintf(c->path, sizeof(c->path), "dynamic");
                                 ret_addr.d[0] = new_address;
+                                if (g_runtime_qing_bst) {
+                                    tsfi_qing_bst_destroy(g_runtime_qing_bst);
+                                    g_runtime_qing_bst = NULL;
+                                }
 
                                 for (int i = 0; i < nested_ctx->storage_count; i++) {
                                     u256_t raw_key = nested_ctx->storage_keys[i];
@@ -731,6 +737,10 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                 c->virtual_address = new_address;
                                 snprintf(c->path, sizeof(c->path), "dynamic");
                                 ret_addr.d[0] = new_address;
+                                if (g_runtime_qing_bst) {
+                                    tsfi_qing_bst_destroy(g_runtime_qing_bst);
+                                    g_runtime_qing_bst = NULL;
+                                }
 
                                 for (int i = 0; i < nested_ctx->storage_count; i++) {
                                     u256_t raw_key = nested_ctx->storage_keys[i];
@@ -782,13 +792,13 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         is_addr = true;
     }
 
-    for (int i = 0; i < g_cached_contracts_count; i++) {
-        if (is_addr) {
-            if (g_cached_contracts[i].virtual_address == search_addr) {
-                c = &g_cached_contracts[i];
-                break;
-            }
-        } else {
+    if (!g_runtime_qing_bst) {
+        g_runtime_qing_bst = tsfi_qing_bst_populate();
+    }
+    if (is_addr) {
+        c = tsfi_qing_bst_find(g_runtime_qing_bst, search_addr);
+    } else {
+        for (int i = 0; i < g_cached_contracts_count; i++) {
             if (strcmp(g_cached_contracts[i].name, name) == 0) {
                 c = &g_cached_contracts[i];
                 break;
@@ -832,6 +842,22 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         }
     } else {
         if (retval_len) *retval_len = 0;
+    }
+
+    if (success && strcmp(name, "cpu6502") == 0) {
+        /* Simulate FET discharge decay on registers A, X, Y (addresses 128, 129, 130) */
+        uint64_t val_a = lau_yul_thunk_sload(128);
+        uint64_t val_x = lau_yul_thunk_sload(129);
+        uint64_t val_y = lau_yul_thunk_sload(130);
+
+        /* Apply 2% FET discharge charge decay per CPU execution loop */
+        uint64_t new_a = (uint64_t)(val_a * 0.98);
+        uint64_t new_x = (uint64_t)(val_x * 0.98);
+        uint64_t new_y = (uint64_t)(val_y * 0.98);
+
+        lau_yul_thunk_sstore(128, new_a);
+        lau_yul_thunk_sstore(129, new_x);
+        lau_yul_thunk_sstore(130, new_y);
     }
 
     pthread_mutex_unlock(&g_thunk_execute_mutex);
@@ -1073,13 +1099,10 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
         return true;
     }
 
-    CachedContract *target = NULL;
-    for (int i = 0; i < g_cached_contracts_count; i++) {
-        if (g_cached_contracts[i].virtual_address == target_addr) {
-            target = &g_cached_contracts[i];
-            break;
-        }
+    if (!g_runtime_qing_bst) {
+        g_runtime_qing_bst = tsfi_qing_bst_populate();
     }
+    CachedContract *target = tsfi_qing_bst_find(g_runtime_qing_bst, target_addr);
     if (!target) {
         success_out->d[0] = 1;
         u256_t mock_ret = {{ 0x1000, 0, 0, 0 }};
