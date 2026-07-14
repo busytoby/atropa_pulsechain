@@ -162,6 +162,8 @@ assets/syrinx/
 /assets/poly_trace.dat.bin
 /assets/isoperimetric_orbit.mp4
 /assets/soundtrack.wav
+/assets/soundtrack_gemm.wav
+/scripts/gemm_synth
 /firmware/tsfi_lib/zmm_init
 
 # Ignore generated custom JPEG AI container format
