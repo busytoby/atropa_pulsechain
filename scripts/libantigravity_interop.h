@@ -494,4 +494,7 @@ int interop_transe_orthogonal_projection(const float *x, const float *w, float *
 float interop_transe_soft_margin_penalty(float score, float margin);
 int interop_rotate_complex_hadamard(const float *h_real, const float *h_imag, const float *r_real, const float *r_imag, float *out_real, float *out_imag, size_t dim);
 
+float interop_transe_regularization_penalty(const float *emb, size_t dim, float lambda_val);
+float interop_transe_mrr_score(const int *ranks, size_t rank_count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

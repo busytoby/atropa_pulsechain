@@ -1184,8 +1184,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 167);
-    assert(code_nodes[1].value == 167);
+    assert(code_nodes[0].value == 169);
+    assert(code_nodes[1].value == 169);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1388,6 +1388,17 @@ int main() {
     assert(out_re[0] >= -1.91f && out_re[0] <= -1.89f);
     assert(out_im[0] >= 2.29f && out_im[0] <= 2.31f);
     printf("✓ RotatE complex multiplication verified.\n");
+
+    // 147. Verify TransE regularization penalty
+    float reg_emb[3] = { 1.0f, 2.0f, 3.0f };
+    assert(interop_transe_regularization_penalty(reg_emb, 3, 0.5f) == 7.0f);
+    printf("✓ TransE regularization penalty verified.\n");
+
+    // 148. Verify TransE MRR score validation
+    int sample_ranks[3] = { 1, 2, 4 };
+    float mrr = interop_transe_mrr_score(sample_ranks, 3);
+    assert(mrr >= 0.58f && mrr <= 0.59f);
+    printf("✓ TransE MRR validation score verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

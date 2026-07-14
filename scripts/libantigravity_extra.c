@@ -1408,3 +1408,23 @@ int interop_rotate_complex_hadamard(const float *h_real, const float *h_imag, co
     }
     return 0;
 }
+
+float interop_transe_regularization_penalty(const float *emb, size_t dim, float lambda_val) {
+    if (!emb || dim == 0) return 0.0f;
+    float sum = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        sum += emb[i] * emb[i];
+    }
+    return lambda_val * sum;
+}
+
+float interop_transe_mrr_score(const int *ranks, size_t rank_count) {
+    if (!ranks || rank_count == 0) return 0.0f;
+    float mrr_sum = 0.0f;
+    for (size_t i = 0; i < rank_count; i++) {
+        if (ranks[i] > 0) {
+            mrr_sum += 1.0f / (float)ranks[i];
+        }
+    }
+    return mrr_sum / (float)rank_count;
+}
