@@ -1368,3 +1368,28 @@ int interop_transe_normalize_embedding(float *emb, size_t dim) {
     }
     return 0;
 }
+
+int interop_transe_predict_rank(const float *h, const float *r, const float *t_correct, const float *t_candidates, size_t candidate_count, size_t dim, int norm_type) {
+    if (!h || !r || !t_correct || !t_candidates || candidate_count == 0 || dim == 0) return -1;
+    float correct_score = interop_transe_score(h, r, t_correct, dim, norm_type);
+    int rank = 1;
+    for (size_t i = 0; i < candidate_count; i++) {
+        float cand_score = interop_transe_score(h, r, t_candidates + i * dim, dim, norm_type);
+        if (cand_score < correct_score) {
+            rank++;
+        }
+    }
+    return rank;
+}
+
+int interop_transe_orthogonal_projection(const float *x, const float *w, float *out_x, size_t dim) {
+    if (!x || !w || !out_x || dim == 0) return -1;
+    float dot = 0.0f;
+    for (size_t i = 0; i < dim; i++) {
+        dot += x[i] * w[i];
+    }
+    for (size_t i = 0; i < dim; i++) {
+        out_x[i] = x[i] - dot * w[i];
+    }
+    return 0;
+}

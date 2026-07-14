@@ -1183,8 +1183,8 @@ int main() {
     // 131. Verify codebase dependency graph import in assets
     InteropQuadNode code_nodes[5];
     assert(interop_quadtree_read("../assets/codebase_graph.dat.bin", code_nodes, 5) == 5);
-    assert(code_nodes[0].value == 163);
-    assert(code_nodes[1].value == 163);
+    assert(code_nodes[0].value == 165);
+    assert(code_nodes[1].value == 165);
     assert(code_nodes[2].value == 0);
     printf("✓ Codebase dependency graph binary asset read and parsed successfully.\n");
 
@@ -1351,6 +1351,26 @@ int main() {
     assert(raw_emb[0] >= 0.59f && raw_emb[0] <= 0.61f);
     assert(raw_emb[1] >= 0.79f && raw_emb[1] <= 0.81f);
     printf("✓ TransE entity embedding normalization verified.\n");
+
+    // 143. Verify TransE rank prediction
+    float h_r[2] = { 1.0f, 1.0f };
+    float r_r[2] = { 0.5f, 0.5f };
+    float t_corr[2] = { 1.5f, 1.5f };
+    float t_cands[4] = {
+        2.0f, 2.0f,
+        1.2f, 1.2f
+    };
+    assert(interop_transe_predict_rank(h_r, r_r, t_corr, t_cands, 2, 2, 1) == 1);
+    assert(interop_transe_predict_rank(h_r, r_r, t_cands, t_cands + 2, 1, 2, 1) == 2);
+    printf("✓ TransE rank prediction verified.\n");
+
+    // 144. Verify TransE/H hyperplane orthogonal projections
+    float x_proj[3] = { 1.0f, 2.0f, 3.0f };
+    float w_proj[3] = { 0.0f, 1.0f, 0.0f };
+    float out_proj[3] = { 0.0f };
+    assert(interop_transe_orthogonal_projection(x_proj, w_proj, out_proj, 3) == 0);
+    assert(out_proj[0] == 1.0f && out_proj[1] == 0.0f && out_proj[2] == 3.0f);
+    printf("✓ TransE/H hyperplane projection verified.\n");
 
     free(raw_mem);
     printf("✓ Schema verified.\n");

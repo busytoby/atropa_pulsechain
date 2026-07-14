@@ -488,4 +488,7 @@ float interop_transe_score(const float *h, const float *r, const float *t, size_
 float interop_transe_margin_loss(float pos_score, float neg_score, float margin);
 int interop_transe_normalize_embedding(float *emb, size_t dim);
 
+int interop_transe_predict_rank(const float *h, const float *r, const float *t_correct, const float *t_candidates, size_t candidate_count, size_t dim, int norm_type);
+int interop_transe_orthogonal_projection(const float *x, const float *w, float *out_x, size_t dim);
+
 #endif // LIBANTIGRAVITY_INTEROP_H
