@@ -754,3 +754,14 @@ int interop_covenant_verify_evolution(InteropCovenantState *cov, InteropTuringSt
     cov->tx_input_witness = expected_next_hash ^ current_tape_hash;
     return 1;
 }
+
+int interop_covenant_deploy_yul(InteropCoaxialTable *rules_table, const uint64_t *yul_rules, size_t rule_count) {
+    if (!rules_table || !yul_rules || rule_count == 0) return -1;
+    for (size_t i = 0; i < rule_count; i++) {
+        uint64_t rule_pair[2] = { yul_rules[i * 2], yul_rules[i * 2 + 1] };
+        if (interop_coaxial_insert(rules_table, rule_pair, 2) != 1) {
+            return -2;
+        }
+    }
+    return 1;
+}

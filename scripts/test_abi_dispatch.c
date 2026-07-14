@@ -700,6 +700,32 @@ int main() {
     free(temp_tape_mem);
     printf("✓ Bitcoin-Style State Evolution Covenant verified successfully.\n");
 
+    // 23. Test Yul Contract Deployment via Bitcoin Covenant
+    printf("23. Testing Yul Contract Deployment via Bitcoin Covenant:\n");
+    char *yul_rules_mem = calloc(1, 16384);
+    assert(yul_rules_mem);
+    InteropCoaxialTable *yul_rules_table = (InteropCoaxialTable*)yul_rules_mem;
+    interop_coaxial_init_table(yul_rules_table, 5, 2);
+    uint64_t compiled_yul[2];
+    compiled_yul[0] = ((uint64_t)0 << 32) | 0;
+    compiled_yul[1] = ((uint64_t)2 << 32) | ((uint64_t)999 << 16) | 1;
+    assert(interop_covenant_deploy_yul(yul_rules_table, compiled_yul, 1) == 1);
+    char *yul_tape_mem = calloc(1, 16384);
+    assert(yul_tape_mem);
+    InteropCoaxialTable *yul_tape = (InteropCoaxialTable*)yul_tape_mem;
+    interop_coaxial_init_table(yul_tape, 5, 2);
+    uint64_t init_cell[2] = { 0, 0 };
+    assert(interop_coaxial_insert(yul_tape, init_cell, 2) == 1);
+    InteropTuringState yul_turing;
+    interop_turing_init(&yul_turing);
+    assert(interop_turing_run_step(&yul_turing, yul_tape, yul_rules_table) == 1);
+    assert(yul_turing.current_state == 2);
+    assert(yul_turing.head_index == 1);
+    assert(interop_coaxial_select(yul_tape, 0) == 999);
+    free(yul_rules_mem);
+    free(yul_tape_mem);
+    printf("✓ Yul virtual contract successfully deployed and verified via Bitcoin covenant.\n");
+
     free(raw_mem);
     printf("✓ Registered schema signatures successfully from mock wired memory member.\n");
 

@@ -184,4 +184,6 @@ int interop_covenant_verify_evolution(InteropCovenantState *cov, InteropTuringSt
 
 uint64_t fnv1a_hash_cascade(uint64_t initial_hash, const void *data, size_t len);
 
+int interop_covenant_deploy_yul(InteropCoaxialTable *rules_table, const uint64_t *yul_rules, size_t rule_count);
+
 #endif // LIBANTIGRAVITY_INTEROP_H

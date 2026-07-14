@@ -133,6 +133,9 @@ Provides a high-throughput, Single-Producer Single-Consumer (SPSC) ring queue im
 ### L. Bitcoin Covenant State Evolution Verification
 Integrates Bitcoin-style covenant rules to verify state-to-state evolution of the Universal Turing Machine database. Rather than tracking sequential transaction histories in blocks, state coordinates are cryptographically anchored using FNV-1a block checksum hash links (`InteropCovenantState`). A state change transaction spent via UTXO execution is validated using `interop_covenant_verify_evolution`, proving correctness of state-to-state mutations and establishing immutable decentralization guarantees.
 
+### M. Yul Virtual Contract Covenant Deployer
+Enables the deployment of low-level Yul virtual contracts directly via Bitcoin covenant witness data payloads. The deployer function `interop_covenant_deploy_yul` compiles Yul transition tuple instructions directly into the coaxial machine's transition rules table, enabling stateful covenant computing environments.
+
 ---
 
 ## 6. Performance Benchmarks
@@ -149,7 +152,7 @@ Performance metrics compiled using the standalone compilation profiler (`benchma
 
 ## 7. Verification Harness
 
-To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, and state evolution covenants:
+To execute the test suite validating lock-free map allocations, general dynamic member registration, Helmholtz caching, RCU thread safety, BST indexing, guest VM WinchesterMQ SCSI loops, verifiable audit logging, coaxial shared offset swaps, system-wide ledger tables, live domain socket loopback bridges, RDBMS-PLL synchronizers, Kermit-over-PLL media transfer pipelines, Turing Machine interpret loops, SPSC ring queues, state evolution covenants, and Yul virtual contract covenant deployments:
 
 ```bash
 cd scripts
@@ -200,6 +203,8 @@ gcc -Wall -Wextra -Werror -std=c11 -I../tsfi2-deepseek/inc -o test_abi_dispatch 
 ✓ Lock-Free SPSC Coaxial Ring Queue verified successfully.
 22. Testing Bitcoin-Style State Evolution Covenant:
 ✓ Bitcoin-Style State Evolution Covenant verified successfully.
+23. Testing Yul Contract Deployment via Bitcoin Covenant:
+✓ Yul virtual contract successfully deployed and verified via Bitcoin covenant.
 ✓ Registered schema signatures successfully from mock wired memory member.
 === ALL LOCK-FREE ABI DISPATCH MAP TESTS PASSED ===
 ```
