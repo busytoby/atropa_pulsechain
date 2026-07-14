@@ -73,6 +73,26 @@ int main(void) {
     state = blue_box_get_block_state();
     assert(state.is_committed == true);
 
-    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, and block state management tests passed successfully.\n");
+    // 8. Test State Serialization (Save/Load to Disk)
+    bool save_ok = blue_box_save_state_to_disk("blue_box_test.dat");
+    assert(save_ok == true);
+
+    // Mangle current state in memory
+    blue_box_init_block(99, zero_hash);
+    state = blue_box_get_block_state();
+    assert(state.block_number == 99);
+
+    // Restore from disk
+    bool load_ok = blue_box_load_state_from_disk("blue_box_test.dat");
+    assert(load_ok == true);
+    state = blue_box_get_block_state();
+    assert(state.block_number == 42);
+    assert(state.active_trunk_mask == 257);
+    assert(state.is_committed == true);
+
+    // Clean up temporary test file
+    remove("blue_box_test.dat");
+
+    printf("[SUCCESS] All Computel Blue Box SF/MF, Red Box coin, immutable storage, block state, and disk serialization tests passed successfully.\n");
     return 0;
 }

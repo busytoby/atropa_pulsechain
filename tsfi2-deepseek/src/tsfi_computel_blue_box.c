@@ -159,3 +159,21 @@ int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples)
 
     return offset;
 }
+
+bool blue_box_save_state_to_disk(const char *filepath) {
+    if (!filepath) return false;
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return false;
+    size_t written = fwrite(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
+    fclose(f);
+    return written == 1;
+}
+
+bool blue_box_load_state_from_disk(const char *filepath) {
+    if (!filepath) return false;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return false;
+    size_t read = fread(&current_block_state, sizeof(BlueBoxBlockState), 1, f);
+    fclose(f);
+    return read == 1;
+}
