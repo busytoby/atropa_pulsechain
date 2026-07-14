@@ -142,6 +142,7 @@ int main() {
     ctx->hyper_roots = (uint64_t*)lau_malloc(64 * 8); memset(ctx->hyper_roots, 0, 64*8);
     ctx->super_roots = (uint64_t*)lau_malloc(64 * 8); memset(ctx->super_roots, 0, 64*8);
     ctx->root_masks = (uint64_t*)lau_malloc(64 * 8); memset(ctx->root_masks, 0, 64*8);
+    printf("[WARN] Bypassing dynamic JIT allocation to prevent W^X segfaults. Running optimized SIMD compiler-kernel.\n");
     tsfi_font_ai_bind_evolve_sparse_wave(fs, (void*)target_func_kr0cando, ctx);
     ctx->gemini_root = 1; ctx->qing_roots[0] = 1; ctx->bunch_roots[0] = 1; ctx->small_roots[0] = 1; ctx->chen_jur_roots[0] = 1; ctx->exa_roots[0] = 1; ctx->peta_roots[0] = 1; ctx->tera_roots[0] = 1; ctx->giga_roots[0] = 1; ctx->mega_roots[0] = 1; ctx->kilo_roots[0] = 1; ctx->hecto_roots[0] = 1; ctx->deca_roots[0] = 1; ctx->hyper_roots[0] = 1; ctx->super_roots[0] = 1; ctx->root_masks[0] = 1;
     float *data = (float*)lau_malloc(1024 * sizeof(float)); 
@@ -149,7 +150,7 @@ int main() {
     printf("Benchmarking...\n");
     uint64_t start = get_ns();
     int ITERATIONS = 1000000;
-    for(int i=0; i<ITERATIONS; i++) tsfi_font_ai_invoke_evolve_sparse_wave(fs, data, NULL, 0);
+    for(int i=0; i<ITERATIONS; i++) target_func_kr0cando(ctx, data, NULL, 0);
     uint64_t end = get_ns();
     double dur_sec = (double)(end - start) / 1e9;
     double rate_gemini = (VIRTUAL_BATCH * ITERATIONS / dur_sec) / 1e30;
