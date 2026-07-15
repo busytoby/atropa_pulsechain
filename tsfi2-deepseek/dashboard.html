@@ -959,7 +959,7 @@
                             <div style="margin-top: 6px; font-size: 13px; color: var(--text-secondary);">
                                 <strong>Total Supply:</strong> ${totalSupplyStr} ${tok.symbol || ''}
                             </div>
-                            ${hasBurnedLp ? `
+                            ${(tok.lp_holdings && tok.lp_holdings.length > 0) ? `
                             <div style="margin-top: 8px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; border-radius: 4px; width: fit-content; min-width: 320px;">
                                 <strong style="color: #22c55e; font-size: 13px; display: block; margin-bottom: 4px;">🔥 AGGREGATED BURNED LIQUIDITY</strong>
                                 <div style="font-size: 13px; color: var(--text-secondary);">
@@ -1017,17 +1017,13 @@
                                         const burnedValuePls = poolValuePls * (pct / 100);
                                         const burnedValueUsd = burnedValuePls * plsdRate;
                                         
-                                        let burnInfo = '';
-                                        if (pct > 0.01) {
-                                            let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
-                                            if (isStable) {
-                                                const maxPegValUsd = (2 * realRes.paired_balance) * (pct / 100);
-                                                valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
-                                            }
-                                            burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:11px; line-height: 1.4;">${valuationText}</span>`;
-                                        } else {
-                                            burnInfo = `<span style="color:var(--text-muted);">Unburned LP</span>`;
+                                        let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
+                                        if (isStable) {
+                                            const maxPegValUsd = (2 * realRes.paired_balance) * (pct / 100);
+                                            valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
                                         }
+                                        const burnColor = pct > 0.01 ? '#22c55e' : 'var(--text-muted)';
+                                        const burnInfo = `<span style="color:${burnColor}; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:11px; line-height: 1.4;">${valuationText}</span>`;
                                         
                                         const supplyPct = (targetTotalSupply > 0) ? ((c.balance / targetTotalSupply) * 100).toFixed(2) : '0.00';
                                         
