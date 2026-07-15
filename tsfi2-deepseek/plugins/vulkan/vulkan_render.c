@@ -380,6 +380,10 @@ void draw_ui_elements(VulkanSystem *s) {
              staging_blend_over_avx512(s->paint_buffer, 0, 0, 50, 50, 0xFFFF0000); // Red corner if dark
         }
     }
+    
+    // Draw live Vulkan knowledge graph of LP connections
+    extern void draw_vulkan_knowledge_graph(VulkanSystem *s);
+    draw_vulkan_knowledge_graph(s);
 }
 
 static VkBuffer g_staging_vk_buffer = VK_NULL_HANDLE;
@@ -947,4 +951,315 @@ void set_custom_fragment_shader(const uint32_t *spv, size_t size) {
     custom_frag_size = size;
     custom_frag_pipeline = VK_NULL_HANDLE;
     custom_frag_layout = VK_NULL_HANDLE;
+}
+
+#include <math.h>
+#include <stdlib.h>
+#include <strings.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    char address[64];
+    char symbol[64];
+    char name[128];
+    uint64_t decimals;
+    double price_pls;
+    uint64_t last_update;
+} VkRdbmsTokenRow;
+
+typedef struct {
+    uint32_t active;
+    uint32_t col_count;
+    uint32_t count;
+    uint32_t capacity;
+    VkRdbmsTokenRow rows[512];
+} VkLauRdbmsTable;
+
+typedef struct {
+    char token0[64];
+    char token1[64];
+    double price;
+} VkSwapEdge;
+#pragma pack(pop)
+
+static void staging_draw_circle(StagingBuffer *sb, int cx, int cy, int r, uint32_t color) {
+    for (int y = -r; y <= r; y++) {
+        for (int x = -r; x <= r; x++) {
+            if (x*x + y*y <= r*r) {
+                int px = cx + x;
+                int py = cy + y;
+                if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
+                    ((uint32_t*)sb->data)[py * sb->width + px] = color;
+                }
+            }
+        }
+    }
+}
+
+static void staging_draw_line(StagingBuffer *sb, int x0, int y0, int x1, int y1, uint32_t color) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+    while (1) {
+        if (x0 >= 0 && x0 < (int)sb->width && y0 >= 0 && y0 < (int)sb->height) {
+            ((uint32_t*)sb->data)[y0 * sb->width + x0] = color;
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+void draw_vulkan_knowledge_graph(VulkanSystem *s) {
+    if (!s || !s->paint_buffer) return;
+    StagingBuffer *sb = s->paint_buffer;
+    
+    static bool loaded = false;
+    static VkRdbmsTokenRow tokens[512];
+    static int token_count = 0;
+    static VkSwapEdge edges[1024];
+    static int edge_count = 0;
+    
+    typedef struct {
+        char address[64];
+        char symbol[16];
+        char name[64];
+        float x, y;
+        float vx, vy;
+        uint32_t color;
+    } RenderNode;
+    
+    static RenderNode render_nodes[512];
+    static int render_nodes_count = 0;
+    static int dragged_node_idx = -1;
+    
+    if (!loaded) {
+        static char sol_addresses[256][64];
+        static int sol_addr_count = 0;
+        
+        FILE *f_sol = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/addresses.sol", "r");
+        if (f_sol) {
+            char line[512];
+            while (fgets(line, sizeof(line), f_sol)) {
+                char *addr_start = strstr(line, "address(0x");
+                if (addr_start) {
+                    addr_start += 8;
+                    char *addr_end = strchr(addr_start, ')');
+                    if (addr_end && (addr_end - addr_start) == 42) {
+                        char clean_addr[64] = "0x";
+                        strncat(clean_addr, addr_start + 2, 40);
+                        
+                        bool dup = false;
+                        for (int k = 0; k < sol_addr_count; k++) {
+                            if (strcasecmp(sol_addresses[k], clean_addr) == 0) {
+                                dup = true;
+                                break;
+                            }
+                        }
+                        if (!dup && sol_addr_count < 256) {
+                            strcpy(sol_addresses[sol_addr_count++], clean_addr);
+                        }
+                    }
+                }
+            }
+            fclose(f_sol);
+        }
+
+        FILE *f_meta = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/assets/contract_metadata.dat.bin", "rb");
+        if (f_meta) {
+            VkLauRdbmsTable table;
+            if (fread(&table, sizeof(VkLauRdbmsTable), 1, f_meta) == 1) {
+                token_count = table.count;
+                if (token_count > 512) token_count = 512;
+                memcpy(tokens, table.rows, token_count * sizeof(VkRdbmsTokenRow));
+            }
+            fclose(f_meta);
+        }
+        
+        FILE *f_edges = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/assets/swap_edges.dat.bin", "rb");
+        if (f_edges) {
+            uint32_t count = 0;
+            if (fread(&count, sizeof(count), 1, f_edges) == 1) {
+                edge_count = count > 1024 ? 1024 : count;
+                size_t nr = fread(edges, sizeof(VkSwapEdge), edge_count, f_edges);
+                (void)nr;
+            }
+            fclose(f_edges);
+        }
+        
+        int cx = sb->width / 2;
+        int cy = 120 + (sb->height - 120) / 2;
+        int r = (sb->height - 120) / 3;
+        if (r < 100) r = 100;
+        
+        for (int i = 0; i < token_count; i++) {
+            bool in_sol = false;
+            for (int k = 0; k < sol_addr_count; k++) {
+                if (strcasecmp(tokens[i].address, sol_addresses[k]) == 0) {
+                    in_sol = true;
+                    break;
+                }
+            }
+            
+            if (in_sol && render_nodes_count < 512) {
+                RenderNode *rn = &render_nodes[render_nodes_count++];
+                strcpy(rn->address, tokens[i].address);
+                strncpy(rn->symbol, tokens[i].symbol, 15);
+                rn->symbol[15] = '\0';
+                strncpy(rn->name, tokens[i].name, 63);
+                rn->name[63] = '\0';
+                
+                float angle = (float)render_nodes_count * (2.0f * 3.14159f / 40.0f);
+                rn->x = cx + r * cosf(angle) + (rand() % 40 - 20);
+                rn->y = cy + r * sinf(angle) + (rand() % 40 - 20);
+                rn->vx = rn->vy = 0;
+                
+                if (strcasecmp(rn->address, "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6") == 0) {
+                    rn->color = 0xFFFF0055; // Atropa (Pink/Red)
+                } else if (strcasecmp(rn->address, "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd") == 0) {
+                    rn->color = 0xFF00F2FE; // dOWN (Cyan)
+                } else {
+                    rn->color = 0xFF4FACFE; // Blue
+                }
+            }
+        }
+        loaded = true;
+    }
+    
+    int play_y_min = 120;
+    int play_y_max = sb->height - 20;
+    int play_x_min = 20;
+    int play_x_max = sb->width - 20;
+    int cx = sb->width / 2;
+    int cy = 120 + (sb->height - 120) / 2;
+    
+    if (s->mouse_down) {
+        if (dragged_node_idx == -1) {
+            float best_dist = 30.0f;
+            for (int i = 0; i < render_nodes_count; i++) {
+                float dx = s->mouse_x - render_nodes[i].x;
+                float dy = s->mouse_y - render_nodes[i].y;
+                float dist = sqrtf(dx*dx + dy*dy);
+                if (dist < best_dist) {
+                    best_dist = dist;
+                    dragged_node_idx = i;
+                }
+            }
+        }
+        if (dragged_node_idx != -1) {
+            render_nodes[dragged_node_idx].x = s->mouse_x;
+            render_nodes[dragged_node_idx].y = s->mouse_y;
+            render_nodes[dragged_node_idx].vx = 0;
+            render_nodes[dragged_node_idx].vy = 0;
+        }
+    } else {
+        dragged_node_idx = -1;
+    }
+    
+    // Repulsion
+    for (int i = 0; i < render_nodes_count; i++) {
+        RenderNode *rn1 = &render_nodes[i];
+        for (int j = i + 1; j < render_nodes_count; j++) {
+            RenderNode *rn2 = &render_nodes[j];
+            float dx = rn2->x - rn1->x;
+            float dy = rn2->y - rn1->y;
+            float dist = sqrtf(dx*dx + dy*dy);
+            if (dist < 0.1f) dist = 0.1f;
+            if (dist < 120.0f) {
+                float force = (120.0f - dist) * 0.015f;
+                float fx = (dx / dist) * force;
+                float fy = (dy / dist) * force;
+                if (i != dragged_node_idx) { rn1->vx -= fx; rn1->vy -= fy; }
+                if (j != dragged_node_idx) { rn2->vx += fx; rn2->vy += fy; }
+            }
+        }
+    }
+    
+    // Attraction
+    for (int j = 0; j < edge_count; j++) {
+        int src_idx = -1, tgt_idx = -1;
+        for (int i = 0; i < render_nodes_count; i++) {
+            if (strcasecmp(render_nodes[i].address, edges[j].token0) == 0) src_idx = i;
+            if (strcasecmp(render_nodes[i].address, edges[j].token1) == 0) tgt_idx = i;
+        }
+        if (src_idx != -1 && tgt_idx != -1) {
+            RenderNode *rn1 = &render_nodes[src_idx];
+            RenderNode *rn2 = &render_nodes[tgt_idx];
+            float dx = rn2->x - rn1->x;
+            float dy = rn2->y - rn1->y;
+            float dist = sqrtf(dx*dx + dy*dy);
+            if (dist < 0.1f) dist = 0.1f;
+            float desired = 80.0f;
+            if (dist > desired) {
+                float force = (dist - desired) * 0.004f;
+                float fx = (dx / dist) * force;
+                float fy = (dy / dist) * force;
+                if (src_idx != dragged_node_idx) { rn1->vx += fx; rn1->vy += fy; }
+                if (tgt_idx != dragged_node_idx) { rn2->vx -= fx; rn2->vy -= fy; }
+            }
+        }
+    }
+    
+    // Limits
+    for (int i = 0; i < render_nodes_count; i++) {
+        RenderNode *rn = &render_nodes[i];
+        if (i != dragged_node_idx) {
+            rn->vx -= (rn->x - cx) * 0.002f;
+            rn->vy -= (rn->y - cy) * 0.002f;
+            
+            rn->x += rn->vx;
+            rn->y += rn->vy;
+            rn->vx *= 0.80f;
+            rn->vy *= 0.80f;
+            
+            if (rn->x < play_x_min) rn->x = play_x_min;
+            if (rn->x > play_x_max) rn->x = play_x_max;
+            if (rn->y < play_y_min) rn->y = play_y_min;
+            if (rn->y > play_y_max) rn->y = play_y_max;
+        }
+    }
+    
+    // Draw links
+    for (int j = 0; j < edge_count; j++) {
+        int src_idx = -1, tgt_idx = -1;
+        for (int i = 0; i < render_nodes_count; i++) {
+            if (strcasecmp(render_nodes[i].address, edges[j].token0) == 0) src_idx = i;
+            if (strcasecmp(render_nodes[i].address, edges[j].token1) == 0) tgt_idx = i;
+        }
+        if (src_idx != -1 && tgt_idx != -1) {
+            staging_draw_line(sb, render_nodes[src_idx].x, render_nodes[src_idx].y,
+                              render_nodes[tgt_idx].x, render_nodes[tgt_idx].y, 0xFF555555);
+        }
+    }
+    
+    // Draw circles
+    for (int i = 0; i < render_nodes_count; i++) {
+        RenderNode *rn = &render_nodes[i];
+        int r = (strcasecmp(rn->address, "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6") == 0) ? 14 : 9;
+        staging_draw_circle(sb, rn->x, rn->y, r, rn->color);
+        
+        draw_debug_text(sb, rn->x - (strlen(rn->symbol)*4), rn->y - r - 12, rn->symbol, 0xFFFFFFFF, true);
+    }
+    
+    // Selection HUD details
+    int active_idx = dragged_node_idx;
+    if (active_idx == -1) {
+        for (int i = 0; i < render_nodes_count; i++) {
+            float dx = s->mouse_x - render_nodes[i].x;
+            float dy = s->mouse_y - render_nodes[i].y;
+            if (sqrtf(dx*dx + dy*dy) < 15.0f) {
+                active_idx = i;
+                break;
+            }
+        }
+    }
+    
+    if (active_idx != -1) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "NODE : %s (%s)", render_nodes[active_idx].symbol, render_nodes[active_idx].name);
+        draw_debug_text(sb, 20, 105, buf, 0xFF00FF00, true);
+        snprintf(buf, sizeof(buf), "ADDR : %s", render_nodes[active_idx].address);
+        draw_debug_text(sb, 20, 120, buf, 0xFFCCCCCC, true);
+    }
 }
