@@ -586,6 +586,12 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
         return false;
     }
 
+    struct timeval tv_timeout;
+    tv_timeout.tv_sec = 5;
+    tv_timeout.tv_usec = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout));
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv_timeout, sizeof(tv_timeout));
+
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
         close(sockfd);
         freeaddrinfo(res);
