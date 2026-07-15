@@ -62,44 +62,34 @@ static uint8_t* hex_to_bytes(const char *hex, size_t *out_len) {
     return bytes;
 }
 
+typedef struct {
+    u256_t key;
+    u256_t val;
+    uint64_t addr;
+} EvmStorageRow;
+
 static void load_reconciliation_data(void) {
-    const char *path = "evm_storage.json";
-    FILE *fp = fopen(path, "r");
+    const char *path = "evm_storage.dat.bin";
+    FILE *fp = fopen(path, "rb");
     if (!fp) {
-        path = "tsfi2-deepseek/evm_storage.json";
-        fp = fopen(path, "r");
+        path = "tsfi2-deepseek/evm_storage.dat.bin";
+        fp = fopen(path, "rb");
     }
     if (!fp) {
-        printf("[YUL_THUNK] evm_storage.json not found!\n");
+        printf("[YUL_THUNK] evm_storage.dat.bin not found!\n");
         return;
     }
     printf("[YUL_THUNK] Loading reconciliation data from %s...\n", path);
-    char line[512];
+    uint32_t count = 0;
     int loaded = 0;
-    while (fgets(line, sizeof(line), fp)) {
-        char key_str[128] = {0};
-        char val_str[128] = {0};
-        char addr_str[128] = {0};
-        int parsed = sscanf(line, " { \"key\": \"%[^\"]\", \"val\": \"%[^\"]\", \"addr\": \"%[^\"]\" }", key_str, val_str, addr_str);
-        if (parsed < 2) {
-            parsed = sscanf(line, " { \"key\": \"%[^\"]\", \"val\": \"%[^\"]\" }", key_str, val_str);
-            addr_str[0] = '\0';
-        }
-        if (parsed >= 2) {
-            u256_t key = {{0}};
-            u256_t val = {{0}};
-            uint64_t addr = 0;
-            if (strlen(key_str) == 64 && strlen(val_str) == 64) {
-                sscanf(key_str, "%16lx%16lx%16lx%16lx", &key.d[3], &key.d[2], &key.d[1], &key.d[0]);
-                sscanf(val_str, "%16lx%16lx%16lx%16lx", &val.d[3], &val.d[2], &val.d[1], &val.d[0]);
-                if (addr_str[0] != '\0') {
-                    sscanf(addr_str, "%lx", &addr);
-                }
-
+    if (fread(&count, sizeof(count), 1, fp) == 1) {
+        for (uint32_t i = 0; i < count; i++) {
+            EvmStorageRow row;
+            if (fread(&row, sizeof(row), 1, fp) == 1) {
                 if (g_yul_evm_context.storage_count < 32768) {
-                    g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = key;
-                    g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = val;
-                    g_yul_evm_context.storage_addrs[g_yul_evm_context.storage_count] = addr;
+                    g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = row.key;
+                    g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = row.val;
+                    g_yul_evm_context.storage_addrs[g_yul_evm_context.storage_count] = row.addr;
                     g_yul_evm_context.storage_count++;
                     loaded++;
                 }

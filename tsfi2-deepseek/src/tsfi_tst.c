@@ -87,15 +87,21 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "manifold.inspect_slots", "25");
     root = tsfi_tst_insert(root, "manifold.upload_asset", "26");
     root = tsfi_tst_insert(root, "flow.trigger_choreography", "27");
-    root = tsfi_tst_insert(root, "wave512.dilemma_log", "28");
-    root = tsfi_tst_insert(root, "wave512.telemetry", "29");
-    root = tsfi_tst_insert(root, "wave512.inject_event", "33");
-    root = tsfi_tst_insert(root, "wave512.clear_cache", "34");
+    root = tsfi_tst_insert(root, "wave64.dilemma_log", "28");
+    root = tsfi_tst_insert(root, "wave64.telemetry", "29");
+    root = tsfi_tst_insert(root, "wave64.inject_event", "33");
+    root = tsfi_tst_insert(root, "wave64.clear_cache", "34");
+    root = tsfi_tst_insert(root, "wave64.query_knowledge_graph", "35");
     root = tsfi_tst_insert(root, "manifold.load_dna_llm", "41");
     root = tsfi_tst_insert(root, "manifold.query_llm", "42");
     root = tsfi_tst_insert(root, "manifold.get_receipt", "43");
     root = tsfi_tst_insert(root, "manifold.mount_instrument", "44");
     root = tsfi_tst_insert(root, "manifold.play_bio", "45");
+    root = tsfi_tst_insert(root, "wave64.get_price_in_pls", "51");
+    root = tsfi_tst_insert(root, "wave64.get_all_prices", "52");
+    root = tsfi_tst_insert(root, "wave64.get_token_holders", "53");
+    root = tsfi_tst_insert(root, "wave64.add_discovered_token", "54");
+    root = tsfi_tst_insert(root, "wave64.add_swap_edge", "55");
 
     return root;
 }

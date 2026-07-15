@@ -34,6 +34,12 @@ void tsfi_thunk_publish_mq(const char *cmd);
 // Execute a raw JSON-RPC call to the local EVM/Anvil node
 bool tsfi_pulse_rpc_exec_raw(const char *json_payload, char *out_buffer, size_t out_max_len);
 
+// Execute a raw JSON-RPC call and return the raw unparsed JSON response body
+bool tsfi_pulse_rpc_exec_raw_body(const char *json_payload, char *out_buffer, size_t out_max_len);
+
+// Fetch token holders list from the PulseScan BlockScout API
+bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, size_t out_max_len);
+
 #ifdef __cplusplus
 }
 #endif

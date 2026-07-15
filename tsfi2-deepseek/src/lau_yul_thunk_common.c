@@ -354,27 +354,30 @@ uint64_t parse_hex64(const char *hex) {
     return strtoull(hex, NULL, 16);
 }
 
+typedef struct {
+    u256_t key;
+    u256_t val;
+    uint64_t addr;
+} EvmStorageRow;
+
 void persist_reconciliation_data(void) {
-    FILE *fp = fopen("evm_storage.json", "w");
+    const char *path = "evm_storage.dat.bin";
+    FILE *fp = fopen(path, "wb");
     if (!fp) {
-        fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
+        path = "tsfi2-deepseek/evm_storage.dat.bin";
+        fp = fopen(path, "wb");
     }
     if (!fp) return;
-    fprintf(fp, "{\n  \"storage\": [\n");
-    for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
-        fprintf(fp, "    { \"key\": \"%016lx%016lx%016lx%016lx\", \"val\": \"%016lx%016lx%016lx%016lx\", \"addr\": \"%lx\" }%s\n",
-                g_yul_evm_context.storage_keys[i].d[3],
-                g_yul_evm_context.storage_keys[i].d[2],
-                g_yul_evm_context.storage_keys[i].d[1],
-                g_yul_evm_context.storage_keys[i].d[0],
-                g_yul_evm_context.storage_vals[i].d[3],
-                g_yul_evm_context.storage_vals[i].d[2],
-                g_yul_evm_context.storage_vals[i].d[1],
-                g_yul_evm_context.storage_vals[i].d[0],
-                g_yul_evm_context.storage_addrs[i],
-                (i == g_yul_evm_context.storage_count - 1) ? "" : ",");
+    
+    uint32_t count = (uint32_t)g_yul_evm_context.storage_count;
+    fwrite(&count, sizeof(count), 1, fp);
+    for (uint32_t i = 0; i < count; i++) {
+        EvmStorageRow row;
+        row.key = g_yul_evm_context.storage_keys[i];
+        row.val = g_yul_evm_context.storage_vals[i];
+        row.addr = g_yul_evm_context.storage_addrs[i];
+        fwrite(&row, sizeof(row), 1, fp);
     }
-    fprintf(fp, "  ]\n}\n");
     fclose(fp);
 }
 

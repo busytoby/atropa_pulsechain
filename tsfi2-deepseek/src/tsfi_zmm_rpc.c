@@ -12,6 +12,7 @@
 #include "tsfi_svdag.h"
 #include "tsfi_io.h"
 #include "lau_memory.h"
+#include "tsfi_block_monitor.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -630,6 +631,24 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         if (extract_json_string(min_ptr, "\"shm_id\"", shm_id, sizeof(shm_id))) {
             tsfi_zmm_vm_attach_telemetry(state, shm_id);
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Attached to %s\", \"id\": %d}\n", shm_id, id);
+            return 1;
+        }
+    } else if (method_type == 35) { // QUERY_KNOWLEDGE_GRAPH
+        char address_hex[128] = {0};
+        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
+            uint64_t virtual_address = 0;
+            if (address_hex[0] == '0' && (address_hex[1] == 'x' || address_hex[1] == 'X')) {
+                virtual_address = strtoull(address_hex + 2, NULL, 16);
+            } else {
+                virtual_address = strtoull(address_hex, NULL, 16);
+            }
+            tsfi_qing_graph_node* graph = tsfi_block_monitor_get_graph();
+            CachedContract* contract = tsfi_qing_graph_route_find(graph, TSFI_NET_ZMM, virtual_address);
+            if (contract) {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"name\": \"%s\", \"address\": \"0x%lx\"}, \"id\": %d}\n", contract->name, contract->virtual_address, id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Contract or block not found in routing graph\"}, \"id\": %d}\n", id);
+            }
             return 1;
         }
     } else if (method_type == 6) { // GENETIC.BENCHMARK
@@ -1326,6 +1345,107 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         }
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"rate\": %u}, \"id\": %d}\n", rate, id);
         return 1;
+    } else if (method_type == 51) { // wave512.get_price_in_pls
+        char address_hex[128] = {0};
+        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
+            double price = tsfi_pulse_get_price_in_pls(address_hex);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"address\": \"%s\", \"price_pls\": %.8f}, \"id\": %d}\n", address_hex, price, id);
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+    } else if (method_type == 52) { // wave512.get_all_prices
+        static char temp_json[131072];
+        tsfi_pulse_get_all_prices_json(temp_json, sizeof(temp_json));
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
+        return 1;
+    } else if (method_type == 53) { // wave512.get_token_holders
+        char address_hex[64] = {0};
+        bool force_refresh = false;
+        char *p_ref = strstr(min_ptr, "\"refresh\"");
+        if (p_ref) {
+            char *colon = strchr(p_ref, ':');
+            if (colon) {
+                while (*colon == ' ' || *colon == ':' || *colon == '\t') colon++;
+                if (strncmp(colon, "true", 4) == 0) {
+                    force_refresh = true;
+                }
+            }
+        }
+        if (extract_json_string(min_ptr, "\"token\"", address_hex, sizeof(address_hex))) {
+            static char temp_json[131072];
+            tsfi_pulse_get_token_holders_json(address_hex, temp_json, sizeof(temp_json), force_refresh);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing token parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+    } else if (method_type == 54) { // wave512.add_discovered_token
+        char address_hex[64] = {0};
+        char symbol[32] = {0};
+        char name[128] = {0};
+        uint64_t decimals = (uint64_t)extract_json_int(min_ptr, "\"decimals\"", 18);
+        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex)) &&
+            extract_json_string(min_ptr, "\"symbol\"", symbol, sizeof(symbol)) &&
+            extract_json_string(min_ptr, "\"name\"", name, sizeof(name))) {
+            add_discovered_token(address_hex, symbol, name, decimals);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address, symbol, or name parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+    } else if (method_type == 55) { // wave512.add_swap_edge
+        char token0[64] = {0};
+        char token1[64] = {0};
+        double price = 0.0;
+        char *p_t0 = strstr(min_ptr, "\"token0\"");
+        char *p_t1 = strstr(min_ptr, "\"token1\"");
+        char *p_pr = strstr(min_ptr, "\"price\"");
+        
+        if (p_t0) {
+            char *colon = strchr(p_t0, ':');
+            if (colon) {
+                char *start = strchr(colon, '"');
+                if (start) {
+                    start++;
+                    char *end = strchr(start, '"');
+                    if (end && (size_t)(end - start) < sizeof(token0)) {
+                        strncpy(token0, start, end - start);
+                    }
+                }
+            }
+        }
+        if (p_t1) {
+            char *colon = strchr(p_t1, ':');
+            if (colon) {
+                char *start = strchr(colon, '"');
+                if (start) {
+                    start++;
+                    char *end = strchr(start, '"');
+                    if (end && (size_t)(end - start) < sizeof(token1)) {
+                        strncpy(token1, start, end - start);
+                    }
+                }
+            }
+        }
+        if (p_pr) {
+            char *colon = strchr(p_pr, ':');
+            if (colon) {
+                price = strtod(colon + 1, NULL);
+            }
+        }
+        
+        if (strlen(token0) > 0 && strlen(token1) > 0 && price > 0.0) {
+            add_swap_edge(token0, token1, price);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing token0, token1, or price parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
     }
 
     

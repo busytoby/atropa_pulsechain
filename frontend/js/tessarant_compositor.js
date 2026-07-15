@@ -328,8 +328,110 @@
         }
 
         updateAndDraw(ctx) {
+            const neighborDist = 45;
+            const separationDist = 10;
+            const maxSpeed = 2.5;
+            const maxForce = 0.15;
+
+            // Pre-calculate flocking forces for each particle to avoid in-place update artifacts
+            const steerForces = this.particles.map((p, idx) => {
+                let sepX = 0, sepY = 0;
+                let alignX = 0, alignY = 0;
+                let cohX = 0, cohY = 0;
+                let sepCount = 0, neighborCount = 0;
+
+                for (let j = 0; j < this.particles.length; j++) {
+                    if (idx === j) continue;
+                    const other = this.particles[j];
+                    const dx = p.x - other.x;
+                    const dy = p.y - other.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 0 && dist < neighborDist) {
+                        // Alignment accumulation
+                        alignX += other.vx;
+                        alignY += other.vy;
+
+                        // Cohesion accumulation
+                        cohX += other.x;
+                        cohY += other.y;
+
+                        neighborCount++;
+
+                        if (dist < separationDist) {
+                            // Separation: force is inversely proportional to distance
+                            sepX += dx / dist;
+                            sepY += dy / dist;
+                            sepCount++;
+                        }
+                    }
+                }
+
+                let steerX = 0, steerY = 0;
+
+                if (sepCount > 0) {
+                    sepX /= sepCount;
+                    sepY /= sepCount;
+                    const mag = Math.sqrt(sepX * sepX + sepY * sepY);
+                    if (mag > 0) {
+                        sepX = (sepX / mag) * maxSpeed - p.vx;
+                        sepY = (sepY / mag) * maxSpeed - p.vy;
+                        steerX += sepX * 1.5;
+                        steerY += sepY * 1.5;
+                    }
+                }
+
+                if (neighborCount > 0) {
+                    // Alignment force
+                    alignX /= neighborCount;
+                    alignY /= neighborCount;
+                    const alignMag = Math.sqrt(alignX * alignX + alignY * alignY);
+                    if (alignMag > 0) {
+                        alignX = (alignX / alignMag) * maxSpeed - p.vx;
+                        alignY = (alignY / alignMag) * maxSpeed - p.vy;
+                        steerX += alignX * 1.0;
+                        steerY += alignY * 1.0;
+                    }
+
+                    // Cohesion force
+                    cohX /= neighborCount;
+                    cohY /= neighborCount;
+                    let targetX = cohX - p.x;
+                    let targetY = cohY - p.y;
+                    const cohMag = Math.sqrt(targetX * targetX + targetY * targetY);
+                    if (cohMag > 0) {
+                        targetX = (targetX / cohMag) * maxSpeed - p.vx;
+                        targetY = (targetY / cohMag) * maxSpeed - p.vy;
+                        steerX += targetX * 0.8;
+                        steerY += targetY * 0.8;
+                    }
+                }
+
+                // Limit steering force
+                const forceMag = Math.sqrt(steerX * steerX + steerY * steerY);
+                if (forceMag > maxForce) {
+                    steerX = (steerX / forceMag) * maxForce;
+                    steerY = (steerY / forceMag) * maxForce;
+                }
+
+                return { fx: steerX, fy: steerY };
+            });
+
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
+                const sf = steerForces[i];
+
+                // Update velocity with steering forces
+                p.vx += sf.fx;
+                p.vy += sf.fy;
+
+                // Limit speed
+                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                if (speed > maxSpeed) {
+                    p.vx = (p.vx / speed) * maxSpeed;
+                    p.vy = (p.vy / speed) * maxSpeed;
+                }
+
                 p.x += p.vx;
                 p.y += p.vy;
                 p.life--;

@@ -26,6 +26,17 @@ typedef struct {
 
 #define MAX_CONSTRAINTS 2048
 
+// Spatial Partitioning Grid for O(N) neighbor lookup
+#define GRID_CELL_SIZE 50.0f
+#define GRID_DIM_X 20
+#define GRID_DIM_Y 12
+#define GRID_DIM_Z 20
+
+typedef struct {
+    int count;
+    uint32_t particle_indices[32]; // Max particles per grid cell
+} GridCell;
+
 #include "libantigravity_interop.h"
 
 typedef struct {
@@ -37,6 +48,18 @@ typedef struct {
     float boundary_min_z, boundary_max_z;
     TsfiZener zener;       // Electro-mechanical Zener clamp feedback
     InteropRegistry *registry; // Direct pointer to feed back Diyat tax values
+    
+    // Grid spatial partition
+    GridCell grid[GRID_DIM_X][GRID_DIM_Y][GRID_DIM_Z];
+    
+    // Boid behavioral parameters for charge-carrier collective dynamics
+    float max_accel;       // Acceleration allocation budget limit
+    float max_speed;       // Speed limit for boid behavior
+    float separation_dist; // Distance to maintain separation
+    float neighbor_dist;   // Radius for alignment and cohesion
+    float separation_w;    // Weight for separation behavior
+    float alignment_w;     // Weight for alignment behavior
+    float cohesion_w;      // Weight for cohesion behavior
 } VerletSystem;
 
 // Initialize the particle system
@@ -48,7 +71,7 @@ bool verlet_system_link(VerletSystem *system, uint32_t p1, uint32_t p2, float st
 // Spawn a particle at a specific location
 bool verlet_system_spawn(VerletSystem *system, float x, float y, float z, float vx, float vy, float vz);
 
-// Update all active particles using Verlet integration and boundary constraints
+// Update all active particles using Verlet integration, spatial partitioning, prioritized budgeting, and steering behaviors
 void verlet_system_update(VerletSystem *system);
 
 #endif // VERLET_INTEGRATOR_H

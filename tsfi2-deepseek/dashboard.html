@@ -677,7 +677,7 @@
             renderSidebar(filtered);
         }
 
-        async function selectToken(addr) {
+        async function selectToken(addr, forceRefresh = false) {
             activeTokenAddr = addr;
             
             // Re-render sidebar to highlight active item
@@ -701,7 +701,7 @@
                     body: JSON.stringify({
                         jsonrpc: '2.0',
                         method: 'wave64.get_token_holders',
-                        params: { token: addr },
+                        params: { token: addr, refresh: forceRefresh },
                         id: 1
                     })
                 });
@@ -758,6 +758,11 @@
                             </div>
                             <div class="token-address" onclick="navigator.clipboard.writeText('${tok.address}'); alert('Copied address!')">
                                 ${tok.address} (Click to Copy)
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button class="qa-btn" style="background: var(--accent); font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: fit-content;" onclick="selectToken('${tok.address}', true)">
+                                    Refresh Holder Balances (Force RPC Update)
+                                </button>
                             </div>
                             ${lpHtml}
                         </div>

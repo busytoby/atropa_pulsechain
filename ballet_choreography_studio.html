@@ -2120,6 +2120,18 @@ Status: Awaiting user to start music.</div>
                 currentOffset.z += (targetOffset.z - currentOffset.z) * lerpSpeed;
             }
 
+            // 6. Organic Camera Steering - Damped tracking of the dancer's position and audio-responsive zoom/yaw
+            camera.x += (currentOffset.x - camera.x) * 0.04;
+            camera.y += (currentOffset.y + 50 - camera.y) * 0.04;
+            camera.z += (currentOffset.z - camera.z) * 0.04;
+
+            let targetDistance = 1100 + (volume * 200) - (bass * 80);
+            camera.distance += (targetDistance - camera.distance) * 0.02;
+
+            if (activeStance !== "pirouette" && activeStance !== "fouette") {
+                camera.yaw += 0.0015 * (1.0 + mid * 1.5);
+            }
+
             // Draw Bear with interpolated joints
             drawBear3D(currentOffset, 1.2, currentAngles, "rgba(255, 0, 127, 0.85)");
 

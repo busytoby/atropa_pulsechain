@@ -15,6 +15,9 @@
 #define HEIGHT 360
 #define TOTAL_FRAMES 300 // 10 seconds at 30 fps
 
+#define MAX_SPEED 0.12f
+#define MAX_FORCE 0.025f
+
 typedef struct {
     tsfi2_vec3_t curr;
     tsfi2_vec3_t prev;
@@ -23,6 +26,16 @@ typedef struct {
 // Standard random range helper
 float rand_range(float min, float max) {
     return min + ((float)rand() / (float)RAND_MAX) * (max - min);
+}
+
+// Math vector utilities for Reynolds force calculations
+void limit_vector(float *vx, float *vy, float *vz, float max_val) {
+    float mag = sqrtf((*vx)*(*vx) + (*vy)*(*vy) + (*vz)*(*vz));
+    if (mag > max_val && mag > 0.0001f) {
+        *vx = (*vx / mag) * max_val;
+        *vy = (*vy / mag) * max_val;
+        *vz = (*vz / mag) * max_val;
+    }
 }
 
 int main(void) {
@@ -87,7 +100,9 @@ int main(void) {
             float fy = 0.0f;
             float fz = 0.0f;
 
-            // Obstacle Avoidance (Reynolds' Obstacles)
+            // Prioritized Steering Accumulation (Reynolds Core Constraint)
+            // Priority 1: Obstacle Avoidance (Scattering)
+            float avoid_x = 0.0f, avoid_y = 0.0f, avoid_z = 0.0f;
             for (int o = 0; o < 3; o++) {
                 float dx_o = particles[i].curr.x - impurities[o].x;
                 float dy_o = particles[i].curr.y - impurities[o].y;
@@ -96,13 +111,16 @@ int main(void) {
                 
                 if (dist_o < 0.22f && dist_o > 0.001f) {
                     float avoid_mag = 0.08f / dist_o;
-                    fx += (dx_o / dist_o) * avoid_mag;
-                    fy += (dy_o / dist_o) * avoid_mag;
-                    fz += (dz_o / dist_o) * avoid_mag;
+                    avoid_x += (dx_o / dist_o) * avoid_mag;
+                    avoid_y += (dy_o / dist_o) * avoid_mag;
+                    avoid_z += (dz_o / dist_o) * avoid_mag;
                 }
             }
+            limit_vector(&avoid_x, &avoid_y, &avoid_z, MAX_FORCE);
+            fx += avoid_x; fy += avoid_y; fz += avoid_z;
 
-            // Reynolds Flocking Steering Rules (Separation, Cohesion, Alignment)
+            // Priority 2: Separation, Cohesion, Alignment
+            float flock_x = 0.0f, flock_y = 0.0f, flock_z = 0.0f;
             float ci_x = 0.0f, ci_y = 0.0f, ci_z = 0.0f;
             float vi_x = 0.0f, vi_y = 0.0f, vi_z = 0.0f;
             int neighbors = 0;
@@ -117,16 +135,16 @@ int main(void) {
                 if (dist < 0.35f && dist > 0.001f) {
                     // Separation
                     float repel = 0.02f / dist;
-                    fx += (dx_p / dist) * repel;
-                    fy += (dy_p / dist) * repel;
-                    fz += (dz_p / dist) * repel;
+                    flock_x += (dx_p / dist) * repel;
+                    flock_y += (dy_p / dist) * repel;
+                    flock_z += (dz_p / dist) * repel;
 
                     // Cohesion accumulation
                     ci_x += particles[j].curr.x;
                     ci_y += particles[j].curr.y;
                     ci_z += particles[j].curr.z;
 
-                    // Alignment accumulation (implicit velocity)
+                    // Alignment accumulation
                     vi_x += particles[j].curr.x - particles[j].prev.x;
                     vi_y += particles[j].curr.y - particles[j].prev.y;
                     vi_z += particles[j].curr.z - particles[j].prev.z;
@@ -137,23 +155,30 @@ int main(void) {
 
             if (neighbors > 0) {
                 ci_x /= neighbors; ci_y /= neighbors; ci_z /= neighbors;
-                fx += (ci_x - particles[i].curr.x) * 0.08f;
-                fy += (ci_y - particles[i].curr.y) * 0.08f;
-                fz += (ci_z - particles[i].curr.z) * 0.08f;
+                flock_x += (ci_x - particles[i].curr.x) * 0.08f;
+                flock_y += (ci_y - particles[i].curr.y) * 0.08f;
+                flock_z += (ci_z - particles[i].curr.z) * 0.08f;
 
                 vi_x /= neighbors; vi_y /= neighbors; vi_z /= neighbors;
                 float implicit_vx = particles[i].curr.x - particles[i].prev.x;
                 float implicit_vy = particles[i].curr.y - particles[i].prev.y;
                 float implicit_vz = particles[i].curr.z - particles[i].prev.z;
-                fx += (vi_x - implicit_vx) * 0.1f;
-                fy += (vi_y - implicit_vy) * 0.1f;
-                fz += (vi_z - implicit_vz) * 0.1f;
+                flock_x += (vi_x - implicit_vx) * 0.1f;
+                flock_y += (vi_y - implicit_vy) * 0.1f;
+                flock_z += (vi_z - implicit_vz) * 0.1f;
             }
+            
+            // Limit steering forces to respect physical acceleration constraints
+            limit_vector(&flock_x, &flock_y, &flock_z, MAX_FORCE);
+            fx += flock_x; fy += flock_y; fz += flock_z;
 
             // Verlet Integration Step
             float vx = particles[i].curr.x - particles[i].prev.x;
             float vy = particles[i].curr.y - particles[i].prev.y;
             float vz = particles[i].curr.z - particles[i].prev.z;
+
+            // Capping velocity to speed limits
+            limit_vector(&vx, &vy, &vz, MAX_SPEED);
 
             float next_x = particles[i].curr.x + vx + fx * dt * dt;
             float next_y = particles[i].curr.y + vy + fy * dt * dt;
@@ -171,7 +196,7 @@ int main(void) {
             particles[i].curr.z = next_z;
         }
 
-        // 4. Project and Draw 3D FET Tube Rings (arcs of cylinder)
+        // 4. Project and Draw 3D FET Tube Rings
         for (int ring = -4; ring <= 4; ring++) {
             float rx = ring * 0.3f;
             for (int deg = 0; deg < 360; deg += 15) {
@@ -188,15 +213,44 @@ int main(void) {
             }
         }
 
-        // 5. Draw Obstacles (Squash & Stretch on size)
+        // 5. Draw Obstacles with volume-conserving Squash & Stretch (Lasseter Principle 1)
         for (int o = 0; o < 3; o++) {
             int sx, sy;
             tsfi2_project_3d_to_2d(&impurities[o], camera_angle, 180.0f, WIDTH, HEIGHT, &sx, &sy);
             
-            // Pulse size in sync with global beat (Lasseter Squash & Stretch)
-            int radius = (int)(8 + fabsf(sinf(t * 4.0f)) * 2);
-            tsfi2_draw_circle(canvas, sx, sy, radius, 155, 89, 182, 1);
-            tsfi2_draw_circle(canvas, sx, sy, radius - 4, 255, 255, 255, 1);
+            // Pulse height (scale_y) and dynamically adjust scale_x to conserve area/volume
+            float stretch_y = 1.0f + 0.18f * sinf(t * 4.0f);
+            float stretch_x = 1.0f / sqrtf(stretch_y);
+            
+            int base_radius = 8;
+            int radius_y = (int)(base_radius * stretch_y);
+            int radius_x = (int)(base_radius * stretch_x);
+            
+            // Draw volume conserving ellipsoid
+            for (int dy = -radius_y; dy <= radius_y; dy++) {
+                for (int dx = -radius_x; dx <= radius_x; dx++) {
+                    float norm_x = (float)dx / radius_x;
+                    float norm_y = (float)dy / radius_y;
+                    if (norm_x*norm_x + norm_y*norm_y <= 1.0f) {
+                        tsfi2_draw_pixel(canvas, sx + dx, sy + dy, 155, 89, 182, 1.0f);
+                    }
+                }
+            }
+            // Draw core (white center)
+            int core_ry = radius_y - 4;
+            int core_rx = radius_x - 4;
+            if (core_ry > 0 && core_rx > 0) {
+                for (int dy = -core_ry; dy <= core_ry; dy++) {
+                    for (int dx = -core_rx; dx <= core_rx; dx++) {
+                        float norm_x = (float)dx / core_rx;
+                        float norm_y = (float)dy / core_ry;
+                        if (norm_x*norm_x + norm_y*norm_y <= 1.0f) {
+                            tsfi2_draw_pixel(canvas, sx + dx, sy + dy, 255, 255, 255, 1.0f);
+                        }
+                    }
+                }
+            }
+            tsfi2_draw_string(canvas, "IMPURITY", sx - 25, sy - radius_y - 12, 1, 155, 89, 182);
         }
 
         // 6. Draw Local Perception Rays for Particle 0 (test agent)
