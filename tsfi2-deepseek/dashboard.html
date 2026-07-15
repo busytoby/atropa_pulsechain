@@ -734,12 +734,33 @@
                     });
                 }
 
-                // Fetch burned LP percentages for each LP holding in parallel
+                // Fetch burned LP percentages and reserves for each LP holding in parallel
                 const lpBurnPercentages = {};
+                const lpRealReserves = {};
                 if (tok.lp_holdings && tok.lp_holdings.length > 0) {
                     await Promise.all(tok.lp_holdings.map(async (lp) => {
-                        const pct = await getBurnedLpPercentage(lp.pool);
+                        const [pct, reserves] = await Promise.all([
+                            getBurnedLpPercentage(lp.pool),
+                            getPoolReserves(lp.pool)
+                        ]);
                         lpBurnPercentages[lp.pool] = pct;
+                        
+                        // Parse reserves using token sort order
+                        const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                        const pairedDec = pairedTok ? (pairedTok.decimals || 18) : 18;
+                        const tokenDec = tok.decimals || 18;
+                        
+                        let pBal = 0;
+                        let tBal = 0;
+                        if (lp.paired_token.toLowerCase() < tok.address.toLowerCase()) {
+                            pBal = reserves.r0 / (10 ** pairedDec);
+                            tBal = reserves.r1 / (10 ** tokenDec);
+                        } else {
+                            pBal = reserves.r1 / (10 ** pairedDec);
+                            tBal = reserves.r0 / (10 ** tokenDec);
+                        }
+                        
+                        lpRealReserves[lp.pool] = { paired_balance: pBal, token_balance: tBal };
                     }));
                 }
 
@@ -767,13 +788,14 @@
                                     const currentSym = tok.symbol || 'Token';
                                     const pairName = `${currentSym} / ${pairedSym}`;
                                     const pct = lpBurnPercentages[lp.pool] || 0;
+                                    const realRes = lpRealReserves[lp.pool] || { paired_balance: 0, token_balance: 0 };
                                     
                                     // Calculate pool value in PLS
                                     let poolValuePls = 0;
                                     if (pairedTok && pairedTok.price_pls) {
-                                        poolValuePls = 2 * lp.paired_balance * pairedTok.price_pls;
+                                        poolValuePls = 2 * realRes.paired_balance * pairedTok.price_pls;
                                     } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
-                                        poolValuePls = 2 * lp.paired_balance;
+                                        poolValuePls = 2 * realRes.paired_balance;
                                     }
                                     
                                     const isStable = pairedSym.toUpperCase().includes('DAI') || 
@@ -788,7 +810,7 @@
                                     if (pct > 0.01) {
                                         let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
                                         if (isStable) {
-                                            const maxPegValUsd = (2 * lp.paired_balance) * (pct / 100);
+                                            const maxPegValUsd = (2 * realRes.paired_balance) * (pct / 100);
                                             valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
                                         }
                                         burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:12px; line-height: 1.4;">${valuationText}</span>`;
@@ -800,7 +822,7 @@
                                         <div class="lp-item">
                                             <div class="lp-pair-name">${pairName}</div>
                                             <div class="lp-reserves" style="font-size: 13px; color: var(--text-muted);">
-                                                ${formatLargeNumber(lp.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(lp.paired_balance)} ${pairedSym}
+                                                ${formatLargeNumber(realRes.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(realRes.paired_balance)} ${pairedSym}
                                             </div>
                                             <div style="font-size: 12px; margin-top: 4px;">
                                                 ${burnInfo}
@@ -825,6 +847,8 @@
                 if (tok.lp_holdings && tok.lp_holdings.length > 0) {
                     tok.lp_holdings.forEach(lp => {
                         const pct = lpBurnPercentages[lp.pool] || 0;
+                        const realRes = lpRealReserves[lp.pool] || { paired_balance: 0, token_balance: 0 };
+                        
                         if (pct > 0.01) {
                             hasBurnedLp = true;
                             const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
@@ -832,9 +856,9 @@
                             
                             let poolValuePls = 0;
                             if (pairedTok && pairedTok.price_pls) {
-                                poolValuePls = 2 * lp.paired_balance * pairedTok.price_pls;
+                                poolValuePls = 2 * realRes.paired_balance * pairedTok.price_pls;
                             } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
-                                poolValuePls = 2 * lp.paired_balance;
+                                poolValuePls = 2 * realRes.paired_balance;
                             }
                             
                             const burnedValuePls = poolValuePls * (pct / 100);
@@ -848,7 +872,7 @@
                                              pairedSym.toUpperCase().includes('USDT') || 
                                              pairedSym.toUpperCase().includes('USD');
                             if (isStable) {
-                                totalMaxPegUsd += (2 * lp.paired_balance) * (pct / 100);
+                                totalMaxPegUsd += (2 * realRes.paired_balance) * (pct / 100);
                             }
                         }
                     });
@@ -1230,6 +1254,21 @@
             } catch (e) {
                 console.error("Failed to query burned LP for", poolAddr, e);
                 return 0;
+            }
+        }
+
+        async function getPoolReserves(poolAddr) {
+            try {
+                const resHex = await rpcRequest('eth_call', [{ to: poolAddr, data: '0x0902f1ac' }, 'latest']);
+                if (!resHex || resHex === '0x' || resHex.includes('error')) return { r0: 0, r1: 0 };
+                const hex = resHex.startsWith('0x') ? resHex.slice(2) : resHex;
+                if (hex.length < 128) return { r0: 0, r1: 0 };
+                const r0 = parseInt(hex.slice(0, 64), 16) || 0;
+                const r1 = parseInt(hex.slice(64, 128), 16) || 0;
+                return { r0, r1 };
+            } catch (e) {
+                console.error("Failed to query getReserves for", poolAddr, e);
+                return { r0: 0, r1: 0 };
             }
         }
 
