@@ -702,7 +702,44 @@
                 `;
                 return;
             }
+            // Dynamically discover WPLS, DAI, USDC pools on V1 and V2 factories on-chain
+            const factories = [
+                '0x29e7c84c8354c004ae23b123024aa0b27b5bae46', // PulseX V2
+                '0x1715a3e790a022e7591749b0ed0d9e3b7b978f26'  // PulseX V1
+            ];
+            const pairedTokens = [
+                '0xa1077a294dde1b09bb078844df40758a5d0f9a27', // WPLS
+                '0x6b175474e89094c44da98b954eedeac495271d0f', // pDAI
+                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // pUSDC
+                '0xefd766ccb8c15e5e9f813af7b2809857baa53a1f'  // Bridged DAI
+            ];
             
+            try {
+                const discoveredPools = [];
+                await Promise.all(factories.map(async (factory) => {
+                    await Promise.all(pairedTokens.map(async (paired) => {
+                        if (paired.toLowerCase() === addr.toLowerCase()) return;
+                        const pool = await queryPair(factory, addr, paired);
+                        if (pool) {
+                            discoveredPools.push({
+                                pool: pool,
+                                paired_token: paired
+                            });
+                        }
+                    }));
+                }));
+                
+                if (!tok.lp_holdings) tok.lp_holdings = [];
+                discoveredPools.forEach(dp => {
+                    const exists = tok.lp_holdings.some(lp => lp.pool.toLowerCase() === dp.pool.toLowerCase());
+                    if (!exists) {
+                        tok.lp_holdings.push(dp);
+                    }
+                });
+            } catch(e) {
+                console.error("Dynamic pair discovery failed:", e);
+            }
+
             try {
                 // Fetch holders
                 const response = await fetch(API_URL, {
@@ -1356,6 +1393,24 @@
                 console.error("Failed to query getReserves for", poolAddr, e);
                 return { r0: 0, r1: 0 };
             }
+        }
+
+        async function queryPair(factory, tokenA, tokenB) {
+            const padA = tokenA.toLowerCase().replace('0x', '').padStart(64, '0');
+            const padB = tokenB.toLowerCase().replace('0x', '').padStart(64, '0');
+            const data = '0xe6a43905' + padA + padB;
+            try {
+                const res = await rpcRequest('eth_call', [{ to: factory, data }, 'latest']);
+                if (res && res !== '0x' && !res.includes('error')) {
+                    const addr = '0x' + res.slice(-40).toLowerCase();
+                    if (addr !== '0x0000000000000000000000000000000000000000') {
+                        return addr;
+                    }
+                }
+            } catch (e) {
+                // Ignore query error
+            }
+            return null;
         }
 
         async function workerTick() {
