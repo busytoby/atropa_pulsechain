@@ -734,6 +734,15 @@
                     });
                 }
 
+                // Fetch burned LP percentages for each LP holding in parallel
+                const lpBurnPercentages = {};
+                if (tok.lp_holdings && tok.lp_holdings.length > 0) {
+                    await Promise.all(tok.lp_holdings.map(async (lp) => {
+                        const pct = await getBurnedLpPercentage(lp.pool);
+                        lpBurnPercentages[lp.pool] = pct;
+                    }));
+                }
+
                 // Render detail template
                 let lpHtml = '';
                 if (tok.lp_holdings && tok.lp_holdings.length > 0) {
@@ -746,11 +755,32 @@
                                     const pairedSym = pairedTok ? pairedTok.symbol : (lp.paired_token.slice(0, 6) + '...' + lp.paired_token.slice(-4));
                                     const currentSym = tok.symbol || 'Token';
                                     const pairName = `${currentSym} / ${pairedSym}`;
+                                    const pct = lpBurnPercentages[lp.pool] || 0;
+                                    
+                                    // Calculate pool value in PLS
+                                    let poolValuePls = 0;
+                                    if (pairedTok && pairedTok.price_pls) {
+                                        poolValuePls = 2 * lp.paired_balance * pairedTok.price_pls;
+                                    } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
+                                        poolValuePls = 2 * lp.paired_balance;
+                                    }
+                                    
+                                    const burnedValuePls = poolValuePls * (pct / 100);
+                                    let burnInfo = '';
+                                    if (pct > 0.01) {
+                                        burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}% (${formatLargeNumber(burnedValuePls, 0)} PLS)</span>`;
+                                    } else {
+                                        burnInfo = `<span style="color:var(--text-muted);">Unburned LP</span>`;
+                                    }
+                                    
                                     return `
                                         <div class="lp-item">
                                             <div class="lp-pair-name">${pairName}</div>
                                             <div class="lp-reserves" style="font-size: 13px; color: var(--text-muted);">
                                                 ${formatLargeNumber(lp.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(lp.paired_balance)} ${pairedSym}
+                                            </div>
+                                            <div style="font-size: 12px; margin-top: 4px;">
+                                                ${burnInfo}
                                             </div>
                                             <div style="font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-top: 4px;">
                                                 Pool: ${lp.pool}
@@ -1104,6 +1134,28 @@
                 } catch (e2) {
                     return '';
                 }
+            }
+        }
+
+        async function getBurnedLpPercentage(poolAddr) {
+            try {
+                const supplyHex = await rpcRequest('eth_call', [{ to: poolAddr, data: '0x18160ddd' }, 'latest']);
+                const rawSupply = decodeABIUint256(supplyHex);
+                if (rawSupply === 0) return 0;
+                
+                // Query balance of 0x0
+                const bal0Hex = await rpcRequest('eth_call', [{ to: poolAddr, data: '0x70a082310000000000000000000000000000000000000000000000000000000000000000' }, 'latest']);
+                const rawBal0 = decodeABIUint256(bal0Hex);
+                
+                // Query balance of 0xdEaD
+                const balDeadHex = await rpcRequest('eth_call', [{ to: poolAddr, data: '0x70a08231000000000000000000000000000000000000000000000000000000000000dead' }, 'latest']);
+                const rawBalDead = decodeABIUint256(balDeadHex);
+                
+                const burned = rawBal0 + rawBalDead;
+                return (burned / rawSupply) * 100;
+            } catch (e) {
+                console.error("Failed to query burned LP for", poolAddr, e);
+                return 0;
             }
         }
 
