@@ -909,13 +909,14 @@
                                     Refresh Holder Balances (Force RPC Update)
                                 </button>
                             </div>
-                            ${lpHtml}
                         </div>
                         <div class="price-section">
                             <div class="token-title-row" style="justify-content: flex-end"><span style="font-size: 12px; text-transform: uppercase;">Current Price</span></div>
                             <div class="big-price">${tok.price_pls ? formatLargeNumber(tok.price_pls, 6) : '0.000000'} PLS</div>
                         </div>
                     </div>
+
+                    ${lpHtml}
 
                     <div class="holders-container">
                         <!-- Smart Contracts -->
