@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Atropa Ecosystem Knowledge Graph</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+  body { background: radial-gradient(circle at center, #11141a 0%, #08090d 100%); color: #f0f2f5; overflow: hidden; height: 100vh; display: flex; }
+  #sidebar { width: 380px; background: rgba(13, 16, 22, 0.9); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 24px; z-index: 10; overflow-y: auto; }
+  #network-container { flex: 1; height: 100%; position: relative; }
+  canvas { width: 100%; height: 100%; display: block; background: transparent; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  h1 { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+  .sub { font-size: 13px; color: #8a92a6; margin-bottom: 24px; }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; }
+  .info-val { font-size: 15px; font-weight: 500; word-break: break-all; color: #e2e8f0; }
+  .details-box { display: none; }
+  #search-box { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: #fff; margin-bottom: 16px; font-size: 14px; outline: none; }
+  #search-box:focus { border-color: #00f2fe; }
+  .pool-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .view-btn { width: 100%; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 12px; color: #8a92a6; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; font-size: 13px; outline: none; }
+  .view-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .view-btn.active { background: linear-gradient(135deg, rgba(0,242,254,0.1) 0%, rgba(79,172,254,0.1) 100%); border-color: #00f2fe; color: #00f2fe; }
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h1>Atropa Ecosystem</h1>
+  <div class="sub">Interactive Knowledge Graph of LP Connections</div>
+  <input type="text" id="search-box" placeholder="Search Token / Address..." oninput="searchNode()">
+  <div class="card" id="general-stats">
+    <div class="card-title">Ecosystem Totals</div>
+    <div class="pool-row"><span>Known Tokens</span><strong>385</strong></div>
+    <div class="pool-row"><span>Active LP Connections</span><strong>323</strong></div>
+  </div>
+  <div class="card" id="views-box">
+    <div class="card-title">Projection View Styles</div>
+    <button class="view-btn active" onclick="setViewMode('force')">Force Spring</button>
+    <button class="view-btn" onclick="setViewMode('seed')">Seed (Circular)</button>
+    <button class="view-btn" onclick="setViewMode('tune')">Tune (Frequency)</button>
+    <button class="view-btn" onclick="setViewMode('conify')">Conify (Depth)</button>
+    <button class="view-btn" onclick="setViewMode('bond')">Bond (Lissajous)</button>
+    <button class="view-btn" onclick="setViewMode('delegate')">Delegate (Hypotrochoid)</button>
+  </div>
+  <div class="details-box" id="details">
+    <div class="card">
+      <div class="card-title">Selected Token</div>
+      <div class="info-val" id="det-name" style="font-size:18px; font-weight:700; color:#00f2fe;"></div>
+      <div class="info-val" id="det-sym" style="margin-bottom:8px;"></div>
+      <div class="card-title" style="margin-top:12px;">Address</div>
+      <div class="info-val" id="det-addr" style="font-size:11px; font-family:monospace;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">LP Connections</div>
+      <div id="det-pools"></div>
+    </div>
+  </div>
+</div>
+<div id="network-container">
+  <canvas id="graph-canvas"></canvas>
+</div>
+<script>
+  const rawNodes = [
+    { id: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", label: "WPLS", title: "Wrapped PLS", symbol: "WPLS", name: "Wrapped PLS", varName: "WrappedPulse" },
+    { id: "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B", label: "TreasuryTokenV1Minter", title: "TreasuryTokenV1Minter", symbol: "TreasuryTokenV1Minter", name: "TreasuryTokenV1Minter", varName: "TreasuryTokenV1Minter" },
+    { id: "0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C", label: "ABI", title: "ABI", symbol: "ABI", name: "ABI", varName: "ABI" },
+    { id: "0x7a20189B297343CF26d8548764b04891f37F3414", label: "atropa", title: "atropa", symbol: "atropa", name: "atropa", varName: "atropa" },
+    { id: "0x903030f7e2d6489F38B0f4F96F9b371ec7960F78", label: "trebizond", title: "trebizond", symbol: "trebizond", name: "trebizond", varName: "trebizond" },
+    { id: "0x6B175474E89094C44Da98b954EedeAC495271d0F", label: "dai", title: "dai", symbol: "dai", name: "dai", varName: "dai" },
+    { id: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", label: "usdc", title: "usdc", symbol: "usdc", name: "usdc", varName: "usdc" },
+    { id: "0xdAC17F958D2ee523a2206206994597C13D831ec7", label: "usdt", title: "usdt", symbol: "usdt", name: "usdt", varName: "usdt" },
+    { id: "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", label: "Atropa", title: "Atropa", symbol: "Atropa", name: "Atropa", varName: "AtropaContract" },
+    { id: "0xCD6159D0a1aaE415E0c1504E90A5d741A28afc98", label: "东方闪电", title: "全能神教会", symbol: "东方闪电", name: "全能神教会", varName: "EasternLightningContract" },
+    { id: "0x50E72874dCd7C198d370ac27c7B3cce9f9a0defd", label: "ᔨ𐐏𐐤ቆᔪ", title: "𐐏", symbol: "ᔨ𐐏𐐤ቆᔪ", name: "𐐏", varName: "FinalContract" },
+    { id: "0x83a918056aB9316837Dc48a216119D679D561d91", label: "ᎧᏃᎮᎸᏍᎩ", title: "ᎧᏃ", symbol: "ᎧᏃᎮᎸᏍᎩ", name: "ᎧᏃ", varName: "KaContract" },
+    { id: "0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11", label: "𐐒𐐄𐐗", title: "𐐒𐐬𐐿𐐨𐑍𐐸𐐰𐑋", symbol: "𐐒𐐄𐐗", name: "𐐒𐐬𐐿𐐨𐑍𐐸𐐰𐑋", varName: "BuckinghamContract" },
+    { id: "0xb9A44De20f26a027e467CB6c2F98766F01904189", label: "𐐧 ᎦᏆᏙᏗ", title: "𐐧Ꮖ", symbol: "𐐧 ᎦᏆᏙᏗ", name: "𐐧Ꮖ", varName: "WheelContract" },
+    { id: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", label: "𑜾", title: "𑊣𑊁𑊟𑊃𑊢𑊖𑊀", symbol: "𑜾", name: "𑊣𑊁𑊟𑊃𑊢𑊖𑊀", varName: "LibertyContract" },
+    { id: "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10", label: "ᜮᜳᜪᜯᜳᜰᜲ᜶ᜤ᜴", title: "ᜤ᜴", symbol: "ᜮᜳᜪᜯᜳᜰᜲ᜶ᜤ᜴", name: "ᜤ᜴", varName: "CherokeeContract" },
+    { id: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", label: "㉻", title: "דרײדל ㉻", symbol: "㉻", name: "דרײדל ㉻", varName: "DreidelContract" },
+    { id: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", label: "ਓੰਫਃਙ਼ੌਘਁ", title: "ਲ", symbol: "ਓੰਫਃਙ਼ੌਘਁ", name: "ਲ", varName: "MantissaContract" },
+    { id: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", label: "𐇴", title: "𐇛𐇹𐇺𐇧𐇱", symbol: "𐇴", name: "𐇛𐇹𐇺𐇧𐇱", varName: "NeptuneContract" },
+    { id: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", label: "ʁ", title: "ʁ", symbol: "ʁ", name: "ʁ", varName: "HarContract" },
+    { id: "0xCd19062a6d3019b02A676D72e51D8de7A398dE25", label: "Ө", title: "Ө", symbol: "Ө", name: "Ө", varName: "ThetaContract" },
+    { id: "0x203e366A1821570b2f84Ff5ae8B3BdeB48Dc4fa1", label: "CROWS ㉫", title: "CROWS ㉫", symbol: "CROWS ㉫", name: "CROWS ㉫", varName: "CROWSContract" },
+    { id: "0xf8AB3393b1f5CD6184Fb6800A1fC802043C4063e", label: "monat money Ǝ𒑰", title: "Ǝ𒑰", symbol: "monat money Ǝ𒑰", name: "Ǝ𒑰", varName: "MonatsContract" },
+    { id: "0x0b1307dc5D90a0B60Be18D2634843343eBc098AF", label: "LEGAL", title: "LEGAL", symbol: "LEGAL", name: "LEGAL", varName: "LegalContract" },
+    { id: "0x1b8F9E19360D1dc94295D984b7Ca7eA9b810D9ee", label: "scissors ㉾", title: "㉾", symbol: "scissors ㉾", name: "㉾", varName: "ScissorsContract" },
+    { id: "0xf69e9f943674027Cedf05564A8D5A01041d07c62", label: "পঁদাে়নুিং", title: "পঁদাে়নুিং", symbol: "পঁদাে়নুিং", name: "পঁদাে়নুিং", varName: "ReadingContract" },
+    { id: "0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89", label: "第作", title: "第作", symbol: "第作", name: "第作", varName: "DiContract" },
+    { id: "0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD", label: "dOWN", title: "dOWN", symbol: "dOWN", name: "dOWN", varName: "dOWNContract" },
+    { id: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", label: "®™", title: "Stay Of Proceedings", symbol: "®™", name: "Stay Of Proceedings", varName: "STAYContract" },
+    { id: "0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d", label: "©™", title: "INDEPENDENCE", symbol: "©™", name: "INDEPENDENCE", varName: "INDEPENDENCEContract" },
+    { id: "0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D", label: "ލ", title: "ލ", symbol: "ލ", name: "ލ", varName: "LOLContract" },
+    { id: "0x77Bed67181CeF592472bcb7F97736c560340E006", label: "BULLION ⑤", title: "Bullion", symbol: "BULLION ⑤", name: "Bullion", varName: "Bullion5Contract" },
+    { id: "0x2959221675bdF0e59D0cC3dE834a998FA5fFb9F4", label: "⑧", title: "⑧", symbol: "⑧", name: "⑧", varName: "Bullion8Contract" },
+    { id: "0x463413c579D29c26D59a65312657DFCe30D545A1", label: "TREASURY BILL ㉾", title: "TREASURY BILL", symbol: "TREASURY BILL ㉾", name: "TREASURY BILL", varName: "TreasuryBillContract" },
+    { id: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", label: "TeddyBear", title: "TeddyBear", symbol: "TeddyBear", name: "TeddyBear", varName: "TeddyBearContract" },
+    { id: "0xdE65090088Df0b2d80A5eC6A7B56ECE36ee83ce8", label: "POPPY ㉾", title: "POPPY", symbol: "POPPY ㉾", name: "POPPY", varName: "PoppyContract" },
+    { id: "0xFa4d9C6E012d946853386113ACbF166deC5465Bb", label: "㈝", title: "㈝", symbol: "㈝", name: "㈝", varName: "OjeonContract" },
+    { id: "0x52a4682880E990ebed5309764C7BD29c4aE22deB", label: "유", title: "유", symbol: "유", name: "유", varName: "YuContract" },
+    { id: "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c", label: "籯", title: "籯", symbol: "籯", name: "籯", varName: "YingContract" },
+    { id: "0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1", label: "ไมิติซส์", title: "ไมิติซส์", symbol: "ไมิติซส์", name: "ไมิติซส์", varName: "MetisContract" },
+    { id: "0xd6077A029Fb5BEF33b02391D7f0349c345F6DDb1", label: "ຮູງ໊", title: "ຮູງ໊ໄ", symbol: "ຮູງ໊", name: "ຮູງ໊ໄ", varName: "GaiContract" },
+    { id: "0xb6936B8e82626405f6E601D54a8292881D86b47D", label: "ꦧꦿꦛꦼꦏꦶꦃ꧇", title: "ꦧꦺꦴ", symbol: "ꦧꦿꦛꦼꦏꦶꦃ꧇", name: "ꦧꦺꦴ", varName: "DiscoContract" },
+    { id: "0x1162104a7b8766784153Dd2D6aC0eCEAecD28117", label: "HOST", title: "ϮϬϮϨ", symbol: "HOST", name: "ϮϬϮϨ", varName: "HOSTContract" },
+    { id: "0x08Fe5c72173044314A74705089d014a4416Ed71D", label: "⠙⠜⠍⠏⠖", title: "⠐", symbol: "⠙⠜⠍⠏⠖", name: "⠐", varName: "DampfContract" },
+    { id: "0xF77c946C18A77B5DdA5e839dA9818C4D1f087393", label: "De Civitate Dei", title: "GOD", symbol: "De Civitate Dei", name: "GOD", varName: "DEIContract" },
+    { id: "0x54D88F0c4a738247DadF160923E1b1C5dc4F510f", label: "𑒙𑒰𑓅 𞅏", title: "𑒙𑓂𑒪𑒲𑓅𑒫𑒱𑒙𑓃 𞅏", symbol: "𑒙𑒰𑓅 𞅏", name: "𑒙𑓂𑒪𑒲𑓅𑒫𑒱𑒙𑓃 𞅏", varName: "TlingitContract" },
+    { id: "0x7FB09EE1a2c0E8b6D1c4E19C0248B3CbC0113af6", label: "ߝߐߔߎߌߖߦ", title: "ߦ ㉺", symbol: "ߝߐߔߎߌߖߦ", name: "ߦ ㉺", varName: "AbUrbeConditaContract" },
+    { id: "0xBb341FD5C855c206f5538cc649f90d84Df19b65a", label: "סם", title: "מונופיזיטיזם", symbol: "סם", name: "מונופיזיטיזם", varName: "SIMContract" },
+    { id: "0xf520404CF4fa5B633626333775b05F5dF94E1a9C", label: "缤 ㉾", title: "缤", symbol: "缤 ㉾", name: "缤", varName: "BinContract" },
+    { id: "0x6236073377AC7e0aB694957dA5d7d4241e72EBc6", label: "PhD", title: "꤅ꤪꤐꤧꤗ꤬", symbol: "PhD", name: "꤅ꤪꤐꤧꤗ꤬", varName: "PhDContract" },
+    { id: "0xE949a217809d1Fab4018E22d6810500399951dAE", label: "𑚇𑚂𑚥𑚃𑚥", title: "Lillies", symbol: "𑚇𑚂𑚥𑚃𑚥", name: "Lillies", varName: "LilliesContract" },
+    { id: "0x7F51FdB20246D7a673036f11C743E99A4AF01de0", label: "克里姆林", title: "𐒺𐓊𐣴𐓃𐒱", symbol: "克里姆林", name: "𐒺𐓊𐣴𐓃𐒱", varName: "KremlinContract" },
+    { id: "0xDf6A16689A893095C721542e5d3CE55bBcc23aC6", label: "㉣", title: "㉣", symbol: "㉣", name: "㉣", varName: "TwoContract" },
+    { id: "0x3d67511733d976800467119264C3d4Cd9FA23041", label: "⑩", title: "泽", symbol: "⑩", name: "泽", varName: "TseContract" },
+    { id: "0x8B8b26bB6C5fD4867339ab2f0acf3aE5129BD2F0", label: "FROCK", title: "Vatican City State", symbol: "FROCK", name: "Vatican City State", varName: "FrockContract" },
+    { id: "0xE63191967735C52f5de78CE2471759a9963Ce118", label: "清导", title: "清导", symbol: "清导", name: "清导", varName: "QingDaoContract" },
+    { id: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", label: "TSFi", title: "TSFi", symbol: "TSFi", name: "TSFi", varName: "TSFiContract" },
+    { id: "0xdE4Ef7Ea464c7771803b9838AeA07cE41089b054", label: "ԳՐԵՆԼԱՆԴԻԱ", title: "ՔՈՏ", symbol: "ԳՐԵՆԼԱՆԴԻԱ", name: "ՔՈՏ", varName: "GreenlandContract" },
+    { id: "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F", label: "佛音", title: "ᥴᥧᥝᥕ", symbol: "佛音", name: "ᥴᥧᥝᥕ", varName: "BuddhaghosaContract" },
+    { id: "0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8ec", label: "Zů", title: "Zürich", symbol: "Zů", name: "Zürich", varName: "ZuoContract" },
+    { id: "0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb", label: "عجթ", title: "Hegemony", symbol: "عجթ", name: "Hegemony", varName: "HegelBetContract" },
+    { id: "0x4a458D04909a42F79d31805762B2abc38ab9407d", label: "ףקשן", title: "הח'נרך", symbol: "ףקשן", name: "הח'נרך", varName: "HahnarchContract" },
+    { id: "0x89E8cD6306AbbAB8e39eeD0D53566d8dC2E02c01", label: "רב", title: "רבנישע וויסנשאפט", symbol: "רב", name: "רבנישע וויסנשאפט", varName: "RabContract" },
+    { id: "0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29", label: "ᨓᨆ", title: "ᨓᨆ", symbol: "ᨓᨆ", name: "ᨓᨆ", varName: "WMContract" },
+    { id: "0xD64f26Bcf78df919D587b6743fcFf5b155815bd6", label: "IRC", title: "irc.debian.org#pulsechain", symbol: "IRC", name: "irc.debian.org#pulsechain", varName: "IRCContract" },
+    { id: "0x1942Ba1EA7c21a070D70C4eFe64B21694283F23e", label: "الامارات", title: "اللا", symbol: "الامارات", name: "اللا", varName: "NoContract" },
+    { id: "0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D97c", label: "𐌎", title: "𐌎", symbol: "𐌎", name: "𐌎", varName: "CallContract" },
+    { id: "0x1f737F7994811fE994Fe72957C374e5cD5D5418A", label: "テディベア", title: "⑨", symbol: "テディベア", name: "⑨", varName: "TeddyBear9Contract" },
+    { id: "0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38", label: "First Pulse Mutual Bond", title: "⑦", symbol: "First Pulse Mutual Bond", name: "⑦", varName: "BondContract" },
+    { id: "0x8B16115fF716b4c52706122cb4e974f7a72E5Af1", label: "BAIL™", title: "Public Record", symbol: "BAIL™", name: "Public Record", varName: "BailContract" },
+    { id: "0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b", label: "ޖޮޔިސްދޭވޯހީ", title: "ހް", symbol: "ޖޮޔިސްދޭވޯހީ", name: "ހް", varName: "WritingContract" },
+    { id: "0x72f96a39AC9408b5458E5597BBC22060552dedF4", label: "صك", title: "JAMES COOK", symbol: "صك", name: "JAMES COOK", varName: "SukukContract" },
+    { id: "0xa28e8aA4d6257157de64a547c90B38C3c540eF72", label: "꡵ꡘꡋꡭꡰꡆꡳ꡴ꡫ", title: "ꡰ", symbol: "꡵ꡘꡋꡭꡰꡆꡳ꡴ꡫ", name: "ꡰ", varName: "hhFaContract" },
+    { id: "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62", label: "ⱏⱟⰿⰺⰹⱓⱒ", title: "ⱑ", symbol: "ⱏⱟⰿⰺⰹⱓⱒ", name: "ⱑ", varName: "NoNukesContract" },
+    { id: "0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc", label: "问题", title: "问题", symbol: "问题", name: "问题", varName: "WenTiContract" },
+    { id: "0x6293373BF0DAE2050641973D49b7b2f71adC91a1", label: "2CC", title: "2 Cent Club", symbol: "2CC", name: "2 Cent Club", varName: "TwoCentClubContract" },
+    { id: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", label: "BFF", title: "𑀭𑀭𑀭𑀭𑀭", symbol: "BFF", name: "𑀭𑀭𑀭𑀭𑀭", varName: "BFFContract" },
+    { id: "0x2234da59c2D5EDB197594C95dbbA7a99Bcd91230", label: "SECURITY™", title: "Sound Castle Coloring Book", symbol: "SECURITY™", name: "Sound Castle Coloring Book", varName: "SECURITYContract" },
+    { id: "0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6", label: "TRSI", title: "Tristar and Red Sector Incorporated", symbol: "TRSI", name: "Tristar and Red Sector Incorporated", varName: "TRSIContract" },
+    { id: "0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B", label: "BEL ㉶", title: "Annabelle: The Profit ㉶", symbol: "BEL ㉶", name: "Annabelle: The Profit ㉶", varName: "BELContract" },
+    { id: "0xC196247AA267Db0DF216d5385bCD23e5cf25EA6A", label: "KLAN", title: "RTV KLAN", symbol: "KLAN", name: "RTV KLAN", varName: "KLANContract" },
+    { id: "0xa8e8412d9B4341239269cBA38ad949fE4870be34", label: "SMG ㉣", title: "上海广播电视台", symbol: "SMG ㉣", name: "上海广播电视台", varName: "SMGContract" },
+    { id: "0x2fA079d2dAA29Ec8925484F9E9021e9191fE4aE4", label: "iCE Advertisements ㉾", title: "iCE ㉾", symbol: "iCE Advertisements ㉾", name: "iCE ㉾", varName: "iCEContract" },
+    { id: "0x5d4cb28eA61125a1fD3c927162C6F1969DD26788", label: "Pirates With Attitude ㉾", title: "PWA ㉾", symbol: "Pirates With Attitude ㉾", name: "PWA ㉾", varName: "PWAContract" },
+    { id: "0xf5E3Cc8d22B10d967bE49FE103e496F449C8604E", label: "ScrollZ ㉾", title: "LIT ㉾", symbol: "ScrollZ ㉾", name: "LIT ㉾", varName: "LITContract" },
+    { id: "0x50e40e8555AaB6b9c6CFF691E14070b6F38142Cb", label: "RZR ㉾", title: "RazoR 1911 ㉾", symbol: "RZR ㉾", name: "RazoR 1911 ㉾", varName: "RZRContract" },
+    { id: "0x86F0985Cd6Ab3196ea8DceBa87B92a2e22124633", label: "FLT ㉾", title: "FairLight ㉾", symbol: "FLT ㉾", name: "FairLight ㉾", varName: "FLTContract" },
+    { id: "0x920401FDce49Fc70A2D4cD70DB0dD90212a97f98", label: "卍", title: "Gokuldham Society 卍", symbol: "卍", name: "Gokuldham Society 卍", varName: "GokuldhamContract" },
+    { id: "0x982B52a54916B899c60031772cc85b041613510E", label: "KPOP", title: "ﾺ㉾", symbol: "KPOP", name: "ﾺ㉾", varName: "KPOPContract" },
+    { id: "0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F2196", label: "CiA ㉾", title: "CiA ㉾", symbol: "CiA ㉾", name: "CiA ㉾", varName: "CiAContract" },
+    { id: "0xf8b6e89b851e03c724aad1F5170230A60490b819", label: "ACiD ㉾", title: "ACiD Productions ㉾", symbol: "ACiD ㉾", name: "ACiD Productions ㉾", varName: "ACiDContract" },
+    { id: "0xee62EE9A354E55dF7C39209B4304161369333fF7", label: "Knights Of Malta ✠", title: "✠", symbol: "Knights Of Malta ✠", name: "✠", varName: "MaltaContract" },
+    { id: "0x241DA2613b0A01C2f60acB636b21A8E082E2f2F0", label: "ACAB", title: "Innit ™", symbol: "ACAB", name: "Innit ™", varName: "ACABContract" },
+    { id: "0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691", label: "Bill Burr ㉫", title: "BURR ㉫", symbol: "Bill Burr ㉫", name: "BURR ㉫", varName: "BillBurrContract" },
+    { id: "0xB8FaCE58CB05C55BBBA9c564A550cc2402A40b5b", label: "𞅏", title: "𞄀𞄑𞄡𞄢𞄣𞄪𞄋𞄩 𞅏", symbol: "𞅏", name: "𞄀𞄑𞄡𞄢𞄣𞄪𞄋𞄩 𞅏", varName: "BonusContract" },
+    { id: "0x7759A6D283192ef2BA082923d28Bec6eBfAf9D68", label: "🌈", title: "LEPROSY", symbol: "🌈", name: "LEPROSY", varName: "LEPROSYContract" },
+    { id: "0xA2262D7728C689526693aE893D0fD8a352C7073C", label: "ⓟ", title: "pINDEPENDENCE", symbol: "ⓟ", name: "pINDEPENDENCE", varName: "PIContract" },
+    { id: "0x2fc636E7fDF9f3E8d61033103052079781a6e7D2", label: "⑤", title: "GIMME FIVE", symbol: "⑤", name: "GIMME FIVE", varName: "G5Contract" },
+    { id: "0xB680F0cc810317933F234f67EB6A9E923407f05D", label: "MATH", title: "libAtropaMath v1.1", symbol: "MATH", name: "libAtropaMath v1.1", varName: "libAtropaMathContract" },
+    { id: "0x24F0154C1dCe548AdF15da2098Fdd8B8A3B8151D", label: "Ⓐ", title: "AFFECTION™", symbol: "Ⓐ", name: "AFFECTION™", varName: "AFFECTIONContract" },
+    { id: "0xEf2125f5d1f7A3d68038F27e681258d13a73E718", label: "限制令™", title: "ꑟꀊꆅꊏꆹꆅꇬ", symbol: "限制令™", name: "ꑟꀊꆅꊏꆹꆅꇬ", varName: "RESTRAININGORDERContract" },
+    { id: "0x173216Ed67eBF3E6767D86e8b3Ff32e0d64437bF", label: "TOD", title: "Not Exist", symbol: "TOD", name: "Not Exist", varName: "WITHOUTContract" },
+    { id: "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69", label: "倫", title: "mariarahel", symbol: "倫", name: "mariarahel", varName: "mariarahelContract" },
+    { id: "0xF2be09EB43c1eD2791d0324BaA0649e62CdA4BBF", label: "\u0818\u0813\u0829\u0810\u082c\u0800\u082b\u080b\u0820", title: "\u0810\u0800", symbol: "\u0818\u0813\u0829\u0810\u082c\u0800\u082b\u080b\u0820", name: "\u0810\u0800", varName: "FAContract" },
+  ];
+
+  const rawEdges = [
+    { from: "0x95acD3924370324F973352614Ea2624F0cf0d7eb", to: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", price: 0.00330000 },
+    { from: "0xefd766ccb38eaf1dfd701853bfce31359239f305", to: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", price: 170937.24014609 },
+    { from: "0x2b5455ad41d3002b573334244649027ce76289c5", to: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", price: 100.00000000 },
+    { from: "0xefD766ccB0F39a5e6219b902cd81B85f984D19Ca", to: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", price: 268.05870000 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 20.21077548 },
+    { from: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 20134204531.38116074 },
+    { from: "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 0.07248191 },
+    { from: "0x4243568fa2bbad327ee36e06c16824cad8b37819", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 19.64536576 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 273.82843697 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 122.54301136 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 0.08627773 },
+    { from: "0x5450af75b1650ee656dbf319a5b5c9fdd8839b03", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 25117495.38666476 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 2.08171223 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0x463413c579d29c26d59a65312657dfce30d545a1", price: 0.00006638 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00001402 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc10a4ed9b4042222d69ff0b374eddd47ed90fc1f", price: 0.00062069 },
+    { from: "0x5450af75b1650ee656dbf319a5b5c9fdd8839b03", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 285861903.57507688 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 10.04382113 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xbbcf895bfcb57d0f457d050bb806d1499436c0ce", price: 844.47764230 },
+    { from: "0xbbcf895bfcb57d0f457d050bb806d1499436c0ce", to: "0xd0047a56a83e9a19b1e0302f5a2bc701e090d57b", price: 0.00511519 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xd0047a56a83e9a19b1e0302f5a2bc701e090d57b", price: 0.24000173 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 2.35641966 },
+    { from: "0x0cb6f5a34ad42ec934882a05265a7d5f59b51a2f", to: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", price: 0.41049395 },
+    { from: "0x0cb6f5a34ad42ec934882a05265a7d5f59b51a2f", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000585 },
+    { from: "0x042b48a98b37042d58bc8defeeb7ca4ec76e6106", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 90.14909226 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xf3526c52f603e517a77e5aa737ff9cd910fd5820", price: 0.00000011 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xbe607b5e4d711d9d3a92594e6f6e247bb2d9e471", price: 0.00566091 },
+    { from: "0x83f20f44975d03b1b09e64809b757c47f942beea", to: "0xbe607b5e4d711d9d3a92594e6f6e247bb2d9e471", price: 15.05672920 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0x83f20f44975d03b1b09e64809b757c47f942beea", price: 1.03358960 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xdf06aa2ef777d0b9701716d0c9ab500465f082ec", price: 12.56231385 },
+    { from: "0x8da17db850315a34532108f0f5458fc0401525f6", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 31073.49305290 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xd5b4beb2983efc60d973e78b54d50a8837b64fd2", price: 0.00012618 },
+    { from: "0x9b82aeac2d2ecbd9f80c3eaa9f10168ca1cdcc97", to: "0xd5b4beb2983efc60d973e78b54d50a8837b64fd2", price: 0.01123733 },
+    { from: "0x9b82aeac2d2ecbd9f80c3eaa9f10168ca1cdcc97", to: "0xeb6b7932da20c6d7b3a899d5887d86dfb09a6408", price: 4.10947396 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xeb6b7932da20c6d7b3a899d5887d86dfb09a6408", price: 180653.95780240 },
+    { from: "0x52a4682880e990ebed5309764c7bd29c4ae22deb", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 54609153.33241887 },
+    { from: "0x52a4682880e990ebed5309764c7bd29c4ae22deb", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 0.00662903 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 0.00000024 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc607606c0dc9b084d4e4458449963a975a762093", price: 193582.21819513 },
+    { from: "0x40daa09334d4e7788830b2d53c8ccbcda60b2364", to: "0xc607606c0dc9b084d4e4458449963a975a762093", price: 94.73711301 },
+    { from: "0x06c27c650b09f36dee21a242a5600ad3ddfaa2f1", to: "0x40daa09334d4e7788830b2d53c8ccbcda60b2364", price: 0.00003121 },
+    { from: "0x06c27c650b09f36dee21a242a5600ad3ddfaa2f1", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 69551874.75502244 },
+    { from: "0x09fc51b8a172ad8a879172727e1134c675853dc3", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 41.10885234 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 99056254.55371299 },
+    { from: "0x19acbfd9c4d09663c93d920cf712a6794ca45270", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00012795 },
+    { from: "0x19acbfd9c4d09663c93d920cf712a6794ca45270", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 29.37386680 },
+    { from: "0x69d4d6842d47838da249fb6fd685757e18908545", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00014449 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0x69d4d6842d47838da249fb6fd685757e18908545", price: 1458.05995079 },
+    { from: "0x81d6b9cb066a378986c93086c485234c8311b125", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.03069276 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb709276c0e8d3a5372a13d4fea886496f396fea1", price: 10.01235295 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xeebe37dbc4694d0369c96c3a6571d1a6553d3d2b", price: 0.00115976 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xeebe37dbc4694d0369c96c3a6571d1a6553d3d2b", price: 0.00000428 },
+    { from: "0x207e6b4529840a4fd518f73c68bc9c19b2a15944", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.53487739 },
+    { from: "0x1e6914bd37413e49957626357de1b5a16bf2fe80", to: "0x207e6b4529840a4fd518f73c68bc9c19b2a15944", price: 169.81761618 },
+    { from: "0x1e6914bd37413e49957626357de1b5a16bf2fe80", to: "0xeebe37dbc4694d0369c96c3a6571d1a6553d3d2b", price: 62.35126957 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 23.69455411 },
+    { from: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", to: "0xc10a4ed9b4042222d69ff0b374eddd47ed90fc1f", price: 206758.91108567 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb62132e35a6c13ee1ee0f84dc5d40bad8d815206", price: 0.01243069 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xb62132e35a6c13ee1ee0f84dc5d40bad8d815206", price: 0.30225586 },
+    { from: "0x31ac295d593877bb77c3fcc19fbbcea9c4f1c50a", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00594339 },
+    { from: "0x27b67bd4b710c352a5716b77ce1bfc2beb5ca1e2", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 137.62411134 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00625832 },
+    { from: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000000 },
+    { from: "0x57fde0a71132198bbec939b98976993d8d89d225", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 449.13402094 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 1069.75401198 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 224646.47772112 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", price: 0.00477084 },
+    { from: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 170714.06315968 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.77111542 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc40c58afff0a8908c392a752f4951eff381aa0b2", price: 0.00000601 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0xc40c58afff0a8908c392a752f4951eff381aa0b2", price: 1043.86350095 },
+    { from: "0x57fde0a71132198bbec939b98976993d8d89d225", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 75.41983936 },
+    { from: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", to: "0x5519f6b21829020348a75a44e808109739e023c5", price: 0.00386463 },
+    { from: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 314740419.52184296 },
+    { from: "0x9f8d74df6dd3145e858578b0be1d9b11f41e0a28", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.03531059 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0xdac17f958d2ee523a2206206994597c13d831ec7", price: 0.00000000 },
+    { from: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", to: "0xdac17f958d2ee523a2206206994597c13d831ec7", price: 0.90956410 },
+    { from: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", to: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", price: 0.00091919 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 0.00014061 },
+    { from: "0x3636832799afad5c362e18368d2868e0fa67deec", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.21563787 },
+    { from: "0x3636832799afad5c362e18368d2868e0fa67deec", to: "0x463413c579d29c26d59a65312657dfce30d545a1", price: 1.00497023 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.20967952 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0x463413c579d29c26d59a65312657dfce30d545a1", price: 33.38553925 },
+    { from: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 0.00000010 },
+    { from: "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 5249.17437040 },
+    { from: "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce", to: "0x9cc7437978255e2c38b0d3d4671fb9ac411a68ac", price: 12.53877866 },
+    { from: "0x9cc7437978255e2c38b0d3d4671fb9ac411a68ac", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00015537 },
+    { from: "0x5450af75b1650ee656dbf319a5b5c9fdd8839b03", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 8772.46402464 },
+    { from: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00002977 },
+    { from: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", to: "0x57fde0a71132198bbec939b98976993d8d89d225", price: 0.00147411 },
+    { from: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 50912.74663138 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 631.31000340 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xc10a4ed9b4042222d69ff0b374eddd47ed90fc1f", price: 5.86368036 },
+    { from: "0x57fde0a71132198bbec939b98976993d8d89d225", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 0.13334422 },
+    { from: "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 0.00003090 },
+    { from: "0x174a0ad99c60c20d9b3d94c3095bc1fb9ddefd62", to: "0xe0f0ba6627af89a7ed1d887d1cddcccd8d79ae11", price: 0.09814702 },
+    { from: "0xe0f0ba6627af89a7ed1d887d1cddcccd8d79ae11", to: "0xf0d7962c8153b2445127e8ca5361578f9f5d0957", price: 0.03901424 },
+    { from: "0xa28e8aa4d6257157de64a547c90b38c3c540ef72", to: "0xf0d7962c8153b2445127e8ca5361578f9f5d0957", price: 20.82501805 },
+    { from: "0xa28e8aa4d6257157de64a547c90b38c3c540ef72", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 740.09243480 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 5538.78233071 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 0.00053676 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0x8671f201d035b315daabc3a6b17f86b0b1cc1e06", price: 0.65575488 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0x8671f201d035b315daabc3a6b17f86b0b1cc1e06", price: 0.13568147 },
+    { from: "0x789119d6973ff96a032d9a2a037afb8888a0fa80", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00019562 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0x789119d6973ff96a032d9a2a037afb8888a0fa80", price: 1105.60165780 },
+    { from: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 4928.00267898 },
+    { from: "0x9b82aeac2d2ecbd9f80c3eaa9f10168ca1cdcc97", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000136 },
+    { from: "0x9b82aeac2d2ecbd9f80c3eaa9f10168ca1cdcc97", to: "0xf8c3527cc04340b208c854e985240c02f7b7793f", price: 30240.88732343 },
+    { from: "0xdac17f958d2ee523a2206206994597c13d831ec7", to: "0xf8c3527cc04340b208c854e985240c02f7b7793f", price: 0.00000000 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xdac17f958d2ee523a2206206994597c13d831ec7", price: 101067391882116.67187500 },
+    { from: "0x02dbae501ba69d42efd0d5c55d66bfd643c2532a", to: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", price: 46.08479816 },
+    { from: "0x02dbae501ba69d42efd0d5c55d66bfd643c2532a", to: "0xc2f43edd0bedc81003d75e33c6e34c8da0f16604", price: 0.00000006 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc2f43edd0bedc81003d75e33c6e34c8da0f16604", price: 8891434.35334111 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 0.00002254 },
+    { from: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 549.03432018 },
+    { from: "0x583d1c1427308f7f96bfd3e0d7a3f9674d8bf8ec", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 1.25435882 },
+    { from: "0x583d1c1427308f7f96bfd3e0d7a3f9674d8bf8ec", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 0.00146638 },
+    { from: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 0.00155264 },
+    { from: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 21902757.10183243 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb95bc84f9b6d0373642d586b81979b067572f7bc", price: 6.36003830 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc52d52f5089ea92ce6bd848c77ac623aa14131a0", price: 0.00001038 },
+    { from: "0xc52d52f5089ea92ce6bd848c77ac623aa14131a0", to: "0xf18b09a5b358b720f23d736163d328dba0bddf41", price: 0.29960148 },
+    { from: "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd", to: "0xf18b09a5b358b720f23d736163d328dba0bddf41", price: 806.87320354 },
+    { from: "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 400.53306554 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 20791768.62370352 },
+    { from: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", to: "0xcd6159d0a1aae415e0c1504e90a5d741a28afc98", price: 0.00000083 },
+    { from: "0xcd6159d0a1aae415e0c1504e90a5d741a28afc98", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 0.12315613 },
+    { from: "0xbbea78397d4d4590882efcc4820f03074ab2ab29", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 0.01246480 },
+    { from: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", to: "0xbbea78397d4d4590882efcc4820f03074ab2ab29", price: 0.34623111 },
+    { from: "0x8d36123903f504eb81eeb832727af517c0db26bd", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 43541.39240562 },
+    { from: "0x4eb7c1c05087f98ae617d006f48914ee73ff8d2a", to: "0x8d36123903f504eb81eeb832727af517c0db26bd", price: 0.02833242 },
+    { from: "0x4eb7c1c05087f98ae617d006f48914ee73ff8d2a", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00706218 },
+    { from: "0x1ca9668a72da58c47bec5d15d989f8e65d90db97", to: "0x24f0154c1dce548adf15da2098fdd8b8a3b8151d", price: 145.70045926 },
+    { from: "0x1ca9668a72da58c47bec5d15d989f8e65d90db97", to: "0x8f326f4530d02c6c5bbf8acd46ddbb0391871e85", price: 0.00000093 },
+    { from: "0x8f326f4530d02c6c5bbf8acd46ddbb0391871e85", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 32.78891334 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0x57fde0a71132198bbec939b98976993d8d89d225", price: 0.47321330 },
+    { from: "0x4ef90d0a9b107dff6e916102c4daf3d0a564b577", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00003564 },
+    { from: "0x4ef90d0a9b107dff6e916102c4daf3d0a564b577", to: "0x556022edbc20e58e2158b4db810b93956bb9d0c2", price: 218614.43280100 },
+    { from: "0x556022edbc20e58e2158b4db810b93956bb9d0c2", to: "0x95032be41ffd6fea41781447332b5f7b1542d03d", price: 0.04335678 },
+    { from: "0x95032be41ffd6fea41781447332b5f7b1542d03d", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 2.99203599 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb46b87ccc819cb5d8a23c935e0ba65b8757d1495", price: 0.06062523 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xb46b87ccc819cb5d8a23c935e0ba65b8757d1495", price: 0.06300460 },
+    { from: "0x0b1307dc5d90a0b60be18d2634843343ebc098af", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 11373.77410578 },
+    { from: "0x0b1307dc5d90a0b60be18d2634843343ebc098af", to: "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd", price: 286.15949205 },
+    { from: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 1921.64292460 },
+    { from: "0x0cb6f5a34ad42ec934882a05265a7d5f59b51a2f", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 329754688.90493327 },
+    { from: "0x050f7ccde53d33cddd4a3fdedcac69af1cf08402", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 0.00000000 },
+    { from: "0x050f7ccde53d33cddd4a3fdedcac69af1cf08402", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 9900.47253619 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 0.00085809 },
+    { from: "0x1a4e22af07f52a1e68c908ff077fef183a50ebe3", to: "0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29", price: 2.16643907 },
+    { from: "0x0b1307dc5d90a0b60be18d2634843343ebc098af", to: "0x1a4e22af07f52a1e68c908ff077fef183a50ebe3", price: 0.00004089 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xc10a4ed9b4042222d69ff0b374eddd47ed90fc1f", price: 0.00047594 },
+    { from: "0x9590c4c59137aa87f347d9566a333d2806a6ecb5", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.04358658 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0x9590c4c59137aa87f347d9566a333d2806a6ecb5", price: 0.14632619 },
+    { from: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 1.71556950 },
+    { from: "0xefd766ccb38eaf1dfd701853bfce31359239f305", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 25164.98048745 },
+    { from: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 25167.00906640 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xeb6b7932da20c6d7b3a899d5887d86dfb09a6408", price: 233723.98967435 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb17d901469b9208b17d916112988a3fed19b5ca1", price: 11229036433.12841225 },
+    { from: "0x463413c579d29c26d59a65312657dfce30d545a1", to: "0xdac17f958d2ee523a2206206994597c13d831ec7", price: 0.00000000 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 0.14974604 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb2cdb1359738e8d845cdf189af3ce06fba708c4b", price: 0.00000002 },
+    { from: "0x2963cbf549efcd00b21e471d0a224c0bbdcb4be2", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 440942389.63346535 },
+    { from: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 79937.10318846 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xf253bb6d4b92232e6f45eea108ba16ffb89f0584", price: 3109.53839018 },
+    { from: "0x80fb784b7ed66730e8b1dbd9820afd29931aab03", to: "0xf253bb6d4b92232e6f45eea108ba16ffb89f0584", price: 0.00001208 },
+    { from: "0x80fb784b7ed66730e8b1dbd9820afd29931aab03", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 41.24665343 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", price: 0.99788925 },
+    { from: "0x80fb784b7ed66730e8b1dbd9820afd29931aab03", to: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", price: 0.02846963 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xd6931b12bf5314c4392d2659d646e0de3f8ad9bd", price: 2.70114881 },
+    { from: "0x80fb784b7ed66730e8b1dbd9820afd29931aab03", to: "0xd6931b12bf5314c4392d2659d646e0de3f8ad9bd", price: 0.00964974 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xfc1e690f61efd961294b3e1ce3313fbd8aa4f85d", price: 0.00039048 },
+    { from: "0x13b9fbd6d642db0c9f54f58b21abca7e8cac48de", to: "0xfc1e690f61efd961294b3e1ce3313fbd8aa4f85d", price: 0.92641145 },
+    { from: "0x13b9fbd6d642db0c9f54f58b21abca7e8cac48de", to: "0x80fb784b7ed66730e8b1dbd9820afd29931aab03", price: 81.73751513 },
+    { from: "0x042b48a98b37042d58bc8defeeb7ca4ec76e6106", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 3090909.19054444 },
+    { from: "0x042b48a98b37042d58bc8defeeb7ca4ec76e6106", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 0.00004054 },
+    { from: "0x96610186f3ab8d73ebee1cf950c750f3b1fb79c2", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 10.78819856 },
+    { from: "0x96610186f3ab8d73ebee1cf950c750f3b1fb79c2", to: "0xd6931b12bf5314c4392d2659d646e0de3f8ad9bd", price: 0.27494932 },
+    { from: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", to: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", price: 0.00001491 },
+    { from: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 0.99780181 },
+    { from: "0xddd4cc921bd7e803728e1159541c43268dd36e80", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 0.94305905 },
+    { from: "0xb261fa283abf9cce0b493b50b57cb654a490f339", to: "0xddd4cc921bd7e803728e1159541c43268dd36e80", price: 98.15398214 },
+    { from: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", to: "0xb261fa283abf9cce0b493b50b57cb654a490f339", price: 0.01083575 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xb261fa283abf9cce0b493b50b57cb654a490f339", price: 2467.58748860 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xd34f5adc24d8cc55c1e832bdf65fffdf80d1314f", price: 0.71886987 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0x628f327a4645145a0d27e155f5ffd5fd9e30aff5", price: 74113.37908995 },
+    { from: "0x628f327a4645145a0d27e155f5ffd5fd9e30aff5", to: "0x667435b2b24f11f1112ec1669c1f15a014e9bf5c", price: 0.00000384 },
+    { from: "0x667435b2b24f11f1112ec1669c1f15a014e9bf5c", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 45.45950170 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0xe35a842eb1edca4c710b6c1b1565ce7df13f5996", price: 0.00071591 },
+    { from: "0x628f327a4645145a0d27e155f5ffd5fd9e30aff5", to: "0xbe2cd67164b3c1ae1d0b6e1def14df663a64b263", price: 0.13759443 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xbe2cd67164b3c1ae1d0b6e1def14df663a64b263", price: 0.02570659 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", price: 39369.51422281 },
+    { from: "0x1c81b4358246d3088ab4361ab755f3d8d4dd62d2", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 489348.20603885 },
+    { from: "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 1.80315961 },
+    { from: "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", to: "0xa63f8061a67ecdbf147cd1b60f91cf95464e868d", price: 5.46956354 },
+    { from: "0x4243568fa2bbad327ee36e06c16824cad8b37819", to: "0xa63f8061a67ecdbf147cd1b60f91cf95464e868d", price: 0.00000303 },
+    { from: "0x3bc7ab48ad7b6bfdcac1281c8b49861823452460", to: "0x628f327a4645145a0d27e155f5ffd5fd9e30aff5", price: 0.99610273 },
+    { from: "0x2d465795d203c49de15f3f77369d8936e8eacb86", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000000 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xa6c4790cc7aa22ca27327cb83276f2abd687b55b", price: 0.00054485 },
+    { from: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", to: "0xa6c4790cc7aa22ca27327cb83276f2abd687b55b", price: 0.03595332 },
+    { from: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", to: "0xefd766ccb38eaf1dfd701853bfce31359239f305", price: 0.29458256 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xe079da7d1a654a0304af8d168be7200fc754dfc2", price: 0.00099168 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xe079da7d1a654a0304af8d168be7200fc754dfc2", price: 3.74575633 },
+    { from: "0x5f16f6c242e038437a7ba3c903dfedb747db4a5c", to: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", price: 489.86710025 },
+    { from: "0x5f16f6c242e038437a7ba3c903dfedb747db4a5c", to: "0xc0f8cac9f94e7809afec9c06326698e47cf21494", price: 0.01775584 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xc0f8cac9f94e7809afec9c06326698e47cf21494", price: 14.45048551 },
+    { from: "0x2640412a7d0a30b6f911829b772972109d465f0d", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000436 },
+    { from: "0x2640412a7d0a30b6f911829b772972109d465f0d", to: "0x463413c579d29c26d59a65312657dfce30d545a1", price: 49034.86163964 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xf717539bc54c1840022a634fd4686f6e9edf0856", price: 0.00892668 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xf717539bc54c1840022a634fd4686f6e9edf0856", price: 0.41456328 },
+    { from: "0x798284fb86a512d49e2bb05638306214ab1a6213", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00131763 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0x798284fb86a512d49e2bb05638306214ab1a6213", price: 2.83969082 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xdcaabaeb4ab3347ea75ce7232d8c50f43d4a767b", price: 30.26846937 },
+    { from: "0x4774e075c16989be68c26cc146fe707ef4393661", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.09867361 },
+    { from: "0x4774e075c16989be68c26cc146fe707ef4393661", to: "0xbe2cd67164b3c1ae1d0b6e1def14df663a64b263", price: 1.44416259 },
+    { from: "0x0eb38452fdccab988838d9be74e0f00239a876e6", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.55477494 },
+    { from: "0x0eb38452fdccab988838d9be74e0f00239a876e6", to: "0xeab7c22b8f5111559a2c2b1a3402d3fc713cac27", price: 18.20847879 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xeab7c22b8f5111559a2c2b1a3402d3fc713cac27", price: 0.00037429 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xc11d7e8b3e8aaf9023c4b0fa616dfa56cb2a8d61", price: 147.95584380 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xc11d7e8b3e8aaf9023c4b0fa616dfa56cb2a8d61", price: 0.00002475 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xf520404cf4fa5b633626333775b05f5df94e1a9c", price: 0.74029171 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xf520404cf4fa5b633626333775b05f5df94e1a9c", price: 0.00271944 },
+    { from: "0x8bdb63033b02c15f113de51ea1c3a96af9e8ecb5", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00000002 },
+    { from: "0x8bdb63033b02c15f113de51ea1c3a96af9e8ecb5", to: "0xf330cb1d41052dbc74d3325376cb82e99454e501", price: 681388369.61209929 },
+    { from: "0x664e58570e5835b99d281f12dd14d350315d7e2a", to: "0xf330cb1d41052dbc74d3325376cb82e99454e501", price: 0.02205147 },
+    { from: "0x664e58570e5835b99d281f12dd14d350315d7e2a", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 3.42899339 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xcc3647e71ee4d7744a424af15300774a7a5afc0c", price: 354.17459101 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xcc3647e71ee4d7744a424af15300774a7a5afc0c", price: 0.00001049 },
+    { from: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", to: "0xb86a5c43743f2e763349e713cd85e35ca9dd8f52", price: 11.10977700 },
+    { from: "0xb86a5c43743f2e763349e713cd85e35ca9dd8f52", to: "0xd7c34bafbf1e1ed1b00570883bdbf8a8419348ea", price: 0.31833517 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xd7c34bafbf1e1ed1b00570883bdbf8a8419348ea", price: 0.00104061 },
+    { from: "0x57fde0a71132198bbec939b98976993d8d89d225", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 140067.37971341 },
+    { from: "0x4243568fa2bbad327ee36e06c16824cad8b37819", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 0.00000000 },
+    { from: "0x2aa53572d0b7ddafc93b9b1fa40d646b85f4148f", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.78616694 },
+    { from: "0x2aa53572d0b7ddafc93b9b1fa40d646b85f4148f", to: "0x6b175474e89094c44da98b954eedeac495271d0f", price: 0.00463153 },
+    { from: "0x0990dead50d6a9e13a7cf44d00a6020ea725e7c8", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 0.00065163 },
+    { from: "0x0990dead50d6a9e13a7cf44d00a6020ea725e7c8", to: "0xe3b3f5f95d263edc6a5e3d4b7314728a390a4342", price: 0.00036517 },
+    { from: "0x6b175474e89094c44da98b954eedeac495271d0f", to: "0xe3b3f5f95d263edc6a5e3d4b7314728a390a4342", price: 15840.03699080 },
+    { from: "0x120a6923a8fd927975b19d60b1ad6fee46a4ab91", to: "0xa1077a294dde1b09bb078844df40758a5d0f9a27", price: 193.96120770 },
+    { from: "0x120a6923a8fd927975b19d60b1ad6fee46a4ab91", to: "0x7b39712ef45f7dced2bbdf11f3d5046ba61da719", price: 0.00000769 },
+    { from: "0x57fde0a71132198bbec939b98976993d8d89d225", to: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", price: 0.01356500 },
+    { from: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", to: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", price: 0.00326791 },
+    { from: "0x0cb6f5a34ad42ec934882a05265a7d5f59b51a2f", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 25088.49397130 },
+    { from: "0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 10271239.02639500 },
+    { from: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", to: "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d", price: 0.00000000 },
+    { from: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", to: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", price: 8.66737793 },
+    { from: "0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b", to: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", price: 153460.04716000 },
+    { from: "0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6", to: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", price: 28.35590000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", price: 10611.08391000 },
+    { from: "0xf8b6e89b851e03c724aad1F5170230A60490b819", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.05413000 },
+    { from: "0xCD6159D0a1aaE415E0c1504E90A5d741A28afc98", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 2569005.69010000 },
+    { from: "0x982B52a54916B899c60031772cc85b041613510E", to: "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", price: 864.44730000 },
+    { from: "0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D", to: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", price: 0.00000000 },
+    { from: "0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 1919131.78830000 },
+    { from: "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 128277.13910000 },
+    { from: "0xB680F0cc810317933F234f67EB6A9E923407f05D", to: "0x6B175474E89094C44Da98b954EedeAC495271d0F", price: 0.08060000 },
+    { from: "0x1942Ba1EA7c21a070D70C4eFe64B21694283F23e", to: "0x08Fe5c72173044314A74705089d014a4416Ed71D", price: 0.00000020 },
+    { from: "0x6236073377AC7e0aB694957dA5d7d4241e72EBc6", to: "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", price: 2123.48200000 },
+    { from: "0x08Fe5c72173044314A74705089d014a4416Ed71D", to: "0x0b1307dc5D90a0B60Be18D2634843343eBc098AF", price: 100.32790000 },
+    { from: "0xB8FaCE58CB05C55BBBA9c564A550cc2402A40b5b", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 4.14200000 },
+    { from: "0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 211092846.88810000 },
+    { from: "0x83a918056aB9316837Dc48a216119D679D561d91", to: "0x6B175474E89094C44Da98b954EedeAC495271d0F", price: 16393.21520000 },
+    { from: "0xF2be09EB43c1eD2791d0324BaA0649e62CdA4BBF", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 2.05028000 },
+    { from: "0xa8e8412d9B4341239269cBA38ad949fE4870be34", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 122999.01159000 },
+    { from: "0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F2196", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 28705.14660000 },
+    { from: "0xee62EE9A354E55dF7C39209B4304161369333fF7", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 9731821.66190000 },
+    { from: "0xEf2125f5d1f7A3d68038F27e681258d13a73E718", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 40734191.74460000 },
+    { from: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", to: "0x1C81b4358246d3088Ab4361aB755F3D8D4dd62d2", price: 209.26920000 },
+    { from: "0x1b8F9E19360D1dc94295D984b7Ca7eA9b810D9ee", to: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", price: 0.00005745 },
+    { from: "0xdE4Ef7Ea464c7771803b9838AeA07cE41089b054", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 0.00022830 },
+    { from: "0x86F0985Cd6Ab3196ea8DceBa87B92a2e22124633", to: "0xE63191967735C52f5de78CE2471759a9963Ce118", price: 2093.89830000 },
+    { from: "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F", to: "0xdE65090088Df0b2d80A5eC6A7B56ECE36ee83ce8", price: 147121.85370000 },
+    { from: "0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1", to: "0xd6077A029Fb5BEF33b02391D7f0349c345F6DDb1", price: 3.82490000 },
+    { from: "0xd6077A029Fb5BEF33b02391D7f0349c345F6DDb1", to: "0x7FB09EE1a2c0E8b6D1c4E19C0248B3CbC0113af6", price: 0.13680000 },
+    { from: "0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D97c", to: "0x2959221675bdF0e59D0cC3dE834a998FA5fFb9F4", price: 21.96220000 },
+    { from: "0x3d67511733d976800467119264C3d4Cd9FA23041", to: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", price: 7977.87190000 },
+    { from: "0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 2064546.06267000 },
+    { from: "0xA2262D7728C689526693aE893D0fD8a352C7073C", to: "0x6B175474E89094C44Da98b954EedeAC495271d0F", price: 179.31480000 },
+    { from: "0x2fc636E7fDF9f3E8d61033103052079781a6e7D2", to: "0x6B175474E89094C44Da98b954EedeAC495271d0F", price: 4.57500000 },
+    { from: "0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8ec", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 4.46960000 },
+    { from: "0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc", to: "0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD", price: 391304.21660000 },
+    { from: "0xBb341FD5C855c206f5538cc649f90d84Df19b65a", to: "0x7FB09EE1a2c0E8b6D1c4E19C0248B3CbC0113af6", price: 506022.98760000 },
+    { from: "0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 34530.06810000 },
+    { from: "0x6293373BF0DAE2050641973D49b7b2f71adC91a1", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 0.00593100 },
+    { from: "0x7FB09EE1a2c0E8b6D1c4E19C0248B3CbC0113af6", to: "0x0Cb6F5a34ad42ec934882A05265A7d5F59b51A2f", price: 0.00010940 },
+    { from: "0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 327152.25820000 },
+    { from: "0xf69e9f943674027Cedf05564A8D5A01041d07c62", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 2.85460000 },
+    { from: "0xF77c946C18A77B5DdA5e839dA9818C4D1f087393", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 17968672.28890000 },
+    { from: "0xFa4d9C6E012d946853386113ACbF166deC5465Bb", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.00000012 },
+    { from: "0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 3.42570000 },
+    { from: "0x50e40e8555AaB6b9c6CFF691E14070b6F38142Cb", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.36390000 },
+    { from: "0x241DA2613b0A01C2f60acB636b21A8E082E2f2F0", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.00487100 },
+    { from: "0x920401FDce49Fc70A2D4cD70DB0dD90212a97f98", to: "0xdF81f7fA2a4d7785A24BbbbBd11cBBa92a878cFe", price: 36737664.16300000 },
+    { from: "0xb6936B8e82626405f6E601D54a8292881D86b47D", to: "0x1162104a7b8766784153Dd2D6aC0eCEAecD28117", price: 0.00988100 },
+    { from: "0x1162104a7b8766784153Dd2D6aC0eCEAecD28117", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 16.37120000 },
+    { from: "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 5620339.51380000 },
+    { from: "0xE949a217809d1Fab4018E22d6810500399951dAE", to: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", price: 0.00040980 },
+    { from: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 0.00011520 },
+    { from: "0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89", to: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", price: 1532.39730000 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", price: 52.18650000 },
+    { from: "0x2fA079d2dAA29Ec8925484F9E9021e9191fE4aE4", to: "0xE63191967735C52f5de78CE2471759a9963Ce118", price: 423495.96940000 },
+    { from: "0xb9A44De20f26a027e467CB6c2F98766F01904189", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 2142210.05102000 },
+    { from: "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 1.57340000 },
+    { from: "0x7759A6D283192ef2BA082923d28Bec6eBfAf9D68", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 42024693.13640000 },
+    { from: "0xDf6A16689A893095C721542e5d3CE55bBcc23aC6", to: "0x6B175474E89094C44Da98b954EedeAC495271d0F", price: 1.25270000 },
+    { from: "0xf8AB3393b1f5CD6184Fb6800A1fC802043C4063e", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.00000004 },
+    { from: "0x2234da59c2D5EDB197594C95dbbA7a99Bcd91230", to: "0x57fde0a71132198BBeC939B98976993d8D89D225", price: 90340.29940000 },
+    { from: "0x5d4cb28eA61125a1fD3c927162C6F1969DD26788", to: "0xE63191967735C52f5de78CE2471759a9963Ce118", price: 2864870.04335000 },
+    { from: "0x8B8b26bB6C5fD4867339ab2f0acf3aE5129BD2F0", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 4.23610000 },
+    { from: "0x89E8cD6306AbbAB8e39eeD0D53566d8dC2E02c01", to: "0x72f96a39AC9408b5458E5597BBC22060552dedF4", price: 193.20220000 },
+    { from: "0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 3.23080000 },
+    { from: "0x50E72874dCd7C198d370ac27c7B3cce9f9a0defd", to: "0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD", price: 154084.26750000 },
+    { from: "0x4a458D04909a42F79d31805762B2abc38ab9407d", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 3385983.59260000 },
+    { from: "0x54D88F0c4a738247DadF160923E1b1C5dc4F510f", to: "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", price: 87.03834000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x0b1307dc5D90a0B60Be18D2634843343eBc098AF", price: 78391.43870000 },
+    { from: "0x1f737F7994811fE994Fe72957C374e5cD5D5418A", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 67.29030000 },
+    { from: "0x72f96a39AC9408b5458E5597BBC22060552dedF4", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 426.29590000 },
+    { from: "0xD64f26Bcf78df919D587b6743fcFf5b155815bd6", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 414576.11410000 },
+    { from: "0x7F51FdB20246D7a673036f11C743E99A4AF01de0", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 0.00091550 },
+    { from: "0xCd19062a6d3019b02A676D72e51D8de7A398dE25", to: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", price: 0.10230000 },
+    { from: "0x77Bed67181CeF592472bcb7F97736c560340E006", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 0.00006294 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", price: 6562.33360000 },
+    { from: "0x8B16115fF716b4c52706122cb4e974f7a72E5Af1", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 0.05528000 },
+  ];
+
+  const activeNodeIds = new Set();
+  rawEdges.forEach(e => { activeNodeIds.add(e.from.toLowerCase()); activeNodeIds.add(e.to.toLowerCase()); });
+
+  const nodes = [];
+  const nodesMap = {};
+  rawNodes.forEach(n => {
+    if (activeNodeIds.has(n.id.toLowerCase()) || n.id.toLowerCase() === '0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6') {
+      const isAtropa = n.id.toLowerCase() === '0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6';
+      const isdOWN = n.id.toLowerCase() === '0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd';
+      const node = {
+        id: n.id,
+        label: n.label,
+        symbol: n.symbol,
+        name: n.name,
+        varName: n.varName,
+        x: Math.random() * 800 - 400,
+        y: Math.random() * 800 - 400,
+        vx: 0, vy: 0,
+        radius: isAtropa ? 22 : (isdOWN ? 16 : 12),
+        color: isAtropa ? '#ff0055' : (isdOWN ? '#00f2fe' : '#4facfe')
+      };
+      nodes.push(node);
+      nodesMap[n.id.toLowerCase()] = node;
+    }
+  });
+
+  const links = [];
+  rawEdges.forEach(e => {
+    const source = nodesMap[e.from.toLowerCase()];
+    const target = nodesMap[e.to.toLowerCase()];
+    if (source && target) {
+      links.push({ source, target, price: e.price });
+    }
+  });
+
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  let width = canvas.width = canvas.offsetWidth;
+  let height = canvas.height = canvas.offsetHeight;
+  let transform = { x: width / 2, y: height / 2, scale: 0.8 };
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = canvas.offsetWidth;
+    height = canvas.height = canvas.offsetHeight;
+  });
+
+  let selectedNode = null;
+  let draggedNode = null;
+  let isPanning = false;
+  let panStart = { x: 0, y: 0 };
+
+  let viewMode = 'force';
+  function setViewMode(mode) {
+    viewMode = mode;
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    const modeBtn = [...document.querySelectorAll('.view-btn')].find(b => b.getAttribute('onclick').includes(mode));
+    if (modeBtn) modeBtn.classList.add('active');
+
+    nodes.forEach((n, idx) => {
+      if (mode === 'seed') {
+        let ring = idx % 4;
+        let ringCount = [1, 6, 12, 24, 48][ring] || 16;
+        let radius = 80 + ring * 90;
+        let angle = ((idx % ringCount) / ringCount) * 2 * Math.PI;
+        n.targetX = Math.cos(angle) * radius;
+        n.targetY = Math.sin(angle) * radius;
+      } else if (mode === 'tune') {
+        n.targetX = -350 + (idx / nodes.length) * 700;
+        n.targetY = -150 + (idx % 4) * 100;
+      } else if (mode === 'conify') {
+        let cols = 8;
+        let col = idx % cols;
+        let row = Math.floor(idx / cols);
+        n.targetX = -320 + col * 90;
+        n.targetY = -250 + row * 70;
+      } else if (mode === 'bond') {
+        let angle = (idx / nodes.length) * 2 * Math.PI;
+        n.targetX = Math.cos(angle) * 280;
+        n.targetY = Math.sin(2 * angle) * 180;
+      } else if (mode === 'delegate') {
+        let angle = (idx / nodes.length) * 4 * Math.PI;
+        let R = 220, r = 70, d = 110;
+        n.targetX = (R - r) * Math.cos(angle) + d * Math.cos(((R - r) / r) * angle);
+        n.targetY = (R - r) * Math.sin(angle) - d * Math.sin(((R - r) / r) * angle);
+      }
+    });
+  }
+
+  function updateSimulation() {
+    if (viewMode === 'force') {
+      // Repulsion between all nodes
+      for (let i = 0; i < nodes.length; i++) {
+        let n1 = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          let n2 = nodes[j];
+          let dx = n2.x - n1.x;
+          let dy = n2.y - n1.y;
+          let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+          if (dist < 350) {
+            let force = (350 - dist) * 0.12;
+            let fx = (dx / dist) * force;
+            let fy = (dy / dist) * force;
+            if (n1 !== draggedNode) { n1.vx -= fx; n1.vy -= fy; }
+            if (n2 !== draggedNode) { n2.vx += fx; n2.vy += fy; }
+          }
+        }
+      }
+
+      // Attraction along links
+      links.forEach(l => {
+        let dx = l.target.x - l.source.x;
+        let dy = l.target.y - l.source.y;
+        let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        let desired = 100;
+        if (dist > desired) {
+          let force = (dist - desired) * 0.04;
+          let fx = (dx / dist) * force;
+          let fy = (dy / dist) * force;
+          if (l.source !== draggedNode) { l.source.vx += fx; l.source.vy += fy; }
+          if (l.target !== draggedNode) { l.target.vx -= fx; l.target.vy -= fy; }
+        }
+      });
+
+      // Gravity towards center and updates
+      nodes.forEach(n => {
+        if (n !== draggedNode) {
+          n.vx -= n.x * 0.015;
+          n.vy -= n.y * 0.015;
+          n.x += n.vx;
+          n.y += n.vy;
+          n.vx *= 0.75;
+          n.vy *= 0.75;
+        }
+      });
+    } else {
+      // Interpolation to target coordinates
+      nodes.forEach(n => {
+        if (n !== draggedNode) {
+          n.x += (n.targetX - n.x) * 0.12;
+          n.y += (n.targetY - n.y) * 0.12;
+          n.vx = 0; n.vy = 0;
+        }
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.scale(transform.scale, transform.scale);
+
+    // Draw connections
+    links.forEach(l => {
+      ctx.beginPath();
+      ctx.moveTo(l.source.x, l.source.y);
+      ctx.lineTo(l.target.x, l.target.y);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+      const isSel = n === selectedNode;
+      ctx.fillStyle = n.color;
+      ctx.shadowBlur = isSel ? 20 : 8;
+      ctx.shadowColor = n.color;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = isSel ? 'bold 12px Outfit' : '10px Outfit';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.label, n.x, n.y - n.radius - 6);
+    });
+
+    ctx.restore();
+  }
+
+  function loop() {
+    updateSimulation();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left - transform.x) / transform.scale,
+      y: (e.clientY - rect.top - transform.y) / transform.scale
+    };
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    const m = getMousePos(e);
+    let clickedNode = null;
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      let n = nodes[i];
+      let dist = Math.sqrt((n.x - m.x)**2 + (n.y - m.y)**2);
+      if (dist < n.radius + 6) {
+        clickedNode = n;
+        break;
+      }
+    }
+
+    if (clickedNode) {
+      selectedNode = clickedNode;
+      draggedNode = clickedNode;
+      displayDetails(clickedNode);
+    } else {
+      isPanning = true;
+      panStart.x = e.clientX - transform.x;
+      panStart.y = e.clientY - transform.y;
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (draggedNode) {
+      const m = getMousePos(e);
+      draggedNode.x = m.x;
+      draggedNode.y = m.y;
+      draggedNode.vx = 0;
+      draggedNode.vy = 0;
+    } else if (isPanning) {
+      transform.x = e.clientX - panStart.x;
+      transform.y = e.clientY - panStart.y;
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    draggedNode = null;
+    isPanning = false;
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+    transform.scale = Math.min(Math.max(transform.scale * zoom, 0.1), 5);
+  });
+
+  function displayDetails(node) {
+    document.getElementById('details').style.display = 'block';
+    document.getElementById('det-name').innerText = node.name || 'Unknown';
+    document.getElementById('det-sym').innerText = node.symbol || 'UNKNOWN';
+    document.getElementById('det-addr').innerText = node.id;
+
+    let poolsHtml = '';
+    links.forEach(l => {
+      if (l.source.id.toLowerCase() === node.id.toLowerCase()) {
+        poolsHtml += '<div class="pool-row"><span>' + l.target.symbol + '</span><strong>' + l.price.toFixed(6) + '</strong></div>';
+      } else if (l.target.id.toLowerCase() === node.id.toLowerCase()) {
+        poolsHtml += '<div class="pool-row"><span>' + l.source.symbol + '</span><strong>' + (1/l.price).toFixed(6) + '</strong></div>';
+      }
+    });
+    document.getElementById('det-pools').innerHTML = poolsHtml || '<div style="color:#64748b;font-size:13px;">No direct active LPs found</div>';
+  }
+
+  function searchNode() {
+    const val = document.getElementById('search-box').value.toLowerCase().trim();
+    if (val.length === 0) return;
+    const matched = nodes.find(n => n.id.toLowerCase() === val || n.name.toLowerCase().includes(val) || n.symbol.toLowerCase().includes(val) || (n.varName && n.varName.toLowerCase().includes(val)));
+    if (matched) {
+      selectedNode = matched;
+      displayDetails(matched);
+      transform.x = width / 2 - matched.x * transform.scale;
+      transform.y = height / 2 - matched.y * transform.scale;
+    }
+  }
+</script>
+</body>
+</html>
