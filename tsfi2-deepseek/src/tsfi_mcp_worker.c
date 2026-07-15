@@ -686,6 +686,7 @@ int main() {
     printf("  sweep        - Scan addresses.sol, retrieve unknown metadata and submit to MCP\n");
     printf("  valholders   - Scan addresses.sol, compute prices in DAI, and record >$100 holders\n");
     printf("  listvalholders - Query and list all permanently saved LP/named contracts holding >$100\n");
+    printf("  dexprice     - Query DexScreener price via MCP for a token\n");
     printf("  status       - Query daemon queue size and local cache status\n");
     printf("  exit / quit  - Exit worker\n");
     printf("> ");
@@ -936,6 +937,28 @@ int main() {
                 }
             } else {
                 printf("[WORKER] Please specify a token address. Usage: valholders 0x[address]\n");
+            }
+        } else if (strncmp(line, "dexprice", 8) == 0) {
+            char *p_addr = strchr(line, ' ');
+            if (p_addr) {
+                while (*p_addr == ' ' || *p_addr == '\t') p_addr++;
+                if (strncmp(p_addr, "0x", 2) == 0 && strlen(p_addr) == 42) {
+                    printf("[WORKER] Querying DexScreener price via MCP...\n");
+                    char payload[512];
+                    snprintf(payload, sizeof(payload),
+                             "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_dexscreener_price\",\"params\":{\"address\":\"%s\"},\"id\":1}\n",
+                             p_addr);
+                    char resp[2048] = {0};
+                    if (query_mcp(payload, resp, sizeof(resp))) {
+                        printf("[RESPONSE] %s\n", resp);
+                    } else {
+                        printf("[WORKER] Error: Failed to retrieve price\n");
+                    }
+                } else {
+                    printf("[WORKER] Invalid address format. Usage: dexprice 0x[address]\n");
+                }
+            } else {
+                printf("[WORKER] Please specify a token address. Usage: dexprice 0x[address]\n");
             }
         } else if (strcmp(line, "listvalholders") == 0) {
             list_value_holders();

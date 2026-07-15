@@ -1469,6 +1469,40 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
             return 1;
         }
+    } else if (method_type == 63) { // wave64.get_dexscreener_price
+        char address_hex[128] = {0};
+        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
+            extern bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd);
+            double price_usd = 0.0;
+            bool success = tsfi_dexscreener_get_price(address_hex, &price_usd);
+            if (success) {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"address\": \"%s\", \"price_usd\": %.8f}, \"id\": %d}\n", address_hex, price_usd, id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32000, \"message\": \"Failed to retrieve price from DexScreener\"}, \"id\": %d}\n", id);
+            }
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+    } else if (method_type == 64) { // wave64.get_dexscreener_pairs
+        char address_hex[128] = {0};
+        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
+            extern bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, size_t out_max_len);
+            static char *pairs_buf = NULL;
+            if (!pairs_buf) {
+                pairs_buf = malloc(524288);
+            }
+            if (pairs_buf && tsfi_dexscreener_get_pairs_json(address_hex, pairs_buf, 524288)) {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", pairs_buf, id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32000, \"message\": \"Failed to retrieve pairs from DexScreener\"}, \"id\": %d}\n", id);
+            }
+            return 1;
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
+            return 1;
+        }
     } else if (method_type == 52) { // wave512.get_all_prices
         static char temp_json[131072];
         tsfi_pulse_get_all_prices_json(temp_json, sizeof(temp_json));

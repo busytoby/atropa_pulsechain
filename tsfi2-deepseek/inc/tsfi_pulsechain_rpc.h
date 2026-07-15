@@ -40,6 +40,12 @@ bool tsfi_pulse_rpc_exec_raw_body(const char *json_payload, char *out_buffer, si
 // Fetch token holders list from the PulseScan BlockScout API
 bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, size_t out_max_len);
 
+// Fetch token price in USD from DexScreener API
+bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd);
+
+// Fetch full token pairs JSON from DexScreener API
+bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, size_t out_max_len);
+
 #ifdef __cplusplus
 }
 #endif

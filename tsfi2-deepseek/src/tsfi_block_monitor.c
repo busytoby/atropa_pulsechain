@@ -696,6 +696,16 @@ double tsfi_pulse_get_price_in_pls(const char *token_addr) {
         return 1.0;
     }
     
+    extern bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd);
+    double token_usd = 0.0;
+    double wpls_usd = 0.0;
+    if (tsfi_dexscreener_get_price(token_addr, &token_usd) &&
+        tsfi_dexscreener_get_price(wpls, &wpls_usd)) {
+        if (wpls_usd > 0.0) {
+            return token_usd / wpls_usd;
+        }
+    }
+    
     uint64_t dec = 18;
     char sym[64], nam[128];
     resolve_token(token_addr, sym, nam, &dec);

@@ -109,6 +109,9 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "pulsechain.get_latest_block", "60");
     root = tsfi_tst_insert(root, "pulsechain.get_known_contracts", "61");
     root = tsfi_tst_insert(root, "pulsechain.prune_block", "62");
+    root = tsfi_tst_insert(root, "wave64.get_dexscreener_price", "63");
+    root = tsfi_tst_insert(root, "wave64.get_dexscreener_pairs", "64");
+
 
     return root;
 }

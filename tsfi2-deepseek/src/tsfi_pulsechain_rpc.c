@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -788,6 +789,280 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
     }
     free(combined);
     return any_success;
+}
+
+bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd) {
+    const char *host = "api.dexscreener.com";
+    const char *port = "443";
+    
+    // Create cache directory if needed
+    struct stat st_dir;
+    if (stat("tmp", &st_dir) != 0) {
+        mkdir("tmp", 0777);
+    }
+    
+    // Determine cache file path
+    char clean_addr[64];
+    const char *addr_ptr = token_addr;
+    if (strncmp(addr_ptr, "0x", 2) == 0) addr_ptr += 2;
+    strcpy(clean_addr, addr_ptr);
+    for (int i = 0; clean_addr[i]; i++) {
+        if (clean_addr[i] >= 'A' && clean_addr[i] <= 'Z') {
+            clean_addr[i] += 32;
+        }
+    }
+    char cache_file[256];
+    snprintf(cache_file, sizeof(cache_file), "tmp/dex_cache_%s.json", clean_addr);
+    
+    // Check if cache file is less than 60 seconds old
+    struct stat st_file;
+    if (stat(cache_file, &st_file) == 0) {
+        time_t now = time(NULL);
+        if (now - st_file.st_mtime < 60) {
+            FILE *f_cache = fopen(cache_file, "r");
+            if (f_cache) {
+                char price_buf[64] = {0};
+                if (fgets(price_buf, sizeof(price_buf) - 1, f_cache)) {
+                    *out_price_usd = strtod(price_buf, NULL);
+                    fclose(f_cache);
+                    if (*out_price_usd > 0.0) {
+                        return true;
+                    }
+                } else {
+                    fclose(f_cache);
+                }
+            }
+        }
+    }
+    
+    struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    if (getaddrinfo(host, port, &hints, &res) != 0) {
+        return false;
+    }
+    
+    int sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd < 0) {
+        freeaddrinfo(res);
+        return false;
+    }
+    
+    struct timeval timeout;
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+    
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+        close(sockfd);
+        freeaddrinfo(res);
+        return false;
+    }
+    freeaddrinfo(res);
+    
+    TsfiTlsContext tls;
+    tsfi_tls_init(&tls, sockfd);
+    if (!tsfi_tls_handshake(&tls, host)) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    
+    char request[512];
+    snprintf(request, sizeof(request),
+             "GET /latest/dex/tokens/%s HTTP/1.1\r\n"
+             "Host: %s\r\n"
+             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Antigravity/2.0\r\n"
+             "Connection: close\r\n"
+             "\r\n",
+             token_addr, host);
+             
+    if (tsfi_tls_write(&tls, request, strlen(request)) < 0) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    
+    char *response = malloc(262144);
+    if (!response) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    memset(response, 0, 262144);
+    
+    size_t total_read = 0;
+    ssize_t n;
+    while ((n = tsfi_tls_read(&tls, response + total_read, 262144 - 1 - total_read)) > 0) {
+        total_read += n;
+        if (total_read >= 262144 - 1) break;
+    }
+    tsfi_tls_close(&tls);
+    close(sockfd);
+    
+    bool success = false;
+    char *body = strstr(response, "\r\n\r\n");
+    if (body) {
+        body += 4;
+        char *price_ptr = strstr(body, "\"priceUsd\":\"");
+        if (price_ptr) {
+            price_ptr += 12;
+            char *end_price = strchr(price_ptr, '"');
+            if (end_price) {
+                char price_str[64];
+                size_t len = end_price - price_ptr;
+                if (len < 63) {
+                    strncpy(price_str, price_ptr, len);
+                    price_str[len] = '\0';
+                    *out_price_usd = strtod(price_str, NULL);
+                    if (*out_price_usd > 0.0) {
+                        success = true;
+                        // Cache the price to file
+                        FILE *f_cache = fopen(cache_file, "w");
+                        if (f_cache) {
+                            fprintf(f_cache, "%f\n", *out_price_usd);
+                            fclose(f_cache);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    free(response);
+    return success;
+}
+
+bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, size_t out_max_len) {
+    const char *host = "api.dexscreener.com";
+    const char *port = "443";
+    
+    // Create cache directory if needed
+    struct stat st_dir;
+    if (stat("tmp", &st_dir) != 0) {
+        mkdir("tmp", 0777);
+    }
+    
+    // Determine cache file path
+    char clean_addr[64];
+    const char *addr_ptr = token_addr;
+    if (strncmp(addr_ptr, "0x", 2) == 0) addr_ptr += 2;
+    strcpy(clean_addr, addr_ptr);
+    for (int i = 0; clean_addr[i]; i++) {
+        if (clean_addr[i] >= 'A' && clean_addr[i] <= 'Z') {
+            clean_addr[i] += 32;
+        }
+    }
+    char cache_file[256];
+    snprintf(cache_file, sizeof(cache_file), "tmp/dex_pairs_cache_%s.json", clean_addr);
+    
+    // Check if cache file is less than 60 seconds old
+    struct stat st_file;
+    if (stat(cache_file, &st_file) == 0) {
+        time_t now = time(NULL);
+        if (now - st_file.st_mtime < 60) {
+            FILE *f_cache = fopen(cache_file, "r");
+            if (f_cache) {
+                size_t n = fread(out_json, 1, out_max_len - 1, f_cache);
+                out_json[n] = '\0';
+                fclose(f_cache);
+                if (n > 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    
+    struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    if (getaddrinfo(host, port, &hints, &res) != 0) {
+        return false;
+    }
+    
+    int sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd < 0) {
+        freeaddrinfo(res);
+        return false;
+    }
+    
+    struct timeval timeout;
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+    
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+        close(sockfd);
+        freeaddrinfo(res);
+        return false;
+    }
+    freeaddrinfo(res);
+    
+    TsfiTlsContext tls;
+    tsfi_tls_init(&tls, sockfd);
+    if (!tsfi_tls_handshake(&tls, host)) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    
+    char request[512];
+    snprintf(request, sizeof(request),
+             "GET /latest/dex/tokens/%s HTTP/1.1\r\n"
+             "Host: %s\r\n"
+             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Antigravity/2.0\r\n"
+             "Accept: application/json\r\n"
+             "Connection: close\r\n"
+             "\r\n",
+             token_addr, host);
+             
+    if (tsfi_tls_write(&tls, request, strlen(request)) < 0) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    
+    char *response = malloc(524288);
+    if (!response) {
+        tsfi_tls_close(&tls);
+        close(sockfd);
+        return false;
+    }
+    memset(response, 0, 524288);
+    
+    size_t total_read = 0;
+    ssize_t n;
+    while ((n = tsfi_tls_read(&tls, response + total_read, 524288 - 1 - total_read)) > 0) {
+        total_read += n;
+        if (total_read >= 524288 - 1) break;
+    }
+    tsfi_tls_close(&tls);
+    close(sockfd);
+    
+    bool success = false;
+    char *body = strstr(response, "\r\n\r\n");
+    if (body) {
+        body += 4;
+        size_t body_len = strlen(body);
+        if (body_len < out_max_len) {
+            strcpy(out_json, body);
+            success = true;
+            
+            // Cache the full JSON response
+            FILE *f_cache = fopen(cache_file, "w");
+            if (f_cache) {
+                fwrite(body, 1, body_len, f_cache);
+                fclose(f_cache);
+            }
+        }
+    }
+    free(response);
+    return success;
 }
 
 
