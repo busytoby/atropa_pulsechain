@@ -679,6 +679,7 @@
 
         async function selectToken(addr, forceRefresh = false) {
             activeTokenAddr = addr;
+            g_bypass_rpc_cache = forceRefresh;
             
             // Re-render sidebar to highlight active item
             filterTokens();
@@ -1274,7 +1275,30 @@
             }
         }
 
+        const rpcCache = {};
+        let g_bypass_rpc_cache = false;
         async function rpcRequest(method, params = []) {
+            if (method === 'eth_call') {
+                const cacheKey = JSON.stringify(params);
+                const now = Date.now();
+                if (!g_bypass_rpc_cache && rpcCache[cacheKey] && (now - rpcCache[cacheKey].timestamp < 30000)) { // 30-second TTL
+                    return rpcCache[cacheKey].result;
+                }
+                const rpcUrl = 'https://rpc.pulsechain.com';
+                const response = await fetch(rpcUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 99 })
+                });
+                const data = await response.json();
+                if (data && data.result) {
+                    rpcCache[cacheKey] = {
+                        result: data.result,
+                        timestamp: now
+                    };
+                }
+                return data ? data.result : null;
+            }
             const rpcUrl = 'https://rpc.pulsechain.com';
             const response = await fetch(rpcUrl, {
                 method: 'POST',
