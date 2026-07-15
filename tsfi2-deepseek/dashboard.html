@@ -691,7 +691,17 @@
                 </div>
             `;
 
-            const tok = allTokens.find(t => t.address === addr);
+            const tok = allTokens.find(t => t.address.toLowerCase() === addr.toLowerCase());
+            if (!tok) {
+                console.error("Token not found in global list for address:", addr);
+                workspace.innerHTML = `
+                    <div class="welcome-screen">
+                        <h2 style="color: #ef4444">Token Not Found</h2>
+                        <p>Address: ${addr}</p>
+                    </div>
+                `;
+                return;
+            }
             
             try {
                 // Fetch holders
