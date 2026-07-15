@@ -848,7 +848,8 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
                                     snprintf(t0_addr, sizeof(t0_addr), "0x%s", call_buf + strlen(call_buf) - 40);
                                 }
                             }
-                            if (tsfi_pulse_rpc_call(pool_address, "0xd21225a3", call_buf, sizeof(call_buf))) {
+                            if (tsfi_pulse_rpc_call(pool_address, "0xd21225a3", call_buf, sizeof(call_buf)) ||
+                                tsfi_pulse_rpc_call(pool_address, "0xd21220a7", call_buf, sizeof(call_buf))) {
                                 if (strlen(call_buf) >= 40) {
                                     snprintf(t1_addr, sizeof(t1_addr), "0x%s", call_buf + strlen(call_buf) - 40);
                                 }
