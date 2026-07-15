@@ -32,8 +32,8 @@
   <input type="text" id="search-box" placeholder="Search Token / Address..." oninput="searchNode()">
   <div class="card" id="general-stats">
     <div class="card-title">Ecosystem Totals</div>
-    <div class="pool-row"><span>Known Tokens</span><strong>481</strong></div>
-    <div class="pool-row"><span>Active LP Connections</span><strong>672</strong></div>
+    <div class="pool-row"><span>Known Tokens</span><strong>486</strong></div>
+    <div class="pool-row"><span>Active LP Connections</span><strong>716</strong></div>
   </div>
   <div class="card" id="views-box">
     <div class="card-title">Projection View Styles</div>
@@ -64,10 +64,6 @@
 <script>
   const rawNodes = [
     { id: "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", label: "WPLS", title: "Wrapped PLS", symbol: "WPLS", name: "Wrapped PLS", varName: "WrappedPulse" },
-    { id: "0x95acD3924370324F973352614Ea2624F0cf0d7eb", label: "PLSX", title: "PulseX", symbol: "PLSX", name: "PulseX", varName: "" },
-    { id: "0x2b5455ad41d3002b573334244649027ce76289c5", label: "HEX", title: "HEX", symbol: "HEX", name: "HEX", varName: "" },
-    { id: "0xefD766ccB0F39a5e6219b902cd81B85f984D19Ca", label: "DAI", title: "DAI from Ethereum", symbol: "DAI", name: "DAI from Ethereum", varName: "" },
-    { id: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", label: "WETH", title: "Wrapped Ether from Ethereum", symbol: "WETH", name: "Wrapped Ether from Ethereum", varName: "" },
     { id: "0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B", label: "TreasuryTokenV1Minter", title: "TreasuryTokenV1Minter", symbol: "TreasuryTokenV1Minter", name: "TreasuryTokenV1Minter", varName: "TreasuryTokenV1Minter" },
     { id: "0xa35c9B5e576BE2E0bA9cc7224B0941CC8acC4c9C", label: "ABI", title: "ABI", symbol: "ABI", name: "ABI", varName: "ABI" },
     { id: "0x7a20189B297343CF26d8548764b04891f37F3414", label: "atropa", title: "atropa", symbol: "atropa", name: "atropa", varName: "atropa" },
@@ -170,146 +166,7 @@
     { id: "0xEf2125f5d1f7A3d68038F27e681258d13a73E718", label: "限制令™", title: "ꑟꀊꆅꊏꆹꆅꇬ", symbol: "限制令™", name: "ꑟꀊꆅꊏꆹꆅꇬ", varName: "RESTRAININGORDERContract" },
     { id: "0x173216Ed67eBF3E6767D86e8b3Ff32e0d64437bF", label: "TOD", title: "Not Exist", symbol: "TOD", name: "Not Exist", varName: "WITHOUTContract" },
     { id: "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69", label: "倫", title: "mariarahel", symbol: "倫", name: "mariarahel", varName: "mariarahelContract" },
-    { id: "0x5450af75b1650ee656dbf319a5b5c9fdd8839b03", label: "INDOMITABLE", title: "G̴̿̽͝͝R̶̐͋͠A̴͗̽F̵͑̐F̴̚͝I̴͑T̴͝I", symbol: "INDOMITABLE", name: "G̴̿̽͝͝R̶̐͋͠A̴͗̽F̵͑̐F̴̚͝I̴͑T̴͝I", varName: "" },
-    { id: "0x31ac295d593877bb77c3fcc19fbbcea9c4f1c50a", label: "CHB", title: "🪳 Section 8 🪳", symbol: "CHB", name: "🪳 Section 8 🪳", varName: "" },
-    { id: "0x95b303987a60c71504d99aa1b13b4da07b0790ab", label: "PLSX", title: "PulseX", symbol: "PLSX", name: "PulseX", varName: "" },
-    { id: "0xefd766ccb38eaf1dfd701853bfce31359239f305", label: "DAI", title: "Dai Stablecoin from Ethereum", symbol: "DAI", name: "Dai Stablecoin from Ethereum", varName: "" },
-    { id: "0x4092c004b31b862937811dc8f4169cc9e975ce5b", label: "DEAD", title: "DEAD", symbol: "DEAD", name: "DEAD", varName: "" },
-    { id: "0xeb6b7932da20c6d7b3a899d5887d86dfb09a6408", label: "PXDC", title: "PXDC Stablecoin", symbol: "PXDC", name: "PXDC Stablecoin", varName: "" },
-    { id: "0x2fa878ab3f87cc1c9737fc071108f904c0b0c95d", label: "INC", title: "Incentive", symbol: "INC", name: "Incentive", varName: "" },
-    { id: "0xb709276c0e8d3a5372a13d4fea886496f396fea1", label: "pNAS", title: "PEACOCK NINJAS AGAINST SOCIETY", symbol: "pNAS", name: "PEACOCK NINJAS AGAINST SOCIETY", varName: "" },
-    { id: "0x9daf8da1eb9cf47aa1fd54859e12d94e066dca0e", label: "JDARPA", title: "Jdarpa", symbol: "JDARPA", name: "Jdarpa", varName: "" },
-    { id: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c", label: "WETH", title: "Wrapped Ether from Ethereum", symbol: "WETH", name: "Wrapped Ether from Ethereum", varName: "" },
-    { id: "0x16951ce6d1d1d67e9239192e3eae4d250576d90c", label: "㈞", title: "㈞", symbol: "㈞", name: "㈞", varName: "" },
-    { id: "0xc10a4ed9b4042222d69ff0b374eddd47ed90fc1f", label: "PCOCK", title: "PulseChain Peacock", symbol: "PCOCK", name: "PulseChain Peacock", varName: "" },
-    { id: "0x770cfa2fb975e7bcaedde234d92c3858c517adca", label: "🖨️", title: "WORLDS GREATEST PDAI PRINTER", symbol: "🖨️", name: "WORLDS GREATEST PDAI PRINTER", varName: "" },
-    { id: "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", label: "USDC-Eth", title: "USD Coin (from Ethereum)", symbol: "USDC-Eth", name: "USD Coin (from Ethereum)", varName: "" },
-    { id: "0x09fc51b8a172ad8a879172727e1134c675853dc3", label: "WWPP", title: "Worlds Worst 🖨️ on Pulsechain", symbol: "WWPP", name: "Worlds Worst 🖨️ on Pulsechain", varName: "" },
-    { id: "0x1c81b4358246d3088ab4361ab755f3d8d4dd62d2", label: "Finvesta", title: "Finvesta", symbol: "Finvesta", name: "Finvesta", varName: "" },
-    { id: "0xc607606c0dc9b084d4e4458449963a975a762093", label: "Stable-LP", title: "PulseX StableSwap LPs", symbol: "Stable-LP", name: "PulseX StableSwap LPs", varName: "" },
-    { id: "0xbbea78397d4d4590882efcc4820f03074ab2ab29", label: "XUSD", title: "XUSD Vibratile Asset", symbol: "XUSD", name: "XUSD Vibratile Asset", varName: "" },
-    { id: "0x042b48a98b37042d58bc8defeeb7ca4ec76e6106", label: "⛽", title: "GAS Money", symbol: "⛽", name: "GAS Money", varName: "" },
-    { id: "0xdcaabaeb4ab3347ea75ce7232d8c50f43d4a767b", label: "Exploited", title: "🤮 No Value 🤮", symbol: "Exploited", name: "🤮 No Value 🤮", varName: "" },
-    { id: "0x0cb6f5a34ad42ec934882a05265a7d5f59b51a2f", label: "USDT", title: "Tether USD from Ethereum", symbol: "USDT", name: "Tether USD from Ethereum", varName: "" },
-    { id: "0x81d6b9cb066a378986c93086c485234c8311b125", label: "Conquered", title: "🤬🔥 Vae Victus 🔥🤬", symbol: "Conquered", name: "🤬🔥 Vae Victus 🔥🤬", varName: "" },
-    { id: "0xdf06aa2ef777d0b9701716d0c9ab500465f082ec", label: "RSI", title: "OVERSOLD", symbol: "RSI", name: "OVERSOLD", varName: "" },
-    { id: "0xf3526c52f603e517a77e5aa737ff9cd910fd5820", label: "🧠BPBE🧠", title: "BIG PROFIT BRAIN ENERGY", symbol: "🧠BPBE🧠", name: "BIG PROFIT BRAIN ENERGY", varName: "" },
-    { id: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", label: "WBTC", title: "Wrapped BTC", symbol: "WBTC", name: "Wrapped BTC", varName: "" },
-    { id: "0x57fde0a71132198bbec939b98976993d8d89d225", label: "HEX", title: "HEX from Ethereum", symbol: "HEX", name: "HEX from Ethereum", varName: "" },
-    { id: "0xf18b09a5b358b720f23d736163d328dba0bddf41", label: "H㉾X", title: "H㉾X", symbol: "H㉾X", name: "H㉾X", varName: "" },
-    { id: "0x1a4e22af07f52a1e68c908ff077fef183a50ebe3", label: "M㉾FTi", title: "㉾ مفتی ㉾", symbol: "M㉾FTi", name: "㉾ مفتی ㉾", varName: "" },
-    { id: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39", label: "HEX", title: "HEX", symbol: "HEX", name: "HEX", varName: "" },
-    { id: "0xf6f8db0aba00007681f8faf16a0fda1c9b030b11", label: "PRVX", title: "ProveX", symbol: "PRVX", name: "ProveX", varName: "" },
-    { id: "0x0291cb0e024e4118d415f99d98415907662fd58f", label: "ENT", title: "Entitled", symbol: "ENT", name: "Entitled", varName: "" },
-    { id: "0xbe607b5e4d711d9d3a92594e6f6e247bb2d9e471", label: "三六九", title: "369", symbol: "三六九", name: "369", varName: "" },
-    { id: "0xae7ab96520de3a18e5e111b5eaab095312d7fe84", label: "stETH", title: "Liquid staked Ether 2.0", symbol: "stETH", name: "Liquid staked Ether 2.0", varName: "" },
-    { id: "0x34f0915a5f15a66eba86f6a58be1a471fb7836a7", label: "PLSD", title: "PulseDogecoin", symbol: "PLSD", name: "PulseDogecoin", varName: "" },
-    { id: "0x9f8d74df6dd3145e858578b0be1d9b11f41e0a28", label: "CODA", title: "CODA", symbol: "CODA", name: "CODA", varName: "" },
-    { id: "0x4eb7c1c05087f98ae617d006f48914ee73ff8d2a", label: "XGAME", title: "XGAME.IO", symbol: "XGAME", name: "XGAME.IO", varName: "" },
-    { id: "0x8da17db850315a34532108f0f5458fc0401525f6", label: "SOLIDX", title: "Solid X", symbol: "SOLIDX", name: "Solid X", varName: "" },
-    { id: "0xbe2cd67164b3c1ae1d0b6e1def14df663a64b263", label: "𝐏𝔽𝔽", title: "Pulse For Freedom", symbol: "𝐏𝔽𝔽", name: "Pulse For Freedom", varName: "" },
-    { id: "0x0eb38452fdccab988838d9be74e0f00239a876e6", label: "INTERN", title: "Liberty Swap Mascot", symbol: "INTERN", name: "Liberty Swap Mascot", varName: "" },
-    { id: "0xb17d901469b9208b17d916112988a3fed19b5ca1", label: "WBTC", title: "Wrapped BTC from Ethereum", symbol: "WBTC", name: "Wrapped BTC from Ethereum", varName: "" },
-    { id: "0x8bdb63033b02c15f113de51ea1c3a96af9e8ecb5", label: "AXIS", title: "AxisAlive", symbol: "AXIS", name: "AxisAlive", varName: "" },
-    { id: "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", label: "F㉾D", title: "Reserve Teh ㉾", symbol: "F㉾D", name: "Reserve Teh ㉾", varName: "" },
-    { id: "0xdc60f0ee40bed3078614be202555d2f07d38166e", label: "BEAST", title: "BEAST", symbol: "BEAST", name: "BEAST", varName: "" },
-    { id: "0x94534EeEe131840b1c0F61847c572228bdfDDE93", label: "pTGC", title: "The Grays Currency", symbol: "pTGC", name: "The Grays Currency", varName: "" },
-    { id: "0x1E2b066d068eb087CCf85620B8306a283ea70816", label: "SWRM", title: "Swarm", symbol: "SWRM", name: "Swarm", varName: "" },
-    { id: "0x945Ac5FDa5A97ec85e7778C435064AC217A68d41", label: "🍯", title: "HoneyPot", symbol: "🍯", name: "HoneyPot", varName: "" },
-    { id: "0x38407c5a0c26675e34b6dd06bf98C571cbCdb6bf", label: "FINVESTIBLE ㉾", title: "Proof Of Finvestment ㉾", symbol: "FINVESTIBLE ㉾", name: "Proof Of Finvestment ㉾", varName: "" },
-    { id: "0x27A28FFb75CF6E92f54C10b2684f4A2d9767c38b", label: "🕊️", title: "MrStu", symbol: "🕊️", name: "MrStu", varName: "" },
-    { id: "0x079699c8615618e708E91D08c8F7Dd020552cBdd", label: "BAE㉿V", title: "BAE BEAR VAULT㉿", symbol: "BAE㉿V", name: "BAE BEAR VAULT㉿", varName: "" },
-    { id: "0xC1B71f522c7B237871C24029772539501CeE99DF", label: "GLOBAL ㉾", title: "Objective Global ㉾", symbol: "GLOBAL ㉾", name: "Objective Global ㉾", varName: "" },
-    { id: "0x697fc467720B2a8e1b2F7F665d0e3f28793E65e8", label: "A1A", title: "TokenA1A", symbol: "A1A", name: "TokenA1A", varName: "" },
-    { id: "0xf50fCB9c3aa984C468206a1a40832EEF384e0Cb1", label: "IMMUNITY™", title: "Helsinki Dyschourd", symbol: "IMMUNITY™", name: "Helsinki Dyschourd", varName: "" },
-    { id: "0x20Bf7bcc498b2F0f0A1e94fFec9dD00ceB59F875", label: "PROSTITUTION™", title: "SUSPEND", symbol: "PROSTITUTION™", name: "SUSPEND", varName: "" },
-    { id: "0xf646eD2Fc7873C7c412Bffb07E2e8038f8EB7895", label: "ÁSGARD", title: "Make The Grade", symbol: "ÁSGARD", name: "Make The Grade", varName: "" },
-    { id: "0xC9eD19a34A9961990C47Ff791aA2Ccf7a5DB96e8", label: "GYRE", title: "Gyre", symbol: "GYRE", name: "Gyre", varName: "" },
-    { id: "0x3a6c545c9E07e6d3041DC802033400F7fBf96c9a", label: "MDALA", title: "MANDALA", symbol: "MDALA", name: "MANDALA", varName: "" },
     { id: "0xF2be09EB43c1eD2791d0324BaA0649e62CdA4BBF", label: "\u0818\u0813\u0829\u0810\u082c\u0800\u082b\u080b\u0820", title: "\u0810\u0800", symbol: "\u0818\u0813\u0829\u0810\u082c\u0800\u082b\u080b\u0820", name: "\u0810\u0800", varName: "FAContract" },
-    { id: "0x5F16F6c242e038437a7ba3C903DFeDB747Db4A5c", label: "正", title: "Tetratricopeptides", symbol: "正", name: "Tetratricopeptides", varName: "" },
-    { id: "0xCe1d47CE3A91E054C111d9cC3B4bae50843200da", label: "ออกจาก🄮", title: "BLÄTTER™", symbol: "ออกจาก🄮", name: "BLÄTTER™", varName: "" },
-    { id: "0x68C75B57F04d229c42249D971F4e9280afdBD6FA", label: "$Horse", title: "Horse", symbol: "$Horse", name: "Horse", varName: "" },
-    { id: "0x9DC72e4AD4d11841993F6c0a087F5B9fb458aA7C", label: "GBABY", title: "In The Know", symbol: "GBABY", name: "In The Know", varName: "" },
-    { id: "0xDC94D621Fa0AcA53e00ADb695aD2E23531fBbdBe", label: "✪FIRE✪🔥", title: "✪FIRE✪🔥", symbol: "✪FIRE✪🔥", name: "✪FIRE✪🔥", varName: "" },
-    { id: "0x61AE7cdaE7E1c5430B0C3d20AC3C640c8a0819BD", label: "pEAGLE", title: "American Bald Eagle", symbol: "pEAGLE", name: "American Bald Eagle", varName: "" },
-    { id: "0x67560BE9920B1F10859fF57A9DE79eD8C6947177", label: "Ⓐ正 ⊢ ∑∞ ∎ 🖨️🏁", title: "Ⓐ正 ⊢ ∑∞ ∎ 🖨️🏁", symbol: "Ⓐ正 ⊢ ∑∞ ∎ 🖨️🏁", name: "Ⓐ正 ⊢ ∑∞ ∎ 🖨️🏁", varName: "" },
-    { id: "0xC52D52F5089EA92Ce6Bd848C77Ac623aa14131A0", label: "パイナップルクリプトナイト", title: "minefullness", symbol: "パイナップルクリプトナイト", name: "minefullness", varName: "" },
-    { id: "0xc59C67101B9A0e7a2aE61cD11E12685Bd5e9263a", label: "PLSMiami", title: "PLSMiami", symbol: "PLSMiami", name: "PLSMiami", varName: "" },
-    { id: "0x965B0d74591bF30327075A247C47dBf487dCff08", label: "VOID", title: "CHATLOG Void", symbol: "VOID", name: "CHATLOG Void", varName: "" },
-    { id: "0x4d36F2AB57F22c3d49AA61667402B384Ec2D6050", label: "pEAGLE", title: "Pulse Eagle", symbol: "pEAGLE", name: "Pulse Eagle", varName: "" },
-    { id: "0x9041A0b29e93f90BB19de32b2FAfa659c79a0370", label: "LIGHT🟡", title: "Illuminate🟡", symbol: "LIGHT🟡", name: "Illuminate🟡", varName: "" },
-    { id: "0x71769F8F268D4ee21b4749d00Ebe86b734A85389", label: "PMC", title: "PEACOCK MASTERCOCK CARD", symbol: "PMC", name: "PEACOCK MASTERCOCK CARD", varName: "" },
-    { id: "0x812571A12330A74E2A3C1fF8953f6f3aac7a83e9", label: "FD㉾C", title: "Federal Deposit Insurance Contract", symbol: "FD㉾C", name: "Federal Deposit Insurance Contract", varName: "" },
-    { id: "0x866536A7834024bf48605A64983AAc2185e1FcbB", label: "FLOW🔵", title: "Current🔵", symbol: "FLOW🔵", name: "Current🔵", varName: "" },
-    { id: "0x6327772dd3158c510069e26606420F88Fdcfcb92", label: "✪WOOD✪🪵", title: "✪WOOD✪🪵", symbol: "✪WOOD✪🪵", name: "✪WOOD✪🪵", varName: "" },
-    { id: "0xb04154B848dA6D562CC4D25A54bBDE73E33552B4", label: "✪EARTH✪🌎", title: "✪EARTH✪🌎", symbol: "✪EARTH✪🌎", name: "✪EARTH✪🌎", varName: "" },
-    { id: "0x874dC8790AF04afbAC82b0156B66FDF2a54dc267", label: "🦊", title: "🦊", symbol: "🦊", name: "🦊", varName: "" },
-    { id: "0x9CC7437978255e2c38B0d3D4671fb9AC411a68aC", label: "DOGE", title: "DOGE", symbol: "DOGE", name: "DOGE", varName: "" },
-    { id: "0x667435b2b24F11F1112Ec1669c1f15a014e9Bf5c", label: "ICHIDAI ㉾", title: "Ichi Dai", symbol: "ICHIDAI ㉾", name: "Ichi Dai", varName: "" },
-    { id: "0xeF7A713C3F10c12D8b12B7CBB78b79b92303Ccd4", label: "BONNIE", title: "Richards first Car", symbol: "BONNIE", name: "Richards first Car", varName: "" },
-    { id: "0xf5D84D7AB53c7250debc48aDB59E2c9E23658C87", label: "BAE㉿B", title: "BAE BEAR BANK㉿", symbol: "BAE㉿B", name: "BAE BEAR BANK㉿", varName: "" },
-    { id: "0x7b5A0Aca554427E87BB16E64594aB7257be343e1", label: "TBP ㉾", title: "Teddy Bear Party", symbol: "TBP ㉾", name: "Teddy Bear Party", varName: "" },
-    { id: "0xf330cb1d41052dbC74D3325376Cb82E99454e501", label: "FIRE", title: "HEXFIREIO", symbol: "FIRE", name: "HEXFIREIO", varName: "" },
-    { id: "0xDA4c21B53Ba5AB236f8CB022e2Ba7D8dA13bB8F8", label: "BAE㉿T", title: "BAE BEAR TREASURY㉿", symbol: "BAE㉿T", name: "BAE BEAR TREASURY㉿", varName: "" },
-    { id: "0x67d2c95c23877aD349671943293E0eF3Af7fc6Ec", label: "STORI", title: "SATORI", symbol: "STORI", name: "SATORI", varName: "" },
-    { id: "0x4eaAF5f49A8f2072BD6898ACc2eCDA83b0735b33", label: "SRB", title: "Serbia Strong", symbol: "SRB", name: "Serbia Strong", varName: "" },
-    { id: "0x296E797F481C15d6FE138ceA09Bda3A1c2869216", label: "YT ㉢", title: "YouTube ㉢", symbol: "YT ㉢", name: "YouTube ㉢", varName: "" },
-    { id: "0xb0Ba7D36B7F0505879179ecE7401F24eB653c6E1", label: "qZů", title: "Zürich QING", symbol: "qZů", name: "Zürich QING", varName: "" },
-    { id: "0x7c4A08584ca8d889e87fc93331224BCb7947fE0c", label: "yjOz1IqBkQk", title: "Tokenized Asset", symbol: "yjOz1IqBkQk", name: "Tokenized Asset", varName: "" },
-    { id: "0xF4C5daBC4fdC3cA74262a8155c2f92f8875ff0Fe", label: "2srMJMLcyDg", title: "Tokenized Asset", symbol: "2srMJMLcyDg", name: "Tokenized Asset", varName: "" },
-    { id: "0xdF81f7fA2a4d7785A24BbbbBd11cBBa92a878cFe", label: "BAE㉿S", title: "BAE BEAR SAFE㉿", symbol: "BAE㉿S", name: "BAE BEAR SAFE㉿", varName: "" },
-    { id: "0x67DB7E519B634046B671f81eE25AAcD50975f515", label: "Junction®™", title: "Junction®™", symbol: "Junction®™", name: "Junction®™", varName: "" },
-    { id: "0xA5019FA6Ff4f8782eBa6c59194b26fBf27feFfBC", label: "USB ㉾", title: "United States Bank", symbol: "USB ㉾", name: "United States Bank", varName: "" },
-    { id: "0x32A35c0b6A711eb3d42f762f19B912A359948b78", label: "🪽💨 ", title: "Hermes", symbol: "🪽💨 ", name: "Hermes", varName: "" },
-    { id: "0x89f5d1c22394B4761F3bF746b60d54De03b59Ec6", label: "Gizmo", title: "Gizmo", symbol: "Gizmo", name: "Gizmo", varName: "" },
-    { id: "0x131bF51e864024DF1982F2cd7B1C786e1A005152", label: "uP", title: "uP", symbol: "uP", name: "uP", varName: "" },
-    { id: "0x365eB1487314fCd5AEEC0800e5f828606d20C661", label: "MCT", title: "MCTolkien", symbol: "MCT", name: "MCTolkien", varName: "" },
-    { id: "0x1FE0319440A672526916C232EAEe4808254Bdb00", label: "HEXDC", title: "HEXDC Stablecoin", symbol: "HEXDC", name: "HEXDC Stablecoin", varName: "" },
-    { id: "0x12828D4cdA7CBfAcd7586E54708A9b9674641bEd", label: "SURF", title: "SURF", symbol: "SURF", name: "SURF", varName: "" },
-    { id: "0xF7EF7188ca663bab6B7b72eC5dF79A048FD8BA25", label: "WELT", title: "䈗", symbol: "WELT", name: "䈗", varName: "" },
-    { id: "0xbEEf3bB9dA340EbdF0f5bae2E85368140d7D85D0", label: "MORE", title: "More", symbol: "MORE", name: "More", varName: "" },
-    { id: "0x8f326f4530D02c6C5BBF8Acd46DDBB0391871e85", label: "CANASTA", title: "ᝃᝈᝐᝆ", symbol: "CANASTA", name: "ᝃᝈᝐᝆ", varName: "" },
-    { id: "0xd2A048eF4e018348EEbC245a4402DB7b46c8E223", label: "dGENESIS", title: "Dysnomia Genesis Rewards Token", symbol: "dGENESIS", name: "Dysnomia Genesis Rewards Token", varName: "" },
-    { id: "0x36824A24780cCf79e973D355cD16A12279cF8700", label: "VATHEK", title: "Interessanti", symbol: "VATHEK", name: "Interessanti", varName: "" },
-    { id: "0x5De2624784Ff1A95612E376470f5DDa6a8D705b7", label: "👁️", title: "ICU", symbol: "👁️", name: "ICU", varName: "" },
-    { id: "0x4Ed2AD8A609Ff412Fe88113B998d6eB28a4d4542", label: "The 5th Column", title: "Centrifuged Hydrogen Peroxide", symbol: "The 5th Column", name: "Centrifuged Hydrogen Peroxide", varName: "" },
-    { id: "0xea0a3AE400B3F5657F865adEb705804c5D96294c", label: "666", title: "Conrad Ferdinand Meyer", symbol: "666", name: "Conrad Ferdinand Meyer", varName: "" },
-    { id: "0x33F3355727E4F00D6422BF0a7BdE6036FDF48bB5", label: "FAKE™", title: "Happy \\", symbol: "FAKE™", name: "Happy \\", varName: "" },
-    { id: "0xaC57300DA6e17e9E83e71b9F6F75d08dC3836532", label: "N㉾SD㉾Q", title: "NotsDotQ", symbol: "N㉾SD㉾Q", name: "NotsDotQ", varName: "" },
-    { id: "0x31cBBeA28c08664762f8f4fEC5DAA3BA7C585F27", label: "PYRA", title: "PYRA", symbol: "PYRA", name: "PYRA", varName: "" },
-    { id: "0xf3b9569F82B18aEf890De263B84189bd33EBe452", label: "CAW", title: "A Hunters Dream", symbol: "CAW", name: "A Hunters Dream", varName: "" },
-    { id: "0x68E87Fa19984f45C68945BBd4c81bF3481750429", label: "𑱰", title: "𑲃𑲄𑱷𑱶", symbol: "𑱰", name: "𑲃𑲄𑱷𑱶", varName: "" },
-    { id: "0x0d4dF81C334153D54A678ad0D25C617b69414e19", label: "SPEED", title: "Allantoin", symbol: "SPEED", name: "Allantoin", varName: "" },
-    { id: "0x1a86852204e64B60Ac96691c0546d47e176240aa", label: "S㉾UR", title: "A Tangy Twist", symbol: "S㉾UR", name: "A Tangy Twist", varName: "" },
-    { id: "0xF4efB17E7147BF86B76D3Fc1A647645F439C2DF7", label: "B-Fi", title: "BAE BEAR FINANCE ㉿", symbol: "B-Fi", name: "BAE BEAR FINANCE ㉿", varName: "" },
-    { id: "0xfc4913214444aF5c715cc9F7b52655e788A569ed", label: "ICSA", title: "Icosa", symbol: "ICSA", name: "Icosa", varName: "" },
-    { id: "0xe83034A7A78fC148c69defebD6D4C80f8Bb4f710", label: "PINU", title: "Pulse Inu", symbol: "PINU", name: "Pulse Inu", varName: "" },
-    { id: "0xd79E7D1696D71E6Ce2EaA9d867230DB78d6F46C1", label: "DADAISM", title: "DADAISM", symbol: "DADAISM", name: "DADAISM", varName: "" },
-    { id: "0xEb14f3192A37ad2501F3BF6627C565e6799aD661", label: "1SWAP", title: "OneSwap", symbol: "1SWAP", name: "OneSwap", varName: "" },
-    { id: "0xeA2f5D1B310417c6fbf6F59E6674679c48f1dE65", label: "Fly", title: "Firefly", symbol: "Fly", name: "Firefly", varName: "" },
-    { id: "0xDf034940efc9a0032FC9f4BB4D57b1Be0745b2d0", label: "sBear", title: "Stakeable Bear", symbol: "sBear", name: "Stakeable Bear", varName: "" },
-    { id: "0xE0E4ca1c31686755783D45260db44B9Ba0f13508", label: "TJ", title: "Teddy Jr", symbol: "TJ", name: "Teddy Jr", varName: "" },
-    { id: "0xDd199016942596Ad07B0aC5Cb167121F4D709d56", label: "GME", title: "GameStop", symbol: "GME", name: "GameStop", varName: "" },
-    { id: "0xF002Fff935c56bE365791f43Ce430929AeeC55db", label: "FART", title: "Fart", symbol: "FART", name: "Fart", varName: "" },
-    { id: "0xF76e4A5fdC48e4DD20a46338aCe446EAB0EDf854", label: "Monkey", title: "Monkey The Cat", symbol: "Monkey", name: "Monkey The Cat", varName: "" },
-    { id: "0xE5996D17BbA136A57Ee59894831c084E7814af38", label: "BEAR", title: "TEDDY BEAR", symbol: "BEAR", name: "TEDDY BEAR", varName: "" },
-    { id: "0xe4EAf77eda2F3f5DB22D4FF1771cF87366e0a5a2", label: "R$BFF", title: "Reward_BFF", symbol: "R$BFF", name: "Reward_BFF", varName: "" },
-    { id: "0xe37799aE11854708D813Ef7E39a74A795fD58f3A", label: "YAYO", title: "42 Keys", symbol: "YAYO", name: "42 Keys", varName: "" },
-    { id: "0xeE67825eF27588FAeE39cfefb465eB0A242A740c", label: "瀈", title: "LOAN", symbol: "瀈", name: "LOAN", varName: "" },
-    { id: "0xF9bC351eef0F1242953Dde097C9e6e57B8FF3A42", label: "MORPH", title: "රුධිර මත්පැන්", symbol: "MORPH", name: "රුධිර මත්පැන්", varName: "" },
-    { id: "0xe3B3f5F95d263edc6A5e3D4b7314728A390a4342", label: "PLSPUP", title: "PLSPUPPY", symbol: "PLSPUP", name: "PLSPUPPY", varName: "" },
-    { id: "0xF12AA7F67Bc983ecf6a027E56b1cd427c6f1208d", label: "ZORN", title: "Zorn", symbol: "ZORN", name: "Zorn", varName: "" },
-    { id: "0xE725e5055020630B0437E29634f00Ae58156Dfc4", label: "bUSDT", title: "Baby USDT", symbol: "bUSDT", name: "Baby USDT", varName: "" },
-    { id: "0xf554564a100B2a5d9b9B8BB33Ded3990e4b8EB8C", label: "TB89ROD", title: "ToolBag89 Rod", symbol: "TB89ROD", name: "ToolBag89 Rod", varName: "" },
-    { id: "0xa4257aFeA2845EB1db130d8C0335932450176fD7", label: "🐻‍❄️", title: "BRRR Protocol", symbol: "🐻‍❄️", name: "BRRR Protocol", varName: "" },
-    { id: "0xD100ecF770dC06D407787c3a991086a6E876Cc17", label: "MILADY", title: "Milady", symbol: "MILADY", name: "Milady", varName: "" },
-    { id: "0xdB8f72d2289E733D02C63499FbCa64d1e7D4c9Fb", label: "RBULL", title: "Red Bull", symbol: "RBULL", name: "Red Bull", varName: "" },
-    { id: "0xa702F6cA7c2d5382FA93dBaf9a535D6807C4D994", label: "Imti", title: "Imti Ao", symbol: "Imti", name: "Imti Ao", varName: "" },
-    { id: "0x5a24D7129B6f3FcAd2220296df28911880AD22B0", label: "PZEN", title: "PLSZEN", symbol: "PZEN", name: "PLSZEN", varName: "" },
-    { id: "0x444444444444C1a66F394025Ac839A535246FCc8", label: "GENI", title: "Genius", symbol: "GENI", name: "Genius", varName: "" },
-    { id: "0xf0d7962C8153b2445127e8Ca5361578f9F5D0957", label: "YAHYA™", title: "محمد بن الحاج قاسم", symbol: "YAHYA™", name: "محمد بن الحاج قاسم", varName: "" },
-    { id: "0xbe0419cDb69Db4e743F0C88907F34e63164e272A", label: "PROOF", title: "BULLET", symbol: "PROOF", name: "BULLET", varName: "" },
   ];
 
   const rawEdges = [
@@ -985,6 +842,50 @@
     { from: "0x77Bed67181CeF592472bcb7F97736c560340E006", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 0.00006294 },
     { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", price: 6562.33360000 },
     { from: "0x8B16115fF716b4c52706122cb4e974f7a72E5Af1", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 0.05528000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0xf69e9f943674027Cedf05564A8D5A01041d07c62", price: 4335404.80050000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 0.31760000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 32576512.48530000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 2.68940000 },
+    { from: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 58560024.22950000 },
+    { from: "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 0.09725000 },
+    { from: "0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 10.80350000 },
+    { from: "0x20Bf7bcc498b2F0f0A1e94fFec9dD00ceB59F875", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 0.95600000 },
+    { from: "0x840CBD20A70774BECAc4e932Fff6fb1f5417997F", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 41.38340000 },
+    { from: "0xbe2cd67164B3c1Ae1D0b6E1def14df663a64B263", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 0.00000012 },
+    { from: "0x1B67c87c509Bed08d48bdB2B3E8b1640f6027802", to: "0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61", price: 0.00014680 },
+    { from: "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10", to: "0xb9A44De20f26a027e467CB6c2F98766F01904189", price: 1.46880000 },
+    { from: "0x1942Ba1EA7c21a070D70C4eFe64B21694283F23e", to: "0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10", price: 0.00000040 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0x4243568Fa2bbad327ee36e06c16824cAd8B37819", price: 34.00775300 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 0.17130000 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 3709165.80680000 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0x7674516ad438dd67A057fBc1119168d9A7d2a9B1", price: 0.02011000 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 0.03747000 },
+    { from: "0x9A3796Cf41B7CbA6921fd50c3f5204ED6506C3e7", to: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", price: 6834909910.39939976 },
+    { from: "0xb9A44De20f26a027e467CB6c2F98766F01904189", to: "0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff", price: 2159243.98020000 },
+    { from: "0xb9A44De20f26a027e467CB6c2F98766F01904189", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 0.03888000 },
+    { from: "0xb9A44De20f26a027e467CB6c2F98766F01904189", to: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", price: 7127558008.76869965 },
+    { from: "0xb9A44De20f26a027e467CB6c2F98766F01904189", to: "0xef2ebA34D5B7257D2CA635b4078212ee479C9A86", price: 0.00940500 },
+    { from: "0x2c25D0Fe7E12b7707517F8c9faCC015e03600bDb", to: "0xb9A44De20f26a027e467CB6c2F98766F01904189", price: 26.47810000 },
+    { from: "0xb6936B8e82626405f6E601D54a8292881D86b47D", to: "0xb9A44De20f26a027e467CB6c2F98766F01904189", price: 7.71370000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x1b8F9E19360D1dc94295D984b7Ca7eA9b810D9ee", price: 104121.10640000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", price: 126456.51280000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", price: 412.31950000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", price: 80204827.36360000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 8938755510.81900024 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622", price: 5.97230000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 90.31420000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", price: 16514158081855.30859375 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x1a4E22af07f52A1E68C908ff077fef183A50EBe3", price: 1918416080.39790010 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x5d9bBc0aC65C9e6C6f1dBdB78C90841a6e8744BC", price: 27.55770000 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb", price: 1538826600.46210003 },
+    { from: "0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3", to: "0x1F45433da3D6388602598438532d269dcc18C74F", price: 131.42740000 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0x463413c579D29c26D59a65312657DFCe30D545A1", price: 98144025.55230001 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0xA1077a294dDE1B09bB078844df40758a5D0f9a27", price: 465152374.07862997 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996", price: 4.69120000 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d", price: 859882337407.97668457 },
+    { from: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", to: "0x920401FDce49Fc70A2D4cD70DB0dD90212a97f98", price: 31705.44630000 },
+    { from: "0x497625f04ce1788154cFB86ef31cE221194588cE", to: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", price: 0.00535500 },
+    { from: "0x27A28FFb75CF6E92f54C10b2684f4A2d9767c38b", to: "0x8A03b032c5494219B212e5a74A49e2aa7F9d206F", price: 0.00004652 },
   ];
 
   const activeNodeIds = new Set();
@@ -1047,30 +948,35 @@
 
     nodes.forEach((n, idx) => {
       if (mode === 'seed') {
-        let ring = idx % 4;
-        let ringCount = [1, 6, 12, 24, 48][ring] || 16;
-        let radius = 80 + ring * 90;
+        let ring = Math.floor(idx / 32);
+        let radius = 100 + ring * 80;
+        let ringCount = 32;
         let angle = ((idx % ringCount) / ringCount) * 2 * Math.PI;
         n.targetX = Math.cos(angle) * radius;
         n.targetY = Math.sin(angle) * radius;
       } else if (mode === 'tune') {
-        n.targetX = -350 + (idx / nodes.length) * 700;
-        n.targetY = -150 + (idx % 4) * 100;
+        let rows = 12;
+        let col = Math.floor(idx / rows);
+        let totalCols = Math.ceil(nodes.length / rows);
+        n.targetX = -450 + (col / Math.max(1, totalCols - 1)) * 900;
+        n.targetY = -250 + (idx % rows) * 45;
       } else if (mode === 'conify') {
-        let cols = 8;
+        let cols = Math.ceil(Math.sqrt(nodes.length));
         let col = idx % cols;
         let row = Math.floor(idx / cols);
-        n.targetX = -320 + col * 90;
-        n.targetY = -250 + row * 70;
+        n.targetX = -420 + col * 55;
+        n.targetY = -250 + row * 45;
       } else if (mode === 'bond') {
         let angle = (idx / nodes.length) * 2 * Math.PI;
-        n.targetX = Math.cos(angle) * 280;
-        n.targetY = Math.sin(2 * angle) * 180;
+        let offset = (idx % 3 - 1) * 35;
+        n.targetX = Math.cos(angle) * 350 + offset * Math.cos(angle);
+        n.targetY = Math.sin(2 * angle) * 220 + offset * Math.sin(angle);
       } else if (mode === 'delegate') {
-        let angle = (idx / nodes.length) * 4 * Math.PI;
-        let R = 220, r = 70, d = 110;
-        n.targetX = (R - r) * Math.cos(angle) + d * Math.cos(((R - r) / r) * angle);
-        n.targetY = (R - r) * Math.sin(angle) - d * Math.sin(((R - r) / r) * angle);
+        let angle = (idx / nodes.length) * 6 * Math.PI;
+        let R = 240, r = 80, d = 130;
+        let thickness = (idx % 3 - 1) * 30;
+        n.targetX = (R - r) * Math.cos(angle) + d * Math.cos(((R - r) / r) * angle) + thickness * Math.cos(angle);
+        n.targetY = (R - r) * Math.sin(angle) - d * Math.sin(((R - r) / r) * angle) + thickness * Math.sin(angle);
       }
     });
   }
