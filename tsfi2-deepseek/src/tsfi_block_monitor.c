@@ -49,6 +49,8 @@ static const HardcodedToken g_known_tokens[] = {
 
 #define KNOWN_TOKENS_COUNT (sizeof(g_known_tokens)/sizeof(g_known_tokens[0]))
 
+static double parse_hex_double(const char *hex, size_t len);
+
 typedef struct {
     char token0[64];
     char token1[64];
@@ -507,6 +509,42 @@ static void load_pool_cache(void) {
     }
 }
 
+static void tsfi_block_monitor_sync_reserves_startup(void) {
+    tsfi_io_printf(stderr, "[MONITOR] Synchronizing reserves for %d cached pools on startup...\n", g_pool_cache_count);
+    for (int i = 0; i < g_pool_cache_count; i++) {
+        char r_buf[1024];
+        if (tsfi_pulse_rpc_call(g_pool_cache[i].pool_address, "0x0902f1ac", r_buf, sizeof(r_buf))) {
+            const char *hex = r_buf;
+            if (hex[0] == '0' && (hex[1] == 'x' || hex[1] == 'X')) hex += 2;
+            if (strlen(hex) >= 128) {
+                char r0_hex[65] = {0};
+                char r1_hex[65] = {0};
+                strncpy(r0_hex, hex, 64);
+                strncpy(r1_hex, hex + 64, 64);
+                
+                double r0 = parse_hex_double(r0_hex, 64);
+                double r1 = parse_hex_double(r1_hex, 64);
+                
+                int dec0 = 18;
+                int dec1 = 18;
+                for (size_t k = 0; k < KNOWN_TOKENS_COUNT; k++) {
+                    if (strcasecmp(g_known_tokens[k].address, g_pool_cache[i].token0) == 0) dec0 = g_known_tokens[k].decimals;
+                    if (strcasecmp(g_known_tokens[k].address, g_pool_cache[i].token1) == 0) dec1 = g_known_tokens[k].decimals;
+                }
+                
+                g_pool_cache[i].token0_balance = r0 / pow(10, dec0);
+                g_pool_cache[i].token1_balance = r1 / pow(10, dec1);
+                
+                if (g_pool_cache[i].token0_balance > 0.0) {
+                    g_pool_cache[i].last_price = g_pool_cache[i].token1_balance / g_pool_cache[i].token0_balance;
+                    add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, g_pool_cache[i].last_price);
+                }
+            }
+        }
+    }
+    tsfi_io_printf(stderr, "[MONITOR] Reserves sync complete. Swap edges: %d\n", g_swap_edges_count);
+}
+
 static int strcasefind(const char *haystack, const char *needle) {
     if (!haystack || !needle) return 0;
     size_t needle_len = strlen(needle);
@@ -709,6 +747,7 @@ void tsfi_block_monitor_init(void) {
     seed_tokens_from_addresses_sol();
     load_swap_edges();
     load_pool_cache();
+    tsfi_block_monitor_sync_reserves_startup();
 }
 
 tsfi_qing_graph_node* tsfi_block_monitor_get_graph(void) {
