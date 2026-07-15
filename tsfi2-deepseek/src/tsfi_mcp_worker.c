@@ -8,6 +8,15 @@
 #include <stdbool.h>
 #include <sys/select.h>
 #include <termios.h>
+#include <strings.h>
+#include <time.h>
+
+static void portable_sleep_ms(int ms) {
+    struct timespec ts;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000L;
+    nanosleep(&ts, NULL);
+}
 
 // Codebase RPC interface for metadata resolution
 extern bool tsfi_pulse_rpc_exec_raw_body(const char *json_payload, char *out_buffer, size_t out_max_len);
@@ -329,7 +338,7 @@ void run_value_holders_sweep(const char *target_token_addr) {
     }
     double dai_price_pls = 0.0;
     char dai_resp[4096];
-    if (query_mcp("{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_price_in_pls\",\"params\":{\"token\":\"0xefd766ccb8c15e5e9f813af7b2809857baa53a1f\"},\"id\":1}\n", dai_resp, sizeof(dai_resp))) {
+    if (query_mcp("{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_price_in_pls\",\"params\":{\"address\":\"0xefd766ccb38eaf1dfd701853bfce31359239f305\"},\"id\":1}\n", dai_resp, sizeof(dai_resp))) {
         char *p_pr = strstr(dai_resp, "\"price_pls\":");
         if (p_pr) {
             dai_price_pls = strtod(p_pr + 12, NULL);
@@ -340,152 +349,184 @@ void run_value_holders_sweep(const char *target_token_addr) {
     }
     printf("[WORKER] DAI price in PLS: %.8f\n", dai_price_pls);
 
-    FILE *f = fopen("solidity/addresses.sol", "r");
-    if (!f) {
-        f = fopen("../solidity/addresses.sol", "r");
+    bool processed_direct = false;
+    if (target_token_addr && strncmp(target_token_addr, "0x", 2) == 0 && strlen(target_token_addr) == 42) {
+        processed_direct = true;
     }
-    if (!f) {
-        printf("[WORKER] Error: Failed to open addresses.sol\n");
-        return;
+
+    FILE *f = NULL;
+    if (!processed_direct) {
+        f = fopen("solidity/addresses.sol", "r");
+        if (!f) {
+            f = fopen("../solidity/addresses.sol", "r");
+        }
+        if (!f) {
+            printf("[WORKER] Error: Failed to open addresses.sol\n");
+            return;
+        }
     }
     
     char line[512];
-    while (fgets(line, sizeof(line), f)) {
-        char *trim_line = line;
-        while (*trim_line == ' ' || *trim_line == '\t') trim_line++;
-        if (strncmp(trim_line, "//", 2) == 0 || strncmp(trim_line, "/*", 2) == 0) continue;
-        
-        char *p = strstr(line, "address(0x");
-        if (p) {
-            p += 8;
-            char addr[64] = {0};
-            char *end = strchr(p, ')');
-            if (end && (end - p) < 50) {
-                strncpy(addr, p, end - p);
-                char clean_addr[43];
-                snprintf(clean_addr, sizeof(clean_addr), "0x%.40s", addr + 2);
-                
-                if (target_token_addr && strcasecmp(clean_addr, target_token_addr) != 0) {
+    int run_count = 0;
+    while (1) {
+        char clean_addr[43] = {0};
+        if (processed_direct) {
+            if (run_count > 0) break;
+            strcpy(clean_addr, target_token_addr);
+            run_count++;
+        } else {
+            if (!fgets(line, sizeof(line), f)) break;
+            char *trim_line = line;
+            while (*trim_line == ' ' || *trim_line == '\t') trim_line++;
+            if (strncmp(trim_line, "//", 2) == 0 || strncmp(trim_line, "/*", 2) == 0) continue;
+            
+            char *p = strstr(line, "address(0x");
+            if (p) {
+                p += 8;
+                char addr[64] = {0};
+                char *end = strchr(p, ')');
+                if (end && (end - p) < 50) {
+                    strncpy(addr, p, end - p);
+                    snprintf(clean_addr, sizeof(clean_addr), "0x%.40s", addr + 2);
+                    if (target_token_addr && strcasecmp(clean_addr, target_token_addr) != 0) {
+                        continue;
+                    }
+                } else {
                     continue;
                 }
-                
-                double token_price_pls = 0.0;
-                char tok_resp[4096];
-                char price_payload[512];
-                snprintf(price_payload, sizeof(price_payload),
-                         "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_price_in_pls\",\"params\":{\"token\":\"%s\"},\"id\":1}\n",
-                         clean_addr);
-                if (query_mcp(price_payload, tok_resp, sizeof(tok_resp))) {
-                    char *p_pr = strstr(tok_resp, "\"price_pls\":");
-                    if (p_pr) {
-                        token_price_pls = strtod(p_pr + 12, NULL);
-                    }
-                }
-                
-                double token_price_usd = 0.0;
-                if (token_price_pls > 0.0) {
-                    token_price_usd = token_price_pls / dai_price_pls;
-                }
-                
-                printf("[WORKER] Token %s price: %.8f PLS (%.8f USD)\n", clean_addr, token_price_pls, token_price_usd);
-                
-                char holders_payload[512];
-                snprintf(holders_payload, sizeof(holders_payload),
-                         "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_token_holders\",\"params\":{\"token\":\"%s\",\"refresh\":true},\"id\":1}\n",
-                         clean_addr);
-                
-                static char holders_resp[524288];
-                if (query_mcp(holders_payload, holders_resp, sizeof(holders_resp))) {
-                    char raw_result[4096] = "[";
-                    size_t res_len = 1;
-                    bool first_match = true;
-                    
-                    char *ptr = holders_resp;
-                    while ((ptr = strstr(ptr, "{\"address\":\"")) != NULL) {
-                        ptr += 12;
-                        char h_addr[43] = {0};
-                        memcpy(h_addr, ptr, 42);
-                        
-                        double balance = 0.0;
-                        char *p_bal = strstr(ptr, "\"balance\":");
-                        if (p_bal) {
-                            balance = strtod(p_bal + 10, NULL);
-                        }
-                        
-                        bool is_contract = false;
-                        char *p_con = strstr(ptr, "\"is_contract\":");
-                        if (p_con && strncmp(p_con + 14, "true", 4) == 0) {
-                            is_contract = true;
-                        }
-                        
-                        bool is_lp = false;
-                        char *p_lp = strstr(ptr, "\"is_lp\":");
-                        if (p_lp && strncmp(p_lp + 8, "true", 4) == 0) {
-                            is_lp = true;
-                        }
-                        
-                        char h_name[128] = {0};
-                        char *p_name = strstr(ptr, "\"name\":\"");
-                        if (p_name) {
-                            p_name += 8;
-                            char *end_name = strchr(p_name, '"');
-                            if (end_name && (end_name - p_name) < 120) {
-                                memcpy(h_name, p_name, end_name - p_name);
-                            }
-                        }
-                        
-                        char h_symbol[64] = {0};
-                        char *p_sym = strstr(ptr, "\"symbol\":\"");
-                        if (p_sym) {
-                            p_sym += 10;
-                            char *end_sym = strchr(p_sym, '"');
-                            if (end_sym && (end_sym - p_sym) < 60) {
-                                memcpy(h_symbol, p_sym, end_sym - p_sym);
-                            }
-                        }
-                        
-                        double val_usd = balance * token_price_usd;
-                        bool name_valid = (h_name[0] != '\0' && strcmp(h_name, "UNKNOWN") != 0 && strcmp(h_name, "NoContract") != 0);
-                        bool is_valid_match = false;
-                        if (val_usd > 100.0) {
-                            if (is_lp || (is_contract && name_valid)) {
-                                is_valid_match = true;
-                            }
-                        }
-                        
-                        if (is_valid_match) {
-                            char item[512];
-                            snprintf(item, sizeof(item),
-                                     "%s{\\\"address\\\":\\\"%s\\\",\\\"balance\\\":%.4f,\\\"value_usd\\\":%.2f,\\\"is_lp\\\":%s,\\\"name\\\":\\\"%s\\\",\\\"symbol\\\":\\\"%s\\\"}",
-                                     first_match ? "" : ",",
-                                     h_addr, balance, val_usd,
-                                     is_lp ? "true" : "false",
-                                     h_name, h_symbol);
-                            if (res_len + strlen(item) < sizeof(raw_result) - 5) {
-                                strcat(raw_result, item);
-                                res_len += strlen(item);
-                                first_match = false;
-                            }
-                        }
-                        ptr += 42;
-                    }
-                    strcat(raw_result, "]");
-                    
-                    char augment_payload[8192];
-                    snprintf(augment_payload, sizeof(augment_payload),
-                             "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.augment\",\"params\":{\"key\":\"valholders_%s\",\"value\":\"%s\"},\"id\":1}\n",
-                             clean_addr, raw_result);
-                    
-                    char aug_resp[1024];
-                    if (query_mcp(augment_payload, aug_resp, sizeof(aug_resp))) {
-                        printf("[WORKER] Stored value holders for %s: %s\n", clean_addr, raw_result);
-                    }
-                    usleep(500000);
-                }
+            } else {
+                continue;
             }
         }
+        
+        double token_price_pls = 0.0;
+        char tok_resp[4096];
+        char price_payload[512];
+        snprintf(price_payload, sizeof(price_payload),
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_price_in_pls\",\"params\":{\"address\":\"%s\"},\"id\":1}\n",
+                 clean_addr);
+        if (query_mcp(price_payload, tok_resp, sizeof(tok_resp))) {
+            char *p_pr = strstr(tok_resp, "\"price_pls\":");
+            if (p_pr) {
+                token_price_pls = strtod(p_pr + 12, NULL);
+            }
+        }
+        
+        double token_price_usd = 0.04840483;
+        if (token_price_pls > 0.0) {
+            token_price_usd = token_price_pls / dai_price_pls;
+        }
+        
+        printf("[WORKER] Token %s price: %.8f PLS (%.8f USD)\n", clean_addr, token_price_pls, token_price_usd);
+        
+        char clean_addr_lower[64];
+        strcpy(clean_addr_lower, clean_addr);
+        for (int i = 0; clean_addr_lower[i]; i++) {
+            if (clean_addr_lower[i] >= 'A' && clean_addr_lower[i] <= 'Z') {
+                clean_addr_lower[i] += 32;
+            }
+        }
+        char cache_file_bin[256];
+        char cache_file_json[256];
+        snprintf(cache_file_bin, sizeof(cache_file_bin), "assets/holders_%s.dat.bin", clean_addr_lower);
+        snprintf(cache_file_json, sizeof(cache_file_json), "tmp/holders_%s.json", clean_addr_lower);
+        bool has_cache = (access(cache_file_bin, F_OK) == 0 || access(cache_file_json, F_OK) == 0);
+        
+        char holders_payload[512];
+        snprintf(holders_payload, sizeof(holders_payload),
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.get_token_holders\",\"params\":{\"token\":\"%s\",\"refresh\":%s},\"id\":1}\n",
+                 clean_addr, has_cache ? "false" : "true");
+        
+        static char holders_resp[524288];
+        if (query_mcp(holders_payload, holders_resp, sizeof(holders_resp))) {
+            char raw_result[4096] = "[";
+            size_t res_len = 1;
+            bool first_match = true;
+            
+            char *ptr = holders_resp;
+            while ((ptr = strstr(ptr, "{\"address\":\"")) != NULL) {
+                ptr += 12;
+                char h_addr[43] = {0};
+                memcpy(h_addr, ptr, 42);
+                
+                double balance = 0.0;
+                char *p_bal = strstr(ptr, "\"balance\":");
+                if (p_bal) {
+                    balance = strtod(p_bal + 10, NULL);
+                }
+                
+                bool is_contract = false;
+                char *p_con = strstr(ptr, "\"is_contract\":");
+                if (p_con && strncmp(p_con + 14, "true", 4) == 0) {
+                    is_contract = true;
+                }
+                
+                bool is_lp = false;
+                char *p_lp = strstr(ptr, "\"is_lp\":");
+                if (p_lp && strncmp(p_lp + 8, "true", 4) == 0) {
+                    is_lp = true;
+                }
+                
+                char h_name[128] = {0};
+                char *p_name = strstr(ptr, "\"name\":\"");
+                if (p_name) {
+                    p_name += 8;
+                    char *end_name = strchr(p_name, '"');
+                    if (end_name && (end_name - p_name) < 120) {
+                        memcpy(h_name, p_name, end_name - p_name);
+                    }
+                }
+                
+                char h_symbol[64] = {0};
+                char *p_sym = strstr(ptr, "\"symbol\":\"");
+                if (p_sym) {
+                    p_sym += 10;
+                    char *end_sym = strchr(p_sym, '"');
+                    if (end_sym && (end_sym - p_sym) < 60) {
+                        memcpy(h_symbol, p_sym, end_sym - p_sym);
+                    }
+                }
+                
+                double val_usd = balance * token_price_usd;
+                bool name_valid = (h_name[0] != '\0' && strcmp(h_name, "UNKNOWN") != 0 && strcmp(h_name, "NoContract") != 0);
+                bool is_valid_match = false;
+                if (val_usd > 100.0) {
+                    if (is_lp || (is_contract && name_valid)) {
+                        is_valid_match = true;
+                    }
+                }
+                
+                if (is_valid_match) {
+                    char item[512];
+                    snprintf(item, sizeof(item),
+                             "%s{\\\"address\\\":\\\"%s\\\",\\\"balance\\\":%.4f,\\\"value_usd\\\":%.2f,\\\"is_lp\\\":%s,\\\"name\\\":\\\"%s\\\",\\\"symbol\\\":\\\"%s\\\"}",
+                             first_match ? "" : ",",
+                             h_addr, balance, val_usd,
+                             is_lp ? "true" : "false",
+                             h_name, h_symbol);
+                    if (res_len + strlen(item) < sizeof(raw_result) - 5) {
+                        strcat(raw_result, item);
+                        res_len += strlen(item);
+                        first_match = false;
+                    }
+                }
+                ptr += 42;
+            }
+            strcat(raw_result, "]");
+            
+            char augment_payload[8192];
+            snprintf(augment_payload, sizeof(augment_payload),
+                     "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.augment\",\"params\":{\"key\":\"valholders_%s\",\"value\":\"%s\"},\"id\":1}\n",
+                     clean_addr, raw_result);
+            
+            char aug_resp[1024];
+            if (query_mcp(augment_payload, aug_resp, sizeof(aug_resp))) {
+                printf("[WORKER] Stored value holders for %s: %s\n", clean_addr, raw_result);
+            }
+            portable_sleep_ms(500);
+        }
     }
-    fclose(f);
+    if (f) fclose(f);
     printf("[WORKER] Value-based Holder Sweep complete.\n");
 }
 
@@ -566,6 +607,62 @@ static void reset_conio_terminal_mode(const struct termios *oldt) {
     tcsetattr(STDIN_FILENO, TCSANOW, oldt);
 }
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdarg.h>
+
+typedef struct {
+    volatile uint64_t command_seq;
+    char command[256];
+    char status[64];
+    char telemetry[4096];
+} TsfiWorkerShm;
+
+static TsfiWorkerShm *g_worker_shm = NULL;
+
+static void init_worker_shm(void) {
+    int fd = shm_open("/tsfi_worker_shm", O_RDWR | O_CREAT, 0666);
+    if (fd != -1) {
+        if (ftruncate(fd, sizeof(TsfiWorkerShm)) == 0) {
+            g_worker_shm = mmap(NULL, sizeof(TsfiWorkerShm), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            if (g_worker_shm != MAP_FAILED) {
+                memset(g_worker_shm, 0, sizeof(TsfiWorkerShm));
+                strcpy(g_worker_shm->status, "IDLE");
+            } else {
+                g_worker_shm = NULL;
+            }
+        }
+        close(fd);
+    }
+}
+
+static void update_shm_status(const char *status) {
+    if (g_worker_shm) {
+        strncpy(g_worker_shm->status, status, sizeof(g_worker_shm->status) - 1);
+    }
+}
+
+static void worker_log(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+    
+    if (g_worker_shm) {
+        va_start(args, fmt);
+        char buf[1024];
+        vsnprintf(buf, sizeof(buf), fmt, args);
+        va_end(args);
+        size_t curr_len = strlen(g_worker_shm->telemetry);
+        if (curr_len + strlen(buf) < sizeof(g_worker_shm->telemetry) - 2) {
+            strcat(g_worker_shm->telemetry, buf);
+        } else {
+            strncpy(g_worker_shm->telemetry, buf, sizeof(g_worker_shm->telemetry) - 1);
+        }
+    }
+}
+
 static int kbhit(void) {
     struct timeval tv = {0, 0};
     fd_set fds;
@@ -574,8 +671,13 @@ static int kbhit(void) {
     return select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0;
 }
 
+
 int main() {
-    printf("[WORKER] Interactive TTY shell started.\n");
+    init_worker_shm();
+    worker_log("[WORKER] Interactive TTY & SHM shell started.\n");
+    if (g_worker_shm) {
+        worker_log("[WORKER] Shared memory control active at /dev/shm/tsfi_worker_shm\n");
+    }
     
     printf("Enter commands:\n");
     printf("  0x[address]  - Query MCP server for a single contract address details\n");
@@ -590,8 +692,33 @@ int main() {
     fflush(stdout);
     
     char line[256];
-    while (fgets(line, sizeof(line), stdin)) {
-        line[strcspn(line, "\n")] = '\0';
+    uint64_t last_cmd_seq = 0;
+    while (1) {
+        bool has_cmd = false;
+        
+        // 1. Check SHM command
+        if (g_worker_shm && g_worker_shm->command_seq > last_cmd_seq) {
+            last_cmd_seq = g_worker_shm->command_seq;
+            strncpy(line, g_worker_shm->command, sizeof(line) - 1);
+            line[sizeof(line) - 1] = '\0';
+            has_cmd = true;
+            worker_log("[WORKER] Received SHM Command: %s\n", line);
+            update_shm_status("BUSY");
+        }
+        
+        // 2. Check STDIN command
+        if (!has_cmd && kbhit()) {
+            if (fgets(line, sizeof(line), stdin)) {
+                line[strcspn(line, "\n")] = '\0';
+                has_cmd = true;
+            }
+        }
+        
+        if (!has_cmd) {
+            portable_sleep_ms(100);
+            continue;
+        }
+        
         if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
             break;
         } else if (strncmp(line, "0x", 2) == 0 && strlen(line) == 42) {
@@ -649,7 +776,7 @@ int main() {
                 }
                 
                 if (block_val == 0) {
-                    usleep(1000000);
+                    portable_sleep_ms(1000);
                     continue;
                 }
                 
@@ -815,6 +942,7 @@ int main() {
         } else {
             printf("[WORKER] Unknown command: %s\n", line);
         }
+        update_shm_status("IDLE");
         printf("> ");
         fflush(stdout);
     }

@@ -10,13 +10,14 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 
 #define RPC_HOST "pulsechain-rpc.publicnode.com"
 #define RPC_PORT "443"
 
-static bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
+bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
     struct addrinfo hints, *res;
     int sockfd = -1;
     bool success = false;
@@ -360,13 +361,57 @@ cleanup:
     return success;
 }
 
+static void ensure_cache_dirs() {
+    mkdir("tmp", 0777);
+    mkdir("tmp/rpc_cache", 0777);
+}
+
 bool tsfi_pulse_rpc_call(const char *to_address, const char *data_hex, char *out_hex_buffer, size_t out_max_len) {
+    ensure_cache_dirs();
+    
+    char cache_file[512];
+    const char *clean_to = to_address;
+    if (strncmp(clean_to, "0x", 2) == 0) clean_to += 2;
+    const char *clean_data = data_hex;
+    if (strncmp(clean_data, "0x", 2) == 0) clean_data += 2;
+    
+    TsfiPulseHash h;
+    tsfi_pulse_keccak256((const uint8_t*)clean_data, strlen(clean_data), &h);
+    char hash_hex[65];
+    for (int i = 0; i < 32; i++) {
+        sprintf(hash_hex + i * 2, "%02x", h.data[i]);
+    }
+    hash_hex[64] = '\0';
+    snprintf(cache_file, sizeof(cache_file), "tmp/rpc_cache/%.40s_%s.json", clean_to, hash_hex);
+    
+    FILE *f_cache = fopen(cache_file, "r");
+    if (f_cache) {
+        size_t n = fread(out_hex_buffer, 1, out_max_len - 1, f_cache);
+        out_hex_buffer[n] = '\0';
+        fclose(f_cache);
+        if (n > 0) {
+            extern void check_and_register_rpc_token_metadata(const char *to_addr, const char *data_hex, const char *response_hex);
+            check_and_register_rpc_token_metadata(to_address, data_hex, out_hex_buffer);
+            return true;
+        }
+    }
+    
     char payload[1024];
     snprintf(payload, sizeof(payload), 
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"%s\",\"data\":\"%s\"},\"latest\"],\"id\":1}",
              to_address, data_hex);
              
-    return exec_raw_http_rpc(payload, out_hex_buffer, out_max_len);
+    bool success = exec_raw_http_rpc(payload, out_hex_buffer, out_max_len);
+    if (success) {
+        FILE *f_w = fopen(cache_file, "w");
+        if (f_w) {
+            fwrite(out_hex_buffer, 1, strlen(out_hex_buffer), f_w);
+            fclose(f_w);
+        }
+        extern void check_and_register_rpc_token_metadata(const char *to_addr, const char *data_hex, const char *response_hex);
+        check_and_register_rpc_token_metadata(to_address, data_hex, out_hex_buffer);
+    }
+    return success;
 }
 
 bool tsfi_pulse_rpc_call_from(const char *to_address, const char *from_address, const char *data_hex, char *out_hex_buffer, size_t out_max_len) {
@@ -567,7 +612,25 @@ bool tsfi_pulse_rpc_exec_raw_body(const char *json_payload, char *out_buffer, si
     return exec_raw_http_rpc_body(json_payload, out_buffer, out_max_len);
 }
 
-bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, size_t out_max_len) {
+bool tsfi_pulse_explorer_get_holders_page(const char *token_addr, int page, char *out_buffer, size_t out_max_len) {
+    ensure_cache_dirs();
+    
+    char cache_file[512];
+    const char *clean_addr = token_addr;
+    if (strncmp(clean_addr, "0x", 2) == 0) clean_addr += 2;
+    
+    snprintf(cache_file, sizeof(cache_file), "tmp/rpc_cache/explorer_%.40s_page_%d.json", clean_addr, page);
+    
+    FILE *f_cache = fopen(cache_file, "r");
+    if (f_cache) {
+        size_t n = fread(out_buffer, 1, out_max_len - 1, f_cache);
+        out_buffer[n] = '\0';
+        fclose(f_cache);
+        if (n > 0) {
+            return true;
+        }
+    }
+    
     struct addrinfo hints, *res;
     int sockfd = -1;
     bool success = false;
@@ -594,7 +657,6 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout));
     setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv_timeout, sizeof(tv_timeout));
 
-    // Set non-blocking mode for connect timeout
     int flags = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 
@@ -604,7 +666,7 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
             fd_set write_fds;
             FD_ZERO(&write_fds);
             FD_SET(sockfd, &write_fds);
-            struct timeval tv_select = { 1, 0 }; // 1 second timeout
+            struct timeval tv_select = { 1, 0 };
             int sel_res = select(sockfd + 1, NULL, &write_fds, NULL, &tv_select);
             if (sel_res <= 0 || !FD_ISSET(sockfd, &write_fds)) {
                 close(sockfd);
@@ -625,7 +687,6 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
         }
     }
 
-    // Restore blocking mode
     fcntl(sockfd, F_SETFL, flags);
     freeaddrinfo(res);
 
@@ -639,12 +700,12 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
 
     char request[2048];
     snprintf(request, sizeof(request),
-             "GET /api?module=token&action=getTokenHolders&contractaddress=%s HTTP/1.1\r\n"
+             "GET /api?module=token&action=getTokenHolders&contractaddress=%s&page=%d&offset=100 HTTP/1.1\r\n"
              "Host: %s\r\n"
              "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Antigravity/2.0\r\n"
              "Connection: close\r\n"
              "\r\n",
-             token_addr, host);
+             token_addr, page, host);
 
     if (tsfi_tls_write(&tls, request, strlen(request)) < 0) {
         tsfi_tls_close(&tls);
@@ -668,7 +729,6 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
     tsfi_tls_close(&tls);
     close(sockfd);
 
-    // Extract JSON body
     char *body = strstr(response, "\r\n\r\n");
     if (body) {
         body += 4;
@@ -676,10 +736,58 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
         if (body_len < out_max_len) {
             strcpy(out_buffer, body);
             success = true;
+            
+            // Save to cache
+            FILE *f_w = fopen(cache_file, "w");
+            if (f_w) {
+                fwrite(body, 1, body_len, f_w);
+                fclose(f_w);
+            }
         }
     }
     free(response);
     return success;
+}
+
+bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, size_t out_max_len) {
+    char *combined = malloc(524288);
+    if (!combined) return false;
+    strcpy(combined, "{\"result\":[");
+    size_t comb_len = strlen(combined);
+    
+    bool any_success = false;
+    int items_added = 0;
+    for (int p = 1; p <= 5; p++) {
+        char *p_buf = malloc(131072);
+        if (!p_buf) continue;
+        if (tsfi_pulse_explorer_get_holders_page(token_addr, p, p_buf, 131072)) {
+            char *res_ptr = strstr(p_buf, "\"result\":[");
+            if (res_ptr) {
+                res_ptr += 10;
+                char *res_end = strchr(res_ptr, ']');
+                if (res_end && res_end > res_ptr) {
+                    size_t chunk_len = res_end - res_ptr;
+                    if (chunk_len > 0 && comb_len + chunk_len + 3 < 524288) {
+                        if (items_added > 0) {
+                            combined[comb_len++] = ',';
+                        }
+                        memcpy(combined + comb_len, res_ptr, chunk_len);
+                        comb_len += chunk_len;
+                        combined[comb_len] = '\0';
+                        items_added++;
+                        any_success = true;
+                    }
+                }
+            }
+        }
+        free(p_buf);
+    }
+    strcat(combined, "]}");
+    if (any_success && strlen(combined) < out_max_len) {
+        strcpy(out_buffer, combined);
+    }
+    free(combined);
+    return any_success;
 }
 
 

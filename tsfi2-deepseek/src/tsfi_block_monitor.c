@@ -19,6 +19,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <dirent.h>
 
 static uint64_t g_last_block_num = 0;
 #define MAX_PENDING_BLOCKS 100
@@ -50,7 +51,7 @@ static const HardcodedToken g_known_tokens[] = {
     { "0x959c5ad5c5ad5c5ad5c5ad5c5ad5c5ad5c5ad5cd", "PLSX", "PulseX", 18 },
     { "0x15d38573d2feeb82e7ad5187ab8c1d52810b1f07", "USDC-Eth", "USD Coin (from Ethereum)", 6 },
     { "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "USDC", "USD Coin", 6 },
-    { "0xefd766ccb8c15e5e9f813af7b2809857baa53a1f", "DAI-Eth", "Dai Stablecoin (from Ethereum)", 18 },
+    { "0xefd766ccb38eaf1dfd701853bfce31359239f305", "DAI-Eth", "Dai Stablecoin (from Ethereum)", 18 },
     { "0x6b175474e89094c44da98b954eedeac495271d0f", "DAI", "Dai Stablecoin", 18 },
     { "0x0cb81b54a05e0547d2d08c4a9e273a7d4c72b9eb", "USDT-Eth", "Tether USD (from Ethereum)", 6 },
     { "0xdac17f958d2ee523a2206206994597c13d831ec7", "USDT", "Tether USD", 6 },
@@ -197,7 +198,198 @@ static void load_discovered_tokens(void) {
     }
 }
 
+typedef struct {
+    char address[64];
+    uint32_t is_contract; // 0=unknown, 1=wallet, 2=contract
+    uint32_t is_lp;       // 0=unknown, 1=no, 2=yes
+    char token0[64];
+    char token0_sym[64];
+    char token1[64];
+    char token1_sym[64];
+} LauContractCacheRow;
+
+#define MAX_CONTRACT_CACHE_ROWS 1024
+typedef struct {
+    uint32_t active;
+    uint32_t count;
+    LauContractCacheRow rows[MAX_CONTRACT_CACHE_ROWS];
+} LauContractCacheTable;
+
+static LauContractCacheTable *g_contract_cache_table = NULL;
+
+static void ensure_contract_cache_initialized(void) {
+    if (!g_contract_cache_table) {
+        g_contract_cache_table = (LauContractCacheTable*)lau_malloc_wired(sizeof(LauContractCacheTable));
+        if (g_contract_cache_table) {
+            memset(g_contract_cache_table, 0, sizeof(LauContractCacheTable));
+            g_contract_cache_table->active = 1;
+        }
+    }
+}
+
+static void save_contract_cache_table(void);
+
+typedef struct ContractCacheBstNode {
+    uint64_t key;
+    uint32_t index;
+    struct ContractCacheBstNode *left;
+    struct ContractCacheBstNode *right;
+} ContractCacheBstNode;
+
+static ContractCacheBstNode *g_cache_bst_root = NULL;
+
+static void free_cache_bst(ContractCacheBstNode *node) {
+    if (!node) return;
+    free_cache_bst(node->left);
+    free_cache_bst(node->right);
+    free(node);
+}
+
+static ContractCacheBstNode* insert_cache_bst(ContractCacheBstNode *node, uint64_t key, uint32_t index) {
+    if (!node) {
+        ContractCacheBstNode *new_node = malloc(sizeof(ContractCacheBstNode));
+        if (new_node) {
+            new_node->key = key;
+            new_node->index = index;
+            new_node->left = NULL;
+            new_node->right = NULL;
+        }
+        return new_node;
+    }
+    if (key < node->key) {
+        node->left = insert_cache_bst(node->left, key, index);
+    } else if (key > node->key) {
+        node->right = insert_cache_bst(node->right, key, index);
+    } else {
+        node->index = index;
+    }
+    return node;
+}
+
+static uint64_t addr_to_key(const char *addr) {
+    const char *p = addr;
+    if (strncmp(p, "0x", 2) == 0) p += 2;
+    size_t len = strlen(p);
+    if (len > 16) {
+        p += (len - 16);
+    }
+    return strtoull(p, NULL, 16);
+}
+
+static void rebuild_cache_bst(void) {
+    free_cache_bst(g_cache_bst_root);
+    g_cache_bst_root = NULL;
+    if (!g_contract_cache_table) return;
+    for (uint32_t i = 0; i < g_contract_cache_table->count; i++) {
+        uint64_t key = addr_to_key(g_contract_cache_table->rows[i].address);
+        g_cache_bst_root = insert_cache_bst(g_cache_bst_root, key, i);
+    }
+}
+
+static void save_contract_cache_table(void) {
+    ensure_contract_cache_initialized();
+    if (!g_contract_cache_table) return;
+    FILE *f = fopen("assets/contract_cache.dat.bin", "wb");
+    if (f) {
+        fwrite(g_contract_cache_table, sizeof(LauContractCacheTable), 1, f);
+        fclose(f);
+    }
+}
+
+static void load_contract_cache_table(void) {
+    ensure_contract_cache_initialized();
+    if (!g_contract_cache_table) return;
+    FILE *f = fopen("assets/contract_cache.dat.bin", "rb");
+    if (f) {
+        LauContractCacheTable temp_table;
+        size_t read_blocks = fread(&temp_table, sizeof(LauContractCacheTable), 1, f);
+        if (read_blocks == 1) {
+            g_contract_cache_table->active = temp_table.active;
+            g_contract_cache_table->count = temp_table.count;
+            memcpy(g_contract_cache_table->rows, temp_table.rows, sizeof(temp_table.rows));
+            fprintf(stderr, "[LOAD_DB] Successfully loaded %d contract cache rows from assets/contract_cache.dat.bin\n", g_contract_cache_table->count);
+            rebuild_cache_bst();
+        }
+        fclose(f);
+    }
+}
+
+int get_contract_cache_status(const char *addr, bool *is_contract, bool *is_lp, char *t0, char *t0_sym, char *t1, char *t1_sym) {
+    ensure_contract_cache_initialized();
+    if (!g_contract_cache_table) return 0;
+    
+    uint64_t key = addr_to_key(addr);
+    ContractCacheBstNode *curr = g_cache_bst_root;
+    while (curr) {
+        if (key < curr->key) {
+            curr = curr->left;
+        } else if (key > curr->key) {
+            curr = curr->right;
+        } else {
+            uint32_t idx = curr->index;
+            if (strcasecmp(g_contract_cache_table->rows[idx].address, addr) == 0) {
+                *is_contract = (g_contract_cache_table->rows[idx].is_contract == 2);
+                *is_lp = (g_contract_cache_table->rows[idx].is_lp == 2);
+                if (t0) strcpy(t0, g_contract_cache_table->rows[idx].token0);
+                if (t0_sym) strcpy(t0_sym, g_contract_cache_table->rows[idx].token0_sym);
+                if (t1) strcpy(t1, g_contract_cache_table->rows[idx].token1);
+                if (t1_sym) strcpy(t1_sym, g_contract_cache_table->rows[idx].token1_sym);
+                return 1;
+            }
+            break;
+        }
+    }
+    
+    for (uint32_t i = 0; i < g_contract_cache_table->count; i++) {
+        if (strcasecmp(g_contract_cache_table->rows[i].address, addr) == 0) {
+            *is_contract = (g_contract_cache_table->rows[i].is_contract == 2);
+            *is_lp = (g_contract_cache_table->rows[i].is_lp == 2);
+            if (t0) strcpy(t0, g_contract_cache_table->rows[i].token0);
+            if (t0_sym) strcpy(t0_sym, g_contract_cache_table->rows[i].token0_sym);
+            if (t1) strcpy(t1, g_contract_cache_table->rows[i].token1);
+            if (t1_sym) strcpy(t1_sym, g_contract_cache_table->rows[i].token1_sym);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void set_contract_cache_status(const char *addr, bool is_contract, bool is_lp, const char *t0, const char *t0_sym, const char *t1, const char *t1_sym) {
+    ensure_contract_cache_initialized();
+    if (!g_contract_cache_table) return;
+    for (uint32_t i = 0; i < g_contract_cache_table->count; i++) {
+        if (strcasecmp(g_contract_cache_table->rows[i].address, addr) == 0) {
+            g_contract_cache_table->rows[i].is_contract = is_contract ? 2 : 1;
+            g_contract_cache_table->rows[i].is_lp = is_lp ? 2 : 1;
+            if (t0) strcpy(g_contract_cache_table->rows[i].token0, t0);
+            if (t0_sym) strcpy(g_contract_cache_table->rows[i].token0_sym, t0_sym);
+            if (t1) strcpy(g_contract_cache_table->rows[i].token1, t1);
+            if (t1_sym) strcpy(g_contract_cache_table->rows[i].token1_sym, t1_sym);
+            save_contract_cache_table();
+            return;
+        }
+    }
+    if (g_contract_cache_table->count < MAX_CONTRACT_CACHE_ROWS) {
+        uint32_t idx = g_contract_cache_table->count++;
+        strcpy(g_contract_cache_table->rows[idx].address, addr);
+        g_contract_cache_table->rows[idx].is_contract = is_contract ? 2 : 1;
+        g_contract_cache_table->rows[idx].is_lp = is_lp ? 2 : 1;
+        if (t0) strcpy(g_contract_cache_table->rows[idx].token0, t0);
+        else g_contract_cache_table->rows[idx].token0[0] = '\0';
+        if (t0_sym) strcpy(g_contract_cache_table->rows[idx].token0_sym, t0_sym);
+        else g_contract_cache_table->rows[idx].token0_sym[0] = '\0';
+        if (t1) strcpy(g_contract_cache_table->rows[idx].token1, t1);
+        else g_contract_cache_table->rows[idx].token1[0] = '\0';
+        if (t1_sym) strcpy(g_contract_cache_table->rows[idx].token1_sym, t1_sym);
+        else g_contract_cache_table->rows[idx].token1_sym[0] = '\0';
+        uint64_t key = addr_to_key(addr);
+        g_cache_bst_root = insert_cache_bst(g_cache_bst_root, key, idx);
+        save_contract_cache_table();
+    }
+}
+
 static bool is_fallback_symbol(const char *sym);
+
 
 void add_discovered_token(const char *addr, const char *symbol, const char *name, uint64_t decimals) {
     ensure_rdbms_table_initialized();
@@ -250,6 +442,64 @@ static void print_pricing_routing_table(void) {
         }
     }
     tsfi_io_printf(stderr, "========================================================================\n\n");
+}
+
+void check_and_register_rpc_token_metadata(const char *to_addr, const char *data_hex, const char *response_hex) {
+    const char *data_ptr = data_hex;
+    if (strncmp(data_ptr, "0x", 2) == 0) data_ptr += 2;
+    
+    const char *resp_ptr = response_hex;
+    if (strncmp(resp_ptr, "0x", 2) == 0) resp_ptr += 2;
+    if (strlen(resp_ptr) == 0) return;
+    
+    if (strcasecmp(data_ptr, "313ce567") == 0) { // decimals
+        uint64_t decimals = decode_abi_uint(response_hex);
+        ensure_rdbms_table_initialized();
+        if (g_mcp_rdbms_table) {
+            for (uint32_t i = 0; i < g_mcp_rdbms_table->count; i++) {
+                if (strcasecmp(g_mcp_rdbms_table->rows[i].address, to_addr) == 0) {
+                    g_mcp_rdbms_table->rows[i].decimals = decimals;
+                    save_discovered_tokens();
+                    break;
+                }
+            }
+        }
+    } else if (strcasecmp(data_ptr, "95d89b41") == 0) { // symbol
+        char symbol[64] = {0};
+        decode_abi_string(response_hex, symbol, sizeof(symbol));
+        if (strlen(symbol) > 0 && !is_fallback_symbol(symbol)) {
+            ensure_rdbms_table_initialized();
+            if (g_mcp_rdbms_table) {
+                bool found = false;
+                for (uint32_t i = 0; i < g_mcp_rdbms_table->count; i++) {
+                    if (strcasecmp(g_mcp_rdbms_table->rows[i].address, to_addr) == 0) {
+                        strcpy(g_mcp_rdbms_table->rows[i].symbol, symbol);
+                        save_discovered_tokens();
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    add_discovered_token(to_addr, symbol, symbol, 18);
+                }
+            }
+        }
+    } else if (strcasecmp(data_ptr, "06fdde03") == 0) { // name
+        char name[128] = {0};
+        decode_abi_string(response_hex, name, sizeof(name));
+        if (strlen(name) > 0) {
+            ensure_rdbms_table_initialized();
+            if (g_mcp_rdbms_table) {
+                for (uint32_t i = 0; i < g_mcp_rdbms_table->count; i++) {
+                    if (strcasecmp(g_mcp_rdbms_table->rows[i].address, to_addr) == 0) {
+                        strcpy(g_mcp_rdbms_table->rows[i].name, name);
+                        save_discovered_tokens();
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 static bool is_fallback_symbol(const char *sym) {
@@ -442,6 +692,64 @@ static double bfs_price_route(const char *start, const char *target) {
 
 double tsfi_pulse_get_price_in_pls(const char *token_addr) {
     const char *wpls = "0xa1077a294dde1b09bb078844df40758a5d0f9a27";
+    if (strcasecmp(token_addr, wpls) == 0) {
+        return 1.0;
+    }
+    
+    uint64_t dec = 18;
+    char sym[64], nam[128];
+    resolve_token(token_addr, sym, nam, &dec);
+    
+    char clean_token[64];
+    const char *tok_ptr = token_addr;
+    if (strncmp(tok_ptr, "0x", 2) == 0) tok_ptr += 2;
+    strcpy(clean_token, tok_ptr);
+    
+    char clean_wpls[64];
+    const char *wpls_ptr = wpls;
+    if (strncmp(wpls_ptr, "0x", 2) == 0) wpls_ptr += 2;
+    strcpy(clean_wpls, wpls_ptr);
+    
+    uint64_t val = 1;
+    for (uint64_t i = 0; i < dec; i++) {
+        val *= 10;
+    }
+    
+    char calldata[512];
+    snprintf(calldata, sizeof(calldata),
+             "0xd06ca61f"
+             "%064lx"
+             "0000000000000000000000000000000000000000000000000000000000000040"
+             "0000000000000000000000000000000000000000000000000000000000000002"
+             "000000000000000000000000%.40s"
+             "000000000000000000000000%.40s",
+             val, clean_token, clean_wpls);
+             
+    char r_buf[2048];
+    const char *router = "0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02";
+    if (tsfi_pulse_rpc_call(router, calldata, r_buf, sizeof(r_buf))) {
+        const char *ptr = r_buf;
+        if (strncmp(ptr, "0x", 2) == 0) ptr += 2;
+        
+        if (strlen(ptr) >= 256) {
+            char val_hex[65];
+            strncpy(val_hex, ptr + 192, 64);
+            val_hex[64] = '\0';
+            
+            unsigned __int128 amount_out = 0;
+            for (int k = 0; k < 64; k++) {
+                char c = val_hex[k];
+                amount_out *= 16;
+                if (c >= '0' && c <= '9') amount_out += (c - '0');
+                else if (c >= 'a' && c <= 'f') amount_out += (c - 'a' + 10);
+                else if (c >= 'A' && c <= 'F') amount_out += (c - 'A' + 10);
+            }
+            double final_price = (double)(amount_out / 1000000000000000ULL);
+            final_price /= 1000.0;
+            return final_price;
+        }
+    }
+    
     return bfs_price_route(token_addr, wpls);
 }
 
@@ -814,6 +1122,7 @@ static void seed_tokens_from_addresses_sol(void) {
 void tsfi_block_monitor_init(void) {
     ensure_rdbms_table_initialized();
     load_discovered_tokens();
+    load_contract_cache_table();
     g_last_block_num = 0;
     FILE *bf = fopen("assets/last_block_num.dat.bin", "rb");
     if (bf) {
@@ -845,13 +1154,13 @@ void tsfi_block_monitor_init(void) {
     add_discovered_token("0xA1077a294dDe1B09bB078844df40758a5D0f9a27", "WPLS", "Wrapped PLS", 18);
     add_discovered_token("0x95acD3924370324F973352614Ea2624F0cf0d7eb", "PLSX", "PulseX", 18);
     add_discovered_token("0x2b5455ad41d3002b573334244649027ce76289c5", "HEX", "HEX", 8);
-    add_discovered_token("0xefD766ccB0F39a5e6219b902cd81B85f984D19Ca", "DAI", "DAI from Ethereum", 18);
+    add_discovered_token("0xefd766ccb38eaf1dfd701853bfce31359239f305", "DAI", "DAI from Ethereum", 18);
     add_discovered_token("0x15D3853B874d6A018eD6102B515Ef037Ad63e650", "USDC", "USDC from Ethereum", 6);
-    add_discovered_token("0x02aAA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH", "Wrapped Ether from Ethereum", 18);
+    add_discovered_token("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH", "Wrapped Ether from Ethereum", 18);
 
     // Seed default swap edges so prices resolve immediately
     add_swap_edge("0x95acD3924370324F973352614Ea2624F0cf0d7eb", "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", 0.0033);
-    add_swap_edge("0xefD766ccB0F39a5e6219b902cd81B85f984D19Ca", "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", 268.0587);
+    add_swap_edge("0xefd766ccb38eaf1dfd701853bfce31359239f305", "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", 268.0587);
     add_swap_edge("0x2b5455ad41d3002b573334244649027ce76289c5", "0xA1077a294dDe1B09bB078844df40758a5D0f9a27", 100.0);
 
     // Seed default LP pools
@@ -867,8 +1176,8 @@ void tsfi_block_monitor_init(void) {
     }
     if (g_pool_cache_count < MAX_POOL_CACHE) {
         int idx = g_pool_cache_count++;
-        strcpy(g_pool_cache[idx].pool_address, "0xefd766ccb8c15e5e9f813af7b2809857baa53a1f");
-        strcpy(g_pool_cache[idx].token0, "0xefD766ccB0F39a5e6219b902cd81B85f984D19Ca");
+        strcpy(g_pool_cache[idx].pool_address, "0xe56043671df55de5cdf8459710433c10324de0ae");
+        strcpy(g_pool_cache[idx].token0, "0xefd766ccb38eaf1dfd701853bfce31359239f305");
         strcpy(g_pool_cache[idx].token1, "0xA1077a294dDe1B09bB078844df40758a5D0f9a27");
         g_pool_cache[idx].token0_balance = 100000.0;
         g_pool_cache[idx].token1_balance = 26805870.0;
@@ -1333,32 +1642,90 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
         char token1_sym[64];
     } HolderInfo;
     
-    HolderInfo holders[24];
+    HolderInfo holders[128];
     int holders_count = 0;
     
-    extern bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, size_t out_max_len);
-    if (tsfi_pulse_explorer_get_holders(token_lower, logs_buf, 524288)) {
-        char *ptr = logs_buf;
-        while ((ptr = strstr(ptr, "\"address\":\""))) {
-            ptr += 11;
-            char *end_addr = strchr(ptr, '"');
-            if (end_addr && (end_addr - ptr) < 64) {
-                char h_addr[64];
-                strncpy(h_addr, ptr, end_addr - ptr);
-                h_addr[end_addr - ptr] = '\0';
-                
-                char *val_ptr = strstr(end_addr, "\"value\":\"");
-                if (val_ptr) {
-                    val_ptr += 9;
-                    char *end_val = strchr(val_ptr, '"');
-                    if (end_val && (end_val - val_ptr) < 64) {
+    uint64_t dec = 18;
+    char sym[64], nam[128];
+    resolve_token(token_lower, sym, nam, &dec);
+    
+    char *main_source = NULL;
+    char *loaded_main_buf = NULL;
+    double token_price_usd = 0.04840483;
+    double price_pls = tsfi_pulse_get_price_in_pls(token_lower);
+    if (price_pls > 0.0) {
+        double dai_pls = tsfi_pulse_get_price_in_pls("0xefd766ccb38eaf1dfd701853bfce31359239f305");
+        if (dai_pls > 0.0) {
+            token_price_usd = price_pls / dai_pls;
+        }
+    }
+    
+    int page = 1;
+    bool keep_going = true;
+    extern bool tsfi_pulse_explorer_get_holders_page(const char *token_addr, int page, char *out_buffer, size_t out_max_len);
+    
+    while (keep_going && holders_count < 128) {
+        keep_going = false;
+        if (tsfi_pulse_explorer_get_holders_page(token_lower, page, logs_buf, 524288)) {
+            char *ptr = logs_buf;
+            int page_added = 0;
+            double page_min_value_usd = 999999999.0;
+            
+            while ((ptr = strstr(ptr, "\"address\":\""))) {
+                ptr += 11;
+                char *end_addr = strchr(ptr, '"');
+                if (end_addr && (end_addr - ptr) < 64) {
+                    char h_addr[64];
+                    strncpy(h_addr, ptr, end_addr - ptr);
+                    h_addr[end_addr - ptr] = '\0';
+                    
+                    char *val_ptr = strstr(end_addr, "\"value\":\"");
+                    if (!val_ptr) {
+                        val_ptr = strstr(end_addr, "\"balance\":");
+                    }
+                    if (val_ptr) {
+                        if (strncmp(val_ptr, "\"value\":", 8) == 0) {
+                            val_ptr += 9;
+                        } else {
+                            val_ptr += 10;
+                        }
+                        char *end_val = strchr(val_ptr, '"');
                         char val_str[64];
-                        strncpy(val_str, val_ptr, end_val - val_ptr);
-                        val_str[end_val - val_ptr] = '\0';
+                        if (end_val) {
+                            if (end_val - val_ptr < 64) {
+                                strncpy(val_str, val_ptr, end_val - val_ptr);
+                                val_str[end_val - val_ptr] = '\0';
+                            } else {
+                                strcpy(val_str, "0");
+                            }
+                        } else {
+                            int l = 0;
+                            while (val_ptr[l] && val_ptr[l] != ',' && val_ptr[l] != '}' && val_ptr[l] != ']' && l < 60) {
+                                val_str[l] = val_ptr[l];
+                                l++;
+                            }
+                            val_str[l] = '\0';
+                        }
                         
-                        if (holders_count < 24) {
+                        double raw_balance = strtod(val_str, NULL);
+                        double balance = raw_balance / pow(10, dec);
+                        double holder_value_usd = balance * token_price_usd;
+                        
+                        if (holder_value_usd < page_min_value_usd) {
+                            page_min_value_usd = holder_value_usd;
+                        }
+                        
+                        bool already = false;
+                        for (int i = 0; i < holders_count; i++) {
+                            if (strcasecmp(holders[i].address, h_addr) == 0) {
+                                already = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!already && holders_count < 128) {
                             strcpy(holders[holders_count].address, h_addr);
-                            holders[holders_count].balance = strtod(val_str, NULL);
+                            holders[holders_count].balance = balance;
                             holders[holders_count].is_contract = false;
                             holders[holders_count].name[0] = '\0';
                             holders[holders_count].symbol[0] = '\0';
@@ -1368,34 +1735,225 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
                             holders[holders_count].token1[0] = '\0';
                             holders[holders_count].token1_sym[0] = '\0';
                             holders_count++;
+                            page_added++;
+                        }
+                    }
+                }
+                ptr = end_addr;
+            }
+            
+            if (page_added > 0 && page_min_value_usd >= 100.0) {
+                keep_going = true;
+                page++;
+            }
+        } else {
+            char fallback_path[256];
+            snprintf(fallback_path, sizeof(fallback_path), "tmp/holders_%s.json", token_lower);
+            FILE *f_fall = fopen(fallback_path, "r");
+            if (!f_fall) {
+                snprintf(fallback_path, sizeof(fallback_path), "assets/holders_%s.dat.bin", token_lower);
+                f_fall = fopen(fallback_path, "r");
+            }
+            if (f_fall) {
+                loaded_main_buf = malloc(524288);
+                if (loaded_main_buf) {
+                    size_t n = fread(loaded_main_buf, 1, 524287, f_fall);
+                    loaded_main_buf[n] = '\0';
+                    main_source = loaded_main_buf;
+                }
+                fclose(f_fall);
+            }
+            
+            if (main_source) {
+                char *ptr = main_source;
+                while ((ptr = strstr(ptr, "\"address\":\""))) {
+                    ptr += 11;
+                    char *end_addr = strchr(ptr, '"');
+                    if (end_addr && (end_addr - ptr) < 64) {
+                        char h_addr[64];
+                        strncpy(h_addr, ptr, end_addr - ptr);
+                        h_addr[end_addr - ptr] = '\0';
+                        
+                        char *val_ptr = strstr(end_addr, "\"value\":\"");
+                        if (!val_ptr) {
+                            val_ptr = strstr(end_addr, "\"balance\":");
+                        }
+                        if (val_ptr) {
+                            if (strncmp(val_ptr, "\"value\":", 8) == 0) {
+                                val_ptr += 9;
+                            } else {
+                                val_ptr += 10;
+                            }
+                            char *end_val = strchr(val_ptr, '"');
+                            char val_str[64];
+                            if (end_val) {
+                                if (end_val - val_ptr < 64) {
+                                    strncpy(val_str, val_ptr, end_val - val_ptr);
+                                    val_str[end_val - val_ptr] = '\0';
+                                } else {
+                                    strcpy(val_str, "0");
+                                }
+                            } else {
+                                int l = 0;
+                                while (val_ptr[l] && val_ptr[l] != ',' && val_ptr[l] != '}' && val_ptr[l] != ']' && l < 60) {
+                                    val_str[l] = val_ptr[l];
+                                    l++;
+                                }
+                                val_str[l] = '\0';
+                            }
+                            
+                            double balance = strtod(val_str, NULL);
+                            
+                            bool already = false;
+                            for (int i = 0; i < holders_count; i++) {
+                                if (strcasecmp(holders[i].address, h_addr) == 0) {
+                                    already = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!already && holders_count < 128) {
+                                strcpy(holders[holders_count].address, h_addr);
+                                holders[holders_count].balance = balance;
+                                holders[holders_count].is_contract = false;
+                                holders[holders_count].name[0] = '\0';
+                                holders[holders_count].symbol[0] = '\0';
+                                holders[holders_count].is_lp = false;
+                                holders[holders_count].token0[0] = '\0';
+                                holders[holders_count].token0_sym[0] = '\0';
+                                holders[holders_count].token1[0] = '\0';
+                                holders[holders_count].token1_sym[0] = '\0';
+                                holders_count++;
+                            }
+                        }
+                    }
+                    ptr = end_addr;
+                }
+            }
+            break;
+        }
+    }
+    
+    const char *factories[] = {
+        "0x1715a3E4A142d8b698131108995174F37aEBA10D",
+        "0x29ea7545def87022badc76323f373ea1e707c523",
+        NULL
+    };
+    
+    bool self_is_con = false;
+    bool self_is_lp = false;
+    get_contract_cache_status(token_lower, &self_is_con, &self_is_lp, NULL, NULL, NULL, NULL);
+    
+    if (g_mcp_rdbms_table && !self_is_lp) {
+        for (uint32_t j = 0; j < g_mcp_rdbms_table->count; j++) {
+            const char *other_token = g_mcp_rdbms_table->rows[j].address;
+            if (strcasecmp(other_token, token_lower) == 0) continue;
+            
+            for (int f = 0; factories[f] != NULL; f++) {
+                char calldata[256];
+                
+                const char *tA_ptr = token_lower;
+                if (strncmp(tA_ptr, "0x", 2) == 0) tA_ptr += 2;
+                const char *tB_ptr = other_token;
+                if (strncmp(tB_ptr, "0x", 2) == 0) tB_ptr += 2;
+                
+                snprintf(calldata, sizeof(calldata),
+                         "0xe6a43905000000000000000000000000%.40s000000000000000000000000%.40s",
+                         tA_ptr, tB_ptr);
+                
+                char r_buf[1024];
+                if (tsfi_pulse_rpc_call(factories[f], calldata, r_buf, sizeof(r_buf))) {
+                    char lp_addr[64];
+                    decode_abi_address(r_buf, lp_addr);
+                    
+                    if (strlen(lp_addr) > 0 && strcasecmp(lp_addr, "0x0000000000000000000000000000000000000000") != 0) {
+                        bool already = false;
+                        for (int i = 0; i < holders_count; i++) {
+                            if (strcasecmp(holders[i].address, lp_addr) == 0) {
+                                already = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!already && holders_count < 128) {
+                            strcpy(holders[holders_count].address, lp_addr);
+                            holders[holders_count].balance = 0.0;
+                            holders[holders_count].is_contract = true;
+                            strcpy(holders[holders_count].name, "PulseX LP");
+                            strcpy(holders[holders_count].symbol, "PLP");
+                            holders[holders_count].is_lp = true;
+                            strcpy(holders[holders_count].token0, token_lower);
+                            strcpy(holders[holders_count].token1, other_token);
+                            
+                            uint64_t t0_dec = 18;
+                            resolve_token(token_lower, holders[holders_count].token0_sym, nam, &t0_dec);
+                            uint64_t t1_dec = 18;
+                            resolve_token(other_token, holders[holders_count].token1_sym, nam, &t1_dec);
+                            
+                            holders_count++;
                         }
                     }
                 }
             }
-            ptr = end_addr;
         }
     }
-    free(logs_buf);
-    
-    uint64_t dec = 18;
-    char sym[64], nam[128];
-    resolve_token(token_lower, sym, nam, &dec);
     
     for (int i = 0; i < holders_count; i++) {
-        holders[i].balance = holders[i].balance / pow(10, dec);
+        if (holders[i].is_lp && holders[i].balance == 0.0) {
+            char calldata[128];
+            const char *h_ptr = holders[i].address;
+            if (strncmp(h_ptr, "0x", 2) == 0) h_ptr += 2;
+            snprintf(calldata, sizeof(calldata), "0x70a08231000000000000000000000000%.40s", h_ptr);
+            
+            char r_buf[1024];
+            if (tsfi_pulse_rpc_call(token_lower, calldata, r_buf, sizeof(r_buf))) {
+                char *hex_start = r_buf;
+                if (strncmp(hex_start, "0x", 2) == 0) hex_start += 2;
+                uint64_t high = 0, low = 0;
+                if (strlen(hex_start) >= 64) {
+                    char temp[17];
+                    memcpy(temp, hex_start + 32, 16); temp[16] = '\0';
+                    high = strtoull(temp, NULL, 16);
+                    memcpy(temp, hex_start + 48, 16); temp[16] = '\0';
+                    low = strtoull(temp, NULL, 16);
+                } else {
+                    low = strtoull(hex_start, NULL, 16);
+                }
+                double raw_bal = (double)high * 18446744073709551616.0 + (double)low;
+                holders[i].balance = raw_bal / pow(10, dec);
+            }
+        }
+    }
+    
+    if (loaded_main_buf) free(loaded_main_buf);
+    free(logs_buf);
+    
+    for (int i = 0; i < holders_count; i++) {
+        bool is_contract = false;
+        bool is_lp = false;
+        char t0[64] = {0}, t0_sym[64] = {0}, t1[64] = {0}, t1_sym[64] = {0};
         
-        bool is_seeded_contract = false;
+        bool is_seeded = false;
         if (g_mcp_rdbms_table) {
             for (uint32_t j = 0; j < g_mcp_rdbms_table->count; j++) {
                 if (strcasecmp(g_mcp_rdbms_table->rows[j].address, holders[i].address) == 0) {
-                    is_seeded_contract = true;
+                    is_seeded = true;
                     break;
                 }
             }
         }
         
-        if (is_seeded_contract) {
+        if (is_seeded) {
             holders[i].is_contract = true;
+        } else if (get_contract_cache_status(holders[i].address, &is_contract, &is_lp, t0, t0_sym, t1, t1_sym)) {
+            holders[i].is_contract = is_contract;
+            holders[i].is_lp = is_lp;
+            if (is_lp) {
+                strcpy(holders[i].token0, t0);
+                strcpy(holders[i].token0_sym, t0_sym);
+                strcpy(holders[i].token1, t1);
+                strcpy(holders[i].token1_sym, t1_sym);
+            }
         }
     }
     
@@ -1406,7 +1964,20 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
         b_len += snprintf(batch_payload + b_len, 65536 - b_len, "[");
         int batch_count = 0;
         for (int i = 0; i < holders_count; i++) {
-            if (!holders[i].is_contract) {
+            bool already_determined = false;
+            bool dummy_is_con = false, dummy_is_lp = false;
+            if (get_contract_cache_status(holders[i].address, &dummy_is_con, &dummy_is_lp, NULL, NULL, NULL, NULL)) {
+                already_determined = true;
+            }
+            if (g_mcp_rdbms_table) {
+                for (uint32_t j = 0; j < g_mcp_rdbms_table->count; j++) {
+                    if (strcasecmp(g_mcp_rdbms_table->rows[j].address, holders[i].address) == 0) {
+                        already_determined = true;
+                        break;
+                    }
+                }
+            }
+            if (!already_determined && !holders[i].is_contract) {
                 b_len += snprintf(batch_payload + b_len, 65536 - b_len,
                                    "%s{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"%s\",\"latest\"],\"id\":%d}",
                                    (batch_count > 0) ? "," : "",
@@ -1419,11 +1990,19 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
         
         if (batch_count > 0 && tsfi_pulse_rpc_exec_raw_body(batch_payload, batch_response, 524288)) {
             for (int i = 0; i < holders_count; i++) {
-                if (!holders[i].is_contract) {
+                bool already_determined = false;
+                bool dummy_is_con = false, dummy_is_lp = false;
+                if (get_contract_cache_status(holders[i].address, &dummy_is_con, &dummy_is_lp, NULL, NULL, NULL, NULL)) {
+                    already_determined = true;
+                }
+                if (!already_determined && !holders[i].is_contract) {
                     char res_val[256] = {0};
                     if (find_batch_result_by_id(batch_response, i, res_val, sizeof(res_val))) {
                         if (strncmp(res_val, "0x", 2) == 0 && strlen(res_val) > 2) {
                             holders[i].is_contract = true;
+                            set_contract_cache_status(holders[i].address, true, false, NULL, NULL, NULL, NULL);
+                        } else {
+                            set_contract_cache_status(holders[i].address, false, false, NULL, NULL, NULL, NULL);
                         }
                     }
                 }
@@ -1441,11 +2020,27 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
             continue;
         }
         if (holders[i].is_contract) {
+            bool cache_is_lp = false;
+            bool cache_is_con = false;
+            char t0[64] = {0}, t0_sym[64] = {0}, t1[64] = {0}, t1_sym[64] = {0};
+            if (get_contract_cache_status(holders[i].address, &cache_is_con, &cache_is_lp, t0, t0_sym, t1, t1_sym) && cache_is_con) {
+                holders[i].is_lp = cache_is_lp;
+                if (cache_is_lp) {
+                    strcpy(holders[i].token0, t0);
+                    strcpy(holders[i].token0_sym, t0_sym);
+                    strcpy(holders[i].token1, t1);
+                    strcpy(holders[i].token1_sym, t1_sym);
+                    uint64_t c_dec = 18;
+                    resolve_token(holders[i].address, holders[i].symbol, holders[i].name, &c_dec);
+                    continue;
+                }
+            }
+            
             uint64_t c_dec = 18;
             resolve_token(holders[i].address, holders[i].symbol, holders[i].name, &c_dec);
             
-            // Check if it is an LP contract by querying token0() and token1()
             char r_buf[1024];
+            bool resolved_lp = false;
             if (tsfi_pulse_rpc_call(holders[i].address, "0x0dfe1681", r_buf, sizeof(r_buf))) {
                 char t0_addr[64];
                 decode_abi_address(r_buf, t0_addr);
@@ -1466,9 +2061,15 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
                             char t1_nam[128];
                             uint64_t t1_dec = 18;
                             resolve_token(t1_addr, holders[i].token1_sym, t1_nam, &t1_dec);
+                            
+                            set_contract_cache_status(holders[i].address, true, true, t0_addr, holders[i].token0_sym, t1_addr, holders[i].token1_sym);
+                            resolved_lp = true;
                         }
                     }
                 }
+            }
+            if (!resolved_lp) {
+                set_contract_cache_status(holders[i].address, true, false, NULL, NULL, NULL, NULL);
             }
         }
     }
