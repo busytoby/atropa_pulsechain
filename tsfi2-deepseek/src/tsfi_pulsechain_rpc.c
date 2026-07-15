@@ -935,6 +935,106 @@ bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd) {
     return success;
 }
 
+void parse_and_cache_dexscreener_pairs(const char *json_body) {
+    if (!json_body) return;
+    extern void add_discovered_token(const char *addr, const char *symbol, const char *name, uint64_t decimals);
+    extern void add_swap_edge(const char *t0, const char *t1, double price);
+    
+    const char *ptr = json_body;
+    while ((ptr = strstr(ptr, "\"pairAddress\":\""))) {
+        ptr += 15;
+        char pair_addr[64] = {0};
+        char *end = strchr(ptr, '"');
+        if (end && (end - ptr) < 63) {
+            strncpy(pair_addr, ptr, end - ptr);
+        }
+        
+        char base_addr[64] = {0};
+        char base_sym[64] = {0};
+        char base_name[128] = {0};
+        char *base_ptr = strstr(ptr, "\"baseToken\":{");
+        if (base_ptr) {
+            char *addr_ptr = strstr(base_ptr, "\"address\":\"");
+            if (addr_ptr) {
+                addr_ptr += 11;
+                char *addr_end = strchr(addr_ptr, '"');
+                if (addr_end && (addr_end - addr_ptr) < 63) {
+                    strncpy(base_addr, addr_ptr, addr_end - addr_ptr);
+                }
+            }
+            char *sym_ptr = strstr(base_ptr, "\"symbol\":\"");
+            if (sym_ptr) {
+                sym_ptr += 10;
+                char *sym_end = strchr(sym_ptr, '"');
+                if (sym_end && (sym_end - sym_ptr) < 63) {
+                    strncpy(base_sym, sym_ptr, sym_end - sym_ptr);
+                }
+            }
+            char *name_ptr = strstr(base_ptr, "\"name\":\"");
+            if (name_ptr) {
+                name_ptr += 8;
+                char *name_end = strchr(name_ptr, '"');
+                if (name_end && (name_end - name_ptr) < 127) {
+                    strncpy(base_name, name_ptr, name_end - name_ptr);
+                }
+            }
+        }
+        
+        char quote_addr[64] = {0};
+        char quote_sym[64] = {0};
+        char quote_name[128] = {0};
+        char *quote_ptr = strstr(ptr, "\"quoteToken\":{");
+        if (quote_ptr) {
+            char *addr_ptr = strstr(quote_ptr, "\"address\":\"");
+            if (addr_ptr) {
+                addr_ptr += 11;
+                char *addr_end = strchr(addr_ptr, '"');
+                if (addr_end && (addr_end - addr_ptr) < 63) {
+                    strncpy(quote_addr, addr_ptr, addr_end - addr_ptr);
+                }
+            }
+            char *sym_ptr = strstr(quote_ptr, "\"symbol\":\"");
+            if (sym_ptr) {
+                sym_ptr += 10;
+                char *sym_end = strchr(sym_ptr, '"');
+                if (sym_end && (sym_end - sym_ptr) < 63) {
+                    strncpy(quote_sym, sym_ptr, sym_end - sym_ptr);
+                }
+            }
+            char *name_ptr = strstr(quote_ptr, "\"name\":\"");
+            if (name_ptr) {
+                name_ptr += 8;
+                char *name_end = strchr(name_ptr, '"');
+                if (name_end && (name_end - name_ptr) < 127) {
+                    strncpy(quote_name, name_ptr, name_end - name_ptr);
+                }
+            }
+        }
+        
+        double price_native = 0.0;
+        char *price_ptr = strstr(ptr, "\"priceNative\":\"");
+        if (price_ptr) {
+            price_ptr += 15;
+            char *price_end = strchr(price_ptr, '"');
+            if (price_end) {
+                char price_str[64] = {0};
+                if ((price_end - price_ptr) < 63) {
+                    strncpy(price_str, price_ptr, price_end - price_ptr);
+                    price_native = strtod(price_str, NULL);
+                }
+            }
+        }
+        
+        if (strlen(base_addr) > 0 && strlen(quote_addr) > 0 && price_native > 0.0) {
+            add_discovered_token(base_addr, base_sym, base_name, 18);
+            add_discovered_token(quote_addr, quote_sym, quote_name, 18);
+            add_swap_edge(base_addr, quote_addr, price_native);
+        }
+        
+        ptr = end;
+    }
+}
+
 bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, size_t out_max_len) {
     const char *host = "api.dexscreener.com";
     const char *port = "443";
@@ -969,6 +1069,7 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
                 out_json[n] = '\0';
                 fclose(f_cache);
                 if (n > 0) {
+                    parse_and_cache_dexscreener_pairs(out_json);
                     return true;
                 }
             }
@@ -1052,6 +1153,7 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
         if (body_len < out_max_len) {
             strcpy(out_json, body);
             success = true;
+            parse_and_cache_dexscreener_pairs(body);
             
             // Cache the full JSON response
             FILE *f_cache = fopen(cache_file, "w");
