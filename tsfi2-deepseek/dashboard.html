@@ -1129,7 +1129,8 @@
                 options: [
                     { text: "My token has an N/A price", next: "na_price" },
                     { text: "Smart contract detected as a user wallet", next: "wallet_check" },
-                    { text: "Holders show 0 balance", next: "zero_balance" }
+                    { text: "Holders show 0 balance", next: "zero_balance" },
+                    { text: "My token has 0% or unexpectedly low burned LP value", next: "low_burn_check" }
                 ]
             },
             na_price: {
@@ -1184,6 +1185,29 @@
             },
             decimals_check: {
                 result: "<strong>Action Item: Scaling configuration.</strong><br>Verify the token decimals. The C monitor executes <code>decimals()</code> via <code>eth_call</code>. If this call reverts, it defaults to 18 decimals, which may scale small balances down to zero."
+            },
+            low_burn_check: {
+                question: "Is the liquidity locked in a third-party locker contract (like UNCX or PinkLock) rather than sent to the dead address?",
+                options: [
+                    { text: "Yes, it is locked in a locker contract", next: "locked_in_contract" },
+                    { text: "No, it should be sent to 0x00...00 or 0x00...dead", next: "burn_address_check" }
+                ]
+            },
+            locked_in_contract: {
+                result: "<strong>Diagnosis: Third-Party Lock.</strong><br>Our burned LP calculations specifically track tokens sent directly to the burn addresses (<code>0x0000000000000000000000000000000000000000</code> or <code>0x000000000000000000000000000000000000dEaD</code>). If the liquidity is locked in a locker contract (e.g. UNCX, PinkLock), it is still locked but will not reflect as 'burned' on this dashboard."
+            },
+            burn_address_check: {
+                question: "Does the token have active liquidity pools on PulseX factories?",
+                options: [
+                    { text: "Yes, it has active pools", next: "pool_liquidity_thin" },
+                    { text: "No, it has no pools yet", next: "no_pools_exist" }
+                ]
+            },
+            pool_liquidity_thin: {
+                result: "<strong>Diagnosis: Thin or Unburned Liquidity.</strong><br>If the pool exists but shows 0% or low burn percentage, the creator did not send the LP tokens to the burn addresses, or only sent a very small portion. The reserves are still queryable, but the peg security level remains low."
+            },
+            no_pools_exist: {
+                result: "<strong>Diagnosis: Missing Pools.</strong><br>If no pools exist on PulseX V1 or V2 factories, there is no LP to burn. Create a liquidity pool with WPLS, pDAI, or pUSDC to initialize the token's trading and burning headroom."
             }
         };
 
