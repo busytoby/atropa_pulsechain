@@ -707,6 +707,20 @@
                 });
                 const holderData = await response.json();
                 
+                // Fetch total supply from token contract on-chain
+                let totalSupplyStr = 'N/A';
+                try {
+                    const supplyHex = await rpcRequest('eth_call', [{ to: addr, data: '0x18160ddd' }, 'latest']);
+                    if (supplyHex && supplyHex !== '0x' && !supplyHex.includes('error')) {
+                        const rawSupply = decodeABIUint256(supplyHex);
+                        const decimals = tok.decimals || 18;
+                        const parsedSupply = rawSupply / (10 ** decimals);
+                        totalSupplyStr = formatLargeNumber(parsedSupply, 2);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch total supply:", e);
+                }
+                
                 let contracts = [];
                 let wallets = [];
                 
@@ -758,6 +772,9 @@
                             </div>
                             <div class="token-address" onclick="navigator.clipboard.writeText('${tok.address}'); alert('Copied address!')">
                                 ${tok.address} (Click to Copy)
+                            </div>
+                            <div style="margin-top: 6px; font-size: 13px; color: var(--text-secondary);">
+                                <strong>Total Supply:</strong> ${totalSupplyStr} ${tok.symbol || ''}
                             </div>
                             <div style="margin-top: 10px;">
                                 <button class="qa-btn" style="background: var(--accent); font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: fit-content;" onclick="selectToken('${tok.address}', true)">
@@ -1074,6 +1091,22 @@
             return parseInt(hex, 16) || 0;
         }
 
+        async function fetchToken1(pairAddr) {
+            try {
+                let t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21225a3' }, 'latest']);
+                if (!t1Hex || t1Hex === '0x' || t1Hex.includes('error')) {
+                    t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21220a7' }, 'latest']);
+                }
+                return t1Hex;
+            } catch (e) {
+                try {
+                    return await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21220a7' }, 'latest']);
+                } catch (e2) {
+                    return '';
+                }
+            }
+        }
+
         async function workerTick() {
             try {
                 const hexBlock = await rpcRequest('eth_blockNumber');
@@ -1105,7 +1138,7 @@
                             
                             // Query token0 and token1 from pair contract
                             const t0Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0x0dfe1681' }, 'latest']);
-                            const t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21225a3' }, 'latest']);
+                            const t1Hex = await fetchToken1(pairAddr);
                             
                             if (t0Hex && t1Hex && t0Hex.length >= 40 && t1Hex.length >= 40) {
                                 const token0 = '0x' + t0Hex.slice(-40).toLowerCase();
@@ -1237,7 +1270,7 @@
                     for (const log of logs) {
                         const pairAddr = log.address;
                         const t0Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0x0dfe1681' }, 'latest']);
-                        const t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21225a3' }, 'latest']);
+                        const t1Hex = await fetchToken1(pairAddr);
                         
                         if (t0Hex && t1Hex && t0Hex.length >= 40 && t1Hex.length >= 40) {
                             const token0 = '0x' + t0Hex.slice(-40).toLowerCase();

@@ -1000,6 +1000,44 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
     }
 }
 
+static char *find_batch_result_by_id(const char *batch_resp, int id, char *res_val, size_t max_len) {
+    char id_pattern[64];
+    snprintf(id_pattern, sizeof(id_pattern), "\"id\":%d", id);
+    const char *item = strstr(batch_resp, id_pattern);
+    if (!item) {
+        snprintf(id_pattern, sizeof(id_pattern), "\"id\": %d", id);
+        item = strstr(batch_resp, id_pattern);
+    }
+    if (!item) return NULL;
+    
+    // Find the boundaries of the containing object
+    const char *start = item;
+    while (start > batch_resp && *start != '{') start--;
+    const char *end = item;
+    while (*end && *end != '}') end++;
+    
+    // Locate the result field inside this specific object
+    const char *res_ptr = strstr(start, "\"result\"");
+    if (res_ptr && res_ptr < end) {
+        const char *colon = strchr(res_ptr, ':');
+        if (colon && colon < end) {
+            const char *val_start = strchr(colon, '"');
+            if (val_start && val_start < end) {
+                val_start++;
+                const char *val_end = strchr(val_start, '"');
+                if (val_end && val_end <= end) {
+                    size_t len = val_end - val_start;
+                    if (len >= max_len) len = max_len - 1;
+                    strncpy(res_val, val_start, len);
+                    res_val[len] = '\0';
+                    return res_val;
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
 int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, size_t max_len, bool force_refresh) {
     char token_lower[64];
     strncpy(token_lower, token_addr, sizeof(token_lower) - 1);
@@ -1132,24 +1170,11 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
         if (batch_count > 0 && tsfi_pulse_rpc_exec_raw_body(batch_payload, batch_response, 524288)) {
             for (int i = 0; i < holders_count; i++) {
                 if (!holders[i].is_contract) {
-                    char id_str[64];
-                    snprintf(id_str, sizeof(id_str), "\"id\":%d", i);
-                    char *item = strstr(batch_response, id_str);
-                    if (item) {
-                        char *obj_start = item - 150;
-                        if (obj_start < batch_response) obj_start = batch_response;
-                        char *obj_end = item + 150;
-                        char saved_char = *obj_end;
-                        *obj_end = '\0';
-                        
-                        char *res_ptr = strstr(obj_start, "\"result\":\"");
-                        if (res_ptr) {
-                            res_ptr += 10;
-                            if (strncmp(res_ptr, "0x", 2) == 0 && res_ptr[2] != '"') {
-                                holders[i].is_contract = true;
-                            }
+                    char res_val[256] = {0};
+                    if (find_batch_result_by_id(batch_response, i, res_val, sizeof(res_val))) {
+                        if (strncmp(res_val, "0x", 2) == 0 && strlen(res_val) > 2) {
+                            holders[i].is_contract = true;
                         }
-                        *obj_end = saved_char;
                     }
                 }
             }
@@ -1175,7 +1200,7 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
                 char t0_addr[64];
                 decode_abi_address(r_buf, t0_addr);
                 if (strlen(t0_addr) > 0 && strcmp(t0_addr, "0x0000000000000000000000000000000000000000") != 0) {
-                    if (tsfi_pulse_rpc_call(holders[i].address, "0xd21220a7", r_buf, sizeof(r_buf))) {
+                    if (tsfi_pulse_rpc_call(holders[i].address, "0xd21225a3", r_buf, sizeof(r_buf))) {
                         char t1_addr[64];
                         decode_abi_address(r_buf, t1_addr);
                         if (strlen(t1_addr) > 0 && strcmp(t1_addr, "0x0000000000000000000000000000000000000000") != 0) {
