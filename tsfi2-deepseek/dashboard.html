@@ -1021,8 +1021,9 @@
                 console.error("Failed to select token:", err);
                 workspace.innerHTML = `
                     <div class="welcome-screen">
-                        <h2 style="color: #ef4444">Connection Error</h2>
-                        <p>Unable to connect to the MCP server. Please ensure the daemon is running and Port 10042 is open.</p>
+                        <h2 style="color: #ef4444">Runtime Error inside selectToken</h2>
+                        <p style="color: #ef4444; font-family: monospace;">${err.message}</p>
+                        <pre style="text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; overflow: auto; max-width: 100%; font-size: 11px; color: #ef4444;">${err.stack}</pre>
                     </div>
                 `;
             }
