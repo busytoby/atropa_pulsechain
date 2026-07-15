@@ -438,23 +438,59 @@ int main() {
     fprintf(f_html, "<div id=\"network-container\">\n  <canvas id=\"graph-canvas\"></canvas>\n</div>\n");
     
     fprintf(f_html, "<script>\n");
-    fprintf(f_html, "  const rawNodes = [\n");
+    
+    // Build the set of tokens to include
+    bool *include_token = calloc(rdbms.count, sizeof(bool));
     for (uint32_t i = 0; i < rdbms.count; i++) {
-        const char *var_name = "";
-        bool found = false;
+        // Core check
         for (int k = 0; k < addr_count; k++) {
             if (strcasecmp(addresses[k], rdbms.rows[i].address) == 0) {
-                var_name = var_names[k];
-                found = true;
+                include_token[i] = true;
                 break;
             }
         }
         if (strcasecmp(rdbms.rows[i].address, "0xA1077a294dDe1B09bB078844df40758a5D0f9a27") == 0) {
-            found = true;
+            include_token[i] = true;
+        }
+    }
+    
+    // External check: include any token connected to a core token
+    for (int j = 0; j < edge_count; j++) {
+        bool tok0_core = false;
+        bool tok1_core = false;
+        for (int k = 0; k < addr_count; k++) {
+            if (strcasecmp(addresses[k], edges[j].token0) == 0) tok0_core = true;
+            if (strcasecmp(addresses[k], edges[j].token1) == 0) tok1_core = true;
+        }
+        if (strcasecmp(edges[j].token0, "0xA1077a294dDe1B09bB078844df40758a5D0f9a27") == 0) tok0_core = true;
+        if (strcasecmp(edges[j].token1, "0xA1077a294dDe1B09bB078844df40758a5D0f9a27") == 0) tok1_core = true;
+        
+        if (tok0_core || tok1_core) {
+            for (uint32_t i = 0; i < rdbms.count; i++) {
+                if (strcasecmp(rdbms.rows[i].address, edges[j].token0) == 0) {
+                    include_token[i] = true;
+                }
+                if (strcasecmp(rdbms.rows[i].address, edges[j].token1) == 0) {
+                    include_token[i] = true;
+                }
+            }
+        }
+    }
+
+    fprintf(f_html, "  const rawNodes = [\n");
+    for (uint32_t i = 0; i < rdbms.count; i++) {
+        if (!include_token[i]) continue;
+        
+        const char *var_name = "";
+        for (int k = 0; k < addr_count; k++) {
+            if (strcasecmp(addresses[k], rdbms.rows[i].address) == 0) {
+                var_name = var_names[k];
+                break;
+            }
+        }
+        if (strcasecmp(rdbms.rows[i].address, "0xA1077a294dDe1B09bB078844df40758a5D0f9a27") == 0) {
             var_name = "WrappedPulse";
         }
-        
-        if (!found) continue;
         char escaped_sym[128] = {0};
         char escaped_name[256] = {0};
         escape_json_str(escaped_sym, strlen(rdbms.rows[i].symbol) > 0 ? rdbms.rows[i].symbol : "UNKNOWN");
