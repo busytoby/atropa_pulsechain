@@ -1039,6 +1039,12 @@ void draw_vulkan_knowledge_graph(VulkanSystem *s) {
         static int sol_addr_count = 0;
         
         FILE *f_sol = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/addresses.sol", "r");
+        if (!f_sol) {
+            f_sol = fopen("solidity/addresses.sol", "r");
+        }
+        if (!f_sol) {
+            f_sol = fopen("../solidity/addresses.sol", "r");
+        }
         if (f_sol) {
             char line[512];
             while (fgets(line, sizeof(line), f_sol)) {
@@ -1067,6 +1073,9 @@ void draw_vulkan_knowledge_graph(VulkanSystem *s) {
         }
 
         FILE *f_meta = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/assets/contract_metadata.dat.bin", "rb");
+        if (!f_meta) {
+            f_meta = fopen("assets/contract_metadata.dat.bin", "rb");
+        }
         if (f_meta) {
             VkLauRdbmsTable table;
             if (fread(&table, sizeof(VkLauRdbmsTable), 1, f_meta) == 1) {
@@ -1078,6 +1087,9 @@ void draw_vulkan_knowledge_graph(VulkanSystem *s) {
         }
         
         FILE *f_edges = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/assets/swap_edges.dat.bin", "rb");
+        if (!f_edges) {
+            f_edges = fopen("assets/swap_edges.dat.bin", "rb");
+        }
         if (f_edges) {
             uint32_t count = 0;
             if (fread(&count, sizeof(count), 1, f_edges) == 1) {
@@ -1095,10 +1107,21 @@ void draw_vulkan_knowledge_graph(VulkanSystem *s) {
         
         for (int i = 0; i < token_count; i++) {
             bool in_sol = false;
-            for (int k = 0; k < sol_addr_count; k++) {
-                if (strcasecmp(tokens[i].address, sol_addresses[k]) == 0) {
-                    in_sol = true;
-                    break;
+            if (sol_addr_count > 0) {
+                for (int k = 0; k < sol_addr_count; k++) {
+                    if (strcasecmp(tokens[i].address, sol_addresses[k]) == 0) {
+                        in_sol = true;
+                        break;
+                    }
+                }
+            } else {
+                // Fallback: If addresses.sol failed to load, display active LP tokens
+                for (int j = 0; j < edge_count; j++) {
+                    if (strcasecmp(tokens[i].address, edges[j].token0) == 0 ||
+                        strcasecmp(tokens[i].address, edges[j].token1) == 0) {
+                        in_sol = true;
+                        break;
+                    }
                 }
             }
             
