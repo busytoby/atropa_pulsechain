@@ -456,6 +456,27 @@ static void save_pool_cache(void) {
     }
 }
 
+static void ensure_pool_in_cache(const char *pool, const char *t0, const char *t1, double price) {
+    for (int i = 0; i < g_pool_cache_count; i++) {
+        if (strcasecmp(g_pool_cache[i].pool_address, pool) == 0) {
+            if (g_pool_cache[i].last_price <= 0.0) {
+                g_pool_cache[i].last_price = price;
+            }
+            return;
+        }
+    }
+    if (g_pool_cache_count < MAX_POOL_CACHE) {
+        int idx = g_pool_cache_count++;
+        strcpy(g_pool_cache[idx].pool_address, pool);
+        strcpy(g_pool_cache[idx].token0, t0);
+        strcpy(g_pool_cache[idx].token1, t1);
+        g_pool_cache[idx].token0_balance = 0.0;
+        g_pool_cache[idx].token1_balance = 0.0;
+        g_pool_cache[idx].last_price = price;
+        g_pool_cache[idx].last_amount = 0.0;
+    }
+}
+
 static void load_pool_cache(void) {
     FILE *f = fopen("tmp/pool_cache.dat.bin", "rb");
     if (f) {
@@ -467,15 +488,21 @@ static void load_pool_cache(void) {
             (void)read_bytes;
         }
         fclose(f);
-        
-        // Feed swap edges from cached pools to resolve prices immediately
-        for (int i = 0; i < g_pool_cache_count; i++) {
-            if (g_pool_cache[i].last_price > 0.0) {
-                add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, g_pool_cache[i].last_price);
-            } else if (g_pool_cache[i].token0_balance > 0.0 && g_pool_cache[i].token1_balance > 0.0) {
-                double reserve_price = g_pool_cache[i].token1_balance / g_pool_cache[i].token0_balance;
-                add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, reserve_price);
-            }
+    }
+    
+    // Seed ATROPA pools if missing
+    ensure_pool_in_cache("0x5ef7aac0de4f2012cb36730da140025b113fada4", "0x6b175474e89094c44da98b954eedeac495271d0f", "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", 0.007741);
+    ensure_pool_in_cache("0xc636bfe0bae34824380b4e26bc34e4614e55e483", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", 0.018481);
+    ensure_pool_in_cache("0xe1d2bdba58d34109c547883dc9c2f9e01cebb003", "0x2556f7f8d82ebcdd7b821b0981c38d9da9439cdd", "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", 0.0001);
+    ensure_pool_in_cache("0x0a022e7591749b0ed0d9e3b7b978f26978440dc7", "0x4243568fa2bbad327ee36e06c16824cad8b37819", "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6", 0.01);
+
+    // Feed swap edges from cached pools to resolve prices immediately
+    for (int i = 0; i < g_pool_cache_count; i++) {
+        if (g_pool_cache[i].last_price > 0.0) {
+            add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, g_pool_cache[i].last_price);
+        } else if (g_pool_cache[i].token0_balance > 0.0 && g_pool_cache[i].token1_balance > 0.0) {
+            double reserve_price = g_pool_cache[i].token1_balance / g_pool_cache[i].token0_balance;
+            add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, reserve_price);
         }
     }
 }
