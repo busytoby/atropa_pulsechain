@@ -470,7 +470,9 @@ static void load_pool_cache(void) {
         
         // Feed swap edges from cached pools to resolve prices immediately
         for (int i = 0; i < g_pool_cache_count; i++) {
-            if (g_pool_cache[i].token0_balance > 0.0 && g_pool_cache[i].token1_balance > 0.0) {
+            if (g_pool_cache[i].last_price > 0.0) {
+                add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, g_pool_cache[i].last_price);
+            } else if (g_pool_cache[i].token0_balance > 0.0 && g_pool_cache[i].token1_balance > 0.0) {
                 double reserve_price = g_pool_cache[i].token1_balance / g_pool_cache[i].token0_balance;
                 add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, reserve_price);
             }
