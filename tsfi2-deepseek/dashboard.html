@@ -732,35 +732,63 @@
                     console.error("Failed to fetch total supply:", e);
                 }
 
-                // Fetch burned LP percentages and reserves for each LP holding in parallel
+                // Fetch burned LP percentages and reserves for all LP pools in parallel
+                const poolsToQuery = new Set();
+                if (tok.lp_holdings) {
+                    tok.lp_holdings.forEach(lp => poolsToQuery.add(lp.pool.toLowerCase()));
+                }
+                if (holderData.result && holderData.result.holders) {
+                    holderData.result.holders.forEach(h => {
+                        if (h.is_contract && h.is_lp) {
+                            poolsToQuery.add(h.address.toLowerCase());
+                        }
+                    });
+                }
+
                 const lpBurnPercentages = {};
                 const lpRealReserves = {};
-                if (tok.lp_holdings && tok.lp_holdings.length > 0) {
-                    await Promise.all(tok.lp_holdings.map(async (lp) => {
-                        const [pct, reserves] = await Promise.all([
-                            getBurnedLpPercentage(lp.pool),
-                            getPoolReserves(lp.pool)
-                        ]);
-                        lpBurnPercentages[lp.pool] = pct;
-                        
-                        // Parse reserves using token sort order
-                        const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                await Promise.all(Array.from(poolsToQuery).map(async (poolAddr) => {
+                    const [pct, reserves] = await Promise.all([
+                        getBurnedLpPercentage(poolAddr),
+                        getPoolReserves(poolAddr)
+                    ]);
+                    lpBurnPercentages[poolAddr] = pct;
+                    
+                    // Determine token0/token1
+                    const matchingLp = tok.lp_holdings && tok.lp_holdings.find(lp => lp.pool.toLowerCase() === poolAddr);
+                    let t0 = '';
+                    let t1 = '';
+                    if (matchingLp) {
+                        const pairedLower = matchingLp.paired_token.toLowerCase();
+                        const tokLower = tok.address.toLowerCase();
+                        t0 = pairedLower < tokLower ? matchingLp.paired_token : tok.address;
+                        t1 = pairedLower < tokLower ? tok.address : matchingLp.paired_token;
+                    } else {
+                        const holderItem = holderData.result.holders.find(h => h.address.toLowerCase() === poolAddr);
+                        if (holderItem && holderItem.token0 && holderItem.token1) {
+                            t0 = holderItem.token0;
+                            t1 = holderItem.token1;
+                        }
+                    }
+                    
+                    let pBal = 0;
+                    let tBal = 0;
+                    if (t0 && t1) {
+                        const pairedAddr = (t0.toLowerCase() === tok.address.toLowerCase()) ? t1 : t0;
+                        const pairedTok = allTokens.find(t => t.address.toLowerCase() === pairedAddr.toLowerCase());
                         const pairedDec = pairedTok ? (pairedTok.decimals || 18) : 18;
                         const tokenDec = tok.decimals || 18;
                         
-                        let pBal = 0;
-                        let tBal = 0;
-                        if (lp.paired_token.toLowerCase() < tok.address.toLowerCase()) {
+                        if (t0.toLowerCase() === pairedAddr.toLowerCase()) {
                             pBal = reserves.r0 / (10 ** pairedDec);
                             tBal = reserves.r1 / (10 ** tokenDec);
                         } else {
                             pBal = reserves.r1 / (10 ** pairedDec);
                             tBal = reserves.r0 / (10 ** tokenDec);
                         }
-                        
-                        lpRealReserves[lp.pool] = { paired_balance: pBal, token_balance: tBal };
-                    }));
-                }
+                    }
+                    lpRealReserves[poolAddr] = { paired_balance: pBal, token_balance: tBal };
+                }));
                 
                 // Dynamically resolve price from LP reserves if it is zero
                 let resolvedPricePls = tok.price_pls || 0;
@@ -846,12 +874,16 @@
                     holderData.result.holders.forEach(h => {
                         if (h.is_contract) {
                             const matchingLp = tok.lp_holdings && tok.lp_holdings.find(lp => lp.pool.toLowerCase() === h.address.toLowerCase());
-                            if (matchingLp) {
-                                renderedLpPools.add(matchingLp.pool.toLowerCase());
+                            const isLp = h.is_lp || matchingLp;
+                            if (isLp) {
+                                renderedLpPools.add(h.address.toLowerCase());
                                 contracts.push({
                                     ...h,
                                     is_lp_holding: true,
-                                    lp_details: matchingLp
+                                    lp_details: matchingLp || {
+                                        pool: h.address,
+                                        paired_token: (h.token0 && h.token0.toLowerCase() === tok.address.toLowerCase() ? h.token1 : h.token0) || ''
+                                    }
                                 });
                             } else {
                                 contracts.push(h);
