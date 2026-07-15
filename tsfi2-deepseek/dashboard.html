@@ -830,15 +830,7 @@
                                             <div style="font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-top: 4px;">
                                                 Pool: ${lp.pool}
                                             </div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Calculate aggregated burned stats
+                // Calculate aggregated burned stats and build unified contracts list
                 let totalBurnedPls = 0;
                 let totalBurnedUsd = 0;
                 let totalMaxPegUsd = 0;
@@ -874,6 +866,45 @@
                             if (isStable) {
                                 totalMaxPegUsd += (2 * realRes.paired_balance) * (pct / 100);
                             }
+                        }
+                    });
+                }
+
+                let contracts = [];
+                let wallets = [];
+                const renderedLpPools = new Set();
+                
+                if (holderData.result && holderData.result.holders) {
+                    holderData.result.holders.forEach(h => {
+                        if (h.is_contract) {
+                            const matchingLp = tok.lp_holdings && tok.lp_holdings.find(lp => lp.pool.toLowerCase() === h.address.toLowerCase());
+                            if (matchingLp) {
+                                renderedLpPools.add(matchingLp.pool.toLowerCase());
+                                contracts.push({
+                                    ...h,
+                                    is_lp_holding: true,
+                                    lp_details: matchingLp
+                                });
+                            } else {
+                                contracts.push(h);
+                            }
+                        } else {
+                            wallets.push(h);
+                        }
+                    });
+                }
+                
+                // Append any LP pools not currently in the holders list
+                if (tok.lp_holdings) {
+                    tok.lp_holdings.forEach(lp => {
+                        if (!renderedLpPools.has(lp.pool.toLowerCase())) {
+                            contracts.push({
+                                address: lp.pool,
+                                balance: 0,
+                                is_contract: true,
+                                is_lp_holding: true,
+                                lp_details: lp
+                            });
                         }
                     });
                 }
@@ -916,8 +947,6 @@
                         </div>
                     </div>
 
-                    ${lpHtml}
-
                     <div class="holders-container">
                         <!-- Smart Contracts -->
                         <div class="holders-panel">
@@ -927,24 +956,79 @@
                             </div>
                             <div class="holders-list">
                                 ${contracts.map(c => {
-                                    let metaHtml = '';
-                                    if (c.symbol && c.symbol !== 'UNKNOWN' && c.symbol !== '') {
-                                        metaHtml = `<div class="holder-card-meta">${c.name} (${c.symbol})</div>`;
-                                    }
-                                    let lpHtml = '';
-                                    if (c.is_lp && c.token0_symbol && c.token1_symbol) {
-                                        lpHtml = `<div class="holder-card-lp">Pair LP: ${c.token0_symbol} / ${c.token1_symbol}</div>`;
-                                    }
-                                    return `
-                                        <div class="holder-card" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                                <div class="holder-addr" title="${c.address}">${c.address.substring(0, 8)}...${c.address.substring(34)}</div>
-                                                <div class="holder-balance">${formatLargeNumber(c.balance)}</div>
+                                    if (c.is_lp_holding) {
+                                        const lp = c.lp_details;
+                                        const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                                        const pairedSym = pairedTok ? pairedTok.symbol : (lp.paired_token.slice(0, 6) + '...' + lp.paired_token.slice(-4));
+                                        const currentSym = tok.symbol || 'Token';
+                                        const pairName = `${currentSym} / ${pairedSym} LP Pool`;
+                                        const pct = lpBurnPercentages[lp.pool] || 0;
+                                        const realRes = lpRealReserves[lp.pool] || { paired_balance: 0, token_balance: 0 };
+                                        
+                                        let poolValuePls = 0;
+                                        if (pairedTok && pairedTok.price_pls) {
+                                            poolValuePls = 2 * realRes.paired_balance * pairedTok.price_pls;
+                                        } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
+                                            poolValuePls = 2 * realRes.paired_balance;
+                                        }
+                                        
+                                        const isStable = pairedSym.toUpperCase().includes('DAI') || 
+                                                         pairedSym.toUpperCase().includes('USDC') || 
+                                                         pairedSym.toUpperCase().includes('USDT') || 
+                                                         pairedSym.toUpperCase().includes('USD');
+                                        
+                                        const burnedValuePls = poolValuePls * (pct / 100);
+                                        const burnedValueUsd = burnedValuePls * plsdRate;
+                                        
+                                        let burnInfo = '';
+                                        if (pct > 0.01) {
+                                            let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
+                                            if (isStable) {
+                                                const maxPegValUsd = (2 * realRes.paired_balance) * (pct / 100);
+                                                valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
+                                            }
+                                            burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:11px; line-height: 1.4;">${valuationText}</span>`;
+                                        } else {
+                                            burnInfo = `<span style="color:var(--text-muted);">Unburned LP</span>`;
+                                        }
+                                        
+                                        const supplyPct = (targetTotalSupply > 0) ? ((c.balance / targetTotalSupply) * 100).toFixed(2) : '0.00';
+                                        
+                                        return `
+                                            <div class="holder-card lp-holder-card" style="flex-direction: column; align-items: flex-start; gap: 4px; border-left: 3px solid var(--accent); background: rgba(255, 255, 255, 0.01);">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                                    <div class="holder-addr" title="${c.address}">${c.address.substring(0, 8)}...${c.address.substring(34)}</div>
+                                                    <div class="holder-balance" style="font-weight: bold; color: var(--accent);">${formatLargeNumber(c.balance)} (${supplyPct}%)</div>
+                                                </div>
+                                                <div class="holder-card-meta" style="font-weight: 500; font-size: 12px; color: var(--text-secondary);">${pairName}</div>
+                                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.05); width: 100%;">
+                                                    <strong>Reserves:</strong> ${formatLargeNumber(realRes.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(realRes.paired_balance)} ${pairedSym}
+                                                </div>
+                                                <div style="font-size: 11px; margin-top: 6px; width: 100%;">
+                                                    ${burnInfo}
+                                                </div>
                                             </div>
-                                            ${metaHtml}
-                                            ${lpHtml}
-                                        </div>
-                                    `;
+                                        `;
+                                    } else {
+                                        let metaHtml = '';
+                                        if (c.symbol && c.symbol !== 'UNKNOWN' && c.symbol !== '') {
+                                            metaHtml = `<div class="holder-card-meta">${c.name} (${c.symbol})</div>`;
+                                        }
+                                        let lpHtml = '';
+                                        if (c.is_lp && c.token0_symbol && c.token1_symbol) {
+                                            lpHtml = `<div class="holder-card-lp">Pair LP: ${c.token0_symbol} / ${c.token1_symbol}</div>`;
+                                        }
+                                        return `
+                                            <div class="holder-card" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                                    <div class="holder-addr" title="${c.address}">${c.address.substring(0, 8)}...${c.address.substring(34)}</div>
+                                                    <div class="holder-balance">${formatLargeNumber(c.balance)}</div>
+                                                </div>
+                                                ${metaHtml}
+                                                ${lpHtml}
+                                            </div>
+                                        `;
+                                    }
                                 }).join('') || '<div style="color: var(--text-muted); text-align: center; margin-top: 20px;">No contracts detected</div>'}
                             </div>
                         </div>
