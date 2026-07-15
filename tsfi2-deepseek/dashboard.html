@@ -1275,19 +1275,7 @@
         }
 
         async function rpcRequest(method, params = []) {
-            const chainIdNum = parseInt(walletChainId, 16);
-            const isPulseChain = chainIdNum === 369 || chainIdNum === 943;
-            const provider = (window.ethereum && walletAddress && isPulseChain) ? window.ethereum : null;
             const rpcUrl = 'https://rpc.pulsechain.com';
-            
-            if (provider) {
-                try {
-                    return await provider.request({ method, params });
-                } catch (e) {
-                    // Fall back to public rpc
-                }
-            }
-            
             const response = await fetch(rpcUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
