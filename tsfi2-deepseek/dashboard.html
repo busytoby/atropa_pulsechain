@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Wavelet PulseChain Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 50%, #0d091a 0%, #030206 100%);
+            --panel-bg: rgba(18, 12, 33, 0.65);
+            --panel-border: rgba(147, 51, 234, 0.2);
+            --accent-glow: rgba(168, 85, 247, 0.4);
+            --text-primary: #f3f1f7;
+            --text-secondary: #a78bfa;
+            --text-muted: #6b5f8a;
+            --accent: #d8b4fe;
+            --contract-color: #38bdf8;
+            --wallet-color: #34d399;
+            --card-hover: rgba(147, 51, 234, 0.08);
+            --shadow-glow: 0 8px 32px 0 rgba(147, 51, 234, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(3, 2, 6, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--panel-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo-section h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #d8b4fe 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-section p {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            flex-grow: 1;
+            gap: 24px;
+            padding: 24px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: calc(100vh - 140px);
+            position: sticky;
+            top: 100px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(3, 2, 6, 0.5);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .token-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 2, 6, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--panel-border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .token-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(3, 2, 6, 0.25);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .token-item:hover {
+            background: var(--card-hover);
+            border-color: var(--panel-border);
+        }
+
+        .token-item.active {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        .token-info-mini {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-width: 70%;
+        }
+
+        .token-symbol {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .token-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .token-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+
+        .token-source {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(129, 140, 248, 0.15);
+            color: #818cf8;
+            margin-top: 4px;
+            align-self: flex-start;
+        }
+
+        .token-source.sol {
+            background: rgba(244, 63, 94, 0.15);
+            color: #f43f5e;
+        }
+
+        /* Main Content View */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .token-header-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .token-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .token-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .token-title-row h2 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .token-title-row span {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .token-address {
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .token-address:hover {
+            color: var(--accent);
+        }
+
+        .price-section {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .big-price {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* LP Holdings breakdown */
+        .lp-card {
+            background: rgba(3, 2, 6, 0.4);
+            border: 1px solid rgba(147, 51, 234, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .lp-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .lp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .lp-item {
+            background: rgba(18, 12, 33, 0.4);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lp-pair-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .lp-reserves {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Holders Columns Layout */
+        .holders-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .holders-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 400px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 12px;
+        }
+
+        .panel-header h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header h3.contracts { color: var(--contract-color); }
+        .panel-header h3.wallets { color: var(--wallet-color); }
+
+        .holder-count {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--text-muted);
+        }
+
+        .holders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .holder-card {
+            background: rgba(3, 2, 6, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .holder-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--panel-border);
+        }
+
+        .holder-addr {
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .holder-balance {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .holder-card-meta {
+            font-size: 12px;
+            color: var(--contract-color);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .holder-card-lp {
+            font-size: 11px;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 4px;
+            padding: 2px 6px;
+            display: inline-block;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* Loading UI */
+        .loader {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(168, 85, 247, 0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 40px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            text-align: center;
+            gap: 20px;
+            color: var(--text-muted);
+        }
+
+            color: var(--text-primary);
+        }
+
+        /* Decision Tree / QA Section */
+        .qa-container {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-glow);
+        }
+        .qa-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #d8b4fe 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .qa-node {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .qa-question {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .qa-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .qa-btn {
+            background: rgba(147, 51, 234, 0.1);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .qa-btn:hover {
+            background: rgba(147, 51, 234, 0.3);
+            border-color: var(--accent);
+        }
+        .qa-btn.active-tab {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.4) 0%, rgba(99, 102, 241, 0.4) 100%);
+            border-color: var(--accent);
+        }
+        .qa-result {
+            background: rgba(3, 2, 6, 0.4);
+            border-left: 4px solid var(--accent);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <h1>Atropa PulseChain Explorer</h1>
+            <p>Auncient Wavelet VM & Swap Monitor</p>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <button id="tab-explorer" class="qa-btn active-tab" onclick="switchTab('explorer')">Explorer Dashboard</button>
+            <button id="tab-qa" class="qa-btn" onclick="switchTab('qa')">Diagnostics QA Tree</button>
+            <button id="tab-worker" class="qa-btn" onclick="switchTab('worker')">Browser RPC Worker</button>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>WinchesterMQ Active</span>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="search-box">
+                <input type="text" id="token-search" placeholder="Search tokens..." oninput="filterTokens()">
+            </div>
+            <div class="token-list" id="token-list-container">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-content" id="workspace-container">
+            <div class="welcome-screen">
+                <h2>Welcome to the Atropa PulseChain Portal</h2>
+                <p>Select any seeded token from the sidebar to view active LP reserves, top holders, and dynamically distinguish smart contracts from wallet addresses.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = (window.location.hostname ? 'http://' + window.location.hostname : 'http://127.0.0.1') + ':10042';
+        let allTokens = [];
+        let activeTokenAddr = '';
+
+        function formatLargeNumber(num, decimals = 4) {
+            if (num === null || num === undefined) return '0.0000';
+            return Number(num).toLocaleString(undefined, {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        // Fetch tokens and prices on boot
+        async function loadTokens() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'wave64.get_all_prices',
+                        id: 1
+                    })
+                });
+                const data = await response.json();
+                if (data.result && data.result.tokens) {
+                    allTokens = data.result.tokens;
+                    renderSidebar(allTokens);
+                }
+            } catch (err) {
+                console.error("Failed to load tokens:", err);
+            }
+        }
+
+        function renderSidebar(tokens) {
+            const container = document.getElementById('token-list-container');
+            container.innerHTML = '';
+            
+            // Sort tokens: addresses.sol (with symbol/name) first sorted alphabetically, then live swaps
+            const sortedTokens = [...tokens].sort((a, b) => {
+                const aIsSol = a.symbol && a.symbol !== 'UNKN' && a.symbol !== 'UNKNOWN' && a.symbol !== '';
+                const bIsSol = b.symbol && b.symbol !== 'UNKN' && b.symbol !== 'UNKNOWN' && b.symbol !== '';
+                
+                if (aIsSol && !bIsSol) return -1;
+                if (!aIsSol && bIsSol) return 1;
+                
+                // If both are same category, sort by symbol alphabetically
+                const symA = (a.symbol || '').toUpperCase();
+                const symB = (b.symbol || '').toUpperCase();
+                return symA.localeCompare(symB);
+            });
+            
+            sortedTokens.forEach(tok => {
+                const item = document.createElement('div');
+                item.className = `token-item ${tok.address === activeTokenAddr ? 'active' : ''}`;
+                item.onclick = () => selectToken(tok.address);
+                
+                const isSol = tok.symbol && tok.symbol !== 'UNKN' && tok.symbol !== 'UNKNOWN' && tok.symbol !== '';
+                const displayName = tok.name && tok.name !== 'UNKNOWN' ? tok.name : tok.address.substring(0, 10) + '...' + tok.address.substring(38);
+                
+                item.innerHTML = `
+                    <div class="token-info-mini">
+                        <div class="token-symbol" style="color: ${isSol ? 'var(--accent)' : 'var(--text-primary)'}">${tok.symbol || 'UNKN'}</div>
+                        <div class="token-name" title="${tok.address}">${displayName}</div>
+                        <span class="token-source ${isSol ? 'sol' : ''}">${isSol ? 'addresses.sol' : 'Live Swap'}</span>
+                    </div>
+                    <div class="token-price">
+                        ${tok.price_pls ? formatLargeNumber(tok.price_pls, 6) : '0.000000'} PLS
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function filterTokens() {
+            const query = document.getElementById('token-search').value.toLowerCase();
+            const filtered = allTokens.filter(t => 
+                t.address.toLowerCase().includes(query) || 
+                (t.symbol && t.symbol.toLowerCase().includes(query))
+            );
+            renderSidebar(filtered);
+        }
+
+        async function selectToken(addr) {
+            activeTokenAddr = addr;
+            
+            // Re-render sidebar to highlight active item
+            filterTokens();
+
+            const workspace = document.getElementById('workspace-container');
+            workspace.innerHTML = `
+                <div class="loader">
+                    <div class="spinner"></div>
+                    <p style="color: var(--text-secondary)">Querying holder balances and verifying contract signatures on ZMM VM...</p>
+                </div>
+            `;
+
+            const tok = allTokens.find(t => t.address === addr);
+            
+            try {
+                // Fetch holders
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'wave64.get_token_holders',
+                        params: { token: addr },
+                        id: 1
+                    })
+                });
+                const holderData = await response.json();
+                
+                let contracts = [];
+                let wallets = [];
+                
+                if (holderData.result && holderData.result.holders) {
+                    holderData.result.holders.forEach(h => {
+                        if (h.is_contract) {
+                            contracts.push(h);
+                        } else {
+                            wallets.push(h);
+                        }
+                    });
+                }
+
+                // Render detail template
+                let lpHtml = '';
+                if (tok.lp_holdings && tok.lp_holdings.length > 0) {
+                    lpHtml = `
+                        <div class="lp-card">
+                            <div class="lp-title">PulseX LP Holdings & Reserves</div>
+                            <div class="lp-grid">
+                                ${tok.lp_holdings.map(lp => {
+                                    const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                                    const pairedSym = pairedTok ? pairedTok.symbol : (lp.paired_token.slice(0, 6) + '...' + lp.paired_token.slice(-4));
+                                    const currentSym = tok.symbol || 'Token';
+                                    const pairName = `${currentSym} / ${pairedSym}`;
+                                    return `
+                                        <div class="lp-item">
+                                            <div class="lp-pair-name">${pairName}</div>
+                                            <div class="lp-reserves" style="font-size: 13px; color: var(--text-muted);">
+                                                ${formatLargeNumber(lp.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(lp.paired_balance)} ${pairedSym}
+                                            </div>
+                                            <div style="font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-top: 4px;">
+                                                Pool: ${lp.pool}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                workspace.innerHTML = `
+                    <div class="token-header-card">
+                        <div class="token-meta">
+                            <div class="token-title-row">
+                                <h2>${tok.symbol || 'Unknown Token'}</h2>
+                                <span>${tok.name || 'Unnamed Contract'}</span>
+                            </div>
+                            <div class="token-address" onclick="navigator.clipboard.writeText('${tok.address}'); alert('Copied address!')">
+                                ${tok.address} (Click to Copy)
+                            </div>
+                            ${lpHtml}
+                        </div>
+                        <div class="price-section">
+                            <div class="token-title-row" style="justify-content: flex-end"><span style="font-size: 12px; text-transform: uppercase;">Current Price</span></div>
+                            <div class="big-price">${tok.price_pls ? formatLargeNumber(tok.price_pls, 6) : '0.000000'} PLS</div>
+                        </div>
+                    </div>
+
+                    <div class="holders-container">
+                        <!-- Smart Contracts -->
+                        <div class="holders-panel">
+                            <div class="panel-header">
+                                <h3 class="contracts">Smart Contracts</h3>
+                                <span class="holder-count">${contracts.length} contracts</span>
+                            </div>
+                            <div class="holders-list">
+                                ${contracts.map(c => {
+                                    let metaHtml = '';
+                                    if (c.symbol && c.symbol !== 'UNKNOWN' && c.symbol !== '') {
+                                        metaHtml = `<div class="holder-card-meta">${c.name} (${c.symbol})</div>`;
+                                    }
+                                    let lpHtml = '';
+                                    if (c.is_lp && c.token0_symbol && c.token1_symbol) {
+                                        lpHtml = `<div class="holder-card-lp">Pair LP: ${c.token0_symbol} / ${c.token1_symbol}</div>`;
+                                    }
+                                    return `
+                                        <div class="holder-card" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                                <div class="holder-addr" title="${c.address}">${c.address.substring(0, 8)}...${c.address.substring(34)}</div>
+                                                <div class="holder-balance">${formatLargeNumber(c.balance)}</div>
+                                            </div>
+                                            ${metaHtml}
+                                            ${lpHtml}
+                                        </div>
+                                    `;
+                                }).join('') || '<div style="color: var(--text-muted); text-align: center; margin-top: 20px;">No contracts detected</div>'}
+                            </div>
+                        </div>
+
+                        <!-- Wallets -->
+                        <div class="holders-panel">
+                            <div class="panel-header">
+                                <h3 class="wallets">User Wallets</h3>
+                                <span class="holder-count">${wallets.length} wallets</span>
+                            </div>
+                            <div class="holders-list">
+                                ${wallets.map(w => `
+                                    <div class="holder-card">
+                                        <div class="holder-addr">${w.address.substring(0, 8)}...${w.address.substring(34)}</div>
+                                        <div class="holder-balance">${formatLargeNumber(w.balance)}</div>
+                                    </div>
+                                `).join('') || '<div style="color: var(--text-muted); text-align: center; margin-top: 20px;">No wallets detected</div>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error("Failed to select token:", err);
+                workspace.innerHTML = `
+                    <div class="welcome-screen">
+                        <h2 style="color: #ef4444">Connection Error</h2>
+                        <p>Unable to connect to the MCP server. Please ensure the daemon is running and Port 10042 is open.</p>
+                    </div>
+                `;
+            }
+        }
+
+        let currentTab = 'explorer';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-explorer').classList.toggle('active-tab', tab === 'explorer');
+            document.getElementById('tab-qa').classList.toggle('active-tab', tab === 'qa');
+            document.getElementById('tab-worker').classList.toggle('active-tab', tab === 'worker');
+            
+            const workspace = document.getElementById('workspace-container');
+            if (tab === 'qa') {
+                renderQaTree();
+            } else if (tab === 'worker') {
+                renderWorkerPanel();
+            } else {
+                if (activeTokenAddr) {
+                    selectToken(activeTokenAddr);
+                } else {
+                    workspace.innerHTML = `
+                        <div class="welcome-screen">
+                            <h2>Welcome to the Atropa PulseChain Portal</h2>
+                            <p>Select any seeded token from the sidebar to view active LP reserves, top holders, and dynamically distinguish smart contracts from wallet addresses.</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        const qaTree = {
+            start: {
+                question: "What issue are you trying to diagnose?",
+                options: [
+                    { text: "My token has an N/A price", next: "na_price" },
+                    { text: "Smart contract detected as a user wallet", next: "wallet_check" },
+                    { text: "Holders show 0 balance", next: "zero_balance" }
+                ]
+            },
+            na_price: {
+                question: "Has this token been traded in any PulseX swap transaction since block 27033600?",
+                options: [
+                    { text: "Yes", next: "price_swapped" },
+                    { text: "No", next: "price_no_swap" },
+                    { text: "I'm not sure", next: "price_check_logs" }
+                ]
+            },
+            price_swapped: {
+                question: "Does the token share a liquidity pool path to WPLS (either directly or via HEX, PLSX, or DAI)?",
+                options: [
+                    { text: "Yes", next: "price_routed_err" },
+                    { text: "No", next: "price_isolated" }
+                ]
+            },
+            price_no_swap: {
+                result: "<strong>Diagnosis: Lack of Swaps.</strong><br>The pricing daemon determines price dynamically from PulseX swap events. If a token has no swap events since block 27033600, its exchange ratio cannot be calculated. Trigger a test swap on PulseX to integrate the pool."
+            },
+            price_check_logs: {
+                result: "<strong>Action Item: Log Analysis.</strong><br>Check the pricing daemon log. Look for lines stating <code>[MONITOR] Accumulated PulseX swap neighbor</code> to see if your token's pool is actively parsed."
+            },
+            price_routed_err: {
+                result: "<strong>Diagnosis: VM Pipeline delay.</strong><br>If the pool has a routed path but shows N/A, wait for the next block tick. The pricing daemon updates the global undirected knowledge graph weights iteratively on each new block detection."
+            },
+            price_isolated: {
+                result: "<strong>Diagnosis: Disconnected Graph Node.</strong><br>The token is isolated. For price to resolve, there must be at least one liquidity pair bridge linking this token back to a routed asset (WPLS, PLSX, HEX, or DAI)."
+            },
+            wallet_check: {
+                question: "Does the target address return bytecode from the eth_getCode RPC method?",
+                options: [
+                    { text: "Yes (non-empty bytecode)", next: "contract_ok" },
+                    { text: "No (0x or empty bytecode)", next: "wallet_real" }
+                ]
+            },
+            contract_ok: {
+                result: "<strong>Diagnosis: Bytecode verified.</strong><br>The address is confirmed to contain contract code. In the server backend, <code>eth_getCode</code> is run on all unique transfer addresses. If it returns code, it is categorized as a <i>Smart Contract</i>."
+            },
+            wallet_real: {
+                result: "<strong>Diagnosis: Real Wallet / EOA.</strong><br>The address does not contain bytecode, meaning it is an Externally Owned Account (EOA) wallet and is correctly displayed in the User Wallets panel."
+            },
+            zero_balance: {
+                question: "Are you checking the balance in the correct decimal scaling format?",
+                options: [
+                    { text: "Yes", next: "decimals_ok" },
+                    { text: "No", next: "decimals_check" }
+                ]
+            },
+            decimals_ok: {
+                result: "<strong>Diagnosis: Transfer event filtering.</strong><br>Balances are accumulated dynamically by scanning ERC20 Transfer events starting from block 27033600. If holders transferred out all tokens, their balance will resolve to 0."
+            },
+            decimals_check: {
+                result: "<strong>Action Item: Scaling configuration.</strong><br>Verify the token decimals. The C monitor executes <code>decimals()</code> via <code>eth_call</code>. If this call reverts, it defaults to 18 decimals, which may scale small balances down to zero."
+            }
+        };
+
+        function renderQaTree(nodeId = 'start') {
+            const workspace = document.getElementById('workspace-container');
+            const node = qaTree[nodeId];
+            if (!node) return;
+
+            let html = `
+                <div class="qa-container">
+                    <div class="qa-title">Diagnostics Question Answering Decision Tree</div>
+                    <div class="qa-node">
+            `;
+
+            if (node.question) {
+                html += `
+                    <div class="qa-question">${node.question}</div>
+                    <div class="qa-options">
+                        ${node.options.map(opt => `
+                            <button class="qa-btn" onclick="renderQaTree('${opt.next}')">${opt.text}</button>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (node.result) {
+                html += `
+                    <div class="qa-result">${node.result}</div>
+                    <button class="qa-btn" style="margin-top: 20px;" onclick="renderQaTree('start')">← Restart Diagnostics</button>
+                `;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+            workspace.innerHTML = html;
+        }
+
+        // --- Browser RPC Worker & Decentralized Discovery ---
+        let workerActive = false;
+        let lastWorkerBlock = 0;
+        let statsBlocksPolled = 0;
+        let statsSwapsPushed = 0;
+        let statsTokensDiscovered = 0;
+        let workerLogs = [];
+        let workerInterval = null;
+        let walletAddress = '';
+        let walletChainId = '';
+
+        function logWorker(msg) {
+            const now = new Date().toLocaleTimeString();
+            workerLogs.unshift(`[${now}] ${msg}`);
+            if (workerLogs.length > 50) workerLogs.pop();
+            const logBox = document.getElementById('worker-log-box');
+            if (logBox) {
+                logBox.value = workerLogs.join('\n');
+            }
+        }
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    walletAddress = accounts[0];
+                    walletChainId = await window.ethereum.request({ method: 'eth_chainId' });
+                    logWorker(`Wallet connected: ${walletAddress} (ChainId: ${parseInt(walletChainId, 16)})`);
+                    renderWorkerPanel();
+                } catch (err) {
+                    logWorker(`Wallet connection failed: ${err.message}`);
+                }
+            } else {
+                alert("No Web3 browser wallet detected (like Rabby or MetaMask). Falling back to public RPC.");
+            }
+        }
+
+        function toggleWorker() {
+            workerActive = !workerActive;
+            const btn = document.getElementById('worker-toggle-btn');
+            if (workerActive) {
+                btn.innerText = "Stop Discovery Worker";
+                btn.style.background = "#ef4444";
+                logWorker("Starting decentralized background RPC discovery node...");
+                workerInterval = setInterval(workerTick, 8000);
+                workerTick();
+            } else {
+                btn.innerText = "Start Discovery Worker";
+                btn.style.background = "var(--accent)";
+                logWorker("Discovery worker stopped.");
+                if (workerInterval) clearInterval(workerInterval);
+            }
+        }
+
+        async function rpcRequest(method, params = []) {
+            const chainIdNum = parseInt(walletChainId, 16);
+            const isPulseChain = chainIdNum === 369 || chainIdNum === 943;
+            const provider = (window.ethereum && walletAddress && isPulseChain) ? window.ethereum : null;
+            const rpcUrl = 'https://rpc.pulsechain.com';
+            
+            if (provider) {
+                try {
+                    return await provider.request({ method, params });
+                } catch (e) {
+                    // Fall back to public rpc
+                }
+            }
+            
+            const response = await fetch(rpcUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 99 })
+            });
+            const data = await response.json();
+            return data.result;
+        }
+
+        function isFallbackSymbolJS(sym) {
+            if (!sym) return true;
+            const s = sym.toUpperCase();
+            if (s === 'UNKNOWN' || s === 'UNKN' || s === 'UNKNOWN_TOKEN' || s === '') return true;
+            if (sym.endsWith('Contract') || sym.endsWith('Router')) return true;
+            return false;
+        }
+
+        function decodeABIString(hex) {
+            if (!hex || hex === '0x') return '';
+            const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+            
+            // Handle bytes32 fixed-size strings (exactly 64 hex characters / 32 bytes)
+            if (cleanHex.length === 64) {
+                let bytes = [];
+                for (let i = 0; i < 64; i += 2) {
+                    const byteVal = parseInt(cleanHex.slice(i, i+2), 16);
+                    if (byteVal === 0) break;
+                    bytes.push(byteVal);
+                }
+                return new TextDecoder().decode(new Uint8Array(bytes));
+            }
+            
+            if (cleanHex.length < 128) return '';
+            const lenHex = cleanHex.slice(64, 128);
+            const len = parseInt(lenHex, 16);
+            if (!len) return '';
+            
+            let bytes = [];
+            const dataHex = cleanHex.slice(128, 128 + len * 2);
+            for (let i = 0; i < dataHex.length; i += 2) {
+                bytes.push(parseInt(dataHex.slice(i, i+2), 16));
+            }
+            return new TextDecoder().decode(new Uint8Array(bytes));
+        }
+
+        function decodeABIUint256(hex) {
+            if (!hex || hex === '0x') return 0;
+            return parseInt(hex, 16) || 0;
+        }
+
+        async function workerTick() {
+            try {
+                const hexBlock = await rpcRequest('eth_blockNumber');
+                if (!hexBlock) return;
+                const currentBlock = parseInt(hexBlock, 16);
+                
+                if (lastWorkerBlock === 0) {
+                    lastWorkerBlock = currentBlock - 2; // Scan last 2 blocks on startup
+                    logWorker(`Initializing scanner from block height: ${lastWorkerBlock}`);
+                }
+
+                if (currentBlock > lastWorkerBlock) {
+                    statsBlocksPolled += (currentBlock - lastWorkerBlock);
+                    document.getElementById('stat-blocks').innerText = statsBlocksPolled;
+                    
+                    logWorker(`Scanning blocks ${lastWorkerBlock + 1} to ${currentBlock}...`);
+                    
+                    // Fetch logs for Swap events
+                    const logs = await rpcRequest('eth_getLogs', [{
+                        fromBlock: '0x' + (lastWorkerBlock + 1).toString(16),
+                        toBlock: '0x' + currentBlock.toString(16),
+                        topics: ['0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'] // Swap
+                    }]);
+
+                    if (logs && logs.length > 0) {
+                        logWorker(`Found ${logs.length} Swap events. Resolving token pairs...`);
+                        for (const log of logs) {
+                            const pairAddr = log.address;
+                            
+                            // Query token0 and token1 from pair contract
+                            const t0Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0x0dfe1681' }, 'latest']);
+                            const t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21225a3' }, 'latest']);
+                            
+                            if (t0Hex && t1Hex && t0Hex.length >= 40 && t1Hex.length >= 40) {
+                                const token0 = '0x' + t0Hex.slice(-40).toLowerCase();
+                                const token1 = '0x' + t1Hex.slice(-40).toLowerCase();
+                                
+                                // Query reserves to compute price
+                                const reservesHex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0x0902f1ac' }, 'latest']);
+                                if (reservesHex && reservesHex.length >= 130) {
+                                    const r0 = parseInt(reservesHex.slice(2, 66), 16);
+                                    const r1 = parseInt(reservesHex.slice(66, 130), 16);
+                                    
+                                    if (r0 > 0 && r1 > 0) {
+                                        // Auto-discover Token 0 if new or fallback
+                                        const knownT0 = allTokens.find(t => t.address.toLowerCase() === token0);
+                                        if (!knownT0 || isFallbackSymbolJS(knownT0.symbol)) {
+                                            const nameHex = await rpcRequest('eth_call', [{ to: token0, data: '0x06fdde03' }, 'latest']);
+                                            const symHex = await rpcRequest('eth_call', [{ to: token0, data: '0x95d89b41' }, 'latest']);
+                                            const decHex = await rpcRequest('eth_call', [{ to: token0, data: '0x313ce567' }, 'latest']);
+                                            
+                                            const tokenName = decodeABIString(nameHex) || "DiscoveredToken";
+                                            const tokenSym = decodeABIString(symHex) || "DISC";
+                                            const decimals = decodeABIUint256(decHex) || 18;
+                                            
+                                            const isNewSymBetter = !isFallbackSymbolJS(tokenSym) || !knownT0;
+                                            if (isNewSymBetter) {
+                                                logWorker(`Resolved Token0: ${tokenSym} (${token0})`);
+                                                await fetch(API_URL, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        jsonrpc: '2.0',
+                                                        method: 'wave64.add_discovered_token',
+                                                        params: { address: token0, symbol: tokenSym, name: tokenName, decimals },
+                                                        id: 100
+                                                    })
+                                                });
+                                                if (knownT0) {
+                                                    knownT0.symbol = tokenSym;
+                                                    knownT0.name = tokenName;
+                                                } else {
+                                                    allTokens.push({ address: token0.toLowerCase(), symbol: tokenSym, name: tokenName, decimals });
+                                                }
+                                                statsTokensDiscovered++;
+                                                document.getElementById('stat-tokens').innerText = statsTokensDiscovered;
+                                            }
+                                        }
+
+                                        // Auto-discover Token 1 if new or fallback
+                                        const knownT1 = allTokens.find(t => t.address.toLowerCase() === token1);
+                                        if (!knownT1 || isFallbackSymbolJS(knownT1.symbol)) {
+                                            const nameHex = await rpcRequest('eth_call', [{ to: token1, data: '0x06fdde03' }, 'latest']);
+                                            const symHex = await rpcRequest('eth_call', [{ to: token1, data: '0x95d89b41' }, 'latest']);
+                                            const decHex = await rpcRequest('eth_call', [{ to: token1, data: '0x313ce567' }, 'latest']);
+                                            
+                                            const tokenName = decodeABIString(nameHex) || "DiscoveredToken";
+                                            const tokenSym = decodeABIString(symHex) || "DISC";
+                                            const decimals = decodeABIUint256(decHex) || 18;
+                                            
+                                            const isNewSymBetter = !isFallbackSymbolJS(tokenSym) || !knownT1;
+                                            if (isNewSymBetter) {
+                                                logWorker(`Resolved Token1: ${tokenSym} (${token1})`);
+                                                await fetch(API_URL, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        jsonrpc: '2.0',
+                                                        method: 'wave64.add_discovered_token',
+                                                        params: { address: token1, symbol: tokenSym, name: tokenName, decimals },
+                                                        id: 101
+                                                    })
+                                                });
+                                                if (knownT1) {
+                                                    knownT1.symbol = tokenSym;
+                                                    knownT1.name = tokenName;
+                                                } else {
+                                                    allTokens.push({ address: token1.toLowerCase(), symbol: tokenSym, name: tokenName, decimals });
+                                                }
+                                                statsTokensDiscovered++;
+                                                document.getElementById('stat-tokens').innerText = statsTokensDiscovered;
+                                            }
+                                        }
+
+                                        // Submit swap edge price
+                                        const dec0 = 18; // Default to 18 for safety if lookup fails
+                                        const dec1 = 18;
+                                        const price = (r1 / Math.pow(10, dec1)) / (r0 / Math.pow(10, dec0));
+                                        
+                                        await fetch(API_URL, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                jsonrpc: '2.0',
+                                                method: 'wave64.add_swap_edge',
+                                                params: { token0, token1, price },
+                                                id: 102
+                                            })
+                                        });
+                                        statsSwapsPushed++;
+                                        document.getElementById('stat-swaps').innerText = statsSwapsPushed;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    lastWorkerBlock = currentBlock;
+                }
+            } catch (err) {
+                logWorker(`Error in worker loop: ${err.message}`);
+            }
+        }
+
+        async function scanHistory(blocksToScan) {
+            logWorker(`Starting historical discovery scan for the past ${blocksToScan} blocks...`);
+            try {
+                const hexBlock = await rpcRequest('eth_blockNumber');
+                if (!hexBlock) return;
+                const currentBlock = parseInt(hexBlock, 16);
+                const fromBlock = currentBlock - blocksToScan;
+                
+                logWorker(`Querying Swap logs from block ${fromBlock} to ${currentBlock}...`);
+                const logs = await rpcRequest('eth_getLogs', [{
+                    fromBlock: '0x' + fromBlock.toString(16),
+                    toBlock: '0x' + currentBlock.toString(16),
+                    topics: ['0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822']
+                }]);
+                
+                if (logs && logs.length > 0) {
+                    logWorker(`Found ${logs.length} historical Swap events. Resolving token pairs...`);
+                    for (const log of logs) {
+                        const pairAddr = log.address;
+                        const t0Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0x0dfe1681' }, 'latest']);
+                        const t1Hex = await rpcRequest('eth_call', [{ to: pairAddr, data: '0xd21225a3' }, 'latest']);
+                        
+                        if (t0Hex && t1Hex && t0Hex.length >= 40 && t1Hex.length >= 40) {
+                            const token0 = '0x' + t0Hex.slice(-40).toLowerCase();
+                            const token1 = '0x' + t1Hex.slice(-40).toLowerCase();
+                            
+                            // Auto-discover Token 0 if new or fallback
+                            const knownT0 = allTokens.find(t => t.address.toLowerCase() === token0);
+                            if (!knownT0 || isFallbackSymbolJS(knownT0.symbol)) {
+                                const nameHex = await rpcRequest('eth_call', [{ to: token0, data: '0x06fdde03' }, 'latest']);
+                                const symHex = await rpcRequest('eth_call', [{ to: token0, data: '0x95d89b41' }, 'latest']);
+                                const decHex = await rpcRequest('eth_call', [{ to: token0, data: '0x313ce567' }, 'latest']);
+                                const tokenName = decodeABIString(nameHex) || "DiscoveredToken";
+                                const tokenSym = decodeABIString(symHex) || "DISC";
+                                const decimals = decodeABIUint256(decHex) || 18;
+                                
+                                const isNewSymBetter = !isFallbackSymbolJS(tokenSym) || !knownT0;
+                                if (isNewSymBetter) {
+                                    logWorker(`Resolved Token0: ${tokenSym} (${token0})`);
+                                    await fetch(API_URL, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            jsonrpc: '2.0',
+                                            method: 'wave64.add_discovered_token',
+                                            params: { address: token0, symbol: tokenSym, name: tokenName, decimals },
+                                            id: 100
+                                        })
+                                    });
+                                    if (knownT0) {
+                                        knownT0.symbol = tokenSym;
+                                        knownT0.name = tokenName;
+                                    } else {
+                                        allTokens.push({ address: token0.toLowerCase(), symbol: tokenSym, name: tokenName, decimals });
+                                    }
+                                    statsTokensDiscovered++;
+                                    document.getElementById('stat-tokens').innerText = statsTokensDiscovered;
+                                }
+                            }
+                            
+                            // Auto-discover Token 1 if new or fallback
+                            const knownT1 = allTokens.find(t => t.address.toLowerCase() === token1);
+                            if (!knownT1 || isFallbackSymbolJS(knownT1.symbol)) {
+                                const nameHex = await rpcRequest('eth_call', [{ to: token1, data: '0x06fdde03' }, 'latest']);
+                                const symHex = await rpcRequest('eth_call', [{ to: token1, data: '0x95d89b41' }, 'latest']);
+                                const decHex = await rpcRequest('eth_call', [{ to: token1, data: '0x313ce567' }, 'latest']);
+                                const tokenName = decodeABIString(nameHex) || "DiscoveredToken";
+                                const tokenSym = decodeABIString(symHex) || "DISC";
+                                const decimals = decodeABIUint256(decHex) || 18;
+                                
+                                const isNewSymBetter = !isFallbackSymbolJS(tokenSym) || !knownT1;
+                                if (isNewSymBetter) {
+                                    logWorker(`Resolved Token1: ${tokenSym} (${token1})`);
+                                    await fetch(API_URL, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            jsonrpc: '2.0',
+                                            method: 'wave64.add_discovered_token',
+                                            params: { address: token1, symbol: tokenSym, name: tokenName, decimals },
+                                            id: 101
+                                        })
+                                    });
+                                    if (knownT1) {
+                                        knownT1.symbol = tokenSym;
+                                        knownT1.name = tokenName;
+                                    } else {
+                                        allTokens.push({ address: token1.toLowerCase(), symbol: tokenSym, name: tokenName, decimals });
+                                    }
+                                    statsTokensDiscovered++;
+                                    document.getElementById('stat-tokens').innerText = statsTokensDiscovered;
+                                }
+                            }
+                        }
+                    }
+                    logWorker(`Historical scan completed.`);
+                } else {
+                    logWorker(`No Swap events found in the past ${blocksToScan} blocks.`);
+                }
+            } catch (err) {
+                logWorker(`Error in historical scan: ${err.message}`);
+            }
+        }
+
+        async function resolveAllFallbackTokens() {
+            const fallbacks = allTokens.filter(t => isFallbackSymbolJS(t.symbol));
+            if (fallbacks.length === 0) {
+                logWorker("No fallback/unknown tokens found to resolve.");
+                return;
+            }
+            
+            logWorker(`Found ${fallbacks.length} fallback/unknown tokens. Querying metadata on-chain...`);
+            
+            for (let i = 0; i < fallbacks.length; i++) {
+                const tok = fallbacks[i];
+                logWorker(`[${i+1}/${fallbacks.length}] Resolving ${tok.address}...`);
+                try {
+                    const nameHex = await rpcRequest('eth_call', [{ to: tok.address, data: '0x06fdde03' }, 'latest']);
+                    const symHex = await rpcRequest('eth_call', [{ to: tok.address, data: '0x95d89b41' }, 'latest']);
+                    const decHex = await rpcRequest('eth_call', [{ to: tok.address, data: '0x313ce567' }, 'latest']);
+                    
+                    const tokenName = decodeABIString(nameHex) || tok.name || "DiscoveredToken";
+                    const tokenSym = decodeABIString(symHex);
+                    const decimals = decodeABIUint256(decHex) || 18;
+                    
+                    if (tokenSym && !isFallbackSymbolJS(tokenSym)) {
+                        logWorker(`  -> Resolved successfully: ${tokenSym} (${tokenName})`);
+                        await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                jsonrpc: '2.0',
+                                method: 'wave64.add_discovered_token',
+                                params: { address: tok.address, symbol: tokenSym, name: tokenName, decimals },
+                                id: 200 + i
+                            })
+                        });
+                        tok.symbol = tokenSym;
+                        tok.name = tokenName;
+                        tok.decimals = decimals;
+                        
+                        // Increment resolved stats
+                        statsTokensDiscovered++;
+                        document.getElementById('stat-tokens').innerText = statsTokensDiscovered;
+                    } else {
+                        logWorker(`  -> Returned fallback/empty symbol: "${tokenSym || ''}". Skipping backend update.`);
+                    }
+                } catch (err) {
+                    logWorker(`  -> Failed to query metadata: ${err.message}`);
+                }
+                // brief delay to prevent RPC rate-limiting
+                await new Promise(r => setTimeout(r, 150));
+            }
+            logWorker("Finished resolving all addresses.sol tokens.");
+            renderSidebar(allTokens);
+        }
+
+        function renderWorkerPanel() {
+            const workspace = document.getElementById('workspace-container');
+            const walletConnected = walletAddress ? `<span style="color:#22c55e">Connected (${walletAddress.slice(0,6)}...${walletAddress.slice(-4)})</span>` : `<span style="color:#ffb020">Disconnected (Using Public RPC)</span>`;
+            
+            workspace.innerHTML = `
+                <div class="qa-container">
+                    <div class="qa-title">Browser RPC Discovery & Farming Worker Node</div>
+                    
+                    <div class="qa-node" style="display:flex; flex-direction:column; gap:20px;">
+                        <div style="background:rgba(255,255,255,0.05); padding:16px; border-radius:8px; border:1px solid var(--panel-border);">
+                            <h3 style="margin-top:0;">Farming System Configuration</h3>
+                            <p>Distribute the WinchesterMQ state and price discovery workload using costless client-side RPC calls via public endpoints or browser wallets.</p>
+                            
+                            <div style="display:flex; gap:20px; align-items:center; margin-top:10px;">
+                                <div><strong>Wallet Status:</strong> ${walletConnected}</div>
+                                ${!walletAddress ? `<button class="qa-btn" onclick="connectWallet()">Connect Wallet</button>` : ''}
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
+                            <div style="background:rgba(129, 140, 248, 0.1); padding:16px; border-radius:8px; text-align:center; border:1px solid rgba(129, 140, 248, 0.2);">
+                                <div style="font-size:24px; font-weight:bold;" id="stat-blocks">${statsBlocksPolled}</div>
+                                <div style="font-size:12px; color:var(--text-muted);">Blocks Polled</div>
+                            </div>
+                            <div style="background:rgba(34, 197, 94, 0.1); padding:16px; border-radius:8px; text-align:center; border:1px solid rgba(34, 197, 94, 0.2);">
+                                <div style="font-size:24px; font-weight:bold;" id="stat-swaps">${statsSwapsPushed}</div>
+                                <div style="font-size:12px; color:var(--text-muted);">Swaps Pushed</div>
+                            </div>
+                            <div style="background:rgba(239, 68, 68, 0.1); padding:16px; border-radius:8px; text-align:center; border:1px solid rgba(239, 68, 68, 0.2);">
+                                <div style="font-size:24px; font-weight:bold;" id="stat-tokens">${statsTokensDiscovered}</div>
+                                <div style="font-size:12px; color:var(--text-muted);">New Tokens Found</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div style="display:flex; gap:10px;">
+                                <button id="worker-toggle-btn" class="qa-btn" style="flex:1; font-size:16px; padding:12px;" onclick="toggleWorker()">
+                                    ${workerActive ? 'Stop Discovery Worker' : 'Start Discovery Worker'}
+                                </button>
+                                <button class="qa-btn" style="background:#4f46e5; font-size:14px; padding:12px;" onclick="scanHistory(250)">
+                                    Scan Past 250 Blocks
+                                </button>
+                                <button class="qa-btn" style="background:#4f46e5; font-size:14px; padding:12px;" onclick="scanHistory(1000)">
+                                    Scan Past 1000 Blocks
+                                </button>
+                            </div>
+                            <button class="qa-btn" style="background:#10b981; font-size:15px; padding:12px; width:100%;" onclick="resolveAllFallbackTokens()">
+                                Resolve addresses.sol Fallback Tokens (Active Metadata Sweep)
+                            </button>
+                        </div>
+
+                        <div>
+                            <strong>Farming System Output Logs:</strong>
+                            <textarea id="worker-log-box" readonly style="width:100%; height:200px; background:#050308; border:1px solid var(--panel-border); font-family:monospace; color:#22c55e; padding:10px; border-radius:8px; margin-top:8px; resize:none;">${workerLogs.join('\n')}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Auto-poll and boot
+        loadTokens();
+        setInterval(loadTokens, 15000);
+        toggleWorker(); // Start the background discovery worker automatically on page load
+    </script>
+</body>
+</html>
