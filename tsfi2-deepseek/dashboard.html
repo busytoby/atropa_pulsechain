@@ -816,6 +816,44 @@
                     `;
                 }
 
+                // Calculate aggregated burned stats
+                let totalBurnedPls = 0;
+                let totalBurnedUsd = 0;
+                let totalMaxPegUsd = 0;
+                let hasBurnedLp = false;
+
+                if (tok.lp_holdings && tok.lp_holdings.length > 0) {
+                    tok.lp_holdings.forEach(lp => {
+                        const pct = lpBurnPercentages[lp.pool] || 0;
+                        if (pct > 0.01) {
+                            hasBurnedLp = true;
+                            const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                            const pairedSym = pairedTok ? pairedTok.symbol : '';
+                            
+                            let poolValuePls = 0;
+                            if (pairedTok && pairedTok.price_pls) {
+                                poolValuePls = 2 * lp.paired_balance * pairedTok.price_pls;
+                            } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
+                                poolValuePls = 2 * lp.paired_balance;
+                            }
+                            
+                            const burnedValuePls = poolValuePls * (pct / 100);
+                            const burnedValueUsd = burnedValuePls * plsdRate;
+                            
+                            totalBurnedPls += burnedValuePls;
+                            totalBurnedUsd += burnedValueUsd;
+                            
+                            const isStable = pairedSym.toUpperCase().includes('DAI') || 
+                                             pairedSym.toUpperCase().includes('USDC') || 
+                                             pairedSym.toUpperCase().includes('USDT') || 
+                                             pairedSym.toUpperCase().includes('USD');
+                            if (isStable) {
+                                totalMaxPegUsd += (2 * lp.paired_balance) * (pct / 100);
+                            }
+                        }
+                    });
+                }
+
                 workspace.innerHTML = `
                     <div class="token-header-card">
                         <div class="token-meta">
@@ -829,6 +867,19 @@
                             <div style="margin-top: 6px; font-size: 13px; color: var(--text-secondary);">
                                 <strong>Total Supply:</strong> ${totalSupplyStr} ${tok.symbol || ''}
                             </div>
+                            ${hasBurnedLp ? `
+                            <div style="margin-top: 8px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; border-radius: 4px; width: fit-content; min-width: 320px;">
+                                <strong style="color: #22c55e; font-size: 13px; display: block; margin-bottom: 4px;">🔥 AGGREGATED BURNED LIQUIDITY</strong>
+                                <div style="font-size: 13px; color: var(--text-secondary);">
+                                    <strong>Current Market Value:</strong> ${formatLargeNumber(totalBurnedPls, 0)} PLS (~$${formatLargeNumber(totalBurnedUsd, 2)} USD)
+                                </div>
+                                ${totalMaxPegUsd > 0 ? `
+                                <div style="margin-top: 4px; font-size: 13px; color: #3b82f6; font-weight: 500;">
+                                    <strong>Max Potential Locked (at $1.00 peg):</strong> ~$${formatLargeNumber(totalMaxPegUsd, 2)} USD
+                                </div>
+                                ` : ''}
+                            </div>
+                            ` : ''}
                             <div style="margin-top: 10px;">
                                 <button class="qa-btn" style="background: var(--accent); font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: fit-content;" onclick="selectToken('${tok.address}', true)">
                                     Refresh Holder Balances (Force RPC Update)
