@@ -480,6 +480,7 @@ void run_value_holders_sweep(const char *target_token_addr) {
                     if (query_mcp(augment_payload, aug_resp, sizeof(aug_resp))) {
                         printf("[WORKER] Stored value holders for %s: %s\n", clean_addr, raw_result);
                     }
+                    usleep(500000);
                 }
             }
         }
@@ -649,6 +650,18 @@ int main() {
                 
                 if (block_val == 0) {
                     usleep(1000000);
+                    continue;
+                }
+                
+                if (pending_count > 10) {
+                    char prune_payload[256];
+                    snprintf(prune_payload, sizeof(prune_payload),
+                             "{\"jsonrpc\":\"2.0\",\"method\":\"pulsechain.prune_block\",\"params\":{\"block\":%lu},\"id\":2}\n",
+                             block_val);
+                    char prune_resp[1024];
+                    if (query_mcp(prune_payload, prune_resp, sizeof(prune_resp))) {
+                        printf("[WORKER] Skipped block %lu (exceeds 10 block window limit, pending: %u)\n", block_val, pending_count);
+                    }
                     continue;
                 }
                 
