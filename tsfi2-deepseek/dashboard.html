@@ -720,19 +720,6 @@
                 } catch (e) {
                     console.error("Failed to fetch total supply:", e);
                 }
-                
-                let contracts = [];
-                let wallets = [];
-                
-                if (holderData.result && holderData.result.holders) {
-                    holderData.result.holders.forEach(h => {
-                        if (h.is_contract) {
-                            contracts.push(h);
-                        } else {
-                            wallets.push(h);
-                        }
-                    });
-                }
 
                 // Fetch burned LP percentages and reserves for each LP holding in parallel
                 const lpBurnPercentages = {};
@@ -800,61 +787,6 @@
                     console.error("Error computing PLS/USD rate:", e);
                 }
 
-                // Render detail template
-                let lpHtml = '';
-                if (tok.lp_holdings && tok.lp_holdings.length > 0) {
-                    lpHtml = `
-                        <div class="lp-card">
-                            <div class="lp-title">PulseX LP Holdings & Reserves</div>
-                            <div class="lp-grid">
-                                ${tok.lp_holdings.map(lp => {
-                                    const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
-                                    const pairedSym = pairedTok ? pairedTok.symbol : (lp.paired_token.slice(0, 6) + '...' + lp.paired_token.slice(-4));
-                                    const currentSym = tok.symbol || 'Token';
-                                    const pairName = `${currentSym} / ${pairedSym}`;
-                                    const pct = lpBurnPercentages[lp.pool] || 0;
-                                    const realRes = lpRealReserves[lp.pool] || { paired_balance: 0, token_balance: 0 };
-                                    
-                                    // Calculate pool value in PLS
-                                    let poolValuePls = 0;
-                                    if (pairedTok && pairedTok.price_pls) {
-                                        poolValuePls = 2 * realRes.paired_balance * pairedTok.price_pls;
-                                    } else if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
-                                        poolValuePls = 2 * realRes.paired_balance;
-                                    }
-                                    
-                                    const isStable = pairedSym.toUpperCase().includes('DAI') || 
-                                                     pairedSym.toUpperCase().includes('USDC') || 
-                                                     pairedSym.toUpperCase().includes('USDT') || 
-                                                     pairedSym.toUpperCase().includes('USD');
-                                    
-                                    const burnedValuePls = poolValuePls * (pct / 100);
-                                    const burnedValueUsd = burnedValuePls * plsdRate;
-                                    
-                                    let burnInfo = '';
-                                    if (pct > 0.01) {
-                                        let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
-                                        if (isStable) {
-                                            const maxPegValUsd = (2 * realRes.paired_balance) * (pct / 100);
-                                            valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
-                                        }
-                                        burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:12px; line-height: 1.4;">${valuationText}</span>`;
-                                    } else {
-                                        burnInfo = `<span style="color:var(--text-muted);">Unburned LP</span>`;
-                                    }
-                                    
-                                    return `
-                                        <div class="lp-item">
-                                            <div class="lp-pair-name">${pairName}</div>
-                                            <div class="lp-reserves" style="font-size: 13px; color: var(--text-muted);">
-                                                ${formatLargeNumber(realRes.token_balance)} ${currentSym} &nbsp;|&nbsp; ${formatLargeNumber(realRes.paired_balance)} ${pairedSym}
-                                            </div>
-                                            <div style="font-size: 12px; margin-top: 4px;">
-                                                ${burnInfo}
-                                            </div>
-                                            <div style="font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-top: 4px;">
-                                                Pool: ${lp.pool}
-                                            </div>
                 // Calculate aggregated burned stats and build unified contracts list
                 let totalBurnedPls = 0;
                 let totalBurnedUsd = 0;
