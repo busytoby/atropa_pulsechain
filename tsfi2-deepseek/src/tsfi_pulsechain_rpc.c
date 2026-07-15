@@ -9,8 +9,9 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
-#define RPC_HOST "rpc.pulsechain.com"
+#define RPC_HOST "pulsechain-rpc.publicnode.com"
 #define RPC_PORT "443"
 
 static bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
@@ -34,6 +35,12 @@ static bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, si
         freeaddrinfo(res);
         return false;
     }
+
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
 
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
         fprintf(stderr, "[RPC DEBUG] connect failed to %s:%s\n", RPC_HOST, RPC_PORT);
@@ -462,7 +469,7 @@ static void forward_to_mcp_server(const char *cmd) {
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0) {
         char payload[1024];
         snprintf(payload, sizeof(payload), 
-                 "{\"jsonrpc\":\"2.0\",\"method\":\"wave512.dilemma_log\",\"params\":{"
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"wave64.dilemma_log\",\"params\":{"
                  "\"event\":\"%s\",\"source\":\"WinchesterMQ Bridge\",\"details\":\"Forwarded from C Thunk Broker\""
                  "},\"id\":1}", cmd);
         ssize_t nw = write(sockfd, payload, strlen(payload));

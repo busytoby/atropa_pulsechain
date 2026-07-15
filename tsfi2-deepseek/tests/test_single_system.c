@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/signalfd.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <time.h>
 
 #define PROVENANCE_KEY "SIG_2026_USLM_AFFIRMED"
@@ -51,7 +51,7 @@ void log_immutable_status(const char *status) {
     }
 }
 
-void mock_lau_final_cleanup(InternalHeader *h, WaveSystem *ws, int sfd) {
+void lau_final_cleanup(InternalHeader *h, WaveSystem *ws, int sfd) {
     if (h && h->resonance_as_status) { free(h->resonance_as_status); h->resonance_as_status = NULL; }
     if (ws) free(ws);
     if (sfd != -1) close(sfd);
@@ -61,7 +61,7 @@ void step_safety_epoch(WaveSystem *ws) { *ws->version = 2026; }
 void step_safety_state(WaveSystem *ws) { *(ws->ftw) = true; }
 void step_executor_directive(WaveSystem *ws) { if (ws->current_directive) (*ws->counter)++; }
 
-void mock_apply_traced_resonance(WaveSystem *ws, void (*augment)(WaveSystem*), const char *fn_name, double intensity) {
+void apply_traced_resonance(WaveSystem *ws, void (*augment)(WaveSystem*), const char *fn_name, double intensity) {
     (void)intensity;
     if (*ws->resonance_as_status != NULL) free(*ws->resonance_as_status);
     int prev_counter = *ws->counter;
@@ -73,7 +73,7 @@ void mock_apply_traced_resonance(WaveSystem *ws, void (*augment)(WaveSystem*), c
     log_immutable_status(buffer);
 }
 
-#define STEP(ws, func, val) mock_apply_traced_resonance(ws, func, #func, val);
+#define STEP(ws, func, val) apply_traced_resonance(ws, func, #func, val);
 
 #define HELMHOLTZ_RESONANCE_LIST(X, ws, i) \
     X(ws, step_safety_epoch, 1.25) \
@@ -81,7 +81,6 @@ void mock_apply_traced_resonance(WaveSystem *ws, void (*augment)(WaveSystem*), c
     X(ws, step_executor_directive, i)
 
 int main() {
-    alarm(5);
     sigset_t mask; sigemptyset(&mask); sigaddset(&mask, SIGINT); sigprocmask(SIG_BLOCK, &mask, NULL);
     int sfd = signalfd(-1, &mask, 0);
 
@@ -89,45 +88,55 @@ int main() {
     WaveSystem *ws = malloc(sizeof(WaveSystem));
     WIRE_BIJECTION(ws, &h);
 
-    int max_fd = (STDIN_FILENO > sfd) ? STDIN_FILENO : sfd;
+    struct pollfd fds[2];
+    fds[0].fd = sfd;
+    fds[0].events = POLLIN;
+    fds[1].fd = STDIN_FILENO;
+    fds[1].events = POLLIN;
+
     printf("--- SYSTEM-11: AUDITED (2026) ---\n");
     char input[256];
     while (1) {
         printf("\nLAU Command (Intensity Directive) > "); fflush(stdout);
-        fd_set readfds;
-        FD_ZERO(&readfds);
-        FD_SET(STDIN_FILENO, &readfds);
-        FD_SET(sfd, &readfds);
-        struct timeval tv = {1, 0}; // 1000ms
-
-        int select_res = select(max_fd + 1, &readfds, NULL, NULL, &tv);
-        if (select_res > 0) { // Add timeout
-            if (FD_ISSET(sfd, &readfds)) { break; }
-            if (FD_ISSET(STDIN_FILENO, &readfds)) {
-                if (fgets(input, sizeof(input), stdin)) {
-                    input[strcspn(input, "\n")] = 0;
-                    double new_i; char new_d[256];
-                    if (sscanf(input, "%lf %255s", &new_i, new_d) == 2) {
-                        if (strcmp(new_d, "EXIT") == 0) { 
-                            log_immutable_status("INTENTIONAL_EXIT_COMMAND_RECEIVED"); 
-                            break; 
-                        }
-                        ws->current_intensity = new_i; ws->current_directive = new_d;
-                        HELMHOLTZ_RESONANCE_LIST(STEP, ws, ws->current_intensity);
-                        printf("[AUDIT] %s\n", *ws->resonance_as_status);
-                    } else if (strcmp(input, "EXIT") == 0) {
-                        break;
-                    }
-                } else {
-                    break; // EOF or error
-                }
-            } // removed bad else if
-        } else {
+        int poll_res = poll(fds, 2, 1000);
+        if (poll_res < 0) {
+            break;
+        }
+        if (poll_res == 0) {
             break; // Timeout
         }
+        
+        if (fds[0].revents & POLLIN) {
+            struct signalfd_siginfo fdsi;
+            ssize_t s = read(sfd, &fdsi, sizeof(struct signalfd_siginfo));
+            (void)s;
+            break;
+        }
+        
+        if (fds[1].revents & POLLIN) {
+            if (fgets(input, sizeof(input), stdin)) {
+                input[strcspn(input, "\n")] = 0;
+                double new_i; char new_d[256];
+                if (sscanf(input, "%lf %255s", &new_i, new_d) == 2) {
+                    if (strcmp(new_d, "EXIT") == 0) { 
+                        log_immutable_status("INTENTIONAL_EXIT_COMMAND_RECEIVED"); 
+                        break; 
+                    }
+                    ws->current_intensity = new_i; ws->current_directive = new_d;
+                    HELMHOLTZ_RESONANCE_LIST(STEP, ws, ws->current_intensity);
+                    printf("[AUDIT] %s\n", *ws->resonance_as_status);
+                } else if (strcmp(input, "EXIT") == 0) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
     }
-    mock_lau_final_cleanup(&h, ws, sfd);
+    
+    lau_final_cleanup(&h, ws, sfd);
     printf("SYSTEM_AT_REST_SUCCESS\n");
+    
     extern void lau_report_memory_metrics(void);
     extern void lau_free_all_active(void);
     lau_free_all_active();

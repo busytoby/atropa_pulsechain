@@ -82,6 +82,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_dat.o \
             $(OBJ_DIR)/tsfi_graph_select.o \
             $(OBJ_DIR)/tsfi_zmm_rpc.o \
+            $(OBJ_DIR)/tsfi_zmm_rpc_pulse.o \
             $(OBJ_DIR)/tsfi_block_monitor.o
 
 # --- Plugin Objects ---

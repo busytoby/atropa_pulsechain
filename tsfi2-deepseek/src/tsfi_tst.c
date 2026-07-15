@@ -102,6 +102,13 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "wave64.get_token_holders", "53");
     root = tsfi_tst_insert(root, "wave64.add_discovered_token", "54");
     root = tsfi_tst_insert(root, "wave64.add_swap_edge", "55");
+    root = tsfi_tst_insert(root, "wave64.retrieve", "56");
+    root = tsfi_tst_insert(root, "wave64.augment", "57");
+    root = tsfi_tst_insert(root, "wave64.prune", "58");
+    root = tsfi_tst_insert(root, "wave64.get_unpriced_tokens", "59");
+    root = tsfi_tst_insert(root, "pulsechain.get_latest_block", "60");
+    root = tsfi_tst_insert(root, "pulsechain.get_known_contracts", "61");
+    root = tsfi_tst_insert(root, "pulsechain.prune_block", "62");
 
     return root;
 }

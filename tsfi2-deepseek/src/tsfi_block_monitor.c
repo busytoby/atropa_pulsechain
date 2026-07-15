@@ -12,8 +12,19 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <errno.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <pthread.h>
 
 static uint64_t g_last_block_num = 0;
+#define MAX_PENDING_BLOCKS 100
+static uint64_t g_pending_blocks[MAX_PENDING_BLOCKS];
+static int g_pending_blocks_count = 0;
+static pthread_mutex_t g_pending_mutex = PTHREAD_MUTEX_INITIALIZER;
 static time_t g_last_poll_time = 0;
 static tsfi_qing_graph_node g_net_nodes[TSFI_NET_COUNT];
 static int g_graph_initialized = 0;
@@ -24,7 +35,7 @@ static const InteropDecisionNode g_accumulator_tree[3] = {
     { 0, 0xFFFFFFFF, 0xFFFFFFFF, 102 }  // Accumulator Lane 2 (Low block heights)
 };
 
-static const char *PULSEX_ROUTER = "0x165C3410fC69F1857c278b5ce0ae3512720FD0E1";
+static const char *PULSEX_ROUTER __attribute__((unused)) = "0x165C3410fC69F1857c278b5ce0ae3512720FD0E1";
 static const char *SWAP_V2_TOPIC = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822";
 static const uint64_t SWAP_FLOOR_THRESHOLD = 1000ULL;
 typedef struct {
@@ -152,10 +163,10 @@ static void ensure_rdbms_table_initialized(void) {
 static void save_discovered_tokens(void) {
     ensure_rdbms_table_initialized();
     if (!g_mcp_rdbms_table) return;
-    FILE *f = fopen("tmp/contract_metadata.dat.bin", "wb");
+    FILE *f = fopen("assets/contract_metadata.dat.bin", "wb");
     if (!f) {
-        mkdir("tmp", 0755);
-        f = fopen("tmp/contract_metadata.dat.bin", "wb");
+        mkdir("assets", 0755);
+        f = fopen("assets/contract_metadata.dat.bin", "wb");
     }
     if (f) {
         fwrite(g_mcp_rdbms_table, sizeof(LauRdbmsTable), 1, f);
@@ -166,7 +177,7 @@ static void save_discovered_tokens(void) {
 static void load_discovered_tokens(void) {
     ensure_rdbms_table_initialized();
     if (!g_mcp_rdbms_table) return;
-    FILE *f = fopen("tmp/contract_metadata.dat.bin", "rb");
+    FILE *f = fopen("assets/contract_metadata.dat.bin", "rb");
     if (f) {
         LauRdbmsTable temp_table;
         size_t read_blocks = fread(&temp_table, sizeof(LauRdbmsTable), 1, f);
@@ -176,13 +187,13 @@ static void load_discovered_tokens(void) {
             g_mcp_rdbms_table->count = temp_table.count;
             g_mcp_rdbms_table->capacity = temp_table.capacity;
             memcpy(g_mcp_rdbms_table->rows, temp_table.rows, sizeof(temp_table.rows));
-            fprintf(stderr, "[LOAD_DB] Successfully loaded %d tokens from tmp/contract_metadata.dat.bin\n", g_mcp_rdbms_table->count);
+            fprintf(stderr, "[LOAD_DB] Successfully loaded %d tokens from assets/contract_metadata.dat.bin\n", g_mcp_rdbms_table->count);
         } else {
-            fprintf(stderr, "[LOAD_DB] Failed to read from tmp/contract_metadata.dat.bin (read %zu blocks)\n", read_blocks);
+            fprintf(stderr, "[LOAD_DB] Failed to read from assets/contract_metadata.dat.bin (read %zu blocks)\n", read_blocks);
         }
         fclose(f);
     } else {
-        fprintf(stderr, "[LOAD_DB] No tmp/contract_metadata.dat.bin found, starting fresh\n");
+        fprintf(stderr, "[LOAD_DB] No assets/contract_metadata.dat.bin found, starting fresh\n");
     }
 }
 
@@ -328,7 +339,7 @@ static void resolve_token(const char *addr, char *out_symbol, char *out_name, ui
 }
 
 static void save_swap_edges(void) {
-    FILE *f = fopen("tmp/swap_edges.dat.bin", "wb");
+    FILE *f = fopen("assets/swap_edges.dat.bin", "wb");
     if (f) {
         uint32_t count = (uint32_t)g_swap_edges_count;
         fwrite(&count, sizeof(count), 1, f);
@@ -338,7 +349,7 @@ static void save_swap_edges(void) {
 }
 
 static void load_swap_edges(void) {
-    FILE *f = fopen("tmp/swap_edges.dat.bin", "rb");
+    FILE *f = fopen("assets/swap_edges.dat.bin", "rb");
     if (f) {
         uint32_t count = 0;
         if (fread(&count, sizeof(count), 1, f) == 1) {
@@ -446,10 +457,66 @@ typedef struct {
 
 #define MAX_POOL_CACHE 256
 static PoolStateCache g_pool_cache[MAX_POOL_CACHE];
+typedef struct {
+    uint64_t block_number;
+    uint32_t pulsex_tx_count;
+    uint32_t unknown_tx_count;
+} BlockHistoryEntry;
+
+#define MAX_BLOCK_HISTORY 50
+static BlockHistoryEntry g_block_history[MAX_BLOCK_HISTORY];
+static int g_block_history_count = 0;
+
+static void save_block_history(void) {
+    FILE *f = fopen("assets/block_history.dat.bin", "wb");
+    if (f) {
+        uint32_t count = (uint32_t)g_block_history_count;
+        fwrite(&count, sizeof(count), 1, f);
+        fwrite(g_block_history, sizeof(BlockHistoryEntry), count, f);
+        fclose(f);
+    }
+}
+
+static void load_block_history(void) {
+    FILE *f = fopen("assets/block_history.dat.bin", "rb");
+    if (f) {
+        uint32_t count = 0;
+        if (fread(&count, sizeof(count), 1, f) == 1) {
+            g_block_history_count = (int)count;
+            if (g_block_history_count > MAX_BLOCK_HISTORY) g_block_history_count = MAX_BLOCK_HISTORY;
+            size_t r = fread(g_block_history, sizeof(BlockHistoryEntry), g_block_history_count, f);
+            (void)r;
+        }
+        fclose(f);
+    }
+    
+    // Repopulate knowledge graph with loaded block history
+    for (int i = 0; i < g_block_history_count; i++) {
+        uint64_t blk = g_block_history[i].block_number;
+        uint32_t unk = g_block_history[i].unknown_tx_count;
+        if (g_graph_initialized) {
+            CachedContract *new_c = (CachedContract*)malloc(sizeof(CachedContract));
+            if (new_c) {
+                snprintf(new_c->name, sizeof(new_c->name), "block_%lu_unk_%u", blk, unk);
+                new_c->virtual_address = blk;
+                new_c->bytecode = NULL;
+                new_c->size = 0;
+                new_c->path[0] = '\0';
+                
+                g_net_nodes[TSFI_NET_PULSECHAIN].bst_root = tsfi_qing_bst_insert(
+                    g_net_nodes[TSFI_NET_PULSECHAIN].bst_root, 
+                    blk, 
+                    new_c
+                );
+            }
+        }
+    }
+}
+
 static int g_pool_cache_count = 0;
 
 static void save_pool_cache(void) {
-    FILE *f = fopen("tmp/pool_cache.dat.bin", "wb");
+    FILE *f = fopen("assets/pool_cache.dat.bin", "wb");
     if (f) {
         uint32_t count = (uint32_t)g_pool_cache_count;
         fwrite(&count, sizeof(count), 1, f);
@@ -480,7 +547,7 @@ static void ensure_pool_in_cache(const char *pool, const char *t0, const char *t
 }
 
 static void load_pool_cache(void) {
-    FILE *f = fopen("tmp/pool_cache.dat.bin", "rb");
+    FILE *f = fopen("assets/pool_cache.dat.bin", "rb");
     if (f) {
         uint32_t count = 0;
         if (fread(&count, sizeof(count), 1, f) == 1) {
@@ -509,7 +576,62 @@ static void load_pool_cache(void) {
     }
 }
 
+static bool check_rpc_connectivity(void) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) return false;
+    
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    
+    struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    if (getaddrinfo("pulsechain-rpc.publicnode.com", "443", &hints, &res) != 0) {
+        close(sockfd);
+        return false;
+    }
+    
+    int ret = connect(sockfd, res->ai_addr, res->ai_addrlen);
+    if (ret < 0) {
+        if (errno == EINPROGRESS) {
+            fd_set wset;
+            FD_ZERO(&wset);
+            FD_SET(sockfd, &wset);
+            struct timeval tv = {1, 0}; // 1.0 second timeout
+            if (select(sockfd + 1, NULL, &wset, NULL, &tv) > 0) {
+                int err;
+                socklen_t len = sizeof(err);
+                if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &err, &len) == 0 && err == 0) {
+                    freeaddrinfo(res);
+                    close(sockfd);
+                    return true;
+                }
+            }
+        }
+    } else {
+        freeaddrinfo(res);
+        close(sockfd);
+        return true;
+    }
+    
+    freeaddrinfo(res);
+    close(sockfd);
+    return false;
+}
+
 static void tsfi_block_monitor_sync_reserves_startup(void) {
+    if (!check_rpc_connectivity()) {
+        tsfi_io_printf(stderr, "[MONITOR] RPC connectivity check failed. Bypassing startup reserve synchronization (Offline mode).\n");
+        for (int i = 0; i < g_pool_cache_count; i++) {
+            if (g_pool_cache[i].token0_balance > 0.0 && g_pool_cache[i].token1_balance > 0.0) {
+                double reserve_price = g_pool_cache[i].token1_balance / g_pool_cache[i].token0_balance;
+                add_swap_edge(g_pool_cache[i].token0, g_pool_cache[i].token1, reserve_price);
+            }
+        }
+        return;
+    }
     tsfi_io_printf(stderr, "[MONITOR] Synchronizing reserves for %d cached pools on startup...\n", g_pool_cache_count);
     for (int i = 0; i < g_pool_cache_count; i++) {
         char r_buf[1024];
@@ -545,6 +667,7 @@ static void tsfi_block_monitor_sync_reserves_startup(void) {
     tsfi_io_printf(stderr, "[MONITOR] Reserves sync complete. Swap edges: %d\n", g_swap_edges_count);
 }
 
+static int strcasefind(const char *haystack, const char *needle) __attribute__((unused));
 static int strcasefind(const char *haystack, const char *needle) {
     if (!haystack || !needle) return 0;
     size_t needle_len = strlen(needle);
@@ -692,12 +815,21 @@ void tsfi_block_monitor_init(void) {
     ensure_rdbms_table_initialized();
     load_discovered_tokens();
     g_last_block_num = 0;
-    FILE *bf = fopen("tmp/last_block_num.txt", "r");
+    FILE *bf = fopen("assets/last_block_num.dat.bin", "rb");
     if (bf) {
-        if (fscanf(bf, "%lu", &g_last_block_num) != 1) {
-            g_last_block_num = 0;
-        }
+        size_t r = fread(&g_last_block_num, sizeof(g_last_block_num), 1, bf);
+        (void)r;
         fclose(bf);
+    }
+    if (g_last_block_num > 0) {
+        pthread_mutex_lock(&g_pending_mutex);
+        g_pending_blocks_count = 0;
+        for (int i = 0; i < 10; i++) {
+            if (g_last_block_num >= (uint64_t)(9 - i)) {
+                g_pending_blocks[g_pending_blocks_count++] = g_last_block_num - (9 - i);
+            }
+        }
+        pthread_mutex_unlock(&g_pending_mutex);
     }
     g_last_poll_time = 0;
     g_pool_cache_count = 0;
@@ -747,7 +879,10 @@ void tsfi_block_monitor_init(void) {
     seed_tokens_from_addresses_sol();
     load_swap_edges();
     load_pool_cache();
-    tsfi_block_monitor_sync_reserves_startup();
+    load_block_history();
+    if (g_pool_cache_count == 0) {
+        tsfi_block_monitor_sync_reserves_startup();
+    }
 }
 
 tsfi_qing_graph_node* tsfi_block_monitor_get_graph(void) {
@@ -797,6 +932,26 @@ int tsfi_pulse_get_all_prices_json(char *out_buf, size_t max_len) {
     return 1;
 }
 
+int tsfi_pulse_get_unpriced_tokens_json(char *out_buf, size_t max_len) {
+    size_t offset = 0;
+    offset += snprintf(out_buf + offset, max_len - offset, "{\"tokens\":[");
+    int count = 0;
+    for (uint32_t i = 0; i < g_discovered_tokens_count; i++) {
+        double price = tsfi_pulse_get_price_in_pls(g_discovered_tokens[i].address);
+        if (price <= 0.0 && strcmp(g_discovered_tokens[i].name, "UNKNOWN") != 0 && strcmp(g_discovered_tokens[i].symbol, "UNKNOWN") != 0) {
+            offset += snprintf(out_buf + offset, max_len - offset,
+                               "%s{\"address\":\"%s\",\"symbol\":\"%s\",\"name\":\"%s\"}",
+                               (count > 0) ? "," : "",
+                               g_discovered_tokens[i].address,
+                               g_discovered_tokens[i].symbol,
+                               g_discovered_tokens[i].name);
+            count++;
+        }
+    }
+    offset += snprintf(out_buf + offset, max_len - offset, "]}");
+    return 1;
+}
+
 void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
     (void)state;
     time_t now = time(NULL);
@@ -815,9 +970,9 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
             if (g_last_block_num == 0) {
                 g_last_block_num = current_block;
                 tsfi_io_printf(stderr, "[MONITOR] Initialized block height to: %lu (Auncient block monitoring active)\n", current_block);
-                FILE *bf_w = fopen("tmp/last_block_num.txt", "w");
+                FILE *bf_w = fopen("assets/last_block_num.dat.bin", "wb");
                 if (bf_w) {
-                    fprintf(bf_w, "%lu\n", g_last_block_num);
+                    fwrite(&g_last_block_num, sizeof(g_last_block_num), 1, bf_w);
                     fclose(bf_w);
                 }
             } else if (current_block > g_last_block_num) {
@@ -825,25 +980,16 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
                     tsfi_io_printf(stderr, "[MONITOR] Catchup range too large (%lu blocks), shifting start to %lu\n", current_block - g_last_block_num, current_block - 50);
                     g_last_block_num = current_block - 50;
                 }
-                tsfi_io_printf(stderr, "[MONITOR] NEW BLOCK DETECTED: %lu -> %lu\n", g_last_block_num, current_block);
-                g_last_block_num = current_block;
-                FILE *bf_w = fopen("tmp/last_block_num.txt", "w");
-                if (bf_w) {
-                    fprintf(bf_w, "%lu\n", g_last_block_num);
-                    fclose(bf_w);
-                }
-
-                // Drive input event directly to WinchesterMQ
-                char cmd_buf[128];
-                snprintf(cmd_buf, sizeof(cmd_buf), "PULSECHAIN:BLOCK:%lu", current_block);
-                tsfi_thunk_publish_mq(cmd_buf);
-
+                
+                uint64_t target_block = g_last_block_num + 1;
+                tsfi_io_printf(stderr, "[MONITOR] Attempting to process block: %lu\n", target_block);
+                
                 // Query Transaction Count for the new block
                 uint32_t pulsex_tx_count = 0;
                 uint32_t unknown_tx_count = 0;
                 char tx_count_payload[256];
                 char block_hex[32];
-                snprintf(block_hex, sizeof(block_hex), "0x%lx", current_block);
+                snprintf(block_hex, sizeof(block_hex), "0x%lx", target_block);
                 snprintf(tx_count_payload, sizeof(tx_count_payload),
                          "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBlockTransactionCountByNumber\",\"params\":[\"%s\"],\"id\":1}",
                          block_hex);
@@ -851,21 +997,16 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
                 char count_buf[128] = {0};
                 if (tsfi_pulse_rpc_exec_raw(tx_count_payload, count_buf, sizeof(count_buf))) {
                     uint64_t total_txs = strtoull(count_buf, NULL, 16);
-                    for (uint64_t idx = 0; idx < total_txs; idx++) {
-                        char tx_query[256];
-                        snprintf(tx_query, sizeof(tx_query),
-                                 "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getTransactionByBlockNumberAndIndex\",\"params\":[\"%s\",\"0x%lx\"],\"id\":1}",
-                                 block_hex, idx);
-                        
-                        char tx_details[4096] = {0};
-                        if (tsfi_pulse_rpc_exec_raw(tx_query, tx_details, sizeof(tx_details))) {
-                            if (strcasefind(tx_details, PULSEX_ROUTER)) {
-                                pulsex_tx_count++;
-                            } else {
-                                unknown_tx_count++;
-                            }
-                        }
+                    if (total_txs == 0) {
+                        tsfi_io_printf(stderr, "[MONITOR] Zero transactions returned for block %lu; treating as RPC failure.\n", target_block);
+                        return;
                     }
+                    
+                    // Drive input event directly to WinchesterMQ
+                    char cmd_buf[128];
+                    snprintf(cmd_buf, sizeof(cmd_buf), "PULSECHAIN:BLOCK:%lu", target_block);
+                    tsfi_thunk_publish_mq(cmd_buf);
+                    unknown_tx_count = total_txs;
                 }
 
                 tsfi_io_printf(stderr, "[MONITOR] Block %lu transactions accumulated: PulseX=%u, Unknown=%u\n",
@@ -1038,26 +1179,71 @@ void tsfi_block_monitor_tick(TsfiZmmVmState *state) {
                 }
 
                 // Classify incoming block to non-preferential accumulator models
-                uint32_t lane = evaluate_accumulator_lane(current_block);
+                uint32_t lane = evaluate_accumulator_lane(target_block);
 
                 // Dynamically update the Knowledge Graph in real-time
                 if (g_graph_initialized) {
                     CachedContract *new_c = (CachedContract*)malloc(sizeof(CachedContract));
                     if (new_c) {
-                        snprintf(new_c->name, sizeof(new_c->name), "block_%lu_px_%u_unk_%u", current_block, pulsex_tx_count, unknown_tx_count);
-                        new_c->virtual_address = current_block;
+                        snprintf(new_c->name, sizeof(new_c->name), "block_%lu_unk_%u", target_block, unknown_tx_count);
+                        new_c->virtual_address = target_block;
                         new_c->bytecode = NULL;
                         new_c->size = 0;
                         new_c->path[0] = '\0';
                         
                         g_net_nodes[TSFI_NET_PULSECHAIN].bst_root = tsfi_qing_bst_insert(
                             g_net_nodes[TSFI_NET_PULSECHAIN].bst_root, 
-                            current_block, 
+                            target_block, 
                             new_c
                         );
-                        tsfi_io_printf(stderr, "[MONITOR] Inserted block %lu into undirected Knowledge Graph (lane %u)\n", current_block, lane);
+                        tsfi_io_printf(stderr, "[MONITOR] Inserted block %lu into undirected Knowledge Graph (lane %u)\n", target_block, lane);
                     }
                 }
+                
+                
+                // Add to block history array
+                if (g_block_history_count < MAX_BLOCK_HISTORY) {
+                    g_block_history[g_block_history_count++] = (BlockHistoryEntry){
+                        .block_number = target_block,
+                        .pulsex_tx_count = pulsex_tx_count,
+                        .unknown_tx_count = unknown_tx_count
+                    };
+                } else {
+                    memmove(g_block_history, g_block_history + 1, sizeof(BlockHistoryEntry) * (MAX_BLOCK_HISTORY - 1));
+                    g_block_history[MAX_BLOCK_HISTORY - 1] = (BlockHistoryEntry){
+                        .block_number = target_block,
+                        .pulsex_tx_count = pulsex_tx_count,
+                        .unknown_tx_count = unknown_tx_count
+                    };
+                }
+                save_block_history();
+                
+                // Persist the successfully processed block number
+                g_last_block_num = target_block;
+                {
+                    pthread_mutex_lock(&g_pending_mutex);
+                    bool found_pending = false;
+                    for (int i = 0; i < g_pending_blocks_count; i++) {
+                        if (g_pending_blocks[i] == target_block) { found_pending = true; break; }
+                    }
+                    if (!found_pending) {
+                        if (g_pending_blocks_count >= 10) {
+                            for (int i = 0; i < g_pending_blocks_count - 1; i++) {
+                                g_pending_blocks[i] = g_pending_blocks[i + 1];
+                            }
+                            g_pending_blocks[g_pending_blocks_count - 1] = target_block;
+                        } else {
+                            g_pending_blocks[g_pending_blocks_count++] = target_block;
+                        }
+                    }
+                    pthread_mutex_unlock(&g_pending_mutex);
+                }
+                FILE *bf_w = fopen("assets/last_block_num.dat.bin", "wb");
+                if (bf_w) {
+                    fwrite(&g_last_block_num, sizeof(g_last_block_num), 1, bf_w);
+                    fclose(bf_w);
+                }
+                
                 print_pricing_routing_table();
             }
         }
@@ -1113,7 +1299,7 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
     }
 
     char cache_path[256];
-    snprintf(cache_path, sizeof(cache_path), "tmp/holders_%s.json", token_lower);
+    snprintf(cache_path, sizeof(cache_path), "assets/holders_%s.dat.bin", token_lower);
 
     struct stat st;
     if (!force_refresh && stat(cache_path, &st) == 0) {
@@ -1327,4 +1513,74 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
     }
 
     return 1;
+}
+
+uint64_t tsfi_block_monitor_get_last_block_num(void) {
+    return g_last_block_num;
+}
+
+void tsfi_block_monitor_set_last_block_num(uint64_t val) {
+    g_last_block_num = val;
+    FILE *bf_w = fopen("assets/last_block_num.dat.bin", "wb");
+    if (bf_w) {
+        fwrite(&g_last_block_num, sizeof(g_last_block_num), 1, bf_w);
+        fclose(bf_w);
+    }
+}
+
+uint64_t tsfi_block_monitor_get_newest_pending_block(void) {
+    pthread_mutex_lock(&g_pending_mutex);
+    uint64_t ret = g_last_block_num;
+    if (g_pending_blocks_count > 0) {
+        uint64_t max_block = 0;
+        for (int i = 0; i < g_pending_blocks_count; i++) {
+            if (g_pending_blocks[i] > max_block) {
+                max_block = g_pending_blocks[i];
+            }
+        }
+        ret = max_block;
+    }
+    pthread_mutex_unlock(&g_pending_mutex);
+    return ret;
+}
+
+bool tsfi_block_monitor_prune_block(uint64_t block_num) {
+    pthread_mutex_lock(&g_pending_mutex);
+    int idx = -1;
+    for (int i = 0; i < g_pending_blocks_count; i++) {
+        if (g_pending_blocks[i] == block_num) {
+            idx = i;
+            break;
+        }
+    }
+    bool ret = false;
+    if (idx != -1) {
+        for (int i = idx; i < g_pending_blocks_count - 1; i++) {
+            g_pending_blocks[i] = g_pending_blocks[i + 1];
+        }
+        g_pending_blocks_count--;
+        ret = true;
+    }
+    pthread_mutex_unlock(&g_pending_mutex);
+    return ret;
+}
+
+int tsfi_block_monitor_get_pending_count(void) {
+    pthread_mutex_lock(&g_pending_mutex);
+    int ret = g_pending_blocks_count;
+    pthread_mutex_unlock(&g_pending_mutex);
+    return ret;
+}
+
+uint32_t tsfi_block_monitor_get_discovered_tokens_count(void) {
+    if (g_mcp_rdbms_table) return g_mcp_rdbms_table->count;
+    return 0;
+}
+
+void tsfi_block_monitor_get_discovered_token(uint32_t idx, char *out_addr, char *out_symbol, char *out_name) {
+    if (g_mcp_rdbms_table && idx < g_mcp_rdbms_table->count) {
+        strcpy(out_addr, g_mcp_rdbms_table->rows[idx].address);
+        strcpy(out_symbol, g_mcp_rdbms_table->rows[idx].symbol);
+        strcpy(out_name, g_mcp_rdbms_table->rows[idx].name);
+    }
 }

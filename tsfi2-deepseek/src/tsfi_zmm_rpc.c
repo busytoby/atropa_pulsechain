@@ -30,6 +30,71 @@ typedef struct {
 static DilemmaLogEntry g_dilemma_logs[MAX_DILEMMA_LOGS];
 static int g_dilemma_log_count = 0;
 
+#define MAX_STORE_KEYS 1024
+typedef struct {
+    char key[128];
+    char value[4096];
+    uint64_t timestamp;
+} StoreEntry;
+
+static StoreEntry g_seq_store[MAX_STORE_KEYS];
+static int g_seq_store_count = 0;
+static pthread_mutex_t g_seq_store_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool g_seq_store_loaded = false;
+
+static int extract_json_string(const char *json, const char *key, char *out, size_t max);
+
+static void save_seq_store(void) {
+    FILE *f = fopen("tmp/mcp_sequential_store.json", "w");
+    if (!f) f = fopen("../tmp/mcp_sequential_store.json", "w");
+    if (f) {
+        fprintf(f, "[\n");
+        for (int i = 0; i < g_seq_store_count; i++) {
+            fprintf(f, "  {\"key\": \"%s\", \"value\": \"%s\", \"timestamp\": %lu}%s\n",
+                    g_seq_store[i].key, g_seq_store[i].value, (unsigned long)g_seq_store[i].timestamp,
+                    (i == g_seq_store_count - 1) ? "" : ",");
+        }
+        fprintf(f, "]\n");
+        fclose(f);
+    }
+}
+
+static void load_seq_store(void) {
+    FILE *f = fopen("tmp/mcp_sequential_store.json", "r");
+    if (!f) f = fopen("../tmp/mcp_sequential_store.json", "r");
+    if (!f) {
+        g_seq_store_loaded = true;
+        return;
+    }
+    static char buf[1024 * 1024];
+    size_t n = fread(buf, 1, sizeof(buf)-1, f);
+    buf[n] = '\0';
+    fclose(f);
+    
+    char *ptr = buf;
+    g_seq_store_count = 0;
+    while ((ptr = strstr(ptr, "{\"key\":"))) {
+        if (g_seq_store_count >= MAX_STORE_KEYS) break;
+        StoreEntry *e = &g_seq_store[g_seq_store_count];
+        char val[4096] = {0};
+        char key[128] = {0};
+        unsigned long ts = 0;
+        if (extract_json_string(ptr, "\"key\"", key, sizeof(key)) &&
+            extract_json_string(ptr, "\"value\"", val, sizeof(val))) {
+            char *ts_ptr = strstr(ptr, "\"timestamp\":");
+            if (ts_ptr) {
+                ts = strtoul(ts_ptr + 12, NULL, 10);
+            }
+            strcpy(e->key, key);
+            strcpy(e->value, val);
+            e->timestamp = ts;
+            g_seq_store_count++;
+        }
+        ptr += 7;
+    }
+    g_seq_store_loaded = true;
+}
+
 // Helper to extract a string parameter from simple JSON
 static int extract_json_string(const char *json, const char *key, char *out, size_t max) {
     char *k = strstr(json, key);
@@ -637,17 +702,66 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         char address_hex[128] = {0};
         if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
             uint64_t virtual_address = 0;
+            char temp[17] = {0};
             if (address_hex[0] == '0' && (address_hex[1] == 'x' || address_hex[1] == 'X')) {
-                virtual_address = strtoull(address_hex + 2, NULL, 16);
+                memcpy(temp, address_hex + 2, 16);
             } else {
-                virtual_address = strtoull(address_hex, NULL, 16);
+                memcpy(temp, address_hex, 16);
             }
+            virtual_address = strtoull(temp, NULL, 16);
             tsfi_qing_graph_node* graph = tsfi_block_monitor_get_graph();
             CachedContract* contract = tsfi_qing_graph_route_find(graph, TSFI_NET_ZMM, virtual_address);
+            if (!contract) {
+                contract = tsfi_qing_graph_route_find(graph, TSFI_NET_PULSECHAIN, virtual_address);
+            }
             if (contract) {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"name\": \"%s\", \"address\": \"0x%lx\"}, \"id\": %d}\n", contract->name, contract->virtual_address, id);
+                char symbol[128] = {0};
+                uint32_t count = tsfi_block_monitor_get_discovered_tokens_count();
+                for (uint32_t i = 0; i < count; i++) {
+                    char t_addr[64];
+                    char t_symbol[32];
+                    char t_name[128];
+                    tsfi_block_monitor_get_discovered_token(i, t_addr, t_symbol, t_name);
+                    char t_temp[17] = {0};
+                    if (t_addr[0] == '0' && (t_addr[1] == 'x' || t_addr[1] == 'X')) {
+                        memcpy(t_temp, t_addr + 2, 16);
+                    } else {
+                        memcpy(t_temp, t_addr, 16);
+                    }
+                    uint64_t t_val = strtoull(t_temp, NULL, 16);
+                    if (t_val == contract->virtual_address) {
+                        snprintf(symbol, sizeof(symbol), "%s", t_symbol);
+                        break;
+                    }
+                }
+                if (symbol[0] == '\0') {
+                    snprintf(symbol, sizeof(symbol), "%s", contract->name);
+                }
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"name\": \"%s\", \"symbol\": \"%s\", \"address\": \"0x%lx\"}, \"id\": %d}\n", contract->name, symbol, contract->virtual_address, id);
             } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Contract or block not found in routing graph\"}, \"id\": %d}\n", id);
+                uint32_t count = tsfi_block_monitor_get_discovered_tokens_count();
+                bool found = false;
+                for (uint32_t i = 0; i < count; i++) {
+                    char t_addr[64];
+                    char t_symbol[32];
+                    char t_name[128];
+                    tsfi_block_monitor_get_discovered_token(i, t_addr, t_symbol, t_name);
+                    char t_temp[17] = {0};
+                    if (t_addr[0] == '0' && (t_addr[1] == 'x' || t_addr[1] == 'X')) {
+                        memcpy(t_temp, t_addr + 2, 16);
+                    } else {
+                        memcpy(t_temp, t_addr, 16);
+                    }
+                    uint64_t t_val = strtoull(t_temp, NULL, 16);
+                    if (t_val == virtual_address) {
+                        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"name\": \"%s\", \"symbol\": \"%s\", \"address\": \"%s\"}, \"id\": %d}\n", t_name, t_symbol, t_addr, id);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Contract or block not found in routing graph\"}, \"id\": %d}\n", id);
+                }
             }
             return 1;
         }
@@ -1446,6 +1560,132 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing token0, token1, or price parameter\"}, \"id\": %d}\n", id);
             return 1;
         }
+    } else if (method_type == 56) { // wave64.retrieve
+        pthread_mutex_lock(&g_seq_store_mutex);
+        if (!g_seq_store_loaded) load_seq_store();
+        
+        char key[128] = {0};
+        bool has_key = extract_json_string(min_ptr, "\"key\"", key, sizeof(key));
+        
+        if (has_key) {
+            int found_idx = -1;
+            for (int i = 0; i < g_seq_store_count; i++) {
+                if (strcmp(g_seq_store[i].key, key) == 0) {
+                    found_idx = i;
+                    break;
+                }
+            }
+            if (found_idx != -1) {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"key\": \"%s\", \"value\": \"%s\", \"timestamp\": %lu}, \"id\": %d}\n",
+                         g_seq_store[found_idx].key, g_seq_store[found_idx].value, (unsigned long)g_seq_store[found_idx].timestamp, id);
+            } else {
+                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32002, \"message\": \"Key not found\"}, \"id\": %d}\n", id);
+            }
+        } else {
+            // Retrieve all as JSON array
+            size_t n = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": [");
+            for (int i = 0; i < g_seq_store_count; i++) {
+                size_t rem = out_max - n;
+                int written = snprintf(output_buf + n, rem, "{\"key\":\"%s\",\"value\":\"%s\",\"timestamp\":%lu}%s",
+                                       g_seq_store[i].key, g_seq_store[i].value, (unsigned long)g_seq_store[i].timestamp,
+                                       (i == g_seq_store_count - 1) ? "" : ",");
+                if (written > 0) n += written;
+            }
+            snprintf(output_buf + n, out_max - n, "], \"id\": %d}\n", id);
+        }
+        pthread_mutex_unlock(&g_seq_store_mutex);
+        return 1;
+    } else if (method_type == 57) { // wave64.augment
+        pthread_mutex_lock(&g_seq_store_mutex);
+        if (!g_seq_store_loaded) load_seq_store();
+        
+        char key[128] = {0};
+        char val[4096] = {0};
+        
+        if (extract_json_string(min_ptr, "\"key\"", key, sizeof(key)) &&
+            extract_json_string(min_ptr, "\"value\"", val, sizeof(val))) {
+            
+            int found_idx = -1;
+            for (int i = 0; i < g_seq_store_count; i++) {
+                if (strcmp(g_seq_store[i].key, key) == 0) {
+                    found_idx = i;
+                    break;
+                }
+            }
+            
+            if (found_idx != -1) {
+                // augment/overwrite
+                snprintf(g_seq_store[found_idx].value, sizeof(g_seq_store[found_idx].value), "%s", val);
+                g_seq_store[found_idx].timestamp = (uint64_t)time(NULL);
+            } else if (g_seq_store_count < MAX_STORE_KEYS) {
+                // insert new
+                StoreEntry *e = &g_seq_store[g_seq_store_count++];
+                snprintf(e->key, sizeof(e->key), "%s", key);
+                snprintf(e->value, sizeof(e->value), "%s", val);
+                e->timestamp = (uint64_t)time(NULL);
+            }
+            save_seq_store();
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing key or value parameter\"}, \"id\": %d}\n", id);
+        }
+        pthread_mutex_unlock(&g_seq_store_mutex);
+        return 1;
+    } else if (method_type == 58) { // wave64.prune
+        pthread_mutex_lock(&g_seq_store_mutex);
+        if (!g_seq_store_loaded) load_seq_store();
+        
+        char key[128] = {0};
+        bool has_key = extract_json_string(min_ptr, "\"key\"", key, sizeof(key));
+        
+        int older_than = extract_json_int(min_ptr, "\"older_than\"", -1);
+        int pruned_count = 0;
+        
+        if (has_key) {
+            for (int i = 0; i < g_seq_store_count; i++) {
+                if (strcmp(g_seq_store[i].key, key) == 0) {
+                    // Remove by shifting
+                    for (int j = i; j < g_seq_store_count - 1; j++) {
+                        g_seq_store[j] = g_seq_store[j + 1];
+                    }
+                    g_seq_store_count--;
+                    pruned_count++;
+                    break;
+                }
+            }
+        } else if (older_than != -1) {
+            for (int i = 0; i < g_seq_store_count; ) {
+                if (g_seq_store[i].timestamp < (uint64_t)older_than) {
+                    for (int j = i; j < g_seq_store_count - 1; j++) {
+                        g_seq_store[j] = g_seq_store[j + 1];
+                    }
+                    g_seq_store_count--;
+                    pruned_count++;
+                } else {
+                    i++;
+                }
+            }
+        } else {
+            // Prune all
+            pruned_count = g_seq_store_count;
+            g_seq_store_count = 0;
+        }
+        
+        if (pruned_count > 0) {
+            save_seq_store();
+        }
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"pruned_count\": %d}, \"id\": %d}\n", pruned_count, id);
+        pthread_mutex_unlock(&g_seq_store_mutex);
+        return 1;
+    } else if (method_type == 59) { // wave64.get_unpriced_tokens
+        static char temp_json[131072];
+        extern int tsfi_pulse_get_unpriced_tokens_json(char *out_buf, size_t max_len);
+        tsfi_pulse_get_unpriced_tokens_json(temp_json, sizeof(temp_json));
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
+        return 1;
+    } else if (method_type == 60 || method_type == 61 || method_type == 62) {
+        extern int tsfi_zmm_rpc_dispatch_pulse(TsfiZmmVmState *state, int method_type, const char *min_ptr, char *output_buf, size_t out_max, int id);
+        return tsfi_zmm_rpc_dispatch_pulse(state, method_type, min_ptr, output_buf, out_max, id);
     }
 
     

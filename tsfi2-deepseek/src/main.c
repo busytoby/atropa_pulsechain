@@ -10,6 +10,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <termios.h>
+#include <sys/select.h>
+
+static void set_conio_terminal_mode(struct termios *oldt) {
+    struct termios newt;
+    tcgetattr(STDIN_FILENO, oldt);
+    newt = *oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+}
+
+static void reset_conio_terminal_mode(const struct termios *oldt) {
+    tcsetattr(STDIN_FILENO, TCSANOW, oldt);
+}
+
+static int kbhit(void) {
+    struct timeval tv = {0, 0};
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    return select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0;
+}
 
 int main(int argc, char **argv) {
     setvbuf(stdin, NULL, _IONBF, 0);
@@ -18,6 +40,12 @@ int main(int argc, char **argv) {
     for(int i=1; i<argc; i++) if(strcmp(argv[i], "--cli") == 0) auto_gemini = false;
 
     // Initialize System
+    struct termios orig_termios;
+    bool is_tty = isatty(STDIN_FILENO);
+    if (is_tty) {
+        set_conio_terminal_mode(&orig_termios);
+    }
+
     WaveSystem *ws = tsfi_create_system();
     if (!ws) {
         fprintf(stderr, "FATAL: System creation failed\n");
@@ -66,6 +94,29 @@ int main(int argc, char **argv) {
     }
 
     while (1) {
+        if (is_tty && kbhit()) {
+            char ch = getchar();
+            if (ch == 'q' || ch == 'Q') {
+                if (fw && fw->cell_printf) fw->cell_printf(0, "\n[INTERRUPT] Graceful shutdown requested via keyboard.\n");
+                break;
+            } else if (ch == 'p' || ch == 'P') {
+                if (fw && fw->cell_printf) fw->cell_printf(0, "\n[PAUSE] System paused. Press any key to resume...\n");
+                while (1) {
+                    struct timespec req = {0, 100000000};
+                    nanosleep(&req, NULL);
+                    if (kbhit()) {
+                        getchar(); // consume raw key
+                        if (fw && fw->cell_printf) fw->cell_printf(0, "[RESUME] Resuming system loop...\n");
+                        break;
+                    }
+                }
+            } else if (ch == 't' || ch == 'T') {
+                if (fw && fw->cell_printf) fw->cell_printf(0, "\n[TELEMETRY QUERY]\n");
+                tsfi_cli_process_line(ws, "0.0 TELEMETRY");
+                if (fw && fw->cell_printf) fw->cell_printf(0, "\nLAU Command (Intensity Directive) > ");
+            }
+        }
+
         char input[256] = {0};
 
         // 1. Physical Arbitration (Firmware Domain)
@@ -92,6 +143,10 @@ int main(int argc, char **argv) {
         if (ws->step_safety_epoch) {
             ws->step_safety_epoch();
         }
+    }
+    
+    if (is_tty) {
+        reset_conio_terminal_mode(&orig_termios);
     }
     
     if (fw && fw->cell_printf) fw->cell_printf(0, "SYSTEM_AT_REST_SUCCESS\n");

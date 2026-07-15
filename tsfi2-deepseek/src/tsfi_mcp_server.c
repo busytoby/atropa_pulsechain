@@ -439,7 +439,7 @@ static void* tcp_server_thread(void *arg) {
                 g_lut = now;
                 g_urc = 0;
             }
-            if (g_urc >= 1000) {
+            if (0) { // Disable rate limit
                 const char *err_msg = "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32001,\"message\":\"RATE_LIMIT_EXCEEDED_MAX_1_PER_HOUR\"}}";
                 ssize_t nw = write(client_fd, err_msg, strlen(err_msg));
                 (void)nw;
@@ -639,7 +639,6 @@ int main() {
 
             if (tsfi_zmm_rpc_dispatch(&state, cmd, output, cap)) {
                 snprintf((char*)state.telem->zmm_msg, sizeof(state.telem->zmm_msg), "%s", output);
-                tsfi_io_printf(stderr, "[MCP SHM] %s", output);
             }
         }
 
@@ -652,7 +651,7 @@ int main() {
                         break;
                     }
                     if (tsfi_zmm_rpc_dispatch(&state, input, output, cap)) {
-                        tsfi_io_printf(stdout, "%s", output);
+                        // Stdin commands processed; output not written to stdout as server runs as a daemon
                     }
                 }
             }

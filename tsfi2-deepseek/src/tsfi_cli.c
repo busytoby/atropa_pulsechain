@@ -84,6 +84,20 @@ static int handle_provenance_command(WaveSystem *ws) {
         tsfi_io_printf(stdout, "[CLI] Error: Provenance logic not bound.\n");
     }
     return 0;
+}static int handle_telemetry_command(WaveSystem *ws) {
+    tsfi_io_printf(stdout, "========================================\n");
+    tsfi_io_printf(stdout, "       SYSTEM TELEMETRY REPORT          \n");
+    tsfi_io_printf(stdout, "========================================\n");
+    tsfi_io_printf(stdout, "Current Intensity: %.4f\n", ws->current_intensity);
+    tsfi_io_printf(stdout, "Current Directive: %s\n", ws->current_directive ? ws->current_directive : "NONE");
+    tsfi_io_printf(stdout, "Resonance Status : %s\n", (ws->resonance_as_status && *ws->resonance_as_status) ? *ws->resonance_as_status : "UNKNOWN");
+    
+    tsfi_io_printf(stdout, "\n[Memory Metrics]\n");
+    extern void lau_report_memory_metrics(void);
+    lau_report_memory_metrics();
+    
+    tsfi_io_printf(stdout, "========================================\n");
+    return 0;
 }
 
 static int handle_query_command(WaveSystem *ws, const char *new_d) {
@@ -294,6 +308,9 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         if (strcmp(new_d, "PROVENANCE") == 0) {
             return handle_provenance_command(ws);
+        }
+        if (strcmp(new_d, "TELEMETRY") == 0) {
+            return handle_telemetry_command(ws);
         }
         if (strncmp(new_d, "CALL", 4) == 0 || strncmp(new_d, "STORAGE", 7) == 0) {
             return handle_query_command(ws, new_d);
