@@ -763,6 +763,31 @@
                         lpRealReserves[lp.pool] = { paired_balance: pBal, token_balance: tBal };
                     }));
                 }
+                
+                // Dynamically resolve price from LP reserves if it is zero
+                let resolvedPricePls = tok.price_pls || 0;
+                if (resolvedPricePls <= 0 && tok.lp_holdings && tok.lp_holdings.length > 0) {
+                    for (const lp of tok.lp_holdings) {
+                        const realRes = lpRealReserves[lp.pool];
+                        if (realRes && realRes.token_balance > 0) {
+                            const pairedTok = allTokens.find(t => t.address.toLowerCase() === lp.paired_token.toLowerCase());
+                            if (lp.paired_token.toLowerCase() === '0xa1077a294dde1b09bb078844df40758a5d0f9a27') {
+                                resolvedPricePls = realRes.paired_balance / realRes.token_balance;
+                                break;
+                            } else if (pairedTok && pairedTok.price_pls > 0) {
+                                resolvedPricePls = (realRes.paired_balance * pairedTok.price_pls) / realRes.token_balance;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (resolvedPricePls > 0) {
+                    tok.price_pls = resolvedPricePls;
+                    const globalTok = allTokens.find(t => t.address.toLowerCase() === addr.toLowerCase());
+                    if (globalTok) {
+                        globalTok.price_pls = resolvedPricePls;
+                    }
+                }
 
                 // Compute PLS/USD rate dynamically from bridged DAI pool (default to 0.00373)
                 let plsdRate = 0.00373;
