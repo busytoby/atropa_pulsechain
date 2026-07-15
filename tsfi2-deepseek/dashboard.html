@@ -743,6 +743,17 @@
                     }));
                 }
 
+                // Compute PLS/USD rate dynamically from bridged DAI pool (default to 0.00373)
+                let plsdRate = 0.00373;
+                try {
+                    const daiBridgeTok = allTokens.find(t => t.address.toLowerCase() === '0xefd766ccb8c15e5e9f813af7b2809857baa53a1f');
+                    if (daiBridgeTok && daiBridgeTok.price_pls > 0) {
+                        plsdRate = 1.0 / daiBridgeTok.price_pls;
+                    }
+                } catch(e) {
+                    console.error("Error computing PLS/USD rate:", e);
+                }
+
                 // Render detail template
                 let lpHtml = '';
                 if (tok.lp_holdings && tok.lp_holdings.length > 0) {
@@ -765,10 +776,22 @@
                                         poolValuePls = 2 * lp.paired_balance;
                                     }
                                     
+                                    const isStable = pairedSym.toUpperCase().includes('DAI') || 
+                                                     pairedSym.toUpperCase().includes('USDC') || 
+                                                     pairedSym.toUpperCase().includes('USDT') || 
+                                                     pairedSym.toUpperCase().includes('USD');
+                                    
                                     const burnedValuePls = poolValuePls * (pct / 100);
+                                    const burnedValueUsd = burnedValuePls * plsdRate;
+                                    
                                     let burnInfo = '';
                                     if (pct > 0.01) {
-                                        burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}% (${formatLargeNumber(burnedValuePls, 0)} PLS)</span>`;
+                                        let valuationText = `Current Burned LP Val: ${formatLargeNumber(burnedValuePls, 0)} PLS (~$${formatLargeNumber(burnedValueUsd, 2)} USD)`;
+                                        if (isStable) {
+                                            const maxPegValUsd = (2 * lp.paired_balance) * (pct / 100);
+                                            valuationText += `<br><span style="color:#3b82f6; font-size:11px; font-weight: 500;">📈 Max Potential Locked (at $1.00 peg): ~$${formatLargeNumber(maxPegValUsd, 2)} USD</span>`;
+                                        }
+                                        burnInfo = `<span style="color:#22c55e; font-weight:bold;">🔥 Burned LP: ${pct.toFixed(2)}%</span><br><span style="color:var(--text-secondary); font-size:12px; line-height: 1.4;">${valuationText}</span>`;
                                     } else {
                                         burnInfo = `<span style="color:var(--text-muted);">Unburned LP</span>`;
                                     }
