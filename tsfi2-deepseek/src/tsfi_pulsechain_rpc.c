@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #define RPC_HOST "pulsechain-rpc.publicnode.com"
 #define RPC_PORT "443"
@@ -592,11 +594,39 @@ bool tsfi_pulse_explorer_get_holders(const char *token_addr, char *out_buffer, s
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout));
     setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv_timeout, sizeof(tv_timeout));
 
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
-        close(sockfd);
-        freeaddrinfo(res);
-        return false;
+    // Set non-blocking mode for connect timeout
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
+    int conn_res = connect(sockfd, res->ai_addr, res->ai_addrlen);
+    if (conn_res < 0) {
+        if (errno == EINPROGRESS) {
+            fd_set write_fds;
+            FD_ZERO(&write_fds);
+            FD_SET(sockfd, &write_fds);
+            struct timeval tv_select = { 1, 0 }; // 1 second timeout
+            int sel_res = select(sockfd + 1, NULL, &write_fds, NULL, &tv_select);
+            if (sel_res <= 0 || !FD_ISSET(sockfd, &write_fds)) {
+                close(sockfd);
+                freeaddrinfo(res);
+                return false;
+            }
+            int optval;
+            socklen_t optlen = sizeof(optval);
+            if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0 || optval != 0) {
+                close(sockfd);
+                freeaddrinfo(res);
+                return false;
+            }
+        } else {
+            close(sockfd);
+            freeaddrinfo(res);
+            return false;
+        }
     }
+
+    // Restore blocking mode
+    fcntl(sockfd, F_SETFL, flags);
     freeaddrinfo(res);
 
     TsfiTlsContext tls;
