@@ -717,8 +717,8 @@
                 });
                 const holderData = await response.json();
                 
-                // Fetch total supply from token contract on-chain
                 let totalSupplyStr = 'N/A';
+                let targetTotalSupply = 0;
                 try {
                     const supplyHex = await rpcRequest('eth_call', [{ to: addr, data: '0x18160ddd' }, 'latest']);
                     if (supplyHex && supplyHex !== '0x' && !supplyHex.includes('error')) {
@@ -726,6 +726,7 @@
                         const decimals = tok.decimals || 18;
                         const parsedSupply = rawSupply / (10 ** decimals);
                         totalSupplyStr = formatLargeNumber(parsedSupply, 2);
+                        targetTotalSupply = parsedSupply;
                     }
                 } catch (e) {
                     console.error("Failed to fetch total supply:", e);
