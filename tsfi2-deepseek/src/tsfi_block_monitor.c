@@ -687,11 +687,6 @@ tsfi_qing_graph_node* tsfi_block_monitor_get_graph(void) {
 }
 
 int tsfi_pulse_get_all_prices_json(char *out_buf, size_t max_len) {
-    load_discovered_tokens();
-    seed_tokens_from_addresses_sol();
-    load_swap_edges();
-    load_pool_cache();
-
     size_t offset = 0;
     offset += snprintf(out_buf + offset, max_len - offset, "{\"tokens\":[");
     for (uint32_t i = 0; i < g_discovered_tokens_count; i++) {
@@ -1200,7 +1195,8 @@ int tsfi_pulse_get_token_holders_json(const char *token_addr, char *out_buf, siz
                 char t0_addr[64];
                 decode_abi_address(r_buf, t0_addr);
                 if (strlen(t0_addr) > 0 && strcmp(t0_addr, "0x0000000000000000000000000000000000000000") != 0) {
-                    if (tsfi_pulse_rpc_call(holders[i].address, "0xd21225a3", r_buf, sizeof(r_buf))) {
+                    if (tsfi_pulse_rpc_call(holders[i].address, "0xd21225a3", r_buf, sizeof(r_buf)) ||
+                        tsfi_pulse_rpc_call(holders[i].address, "0xd21220a7", r_buf, sizeof(r_buf))) {
                         char t1_addr[64];
                         decode_abi_address(r_buf, t1_addr);
                         if (strlen(t1_addr) > 0 && strcmp(t1_addr, "0x0000000000000000000000000000000000000000") != 0) {
