@@ -722,8 +722,28 @@ int main(void) {
     printf("  Z-machine Static/High Memory block 400000 maps to: Cyl %d, Head %d, Sector %d\n", 
            static_chs.cylinder, static_chs.head, static_chs.sector);
     assert(static_chs.cylinder >= 45 && static_chs.cylinder <= 99);
+
+    // Allocate temp disk record to test direct address read/writes
+    tsfi_ramac_record *temp_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+    assert(temp_disk != NULL);
+
+    // Write to Z-machine dynamic memory address 3200 (Cylinder 0, Sector 100)
+    int wr_ret = tsfi_s370_zmachine_write_byte(temp_disk, 3200, 0x55);
+    assert(wr_ret == 0);
+
+    // Read back dynamic memory address 3200
+    uint8_t rd_val = 0;
+    int rd_ret = tsfi_s370_zmachine_read_byte(temp_disk, 3200, &rd_val);
+    assert(rd_ret == 0);
+    assert(rd_val == 0x55);
+
+    // Attempt write to Z-machine static memory address 2000000 (Cylinder 62, Sector 62500)
+    int wr_fail_ret = tsfi_s370_zmachine_write_byte(temp_disk, 2000000, 0xAA);
+    assert(wr_fail_ret == -2); // Write protected segment violation exception
+
+    free(temp_disk);
     
-    printf("  [PASS] Z-machine RAMAC primary/overflow mapping verified successfully.\n");
+    printf("  [PASS] Z-machine RAMAC primary/overflow mapping and memory access verified successfully.\n");
 
     free(disk);
 

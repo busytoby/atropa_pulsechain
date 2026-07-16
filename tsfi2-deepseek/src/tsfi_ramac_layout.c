@@ -1100,3 +1100,51 @@ int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_month
 
     return 0;
 }
+
+int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t *out_val) {
+    if (!disk || !out_val) {
+        return -1;
+    }
+
+    int sector_idx = zmachine_addr / 32;
+    int byte_offset = zmachine_addr % 32;
+
+    int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
+    if (sector_idx >= total_sectors) {
+        return -1; // Address out of bounds
+    }
+
+    if (!disk[sector_idx].is_active) {
+        *out_val = 0; // Uninitialized memory reads as 0
+    } else {
+        *out_val = (uint8_t)disk[sector_idx].value[byte_offset];
+    }
+
+    return 0;
+}
+
+int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t val) {
+    if (!disk) {
+        return -1;
+    }
+
+    int sector_idx = zmachine_addr / 32;
+    int byte_offset = zmachine_addr % 32;
+
+    int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
+    if (sector_idx >= total_sectors) {
+        return -1; // Address out of bounds
+    }
+
+    // Resolve Cylinder index to check static/high memory protection boundary
+    // total sectors per cylinder is heads * sectors (50 * 20 = 1000)
+    int cylinder = sector_idx / 1000;
+    if (cylinder >= 45) {
+        return -2; // Write protected segment violation (Static/High Memory write exception)
+    }
+
+    disk[sector_idx].value[byte_offset] = (char)val;
+    disk[sector_idx].is_active = 1;
+
+    return 0;
+}

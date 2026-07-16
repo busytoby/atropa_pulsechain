@@ -249,9 +249,14 @@ int tsfi_s370_executive_decision_villalon(int decision_count, const double *bene
 int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsigned int seed);
 
 // Vladimir Zworykin (RCA) style developmental project scale divergence predictor
-// Models Sarnoff-Zworykin scale gap where actual cost scales by 500x and timeframe scales by 6.67x
-// Returns 0 on success, -1 on invalid configurations
 int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_months,
                                       double *out_actual_budget, double *out_actual_months);
+
+// Z-machine RAMAC storage mapping memory access routines (Project Peters realization)
+// Reads a single byte from the mapped RAMAC layout disk
+int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t *out_val);
+
+// Writes a single byte to the mapped RAMAC layout disk, enforcing read-only constraint on static/high segments (cylinders >= 45)
+int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t val);
 
 #endif // TSFI_RAMAC_LAYOUT_H
