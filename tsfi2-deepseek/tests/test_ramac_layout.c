@@ -930,6 +930,22 @@ int main(void) {
     assert(th_output == 0); // Weighted sum 3 < threshold 4
     printf("  [PASS] Saburo Muroga threshold logic gate verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9. Autonetics Recomp II Word Decoder Verification
+    printf("[Test] Verifying Autonetics Recomp II word decoder...\n");
+    // Build a 40-bit word with two instructions:
+    // Left: Opcode = 0x1E (30), Address = 0x7A0 (1952) -> 20-bit: (30 << 15) | (1952 << 3) = 0xF3D00
+    // Right: Opcode = 0x0A (10), Address = 0x120 (288) -> 20-bit: (10 << 15) | (288 << 3) = 0x50900
+    // Combined 40-bit: (0xF3D00 << 20) | 0x50900 = 0xF3D0050900
+    uint64_t raw_recomp_word = 0xF3D0050900ULL;
+    int op1 = 0, addr1 = 0, op2 = 0, addr2 = 0;
+    int recomp_dec_ret = tsfi_s370_recomp_ii_decode_word(raw_recomp_word, &op1, &addr1, &op2, &addr2);
+    assert(recomp_dec_ret == 0);
+    assert(op1 == 30);
+    assert(addr1 == 1952);
+    assert(op2 == 10);
+    assert(addr2 == 288);
+    printf("  [PASS] Autonetics Recomp II word decoder verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

@@ -1468,3 +1468,22 @@ int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int i
 
     return 0;
 }
+
+int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int *op2, int *addr2) {
+    if (!op1 || !addr1 || !op2 || !addr2) {
+        return -1;
+    }
+
+    // Decodes two 20-bit instructions from a 40-bit Recomp II word:
+    // Left Instruction (bits 20..39):
+    uint64_t left_instr = (raw_word >> 20) & 0xFFFFF;
+    *op1 = (left_instr >> 15) & 0x1F;   // 5-bit opcode
+    *addr1 = (left_instr >> 3) & 0xFFF; // 12-bit address
+
+    // Right Instruction (bits 0..19):
+    uint64_t right_instr = raw_word & 0xFFFFF;
+    *op2 = (right_instr >> 15) & 0x1F;
+    *addr2 = (right_instr >> 3) & 0xFFF;
+
+    return 0;
+}

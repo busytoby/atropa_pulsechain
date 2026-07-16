@@ -312,4 +312,7 @@ int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card
 int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int input_count,
                                     int threshold, int *output);
 
+// Autonetics Recomp II 40-bit word instruction decoder
+int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int *op2, int *addr2);
+
 #endif // TSFI_RAMAC_LAYOUT_H
