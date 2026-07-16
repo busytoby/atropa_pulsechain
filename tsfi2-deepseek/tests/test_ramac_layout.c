@@ -915,6 +915,21 @@ int main(void) {
     assert(holes_count == 4);
     printf("  [PASS] Batten / Peek-a-boo card matching verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.8. Muroga Threshold Logic Gate Verification
+    printf("[Test] Verifying Saburo Muroga threshold logic gate...\n");
+    int th_inputs[3] = {1, 0, 1};
+    int th_weights[3] = {2, 3, 1}; // Weighted sum: 1*2 + 0*3 + 1*1 = 3
+    int th_output = -1;
+    
+    int th_ret = tsfi_s370_muroga_threshold_gate(th_inputs, th_weights, 3, 3, &th_output);
+    assert(th_ret == 0);
+    assert(th_output == 1); // Weighted sum 3 >= threshold 3
+
+    th_ret = tsfi_s370_muroga_threshold_gate(th_inputs, th_weights, 3, 4, &th_output);
+    assert(th_ret == 0);
+    assert(th_output == 0); // Weighted sum 3 < threshold 4
+    printf("  [PASS] Saburo Muroga threshold logic gate verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

@@ -308,4 +308,8 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
 int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card_b,
                                      uint32_t *out_matching, int word_count);
 
+// Saburo Muroga style threshold logic gate emulator
+int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int input_count,
+                                    int threshold, int *output);
+
 #endif // TSFI_RAMAC_LAYOUT_H

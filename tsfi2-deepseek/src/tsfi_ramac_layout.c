@@ -1448,3 +1448,23 @@ int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card
 
     return match_holes_count;
 }
+
+int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int input_count,
+                                    int threshold, int *output) {
+    if (!inputs || !weights || input_count <= 0 || !output) {
+        return -1;
+    }
+
+    int weighted_sum = 0;
+    for (int i = 0; i < input_count; i++) {
+        weighted_sum += inputs[i] * weights[i];
+    }
+
+    if (weighted_sum >= threshold) {
+        *output = 1;
+    } else {
+        *output = 0;
+    }
+
+    return 0;
+}
