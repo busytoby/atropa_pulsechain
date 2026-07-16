@@ -252,3 +252,66 @@ int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
     model->accumulators[acc_id] /= val;
     return 0;
 }
+
+int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, char *response_out, int max_len) {
+    if (!disk || !command || !response_out) return -1;
+    
+    char cmd[16] = {0};
+    char arg1[32] = {0};
+    char arg2[32] = {0};
+
+    int parsed = sscanf(command, "%15s %31s %31s", cmd, arg1, arg2);
+    if (parsed <= 0) return -1;
+
+    if (strcmp(cmd, "QRY") == 0) {
+        if (parsed < 2) return -1;
+        double seek = 0.0;
+        const char *val = tsfi_ramac_search_record(disk, arg1, 5, &seek);
+        if (val) {
+            snprintf(response_out, max_len, "KEY: %s VAL: %s SEEK: %.1f us", arg1, val, seek);
+        } else {
+            snprintf(response_out, max_len, "KEY: %s STATUS: NOT_FOUND", arg1);
+        }
+        return 0;
+    }
+
+    if (strcmp(cmd, "WRT") == 0) {
+        if (parsed < 3) return -1;
+        double seek = 0.0;
+        int idx = tsfi_ramac_insert_record(disk, arg1, arg2, 5, &seek);
+        if (idx != -1) {
+            snprintf(response_out, max_len, "WRITE_SUCCESS INDEX: %d SEEK: %.1f us", idx, seek);
+        } else {
+            snprintf(response_out, max_len, "WRITE_FAILED (CYLINDER FULL)");
+        }
+        return 0;
+    }
+
+    if (strcmp(cmd, "PRT") == 0) {
+        if (parsed < 2) return -1;
+        int parity_ok = tsfi_ramac_check_parity(arg1);
+        if (parity_ok) {
+            snprintf(response_out, max_len, "PARITY CHECK: PASS");
+        } else {
+            snprintf(response_out, max_len, "PARITY CHECK: FAIL");
+        }
+        return 0;
+    }
+
+    return -1;
+}
+
+int tsfi_ramac_check_parity(const char *str) {
+    if (!str) return 0;
+    while (*str) {
+        unsigned char c = *str++;
+        int total_bits = 0;
+        for (int b = 0; b < 8; b++) {
+            if ((c >> b) & 1) total_bits++;
+        }
+        if (total_bits % 2 == 0) {
+            return 0; // Parity failure: IBM 305 RAMAC requires odd parity
+        }
+    }
+    return 1;
+}

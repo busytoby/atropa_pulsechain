@@ -110,20 +110,43 @@ int main(void) {
     tsfi_ramac_acc_model accs;
     tsfi_ramac_acc_init(&accs);
     
-    // Test base operations
     tsfi_ramac_acc_add(&accs, 3, 500);
     assert(accs.accumulators[3] == 500);
 
-    // Test standard continuous division
     tsfi_ramac_acc_div(&accs, 3, 5);
     assert(accs.accumulators[3] == 100);
 
-    // Trigger division by zero to verify interception & isolation redirect (Rule 12)
     int div_zero_ret = tsfi_ramac_acc_div(&accs, 3, 0);
     assert(div_zero_ret == -1);
     assert(accs.trap_active == 1);
     assert(accs.isolation_trap == 100);
     printf("  [PASS] Mathematical continuity interruption successfully intercepted and isolated.\n");
+
+    // 3.9. Inquiry Station & Parity Checker Verification
+    printf("[Test] Verifying IBM 370 Inquiry Station console parser & BCD parity checker...\n");
+    char response[256];
+    
+    // Test inquiry WRT command
+    int inq_ret1 = tsfi_ramac_inquiry_station(disk, "WRT key_inq val_inq", response, sizeof(response));
+    assert(inq_ret1 == 0);
+    printf("  Inquiry WRT Response: %s\n", response);
+    assert(strstr(response, "WRITE_SUCCESS") != NULL);
+
+    // Test inquiry QRY command
+    int inq_ret2 = tsfi_ramac_inquiry_station(disk, "QRY key_inq", response, sizeof(response));
+    assert(inq_ret2 == 0);
+    printf("  Inquiry QRY Response: %s\n", response);
+    assert(strstr(response, "VAL: val_inq") != NULL);
+
+    // Test BCD parity check
+    // "A" (ASCII 65 = 01000001) has 2 bits set -> Even parity (fails odd check)
+    // We can inject characters to test the popcount checker
+    char odd_str[2] = { 65 | 128, 0 }; // 01000001 | 10000000 = 11000001 (3 bits set) -> Odd parity (passes)
+    char even_str[2] = { 65, 0 };      // 01000001 (2 bits set) -> Even parity (fails)
+
+    assert(tsfi_ramac_check_parity(odd_str) == 1);
+    assert(tsfi_ramac_check_parity(even_str) == 0);
+    printf("  [PASS] IBM 370 inquiry console and BCD parity validation verified successfully.\n");
 
     free(disk);
 

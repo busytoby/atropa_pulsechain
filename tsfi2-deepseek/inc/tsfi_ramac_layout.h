@@ -66,4 +66,11 @@ void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model);
 int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
 int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
 
+// IBM 370 printer-keyboard inquiry station console parser
+int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, char *response_out, int max_len);
+
+// BCD 7-bit parity checker
+// Returns 1 if all characters in the string have valid odd parity (even number of 1s plus parity bit = odd)
+int tsfi_ramac_check_parity(const char *str);
+
 #endif // TSFI_RAMAC_LAYOUT_H
