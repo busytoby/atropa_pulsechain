@@ -96,6 +96,20 @@ int main(void) {
     printf("       [LogOS] Syscall sys_write completed successfully. State saved.\n");
     fflush(stdout);
 
+    // 5. Verify Logical Registry Programming Contracts
+    printf("       [LogOS] Verifying Logical Registry Programming Contracts...\n");
+    fflush(stdout);
+    tsfi_trie_insert(trie_root, "query/owns_wallet/agent_007", "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266");
+    tsfi_trie_insert(trie_root, "trigger/event_101/action", "sys_alloc_100_tokens");
+    
+    tsfi_dat *query_dat = tsfi_dat_compile(trie_root);
+    assert(query_dat != NULL);
+    const char *wallet_res = tsfi_dat_search(query_dat, "query/owns_wallet/agent_007");
+    assert(wallet_res != NULL && strcmp(wallet_res, "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266") == 0);
+    const char *action_res = tsfi_dat_search(query_dat, "trigger/event_101/action");
+    assert(action_res != NULL && strcmp(action_res, "sys_alloc_100_tokens") == 0);
+    tsfi_dat_destroy(query_dat);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
