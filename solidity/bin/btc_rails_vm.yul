@@ -8,93 +8,99 @@ object "BtcRailsVM" {
             if lt(calldatasize(), 4) { revert(0, 0) }
             let selector := shr(224, calldataload(0))
             
-            // execute(bytes bytecode) -> returns (uint256 stack_count, uint256 altstack_count, int256[] memory_dump)
-            // Selector: 0x9c3f25c7
-            if iszero(sub(selector, 0x9c3f25c7)) {
+            // execute(bytes bytecode, uint256 cycles) -> returns (uint256 pc, uint256 sp, uint256 asp, uint256 halted)
+            // Selector: 0x22137682
+            if iszero(sub(selector, 0x22137682)) {
                 let offset := add(4, calldataload(4))
                 let len := calldataload(offset)
                 let start := add(offset, 32)
+                let cycles := calldataload(36)
                 
-                // Copy expression/bytecode payload to memory at 0x1000
+                // Copy bytecode to memory at 0x1000
                 calldatacopy(0x1000, start, len)
                 
-                // Set stack pointers in memory
-                let stack_ptr := 0x2000
-                let altstack_ptr := 0x2200
+                // Virtual registers setup
+                let regPC := 0
+                let regSP := 0x2000     // Primary stack pointer
+                let regASP := 0x2200    // Alternate stack pointer
+                let regHalted := 0
                 
-                let ip := 0
-                for {} lt(ip, len) {} {
-                    let op := byte(0, mload(add(0x1000, ip)))
-                    ip := add(ip, 1)
+                for { let cyc := 0 } and(and(lt(cyc, cycles), lt(regPC, len)), iszero(regHalted)) { cyc := add(cyc, 1) } {
+                    let op := byte(0, mload(add(0x1000, regPC)))
+                    regPC := add(regPC, 1)
                     
                     switch op
                     case 1 { // PUSH (read next 4 bytes as 32-bit int)
-                        let val := shr(224, mload(add(0x1000, ip)))
-                        ip := add(ip, 4)
+                        if lt(len, add(regPC, 4)) {
+                            regHalted := 1
+                            break
+                        }
+                        let val := shr(224, mload(add(0x1000, regPC)))
+                        regPC := add(regPC, 4)
                         
-                        mstore(stack_ptr, val)
-                        stack_ptr := add(stack_ptr, 32)
+                        mstore(regSP, val)
+                        regSP := add(regSP, 32)
                     }
                     case 2 { // ADD
-                        stack_ptr := sub(stack_ptr, 32)
-                        let b := mload(stack_ptr)
-                        stack_ptr := sub(stack_ptr, 32)
-                        let a := mload(stack_ptr)
-                        mstore(stack_ptr, add(a, b))
-                        stack_ptr := add(stack_ptr, 32)
+                        if lt(regSP, 0x2040) {
+                            regHalted := 1
+                            break
+                        }
+                        regSP := sub(regSP, 32)
+                        let b := mload(regSP)
+                        regSP := sub(regSP, 32)
+                        let a := mload(regSP)
+                        mstore(regSP, add(a, b))
+                        regSP := add(regSP, 32)
                     }
                     case 3 { // SUB
-                        stack_ptr := sub(stack_ptr, 32)
-                        let b := mload(stack_ptr)
-                        stack_ptr := sub(stack_ptr, 32)
-                        let a := mload(stack_ptr)
-                        mstore(stack_ptr, sub(a, b))
-                        stack_ptr := add(stack_ptr, 32)
+                        if lt(regSP, 0x2040) {
+                            regHalted := 1
+                            break
+                        }
+                        regSP := sub(regSP, 32)
+                        let b := mload(regSP)
+                        regSP := sub(regSP, 32)
+                        let a := mload(regSP)
+                        mstore(regSP, sub(a, b))
+                        regSP := add(regSP, 32)
                     }
                     case 4 { // TOALTSTACK
-                        stack_ptr := sub(stack_ptr, 32)
-                        let val := mload(stack_ptr)
-                        mstore(altstack_ptr, val)
-                        altstack_ptr := add(altstack_ptr, 32)
+                        if lt(regSP, 0x2020) {
+                            regHalted := 1
+                            break
+                        }
+                        regSP := sub(regSP, 32)
+                        let val := mload(regSP)
+                        mstore(regASP, val)
+                        regASP := add(regASP, 32)
                     }
                     case 5 { // FROMALTSTACK
-                        altstack_ptr := sub(altstack_ptr, 32)
-                        let val := mload(altstack_ptr)
-                        mstore(stack_ptr, val)
-                        stack_ptr := add(stack_ptr, 32)
+                        if lt(regASP, 0x2220) {
+                            regHalted := 1
+                            break
+                        }
+                        regASP := sub(regASP, 32)
+                        let val := mload(regASP)
+                        mstore(regSP, val)
+                        regSP := add(regSP, 32)
                     }
                     case 6 { // HALT
-                        break
+                        regHalted := 1
                     }
                     default {
-                        revert(0, 0)
+                        regHalted := 1
                     }
                 }
                 
-                // Format return output
-                let stack_count := div(sub(stack_ptr, 0x2000), 32)
-                let altstack_count := div(sub(altstack_ptr, 0x2200), 32)
-                
-                let ret_offset := 0x3000
-                mstore(ret_offset, stack_count)
-                mstore(add(ret_offset, 32), altstack_count)
-                
-                let out_ptr := add(ret_offset, 64)
-                let src := 0x2000
-                for {} lt(src, stack_ptr) {} {
-                    mstore(out_ptr, mload(src))
-                    out_ptr := add(out_ptr, 32)
-                    src := add(src, 32)
-                }
-                src := 0x2200
-                for {} lt(src, altstack_ptr) {} {
-                    mstore(out_ptr, mload(src))
-                    out_ptr := add(out_ptr, 32)
-                    src := add(src, 32)
-                }
-                
-                return(ret_offset, sub(out_ptr, ret_offset))
+                // Return final state registers
+                mstore(0, regPC)
+                mstore(32, regSP)
+                mstore(64, regASP)
+                mstore(96, regHalted)
+                return(0, 128)
             }
+            
             revert(0, 0)
         }
     }
