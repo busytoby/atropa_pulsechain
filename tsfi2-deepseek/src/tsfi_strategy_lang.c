@@ -200,8 +200,8 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
     strncpy(script_copy, script, 511);
     script_copy[511] = '\0';
 
-    // Delimiters include whitespace, parens, braces, commas, quotes, and semicolons (excluding equals)
-    const char *delims = " ;(),{}\"\n\r\t";
+    // Delimiters include whitespace, periods, parens, braces, commas, quotes, and semicolons
+    const char *delims = " ;(),{}\"\n\r\t.";
     
     // Store tokens in an array for multi-token lookahead parsing
     char *tokens[128];
