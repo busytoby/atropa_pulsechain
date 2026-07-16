@@ -124,6 +124,37 @@ int main(void) {
     assert(query_vm.registers[2] > 0);
     assert(query_vm.registers[3] == 45);
 
+    // 7. Verify loop modifier: LOOP_UNTIL_EMPTY
+    // Bytecode checks if queue is non-empty, Jumps to index 0.
+    // We will compile a script: "LOOP_UNTIL_EMPTY 0;"
+    uint8_t loop_bc[32];
+    int loop_len = 0;
+    res = tsfi_strategy_compile_script("LOOP_UNTIL_EMPTY 0;", loop_bc, 32, &loop_len);
+    assert(res == 0);
+    assert(loop_bc[0] == 0x17 && loop_bc[1] == 0);
+
+    // 8. Verify Telemetry Broadcast
+    TSFiStrategyTelemetry telemetry;
+    memset(&telemetry, 0, sizeof(telemetry));
+    tsfi_strategy_vm_broadcast(&query_vm, &pq, &telemetry);
+    assert(telemetry.queue_size == pq.size);
+    assert(telemetry.registers[2] == query_vm.registers[2]);
+    printf("  [Strategy Telemetry] Broadcast Verified. Queue Size: %d\n", telemetry.queue_size);
+    fflush(stdout);
+
+    // 9. Verify C-like syntax compiler translation
+    uint8_t c_like_bc[32];
+    int c_like_len = 0;
+    res = tsfi_strategy_compile_script("depth = 4; R0 = 15; R0 = R0 + R1; if (R0 == R1) jump(24); eval();", c_like_bc, 32, &c_like_len);
+    assert(res == 0);
+    assert(c_like_bc[0] == 0x01 && c_like_bc[1] == 4); // depth = 4
+    assert(c_like_bc[2] == 0x14 && c_like_bc[3] == 0 && c_like_bc[4] == 15); // R0 = 15
+    assert(c_like_bc[5] == 0x10 && c_like_bc[6] == 0 && c_like_bc[7] == 1); // ADD R0 R1
+    assert(c_like_bc[8] == 0x12 && c_like_bc[9] == 24 && c_like_bc[10] == 0 && c_like_bc[11] == 1); // JEQ 24 R0 R1
+    assert(c_like_bc[12] == 0x03); // EVAL
+    printf("  [Strategy C-like Parser] Compiled and verified statement tree successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
