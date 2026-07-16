@@ -844,6 +844,19 @@ int main(void) {
     assert(active_cpu == 0); // System crash state when both are offline
     printf("  [PASS] SAGE AN/FSQ-7 redundancy monitor verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.7. Engelbart & Bourne Index Resolver Verification
+    printf("[Test] Verifying Engelbart & Bourne index resolver...\n");
+    const char *abstract_text = "This document describes the design of real-time SAGE systems and radar data integration networks.";
+    const char *keywords_list[] = {"real-time", "SAGE", "radar", "nonexistent"};
+    uint8_t index_packed[16] = {0};
+    int index_ret = tsfi_s370_engelbart_index_resolve(abstract_text, keywords_list, 4, index_packed, 16);
+    assert(index_ret > 0);
+    char index_zoned[32] = {0};
+    assert(tsfi_s370_unpack(index_packed, index_ret, index_zoned, 32) == 0);
+    printf("  Document matching keyword frequency: '%s'\n", index_zoned);
+    assert(strcmp(index_zoned, "3") == 0); // Matches 'real-time', 'SAGE', 'radar'
+    printf("  [PASS] Engelbart & Bourne index resolver verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

@@ -1328,3 +1328,29 @@ int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *a
 
     return 0;
 }
+
+int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keywords, int keyword_count,
+                                      uint8_t *comp3_out, int max_len) {
+    if (!abstract || !keywords || keyword_count <= 0 || !comp3_out || max_len <= 0) {
+        return -1;
+    }
+
+    int match_count = 0;
+
+    for (int i = 0; i < keyword_count; i++) {
+        if (!keywords[i]) continue;
+        const char *ptr = abstract;
+        int len = strlen(keywords[i]);
+        if (len == 0) continue;
+
+        while ((ptr = strstr(ptr, keywords[i])) != NULL) {
+            match_count++;
+            ptr += len; // Shift pointer beyond match pattern
+        }
+    }
+
+    char zoned[64];
+    snprintf(zoned, sizeof(zoned), "%d", match_count);
+
+    return tsfi_s370_pack(zoned, comp3_out, max_len);
+}

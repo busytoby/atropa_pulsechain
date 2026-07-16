@@ -286,4 +286,8 @@ int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double sp
 // SAGE AN/FSQ-7 style active-passive dual-CPU redundancy and failover state controller
 int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *active_cpu);
 
+// Engelbart & Bourne technical information search index resolver
+int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keywords, int keyword_count,
+                                      uint8_t *comp3_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H
