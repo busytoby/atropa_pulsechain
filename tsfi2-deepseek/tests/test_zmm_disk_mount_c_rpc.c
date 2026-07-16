@@ -405,14 +405,7 @@ int main(int argc, char *argv[]) {
     // ANVIL SECTOR READ/WRITE VERIFICATION (RAMAC ENHANCED)
     // ---------------------------------------------------------
     printf("[C-Test] Verifying Block Write (U2) and Read (U1) sectors on DiskSystem...\n");
-    // Format a sector write payload containing RAMAC verification data
     char write_cmd[2048];
-    // Selector = 0x9812a4df (executeDiskCommand)
-    // Offset = 0x20
-    // Length of bytes = 11 (for "U2 T02 S03\0") + 256 (data) = 267 bytes (0x10b)
-    // "U2 T02 S03\0" -> "5532205430322053303300" (11 bytes)
-    // Data = "RAMAC_SYSTEM_TEST_DATA_VERIFIED_OVER_ANVIL_RPC" padded to 256 bytes
-    // (512 hex characters)
     char data_hex[513];
     memset(data_hex, '0', 512);
     data_hex[512] = '\0';
@@ -456,8 +449,6 @@ int main(int argc, char *argv[]) {
              disk_addr);
 
     send_rpc_request(read_cmd, response, sizeof(response));
-    printf("DEBUG: response = %s\n", response);
-    // Verify that response contains the hex representation of "RAMAC_SYSTEM_TEST_DATA_VERIFIED_OVER_ANVIL_RPC"
     char test_hex[128];
     test_hex[0] = '\0';
     for (size_t i = 0; i < strlen(data_str); i++) {
@@ -465,6 +456,64 @@ int main(int argc, char *argv[]) {
     }
     assert(strstr(response, test_hex) != NULL);
     printf("  [READ] Verified sector contains written data: '%s'\n", data_str);
+
+    // ---------------------------------------------------------
+    // YUL-BASED RAMAC SYSTEM INQUIRY SYSTEM VERIFICATION ON ANVIL
+    // ---------------------------------------------------------
+    printf("[C-Test] Compiling and deploying Yul-based RamacSystem...\n");
+    char *ramac_hex = malloc(131072);
+    assert(ramac_hex != NULL);
+    compile_yul_to_bytecode("../solidity/bin/ramacSystem.yul", ramac_hex, 131072);
+    char ramac_addr[128];
+    deploy_contract_from_c(ramac_hex, ramac_addr, sizeof(ramac_addr));
+    printf("  [DEPLOYED] RamacSystem Address: %s\n", ramac_addr);
+
+    printf("[C-Test] Executing Yul-based RAMAC Inquiry command (WRT)...\n");
+    // WRT key (32 bytes padded): "key_test_123"
+    // VAL val (32 bytes padded): "val_test_999"
+    // Selector = 0xe28e404f
+    // Offset = 0x20
+    // Length = 68 (WRT + spaces + key + val) -> 0x44
+    // CMD payload = "WRT " + key (32 bytes) + val (32 bytes) = 68 bytes
+    // In hex: WRT = 57525420
+    char wrt_inq_payload[1024];
+    snprintf(wrt_inq_payload, sizeof(wrt_inq_payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xe28e404f"
+             "0000000000000000000000000000000000000000000000000000000000000020" // offset
+             "0000000000000000000000000000000000000000000000000000000000000044" // length 68
+             "57525420" // "WRT "
+             "6b65795f746573745f3132330000000000000000000000000000000000000000" // key: "key_test_123" (32 bytes)
+             "76616c5f746573745f3939390000000000000000000000000000000000000000\"" // val: "val_test_999" (32 bytes)
+             "}],\"id\":1}",
+             ramac_addr);
+
+    execute_tx(wrt_inq_payload);
+    printf("  [WRT] Wrote key_test_123 to RamacSystem on Anvil.\n");
+
+    printf("[C-Test] Executing Yul-based RAMAC Inquiry command (QRY)...\n");
+    // QRY key (32 bytes padded): "key_test_123"
+    // CMD payload = "QRY " + key (32 bytes) = 36 bytes (0x24)
+    char qry_inq_payload[1024];
+    snprintf(qry_inq_payload, sizeof(qry_inq_payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0xe28e404f"
+             "0000000000000000000000000000000000000000000000000000000000000020"
+             "0000000000000000000000000000000000000000000000000000000000000024" // length 36
+             "51525920" // "QRY "
+             "6b65795f746573745f3132330000000000000000000000000000000000000000\""
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+
+    send_rpc_request(qry_inq_payload, response, sizeof(response));
+    // Verify response contains "val_test_999" hex representation: "76616c5f746573745f393939"
+    assert(strstr(response, "76616c5f746573745f393939") != NULL);
+    printf("  [QRY] Successfully retrieved val_test_999 from EVM storage!\n");
+
+    free(ramac_hex);
 
     // Unmount disk from LUN 0
     char unmount_payload[1024];
