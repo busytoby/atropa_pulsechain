@@ -698,6 +698,16 @@ int main(void) {
     assert(params[1] > 185.27 && params[1] < 185.29);
     printf("  [PASS] Maurice Nelles deliberate creativeness mutator verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.5. Vladimir Zworykin RCA project scale predictor
+    printf("[Test] Verifying Vladimir Zworykin RCA project scale predictor...\n");
+    double act_budget = 0.0, act_months = 0.0;
+    int zw_ret = tsfi_s370_project_scale_zworykin(100000.0, 18.0, &act_budget, &act_months);
+    assert(zw_ret == 0);
+    printf("  Zworykin actual budget: %.2f USD, actual months: %.2f months\n", act_budget, act_months);
+    assert(act_budget > 49999999.9 && act_budget < 50000000.1);
+    assert(act_months > 119.9 && act_months < 120.1);
+    printf("  [PASS] Vladimir Zworykin RCA project scale predictor verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

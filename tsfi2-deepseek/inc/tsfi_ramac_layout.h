@@ -246,8 +246,12 @@ int tsfi_s370_executive_decision_villalon(int decision_count, const double *bene
                                           int *out_optimal_decision_idx);
 
 // Maurice Nelles (Borg-Warner Director of Research) style deliberate creativeness heuristic mutator
-// Deterministically perturbs operational parameters to evaluate structural design variations
-// Returns 0 on success, -1 on invalid configurations
 int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsigned int seed);
+
+// Vladimir Zworykin (RCA) style developmental project scale divergence predictor
+// Models Sarnoff-Zworykin scale gap where actual cost scales by 500x and timeframe scales by 6.67x
+// Returns 0 on success, -1 on invalid configurations
+int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_months,
+                                      double *out_actual_budget, double *out_actual_months);
 
 #endif // TSFI_RAMAC_LAYOUT_H

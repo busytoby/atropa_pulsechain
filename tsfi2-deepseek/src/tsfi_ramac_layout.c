@@ -1087,3 +1087,16 @@ int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsi
 
     return 0;
 }
+
+int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_months,
+                                      double *out_actual_budget, double *out_actual_months) {
+    if (initial_budget <= 0.0 || initial_months <= 0.0 || !out_actual_budget || !out_actual_months) {
+        return -1;
+    }
+
+    // RCA Sarnoff-Zworykin scale gap: actual cost is 500x initial proposal, months is 6.67x
+    *out_actual_budget = initial_budget * 500.0;
+    *out_actual_months = initial_months * 6.66666667;
+
+    return 0;
+}
