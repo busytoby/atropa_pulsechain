@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Lissajous Synthesizer & State Transition Demo</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #08090d;
+            --bg-secondary: #10121a;
+            --bg-card: rgba(22, 24, 38, 0.7);
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --text-primary: #f1f4fa;
+            --text-secondary: #8e95b0;
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9b51e0;
+            --accent-green: #00f5a0;
+            --accent-pink: #ff007f;
+            --accent-orange: #ff7e5f;
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Space Grotesk', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 5% 10%, rgba(155, 81, 224, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 95% 90%, rgba(0, 242, 254, 0.07) 0%, transparent 40%);
+        }
+
+        header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(8, 9, 13, 0.85);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
+            opacity: 0.3;
+        }
+
+        .card-title {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        canvas {
+            background: rgba(4, 5, 8, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            width: 100%;
+            height: 480px;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.08);
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-purple);
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--accent-purple);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(155, 81, 224, 0.3);
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(155, 81, 224, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .register-status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .status-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .data-console {
+            background: rgba(4, 5, 8, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a2a8c3;
+            max-height: 250px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .math-expr {
+            color: var(--accent-green);
+        }
+
+        .audio-wave-visualizer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wave-bar {
+            width: 4px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+            height: 5%;
+            transition: height 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">AUNCIENT LISSAJOUS SYNTHESIZER</div>
+        <div class="badge">VM Register Mode Active</div>
+    </header>
+
+    <div class="container">
+        
+        <!-- LEFT: VISUALIZATION & AUDIO WAVEFORM -->
+        <div class="card">
+            <div class="card-title">
+                <span>3D Quaternion Orbit Projection</span>
+                <span style="font-size: 0.85rem; color: var(--accent-cyan);" id="audioStatus">Audio: Suspended (Click Play)</span>
+            </div>
+            
+            <canvas id="orbitCanvas"></canvas>
+
+            <div class="audio-wave-visualizer" id="waveVisualizer">
+                <!-- Bars generated dynamically -->
+            </div>
+
+            <button class="btn" id="playBtn">Initialize & Play Synthesizer</button>
+        </div>
+
+        <!-- RIGHT: REGISTERS & TRANSITIONS -->
+        <div class="card">
+            <div class="card-title">State Registers & Transitions</div>
+            
+            <div class="register-status-grid">
+                <div class="status-box" style="border-top: 3px solid var(--accent-cyan);">
+                    <div class="status-label">Channel (fx)</div>
+                    <div class="status-value" id="valChannel" style="color: var(--accent-cyan);">0</div>
+                </div>
+                <div class="status-box" style="border-top: 3px solid var(--accent-purple);">
+                    <div class="status-label">Dynamo (fy)</div>
+                    <div class="status-value" id="valDynamo" style="color: var(--accent-purple);">0</div>
+                </div>
+                <div class="status-box" style="border-top: 3px solid var(--accent-green);">
+                    <div class="status-label">Foundation (fz)</div>
+                    <div class="status-value" id="valFoundation" style="color: var(--accent-green);">0</div>
+                </div>
+            </div>
+
+            <div class="control-grid">
+                <div class="control-group">
+                    <label>Base (B)</label>
+                    <div class="slider-container">
+                        <input type="range" id="regBase" min="2" max="100" value="13">
+                        <div class="value-display" id="dispBase">13</div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Signal (S)</label>
+                    <div class="slider-container">
+                        <input type="range" id="regSignal" min="1" max="50" value="7">
+                        <div class="value-display" id="dispSignal">7</div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Secret (Sec)</label>
+                    <div class="slider-container">
+                        <input type="range" id="regSecret" min="1" max="50" value="9">
+                        <div class="value-display" id="dispSecret">9</div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Identity (Id)</label>
+                    <div class="slider-container">
+                        <input type="range" id="regIdentity" min="1" max="50" value="5">
+                        <div class="value-display" id="dispIdentity">5</div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Element (El)</label>
+                    <div class="slider-container">
+                        <input type="range" id="regElement" min="10" max="1000" value="250">
+                        <div class="value-display" id="dispElement">250</div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Chin</label>
+                    <div class="slider-container">
+                        <input type="range" id="regChin" min="10" max="1000" value="450">
+                        <div class="value-display" id="dispChin">450</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label>VM State Transitions</label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <button class="btn btn-secondary" onclick="triggerTransition('Seed')">Seed</button>
+                    <button class="btn btn-secondary" onclick="triggerTransition('Form')">Form</button>
+                    <button class="btn btn-secondary" onclick="triggerTransition('Fuse')">Fuse</button>
+                    <button class="btn btn-secondary" onclick="triggerTransition('Tune')">Tune</button>
+                    <button class="btn btn-secondary" onclick="triggerTransition('Polarize')">Polarize</button>
+                    <button class="btn btn-secondary" onclick="triggerTransition('Conify')">Conify</button>
+                </div>
+                <button class="btn" style="margin-top: 10px; background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink)); box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);" onclick="triggerTransition('Bond')">Bond (Align Axis)</button>
+            </div>
+
+            <div class="data-console" id="logConsole">
+                [SYSTEM] Auncient Lissajous Synthesizer loaded.<br>
+                [SYSTEM] MotzkinPrime = 953467954114363.<br>
+                [SYSTEM] Waiting for initialization.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const MotzkinPrime = 953467954114363n;
+
+        // Visual State Variables
+        let base = 13n;
+        let signal = 7n;
+        let secret = 9n;
+        let identity = 5n;
+        let element = 250n;
+        let chin = 450n;
+
+        let channel = 0;
+        let dynamo = 0;
+        let foundation = 0;
+        let pole = 0;
+        let phaseShift = 0.0;
+
+        // DOM elements
+        const playBtn = document.getElementById('playBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const logConsole = document.getElementById('logConsole');
+        const orbitCanvas = document.getElementById('orbitCanvas');
+        const orbitCtx = orbitCanvas.getContext('2d');
+
+        // Setup sliders
+        function setupSlider(id, dispId, callback) {
+            const slider = document.getElementById(id);
+            const disp = document.getElementById(dispId);
+            slider.addEventListener('input', (e) => {
+                disp.textContent = e.target.value;
+                callback(BigInt(e.target.value));
+            });
+        }
+        setupSlider('regBase', 'dispBase', (v) => { base = v; });
+        setupSlider('regSignal', 'dispSignal', (v) => { signal = v; });
+        setupSlider('regSecret', 'dispSecret', (v) => { secret = v; });
+        setupSlider('regIdentity', 'dispIdentity', (v) => { identity = v; });
+        setupSlider('regElement', 'dispElement', (v) => { element = v; });
+        setupSlider('regChin', 'dispChin', (v) => { chin = v; });
+
+        // Modular Exponentiation
+        function modPow(base, exponent, modulus) {
+            if (modulus === 1n) return 0n;
+            let result = 1n;
+            base = base % modulus;
+            let exp = exponent;
+            while (exp > 0n) {
+                if (exp % 2n === 1n) {
+                    result = (result * base) % modulus;
+                }
+                exp = exp / 2n;
+                base = (base * base) % modulus;
+            }
+            return result;
+        }
+
+        // Web Audio Synthesizer Context
+        let audioCtx = null;
+        let oscX = null, oscY = null, oscZ = null;
+        let gainNode = null;
+
+        playBtn.addEventListener('click', () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create three oscillators for Channel (X), Dynamo (Y), and Foundation (Z)
+                oscX = audioCtx.createOscillator();
+                oscY = audioCtx.createOscillator();
+                oscZ = audioCtx.createOscillator();
+
+                oscX.type = 'sine';
+                oscY.type = 'sawtooth';
+                oscZ.type = 'triangle';
+
+                gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+                oscX.connect(gainNode);
+                oscY.connect(gainNode);
+                oscZ.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscX.start();
+                oscY.start();
+                oscZ.start();
+
+                audioStatus.textContent = "Audio: Synthesizing";
+                playBtn.style.background = 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))';
+                playBtn.style.boxShadow = '0 4px 15px rgba(0, 245, 160, 0.3)';
+                playBtn.textContent = "Synthesizer Running";
+
+                appendLog("[AUDIO] Web Audio context running. Oscillators mapped to Lissajous parameters.");
+                triggerTransition('Seed');
+            } else {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                    audioStatus.textContent = "Audio: Synthesizing";
+                    appendLog("[AUDIO] Resumed synthesis.");
+                } else {
+                    audioCtx.suspend();
+                    audioStatus.textContent = "Audio: Suspended";
+                    appendLog("[AUDIO] Suspended synthesis.");
+                }
+            }
+        });
+
+        function appendLog(msg) {
+            logConsole.innerHTML += "<br>" + msg;
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+
+        function triggerTransition(name) {
+            appendLog(`[VM] Initiating state transition: <strong>${name}</strong>`);
+            
+            switch (name) {
+                case 'Seed':
+                    // Seed transition: random or initial assignments
+                    appendLog(`[VM] Seed: base=${base}, signal=${signal}, secret=${secret}`);
+                    break;
+
+                case 'Form':
+                    // Form: Base = Chi ^ Secret mod MotzkinPrime. Simulated Chi = 17
+                    base = modPow(17n, secret, MotzkinPrime);
+                    document.getElementById('regBase').value = Number(base % 100n);
+                    document.getElementById('dispBase').textContent = Number(base % 100n);
+                    appendLog(`[VM] Form: Base updated to <span class="math-expr">B = 17^{Sec} \\pmod{MotzkinPrime} = ${base}</span>`);
+                    break;
+
+                case 'Fuse':
+                    // Fuse: Owner override. Values fused to slider parameters
+                    appendLog(`[VM] Fuse: Fusing Base=${base}, Signal=${signal}, Secret=${secret}`);
+                    break;
+
+                case 'Tune':
+                    // Tune: Channel = Base ^ Signal mod MotzkinPrime
+                    let rawChan = modPow(base, signal, MotzkinPrime);
+                    channel = Number(rawChan % 800n) + 100; // Map to audible freq range
+                    document.getElementById('valChannel').textContent = channel + " Hz";
+                    updateFreq(oscX, channel);
+                    appendLog(`[VM] Tune: Channel frequency set to <span class="math-expr">Channel = B^S \\pmod{MotzkinPrime} = ${channel} Hz</span>`);
+                    break;
+
+                case 'Polarize':
+                    // Polarize: Pole = Base ^ Secret mod MotzkinPrime
+                    let rawPole = modPow(base, secret, MotzkinPrime);
+                    pole = Number(rawPole % 100n);
+                    appendLog(`[VM] Polarize: Pole translation set to <span class="math-expr">Pole = B^{Sec} \\pmod{MotzkinPrime} = ${pole}</span>`);
+                    break;
+
+                case 'Conify':
+                    // Conify: Foundation = Base ^ Identity mod MotzkinPrime
+                    let rawFound = modPow(base, identity, MotzkinPrime);
+                    foundation = Number(rawFound % 600n) + 80; // Map to audible freq range
+                    document.getElementById('valFoundation').textContent = foundation + " Hz";
+                    updateFreq(oscZ, foundation);
+                    appendLog(`[VM] Conify: Foundation frequency set to <span class="math-expr">Foundation = B^{Id} \\pmod{MotzkinPrime} = ${foundation} Hz</span>`);
+                    break;
+
+                case 'Bond':
+                    // Bond: Dynamo = Base ^ Signal mod Element. Zeroes Pole.
+                    let rawDyn = modPow(base, signal, element);
+                    dynamo = Number(rawDyn % 600n) + 120; // Map to audible freq range
+                    document.getElementById('valDynamo').textContent = dynamo + " Hz";
+                    updateFreq(oscY, dynamo);
+                    pole = 0;
+                    appendLog(`[VM] Bond: Dynamo frequency set to <span class="math-expr">Dynamo = B^S \\pmod{Element} = ${dynamo} Hz</span>. Pole reset to 0.`);
+                    break;
+            }
+        }
+
+        function updateFreq(osc, freq) {
+            if (audioCtx && osc) {
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            }
+        }
+
+        // --- Visual 3D Orbit Canvas Render ---
+        function resizeCanvas() {
+            orbitCanvas.width = orbitCanvas.clientWidth * window.devicePixelRatio;
+            orbitCanvas.height = orbitCanvas.clientHeight * window.devicePixelRatio;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const waveVisualizer = document.getElementById('waveVisualizer');
+        const numBars = 40;
+        const bars = [];
+        for (let i = 0; i < numBars; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wave-bar';
+            waveVisualizer.appendChild(bar);
+            bars.push(bar);
+        }
+
+        function renderOrbit() {
+            orbitCtx.clearRect(0, 0, orbitCanvas.width, orbitCanvas.height);
+            const w = orbitCanvas.width;
+            const h = orbitCanvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const scale = Math.min(w, h) * 0.35;
+
+            // Frequencies from registers
+            let fx = channel ? channel / 100.0 : 3.0;
+            let fy = dynamo ? dynamo / 100.0 : 4.0;
+            let fz = foundation ? foundation / 100.0 : 2.0;
+
+            // Render Lissajous projection lines
+            orbitCtx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+            orbitCtx.lineWidth = 1.5;
+            orbitCtx.beginPath();
+
+            let totalPoints = 600;
+            for (let i = 0; i < totalPoints; i++) {
+                let t = (i / totalPoints) * Math.PI * 2 * 5;
+                
+                // Coordinates modulated by frequencies
+                let x = Math.sin(fx * t + phaseShift);
+                let y = Math.sin(fy * t);
+                let z = Math.cos(fz * t + phaseShift);
+
+                // Rotate coordinates around Y/Z axes
+                let angle = phaseShift * 0.2;
+                let rotX = x * Math.cos(angle) - z * Math.sin(angle);
+                let rotZ = x * Math.sin(angle) + z * Math.cos(angle);
+
+                // Project 3D coordinates to 2D screen
+                let projX = centerX + (rotX * scale);
+                // Apply Chin hemisphere asymmetry constraint
+                let asymmetry = 1.0;
+                if (y < 0) {
+                    asymmetry = 1.0 + (Number(chin) / 2000.0);
+                }
+                let projY = centerY + (y * asymmetry * scale);
+
+                if (i === 0) orbitCtx.moveTo(projX, projY);
+                else orbitCtx.lineTo(projX, projY);
+            }
+            orbitCtx.stroke();
+
+            // Glow core
+            orbitCtx.strokeStyle = 'rgba(155, 81, 224, 0.3)';
+            orbitCtx.lineWidth = 4;
+            orbitCtx.stroke();
+
+            // Animate phase shift
+            phaseShift += 0.02;
+
+            // Animate wave visualizer bars based on simulated frequencies
+            for (let i = 0; i < numBars; i++) {
+                let waveVal = Math.sin(i * 0.3 + phaseShift * 2) * 20 + Math.cos(i * 0.15 + phaseShift) * 20 + 40;
+                bars[i].style.height = `${Math.max(10, Math.min(100, waveVal))}%`;
+            }
+
+            requestAnimationFrame(renderOrbit);
+        }
+
+        renderOrbit();
+    </script>
+</body>
+</html>
