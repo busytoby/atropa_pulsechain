@@ -315,4 +315,7 @@ int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int i
 // Autonetics Recomp II 40-bit word instruction decoder
 int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int *op2, int *addr2);
 
+// Autonetics Recomp II drum memory rotational sector scheduler (minimum latency coding)
+int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, int *out_optimal_sector);
+
 #endif // TSFI_RAMAC_LAYOUT_H

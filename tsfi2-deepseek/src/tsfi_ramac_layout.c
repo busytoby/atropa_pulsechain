@@ -582,7 +582,7 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
     if (account->is_admin_tier) {
         *out_psw_key = 0; // Master Key (Supervisor privileges)
     } else {
-        // Regular accounts mapped to an authorized key between 1 and 15
+        // Regular accounts mapped to an authorized key between 15 and 1
         *out_psw_key = (account->public_key[0] % 15) + 1;
     }
 
@@ -1484,6 +1484,21 @@ int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int
     uint64_t right_instr = raw_word & 0xFFFFF;
     *op2 = (right_instr >> 15) & 0x1F;
     *addr2 = (right_instr >> 3) & 0xFFF;
+
+    return 0;
+}
+
+int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, int *out_optimal_sector) {
+    if (current_sector < 0 || current_sector >= 64 || execution_cycles < 0 || !out_optimal_sector) {
+        return -1;
+    }
+
+    // Recomp II drum execution sector-advance timing:
+    // Let's assume 8 clock cycles represent the rotation time of 1 sector.
+    int sectors_passed = (execution_cycles + 7) / 8;
+
+    // Minimum latency code scheduling inserts a safety buffer of +1 sector to prevent missing the slot
+    *out_optimal_sector = (current_sector + sectors_passed + 1) % 64;
 
     return 0;
 }

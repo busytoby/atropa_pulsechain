@@ -946,6 +946,17 @@ int main(void) {
     assert(addr2 == 288);
     printf("  [PASS] Autonetics Recomp II word decoder verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.2. Autonetics Recomp II Drum Scheduler Verification
+    printf("[Test] Verifying Autonetics Recomp II drum scheduling latency optimization...\n");
+    int optimal_sector = -1;
+    // Current sector = 10, execution cycles = 15.
+    // 15 cycles fits in 2 sectors (15 + 7)/8 = 2.
+    // Optimal target sector = (10 + 2 + 1) = 13
+    int sched_ret = tsfi_s370_recomp_ii_drum_schedule(10, 15, &optimal_sector);
+    assert(sched_ret == 0);
+    assert(optimal_sector == 13);
+    printf("  [PASS] Autonetics Recomp II drum scheduler verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
