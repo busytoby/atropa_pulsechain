@@ -173,6 +173,17 @@ typedef struct {
     double triode2_plate_v; // Plate voltage (Inverted /Q output)
 } tsfi_lgp30_flipflop;
 
+// Bendix G-15 DA-1 Digital Differential Analyzer (DDA) integrator structure
+typedef struct {
+    int64_t y;                  // Integrand register Y
+    int64_t r;                  // Remainder register R
+    int64_t limit;              // Scaled limit threshold for R overflow
+    int output_dz;              // Output pulse emitted: -1, 0, or 1
+    int src_dx_integrator;      // Integrator index providing independent variable dx (-1 for time step dx=1)
+    int src_dy_integrator;      // Integrator index providing dy pulse (-1 for dy=0)
+    int dy_invert;              // Inversion flag for incoming dy pulse
+} tsfi_bendixg15_dda_integrator;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -423,5 +434,8 @@ void tsfi_lgp30_flipflop_init(tsfi_lgp30_flipflop *ff);
 
 // Physical ODE simulation tick for Librascope LGP-30 vacuum tube twin-triode flip flop bistable multivibrator
 void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, double trigger_reset_v, double dt);
+
+// Bendix G-15 DA-1 Digital Differential Analyzer (DDA) simulation step execution
+int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int count);
 
 #endif // TSFI_RAMAC_LAYOUT_H

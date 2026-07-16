@@ -1332,6 +1332,39 @@ int main(void) {
 
     printf("  [PASS] Librascope LGP-30 vacuum tube flip flop physical latching verified successfully.\n");
 
+    // Test Scenario 8: Bendix G-15 DA-1 Digital Differential Analyzer (DDA)
+    printf("[Test] Verifying Bendix G-15 DA-1 Digital Differential Analyzer...\n");
+    tsfi_bendixg15_dda_integrator dda[2];
+    
+    // Setup integrator 0: Sine wave generator
+    dda[0].y = 0;
+    dda[0].r = 0;
+    dda[0].limit = 1000;
+    dda[0].output_dz = 0;
+    dda[0].src_dx_integrator = -1; // time step dx=1
+    dda[0].src_dy_integrator = 1;  // dy from Cosine (integrator 1)
+    dda[0].dy_invert = 0;
+
+    // Setup integrator 1: Cosine wave generator
+    dda[1].y = 1000; // start value
+    dda[1].r = 0;
+    dda[1].limit = 1000;
+    dda[1].output_dz = 0;
+    dda[1].src_dx_integrator = -1; // time step dx=1
+    dda[1].src_dy_integrator = 0;  // dy from Sine (integrator 0)
+    dda[1].dy_invert = 1;          // inverted dy output (negative feedback for oscillation)
+
+    // Execute 60 ticks to run simulation
+    for (int i = 0; i < 60; i++) {
+        int dda_ret = tsfi_s370_bendixg15_dda_tick(dda, 2);
+        assert(dda_ret == 0);
+    }
+    // Verify that the integrators accumulated values (sine/cosine oscillation values)
+    assert(dda[0].y != 0);
+    assert(dda[1].y < 1000); // Decayed as it transfers energy to dda[0]
+
+    printf("  [PASS] Bendix G-15 DA-1 DDA co-processor simulation verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

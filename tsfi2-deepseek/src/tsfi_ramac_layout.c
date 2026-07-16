@@ -2168,3 +2168,66 @@ void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, dou
     ff->triode1_plate_v += (target_p1 - ff->triode1_plate_v) * (dt / 0.000002);
     ff->triode2_plate_v += (target_p2 - ff->triode2_plate_v) * (dt / 0.000002);
 }
+
+int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int count) {
+    if (!integrators || count <= 0) return -1;
+
+    // 1. Snapshot previous outputs to resolve feedback pathways without race conditions
+    int *prev_outputs = (int *)malloc(count * sizeof(int));
+    if (!prev_outputs) return -1;
+
+    for (int i = 0; i < count; i++) {
+        prev_outputs[i] = integrators[i].output_dz;
+    }
+
+    // 2. Perform Euler step for each integrator in the DA-1 Digital Differential Analyzer
+    for (int i = 0; i < count; i++) {
+        // Resolve independent variable step dx
+        int dx = 0;
+        if (integrators[i].src_dx_integrator == -1) {
+            dx = 1; // Standard independent variable time step
+        } else {
+            int src_idx = integrators[i].src_dx_integrator;
+            if (src_idx >= 0 && src_idx < count) {
+                dx = prev_outputs[src_idx];
+            }
+        }
+
+        // Resolve integrand increment dy
+        int dy = 0;
+        if (integrators[i].src_dy_integrator != -1) {
+            int src_idx = integrators[i].src_dy_integrator;
+            if (src_idx >= 0 && src_idx < count) {
+                dy = prev_outputs[src_idx];
+            }
+        }
+
+        if (integrators[i].dy_invert) {
+            dy = -dy;
+        }
+
+        // Update integrand Y
+        integrators[i].y += dy;
+
+        // Accumulate to R accumulator if dx is active
+        if (dx != 0) {
+            integrators[i].r += integrators[i].y * dx;
+
+            // Overflow detection and output pulse emission
+            if (integrators[i].r >= integrators[i].limit) {
+                integrators[i].r -= integrators[i].limit;
+                integrators[i].output_dz = 1;
+            } else if (integrators[i].r <= -integrators[i].limit) {
+                integrators[i].r += integrators[i].limit;
+                integrators[i].output_dz = -1;
+            } else {
+                integrators[i].output_dz = 0;
+            }
+        } else {
+            integrators[i].output_dz = 0;
+        }
+    }
+
+    free(prev_outputs);
+    return 0;
+}
