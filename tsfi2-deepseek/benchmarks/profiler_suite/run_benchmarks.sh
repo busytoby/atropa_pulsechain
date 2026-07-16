@@ -57,6 +57,7 @@ make tests/bench_unified_classifier > /dev/null 2>&1 &
 make tests/test_akb > /dev/null 2>&1 &
 make tests/test_box_orchestrator > /dev/null 2>&1 &
 make tests/test_synth_akb > /dev/null 2>&1 &
+make tests/test_synth_direct > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -145,6 +146,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_akb > /dev/null 2>&1
 ./tests/test_box_orchestrator > /dev/null 2>&1
 ./tests/test_synth_akb > /dev/null 2>&1
+./tests/test_synth_direct > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
