@@ -475,6 +475,82 @@ object "BtcErc20GasToken" {
                         continue
                     }
                     
+                    // OP_CHECKSIG (0xac: verifies ECDSA signature using ecrecover)
+                    if iszero(sub(op, 0xac)) {
+                        if lt(stack_ptr, 0x2080) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let v := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let r := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let s := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let hash := mload(stack_ptr)
+                        
+                        // Prepare ecrecover input in scratch space
+                        mstore(0, hash)
+                        mstore(32, v)
+                        mstore(64, r)
+                        mstore(96, s)
+                        
+                        let ok := staticcall(gas(), 1, 0, 128, 0, 32)
+                        let signer := 0
+                        if ok {
+                            signer := mload(0)
+                        }
+                        mstore(stack_ptr, signer)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // sys_open (0x11: resolves path using storage registry)
+                    if iszero(sub(op, 0x11)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let path_hash := mload(stack_ptr)
+                        
+                        mstore(0, path_hash)
+                        mstore(32, 13) // Map registry index
+                        let target := sload(keccak256(0, 64))
+                        mstore(stack_ptr, target)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // sys_write (0x12: emits log event for the sync worker to update DAT)
+                    if iszero(sub(op, 0x12)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let val := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let key := mload(stack_ptr)
+                        
+                        // Emit SysWrite event
+                        mstore(0, key)
+                        mstore(32, val)
+                        log1(0, 64, 0x3344556677889900112233445566778899001122334455667788990011223344)
+                        
+                        mstore(stack_ptr, 1)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // sys_fork (0x13: clones variable registry context mapping)
+                    if iszero(sub(op, 0x13)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let child_id := mload(stack_ptr)
+                        
+                        // Simply record child VM link on-chain
+                        mstore(0, child_id)
+                        mstore(32, 14)
+                        sstore(keccak256(0, 64), 1)
+                        
+                        mstore(stack_ptr, 1)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
                     // OP_EQUALVERIFY
                     if iszero(sub(op, 0x88)) {
                         if lt(stack_ptr, 0x2040) { revert(0, 0) }
