@@ -199,23 +199,26 @@ int main(void) {
     memset(page_tables, 0, sizeof(page_tables));
     page_tables[5].page_frame_real_addr = 0x8F000;
     page_tables[5].invalid = 0;
+    page_tables[5].write_protect = 1; // page-protection enabled
 
     page_tables[6].page_frame_real_addr = 0;
     page_tables[6].invalid = 1;
 
     uint32_t virt_addr = 0x5123;
     uint32_t phys_addr = 0;
-    int translate_ret1 = tsfi_s370_dat_translate(virt_addr, seg_table, 2, page_tables, &phys_addr);
+    int write_protected = 0;
+    int translate_ret1 = tsfi_s370_dat_translate(virt_addr, seg_table, 2, page_tables, &phys_addr, &write_protected);
     assert(translate_ret1 == 0);
-    printf("  Virtual address 0x%08X translated to physical address 0x%08X\n", virt_addr, phys_addr);
+    printf("  Virtual address 0x%08X translated to physical address 0x%08X (write protected: %d)\n", virt_addr, phys_addr, write_protected);
     assert(phys_addr == 0x8F123);
+    assert(write_protected == 1);
 
     uint32_t invalid_seg_addr = 0x105123;
-    int translate_ret2 = tsfi_s370_dat_translate(invalid_seg_addr, seg_table, 2, page_tables, &phys_addr);
+    int translate_ret2 = tsfi_s370_dat_translate(invalid_seg_addr, seg_table, 2, page_tables, &phys_addr, &write_protected);
     assert(translate_ret2 == -1);
 
     uint32_t invalid_page_addr = 0x6123;
-    int translate_ret3 = tsfi_s370_dat_translate(invalid_page_addr, seg_table, 2, page_tables, &phys_addr);
+    int translate_ret3 = tsfi_s370_dat_translate(invalid_page_addr, seg_table, 2, page_tables, &phys_addr, &write_protected);
     assert(translate_ret3 == -1);
 
     printf("  [PASS] System/370 Dynamic Address Translation (DAT) paging verified successfully.\n");

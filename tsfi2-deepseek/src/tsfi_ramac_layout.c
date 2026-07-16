@@ -381,8 +381,8 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
 int tsfi_s370_dat_translate(uint32_t virtual_addr, 
                             tsfi_s370_segment_entry *seg_table, int seg_count,
                             tsfi_s370_page_entry *page_tables,
-                            uint32_t *out_physical_addr) {
-    if (!seg_table || !page_tables || !out_physical_addr) return -1;
+                            uint32_t *out_physical_addr, int *out_write_protected) {
+    if (!seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
 
     // S/370 31-bit addressing translation:
     // SX (Segment Index) = bits 1..11 (11 bits) -> (addr >> 20) & 0x7FF
@@ -407,6 +407,7 @@ int tsfi_s370_dat_translate(uint32_t virtual_addr,
     }
 
     *out_physical_addr = page_tables[pte_idx].page_frame_real_addr + bx;
+    *out_write_protected = page_tables[pte_idx].write_protect;
     return 0; // Translation successful
 }
 

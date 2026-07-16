@@ -56,6 +56,7 @@ typedef struct {
 typedef struct {
     uint32_t page_frame_real_addr; // Physical real address page offset
     int invalid;                   // Page invalid bit (I)
+    int write_protect;             // Page-Protection bit (P) - read-only virtual page
 } tsfi_s370_page_entry;
 
 // System/370 Channel Command Word (CCW) structure
@@ -142,10 +143,12 @@ int tsfi_ramac_check_parity(const char *str);
 int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
 
 // System/370 Dynamic Address Translation (DAT) translation lookup emulators
+// Returns 0 on success, -1 on translation exceptions (segment invalid/page invalid)
+// out_write_protected is populated with the Page-Protection bit (P)
 int tsfi_s370_dat_translate(uint32_t virtual_addr, 
                             tsfi_s370_segment_entry *seg_table, int seg_count,
                             tsfi_s370_page_entry *page_tables,
-                            uint32_t *out_physical_addr);
+                            uint32_t *out_physical_addr, int *out_write_protected);
 
 // System/370 Channel I/O Program execution emulator
 int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
@@ -171,7 +174,6 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
                                 uint8_t *out_psw_key);
 
 // System/370 Security Hardware Program Interruption & PSW Swap handling
-// Returns 0 on successful swap, -1 if memory bounds exceeded
 int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
                                         uint8_t *real_memory, int mem_size);
 
