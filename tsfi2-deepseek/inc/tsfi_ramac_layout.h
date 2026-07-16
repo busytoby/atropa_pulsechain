@@ -325,4 +325,7 @@ int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int c
 // MIT Lincoln Laboratory TX-2 SIMD/Variable Word Length ALU
 int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *op, uint64_t *out_val);
 
+// MIT Lincoln Laboratory TX-2 light pen tracking loop simulator
+int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, double *cross_y, double cross_radius);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -176,7 +176,12 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     return found_slot;
 }
 
-const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us) {
+const char* tsfi_ramac_search_record(disk, key, cylinder, out_total_seek_us)
+    tsfi_ramac_record *disk;
+    const char *key;
+    int cylinder;
+    double *out_total_seek_us;
+{
     int primary_idx = tsfi_ramac_hash_key(key, cylinder);
     int current_idx = primary_idx;
     double seek_time = 0.0;
@@ -1606,4 +1611,48 @@ int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *o
 
     *out_val = result;
     return 0;
+}
+
+int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, double *cross_y, double cross_radius) {
+    if (!cross_x || !cross_y || cross_radius <= 0.0) {
+        return -1;
+    }
+
+    // Generate coordinates for a 9-point tracking cross centered at (*cross_x, *cross_y)
+    double px[9], py[9];
+    // Center point
+    px[0] = *cross_x; py[0] = *cross_y;
+    // Cardinal points
+    px[1] = *cross_x + cross_radius; py[1] = *cross_y;
+    px[2] = *cross_x - cross_radius; py[2] = *cross_y;
+    px[3] = *cross_x; py[3] = *cross_y + cross_radius;
+    px[4] = *cross_x; py[4] = *cross_y - cross_radius;
+    // Intermediate diagonal points
+    double diag = cross_radius * 0.5;
+    px[5] = *cross_x + diag; py[5] = *cross_y + diag;
+    px[6] = *cross_x - diag; py[6] = *cross_y - diag;
+    px[7] = *cross_x + diag; py[7] = *cross_y - diag;
+    px[8] = *cross_x - diag; py[8] = *cross_y + diag;
+
+    // Detect points falling inside the pen aperture (radius threshold: 0.7 * cross_radius)
+    double threshold = 0.7 * cross_radius;
+    double sum_x = 0.0, sum_y = 0.0;
+    int detected_count = 0;
+
+    for (int i = 0; i < 9; i++) {
+        double dist = sqrt((px[i] - pen_x) * (px[i] - pen_x) + (py[i] - pen_y) * (py[i] - pen_y));
+        if (dist <= threshold) {
+            sum_x += px[i];
+            sum_y += py[i];
+            detected_count++;
+        }
+    }
+
+    // If points are detected, relocate the tracking cross to their centroid
+    if (detected_count > 0) {
+        *cross_x = sum_x / detected_count;
+        *cross_y = sum_y / detected_count;
+    }
+
+    return detected_count;
 }

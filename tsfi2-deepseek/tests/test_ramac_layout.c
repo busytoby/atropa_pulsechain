@@ -982,6 +982,18 @@ int main(void) {
     assert(alu_out == (((0x15ULL) << 18) | 0x2AULL));
     printf("  [PASS] TX-2 SIMD ALU verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.5. MIT Lincoln Laboratory TX-2 Light Pen Tracking Loop Verification
+    printf("[Test] Verifying MIT Lincoln Laboratory TX-2 light pen tracking loop...\n");
+    double track_x = 10.0;
+    double track_y = 10.0;
+    // Pen is slightly offset to the right at (10.05, 10.0)
+    int tracked_points = tsfi_s370_tx2_light_pen_track(10.05, 10.0, &track_x, &track_y, 0.2);
+    assert(tracked_points > 0);
+    // The cross should shift towards the pen position
+    assert(track_x > 10.0);
+    printf("  Centroid relocated to: (%.4f, %.4f)\n", track_x, track_y);
+    printf("  [PASS] TX-2 light pen tracking loop verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
