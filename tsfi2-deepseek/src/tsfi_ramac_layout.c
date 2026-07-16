@@ -3020,3 +3020,21 @@ int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int 
     *out_result = rca_out_val;
     return 0;
 }
+
+int tsfi_s370_cobol_tombstone_report(char *report_out, int max_len) {
+    if (!report_out || max_len < 256) return -1;
+
+    const char *tombstone_art = 
+        "     .------.\n"
+        "    /  R.I.P. \\\n"
+        "   |    COBOL   |\n"
+        "   |            |\n"
+        "   |  1959-1960 |\n"
+        "   |   CODASYL  |\n"
+        "   |            |\n"
+        "  *|____________|*\n";
+
+    strncpy(report_out, tombstone_art, max_len - 1);
+    report_out[max_len - 1] = '\0';
+    return 0;
+}

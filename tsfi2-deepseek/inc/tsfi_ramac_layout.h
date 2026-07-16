@@ -599,4 +599,7 @@ int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int 
 // Simulated Cross-Compiler Compatibility Loop demonstrating RCA 501 and UNIVAC II parity
 int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int val_r0, int val_r1, int *out_result);
 
+// Simulated COBOL Tombstone formatting report exporter
+int tsfi_s370_cobol_tombstone_report(char *report_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

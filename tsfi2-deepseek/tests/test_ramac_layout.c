@@ -1899,6 +1899,15 @@ int main(void) {
     assert(out_res == 40);
     printf("  [PASS] Cross-compiler compatibility loop executed with parity: OUT = %d\n", out_res);
 
+    // Test Scenario 30: Howard Bromberg COBOL Tombstone Report Exporter
+    printf("[Test] Verifying COBOL Tombstone Report Exporter...\n");
+    char tomb_rep[512] = {0};
+    int tomb_ret = tsfi_s370_cobol_tombstone_report(tomb_rep, sizeof(tomb_rep));
+    assert(tomb_ret == 0);
+    assert(strstr(tomb_rep, "COBOL") != NULL);
+    assert(strstr(tomb_rep, "R.I.P.") != NULL);
+    printf("  [PASS] COBOL Tombstone report successfully generated:\n%s", tomb_rep);
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
