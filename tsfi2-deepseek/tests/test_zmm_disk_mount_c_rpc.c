@@ -401,6 +401,71 @@ int main(int argc, char *argv[]) {
     printf("  [MOUNT_CHECK] WinchesterMQ returned mounted address: 0x%s\n", query_addr + 26);
     assert(strcmp(query_addr + 26, disk_addr + 2) == 0);
 
+    // ---------------------------------------------------------
+    // ANVIL SECTOR READ/WRITE VERIFICATION (RAMAC ENHANCED)
+    // ---------------------------------------------------------
+    printf("[C-Test] Verifying Block Write (U2) and Read (U1) sectors on DiskSystem...\n");
+    // Format a sector write payload containing RAMAC verification data
+    char write_cmd[2048];
+    // Selector = 0x9812a4df (executeDiskCommand)
+    // Offset = 0x20
+    // Length of bytes = 11 (for "U2 T02 S03\0") + 256 (data) = 267 bytes (0x10b)
+    // "U2 T02 S03\0" -> "5532205430322053303300" (11 bytes)
+    // Data = "RAMAC_SYSTEM_TEST_DATA_VERIFIED_OVER_ANVIL_RPC" padded to 256 bytes
+    // (512 hex characters)
+    char data_hex[513];
+    memset(data_hex, '0', 512);
+    data_hex[512] = '\0';
+    const char *data_str = "RAMAC_SYSTEM_TEST_DATA_VERIFIED_OVER_ANVIL_RPC";
+    for (size_t i = 0; i < strlen(data_str); i++) {
+        sprintf(data_hex + (i * 2), "%02x", (unsigned char)data_str[i]);
+    }
+
+    snprintf(write_cmd, sizeof(write_cmd),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0x9812a4df"
+             "0000000000000000000000000000000000000000000000000000000000000020" // offset
+             "000000000000000000000000000000000000000000000000000000000000010b" // length 267
+             "5532205430322053303300" // "U2 T02 S03\0"
+             "%s\"," // 256 bytes hex data
+             "\"gas\":\"0xF4240\""
+             "}],\"id\":1}",
+             disk_addr, data_hex);
+
+    execute_tx(write_cmd);
+    printf("  [WRITE] Successfully wrote sector (Track 2, Sector 3).\n");
+
+    // Mine a block to bypass the switch bounce debouncer same-block restriction
+    char mine_payload[128] = "{\"jsonrpc\":\"2.0\",\"method\":\"evm_mine\",\"params\":[],\"id\":1}";
+    char mine_response[1024];
+    send_rpc_request(mine_payload, mine_response, sizeof(mine_response));
+
+    // Query read payload using eth_call with aligned caller "from" field
+    char read_cmd[1024];
+    snprintf(read_cmd, sizeof(read_cmd),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0x9812a4df"
+             "0000000000000000000000000000000000000000000000000000000000000020"
+             "000000000000000000000000000000000000000000000000000000000000000b"
+             "5531205430322053303300\"" // "U1 T02 S03\0"
+             "},\"latest\"],\"id\":1}",
+             disk_addr);
+
+    send_rpc_request(read_cmd, response, sizeof(response));
+    printf("DEBUG: response = %s\n", response);
+    // Verify that response contains the hex representation of "RAMAC_SYSTEM_TEST_DATA_VERIFIED_OVER_ANVIL_RPC"
+    char test_hex[128];
+    test_hex[0] = '\0';
+    for (size_t i = 0; i < strlen(data_str); i++) {
+        sprintf(test_hex + (i * 2), "%02x", (unsigned char)data_str[i]);
+    }
+    assert(strstr(response, test_hex) != NULL);
+    printf("  [READ] Verified sector contains written data: '%s'\n", data_str);
+
     // Unmount disk from LUN 0
     char unmount_payload[1024];
     snprintf(unmount_payload, sizeof(unmount_payload),
