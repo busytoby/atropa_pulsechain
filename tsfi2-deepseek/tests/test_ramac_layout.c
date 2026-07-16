@@ -1596,6 +1596,23 @@ int main(void) {
 
     printf("  [PASS] IBM 7030 STRETCH Look-Ahead Unit verified successfully.\n");
 
+    // Test Scenario 16: IBM 7030 STRETCH Variable Field Length (VFL) Arithmetic
+    printf("[Test] Verifying IBM 7030 STRETCH VFL Arithmetic...\n");
+    uint64_t vfl_memory[4] = {0};
+
+    int write_res = tsfi_s370_ibm7030_write_bits(vfl_memory, 10, 8, 0x55);
+    assert(write_res == 0);
+
+    write_res = tsfi_s370_ibm7030_write_bits(vfl_memory, 25, 8, 0xAA);
+    assert(write_res == 0);
+
+    uint64_t vfl_sum = 0;
+    int vfl_res = tsfi_s370_ibm7030_vfl_add(vfl_memory, 10, 1, 8, 25, 1, 8, &vfl_sum);
+    assert(vfl_res == 0);
+    assert(vfl_sum == 0xFF);
+
+    printf("  [PASS] IBM 7030 STRETCH VFL Arithmetic verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

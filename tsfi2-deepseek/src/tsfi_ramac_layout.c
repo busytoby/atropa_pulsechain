@@ -2468,3 +2468,28 @@ int tsfi_s370_ibm7030_lau_commit(tsfi_ibm7030_lau_queue *queue, uint64_t *memory
     queue->head = head;
     return commits;
 }
+
+int tsfi_s370_ibm7030_vfl_add(const uint64_t *memory, 
+                              uint32_t bit_addr_a, int len_a, int byte_size_a,
+                              uint32_t bit_addr_b, int len_b, int byte_size_b,
+                              uint64_t *out_val) {
+    if (!memory || !out_val || len_a <= 0 || byte_size_a <= 0 || len_b <= 0 || byte_size_b <= 0) {
+        return -1;
+    }
+
+    int bit_len_a = len_a * byte_size_a;
+    int bit_len_b = len_b * byte_size_b;
+
+    if (bit_len_a > 64 || bit_len_b > 64) {
+        return -2;
+    }
+
+    uint64_t val_a = 0;
+    uint64_t val_b = 0;
+
+    if (tsfi_s370_ibm7030_read_bits(memory, bit_addr_a, bit_len_a, &val_a) != 0) return -3;
+    if (tsfi_s370_ibm7030_read_bits(memory, bit_addr_b, bit_len_b, &val_b) != 0) return -3;
+
+    *out_val = val_a + val_b;
+    return 0;
+}

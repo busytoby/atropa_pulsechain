@@ -495,4 +495,10 @@ int tsfi_s370_ibm7030_lau_push_store(tsfi_ibm7030_lau_queue *queue, uint32_t add
 // IBM 7030 STRETCH LAU queue commit to main memory
 int tsfi_s370_ibm7030_lau_commit(tsfi_ibm7030_lau_queue *queue, uint64_t *memory, int mem_size);
 
+// IBM 7030 STRETCH Variable Field Length (VFL) binary addition
+int tsfi_s370_ibm7030_vfl_add(const uint64_t *memory, 
+                              uint32_t bit_addr_a, int len_a, int byte_size_a,
+                              uint32_t bit_addr_b, int len_b, int byte_size_b,
+                              uint64_t *out_val);
+
 #endif // TSFI_RAMAC_LAYOUT_H
