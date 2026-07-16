@@ -1982,3 +1982,38 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
 
     return 0; // ZY-IR execution completed successfully
 }
+
+int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_size,
+                           char *yul_code_out, int max_len) {
+    if (!program || program_size <= 0 || !yul_code_out || max_len <= 0) {
+        return -1;
+    }
+
+    yul_code_out[0] = '\0';
+    int offset = snprintf(yul_code_out, max_len, "{\n");
+
+    for (int i = 0; i < program_size; i++) {
+        if (offset >= max_len - 64) break;
+
+        tsfi_uncol_instruction inst = program[i];
+        if (strcmp(inst.op, "LOAD") == 0) {
+            offset += snprintf(yul_code_out + offset, max_len - offset,
+                               "  let r%d := mload(%d)\n", inst.reg_dest, inst.address);
+        } else if (strcmp(inst.op, "STORE") == 0) {
+            offset += snprintf(yul_code_out + offset, max_len - offset,
+                               "  mstore(%d, r%d)\n", inst.address, inst.reg_dest);
+        } else if (strcmp(inst.op, "ADD") == 0) {
+            offset += snprintf(yul_code_out + offset, max_len - offset,
+                               "  let r%d := add(r%d, r%d)\n", inst.reg_dest, inst.reg_src1, inst.reg_src2);
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            offset += snprintf(yul_code_out + offset, max_len - offset,
+                               "  let r%d := sub(r%d, r%d)\n", inst.reg_dest, inst.reg_src1, inst.reg_src2);
+        }
+    }
+
+    if (offset < max_len - 3) {
+        snprintf(yul_code_out + offset, max_len - offset, "}\n");
+    }
+
+    return 0;
+}

@@ -1216,6 +1216,21 @@ int main(void) {
     free(pipe_mem);
     printf("  [PASS] Complex ZY-IR pipeline verified successfully.\n");
 
+    // Test Scenario 4: UNCOL to Yul code compiler
+    printf("[Test] Verifying UNCOL to Yul compiler...\n");
+    tsfi_uncol_instruction uncol_yul_prog[3] = {
+        {"LOAD", 0, 0, 0, 64},
+        {"ADD", 2, 0, 0, 0},
+        {"STORE", 2, 0, 0, 128}
+    };
+    char yul_out[256];
+    int yul_comp_ret = tsfi_s370_uncol_to_yul(uncol_yul_prog, 3, yul_out, 256);
+    assert(yul_comp_ret == 0);
+    assert(strstr(yul_out, "let r0 := mload(64)") != NULL);
+    assert(strstr(yul_out, "let r2 := add(r0, r0)") != NULL);
+    assert(strstr(yul_out, "mstore(128, r2)") != NULL);
+    printf("  [PASS] UNCOL to Yul compiler verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

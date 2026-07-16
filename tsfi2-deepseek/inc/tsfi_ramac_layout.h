@@ -378,4 +378,8 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
                         int initiator_id, int initiator_priority,
                         int *registers, int reg_count, uint64_t *current_tick);
 
+// UNCOL-to-Solidity/Yul code block compiler
+int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_size,
+                           char *yul_code_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H
