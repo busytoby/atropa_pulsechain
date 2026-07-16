@@ -957,6 +957,20 @@ int main(void) {
     assert(optimal_sector == 13);
     printf("  [PASS] Autonetics Recomp II drum scheduler verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.3. Perforated Paper Tape Synthesizer Verification
+    printf("[Test] Verifying perforated paper tape synthesizer sequencer...\n");
+    // Trigger tape: Row 0 has bit 0 (Bass) and bit 3 (A4) active (0x09)
+    uint8_t dummy_tape[] = {0x09, 0x00, 0x01};
+    double synth_audio[1000] = {0.0};
+    int synth_ret = tsfi_s370_paper_tape_synthesizer(dummy_tape, 3, 8, synth_audio, 1000, 8000.0);
+    assert(synth_ret == 0);
+    // At sample 0, the audio should be non-zero since row 0 has active triggers
+    printf("  Synthesizer sample 0 value: %.4f\n", synth_audio[0]);
+    assert(fabs(synth_audio[0]) < 0.000001); // Initial sin(0) = 0, but sample 1 is non-zero
+    printf("  Synthesizer sample 1 value: %.4f\n", synth_audio[1]);
+    assert(fabs(synth_audio[1]) > 0.0001); // Trigger active sound wave decay
+    printf("  [PASS] Perforated paper tape synthesizer verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

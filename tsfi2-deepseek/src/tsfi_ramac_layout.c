@@ -4,6 +4,10 @@
 #include <string.h>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index) {
     tsfi_ramac_chs chs;
     int words_per_sector = RAMAC_WORDS;
@@ -582,7 +586,7 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
     if (account->is_admin_tier) {
         *out_psw_key = 0; // Master Key (Supervisor privileges)
     } else {
-        // Regular accounts mapped to an authorized key between 15 and 1
+        // Regular accounts mapped to an authorized key between 1 and 15
         *out_psw_key = (account->public_key[0] % 15) + 1;
     }
 
@@ -1499,6 +1503,50 @@ int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, 
 
     // Minimum latency code scheduling inserts a safety buffer of +1 sector to prevent missing the slot
     *out_optimal_sector = (current_sector + sectors_passed + 1) % 64;
+
+    return 0;
+}
+
+int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int channels,
+                                     double *out_audio, int max_samples, double sample_rate) {
+    if (!tape_data || length <= 0 || channels <= 0 || channels > 8 || !out_audio || max_samples <= 0 || sample_rate <= 0.0) {
+        return -1;
+    }
+
+    // Clear output audio buffer
+    memset(out_audio, 0, max_samples * sizeof(double));
+
+    // Audio tone frequencies corresponding to the 8 possible tape tracks/channels
+    double frequencies[8] = {110.0, 220.0, 330.0, 440.0, 550.0, 660.0, 770.0, 880.0};
+
+    // Duration of 1 tape row (step): 0.1 seconds
+    double step_duration = 0.1;
+    int samples_per_step = (int)(step_duration * sample_rate);
+
+    for (int step = 0; step < length; step++) {
+        int start_sample = step * samples_per_step;
+        if (start_sample >= max_samples) break;
+
+        uint8_t row_val = tape_data[step];
+
+        for (int c = 0; c < channels; c++) {
+            if ((row_val >> c) & 1) {
+                double freq = frequencies[c];
+
+                // Generate decaying sine wave for this channel trigger
+                for (int s = 0; s < samples_per_step; s++) {
+                    int out_idx = start_sample + s;
+                    if (out_idx >= max_samples) break;
+
+                    double t = (double)s / sample_rate;
+                    double decay = exp(-t / 0.05); // Decay time constant tau = 50ms
+                    double signal = sin(2.0 * M_PI * freq * t) * decay * 0.1; // Scale amplitude
+
+                    out_audio[out_idx] += signal;
+                }
+            }
+        }
+    }
 
     return 0;
 }

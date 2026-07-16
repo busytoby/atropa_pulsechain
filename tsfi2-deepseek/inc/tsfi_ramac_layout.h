@@ -318,4 +318,8 @@ int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int
 // Autonetics Recomp II drum memory rotational sector scheduler (minimum latency coding)
 int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, int *out_optimal_sector);
 
+// Perforated paper tape synthesizer sequencer instrument
+int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int channels,
+                                     double *out_audio, int max_samples, double sample_rate);
+
 #endif // TSFI_RAMAC_LAYOUT_H
