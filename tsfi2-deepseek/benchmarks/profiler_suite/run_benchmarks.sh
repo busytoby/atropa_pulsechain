@@ -44,6 +44,7 @@ make tests/test_question_crystallization > /dev/null 2>&1 &
 make tests/test_doxastic_classifier > /dev/null 2>&1 &
 make tests/test_strain_classifier > /dev/null 2>&1 &
 make tests/test_doxastic_rules > /dev/null 2>&1 &
+make tests/test_doxastic_loop > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -119,6 +120,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_doxastic_classifier > /dev/null 2>&1
 ./tests/test_strain_classifier > /dev/null 2>&1
 ./tests/test_doxastic_rules > /dev/null 2>&1
+./tests/test_doxastic_loop > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
