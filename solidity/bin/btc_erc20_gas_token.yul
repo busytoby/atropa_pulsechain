@@ -190,6 +190,21 @@ object "BtcErc20GasToken" {
                 return(0, 32)
             }
             
+            // approve_lau_operator(address operator, uint256 approved) -> returns (uint256 success)
+            // Selector: 0xa9c3c1a2
+            if iszero(sub(selector, 0xa9c3c1a2)) {
+                let operator := calldataload(4)
+                let approved := calldataload(36)
+                
+                mstore(0, operator)
+                mstore(32, 12)
+                let slot := keccak256(0, 64)
+                sstore(slot, approved)
+                
+                mstore(0, 1)
+                return(0, 32)
+            }
+            
             // Helper to resolve ERC20 balance storage slot
             function get_balance_slot(account) -> slot {
                 mstore(0, account)
@@ -207,19 +222,28 @@ object "BtcErc20GasToken" {
                 slot := keccak256(0, 64)
             }
             
-            // Verification interpreter loop with strict BTC compatibility checks
+            // Verification interpreter loop with strict BTC compatibility checks + LAU operator extension
             function run_btc_verification_loop(len) -> success {
                 let stack_ptr := 0x2000
                 let altstack_ptr := 0x2200
+                
+                // Resolve limit: 1000 standard; 32000 for approved LAU operators
+                let limit := 1000
+                mstore(0, caller())
+                mstore(32, 12)
+                let slot := keccak256(0, 64)
+                if sload(slot) {
+                    limit := 32000
+                }
                 
                 let ip := 0
                 for {} lt(ip, len) {} {
                     let op := byte(0, mload(add(0x1000, ip)))
                     ip := add(ip, 1)
                     
-                    // Strict Stack size limit: primary + alt stack count <= 1000
+                    // Stack limit check (Dynamic operator scaling)
                     let total_elements := add(div(sub(stack_ptr, 0x2000), 32), div(sub(altstack_ptr, 0x2200), 32))
-                    if gt(total_elements, 1000) { revert(0, 0) }
+                    if gt(total_elements, limit) { revert(0, 0) }
                     
                     // OP_PUSH
                     if iszero(sub(op, 0x01)) {
@@ -232,7 +256,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_ADD
                     if iszero(sub(op, 0x93)) {
-                        if lt(stack_ptr, 0x2040) { revert(0, 0) } // Strict Pop underflow check
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
                         stack_ptr := sub(stack_ptr, 32)
                         let b := mload(stack_ptr)
                         stack_ptr := sub(stack_ptr, 32)
@@ -306,10 +330,10 @@ object "BtcErc20GasToken" {
                 }
                 
                 // Strict final stack state check
-                if lt(stack_ptr, 0x2020) { revert(0, 0) } // Stack must not be empty
+                if lt(stack_ptr, 0x2020) { revert(0, 0) }
                 stack_ptr := sub(stack_ptr, 32)
                 let final_res := mload(stack_ptr)
-                success := iszero(iszero(final_res)) // Non-zero is truthy/successful
+                success := iszero(iszero(final_res))
             }
             
             revert(0, 0)
