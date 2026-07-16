@@ -220,6 +220,144 @@ object "RamacSystem" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // loadDATNode(uint256 index, int256 baseVal, int256 checkVal)
+            // Selector: 0xa3bf305a
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa3bf305a) {
+                let idx := calldataload(4)
+                let baseVal := calldataload(36)
+                let checkVal := calldataload(68)
+                sstore(add(0x3000, idx), baseVal)
+                sstore(add(0x4000, idx), checkVal)
+                return(0x00, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // executeDATLookup(bytes calldata key) -> int256 finalState
+            // Selector: 0xbc8e3d0f
+            // ----------------------------------------------------------------
+            if eq(selector, 0xbc8e3d0f) {
+                let keyLen := calldataload(36)
+                let keyOffset := 68
+
+                let state := 0
+                let failed := 0
+                
+                for { let i := 0 } lt(i, keyLen) { i := add(i, 1) } {
+                    // Extract single character byte
+                    // calldataload(add(keyOffset, i)) fetches 32 bytes, we want the byte at offset i
+                    let word := calldataload(add(keyOffset, i))
+                    let c := byte(0, word)
+
+                    let baseVal := sload(add(0x3000, state))
+                    let nextState := add(baseVal, c)
+                    let checkVal := sload(add(0x4000, nextState))
+
+                    let oldState := state
+                    if eq(checkVal, oldState) {
+                        state := nextState
+                    }
+                    if iszero(eq(checkVal, oldState)) {
+                        failed := 1
+                        break
+                    }
+                }
+
+                if failed {
+                    mstore(0x00, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) // -1 on failure
+                    return(0x00, 32)
+                }
+
+                mstore(0x00, state)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // loadTreeNode(uint256 nodeId, uint256 isLeaf, uint256 keyCount,
+            //              uint256 key0, uint256 key1,
+            //              uint256 child0, uint256 child1, uint256 child2)
+            // Selector: 0xd32a9305
+            // ----------------------------------------------------------------
+            if eq(selector, 0xd32a9305) {
+                let nodeId := calldataload(4)
+                
+                mstore(0x00, 0x5000)
+                mstore(0x20, nodeId)
+                let baseSlot := keccak256(0x00, 64)
+
+                sstore(baseSlot, calldataload(36))        // isLeaf
+                sstore(add(baseSlot, 1), calldataload(68))  // keyCount
+                sstore(add(baseSlot, 2), calldataload(100)) // key0
+                sstore(add(baseSlot, 3), calldataload(132)) // key1
+                sstore(add(baseSlot, 4), calldataload(164)) // child0
+                sstore(add(baseSlot, 5), calldataload(196)) // child1
+                sstore(add(baseSlot, 6), calldataload(228)) // child2
+                return(0x00, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // executeTreeSearch(uint256 nodeId, uint256 targetKey) -> uint256 foundNodeId
+            // Selector: 0x5f23a9d3
+            // ----------------------------------------------------------------
+            if eq(selector, 0x5f23a9d3) {
+                let currNode := calldataload(4)
+                let targetKey := calldataload(36)
+                let resultNode := 0
+
+                for {} 1 {} {
+                    if iszero(currNode) { break }
+
+                    mstore(0x00, 0x5000)
+                    mstore(0x20, currNode)
+                    let baseSlot := keccak256(0x00, 64)
+
+                    let isLeaf := sload(baseSlot)
+                    let keyCount := sload(add(baseSlot, 1))
+                    let k0 := sload(add(baseSlot, 2))
+                    let k1 := sload(add(baseSlot, 3))
+
+                    if isLeaf {
+                        if eq(k0, targetKey) {
+                            resultNode := currNode
+                            break
+                        }
+                        if and(eq(keyCount, 2), eq(k1, targetKey)) {
+                            resultNode := currNode
+                            break
+                        }
+                        break // Leaf reached but key not found
+                    }
+
+                    // Inner node branch routing logic
+                    if lt(targetKey, k0) {
+                        currNode := sload(add(baseSlot, 4)) // child0
+                        continue
+                    }
+                    if eq(keyCount, 1) {
+                        if or(eq(targetKey, k0), gt(targetKey, k0)) {
+                            currNode := sload(add(baseSlot, 5)) // child1
+                            continue
+                        }
+                    }
+                    if eq(keyCount, 2) {
+                        if and(or(eq(targetKey, k0), gt(targetKey, k0)), lt(targetKey, k1)) {
+                            currNode := sload(add(baseSlot, 5)) // child1
+                            continue
+                        }
+                        if or(eq(targetKey, k1), gt(targetKey, k1)) {
+                            currNode := sload(add(baseSlot, 6)) // child2
+                            continue
+                        }
+                    }
+
+                    break // Safe exit
+                }
+
+                mstore(0x00, resultNode)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }

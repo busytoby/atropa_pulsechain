@@ -562,6 +562,145 @@ int main(int argc, char *argv[]) {
     assert(strstr(response, "execution reverted") != NULL);
     printf("  [ALU_TRAP] Rule 12 Division by Zero successfully intercepted and reverted in Yul!\n");
 
+    printf("  [ALU_TRAP] Rule 12 Division by Zero successfully intercepted and reverted in Yul!\n");
+
+    printf("[C-Test] Loading Double-Array Trie (DAT) nodes into RamacSystem storage...\n");
+    // Load Node 0: base = 10, check = 0
+    char load_dat0[1024];
+    snprintf(load_dat0, sizeof(load_dat0),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xa3bf305a"
+             "0000000000000000000000000000000000000000000000000000000000000000" // index = 0
+             "000000000000000000000000000000000000000000000000000000000000000a" // baseVal = 10
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // checkVal = 0
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_dat0);
+
+    // Load Node 107 (10 + 'a' [97]): base = 20, check = 0
+    char load_dat107[1024];
+    snprintf(load_dat107, sizeof(load_dat107),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xa3bf305a"
+             "000000000000000000000000000000000000000000000000000000000000006b" // index = 107 (0x6b)
+             "0000000000000000000000000000000000000000000000000000000000000014" // baseVal = 20
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // checkVal = 0
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_dat107);
+
+    // Load Node 118 (20 + 'b' [98]): base = 30, check = 107
+    char load_dat118[1024];
+    snprintf(load_dat118, sizeof(load_dat118),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xa3bf305a"
+             "0000000000000000000000000000000000000000000000000000000000000076" // index = 118 (0x76)
+             "000000000000000000000000000000000000000000000000000000000000001e" // baseVal = 30
+             "000000000000000000000000000000000000000000000000000000000000006b\"" // checkVal = 107 (0x6b)
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_dat118);
+
+    printf("[C-Test] Executing Yul-based DAT lookup for key 'ab'...\n");
+    // Selector = 0xbc8e3d0f
+    // Offset = 0x20
+    // Length = 2
+    // Data = "ab" -> "6162"
+    char dat_lookup[1024];
+    snprintf(dat_lookup, sizeof(dat_lookup),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0xbc8e3d0f"
+             "0000000000000000000000000000000000000000000000000000000000000020"
+             "0000000000000000000000000000000000000000000000000000000000000002"
+             "6162000000000000000000000000000000000000000000000000000000000000\""
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+    send_rpc_request(dat_lookup, response, sizeof(response));
+    printf("DEBUG: DAT response = %s\n", response);
+    // Final state should be 118 (0x76)
+    assert(strstr(response, "0000000000000000000000000000000000000000000000000000000000000076") != NULL);
+    printf("  [DAT] Yul Double-Array Trie lookup verified successfully. Final State = 118.\n");
+
+    printf("[C-Test] Loading 2-3 Tree nodes into RamacSystem storage...\n");
+    // Load Parent Node 1: isLeaf = 0, keyCount = 1, key0 = 100, key1 = 0, child0 = 2, child1 = 3, child2 = 0
+    char load_tree1[1024];
+    snprintf(load_tree1, sizeof(load_tree1),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xd32a9305"
+             "0000000000000000000000000000000000000000000000000000000000000001" // nodeId = 1
+             "0000000000000000000000000000000000000000000000000000000000000000" // isLeaf = 0
+             "0000000000000000000000000000000000000000000000000000000000000001" // keyCount = 1
+             "0000000000000000000000000000000000000000000000000000000000000064" // key0 = 100 (0x64)
+             "0000000000000000000000000000000000000000000000000000000000000000" // key1 = 0
+             "0000000000000000000000000000000000000000000000000000000000000002" // child0 = 2
+             "0000000000000000000000000000000000000000000000000000000000000003" // child1 = 3
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // child2 = 0
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_tree1);
+
+    // Load Leaf Node 2: isLeaf = 1, keyCount = 1, key0 = 50, key1 = 0, child0 = 0, child1 = 0, child2 = 0
+    char load_tree2[1024];
+    snprintf(load_tree2, sizeof(load_tree2),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xd32a9305"
+             "0000000000000000000000000000000000000000000000000000000000000002" // nodeId = 2
+             "0000000000000000000000000000000000000000000000000000000000000001" // isLeaf = 1
+             "0000000000000000000000000000000000000000000000000000000000000001" // keyCount = 1
+             "0000000000000000000000000000000000000000000000000000000000000032" // key0 = 50 (0x32)
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000\""
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_tree2);
+
+    // Load Leaf Node 3: isLeaf = 1, keyCount = 1, key0 = 150, key1 = 0, child0 = 0, child1 = 0, child2 = 0
+    char load_tree3[1024];
+    snprintf(load_tree3, sizeof(load_tree3),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xd32a9305"
+             "0000000000000000000000000000000000000000000000000000000000000003" // nodeId = 3
+             "0000000000000000000000000000000000000000000000000000000000000001" // isLeaf = 1
+             "0000000000000000000000000000000000000000000000000000000000000001" // keyCount = 1
+             "0000000000000000000000000000000000000000000000000000000000000096" // key0 = 150 (0x96)
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000"
+             "0000000000000000000000000000000000000000000000000000000000000000\""
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_tree3);
+
+    printf("[C-Test] Executing Yul-based 2-3 Tree search for key 150...\n");
+    char tree_search[1024];
+    snprintf(tree_search, sizeof(tree_search),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0x5f23a9d3"
+             "0000000000000000000000000000000000000000000000000000000000000001" // start nodeId = 1
+             "0000000000000000000000000000000000000000000000000000000000000096\"" // targetKey = 150
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+    send_rpc_request(tree_search, response, sizeof(response));
+    // Should find the key in Node 3
+    assert(strstr(response, "0000000000000000000000000000000000000000000000000000000000000003") != NULL);
+    printf("  [Tree] 2-3 Tree search resolved successfully. Target node ID = 3.\n");
+
     free(ramac_hex);
 
     // Unmount disk from LUN 0
