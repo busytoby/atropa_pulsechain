@@ -318,12 +318,29 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 idx++;
             }
         } else if (strcmp(t, "ADD") == 0) {
+            // Support COBOL style: ADD R1 TO R0;
+            if (idx + 3 < token_count && strcmp(tokens[idx + 2], "TO") == 0 && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x10;
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                idx += 4;
+            }
             // Support legacy: ADD R0 R1;
-            if (idx + 2 < token_count && pc + 2 < max_len) {
+            else if (idx + 2 < token_count && pc + 2 < max_len) {
                 bytecode_out[pc++] = 0x10;
                 bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
                 bytecode_out[pc++] = (uint8_t)(tokens[idx + 2][1] - '0');
                 idx += 3;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "SUBTRACT") == 0) {
+            // Support COBOL style: SUBTRACT R1 FROM R0;
+            if (idx + 3 < token_count && strcmp(tokens[idx + 2], "FROM") == 0 && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x11;
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                idx += 4;
             } else {
                 idx++;
             }

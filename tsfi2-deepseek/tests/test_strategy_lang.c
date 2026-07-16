@@ -174,6 +174,21 @@ int main(void) {
     fflush(stdout);
     assert(strategy_vm.registers[1] == 1);
 
+    // 11. Verify COBOL-style syntax compiler translation
+    uint8_t cobol_bc[64];
+    int cobol_len = 0;
+    res = tsfi_strategy_compile_script("SET_REG R0 10; SET_REG R1 5; SUBTRACT R1 FROM R0; ADD R1 TO R0;", cobol_bc, 64, &cobol_len);
+    assert(res == 0);
+    
+    TSFiStrategyVM cobol_vm;
+    tsfi_strategy_vm_init(&cobol_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&cobol_vm, NULL, cobol_bc, cobol_len, NULL);
+    assert(res == 0);
+    // R0 = 10 -> R0 = R0 - R1 (5) -> R0 = R0 + R1 (10)
+    assert(cobol_vm.registers[0] == 10);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL ADD/SUBTRACT successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
