@@ -62,6 +62,9 @@ object "BtcErc20GasToken" {
                 let to_slot := get_balance_slot(to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
+                // Emit standard ERC-20 Transfer log event (topic hash for Transfer(address,address,uint256))
+                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, caller(), to)
+                
                 mstore(0, 1)
                 return(0, 32)
             }
@@ -74,6 +77,9 @@ object "BtcErc20GasToken" {
                 
                 let slot := get_allowance_slot(caller(), spender)
                 sstore(slot, amount)
+                
+                // Approval log
+                log3(0, 0, 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925, caller(), spender)
                 
                 mstore(0, 1)
                 return(0, 32)
@@ -111,6 +117,8 @@ object "BtcErc20GasToken" {
                 let to_slot := get_balance_slot(to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
+                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, from, to)
+                
                 mstore(0, 1)
                 return(0, 32)
             }
@@ -121,13 +129,11 @@ object "BtcErc20GasToken" {
                 let target := calldataload(4)
                 let amount := calldataload(36)
                 
-                // Generate pseudo-UTXO hash
                 mstore(0, target)
                 mstore(32, amount)
                 mstore(64, timestamp())
                 let utxo_hash := keccak256(0, 96)
                 
-                // Track UTXO info
                 mstore(0, utxo_hash)
                 mstore(32, 20)
                 sstore(keccak256(0, 64), amount)
@@ -136,7 +142,6 @@ object "BtcErc20GasToken" {
                 mstore(32, 21)
                 sstore(keccak256(0, 64), target)
                 
-                // Credit target standard ERC-20 balance
                 let bal_slot := get_balance_slot(target)
                 sstore(bal_slot, add(sload(bal_slot), amount))
                 
@@ -151,7 +156,6 @@ object "BtcErc20GasToken" {
                 let recipient := calldataload(36)
                 let amount := calldataload(68)
                 
-                // Fetch and verify UTXO amount and owner
                 mstore(0, utxo_hash)
                 mstore(32, 20)
                 let amt_slot := keccak256(0, 64)
@@ -163,21 +167,17 @@ object "BtcErc20GasToken" {
                 let own_slot := keccak256(0, 64)
                 let owner := sload(own_slot)
                 
-                // Copy witness script data
                 let offset := add(4, calldataload(100))
                 let len := calldataload(offset)
                 let start := add(offset, 32)
                 calldatacopy(0x1000, start, len)
                 
-                // Execute standard 2-stack validation challenge
                 let verified := run_btc_verification_loop(len)
                 if iszero(verified) { revert(0, 0) }
                 
-                // Nullify/consume UTXO
                 sstore(amt_slot, 0)
                 sstore(own_slot, 0)
                 
-                // Deduct owner balance from the SAME underlying balance sheet mapping
                 let owner_bal_slot := get_balance_slot(owner)
                 let owner_bal := sload(owner_bal_slot)
                 if lt(owner_bal, amount) { revert(0, 0) }
@@ -231,6 +231,9 @@ object "BtcErc20GasToken" {
                 sstore(from_slot, sub(from_bal, total_cost))
                 let to_slot := get_balance_slot(to)
                 sstore(to_slot, add(sload(to_slot), amount))
+                
+                // STRICT ISOLATION: We modify internal balance sheet memory
+                // but do NOT emit log3 Transfer events here (relying solely on BTC ledger tracking).
                 
                 mstore(0, 1)
                 return(0, 32)
