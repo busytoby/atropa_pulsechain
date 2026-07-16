@@ -1,0 +1,4 @@
+SET depth 3;
+SET abductive 1;
+EVAL;
+PRUNE 15;
