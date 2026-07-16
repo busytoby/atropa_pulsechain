@@ -644,5 +644,6 @@ int interop_vm_recursive_verify(const InteropNestedVM *nested, int target_depth,
 int interop_hadamard_verlet_decouple(const float *k_matrix, size_t size, float *out_diagonalized);
 int interop_hadamard_nonlinearity_audit(const int *boolean_function, size_t num_vars, int *out_nonlinearity);
 int interop_hadamard_bibd_schedule(size_t order, int *out_schedule, size_t *out_rows, size_t *out_cols);
+int tsfi_vaesen_solve_step(int current_x, int prev_x, int force);
 
 #endif // LIBANTIGRAVITY_INTEROP_H

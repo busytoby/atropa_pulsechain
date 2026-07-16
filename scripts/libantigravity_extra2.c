@@ -1391,6 +1391,37 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
                     memcpy(vm->altstack, cp->altstack, cp->altstack_len * sizeof(int));
                 }
                 break;
+            case 0xac: // OP_CHECKSIG: pops v, r, s, hash, pushes mock verified sender address (0x07)
+                if (vm->stack_len < 4) return -4;
+                vm->stack_len -= 4;
+                vm->stack[vm->stack_len++] = 0x07;
+                break;
+            case 0x23: // OP_CUT: clears/prunes all choice points
+                cp_len = 0;
+                break;
+            case 0x24: // OP_NEQ: pops two values; if equal, backtracks (fails constraint)
+                if (vm->stack_len < 2) return -4;
+                {
+                    int b = vm->stack[--vm->stack_len];
+                    int a = vm->stack[--vm->stack_len];
+                    if (a == b) {
+                        // Fail and backtrack
+                        if (cp_len == 0) {
+                            vm->halted = 1;
+                        } else {
+                            ChoicePoint *cp = &cp_stack[--cp_len];
+                            vm->pc = cp->pc;
+                            vm->stack_len = cp->stack_len;
+                            memcpy(vm->stack, cp->stack, cp->stack_len * sizeof(int));
+                            vm->altstack_len = cp->altstack_len;
+                            memcpy(vm->altstack, cp->altstack, cp->altstack_len * sizeof(int));
+                        }
+                    } else {
+                        // Invariant satisfied, push success result
+                        vm->stack[vm->stack_len++] = 1;
+                    }
+                }
+                break;
             default:
                 return -5;
         }
@@ -1599,4 +1630,8 @@ int interop_hadamard_bibd_schedule(size_t order, int *out_schedule, size_t *out_
         }
     }
     return 0;
+}
+
+int tsfi_vaesen_solve_step(int current_x, int prev_x, int force) {
+    return (2 * current_x) - prev_x + force;
 }
