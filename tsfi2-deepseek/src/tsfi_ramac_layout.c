@@ -2681,3 +2681,26 @@ uint64_t tsfi_s370_cdc1604_subtractive_add(uint64_t a, uint64_t b, int bit_width
 
     return sum & mask;
 }
+
+int tsfi_s370_cdc1604_resolve_address(const int *memory, int mem_size, 
+                                      uint16_t base_address, int index_reg_idx, 
+                                      const int *index_registers, int indirect_flag, 
+                                      uint32_t *out_effective_address) {
+    if (!out_effective_address) return -1;
+
+    uint32_t addr = base_address;
+
+    if (index_registers && index_reg_idx >= 1 && index_reg_idx <= 6) {
+        addr = (addr + index_registers[index_reg_idx]) & 0x7FFF;
+    }
+
+    if (indirect_flag) {
+        if (!memory || (int)addr >= mem_size || (int)addr < 0) {
+            return -2;
+        }
+        addr = (uint32_t)(memory[addr] & 0x7FFF);
+    }
+
+    *out_effective_address = addr;
+    return 0;
+}

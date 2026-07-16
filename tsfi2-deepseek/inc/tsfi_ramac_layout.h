@@ -567,4 +567,10 @@ void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb);
 // CDC 1604 1's Complement Subtractive Adder
 uint64_t tsfi_s370_cdc1604_subtractive_add(uint64_t a, uint64_t b, int bit_width);
 
+// CDC 1604 Memory Address Resolution with Indexing and Indirection
+int tsfi_s370_cdc1604_resolve_address(const int *memory, int mem_size, 
+                                      uint16_t base_address, int index_reg_idx, 
+                                      const int *index_registers, int indirect_flag, 
+                                      uint32_t *out_effective_address);
+
 #endif // TSFI_RAMAC_LAYOUT_H

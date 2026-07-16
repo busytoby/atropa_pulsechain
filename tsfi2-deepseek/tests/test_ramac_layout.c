@@ -1744,6 +1744,24 @@ int main(void) {
 
     printf("  [PASS] CDC 1604 Subtractive Adder verified successfully.\n");
 
+    // Test Scenario 22: CDC 1604 Memory Address Resolution (Indexing + Indirection)
+    printf("[Test] Verifying CDC 1604 Address Resolution...\n");
+    int cdc_memory[128] = {0};
+    int cdc_index_registers[8] = {0, 10, 20, 30, 40, 50, 60, 70};
+
+    cdc_memory[100] = 50;
+
+    eff_addr = 0;
+    int resolve_ok = tsfi_s370_cdc1604_resolve_address(cdc_memory, 128, 80, 2, cdc_index_registers, 0, &eff_addr);
+    assert(resolve_ok == 0);
+    assert(eff_addr == 100);
+
+    resolve_ok = tsfi_s370_cdc1604_resolve_address(cdc_memory, 128, 80, 2, cdc_index_registers, 1, &eff_addr);
+    assert(resolve_ok == 0);
+    assert(eff_addr == 50);
+
+    printf("  [PASS] CDC 1604 Address Resolution verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
