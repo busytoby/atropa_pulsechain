@@ -1141,6 +1141,81 @@ int main(void) {
     free(yul_memory);
     printf("  [PASS] ZY-IR executor verified successfully.\n");
 
+    // Test Scenario 1: ZMM Lock Timeout Eviction Verification
+    printf("[Test] Verifying ZMM lock timeout eviction...\n");
+    tsfi_zmm_lock_registry time_locks;
+    tsfi_s370_zmm_lock_init(&time_locks);
+    // Acquire lock on cylinder 15 at tick 100
+    int ret_acq = tsfi_s370_zmm_lock_acquire(&time_locks, 1, 15, 2, 100, 1);
+    assert(ret_acq == 0);
+    // Attempt conflict acquire at tick 150 -> denied
+    int ret_fail = tsfi_s370_zmm_lock_acquire(&time_locks, 2, 15, 2, 150, 1);
+    assert(ret_fail == -2);
+    // Attempt conflict acquire at tick 1200 (> 1000 tick duration) -> success due to stale lock eviction
+    int ret_evict = tsfi_s370_zmm_lock_acquire(&time_locks, 2, 15, 2, 1200, 1);
+    assert(ret_evict == 0);
+    assert(time_locks.cylinder_owners[15] == 2);
+    printf("  [PASS] ZMM lock timeout eviction verified successfully.\n");
+
+    // Test Scenario 2: ZY-IR Access Violations (ZWRITE without lock)
+    printf("[Test] Verifying ZY-IR access violation handling...\n");
+    uint8_t *viol_mem = (uint8_t*)calloc(256, 1);
+    int viol_regs[8] = {0};
+    uint64_t viol_ticks = 0;
+    tsfi_zmm_lock_registry viol_locks;
+    tsfi_s370_zmm_lock_init(&viol_locks);
+    tsfi_ramac_record *viol_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+
+    // Try to write without locking cylinder 20
+    tsfi_zyir_instruction viol_prog[1] = {
+        {"ZWRITE", 0, 0, 0, 20}
+    };
+    int viol_ret = tsfi_s370_zyir_exec(viol_prog, 1, viol_mem, 256, viol_disk, &viol_locks, 9, 2, viol_regs, 8, &viol_ticks);
+    assert(viol_ret == -3); // Returns access violation
+    printf("  [PASS] ZY-IR write access violation verified successfully.\n");
+    free(viol_disk);
+    free(viol_mem);
+
+    // Test Scenario 3: Complex ZY-IR Pipeline (multiple cylinders routing)
+    printf("[Test] Verifying complex ZY-IR pipeline routing...\n");
+    uint8_t *pipe_mem = (uint8_t*)calloc(256, 1);
+    int pipe_regs[8] = {0};
+    uint64_t pipe_ticks = 0;
+    tsfi_zmm_lock_registry pipe_locks;
+    tsfi_s370_zmm_lock_init(&pipe_locks);
+    tsfi_ramac_record *pipe_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+
+    // Operations:
+    // Write 77 to cylinder 4 (requires Exclusive Lock)
+    // Read from cylinder 4, store in memory offset 64
+    // Write 99 to cylinder 5 (requires Exclusive Lock)
+    // Read from cylinder 5, store in memory offset 68
+    pipe_regs[0] = 77;
+    pipe_regs[1] = 99;
+    pipe_regs[4] = 2; // Exclusive lock mode
+
+    tsfi_zyir_instruction pipe_prog[10] = {
+        {"ZLOCK", 5, 4, 0, 4},   // Lock cyl 4 -> reg[5]
+        {"ZWRITE", 0, 0, 0, 4},  // Write reg[0] (77)
+        {"ZREAD", 6, 0, 0, 4},   // Read cyl 4 -> reg[6]
+        {"MSTORE", 0, 6, 0, 64}, // Store reg[6] to mem[64]
+        {"ZRELEASE", 5, 0, 0, 4},// Release cyl 4
+        {"ZLOCK", 5, 4, 0, 5},   // Lock cyl 5 -> reg[5]
+        {"ZWRITE", 0, 1, 0, 5},  // Write reg[1] (99)
+        {"ZREAD", 7, 0, 0, 5},   // Read cyl 5 -> reg[7]
+        {"MSTORE", 0, 7, 0, 68}, // Store reg[7] to mem[68]
+        {"ZRELEASE", 5, 0, 0, 5} // Release cyl 5
+    };
+
+    int pipe_ret = tsfi_s370_zyir_exec(pipe_prog, 10, pipe_mem, 256, pipe_disk, &pipe_locks, 10, 2, pipe_regs, 8, &pipe_ticks);
+    assert(pipe_ret == 0);
+    assert(pipe_mem[67] == 77);
+    assert(pipe_mem[71] == 99);
+
+    free(pipe_disk);
+    free(pipe_mem);
+    printf("  [PASS] Complex ZY-IR pipeline verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
