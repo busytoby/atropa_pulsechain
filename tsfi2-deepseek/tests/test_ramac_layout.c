@@ -708,6 +708,23 @@ int main(void) {
     assert(act_months > 119.9 && act_months < 120.1);
     printf("  [PASS] Vladimir Zworykin RCA project scale predictor verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.8. Z-machine RAMAC storage mapping
+    printf("[Test] Verifying Z-machine RAMAC primary/overflow storage mapping...\n");
+    
+    // Dynamic Memory write: slot 100 falls into Cylinder 0 (Primary Area 0-44)
+    tsfi_ramac_chs dynamic_chs = tsfi_ramac_index_to_chs(100);
+    printf("  Z-machine Dynamic Memory block 100 maps to: Cyl %d, Head %d, Sector %d\n", 
+           dynamic_chs.cylinder, dynamic_chs.head, dynamic_chs.sector);
+    assert(dynamic_chs.cylinder >= 0 && dynamic_chs.cylinder <= 44);
+
+    // Static/High Memory write: slot 400000 falls into Cylinder 50 (Overflow Area 45-99)
+    tsfi_ramac_chs static_chs = tsfi_ramac_index_to_chs(400000);
+    printf("  Z-machine Static/High Memory block 400000 maps to: Cyl %d, Head %d, Sector %d\n", 
+           static_chs.cylinder, static_chs.head, static_chs.sector);
+    assert(static_chs.cylinder >= 45 && static_chs.cylinder <= 99);
+    
+    printf("  [PASS] Z-machine RAMAC primary/overflow mapping verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
