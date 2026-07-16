@@ -877,21 +877,19 @@ int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_
 
     uint32_t virtual_page = virtual_addr & 0xFFFFF000;
 
-    // 1. TLB Hit check: fully associative lookup across 8 cached entries
-    for (int i = 0; i < 8; i++) {
-        if (cpu->tlb[i].valid && cpu->tlb[i].virtual_page == virtual_page) {
-            *out_physical_addr = cpu->tlb[i].real_page | (virtual_addr & 0x0FFF);
-            *out_write_protected = cpu->tlb[i].write_protect;
-            return 0; // TLB Hit (sub-microsecond lookup bypassed page walk)
-        }
+    // 1. Optimized TLB lookup: Direct mapped hash lookup to fulfill sub-microsecond latency (Rule 11)
+    int slot = (virtual_page >> 12) & 0x7;
+    if (cpu->tlb[slot].valid && cpu->tlb[slot].virtual_page == virtual_page) {
+        *out_physical_addr = cpu->tlb[slot].real_page | (virtual_addr & 0x0FFF);
+        *out_write_protected = cpu->tlb[slot].write_protect;
+        return 0; // Direct Map TLB Hit
     }
 
     // 2. TLB Miss: perform full segment-page translation table walk
     int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, out_physical_addr, out_write_protected);
     if (ret != 0) return ret;
 
-    // 3. Cache results inside TLB using round-robin eviction logic
-    int slot = (virtual_page >> 12) % 8;
+    // 3. Cache results inside TLB slot using bitwise masking
     cpu->tlb[slot].virtual_page = virtual_page;
     cpu->tlb[slot].real_page = *out_physical_addr & 0xFFFFF000;
     cpu->tlb[slot].write_protect = *out_write_protected;
@@ -1172,4 +1170,62 @@ int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr,
     *out_chs = tsfi_ramac_index_to_chs(flat_word_index);
 
     return 0;
+}
+
+int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_reg,
+                                      const uint8_t *stream, int stream_len,
+                                      uint8_t *out_buffer, int max_out_len) {
+    if (!scsi_bus_status || !data_reg || !stream || stream_len <= 0 || !out_buffer || max_out_len <= 0) {
+        return -1;
+    }
+
+    int bytes_transferred = 0;
+
+    for (int i = 0; i < stream_len; i++) {
+        if (bytes_transferred >= max_out_len) {
+            break;
+        }
+
+        // 1. Present data byte on SCSI data lines (data register)
+        *data_reg = stream[i];
+
+        // 2. Assert REQ signal (bit 0x01 on control status register)
+        *scsi_bus_status |= 0x01;
+
+        // 3. Simulated Device Loop: Device observes REQ, reads data, asserts ACK (bit 0x02)
+        *scsi_bus_status |= 0x02; 
+
+        // 4. Host observes ACK, reads byte into out_buffer and clears REQ signal
+        out_buffer[bytes_transferred++] = *data_reg;
+        *scsi_bus_status &= ~0x01;
+
+        // 5. Device observes REQ deassertion, deasserts ACK signal
+        *scsi_bus_status &= ~0x02;
+    }
+
+    return bytes_transferred;
+}
+
+int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coefficients, int coeff_count,
+                                      uint8_t *dest_out, int dest_max_len) {
+    if (!coefficients || coeff_count <= 0 || !dest_out || dest_max_len <= 0) {
+        return -1;
+    }
+
+    // Evaluate polynomial: y = sum( c_i * x^i )
+    double eval_val = 0.0;
+    for (int i = 0; i < coeff_count; i++) {
+        eval_val += coefficients[i] * pow(analog_amplitude, i);
+    }
+
+    // Normalize output scale to [0..1000]
+    long long final_digital = (long long)round(eval_val * 1000.0);
+    if (final_digital < 0) final_digital = 0;
+    if (final_digital > 1000) final_digital = 1000;
+
+    char zoned[128];
+    snprintf(zoned, sizeof(zoned), "%lld", final_digital);
+
+    // Pack directly to COMP-3 format
+    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }

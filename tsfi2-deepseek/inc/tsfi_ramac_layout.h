@@ -96,7 +96,7 @@ typedef struct {
     int lap_enabled;      // Low-Address Protection (LAP) enabled flag (Control Reg 0 bit)
     uint8_t psw_key;      // Current execution access key (4-bit key, 0-15)
     tsfi_s370_psw current_psw; // Current CPU PSW state
-    tsfi_s370_tlb_entry tlb[8]; // 8-entry fully associative TLB cache simulation
+    tsfi_s370_tlb_entry tlb[8]; // 8-entry direct mapped TLB cache simulation
 } tsfi_s370_cpu_state;
 
 // LAU Account PKI Key verified token context
@@ -257,11 +257,18 @@ int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachin
 int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t val);
 
 // System/370 Dynamic Address Translation (DAT) logical mapping to RAMAC CHS coordinates
-// Translates 31-bit virtual addresses to physical RAMAC cylinders, heads, and sectors
-// Returns 0 on success, -1 on invalid translation configurations
 int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr, 
                                   tsfi_s370_segment_entry *seg_table, int seg_count,
                                   tsfi_s370_page_entry *page_tables,
                                   tsfi_ramac_chs *out_chs);
+
+// SCSI WinchesterMQ Handshake Loop emulation interface (Rule 5 Auncient routing compliant)
+int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_reg,
+                                      const uint8_t *stream, int stream_len,
+                                      uint8_t *out_buffer, int max_out_len);
+
+// Benson-Lehner OSCAR reader with polynomial calibration curves
+int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coefficients, int coeff_count,
+                                      uint8_t *dest_out, int dest_max_len);
 
 #endif // TSFI_RAMAC_LAYOUT_H

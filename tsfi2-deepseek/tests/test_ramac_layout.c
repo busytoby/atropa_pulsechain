@@ -768,6 +768,31 @@ int main(void) {
     assert(dat_chs.cylinder == 18);
     printf("  [PASS] System/370 DAT RAMAC address translator verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.2. WinchesterMQ SCSI Handshake Loop Verification
+    printf("[Test] Verifying WinchesterMQ SCSI handshake loop...\n");
+    uint8_t scsi_status = 0;
+    uint8_t scsi_data = 0;
+    uint8_t test_stream[] = {0x0A, 0x0B, 0x0C};
+    uint8_t scsi_out[4] = {0};
+    int scsi_ret = tsfi_s370_winchester_mq_handshake(&scsi_status, &scsi_data, test_stream, 3, scsi_out, 4);
+    assert(scsi_ret == 3);
+    assert(scsi_out[0] == 0x0A && scsi_out[1] == 0x0B && scsi_out[2] == 0x0C);
+    printf("  [PASS] WinchesterMQ SCSI handshake verified successfully.\n");
+
+    // 3.9.9.9.9.9.9.9.9.4. Polynomial OSCAR reader calibration curve
+    printf("[Test] Verifying polynomial OSCAR reader calibration...\n");
+    double coeffs[] = {0.1, 0.2, 0.3}; // y = 0.1 + 0.2*x + 0.3*x^2
+    uint8_t oscar_out[16] = {0};
+    int oscar_ret = tsfi_s370_oscar_reader_polynomial(0.5, coeffs, 3, oscar_out, 16);
+    assert(oscar_ret > 0);
+    char oscar_zoned[32] = {0};
+    int unpack_ret = tsfi_s370_unpack(oscar_out, oscar_ret, oscar_zoned, 32);
+    assert(unpack_ret == 0);
+    printf("  OSCAR amplitude 0.5 mapped to polynomial digital string: '%s'\n", oscar_zoned);
+    // y = 0.1 + 0.1 + 0.075 = 0.275 -> normalized to 275 BCD
+    assert(strcmp(oscar_zoned, "275") == 0);
+    printf("  [PASS] Polynomial OSCAR reader verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
