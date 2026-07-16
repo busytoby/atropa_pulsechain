@@ -1412,6 +1412,26 @@ int main(void) {
 
     free(disk);
 
+    // Test Scenario 11: IBM 7030 STRETCH bit-addressable memory access
+    printf("[Test] Verifying IBM 7030 STRETCH bit-addressable memory...\n");
+    uint64_t stretch_mem[4] = {0};
+    
+    // Write 0xDEADBEEF (32 bits) at bit address 48 (spanning word index 0 and 1)
+    int stretch_ret = tsfi_s370_ibm7030_write_bits(stretch_mem, 48, 32, 0xDEADBEEFULL);
+    assert(stretch_ret == 0);
+
+    uint64_t stretch_val = 0;
+    stretch_ret = tsfi_s370_ibm7030_read_bits(stretch_mem, 48, 32, &stretch_val);
+    assert(stretch_ret == 0);
+    assert(stretch_val == 0xDEADBEEFULL);
+
+    // Verify raw memory values:
+    // Low 16 bits of 0xDEADBEEF (0xBEEF) at memory[0] bits 48..63
+    assert((stretch_mem[0] >> 48) == 0xBEEFULL);
+    // High 16 bits of 0xDEADBEEF (0xDEAD) at memory[1] bits 0..15
+    assert((stretch_mem[1] & 0xFFFFULL) == 0xDEADULL);
+    printf("  [PASS] IBM 7030 STRETCH bit-addressable memory verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

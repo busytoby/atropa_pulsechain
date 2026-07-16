@@ -444,4 +444,10 @@ int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int
 // UNCOL Universal Computer Oriented Language compiler target LGP-30 bytecode generator
 int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_size, int *lgp_memory_out, int max_words);
 
+// IBM 7030 STRETCH bit-addressable memory reader
+int tsfi_s370_ibm7030_read_bits(const uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t *out_val);
+
+// IBM 7030 STRETCH bit-addressable memory writer
+int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t val);
+
 #endif // TSFI_RAMAC_LAYOUT_H

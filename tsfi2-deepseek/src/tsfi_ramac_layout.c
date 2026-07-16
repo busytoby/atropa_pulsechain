@@ -2358,3 +2358,59 @@ int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_
 
     return compiled_words;
 }
+
+int tsfi_s370_ibm7030_read_bits(const uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t *out_val) {
+    if (!memory || !out_val || bit_length <= 0 || bit_length > 64) {
+        return -1;
+    }
+
+    uint32_t word_idx = bit_address / 64;
+    uint32_t offset = bit_address % 64;
+
+    uint64_t mask = (bit_length == 64) ? ~0ULL : ((1ULL << bit_length) - 1);
+
+    if (offset + bit_length <= 64) {
+        *out_val = (memory[word_idx] >> offset) & mask;
+    } else {
+        uint32_t bits1 = 64 - offset;
+        uint32_t bits2 = bit_length - bits1;
+
+        uint64_t val1 = (memory[word_idx] >> offset) & ((1ULL << bits1) - 1);
+        uint64_t val2 = memory[word_idx + 1] & ((1ULL << bits2) - 1);
+
+        *out_val = val1 | (val2 << bits1);
+    }
+
+    return 0;
+}
+
+int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t val) {
+    if (!memory || bit_length <= 0 || bit_length > 64) {
+        return -1;
+    }
+
+    uint32_t word_idx = bit_address / 64;
+    uint32_t offset = bit_address % 64;
+
+    uint64_t mask = (bit_length == 64) ? ~0ULL : ((1ULL << bit_length) - 1);
+    val &= mask; // Ensure val doesn't exceed bit_length capacity
+
+    if (offset + bit_length <= 64) {
+        uint64_t write_mask = mask << offset;
+        memory[word_idx] = (memory[word_idx] & ~write_mask) | (val << offset);
+    } else {
+        uint32_t bits1 = 64 - offset;
+        uint32_t bits2 = bit_length - bits1;
+
+        uint64_t mask1 = ((1ULL << bits1) - 1) << offset;
+        uint64_t mask2 = (1ULL << bits2) - 1;
+
+        uint64_t val1 = val & ((1ULL << bits1) - 1);
+        uint64_t val2 = (val >> bits1) & mask2;
+
+        memory[word_idx] = (memory[word_idx] & ~mask1) | (val1 << offset);
+        memory[word_idx + 1] = (memory[word_idx + 1] & ~mask2) | val2;
+    }
+
+    return 0;
+}
