@@ -169,7 +169,7 @@ object "BtcErc20GasToken" {
                 let start := add(offset, 32)
                 calldatacopy(0x1000, start, len)
                 
-                // Execute standard 2-stack validation challenge
+                // Execute standard 2-stack verification challenge
                 let verified := run_btc_verification_loop(len)
                 if iszero(verified) { revert(0, 0) }
                 
@@ -180,7 +180,7 @@ object "BtcErc20GasToken" {
                 // Deduct owner balance from the SAME underlying balance sheet mapping
                 let owner_bal_slot := get_balance_slot(owner)
                 let owner_bal := sload(owner_bal_slot)
-                if lt(owner_bal, amount) { revert(0, 0) } // Balance check verification
+                if lt(owner_bal, amount) { revert(0, 0) }
                 sstore(owner_bal_slot, sub(owner_bal, amount))
                 
                 let rec_bal_slot := get_balance_slot(recipient)
@@ -207,7 +207,7 @@ object "BtcErc20GasToken" {
                 slot := keccak256(0, 64)
             }
             
-            // Verification interpreter loop
+            // Verification interpreter loop with strict BTC compatibility checks
             function run_btc_verification_loop(len) -> success {
                 let stack_ptr := 0x2000
                 let altstack_ptr := 0x2200
@@ -216,6 +216,10 @@ object "BtcErc20GasToken" {
                 for {} lt(ip, len) {} {
                     let op := byte(0, mload(add(0x1000, ip)))
                     ip := add(ip, 1)
+                    
+                    // Strict Stack size limit: primary + alt stack count <= 1000
+                    let total_elements := add(div(sub(stack_ptr, 0x2000), 32), div(sub(altstack_ptr, 0x2200), 32))
+                    if gt(total_elements, 1000) { revert(0, 0) }
                     
                     // OP_PUSH
                     if iszero(sub(op, 0x01)) {
@@ -228,6 +232,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_ADD
                     if iszero(sub(op, 0x93)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) } // Strict Pop underflow check
                         stack_ptr := sub(stack_ptr, 32)
                         let b := mload(stack_ptr)
                         stack_ptr := sub(stack_ptr, 32)
@@ -239,6 +244,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_SUB
                     if iszero(sub(op, 0x94)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
                         stack_ptr := sub(stack_ptr, 32)
                         let b := mload(stack_ptr)
                         stack_ptr := sub(stack_ptr, 32)
@@ -250,6 +256,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_TOALTSTACK
                     if iszero(sub(op, 0x6b)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
                         stack_ptr := sub(stack_ptr, 32)
                         let val := mload(stack_ptr)
                         mstore(altstack_ptr, val)
@@ -259,6 +266,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_FROMALTSTACK
                     if iszero(sub(op, 0x6c)) {
+                        if lt(altstack_ptr, 0x2220) { revert(0, 0) }
                         altstack_ptr := sub(altstack_ptr, 32)
                         let val := mload(altstack_ptr)
                         mstore(stack_ptr, val)
@@ -268,6 +276,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_SHA256
                     if iszero(sub(op, 0xa8)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
                         stack_ptr := sub(stack_ptr, 32)
                         let val := mload(stack_ptr)
                         mstore(0x3000, val)
@@ -279,6 +288,7 @@ object "BtcErc20GasToken" {
                     
                     // OP_EQUALVERIFY
                     if iszero(sub(op, 0x88)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
                         stack_ptr := sub(stack_ptr, 32)
                         let b := mload(stack_ptr)
                         stack_ptr := sub(stack_ptr, 32)
@@ -295,9 +305,11 @@ object "BtcErc20GasToken" {
                     revert(0, 0)
                 }
                 
+                // Strict final stack state check
+                if lt(stack_ptr, 0x2020) { revert(0, 0) } // Stack must not be empty
                 stack_ptr := sub(stack_ptr, 32)
                 let final_res := mload(stack_ptr)
-                success := eq(final_res, 1)
+                success := iszero(iszero(final_res)) // Non-zero is truthy/successful
             }
             
             revert(0, 0)
