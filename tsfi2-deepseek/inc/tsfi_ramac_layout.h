@@ -532,4 +532,36 @@ int tsfi_s370_ibm7090_tix(uint16_t *index_reg, uint16_t decrement, uint16_t targ
 // IBM 7090 Loop Control: Transfer with Index Incremented (TXI)
 int tsfi_s370_ibm7090_txi(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc);
 
+// CDC 6600 Functional Unit Types
+typedef enum {
+    CDC_UNIT_ADD,
+    CDC_UNIT_MULTIPLY,
+    CDC_UNIT_SHIFT,
+    CDC_UNIT_BRANCH,
+    CDC_UNIT_COUNT
+} tsfi_cdc6600_unit_type;
+
+// CDC 6600 Functional Unit State
+typedef struct {
+    int is_busy;
+    int remaining_cycles;
+    int dest_reg;
+    int result_value;
+} tsfi_cdc6600_functional_unit;
+
+// CDC 6600 Scoreboard
+typedef struct {
+    tsfi_cdc6600_functional_unit units[CDC_UNIT_COUNT];
+    int registers[8]; // X0-X7 register file
+} tsfi_cdc6600_scoreboard;
+
+// Initializes the CDC 6600 scoreboard and registers
+void tsfi_s370_cdc6600_init(tsfi_cdc6600_scoreboard *sb);
+
+// Issues an instruction to a specific functional unit if not busy
+int tsfi_s370_cdc6600_issue(tsfi_cdc6600_scoreboard *sb, tsfi_cdc6600_unit_type unit, int dest_reg, int src_val_a, int src_val_b, int op);
+
+// Ticks the scoreboard clock, executing active functional units and resolving register writes
+void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb);
+
 #endif // TSFI_RAMAC_LAYOUT_H

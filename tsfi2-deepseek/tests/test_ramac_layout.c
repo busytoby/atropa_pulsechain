@@ -1702,6 +1702,35 @@ int main(void) {
 
     printf("  [PASS] IBM 7090 Loop Control verified successfully.\n");
 
+    // Test Scenario 20: CDC 6600 Parallel Scoreboard Scheduler
+    printf("[Test] Verifying CDC 6600 Scoreboard...\n");
+    tsfi_cdc6600_scoreboard sb;
+    tsfi_s370_cdc6600_init(&sb);
+
+    int is_ok = tsfi_s370_cdc6600_issue(&sb, CDC_UNIT_ADD, 1, 10, 20, 0);
+    assert(is_ok == 0);
+    assert(sb.units[CDC_UNIT_ADD].is_busy == 1);
+
+    is_ok = tsfi_s370_cdc6600_issue(&sb, CDC_UNIT_MULTIPLY, 2, 5, 6, 0);
+    assert(is_ok == 0);
+    assert(sb.units[CDC_UNIT_MULTIPLY].is_busy == 1);
+
+    tsfi_s370_cdc6600_tick(&sb);
+    assert(sb.registers[1] == 0);
+    assert(sb.registers[2] == 0);
+
+    tsfi_s370_cdc6600_tick(&sb);
+    assert(sb.registers[1] == 30);
+    assert(sb.registers[2] == 0);
+    assert(sb.units[CDC_UNIT_ADD].is_busy == 0);
+
+    tsfi_s370_cdc6600_tick(&sb);
+    tsfi_s370_cdc6600_tick(&sb);
+    assert(sb.registers[2] == 30);
+    assert(sb.units[CDC_UNIT_MULTIPLY].is_busy == 0);
+
+    printf("  [PASS] CDC 6600 Scoreboard verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

@@ -2607,3 +2607,60 @@ int tsfi_s370_ibm7090_txi(uint16_t *index_reg, uint16_t decrement, uint16_t targ
     *pc = target_address;
     return 1;
 }
+
+void tsfi_s370_cdc6600_init(tsfi_cdc6600_scoreboard *sb) {
+    if (!sb) return;
+    memset(sb->units, 0, sizeof(sb->units));
+    memset(sb->registers, 0, sizeof(sb->registers));
+}
+
+int tsfi_s370_cdc6600_issue(tsfi_cdc6600_scoreboard *sb, tsfi_cdc6600_unit_type unit, int dest_reg, int src_val_a, int src_val_b, int op) {
+    if (!sb || unit < 0 || unit >= CDC_UNIT_COUNT) return -1;
+    if (dest_reg < 0 || dest_reg >= 8) return -2;
+
+    tsfi_cdc6600_functional_unit *fu = &sb->units[unit];
+    if (fu->is_busy) {
+        return -3; // Functional unit is busy
+    }
+
+    fu->is_busy = 1;
+    fu->dest_reg = dest_reg;
+
+    switch (unit) {
+        case CDC_UNIT_ADD:
+            fu->result_value = (op == 0) ? (src_val_a + src_val_b) : (src_val_a - src_val_b);
+            fu->remaining_cycles = 2;
+            break;
+        case CDC_UNIT_MULTIPLY:
+            fu->result_value = src_val_a * src_val_b;
+            fu->remaining_cycles = 4;
+            break;
+        case CDC_UNIT_SHIFT:
+            fu->result_value = src_val_a << src_val_b;
+            fu->remaining_cycles = 1;
+            break;
+        case CDC_UNIT_BRANCH:
+            fu->result_value = src_val_a; // pass-through target
+            fu->remaining_cycles = 1;
+            break;
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb) {
+    if (!sb) return;
+
+    for (int i = 0; i < CDC_UNIT_COUNT; i++) {
+        tsfi_cdc6600_functional_unit *fu = &sb->units[i];
+        if (fu->is_busy) {
+            fu->remaining_cycles--;
+            if (fu->remaining_cycles == 0) {
+                sb->registers[fu->dest_reg] = fu->result_value;
+                fu->is_busy = 0;
+            }
+        }
+    }
+}
