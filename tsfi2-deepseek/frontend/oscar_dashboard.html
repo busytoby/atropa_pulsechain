@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient OSCAR & FET Viscoelastic Discharge Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0b10;
+            --bg-secondary: #121420;
+            --bg-card: rgba(26, 29, 46, 0.65);
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --text-primary: #f1f3f9;
+            --text-secondary: #9aa0b9;
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9b51e0;
+            --accent-green: #00f5a0;
+            --accent-pink: #ff007f;
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Space Grotesk', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(155, 81, 224, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.08) 0%, transparent 40%);
+        }
+
+        header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(10, 11, 16, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            opacity: 0.3;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 242, 254, 0.2);
+            box-shadow: 0 12px 40px 0 rgba(0, 242, 254, 0.05);
+        }
+
+        .card-title {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: var(--accent-cyan);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        canvas {
+            background: rgba(5, 5, 8, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            width: 100%;
+            height: 280px;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .data-stream {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .highlight-accent {
+            color: var(--accent-green);
+        }
+
+        .highlight-pink {
+            color: var(--accent-pink);
+        }
+
+        .intro-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .pki-token-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .pki-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .pki-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .pki-value {
+            font-family: var(--font-mono);
+            color: var(--accent-purple);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">OSCAR DATA REDUCTION SYSTEM</div>
+        <div class="badge">Auncient Mode Active</div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- CARD 1: OSCAR READER -->
+        <div class="card">
+            <div class="card-title">
+                <span style="color: var(--accent-cyan);">✦</span> 
+                Benson-Lehner OSCAR Calibration Reader
+            </div>
+            <p class="intro-text">
+                Reads non-linear oscillographic traces via a simulated reading arm calibration overlay. Click inside the trace viewport to measure the analog amplitude and observe the linearized COMP-3 output.
+            </p>
+
+            <canvas id="oscarCanvas"></canvas>
+
+            <div class="control-group">
+                <label>Manual Analog Input Amplitude</label>
+                <div class="slider-container">
+                    <input type="range" id="oscarAmpSlider" min="0" max="1" step="0.01" value="0.35">
+                    <div class="value-display" id="oscarAmpVal">0.35</div>
+                </div>
+            </div>
+
+            <div class="pki-token-grid">
+                <div class="pki-box">
+                    <div class="pki-label">Digitized Coordinate</div>
+                    <div class="pki-value" id="oscarDigitized" style="color: var(--accent-green);">375</div>
+                </div>
+                <div class="pki-box">
+                    <div class="pki-label">COMP-3 BCD Bytes</div>
+                    <div class="pki-value" id="oscarCOMP3" style="color: var(--accent-pink);">37 5C</div>
+                </div>
+            </div>
+
+            <div class="data-stream" style="margin-top: 20px;" id="oscarLog">
+                [SYSTEM] OSCAR calibration reader active.<br>
+                [OSCAR] Interp value resolved to digital scale.
+            </div>
+        </div>
+
+        <!-- CARD 2: FET VISCOELASTIC DISCHARGE -->
+        <div class="card">
+            <div class="card-title">
+                <span style="color: var(--accent-purple);">✦</span> 
+                A. M. Freudenthal FET Viscoelastic Discharge
+            </div>
+            <p class="intro-text">
+                Simulates field-effect transistor (FET) discharge cycles using soft-body Verlet integration coupled with Freudenthal viscoelastic relaxation multipliers (Rule 10 physics constraint).
+            </p>
+
+            <canvas id="fetCanvas"></canvas>
+
+            <div class="control-group">
+                <label>Viscoelastic Restoring Force (Spring constant k)</label>
+                <div class="slider-container">
+                    <input type="range" id="fetK" min="1.0" max="10.0" step="0.1" value="5.0">
+                    <div class="value-display" id="fetKVal">5.0</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Viscous Charge Damping (c)</label>
+                <div class="slider-container">
+                    <input type="range" id="fetC" min="0.1" max="2.0" step="0.1" value="0.5">
+                    <div class="value-display" id="fetCVal">0.5</div>
+                </div>
+            </div>
+
+            <div class="pki-token-grid">
+                <div class="pki-box">
+                    <div class="pki-label">Relaxation Time (&tau;<sub>F</sub>)</div>
+                    <div class="pki-value" style="color: var(--accent-purple);">1.5 seconds</div>
+                </div>
+                <div class="pki-box">
+                    <div class="pki-label">Current Charge State</div>
+                    <div class="pki-value" id="fetCurrentCharge" style="color: var(--accent-green);">10.00 V</div>
+                </div>
+            </div>
+
+            <div class="data-stream" style="margin-top: 20px;" id="fetLog">
+                [SYSTEM] Freudenthal Verlet solver initialized.<br>
+                [PHYSICS] mass=1.0, time_step=0.1s.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- OSCAR Calibration Reader Logic ---
+        const oscarCurve = [0.0, 0.2, 0.5, 0.8, 1.0]; // Non-linear calibration overlay mapping
+        const oscarCanvas = document.getElementById('oscarCanvas');
+        const oscarCtx = oscarCanvas.getContext('2d');
+        const oscarSlider = document.getElementById('oscarAmpSlider');
+        const oscarVal = document.getElementById('oscarAmpVal');
+        const oscarDigitized = document.getElementById('oscarDigitized');
+        const oscarCOMP3 = document.getElementById('oscarCOMP3');
+        const oscarLog = document.getElementById('oscarLog');
+
+        function resizeCanvas(canvas) {
+            canvas.width = canvas.clientWidth * window.devicePixelRatio;
+            canvas.height = canvas.clientHeight * window.devicePixelRatio;
+        }
+
+        // Linear interpolation helper
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        // COMP-3 packing emulator
+        function packCOMP3(num) {
+            let str = Math.abs(num).toString();
+            let sign = num >= 0 ? 'C' : 'D';
+            if (str.length % 2 === 0) {
+                str = '0' + str;
+            }
+            let bytes = [];
+            for (let i = 0; i < str.length; i += 2) {
+                if (i === str.length - 1) {
+                    bytes.push(str[i] + sign);
+                } else {
+                    bytes.push(str[i] + str[i+1]);
+                }
+            }
+            return bytes.join(' ');
+        }
+
+        function runOSCARReader(amplitude) {
+            // Find bounding segment
+            let idx = 0;
+            while (idx < oscarCurve.length - 1 && oscarCurve[idx + 1] < amplitude) {
+                idx++;
+            }
+            let t = 0;
+            let range = oscarCurve[idx + 1] - oscarCurve[idx];
+            if (range > 0.00001) {
+                t = (amplitude - oscarCurve[idx]) / range;
+            }
+            let interp = idx + t;
+            let digitized = Math.round(interp * (1000.0 / (oscarCurve.length - 1)));
+            
+            // Update Displays
+            oscarDigitized.textContent = digitized;
+            oscarCOMP3.textContent = packCOMP3(digitized);
+            
+            // Draw Viewport
+            drawOSCARCurve(amplitude, digitized);
+        }
+
+        function drawOSCARCurve(activeAmp, digitized) {
+            oscarCtx.clearRect(0, 0, oscarCanvas.width, oscarCanvas.height);
+            const w = oscarCanvas.width;
+            const h = oscarCanvas.height;
+            const padding = 40;
+
+            // Draw grid
+            oscarCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            oscarCtx.lineWidth = 1;
+            for (let x = padding; x < w - padding; x += (w - 2*padding) / 10) {
+                oscarCtx.beginPath();
+                oscarCtx.moveTo(x, padding);
+                oscarCtx.lineTo(x, h - padding);
+                oscarCtx.stroke();
+            }
+
+            // Draw non-linear calibration curve
+            oscarCtx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+            oscarCtx.lineWidth = 3;
+            oscarCtx.beginPath();
+            for (let i = 0; i < w - 2*padding; i++) {
+                let xRatio = i / (w - 2*padding);
+                // Map xRatio to curve
+                let curveIdx = xRatio * (oscarCurve.length - 1);
+                let baseIdx = Math.floor(curveIdx);
+                let localT = curveIdx - baseIdx;
+                let ampVal = lerp(oscarCurve[baseIdx], oscarCurve[baseIdx + 1], localT);
+                
+                let cx = padding + i;
+                let cy = h - padding - ampVal * (h - 2*padding);
+                if (i === 0) oscarCtx.moveTo(cx, cy);
+                else oscarCtx.lineTo(cx, cy);
+            }
+            oscarCtx.stroke();
+
+            // Draw active measurement point
+            let measureX = padding + (digitized / 1000.0) * (w - 2*padding);
+            let measureY = h - padding - activeAmp * (h - 2*padding);
+            
+            oscarCtx.fillStyle = '#ff007f';
+            oscarCtx.shadowColor = '#ff007f';
+            oscarCtx.shadowBlur = 15;
+            oscarCtx.beginPath();
+            oscarCtx.arc(measureX, measureY, 8, 0, Math.PI * 2);
+            oscarCtx.fill();
+            oscarCtx.shadowBlur = 0; // Reset
+
+            // Helper lines
+            oscarCtx.strokeStyle = 'rgba(255, 0, 127, 0.3)';
+            oscarCtx.lineWidth = 1;
+            oscarCtx.setLineDash([5, 5]);
+            oscarCtx.beginPath();
+            oscarCtx.moveTo(measureX, h - padding);
+            oscarCtx.lineTo(measureX, measureY);
+            oscarCtx.moveTo(padding, measureY);
+            oscarCtx.lineTo(measureX, measureY);
+            oscarCtx.stroke();
+            oscarCtx.setLineDash([]);
+        }
+
+        oscarSlider.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            oscarVal.textContent = val.toFixed(2);
+            runOSCARReader(val);
+            oscarLog.innerHTML += `<br>[OSCAR] Amplitude measured: ${val.toFixed(2)} -> Dig: ${oscarDigitized.textContent}`;
+            oscarLog.scrollTop = oscarLog.scrollHeight;
+        });
+
+        oscarCanvas.addEventListener('click', (e) => {
+            const rect = oscarCanvas.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            const clickYRatio = 1.0 - (clickY / rect.height);
+            let amp = Math.max(0.0, Math.min(1.0, clickYRatio));
+            oscarSlider.value = amp;
+            oscarVal.textContent = amp.toFixed(2);
+            runOSCARReader(amp);
+        });
+
+
+        // --- FET Viscoelastic Discharge Logic ---
+        const fetCanvas = document.getElementById('fetCanvas');
+        const fetCtx = fetCanvas.getContext('2d');
+        const sliderK = document.getElementById('fetK');
+        const valK = document.getElementById('fetKVal');
+        const sliderC = document.getElementById('fetC');
+        const valC = document.getElementById('fetCVal');
+        const chargeDisplay = document.getElementById('fetCurrentCharge');
+        const fetLog = document.getElementById('fetLog');
+
+        let fetTime = 0.0;
+        let fetPos = 10.0;
+        let fetPrevPos = 10.0;
+        const timeStep = 0.1;
+        const mass = 1.0;
+        const tauF = 1.5; // Freudenthal relaxation parameter
+        let chartData = [];
+
+        function stepPhysics() {
+            let k = parseFloat(sliderK.value);
+            let c = parseFloat(sliderC.value);
+
+            // Verlet physics solver
+            let vel = (fetPos - fetPrevPos) / timeStep;
+            let force = -k * fetPos - c * vel;
+            let accel = force / mass;
+            let nextPos = 2.0 * fetPos - fetPrevPos + accel * timeStep * timeStep;
+
+            fetPrevPos = fetPos;
+            fetPos = nextPos;
+
+            // Apply Freudenthal relaxation
+            let decay = fetPos * Math.exp(-fetTime / tauF);
+
+            fetTime += timeStep;
+            chartData.push({ t: fetTime, val: decay });
+            if (chartData.length > 100) chartData.shift();
+
+            chargeDisplay.textContent = decay.toFixed(2) + " V";
+            drawFETChart(decay);
+        }
+
+        function drawFETChart(currentCharge) {
+            fetCtx.clearRect(0, 0, fetCanvas.width, fetCanvas.height);
+            const w = fetCanvas.width;
+            const h = fetCanvas.height;
+            const padding = 40;
+
+            // Draw axis
+            fetCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            fetCtx.lineWidth = 1;
+            fetCtx.beginPath();
+            fetCtx.moveTo(padding, h - padding);
+            fetCtx.lineTo(w - padding, h - padding);
+            fetCtx.moveTo(padding, padding);
+            fetCtx.lineTo(padding, h - padding);
+            fetCtx.stroke();
+
+            // Plot viscoelastic decay curve
+            if (chartData.length > 1) {
+                fetCtx.strokeStyle = 'rgba(155, 81, 224, 0.7)';
+                fetCtx.lineWidth = 3;
+                fetCtx.beginPath();
+                for (let i = 0; i < chartData.length; i++) {
+                    let cx = padding + (i / 100.0) * (w - 2*padding);
+                    // Map -10 to +10 range to heights
+                    let cy = h/2 + (chartData[i].val / 15.0) * (h/2 - padding);
+                    if (i === 0) fetCtx.moveTo(cx, cy);
+                    else fetCtx.lineTo(cx, cy);
+                }
+                fetCtx.stroke();
+            }
+
+            // Draw simulated space charge particle
+            let px = padding + ((chartData.length - 1) / 100.0) * (w - 2*padding);
+            let py = h/2 + (currentCharge / 15.0) * (h/2 - padding);
+
+            fetCtx.fillStyle = '#9b51e0';
+            fetCtx.shadowColor = '#9b51e0';
+            fetCtx.shadowBlur = 15;
+            fetCtx.beginPath();
+            fetCtx.arc(px, py, 10, 0, Math.PI * 2);
+            fetCtx.fill();
+            fetCtx.shadowBlur = 0;
+        }
+
+        sliderK.addEventListener('input', (e) => { valK.textContent = parseFloat(e.target.value).toFixed(1); resetSimulation(); });
+        sliderC.addEventListener('input', (e) => { valC.textContent = parseFloat(e.target.value).toFixed(1); resetSimulation(); });
+
+        function resetSimulation() {
+            fetPos = 10.0;
+            fetPrevPos = 10.0;
+            fetTime = 0.0;
+            chartData = [];
+            fetLog.innerHTML += `<br>[PHYSICS] Parameters updated. Resetting decay simulation...`;
+            fetLog.scrollTop = fetLog.scrollHeight;
+        }
+
+        // --- Init Window Resizing & Loops ---
+        window.addEventListener('resize', () => {
+            resizeCanvas(oscarCanvas);
+            resizeCanvas(fetCanvas);
+            runOSCARReader(parseFloat(oscarSlider.value));
+        });
+
+        // Initialize viewports
+        resizeCanvas(oscarCanvas);
+        resizeCanvas(fetCanvas);
+        runOSCARReader(0.35);
+
+        // Run animation loop for viscoelastic decay
+        setInterval(stepPhysics, 100);
+    </script>
+</body>
+</html>
