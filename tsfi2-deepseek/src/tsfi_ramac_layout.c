@@ -73,3 +73,122 @@ int tsfi_ramac_layout_optimize(tsfi_dat *dat, const char *filepath) {
     fclose(fp);
     return 0;
 }
+
+int tsfi_ramac_hash_key(const char *key, int cylinder) {
+    unsigned int hash = 5381;
+    int c;
+    while ((c = *key++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    // We restrict primary tracks to heads 0..44 (total 45 tracks per cylinder)
+    int primary_slots = 45 * RAMAC_SECTORS;
+    int slot = hash % primary_slots;
+    
+    // Return flat index within cylinder:
+    // slot represents head * RAMAC_SECTORS + sector
+    int head = slot / RAMAC_SECTORS;
+    int sector = slot % RAMAC_SECTORS;
+
+    tsfi_ramac_chs chs;
+    chs.cylinder = cylinder;
+    chs.head = head;
+    chs.sector = sector;
+    chs.word_offset = 0;
+
+    return tsfi_ramac_chs_to_index(chs);
+}
+
+int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder, double *out_total_seek_us) {
+    int primary_idx = tsfi_ramac_hash_key(key, cylinder);
+    int current_idx = primary_idx;
+    int last_idx = -1;
+    double seek_time = 0.0;
+    int current_head = 0; // Assume start head
+
+    // Traverse existing collision chain
+    while (disk[current_idx].is_active) {
+        seek_time += tsfi_ramac_calculate_seek(current_head, current_idx);
+        current_head = current_idx;
+
+        if (strcmp(disk[current_idx].key, key) == 0) {
+            // Overwrite existing key
+            strcpy(disk[current_idx].value, value);
+            if (out_total_seek_us) *out_total_seek_us = seek_time;
+            return current_idx;
+        }
+        last_idx = current_idx;
+        if (disk[current_idx].next_overflow_index == -1) {
+            break;
+        }
+        current_idx = disk[current_idx].next_overflow_index;
+    }
+
+    if (!disk[current_idx].is_active) {
+        // Direct placement
+        seek_time += tsfi_ramac_calculate_seek(current_head, current_idx);
+        strcpy(disk[current_idx].key, key);
+        strcpy(disk[current_idx].value, value);
+        disk[current_idx].is_active = 1;
+        disk[current_idx].next_overflow_index = -1;
+        if (out_total_seek_us) *out_total_seek_us = seek_time;
+        return current_idx;
+    }
+
+    // Find free slot in overflow area (heads 45..49) of the same cylinder
+    tsfi_ramac_chs overflow_chs;
+    overflow_chs.cylinder = cylinder;
+    overflow_chs.word_offset = 0;
+
+    int found_slot = -1;
+    for (int h = 45; h < 50; h++) {
+        overflow_chs.head = h;
+        for (int s = 0; s < RAMAC_SECTORS; s++) {
+            overflow_chs.sector = s;
+            int test_idx = tsfi_ramac_chs_to_index(overflow_chs);
+            if (!disk[test_idx].is_active) {
+                found_slot = test_idx;
+                break;
+            }
+        }
+        if (found_slot != -1) break;
+    }
+
+    if (found_slot == -1) {
+        // Cylinder overflow area full
+        return -1;
+    }
+
+    // Write to overflow slot
+    seek_time += tsfi_ramac_calculate_seek(current_head, found_slot);
+    strcpy(disk[found_slot].key, key);
+    strcpy(disk[found_slot].value, value);
+    disk[found_slot].is_active = 1;
+    disk[found_slot].next_overflow_index = -1;
+
+    // Link the last record to this overflow slot
+    disk[last_idx].next_overflow_index = found_slot;
+
+    if (out_total_seek_us) *out_total_seek_us = seek_time;
+    return found_slot;
+}
+
+const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us) {
+    int primary_idx = tsfi_ramac_hash_key(key, cylinder);
+    int current_idx = primary_idx;
+    double seek_time = 0.0;
+    int current_head = 0;
+
+    while (current_idx != -1 && disk[current_idx].is_active) {
+        seek_time += tsfi_ramac_calculate_seek(current_head, current_idx);
+        current_head = current_idx;
+
+        if (strcmp(disk[current_idx].key, key) == 0) {
+            if (out_total_seek_us) *out_total_seek_us = seek_time;
+            return disk[current_idx].value;
+        }
+        current_idx = disk[current_idx].next_overflow_index;
+    }
+
+    if (out_total_seek_us) *out_total_seek_us = seek_time;
+    return NULL;
+}
