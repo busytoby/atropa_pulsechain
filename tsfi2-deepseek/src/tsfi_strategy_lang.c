@@ -284,6 +284,43 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 putchar('\n');
                 fflush(stdout);
             }
+        } else if (op == 0x22) {
+            if (pc < len) {
+                uint8_t mode = bytecode[pc++];
+                if (mode == 0) {
+                    if (pc + 2 < len) {
+                        uint8_t target_reg = bytecode[pc++];
+                        uint8_t counter_reg = bytecode[pc++];
+                        uint8_t digit = bytecode[pc++];
+                        if (target_reg < 4 && counter_reg < 4) {
+                            char buf[32];
+                            snprintf(buf, sizeof(buf), "%d", vm->registers[target_reg]);
+                            int count = 0;
+                            char target_char = '0' + digit;
+                            for (int k = 0; buf[k] != '\0'; k++) {
+                                if (buf[k] == target_char) count++;
+                            }
+                            vm->registers[counter_reg] += count;
+                        }
+                    }
+                } else if (mode == 1) {
+                    if (pc + 2 < len) {
+                        uint8_t target_reg = bytecode[pc++];
+                        uint8_t old_digit = bytecode[pc++];
+                        uint8_t new_digit = bytecode[pc++];
+                        if (target_reg < 4) {
+                            char buf[32];
+                            snprintf(buf, sizeof(buf), "%d", vm->registers[target_reg]);
+                            char old_char = '0' + old_digit;
+                            char new_char = '0' + new_digit;
+                            for (int k = 0; buf[k] != '\0'; k++) {
+                                if (buf[k] == old_char) buf[k] = new_char;
+                            }
+                            vm->registers[target_reg] = atoi(buf);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -517,6 +554,72 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 }
             }
             idx = end_idx;
+        } else if (strcmp(t, "INSPECT") == 0 || strcmp(t, "inspect") == 0) {
+            if (idx + 5 < token_count && pc + 4 < max_len) {
+                char *target_reg = tokens[idx + 1];
+                char *action = tokens[idx + 2];
+                if (target_reg[0] == 'R' && target_reg[1] >= '0' && target_reg[1] <= '3' && target_reg[2] == '\0') {
+                    if (strcmp(action, "REPLACING") == 0 || strcmp(action, "replacing") == 0) {
+                        char *old_digit = NULL;
+                        char *new_digit = NULL;
+                        int advanced = 0;
+                        if (strcmp(tokens[idx + 3], "ALL") == 0 || strcmp(tokens[idx + 3], "all") == 0) {
+                            if (idx + 6 < token_count) {
+                                old_digit = tokens[idx + 4];
+                                new_digit = tokens[idx + 6];
+                                advanced = 7;
+                            }
+                        } else {
+                            old_digit = tokens[idx + 3];
+                            new_digit = tokens[idx + 5];
+                            advanced = 6;
+                        }
+                        if (old_digit && new_digit) {
+                            bytecode_out[pc++] = 0x22;
+                            bytecode_out[pc++] = 1; // REPLACING
+                            bytecode_out[pc++] = (uint8_t)(target_reg[1] - '0');
+                            bytecode_out[pc++] = (uint8_t)(old_digit[0] - '0');
+                            bytecode_out[pc++] = (uint8_t)(new_digit[0] - '0');
+                            idx += advanced;
+                        } else {
+                            idx++;
+                        }
+                    } else if (strcmp(action, "TALLYING") == 0 || strcmp(action, "tallying") == 0) {
+                        char *counter_reg = tokens[idx + 3];
+                        char *digit = NULL;
+                        int advanced = 0;
+                        if (counter_reg[0] == 'R' && counter_reg[1] >= '0' && counter_reg[1] <= '3' && counter_reg[2] == '\0') {
+                            if (strcmp(tokens[idx + 5], "ALL") == 0 || strcmp(tokens[idx + 5], "all") == 0) {
+                                if (idx + 6 < token_count) {
+                                    digit = tokens[idx + 6];
+                                    advanced = 7;
+                                }
+                            } else {
+                                digit = tokens[idx + 5];
+                                advanced = 6;
+                            }
+                            if (digit) {
+                                bytecode_out[pc++] = 0x22;
+                                bytecode_out[pc++] = 0; // TALLYING
+                                bytecode_out[pc++] = (uint8_t)(target_reg[1] - '0');
+                                bytecode_out[pc++] = (uint8_t)(counter_reg[1] - '0');
+                                bytecode_out[pc++] = (uint8_t)(digit[0] - '0');
+                                idx += advanced;
+                            } else {
+                                idx++;
+                            }
+                        } else {
+                            idx++;
+                        }
+                    } else {
+                        idx++;
+                    }
+                } else {
+                    idx++;
+                }
+            } else {
+                idx++;
+            }
         } else if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
             if (idx + 5 < token_count && (strcmp(tokens[idx + 1], "UNTIL") == 0 || strcmp(tokens[idx + 1], "until") == 0)) {
                 char *reg_a = tokens[idx + 2];
@@ -838,7 +941,8 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 "EXIT", "exit", "EXIT-PROGRAM", "exit-program", "EXIT_PROGRAM",
                 "EVAL", "eval", "PRUNE", "prune", "WEIGHT", "weight", "SET_REG",
                 "GET_PRIO", "get_prio", "GET_SIZE", "get_size", "LOOP_UNTIL_EMPTY", "loop_until_empty",
-                "GET_LOGIC", "get_logic", "SET", "depth", "abductive", "==", "JEQ", "<", "JLT", "jump"
+                "GET_LOGIC", "get_logic", "SET", "depth", "abductive", "==", "JEQ", "<", "JLT", "jump",
+                "DISPLAY", "display", "INSPECT", "inspect", "GO", "go"
             };
             for (size_t i = 0; i < sizeof(kws)/sizeof(kws[0]); i++) {
                 if (strcmp(t, kws[i]) == 0) {

@@ -315,6 +315,36 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL DISPLAY successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL INSPECT statements
+    uint8_t ins_bc_1[64];
+    int ins_len_1 = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 55 TO R0; INSPECT R0 REPLACING ALL 5 BY 2;",
+        ins_bc_1, 64, &ins_len_1);
+    assert(res == 0);
+
+    TSFiStrategyVM ins_vm_1;
+    tsfi_strategy_vm_init(&ins_vm_1);
+    res = tsfi_strategy_vm_execute_bytecode(&ins_vm_1, NULL, ins_bc_1, ins_len_1, NULL);
+    assert(res == 0);
+    assert(ins_vm_1.registers[0] == 22);
+
+    uint8_t ins_bc_2[64];
+    int ins_len_2 = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 155 TO R0; MOVE 0 TO R1; INSPECT R0 TALLYING R1 FOR ALL 5;",
+        ins_bc_2, 64, &ins_len_2);
+    assert(res == 0);
+
+    TSFiStrategyVM ins_vm_2;
+    tsfi_strategy_vm_init(&ins_vm_2);
+    res = tsfi_strategy_vm_execute_bytecode(&ins_vm_2, NULL, ins_bc_2, ins_len_2, NULL);
+    assert(res == 0);
+    assert(ins_vm_2.registers[1] == 2);
+
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL INSPECT successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
