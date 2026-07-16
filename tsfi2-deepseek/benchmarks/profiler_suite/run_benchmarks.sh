@@ -84,6 +84,7 @@ make tests/test_helmholtz_command_rails > /dev/null 2>&1 &
 make tests/test_coaxial_telemetry > /dev/null 2>&1 &
 make tests/test_coaxial_kermit_rails > /dev/null 2>&1 &
 make tests/test_cooperative_sync_hosts > /dev/null 2>&1 &
+make tests/test_cooperative_sync_hosts_net > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -199,6 +200,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_coaxial_telemetry > /dev/null 2>&1
 ./tests/test_coaxial_kermit_rails > /dev/null 2>&1
 ./tests/test_cooperative_sync_hosts > /dev/null 2>&1
+./tests/test_cooperative_sync_hosts_net > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
