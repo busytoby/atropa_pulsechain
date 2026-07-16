@@ -1,0 +1,7 @@
+depth = 4;
+abductive = 1;
+R0 = 15;
+R1 = 12;
+R0 = R0 - R1;
+eval();
+prune(10);
