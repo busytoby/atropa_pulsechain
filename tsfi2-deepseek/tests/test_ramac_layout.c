@@ -1790,6 +1790,16 @@ int main(void) {
 
     printf("  [PASS] Unified RAMAC Controller verified successfully.\n");
 
+    // Test Scenario 24: CDC 1604 Subtractive Multiplier (1's complement)
+    printf("[Test] Verifying CDC 1604 Subtractive Multiplier...\n");
+    uint64_t res_mul = tsfi_s370_cdc1604_subtractive_multiply(5, 6, 48);
+    assert(res_mul == 30);
+
+    res_mul = tsfi_s370_cdc1604_subtractive_multiply(0xFFFFFFFFFFFAULL, 6, 48);
+    assert(res_mul == 0xFFFFFFFFFFE1ULL);
+
+    printf("  [PASS] CDC 1604 Subtractive Multiplier verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

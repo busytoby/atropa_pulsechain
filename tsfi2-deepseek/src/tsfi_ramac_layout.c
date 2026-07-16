@@ -2736,3 +2736,30 @@ int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ram
 
     return 0;
 }
+
+uint64_t tsfi_s370_cdc1604_subtractive_multiply(uint64_t a, uint64_t b, int bit_width) {
+    if (bit_width <= 0 || bit_width > 64) return 0;
+
+    uint64_t mask = (bit_width == 64) ? ~0ULL : ((1ULL << bit_width) - 1);
+    uint64_t sign_bit = 1ULL << (bit_width - 1);
+
+    int sign_a = (a & sign_bit) ? 1 : 0;
+    int sign_b = (b & sign_bit) ? 1 : 0;
+
+    uint64_t val_a = sign_a ? ((~a) & mask) : a;
+    uint64_t val_b = sign_b ? ((~b) & mask) : b;
+
+    uint64_t prod = val_a * val_b;
+
+    uint64_t carry = (bit_width == 64) ? 0 : (prod >> bit_width);
+    prod = (prod & mask) + carry;
+
+    carry = (bit_width == 64) ? 0 : (prod >> bit_width);
+    prod = (prod & mask) + carry;
+
+    if (sign_a ^ sign_b) {
+        prod = (~prod) & mask;
+    }
+
+    return prod & mask;
+}

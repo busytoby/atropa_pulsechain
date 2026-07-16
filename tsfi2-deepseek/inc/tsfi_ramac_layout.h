@@ -577,4 +577,7 @@ int tsfi_s370_cdc1604_resolve_address(const int *memory, int mem_size,
 int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size, 
                                     uint32_t sector_addr, int is_write, uint64_t *data_word);
 
+// CDC 1604 1's Complement Subtractive Multiplier
+uint64_t tsfi_s370_cdc1604_subtractive_multiply(uint64_t a, uint64_t b, int bit_width);
+
 #endif // TSFI_RAMAC_LAYOUT_H
