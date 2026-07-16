@@ -671,6 +671,23 @@ int main(void) {
     assert(var > 0.000186 && var < 0.000188);
     printf("  [PASS] Ora C. Roehl portfolio yield strategy verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.8. Luis J. A. Villalon executive techniques decision solver
+    printf("[Test] Verifying Luis J. A. Villalon executive techniques decision solver...\n");
+    double benefit[] = {1000.0, 1500.0, 800.0};
+    double cost[] = {200.0, 300.0, 100.0};
+    double risk[] = {0.10, 0.25, 0.05}; // 10%, 25%, 5% risk probabilities
+    double optimal_value = 0.0;
+    int optimal_idx = -1;
+    int dec_ret = tsfi_s370_executive_decision_villalon(3, benefit, cost, risk, &optimal_value, &optimal_idx);
+    assert(dec_ret == 0);
+    printf("  Optimal Decision Index: %d, Expected Net Value: %.2f\n", optimal_idx, optimal_value);
+    // V0 = 1000 - 200 - 1000 * 0.10 = 800 - 100 = 700.0
+    // V1 = 1500 - 300 - 1500 * 0.25 = 1200 - 375 = 825.0 (Optimal)
+    // V2 = 800 - 100 - 800 * 0.05 = 700 - 40 = 660.0
+    assert(optimal_idx == 1);
+    assert(optimal_value > 824.9 && optimal_value < 825.1);
+    printf("  [PASS] Luis J. A. Villalon executive decision solver verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

@@ -164,7 +164,7 @@ int tsfi_s370_dat_translate(uint32_t virtual_addr,
                             tsfi_s370_page_entry *page_tables,
                             uint32_t *out_physical_addr, int *out_write_protected);
 
-// System/370 Channel I/O Program execution emulator
+// System/370 Channel Command Word (CCW) I/O program chains...
 int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
                               tsfi_s370_ccw *ccw_chain, int chain_len,
                               uint8_t *memory_pool, int mem_size);
@@ -237,9 +237,14 @@ int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_res
                                           double *out_beta, double *out_pf);
 
 // Ora C. Roehl (Keystone Custodian Funds VP of Research) style stochastic portfolio yield strategy optimizer
-// Calculates portfolio expected return and variance under 1956 mid-century market covariance limits
-// Returns 0 on success, -1 on invalid configurations
 int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const double *weights, int asset_count,
                                            double *out_expected_return, double *out_variance);
+
+// Luis J. A. Villalon style executive techniques decision-tree evaluator
+// Resolves the optimal policy/branch yielding the maximum expected net utility
+// Returns 0 on success, -1 on invalid configurations
+int tsfi_s370_executive_decision_villalon(int decision_count, const double *benefit, const double *cost,
+                                          const double *risk_prob, double *out_expected_net_value,
+                                          int *out_optimal_decision_idx);
 
 #endif // TSFI_RAMAC_LAYOUT_H

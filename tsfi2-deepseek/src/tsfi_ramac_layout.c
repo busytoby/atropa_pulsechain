@@ -1046,3 +1046,27 @@ int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const doub
 
     return 0;
 }
+
+int tsfi_s370_executive_decision_villalon(int decision_count, const double *benefit, const double *cost,
+                                          const double *risk_prob, double *out_expected_net_value,
+                                          int *out_optimal_decision_idx) {
+    if (decision_count <= 0 || !benefit || !cost || !risk_prob || !out_expected_net_value || !out_optimal_decision_idx) {
+        return -1;
+    }
+
+    double max_value = -9999999.0;
+    int opt_idx = -1;
+
+    for (int i = 0; i < decision_count; i++) {
+        // Expected value: V_i = Benefit_i - Cost_i - (Benefit_i * RiskProb_i)
+        double value = benefit[i] - cost[i] - (benefit[i] * risk_prob[i]);
+        if (value > max_value) {
+            max_value = value;
+            opt_idx = i;
+        }
+    }
+
+    *out_expected_net_value = max_value;
+    *out_optimal_decision_idx = opt_idx;
+    return 0;
+}
