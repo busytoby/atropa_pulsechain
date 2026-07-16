@@ -195,6 +195,26 @@ int main(void) {
     printf("         [DEBUG] constraint stack_len = %d, stack[0] = %d\n", (int)constraint_vm.stack_len, constraint_vm.stack[0]); fflush(stdout);
     assert(constraint_vm.stack_len == 3 && constraint_vm.stack[0] == 50 && constraint_vm.stack[1] == 50 && constraint_vm.stack[2] == 99);
 
+    // 10. Verify WAM Trail and Variable Unbinding
+    printf("       [LogOS] Verifying WAM Trail and variable unbinding (OP_BIND)...\n");
+    fflush(stdout);
+    InteropStackVM trail_vm;
+    memset(&trail_vm, 0, sizeof(InteropStackVM));
+    int trail_script[14] = {
+        1, -9999,
+        0x21, 11,
+        1, 555,
+        1, 0,
+        0x25,
+        0x22,
+        6,
+        6,
+        6
+    };
+    assert(interop_stack_vm_execute(&trail_vm, trail_script, 13) == 0);
+    printf("         [DEBUG] trail vm stack[0] after backtrack: %d\n", trail_vm.stack[0]); fflush(stdout);
+    assert(trail_vm.stack[0] == -9999);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
