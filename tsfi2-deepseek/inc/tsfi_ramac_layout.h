@@ -149,6 +149,14 @@ typedef struct {
     uint32_t val_addr; // Memory offset, disk address, or immediate constant value
 } tsfi_zyir_instruction;
 
+// Philco 212 24-bit instruction layout
+typedef struct {
+    uint8_t opcode;
+    uint8_t index_reg;
+    uint8_t mod_mode;
+    uint16_t address;
+} tsfi_philco212_instruction;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -381,5 +389,11 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
 // UNCOL-to-Solidity/Yul code block compiler
 int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_size,
                            char *yul_code_out, int max_len);
+
+// Philco 212 48-bit double instruction word decoder
+int tsfi_s370_philco212_decode(uint64_t raw_word, tsfi_philco212_instruction *inst_left, tsfi_philco212_instruction *inst_right);
+
+// Philco 212 automatic index modification processor
+int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *index_registers, int index_reg_count, uint16_t *out_modified_address);
 
 #endif // TSFI_RAMAC_LAYOUT_H

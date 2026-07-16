@@ -2017,3 +2017,67 @@ int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_si
 
     return 0;
 }
+
+int tsfi_s370_philco212_decode(uint64_t raw_word, tsfi_philco212_instruction *inst_left, tsfi_philco212_instruction *inst_right) {
+    if (!inst_left || !inst_right) return -1;
+
+    // Word is 48-bit length
+    uint64_t clean_word = raw_word & 0xFFFFFFFFFFFFULL;
+
+    // Left instruction (bits 24..47)
+    uint32_t left_val = (clean_word >> 24) & 0xFFFFFF;
+    inst_left->opcode = (left_val >> 16) & 0xFF;
+    inst_left->index_reg = (left_val >> 13) & 0x07;
+    inst_left->mod_mode = (left_val >> 11) & 0x03;
+    inst_left->address = left_val & 0x7FF;
+
+    // Right instruction (bits 0..23)
+    uint32_t right_val = clean_word & 0xFFFFFF;
+    inst_right->opcode = (right_val >> 16) & 0xFF;
+    inst_right->index_reg = (right_val >> 13) & 0x07;
+    inst_right->mod_mode = (right_val >> 11) & 0x03;
+    inst_right->address = right_val & 0x7FF;
+
+    return 0;
+}
+
+int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *index_registers, int index_reg_count, uint16_t *out_modified_address) {
+    if (!inst || !index_registers || !out_modified_address) return -1;
+
+    if (inst->index_reg >= index_reg_count) {
+        return -1; // Out of bounds
+    }
+
+    if (inst->index_reg == 0) {
+        // No index register modification
+        *out_modified_address = inst->address;
+        return 0;
+    }
+
+    int index_val = index_registers[inst->index_reg];
+
+    // Evaluate the 4 automatic index modification modes of the Philco 212 CPU:
+    switch (inst->mod_mode) {
+        case 0: // 00: Standard offset addition (Index modification only, registers unchanged)
+            *out_modified_address = (inst->address + index_val) & 0x7FF;
+            break;
+
+        case 1: // 01: Post-increment index modification
+            *out_modified_address = (inst->address + index_val) & 0x7FF;
+            index_registers[inst->index_reg] = (index_val + 1) & 0x7FF;
+            break;
+
+        case 2: // 10: Post-decrement index modification
+            *out_modified_address = (inst->address + index_val) & 0x7FF;
+            index_registers[inst->index_reg] = (index_val - 1) & 0x7FF;
+            break;
+
+        case 3: // 11: Pre-increment index modification
+            index_val = (index_val + 1) & 0x7FF;
+            index_registers[inst->index_reg] = index_val;
+            *out_modified_address = (inst->address + index_val) & 0x7FF;
+            break;
+    }
+
+    return 0;
+}

@@ -1231,6 +1231,48 @@ int main(void) {
     assert(strstr(yul_out, "mstore(128, r2)") != NULL);
     printf("  [PASS] UNCOL to Yul compiler verified successfully.\n");
 
+    // Test Scenario 5: Philco 212 Instruction Decoder & Modification Modes
+    printf("[Test] Verifying Philco 212 CPU instruction decoder and modes...\n");
+    // Pack two instructions:
+    // Left: opcode = 0xA2, index_reg = 3, mod_mode = 1 (post-increment), address = 100
+    // left_val = (0xA2 << 16) | (3 << 13) | (1 << 11) | 100 = 0xA26864
+    // Right: opcode = 0xB5, index_reg = 2, mod_mode = 2 (post-decrement), address = 200
+    // right_val = (0xB5 << 16) | (2 << 13) | (2 << 11) | 200 = 0xB550C8
+    uint64_t philco_word = ((uint64_t)0xA26864 << 24) | 0xB550C8;
+    tsfi_philco212_instruction inst_l, inst_r;
+    int decode_ret = tsfi_s370_philco212_decode(philco_word, &inst_l, &inst_r);
+    assert(decode_ret == 0);
+    assert(inst_l.opcode == 0xA2);
+    assert(inst_l.index_reg == 3);
+    assert(inst_l.mod_mode == 1);
+    assert(inst_l.address == 100);
+
+    assert(inst_r.opcode == 0xB5);
+    assert(inst_r.index_reg == 2);
+    assert(inst_r.mod_mode == 2);
+    assert(inst_r.address == 200);
+
+    // Verify Address Modification Modes
+    int index_regs[8] = {0, 10, 50, 80, 0, 0, 0, 0};
+    uint16_t mod_addr_l = 0;
+    uint16_t mod_addr_r = 0;
+
+    // Test left: Address = 100, Index Register 3 has value 80, mode 1 (post-increment)
+    // Modified address should be 100 + 80 = 180. Post value should increment to 81.
+    int mod_ret_l = tsfi_s370_philco212_modify_address(&inst_l, index_regs, 8, &mod_addr_l);
+    assert(mod_ret_l == 0);
+    assert(mod_addr_l == 180);
+    assert(index_regs[3] == 81);
+
+    // Test right: Address = 200, Index Register 2 has value 50, mode 2 (post-decrement)
+    // Modified address should be 200 + 50 = 250. Post value should decrement to 49.
+    int mod_ret_r = tsfi_s370_philco212_modify_address(&inst_r, index_regs, 8, &mod_addr_r);
+    assert(mod_ret_r == 0);
+    assert(mod_addr_r == 250);
+    assert(index_regs[2] == 49);
+
+    printf("  [PASS] Philco 212 CPU decoder and modes verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
