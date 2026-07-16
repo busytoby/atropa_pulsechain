@@ -608,4 +608,7 @@ int tsfi_s370_rca501_card_punch(const char *text, uint16_t *card_columns_out, in
 // RCA 501 card reader emulator decoding 12-bit columns back to characters
 int tsfi_s370_rca501_card_read(const uint16_t *card_columns, int col_count, char *text_out, int max_len);
 
+// Charles W. Adams NJCC "logic, not hardware" structural prediction report
+int tsfi_s370_charles_adams_stored_logic_report(char *report_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

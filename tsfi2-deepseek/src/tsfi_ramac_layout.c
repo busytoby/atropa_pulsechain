@@ -3116,3 +3116,19 @@ int tsfi_s370_rca501_card_read(const uint16_t *card_columns, int col_count, char
     text_out[cols] = '\0';
     return cols;
 }
+
+int tsfi_s370_charles_adams_stored_logic_report(char *report_out, int max_len) {
+    if (!report_out || max_len < 256) return -1;
+
+    const char *report_text = 
+        "=== DATAMATION MARCH 1961 REPORT ===\n"
+        "Design Trends: Stored Logic Computers\n"
+        "Prediction: 'Not Hardware, but Logic'\n"
+        "Author: Charles W. Adams\n"
+        "Summary: Dynamic microprogramming allows\n"
+        "reconfigurable logic instruction paths.\n";
+
+    strncpy(report_out, report_text, max_len - 1);
+    report_out[max_len - 1] = '\0';
+    return 0;
+}

@@ -1921,6 +1921,15 @@ int main(void) {
     assert(strcmp(decoded_txt, "COBOL $123") == 0);
     printf("  [PASS] Card punch/read parity matched: '%s'\n", decoded_txt);
 
+    // Test Scenario 32: Charles W. Adams Stored Logic Report Exporter
+    printf("[Test] Verifying Charles W. Adams Stored Logic Report...\n");
+    char adams_rep[512] = {0};
+    int adams_ret = tsfi_s370_charles_adams_stored_logic_report(adams_rep, sizeof(adams_rep));
+    assert(adams_ret == 0);
+    assert(strstr(adams_rep, "Adams") != NULL);
+    assert(strstr(adams_rep, "Hardware") != NULL);
+    printf("  [PASS] Charles W. Adams stored logic report successfully verified:\n%s", adams_rep);
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
