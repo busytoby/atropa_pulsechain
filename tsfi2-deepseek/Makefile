@@ -407,6 +407,9 @@ tests/test_epyx_opcodes: tests/test_epyx_opcodes.c $(CORE_OBJS) $(OBJ_DIR)/vulka
 tests/test_aub_complete: tests/test_aub_complete.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_auncient_btc_tree_tests: tests/test_auncient_btc_tree_tests.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_lode_runner: tests/test_lode_runner.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
