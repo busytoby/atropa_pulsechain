@@ -1,4 +1,6 @@
 SET depth 3;
-SET abductive 1;
+SET_REG R0 5;
+SET_REG R1 2;
+ADD R0 R1;
 EVAL;
 PRUNE 15;
