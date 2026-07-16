@@ -2320,3 +2320,41 @@ int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int
 
     return steps;
 }
+
+int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_size, int *lgp_memory_out, int max_words) {
+    if (!program || program_size <= 0 || !lgp_memory_out || max_words <= 0) {
+        return -1;
+    }
+
+    int compiled_words = 0;
+
+    for (int i = 0; i < program_size; i++) {
+        if (compiled_words >= max_words) {
+            return -2; // Buffer overflow
+        }
+
+        tsfi_uncol_instruction inst = program[i];
+        int opcode = -1;
+        int addr = inst.address & 0x0FFF;
+
+        if (strcmp(inst.op, "LOAD") == 0) {
+            opcode = 0; // Bring (B m)
+        } else if (strcmp(inst.op, "STORE") == 0) {
+            opcode = 9; // Hold/Store (H m)
+        } else if (strcmp(inst.op, "ADD") == 0) {
+            opcode = 2; // Add (A m)
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            opcode = 3; // Subtract (S m)
+        } else if (strcmp(inst.op, "JMP") == 0) {
+            opcode = 7; // Unconditional transfer (U m)
+        } else if (strcmp(inst.op, "JZ") == 0) {
+            opcode = 8; // Test Negative (T m) - nearest LGP-30 conditional mapping
+        }
+
+        if (opcode != -1) {
+            lgp_memory_out[compiled_words++] = (opcode << 20) | addr;
+        }
+    }
+
+    return compiled_words;
+}

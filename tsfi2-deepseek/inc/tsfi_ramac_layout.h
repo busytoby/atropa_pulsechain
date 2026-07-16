@@ -441,4 +441,7 @@ int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int
 // Librascope LGP-30 16-instruction set architecture interpreter
 int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int *pc, int max_steps);
 
+// UNCOL Universal Computer Oriented Language compiler target LGP-30 bytecode generator
+int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_size, int *lgp_memory_out, int max_words);
+
 #endif // TSFI_RAMAC_LAYOUT_H

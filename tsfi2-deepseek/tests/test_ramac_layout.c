@@ -1392,6 +1392,24 @@ int main(void) {
     assert(lgp_mem[103] == 20000); // (50000 - 40000) * 2 = 20000 holding value
     printf("  [PASS] Librascope LGP-30 machine strategy runner verified successfully.\n");
 
+    // Test Scenario 10: UNCOL to LGP-30 target bytecode compiler
+    printf("[Test] Verifying UNCOL to LGP-30 compiler...\n");
+    tsfi_uncol_instruction lgp_uncol_prog[3];
+    strcpy(lgp_uncol_prog[0].op, "LOAD");
+    lgp_uncol_prog[0].address = 50;
+    strcpy(lgp_uncol_prog[1].op, "ADD");
+    lgp_uncol_prog[1].address = 51;
+    strcpy(lgp_uncol_prog[2].op, "STORE");
+    lgp_uncol_prog[2].address = 52;
+
+    int compiled_lgp[10] = {0};
+    int comp_count = tsfi_s370_uncol_to_lgp30(lgp_uncol_prog, 3, compiled_lgp, 10);
+    assert(comp_count == 3);
+    assert(compiled_lgp[0] == ((0 << 20) | 50)); // Bring 50
+    assert(compiled_lgp[1] == ((2 << 20) | 51)); // Add 51
+    assert(compiled_lgp[2] == ((9 << 20) | 52)); // Hold/Store 52
+    printf("  [PASS] UNCOL to LGP-30 compiler verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
