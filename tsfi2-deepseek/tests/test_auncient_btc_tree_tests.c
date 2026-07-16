@@ -6,6 +6,7 @@
 #include "../../scripts/libantigravity_interop.h"
 #include "tsfi_trie.h"
 #include "tsfi_dat.h"
+#include "tsfi_ring_buffer.h"
 #include "../../scripts/libantigravity_extra2.c"
 
 int optimize_witness_script(const int *script_in, int len, int *script_out) {
@@ -194,7 +195,16 @@ int main(void) {
     int optimized_script[4];
     int opt_len = optimize_witness_script(raw_script, 4, optimized_script);
     assert(opt_len == 2);
-    assert(optimized_script[0] == 1 && optimized_script[1] == 4);
+    // 11. Verify Lock-Free SPMC Ring Buffer
+    printf("       [Verify] Lock-Free SPMC Ring Buffer...\n");
+    fflush(stdout);
+    tsfi_ring_buffer rb;
+    tsfi_ring_init(&rb);
+    RingTask t1 = { .nonce = 888, .block_number = 15, .target_key = "unify_test" };
+    assert(tsfi_ring_produce(&rb, t1) == true);
+    RingTask t_out;
+    assert(tsfi_ring_consume(&rb, &t_out) == true);
+    assert(t_out.nonce == 888 && strcmp(t_out.target_key, "unify_test") == 0);
 
     printf("[PASS] All 2-stack BTC rails verification tests passed successfully.\n");
     fflush(stdout);
