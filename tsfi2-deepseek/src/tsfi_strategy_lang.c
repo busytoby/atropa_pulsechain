@@ -107,7 +107,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
                 if (dst < 4 && src < 4 && vm->registers[dst] == vm->registers[src]) {
-                    if (target_pc < len) {
+                    if (target_pc <= len) {
                         pc = target_pc;
                     }
                 }
@@ -118,7 +118,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
                 if (dst < 4 && src < 4 && vm->registers[dst] < vm->registers[src]) {
-                    if (target_pc < len) {
+                    if (target_pc <= len) {
                         pc = target_pc;
                     }
                 }
@@ -192,6 +192,13 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     vm->registers[dst] = vm->registers[src];
                 }
             }
+        } else if (op == 0x1A) { // JUMP target_pc
+            if (pc < len) {
+                uint8_t target_pc = bytecode[pc++];
+                if (target_pc <= len) {
+                    pc = target_pc;
+                }
+            }
         }
     }
 
@@ -223,9 +230,43 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
 
     int pc = 0;
     int idx = 0;
+    int loop_start_pc = -1;
+    int loop_exit_placeholder_pc = -1;
     while (idx < token_count) {
         char *t = tokens[idx];
-        if (strcmp(t, "SET") == 0) {
+        if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
+            if (idx + 5 < token_count && (strcmp(tokens[idx + 1], "UNTIL") == 0 || strcmp(tokens[idx + 1], "until") == 0)) {
+                char *reg_a = tokens[idx + 2];
+                char *op = tokens[idx + 3];
+                char *reg_b = tokens[idx + 4];
+                if (reg_a[0] == 'R' && reg_b[0] == 'R') {
+                    loop_start_pc = pc;
+                    if (strcmp(op, "==") == 0 || strcmp(op, "JEQ") == 0) {
+                        bytecode_out[pc++] = 0x12;
+                        loop_exit_placeholder_pc = pc;
+                        bytecode_out[pc++] = 0;
+                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                    } else if (strcmp(op, "<") == 0 || strcmp(op, "JLT") == 0) {
+                        bytecode_out[pc++] = 0x13;
+                        loop_exit_placeholder_pc = pc;
+                        bytecode_out[pc++] = 0;
+                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                    }
+                }
+                idx += 5;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "END-PERFORM") == 0 || strcmp(t, "end-perform") == 0 || strcmp(t, "END_PERFORM") == 0) {
+            if (loop_start_pc != -1 && loop_exit_placeholder_pc != -1 && pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x1A;
+                bytecode_out[pc++] = (uint8_t)loop_start_pc;
+                bytecode_out[loop_exit_placeholder_pc] = (uint8_t)pc;
+            }
+            idx++;
+        } else if (strcmp(t, "SET") == 0) {
             // Support legacy: SET depth 3;
             if (idx + 2 < token_count) {
                 char *param = tokens[idx + 1];

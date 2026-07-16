@@ -204,6 +204,22 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL MOVE/COPY successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL PERFORM UNTIL loops
+    uint8_t loop_bc_perf[64];
+    int loop_len_perf = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 0 TO R0; MOVE 3 TO R1; MOVE 1 TO R2; PERFORM UNTIL R0 == R1 ADD R2 TO R0. END-PERFORM.",
+        loop_bc_perf, 64, &loop_len_perf);
+    assert(res == 0);
+
+    TSFiStrategyVM loop_vm;
+    tsfi_strategy_vm_init(&loop_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&loop_vm, NULL, loop_bc_perf, loop_len_perf, NULL);
+    assert(res == 0);
+    assert(loop_vm.registers[0] == 3);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL PERFORM UNTIL successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
