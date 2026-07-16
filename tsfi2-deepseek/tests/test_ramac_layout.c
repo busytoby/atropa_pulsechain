@@ -1540,6 +1540,35 @@ int main(void) {
 
     printf("  [PASS] EVM-Native Yul SEC-DED ECC verified successfully.\n");
 
+    // Test Scenario 14: IBM 7030 STRETCH Index Register Auto-Modification
+    printf("[Test] Verifying IBM 7030 STRETCH Index Register Auto-Modification...\n");
+    tsfi_ibm7030_index_reg idx_reg = {
+        .value = 100,
+        .count = 2,
+        .limit = 105
+    };
+    uint64_t indicators = 0;
+    uint32_t offset = 0;
+
+    // 1. Modifying within limits
+    int idx_res = tsfi_s370_ibm7030_index_modify(&idx_reg, 2, &indicators, &offset);
+    assert(idx_res == 0);
+    assert(offset == 100);
+    assert(idx_reg.value == 102);
+    assert(idx_reg.count == 1);
+    assert(indicators == 0);
+
+    // 2. Modifying to exceed limit and trigger trap
+    idx_res = tsfi_s370_ibm7030_index_modify(&idx_reg, 3, &indicators, &offset);
+    assert(idx_res == 1);
+    assert(offset == 102);
+    assert(idx_reg.value == 105);
+    assert(idx_reg.count == 0);
+    assert((indicators & (1ULL << 1)) != 0);
+    assert((indicators & (1ULL << 2)) != 0);
+
+    printf("  [PASS] IBM 7030 STRETCH Index Register Auto-Modification verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

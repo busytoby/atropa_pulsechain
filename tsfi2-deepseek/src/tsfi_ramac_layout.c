@@ -2359,3 +2359,36 @@ int tsfi_s370_ibm7030_ecc_decode(uint64_t word_64, uint64_t *out_corrected_data)
         }
     }
 }
+
+int tsfi_s370_ibm7030_index_modify(tsfi_ibm7030_index_reg *reg, int increment_step, uint64_t *indicator_register, uint32_t *out_offset) {
+    if (!reg || !indicator_register || !out_offset) return -1;
+
+    // 1. Output the current index value offset
+    *out_offset = (uint32_t)(reg->value & 0x1FFFFFFULL);
+
+    // 2. Modify value by step (wrapping to 25 bits)
+    reg->value = (reg->value + increment_step) & 0x1FFFFFFULL;
+
+    // 3. Decrement down-counter if non-zero
+    if (reg->count > 0) {
+        reg->count--;
+    }
+
+    // 4. Update Indicators
+    if (reg->value == 0) {
+        *indicator_register |= (1ULL << 0); // Value Zero indicator
+    }
+    if (reg->count == 0) {
+        *indicator_register |= (1ULL << 1); // Count Zero indicator
+    }
+    if (reg->value >= reg->limit) {
+        *indicator_register |= (1ULL << 2); // Limit Exceeded indicator
+    }
+
+    // Return -1 if count zero or limit exceeded indicators were tripped
+    if (reg->count == 0 || reg->value >= reg->limit) {
+        return 1; // Trip condition
+    }
+
+    return 0;
+}

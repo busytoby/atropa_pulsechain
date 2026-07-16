@@ -450,10 +450,20 @@ int tsfi_s370_ibm7030_read_bits(const uint64_t *memory, uint32_t bit_address, in
 // IBM 7030 STRETCH bit-addressable memory writer
 int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t val);
 
+// IBM 7030 STRETCH Index Register Layout (Auto-modification tracking)
+typedef struct {
+    uint64_t value;  // bits 0..24: Index Value
+    uint32_t count;  // bits 28..45: Down Counter
+    uint32_t limit;  // bits 46..63: Value Limit
+} tsfi_ibm7030_index_reg;
+
 // IBM 7030 STRETCH Hamming SEC-DED ECC encoder
 uint64_t tsfi_s370_ibm7030_ecc_encode(uint64_t data);
 
 // IBM 7030 STRETCH Hamming SEC-DED ECC decoder
 int tsfi_s370_ibm7030_ecc_decode(uint64_t word_72, uint64_t *out_corrected_data);
+
+// IBM 7030 STRETCH index modifier with count and limit checking
+int tsfi_s370_ibm7030_index_modify(tsfi_ibm7030_index_reg *reg, int increment_step, uint64_t *indicator_register, uint32_t *out_offset);
 
 #endif // TSFI_RAMAC_LAYOUT_H
