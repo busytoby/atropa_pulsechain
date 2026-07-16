@@ -10,6 +10,8 @@ void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     vm->abductive_priority_scale = 1;
     vm->executed_evals = 0;
     memset(vm->registers, 0, sizeof(vm->registers));
+    memset(vm->call_stack, 0, sizeof(vm->call_stack));
+    vm->stack_pointer = 0;
 }
 
 // Restore heap invariants after priority mutations
@@ -237,6 +239,18 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     vm->registers[dst] /= vm->registers[src];
                 }
             }
+        } else if (op == 0x1F) { // CALL target_pc
+            if (pc < len) {
+                uint8_t target_pc = bytecode[pc++];
+                if (vm->stack_pointer < 8) {
+                    vm->call_stack[vm->stack_pointer++] = pc;
+                    pc = target_pc;
+                }
+            }
+        } else if (op == 0x20) { // EXIT
+            if (vm->stack_pointer > 0) {
+                pc = vm->call_stack[--vm->stack_pointer];
+            }
         }
     }
 
@@ -272,6 +286,21 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
     int loop_exit_placeholder_pc = -1;
     int if_branch_placeholder_pc = -1;
     int else_jmp_placeholder_pc = -1;
+
+    typedef struct {
+        char name[32];
+        int pc;
+    } StrategyLabel;
+
+    typedef struct {
+        char label_name[32];
+        int placeholder_pc;
+    } StrategyCallFixup;
+
+    StrategyLabel labels[16];
+    int label_count = 0;
+    StrategyCallFixup call_fixups[16];
+    int call_fixup_count = 0;
     while (idx < token_count) {
         char *t = tokens[idx];
         if ((strcmp(t, "IF") == 0 || strcmp(t, "if") == 0) &&
@@ -318,6 +347,20 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 else_jmp_placeholder_pc = -1;
             }
             idx++;
+        } else if (strcmp(t, "GO") == 0 || strcmp(t, "go") == 0) {
+            if (idx + 2 < token_count && (strcmp(tokens[idx + 1], "TO") == 0 || strcmp(tokens[idx + 1], "to") == 0)) {
+                if (call_fixup_count < 16 && pc + 1 < max_len) {
+                    strncpy(call_fixups[call_fixup_count].label_name, tokens[idx + 2], 31);
+                    call_fixups[call_fixup_count].label_name[31] = '\0';
+                    call_fixups[call_fixup_count].placeholder_pc = pc + 1;
+                    call_fixup_count++;
+                    bytecode_out[pc++] = 0x1A; // JUMP
+                    bytecode_out[pc++] = 0; // placeholder
+                }
+                idx += 3;
+            } else {
+                idx++;
+            }
         } else if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
             if (idx + 5 < token_count && (strcmp(tokens[idx + 1], "UNTIL") == 0 || strcmp(tokens[idx + 1], "until") == 0)) {
                 char *reg_a = tokens[idx + 2];
@@ -340,6 +383,16 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                     }
                 }
                 idx += 5;
+            } else if (idx + 1 < token_count) {
+                if (call_fixup_count < 16 && pc + 1 < max_len) {
+                    strncpy(call_fixups[call_fixup_count].label_name, tokens[idx + 1], 31);
+                    call_fixups[call_fixup_count].label_name[31] = '\0';
+                    call_fixups[call_fixup_count].placeholder_pc = pc + 1;
+                    call_fixup_count++;
+                    bytecode_out[pc++] = 0x1F;
+                    bytecode_out[pc++] = 0;
+                }
+                idx += 2;
             } else {
                 idx++;
             }
@@ -348,6 +401,13 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 bytecode_out[pc++] = 0x1A;
                 bytecode_out[pc++] = (uint8_t)loop_start_pc;
                 bytecode_out[loop_exit_placeholder_pc] = (uint8_t)pc;
+            }
+            idx++;
+        } else if (strcmp(t, "EXIT") == 0 || strcmp(t, "exit") == 0 ||
+                   strcmp(t, "EXIT-PROGRAM") == 0 || strcmp(t, "exit-program") == 0 ||
+                   strcmp(t, "EXIT_PROGRAM") == 0) {
+            if (pc < max_len) {
+                bytecode_out[pc++] = 0x20;
             }
             idx++;
         } else if (strcmp(t, "SET") == 0) {
@@ -613,7 +673,44 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 idx++;
             }
         } else {
-            idx++;
+            int is_kw = 0;
+            const char *kws[] = {
+                "MOVE", "move", "TO", "to", "ADD", "add", "SUBTRACT", "subtract",
+                "MULTIPLY", "multiply", "BY", "by", "DIVIDE", "divide", "INTO", "into",
+                "PERFORM", "perform", "UNTIL", "until", "END-PERFORM", "end-perform", "END_PERFORM",
+                "IF", "if", "ELSE", "else", "END-IF", "end-if", "END_IF",
+                "EXIT", "exit", "EXIT-PROGRAM", "exit-program", "EXIT_PROGRAM",
+                "EVAL", "eval", "PRUNE", "prune", "WEIGHT", "weight", "SET_REG",
+                "GET_PRIO", "get_prio", "GET_SIZE", "get_size", "LOOP_UNTIL_EMPTY", "loop_until_empty",
+                "GET_LOGIC", "get_logic", "SET", "depth", "abductive", "==", "JEQ", "<", "JLT", "jump"
+            };
+            for (size_t i = 0; i < sizeof(kws)/sizeof(kws[0]); i++) {
+                if (strcmp(t, kws[i]) == 0) {
+                    is_kw = 1;
+                    break;
+                }
+            }
+            if (!is_kw && t[0] >= 'A' && t[0] <= 'z' && !(t[0] == 'R' && t[1] >= '0' && t[1] <= '3' && t[2] == '\0')) {
+                if (label_count < 16) {
+                    strncpy(labels[label_count].name, t, 31);
+                    labels[label_count].name[31] = '\0';
+                    labels[label_count].pc = pc;
+                    label_count++;
+                }
+                idx++;
+            } else {
+                idx++;
+            }
+        }
+    }
+
+    // Resolve call fixups
+    for (int i = 0; i < call_fixup_count; i++) {
+        for (int j = 0; j < label_count; j++) {
+            if (strcmp(call_fixups[i].label_name, labels[j].name) == 0) {
+                bytecode_out[call_fixups[i].placeholder_pc] = (uint8_t)labels[j].pc;
+                break;
+            }
         }
     }
 

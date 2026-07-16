@@ -266,6 +266,23 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL MULTIPLY/DIVIDE successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL Paragraph Subroutines and GO TO statements
+    uint8_t sub_bc[64];
+    int sub_len = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 5 TO R0; PERFORM MY-SUB. MULTIPLY R1 BY R0. GO TO END-PROG. MY-SUB. MOVE 2 TO R1. EXIT. END-PROG.",
+        sub_bc, 64, &sub_len);
+    assert(res == 0);
+
+    TSFiStrategyVM sub_vm;
+    tsfi_strategy_vm_init(&sub_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&sub_vm, NULL, sub_bc, sub_len, NULL);
+    assert(res == 0);
+    assert(sub_vm.registers[0] == 10);
+    assert(sub_vm.registers[1] == 2);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL PERFORM subroutines successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;

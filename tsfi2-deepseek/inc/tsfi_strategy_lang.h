@@ -9,6 +9,8 @@ typedef struct {
     int abductive_priority_scale;
     int executed_evals;
     int registers[4]; // General-purpose registers R0-R3
+    int call_stack[8]; // Call stack for subroutine return PCs
+    int stack_pointer; // Pointer to top of stack
 } TSFiStrategyVM;
 
 // Initialize the Strategy VM
