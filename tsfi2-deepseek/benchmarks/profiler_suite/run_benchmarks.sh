@@ -26,6 +26,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g 
 gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compositor_interop.c tests/libmozilla_interop.c -o tests/bench_ac_compositor_interop -lpthread -lpulse-simple -lpulse &
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_agentic_dispatch.c -o tests/bench_agentic_dispatch -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse-simple -lpulse -Wl,-rpath,. &
 gcc -Wall -Wextra -Werror -O3 -g -march=native -Iinc -Isrc tests/bench_knowledge_graph.c ../scripts/libantigravity_interop.c ../scripts/libantigravity_extra.c ../scripts/libantigravity_extra2.c ../scripts/abi_dispatch_map.c -o tests/bench_knowledge_graph -lm -lrt -lpthread &
+make tests/test_logos_agent_kernel > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -79,6 +80,10 @@ echo "[RUN] In-Memory Agentic Dispatch Benchmark..."
 # 14. Run Knowledge Graph Benchmark
 echo "[RUN] Knowledge Graph & Ouroboros Benchmark..."
 ./tests/bench_knowledge_graph > "${TMP_DIR}/bench_graph.log"
+
+# 15. Run LogOS Agent Kernel Latency Benchmark
+echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
+./tests/test_logos_agent_kernel > "${TMP_DIR}/bench_logos.log"
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
