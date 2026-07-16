@@ -2872,3 +2872,49 @@ int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out) {
     rca_data_out[i] = '\0';
     return 0;
 }
+
+int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int64_t *out_val) {
+    if (!input_field || !out_val) return -1;
+
+    int64_t val = 0;
+    int sign = 1;
+
+    if (is_univac) {
+        if (input_field[0] == '-') {
+            sign = -1;
+        }
+
+        int i = 1;
+        while (i < 12 && input_field[i] != '\0' && input_field[i] != ' ') {
+            if (input_field[i] >= '0' && input_field[i] <= '9') {
+                val = val * 10 + (input_field[i] - '0');
+            }
+            i++;
+        }
+    } else {
+        int len = 0;
+        while (input_field[len] != '\0' && input_field[len] != '$') {
+            len++;
+        }
+
+        if (len == 0) return -2;
+
+        char last_char = input_field[len - 1];
+        if (last_char == '-') {
+            sign = -1;
+            len--;
+        } else if (last_char == '+') {
+            sign = 1;
+            len--;
+        }
+
+        for (int i = 0; i < len; i++) {
+            if (input_field[i] >= '0' && input_field[i] <= '9') {
+                val = val * 10 + (input_field[i] - '0');
+            }
+        }
+    }
+
+    *out_val = val * sign;
+    return 0;
+}

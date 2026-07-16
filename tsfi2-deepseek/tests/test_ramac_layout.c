@@ -1862,6 +1862,23 @@ int main(void) {
 
     printf("  [PASS] RCA 501 / UNIVAC II Data Formatting verified successfully.\n");
 
+    // Test Scenario 27: Howard Bromberg COBOL Compatibility (Signed Field Normalization)
+    printf("[Test] Verifying RCA 501 / UNIVAC II Signed Field Normalization...\n");
+    int64_t norm_val = 0;
+    int norm_ok = tsfi_s370_normalize_signed_field("12345-$", 0, &norm_val);
+    assert(norm_ok == 0);
+    assert(norm_val == -12345);
+
+    norm_ok = tsfi_s370_normalize_signed_field("-12345      ", 1, &norm_val);
+    assert(norm_ok == 0);
+    assert(norm_val == -12345);
+
+    norm_ok = tsfi_s370_normalize_signed_field("6789+$", 0, &norm_val);
+    assert(norm_ok == 0);
+    assert(norm_val == 6789);
+
+    printf("  [PASS] RCA 501 / UNIVAC II Signed Field Normalization verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

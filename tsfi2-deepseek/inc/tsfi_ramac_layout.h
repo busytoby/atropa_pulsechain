@@ -590,4 +590,7 @@ int tsfi_s370_rca501_to_univac2(const char *rca_data, char *univac_data_out);
 // UNIVAC II fixed-width 12-byte to RCA 501 variable-length string compatibility converter
 int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out);
 
+// Normalize different signed numeric field formats between RCA 501 and UNIVAC II
+int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int64_t *out_val);
+
 #endif // TSFI_RAMAC_LAYOUT_H
