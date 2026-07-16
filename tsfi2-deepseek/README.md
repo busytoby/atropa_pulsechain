@@ -86,7 +86,27 @@ make release
 make clean
 ```
 
-## 3. Benchmarking & Verification
+
+## 5. Unified 2-3 Trees & BTC Script Rails
+
+The simulation workspace integrates a specialized **2-stack BTC Script emulator** and a **dual-compatible ERC-20 Gas Engine** to drive nested transaction logic and logic variable unification.
+
+### Architectural Core
+*   **Emulated Yul CPU (`btc_rails_vm.yul`):** A cycle-by-cycle emulated Yul CPU containing dedicated registers `PC` (program counter), `SP` (stack pointer), `ASP` (alternate stack pointer), and `HALT`. It utilizes a dynamic allocator (`allocate_mem`) referencing memory pointer slot `0x40`.
+*   **Dual-Gas ERC-20 Token (`btc_erc20_gas_token.yul`):** Bridges main-network ERC-20 transfers with witness verification loops. It supports standard balances and transfers, alongside logical address bindings.
+*   **LAU Operator Limit Scaling:** Standard script executions are strictly bound to the **1000-element stack limit** to prevent DoS. Verified LAU operators are automatically allocated up to **32000 elements** (1MB of stack space) for complex operations.
+*   **Unification Address Dereferencing:** Longer, nested address paths (e.g. `dynamic_<parent>/<child>/<wallet>`) are resolved as logic variables. All storage mutations call the unification engine to recursively dereference structural path terms to their concrete terminal 20-byte EVM addresses.
+*   **Isolated Custom Logging:** To keep nested transfers isolated from standard ERC-20 indexing monitors, `nested_transfer` transactions do not emit standard ERC-20 `Transfer` events; instead, they emit a custom `NestedTransfer` event containing the path addresses.
+*   **Double-Array Trie (DAT) Persistence:** The dynamic structural state of the 2-3 tree is maintained as a persistent Double-Array Trie database slice saved on disk strictly as `.dat.bin` binary files (never JSON).
+
+### Running the Verification Suite
+Compile and execute the C unit tests:
+```bash
+make tests/test_auncient_btc_tree_tests
+./tests/test_auncient_btc_tree_tests
+```
+
+## 6. Benchmarking & Verification
 
 The primary verification tool is `tests/benchmark_suite`. It validates performance against strict policy thresholds.
 
