@@ -534,6 +534,10 @@
                                 <button class="btn btn-small btn-preset" data-profile="syd64" style="border-color: var(--neon-cyan); color: #fff; background: rgba(0, 242, 254, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Syd 64 (Commodore 64)</button>
                                 <button class="btn btn-small btn-preset" data-profile="stephen" style="border-color: var(--neon-green); color: #fff; background: rgba(57, 255, 20, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Stephen (TMS5220 LPC)</button>
                                 <button class="btn btn-small btn-preset" data-profile="human" style="border-color: #ff9900; color: #fff; background: rgba(255, 153, 0, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Breathy Human (LF Model)</button>
+                                <label style="display: inline-flex; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--text-primary); cursor: pointer; padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.3); white-space: nowrap;">
+                                    <input type="checkbox" id="chkLGP30Warmth" style="accent-color: var(--neon-magenta);">
+                                    LGP-30 Tube Warmth
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -806,6 +810,23 @@
 
     <!-- Rule sets & synthesis logic scripts -->
     <script>
+        function makeLGP30TriodeCurve() {
+             const n_samples = 44100;
+             const curve = new Float32Array(n_samples);
+             for (let i = 0; i < n_samples; ++i) {
+                 const x = (i - n_samples / 2) / (n_samples / 2);
+                 const vg = -5.0 + x * 8.0;
+                 let ip = 0.0;
+                 if (vg > -6.0) {
+                     ip = 0.002 * Math.pow(vg + 6.0, 1.5);
+                 }
+                 const target_p = 200.0 - ip * 20000.0;
+                 const v_out = Math.max(0.0, Math.min(200.0, target_p));
+                 curve[i] = (v_out - 100.0) / 100.0;
+             }
+             return curve;
+         }
+
         // Phoneme names matching standard Votrax SC-01A output definitions
         const phonemeNames = [
             "EH3", "EH2", "EH1", "PA0", "DT", "A2", "A1", "ZH",
@@ -1328,7 +1349,17 @@
             const targetVolume = 0.12 * energyFactor;
             mainGain.gain.setValueAtTime(targetVolume, now);
             mainGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, targetVolume * 0.01), now + duration);
-            mainGain.connect(analyser || audioCtx.destination);
+            
+            const useWarmth = document.getElementById("chkLGP30Warmth") && document.getElementById("chkLGP30Warmth").checked;
+            if (useWarmth) {
+                const shaper = audioCtx.createWaveShaper();
+                shaper.curve = window.lgp30TriodeCurve || (window.lgp30TriodeCurve = makeLGP30TriodeCurve());
+                shaper.oversample = '4x';
+                mainGain.connect(shaper);
+                shaper.connect(analyser || audioCtx.destination);
+            } else {
+                mainGain.connect(analyser || audioCtx.destination);
+            }
 
             if (useVocoder && waveform === "msx_y8950") {
                 // 1. Synthesize raw speech at 16kHz
