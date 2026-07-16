@@ -503,6 +503,43 @@ object "BtcErc20GasToken" {
                         continue
                     }
                     
+                    // OP_TRY_ME_ELSE (0x21: registers alternate branch target)
+                    if iszero(sub(op, 0x21)) {
+                        let target := mload(add(0x1000, ip))
+                        ip := add(ip, 32)
+                        
+                        // Save choice point frame in memory starting at 0x3000
+                        let cp_idx := mload(0x2ff0) // Read choice point count
+                        let cp_offset := add(0x3000, mul(cp_idx, 96))
+                        
+                        mstore(cp_offset, target)
+                        mstore(add(cp_offset, 32), stack_ptr)
+                        
+                        mstore(0x2ff0, add(cp_idx, 1)) // Increment choice point count
+                        continue
+                    }
+                    
+                    // OP_FAIL (0x22: backtracks execution path)
+                    if iszero(sub(op, 0x22)) {
+                        let cp_idx := mload(0x2ff0)
+                        if iszero(cp_idx) {
+                            // No choice points left, execution fails/halts
+                            revert(0, 0)
+                        }
+                        
+                        // Decrement and load choice point frame
+                        cp_idx := sub(cp_idx, 1)
+                        mstore(0x2ff0, cp_idx)
+                        let cp_offset := add(0x3000, mul(cp_idx, 96))
+                        
+                        let target := mload(cp_offset)
+                        let saved_stack_ptr := mload(add(cp_offset, 32))
+                        
+                        ip := target
+                        stack_ptr := saved_stack_ptr
+                        continue
+                    }
+                    
                     // sys_open (0x11: resolves path using storage registry)
                     if iszero(sub(op, 0x11)) {
                         if lt(stack_ptr, 0x2020) { revert(0, 0) }
