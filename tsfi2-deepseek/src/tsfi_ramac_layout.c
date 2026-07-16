@@ -1868,3 +1868,117 @@ int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_i
 
     return -1; // Denied: releasing an unowned lock
 }
+
+int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
+                        uint8_t *yul_memory, int yul_mem_size,
+                        tsfi_ramac_record *zmm_disk, tsfi_zmm_lock_registry *lock_registry,
+                        int initiator_id, int initiator_priority,
+                        int *registers, int reg_count, uint64_t *current_tick) {
+    if (!program || program_size <= 0 || !yul_memory || yul_mem_size <= 0 || 
+        !zmm_disk || !lock_registry || !registers || reg_count <= 0 || !current_tick) {
+        return -1;
+    }
+
+    int pc = 0;
+    int run_limit = 0;
+
+    while (pc >= 0 && pc < program_size && run_limit < 10000) {
+        tsfi_zyir_instruction inst = program[pc];
+        run_limit++;
+        (*current_tick)++;
+
+        if (strcmp(inst.op, "MSTORE") == 0) {
+            if (inst.val_addr + 4 > (uint32_t)yul_mem_size || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
+                return -2; // Fault exception
+            }
+            int val = registers[inst.reg_src1];
+            yul_memory[inst.val_addr] = (val >> 24) & 0xFF;
+            yul_memory[inst.val_addr + 1] = (val >> 16) & 0xFF;
+            yul_memory[inst.val_addr + 2] = (val >> 8) & 0xFF;
+            yul_memory[inst.val_addr + 3] = val & 0xFF;
+            pc++;
+        } else if (strcmp(inst.op, "MLOAD") == 0) {
+            if (inst.val_addr + 4 > (uint32_t)yul_mem_size || inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
+                return -2;
+            }
+            registers[inst.reg_dest] = ((int)yul_memory[inst.val_addr] << 24) |
+                                       ((int)yul_memory[inst.val_addr + 1] << 16) |
+                                       ((int)yul_memory[inst.val_addr + 2] << 8)  |
+                                       (int)yul_memory[inst.val_addr + 3];
+            pc++;
+        } else if (strcmp(inst.op, "ZLOCK") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
+                return -2;
+            }
+            int lock_mode = registers[inst.reg_src1];
+            int lock_res = tsfi_s370_zmm_lock_acquire(lock_registry, initiator_id, inst.val_addr, lock_mode,
+                                                      *current_tick, initiator_priority);
+            registers[inst.reg_dest] = lock_res;
+            pc++;
+        } else if (strcmp(inst.op, "ZRELEASE") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
+                return -2;
+            }
+            int rel_res = tsfi_s370_zmm_lock_release(lock_registry, initiator_id, inst.val_addr);
+            registers[inst.reg_dest] = rel_res;
+            pc++;
+        } else if (strcmp(inst.op, "ZWRITE") == 0) {
+            int cylinder = inst.val_addr;
+            if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
+                return -2;
+            }
+            // Enforce security check: initiator must possess active write lock (lock_mode = 2) on target cylinder
+            if (lock_registry->locked_cylinders[cylinder] != 2 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
+                return -3; // Access violation exception
+            }
+            char key_str[32];
+            char val_str[32];
+            snprintf(key_str, sizeof(key_str), "zyir_key_%d", initiator_id);
+            snprintf(val_str, sizeof(val_str), "zyir_val_%d", registers[inst.reg_src1]);
+            double temp_seek = 0.0;
+            tsfi_ramac_insert_record(zmm_disk, key_str, val_str, cylinder, &temp_seek);
+            pc++;
+        } else if (strcmp(inst.op, "ZREAD") == 0) {
+            int cylinder = inst.val_addr;
+            if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
+                return -2;
+            }
+            // Enforce security check: initiator must possess active lock on target cylinder (mode 1 or 2)
+            if (lock_registry->locked_cylinders[cylinder] == 0 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
+                return -3; // Access violation exception
+            }
+            char key_str[32];
+            snprintf(key_str, sizeof(key_str), "zyir_key_%d", initiator_id);
+            double temp_seek = 0.0;
+            const char *res_val = tsfi_ramac_search_record(zmm_disk, key_str, cylinder, &temp_seek);
+            if (res_val) {
+                int numeric_val = 0;
+                sscanf(res_val, "zyir_val_%d", &numeric_val);
+                registers[inst.reg_dest] = numeric_val;
+            } else {
+                registers[inst.reg_dest] = 0;
+            }
+            pc++;
+        } else if (strcmp(inst.op, "ADD") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
+                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
+                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
+                return -2;
+            }
+            registers[inst.reg_dest] = registers[inst.reg_src1] + registers[inst.reg_src2];
+            pc++;
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
+                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
+                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
+                return -2;
+            }
+            registers[inst.reg_dest] = registers[inst.reg_src1] - registers[inst.reg_src2];
+            pc++;
+        } else {
+            pc++; // NOP
+        }
+    }
+
+    return 0; // ZY-IR execution completed successfully
+}

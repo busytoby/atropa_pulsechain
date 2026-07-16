@@ -140,6 +140,15 @@ typedef struct {
     uint64_t lock_ticks[RAMAC_CYLINDERS];  // Tick stamp for timeout eviction
 } tsfi_zmm_lock_registry;
 
+// ZY-IR: Yul and ZMM aware Intermediate Representation instruction
+typedef struct {
+    char op[16];      // "MSTORE", "MLOAD", "ZREAD", "ZWRITE", "ZLOCK", "ZRELEASE", "ADD", "SUB"
+    int reg_dest;     // Target register index (0..7)
+    int reg_src1;     // Source register 1
+    int reg_src2;     // Source register 2
+    uint32_t val_addr; // Memory offset, disk address, or immediate constant value
+} tsfi_zyir_instruction;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -361,5 +370,12 @@ void tsfi_s370_zmm_lock_init(tsfi_zmm_lock_registry *registry);
 int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder, int lock_mode,
                                uint64_t current_tick, int initiator_priority);
 int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder);
+
+// ZY-IR: Yul and ZMM aware Intermediate Representation execution engine
+int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
+                        uint8_t *yul_memory, int yul_mem_size,
+                        tsfi_ramac_record *zmm_disk, tsfi_zmm_lock_registry *lock_registry,
+                        int initiator_id, int initiator_priority,
+                        int *registers, int reg_count, uint64_t *current_tick);
 
 #endif // TSFI_RAMAC_LAYOUT_H

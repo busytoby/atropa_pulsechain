@@ -1101,6 +1101,46 @@ int main(void) {
 
     printf("  [PASS] ZMM lock registry verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.9.9. ZY-IR Yul and ZMM Aware IR Verification
+    printf("[Test] Verifying ZY-IR executor...\n");
+    uint8_t *yul_memory = (uint8_t*)calloc(256, 1);
+    int zyir_regs[8] = {0};
+    uint64_t ticks = 0;
+    tsfi_zmm_lock_registry zyir_locks;
+    tsfi_s370_zmm_lock_init(&zyir_locks);
+    
+    // Allocate fresh disk for testing
+    tsfi_ramac_record *zyir_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+
+    // Program:
+    // registers[0] = 500 (loaded via MLOAD from yul_memory)
+    // Acquire Exclusive Lock on cylinder 12 (using register 1 as lock mode 2)
+    // Write register 0 value to ZMM cylinder 12
+    // Read from ZMM cylinder 12 into register 2
+    // Store register 2 to yul_memory address 32
+    yul_memory[0] = 0;
+    yul_memory[1] = 0;
+    yul_memory[2] = 1;
+    yul_memory[3] = 244; // 500
+    zyir_regs[1] = 2; // Exclusive lock mode
+
+    tsfi_zyir_instruction zyir_prog[5] = {
+        {"MLOAD", 0, 0, 0, 0},        // reg[0] = memory[0..3] (500)
+        {"ZLOCK", 3, 1, 0, 12},       // reg[3] = ZLOCK(cylinder 12, mode 2)
+        {"ZWRITE", 0, 0, 0, 12},      // ZWRITE(cylinder 12, key_9, value_500)
+        {"ZREAD", 2, 0, 0, 12},       // reg[2] = ZREAD(cylinder 12)
+        {"MSTORE", 0, 2, 0, 32}       // memory[32..35] = reg[2] (500)
+    };
+
+    int zyir_ret = tsfi_s370_zyir_exec(zyir_prog, 5, yul_memory, 256, zyir_disk, &zyir_locks, 9, 2, zyir_regs, 8, &ticks);
+    assert(zyir_ret == 0);
+    assert(zyir_regs[2] == 500);
+    assert(yul_memory[35] == 244);
+    
+    free(zyir_disk);
+    free(yul_memory);
+    printf("  [PASS] ZY-IR executor verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
