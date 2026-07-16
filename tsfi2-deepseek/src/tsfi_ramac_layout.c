@@ -2918,3 +2918,39 @@ int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int
     *out_val = val * sign;
     return 0;
 }
+
+static int get_char_weight(char c, int is_univac) {
+    if (c == ' ' || c == '\0' || c == '$') return 0;
+    if (is_univac) {
+        if (c >= '0' && c <= '9') return (c - '0') + 1;
+        if (c >= 'A' && c <= 'Z') return (c - 'A') + 11;
+        if (c >= 'a' && c <= 'z') return (c - 'a') + 11;
+    } else {
+        if (c >= 'A' && c <= 'Z') return (c - 'A') + 1;
+        if (c >= 'a' && c <= 'z') return (c - 'a') + 1;
+        if (c >= '0' && c <= '9') return (c - '0') + 27;
+    }
+    return (int)c + 100;
+}
+
+int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int is_univac) {
+    if (!str_a || !str_b) return 0;
+
+    int i = 0;
+    while (1) {
+        char ca = str_a[i];
+        char cb = str_b[i];
+
+        int wa = get_char_weight(ca, is_univac);
+        int wb = get_char_weight(cb, is_univac);
+
+        if (wa < wb) return -1;
+        if (wa > wb) return 1;
+
+        if (ca == '\0' || ca == '$' || cb == '\0' || cb == '$') {
+            break;
+        }
+        i++;
+    }
+    return 0;
+}

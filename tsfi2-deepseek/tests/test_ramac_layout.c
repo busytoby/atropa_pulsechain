@@ -1879,6 +1879,16 @@ int main(void) {
 
     printf("  [PASS] RCA 501 / UNIVAC II Signed Field Normalization verified successfully.\n");
 
+    // Test Scenario 28: Howard Bromberg COBOL Compatibility (Collating Sequence Comparisons)
+    printf("[Test] Verifying RCA 501 / UNIVAC II Collating Sequence Comparisons...\n");
+    int cmp_res = tsfi_s370_cobol_compare_collating("A1", "1A", 1);
+    assert(cmp_res == 1);
+
+    cmp_res = tsfi_s370_cobol_compare_collating("A1", "1A", 0);
+    assert(cmp_res == -1);
+
+    printf("  [PASS] RCA 501 / UNIVAC II Collating Sequence Comparisons verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

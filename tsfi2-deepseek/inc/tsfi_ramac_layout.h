@@ -593,4 +593,7 @@ int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out);
 // Normalize different signed numeric field formats between RCA 501 and UNIVAC II
 int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int64_t *out_val);
 
+// Compare two strings using either RCA 501 or UNIVAC II collating character weights
+int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int is_univac);
+
 #endif // TSFI_RAMAC_LAYOUT_H
