@@ -526,4 +526,10 @@ void tsfi_s370_honeywell800_init(tsfi_honeywell800_scheduler *sched);
 // Executes a single instruction execution cycle across the active thread registers in round-robin fashion
 int tsfi_s370_honeywell800_tick(tsfi_honeywell800_scheduler *sched, int *memory, int mem_size);
 
+// IBM 7090 Loop Control: Transfer on Index (TIX)
+int tsfi_s370_ibm7090_tix(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc);
+
+// IBM 7090 Loop Control: Transfer with Index Incremented (TXI)
+int tsfi_s370_ibm7090_txi(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc);
+
 #endif // TSFI_RAMAC_LAYOUT_H

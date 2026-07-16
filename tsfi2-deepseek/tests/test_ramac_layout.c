@@ -1680,6 +1680,28 @@ int main(void) {
 
     printf("  [PASS] Honeywell 800 Traffic Control Multiprogramming Scheduler verified successfully.\n");
 
+    // Test Scenario 19: IBM 7090 Loop Control (TIX/TXI)
+    printf("[Test] Verifying IBM 7090 Loop Control (TIX/TXI)...\n");
+    uint16_t index_val = 10;
+    uint16_t pc_val = 100;
+
+    int branched = tsfi_s370_ibm7090_tix(&index_val, 3, 200, &pc_val);
+    assert(branched == 1);
+    assert(index_val == 7);
+    assert(pc_val == 200);
+
+    branched = tsfi_s370_ibm7090_tix(&index_val, 8, 300, &pc_val);
+    assert(branched == 0);
+    assert(index_val == 7);
+    assert(pc_val == 200);
+
+    branched = tsfi_s370_ibm7090_txi(&index_val, 5, 400, &pc_val);
+    assert(branched == 1);
+    assert(index_val == 12);
+    assert(pc_val == 400);
+
+    printf("  [PASS] IBM 7090 Loop Control verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

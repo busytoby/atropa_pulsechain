@@ -2588,3 +2588,22 @@ int tsfi_s370_honeywell800_tick(tsfi_honeywell800_scheduler *sched, int *memory,
     sched->current_thread_idx = (tid + 1) % 8;
     return tid;
 }
+
+int tsfi_s370_ibm7090_tix(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc) {
+    if (!index_reg || !pc) return -1;
+
+    if (*index_reg > decrement) {
+        *index_reg -= decrement;
+        *pc = target_address;
+        return 1;
+    }
+    return 0;
+}
+
+int tsfi_s370_ibm7090_txi(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc) {
+    if (!index_reg || !pc) return -1;
+
+    *index_reg += decrement;
+    *pc = target_address;
+    return 1;
+}
