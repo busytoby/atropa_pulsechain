@@ -290,4 +290,7 @@ int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *a
 int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keywords, int keyword_count,
                                       uint8_t *comp3_out, int max_len);
 
+// Saburo Muroga style parametron majority phase decision logic gate emulator
+int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int phase_in_3, int *phase_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

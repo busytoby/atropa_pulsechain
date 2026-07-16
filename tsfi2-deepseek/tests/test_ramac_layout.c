@@ -857,6 +857,18 @@ int main(void) {
     assert(strcmp(index_zoned, "3") == 0); // Matches 'real-time', 'SAGE', 'radar'
     printf("  [PASS] Engelbart & Bourne index resolver verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9. Saburo Muroga Parametron majority gate verification
+    printf("[Test] Verifying Saburo Muroga parametron majority phase logic gate...\n");
+    int param_phase = -1;
+    int p_ret = tsfi_s370_muroga_parametron_majority(1, 0, 1, &param_phase);
+    assert(p_ret == 0);
+    assert(param_phase == 1); // 180 degrees phase state is the majority
+
+    p_ret = tsfi_s370_muroga_parametron_majority(0, 0, 1, &param_phase);
+    assert(p_ret == 0);
+    assert(param_phase == 0); // 0 degrees phase state is the majority
+    printf("  [PASS] Saburo Muroga parametron logic gate verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

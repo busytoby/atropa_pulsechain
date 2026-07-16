@@ -1354,3 +1354,19 @@ int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keyword
 
     return tsfi_s370_pack(zoned, comp3_out, max_len);
 }
+
+int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int phase_in_3, int *phase_out) {
+    if (!phase_out) {
+        return -1;
+    }
+
+    // Parametron majority decision gate: outputs phase representing the majority of the three inputs
+    int sum = phase_in_1 + phase_in_2 + phase_in_3;
+    if (sum >= 2) {
+        *phase_out = 1; // 180 degrees phase state
+    } else {
+        *phase_out = 0; // 0 degrees phase state
+    }
+
+    return 0;
+}
