@@ -23,8 +23,8 @@ object "BtcRailsVM" {
                 mstore(0x40, 0x1100)
                 
                 // Dynamically allocate start boundaries for stack and altstack
-                let stack_base := allocate_mem(32000)    // 1000 words primary stack
-                let altstack_base := allocate_mem(32000) // 1000 words alternate stack
+                let stack_base := allocate_mem(32000)
+                let altstack_base := allocate_mem(32000)
                 
                 // Virtual registers setup
                 let regPC := 0
@@ -32,13 +32,19 @@ object "BtcRailsVM" {
                 let regASP := altstack_base
                 let regHalted := 0
                 
+                // Resolve stack limit: standard is 1000; LAU operators are allowed up to 32000
+                let limit := 1000
+                if is_lau_operator(caller()) {
+                    limit := 32000
+                }
+                
                 for { let cyc := 0 } and(and(lt(cyc, cycles), lt(regPC, len)), iszero(regHalted)) { cyc := add(cyc, 1) } {
                     let op := byte(0, mload(add(0x1000, regPC)))
                     regPC := add(regPC, 1)
                     
-                    // Track combined elements count: (SP - stack_base)/32 + (ASP - altstack_base)/32
+                    // Track combined elements count
                     let elements_count := add(div(sub(regSP, stack_base), 32), div(sub(regASP, altstack_base), 32))
-                    if gt(elements_count, 1000) {
+                    if gt(elements_count, limit) {
                         regHalted := 1
                         break
                     }
@@ -133,10 +139,33 @@ object "BtcRailsVM" {
                 return(0, 32)
             }
             
+            // approve_lau_operator(address operator, uint256 approved) -> returns (uint256 success)
+            // Selector: 0xa9c3c1a2
+            if iszero(sub(selector, 0xa9c3c1a2)) {
+                let operator := calldataload(4)
+                let approved := calldataload(36)
+                
+                mstore(0, operator)
+                mstore(32, 12) // Prefix 12 for LAU operator approvals
+                let slot := keccak256(0, 64)
+                sstore(slot, approved)
+                
+                mstore(0, 1)
+                return(0, 32)
+            }
+            
             // Helper function to allocate dynamic memory space
             function allocate_mem(size) -> addr {
                 addr := mload(0x40)
                 mstore(0x40, add(addr, size))
+            }
+            
+            // Helper function to verify LAU operator approval
+            function is_lau_operator(operator) -> res {
+                mstore(0, operator)
+                mstore(32, 12)
+                let slot := keccak256(0, 64)
+                res := sload(slot)
             }
             
             revert(0, 0)
