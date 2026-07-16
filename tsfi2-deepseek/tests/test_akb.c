@@ -27,12 +27,22 @@ int main(void) {
     fflush(stdout);
     assert(cached_val && strcmp(cached_val, "99") == 0);
 
-    // Verify sync page flushing
+    // 1b. Verify Ephemeral Temporary State construction
+    tsfi_akb_write_temp(akb, "akb/temp_key", "RELATION_TRUE");
+    assert(tsfi_akb_is_temp(akb, "akb/temp_key") == 1);
+    const char *temp_val = tsfi_akb_read(akb, "akb/temp_key");
+    printf("  [Cache] Read temporary key: %s (Expected TEMP_RELATION_TRUE)\n", temp_val);
+    fflush(stdout);
+    assert(temp_val && strcmp(temp_val, "TEMP_RELATION_TRUE") == 0);
+
+    // Verify sync page flushing (crystallizing temp values to permanent rails)
     tsfi_akb_sync(akb, trie_root);
-    // Reload compiled search directly to verify persistence
+    // Reload compiled search directly to verify persistence and crystallization
     const char *persisted_val = tsfi_dat_search(akb->disk_dat, "akb/dirty_key");
+    const char *persisted_temp = tsfi_dat_search(akb->disk_dat, "akb/temp_key");
     assert(persisted_val && strcmp(persisted_val, "99") == 0);
-    printf("  [Cache] Verified sync successfully flushed to disk DAT rails.\n");
+    assert(persisted_temp && strcmp(persisted_temp, "RELATION_TRUE") == 0);
+    printf("  [Cache] Verified sync successfully crystallized temporary weights to permanent rails.\n");
     fflush(stdout);
 
     // 2. Verify Secondary Graph Adjacency index

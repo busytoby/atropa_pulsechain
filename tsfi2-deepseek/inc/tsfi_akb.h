@@ -34,6 +34,12 @@ TSFiAKB* tsfi_akb_create(tsfi_dat *disk_dat);
 // In-Memory Fast Write (Dirty-Page write)
 void tsfi_akb_write(TSFiAKB *akb, const char *key, const char *value);
 
+// Ephemeral Temporary State Write (Logically deduced temporary coordinates)
+void tsfi_akb_write_temp(TSFiAKB *akb, const char *key, const char *value);
+
+// Check if coordinate is a temporary state
+int tsfi_akb_is_temp(TSFiAKB *akb, const char *key);
+
 // In-Memory Fast Read (Cache-First read)
 const char* tsfi_akb_read(TSFiAKB *akb, const char *key);
 

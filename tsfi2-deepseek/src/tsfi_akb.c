@@ -31,6 +31,22 @@ void tsfi_akb_write(TSFiAKB *akb, const char *key, const char *value) {
     }
 }
 
+void tsfi_akb_write_temp(TSFiAKB *akb, const char *key, const char *value) {
+    if (!akb || !key || !value) return;
+    char temp_val[128];
+    snprintf(temp_val, sizeof(temp_val), "TEMP_%s", value);
+    tsfi_akb_write(akb, key, temp_val);
+}
+
+int tsfi_akb_is_temp(TSFiAKB *akb, const char *key) {
+    if (!akb || !key) return 0;
+    const char *val = tsfi_akb_read(akb, key);
+    if (val && strncmp(val, "TEMP_", 5) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 const char* tsfi_akb_read(TSFiAKB *akb, const char *key) {
     if (!akb || !key) return NULL;
 
@@ -55,7 +71,12 @@ void tsfi_akb_sync(TSFiAKB *akb, tsfi_trie_node *trie_root) {
     int synced_any = 0;
     for (int i = 0; i < akb->cache_count; i++) {
         if (akb->cache[i].is_dirty) {
-            tsfi_trie_insert(trie_root, akb->cache[i].key, akb->cache[i].value);
+            const char *val = akb->cache[i].value;
+            if (strncmp(val, "TEMP_", 5) == 0) {
+                val += 5;
+            }
+            tsfi_trie_insert(trie_root, akb->cache[i].key, val);
+            strncpy(akb->cache[i].value, val, sizeof(akb->cache[i].value) - 1);
             akb->cache[i].is_dirty = 0;
             synced_any = 1;
         }
