@@ -770,6 +770,9 @@ tests/test_synth_direct: tests/test_synth_direct.c $(CORE_OBJS) $(OBJ_DIR)/vulka
 tests/test_synth_perf: tests/test_synth_perf.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/bench_synth_perf: tests/bench_synth_perf.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_winchester_bridge: tests/test_winchester_bridge.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
