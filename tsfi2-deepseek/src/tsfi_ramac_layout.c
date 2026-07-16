@@ -1,4 +1,5 @@
 #include "tsfi_ramac_layout.h"
+#include "tsfi_strategy_lang.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -2952,5 +2953,70 @@ int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int 
         }
         i++;
     }
+    return 0;
+}
+
+int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int val_r0, int val_r1, int *out_result) {
+    if (!cobol_strategy_script || !out_result) return -1;
+
+    uint8_t bytecode[256];
+    int len = 0;
+    int res = tsfi_strategy_compile_script(cobol_strategy_script, bytecode, 256, &len);
+    if (res != 0) return -2;
+
+    char rca_input_0[32];
+    char rca_input_1[32];
+    snprintf(rca_input_0, sizeof(rca_input_0), "%s%d$", (val_r0 >= 0 ? "+" : ""), val_r0);
+    snprintf(rca_input_1, sizeof(rca_input_1), "%s%d$", (val_r1 >= 0 ? "+" : ""), val_r1);
+
+    int64_t rca_reg0_val = 0;
+    int64_t rca_reg1_val = 0;
+    tsfi_s370_normalize_signed_field(rca_input_0, 0, &rca_reg0_val);
+    tsfi_s370_normalize_signed_field(rca_input_1, 0, &rca_reg1_val);
+
+    TSFiStrategyVM rca_vm;
+    tsfi_strategy_vm_init(&rca_vm);
+    rca_vm.registers[0] = (int)rca_reg0_val;
+    rca_vm.registers[1] = (int)rca_reg1_val;
+
+    res = tsfi_strategy_vm_execute_bytecode(&rca_vm, NULL, bytecode, len, NULL);
+    if (res != 0) return -3;
+    int rca_out_val = rca_vm.registers[0];
+
+    char rca_output[32];
+    snprintf(rca_output, sizeof(rca_output), "%s%d$", (rca_out_val >= 0 ? "+" : ""), rca_out_val);
+
+    char univac_input_0[16];
+    char univac_input_1[16];
+    tsfi_s370_rca501_to_univac2(rca_input_0, univac_input_0);
+    tsfi_s370_rca501_to_univac2(rca_input_1, univac_input_1);
+
+    int64_t univac_reg0_val = 0;
+    int64_t univac_reg1_val = 0;
+    tsfi_s370_normalize_signed_field(univac_input_0, 1, &univac_reg0_val);
+    tsfi_s370_normalize_signed_field(univac_input_1, 1, &univac_reg1_val);
+
+    TSFiStrategyVM univac_vm;
+    tsfi_strategy_vm_init(&univac_vm);
+    univac_vm.registers[0] = (int)univac_reg0_val;
+    univac_vm.registers[1] = (int)univac_reg1_val;
+
+    res = tsfi_strategy_vm_execute_bytecode(&univac_vm, NULL, bytecode, len, NULL);
+    if (res != 0) return -4;
+    int univac_out_val = univac_vm.registers[0];
+
+    char univac_output[16];
+    snprintf(univac_output, sizeof(univac_output), "%s%d", (univac_out_val >= 0 ? "+" : ""), univac_out_val);
+    char univac_output_padded[16];
+    tsfi_s370_rca501_to_univac2(univac_output, univac_output_padded);
+
+    char rca_translated_output[32];
+    tsfi_s370_univac2_to_rca501(univac_output_padded, rca_translated_output);
+
+    if (strcmp(rca_output, rca_translated_output) != 0) {
+        return -5;
+    }
+
+    *out_result = rca_out_val;
     return 0;
 }

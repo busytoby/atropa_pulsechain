@@ -596,4 +596,7 @@ int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int
 // Compare two strings using either RCA 501 or UNIVAC II collating character weights
 int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int is_univac);
 
+// Simulated Cross-Compiler Compatibility Loop demonstrating RCA 501 and UNIVAC II parity
+int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int val_r0, int val_r1, int *out_result);
+
 #endif // TSFI_RAMAC_LAYOUT_H

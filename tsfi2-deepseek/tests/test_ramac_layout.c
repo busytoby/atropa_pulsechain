@@ -1889,6 +1889,16 @@ int main(void) {
 
     printf("  [PASS] RCA 501 / UNIVAC II Collating Sequence Comparisons verified successfully.\n");
 
+    // Test Scenario 29: Howard Bromberg COBOL Cross-Compiler Parity Loop
+    printf("[Test] Verifying Howard Bromberg COBOL Cross-Compiler Parity Loop...\n");
+    int out_res = 0;
+    int parity_ret = tsfi_s370_cross_compiler_parity_loop(
+        "DATA DIVISION. 01 ACCUM PIC 9 USAGE R0. 01 FACTOR PIC 9 USAGE R1. PROCEDURE DIVISION. MOVE R0 TO ACCUM; ADD R1 TO ACCUM;",
+        15, 25, &out_res);
+    assert(parity_ret == 0);
+    assert(out_res == 40);
+    printf("  [PASS] Cross-compiler compatibility loop executed with parity: OUT = %d\n", out_res);
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
