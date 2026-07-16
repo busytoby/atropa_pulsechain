@@ -251,6 +251,39 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (vm->stack_pointer > 0) {
                 pc = vm->call_stack[--vm->stack_pointer];
             }
+        } else if (op == 0x21) { // DISPLAY
+            if (pc < len) {
+                uint8_t num_items = bytecode[pc++];
+                for (uint8_t i = 0; i < num_items; i++) {
+                    if (pc < len) {
+                        uint8_t type = bytecode[pc++];
+                        if (type == 0) {
+                            if (pc < len) {
+                                uint8_t str_len = bytecode[pc++];
+                                if (pc + str_len <= len) {
+                                    for (uint8_t j = 0; j < str_len; j++) {
+                                        putchar(bytecode[pc + j]);
+                                    }
+                                    pc += str_len;
+                                }
+                            }
+                        } else if (type == 1) {
+                            if (pc < len) {
+                                uint8_t reg = bytecode[pc++];
+                                if (reg < 4) {
+                                    printf("%d", vm->registers[reg]);
+                                }
+                            }
+                        } else if (type == 2) {
+                            printf("%d", vm->depth_priority_scale);
+                        } else if (type == 3) {
+                            printf("%d", vm->abductive_priority_scale);
+                        }
+                    }
+                }
+                putchar('\n');
+                fflush(stdout);
+            }
         }
     }
 
@@ -415,6 +448,75 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             } else {
                 idx++;
             }
+        } else if (strcmp(t, "DISPLAY") == 0 || strcmp(t, "display") == 0) {
+            int start_idx = idx + 1;
+            int items_count = 0;
+            int end_idx = start_idx;
+            const char *kws[] = {
+                "MOVE", "move", "ADD", "add", "SUBTRACT", "subtract",
+                "MULTIPLY", "multiply", "DIVIDE", "divide",
+                "PERFORM", "perform", "END-PERFORM", "end-perform", "END_PERFORM",
+                "IF", "if", "ELSE", "else", "END-IF", "end-if", "END_IF",
+                "EXIT", "exit", "EXIT-PROGRAM", "exit-program", "EXIT_PROGRAM",
+                "EVAL", "eval", "PRUNE", "prune", "WEIGHT", "weight", "SET_REG",
+                "GET_PRIO", "get_prio", "GET_SIZE", "get_size", "LOOP_UNTIL_EMPTY", "loop_until_empty",
+                "GET_LOGIC", "get_logic", "SET", "GO", "go", "DISPLAY", "display"
+            };
+            while (end_idx < token_count) {
+                char *item_tok = tokens[end_idx];
+                int is_end = 0;
+                for (size_t i = 0; i < sizeof(kws)/sizeof(kws[0]); i++) {
+                    if (strcmp(item_tok, kws[i]) == 0) {
+                        is_end = 1;
+                        break;
+                    }
+                }
+                if (is_end) break;
+                
+                int is_label = 0;
+                for (int l = 0; l < label_count; l++) {
+                    if (strcmp(item_tok, labels[l].name) == 0) {
+                        is_label = 1;
+                        break;
+                    }
+                }
+                if (is_label) break;
+
+                items_count++;
+                end_idx++;
+            }
+            
+            if (items_count > 0 && pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x21;
+                bytecode_out[pc++] = (uint8_t)items_count;
+                for (int k = start_idx; k < end_idx; k++) {
+                    char *item_tok = tokens[k];
+                    if (item_tok[0] == 'R' && item_tok[1] >= '0' && item_tok[1] <= '3' && item_tok[2] == '\0') {
+                        if (pc + 1 < max_len) {
+                            bytecode_out[pc++] = 1;
+                            bytecode_out[pc++] = (uint8_t)(item_tok[1] - '0');
+                        }
+                    } else if (strcmp(item_tok, "depth") == 0) {
+                        if (pc < max_len) {
+                            bytecode_out[pc++] = 2;
+                        }
+                    } else if (strcmp(item_tok, "abductive") == 0) {
+                        if (pc < max_len) {
+                            bytecode_out[pc++] = 3;
+                        }
+                    } else {
+                        int slen = strlen(item_tok);
+                        if (pc + 2 + slen < max_len) {
+                            bytecode_out[pc++] = 0;
+                            bytecode_out[pc++] = (uint8_t)(slen + 1);
+                            memcpy(&bytecode_out[pc], item_tok, slen);
+                            bytecode_out[pc + slen] = ' ';
+                            pc += slen + 1;
+                        }
+                    }
+                }
+            }
+            idx = end_idx;
         } else if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
             if (idx + 5 < token_count && (strcmp(tokens[idx + 1], "UNTIL") == 0 || strcmp(tokens[idx + 1], "until") == 0)) {
                 char *reg_a = tokens[idx + 2];

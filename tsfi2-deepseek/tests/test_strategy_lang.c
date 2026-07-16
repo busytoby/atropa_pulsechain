@@ -300,6 +300,21 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL DATA DIVISION variable mapping successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL DISPLAY statements
+    uint8_t disp_bc[64];
+    int disp_len = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 12 TO R0; DISPLAY Volatility is R0 depth;",
+        disp_bc, 64, &disp_len);
+    assert(res == 0);
+
+    TSFiStrategyVM disp_vm;
+    tsfi_strategy_vm_init(&disp_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&disp_vm, NULL, disp_bc, disp_len, NULL);
+    assert(res == 0);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL DISPLAY successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
