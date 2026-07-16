@@ -51,6 +51,18 @@ int main(void) {
     float edge_w = tsfi_akb_get_edge(perf_engine->synth->orchestrator->akb, "Node_A", "Node_B");
     assert(fabs(edge_w - 0.95f) < 0.0001f);
 
+    // 4. Verify recursive DCG parser: "the secondary tone-wheel play amplitude 0.70"
+    const char *recursive_tokens[6] = { "the", "secondary", "tone-wheel", "play", "amplitude", "0.70" };
+    res = tsfi_nlp_parse_dcg(perf_engine, recursive_tokens, 6, &cmd);
+    printf("  [DCG Recursive] Status: %d, Type: %d, Target Wheel: %d, Amp: %.2f\n", 
+           res, cmd.type, cmd.target_wheel_idx, cmd.target_amplitude);
+    fflush(stdout);
+    assert(res == 0);
+    assert(cmd.type == CMD_PLAY_TONE);
+    assert(cmd.target_wheel_idx == 1);
+    assert(fabs(cmd.target_amplitude - 0.70f) < 0.0001f);
+    assert(fabs(perf_engine->synth->wheels[1].amplitude - 0.70f) < 0.0001f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

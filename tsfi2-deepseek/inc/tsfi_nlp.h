@@ -22,4 +22,7 @@ typedef struct {
 // Parse a natural language command and execute CLP constraint verification
 int tsfi_nlp_execute_command(TSFiSynthPerfEngine *engine, const char *command_str, TSFiParsedCommand *cmd_out);
 
+// Perform recursive DCG-CLP parsing over token streams
+int tsfi_nlp_parse_dcg(TSFiSynthPerfEngine *engine, const char **tokens, int token_count, TSFiParsedCommand *cmd_out);
+
 #endif // TSFI_NLP_H

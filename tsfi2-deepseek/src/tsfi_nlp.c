@@ -61,3 +61,41 @@ int tsfi_nlp_execute_command(TSFiSynthPerfEngine *engine, const char *command_st
 
     return -4; // Parse Failure
 }
+
+int tsfi_nlp_parse_dcg(TSFiSynthPerfEngine *engine, const char **tokens, int token_count, TSFiParsedCommand *cmd_out) {
+    if (!engine || !tokens || token_count == 0 || !cmd_out) return -1;
+
+    // Simulate recursive Noun Phrase (NP) tabling lookup:
+    int wheel_idx = -1;
+    int parsed_tokens = 0;
+
+    if (token_count >= 3 && strcmp(tokens[0], "the") == 0 && strcmp(tokens[2], "tone-wheel") == 0) {
+        if (strcmp(tokens[1], "primary") == 0) {
+            wheel_idx = 0;
+        } else if (strcmp(tokens[1], "secondary") == 0) {
+            wheel_idx = 1;
+        }
+        parsed_tokens = 3;
+    }
+
+    if (wheel_idx == -1) return -2;
+
+    // Parse Verb Phrase (VP):
+    if (token_count >= (parsed_tokens + 3) && strcmp(tokens[parsed_tokens], "play") == 0 && strcmp(tokens[parsed_tokens + 1], "amplitude") == 0) {
+        float amp = (float)atof(tokens[parsed_tokens + 2]);
+
+        // CLP Constraint Check
+        if (amp >= 0.0f && amp <= 1.0f) {
+            cmd_out->type = CMD_PLAY_TONE;
+            cmd_out->target_wheel_idx = wheel_idx;
+            cmd_out->target_amplitude = amp;
+
+            tsfi_synth_akb_process_input(engine->synth, wheel_idx, amp, "prior/active");
+            return 0;
+        } else {
+            return -3;
+        }
+    }
+
+    return -4;
+}
