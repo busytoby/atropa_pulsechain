@@ -10,9 +10,11 @@
 
 int main(void) {
     printf("[Auncient BTC Tree] Starting 2-stack BTC rails verification tests...\n");
+    fflush(stdout);
 
     // 1. Verify Yul opcode instruction translation
     printf("       [Verify] Yul opcode translation...\n");
+    fflush(stdout);
     int translated_op = 0;
     assert(interop_yul_translate_opcode(100, &translated_op) == 0); // PUSH
     assert(translated_op == 1);
@@ -25,6 +27,7 @@ int main(void) {
     
     // 2. Verify Yul object execution and memory mapping on 2-stack VM
     printf("       [Verify] Yul object execution and memory mapping...\n");
+    fflush(stdout);
     InteropStackVM vm;
     memset(&vm, 0, sizeof(InteropStackVM));
     // Bytecode instructions: PUSH 100, PUSH 500, MSTORE, PUSH 200, PUSH 700, MSTORE, HALT
@@ -38,6 +41,7 @@ int main(void) {
     
     // 3. Verify memory state validations
     printf("       [Verify] Yul EVM memory proofs...\n");
+    fflush(stdout);
     int pl_verified = -1;
     assert(interop_yul_verify_memory(memory_pages, mem_count, 100, 500, &pl_verified) == 0);
     assert(pl_verified == 1);
@@ -48,6 +52,7 @@ int main(void) {
     
     // 4. Verify recursive VM stack execution
     printf("       [Verify] Recursive VM execution boundaries...\n");
+    fflush(stdout);
     InteropNestedVM parent, child;
     memset(&parent, 0, sizeof(InteropNestedVM));
     memset(&child, 0, sizeof(InteropNestedVM));
@@ -68,6 +73,7 @@ int main(void) {
 
     // 6. Verify Double-Array Trie (DAT) quadtree persistent binary serialization
     printf("       [Verify] Double-Array Trie (DAT) serialization persistence...\n");
+    fflush(stdout);
     tsfi_trie_node *trie_root = tsfi_trie_create_node(0);
     tsfi_trie_insert(trie_root, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver", "receiver_wallet");
     tsfi_trie_insert(trie_root, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/operator", "operator_wallet");
@@ -78,11 +84,9 @@ int main(void) {
     const char *resolved_val = tsfi_dat_search(dat, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver");
     assert(resolved_val != NULL && strcmp(resolved_val, "receiver_wallet") == 0);
     
-    // Test saving database slice to binary DAT format on disk (.dat.bin ONLY per Rule 13)
     const char *test_bin_path = "tmp/test_unified_addr.dat.bin";
     assert(tsfi_dat_save_bin(dat, test_bin_path) == 0);
     
-    // Load database slice back and verify contents
     tsfi_dat *loaded_dat = tsfi_dat_load_bin(test_bin_path);
     assert(loaded_dat != NULL);
     const char *loaded_val = tsfi_dat_search(loaded_dat, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver");
@@ -92,6 +96,44 @@ int main(void) {
     tsfi_dat_destroy(loaded_dat);
     tsfi_trie_destroy(trie_root);
 
+    // 7. Verify Unified 2-3 Tree over DAT on BTC Rails
+    printf("       [Verify] Unified 2-3 Tree structural splits over DAT...\n");
+    fflush(stdout);
+    tsfi_trie_node *tree_root = tsfi_trie_create_node(0);
+    
+    tsfi_trie_insert(tree_root, "tree_root/type", "2-node");
+    tsfi_trie_insert(tree_root, "tree_root/val1", "50");
+    tsfi_trie_insert(tree_root, "tree_root/left", "tree_node_a");
+    tsfi_trie_insert(tree_root, "tree_root/right", "tree_node_b");
+    
+    tsfi_trie_insert(tree_root, "tree_node_a/type", "3-node");
+    tsfi_trie_insert(tree_root, "tree_node_a/val1", "20");
+    tsfi_trie_insert(tree_root, "tree_node_a/val2", "30");
+    
+    tsfi_trie_insert(tree_root, "tree_node_b/type", "2-node");
+    tsfi_trie_insert(tree_root, "tree_node_b/val1", "80");
+    
+    tsfi_dat *tree_dat = tsfi_dat_compile(tree_root);
+    assert(tree_dat != NULL);
+    
+    const char *node_type = tsfi_dat_search(tree_dat, "tree_root/type");
+    assert(node_type != NULL && strcmp(node_type, "2-node") == 0);
+    
+    const char *node_val = tsfi_dat_search(tree_dat, "tree_node_a/val2");
+    assert(node_val != NULL && strcmp(node_val, "30") == 0);
+    
+    printf("       [Verify] BTC Rails execution proof matching tree constraints...\n");
+    fflush(stdout);
+    InteropStackVM tree_vm;
+    memset(&tree_vm, 0, sizeof(InteropStackVM));
+    int btc_tree_script[10] = { 1, 30, 1, 20, 2, 1, 50, 6 };
+    assert(interop_stack_vm_execute(&tree_vm, btc_tree_script, 8) == 0);
+    assert(tree_vm.stack_len == 1 && tree_vm.stack[0] == 50);
+    
+    tsfi_dat_destroy(tree_dat);
+    tsfi_trie_destroy(tree_root);
+
     printf("[PASS] All 2-stack BTC rails verification tests passed successfully.\n");
+    fflush(stdout);
     return 0;
 }
