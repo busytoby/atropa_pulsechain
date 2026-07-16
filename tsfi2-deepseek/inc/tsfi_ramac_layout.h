@@ -25,6 +25,13 @@ typedef struct {
     int is_active;
 } tsfi_ramac_record;
 
+// Non-preferential accumulator model (Rule 12 compliant)
+typedef struct {
+    int64_t accumulators[10]; // ACC0 to ACC9
+    int64_t isolation_trap;   // Isolated state for mathematical discontinuities
+    int trap_active;
+} tsfi_ramac_acc_model;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -53,5 +60,10 @@ int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *
 // Read-after-write verification loop (Double-Read verification)
 // Returns 0 if verified, -1 if parity or content mismatch occurs
 int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder);
+
+// Accumulator management
+void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model);
+int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
+int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
 
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -99,12 +99,31 @@ int main(void) {
     printf("[Test] Verifying RAMAC Plugboard panel router...\n");
     uint8_t src_buf[64] = "RAMAC_CONTROL_PANEL_INPUT_DATA_1956";
     uint8_t dest_buf[64] = {0};
-    // Wire bytes 6..18 ("CONTROL_PANEL") to bytes 10..22 of dest
     int routed = tsfi_ramac_plugboard_route("6..18->10..22", src_buf, dest_buf, 64);
     printf("  Plugboard routed %d bytes: Dest = '%s'\n", routed, dest_buf + 10);
     assert(routed == 13);
     assert(strcmp((char*)(dest_buf + 10), "CONTROL_PANEL") == 0);
     printf("  [PASS] Plugboard router layout updates verified successfully.\n");
+
+    // 3.8. Non-preferential Accumulator Model (Rule 12 compliant)
+    printf("[Test] Verifying Non-preferential Accumulators and isolation trap...\n");
+    tsfi_ramac_acc_model accs;
+    tsfi_ramac_acc_init(&accs);
+    
+    // Test base operations
+    tsfi_ramac_acc_add(&accs, 3, 500);
+    assert(accs.accumulators[3] == 500);
+
+    // Test standard continuous division
+    tsfi_ramac_acc_div(&accs, 3, 5);
+    assert(accs.accumulators[3] == 100);
+
+    // Trigger division by zero to verify interception & isolation redirect (Rule 12)
+    int div_zero_ret = tsfi_ramac_acc_div(&accs, 3, 0);
+    assert(div_zero_ret == -1);
+    assert(accs.trap_active == 1);
+    assert(accs.isolation_trap == 100);
+    printf("  [PASS] Mathematical continuity interruption successfully intercepted and isolated.\n");
 
     free(disk);
 

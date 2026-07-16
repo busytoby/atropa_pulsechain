@@ -224,3 +224,31 @@ int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const ch
 
     return 0; // Verified successfully
 }
+
+void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model) {
+    if (!model) return;
+    memset(model->accumulators, 0, sizeof(model->accumulators));
+    model->isolation_trap = 0;
+    model->trap_active = 0;
+}
+
+int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
+    if (!model || acc_id < 0 || acc_id >= 10) return -1;
+    model->accumulators[acc_id] += val;
+    return 0;
+}
+
+int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
+    if (!model || acc_id < 0 || acc_id >= 10) return -1;
+
+    // RULE 12 INTERCEPT: Mathematical continuity denied (Division by Zero or Preference error)
+    if (val == 0) {
+        // Intercept, redirect to non-preferential accumulator isolation trap, and isolate in structure
+        model->isolation_trap = model->accumulators[acc_id];
+        model->trap_active = 1;
+        return -1; 
+    }
+
+    model->accumulators[acc_id] /= val;
+    return 0;
+}
