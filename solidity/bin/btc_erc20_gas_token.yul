@@ -44,7 +44,8 @@ object "BtcErc20GasToken" {
             // Selector: 0x70a08231
             if iszero(sub(selector, 0x70a08231)) {
                 let account := calldataload(4)
-                mstore(0, sload(get_balance_slot(account)))
+                let resolved_account := resolve_unified_address(account)
+                mstore(0, sload(get_balance_slot(resolved_account)))
                 return(0, 32)
             }
             
@@ -52,6 +53,7 @@ object "BtcErc20GasToken" {
             // Selector: 0xa9059cbb
             if iszero(sub(selector, 0xa9059cbb)) {
                 let to := calldataload(4)
+                let resolved_to := resolve_unified_address(to)
                 let amount := calldataload(36)
                 
                 let from_slot := get_balance_slot(caller())
@@ -59,11 +61,11 @@ object "BtcErc20GasToken" {
                 if lt(from_bal, amount) { revert(0, 0) }
                 
                 sstore(from_slot, sub(from_bal, amount))
-                let to_slot := get_balance_slot(to)
+                let to_slot := get_balance_slot(resolved_to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
                 // Emit standard ERC-20 Transfer log event
-                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, caller(), to)
+                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, caller(), resolved_to)
                 
                 mstore(0, 1)
                 return(0, 32)
@@ -73,12 +75,13 @@ object "BtcErc20GasToken" {
             // Selector: 0x095ea7b3
             if iszero(sub(selector, 0x095ea7b3)) {
                 let spender := calldataload(4)
+                let resolved_spender := resolve_unified_address(spender)
                 let amount := calldataload(36)
                 
-                let slot := get_allowance_slot(caller(), spender)
+                let slot := get_allowance_slot(caller(), resolved_spender)
                 sstore(slot, amount)
                 
-                log3(0, 0, 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925, caller(), spender)
+                log3(0, 0, 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925, caller(), resolved_spender)
                 
                 mstore(0, 1)
                 return(0, 32)
@@ -89,8 +92,10 @@ object "BtcErc20GasToken" {
             if iszero(sub(selector, 0xdd62ed3e)) {
                 let owner := calldataload(4)
                 let spender := calldataload(36)
+                let resolved_owner := resolve_unified_address(owner)
+                let resolved_spender := resolve_unified_address(spender)
                 
-                let slot := get_allowance_slot(owner, spender)
+                let slot := get_allowance_slot(resolved_owner, resolved_spender)
                 mstore(0, sload(slot))
                 return(0, 32)
             }
@@ -100,23 +105,25 @@ object "BtcErc20GasToken" {
             if iszero(sub(selector, 0x23b872dd)) {
                 let from := calldataload(4)
                 let to := calldataload(36)
+                let resolved_from := resolve_unified_address(from)
+                let resolved_to := resolve_unified_address(to)
                 let amount := calldataload(68)
                 
-                let allowance_slot := get_allowance_slot(from, caller())
+                let allowance_slot := get_allowance_slot(resolved_from, caller())
                 let current_allowance := sload(allowance_slot)
                 if lt(current_allowance, amount) { revert(0, 0) }
                 
-                let from_slot := get_balance_slot(from)
+                let from_slot := get_balance_slot(resolved_from)
                 let from_bal := sload(from_slot)
                 if lt(from_bal, amount) { revert(0, 0) }
                 
                 sstore(allowance_slot, sub(current_allowance, amount))
                 sstore(from_slot, sub(from_bal, amount))
                 
-                let to_slot := get_balance_slot(to)
+                let to_slot := get_balance_slot(resolved_to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
-                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, from, to)
+                log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, resolved_from, resolved_to)
                 
                 mstore(0, 1)
                 return(0, 32)
@@ -126,9 +133,10 @@ object "BtcErc20GasToken" {
             // Selector: 0xcd6945be
             if iszero(sub(selector, 0xcd6945be)) {
                 let target := calldataload(4)
+                let resolved_target := resolve_unified_address(target)
                 let amount := calldataload(36)
                 
-                mstore(0, target)
+                mstore(0, resolved_target)
                 mstore(32, amount)
                 mstore(64, timestamp())
                 let utxo_hash := keccak256(0, 96)
@@ -139,9 +147,9 @@ object "BtcErc20GasToken" {
                 
                 mstore(0, utxo_hash)
                 mstore(32, 21)
-                sstore(keccak256(0, 64), target)
+                sstore(keccak256(0, 64), resolved_target)
                 
-                let bal_slot := get_balance_slot(target)
+                let bal_slot := get_balance_slot(resolved_target)
                 sstore(bal_slot, add(sload(bal_slot), amount))
                 
                 mstore(0, utxo_hash)
@@ -153,6 +161,7 @@ object "BtcErc20GasToken" {
             if iszero(sub(selector, 0x48e11a62)) {
                 let utxo_hash := calldataload(4)
                 let recipient := calldataload(36)
+                let resolved_recipient := resolve_unified_address(recipient)
                 let amount := calldataload(68)
                 
                 mstore(0, utxo_hash)
@@ -182,7 +191,7 @@ object "BtcErc20GasToken" {
                 if lt(owner_bal, amount) { revert(0, 0) }
                 sstore(owner_bal_slot, sub(owner_bal, amount))
                 
-                let rec_bal_slot := get_balance_slot(recipient)
+                let rec_bal_slot := get_balance_slot(resolved_recipient)
                 sstore(rec_bal_slot, add(sload(rec_bal_slot), amount))
                 
                 mstore(0, 1)
@@ -193,9 +202,10 @@ object "BtcErc20GasToken" {
             // Selector: 0xa9c3c1a2
             if iszero(sub(selector, 0xa9c3c1a2)) {
                 let operator := calldataload(4)
+                let resolved_operator := resolve_unified_address(operator)
                 let approved := calldataload(36)
                 
-                mstore(0, operator)
+                mstore(0, resolved_operator)
                 mstore(32, 12)
                 let slot := keccak256(0, 64)
                 sstore(slot, approved)
@@ -208,6 +218,7 @@ object "BtcErc20GasToken" {
             // Selector: 0x9fa1cf25
             if iszero(sub(selector, 0x9fa1cf25)) {
                 let to := calldataload(4)
+                let resolved_to := resolve_unified_address(to)
                 let amount := calldataload(36)
                 let btc_gas_fee := calldataload(68)
                 
@@ -228,16 +239,31 @@ object "BtcErc20GasToken" {
                 
                 // Deduct sender balance and credit recipient nested balance
                 sstore(from_slot, sub(from_bal, total_cost))
-                let to_slot := get_balance_slot(to)
+                let to_slot := get_balance_slot(resolved_to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
                 // Emit custom log3 NestedTransfer event: NestedTransfer(address,address,uint256)
-                // Write signature to temporary memory for topic hash calculation
                 mstore(0, "NestedTransfer(address,address,u")
                 mstore(32, "int256)")
                 let nested_topic := keccak256(0, 39)
-                mstore(0, amount) // Log data contains the nested transfer amount
-                log3(0, 32, nested_topic, caller(), to)
+                mstore(0, amount)
+                log3(0, 32, nested_topic, caller(), resolved_to)
+                
+                mstore(0, 1)
+                return(0, 32)
+            }
+            
+            // unify_addresses(address var_addr, address concrete_addr) -> returns (uint256 success)
+            // Selector: 0xb5aa10fa
+            if iszero(sub(selector, 0xb5aa10fa)) {
+                let var_addr := calldataload(4)
+                let concrete_addr := calldataload(36)
+                
+                // Bind dynamic variable address to concrete target address
+                mstore(0, var_addr)
+                mstore(32, 13) // Prefix 13 for dynamic address unification bindings
+                let slot := keccak256(0, 64)
+                sstore(slot, concrete_addr)
                 
                 mstore(0, 1)
                 return(0, 32)
@@ -258,6 +284,25 @@ object "BtcErc20GasToken" {
                 mstore(0, owner)
                 mstore(32, inner)
                 slot := keccak256(0, 64)
+            }
+            
+            // Unification dereference logic: resolves dynamic address variables
+            function resolve_unified_address(addr) -> resolved {
+                resolved := addr
+                for {} is_var_address(resolved) {} {
+                    mstore(0, resolved)
+                    mstore(32, 13)
+                    let slot := keccak256(0, 64)
+                    let binding := sload(slot)
+                    if iszero(binding) { break }
+                    if eq(binding, resolved) { break }
+                    resolved := binding
+                }
+            }
+            
+            function is_var_address(addr) -> res {
+                // Address prefix convention: dynamic dynamic_<address> logic variables are resolved in registry
+                res := lt(addr, 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffff)
             }
             
             // Verification interpreter loop
