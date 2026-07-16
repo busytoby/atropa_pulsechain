@@ -142,6 +142,84 @@ object "RamacSystem" {
                 revert(0, 0)
             }
 
+            // ----------------------------------------------------------------
+            // executeALU(bytes calldata program) -> uint256 final_acc1
+            // Selector: 0xb1b6081e
+            // ----------------------------------------------------------------
+            if eq(selector, 0xb1b6081e) {
+                let progLen := calldataload(36)
+                let numInstructions := div(progLen, 32)
+                let dataOffset := 68
+
+                let p_counter := 0
+                for {} lt(p_counter, numInstructions) {} {
+                    let inst := calldataload(add(dataOffset, mul(p_counter, 32)))
+                    let op := byte(0, inst)
+                    let dest_acc := byte(1, inst)
+                    let src_acc := byte(2, inst)
+                    let is_const := byte(3, inst)
+                    let val := and(inst, 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+
+                    // Resolve operand value (constant or from register slot 0x1000 + src_acc)
+                    let operand := val
+                    if iszero(is_const) {
+                        operand := sload(add(0x1000, src_acc))
+                    }
+
+                    // ADD (1)
+                    if eq(op, 1) {
+                        let current := sload(add(0x1000, dest_acc))
+                        sstore(add(0x1000, dest_acc), add(current, operand))
+                        p_counter := add(p_counter, 1)
+                    }
+
+                    // SUB (2)
+                    if eq(op, 2) {
+                        let current := sload(add(0x1000, dest_acc))
+                        sstore(add(0x1000, dest_acc), sub(current, operand))
+                        p_counter := add(p_counter, 1)
+                    }
+
+                    // DIV (3) - RULE 12 COMPLIANT INTERCEPT
+                    if eq(op, 3) {
+                        let current := sload(add(0x1000, dest_acc))
+                        if iszero(operand) {
+                            sstore(0x2000, current) // isolation_trap
+                            sstore(0x2001, 1) // trap_active
+                            revert(0, 0) // Intercept mathematical continuity failure
+                        }
+                        sstore(add(0x1000, dest_acc), div(current, operand))
+                        p_counter := add(p_counter, 1)
+                    }
+
+                    // CMP (4)
+                    if eq(op, 4) {
+                        let current := sload(add(0x1000, dest_acc))
+                        let cmp_flag := 0
+                        if eq(current, operand) { cmp_flag := 0 }
+                        if gt(current, operand) { cmp_flag := 1 }
+                        if lt(current, operand) { cmp_flag := 2 }
+                        sstore(0x2002, cmp_flag)
+                        p_counter := add(p_counter, 1)
+                    }
+
+                    // JEQ (5)
+                    if eq(op, 5) {
+                        let flag := sload(0x2002)
+                        if iszero(flag) {
+                            p_counter := val // Jump directly to target p_counter instruction index
+                        }
+                        if flag {
+                            p_counter := add(p_counter, 1)
+                        }
+                    }
+                }
+
+                // Return final ACC1 value
+                mstore(0x00, sload(0x1001))
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }

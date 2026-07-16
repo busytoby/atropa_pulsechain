@@ -513,6 +513,55 @@ int main(int argc, char *argv[]) {
     assert(strstr(response, "76616c5f746573745f393939") != NULL);
     printf("  [QRY] Successfully retrieved val_test_999 from EVM storage!\n");
 
+    printf("[C-Test] Executing Yul-based RAMAC ALU program steps on Anvil...\n");
+    // Send 6 instructions:
+    // Inst 0: ADD ACC1 100 -> 0101000100000000000000000000000000000000000000000000000000000064
+    // Inst 1: ADD ACC2 50  -> 0102000100000000000000000000000000000000000000000000000000000032
+    // Inst 2: CMP ACC1 ACC2 -> 0401020000000000000000000000000000000000000000000000000000000000
+    // Inst 3: JEQ 5        -> 0500000100000000000000000000000000000000000000000000000000000005
+    // Inst 4: SUB ACC1 ACC2 -> 0201020000000000000000000000000000000000000000000000000000000000
+    // Inst 5: ADD ACC1 5   -> 0101000100000000000000000000000000000000000000000000000000000005
+    char alu_payload[2048];
+    snprintf(alu_payload, sizeof(alu_payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0xb1b6081e"
+             "0000000000000000000000000000000000000000000000000000000000000020" // offset
+             "00000000000000000000000000000000000000000000000000000000000000c0" // length 192 bytes (6 insts * 32)
+             "0101000100000000000000000000000000000000000000000000000000000064"
+             "0102000100000000000000000000000000000000000000000000000000000032"
+             "0401020000000000000000000000000000000000000000000000000000000000"
+             "0500000100000000000000000000000000000000000000000000000000000005"
+             "0201020000000000000000000000000000000000000000000000000000000000"
+             "0101000100000000000000000000000000000000000000000000000000000005\""
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+
+    send_rpc_request(alu_payload, response, sizeof(response));
+    // Final ACC1 value should be 55 (0x37)
+    assert(strstr(response, "0000000000000000000000000000000000000000000000000000000000000037") != NULL);
+    printf("  [ALU] Yul ALU successfully verified. Final ACC1 = 55.\n");
+
+    printf("[C-Test] Verifying Rule 12 Zero Division Interception in Yul ALU...\n");
+    // Send 2 instructions:
+    // Inst 0: ADD ACC1 100 -> 0101000100000000000000000000000000000000000000000000000000000064
+    // Inst 1: DIV ACC1 0   -> 0301000100000000000000000000000000000000000000000000000000000000
+    char div_zero_payload[1024];
+    snprintf(div_zero_payload, sizeof(div_zero_payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0xb1b6081e"
+             "0000000000000000000000000000000000000000000000000000000000000020" // offset
+             "0000000000000000000000000000000000000000000000000000000000000040" // length 64 bytes
+             "0101000100000000000000000000000000000000000000000000000000000064"
+             "0301000100000000000000000000000000000000000000000000000000000000\""
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+    send_rpc_request(div_zero_payload, response, sizeof(response));
+    // Verify that the call reverted
+    assert(strstr(response, "execution reverted") != NULL);
+    printf("  [ALU_TRAP] Rule 12 Division by Zero successfully intercepted and reverted in Yul!\n");
+
     free(ramac_hex);
 
     // Unmount disk from LUN 0
