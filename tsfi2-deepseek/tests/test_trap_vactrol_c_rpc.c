@@ -191,16 +191,16 @@ int main() {
     printf("ELEKTOR ISSUE #19: DYNAMIC TRAP ACCUMULATOR COUPLER (ANVIL LIVE)\n");
     printf("=============================================================\n");
 
-    printf("[C-Test] Compiling VederVactrol Yul object...\n");
-    char *vv_hex = malloc(131072);
-    assert(vv_hex != NULL);
-    compile_yul_to_bytecode("../solidity/bin/vederVactrol.yul", vv_hex, 131072);
+    printf("[C-Test] Compiling TrapVactrol Yul object...\n");
+    char *tv_hex = malloc(131072);
+    assert(tv_hex != NULL);
+    compile_yul_to_bytecode("../solidity/bin/trapVactrol.yul", tv_hex, 131072);
 
-    char vv_addr[128];
-    printf("[C-Test] Deploying VederVactrol contract dynamically from C...\n");
-    deploy_contract_from_c(vv_hex, vv_addr, sizeof(vv_addr));
-    printf("  [DEPLOYED] VederVactrol Address: %s\n", vv_addr);
-    free(vv_hex);
+    char tv_addr[128];
+    printf("[C-Test] Deploying TrapVactrol contract dynamically from C...\n");
+    deploy_contract_from_c(tv_hex, tv_addr, sizeof(tv_addr));
+    printf("  [DEPLOYED] TrapVactrol Address: %s\n", tv_addr);
+    free(tv_hex);
 
     // Call processSamples in a single batch of 3 inputs:
     // 0: Input 1.0V (0xde0b6b3a7640000), isClipping: 0 -> Output exactly 1.0V (0xde0b6b3a7640000)
@@ -215,7 +215,7 @@ int main() {
         "0000000000000000000000000000000100000000000000000000000000000000"; // statePack (isClipping = 1)
 
     char out_val[2048];
-    trigger_process_samples(vv_addr, "3", inputs, out_val, sizeof(out_val));
+    trigger_process_samples(tv_addr, "3", inputs, out_val, sizeof(out_val));
 
     printf("  [RESULT] Dynamic Trap Opto Samples (0-2):\n");
     printf("    Sample 0 (1.0V, Inactive):            %.64s\n", out_val + 2);
