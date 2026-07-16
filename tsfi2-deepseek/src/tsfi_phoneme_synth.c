@@ -29,9 +29,14 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
     total_amplitude = total_amplitude / (float)len;
     if (total_amplitude > 1.0f) total_amplitude = 1.0f;
 
-    // 2. Apply directly to tone-wheel parameters
-    engine->synth->wheels[wheel_idx].frequency = base_freq + (accumulated_freq_offset / (float)len);
-    engine->synth->wheels[wheel_idx].amplitude = total_amplitude;
+    // 2. Apply directly to tone-wheel parameters with LGP-30 twin-triode warmth saturation
+    float final_freq = base_freq + (accumulated_freq_offset / (float)len);
+    // Apply asymmetric quadratic soft-clipping for pleasant second-harmonic tube warmth
+    float warmed_amp = total_amplitude + 0.15f * total_amplitude * total_amplitude;
+    if (warmed_amp > 1.0f) warmed_amp = 1.0f;
+
+    engine->synth->wheels[wheel_idx].frequency = final_freq;
+    engine->synth->wheels[wheel_idx].amplitude = warmed_amp;
 
     // 3. Write active state change to in-memory AKB rails
     char coord_key[128];
