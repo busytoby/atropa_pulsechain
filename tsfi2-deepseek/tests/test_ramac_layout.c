@@ -1569,6 +1569,33 @@ int main(void) {
 
     printf("  [PASS] IBM 7030 STRETCH Index Register Auto-Modification verified successfully.\n");
 
+    // Test Scenario 15: IBM 7030 STRETCH Look-Ahead Unit Pipelined Queue
+    printf("[Test] Verifying IBM 7030 STRETCH Look-Ahead Unit Pipelined Queue...\n");
+    tsfi_ibm7030_lau_queue lau_q;
+    tsfi_s370_ibm7030_lau_init(&lau_q);
+
+    uint64_t mock_memory[64] = {0};
+    mock_memory[10] = 0xDEADBEEF1234ULL;
+
+    // 1. Push look-ahead load of address 10
+    int lau_res = tsfi_s370_ibm7030_lau_push_load(&lau_q, 10);
+    assert(lau_res == 0);
+
+    // 2. Push look-ahead store to address 10 (triggers RAW forwarding)
+    lau_res = tsfi_s370_ibm7030_lau_push_store(&lau_q, 10, 0xFEEDFACE5678ULL);
+    assert(lau_res == 0);
+
+    // Verify load entry is forwarded
+    assert(lau_q.entries[0].forwarded == 1);
+    assert(lau_q.entries[0].value == 0xFEEDFACE5678ULL);
+
+    // 3. Commit look-ahead operations to memory
+    int commits = tsfi_s370_ibm7030_lau_commit(&lau_q, mock_memory, 64);
+    assert(commits == 2);
+    assert(mock_memory[10] == 0xFEEDFACE5678ULL);
+
+    printf("  [PASS] IBM 7030 STRETCH Look-Ahead Unit verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

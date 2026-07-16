@@ -457,6 +457,23 @@ typedef struct {
     uint32_t limit;  // bits 46..63: Value Limit
 } tsfi_ibm7030_index_reg;
 
+// IBM 7030 STRETCH Look-Ahead Unit Buffer Entry
+typedef struct {
+    uint32_t address;
+    uint64_t value;
+    int is_store;      // 0 = LOAD, 1 = STORE
+    int is_pending;    // 1 = pending memory access, 0 = idle/committed
+    int forwarded;     // 1 = value was forwarded from a store buffer
+} tsfi_ibm7030_lau_entry;
+
+// IBM 7030 STRETCH Look-Ahead Queue
+typedef struct {
+    tsfi_ibm7030_lau_entry entries[8];
+    int head;
+    int tail;
+    int count;
+} tsfi_ibm7030_lau_queue;
+
 // IBM 7030 STRETCH Hamming SEC-DED ECC encoder
 uint64_t tsfi_s370_ibm7030_ecc_encode(uint64_t data);
 
@@ -465,5 +482,17 @@ int tsfi_s370_ibm7030_ecc_decode(uint64_t word_72, uint64_t *out_corrected_data)
 
 // IBM 7030 STRETCH index modifier with count and limit checking
 int tsfi_s370_ibm7030_index_modify(tsfi_ibm7030_index_reg *reg, int increment_step, uint64_t *indicator_register, uint32_t *out_offset);
+
+// IBM 7030 STRETCH Look-Ahead Unit initialization
+void tsfi_s370_ibm7030_lau_init(tsfi_ibm7030_lau_queue *queue);
+
+// IBM 7030 STRETCH LAU queue push load operation
+int tsfi_s370_ibm7030_lau_push_load(tsfi_ibm7030_lau_queue *queue, uint32_t address);
+
+// IBM 7030 STRETCH LAU queue push store operation (with RAW forwarding checks)
+int tsfi_s370_ibm7030_lau_push_store(tsfi_ibm7030_lau_queue *queue, uint32_t address, uint64_t val);
+
+// IBM 7030 STRETCH LAU queue commit to main memory
+int tsfi_s370_ibm7030_lau_commit(tsfi_ibm7030_lau_queue *queue, uint64_t *memory, int mem_size);
 
 #endif // TSFI_RAMAC_LAYOUT_H

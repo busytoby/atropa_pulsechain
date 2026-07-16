@@ -2392,3 +2392,79 @@ int tsfi_s370_ibm7030_index_modify(tsfi_ibm7030_index_reg *reg, int increment_st
 
     return 0;
 }
+
+void tsfi_s370_ibm7030_lau_init(tsfi_ibm7030_lau_queue *queue) {
+    if (!queue) return;
+    memset(queue->entries, 0, sizeof(queue->entries));
+    queue->head = 0;
+    queue->tail = 0;
+    queue->count = 0;
+}
+
+int tsfi_s370_ibm7030_lau_push_load(tsfi_ibm7030_lau_queue *queue, uint32_t address) {
+    if (!queue || queue->count >= 8) return -1;
+
+    int tail = queue->tail;
+    queue->entries[tail].address = address;
+    queue->entries[tail].value = 0;
+    queue->entries[tail].is_store = 0;
+    queue->entries[tail].is_pending = 1;
+    queue->entries[tail].forwarded = 0;
+
+    queue->tail = (tail + 1) % 8;
+    queue->count++;
+    return 0;
+}
+
+int tsfi_s370_ibm7030_lau_push_store(tsfi_ibm7030_lau_queue *queue, uint32_t address, uint64_t val) {
+    if (!queue || queue->count >= 8) return -1;
+
+    for (int idx = 0; idx < 8; idx++) {
+        if (queue->entries[idx].is_pending && queue->entries[idx].is_store == 0 && queue->entries[idx].address == address) {
+            queue->entries[idx].value = val;
+            queue->entries[idx].forwarded = 1;
+        }
+    }
+
+    int tail = queue->tail;
+    queue->entries[tail].address = address;
+    queue->entries[tail].value = val;
+    queue->entries[tail].is_store = 1;
+    queue->entries[tail].is_pending = 1;
+    queue->entries[tail].forwarded = 0;
+
+    queue->tail = (tail + 1) % 8;
+    queue->count++;
+    return 0;
+}
+
+int tsfi_s370_ibm7030_lau_commit(tsfi_ibm7030_lau_queue *queue, uint64_t *memory, int mem_size) {
+    if (!queue || !memory || queue->count == 0) return 0;
+
+    int commits = 0;
+    int head = queue->head;
+
+    while (queue->count > 0) {
+        tsfi_ibm7030_lau_entry *entry = &queue->entries[head];
+        if (entry->is_pending) {
+            uint32_t word_addr = entry->address;
+            if (word_addr >= (uint32_t)mem_size) {
+                return -1;
+            }
+
+            if (entry->is_store) {
+                memory[word_addr] = entry->value;
+            } else {
+                if (!entry->forwarded) {
+                    entry->value = memory[word_addr];
+                }
+            }
+            entry->is_pending = 0;
+            commits++;
+        }
+        head = (head + 1) % 8;
+        queue->count--;
+    }
+    queue->head = head;
+    return commits;
+}
