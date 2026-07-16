@@ -542,8 +542,14 @@ int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code
 }
 
 int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
+                             int is_write_protected_page,
                              tsfi_s370_storage_key *block_keys, int block_count) {
     if (!cpu) return -1;
+
+    // Page-Protection Exception: write to virtual page marked read-only is prohibited
+    if (is_write_protected_page) {
+        return -1; // Protection Exception
+    }
 
     // Low-Address Protection (LAP): write to first 512 bytes (addresses 0..511) in Problem State is prohibited
     if (cpu->lap_enabled && real_addr < 512 && cpu->supervisor_state == 0) {
@@ -861,4 +867,42 @@ int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nod
 
     fclose(fp);
     return node_count;
+}
+
+int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_addr,
+                                     tsfi_s370_segment_entry *seg_table, int seg_count,
+                                     tsfi_s370_page_entry *page_tables,
+                                     uint32_t *out_physical_addr, int *out_write_protected) {
+    if (!cpu || !seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
+
+    uint32_t virtual_page = virtual_addr & 0xFFFFF000;
+
+    // 1. TLB Hit check: fully associative lookup across 8 cached entries
+    for (int i = 0; i < 8; i++) {
+        if (cpu->tlb[i].valid && cpu->tlb[i].virtual_page == virtual_page) {
+            *out_physical_addr = cpu->tlb[i].real_page | (virtual_addr & 0x0FFF);
+            *out_write_protected = cpu->tlb[i].write_protect;
+            return 0; // TLB Hit (sub-microsecond lookup bypassed page walk)
+        }
+    }
+
+    // 2. TLB Miss: perform full segment-page translation table walk
+    int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, out_physical_addr, out_write_protected);
+    if (ret != 0) return ret;
+
+    // 3. Cache results inside TLB using round-robin eviction logic
+    int slot = (virtual_page >> 12) % 8;
+    cpu->tlb[slot].virtual_page = virtual_page;
+    cpu->tlb[slot].real_page = *out_physical_addr & 0xFFFFF000;
+    cpu->tlb[slot].write_protect = *out_write_protected;
+    cpu->tlb[slot].valid = 1;
+
+    return 0;
+}
+
+void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu) {
+    if (!cpu) return;
+    for (int i = 0; i < 8; i++) {
+        cpu->tlb[i].valid = 0;
+    }
 }

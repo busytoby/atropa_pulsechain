@@ -82,12 +82,21 @@ typedef struct {
     uint32_t instruction_address; // Instruction address pointer (31-bit)
 } tsfi_s370_psw;
 
+// Translation Lookaside Buffer (TLB) entry structure for hardware lookup acceleration
+typedef struct {
+    uint32_t virtual_page;  // Virtual address segment/page boundary key
+    uint32_t real_page;     // Mapped real memory page frame address
+    int write_protect;      // Page-protection status bit cached from page tables
+    int valid;              // Validity flag
+} tsfi_s370_tlb_entry;
+
 // System/370 Processor Status Word (PSW) Privilege & Security Mode Context
 typedef struct {
     int supervisor_state; // Privilege mode (1: Supervisor State, 0: Problem State)
     int lap_enabled;      // Low-Address Protection (LAP) enabled flag (Control Reg 0 bit)
     uint8_t psw_key;      // Current execution access key (4-bit key, 0-15)
     tsfi_s370_psw current_psw; // Current CPU PSW state
+    tsfi_s370_tlb_entry tlb[8]; // 8-entry fully associative TLB cache simulation
 } tsfi_s370_cpu_state;
 
 // LAU Account PKI Key verified token context
@@ -171,8 +180,9 @@ int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_writ
 // System/370 Privilege & Security Mode Checks
 int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code);
 
-// System/370 Write Validation (integrates Storage Keys & Low-Address Protection)
+// System/370 Write Validation (integrates Storage Keys, Low-Address Protection, and Virtual Page-Protection)
 int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
+                             int is_write_protected_page,
                              tsfi_s370_storage_key *block_keys, int block_count);
 
 // System/370 LAU Account PKI Key Authorization
@@ -202,8 +212,15 @@ int tsfi_s370_data_reduction_unit(double x, double y, double scale,
 
 // Quadtree serialization to disk using the strict Rule 13 .dat.bin format
 int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int node_count);
-
-// Quadtree deserialization from disk
 int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int max_nodes);
+
+// Translates virtual address using CPU TLB cache or falls back to table walk (populating TLB)
+int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_addr,
+                                     tsfi_s370_segment_entry *seg_table, int seg_count,
+                                     tsfi_s370_page_entry *page_tables,
+                                     uint32_t *out_physical_addr, int *out_write_protected);
+
+// Purges/Invalidates all entries in the CPU TLB cache
+void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu);
 
 #endif // TSFI_RAMAC_LAYOUT_H

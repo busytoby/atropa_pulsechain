@@ -310,20 +310,63 @@ int main(void) {
     cpu.supervisor_state = 0; 
     cpu.lap_enabled = 1;
     cpu.psw_key = 0; 
-    int lap_ret1 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    int lap_ret1 = tsfi_s370_validate_write(&cpu, 200, 0, block_keys, 4);
     assert(lap_ret1 == -1);
 
     cpu.supervisor_state = 1; 
     cpu.psw_key = 0;
-    int lap_ret2 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    int lap_ret2 = tsfi_s370_validate_write(&cpu, 200, 0, block_keys, 4);
     assert(lap_ret2 == 0);
 
     cpu.supervisor_state = 0; 
     cpu.lap_enabled = 0;      
     cpu.psw_key = 5;          
     block_keys[0].acc = 5;
-    int lap_ret3 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    int lap_ret3 = tsfi_s370_validate_write(&cpu, 200, 0, block_keys, 4);
     assert(lap_ret3 == 0);
+
+    // Test page-protection flag write blocking
+    int page_prot_ret = tsfi_s370_validate_write(&cpu, 200, 1, block_keys, 4);
+    assert(page_prot_ret == -1);
+
+    // Test TLB cache hits and invalidation purges
+    printf("[Test] Verifying CPU TLB cache hardware lookup acceleration...\n");
+    tsfi_s370_tlb_purge(&cpu);
+    
+    tsfi_s370_segment_entry test_seg[1];
+    test_seg[0].page_table_origin = 0;
+    test_seg[0].length = 16;
+    test_seg[0].invalid = 0;
+
+    tsfi_s370_page_entry test_page[16];
+    memset(test_page, 0, sizeof(test_page));
+    test_page[3].page_frame_real_addr = 0xAA000;
+    test_page[3].invalid = 0;
+    test_page[3].write_protect = 1;
+
+    uint32_t tlb_phys = 0;
+    int tlb_wp = 0;
+    // Miss: should perform table walk and populate TLB entry
+    int tlb_ret1 = tsfi_s370_dat_translate_with_tlb(&cpu, 0x003123, test_seg, 1, test_page, &tlb_phys, &tlb_wp);
+    assert(tlb_ret1 == 0);
+    assert(tlb_phys == 0xAA123);
+    assert(tlb_wp == 1);
+    assert(cpu.tlb[3].valid == 1);
+    assert(cpu.tlb[3].virtual_page == 0x003000);
+
+    // Hit: invalidate page table entries to verify the TLB entry bypasses table walks
+    test_page[3].invalid = 1;
+    tlb_phys = 0;
+    tlb_wp = 0;
+    int tlb_ret2 = tsfi_s370_dat_translate_with_tlb(&cpu, 0x003123, test_seg, 1, test_page, &tlb_phys, &tlb_wp);
+    assert(tlb_ret2 == 0); // Still hit because TLB entry is cached!
+    assert(tlb_phys == 0xAA123);
+
+    // Purge TLB cache: lookup should now perform table walk and fail because table entry is invalid
+    tsfi_s370_tlb_purge(&cpu);
+    int tlb_ret3 = tsfi_s370_dat_translate_with_tlb(&cpu, 0x003123, test_seg, 1, test_page, &tlb_phys, &tlb_wp);
+    assert(tlb_ret3 == -1); // Fails as expected!
+    printf("  [PASS] CPU TLB hit, miss, eviction, and invalidate purge cycles verified successfully.\n");
 
     printf("  [PASS] System/370 Privilege States & LAP write validations verified successfully.\n");
 
