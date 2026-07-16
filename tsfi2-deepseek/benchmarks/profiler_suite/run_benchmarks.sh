@@ -68,6 +68,7 @@ make tests/test_phoneme_synth > /dev/null 2>&1 &
 make tests/test_markov_lm > /dev/null 2>&1 &
 make tests/test_shm_prune > /dev/null 2>&1 &
 make tests/test_lexical_trie > /dev/null 2>&1 &
+make tests/test_anvil_vm > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -167,6 +168,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_markov_lm > /dev/null 2>&1
 ./tests/test_shm_prune > /dev/null 2>&1
 ./tests/test_lexical_trie > /dev/null 2>&1
+./tests/test_anvil_vm > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
