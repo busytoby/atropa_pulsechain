@@ -139,11 +139,9 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
 const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us);
 
 // IBM 305 RAMAC plugboard wiring control panel emulator
-// Parses wiring rules like "0..7->8..15" and routes source buffer sections to destination
 int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *dest, int max_len);
 
 // Read-after-write verification loop (Double-Read verification)
-// Returns 0 if verified, -1 if parity or content mismatch occurs
 int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder);
 
 // Accumulator management
@@ -155,11 +153,9 @@ int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
 int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, char *response_out, int max_len);
 
 // BCD 7-bit parity checker
-// Returns 1 if all characters in the string have valid odd parity (even number of 1s plus parity bit = odd)
 int tsfi_ramac_check_parity(const char *str);
 
 // IBM 305 Processor Loop
-// Executes a plugboard ALU instruction list on the accumulator model
 int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
 
 // System/370 Dynamic Address Translation (DAT) translation lookup emulators
@@ -222,5 +218,11 @@ int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_
 
 // Purges/Invalidates all entries in the CPU TLB cache
 void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu);
+
+// Benson-Lehner OSCAR (Oscillograph Analyzer and Reader) style non-linear calibration map converter
+// Maps analog amplitudes against calibration curve, outputs digitized COMP-3 BCD payload
+// Returns bytes written to dest_out, or -1 on error
+int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_table, int table_size,
+                           uint8_t *dest_out, int dest_max_len);
 
 #endif // TSFI_RAMAC_LAYOUT_H

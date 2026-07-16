@@ -906,3 +906,33 @@ void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu) {
         cpu->tlb[i].valid = 0;
     }
 }
+
+int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_table, int table_size,
+                           uint8_t *dest_out, int dest_max_len) {
+    if (table_size < 2 || !calibration_table || !dest_out || dest_max_len <= 0) {
+        return -1;
+    }
+
+    // 1. Search calibration curve to locate interval
+    int idx = 0;
+    while (idx < table_size - 1 && calibration_table[idx + 1] < analog_amplitude) {
+        idx++;
+    }
+
+    // 2. Linearly interpolate within selected overlay segment
+    double t = 0.0;
+    double range = calibration_table[idx + 1] - calibration_table[idx];
+    if (range > 0.000001) {
+        t = (analog_amplitude - calibration_table[idx]) / range;
+    }
+    double interp_val = idx + t;
+
+    // Normalize output scale to [0..1000]
+    long long final_digital = (long long)round(interp_val * (1000.0 / (table_size - 1)));
+    
+    char zoned[128];
+    snprintf(zoned, sizeof(zoned), "%lld", final_digital);
+
+    // 3. Pack directly to COMP-3 BCD format
+    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
+}

@@ -603,6 +603,24 @@ int main(void) {
 
     printf("  [PASS] Quadtree serialization, extension rules, and COMP-3 mappings verified successfully.\n");
 
+    // 3.9.9.9.9.9. Benson-Lehner OSCAR style calibration mapping
+    printf("[Test] Verifying Benson-Lehner OSCAR Reader calibration overlays...\n");
+    double calibration_curve[] = {0.0, 0.2, 0.5, 0.8, 1.0};
+    uint8_t oscar_packed[16];
+    // Input 0.35 is halfway between 0.2 (idx 1) and 0.5 (idx 2) -> interp_val = 1.5.
+    // Digital scaling factor: 1.5 * (1000 / 4) = 1.5 * 250 = 375.
+    int oscar_bytes = tsfi_s370_oscar_reader(0.35, calibration_curve, 5, oscar_packed, 16);
+    assert(oscar_bytes == 2); // 375 -> 37 5C
+    assert(oscar_packed[0] == 0x37);
+    assert(oscar_packed[1] == 0x5C);
+
+    char oscar_unpacked[32];
+    int unpack_oscar_ret = tsfi_s370_unpack(oscar_packed, oscar_bytes, oscar_unpacked, sizeof(oscar_unpacked));
+    assert(unpack_oscar_ret == 0);
+    printf("  OSCAR amplitude 0.35 mapped to digitized value: %s\n", oscar_unpacked);
+    assert(strcmp(oscar_unpacked, "375") == 0);
+    printf("  [PASS] Benson-Lehner OSCAR calibration reader verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
