@@ -6,9 +6,13 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <time.h>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define ANVIL_IP "127.0.0.1"
 #define ANVIL_PORT 8545
+#define ADDR_FILE "tmp/winchestermq_address.txt"
 
 static int connect_to_anvil() {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -181,7 +185,148 @@ static void deploy_contract_from_c(const char *bytecode_hex, char *out_addr, siz
     exit(1);
 }
 
-int main(void) {
+static void load_wmq_address(char *addr, size_t max_len) {
+    FILE *fp = fopen(ADDR_FILE, "r");
+    if (!fp) {
+        addr[0] = '\0';
+        return;
+    }
+    if (fgets(addr, max_len, fp)) {
+        size_t len = strlen(addr);
+        while (len > 0 && (addr[len-1] == '\n' || addr[len-1] == '\r')) {
+            addr[len-1] = '\0';
+            len--;
+        }
+    }
+    fclose(fp);
+}
+
+static void save_wmq_address(const char *addr) {
+    // Ensure parent dir exists
+    int res = mkdir("tmp", 0777);
+    (void)res;
+    FILE *fp = fopen(ADDR_FILE, "w");
+    if (fp) {
+        fprintf(fp, "%s\n", addr);
+        fclose(fp);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    char wmq_addr[128] = {0};
+    load_wmq_address(wmq_addr, sizeof(wmq_addr));
+
+    if (argc > 1 && strcmp(argv[1], "deploy") == 0) {
+        printf("[C-Client] Compiling and deploying WinchesterMQ...\n");
+        char *wmq_hex = malloc(131072);
+        assert(wmq_hex != NULL);
+        compile_yul_to_bytecode("../solidity/bin/WinchesterMQ.yul", wmq_hex, 131072);
+        deploy_contract_from_c(wmq_hex, wmq_addr, sizeof(wmq_addr));
+        save_wmq_address(wmq_addr);
+        printf("Deployed WinchesterMQ Address: %s\n", wmq_addr);
+        free(wmq_hex);
+        return 0;
+    }
+
+    if (argc > 1 && strcmp(argv[1], "mount") == 0) {
+        if (argc < 4) {
+            fprintf(stderr, "Usage: %s mount <lun> <disk_address>\n", argv[0]);
+            return 1;
+        }
+        if (strlen(wmq_addr) == 0) {
+            fprintf(stderr, "Error: WinchesterMQ not deployed. Run '%s deploy' first.\n", argv[0]);
+            return 1;
+        }
+        unsigned long lun = strtoul(argv[2], NULL, 10);
+        const char *disk_addr = argv[3];
+        if (disk_addr[0] == '0' && (disk_addr[1] == 'x' || disk_addr[1] == 'X')) disk_addr += 2;
+
+        char payload[1024];
+        char lun_hex[65];
+        snprintf(lun_hex, sizeof(lun_hex), "%064lx", lun);
+
+        snprintf(payload, sizeof(payload),
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+                 "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+                 "\"to\":\"%s\","
+                 "\"data\":\"0x4d6f756e%s"
+                 "000000000000000000000000%s\","
+                 "\"gas\":\"0xF4240\""
+                 "}],\"id\":1}",
+                 wmq_addr, lun_hex, disk_addr);
+
+        execute_tx(payload);
+        printf("Mounted disk %s on LUN %lu\n", argv[3], lun);
+        return 0;
+    }
+
+    if (argc > 1 && strcmp(argv[1], "unmount") == 0) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s unmount <lun>\n", argv[0]);
+            return 1;
+        }
+        if (strlen(wmq_addr) == 0) {
+            fprintf(stderr, "Error: WinchesterMQ not deployed. Run '%s deploy' first.\n", argv[0]);
+            return 1;
+        }
+        unsigned long lun = strtoul(argv[2], NULL, 10);
+
+        char payload[1024];
+        char lun_hex[65];
+        snprintf(lun_hex, sizeof(lun_hex), "%064lx", lun);
+
+        snprintf(payload, sizeof(payload),
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+                 "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+                 "\"to\":\"%s\","
+                 "\"data\":\"0x4d6f756e%s"
+                 "0000000000000000000000000000000000000000000000000000000000000000\","
+                 "\"gas\":\"0xF4240\""
+                 "}],\"id\":1}",
+                 wmq_addr, lun_hex);
+
+        execute_tx(payload);
+        printf("Unmounted LUN %lu\n", lun);
+        return 0;
+    }
+
+    if (argc > 1 && strcmp(argv[1], "get") == 0) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s get <lun>\n", argv[0]);
+            return 1;
+        }
+        if (strlen(wmq_addr) == 0) {
+            fprintf(stderr, "Error: WinchesterMQ not deployed. Run '%s deploy' first.\n", argv[0]);
+            return 1;
+        }
+        unsigned long lun = strtoul(argv[2], NULL, 10);
+        char lun_hex[65];
+        snprintf(lun_hex, sizeof(lun_hex), "%064lx", lun);
+
+        char query_payload[1024];
+        snprintf(query_payload, sizeof(query_payload),
+                 "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+                 "\"to\":\"%s\","
+                 "\"data\":\"0x476f756e%s\""
+                 "},\"latest\"],\"id\":1}",
+                 wmq_addr, lun_hex);
+
+        char response[8192];
+        send_rpc_request(query_payload, response, sizeof(response));
+        char *res_ptr = strstr(response, "\"result\":\"");
+        assert(res_ptr != NULL);
+        res_ptr += 10;
+        char *end_quote = strchr(res_ptr, '"');
+        assert(end_quote != NULL);
+        char query_addr[128];
+        size_t len = end_quote - res_ptr;
+        memcpy(query_addr, res_ptr, len);
+        query_addr[len] = '\0';
+        printf("LUN %lu mounted disk address: 0x%s\n", lun, query_addr + 24);
+        return 0;
+    }
+
+    // Default automated verification loop
     printf("=============================================================\n");
     printf("SOLID STATE HARDWARE DYNAMICS: MOUNT/UNMOUNT VERIFICATION\n");
     printf("=============================================================\n");
@@ -194,17 +339,16 @@ int main(void) {
     compile_yul_to_bytecode("../solidity/bin/WinchesterMQ.yul", wmq_hex, 131072);
     compile_yul_to_bytecode("../solidity/bin/diskSystem.yul", disk_hex, 131072);
 
-    char wmq_addr[128];
-    char disk_addr[128];
     printf("[C-Test] Deploying WinchesterMQ on Anvil...\n");
     deploy_contract_from_c(wmq_hex, wmq_addr, sizeof(wmq_addr));
     printf("  [DEPLOYED] WinchesterMQ Address: %s\n", wmq_addr);
+    save_wmq_address(wmq_addr);
 
+    char disk_addr[128];
     printf("[C-Test] Deploying DiskSystem on Anvil...\n");
     deploy_contract_from_c(disk_hex, disk_addr, sizeof(disk_addr));
     printf("  [DEPLOYED] DiskSystem Address: %s\n", disk_addr);
 
-    // Call mountDisk(0, disk_addr) via WinchesterMQ (selector: 0x4d6f756e)
     char mount_payload[1024];
     snprintf(mount_payload, sizeof(mount_payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
@@ -212,7 +356,7 @@ int main(void) {
              "\"to\":\"%s\","
              "\"data\":\"0x4d6f756e"
              "0000000000000000000000000000000000000000000000000000000000000000" // LUN = 0
-             "000000000000000000000000%s\"," // Disk Address (padded to 32 bytes)
+             "000000000000000000000000%s\","
              "\"gas\":\"0xF4240\""
              "}],\"id\":1}",
              wmq_addr, disk_addr + 2);
@@ -220,7 +364,6 @@ int main(void) {
     execute_tx(mount_payload);
     printf("  [MOUNT] Disk successfully mounted on LUN 0.\n");
 
-    // Call getMountedDisk(0) via WinchesterMQ (selector: 0x476f756e)
     char query_payload[1024];
     snprintf(query_payload, sizeof(query_payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
@@ -243,7 +386,6 @@ int main(void) {
     query_addr[len] = '\0';
     printf("  [MOUNT_CHECK] WinchesterMQ returned mounted address: 0x%s\n", query_addr + 24);
 
-    // Call unmount / mount null address to test unmounting
     char unmount_payload[1024];
     snprintf(unmount_payload, sizeof(unmount_payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
@@ -251,7 +393,7 @@ int main(void) {
              "\"to\":\"%s\","
              "\"data\":\"0x4d6f756e"
              "0000000000000000000000000000000000000000000000000000000000000000" // LUN = 0
-             "0000000000000000000000000000000000000000000000000000000000000000\"," // Null address unmounts
+             "0000000000000000000000000000000000000000000000000000000000000000\","
              "\"gas\":\"0xF4240\""
              "}],\"id\":1}",
              wmq_addr);
