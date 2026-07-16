@@ -220,9 +220,12 @@ int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_
 void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu);
 
 // Benson-Lehner OSCAR (Oscillograph Analyzer and Reader) style non-linear calibration map converter
-// Maps analog amplitudes against calibration curve, outputs digitized COMP-3 BCD payload
-// Returns bytes written to dest_out, or -1 on error
 int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_table, int table_size,
                            uint8_t *dest_out, int dest_max_len);
+
+// Alfred M. Freudenthal viscoelastic soft-body physics solver applied strictly to FET discharge cycles
+// Returns 0 on success, -1 on invalid configuration (Conforms to Rule 10 physics boundaries)
+int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step, double mass,
+                                        double spring_k, double damping_c, int steps, double *out_decay_charges);
 
 #endif // TSFI_RAMAC_LAYOUT_H

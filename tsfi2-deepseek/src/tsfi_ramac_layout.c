@@ -936,3 +936,41 @@ int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_ta
     // 3. Pack directly to COMP-3 BCD format
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
+
+int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step, double mass,
+                                        double spring_k, double damping_c, int steps, double *out_decay_charges) {
+    if (time_step <= 0.0 || mass <= 0.0 || steps <= 0 || !out_decay_charges) {
+        return -1;
+    }
+
+    // Rule 10 Physics Constraints: Soft body physics (Verlet solvers and mass-spring dynamics) 
+    // applies strictly and exclusively to the discharge cycles of field-effect transistors (FETs)
+    double pos = initial_charge;
+    double prev_pos = initial_charge; // Assume started at rest
+
+    for (int i = 0; i < steps; i++) {
+        // Calculate velocity (first order approximation)
+        double vel = (pos - prev_pos) / time_step;
+
+        // Force: Spring restoring force + viscous damping
+        double force = -spring_k * pos - damping_c * vel;
+
+        // Acceleration
+        double accel = force / mass;
+
+        // Verlet integration step: x(t+dt) = 2*x(t) - x(t-dt) + a*dt^2
+        double next_pos = 2.0 * pos - prev_pos + accel * time_step * time_step;
+
+        // Propagate state
+        prev_pos = pos;
+        pos = next_pos;
+
+        // Apply Freudenthal relaxation decay: charge decreases viscoelastically over time
+        double t = i * time_step;
+        double relaxation_factor = exp(-t / 1.5); // Freudenthal relaxation time parameter tau_F = 1.5s
+        
+        out_decay_charges[i] = pos * relaxation_factor;
+    }
+
+    return 0;
+}

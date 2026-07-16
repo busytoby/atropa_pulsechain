@@ -621,6 +621,17 @@ int main(void) {
     assert(strcmp(oscar_unpacked, "375") == 0);
     printf("  [PASS] Benson-Lehner OSCAR calibration reader verified successfully.\n");
 
+    // 3.9.9.9.9.9.5. Alfred M. Freudenthal viscoelastic FET discharge solver
+    printf("[Test] Verifying A. M. Freudenthal Viscoelastic FET Discharge solver (Rule 10)...\n");
+    double decay_charges[10];
+    memset(decay_charges, 0, sizeof(decay_charges));
+    int phy_ret = tsfi_s370_fet_discharge_freudenthal(10.0, 0.1, 1.0, 5.0, 0.5, 10, decay_charges);
+    assert(phy_ret == 0);
+    printf("  Initial simulated FET charge: %.2f V, Step 1: %.2f V, Step 9: %.2f V\n", 10.0, decay_charges[0], decay_charges[9]);
+    assert(decay_charges[0] == 9.5);
+    assert(decay_charges[9] < 1.0); // Conforms to viscoelastic decay decay patterns
+    printf("  [PASS] Alfred M. Freudenthal FET viscoelastic discharge solver verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
