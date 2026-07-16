@@ -88,8 +88,25 @@ int main(void) {
     assert(val2 != NULL && strcmp(val2, "colliding_record") == 0);
     printf("  Search 'customer_999' val: %s (seek: %.2f us)\n", val2, search_seek);
 
-    free(disk);
     printf("  [PASS] Cylinder Overflow Hash verified successfully.\n");
+
+    // 3.5. Read-After-Write Verification & Plugboard Emulator
+    printf("[Test] Verifying Read-After-Write verification...\n");
+    int verify_status = tsfi_ramac_write_verified(disk, "customer_333", "verified_val", 5);
+    assert(verify_status == 0);
+    printf("  [PASS] Read-After-Write verification check passed.\n");
+
+    printf("[Test] Verifying RAMAC Plugboard panel router...\n");
+    uint8_t src_buf[64] = "RAMAC_CONTROL_PANEL_INPUT_DATA_1956";
+    uint8_t dest_buf[64] = {0};
+    // Wire bytes 6..18 ("CONTROL_PANEL") to bytes 10..22 of dest
+    int routed = tsfi_ramac_plugboard_route("6..18->10..22", src_buf, dest_buf, 64);
+    printf("  Plugboard routed %d bytes: Dest = '%s'\n", routed, dest_buf + 10);
+    assert(routed == 13);
+    assert(strcmp((char*)(dest_buf + 10), "CONTROL_PANEL") == 0);
+    printf("  [PASS] Plugboard router layout updates verified successfully.\n");
+
+    free(disk);
 
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");

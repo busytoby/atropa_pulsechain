@@ -192,3 +192,35 @@ const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, i
     if (out_total_seek_us) *out_total_seek_us = seek_time;
     return NULL;
 }
+
+int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *dest, int max_len) {
+    if (!wiring || !src || !dest) return -1;
+    int src_s = 0, src_e = 0, dest_s = 0, dest_e = 0;
+    if (sscanf(wiring, "%d..%d->%d..%d", &src_s, &src_e, &dest_s, &dest_e) != 4) {
+        return -1;
+    }
+
+    if (src_s < 0 || src_e >= max_len || src_s > src_e) return -1;
+    if (dest_s < 0 || dest_e >= max_len || dest_s > dest_e) return -1;
+
+    int copy_len = src_e - src_s + 1;
+    int dest_len = dest_e - dest_s + 1;
+    int size_to_copy = (copy_len < dest_len) ? copy_len : dest_len;
+
+    memcpy(dest + dest_s, src + src_s, size_to_copy);
+    return size_to_copy;
+}
+
+int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder) {
+    double temp_seek = 0.0;
+    int write_idx = tsfi_ramac_insert_record(disk, key, value, cylinder, &temp_seek);
+    if (write_idx == -1) return -1;
+
+    // Immediately trigger read-after-write verification
+    const char *read_val = tsfi_ramac_search_record(disk, key, cylinder, &temp_seek);
+    if (!read_val || strcmp(read_val, value) != 0) {
+        return -1; // Parity check mismatch!
+    }
+
+    return 0; // Verified successfully
+}

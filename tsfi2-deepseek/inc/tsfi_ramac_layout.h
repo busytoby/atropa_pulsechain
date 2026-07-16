@@ -2,6 +2,7 @@
 #define TSFI_RAMAC_LAYOUT_H
 
 #include "tsfi_dat.h"
+#include <stdint.h>
 
 // IBM 305 RAMAC disk geometry parameters
 #define RAMAC_CYLINDERS 100
@@ -44,5 +45,13 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
 
 // Searches a record in the cylinder-overflow layout
 const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us);
+
+// IBM 305 RAMAC plugboard wiring control panel emulator
+// Parses wiring rules like "0..7->8..15" and routes source buffer sections to destination
+int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *dest, int max_len);
+
+// Read-after-write verification loop (Double-Read verification)
+// Returns 0 if verified, -1 if parity or content mismatch occurs
+int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder);
 
 #endif // TSFI_RAMAC_LAYOUT_H
