@@ -17,9 +17,13 @@ void tsfi_zmm_winchester_handshake(TsfiZmmVmState *vm_state, uint8_t keycode) {
     uint8_t command_byte = (0x02 << 6) | 0x20; // Keyboard event class + DOWN state
     write_selector[35] = command_byte;
     
-    // Clear and set keycode in REU RAM matching compiler expectations
+    // Protect keycode in REU RAM using SEC-DED ECC encoding
     if (vm_state->reu_ram) {
-        vm_state->reu_ram[0xF002] = keycode;
+        extern uint64_t tsfi_s370_ibm7030_ecc_encode(uint64_t data);
+        uint64_t ecc_keycode = tsfi_s370_ibm7030_ecc_encode(keycode);
+        for (int k = 0; k < 8; k++) {
+            vm_state->reu_ram[0xF002 + k] = (ecc_keycode >> (k * 8)) & 0xFF;
+        }
     }
 
     bool write_ok = lau_yul_thunk_execute("WinchesterMQ", write_selector, 36, retval, &ret_len);
