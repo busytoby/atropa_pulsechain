@@ -32,6 +32,20 @@ typedef struct {
     int trap_active;
 } tsfi_ramac_acc_model;
 
+// IBM 380 80-column punched card structure
+typedef struct {
+    char columns[80];
+} tsfi_ramac_card;
+
+// IBM 305 ALU program instruction step
+typedef struct {
+    char op[8];   // "ADD", "SUB", "DIV", "CMP", "JEQ"
+    int acc_dest; // Destination accumulator (0..9)
+    int acc_src;  // Source accumulator (0..9) or constant value
+    int constant; // Flag indicating if constant value is used
+    char label[16]; // Label for jumps
+} tsfi_ramac_instruction;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -72,5 +86,9 @@ int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, cha
 // BCD 7-bit parity checker
 // Returns 1 if all characters in the string have valid odd parity (even number of 1s plus parity bit = odd)
 int tsfi_ramac_check_parity(const char *str);
+
+// IBM 305 Processor Loop
+// Executes a plugboard ALU instruction list on the accumulator model
+int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
 
 #endif // TSFI_RAMAC_LAYOUT_H

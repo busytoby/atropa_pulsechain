@@ -126,27 +126,78 @@ int main(void) {
     printf("[Test] Verifying IBM 370 Inquiry Station console parser & BCD parity checker...\n");
     char response[256];
     
-    // Test inquiry WRT command
     int inq_ret1 = tsfi_ramac_inquiry_station(disk, "WRT key_inq val_inq", response, sizeof(response));
     assert(inq_ret1 == 0);
     printf("  Inquiry WRT Response: %s\n", response);
     assert(strstr(response, "WRITE_SUCCESS") != NULL);
 
-    // Test inquiry QRY command
     int inq_ret2 = tsfi_ramac_inquiry_station(disk, "QRY key_inq", response, sizeof(response));
     assert(inq_ret2 == 0);
     printf("  Inquiry QRY Response: %s\n", response);
     assert(strstr(response, "VAL: val_inq") != NULL);
 
-    // Test BCD parity check
-    // "A" (ASCII 65 = 01000001) has 2 bits set -> Even parity (fails odd check)
-    // We can inject characters to test the popcount checker
-    char odd_str[2] = { 65 | 128, 0 }; // 01000001 | 10000000 = 11000001 (3 bits set) -> Odd parity (passes)
-    char even_str[2] = { 65, 0 };      // 01000001 (2 bits set) -> Even parity (fails)
+    char odd_str[2] = { 65 | 128, 0 }; 
+    char even_str[2] = { 65, 0 };      
 
     assert(tsfi_ramac_check_parity(odd_str) == 1);
     assert(tsfi_ramac_check_parity(even_str) == 0);
     printf("  [PASS] IBM 370 inquiry console and BCD parity validation verified successfully.\n");
+
+    // 3.9.5. ALU Program Execution Loop Verification
+    printf("[Test] Verifying IBM 305 plugboard ALU processor core...\n");
+    tsfi_ramac_acc_model alu_model;
+    tsfi_ramac_acc_init(&alu_model);
+
+    // ALU Program steps:
+    // 0: ADD ACC1 100 (constant)
+    // 1: ADD ACC2 50  (constant)
+    // 2: CMP ACC1 ACC2
+    // 3: JEQ LABEL_END (should NOT jump because 100 != 50)
+    // 4: SUB ACC1 ACC2 (ACC1 = 100 - 50 = 50)
+    // 5: LABEL_END: ADD ACC1 5 (constant) -> total ACC1 = 55
+    tsfi_ramac_instruction prog[6];
+    
+    strcpy(prog[0].op, "ADD");
+    prog[0].acc_dest = 1;
+    prog[0].acc_src = 100;
+    prog[0].constant = 1;
+    prog[0].label[0] = '\0';
+
+    strcpy(prog[1].op, "ADD");
+    prog[1].acc_dest = 2;
+    prog[1].acc_src = 50;
+    prog[1].constant = 1;
+    prog[1].label[0] = '\0';
+
+    strcpy(prog[2].op, "CMP");
+    prog[2].acc_dest = 1;
+    prog[2].acc_src = 2;
+    prog[2].constant = 0;
+    prog[2].label[0] = '\0';
+
+    strcpy(prog[3].op, "JEQ");
+    prog[3].acc_dest = 0;
+    prog[3].acc_src = 0;
+    prog[3].constant = 0;
+    strcpy(prog[3].label, "LABEL_END");
+
+    strcpy(prog[4].op, "SUB");
+    prog[4].acc_dest = 1;
+    prog[4].acc_src = 2;
+    prog[4].constant = 0;
+    prog[4].label[0] = '\0';
+
+    strcpy(prog[5].op, "ADD");
+    prog[5].acc_dest = 1;
+    prog[5].acc_src = 5;
+    prog[5].constant = 1;
+    strcpy(prog[5].label, "LABEL_END");
+
+    int run_ret = tsfi_ramac_alu_exec(&alu_model, prog, 6);
+    assert(run_ret == 0);
+    printf("  ALU completed execution. ACC1 value: %lld\n", (long long)alu_model.accumulators[1]);
+    assert(alu_model.accumulators[1] == 55);
+    printf("  [PASS] IBM 305 ALU program steps and logic branching verified successfully.\n");
 
     free(disk);
 

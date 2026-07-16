@@ -315,3 +315,65 @@ int tsfi_ramac_check_parity(const char *str) {
     }
     return 1;
 }
+
+int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size) {
+    if (!model || !program || program_size <= 0) return -1;
+
+    int pc = 0;
+    int cmp_flag = 0; // 0: equal, 1: dest > src, -1: dest < src
+
+    while (pc >= 0 && pc < program_size) {
+        tsfi_ramac_instruction inst = program[pc];
+        
+        int64_t val = 0;
+        if (inst.constant) {
+            val = inst.acc_src;
+        } else {
+            if (inst.acc_src >= 0 && inst.acc_src < 10) {
+                val = model->accumulators[inst.acc_src];
+            }
+        }
+
+        if (strcmp(inst.op, "ADD") == 0) {
+            tsfi_ramac_acc_add(model, inst.acc_dest, val);
+            pc++;
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            tsfi_ramac_acc_add(model, inst.acc_dest, -val);
+            pc++;
+        } else if (strcmp(inst.op, "DIV") == 0) {
+            int div_ret = tsfi_ramac_acc_div(model, inst.acc_dest, val);
+            if (div_ret == -1 && model->trap_active) {
+                // Return immediately to handle isolated math discontinuity
+                return -1;
+            }
+            pc++;
+        } else if (strcmp(inst.op, "CMP") == 0) {
+            int64_t dest_val = model->accumulators[inst.acc_dest];
+            if (dest_val == val) cmp_flag = 0;
+            else if (dest_val > val) cmp_flag = 1;
+            else cmp_flag = -1;
+            pc++;
+        } else if (strcmp(inst.op, "JEQ") == 0) {
+            if (cmp_flag == 0) {
+                // Find label index
+                int target_pc = -1;
+                for (int j = 0; j < program_size; j++) {
+                    if (strcmp(program[j].label, inst.label) == 0) {
+                        target_pc = j;
+                        break;
+                    }
+                }
+                if (target_pc != -1) {
+                    pc = target_pc;
+                } else {
+                    pc++;
+                }
+            } else {
+                pc++;
+            }
+        } else {
+            pc++; // NOP
+        }
+    }
+    return 0;
+}
