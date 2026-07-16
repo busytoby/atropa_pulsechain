@@ -581,3 +581,42 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
 
     return 0; // Authorized
 }
+
+int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
+                                        uint8_t *real_memory, int mem_size) {
+    if (!cpu || !real_memory || mem_size < 512) {
+        return -1;
+    }
+
+    // 1. Store Program Interrupt Code (16-bit PIC) at real storage offset 142 (0x8E / 0x8F)
+    real_memory[142] = (pic >> 8) & 0xFF;
+    real_memory[143] = pic & 0xFF;
+
+    // 2. Save current PSW to Program Old PSW vector location (real address 40 / 0x28)
+    real_memory[40] = (cpu->current_psw.key << 4);
+    real_memory[41] = cpu->current_psw.problem_state ? 0x01 : 0x00;
+    real_memory[42] = 0x00;
+    real_memory[43] = 0x00;
+    real_memory[44] = (cpu->current_psw.instruction_address >> 24) & 0xFF;
+    real_memory[45] = (cpu->current_psw.instruction_address >> 16) & 0xFF;
+    real_memory[46] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
+    real_memory[47] = cpu->current_psw.instruction_address & 0xFF;
+
+    // 3. Load new PSW from Program New PSW vector location (real address 88 / 0x58)
+    uint8_t new_key = (real_memory[88] >> 4) & 0x0F;
+    int new_problem_state = real_memory[89] & 0x01;
+    uint32_t new_inst_addr = ((uint32_t)real_memory[92] << 24) |
+                             ((uint32_t)real_memory[93] << 16) |
+                             ((uint32_t)real_memory[94] << 8)  |
+                             (uint32_t)real_memory[95];
+
+    cpu->current_psw.key = new_key;
+    cpu->current_psw.problem_state = new_problem_state;
+    cpu->current_psw.instruction_address = new_inst_addr;
+
+    // Sync privilege controls
+    cpu->psw_key = new_key;
+    cpu->supervisor_state = !new_problem_state;
+
+    return 0; // Interruption and PSW swap completed
+}

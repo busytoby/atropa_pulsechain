@@ -343,12 +343,10 @@ int main(void) {
     printf("  Regular LAU verified. Authorized PSW Access Key: %d\n", psw_key);
     assert(psw_key == ((0xAB % 15) + 1));
 
-    // Mismatched signature should FAIL
     sig[0] ^= 0xFF;
     int auth_ret2 = tsfi_s370_authorize_psw_key(&user_account, sig, 32, message, 4, &psw_key);
     assert(auth_ret2 == -1);
 
-    // Supervisor LAU admin verified should yield Key 0
     tsfi_lau_account admin_account;
     strcpy(admin_account.account_address, "0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
     memset(admin_account.public_key, 0xDE, 32);
@@ -363,6 +361,51 @@ int main(void) {
     assert(psw_key == 0);
 
     printf("  [PASS] System/370 LAU Account PKI Key authorizations verified successfully.\n");
+
+    // 3.9.9.9.5. System/370 Program Interruption and PSW Swap Hardware Validation
+    printf("[Test] Verifying System/370 Program Interruption & PSW Swap handling...\n");
+    uint8_t real_memory[1024];
+    memset(real_memory, 0, sizeof(real_memory));
+
+    // Setup Program New PSW at real address 88: access control key = 2, problem state = 0 (supervisor), inst_address = 0x2000
+    real_memory[88] = (2 << 4); // key 2
+    real_memory[89] = 0x00;     // supervisor state (problem = 0)
+    real_memory[92] = 0x00;
+    real_memory[93] = 0x00;
+    real_memory[94] = 0x20;
+    real_memory[95] = 0x00;     // 0x00002000
+
+    // Setup CPU state and current PSW: key = 5, problem state = 1 (problem), inst_address = 0x5000
+    cpu.current_psw.key = 5;
+    cpu.current_psw.problem_state = 1;
+    cpu.current_psw.instruction_address = 0x5000;
+    cpu.psw_key = 5;
+    cpu.supervisor_state = 0; // problem state
+
+    // Trigger Program Interrupt with PIC 0x0004 (Protection Exception)
+    int interrupt_ret = tsfi_s370_trigger_program_interrupt(&cpu, 0x0004, real_memory, 1024);
+    assert(interrupt_ret == 0);
+
+    // Verify PIC stored at byte offset 142
+    assert(real_memory[142] == 0x00);
+    assert(real_memory[143] == 0x04);
+
+    // Verify Old PSW saved at address 40
+    assert(real_memory[40] == 0x50); // key 5
+    assert(real_memory[41] == 0x01); // problem state 1
+    assert(real_memory[44] == 0x00);
+    assert(real_memory[45] == 0x00);
+    assert(real_memory[46] == 0x50);
+    assert(real_memory[47] == 0x00); // address 0x5000
+
+    // Verify CPU state updated to New PSW
+    assert(cpu.current_psw.key == 2);
+    assert(cpu.current_psw.problem_state == 0);
+    assert(cpu.current_psw.instruction_address == 0x2000);
+    assert(cpu.psw_key == 2);
+    assert(cpu.supervisor_state == 1); // swapped to Supervisor state
+
+    printf("  [PASS] System/370 Program Interruption & hardware PSW swap verified successfully.\n");
 
     free(disk);
 

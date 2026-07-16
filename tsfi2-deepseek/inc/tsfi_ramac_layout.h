@@ -74,11 +74,19 @@ typedef struct {
     uint8_t changed;       // Change bit (C)
 } tsfi_s370_storage_key;
 
+// System/370 Program Status Word (PSW) layout
+typedef struct {
+    uint8_t key;                  // Access key (4 bits)
+    int problem_state;            // Problem state flag
+    uint32_t instruction_address; // Instruction address pointer (31-bit)
+} tsfi_s370_psw;
+
 // System/370 Processor Status Word (PSW) Privilege & Security Mode Context
 typedef struct {
     int supervisor_state; // Privilege mode (1: Supervisor State, 0: Problem State)
     int lap_enabled;      // Low-Address Protection (LAP) enabled flag (Control Reg 0 bit)
     uint8_t psw_key;      // Current execution access key (4-bit key, 0-15)
+    tsfi_s370_psw current_psw; // Current CPU PSW state
 } tsfi_s370_cpu_state;
 
 // LAU Account PKI Key verified token context
@@ -157,11 +165,14 @@ int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
                              tsfi_s370_storage_key *block_keys, int block_count);
 
 // System/370 LAU Account PKI Key Authorization
-// Validates signature using registered LAU public key, resolving authorized PSW Access Key level
-// Returns 0 if authorized, -1 if signature verification fails
 int tsfi_s370_authorize_psw_key(tsfi_lau_account *account, 
                                 const uint8_t *signature, int sig_len,
                                 const uint8_t *message, int msg_len,
                                 uint8_t *out_psw_key);
+
+// System/370 Security Hardware Program Interruption & PSW Swap handling
+// Returns 0 on successful swap, -1 if memory bounds exceeded
+int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
+                                        uint8_t *real_memory, int mem_size);
 
 #endif // TSFI_RAMAC_LAYOUT_H
