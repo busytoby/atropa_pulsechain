@@ -62,7 +62,7 @@ object "BtcErc20GasToken" {
                 let to_slot := get_balance_slot(to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
-                // Emit standard ERC-20 Transfer log event (topic hash for Transfer(address,address,uint256))
+                // Emit standard ERC-20 Transfer log event
                 log3(0, 0, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, caller(), to)
                 
                 mstore(0, 1)
@@ -78,7 +78,6 @@ object "BtcErc20GasToken" {
                 let slot := get_allowance_slot(caller(), spender)
                 sstore(slot, amount)
                 
-                // Approval log
                 log3(0, 0, 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925, caller(), spender)
                 
                 mstore(0, 1)
@@ -232,8 +231,13 @@ object "BtcErc20GasToken" {
                 let to_slot := get_balance_slot(to)
                 sstore(to_slot, add(sload(to_slot), amount))
                 
-                // STRICT ISOLATION: We modify internal balance sheet memory
-                // but do NOT emit log3 Transfer events here (relying solely on BTC ledger tracking).
+                // Emit custom log3 NestedTransfer event: NestedTransfer(address,address,uint256)
+                // Write signature to temporary memory for topic hash calculation
+                mstore(0, "NestedTransfer(address,address,u")
+                mstore(32, "int256)")
+                let nested_topic := keccak256(0, 39)
+                mstore(0, amount) // Log data contains the nested transfer amount
+                log3(0, 32, nested_topic, caller(), to)
                 
                 mstore(0, 1)
                 return(0, 32)
