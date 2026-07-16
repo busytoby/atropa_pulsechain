@@ -10,6 +10,28 @@ void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     vm->executed_evals = 0;
 }
 
+// Restore heap invariants after priority mutations
+static void heapify(TSFiPriorityQueue *pq) {
+    for (int i = (pq->size / 2) - 1; i >= 0; i--) {
+        int idx = i;
+        while (2 * idx + 1 < pq->size) {
+            int left = 2 * idx + 1;
+            int right = left + 1;
+            int smallest = left;
+            if (right < pq->size && pq->items[right].priority < pq->items[left].priority) {
+                smallest = right;
+            }
+            if (pq->items[idx].priority <= pq->items[smallest].priority) {
+                break;
+            }
+            TSFiQueueItem temp = pq->items[idx];
+            pq->items[idx] = pq->items[smallest];
+            pq->items[smallest] = temp;
+            idx = smallest;
+        }
+    }
+}
+
 int tsfi_strategy_vm_execute(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const char *script) {
     if (!vm || !script) return -1;
 
@@ -30,6 +52,31 @@ int tsfi_strategy_vm_execute(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const ch
                     vm->abductive_priority_scale = val;
                 }
             }
+        } else if (strcmp(token, "PRUNE") == 0) {
+            char *thresh_str = strtok(NULL, " ;");
+            if (thresh_str && pq) {
+                int threshold = atoi(thresh_str);
+                // Drop any item exceeding threshold priority
+                int write_idx = 0;
+                for (int i = 0; i < pq->size; i++) {
+                    if (pq->items[i].priority <= threshold) {
+                        pq->items[write_idx++] = pq->items[i];
+                    }
+                }
+                pq->size = write_idx;
+            }
+        } else if (strcmp(token, "WEIGHT") == 0) {
+            char *subgoal_str = strtok(NULL, " ;");
+            char *weight_str = strtok(NULL, " ;");
+            if (subgoal_str && weight_str && pq) {
+                int keycode = atoi(subgoal_str);
+                int weight = atoi(weight_str);
+                for (int i = 0; i < pq->size; i++) {
+                    if (pq->items[i].keycode == keycode) {
+                        pq->items[i].priority = weight;
+                    }
+                }
+            }
         } else if (strcmp(token, "EVAL") == 0) {
             vm->executed_evals++;
             // Re-prioritize active queue items according to scaling strategy
@@ -42,5 +89,8 @@ int tsfi_strategy_vm_execute(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const ch
         token = strtok(NULL, " ;");
     }
 
+    if (pq) {
+        heapify(pq);
+    }
     return 0;
 }

@@ -44,6 +44,22 @@ int main(void) {
     fflush(stdout);
     assert(item.priority == 25);
 
+    // Push new subgoals to verify PRUNE and WEIGHT
+    tsfi_priority_queue_push(&pq, 15, 33, "SUBGOAL_C");
+    tsfi_priority_queue_push(&pq, 50, 34, "SUBGOAL_D");
+
+    // Execute script: set priority of 34 to 3, then prune anything exceeding 20
+    const char *prune_script = "WEIGHT 34 3; PRUNE 20;";
+    res = tsfi_strategy_vm_execute(&vm, &pq, prune_script);
+    assert(res == 0);
+
+    // Verify item 33 (prio 15 <= 20) and item 34 (prio 3 <= 20) are kept
+    assert(pq.size == 2);
+    res = tsfi_priority_queue_pop(&pq, &item);
+    assert(res == 0 && item.keycode == 34 && item.priority == 3);
+    printf("  [Strategy Prune/Weight] Popped priority 3 keycode: %d (Expected: 34)\n", item.keycode);
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
