@@ -1550,3 +1550,60 @@ int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int c
 
     return 0;
 }
+
+int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *op, uint64_t *out_val) {
+    if (!op || !out_val) {
+        return -1;
+    }
+
+    // Clean to 36-bit word length limit
+    uint64_t a = op_a & 0xFFFFFFFFFULL;
+    uint64_t b = op_b & 0xFFFFFFFFFULL;
+    uint64_t result = 0;
+
+    int is_add = (strcmp(op, "ADD") == 0);
+    int is_sub = (strcmp(op, "SUB") == 0);
+    if (!is_add && !is_sub) return -1;
+
+    if (mode == 36) {
+        if (is_add) {
+            result = (a + b) & 0xFFFFFFFFFULL;
+        } else {
+            result = (a - b) & 0xFFFFFFFFFULL;
+        }
+    } else if (mode == 18) {
+        // Two 18-bit slices
+        uint64_t a_hi = (a >> 18) & 0x3FFFFULL;
+        uint64_t a_lo = a & 0x3FFFFULL;
+        uint64_t b_hi = (b >> 18) & 0x3FFFFULL;
+        uint64_t b_lo = b & 0x3FFFFULL;
+        uint64_t r_hi = 0, r_lo = 0;
+
+        if (is_add) {
+            r_hi = (a_hi + b_hi) & 0x3FFFFULL;
+            r_lo = (a_lo + b_lo) & 0x3FFFFULL;
+        } else {
+            r_hi = (a_hi - b_hi) & 0x3FFFFULL;
+            r_lo = (a_lo - b_lo) & 0x3FFFFULL;
+        }
+        result = (r_hi << 18) | r_lo;
+    } else if (mode == 9) {
+        // Four 9-bit slices
+        uint64_t r[4] = {0};
+        for (int i = 0; i < 4; i++) {
+            uint64_t sa = (a >> (i * 9)) & 0x1FFULL;
+            uint64_t sb = (b >> (i * 9)) & 0x1FFULL;
+            if (is_add) {
+                r[i] = (sa + sb) & 0x1FFULL;
+            } else {
+                r[i] = (sa - sb) & 0x1FFULL;
+            }
+        }
+        result = (r[3] << 27) | (r[2] << 18) | (r[1] << 9) | r[0];
+    } else {
+        return -1;
+    }
+
+    *out_val = result;
+    return 0;
+}

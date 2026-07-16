@@ -971,6 +971,17 @@ int main(void) {
     assert(fabs(synth_audio[1]) > 0.0001); // Trigger active sound wave decay
     printf("  [PASS] Perforated paper tape synthesizer verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.4. MIT Lincoln Laboratory TX-2 SIMD ALU Verification
+    printf("[Test] Verifying MIT Lincoln Laboratory TX-2 SIMD ALU...\n");
+    uint64_t alu_out = 0;
+    // 18-bit SIMD ADD mode: High half: 0x10 + 0x05 = 0x15. Low half: 0x20 + 0x0A = 0x2A
+    // Input A: (0x10 << 18) | 0x20 = 0x400020
+    // Input B: (0x05 << 18) | 0x0A = 0x14000A
+    int alu_ret = tsfi_s370_tx2_simd_alu(0x400020ULL, 0x14000AULL, 18, "ADD", &alu_out);
+    assert(alu_ret == 0);
+    assert(alu_out == (((0x15ULL) << 18) | 0x2AULL));
+    printf("  [PASS] TX-2 SIMD ALU verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
