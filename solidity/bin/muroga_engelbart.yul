@@ -97,6 +97,27 @@ object "MurogaEngelbart" {
                 return(0x00, 32)
             }
             
+            // Selector 0x44440000: tx2_simd_add_256
+            // Inputs:
+            // - calldataload(4): val_a (256-bit packed word containing four 64-bit lanes)
+            // - calldataload(36): val_b (256-bit packed word containing four 64-bit lanes)
+            if eq(selector, 0x44440000) {
+                let val_a := calldataload(4)
+                let val_b := calldataload(36)
+                let res_val := 0
+                
+                for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                    let shift := mul(i, 64)
+                    let lane_a := and(shr(shift, val_a), 0xFFFFFFFFFFFFFFFF)
+                    let lane_b := and(shr(shift, val_b), 0xFFFFFFFFFFFFFFFF)
+                    let res_lane := and(add(lane_a, lane_b), 0xFFFFFFFFFFFFFFFF)
+                    res_val := or(res_val, shl(shift, res_lane))
+                }
+                
+                mstore(0x00, res_val)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
