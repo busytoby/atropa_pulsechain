@@ -450,4 +450,10 @@ int tsfi_s370_ibm7030_read_bits(const uint64_t *memory, uint32_t bit_address, in
 // IBM 7030 STRETCH bit-addressable memory writer
 int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit_length, uint64_t val);
 
+// IBM 7030 STRETCH Hamming SEC-DED ECC encoder
+uint64_t tsfi_s370_ibm7030_ecc_encode(uint64_t data);
+
+// IBM 7030 STRETCH Hamming SEC-DED ECC decoder
+int tsfi_s370_ibm7030_ecc_decode(uint64_t word_72, uint64_t *out_corrected_data);
+
 #endif // TSFI_RAMAC_LAYOUT_H

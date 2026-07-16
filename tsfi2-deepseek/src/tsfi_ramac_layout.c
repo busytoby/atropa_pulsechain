@@ -39,18 +39,8 @@ double tsfi_ramac_calculate_seek(int from_index, int to_index) {
     tsfi_ramac_chs c1 = tsfi_ramac_index_to_chs(from_index);
     tsfi_ramac_chs c2 = tsfi_ramac_index_to_chs(to_index);
 
-    // Physical model of IBM 305 RAMAC movement:
-    // 1. Horizontal seek: Cylinder-to-cylinder arm movement.
-    //    Average cylinder-to-cylinder seek: ~1.5 milliseconds per cylinder.
     double cylinder_seek = abs(c1.cylinder - c2.cylinder) * 1.5;
-
-    // 2. Vertical seek: Disk surface head swap (if head index changes).
-    //    Average head swap time: ~0.8 milliseconds.
     double head_swap = (c1.head != c2.head) ? 0.8 : 0.0;
-
-    // 3. Rotational latency: Sector-to-sector delay.
-    //    Assuming 600 RPM (100 ms per full rotation of 20 sectors).
-    //    Rotational delay = 5.0 ms per sector distance.
     double rotational_delay = abs(c1.sector - c2.sector) * 5.0;
 
     return (cylinder_seek + head_swap + rotational_delay) * 1000.0; // Return in microseconds
@@ -59,18 +49,14 @@ double tsfi_ramac_calculate_seek(int from_index, int to_index) {
 int tsfi_ramac_layout_optimize(tsfi_dat *dat, const char *filepath) {
     if (!dat || !filepath) return -1;
 
-    // Open target file for writing the RAMAC-optimized dat layout
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return -1;
 
-    // Write magic signature
     fwrite("RMAC", 1, 4, fp);
 
-    // Calculate total layout words and size
     int capacity = dat->capacity;
     fwrite(&capacity, sizeof(int), 1, fp);
 
-    // Write base and check arrays clustered as aligned structures
     fwrite(dat->base, sizeof(int), capacity, fp);
     fwrite(dat->check, sizeof(int), capacity, fp);
 
@@ -84,12 +70,9 @@ int tsfi_ramac_hash_key(const char *key, int cylinder) {
     while ((c = *key++)) {
         hash = ((hash << 5) + hash) + c;
     }
-    // We restrict primary tracks to heads 0..44 (total 45 tracks per cylinder)
     int primary_slots = 45 * RAMAC_SECTORS;
     int slot = hash % primary_slots;
     
-    // Return flat index within cylinder:
-    // slot represents head * RAMAC_SECTORS + sector
     int head = slot / RAMAC_SECTORS;
     int sector = slot % RAMAC_SECTORS;
 
@@ -107,15 +90,13 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     int current_idx = primary_idx;
     int last_idx = -1;
     double seek_time = 0.0;
-    int current_head = 0; // Assume start head
+    int current_head = 0;
 
-    // Traverse existing collision chain
     while (disk[current_idx].is_active) {
         seek_time += tsfi_ramac_calculate_seek(current_head, current_idx);
         current_head = current_idx;
 
         if (strcmp(disk[current_idx].key, key) == 0) {
-            // Overwrite existing key
             strcpy(disk[current_idx].value, value);
             if (out_total_seek_us) *out_total_seek_us = seek_time;
             return current_idx;
@@ -128,7 +109,6 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     }
 
     if (!disk[current_idx].is_active) {
-        // Direct placement
         seek_time += tsfi_ramac_calculate_seek(current_head, current_idx);
         strcpy(disk[current_idx].key, key);
         strcpy(disk[current_idx].value, value);
@@ -138,7 +118,6 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
         return current_idx;
     }
 
-    // Find free slot in overflow area (heads 45..49) of the same cylinder
     tsfi_ramac_chs overflow_chs;
     overflow_chs.cylinder = cylinder;
     overflow_chs.word_offset = 0;
@@ -158,18 +137,15 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     }
 
     if (found_slot == -1) {
-        // Cylinder overflow area full
         return -1;
     }
 
-    // Write to overflow slot
     seek_time += tsfi_ramac_calculate_seek(current_head, found_slot);
     strcpy(disk[found_slot].key, key);
     strcpy(disk[found_slot].value, value);
     disk[found_slot].is_active = 1;
     disk[found_slot].next_overflow_index = -1;
 
-    // Link the last record to this overflow slot
     disk[last_idx].next_overflow_index = found_slot;
 
     if (out_total_seek_us) *out_total_seek_us = seek_time;
@@ -220,13 +196,12 @@ int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const ch
     int write_idx = tsfi_ramac_insert_record(disk, key, value, cylinder, &temp_seek);
     if (write_idx == -1) return -1;
 
-    // Immediately trigger read-after-write verification
     const char *read_val = tsfi_ramac_search_record(disk, key, cylinder, &temp_seek);
     if (!read_val || strcmp(read_val, value) != 0) {
-        return -1; // Parity check mismatch!
+        return -1;
     }
 
-    return 0; // Verified successfully
+    return 0;
 }
 
 void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model) {
@@ -245,9 +220,7 @@ int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
 int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
     if (!model || acc_id < 0 || acc_id >= 10) return -1;
 
-    // RULE 12 INTERCEPT: Mathematical continuity denied (Division by Zero or Preference error)
     if (val == 0) {
-        // Intercept, redirect to non-preferential accumulator isolation trap, and isolate in structure
         model->isolation_trap = model->accumulators[acc_id];
         model->trap_active = 1;
         return -1; 
@@ -314,7 +287,7 @@ int tsfi_ramac_check_parity(const char *str) {
             if ((c >> b) & 1) total_bits++;
         }
         if (total_bits % 2 == 0) {
-            return 0; // Parity failure: IBM 305 RAMAC requires odd parity
+            return 0;
         }
     }
     return 1;
@@ -324,7 +297,7 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
     if (!model || !program || program_size <= 0) return -1;
 
     int pc = 0;
-    int cmp_flag = 0; // 0: equal, 1: dest > src, -1: dest < src
+    int cmp_flag = 0;
 
     while (pc >= 0 && pc < program_size) {
         tsfi_ramac_instruction inst = program[pc];
@@ -347,7 +320,6 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
         } else if (strcmp(inst.op, "DIV") == 0) {
             int div_ret = tsfi_ramac_acc_div(model, inst.acc_dest, val);
             if (div_ret == -1 && model->trap_active) {
-                // Return immediately to handle isolated math discontinuity
                 return -1;
             }
             pc++;
@@ -359,7 +331,6 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
             pc++;
         } else if (strcmp(inst.op, "JEQ") == 0) {
             if (cmp_flag == 0) {
-                // Find label index
                 int target_pc = -1;
                 for (int j = 0; j < program_size; j++) {
                     if (strcmp(program[j].label, inst.label) == 0) {
@@ -376,7 +347,7 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
                 pc++;
             }
         } else {
-            pc++; // NOP
+            pc++;
         }
     }
     return 0;
@@ -388,31 +359,26 @@ int tsfi_s370_dat_translate(uint32_t virtual_addr,
                             uint32_t *out_physical_addr, int *out_write_protected) {
     if (!seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
 
-    // S/370 31-bit addressing translation:
-    // SX (Segment Index) = bits 1..11 (11 bits) -> (addr >> 20) & 0x7FF
-    // PX (Page Index)    = bits 12..19 (8 bits) -> (addr >> 12) & 0xFF
-    // BX (Byte Offset)   = bits 20..31 (12 bits) -> addr & 0xFFF
     uint32_t sx = (virtual_addr >> 20) & 0x7FF;
     uint32_t px = (virtual_addr >> 12) & 0xFF;
     uint32_t bx = virtual_addr & 0xFFF;
 
     if ((int)sx >= seg_count) {
-        return -1; // Segment translation exception (limit exceeded)
+        return -1;
     }
 
     if (seg_table[sx].invalid) {
-        return -1; // Segment invalid exception
+        return -1;
     }
 
-    // Offset in global page table structure
     uint32_t pte_idx = seg_table[sx].page_table_origin + px;
     if (page_tables[pte_idx].invalid) {
-        return -1; // Page invalid exception
+        return -1;
     }
 
     *out_physical_addr = page_tables[pte_idx].page_frame_real_addr + bx;
     *out_write_protected = page_tables[pte_idx].write_protect;
-    return 0; // Translation successful
+    return 0;
 }
 
 int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
@@ -423,29 +389,26 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
     }
 
     int current_ccw_idx = 0;
-    int current_seek_sector = 0; // Default seek index pointer
+    int current_seek_sector = 0;
 
     while (current_ccw_idx < chain_len) {
         tsfi_s370_ccw ccw = ccw_chain[current_ccw_idx];
 
         if (ccw.data_addr >= (uint32_t)mem_size) {
-            return -1; // Memory out of bounds
+            return -1;
         }
 
         switch (ccw.cmd_code) {
-            case 0x07: // Control Command: SEEK
-                // Read target sector index from memory
+            case 0x07:
                 if (ccw.data_addr + 4 > (uint32_t)mem_size) return -1;
                 memcpy(&current_seek_sector, memory_pool + ccw.data_addr, 4);
                 if (current_seek_sector < 0 || current_seek_sector >= total_slots) {
-                    return -1; // Sector index out of bounds
+                    return -1;
                 }
                 break;
 
-            case 0x02: // Input Command: READ
-                // Read from RAMAC disk current_seek_sector to memory_pool
+            case 0x02:
                 if (current_seek_sector >= total_slots || !disk[current_seek_sector].is_active) {
-                    // Return empty record if inactive
                     memset(memory_pool + ccw.data_addr, 0, ccw.count < 32 ? ccw.count : 32);
                 } else {
                     int size_to_copy = ccw.count < 32 ? ccw.count : 32;
@@ -454,8 +417,7 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
                 }
                 break;
 
-            case 0x01: // Output Command: WRITE
-                // Write from memory_pool to RAMAC disk current_seek_sector
+            case 0x01:
                 if (current_seek_sector >= total_slots) return -1;
                 {
                     int size_to_copy = ccw.count < 32 ? ccw.count : 32;
@@ -467,82 +429,69 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
                 break;
 
             default:
-                return -1; // Unsupported CCW command code
+                return -1;
         }
 
-        // Check command chaining flag (bit 2 represents command chaining in standard S/370: mask 0x02)
         if (ccw.flags & 0x02) {
             current_ccw_idx++;
         } else {
-            break; // Terminate I/O program
+            break;
         }
     }
 
-    return 0; // I/O channel program completed successfully
+    return 0;
 }
 
 int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
                                 tsfi_s370_storage_key *block_keys, int block_count) {
     if (!block_keys || block_count <= 0) return -1;
 
-    // S/370 block protection size: 4096-byte pages
     int block_idx = real_addr / 4096;
     if (block_idx >= block_count) {
-        return -1; // Out of bounds
+        return -1;
     }
 
-    // Access key 0 is the master key, allowing unrestricted access
     if (psw_key != 0) {
         uint8_t block_key = block_keys[block_idx].acc;
 
         if (is_write) {
-            // Write protection requires matching access control bits
             if (psw_key != block_key) {
-                return -1; // Protection Exception
+                return -1;
             }
         } else {
-            // Read protection requires matching access control bits only if Fetch Protection (F) is enabled
             if (block_keys[block_idx].fetch_protect) {
                 if (psw_key != block_key) {
-                    return -1; // Protection Exception
+                    return -1;
                 }
             }
         }
     }
 
-    // Update hardware Referenced (R) and Changed (C) reference bits
     block_keys[block_idx].referenced = 1;
     if (is_write) {
         block_keys[block_idx].changed = 1;
     }
 
-    return 0; // Access Permitted
+    return 0;
 }
 
 int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code) {
     if (!cpu || !op_code) return -1;
 
-    // List of privileged operations in System/370 execution states
     const char *privileged_ops[] = {
-        "SSK",   // Set Storage Key
-        "ISK",   // Insert Storage Key
-        "LPSW",  // Load Program Status Word
-        "SIO",   // Start I/O
-        "STCTL", // Store Control Register
-        "LCTL"   // Load Control Register
+        "SSK", "ISK", "LPSW", "SIO", "STCTL", "LCTL"
     };
     int privileged_count = 6;
 
-    // Problem State (supervisor_state == 0) restricts privileged instructions
     if (cpu->supervisor_state == 0) {
         for (int i = 0; i < privileged_count; i++) {
             if (strcmp(op_code, privileged_ops[i]) == 0) {
-                return -1; // Privileged Operation Exception
+                return -1;
             }
         }
     }
 
-    return 0; // Instruction validation passes
+    return 0;
 }
 
 int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
@@ -550,17 +499,14 @@ int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
                              tsfi_s370_storage_key *block_keys, int block_count) {
     if (!cpu) return -1;
 
-    // Page-Protection Exception: write to virtual page marked read-only is prohibited
     if (is_write_protected_page) {
-        return -1; // Protection Exception
+        return -1;
     }
 
-    // Low-Address Protection (LAP): write to first 512 bytes (addresses 0..511) in Problem State is prohibited
     if (cpu->lap_enabled && real_addr < 512 && cpu->supervisor_state == 0) {
-        return -1; // Protection Exception (LAP violation)
+        return -1;
     }
 
-    // Delegate to standard storage key protection checks
     return tsfi_s370_check_storage_key(cpu->psw_key, real_addr, 1, block_keys, block_count);
 }
 
@@ -572,25 +518,22 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
         return -1;
     }
 
-    // Verify PKI signature: expect simple cryptographic verification mapping
     uint8_t expected_sig[32];
     for (int i = 0; i < 32; i++) {
         expected_sig[i] = account->public_key[i] ^ (message[i % msg_len] + i);
     }
 
     if (memcmp(expected_sig, signature, 32) != 0) {
-        return -1; // PKI signature verification failed
+        return -1;
     }
 
-    // Map verified LAU account tier privileges to PSW key
     if (account->is_admin_tier) {
-        *out_psw_key = 0; // Master Key (Supervisor privileges)
+        *out_psw_key = 0;
     } else {
-        // Regular accounts mapped to an authorized key between 1 and 15
         *out_psw_key = (account->public_key[0] % 15) + 1;
     }
 
-    return 0; // Authorized
+    return 0;
 }
 
 int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
@@ -599,11 +542,9 @@ int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
         return -1;
     }
 
-    // 1. Store Program Interrupt Code (16-bit PIC) at real storage offset 142 (0x8E / 0x8F)
     real_memory[142] = (pic >> 8) & 0xFF;
     real_memory[143] = pic & 0xFF;
 
-    // 2. Save current PSW to Program Old PSW vector location (real address 40 / 0x28)
     real_memory[40] = (cpu->current_psw.key << 4);
     real_memory[41] = cpu->current_psw.problem_state ? 0x01 : 0x00;
     real_memory[42] = 0x00;
@@ -613,7 +554,6 @@ int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
     real_memory[46] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
     real_memory[47] = cpu->current_psw.instruction_address & 0xFF;
 
-    // 3. Load new PSW from Program New PSW vector location (real address 88 / 0x58)
     uint8_t new_key = (real_memory[88] >> 4) & 0x0F;
     int new_problem_state = real_memory[89] & 0x01;
     uint32_t new_inst_addr = ((uint32_t)real_memory[92] << 24) |
@@ -625,20 +565,19 @@ int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
     cpu->current_psw.problem_state = new_problem_state;
     cpu->current_psw.instruction_address = new_inst_addr;
 
-    // Sync privilege controls
     cpu->psw_key = new_key;
     cpu->supervisor_state = !new_problem_state;
 
-    return 0; // Interruption and PSW swap completed
+    return 0;
 }
 
 int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len) {
     if (!zoned_str || !packed_out || max_len <= 0) return -1;
 
-    int sign = 0xC; // Default positive sign flag (C or F)
+    int sign = 0xC;
     const char *digits = zoned_str;
     if (zoned_str[0] == '-') {
-        sign = 0xD; // Negative sign flag
+        sign = 0xD;
         digits++;
     } else if (zoned_str[0] == '+') {
         digits++;
@@ -647,9 +586,6 @@ int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len) {
     int len = strlen(digits);
     if (len == 0) return -1;
 
-    // COMP-3 packed decimal format has (len + 1) / 2 bytes.
-    // If len is even, we pad with a leading zero to fit into whole bytes:
-    // e.g. 4 digits: 01 23 4C -> 3 bytes
     int is_even = (len % 2 == 0);
     int packed_len = (len + 2) / 2;
     if (packed_len > max_len) return -1;
@@ -662,13 +598,12 @@ int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len) {
         uint8_t low = 0;
 
         if (i == 0 && is_even) {
-            // First byte high nibble is padded zero
             high = 0;
             low = digits[digit_idx++] - '0';
         } else {
             high = digits[digit_idx++] - '0';
             if (i == packed_len - 1) {
-                low = sign; // Last low nibble is sign C/D/F
+                low = sign;
             } else {
                 low = digits[digit_idx++] - '0';
             }
@@ -687,7 +622,6 @@ int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int
     int sign_found = 0;
     int negative = 0;
 
-    // Temporary digits buffer
     char digits[128];
     int digits_idx = 0;
 
@@ -695,7 +629,7 @@ int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int
         uint8_t high = (packed[i] >> 4) & 0x0F;
         uint8_t low = packed[i] & 0x0F;
 
-        if (high > 9) return -1; // Invalid BCD digit in high nibble
+        if (high > 9) return -1;
 
         if (i == 0 && high == 0) {
             // Skip leading padding zero
@@ -704,17 +638,16 @@ int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int
         }
 
         if (i == packed_len - 1) {
-            // Last low nibble is sign
             if (low == 0xC || low == 0xF || low == 0xA || low == 0xE) {
                 negative = 0;
             } else if (low == 0xD || low == 0xB) {
                 negative = 1;
             } else {
-                return -1; // Invalid sign nibble
+                return -1;
             }
             sign_found = 1;
         } else {
-            if (low > 9) return -1; // Invalid BCD digit in low nibble
+            if (low > 9) return -1;
             digits[digits_idx++] = low + '0';
         }
     }
@@ -759,10 +692,8 @@ int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
         return -1;
     }
 
-    // 1. Store 8-bit SVC code at real storage offset 139 (0x8B)
     real_memory[139] = svc_code;
 
-    // 2. Save current PSW to SVC Old PSW vector location (real address 32 / 0x20)
     real_memory[32] = (cpu->current_psw.key << 4);
     real_memory[33] = cpu->current_psw.problem_state ? 0x01 : 0x00;
     real_memory[34] = 0x00;
@@ -772,7 +703,6 @@ int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
     real_memory[38] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
     real_memory[39] = cpu->current_psw.instruction_address & 0xFF;
 
-    // 3. Load new PSW from SVC New PSW vector location (real address 80 / 0x50)
     uint8_t new_key = (real_memory[80] >> 4) & 0x0F;
     int new_problem_state = real_memory[81] & 0x01;
     uint32_t new_inst_addr = ((uint32_t)real_memory[84] << 24) |
@@ -784,51 +714,39 @@ int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
     cpu->current_psw.problem_state = new_problem_state;
     cpu->current_psw.instruction_address = new_inst_addr;
 
-    // Sync privilege controls
     cpu->psw_key = new_key;
     cpu->supervisor_state = !new_problem_state;
 
-    return 0; // SVC interrupt transition completed
+    return 0;
 }
 
 int tsfi_s370_data_reduction_unit(double x, double y, double scale,
                                   uint8_t *dest_out, int dest_max_len) {
     if (!dest_out || dest_max_len <= 0) return -1;
 
-    // 1. Emulate Benson-Lehner Electroplotter analog-to-digital coordinate conversion:
-    // Scale analog voltage values to discrete integer records
     long long coord_x = (long long)round(x * scale);
     long long coord_y = (long long)round(y * scale);
-
-    // Sum coordinates to build structured composite data packet
     long long combined = coord_x + coord_y;
 
     char zoned[128];
     snprintf(zoned, sizeof(zoned), "%lld", combined);
 
-    // 2. Package directly to COMP-3 format for immediate COBOL strategy engine consumption
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
 
 int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int node_count) {
     if (!filepath || !nodes || node_count <= 0) return -1;
 
-    // Rule 13: strictly check .dat.bin extension for quadtree index
     int len = strlen(filepath);
     if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
-        return -1; // Extension error
+        return -1;
     }
 
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return -1;
 
-    // Write magic signature
     fwrite("QUAD", 1, 4, fp);
-
-    // Write node count
     fwrite(&node_count, sizeof(int), 1, fp);
-
-    // Write array of quadtree nodes
     fwrite(nodes, sizeof(tsfi_quadtree_node), node_count, fp);
 
     fclose(fp);
@@ -838,10 +756,9 @@ int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes
 int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int max_nodes) {
     if (!filepath || !nodes || max_nodes <= 0) return -1;
 
-    // Rule 13: strictly check .dat.bin extension
     int len = strlen(filepath);
     if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
-        return -1; // Extension error
+        return -1;
     }
 
     FILE *fp = fopen(filepath, "rb");
@@ -861,7 +778,7 @@ int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nod
 
     if (node_count > max_nodes) {
         fclose(fp);
-        return -1; // Destination buffer size exceeded
+        return -1;
     }
 
     if ((int)fread(nodes, sizeof(tsfi_quadtree_node), node_count, fp) != node_count) {
@@ -881,19 +798,16 @@ int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_
 
     uint32_t virtual_page = virtual_addr & 0xFFFFF000;
 
-    // 1. Optimized TLB lookup: Direct mapped hash lookup to fulfill sub-microsecond latency (Rule 11)
     int slot = (virtual_page >> 12) & 0x7;
     if (cpu->tlb[slot].valid && cpu->tlb[slot].virtual_page == virtual_page) {
         *out_physical_addr = cpu->tlb[slot].real_page | (virtual_addr & 0x0FFF);
         *out_write_protected = cpu->tlb[slot].write_protect;
-        return 0; // Direct Map TLB Hit
+        return 0;
     }
 
-    // 2. TLB Miss: perform full segment-page translation table walk
     int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, out_physical_addr, out_write_protected);
     if (ret != 0) return ret;
 
-    // 3. Cache results inside TLB slot using bitwise masking
     cpu->tlb[slot].virtual_page = virtual_page;
     cpu->tlb[slot].real_page = *out_physical_addr & 0xFFFFF000;
     cpu->tlb[slot].write_protect = *out_write_protected;
@@ -915,13 +829,11 @@ int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_ta
         return -1;
     }
 
-    // 1. Search calibration curve to locate interval
     int idx = 0;
     while (idx < table_size - 1 && calibration_table[idx + 1] < analog_amplitude) {
         idx++;
     }
 
-    // 2. Linearly interpolate within selected overlay segment
     double t = 0.0;
     double range = calibration_table[idx + 1] - calibration_table[idx];
     if (range > 0.000001) {
@@ -929,13 +841,11 @@ int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_ta
     }
     double interp_val = idx + t;
 
-    // Normalize output scale to [0..1000]
     long long final_digital = (long long)round(interp_val * (1000.0 / (table_size - 1)));
     
     char zoned[128];
     snprintf(zoned, sizeof(zoned), "%lld", final_digital);
 
-    // 3. Pack directly to COMP-3 BCD format
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
 
@@ -945,31 +855,20 @@ int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step,
         return -1;
     }
 
-    // Rule 10 Physics Constraints: Soft body physics (Verlet solvers and mass-spring dynamics) 
-    // applies strictly and exclusively to the discharge cycles of field-effect transistors (FETs)
     double pos = initial_charge;
-    double prev_pos = initial_charge; // Assume started at rest
+    double prev_pos = initial_charge;
 
     for (int i = 0; i < steps; i++) {
-        // Calculate velocity (first order approximation)
         double vel = (pos - prev_pos) / time_step;
-
-        // Force: Spring restoring force + viscous damping
         double force = -spring_k * pos - damping_c * vel;
-
-        // Acceleration
         double accel = force / mass;
-
-        // Verlet integration step: x(t+dt) = 2*x(t) - x(t-dt) + a*dt^2
         double next_pos = 2.0 * pos - prev_pos + accel * time_step * time_step;
 
-        // Propagate state
         prev_pos = pos;
         pos = next_pos;
 
-        // Apply Freudenthal relaxation decay: charge decreases viscoelastically over time
         double t = i * time_step;
-        double relaxation_factor = exp(-t / 1.5); // Freudenthal relaxation time parameter tau_F = 1.5s
+        double relaxation_factor = exp(-t / 1.5);
         
         out_decay_charges[i] = pos * relaxation_factor;
     }
@@ -986,7 +885,6 @@ double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, i
     double cumulative_damage = 0.0;
     for (int i = 0; i < cycle_count; i++) {
         if (stress_amplitudes[i] > 0.0) {
-            // D = sum( (S_i / S_0) ^ alpha )
             double damage_cycle = pow(stress_amplitudes[i] / reference_stress, shape_parameter);
             cumulative_damage += damage_cycle;
         }
@@ -1002,12 +900,9 @@ int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_res
         return -1;
     }
 
-    // Reliability safety index: beta = (mu_R - mu_S) / sqrt(sigma_R^2 + sigma_S^2)
     double denom = sqrt(std_resistance * std_resistance + std_stress * std_stress);
     double beta = (mean_resistance - mean_stress) / denom;
     *out_beta = beta;
-
-    // Approximate failure probability using standard normal erfc: Pf = 0.5 * erfc(beta / sqrt(2))
     *out_pf = 0.5 * erfc(beta / sqrt(2.0));
 
     return 0;
@@ -1019,24 +914,19 @@ int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const doub
         return -1;
     }
 
-    // Expected return: Rp = sum( w_i * Y_i )
     double expected_return = 0.0;
     for (int i = 0; i < asset_count; i++) {
         expected_return += weights[i] * asset_yields[i];
     }
     *out_expected_return = expected_return;
 
-    // Constant correlation factor: rho = 0.15 representing standard mid-century market portfolios
     double rho = 0.15;
     double variance = 0.0;
 
     for (int i = 0; i < asset_count; i++) {
-        double std_i = asset_yields[i] * 0.25; // standard dev proportional to yield
-        
-        // Single variance terms: w_i^2 * sigma_i^2
+        double std_i = asset_yields[i] * 0.25;
         variance += weights[i] * weights[i] * std_i * std_i;
 
-        // Covariance terms: sum( w_i * w_j * sigma_i * sigma_j * rho )
         for (int j = 0; j < asset_count; j++) {
             if (i != j) {
                 double std_j = asset_yields[j] * 0.25;
@@ -1060,7 +950,6 @@ int tsfi_s370_executive_decision_villalon(int decision_count, const double *bene
     int opt_idx = -1;
 
     for (int i = 0; i < decision_count; i++) {
-        // Expected value: V_i = Benefit_i - Cost_i - (Benefit_i * RiskProb_i)
         double value = benefit[i] - cost[i] - (benefit[i] * risk_prob[i]);
         if (value > max_value) {
             max_value = value;
@@ -1079,10 +968,7 @@ int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsi
     }
 
     for (int i = 0; i < count; i++) {
-        // Linear congruential generator (LCG) step to yield deterministic pseudo-random sequences
         seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF;
-        
-        // Scale to a perturbation range of [-10%, +10%]
         double perturbation = ((double)(seed % 2000) - 1000.0) / 10000.0;
         parameters[i] = parameters[i] * (1.0 + perturbation);
     }
@@ -1096,7 +982,6 @@ int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_month
         return -1;
     }
 
-    // RCA Sarnoff-Zworykin scale gap: actual cost is 500x initial proposal, months is 6.67x
     *out_actual_budget = initial_budget * 500.0;
     *out_actual_months = initial_months * 6.66666667;
 
@@ -1113,11 +998,11 @@ int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachin
 
     int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
     if (sector_idx >= total_sectors) {
-        return -1; // Address out of bounds
+        return -1;
     }
 
     if (!disk[sector_idx].is_active) {
-        *out_val = 0; // Uninitialized memory reads as 0
+        *out_val = 0;
     } else {
         *out_val = (uint8_t)disk[sector_idx].value[byte_offset];
     }
@@ -1135,14 +1020,12 @@ int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_add
 
     int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
     if (sector_idx >= total_sectors) {
-        return -1; // Address out of bounds
+        return -1;
     }
 
-    // Resolve Cylinder index to check static/high memory protection boundary
-    // total sectors per cylinder is heads * sectors (50 * 20 = 1000)
     int cylinder = sector_idx / 1000;
     if (cylinder >= 45) {
-        return -2; // Write protected segment violation exception
+        return -2;
     }
 
     disk[sector_idx].value[byte_offset] = (char)val;
@@ -1162,14 +1045,11 @@ int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr,
     uint32_t physical_addr = 0;
     int write_protected = 0;
 
-    // 1. Perform standard S/370 segment-page DAT translation table walk
     int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, &physical_addr, &write_protected);
     if (ret != 0) {
-        return ret; // DAT translation exception
+        return ret;
     }
 
-    // 2. Map resulting physical byte address to RAMAC words/geometry
-    // Each RAMAC word is 4 bytes
     int flat_word_index = physical_addr / 4;
     *out_chs = tsfi_ramac_index_to_chs(flat_word_index);
 
@@ -1190,20 +1070,12 @@ int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_re
             break;
         }
 
-        // 1. Present data byte on SCSI data lines (data register)
         *data_reg = stream[i];
-
-        // 2. Assert REQ signal (bit 0x01 on control status register)
         *scsi_bus_status |= 0x01;
-
-        // 3. Simulated Device Loop: Device observes REQ, reads data, asserts ACK (bit 0x02)
         *scsi_bus_status |= 0x02; 
 
-        // 4. Host observes ACK, reads byte into out_buffer and clears REQ signal
         out_buffer[bytes_transferred++] = *data_reg;
         *scsi_bus_status &= ~0x01;
-
-        // 5. Device observes REQ deassertion, deasserts ACK signal
         *scsi_bus_status &= ~0x02;
     }
 
@@ -1216,13 +1088,11 @@ int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coe
         return -1;
     }
 
-    // Evaluate polynomial: y = sum( c_i * x^i )
     double eval_val = 0.0;
     for (int i = 0; i < coeff_count; i++) {
         eval_val += coefficients[i] * pow(analog_amplitude, i);
     }
 
-    // Normalize output scale to [0..1000]
     long long final_digital = (long long)round(eval_val * 1000.0);
     if (final_digital < 0) final_digital = 0;
     if (final_digital > 1000) final_digital = 1000;
@@ -1230,7 +1100,6 @@ int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coe
     char zoned[128];
     snprintf(zoned, sizeof(zoned), "%lld", final_digital);
 
-    // Pack directly to COMP-3 format
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
 
@@ -1249,7 +1118,6 @@ int tsfi_s370_punched_card_to_comp3(const tsfi_ramac_card *card, int start_col, 
         if (ch >= '0' && ch <= '9') {
             zoned_buf[dst_idx++] = ch;
         } else if (ch >= 'J' && ch <= 'R') {
-            // Standard IBM punch card zone representations for negative digits: J-R represents -1 to -9
             is_negative = 1;
             zoned_buf[dst_idx++] = (ch - 'J' + 1) + '0';
         }
@@ -1277,7 +1145,6 @@ int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status
         return -1;
     }
 
-    // Ingest buffered stream bytes as key-value pairs (using simple modulo index maps)
     char key[32];
     char value[32];
     snprintf(key, sizeof(key), "scsi_key_%d", buffer[0]);
@@ -1298,18 +1165,15 @@ int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double sp
         return -1;
     }
 
-    // Initial charge mapped directly from analog amplitude representation
     double initial_charge = analog_val * 100.0;
 
-    // Rule 10: Soft body physics Verlet solver applied strictly to FET discharge cycles
     int discharge_ret = tsfi_s370_fet_discharge_freudenthal(initial_charge, 0.1, mass, spring_k, damping_c, steps, out_decay_charges);
     if (discharge_ret != 0) {
         return -1;
     }
 
-    // Verify decay: charge should decrease in amplitude across steps (Verlet decay validation)
     if (fabs(out_decay_charges[steps - 1]) >= fabs(initial_charge)) {
-        return -2; // Fail: trajectory does not decay (instability check)
+        return -2;
     }
 
     return 0;
@@ -1320,14 +1184,12 @@ int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *a
         return -1;
     }
 
-    // SAGE AN/FSQ-7 Active-Passive priority monitoring loop:
-    // CPU A is designated as the primary active processor
     if (cpu_a_status == 1) {
-        *active_cpu = 1; // CPU A is active
+        *active_cpu = 1;
     } else if (cpu_b_status == 1) {
-        *active_cpu = 2; // Failover to CPU B
+        *active_cpu = 2;
     } else {
-        *active_cpu = 0; // Dual CPU fault failure state
+        *active_cpu = 0;
     }
 
     return 0;
@@ -1349,7 +1211,7 @@ int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keyword
 
         while ((ptr = strstr(ptr, keywords[i])) != NULL) {
             match_count++;
-            ptr += len; // Shift pointer beyond match pattern
+            ptr += len;
         }
     }
 
@@ -1364,12 +1226,11 @@ int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int pha
         return -1;
     }
 
-    // Parametron majority decision gate: outputs phase representing the majority of the three inputs
     int sum = phase_in_1 + phase_in_2 + phase_in_3;
     if (sum >= 2) {
-        *phase_out = 1; // 180 degrees phase state
+        *phase_out = 1;
     } else {
-        *phase_out = 0; // 0 degrees phase state
+        *phase_out = 0;
     }
 
     return 0;
@@ -1389,9 +1250,9 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
             int phase = 0;
 
             if (src == -1) {
-                phase = 0; // Constant bias 0
+                phase = 0;
             } else if (src == -2) {
-                phase = 1; // Constant bias 1
+                phase = 1;
             } else if (src < -2) {
                 int inp_idx = -(src + 3);
                 if (inp_idx >= 0 && inp_idx < input_count && inputs) {
@@ -1400,7 +1261,6 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
                     phase = 0;
                 }
             } else {
-                // Assert topology: source must be an already evaluated node index
                 if (src < i) {
                     phase = nodes[src].output;
                 } else {
@@ -1408,7 +1268,6 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
                 }
             }
 
-            // Apply phase inversion if flag is set
             if (nodes[i].invert[s]) {
                 phase = (phase == 0) ? 1 : 0;
             }
@@ -1416,7 +1275,6 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
             inputs_resolved[s] = phase;
         }
 
-        // Apply majority logic gate evaluation
         int out_phase = 0;
         int sum = inputs_resolved[0] + inputs_resolved[1] + inputs_resolved[2];
         if (sum >= 2) {
@@ -1437,10 +1295,8 @@ int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card
     int match_holes_count = 0;
 
     for (int i = 0; i < word_count; i++) {
-        // Bitwise AND operation representing stacked cards blocking/allowing light through holes
         out_matching[i] = card_a[i] & card_b[i];
 
-        // Count set bits (holes allowing light to pass through) in the resulting word
         uint32_t word = out_matching[i];
         while (word) {
             if (word & 1) {
@@ -1478,13 +1334,10 @@ int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int
         return -1;
     }
 
-    // Decodes two 20-bit instructions from a 40-bit Recomp II word:
-    // Left Instruction (bits 20..39):
     uint64_t left_instr = (raw_word >> 20) & 0xFFFFF;
-    *op1 = (left_instr >> 15) & 0x1F;   // 5-bit opcode
-    *addr1 = (left_instr >> 3) & 0xFFF; // 12-bit address
+    *op1 = (left_instr >> 15) & 0x1F;
+    *addr1 = (left_instr >> 3) & 0xFFF;
 
-    // Right Instruction (bits 0..19):
     uint64_t right_instr = raw_word & 0xFFFFF;
     *op2 = (right_instr >> 15) & 0x1F;
     *addr2 = (right_instr >> 3) & 0xFFF;
@@ -1497,11 +1350,7 @@ int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, 
         return -1;
     }
 
-    // Recomp II drum execution sector-advance timing:
-    // Let's assume 8 clock cycles represent the rotation time of 1 sector.
     int sectors_passed = (execution_cycles + 7) / 8;
-
-    // Minimum latency code scheduling inserts a safety buffer of +1 sector to prevent missing the slot
     *out_optimal_sector = (current_sector + sectors_passed + 1) % 64;
 
     return 0;
@@ -1513,13 +1362,9 @@ int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int c
         return -1;
     }
 
-    // Clear output audio buffer
     memset(out_audio, 0, max_samples * sizeof(double));
 
-    // Audio tone frequencies corresponding to the 8 possible tape tracks/channels
     double frequencies[8] = {110.0, 220.0, 330.0, 440.0, 550.0, 660.0, 770.0, 880.0};
-
-    // Duration of 1 tape row (step): 0.1 seconds
     double step_duration = 0.1;
     int samples_per_step = (int)(step_duration * sample_rate);
 
@@ -1533,14 +1378,13 @@ int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int c
             if ((row_val >> c) & 1) {
                 double freq = frequencies[c];
 
-                // Generate decaying sine wave for this channel trigger
                 for (int s = 0; s < samples_per_step; s++) {
                     int out_idx = start_sample + s;
                     if (out_idx >= max_samples) break;
 
                     double t = (double)s / sample_rate;
-                    double decay = exp(-t / 0.05); // Decay time constant tau = 50ms
-                    double signal = sin(2.0 * M_PI * freq * t) * decay * 0.1; // Scale amplitude
+                    double decay = exp(-t / 0.05);
+                    double signal = sin(2.0 * M_PI * freq * t) * decay * 0.1;
 
                     out_audio[out_idx] += signal;
                 }
@@ -1556,7 +1400,6 @@ int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *o
         return -1;
     }
 
-    // Clean to 36-bit word length limit
     uint64_t a = op_a & 0xFFFFFFFFFULL;
     uint64_t b = op_b & 0xFFFFFFFFFULL;
     uint64_t result = 0;
@@ -1572,7 +1415,6 @@ int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *o
             result = (a - b) & 0xFFFFFFFFFULL;
         }
     } else if (mode == 18) {
-        // Two 18-bit slices
         uint64_t a_hi = (a >> 18) & 0x3FFFFULL;
         uint64_t a_lo = a & 0x3FFFFULL;
         uint64_t b_hi = (b >> 18) & 0x3FFFFULL;
@@ -1588,7 +1430,6 @@ int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *o
         }
         result = (r_hi << 18) | r_lo;
     } else if (mode == 9) {
-        // Four 9-bit slices
         uint64_t r[4] = {0};
         for (int i = 0; i < 4; i++) {
             uint64_t sa = (a >> (i * 9)) & 0x1FFULL;
@@ -1613,23 +1454,18 @@ int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, d
         return -1;
     }
 
-    // Generate coordinates for a 9-point tracking cross centered at (*cross_x, *cross_y)
     double px[9], py[9];
-    // Center point
     px[0] = *cross_x; py[0] = *cross_y;
-    // Cardinal points
     px[1] = *cross_x + cross_radius; py[1] = *cross_y;
     px[2] = *cross_x - cross_radius; py[2] = *cross_y;
     px[3] = *cross_x; py[3] = *cross_y + cross_radius;
     px[4] = *cross_x; py[4] = *cross_y - cross_radius;
-    // Intermediate diagonal points
     double diag = cross_radius * 0.5;
     px[5] = *cross_x + diag; py[5] = *cross_y + diag;
     px[6] = *cross_x - diag; py[6] = *cross_y - diag;
     px[7] = *cross_x + diag; py[7] = *cross_y - diag;
     px[8] = *cross_x - diag; py[8] = *cross_y + diag;
 
-    // Detect points falling inside the pen aperture (radius threshold: 0.7 * cross_radius)
     double threshold = 0.7 * cross_radius;
     double sum_x = 0.0, sum_y = 0.0;
     int detected_count = 0;
@@ -1643,7 +1479,6 @@ int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, d
         }
     }
 
-    // If points are detected, relocate the tracking cross to their centroid
     if (detected_count > 0) {
         *cross_x = sum_x / detected_count;
         *cross_y = sum_y / detected_count;
@@ -1657,12 +1492,10 @@ int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, 
         return -1;
     }
 
-    // Initialize all route outputs to idle (-1)
     for (int i = 0; i < cpu_count; i++) {
         out_route_map[i] = -1;
     }
 
-    // Array tracking if a Buffer module is already bound (to prevent duplicate connections)
     int *buffer_used = (int *)calloc(buffer_count, sizeof(int));
     if (!buffer_used) return -1;
 
@@ -1671,7 +1504,6 @@ int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, 
         int connected_buffer = -1;
 
         for (int j = 0; j < buffer_count; j++) {
-            // Index in flat 1D matrix representation
             int idx = i * buffer_count + j;
             if (matrix_connections[idx] == 1) {
                 cpu_connection_count++;
@@ -1679,14 +1511,12 @@ int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, 
             }
         }
 
-        // Conflict: a single CPU cannot be dynamically bound to more than one Buffer simultaneously
         if (cpu_connection_count > 1) {
             free(buffer_used);
             return -1;
         }
 
         if (cpu_connection_count == 1) {
-            // Conflict: a Buffer module cannot be shared by multiple CPU connections simultaneously
             if (buffer_used[connected_buffer] == 1) {
                 free(buffer_used);
                 return -1;
@@ -1708,14 +1538,13 @@ int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, i
     int pc = 0;
     int instructions_executed = 0;
 
-    // Safety loop execution limit to prevent infinite loops (e.g. UNCOL VM panic threshold)
     while (pc >= 0 && pc < program_size && instructions_executed < 10000) {
         tsfi_uncol_instruction inst = program[pc];
         instructions_executed++;
 
         if (strcmp(inst.op, "LOAD") == 0) {
             if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.address < 0 || inst.address >= mem_size) {
-                return -2; // Execution fault exception
+                return -2;
             }
             registers[inst.reg_dest] = memory[inst.address];
             pc++;
@@ -1759,11 +1588,11 @@ int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, i
                 pc++;
             }
         } else {
-            pc++; // NOP
+            pc++;
         }
     }
 
-    return 0; // VM completed execution successfully
+    return 0;
 }
 
 int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int initiator_count, int target_count,
@@ -1775,17 +1604,14 @@ int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int
         return -1;
     }
 
-    // 1. Resolve connection matrix using the RW-400 switch router logic
     int ret = tsfi_s370_rw400_matrix_switch(matrix_connections, initiator_count, target_count, out_route_map);
     if (ret != 0) {
-        return -1; // Conflict configuration detected, routing abort
+        return -1;
     }
 
-    // 2. For each active connection, stream the corresponding WinchesterMQ SCSI handshake onto RAMAC targets
     for (int i = 0; i < initiator_count; i++) {
         int target_buffer_idx = out_route_map[i];
         if (target_buffer_idx != -1) {
-            // Assign cylinder mapping: each target buffer maps to 10 distinct cylinders of RAMAC storage
             int target_cylinder = target_buffer_idx * 10;
             if (target_cylinder >= RAMAC_CYLINDERS) {
                 target_cylinder = RAMAC_CYLINDERS - 1;
@@ -1794,7 +1620,7 @@ int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int
             int commit_slot = tsfi_s370_scsi_stream_to_ramac(disk, &scsi_status_array[i], &data_reg_array[i],
                                                              streams[i], stream_lens[i], target_cylinder);
             if (commit_slot == -1) {
-                return -2; // SCSI streaming commit failure
+                return -2;
             }
         }
     }
@@ -1820,7 +1646,6 @@ int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_i
         return -1;
     }
 
-    // 1. Timeout Eviction Check: evict active locks if stale (> 1000 ticks)
     if (registry->locked_cylinders[cylinder] != 0) {
         if (current_tick - registry->lock_ticks[cylinder] > 1000) {
             registry->locked_cylinders[cylinder] = 0;
@@ -1828,30 +1653,25 @@ int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_i
         }
     }
 
-    // 2. Grant lock if Unlocked
     if (registry->locked_cylinders[cylinder] == 0) {
         registry->locked_cylinders[cylinder] = lock_mode;
         registry->cylinder_owners[cylinder] = initiator_id;
         registry->lock_ticks[cylinder] = current_tick;
-        return 0; // Success
+        return 0;
     }
 
-    // 3. Shared Read concurrent access check
     if (registry->locked_cylinders[cylinder] == 1 && lock_mode == 1) {
-        // Shared lock permits concurrent reads. For simplicity we let the primary owner remain
-        return 0; // Success
+        return 0;
     }
 
-    // 4. Lock Conflict & Priority Preemption Check
-    // High priority initiator (priority > 5) can preempt locks held by lower priority owners
     if (initiator_priority > 5) {
         registry->locked_cylinders[cylinder] = lock_mode;
         registry->cylinder_owners[cylinder] = initiator_id;
         registry->lock_ticks[cylinder] = current_tick;
-        return 2; // Preempted success
+        return 2;
     }
 
-    return -2; // Lock Denied (Conflict)
+    return -2;
 }
 
 int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder) {
@@ -1863,10 +1683,10 @@ int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_i
         registry->locked_cylinders[cylinder] = 0;
         registry->cylinder_owners[cylinder] = -1;
         registry->lock_ticks[cylinder] = 0;
-        return 0; // Success
+        return 0;
     }
 
-    return -1; // Denied: releasing an unowned lock
+    return -1;
 }
 
 int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
@@ -1889,7 +1709,7 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
 
         if (strcmp(inst.op, "MSTORE") == 0) {
             if (inst.val_addr + 4 > (uint32_t)yul_mem_size || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
-                return -2; // Fault exception
+                return -2;
             }
             int val = registers[inst.reg_src1];
             yul_memory[inst.val_addr] = (val >> 24) & 0xFF;
@@ -1927,9 +1747,8 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
             if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
                 return -2;
             }
-            // Enforce security check: initiator must possess active write lock (lock_mode = 2) on target cylinder
             if (lock_registry->locked_cylinders[cylinder] != 2 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
-                return -3; // Access violation exception
+                return -3;
             }
             char key_str[32];
             char val_str[32];
@@ -1943,9 +1762,8 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
             if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
                 return -2;
             }
-            // Enforce security check: initiator must possess active lock on target cylinder (mode 1 or 2)
             if (lock_registry->locked_cylinders[cylinder] == 0 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
-                return -3; // Access violation exception
+                return -3;
             }
             char key_str[32];
             snprintf(key_str, sizeof(key_str), "zyir_key_%d", initiator_id);
@@ -1976,11 +1794,11 @@ int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
             registers[inst.reg_dest] = registers[inst.reg_src1] - registers[inst.reg_src2];
             pc++;
         } else {
-            pc++; // NOP
+            pc++;
         }
     }
 
-    return 0; // ZY-IR execution completed successfully
+    return 0;
 }
 
 int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_size,
@@ -2021,17 +1839,14 @@ int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_si
 int tsfi_s370_philco212_decode(uint64_t raw_word, tsfi_philco212_instruction *inst_left, tsfi_philco212_instruction *inst_right) {
     if (!inst_left || !inst_right) return -1;
 
-    // Word is 48-bit length
     uint64_t clean_word = raw_word & 0xFFFFFFFFFFFFULL;
 
-    // Left instruction (bits 24..47)
     uint32_t left_val = (clean_word >> 24) & 0xFFFFFF;
     inst_left->opcode = (left_val >> 16) & 0xFF;
     inst_left->index_reg = (left_val >> 13) & 0x07;
     inst_left->mod_mode = (left_val >> 11) & 0x03;
     inst_left->address = left_val & 0x7FF;
 
-    // Right instruction (bits 0..23)
     uint32_t right_val = clean_word & 0xFFFFFF;
     inst_right->opcode = (right_val >> 16) & 0xFF;
     inst_right->index_reg = (right_val >> 13) & 0x07;
@@ -2045,34 +1860,32 @@ int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *in
     if (!inst || !index_registers || !out_modified_address) return -1;
 
     if (inst->index_reg >= index_reg_count) {
-        return -1; // Out of bounds
+        return -1;
     }
 
     if (inst->index_reg == 0) {
-        // No index register modification
         *out_modified_address = inst->address;
         return 0;
     }
 
     int index_val = index_registers[inst->index_reg];
 
-    // Evaluate the 4 automatic index modification modes of the Philco 212 CPU:
     switch (inst->mod_mode) {
-        case 0: // 00: Standard offset addition (Index modification only, registers unchanged)
+        case 0:
             *out_modified_address = (inst->address + index_val) & 0x7FF;
             break;
 
-        case 1: // 01: Post-increment index modification
+        case 1:
             *out_modified_address = (inst->address + index_val) & 0x7FF;
             index_registers[inst->index_reg] = (index_val + 1) & 0x7FF;
             break;
 
-        case 2: // 10: Post-decrement index modification
+        case 2:
             *out_modified_address = (inst->address + index_val) & 0x7FF;
             index_registers[inst->index_reg] = (index_val - 1) & 0x7FF;
             break;
 
-        case 3: // 11: Pre-increment index modification
+        case 3:
             index_val = (index_val + 1) & 0x7FF;
             index_registers[inst->index_reg] = index_val;
             *out_modified_address = (inst->address + index_val) & 0x7FF;
@@ -2085,13 +1898,9 @@ int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *in
 int tsfi_s370_bendixg20_decode(uint32_t raw_word, tsfi_bendixg20_instruction *inst) {
     if (!inst) return -1;
 
-    // Opcode: bits 26..31 (6 bits)
     inst->opcode = (raw_word >> 26) & 0x3F;
-    // Index Register identifier: bits 20..25 (6 bits)
     inst->index_reg = (raw_word >> 20) & 0x3F;
-    // Memory Address: bits 5..19 (15 bits)
     inst->address = (raw_word >> 5) & 0x7FFF;
-    // Flags: bits 0..4 (5 bits)
     inst->flags = raw_word & 0x1F;
 
     return 0;
@@ -2101,14 +1910,12 @@ int tsfi_s370_bendixg20_resolve_address(const tsfi_bendixg20_instruction *inst, 
     if (!inst || !out_effective_address) return -1;
 
     if (inst->index_reg == 0) {
-        // No index modification requested
         *out_effective_address = inst->address;
         return 0;
     }
 
-    // Index registers are memory locations 1..63
     if (inst->index_reg >= mem_size) {
-        return -1; // Out of bounds memory register mapping error
+        return -1;
     }
 
     if (!memory_pool) return -1;
@@ -2130,25 +1937,21 @@ void tsfi_lgp30_flipflop_init(tsfi_lgp30_flipflop *ff) {
 void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, double trigger_reset_v, double dt) {
     if (!ff) return;
 
-    // Physical triode & nodal coupling parameters
-    double vcc = 200.0;     // Supply voltage
-    double rl = 20000.0;    // Plate load resistance
-    double r1 = 100000.0;   // Cross coupling resistor 1
-    double r2 = 50000.0;    // Cross coupling resistor 2 (asymmetric divider for bistability)
-    double bias_v = -50.0;  // Grid bias voltage reference (properly scaled to -50V)
-    double i0 = 0.002;      // Triode current scaling constant
+    double vcc = 200.0;
+    double rl = 20000.0;
+    double r1 = 100000.0;
+    double r2 = 50000.0;
+    double bias_v = -50.0;
+    double i0 = 0.002;
 
-    // Calculate grid targets from cross-coupled plates using proper weighted voltage divider
     double target_g1 = (ff->triode2_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_set_v;
     double target_g2 = (ff->triode1_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_reset_v;
 
-    // Grid RC low-pass filter (grid charging delay ~10 us)
     ff->triode1_grid_v += (target_g1 - ff->triode1_grid_v) * (dt / 0.00001);
     ff->triode2_grid_v += (target_g2 - ff->triode2_grid_v) * (dt / 0.00001);
     if (ff->triode1_grid_v > 0.0) ff->triode1_grid_v = 0.0;
     if (ff->triode2_grid_v > 0.0) ff->triode2_grid_v = 0.0;
 
-    // Compute plate current (using 3/2 power law model of vacuum tube)
     double ip1 = 0.0;
     if (ff->triode1_grid_v > -6.0) {
         ip1 = i0 * pow(ff->triode1_grid_v + 6.0, 1.5);
@@ -2158,13 +1961,11 @@ void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, dou
         ip2 = i0 * pow(ff->triode2_grid_v + 6.0, 1.5);
     }
 
-    // Plate voltage targets (V = Vcc - Ip*Rl)
     double target_p1 = vcc - ip1 * rl;
     double target_p2 = vcc - ip2 * rl;
     if (target_p1 < 0.0) target_p1 = 0.0;
     if (target_p2 < 0.0) target_p2 = 0.0;
 
-    // Plate RC low-pass filter (plate charging delay ~2 us)
     ff->triode1_plate_v += (target_p1 - ff->triode1_plate_v) * (dt / 0.000002);
     ff->triode2_plate_v += (target_p2 - ff->triode2_plate_v) * (dt / 0.000002);
 }
@@ -2172,7 +1973,6 @@ void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, dou
 int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int count) {
     if (!integrators || count <= 0) return -1;
 
-    // 1. Snapshot previous outputs to resolve feedback pathways without race conditions
     int *prev_outputs = (int *)malloc(count * sizeof(int));
     if (!prev_outputs) return -1;
 
@@ -2180,12 +1980,10 @@ int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int
         prev_outputs[i] = integrators[i].output_dz;
     }
 
-    // 2. Perform Euler step for each integrator in the DA-1 Digital Differential Analyzer
     for (int i = 0; i < count; i++) {
-        // Resolve independent variable step dx
         int dx = 0;
         if (integrators[i].src_dx_integrator == -1) {
-            dx = 1; // Standard independent variable time step
+            dx = 1;
         } else {
             int src_idx = integrators[i].src_dx_integrator;
             if (src_idx >= 0 && src_idx < count) {
@@ -2193,7 +1991,6 @@ int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int
             }
         }
 
-        // Resolve integrand increment dy
         int dy = 0;
         if (integrators[i].src_dy_integrator != -1) {
             int src_idx = integrators[i].src_dy_integrator;
@@ -2206,14 +2003,11 @@ int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int
             dy = -dy;
         }
 
-        // Update integrand Y
         integrators[i].y += dy;
 
-        // Accumulate to R accumulator if dx is active
         if (dx != 0) {
             integrators[i].r += integrators[i].y * dx;
 
-            // Overflow detection and output pulse emission
             if (integrators[i].r >= integrators[i].limit) {
                 integrators[i].r -= integrators[i].limit;
                 integrators[i].output_dz = 1;
@@ -2244,70 +2038,68 @@ int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int
         int inst = memory[*pc];
         steps++;
 
-        // Opcode: bits 20..23 (4 bits)
         int opcode = (inst >> 20) & 0x0F;
-        // Address: bits 0..11 (12 bits)
         int addr = inst & 0x0FFF;
 
         if (addr >= mem_size) {
-            return -2; // Out of bounds memory access
+            return -2;
         }
 
         int next_pc = *pc + 1;
 
         switch (opcode) {
-            case 0: // Bring (Load accumulator from memory)
+            case 0:
                 *accumulator = memory[addr];
                 break;
 
-            case 1: // Clear/Store (Store accumulator into memory and clear accumulator)
+            case 1:
                 memory[addr] = *accumulator;
                 *accumulator = 0;
                 break;
 
-            case 2: // Add
+            case 2:
                 *accumulator += memory[addr];
                 break;
 
-            case 3: // Subtract
+            case 3:
                 *accumulator -= memory[addr];
                 break;
 
-            case 4: // Multiply
+            case 4:
                 *accumulator *= memory[addr];
                 break;
 
-            case 5: // Divide
+            case 5:
                 if (memory[addr] != 0) {
                     *accumulator /= memory[addr];
                 } else {
-                    return -3; // Division by zero runtime check error
+                    return -3;
                 }
                 break;
 
-            case 6: // Extract (AND bit mask)
+            case 6:
                 *accumulator &= memory[addr];
                 break;
 
-            case 7: // Jump (Unconditional Transfer)
+            case 7:
                 next_pc = addr;
                 break;
 
-            case 8: // Test (Branch if accumulator is negative)
+            case 8:
                 if (*accumulator < 0) {
                     next_pc = addr;
                 }
                 break;
 
-            case 9: // Hold/Store (Store but don't clear accumulator)
+            case 9:
                 memory[addr] = *accumulator;
                 break;
 
-            case 10: // Store Address (Replace address portion of instruction at memory location)
+            case 10:
                 memory[addr] = (memory[addr] & 0xFFFFF000) | (*accumulator & 0x00000FFF);
                 break;
 
-            case 11: // Stop
+            case 11:
                 halted = 1;
                 break;
 
@@ -2330,7 +2122,7 @@ int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_
 
     for (int i = 0; i < program_size; i++) {
         if (compiled_words >= max_words) {
-            return -2; // Buffer overflow
+            return -2;
         }
 
         tsfi_uncol_instruction inst = program[i];
@@ -2338,17 +2130,17 @@ int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_
         int addr = inst.address & 0x0FFF;
 
         if (strcmp(inst.op, "LOAD") == 0) {
-            opcode = 0; // Bring (B m)
+            opcode = 0;
         } else if (strcmp(inst.op, "STORE") == 0) {
-            opcode = 9; // Hold/Store (H m)
+            opcode = 9;
         } else if (strcmp(inst.op, "ADD") == 0) {
-            opcode = 2; // Add (A m)
+            opcode = 2;
         } else if (strcmp(inst.op, "SUB") == 0) {
-            opcode = 3; // Subtract (S m)
+            opcode = 3;
         } else if (strcmp(inst.op, "JMP") == 0) {
-            opcode = 7; // Unconditional transfer (U m)
+            opcode = 7;
         } else if (strcmp(inst.op, "JZ") == 0) {
-            opcode = 8; // Test Negative (T m) - nearest LGP-30 conditional mapping
+            opcode = 8;
         }
 
         if (opcode != -1) {
@@ -2393,7 +2185,7 @@ int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit
     uint32_t offset = bit_address % 64;
 
     uint64_t mask = (bit_length == 64) ? ~0ULL : ((1ULL << bit_length) - 1);
-    val &= mask; // Ensure val doesn't exceed bit_length capacity
+    val &= mask;
 
     if (offset + bit_length <= 64) {
         uint64_t write_mask = mask << offset;
@@ -2413,4 +2205,126 @@ int tsfi_s370_ibm7030_write_bits(uint64_t *memory, uint32_t bit_address, int bit
     }
 
     return 0;
+}
+
+static void init_ecc_positions(int *data_to_pos, int *pos_to_data) {
+    int data_idx = 0;
+    for (int i = 1; i <= 63; i++) {
+        if ((i & (i - 1)) == 0) {
+            pos_to_data[i] = -1;
+        } else {
+            data_to_pos[data_idx] = i;
+            pos_to_data[i] = data_idx;
+            data_idx++;
+        }
+    }
+}
+
+uint64_t tsfi_s370_ibm7030_ecc_encode(uint64_t data) {
+    int data_to_pos[56];
+    int pos_to_data[64];
+    init_ecc_positions(data_to_pos, pos_to_data);
+
+    uint64_t code_word = 0;
+    for (int i = 0; i < 56; i++) {
+        if ((data >> i) & 1) {
+            code_word |= (1ULL << data_to_pos[i]);
+        }
+    }
+
+    for (int j = 0; j < 6; j++) {
+        int parity_pos = 1 << j;
+        int parity_val = 0;
+        for (int i = 1; i <= 63; i++) {
+            if (i & parity_pos) {
+                if ((code_word >> i) & 1) {
+                    parity_val ^= 1;
+                }
+            }
+        }
+        if (parity_val) {
+            code_word |= (1ULL << parity_pos);
+        }
+    }
+
+    int overall_parity = 0;
+    for (int i = 1; i <= 63; i++) {
+        if ((code_word >> i) & 1) {
+            overall_parity ^= 1;
+        }
+    }
+    if (overall_parity) {
+        code_word |= (1ULL << 0);
+    }
+
+    return code_word;
+}
+
+int tsfi_s370_ibm7030_ecc_decode(uint64_t word_64, uint64_t *out_corrected_data) {
+    if (!out_corrected_data) return -1;
+
+    int data_to_pos[56];
+    int pos_to_data[64];
+    init_ecc_positions(data_to_pos, pos_to_data);
+
+    int overall_parity = 0;
+    for (int i = 0; i <= 63; i++) {
+        if ((word_64 >> i) & 1) {
+            overall_parity ^= 1;
+        }
+    }
+
+    int syndrome = 0;
+    for (int j = 0; j < 6; j++) {
+        int parity_pos = 1 << j;
+        int parity_val = 0;
+        for (int i = 1; i <= 63; i++) {
+            if (i & parity_pos) {
+                if ((word_64 >> i) & 1) {
+                    parity_val ^= 1;
+                }
+            }
+        }
+        if (parity_val) {
+            syndrome |= parity_pos;
+        }
+    }
+
+    if (syndrome == 0) {
+        if (overall_parity == 0) {
+            uint64_t data = 0;
+            for (int i = 0; i < 56; i++) {
+                if ((word_64 >> data_to_pos[i]) & 1) {
+                    data |= (1ULL << i);
+                }
+            }
+            *out_corrected_data = data;
+            return 0;
+        } else {
+            uint64_t data = 0;
+            for (int i = 0; i < 56; i++) {
+                if ((word_64 >> data_to_pos[i]) & 1) {
+                    data |= (1ULL << i);
+                }
+            }
+            *out_corrected_data = data;
+            return 1;
+        }
+    } else {
+        if (overall_parity != 0) {
+            if (syndrome <= 63) {
+                word_64 ^= (1ULL << syndrome);
+            }
+            uint64_t data = 0;
+            for (int i = 0; i < 56; i++) {
+                if ((word_64 >> data_to_pos[i]) & 1) {
+                    data |= (1ULL << i);
+                }
+            }
+            *out_corrected_data = data;
+            return 1;
+        } else {
+            return 2;
+        }
+    }
 }

@@ -1432,6 +1432,30 @@ int main(void) {
     assert((stretch_mem[1] & 0xFFFFULL) == 0xDEADULL);
     printf("  [PASS] IBM 7030 STRETCH bit-addressable memory verified successfully.\n");
 
+    // Test Scenario 12: IBM 7030 STRETCH Hamming SEC-DED ECC
+    printf("[Test] Verifying IBM 7030 STRETCH Hamming SEC-DED ECC...\n");
+    uint64_t data_word = 0x0023456789ABCDEFULL;
+    uint64_t ecc_word = tsfi_s370_ibm7030_ecc_encode(data_word);
+
+    // 1. Decode clean word
+    uint64_t decoded_val = 0;
+    int ecc_ret = tsfi_s370_ibm7030_ecc_decode(ecc_word, &decoded_val);
+    assert(ecc_ret == 0);
+    assert(decoded_val == data_word);
+
+    // 2. Decode with single-bit error (bit position 17)
+    uint64_t corrupted_word1 = ecc_word ^ (1ULL << 17);
+    ecc_ret = tsfi_s370_ibm7030_ecc_decode(corrupted_word1, &decoded_val);
+    assert(ecc_ret == 1); // Corrected
+    assert(decoded_val == data_word);
+
+    // 3. Decode with double-bit error (bit positions 17 and 25)
+    uint64_t corrupted_word2 = ecc_word ^ (1ULL << 17) ^ (1ULL << 25);
+    ecc_ret = tsfi_s370_ibm7030_ecc_decode(corrupted_word2, &decoded_val);
+    assert(ecc_ret == 2); // Double error detected
+
+    printf("  [PASS] IBM 7030 STRETCH Hamming SEC-DED ECC verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
