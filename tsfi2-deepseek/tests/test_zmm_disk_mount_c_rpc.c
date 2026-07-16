@@ -202,7 +202,6 @@ static void load_wmq_address(char *addr, size_t max_len) {
 }
 
 static void save_wmq_address(const char *addr) {
-    // Ensure parent dir exists
     int res = mkdir("tmp", 0777);
     (void)res;
     FILE *fp = fopen(ADDR_FILE, "w");
@@ -322,11 +321,11 @@ int main(int argc, char *argv[]) {
         size_t len = end_quote - res_ptr;
         memcpy(query_addr, res_ptr, len);
         query_addr[len] = '\0';
-        printf("LUN %lu mounted disk address: 0x%s\n", lun, query_addr + 24);
+        printf("LUN %lu mounted disk address: 0x%s\n", lun, query_addr + 26);
         return 0;
     }
 
-    // Default automated verification loop
+    // Default automated verification loop with strict C asserts
     printf("=============================================================\n");
     printf("SOLID STATE HARDWARE DYNAMICS: MOUNT/UNMOUNT VERIFICATION\n");
     printf("=============================================================\n");
@@ -349,21 +348,7 @@ int main(int argc, char *argv[]) {
     deploy_contract_from_c(disk_hex, disk_addr, sizeof(disk_addr));
     printf("  [DEPLOYED] DiskSystem Address: %s\n", disk_addr);
 
-    char mount_payload[1024];
-    snprintf(mount_payload, sizeof(mount_payload),
-             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
-             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
-             "\"to\":\"%s\","
-             "\"data\":\"0x4d6f756e"
-             "0000000000000000000000000000000000000000000000000000000000000000" // LUN = 0
-             "000000000000000000000000%s\","
-             "\"gas\":\"0xF4240\""
-             "}],\"id\":1}",
-             wmq_addr, disk_addr + 2);
-
-    execute_tx(mount_payload);
-    printf("  [MOUNT] Disk successfully mounted on LUN 0.\n");
-
+    // Assert initially unmounted (0 address returned)
     char query_payload[1024];
     snprintf(query_payload, sizeof(query_payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
@@ -380,12 +365,43 @@ int main(int argc, char *argv[]) {
     res_ptr += 10;
     char *end_quote = strchr(res_ptr, '"');
     assert(end_quote != NULL);
-    char query_addr[128];
+    char initial_addr[128];
     size_t len = end_quote - res_ptr;
+    memcpy(initial_addr, res_ptr, len);
+    initial_addr[len] = '\0';
+    assert(strcmp(initial_addr + 26, "0000000000000000000000000000000000000000") == 0);
+
+    // Mount disk address on LUN 0
+    char mount_payload[1024];
+    snprintf(mount_payload, sizeof(mount_payload),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0x4d6f756e"
+             "0000000000000000000000000000000000000000000000000000000000000000" // LUN = 0
+             "000000000000000000000000%s\","
+             "\"gas\":\"0xF4240\""
+             "}],\"id\":1}",
+             wmq_addr, disk_addr + 2);
+
+    execute_tx(mount_payload);
+    printf("  [MOUNT] Disk successfully mounted on LUN 0.\n");
+
+    // Assert mount address checks match perfectly
+    send_rpc_request(query_payload, response, sizeof(response));
+    res_ptr = strstr(response, "\"result\":\"");
+    assert(res_ptr != NULL);
+    res_ptr += 10;
+    end_quote = strchr(res_ptr, '"');
+    assert(end_quote != NULL);
+    char query_addr[128];
+    len = end_quote - res_ptr;
     memcpy(query_addr, res_ptr, len);
     query_addr[len] = '\0';
-    printf("  [MOUNT_CHECK] WinchesterMQ returned mounted address: 0x%s\n", query_addr + 24);
+    printf("  [MOUNT_CHECK] WinchesterMQ returned mounted address: 0x%s\n", query_addr + 26);
+    assert(strcmp(query_addr + 26, disk_addr + 2) == 0);
 
+    // Unmount disk from LUN 0
     char unmount_payload[1024];
     snprintf(unmount_payload, sizeof(unmount_payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
@@ -399,6 +415,19 @@ int main(int argc, char *argv[]) {
              wmq_addr);
     execute_tx(unmount_payload);
     printf("  [UNMOUNT] Disk successfully unmounted from LUN 0.\n");
+
+    // Assert address reset to 0 after unmount
+    send_rpc_request(query_payload, response, sizeof(response));
+    res_ptr = strstr(response, "\"result\":\"");
+    assert(res_ptr != NULL);
+    res_ptr += 10;
+    end_quote = strchr(res_ptr, '"');
+    assert(end_quote != NULL);
+    char post_unmount_addr[128];
+    len = end_quote - res_ptr;
+    memcpy(post_unmount_addr, res_ptr, len);
+    post_unmount_addr[len] = '\0';
+    assert(strcmp(post_unmount_addr + 26, "0000000000000000000000000000000000000000") == 0);
 
     free(wmq_hex);
     free(disk_hex);
