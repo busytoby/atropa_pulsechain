@@ -176,12 +176,7 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     return found_slot;
 }
 
-const char* tsfi_ramac_search_record(disk, key, cylinder, out_total_seek_us)
-    tsfi_ramac_record *disk;
-    const char *key;
-    int cylinder;
-    double *out_total_seek_us;
-{
+const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us) {
     int primary_idx = tsfi_ramac_hash_key(key, cylinder);
     int current_idx = primary_idx;
     double seek_time = 0.0;
@@ -1655,4 +1650,52 @@ int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, d
     }
 
     return detected_count;
+}
+
+int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, int buffer_count, int *out_route_map) {
+    if (!matrix_connections || cpu_count <= 0 || buffer_count <= 0 || !out_route_map) {
+        return -1;
+    }
+
+    // Initialize all route outputs to idle (-1)
+    for (int i = 0; i < cpu_count; i++) {
+        out_route_map[i] = -1;
+    }
+
+    // Array tracking if a Buffer module is already bound (to prevent duplicate connections)
+    int *buffer_used = (int *)calloc(buffer_count, sizeof(int));
+    if (!buffer_used) return -1;
+
+    for (int i = 0; i < cpu_count; i++) {
+        int cpu_connection_count = 0;
+        int connected_buffer = -1;
+
+        for (int j = 0; j < buffer_count; j++) {
+            // Index in flat 1D matrix representation
+            int idx = i * buffer_count + j;
+            if (matrix_connections[idx] == 1) {
+                cpu_connection_count++;
+                connected_buffer = j;
+            }
+        }
+
+        // Conflict: a single CPU cannot be dynamically bound to more than one Buffer simultaneously
+        if (cpu_connection_count > 1) {
+            free(buffer_used);
+            return -1;
+        }
+
+        if (cpu_connection_count == 1) {
+            // Conflict: a Buffer module cannot be shared by multiple CPU connections simultaneously
+            if (buffer_used[connected_buffer] == 1) {
+                free(buffer_used);
+                return -1;
+            }
+            buffer_used[connected_buffer] = 1;
+            out_route_map[i] = connected_buffer;
+        }
+    }
+
+    free(buffer_used);
+    return 0;
 }

@@ -994,6 +994,32 @@ int main(void) {
     printf("  Centroid relocated to: (%.4f, %.4f)\n", track_x, track_y);
     printf("  [PASS] TX-2 light pen tracking loop verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.6. Ramo-Wooldridge RW-400 Matrix Switch Verification
+    printf("[Test] Verifying RW-400 polymorphic matrix switch...\n");
+    // Matrix: 3 CPUs, 4 Buffers
+    // Requested connections: CPU 0 -> Buffer 2, CPU 1 -> Buffer 0, CPU 2 -> Buffer 3
+    int conn[12] = {
+        0, 0, 1, 0, // CPU 0
+        1, 0, 0, 0, // CPU 1
+        0, 0, 0, 1  // CPU 2
+    };
+    int routes[3] = {-1, -1, -1};
+    int sw_ret = tsfi_s370_rw400_matrix_switch(conn, 3, 4, routes);
+    assert(sw_ret == 0);
+    assert(routes[0] == 2);
+    assert(routes[1] == 0);
+    assert(routes[2] == 3);
+
+    // Conflict case: CPU 0 and CPU 1 both request Buffer 2
+    int conn_conflict[12] = {
+        0, 0, 1, 0, // CPU 0 -> Buffer 2
+        0, 0, 1, 0, // CPU 1 -> Buffer 2
+        0, 0, 0, 1  // CPU 2 -> Buffer 3
+    };
+    int sw_conflict_ret = tsfi_s370_rw400_matrix_switch(conn_conflict, 3, 4, routes);
+    assert(sw_conflict_ret == -1); // Routing failed due to destination conflict
+    printf("  [PASS] RW-400 polymorphic matrix switch routing verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

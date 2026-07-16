@@ -328,4 +328,7 @@ int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *o
 // MIT Lincoln Laboratory TX-2 light pen tracking loop simulator
 int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, double *cross_y, double cross_radius);
 
+// Ramo-Wooldridge RW-400 polymorphic switching matrix router
+int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, int buffer_count, int *out_route_map);
+
 #endif // TSFI_RAMAC_LAYOUT_H
