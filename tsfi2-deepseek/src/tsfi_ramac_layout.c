@@ -2231,3 +2231,92 @@ int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int
     free(prev_outputs);
     return 0;
 }
+
+int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int *pc, int max_steps) {
+    if (!memory || mem_size <= 0 || !accumulator || !pc || max_steps <= 0) {
+        return -1;
+    }
+
+    int steps = 0;
+    int halted = 0;
+
+    while (*pc >= 0 && *pc < mem_size && steps < max_steps && !halted) {
+        int inst = memory[*pc];
+        steps++;
+
+        // Opcode: bits 20..23 (4 bits)
+        int opcode = (inst >> 20) & 0x0F;
+        // Address: bits 0..11 (12 bits)
+        int addr = inst & 0x0FFF;
+
+        if (addr >= mem_size) {
+            return -2; // Out of bounds memory access
+        }
+
+        int next_pc = *pc + 1;
+
+        switch (opcode) {
+            case 0: // Bring (Load accumulator from memory)
+                *accumulator = memory[addr];
+                break;
+
+            case 1: // Clear/Store (Store accumulator into memory and clear accumulator)
+                memory[addr] = *accumulator;
+                *accumulator = 0;
+                break;
+
+            case 2: // Add
+                *accumulator += memory[addr];
+                break;
+
+            case 3: // Subtract
+                *accumulator -= memory[addr];
+                break;
+
+            case 4: // Multiply
+                *accumulator *= memory[addr];
+                break;
+
+            case 5: // Divide
+                if (memory[addr] != 0) {
+                    *accumulator /= memory[addr];
+                } else {
+                    return -3; // Division by zero runtime check error
+                }
+                break;
+
+            case 6: // Extract (AND bit mask)
+                *accumulator &= memory[addr];
+                break;
+
+            case 7: // Jump (Unconditional Transfer)
+                next_pc = addr;
+                break;
+
+            case 8: // Test (Branch if accumulator is negative)
+                if (*accumulator < 0) {
+                    next_pc = addr;
+                }
+                break;
+
+            case 9: // Hold/Store (Store but don't clear accumulator)
+                memory[addr] = *accumulator;
+                break;
+
+            case 10: // Store Address (Replace address portion of instruction at memory location)
+                memory[addr] = (memory[addr] & 0xFFFFF000) | (*accumulator & 0x00000FFF);
+                break;
+
+            case 11: // Stop
+                halted = 1;
+                break;
+
+            default:
+                break;
+        }
+
+        *pc = next_pc;
+    }
+
+    return steps;
+}

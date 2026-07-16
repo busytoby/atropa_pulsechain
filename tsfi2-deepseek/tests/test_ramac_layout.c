@@ -1365,6 +1365,33 @@ int main(void) {
 
     printf("  [PASS] Bendix G-15 DA-1 DDA co-processor simulation verified successfully.\n");
 
+    // Test Scenario 9: LGP-30 instruction set interpreter strategy runner
+    printf("[Test] Verifying Librascope LGP-30 machine strategy runner...\n");
+    int lgp_mem[200] = {0};
+    int lgp_acc = 0;
+    int lgp_pc = 0;
+
+    // Load initial funds: Bring memory location 100
+    lgp_mem[0] = (0 << 20) | 100;
+    // Subtract cost: Subtract location 101
+    lgp_mem[1] = (3 << 20) | 101;
+    // Multiply by yield factor: Multiply location 102
+    lgp_mem[2] = (4 << 20) | 102;
+    // Store result to temp holding location 103
+    lgp_mem[3] = (9 << 20) | 103;
+    // Stop
+    lgp_mem[4] = (11 << 20) | 0;
+
+    // Set memory values
+    lgp_mem[100] = 50000; // initial funds
+    lgp_mem[101] = 40000; // cost
+    lgp_mem[102] = 2;     // yield factor
+
+    int lgp_ret = tsfi_s370_lgp30_interpreter(lgp_mem, 200, &lgp_acc, &lgp_pc, 100);
+    assert(lgp_ret > 0);
+    assert(lgp_mem[103] == 20000); // (50000 - 40000) * 2 = 20000 holding value
+    printf("  [PASS] Librascope LGP-30 machine strategy runner verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

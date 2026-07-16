@@ -438,4 +438,7 @@ void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, dou
 // Bendix G-15 DA-1 Digital Differential Analyzer (DDA) simulation step execution
 int tsfi_s370_bendixg15_dda_tick(tsfi_bendixg15_dda_integrator *integrators, int count);
 
+// Librascope LGP-30 16-instruction set architecture interpreter
+int tsfi_s370_lgp30_interpreter(int *memory, int mem_size, int *accumulator, int *pc, int max_steps);
+
 #endif // TSFI_RAMAC_LAYOUT_H
