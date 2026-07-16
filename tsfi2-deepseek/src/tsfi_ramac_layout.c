@@ -742,3 +742,41 @@ int tsfi_s370_packed_add(const uint8_t *a, int a_len,
 
     return tsfi_s370_pack(zoned_sum, dest_out, dest_max_len);
 }
+
+int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
+                          uint8_t *real_memory, int mem_size) {
+    if (!cpu || !real_memory || mem_size < 512) {
+        return -1;
+    }
+
+    // 1. Store 8-bit SVC code at real storage offset 139 (0x8B)
+    real_memory[139] = svc_code;
+
+    // 2. Save current PSW to SVC Old PSW vector location (real address 32 / 0x20)
+    real_memory[32] = (cpu->current_psw.key << 4);
+    real_memory[33] = cpu->current_psw.problem_state ? 0x01 : 0x00;
+    real_memory[34] = 0x00;
+    real_memory[35] = 0x00;
+    real_memory[36] = (cpu->current_psw.instruction_address >> 24) & 0xFF;
+    real_memory[37] = (cpu->current_psw.instruction_address >> 16) & 0xFF;
+    real_memory[38] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
+    real_memory[39] = cpu->current_psw.instruction_address & 0xFF;
+
+    // 3. Load new PSW from SVC New PSW vector location (real address 80 / 0x50)
+    uint8_t new_key = (real_memory[80] >> 4) & 0x0F;
+    int new_problem_state = real_memory[81] & 0x01;
+    uint32_t new_inst_addr = ((uint32_t)real_memory[84] << 24) |
+                             ((uint32_t)real_memory[85] << 16) |
+                             ((uint32_t)real_memory[86] << 8)  |
+                             (uint32_t)real_memory[87];
+
+    cpu->current_psw.key = new_key;
+    cpu->current_psw.problem_state = new_problem_state;
+    cpu->current_psw.instruction_address = new_inst_addr;
+
+    // Sync privilege controls
+    cpu->psw_key = new_key;
+    cpu->supervisor_state = !new_problem_state;
+
+    return 0; // SVC interrupt transition completed
+}

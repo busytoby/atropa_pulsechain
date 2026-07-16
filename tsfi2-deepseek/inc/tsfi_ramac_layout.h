@@ -175,15 +175,15 @@ int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
                                         uint8_t *real_memory, int mem_size);
 
 // System/370 COMP-3 Packed Decimal (COBOL style) Arithmetic Unit emulators
-// Packs zoned string to COMP-3 format (returns bytes written, or -1 on error)
 int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len);
-
-// Unpacks COMP-3 format to zoned string (returns 0 on success, -1 on error)
 int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int max_len);
-
-// Adds two packed decimal byte arrays directly, writing the result in packed COMP-3 format
 int tsfi_s370_packed_add(const uint8_t *a, int a_len,
                          const uint8_t *b, int b_len,
                          uint8_t *dest_out, int dest_max_len);
+
+// System/370 Supervisor Call (SVC) security interruption gateway
+// Returns 0 on successful SVC transition, -1 on bounds exceptions
+int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
+                          uint8_t *real_memory, int mem_size);
 
 #endif // TSFI_RAMAC_LAYOUT_H

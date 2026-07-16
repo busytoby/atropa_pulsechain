@@ -410,7 +410,6 @@ int main(void) {
     uint8_t packed_b[32];
     uint8_t packed_sum[32];
 
-    // Pack positive zoned string "12345" -> 12 34 5C
     int size_a = tsfi_s370_pack("12345", packed_a, 32);
     assert(size_a == 3);
     assert(packed_a[0] == 0x12);
@@ -422,7 +421,6 @@ int main(void) {
     assert(unpack_ret1 == 0);
     assert(strcmp(unpacked_a, "12345") == 0);
 
-    // Pack negative zoned string "-1234" -> 01 23 4D
     int size_b = tsfi_s370_pack("-1234", packed_b, 32);
     assert(size_b == 3);
     assert(packed_b[0] == 0x01);
@@ -434,7 +432,6 @@ int main(void) {
     assert(unpack_ret2 == 0);
     assert(strcmp(unpacked_b, "-1234") == 0);
 
-    // Add packed decimals: 12345 + (-1234) = 11111 -> 11 11 1C
     int size_sum = tsfi_s370_packed_add(packed_a, size_a, packed_b, size_b, packed_sum, 32);
     assert(size_sum == 3);
     assert(packed_sum[0] == 0x11);
@@ -447,6 +444,48 @@ int main(void) {
     assert(strcmp(unpacked_sum, "11111") == 0);
 
     printf("  [PASS] System/370 COBOL-style packed BCD arithmetic verified successfully.\n");
+
+    // 3.9.9.9.9. System/370 Supervisor Call (SVC) Hardware Interruption Validation
+    printf("[Test] Verifying System/370 Supervisor Call (SVC) gatekeeper interrupt...\n");
+    
+    // Setup SVC New PSW at real address 80: key = 0, problem state = 0, address = 0x1000
+    real_memory[80] = 0x00; // key 0
+    real_memory[81] = 0x00; // supervisor state
+    real_memory[84] = 0x00;
+    real_memory[85] = 0x00;
+    real_memory[86] = 0x10;
+    real_memory[87] = 0x00; // 0x00001000
+
+    // Setup active CPU PSW state: key = 8, problem state = 1, address = 0x4000
+    cpu.current_psw.key = 8;
+    cpu.current_psw.problem_state = 1;
+    cpu.current_psw.instruction_address = 0x4000;
+    cpu.psw_key = 8;
+    cpu.supervisor_state = 0; // problem state
+
+    // Trigger SVC 204 (secure system call request)
+    int svc_ret = tsfi_s370_trigger_svc(&cpu, 204, real_memory, 1024);
+    assert(svc_ret == 0);
+
+    // Verify SVC code written to offset 139
+    assert(real_memory[139] == 204);
+
+    // Verify Old PSW archived to offset 32
+    assert(real_memory[32] == 0x80); // key 8
+    assert(real_memory[33] == 0x01); // problem state 1
+    assert(real_memory[36] == 0x00);
+    assert(real_memory[37] == 0x00);
+    assert(real_memory[38] == 0x40);
+    assert(real_memory[39] == 0x00); // address 0x4000
+
+    // Verify active PSW loaded with SVC New PSW vector values
+    assert(cpu.current_psw.key == 0);
+    assert(cpu.current_psw.problem_state == 0);
+    assert(cpu.current_psw.instruction_address == 0x1000);
+    assert(cpu.psw_key == 0);
+    assert(cpu.supervisor_state == 1); // Swapped to supervisor privileges
+
+    printf("  [PASS] System/370 SVC gatekeeper interrupt verified successfully.\n");
 
     free(disk);
 
