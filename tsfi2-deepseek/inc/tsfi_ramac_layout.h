@@ -182,8 +182,13 @@ int tsfi_s370_packed_add(const uint8_t *a, int a_len,
                          uint8_t *dest_out, int dest_max_len);
 
 // System/370 Supervisor Call (SVC) security interruption gateway
-// Returns 0 on successful SVC transition, -1 on bounds exceptions
 int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
                           uint8_t *real_memory, int mem_size);
+
+// Benson-Lehner style Data Reduction Unit (inspired by Research & Engineering Oct 1956)
+// Reduces analog coordinates (x, y) scaling to digital zoned strings and packs to dest COMP-3
+// Returns bytes written to dest_out, or -1 on error
+int tsfi_s370_data_reduction_unit(double x, double y, double scale,
+                                  uint8_t *dest_out, int dest_max_len);
 
 #endif // TSFI_RAMAC_LAYOUT_H

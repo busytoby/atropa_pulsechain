@@ -780,3 +780,22 @@ int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
 
     return 0; // SVC interrupt transition completed
 }
+
+int tsfi_s370_data_reduction_unit(double x, double y, double scale,
+                                  uint8_t *dest_out, int dest_max_len) {
+    if (!dest_out || dest_max_len <= 0) return -1;
+
+    // 1. Emulate Benson-Lehner Electroplotter analog-to-digital coordinate conversion:
+    // Scale analog voltage values to discrete integer records
+    long long coord_x = (long long)round(x * scale);
+    long long coord_y = (long long)round(y * scale);
+
+    // Sum coordinates to build structured composite data packet
+    long long combined = coord_x + coord_y;
+
+    char zoned[128];
+    snprintf(zoned, sizeof(zoned), "%lld", combined);
+
+    // 2. Package directly to COMP-3 format for immediate COBOL strategy engine consumption
+    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
+}

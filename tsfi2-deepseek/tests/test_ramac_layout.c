@@ -448,44 +448,53 @@ int main(void) {
     // 3.9.9.9.9. System/370 Supervisor Call (SVC) Hardware Interruption Validation
     printf("[Test] Verifying System/370 Supervisor Call (SVC) gatekeeper interrupt...\n");
     
-    // Setup SVC New PSW at real address 80: key = 0, problem state = 0, address = 0x1000
-    real_memory[80] = 0x00; // key 0
-    real_memory[81] = 0x00; // supervisor state
+    real_memory[80] = 0x00; 
+    real_memory[81] = 0x00; 
     real_memory[84] = 0x00;
     real_memory[85] = 0x00;
     real_memory[86] = 0x10;
-    real_memory[87] = 0x00; // 0x00001000
+    real_memory[87] = 0x00; 
 
-    // Setup active CPU PSW state: key = 8, problem state = 1, address = 0x4000
     cpu.current_psw.key = 8;
     cpu.current_psw.problem_state = 1;
     cpu.current_psw.instruction_address = 0x4000;
     cpu.psw_key = 8;
-    cpu.supervisor_state = 0; // problem state
+    cpu.supervisor_state = 0; 
 
-    // Trigger SVC 204 (secure system call request)
     int svc_ret = tsfi_s370_trigger_svc(&cpu, 204, real_memory, 1024);
     assert(svc_ret == 0);
 
-    // Verify SVC code written to offset 139
     assert(real_memory[139] == 204);
 
-    // Verify Old PSW archived to offset 32
-    assert(real_memory[32] == 0x80); // key 8
-    assert(real_memory[33] == 0x01); // problem state 1
+    assert(real_memory[32] == 0x80); 
+    assert(real_memory[33] == 0x01); 
     assert(real_memory[36] == 0x00);
     assert(real_memory[37] == 0x00);
     assert(real_memory[38] == 0x40);
-    assert(real_memory[39] == 0x00); // address 0x4000
+    assert(real_memory[39] == 0x00); 
 
-    // Verify active PSW loaded with SVC New PSW vector values
     assert(cpu.current_psw.key == 0);
     assert(cpu.current_psw.problem_state == 0);
     assert(cpu.current_psw.instruction_address == 0x1000);
     assert(cpu.psw_key == 0);
-    assert(cpu.supervisor_state == 1); // Swapped to supervisor privileges
+    assert(cpu.supervisor_state == 1); 
 
     printf("  [PASS] System/370 SVC gatekeeper interrupt verified successfully.\n");
+
+    // 3.9.9.9.9.5. Benson-Lehner style Data Reduction Unit Verification
+    printf("[Test] Verifying Benson-Lehner Data Reduction Unit...\n");
+    uint8_t reduced_packed[32];
+    int red_bytes = tsfi_s370_data_reduction_unit(4.25, 2.75, 100.0, reduced_packed, 32);
+    assert(red_bytes == 2); // 700 -> 70 0C
+    assert(reduced_packed[0] == 0x70);
+    assert(reduced_packed[1] == 0x0C);
+
+    char unpacked_red[128];
+    int unpack_ret_red = tsfi_s370_unpack(reduced_packed, red_bytes, unpacked_red, 128);
+    assert(unpack_ret_red == 0);
+    printf("  Reduced coordinate values sum to zoned string: '%s'\n", unpacked_red);
+    assert(strcmp(unpacked_red, "700") == 0);
+    printf("  [PASS] Benson-Lehner Electroplotter data reduction logic verified successfully.\n");
 
     free(disk);
 
