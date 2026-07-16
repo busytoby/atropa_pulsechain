@@ -88,6 +88,7 @@ make tests/test_cooperative_sync_hosts_net > /dev/null 2>&1 &
 make tests/test_cooperative_sync_clients_net > /dev/null 2>&1 &
 make tests/test_cooperative_sync_telemetry > /dev/null 2>&1 &
 make tests/test_unified_sync_sandbox > /dev/null 2>&1 &
+make tests/test_shm_ipc_cooperative > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -207,6 +208,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_cooperative_sync_clients_net > /dev/null 2>&1
 ./tests/test_cooperative_sync_telemetry > /dev/null 2>&1
 ./tests/test_unified_sync_sandbox > /dev/null 2>&1
+./tests/test_shm_ipc_cooperative > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
