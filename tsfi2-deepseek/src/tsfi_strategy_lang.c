@@ -184,6 +184,30 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     vm->registers[reg] = val;
                 }
             }
+        } else if (op == 0x15) { // GET_PRIO dst keycode
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t keycode = bytecode[pc++];
+                if (dst < 4) {
+                    int found_prio = -1;
+                    if (pq) {
+                        for (int i = 0; i < pq->size; i++) {
+                            if (pq->items[i].keycode == keycode) {
+                                found_prio = pq->items[i].priority;
+                                break;
+                            }
+                        }
+                    }
+                    vm->registers[dst] = found_prio;
+                }
+            }
+        } else if (op == 0x16) { // GET_SIZE dst
+            if (pc < len) {
+                uint8_t dst = bytecode[pc++];
+                if (dst < 4) {
+                    vm->registers[dst] = pq ? pq->size : 0;
+                }
+            }
         }
     }
 
@@ -277,6 +301,20 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 bytecode_out[pc++] = (uint8_t)atoi(target_str);
                 bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
                 bytecode_out[pc++] = (uint8_t)(src_str[1] - '0');
+            }
+        } else if (strcmp(token, "GET_PRIO") == 0) {
+            char *dst_str = strtok(NULL, " ;");
+            char *keycode_str = strtok(NULL, " ;");
+            if (dst_str && keycode_str && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x15; // GET_PRIO
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)atoi(keycode_str);
+            }
+        } else if (strcmp(token, "GET_SIZE") == 0) {
+            char *dst_str = strtok(NULL, " ;");
+            if (dst_str && pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x16; // GET_SIZE
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
             }
         }
         token = strtok(NULL, " ;");

@@ -107,6 +107,23 @@ int main(void) {
     fflush(stdout);
     assert(turing_vm.registers[0] == 15);
 
+    // 6. Verify State queries: GET_PRIO and GET_SIZE
+    tsfi_priority_queue_push(&pq, 45, 99, "QUERY_TARGET");
+    
+    uint8_t query_bc[32];
+    int query_len = 0;
+    res = tsfi_strategy_compile_script("GET_SIZE R2; GET_PRIO R3 99;", query_bc, 32, &query_len);
+    assert(res == 0);
+    
+    TSFiStrategyVM query_vm;
+    tsfi_strategy_vm_init(&query_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&query_vm, &pq, query_bc, query_len);
+    assert(res == 0);
+    printf("  [Strategy Queries] PQ size: %d, Keycode 99 priority: %d\n", query_vm.registers[2], query_vm.registers[3]);
+    fflush(stdout);
+    assert(query_vm.registers[2] > 0);
+    assert(query_vm.registers[3] == 45);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
