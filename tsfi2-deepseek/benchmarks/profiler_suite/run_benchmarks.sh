@@ -52,6 +52,7 @@ make tests/test_algebraic_query > /dev/null 2>&1 &
 make tests/test_markov_selection > /dev/null 2>&1 &
 make tests/test_complex_reasoning > /dev/null 2>&1 &
 make tests/test_bayesian_matrix > /dev/null 2>&1 &
+make tests/test_unified_classifier > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -135,6 +136,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_markov_selection > /dev/null 2>&1
 ./tests/test_complex_reasoning > /dev/null 2>&1
 ./tests/test_bayesian_matrix > /dev/null 2>&1
+./tests/test_unified_classifier > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
