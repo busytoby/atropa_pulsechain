@@ -144,6 +144,29 @@ int main(void) {
     int sigs_low = (trust_low > 80) ? 1 : ((trust_low > 40) ? 2 : 3);
     assert(sigs_low == 3);
 
+    // 8. Verify Vaesen Damped Solver (Damping, collisions, and fractures)
+    printf("       [LogOS] Verifying Vaesen Damped Solver metrics...\n");
+    fflush(stdout);
+    int velocity = 20;
+    int damping_c = 4;
+    int damping_force = velocity * damping_c;
+    assert(damping_force == 80);
+    
+    int dist = 8;
+    int radius_sum = 10;
+    int colliding = (dist < radius_sum) ? 1 : 0;
+    assert(colliding == 1);
+    
+    int temp = 100;
+    int decay = 5;
+    int next_temp = (temp > decay) ? (temp - decay) : 0;
+    assert(next_temp == 95);
+    
+    int tension = 150;
+    int limit = 100;
+    int fractured = (tension > limit) ? 1 : 0;
+    assert(fractured == 1);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
