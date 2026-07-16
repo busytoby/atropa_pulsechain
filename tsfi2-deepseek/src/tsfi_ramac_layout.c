@@ -1370,3 +1370,56 @@ int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int pha
 
     return 0;
 }
+
+int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_count,
+                                       const int *inputs, int input_count) {
+    if (!nodes || node_count <= 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < node_count; i++) {
+        int inputs_resolved[3] = {0};
+
+        for (int s = 0; s < 3; s++) {
+            int src = nodes[i].sources[s];
+            int phase = 0;
+
+            if (src == -1) {
+                phase = 0; // Constant bias 0
+            } else if (src == -2) {
+                phase = 1; // Constant bias 1
+            } else if (src < -2) {
+                int inp_idx = -(src + 3);
+                if (inp_idx >= 0 && inp_idx < input_count && inputs) {
+                    phase = inputs[inp_idx];
+                } else {
+                    phase = 0;
+                }
+            } else {
+                // Assert topology: source must be an already evaluated node index
+                if (src < i) {
+                    phase = nodes[src].output;
+                } else {
+                    phase = 0;
+                }
+            }
+
+            // Apply phase inversion if flag is set
+            if (nodes[i].invert[s]) {
+                phase = (phase == 0) ? 1 : 0;
+            }
+
+            inputs_resolved[s] = phase;
+        }
+
+        // Apply majority logic gate evaluation
+        int out_phase = 0;
+        int sum = inputs_resolved[0] + inputs_resolved[1] + inputs_resolved[2];
+        if (sum >= 2) {
+            out_phase = 1;
+        }
+        nodes[i].output = out_phase;
+    }
+
+    return 0;
+}

@@ -869,6 +869,38 @@ int main(void) {
     assert(param_phase == 0); // 0 degrees phase state is the majority
     printf("  [PASS] Saburo Muroga parametron logic gate verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.5. Dynamic Parametron Circuit Netlist DAG Evaluation
+    printf("[Test] Verifying dynamic parametron circuit DAG netlist evaluator...\n");
+    // Construct a 2-node circuit representing (Input0 AND Input1)
+    // Node 0: AND mode -> inputs sources are Input0 (-3), Input1 (-4), and Constant Bias 0 (-1)
+    // Node 1: NOT mode -> Node 0 output, Constant Bias 0, Constant Bias 0, with first input inverted
+    tsfi_parametron_node circuit_nodes[2];
+    memset(circuit_nodes, 0, sizeof(circuit_nodes));
+    
+    // Node 0: sources = {Input0, Input1, Bias0} -> acts as AND gate
+    circuit_nodes[0].sources[0] = -3; 
+    circuit_nodes[0].sources[1] = -4;
+    circuit_nodes[0].sources[2] = -1; 
+    
+    // Node 1: sources = {Node 0, Bias1, Bias0}, with inversion on Node 0 input -> acts as NOT gate on Node 0 output
+    circuit_nodes[1].sources[0] = 0; 
+    circuit_nodes[1].sources[1] = -2;
+    circuit_nodes[1].sources[2] = -1;
+    circuit_nodes[1].invert[0] = 1;  // Invert Node 0 input phase
+
+    int test_inputs[] = {1, 1}; // Input0 = 1, Input1 = 1
+    int c_eval = tsfi_s370_parametron_circuit_eval(circuit_nodes, 2, test_inputs, 2);
+    assert(c_eval == 0);
+    assert(circuit_nodes[0].output == 1); // AND output is 1
+    assert(circuit_nodes[1].output == 0); // NOT output is 0
+
+    test_inputs[0] = 0; // Input0 = 0, Input1 = 1
+    c_eval = tsfi_s370_parametron_circuit_eval(circuit_nodes, 2, test_inputs, 2);
+    assert(c_eval == 0);
+    assert(circuit_nodes[0].output == 0); // AND output is 0
+    assert(circuit_nodes[1].output == 1); // NOT output is 1
+    printf("  [PASS] Dynamic parametron circuit DAG netlist evaluator verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

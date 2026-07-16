@@ -117,6 +117,13 @@ typedef struct {
     int is_active;
 } tsfi_quadtree_node;
 
+// Saburo Muroga parametron logic circuit node
+typedef struct {
+    int sources[3]; // Reference index: L >= 0 -> Node output L, -1 -> Constant 0, -2 -> Constant 1, L < -2 -> Input [-(L + 3)]
+    int invert[3];  // Inversion flag for each input phase (1: Inverted, 0: Normal)
+    int output;     // Phase state output cache (0 or 1)
+} tsfi_parametron_node;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -292,5 +299,9 @@ int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keyword
 
 // Saburo Muroga style parametron majority phase decision logic gate emulator
 int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int phase_in_3, int *phase_out);
+
+// Dynamic Parametron Circuit Netlist Evaluator
+int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_count,
+                                       const int *inputs, int input_count);
 
 #endif // TSFI_RAMAC_LAYOUT_H
