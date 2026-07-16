@@ -101,6 +101,24 @@ object "BtcRailsVM" {
                 return(0, 128)
             }
             
+            // peek(uint256 offset) -> returns (uint256 value)
+            // Selector: 0x0f882f07
+            if iszero(sub(selector, 0x0f882f07)) {
+                let offset := calldataload(4)
+                mstore(0, sload(offset))
+                return(0, 32)
+            }
+            
+            // poke(uint256 offset, uint256 value) -> returns (uint256 success)
+            // Selector: 0xba972e3a
+            if iszero(sub(selector, 0xba972e3a)) {
+                let offset := calldataload(4)
+                let value := calldataload(36)
+                sstore(offset, value)
+                mstore(0, 1)
+                return(0, 32)
+            }
+            
             revert(0, 0)
         }
     }
