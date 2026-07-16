@@ -63,6 +63,37 @@ int main(void) {
     assert(status == 0);
     assert(vm.trail_len == 0);
 
+    // 5. Verify OP_RESOLVE_IMPLICATION Conjunction Logic
+    TSFiAnvilVM implication_vm;
+    tsfi_anvil_vm_init(&implication_vm);
+
+    // Bind source relation entries and destination entry
+    tsfi_anvil_vm_bind(&implication_vm, "source_a", "TRUE");
+    tsfi_anvil_vm_bind(&implication_vm, "source_b", "TRUE");
+    tsfi_anvil_vm_bind(&implication_vm, "target_c", "FALSE"); // target initially false
+
+    // Look up slots in the subgoal table
+    int slot_a = -1, slot_b = -1, slot_dst = -1;
+    for (int i = 0; i < 64; i++) {
+        if (strcmp(implication_vm.subgoal_table[i].key, "source_a") == 0) slot_a = i;
+        if (strcmp(implication_vm.subgoal_table[i].key, "source_b") == 0) slot_b = i;
+        if (strcmp(implication_vm.subgoal_table[i].key, "target_c") == 0) slot_dst = i;
+    }
+
+    assert(slot_a != -1 && slot_b != -1 && slot_dst != -1);
+
+    // Run bytecode: 0x5C (RESOLVE_IMPLICATION), slot_a, slot_b, slot_dst
+    int implication_bc[4] = { 0x5C, slot_a, slot_b, slot_dst };
+    status = tsfi_anvil_vm_execute(&implication_vm, implication_bc, 4, 1.0f, 1.0f, 0.0f);
+    assert(status == 1);
+
+    // Assert implication resolved successfully: target_c becomes TRUE
+    const TSFiSubgoalEntry *res_entry = tsfi_anvil_vm_lookup_subgoal(&implication_vm, "target_c");
+    assert(res_entry != NULL);
+    printf("  [Anvil Implication] Conjunction resolved: target_c value is '%s' (Expected 'TRUE')\n", res_entry->value);
+    fflush(stdout);
+    assert(strcmp(res_entry->value, "TRUE") == 0);
+
     printf("[PASS] WAM Trail backtracking and subgoal memoization verified successfully!\n");
     fflush(stdout);
     return 0;

@@ -112,6 +112,22 @@ int tsfi_anvil_vm_execute(TSFiAnvilVM *vm, const int *bytecode, int len, float p
         } else if (op == 0x5B) { // OP_BACKTRACK_RAIL
             tsfi_anvil_vm_backtrack(vm, 0);
             return 0;
+        } else if (op == 0x5C) { // OP_RESOLVE_IMPLICATION
+            if (pc + 2 < len) {
+                int src_a = bytecode[pc++];
+                int src_b = bytecode[pc++];
+                int dst = bytecode[pc++];
+                if (src_a < 64 && src_b < 64 && dst < 64) {
+                    TSFiSubgoalEntry *entry_a = &vm->subgoal_table[src_a];
+                    TSFiSubgoalEntry *entry_b = &vm->subgoal_table[src_b];
+                    TSFiSubgoalEntry *entry_dst = &vm->subgoal_table[dst];
+                    if (entry_a->key[0] != '\0' && entry_b->key[0] != '\0' && entry_dst->key[0] != '\0') {
+                        if (strcmp(entry_a->value, "TRUE") == 0 && strcmp(entry_b->value, "TRUE") == 0) {
+                            tsfi_anvil_vm_bind(vm, entry_dst->key, "TRUE");
+                        }
+                    }
+                }
+            }
         }
     }
     return 1; // Passed abductive verification rails
