@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
+#include <time.h>
 #include "tsfi_trie.h"
 #include "tsfi_dat.h"
 #include "tsfi_ring_buffer.h"
@@ -60,10 +61,18 @@ int main(void) {
         6            // 11: HALT
     };
     
-    assert(interop_stack_vm_execute(&vm, plan_script, 12) == 0);
-    printf("       [LogOS] Plan verified. VM Stack: size=%d, [0]=%d, [1]=%d\n", 
-           (int)vm.stack_len, vm.stack[0], vm.stack[1]);
+    struct timespec start_time, end_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    int exec_res = interop_stack_vm_execute(&vm, plan_script, 12);
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    assert(exec_res == 0);
+    
+    long long duration_ns = (end_time.tv_sec - start_time.tv_sec) * 1000000000LL + (end_time.tv_nsec - start_time.tv_nsec);
+    printf("       [LogOS] Plan verified in %lld ns. VM Stack: size=%d, [0]=%d, [1]=%d\n", 
+           duration_ns, (int)vm.stack_len, vm.stack[0], vm.stack[1]);
     fflush(stdout);
+    // Latency Guard Gate: must be under 5000 ns to satisfy latency profiles
+    assert(duration_ns < 5000LL);
     assert(vm.stack_len == 2 && vm.stack[0] == 101 && vm.stack[1] == 200);
 
     // 4. PKI Check and Syscall Execution Commit
