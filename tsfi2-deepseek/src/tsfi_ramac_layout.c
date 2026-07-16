@@ -2664,3 +2664,20 @@ void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb) {
         }
     }
 }
+
+uint64_t tsfi_s370_cdc1604_subtractive_add(uint64_t a, uint64_t b, int bit_width) {
+    if (bit_width <= 0 || bit_width > 64) return 0;
+
+    uint64_t mask = (bit_width == 64) ? ~0ULL : ((1ULL << bit_width) - 1);
+    uint64_t sum = (a & mask) + (b & mask);
+
+    // End-around carry implementation for 1's complement subtractive adder
+    uint64_t carry = (bit_width == 64) ? 0 : (sum >> bit_width);
+    sum = (sum & mask) + carry;
+
+    // Handle secondary carry if triggered
+    carry = (bit_width == 64) ? 0 : (sum >> bit_width);
+    sum = (sum & mask) + carry;
+
+    return sum & mask;
+}

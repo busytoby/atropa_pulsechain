@@ -1731,6 +1731,19 @@ int main(void) {
 
     printf("  [PASS] CDC 6600 Scoreboard verified successfully.\n");
 
+    // Test Scenario 21: CDC 1604 Subtractive Adder (1's complement)
+    printf("[Test] Verifying CDC 1604 Subtractive Adder...\n");
+    uint64_t res_add = tsfi_s370_cdc1604_subtractive_add(20, 30, 48);
+    assert(res_add == 50);
+
+    res_add = tsfi_s370_cdc1604_subtractive_add(0xFFFFFFFFFFFFULL, 5, 48);
+    assert(res_add == 5);
+
+    res_add = tsfi_s370_cdc1604_subtractive_add(0xFFFFFFFFFFFEULL, 2, 48);
+    assert(res_add == 1);
+
+    printf("  [PASS] CDC 1604 Subtractive Adder verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

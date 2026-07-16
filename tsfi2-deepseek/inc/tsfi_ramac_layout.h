@@ -564,4 +564,7 @@ int tsfi_s370_cdc6600_issue(tsfi_cdc6600_scoreboard *sb, tsfi_cdc6600_unit_type 
 // Ticks the scoreboard clock, executing active functional units and resolving register writes
 void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb);
 
+// CDC 1604 1's Complement Subtractive Adder
+uint64_t tsfi_s370_cdc1604_subtractive_add(uint64_t a, uint64_t b, int bit_width);
+
 #endif // TSFI_RAMAC_LAYOUT_H
