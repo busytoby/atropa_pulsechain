@@ -157,6 +157,14 @@ typedef struct {
     uint16_t address;
 } tsfi_philco212_instruction;
 
+// Bendix G-20 32-bit instruction layout
+typedef struct {
+    uint8_t opcode;
+    uint8_t index_reg; // Memory address 1..63 used as index register
+    uint16_t address;
+    uint8_t flags;
+} tsfi_bendixg20_instruction;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -395,5 +403,11 @@ int tsfi_s370_philco212_decode(uint64_t raw_word, tsfi_philco212_instruction *in
 
 // Philco 212 automatic index modification processor
 int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *index_registers, int index_reg_count, uint16_t *out_modified_address);
+
+// Bendix G-20 instruction decoder
+int tsfi_s370_bendixg20_decode(uint32_t raw_word, tsfi_bendixg20_instruction *inst);
+
+// Bendix G-20 memory index modification resolver
+int tsfi_s370_bendixg20_resolve_address(const tsfi_bendixg20_instruction *inst, const int *memory_pool, int mem_size, uint32_t *out_effective_address);
 
 #endif // TSFI_RAMAC_LAYOUT_H

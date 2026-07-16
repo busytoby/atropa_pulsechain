@@ -1273,6 +1273,34 @@ int main(void) {
 
     printf("  [PASS] Philco 212 CPU decoder and modes verified successfully.\n");
 
+    // Test Scenario 6: Bendix G-20 Instruction Decoder & Index Registers
+    printf("[Test] Verifying Bendix G-20 CPU instruction decoder and memory indexing...\n");
+    // Opcode = 25 (0x19), Index Reg = 14 (0x0E), Address = 4096 (0x1000), Flags = 7 (0x07)
+    // raw_word = (25 << 26) | (14 << 20) | (4096 << 5) | 7
+    // raw_word = 0x64000000 | 0x00E00000 | 0x00020000 | 7 = 0x64E20007
+    uint32_t g20_word = 0x64E20007;
+    tsfi_bendixg20_instruction g20_inst;
+    int g20_dec_ret = tsfi_s370_bendixg20_decode(g20_word, &g20_inst);
+    assert(g20_dec_ret == 0);
+    assert(g20_inst.opcode == 25);
+    assert(g20_inst.index_reg == 14);
+    assert(g20_inst.address == 4096);
+    assert(g20_inst.flags == 7);
+
+    // Verify Address Resolution using Memory Pool
+    int g20_mem_pool[64];
+    memset(g20_mem_pool, 0, sizeof(g20_mem_pool));
+    // Index Register 14 (Memory Location 14) holds offset value 1024
+    g20_mem_pool[14] = 1024;
+
+    uint32_t eff_addr = 0;
+    int g20_res_ret = tsfi_s370_bendixg20_resolve_address(&g20_inst, g20_mem_pool, 64, &eff_addr);
+    assert(g20_res_ret == 0);
+    // Effective address should be 4096 + 1024 = 5120
+    assert(eff_addr == 5120);
+
+    printf("  [PASS] Bendix G-20 CPU decoder and memory indexing verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

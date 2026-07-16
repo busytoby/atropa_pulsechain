@@ -2081,3 +2081,40 @@ int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *in
 
     return 0;
 }
+
+int tsfi_s370_bendixg20_decode(uint32_t raw_word, tsfi_bendixg20_instruction *inst) {
+    if (!inst) return -1;
+
+    // Opcode: bits 26..31 (6 bits)
+    inst->opcode = (raw_word >> 26) & 0x3F;
+    // Index Register identifier: bits 20..25 (6 bits)
+    inst->index_reg = (raw_word >> 20) & 0x3F;
+    // Memory Address: bits 5..19 (15 bits)
+    inst->address = (raw_word >> 5) & 0x7FFF;
+    // Flags: bits 0..4 (5 bits)
+    inst->flags = raw_word & 0x1F;
+
+    return 0;
+}
+
+int tsfi_s370_bendixg20_resolve_address(const tsfi_bendixg20_instruction *inst, const int *memory_pool, int mem_size, uint32_t *out_effective_address) {
+    if (!inst || !out_effective_address) return -1;
+
+    if (inst->index_reg == 0) {
+        // No index modification requested
+        *out_effective_address = inst->address;
+        return 0;
+    }
+
+    // Index registers are memory locations 1..63
+    if (inst->index_reg >= mem_size) {
+        return -1; // Out of bounds memory register mapping error
+    }
+
+    if (!memory_pool) return -1;
+
+    int offset_val = memory_pool[inst->index_reg];
+    *out_effective_address = (inst->address + offset_val) & 0x7FFF;
+
+    return 0;
+}
