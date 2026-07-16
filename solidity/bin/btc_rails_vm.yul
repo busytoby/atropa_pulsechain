@@ -19,15 +19,29 @@ object "BtcRailsVM" {
                 // Copy bytecode to memory at 0x1000
                 calldatacopy(0x1000, start, len)
                 
+                // Set free memory pointer to 0x1100 (after bytecode area)
+                mstore(0x40, 0x1100)
+                
+                // Dynamically allocate start boundaries for stack and altstack
+                let stack_base := allocate_mem(32000)    // 1000 words primary stack
+                let altstack_base := allocate_mem(32000) // 1000 words alternate stack
+                
                 // Virtual registers setup
                 let regPC := 0
-                let regSP := 0x2000     // Primary stack pointer
-                let regASP := 0x2200    // Alternate stack pointer
+                let regSP := stack_base
+                let regASP := altstack_base
                 let regHalted := 0
                 
                 for { let cyc := 0 } and(and(lt(cyc, cycles), lt(regPC, len)), iszero(regHalted)) { cyc := add(cyc, 1) } {
                     let op := byte(0, mload(add(0x1000, regPC)))
                     regPC := add(regPC, 1)
+                    
+                    // Track combined elements count: (SP - stack_base)/32 + (ASP - altstack_base)/32
+                    let elements_count := add(div(sub(regSP, stack_base), 32), div(sub(regASP, altstack_base), 32))
+                    if gt(elements_count, 1000) {
+                        regHalted := 1
+                        break
+                    }
                     
                     switch op
                     case 1 { // PUSH (read next 4 bytes as 32-bit int)
@@ -42,7 +56,7 @@ object "BtcRailsVM" {
                         regSP := add(regSP, 32)
                     }
                     case 2 { // ADD
-                        if lt(regSP, 0x2040) {
+                        if lt(regSP, add(stack_base, 64)) {
                             regHalted := 1
                             break
                         }
@@ -54,7 +68,7 @@ object "BtcRailsVM" {
                         regSP := add(regSP, 32)
                     }
                     case 3 { // SUB
-                        if lt(regSP, 0x2040) {
+                        if lt(regSP, add(stack_base, 64)) {
                             regHalted := 1
                             break
                         }
@@ -66,7 +80,7 @@ object "BtcRailsVM" {
                         regSP := add(regSP, 32)
                     }
                     case 4 { // TOALTSTACK
-                        if lt(regSP, 0x2020) {
+                        if lt(regSP, add(stack_base, 32)) {
                             regHalted := 1
                             break
                         }
@@ -76,7 +90,7 @@ object "BtcRailsVM" {
                         regASP := add(regASP, 32)
                     }
                     case 5 { // FROMALTSTACK
-                        if lt(regASP, 0x2220) {
+                        if lt(regASP, add(altstack_base, 32)) {
                             regHalted := 1
                             break
                         }
@@ -117,6 +131,12 @@ object "BtcRailsVM" {
                 sstore(offset, value)
                 mstore(0, 1)
                 return(0, 32)
+            }
+            
+            // Helper function to allocate dynamic memory space
+            function allocate_mem(size) -> addr {
+                addr := mload(0x40)
+                mstore(0x40, add(addr, size))
             }
             
             revert(0, 0)
