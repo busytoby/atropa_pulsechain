@@ -828,6 +828,22 @@ int main(void) {
     assert(fabs(sensor_decay[9]) < 80.00);
     printf("  [PASS] Soft-body analog sensor decay validator verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.5. SAGE redundancy monitor failover verification
+    printf("[Test] Verifying SAGE AN/FSQ-7 active-passive redundancy controller...\n");
+    int active_cpu = 0;
+    int sag_ret = tsfi_s370_sage_redundancy_monitor(1, 1, &active_cpu);
+    assert(sag_ret == 0);
+    assert(active_cpu == 1); // Primary active when CPU A is online
+    
+    sag_ret = tsfi_s370_sage_redundancy_monitor(0, 1, &active_cpu);
+    assert(sag_ret == 0);
+    assert(active_cpu == 2); // Failover to CPU B when CPU A is offline
+
+    sag_ret = tsfi_s370_sage_redundancy_monitor(0, 0, &active_cpu);
+    assert(sag_ret == 0);
+    assert(active_cpu == 0); // System crash state when both are offline
+    printf("  [PASS] SAGE AN/FSQ-7 redundancy monitor verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

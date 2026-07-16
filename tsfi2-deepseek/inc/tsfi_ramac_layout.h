@@ -283,4 +283,7 @@ int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status
 int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double spring_k, double damping_c,
                                        double *out_decay_charges, int steps);
 
+// SAGE AN/FSQ-7 style active-passive dual-CPU redundancy and failover state controller
+int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *active_cpu);
+
 #endif // TSFI_RAMAC_LAYOUT_H

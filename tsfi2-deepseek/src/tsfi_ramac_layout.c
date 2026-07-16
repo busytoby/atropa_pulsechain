@@ -1310,3 +1310,21 @@ int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double sp
 
     return 0;
 }
+
+int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *active_cpu) {
+    if (!active_cpu) {
+        return -1;
+    }
+
+    // SAGE AN/FSQ-7 Active-Passive priority monitoring loop:
+    // CPU A is designated as the primary active processor
+    if (cpu_a_status == 1) {
+        *active_cpu = 1; // CPU A is active
+    } else if (cpu_b_status == 1) {
+        *active_cpu = 2; // Failover to CPU B
+    } else {
+        *active_cpu = 0; // Dual CPU fault failure state
+    }
+
+    return 0;
+}
