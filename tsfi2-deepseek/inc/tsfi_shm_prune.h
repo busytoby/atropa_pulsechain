@@ -3,6 +3,7 @@
 
 #include "tsfi_akb.h"
 #include "tsfi_markov_lm.h"
+#include "tsfi_spec_queues.h"
 
 // 1. Shared Memory Handshake Registers Structure
 typedef struct {
@@ -14,6 +15,7 @@ typedef struct {
 typedef struct {
     TSFiMarkovLM *lm;
     float cumulative_threshold;
+    TSFiIntrusiveHeap path_heap;
 } TSFiPruner;
 
 // Initialize shared-memory registers

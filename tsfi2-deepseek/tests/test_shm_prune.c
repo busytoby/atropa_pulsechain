@@ -30,6 +30,7 @@ int main(void) {
         .lm = &lm,
         .cumulative_threshold = 0.50f
     };
+    tsfi_intrusive_heap_init(&pruner.path_heap);
 
     // Valid high probability path: T -> O -> N -> E (Prob: 0.90 * 0.95 * 0.98 = 0.8379 > 0.50)
     int path_valid[4] = { PHONEME_T, PHONEME_O, PHONEME_N, PHONEME_E };
