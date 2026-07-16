@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "libantigravity_interop.h"
+#include <string.h>
 
 float interop_transr_score(const float *h, const float *M, const float *r, const float *t, size_t ent_dim, size_t rel_dim, int norm_type) {
     if (!h || !M || !r || !t || ent_dim == 0 || rel_dim == 0) return 0.0f;
@@ -1322,10 +1323,14 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
         size_t stack_len;
         int altstack[64];
         size_t altstack_len;
+        int trail_len;
     } ChoicePoint;
     
     ChoicePoint cp_stack[16];
     int cp_len = 0;
+    
+    int trail_stack[64];
+    int trail_len = 0;
     
     vm->pc = 0;
     vm->halted = 0;
@@ -1367,7 +1372,7 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
             case 6:
                 vm->halted = 1;
                 break;
-            case 0x21: // OP_TRY_ME_ELSE: save choice point (expects next instruction to push jump target PC)
+            case 0x21: // OP_TRY_ME_ELSE: save choice point
                 if ((size_t)vm->pc >= len) return -2;
                 if (cp_len >= 16) return -3;
                 {
@@ -1377,6 +1382,7 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
                     memcpy(cp->stack, vm->stack, vm->stack_len * sizeof(int));
                     cp->altstack_len = vm->altstack_len;
                     memcpy(cp->altstack, vm->altstack, vm->altstack_len * sizeof(int));
+                    cp->trail_len = trail_len;
                 }
                 break;
             case 0x22: // OP_FAIL: backtrack to last choice point
@@ -1389,6 +1395,14 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
                     memcpy(vm->stack, cp->stack, cp->stack_len * sizeof(int));
                     vm->altstack_len = cp->altstack_len;
                     memcpy(vm->altstack, cp->altstack, cp->altstack_len * sizeof(int));
+                    
+                    // Unbind variables on Trail
+                    while (trail_len > cp->trail_len) {
+                        int bound_idx = trail_stack[--trail_len];
+                        if (bound_idx >= 0 && bound_idx < 64) {
+                            vm->stack[bound_idx] = -9999; // Reset to UNBOUND
+                        }
+                    }
                 }
                 break;
             case 0xac: // OP_CHECKSIG: pops v, r, s, hash, pushes mock verified sender address (0x07)
@@ -1415,10 +1429,52 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
                             memcpy(vm->stack, cp->stack, cp->stack_len * sizeof(int));
                             vm->altstack_len = cp->altstack_len;
                             memcpy(vm->altstack, cp->altstack, cp->altstack_len * sizeof(int));
+                            
+                            while (trail_len > cp->trail_len) {
+                                int bound_idx = trail_stack[--trail_len];
+                                if (bound_idx >= 0 && bound_idx < 64) {
+                                    vm->stack[bound_idx] = -9999;
+                                }
+                            }
                         }
                     } else {
                         // Invariant satisfied, push success result
                         vm->stack[vm->stack_len++] = 1;
+                    }
+                }
+                break;
+            case 0x25: // OP_BIND: pops value and stack index, binds variable and registers on Trail
+                if (vm->stack_len < 2) return -4;
+                {
+                    int bind_idx = vm->stack[--vm->stack_len];
+                    int val = vm->stack[--vm->stack_len];
+                    if (bind_idx >= 0 && bind_idx < 64) {
+                        vm->stack[bind_idx] = val;
+                        if (trail_len < 64) {
+                            trail_stack[trail_len++] = bind_idx;
+                        }
+                    }
+                }
+                break;
+            case 0x26: // OP_PROB_TRY: pops threshold, reads target PC. Branches if rand_roll >= threshold
+                if (vm->stack_len < 1) return -4;
+                if ((size_t)vm->pc >= len) return -2;
+                if (cp_len >= 16) return -3;
+                {
+                    int threshold = vm->stack[--vm->stack_len];
+                    int target_pc = bytecode[vm->pc++];
+                    static unsigned int rand_seed = 98765;
+                    rand_seed = rand_seed * 1103515245 + 12345;
+                    int roll = (rand_seed / 65536) % 100;
+                    
+                    if (roll >= threshold) {
+                        ChoicePoint *cp = &cp_stack[cp_len++];
+                        cp->pc = target_pc;
+                        cp->stack_len = vm->stack_len;
+                        memcpy(cp->stack, vm->stack, vm->stack_len * sizeof(int));
+                        cp->altstack_len = vm->altstack_len;
+                        memcpy(cp->altstack, vm->altstack, vm->altstack_len * sizeof(int));
+                        cp->trail_len = trail_len;
                     }
                 }
                 break;
