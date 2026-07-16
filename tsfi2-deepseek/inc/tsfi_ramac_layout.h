@@ -271,4 +271,16 @@ int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_re
 int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coefficients, int coeff_count,
                                       uint8_t *dest_out, int dest_max_len);
 
+// Translates a field of a punched card directly into a COMP-3 packed BCD structure
+int tsfi_s370_punched_card_to_comp3(const tsfi_ramac_card *card, int start_col, int end_col,
+                                    uint8_t *packed_out, int max_len);
+
+// Streams data via WinchesterMQ loop and commits as records to RAMAC cylinders
+int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status, uint8_t *data_reg,
+                                    const uint8_t *stream, int stream_len, int target_cylinder);
+
+// Checks Benson-Lehner OSCAR reader analog output value decay against the FET viscoelastic discharge boundaries
+int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double spring_k, double damping_c,
+                                       double *out_decay_charges, int steps);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -1229,3 +1229,84 @@ int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coe
     // Pack directly to COMP-3 format
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
+
+int tsfi_s370_punched_card_to_comp3(const tsfi_ramac_card *card, int start_col, int end_col,
+                                    uint8_t *packed_out, int max_len) {
+    if (!card || start_col < 0 || end_col >= 80 || start_col > end_col || !packed_out || max_len <= 0) {
+        return -1;
+    }
+
+    char zoned_buf[64] = {0};
+    int dst_idx = 0;
+    int is_negative = 0;
+
+    for (int c = start_col; c <= end_col; c++) {
+        char ch = card->columns[c];
+        if (ch >= '0' && ch <= '9') {
+            zoned_buf[dst_idx++] = ch;
+        } else if (ch >= 'J' && ch <= 'R') {
+            // Standard IBM punch card zone representations for negative digits: J-R represents -1 to -9
+            is_negative = 1;
+            zoned_buf[dst_idx++] = (ch - 'J' + 1) + '0';
+        }
+    }
+    zoned_buf[dst_idx] = '\0';
+
+    if (is_negative) {
+        char temp[64];
+        snprintf(temp, sizeof(temp), "-%s", zoned_buf);
+        strcpy(zoned_buf, temp);
+    }
+
+    return tsfi_s370_pack(zoned_buf, packed_out, max_len);
+}
+
+int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status, uint8_t *data_reg,
+                                    const uint8_t *stream, int stream_len, int target_cylinder) {
+    if (!disk || !scsi_status || !data_reg || !stream || stream_len <= 0) {
+        return -1;
+    }
+
+    uint8_t buffer[256];
+    int read_bytes = tsfi_s370_winchester_mq_handshake(scsi_status, data_reg, stream, stream_len, buffer, 256);
+    if (read_bytes <= 0) {
+        return -1;
+    }
+
+    // Ingest buffered stream bytes as key-value pairs (using simple modulo index maps)
+    char key[32];
+    char value[32];
+    snprintf(key, sizeof(key), "scsi_key_%d", buffer[0]);
+    snprintf(value, sizeof(value), "scsi_val_%d", buffer[read_bytes - 1]);
+
+    double temp_seek = 0.0;
+    int slot = tsfi_ramac_insert_record(disk, key, value, target_cylinder, &temp_seek);
+    if (slot == -1) {
+        return -1;
+    }
+
+    return slot;
+}
+
+int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double spring_k, double damping_c,
+                                       double *out_decay_charges, int steps) {
+    if (!out_decay_charges || steps <= 0) {
+        return -1;
+    }
+
+    // Initial charge mapped directly from analog amplitude representation
+    double initial_charge = analog_val * 100.0;
+
+    // Rule 10: Soft body physics Verlet solver applied strictly to FET discharge cycles
+    int discharge_ret = tsfi_s370_fet_discharge_freudenthal(initial_charge, 0.1, mass, spring_k, damping_c, steps, out_decay_charges);
+    if (discharge_ret != 0) {
+        return -1;
+    }
+
+    // Verify decay: charge should decrease in amplitude across steps (Verlet decay validation)
+    if (fabs(out_decay_charges[steps - 1]) >= fabs(initial_charge)) {
+        return -2; // Fail: trajectory does not decay (instability check)
+    }
+
+    return 0;
+}

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 #include "tsfi_ramac_layout.h"
 
 int main(void) {
@@ -792,6 +793,40 @@ int main(void) {
     // y = 0.1 + 0.1 + 0.075 = 0.275 -> normalized to 275 BCD
     assert(strcmp(oscar_zoned, "275") == 0);
     printf("  [PASS] Polynomial OSCAR reader verified successfully.\n");
+
+    // 3.9.9.9.9.9.9.9.9.6. Punched card-to-COMP3 conversion
+    printf("[Test] Verifying IBM 380 punched card conversion to COMP-3 BCD...\n");
+    tsfi_ramac_card test_card;
+    memset(test_card.columns, ' ', 80);
+    memcpy(test_card.columns + 10, "1234K", 5); // 'K' is negative zone punch representation for 2
+    uint8_t card_packed[16] = {0};
+    int card_ret = tsfi_s370_punched_card_to_comp3(&test_card, 10, 14, card_packed, 16);
+    assert(card_ret > 0);
+    char card_zoned[32] = {0};
+    assert(tsfi_s370_unpack(card_packed, card_ret, card_zoned, 32) == 0);
+    printf("  Punched card field parsed to zoned: '%s'\n", card_zoned);
+    assert(strcmp(card_zoned, "-12342") == 0);
+    printf("  [PASS] IBM punched card parser verified successfully.\n");
+
+    // 3.9.9.9.9.9.9.9.9.8. WinchesterMQ SCSI stream to RAMAC disk records
+    printf("[Test] Verifying SCSI stream to RAMAC record layout updates...\n");
+    uint8_t stream_buf[] = {0xF1, 0xF2, 0xF3};
+    uint8_t scsi_st = 0;
+    uint8_t scsi_dt = 0;
+    int stream_slot = tsfi_s370_scsi_stream_to_ramac(disk, &scsi_st, &scsi_dt, stream_buf, 3, 5);
+    assert(stream_slot != -1);
+    printf("  SCSI stream committed to RAMAC Cylinder 5, sector slot: %d\n", stream_slot);
+    printf("  [PASS] SCSI-to-RAMAC streamer verified successfully.\n");
+
+    // 3.9.9.9.9.9.9.9.9.9. Soft-body analog sensor calibration decay validation (Rule 10 compliant)
+    printf("[Test] Verifying soft-body analog sensor decay validation...\n");
+    double sensor_decay[10] = {0.0};
+    // Initialize analog input amplitude of 0.8, verifying spring-mass system decay curves
+    int sensor_ret = tsfi_s370_oscar_soft_body_validate(0.8, 1.0, 5.0, 2.0, sensor_decay, 10);
+    assert(sensor_ret == 0);
+    printf("  Sensor initial value: 80.00, step 9 decay value: %.4f\n", sensor_decay[9]);
+    assert(fabs(sensor_decay[9]) < 80.00);
+    printf("  [PASS] Soft-body analog sensor decay validator verified successfully.\n");
 
     free(disk);
 
