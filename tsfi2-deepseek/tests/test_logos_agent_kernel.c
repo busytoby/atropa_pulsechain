@@ -215,6 +215,24 @@ int main(void) {
     printf("         [DEBUG] trail vm stack[0] after backtrack: %d\n", trail_vm.stack[0]); fflush(stdout);
     assert(trail_vm.stack[0] == -9999);
 
+    // 11. Verify Probabilistic Backtracking
+    printf("       [LogOS] Verifying Probabilistic Backtracking (OP_PROB_TRY)...\n");
+    fflush(stdout);
+    InteropStackVM prob_vm;
+    memset(&prob_vm, 0, sizeof(InteropStackVM));
+    int prob_script[12] = {
+        1, 10,
+        0x26, 8,
+        1, 888,
+        0x22,
+        6,
+        1, 999,
+        6
+    };
+    assert(interop_stack_vm_execute(&prob_vm, prob_script, 11) == 0);
+    printf("         [DEBUG] prob vm stack_len = %d, stack[0] = %d\n", (int)prob_vm.stack_len, prob_vm.stack[0]); fflush(stdout);
+    assert(prob_vm.stack_len == 1 && prob_vm.stack[0] == 999);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
