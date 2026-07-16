@@ -27,6 +27,13 @@ gcc -Wall -Wextra -Werror -Iinc -Isrc -O3 -g -march=native tests/bench_ac_compos
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_agentic_dispatch.c -o tests/bench_agentic_dispatch -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse-simple -lpulse -Wl,-rpath,. &
 gcc -Wall -Wextra -Werror -O3 -g -march=native -Iinc -Isrc tests/bench_knowledge_graph.c ../scripts/libantigravity_interop.c ../scripts/libantigravity_extra.c ../scripts/libantigravity_extra2.c ../scripts/abi_dispatch_map.c -o tests/bench_knowledge_graph -lm -lrt -lpthread &
 make tests/test_logos_agent_kernel > /dev/null 2>&1 &
+make tests/test_datalog_unification > /dev/null 2>&1 &
+make tests/test_algebraic_unification > /dev/null 2>&1 &
+make tests/test_doxastic_thermodynamics > /dev/null 2>&1 &
+make tests/test_knowledge_graph_unification > /dev/null 2>&1 &
+make tests/test_probabilistic_unification > /dev/null 2>&1 &
+make tests/test_turing_semantics > /dev/null 2>&1 &
+make tests/test_horn_abduction > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -84,6 +91,14 @@ echo "[RUN] Knowledge Graph & Ouroboros Benchmark..."
 # 15. Run LogOS Agent Kernel Latency Benchmark
 echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_logos_agent_kernel > "${TMP_DIR}/bench_logos.log"
+
+./tests/test_datalog_unification > /dev/null 2>&1
+./tests/test_algebraic_unification > /dev/null 2>&1
+./tests/test_doxastic_thermodynamics > /dev/null 2>&1
+./tests/test_knowledge_graph_unification > /dev/null 2>&1
+./tests/test_probabilistic_unification > /dev/null 2>&1
+./tests/test_turing_semantics > /dev/null 2>&1
+./tests/test_horn_abduction > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
