@@ -1,6 +1,6 @@
-depth = 3;
-R0 = 5;
-R1 = 2;
-R0 = R0 + R1;
-eval();
-prune(15);
+SET depth 3.
+SET_REG R0 5.
+SET_REG R1 2.
+ADD R1 TO R0.
+EVAL.
+PRUNE 15.

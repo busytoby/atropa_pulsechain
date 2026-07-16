@@ -1,9 +1,9 @@
-depth = 2;
-abductive = 3;
-R0 = 4;
-R1 = 4;
-if (R0 == R1) jump(16);
-weight(30, 10);
-weight(32, 12);
-eval();
-prune(25);
+SET depth 2.
+SET abductive 3.
+SET_REG R0 4.
+SET_REG R1 4.
+if (R0 == R1) jump(16).
+WEIGHT 30 10.
+WEIGHT 32 12.
+EVAL.
+PRUNE 25.

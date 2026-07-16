@@ -1,7 +1,7 @@
-depth = 4;
-abductive = 1;
-R0 = 15;
-R1 = 12;
-R0 = R0 - R1;
-eval();
-prune(10);
+SET depth 4.
+SET abductive 1.
+SET_REG R0 15.
+SET_REG R1 12.
+SUBTRACT R1 FROM R0.
+EVAL.
+PRUNE 10.
