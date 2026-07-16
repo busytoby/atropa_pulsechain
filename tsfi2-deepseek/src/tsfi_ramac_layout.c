@@ -2834,3 +2834,41 @@ int tsfi_s370_honeywell800_tick_ramac(tsfi_honeywell800_scheduler *sched, int *m
     sched->current_thread_idx = (tid + 1) % 8;
     return tid;
 }
+
+int tsfi_s370_rca501_to_univac2(const char *rca_data, char *univac_data_out) {
+    if (!rca_data || !univac_data_out) return -1;
+
+    int i = 0;
+    while (i < 12 && rca_data[i] != '\0' && rca_data[i] != '$') {
+        univac_data_out[i] = rca_data[i];
+        i++;
+    }
+
+    // Pad the remaining of the 12-byte UNIVAC word with space characters
+    while (i < 12) {
+        univac_data_out[i] = ' ';
+        i++;
+    }
+    univac_data_out[12] = '\0';
+    return 0;
+}
+
+int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out) {
+    if (!univac_data || !rca_data_out) return -1;
+
+    // Find the last non-space character in the 12-byte word
+    int len = 12;
+    while (len > 0 && (univac_data[len - 1] == ' ' || univac_data[len - 1] == '\0')) {
+        len--;
+    }
+
+    int i;
+    for (i = 0; i < len; i++) {
+        rca_data_out[i] = univac_data[i];
+    }
+
+    // Append the RCA 501 variable-length item delimiter '$'
+    rca_data_out[i++] = '$';
+    rca_data_out[i] = '\0';
+    return 0;
+}

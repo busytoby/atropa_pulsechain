@@ -1846,6 +1846,22 @@ int main(void) {
 
     printf("  [PASS] Combined Multiprogramming RAMAC Storage verified successfully.\n");
 
+    // Test Scenario 26: Howard Bromberg COBOL Compatibility (RCA 501 / UNIVAC II Data Formatting)
+    printf("[Test] Verifying RCA 501 to UNIVAC II Data Formatting Compatibility...\n");
+    const char *rca_test = "HELLO$";
+    char univac_out[13] = {0};
+
+    int trans_ok = tsfi_s370_rca501_to_univac2(rca_test, univac_out);
+    assert(trans_ok == 0);
+    assert(strcmp(univac_out, "HELLO       ") == 0);
+
+    char rca_out[16] = {0};
+    trans_ok = tsfi_s370_univac2_to_rca501(univac_out, rca_out);
+    assert(trans_ok == 0);
+    assert(strcmp(rca_out, "HELLO$") == 0);
+
+    printf("  [PASS] RCA 501 / UNIVAC II Data Formatting verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

@@ -584,4 +584,10 @@ uint64_t tsfi_s370_cdc1604_subtractive_multiply(uint64_t a, uint64_t b, int bit_
 int tsfi_s370_honeywell800_tick_ramac(tsfi_honeywell800_scheduler *sched, int *memory, int mem_size,
                                       tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size);
 
+// RCA 501 variable-length string to UNIVAC II fixed-width 12-byte compatibility converter
+int tsfi_s370_rca501_to_univac2(const char *rca_data, char *univac_data_out);
+
+// UNIVAC II fixed-width 12-byte to RCA 501 variable-length string compatibility converter
+int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
