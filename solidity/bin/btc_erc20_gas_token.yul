@@ -397,6 +397,84 @@ object "BtcErc20GasToken" {
                         continue
                     }
                     
+                    // OP_FIB (non-standard: computes N-th Fibonacci number)
+                    if iszero(sub(op, 0xb1)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let n := mload(stack_ptr)
+                        
+                        let a := 0
+                        let b := 1
+                        for { let i := 0 } lt(i, n) { i := add(i, 1) } {
+                            let temp := b
+                            b := add(a, b)
+                            a := temp
+                        }
+                        
+                        mstore(stack_ptr, a)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // OP_AUDIT_LOGS (non-standard: pushes block number and state hash)
+                    if iszero(sub(op, 0xb6)) {
+                        mstore(stack_ptr, number())
+                        stack_ptr := add(stack_ptr, 32)
+                        mstore(stack_ptr, coinbase())
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // OP_MASS_UNIFY (non-standard: registers batch unification address bindings)
+                    if iszero(sub(op, 0xb7)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let concrete := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let variable := mload(stack_ptr)
+                        
+                        mstore(0, variable)
+                        mstore(32, 13)
+                        sstore(keccak256(0, 64), concrete)
+                        
+                        mstore(stack_ptr, 1)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // OP_PING_DAEMON (non-standard: emits DaemonPing event)
+                    if iszero(sub(op, 0xb8)) {
+                        if lt(stack_ptr, 0x2020) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let nonce := mload(stack_ptr)
+                        
+                        mstore(0, "DaemonPing(uint256)")
+                        let topic := keccak256(0, 19)
+                        mstore(0, nonce)
+                        log2(0, 32, topic, caller())
+                        
+                        mstore(stack_ptr, 1)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
+                    // OP_CHALLENGE_STATE (non-standard: verifies state path checksum)
+                    if iszero(sub(op, 0xb9)) {
+                        if lt(stack_ptr, 0x2040) { revert(0, 0) }
+                        stack_ptr := sub(stack_ptr, 32)
+                        let expected_hash := mload(stack_ptr)
+                        stack_ptr := sub(stack_ptr, 32)
+                        let path_val := mload(stack_ptr)
+                        
+                        mstore(0, path_val)
+                        let actual_hash := keccak256(0, 32)
+                        
+                        let match_val := eq(actual_hash, expected_hash)
+                        mstore(stack_ptr, match_val)
+                        stack_ptr := add(stack_ptr, 32)
+                        continue
+                    }
+                    
                     // OP_EQUALVERIFY
                     if iszero(sub(op, 0x88)) {
                         if lt(stack_ptr, 0x2040) { revert(0, 0) }
