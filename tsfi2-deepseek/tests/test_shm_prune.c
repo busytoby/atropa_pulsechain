@@ -46,6 +46,21 @@ int main(void) {
     fflush(stdout);
     assert(status == 1);
 
+    // 3. Verify Intrusive Heap integration inside pruner context
+    TSFiIntrusiveNode p1 = { .priority = 20, .keycode = 100, .heap_index = -1 };
+    TSFiIntrusiveNode p2 = { .priority = 10, .keycode = 200, .heap_index = -1 };
+    
+    tsfi_shm_prune_push_node(&pruner, &p1);
+    tsfi_shm_prune_push_node(&pruner, &p2);
+    
+    // Update p1 priority (bubble to root)
+    tsfi_shm_prune_update_node(&pruner, &p1, 5);
+    
+    TSFiIntrusiveNode *popped = tsfi_shm_prune_pop_node(&pruner);
+    assert(popped != NULL && popped->keycode == 100);
+    printf("  [Pruner Intrusive] Popped highest priority path keycode: %d (Expected: 100)\n", popped->keycode);
+    fflush(stdout);
+
     printf("[PASS] Zero-copy register and graph pruning verified successfully!\n");
     fflush(stdout);
     return 0;

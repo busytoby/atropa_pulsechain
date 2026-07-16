@@ -27,8 +27,10 @@ void tsfi_shm_bridge_write(TSFiSHMBridge *bridge, int keycode);
 // Read keycode from SHM register
 int tsfi_shm_bridge_read(TSFiSHMBridge *bridge);
 
-// Evaluates SVDAG path transitions, pruning early if cumulative probability is too low
-// Returns 0 if path is allowed, 1 if path is pruned
 int tsfi_shm_prune_path(TSFiPruner *pruner, const int *phoneme_path, int path_len);
+
+int tsfi_shm_prune_push_node(TSFiPruner *pruner, TSFiIntrusiveNode *node);
+void tsfi_shm_prune_update_node(TSFiPruner *pruner, TSFiIntrusiveNode *node, int new_priority);
+TSFiIntrusiveNode* tsfi_shm_prune_pop_node(TSFiPruner *pruner);
 
 #endif // TSFI_SHM_PRUNE_H

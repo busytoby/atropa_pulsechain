@@ -47,3 +47,21 @@ int tsfi_shm_prune_path(TSFiPruner *pruner, const int *phoneme_path, int path_le
 
     return 0; // Allowed
 }
+
+// Push path node to pruner intrusive heap and sort in-place
+int tsfi_shm_prune_push_node(TSFiPruner *pruner, TSFiIntrusiveNode *node) {
+    if (!pruner || !node) return -1;
+    return tsfi_intrusive_heap_push(&pruner->path_heap, node);
+}
+
+// Update path node priority weight in O(log n)
+void tsfi_shm_prune_update_node(TSFiPruner *pruner, TSFiIntrusiveNode *node, int new_priority) {
+    if (!pruner || !node) return;
+    tsfi_intrusive_heap_update(&pruner->path_heap, node, new_priority);
+}
+
+// Pop highest priority (lowest cost) path node
+TSFiIntrusiveNode* tsfi_shm_prune_pop_node(TSFiPruner *pruner) {
+    if (!pruner) return NULL;
+    return tsfi_intrusive_heap_pop(&pruner->path_heap);
+}
