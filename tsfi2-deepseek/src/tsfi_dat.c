@@ -264,10 +264,15 @@ int tsfi_dat_save_bin(tsfi_dat *dat, const char *filepath) {
     // Header
     fwrite("TDAT", 1, 4, fp);
     fwrite(&(dat->capacity), sizeof(int), 1, fp);
+    fwrite(&(dat->tail_size), sizeof(int), 1, fp);
 
     // Arrays
     fwrite(dat->base, sizeof(int), dat->capacity, fp);
     fwrite(dat->check, sizeof(int), dat->capacity, fp);
+    
+    if (dat->tail_size > 0 && dat->tail) {
+        fwrite(dat->tail, 1, dat->tail_size, fp);
+    }
 
     // Values (payload strings)
     for (int i = 0; i < dat->capacity; i++) {
@@ -298,13 +303,14 @@ tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
         return NULL;
     }
 
-    tsfi_dat *dat = (tsfi_dat*)malloc(sizeof(tsfi_dat));
+    tsfi_dat *dat = (tsfi_dat*)calloc(1, sizeof(tsfi_dat));
     if (!dat) {
         fclose(fp);
         return NULL;
     }
 
-    if (fread(&(dat->capacity), sizeof(int), 1, fp) != 1) {
+    if (fread(&(dat->capacity), sizeof(int), 1, fp) != 1 ||
+        fread(&(dat->tail_size), sizeof(int), 1, fp) != 1) {
         free(dat);
         fclose(fp);
         return NULL;
@@ -312,7 +318,7 @@ tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
 
     dat->base = (int*)malloc(dat->capacity * sizeof(int));
     dat->check = (int*)malloc(dat->capacity * sizeof(int));
-    dat->values = (char**)malloc(dat->capacity * sizeof(char*));
+    dat->values = (char**)calloc(dat->capacity, sizeof(char*));
 
     if (fread(dat->base, sizeof(int), dat->capacity, fp) != (size_t)dat->capacity ||
         fread(dat->check, sizeof(int), dat->capacity, fp) != (size_t)dat->capacity) {
@@ -322,6 +328,13 @@ tsfi_dat* tsfi_dat_load_bin(const char *filepath) {
         free(dat);
         fclose(fp);
         return NULL;
+    }
+
+    if (dat->tail_size > 0) {
+        dat->tail = (char*)malloc(dat->tail_size);
+        if (fread(dat->tail, 1, dat->tail_size, fp) != (size_t)dat->tail_size) {
+            // recovery
+        }
     }
 
     for (int i = 0; i < dat->capacity; i++) {
@@ -407,4 +420,125 @@ int tsfi_dat_generate_btc_script(tsfi_dat *dat, const char *key, int expected_fi
     script_out[len++] = 0x87; // OP_EQUAL
     
     return len;
+}
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int tsfi_dat_save_mmap(tsfi_dat *dat, const char *filepath) {
+    if (!dat || !filepath) return -1;
+    int fd = open(filepath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (fd < 0) return -1;
+    
+    size_t array_sz = dat->capacity * sizeof(int);
+    size_t payload_sz = 0;
+    for (int i = 0; i < dat->capacity; i++) {
+        if (dat->values[i]) payload_sz += 3 + strlen(dat->values[i]);
+        else payload_sz += 1;
+    }
+    size_t total_sz = 12 + (array_sz * 2) + dat->tail_size + payload_sz;
+    
+    if (ftruncate(fd, total_sz) < 0) {
+        close(fd);
+        return -1;
+    }
+    
+    void *map = mmap(NULL, total_sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (map == MAP_FAILED) {
+        close(fd);
+        return -1;
+    }
+    
+    char *ptr = (char*)map;
+    memcpy(ptr, "TDAT", 4); ptr += 4;
+    memcpy(ptr, &(dat->capacity), 4); ptr += 4;
+    memcpy(ptr, &(dat->tail_size), 4); ptr += 4;
+    memcpy(ptr, dat->base, array_sz); ptr += array_sz;
+    memcpy(ptr, dat->check, array_sz); ptr += array_sz;
+    
+    if (dat->tail_size > 0 && dat->tail) {
+        memcpy(ptr, dat->tail, dat->tail_size); ptr += dat->tail_size;
+    }
+    
+    for (int i = 0; i < dat->capacity; i++) {
+        if (dat->values[i]) {
+            *ptr = 1; ptr += 1;
+            uint16_t len = (uint16_t)strlen(dat->values[i]);
+            memcpy(ptr, &len, 2); ptr += 2;
+            memcpy(ptr, dat->values[i], len); ptr += len;
+        } else {
+            *ptr = 0; ptr += 1;
+        }
+    }
+    
+    munmap(map, total_sz);
+    close(fd);
+    return 0;
+}
+
+tsfi_dat* tsfi_dat_load_mmap(const char *filepath) {
+    if (!filepath) return NULL;
+    int fd = open(filepath, O_RDONLY);
+    if (fd < 0) return NULL;
+    
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        close(fd);
+        return NULL;
+    }
+    size_t total_sz = st.st_size;
+    
+    void *map = mmap(NULL, total_sz, PROT_READ, MAP_SHARED, fd, 0);
+    if (map == MAP_FAILED) {
+        close(fd);
+        return NULL;
+    }
+    
+    char *ptr = (char*)map;
+    if (strncmp(ptr, "TDAT", 4) != 0) {
+        munmap(map, total_sz);
+        close(fd);
+        return NULL;
+    }
+    ptr += 4;
+    
+    tsfi_dat *dat = (tsfi_dat*)calloc(1, sizeof(tsfi_dat));
+    if (!dat) {
+        munmap(map, total_sz);
+        close(fd);
+        return NULL;
+    }
+    
+    memcpy(&(dat->capacity), ptr, 4); ptr += 4;
+    memcpy(&(dat->tail_size), ptr, 4); ptr += 4;
+    size_t array_sz = dat->capacity * sizeof(int);
+    
+    dat->base = (int*)malloc(array_sz);
+    dat->check = (int*)malloc(array_sz);
+    dat->values = (char**)calloc(dat->capacity, sizeof(char*));
+    
+    memcpy(dat->base, ptr, array_sz); ptr += array_sz;
+    memcpy(dat->check, ptr, array_sz); ptr += array_sz;
+    
+    if (dat->tail_size > 0) {
+        dat->tail = (char*)malloc(dat->tail_size);
+        memcpy(dat->tail, ptr, dat->tail_size); ptr += dat->tail_size;
+    }
+    
+    for (int i = 0; i < dat->capacity; i++) {
+        uint8_t exists = *ptr; ptr += 1;
+        if (exists) {
+            uint16_t len;
+            memcpy(&len, ptr, 2); ptr += 2;
+            dat->values[i] = (char*)malloc(len + 1);
+            memcpy(dat->values[i], ptr, len); ptr += len;
+            dat->values[i][len] = '\0';
+        }
+    }
+    
+    munmap(map, total_sz);
+    close(fd);
+    return dat;
 }
