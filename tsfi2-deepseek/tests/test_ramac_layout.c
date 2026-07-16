@@ -745,6 +745,29 @@ int main(void) {
     
     printf("  [PASS] Z-machine RAMAC primary/overflow mapping and memory access verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9. System/370 DAT RAMAC translation
+    printf("[Test] Verifying System/370 DAT RAMAC address translator...\n");
+    tsfi_s370_segment_entry test_segs[2];
+    test_segs[0].page_table_origin = 0;
+    test_segs[0].length = 1;
+    test_segs[0].invalid = 0;
+
+    tsfi_s370_page_entry test_ptes[256];
+    test_ptes[0].page_frame_real_addr = 0x0008F000;
+    test_ptes[0].invalid = 0;
+    test_ptes[0].write_protect = 1;
+
+    tsfi_ramac_chs dat_chs;
+    int trans_ret = tsfi_s370_dat_ramac_translate(0x00000124, test_segs, 1, test_ptes, &dat_chs);
+    assert(trans_ret == 0);
+    printf("  DAT Virtual 0x00000124 -> Real RealAddr 0x0008F124 -> RAMAC Cyl %d, Head %d, Sector %d, Word %d\n",
+           dat_chs.cylinder, dat_chs.head, dat_chs.sector, dat_chs.word_offset);
+    // Real address 0x0008F124 = 586020 bytes
+    // Word index = 586020 / 4 = 146505
+    // 146505 / (50 * 20 * 8) = 146505 / 8000 = Cylinder 18
+    assert(dat_chs.cylinder == 18);
+    printf("  [PASS] System/370 DAT RAMAC address translator verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

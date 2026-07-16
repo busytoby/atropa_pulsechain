@@ -253,10 +253,15 @@ int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_month
                                       double *out_actual_budget, double *out_actual_months);
 
 // Z-machine RAMAC storage mapping memory access routines (Project Peters realization)
-// Reads a single byte from the mapped RAMAC layout disk
 int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t *out_val);
-
-// Writes a single byte to the mapped RAMAC layout disk, enforcing read-only constraint on static/high segments (cylinders >= 45)
 int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t val);
+
+// System/370 Dynamic Address Translation (DAT) logical mapping to RAMAC CHS coordinates
+// Translates 31-bit virtual addresses to physical RAMAC cylinders, heads, and sectors
+// Returns 0 on success, -1 on invalid translation configurations
+int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr, 
+                                  tsfi_s370_segment_entry *seg_table, int seg_count,
+                                  tsfi_s370_page_entry *page_tables,
+                                  tsfi_ramac_chs *out_chs);
 
 #endif // TSFI_RAMAC_LAYOUT_H

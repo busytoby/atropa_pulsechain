@@ -1140,11 +1140,36 @@ int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_add
     // total sectors per cylinder is heads * sectors (50 * 20 = 1000)
     int cylinder = sector_idx / 1000;
     if (cylinder >= 45) {
-        return -2; // Write protected segment violation (Static/High Memory write exception)
+        return -2; // Write protected segment violation exception
     }
 
     disk[sector_idx].value[byte_offset] = (char)val;
     disk[sector_idx].is_active = 1;
+
+    return 0;
+}
+
+int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr, 
+                                  tsfi_s370_segment_entry *seg_table, int seg_count,
+                                  tsfi_s370_page_entry *page_tables,
+                                  tsfi_ramac_chs *out_chs) {
+    if (!seg_table || !page_tables || !out_chs) {
+        return -1;
+    }
+
+    uint32_t physical_addr = 0;
+    int write_protected = 0;
+
+    // 1. Perform standard S/370 segment-page DAT translation table walk
+    int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, &physical_addr, &write_protected);
+    if (ret != 0) {
+        return ret; // DAT translation exception
+    }
+
+    // 2. Map resulting physical byte address to RAMAC words/geometry
+    // Each RAMAC word is 4 bytes
+    int flat_word_index = physical_addr / 4;
+    *out_chs = tsfi_ramac_index_to_chs(flat_word_index);
 
     return 0;
 }
