@@ -188,7 +188,7 @@ static void trigger_process_samples(const char *contract, const char *count_hex,
 
 int main() {
     printf("=============================================================\n");
-    printf("ELEKTOR ISSUE #19: VEDER-BIAS PLUMBICON COUPLER (ANVIL LIVE)\n");
+    printf("ELEKTOR ISSUE #19: DYNAMIC TRAP ACCUMULATOR COUPLER (ANVIL LIVE)\n");
     printf("=============================================================\n");
 
     printf("[C-Test] Compiling VederVactrol Yul object...\n");
@@ -204,23 +204,23 @@ int main() {
 
     // Call processSamples in a single batch of 3 inputs:
     // 0: Input 1.0V (0xde0b6b3a7640000), isClipping: 0 -> Output exactly 1.0V (0xde0b6b3a7640000)
-    // 1: Input 1.0V (0xde0b6b3a7640000), isClipping: 1, L_bias: 0 -> Minimal default lag insertion loss: output ~ 0.909V
-    // 2: Input 1.0V (0xde0b6b3a7640000), isClipping: 1, L_bias: 0.5V (0x6f05b59d3b20000) -> Veder-bias active, instant lag reduction attenuation
+    // 1: Input 2.5V (0x22b1c8c122b80000), isClipping: 1 -> Trap accumulator builds up charge
+    // 2: Input 2.5V (0x22b1c8c122b80000), isClipping: 1 -> Trap accumulator lowers effective threshold, causing heavier attenuation
     const char *inputs =
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0, L_bias = 0)
-        "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1, L_bias = 0)
-        "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "00000000000000000000000000000001000000000000000006f05b59d3b20000"; // statePack (isClipping = 1, L_bias = 0.5)
+        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0)
+        "00000000000000000000000000000000000000000000000022b1c8c122b80000" // 2.5V
+        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1)
+        "00000000000000000000000000000000000000000000000022b1c8c122b80000" // 2.5V
+        "0000000000000000000000000000000100000000000000000000000000000000"; // statePack (isClipping = 1)
 
     char out_val[2048];
     trigger_process_samples(vv_addr, "3", inputs, out_val, sizeof(out_val));
 
-    printf("  [RESULT] Veder-Bias Opto Samples (0-2):\n");
+    printf("  [RESULT] Dynamic Trap Opto Samples (0-2):\n");
     printf("    Sample 0 (1.0V, Inactive):            %.64s\n", out_val + 2);
-    printf("    Sample 1 (1.0V, Active No Bias):      %.64s\n", out_val + 2 + 64);
-    printf("    Sample 2 (1.0V, Active Veder Bias):   %.64s\n", out_val + 2 + 128);
+    printf("    Sample 1 (2.5V, First Active Spike):  %.64s\n", out_val + 2 + 64);
+    printf("    Sample 2 (2.5V, Second Active Spike): %.64s\n", out_val + 2 + 128);
 
     char sample0_hex[65];
     char sample1_hex[65];
@@ -233,10 +233,10 @@ int main() {
     sample2_hex[64] = '\0';
 
     assert(strcmp(sample0_hex, "0000000000000000000000000000000000000000000000000de0b6b3a7640000") == 0);
-    // Veder bias active has a smaller value (more attenuated) than no bias because traps are pre-filled
+    // Dynamic trap charge lowering threshold forces heavier compression on successive samples
     assert(strcmp(sample2_hex, sample1_hex) != 0);
 
-    printf("[PASS] Plumbicon Veder-bias lag reduction verified successfully!\n");
+    printf("[PASS] Dynamic Trap Accumulator lag reduction verified successfully!\n");
     printf("=============================================================\n");
     return 0;
 }

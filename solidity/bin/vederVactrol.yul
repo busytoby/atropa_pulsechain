@@ -19,13 +19,13 @@ object "VederVactrol" {
                 let memOffset := 0x80
 
                 let l_state := sload(200)
+                let t_trap := sload(201) // Trap charge accumulator
 
                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
                     let input := calldataload(add(36, mul(i, 64)))
                     let statePack := calldataload(add(68, mul(i, 64)))
 
                     let isClipping := shr(128, statePack)
-                    let L_bias := and(statePack, 0xffffffffffffffffffffffffffffffff)
 
                     let output := input
                     if isClipping {
@@ -34,20 +34,30 @@ object "VederVactrol" {
                             abs_in := sub(0, input)
                         }
 
-                        let L_red := 0
-                        if sgt(abs_in, V_FORWARD_RED()) {
-                            L_red := sub(abs_in, V_FORWARD_RED())
+                        // Update Trap Accumulator: T_trap = 0.99 * T_trap + 0.01 * abs(Vin)
+                        t_trap := add(sdiv(mul(t_trap, 99), 100), sdiv(mul(abs_in, 1), 100))
+
+                        // Dynamic threshold: V_eff = max(0, V_forward - 0.5 * T_trap)
+                        let v_offset := sdiv(mul(t_trap, 500000000000000000), scale)
+                        let V_eff := V_FORWARD_RED()
+                        if sgt(V_eff, v_offset) {
+                            V_eff := sub(V_eff, v_offset)
+                        }
+                        if iszero(sgt(V_eff, v_offset)) {
+                            V_eff := 0
                         }
 
-                        // Apply constant background Veder-Bias to pre-fill shallow traps
-                        let L_target := add(L_bias, L_red)
+                        let L_red := 0
+                        if sgt(abs_in, V_eff) {
+                            L_red := sub(abs_in, V_eff)
+                        }
 
                         // Stateful temporal lag: fast attack (10%), slow release (0.5%)
-                        if sgt(L_target, l_state) {
-                            l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 10), 100))
+                        if sgt(L_red, l_state) {
+                            l_state := add(l_state, sdiv(mul(sub(L_red, l_state), 10), 100))
                         }
-                        if iszero(sgt(L_target, l_state)) {
-                            l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 5), 1000))
+                        if iszero(sgt(L_red, l_state)) {
+                            l_state := add(l_state, sdiv(mul(sub(L_red, l_state), 5), 1000))
                         }
 
                         // LDR resistance calculation
@@ -63,6 +73,7 @@ object "VederVactrol" {
                 }
 
                 sstore(200, l_state)
+                sstore(201, t_trap)
                 return(memOffset, mul(count, 32))
             }
 
@@ -74,9 +85,9 @@ object "VederVactrol" {
                 let scale := SCALE()
 
                 let isClipping := shr(128, statePack)
-                let L_bias := and(statePack, 0xffffffffffffffffffffffffffffffff)
 
                 let l_state := sload(200)
+                let t_trap := sload(201)
                 let output := input
 
                 if isClipping {
@@ -85,18 +96,27 @@ object "VederVactrol" {
                         abs_in := sub(0, input)
                     }
 
+                    t_trap := add(sdiv(mul(t_trap, 99), 100), sdiv(mul(abs_in, 1), 100))
+
+                    let v_offset := sdiv(mul(t_trap, 500000000000000000), scale)
+                    let V_eff := V_FORWARD_RED()
+                    if sgt(V_eff, v_offset) {
+                        V_eff := sub(V_eff, v_offset)
+                    }
+                    if iszero(sgt(V_eff, v_offset)) {
+                        V_eff := 0
+                    }
+
                     let L_red := 0
-                    if sgt(abs_in, V_FORWARD_RED()) {
-                        L_red := sub(abs_in, V_FORWARD_RED())
+                    if sgt(abs_in, V_eff) {
+                        L_red := sub(abs_in, V_eff)
                     }
 
-                    let L_target := add(L_bias, L_red)
-
-                    if sgt(L_target, l_state) {
-                        l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 10), 100))
+                    if sgt(L_red, l_state) {
+                        l_state := add(l_state, sdiv(mul(sub(L_red, l_state), 10), 100))
                     }
-                    if iszero(sgt(L_target, l_state)) {
-                        l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 5), 1000))
+                    if iszero(sgt(L_red, l_state)) {
+                        l_state := add(l_state, sdiv(mul(sub(L_red, l_state), 5), 1000))
                     }
 
                     let denominator := add(scale, sdiv(mul(GAMMA(), l_state), scale))
@@ -107,6 +127,7 @@ object "VederVactrol" {
                 }
 
                 sstore(200, l_state)
+                sstore(201, t_trap)
                 mstore(0, output)
                 return(0, 32)
             }
