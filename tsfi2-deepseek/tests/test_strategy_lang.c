@@ -189,6 +189,21 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL ADD/SUBTRACT successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL MOVE statement compiler and COPY execution
+    uint8_t move_bc[64];
+    int move_len = 0;
+    res = tsfi_strategy_compile_script("MOVE 15 TO R0; MOVE R0 TO R1;", move_bc, 64, &move_len);
+    assert(res == 0);
+
+    TSFiStrategyVM move_vm;
+    tsfi_strategy_vm_init(&move_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&move_vm, NULL, move_bc, move_len, NULL);
+    assert(res == 0);
+    assert(move_vm.registers[0] == 15);
+    assert(move_vm.registers[1] == 15);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL MOVE/COPY successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;

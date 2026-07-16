@@ -184,6 +184,14 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     vm->registers[dst] = val;
                 }
             }
+        } else if (op == 0x19) { // COPY_REG dst src
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4) {
+                    vm->registers[dst] = vm->registers[src];
+                }
+            }
         }
     }
 
@@ -304,6 +312,25 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 bytecode_out[pc++] = (uint8_t)atoi(tokens[idx + 1]);
                 bytecode_out[pc++] = (uint8_t)atoi(tokens[idx + 2]);
                 idx += 3;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "MOVE") == 0 || strcmp(t, "move") == 0) {
+            if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "TO") == 0 || strcmp(tokens[idx + 2], "to") == 0) && pc + 2 < max_len) {
+                char *src = tokens[idx + 1];
+                char *dst = tokens[idx + 3];
+                if (dst[0] == 'R' && dst[1] >= '0' && dst[1] <= '3') {
+                    if (src[0] == 'R' && src[1] >= '0' && src[1] <= '3') {
+                        bytecode_out[pc++] = 0x19;
+                        bytecode_out[pc++] = (uint8_t)(dst[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)(src[1] - '0');
+                    } else {
+                        bytecode_out[pc++] = 0x14;
+                        bytecode_out[pc++] = (uint8_t)(dst[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)atoi(src);
+                    }
+                }
+                idx += 4;
             } else {
                 idx++;
             }
