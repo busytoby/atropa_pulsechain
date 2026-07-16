@@ -507,4 +507,23 @@ int tsfi_s370_ibm7030_vfl_logic(const uint64_t *memory,
                                 uint32_t bit_addr_b, int len_b, int byte_size_b,
                                 const char *op, uint64_t *out_val);
 
+// Honeywell 800 Thread State
+typedef struct {
+    int pc;
+    int64_t accumulator;
+    int is_active;
+} tsfi_honeywell800_thread;
+
+// Honeywell 800 Traffic Control Scheduler
+typedef struct {
+    tsfi_honeywell800_thread threads[8];
+    int current_thread_idx;
+} tsfi_honeywell800_scheduler;
+
+// Initializes the Honeywell 800 Traffic Control scheduler
+void tsfi_s370_honeywell800_init(tsfi_honeywell800_scheduler *sched);
+
+// Executes a single instruction execution cycle across the active thread registers in round-robin fashion
+int tsfi_s370_honeywell800_tick(tsfi_honeywell800_scheduler *sched, int *memory, int mem_size);
+
 #endif // TSFI_RAMAC_LAYOUT_H

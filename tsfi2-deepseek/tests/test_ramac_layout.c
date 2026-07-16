@@ -1633,6 +1633,53 @@ int main(void) {
 
     printf("  [PASS] IBM 7030 STRETCH VFL Logic verified successfully.\n");
 
+    // Test Scenario 18: Honeywell 800 Traffic Control Multiprogramming Scheduler
+    printf("[Test] Verifying Honeywell 800 Traffic Control Multiprogramming Scheduler...\n");
+    tsfi_honeywell800_scheduler hw_sched;
+    tsfi_s370_honeywell800_init(&hw_sched);
+
+    int hw_memory[64] = {0};
+    hw_memory[0] = (0x01 << 24) | 50;
+    hw_memory[1] = (0x02 << 24) | 51;
+    hw_memory[2] = (0x03 << 24) | 52;
+    hw_memory[3] = (0x04 << 24) | 0;
+
+    hw_memory[4] = (0x01 << 24) | 51;
+    hw_memory[5] = (0x02 << 24) | 50;
+    hw_memory[6] = (0x03 << 24) | 53;
+    hw_memory[7] = (0x04 << 24) | 0;
+
+    hw_memory[50] = 100;
+    hw_memory[51] = 200;
+
+    hw_sched.threads[0].pc = 0;
+    hw_sched.threads[0].is_active = 1;
+    hw_sched.threads[1].pc = 4;
+    hw_sched.threads[1].is_active = 1;
+
+    int ran_tid = tsfi_s370_honeywell800_tick(&hw_sched, hw_memory, 64);
+    assert(ran_tid == 0);
+    assert(hw_sched.threads[0].accumulator == 100);
+
+    ran_tid = tsfi_s370_honeywell800_tick(&hw_sched, hw_memory, 64);
+    assert(ran_tid == 1);
+    assert(hw_sched.threads[1].accumulator == 200);
+
+    ran_tid = tsfi_s370_honeywell800_tick(&hw_sched, hw_memory, 64);
+    assert(ran_tid == 0);
+    assert(hw_sched.threads[0].accumulator == 300);
+
+    ran_tid = tsfi_s370_honeywell800_tick(&hw_sched, hw_memory, 64);
+    assert(ran_tid == 1);
+    assert(hw_sched.threads[1].accumulator == 300);
+
+    while (tsfi_s370_honeywell800_tick(&hw_sched, hw_memory, 64) >= 0);
+
+    assert(hw_memory[52] == 300);
+    assert(hw_memory[53] == 300);
+
+    printf("  [PASS] Honeywell 800 Traffic Control Multiprogramming Scheduler verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

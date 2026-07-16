@@ -2527,3 +2527,64 @@ int tsfi_s370_ibm7030_vfl_logic(const uint64_t *memory,
 
     return 0;
 }
+
+void tsfi_s370_honeywell800_init(tsfi_honeywell800_scheduler *sched) {
+    if (!sched) return;
+    memset(sched->threads, 0, sizeof(sched->threads));
+    sched->current_thread_idx = 0;
+}
+
+int tsfi_s370_honeywell800_tick(tsfi_honeywell800_scheduler *sched, int *memory, int mem_size) {
+    if (!sched || !memory || mem_size <= 0) return -1;
+
+    int tid = -1;
+    for (int i = 0; i < 8; i++) {
+        int candidate = (sched->current_thread_idx + i) % 8;
+        if (sched->threads[candidate].is_active) {
+            tid = candidate;
+            break;
+        }
+    }
+
+    if (tid == -1) {
+        return -2; // No active threads
+    }
+
+    tsfi_honeywell800_thread *thread = &sched->threads[tid];
+    if (thread->pc < 0 || thread->pc >= mem_size) {
+        thread->is_active = 0;
+        return -3;
+    }
+
+    int instruction = memory[thread->pc];
+    int opcode = (instruction >> 24) & 0xFF;
+    int address = instruction & 0xFFFFFF;
+
+    thread->pc++;
+
+    switch (opcode) {
+        case 0x01: // LOAD
+            if (address >= 0 && address < mem_size) {
+                thread->accumulator = memory[address];
+            }
+            break;
+        case 0x02: // ADD
+            if (address >= 0 && address < mem_size) {
+                thread->accumulator += memory[address];
+            }
+            break;
+        case 0x03: // STORE
+            if (address >= 0 && address < mem_size) {
+                memory[address] = (int)thread->accumulator;
+            }
+            break;
+        case 0x04: // HALT
+            thread->is_active = 0;
+            break;
+        default:
+            break;
+    }
+
+    sched->current_thread_idx = (tid + 1) % 8;
+    return tid;
+}
