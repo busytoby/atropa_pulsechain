@@ -17,6 +17,8 @@ int main(void) {
     // Clean previous storage state files
     remove("evm_storage.json");
     remove("tsfi2-deepseek/evm_storage.json");
+    remove("evm_storage.dat.bin");
+    remove("tsfi2-deepseek/evm_storage.dat.bin");
 
     tsfi_wire_firmware_init();
 

@@ -151,6 +151,11 @@ object "RamacSystem" {
                 let numInstructions := div(progLen, 32)
                 let dataOffset := 68
 
+                // Zero out accumulators for determinism
+                for { let r := 0 } lt(r, 10) { r := add(r, 1) } {
+                    sstore(add(0x1000, r), 0)
+                }
+
                 let p_counter := 0
                 for {} lt(p_counter, numInstructions) {} {
                     let inst := calldataload(add(dataOffset, mul(p_counter, 32)))
@@ -245,8 +250,6 @@ object "RamacSystem" {
                 let failed := 0
                 
                 for { let i := 0 } lt(i, keyLen) { i := add(i, 1) } {
-                    // Extract single character byte
-                    // calldataload(add(keyOffset, i)) fetches 32 bytes, we want the byte at offset i
                     let word := calldataload(add(keyOffset, i))
                     let c := byte(0, word)
 
@@ -355,6 +358,59 @@ object "RamacSystem" {
                 }
 
                 mstore(0x00, resultNode)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // loadDATTableEntry(uint256 isPageTable, uint256 tab_origin, uint256 index, uint256 val, uint256 is_invalid)
+            // Selector: 0xf3a9012c
+            // ----------------------------------------------------------------
+            if eq(selector, 0xf3a9012c) {
+                let isPageTable := calldataload(4)
+                let tab_origin := calldataload(36)
+                let idx := calldataload(68)
+                let val := calldataload(100)
+                let is_invalid := calldataload(132)
+
+                let entryWord := or(shl(8, val), and(is_invalid, 0xFF))
+                
+                let baseSlot := add(0x6000, add(tab_origin, idx))
+                if isPageTable {
+                    baseSlot := add(0x7000, add(tab_origin, idx))
+                }
+
+                sstore(baseSlot, entryWord)
+                return(0x00, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // executeDATTranslate(uint256 virtualAddr, uint256 segmentTableOrigin) -> uint256 physicalAddr
+            // Selector: 0x12a3f9e0
+            // ----------------------------------------------------------------
+            if eq(selector, 0x12a3f9e0) {
+                let virtAddr := calldataload(4)
+                let segOrigin := calldataload(36)
+
+                let sx := and(shr(20, virtAddr), 0x7FF)
+                let px := and(shr(12, virtAddr), 0xFF)
+                let bx := and(virtAddr, 0xFFF)
+
+                let segEntry := sload(add(0x6000, add(segOrigin, sx)))
+                let pageTableOrigin := shr(8, segEntry)
+                let segInvalid := and(segEntry, 0xFF)
+                if segInvalid {
+                    revert(0, 0) // Segment translation exception
+                }
+
+                let pageEntry := sload(add(0x7000, add(pageTableOrigin, px)))
+                let realAddr := shr(8, pageEntry)
+                let pageInvalid := and(pageEntry, 0xFF)
+                if pageInvalid {
+                    revert(0, 0) // Page translation exception
+                }
+
+                let physicalAddr := add(realAddr, bx)
+                mstore(0x00, physicalAddr)
                 return(0x00, 32)
             }
 

@@ -701,6 +701,53 @@ int main(int argc, char *argv[]) {
     assert(strstr(response, "0000000000000000000000000000000000000000000000000000000000000003") != NULL);
     printf("  [Tree] 2-3 Tree search resolved successfully. Target node ID = 3.\n");
 
+    printf("[C-Test] Loading System/370 Segment Table Entry (SX = 0 -> Page Table at 256)...\n");
+    char load_seg[1024];
+    snprintf(load_seg, sizeof(load_seg),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xf3a9012c"
+             "0000000000000000000000000000000000000000000000000000000000000000" // isPageTable = 0 (segment table)
+             "0000000000000000000000000000000000000000000000000000000000000000" // origin = 0
+             "0000000000000000000000000000000000000000000000000000000000000000" // index = 0
+             "0000000000000000000000000000000000000000000000000000000000000100" // val = 256 (page table origin)
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // invalid = 0
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_seg);
+
+    printf("[C-Test] Loading System/370 Page Table Entry (PX = 5 -> Real Address 0x8F000)...\n");
+    char load_page[1024];
+    snprintf(load_page, sizeof(load_page),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
+             "\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+             "\"to\":\"%s\","
+             "\"data\":\"0xf3a9012c"
+             "0000000000000000000000000000000000000000000000000000000000000001" // isPageTable = 1 (page table)
+             "0000000000000000000000000000000000000000000000000000000000000100" // origin = 256
+             "0000000000000000000000000000000000000000000000000000000000000005" // index = 5
+             "000000000000000000000000000000000000000000000000000000000008f000" // val = 0x8F000
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // invalid = 0
+             "}],\"id\":1}",
+             ramac_addr);
+    execute_tx(load_page);
+
+    printf("[C-Test] Executing Yul-based System/370 DAT translate for Virtual Address 0x5123...\n");
+    char dat_trans[1024];
+    snprintf(dat_trans, sizeof(dat_trans),
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{"
+             "\"to\":\"%s\","
+             "\"data\":\"0x12a3f9e0"
+             "0000000000000000000000000000000000000000000000000000000000005123" // virtualAddr = 0x5123
+             "0000000000000000000000000000000000000000000000000000000000000000\"" // segmentTableOrigin = 0
+             "},\"latest\"],\"id\":1}",
+             ramac_addr);
+    send_rpc_request(dat_trans, response, sizeof(response));
+    // Physical address should be 0x8F123
+    assert(strstr(response, "000000000000000000000000000000000000000000000000000000000008f123") != NULL);
+    printf("  [DAT] Yul System/370 address translation verified successfully. Physical Address = 0x8F123.\n");
+
     free(ramac_hex);
 
     // Unmount disk from LUN 0
