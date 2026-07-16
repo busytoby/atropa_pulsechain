@@ -224,8 +224,12 @@ int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_ta
                            uint8_t *dest_out, int dest_max_len);
 
 // Alfred M. Freudenthal viscoelastic soft-body physics solver applied strictly to FET discharge cycles
-// Returns 0 on success, -1 on invalid configuration (Conforms to Rule 10 physics boundaries)
 int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step, double mass,
                                         double spring_k, double damping_c, int steps, double *out_decay_charges);
+
+// Alfred M. Freudenthal fatigue damage accumulation solver applied strictly to FET gate dielectric discharge stress
+// Returns cumulative damage factor D, or -1.0 on invalid configurations
+double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, int cycle_count,
+                                              double reference_stress, double shape_parameter);
 
 #endif // TSFI_RAMAC_LAYOUT_H

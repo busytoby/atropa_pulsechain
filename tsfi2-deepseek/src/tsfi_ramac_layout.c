@@ -974,3 +974,21 @@ int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step,
 
     return 0;
 }
+
+double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, int cycle_count,
+                                              double reference_stress, double shape_parameter) {
+    if (!stress_amplitudes || cycle_count <= 0 || reference_stress <= 0.0 || shape_parameter <= 0.0) {
+        return -1.0;
+    }
+
+    double cumulative_damage = 0.0;
+    for (int i = 0; i < cycle_count; i++) {
+        if (stress_amplitudes[i] > 0.0) {
+            // D = sum( (S_i / S_0) ^ alpha )
+            double damage_cycle = pow(stress_amplitudes[i] / reference_stress, shape_parameter);
+            cumulative_damage += damage_cycle;
+        }
+    }
+
+    return cumulative_damage;
+}

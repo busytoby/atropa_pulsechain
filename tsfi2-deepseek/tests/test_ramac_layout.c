@@ -632,6 +632,15 @@ int main(void) {
     assert(decay_charges[9] < 1.0); // Conforms to viscoelastic decay decay patterns
     printf("  [PASS] Alfred M. Freudenthal FET viscoelastic discharge solver verified successfully.\n");
 
+    // 3.9.9.9.9.9.8. Alfred M. Freudenthal fatigue damage accumulation solver
+    printf("[Test] Verifying A. M. Freudenthal Gate Oxide Fatigue Damage accumulation...\n");
+    double cycle_stresses[] = {4.0, 5.5, 6.0, 3.5};
+    double accum_damage = tsfi_s370_fet_gate_fatigue_freudenthal(cycle_stresses, 4, 5.0, 2.0);
+    printf("  Accumulated FET gate oxide fatigue damage factor: %.4f\n", accum_damage);
+    // (4/5)^2 + (5.5/5)^2 + (6/5)^2 + (3.5/5)^2 = 0.64 + 1.21 + 1.44 + 0.49 = 3.78
+    assert(accum_damage > 3.77 && accum_damage < 3.79);
+    printf("  [PASS] Alfred M. Freudenthal FET gate fatigue accumulation verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
