@@ -129,14 +129,14 @@ object "BtcErc20GasToken" {
                 
                 // Track UTXO info
                 mstore(0, utxo_hash)
-                mstore(32, 20) // Prefix 20 for UTXO amount
+                mstore(32, 20)
                 sstore(keccak256(0, 64), amount)
                 
                 mstore(0, utxo_hash)
-                mstore(32, 21) // Prefix 21 for UTXO owner
+                mstore(32, 21)
                 sstore(keccak256(0, 64), target)
                 
-                // Credit target standard ERC-20 balance (Unified Balance Sheet)
+                // Credit target standard ERC-20 balance
                 let bal_slot := get_balance_slot(target)
                 sstore(bal_slot, add(sload(bal_slot), amount))
                 
@@ -169,7 +169,7 @@ object "BtcErc20GasToken" {
                 let start := add(offset, 32)
                 calldatacopy(0x1000, start, len)
                 
-                // Execute standard 2-stack verification challenge
+                // Execute standard 2-stack validation challenge
                 let verified := run_btc_verification_loop(len)
                 if iszero(verified) { revert(0, 0) }
                 
@@ -205,6 +205,37 @@ object "BtcErc20GasToken" {
                 return(0, 32)
             }
             
+            // nested_transfer(address to, uint256 amount, uint256 btc_gas_fee, bytes witness_script) -> returns (uint256 success)
+            // Selector: 0x9fa1cf25
+            if iszero(sub(selector, 0x9fa1cf25)) {
+                let to := calldataload(4)
+                let amount := calldataload(36)
+                let btc_gas_fee := calldataload(68)
+                
+                let total_cost := add(amount, btc_gas_fee)
+                let from_slot := get_balance_slot(caller())
+                let from_bal := sload(from_slot)
+                if lt(from_bal, total_cost) { revert(0, 0) }
+                
+                // Copy witness script data
+                let offset := add(4, calldataload(100))
+                let len := calldataload(offset)
+                let start := add(offset, 32)
+                calldatacopy(0x1000, start, len)
+                
+                // Execute standard 2-stack validation challenge
+                let verified := run_btc_verification_loop(len)
+                if iszero(verified) { revert(0, 0) }
+                
+                // Deduct sender balance and credit recipient nested balance
+                sstore(from_slot, sub(from_bal, total_cost))
+                let to_slot := get_balance_slot(to)
+                sstore(to_slot, add(sload(to_slot), amount))
+                
+                mstore(0, 1)
+                return(0, 32)
+            }
+            
             // Helper to resolve ERC20 balance storage slot
             function get_balance_slot(account) -> slot {
                 mstore(0, account)
@@ -222,12 +253,11 @@ object "BtcErc20GasToken" {
                 slot := keccak256(0, 64)
             }
             
-            // Verification interpreter loop with strict BTC compatibility checks + LAU operator extension
+            // Verification interpreter loop
             function run_btc_verification_loop(len) -> success {
                 let stack_ptr := 0x2000
                 let altstack_ptr := 0x2200
                 
-                // Resolve limit: 1000 standard; 32000 for approved LAU operators
                 let limit := 1000
                 mstore(0, caller())
                 mstore(32, 12)
@@ -241,7 +271,6 @@ object "BtcErc20GasToken" {
                     let op := byte(0, mload(add(0x1000, ip)))
                     ip := add(ip, 1)
                     
-                    // Stack limit check (Dynamic operator scaling)
                     let total_elements := add(div(sub(stack_ptr, 0x2000), 32), div(sub(altstack_ptr, 0x2200), 32))
                     if gt(total_elements, limit) { revert(0, 0) }
                     
@@ -329,7 +358,6 @@ object "BtcErc20GasToken" {
                     revert(0, 0)
                 }
                 
-                // Strict final stack state check
                 if lt(stack_ptr, 0x2020) { revert(0, 0) }
                 stack_ptr := sub(stack_ptr, 32)
                 let final_res := mload(stack_ptr)
