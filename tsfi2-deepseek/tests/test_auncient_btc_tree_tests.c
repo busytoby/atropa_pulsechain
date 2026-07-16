@@ -3,7 +3,10 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "libantigravity_interop.h"
+#include "../../scripts/libantigravity_interop.h"
+#include "tsfi_trie.h"
+#include "tsfi_dat.h"
+#include "../../scripts/libantigravity_extra2.c"
 
 int main(void) {
     printf("[Auncient BTC Tree] Starting 2-stack BTC rails verification tests...\n");
@@ -62,6 +65,32 @@ int main(void) {
     int exp_child_stack[1] = { 30 };
     assert(interop_vm_recursive_verify(&parent, 1, exp_child_stack, 1, &rec_verified) == 0);
     assert(rec_verified == 1);
+
+    // 6. Verify Double-Array Trie (DAT) quadtree persistent binary serialization
+    printf("       [Verify] Double-Array Trie (DAT) serialization persistence...\n");
+    tsfi_trie_node *trie_root = tsfi_trie_create_node(0);
+    tsfi_trie_insert(trie_root, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver", "receiver_wallet");
+    tsfi_trie_insert(trie_root, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/operator", "operator_wallet");
+    
+    tsfi_dat *dat = tsfi_dat_compile(trie_root);
+    assert(dat != NULL);
+    
+    const char *resolved_val = tsfi_dat_search(dat, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver");
+    assert(resolved_val != NULL && strcmp(resolved_val, "receiver_wallet") == 0);
+    
+    // Test saving database slice to binary DAT format on disk (.dat.bin ONLY per Rule 13)
+    const char *test_bin_path = "tmp/test_unified_addr.dat.bin";
+    assert(tsfi_dat_save_bin(dat, test_bin_path) == 0);
+    
+    // Load database slice back and verify contents
+    tsfi_dat *loaded_dat = tsfi_dat_load_bin(test_bin_path);
+    assert(loaded_dat != NULL);
+    const char *loaded_val = tsfi_dat_search(loaded_dat, "dynamic_0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/receiver");
+    assert(loaded_val != NULL && strcmp(loaded_val, "receiver_wallet") == 0);
+    
+    tsfi_dat_destroy(dat);
+    tsfi_dat_destroy(loaded_dat);
+    tsfi_trie_destroy(trie_root);
 
     printf("[PASS] All 2-stack BTC rails verification tests passed successfully.\n");
     return 0;
