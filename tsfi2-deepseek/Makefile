@@ -312,6 +312,9 @@ bin/test_germanium_coax_string_c_rpc: tests/test_germanium_coax_string_c_rpc.c
 bin/test_zmm_disk_mount_c_rpc: tests/test_zmm_disk_mount_c_rpc.c
 	$(CC) $(CFLAGS) -o $@ $^
 
+bin/test_zmm_ramac_rails: tests/test_zmm_ramac_rails.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_ramac_layout: tests/test_ramac_layout.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
