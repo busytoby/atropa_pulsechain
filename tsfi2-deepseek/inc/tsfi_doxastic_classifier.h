@@ -21,4 +21,17 @@ typedef struct {
 // Classify a specific 3D coordinate region in the DAT/SVDAG database
 TSFiDoxasticClassification tsfi_doxastic_classify_region(tsfi_dat *dat, int x_start, int x_end, int y, int z);
 
+typedef enum {
+    CLASS_STABLE = 10,
+    CLASS_FRONTIER, // High-potential boundary (Fact adjacent to Question)
+    CLASS_FRACTURE  // Contradiction boundary (Fact adjacent to Retracted)
+} TSFiStrainClass;
+
+typedef struct {
+    TSFiStrainClass class_id;
+    float boundary_gradient;
+} TSFiStrainClassification;
+
+TSFiStrainClassification tsfi_doxastic_classify_strain(tsfi_dat *dat, int x_start, int x_end, int y, int z);
+
 #endif // TSFI_DOXASTIC_CLASSIFIER_H
