@@ -167,6 +167,25 @@ int main(void) {
     int fractured = (tension > limit) ? 1 : 0;
     assert(fractured == 1);
 
+    // 9. Verify Turing completeness and constraints (OP_CUT & OP_NEQ)
+    printf("       [LogOS] Verifying Turing-complete opcodes (OP_CUT) and constraints (OP_NEQ)...\n");
+    fflush(stdout);
+    InteropStackVM constraint_vm;
+    memset(&constraint_vm, 0, sizeof(InteropStackVM));
+    int constraint_script[15] = {
+        1, 50,
+        1, 50,
+        0x21, 11,
+        0x24,
+        6,
+        6, 6, 6,
+        1, 99,
+        6
+    };
+    assert(interop_stack_vm_execute(&constraint_vm, constraint_script, 14) == 0);
+    printf("         [DEBUG] constraint stack_len = %d, stack[0] = %d\n", (int)constraint_vm.stack_len, constraint_vm.stack[0]); fflush(stdout);
+    assert(constraint_vm.stack_len == 3 && constraint_vm.stack[0] == 50 && constraint_vm.stack[1] == 50 && constraint_vm.stack[2] == 99);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
