@@ -250,6 +250,22 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL IF/ELSE/END-IF successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL MULTIPLY and DIVIDE statements
+    uint8_t arith_bc[64];
+    int arith_len = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 10 TO R0; MOVE 2 TO R1; MULTIPLY R1 BY R0; DIVIDE R1 INTO R0;",
+        arith_bc, 64, &arith_len);
+    assert(res == 0);
+
+    TSFiStrategyVM arith_vm;
+    tsfi_strategy_vm_init(&arith_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&arith_vm, NULL, arith_bc, arith_len, NULL);
+    assert(res == 0);
+    assert(arith_vm.registers[0] == 10);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL MULTIPLY/DIVIDE successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;

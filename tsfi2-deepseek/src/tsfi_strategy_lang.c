@@ -221,6 +221,22 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     }
                 }
             }
+        } else if (op == 0x1D) { // MUL dst src
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4) {
+                    vm->registers[dst] *= vm->registers[src];
+                }
+            }
+        } else if (op == 0x1E) { // DIV dst src
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4 && vm->registers[src] != 0) {
+                    vm->registers[dst] /= vm->registers[src];
+                }
+            }
         }
     }
 
@@ -474,6 +490,24 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             // Support COBOL style: SUBTRACT R1 FROM R0;
             if (idx + 3 < token_count && strcmp(tokens[idx + 2], "FROM") == 0 && pc + 2 < max_len) {
                 bytecode_out[pc++] = 0x11;
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                idx += 4;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "MULTIPLY") == 0 || strcmp(t, "multiply") == 0) {
+            if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "BY") == 0 || strcmp(tokens[idx + 2], "by") == 0) && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x1D;
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
+                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                idx += 4;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "DIVIDE") == 0 || strcmp(t, "divide") == 0) {
+            if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "INTO") == 0 || strcmp(tokens[idx + 2], "into") == 0) && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x1E;
                 bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
                 bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
                 idx += 4;
