@@ -241,10 +241,13 @@ int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const doub
                                            double *out_expected_return, double *out_variance);
 
 // Luis J. A. Villalon style executive techniques decision-tree evaluator
-// Resolves the optimal policy/branch yielding the maximum expected net utility
-// Returns 0 on success, -1 on invalid configurations
 int tsfi_s370_executive_decision_villalon(int decision_count, const double *benefit, const double *cost,
                                           const double *risk_prob, double *out_expected_net_value,
                                           int *out_optimal_decision_idx);
+
+// Maurice Nelles (Borg-Warner Director of Research) style deliberate creativeness heuristic mutator
+// Deterministically perturbs operational parameters to evaluate structural design variations
+// Returns 0 on success, -1 on invalid configurations
+int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsigned int seed);
 
 #endif // TSFI_RAMAC_LAYOUT_H

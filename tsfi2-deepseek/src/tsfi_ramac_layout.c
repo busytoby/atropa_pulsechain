@@ -1070,3 +1070,20 @@ int tsfi_s370_executive_decision_villalon(int decision_count, const double *bene
     *out_optimal_decision_idx = opt_idx;
     return 0;
 }
+
+int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsigned int seed) {
+    if (!parameters || count <= 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < count; i++) {
+        // Linear congruential generator (LCG) step to yield deterministic pseudo-random sequences
+        seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF;
+        
+        // Scale to a perturbation range of [-10%, +10%]
+        double perturbation = ((double)(seed % 2000) - 1000.0) / 10000.0;
+        parameters[i] = parameters[i] * (1.0 + perturbation);
+    }
+
+    return 0;
+}

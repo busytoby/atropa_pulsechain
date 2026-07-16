@@ -688,6 +688,16 @@ int main(void) {
     assert(optimal_value > 824.9 && optimal_value < 825.1);
     printf("  [PASS] Luis J. A. Villalon executive decision solver verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9. Maurice Nelles deliberate creativeness mutator
+    printf("[Test] Verifying Maurice Nelles deliberate creativeness mutator...\n");
+    double params[] = {100.0, 200.0};
+    int cr_ret = tsfi_s370_deliberate_creativeness_nelles(params, 2, 42);
+    assert(cr_ret == 0);
+    printf("  Mutated parameters: [0]=%.2f, [1]=%.2f\n", params[0], params[1]);
+    assert(params[0] > 90.26 && params[0] < 90.28);
+    assert(params[1] > 185.27 && params[1] < 185.29);
+    printf("  [PASS] Maurice Nelles deliberate creativeness mutator verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
