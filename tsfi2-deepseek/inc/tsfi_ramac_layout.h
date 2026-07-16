@@ -58,6 +58,14 @@ typedef struct {
     int invalid;                   // Page invalid bit (I)
 } tsfi_s370_page_entry;
 
+// System/370 Channel Command Word (CCW) structure
+typedef struct {
+    uint8_t cmd_code;   // Command code (e.g. 0x01: write, 0x02: read, 0x07: seek)
+    uint32_t data_addr; // Target memory data address pointer
+    uint8_t flags;      // CCW flags (bit 1: Chain Data, bit 2: Chain Command)
+    uint16_t count;     // Transfer byte count
+} tsfi_s370_ccw;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -104,10 +112,15 @@ int tsfi_ramac_check_parity(const char *str);
 int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
 
 // System/370 Dynamic Address Translation (DAT) translation lookup emulators
-// Returns 0 on success, -1 on translation exceptions (segment invalid/page invalid)
 int tsfi_s370_dat_translate(uint32_t virtual_addr, 
                             tsfi_s370_segment_entry *seg_table, int seg_count,
                             tsfi_s370_page_entry *page_tables,
                             uint32_t *out_physical_addr);
+
+// System/370 Channel I/O Program execution emulator
+// Executes chained CCWs against the RAMAC disk structure
+int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
+                              tsfi_s370_ccw *ccw_chain, int chain_len,
+                              uint8_t *memory_pool, int mem_size);
 
 #endif // TSFI_RAMAC_LAYOUT_H

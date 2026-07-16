@@ -186,30 +186,23 @@ int main(void) {
 
     // 3.9.8. System/370 Dynamic Address Translation (DAT) verification
     printf("[Test] Verifying System/370 Dynamic Address Translation (DAT)...\n");
-    // Define a 2-segment table
     tsfi_s370_segment_entry seg_table[2];
-    seg_table[0].page_table_origin = 0;   // page table 0 starts at index 0
+    seg_table[0].page_table_origin = 0;
     seg_table[0].length = 16;
     seg_table[0].invalid = 0;
 
-    seg_table[1].page_table_origin = 256; // page table 1 starts at index 256
+    seg_table[1].page_table_origin = 256;
     seg_table[1].length = 16;
-    seg_table[1].invalid = 1;             // invalid segment
+    seg_table[1].invalid = 1;
 
-    // Define page entries
     tsfi_s370_page_entry page_tables[512];
     memset(page_tables, 0, sizeof(page_tables));
-    page_tables[5].page_frame_real_addr = 0x8F000; // page index 5 maps to physical page 0x8F000
+    page_tables[5].page_frame_real_addr = 0x8F000;
     page_tables[5].invalid = 0;
 
     page_tables[6].page_frame_real_addr = 0;
-    page_tables[6].invalid = 1;                    // invalid page
+    page_tables[6].invalid = 1;
 
-    // Virtual address to translate:
-    // SX = 0
-    // PX = 5
-    // BX = 0x123 (displacement)
-    // Virtual address in 31-bit mode: (0 << 20) | (5 << 12) | 0x123 = 0x5123
     uint32_t virt_addr = 0x5123;
     uint32_t phys_addr = 0;
     int translate_ret1 = tsfi_s370_dat_translate(virt_addr, seg_table, 2, page_tables, &phys_addr);
@@ -217,17 +210,55 @@ int main(void) {
     printf("  Virtual address 0x%08X translated to physical address 0x%08X\n", virt_addr, phys_addr);
     assert(phys_addr == 0x8F123);
 
-    // Test invalid segment access: SX = 1 -> Virtual address: (1 << 20) | (5 << 12) | 0x123 = 0x105123
     uint32_t invalid_seg_addr = 0x105123;
     int translate_ret2 = tsfi_s370_dat_translate(invalid_seg_addr, seg_table, 2, page_tables, &phys_addr);
     assert(translate_ret2 == -1);
 
-    // Test invalid page access: SX = 0, PX = 6 -> Virtual address: (0 << 20) | (6 << 12) | 0x123 = 0x6123
     uint32_t invalid_page_addr = 0x6123;
     int translate_ret3 = tsfi_s370_dat_translate(invalid_page_addr, seg_table, 2, page_tables, &phys_addr);
     assert(translate_ret3 == -1);
 
     printf("  [PASS] System/370 Dynamic Address Translation (DAT) paging verified successfully.\n");
+
+    // 3.9.9. System/370 Channel I/O Subsystem Program execution
+    printf("[Test] Verifying System/370 Channel Command Word (CCW) I/O program chains...\n");
+    uint8_t memory_pool[1024];
+    memset(memory_pool, 0, sizeof(memory_pool));
+
+    // Store target sector index (120) inside memory pool at offset 10
+    int target_sec = 120;
+    memcpy(memory_pool + 10, &target_sec, 4);
+
+    // Store payload data inside memory pool at offset 20
+    const char *payload_data = "CCW_TEST_DATA";
+    memcpy(memory_pool + 20, payload_data, 13);
+
+    // CCW chain definition:
+    // CCW 0: Seek sector 120 (cmd 0x07, address 10, flags 0x02 [chain command], count 4)
+    // CCW 1: Write payload to sector (cmd 0x01, address 20, flags 0x02 [chain command], count 13)
+    // CCW 2: Read payload from sector back to address 40 (cmd 0x02, address 40, flags 0x00, count 13)
+    tsfi_s370_ccw ccw_chain[3];
+    
+    ccw_chain[0].cmd_code = 0x07;
+    ccw_chain[0].data_addr = 10;
+    ccw_chain[0].flags = 0x02;
+    ccw_chain[0].count = 4;
+
+    ccw_chain[1].cmd_code = 0x01;
+    ccw_chain[1].data_addr = 20;
+    ccw_chain[1].flags = 0x02;
+    ccw_chain[1].count = 13;
+
+    ccw_chain[2].cmd_code = 0x02;
+    ccw_chain[2].data_addr = 40;
+    ccw_chain[2].flags = 0x00;
+    ccw_chain[2].count = 13;
+
+    int channel_ret = tsfi_s370_channel_execute(disk, total_slots, ccw_chain, 3, memory_pool, 1024);
+    assert(channel_ret == 0);
+    printf("  Read-back CCW data at memory offset 40: '%s'\n", (char*)(memory_pool + 40));
+    assert(strcmp((char*)(memory_pool + 40), "CCW_TEST_DATA") == 0);
+    printf("  [PASS] System/370 Channel I/O Program execution verified successfully.\n");
 
     free(disk);
 

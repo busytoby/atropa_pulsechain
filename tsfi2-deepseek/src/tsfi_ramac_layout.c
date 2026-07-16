@@ -409,3 +409,69 @@ int tsfi_s370_dat_translate(uint32_t virtual_addr,
     *out_physical_addr = page_tables[pte_idx].page_frame_real_addr + bx;
     return 0; // Translation successful
 }
+
+int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
+                              tsfi_s370_ccw *ccw_chain, int chain_len,
+                              uint8_t *memory_pool, int mem_size) {
+    if (!disk || total_slots <= 0 || !ccw_chain || chain_len <= 0 || !memory_pool || mem_size <= 0) {
+        return -1;
+    }
+
+    int current_ccw_idx = 0;
+    int current_seek_sector = 0; // Default seek index pointer
+
+    while (current_ccw_idx < chain_len) {
+        tsfi_s370_ccw ccw = ccw_chain[current_ccw_idx];
+
+        if (ccw.data_addr >= (uint32_t)mem_size) {
+            return -1; // Memory out of bounds
+        }
+
+        switch (ccw.cmd_code) {
+            case 0x07: // Control Command: SEEK
+                // Read target sector index from memory
+                if (ccw.data_addr + 4 > (uint32_t)mem_size) return -1;
+                memcpy(&current_seek_sector, memory_pool + ccw.data_addr, 4);
+                if (current_seek_sector < 0 || current_seek_sector >= total_slots) {
+                    return -1; // Sector index out of bounds
+                }
+                break;
+
+            case 0x02: // Input Command: READ
+                // Read from RAMAC disk current_seek_sector to memory_pool
+                if (current_seek_sector >= total_slots || !disk[current_seek_sector].is_active) {
+                    // Return empty record if inactive
+                    memset(memory_pool + ccw.data_addr, 0, ccw.count < 32 ? ccw.count : 32);
+                } else {
+                    int size_to_copy = ccw.count < 32 ? ccw.count : 32;
+                    if (ccw.data_addr + size_to_copy > (uint32_t)mem_size) return -1;
+                    memcpy(memory_pool + ccw.data_addr, disk[current_seek_sector].value, size_to_copy);
+                }
+                break;
+
+            case 0x01: // Output Command: WRITE
+                // Write from memory_pool to RAMAC disk current_seek_sector
+                if (current_seek_sector >= total_slots) return -1;
+                {
+                    int size_to_copy = ccw.count < 32 ? ccw.count : 32;
+                    if (ccw.data_addr + size_to_copy > (uint32_t)mem_size) return -1;
+                    memset(disk[current_seek_sector].value, 0, sizeof(disk[current_seek_sector].value));
+                    memcpy(disk[current_seek_sector].value, memory_pool + ccw.data_addr, size_to_copy);
+                    disk[current_seek_sector].is_active = 1;
+                }
+                break;
+
+            default:
+                return -1; // Unsupported CCW command code
+        }
+
+        // Check command chaining flag (bit 2 represents command chaining in standard S/370: mask 0x02)
+        if (ccw.flags & 0x02) {
+            current_ccw_idx++;
+        } else {
+            break; // Terminate I/O program
+        }
+    }
+
+    return 0; // I/O channel program completed successfully
+}
