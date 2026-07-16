@@ -1039,6 +1039,43 @@ int main(void) {
     assert(uncol_mem[2] == 15);
     printf("  [PASS] UNCOL VM execution verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.8. Polymorphic WinchesterMQ SCSI Routing Verification
+    printf("[Test] Verifying polymorphic WinchesterMQ SCSI routing...\n");
+    // Allocate fresh disk to verify SCSI commits
+    tsfi_ramac_record *poly_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+    assert(poly_disk != NULL);
+
+    int poly_conn[4] = {
+        0, 1, // Initiator 0 -> Target 1
+        1, 0  // Initiator 1 -> Target 0
+    };
+    uint8_t scsi_statuses[2] = {0, 0};
+    uint8_t data_regs[2] = {0, 0};
+    uint8_t str0[3] = {42, 43, 44};
+    uint8_t str1[3] = {88, 89, 90};
+    const uint8_t *streams_arr[2] = {str0, str1};
+    int stream_lens_arr[2] = {3, 3};
+    int poly_routes[2] = {-1, -1};
+
+    int poly_ret = tsfi_s370_polymorphic_winchester_mq_route(poly_conn, 2, 2, scsi_statuses, data_regs,
+                                                            streams_arr, stream_lens_arr, poly_disk, poly_routes);
+    assert(poly_ret == 0);
+    assert(poly_routes[0] == 1); // Initiator 0 routed to Target 1 (Cylinder 10)
+    assert(poly_routes[1] == 0); // Initiator 1 routed to Target 0 (Cylinder 0)
+
+    // Verify written data (SCSI keys should be present in target cylinder memory slices)
+    double seek_poly = 0.0;
+    const char *val_i0 = tsfi_ramac_search_record(poly_disk, "scsi_key_42", 10, &seek_poly);
+    assert(val_i0 != NULL);
+    assert(strcmp(val_i0, "scsi_val_44") == 0);
+
+    const char *val_i1 = tsfi_ramac_search_record(poly_disk, "scsi_key_88", 0, &seek_poly);
+    assert(val_i1 != NULL);
+    assert(strcmp(val_i1, "scsi_val_90") == 0);
+
+    free(poly_disk);
+    printf("  [PASS] Polymorphic WinchesterMQ SCSI routing verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

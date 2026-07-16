@@ -1765,3 +1765,39 @@ int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, i
 
     return 0; // VM completed execution successfully
 }
+
+int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int initiator_count, int target_count,
+                                              uint8_t *scsi_status_array, uint8_t *data_reg_array,
+                                              const uint8_t **streams, const int *stream_lens,
+                                              tsfi_ramac_record *disk, int *out_route_map) {
+    if (!matrix_connections || initiator_count <= 0 || target_count <= 0 || 
+        !scsi_status_array || !data_reg_array || !streams || !stream_lens || !disk || !out_route_map) {
+        return -1;
+    }
+
+    // 1. Resolve connection matrix using the RW-400 switch router logic
+    int ret = tsfi_s370_rw400_matrix_switch(matrix_connections, initiator_count, target_count, out_route_map);
+    if (ret != 0) {
+        return -1; // Conflict configuration detected, routing abort
+    }
+
+    // 2. For each active connection, stream the corresponding WinchesterMQ SCSI handshake onto RAMAC targets
+    for (int i = 0; i < initiator_count; i++) {
+        int target_buffer_idx = out_route_map[i];
+        if (target_buffer_idx != -1) {
+            // Assign cylinder mapping: each target buffer maps to 10 distinct cylinders of RAMAC storage
+            int target_cylinder = target_buffer_idx * 10;
+            if (target_cylinder >= RAMAC_CYLINDERS) {
+                target_cylinder = RAMAC_CYLINDERS - 1;
+            }
+
+            int commit_slot = tsfi_s370_scsi_stream_to_ramac(disk, &scsi_status_array[i], &data_reg_array[i],
+                                                             streams[i], stream_lens[i], target_cylinder);
+            if (commit_slot == -1) {
+                return -2; // SCSI streaming commit failure
+            }
+        }
+    }
+
+    return 0;
+}

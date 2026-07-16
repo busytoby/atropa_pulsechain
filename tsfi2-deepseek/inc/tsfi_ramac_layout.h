@@ -343,4 +343,10 @@ int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, 
 // UNCOL Universal Computer Oriented Language VM execution loop
 int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, int *memory, int mem_size, int *registers, int reg_count);
 
+// Polymorphic WinchesterMQ SCSI routing system linking multiple initiators to multiple targets
+int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int initiator_count, int target_count,
+                                              uint8_t *scsi_status_array, uint8_t *data_reg_array,
+                                              const uint8_t **streams, const int *stream_lens,
+                                              tsfi_ramac_record *disk, int *out_route_map);
+
 #endif // TSFI_RAMAC_LAYOUT_H
