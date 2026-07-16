@@ -2704,3 +2704,35 @@ int tsfi_s370_cdc1604_resolve_address(const int *memory, int mem_size,
     *out_effective_address = addr;
     return 0;
 }
+
+int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size, 
+                                    uint32_t sector_addr, int is_write, uint64_t *data_word) {
+    if (!queue || !ramac_platter || !data_word || (int)sector_addr >= platter_size) return -1;
+
+    if (is_write) {
+        uint64_t ecc_encoded_word = tsfi_s370_ibm7030_ecc_encode(*data_word);
+        int push_status = tsfi_s370_ibm7030_lau_push_store(queue, sector_addr, ecc_encoded_word);
+        if (push_status != 0) return -2;
+
+        int commits = tsfi_s370_ibm7030_lau_commit(queue, ramac_platter, platter_size);
+        if (commits < 0) return -3;
+    } else {
+        int push_status = tsfi_s370_ibm7030_lau_push_load(queue, sector_addr);
+        if (push_status != 0) return -2;
+
+        int commits = tsfi_s370_ibm7030_lau_commit(queue, ramac_platter, platter_size);
+        if (commits < 0) return -3;
+
+        int last_head = (queue->head - 1 + 8) % 8;
+        uint64_t ecc_read_word = queue->entries[last_head].value;
+
+        uint64_t corrected_val = 0;
+        int err_type = tsfi_s370_ibm7030_ecc_decode(ecc_read_word, &corrected_val);
+        if (err_type == 2) {
+            return -4;
+        }
+        *data_word = corrected_val;
+    }
+
+    return 0;
+}

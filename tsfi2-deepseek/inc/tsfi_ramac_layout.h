@@ -573,4 +573,8 @@ int tsfi_s370_cdc1604_resolve_address(const int *memory, int mem_size,
                                       const int *index_registers, int indirect_flag, 
                                       uint32_t *out_effective_address);
 
+// Unified RAMAC controller combining look-ahead queue buffers and SEC-DED ECC protection
+int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size, 
+                                    uint32_t sector_addr, int is_write, uint64_t *data_word);
+
 #endif // TSFI_RAMAC_LAYOUT_H

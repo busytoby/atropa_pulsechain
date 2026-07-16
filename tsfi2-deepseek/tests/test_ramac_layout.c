@@ -1762,6 +1762,34 @@ int main(void) {
 
     printf("  [PASS] CDC 1604 Address Resolution verified successfully.\n");
 
+    // Test Scenario 23: Unified RAMAC Controller (Speculative queue + SEC-DED ECC + Platter Storage)
+    printf("[Test] Verifying Unified RAMAC Controller...\n");
+    uint64_t ramac_platter[64] = {0};
+    tsfi_ibm7030_lau_queue controller_q;
+    tsfi_s370_ibm7030_lau_init(&controller_q);
+
+    data_word = 0xAA55AA551234ULL;
+    int controller_ok = tsfi_s370_ramac_controller_exec(&controller_q, ramac_platter, 64, 5, 1, &data_word);
+    assert(controller_ok == 0);
+
+    uint64_t read_word = 0;
+    controller_ok = tsfi_s370_ramac_controller_exec(&controller_q, ramac_platter, 64, 5, 0, &read_word);
+    assert(controller_ok == 0);
+    assert(read_word == 0xAA55AA551234ULL);
+
+    ramac_platter[5] ^= (1ULL << 15);
+    read_word = 0;
+    controller_ok = tsfi_s370_ramac_controller_exec(&controller_q, ramac_platter, 64, 5, 0, &read_word);
+    assert(controller_ok == 0);
+    assert(read_word == 0xAA55AA551234ULL);
+
+    ramac_platter[5] ^= (1ULL << 20);
+    read_word = 0;
+    controller_ok = tsfi_s370_ramac_controller_exec(&controller_q, ramac_platter, 64, 5, 0, &read_word);
+    assert(controller_ok == -4);
+
+    printf("  [PASS] Unified RAMAC Controller verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
