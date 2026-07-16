@@ -9,6 +9,7 @@ TSFiBoxOrchestrator* tsfi_box_orchestrator_create(tsfi_dat *disk_dat, tsfi_trie_
     if (!orc) return NULL;
     orc->trie_root = trie_root;
     orc->akb = tsfi_akb_create(disk_dat);
+    tsfi_ot_accumulator_init(&orc->ot_accumulator);
     return orc;
 }
 
@@ -64,6 +65,12 @@ int tsfi_box_orchestrator_step(TSFiBoxOrchestrator *orc, int x_start, int x_end,
             orc->resolved_count++;
             return 1; // Resolved
         } else {
+            // Accumulate undecidable coordinates in OT Accumulator
+            for (int x = x_start; x <= x_end; x++) {
+                char coord_key[128];
+                snprintf(coord_key, sizeof(coord_key), "svdag/%d/%d/%d", x, y, z);
+                tsfi_ot_accumulator_add(&orc->ot_accumulator, coord_key, classification.posterior_probability);
+            }
             orc->failed_count++;
             return 0; // Constraints failed
         }

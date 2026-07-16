@@ -3,6 +3,7 @@
 
 #include "tsfi_akb.h"
 #include "tsfi_unified_classifier.h"
+#include "tsfi_ot_accumulator.h"
 
 // Unified Box System State
 typedef struct {
@@ -10,6 +11,7 @@ typedef struct {
     tsfi_trie_node *trie_root;
     int resolved_count;
     int failed_count;
+    TSFiOTAccumulator ot_accumulator;
 } TSFiBoxOrchestrator;
 
 // Initialize the Box Orchestrator with an active DAT database
