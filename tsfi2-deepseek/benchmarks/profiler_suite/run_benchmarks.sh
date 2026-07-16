@@ -62,6 +62,7 @@ make tests/test_synth_perf > /dev/null 2>&1 &
 make tests/test_winchester_bridge > /dev/null 2>&1 &
 make tests/test_dual_stack > /dev/null 2>&1 &
 make tests/bench_synth_perf > /dev/null 2>&1 &
+make tests/test_doxastic_pipeline > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -155,6 +156,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_winchester_bridge > /dev/null 2>&1
 ./tests/test_dual_stack > /dev/null 2>&1
 ./tests/bench_synth_perf > /dev/null 2>&1
+./tests/test_doxastic_pipeline > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
