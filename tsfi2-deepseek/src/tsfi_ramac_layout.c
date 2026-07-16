@@ -1010,3 +1010,39 @@ int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_res
 
     return 0;
 }
+
+int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const double *weights, int asset_count,
+                                           double *out_expected_return, double *out_variance) {
+    if (!asset_yields || !weights || asset_count <= 0 || !out_expected_return || !out_variance) {
+        return -1;
+    }
+
+    // Expected return: Rp = sum( w_i * Y_i )
+    double expected_return = 0.0;
+    for (int i = 0; i < asset_count; i++) {
+        expected_return += weights[i] * asset_yields[i];
+    }
+    *out_expected_return = expected_return;
+
+    // Constant correlation factor: rho = 0.15 representing standard mid-century market portfolios
+    double rho = 0.15;
+    double variance = 0.0;
+
+    for (int i = 0; i < asset_count; i++) {
+        double std_i = asset_yields[i] * 0.25; // standard dev proportional to yield
+        
+        // Single variance terms: w_i^2 * sigma_i^2
+        variance += weights[i] * weights[i] * std_i * std_i;
+
+        // Covariance terms: sum( w_i * w_j * sigma_i * sigma_j * rho )
+        for (int j = 0; j < asset_count; j++) {
+            if (i != j) {
+                double std_j = asset_yields[j] * 0.25;
+                variance += weights[i] * weights[j] * std_i * std_j * rho;
+            }
+        }
+    }
+    *out_variance = variance;
+
+    return 0;
+}

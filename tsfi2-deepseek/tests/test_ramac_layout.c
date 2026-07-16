@@ -653,6 +653,24 @@ int main(void) {
     assert(pf > 0.05 && pf < 0.06); // Pf = 0.5 * erfc(1.6 / 1.414) ~ 0.0548
     printf("  [PASS] Alfred M. Freudenthal FET gate reliability index verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.5. Ora C. Roehl Keystone Custodian stochastic portfolio optimizer
+    printf("[Test] Verifying Ora C. Roehl Keystone Custodian portfolio strategy...\n");
+    double assets[] = {0.08, 0.05}; // 8% and 5% yields
+    double weights[] = {0.60, 0.40}; // 60% and 40% allocations
+    double exp_ret = 0.0, var = 0.0;
+    int port_ret = tsfi_s370_portfolio_strategy_keystone(assets, weights, 2, &exp_ret, &var);
+    assert(port_ret == 0);
+    printf("  Expected portfolio return: %.4f, Variance: %.6f\n", exp_ret, var);
+    // exp_ret = 0.60 * 0.08 + 0.40 * 0.05 = 0.048 + 0.02 = 0.068 (6.8%)
+    assert(exp_ret > 0.067 && exp_ret < 0.069);
+    // std_0 = 0.08 * 0.25 = 0.02, std_1 = 0.05 * 0.25 = 0.0125
+    // var = w0^2 * std0^2 + w1^2 * std1^2 + 2 * w0 * w1 * std0 * std1 * rho
+    //     = 0.36 * 0.0004 + 0.16 * 0.00015625 + 2 * 0.6 * 0.4 * 0.02 * 0.0125 * 0.15
+    //     = 0.000144 + 0.000025 + 0.48 * 0.00025 * 0.15
+    //     = 0.000144 + 0.000025 + 0.000018 = 0.000187
+    assert(var > 0.000186 && var < 0.000188);
+    printf("  [PASS] Ora C. Roehl portfolio yield strategy verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

@@ -232,10 +232,14 @@ double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, i
                                               double reference_stress, double shape_parameter);
 
 // Alfred M. Freudenthal structural reliability safety solver applied strictly to FET gate oxide breakdown
-// Computes reliability index beta, and estimates the probability of failure Pf
-// Returns 0 on success, -1 on invalid configurations
 int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_resistance,
                                           double mean_stress, double std_stress,
                                           double *out_beta, double *out_pf);
+
+// Ora C. Roehl (Keystone Custodian Funds VP of Research) style stochastic portfolio yield strategy optimizer
+// Calculates portfolio expected return and variance under 1956 mid-century market covariance limits
+// Returns 0 on success, -1 on invalid configurations
+int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const double *weights, int asset_count,
+                                           double *out_expected_return, double *out_variance);
 
 #endif // TSFI_RAMAC_LAYOUT_H
