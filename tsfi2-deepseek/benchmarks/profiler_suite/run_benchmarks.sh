@@ -91,6 +91,7 @@ make tests/test_unified_sync_sandbox > /dev/null 2>&1 &
 make tests/test_shm_ipc_cooperative > /dev/null 2>&1 &
 make tests/test_shm_kermit_cooperative > /dev/null 2>&1 &
 make tests/test_shm_ring_cooperative > /dev/null 2>&1 &
+make benchmarks/profiler_suite/bench_strategy_vm > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -148,6 +149,10 @@ echo "[RUN] Knowledge Graph & Ouroboros Benchmark..."
 # 15. Run LogOS Agent Kernel Latency Benchmark
 echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_logos_agent_kernel > "${TMP_DIR}/bench_logos.log"
+
+# 16. Run Strategy VM Execution Benchmark
+echo "[RUN] Strategy VM Execution Benchmark..."
+./benchmarks/profiler_suite/bench_strategy_vm > "${TMP_DIR}/bench_strategy_vm.log"
 
 ./tests/test_datalog_unification > /dev/null 2>&1
 ./tests/test_algebraic_unification > /dev/null 2>&1
