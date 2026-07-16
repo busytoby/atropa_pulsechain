@@ -60,6 +60,38 @@ int main(void) {
     printf("  [Strategy Prune/Weight] Popped priority 3 keycode: %d (Expected: 34)\n", item.keycode);
     fflush(stdout);
 
+    // 3. Verify Bytecode execution pathway
+    tsfi_priority_queue_push(&pq, 10, 40, "BC_LOW");
+    tsfi_priority_queue_push(&pq, 2, 41, "BC_HIGH");
+
+    // Bytecode stream:
+    // 0x01, 2 (SET_DEPTH = 2)
+    // 0x02, 5 (SET_ABDUCTIVE = 5)
+    // 0x03    (OP_EVAL)
+    uint8_t bc[5] = { 0x01, 2, 0x02, 5, 0x03 };
+    res = tsfi_strategy_vm_execute_bytecode(&vm, &pq, bc, 5);
+    assert(res == 0);
+
+    // Verify popped priorities:
+    // Item 41: (2 * 2) + 5 = 9
+    // Item 40: (10 * 2) + 5 = 25
+    res = tsfi_priority_queue_pop(&pq, &item);
+    assert(res == 0 && item.keycode == 41 && item.priority == 9);
+    printf("  [Strategy Bytecode] Popped bytecode priority 9 keycode: %d (Expected: 41)\n", item.keycode);
+    fflush(stdout);
+
+    // 4. Verify script compiling tool
+    uint8_t compiled_bc[32];
+    int bc_len = 0;
+    res = tsfi_strategy_compile_script("SET depth 3; SET abductive 10; EVAL;", compiled_bc, 32, &bc_len);
+    assert(res == 0);
+    assert(bc_len == 5);
+    assert(compiled_bc[0] == 0x01 && compiled_bc[1] == 3);
+    assert(compiled_bc[2] == 0x02 && compiled_bc[3] == 10);
+    assert(compiled_bc[4] == 0x03);
+    printf("  [Strategy Compiler] Compiled script successfully to 5 bytecode instructions.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
