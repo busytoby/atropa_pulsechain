@@ -1456,6 +1456,90 @@ int main(void) {
 
     printf("  [PASS] IBM 7030 STRETCH Hamming SEC-DED ECC verified successfully.\n");
 
+    // Test Scenario 13: EVM-Native Yul SEC-DED ECC Validation
+    printf("[Test] Verifying EVM-Native Yul SEC-DED ECC Contract...\n");
+    extern bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual_address);
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+
+    bool yul_init = lau_yul_thunk_init("sec_ded", "../solidity/bin/sec_ded.yul", 0x777);
+    assert(yul_init);
+
+    // 1. Test encoding a value using Yul
+    uint8_t enc_cd[36] = {0x51, 0xc7, 0x20, 0x54};
+    uint64_t test_data = 0x0023456789ABCDEFULL;
+    for (int k = 0; k < 8; k++) {
+        enc_cd[35 - k] = (test_data >> (k * 8)) & 0xFF;
+    }
+    uint8_t enc_ret[32];
+    size_t enc_ret_len = 32;
+    bool exec_ok = lau_yul_thunk_execute("sec_ded", enc_cd, 36, enc_ret, &enc_ret_len);
+    assert(exec_ok);
+
+    uint64_t yul_ecc_word = 0;
+    for (int k = 0; k < 8; k++) {
+        yul_ecc_word |= ((uint64_t)enc_ret[31 - k] << (k * 8));
+    }
+    uint64_t expected_ecc = tsfi_s370_ibm7030_ecc_encode(test_data);
+    assert(yul_ecc_word == expected_ecc);
+    printf("  [PASS] Yul encoder output matches C implementation.\n");
+
+    // 2. Test decoding clean word using Yul
+    uint8_t dec_cd[36] = {0x90, 0x0f, 0x0a, 0xa0};
+    for (int k = 0; k < 8; k++) {
+        dec_cd[35 - k] = (yul_ecc_word >> (k * 8)) & 0xFF;
+    }
+    uint8_t yul_dec_ret[64];
+    size_t dec_ret_len = 64;
+    exec_ok = lau_yul_thunk_execute("sec_ded", dec_cd, 36, yul_dec_ret, &dec_ret_len);
+    assert(exec_ok);
+
+    uint64_t yul_decoded_val = 0;
+    uint64_t yul_err_code = 0;
+    for (int k = 0; k < 8; k++) {
+        yul_decoded_val |= ((uint64_t)yul_dec_ret[31 - k] << (k * 8));
+        yul_err_code |= ((uint64_t)yul_dec_ret[63 - k] << (k * 8));
+    }
+    assert(yul_decoded_val == test_data);
+    assert(yul_err_code == 0);
+    printf("  [PASS] Yul decoder successfully decoded clean word.\n");
+
+    // 3. Test decoding single-bit error using Yul
+    uint64_t corrupted_yul_word1 = yul_ecc_word ^ (1ULL << 17);
+    for (int k = 0; k < 8; k++) {
+        dec_cd[35 - k] = (corrupted_yul_word1 >> (k * 8)) & 0xFF;
+    }
+    dec_ret_len = 64;
+    exec_ok = lau_yul_thunk_execute("sec_ded", dec_cd, 36, yul_dec_ret, &dec_ret_len);
+    assert(exec_ok);
+
+    yul_decoded_val = 0;
+    yul_err_code = 0;
+    for (int k = 0; k < 8; k++) {
+        yul_decoded_val |= ((uint64_t)yul_dec_ret[31 - k] << (k * 8));
+        yul_err_code |= ((uint64_t)yul_dec_ret[63 - k] << (k * 8));
+    }
+    assert(yul_decoded_val == test_data);
+    assert(yul_err_code == 1);
+    printf("  [PASS] Yul decoder successfully corrected single-bit error.\n");
+
+    // 4. Test decoding double-bit error using Yul
+    uint64_t corrupted_yul_word2 = yul_ecc_word ^ (1ULL << 17) ^ (1ULL << 25);
+    for (int k = 0; k < 8; k++) {
+        dec_cd[35 - k] = (corrupted_yul_word2 >> (k * 8)) & 0xFF;
+    }
+    dec_ret_len = 64;
+    exec_ok = lau_yul_thunk_execute("sec_ded", dec_cd, 36, yul_dec_ret, &dec_ret_len);
+    assert(exec_ok);
+
+    yul_err_code = 0;
+    for (int k = 0; k < 8; k++) {
+        yul_err_code |= ((uint64_t)yul_dec_ret[63 - k] << (k * 8));
+    }
+    assert(yul_err_code == 2);
+    printf("  [PASS] Yul decoder successfully detected double-bit error.\n");
+
+    printf("  [PASS] EVM-Native Yul SEC-DED ECC verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
