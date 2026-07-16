@@ -41,7 +41,7 @@ int main(void) {
 
     // 4. Red Rail Strategy Modification: Boost abductive path scheduling priority
     const char *script = "SET abductive 30; EVAL;";
-    int res = tsfi_strategy_vm_execute(&red_rail_strategy, &scheduler_queue, script);
+    int res = tsfi_strategy_vm_execute(&red_rail_strategy, &scheduler_queue, script, NULL);
     assert(res == 0);
 
     // Verify Red Rail priorities updated:

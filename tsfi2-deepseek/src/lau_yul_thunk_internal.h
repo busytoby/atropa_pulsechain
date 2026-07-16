@@ -62,4 +62,46 @@ void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val);
 // Execution loops
 bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, const char *name);
 
+// BST memoization definitions
+typedef struct LauMemoNode {
+    uint64_t signature_hash;
+    char contract_name[64];
+    void *calldata_ptr;
+    size_t calldatasize;
+    void *retval_ptr;
+    size_t retval_len;
+    int height;
+    uint64_t created_time_ms;
+    uint64_t ttl_ms;
+    bool stale;
+    bool read_storage;
+    uint64_t cache_hits;
+    struct LauMemoNode *left;
+    struct LauMemoNode *right;
+} LauMemoNode;
+
+typedef struct {
+    char parent[64];
+    char child[64];
+} ContractDependency;
+
+extern LauMemoNode *s_thunk_memo_bst_root;
+extern pthread_mutex_t s_thunk_memo_bst_mutex;
+extern char s_execution_call_stack[16][64];
+extern int s_execution_call_stack_depth;
+extern ContractDependency s_dependencies[256];
+extern int s_dependency_count;
+extern bool g_cache_rehydrated;
+
+uint64_t current_time_ms(void);
+uint64_t bst_fnv1a_hash(const char *name, const uint8_t *calldata, size_t calldatasize);
+LauMemoNode* bst_find(LauMemoNode *root, uint64_t hash);
+LauMemoNode* bst_find_any(LauMemoNode *root, uint64_t hash);
+LauMemoNode* lau_yul_thunk_avl_insert(LauMemoNode *node, LauMemoNode *new_node);
+void register_dependency(const char *parent, const char *child);
+void write_thunk_to_disk(LauMemoNode *node);
+int count_active_nodes(LauMemoNode *node);
+void evict_lru_node(LauMemoNode *node, LauMemoNode **lru_found, uint64_t *oldest_time);
+bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
+
 #endif // LAU_YUL_THUNK_INTERNAL_H

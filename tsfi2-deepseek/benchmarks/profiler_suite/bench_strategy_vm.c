@@ -33,7 +33,7 @@ int main(void) {
         // Reset scale factors to simulate continuous runs
         vm.depth_priority_scale = 1;
         vm.abductive_priority_scale = 1;
-        res = tsfi_strategy_vm_execute_bytecode(&vm, &pq, bytecode, bc_len);
+        res = tsfi_strategy_vm_execute_bytecode(&vm, &pq, bytecode, bc_len, NULL);
         if (res != 0) {
             fprintf(stderr, "VM execution failed at iteration %d\n", i);
             return 1;

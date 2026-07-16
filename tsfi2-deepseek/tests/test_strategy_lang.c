@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include "tsfi_strategy_lang.h"
+#include "tsfi_anvil_vm.h"
 
 int main(void) {
     printf("[Strategy Lang] Starting strategy script parser tests...\n");
@@ -19,7 +20,7 @@ int main(void) {
 
     // Execute script: set depth scale to 2, abductive scale to 5, and execute EVAL re-prioritization
     const char *script = "SET depth 2; SET abductive 5; EVAL;";
-    int res = tsfi_strategy_vm_execute(&vm, &pq, script);
+    int res = tsfi_strategy_vm_execute(&vm, &pq, script, NULL);
     assert(res == 0);
     printf("  [Strategy Script] Executed eval: %d (Expected 1), Depth Scale: %d (Expected 2)\n", 
            vm.executed_evals, vm.depth_priority_scale);
@@ -50,7 +51,7 @@ int main(void) {
 
     // Execute script: set priority of 34 to 3, then prune anything exceeding 20
     const char *prune_script = "WEIGHT 34 3; PRUNE 20;";
-    res = tsfi_strategy_vm_execute(&vm, &pq, prune_script);
+    res = tsfi_strategy_vm_execute(&vm, &pq, prune_script, NULL);
     assert(res == 0);
 
     // Verify item 33 (prio 15 <= 20) and item 34 (prio 3 <= 20) are kept
@@ -69,7 +70,7 @@ int main(void) {
     // 0x02, 5 (SET_ABDUCTIVE = 5)
     // 0x03    (OP_EVAL)
     uint8_t bc[5] = { 0x01, 2, 0x02, 5, 0x03 };
-    res = tsfi_strategy_vm_execute_bytecode(&vm, &pq, bc, 5);
+    res = tsfi_strategy_vm_execute_bytecode(&vm, &pq, bc, 5, NULL);
     assert(res == 0);
 
     // Verify popped priorities:
@@ -101,7 +102,7 @@ int main(void) {
     
     TSFiStrategyVM turing_vm;
     tsfi_strategy_vm_init(&turing_vm);
-    res = tsfi_strategy_vm_execute_bytecode(&turing_vm, NULL, turing_bc, turing_len);
+    res = tsfi_strategy_vm_execute_bytecode(&turing_vm, NULL, turing_bc, turing_len, NULL);
     assert(res == 0);
     printf("  [Strategy Turing Registers] R0=%d (Expected 15)\n", turing_vm.registers[0]);
     fflush(stdout);
@@ -117,7 +118,7 @@ int main(void) {
     
     TSFiStrategyVM query_vm;
     tsfi_strategy_vm_init(&query_vm);
-    res = tsfi_strategy_vm_execute_bytecode(&query_vm, &pq, query_bc, query_len);
+    res = tsfi_strategy_vm_execute_bytecode(&query_vm, &pq, query_bc, query_len, NULL);
     assert(res == 0);
     printf("  [Strategy Queries] PQ size: %d, Keycode 99 priority: %d\n", query_vm.registers[2], query_vm.registers[3]);
     fflush(stdout);
@@ -154,6 +155,24 @@ int main(void) {
     assert(c_like_bc[12] == 0x03); // EVAL
     printf("  [Strategy C-like Parser] Compiled and verified statement tree successfully.\n");
     fflush(stdout);
+
+    // 10. Verify semantic logical subgoal lookups
+    TSFiAnvilVM logic_vm;
+    tsfi_anvil_vm_init(&logic_vm);
+    tsfi_anvil_vm_bind(&logic_vm, "svdag/relation/0", "TRUE");
+
+    uint8_t logic_bc[32];
+    int logic_len = 0;
+    res = tsfi_strategy_compile_script("get_logic(\"svdag/relation/0\", R1);", logic_bc, 32, &logic_len);
+    assert(res == 0);
+
+    TSFiStrategyVM strategy_vm;
+    tsfi_strategy_vm_init(&strategy_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&strategy_vm, NULL, logic_bc, logic_len, &logic_vm);
+    assert(res == 0);
+    printf("  [Strategy Logic Bindings] R1=%d (Expected 1/TRUE)\n", strategy_vm.registers[1]);
+    fflush(stdout);
+    assert(strategy_vm.registers[1] == 1);
 
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);

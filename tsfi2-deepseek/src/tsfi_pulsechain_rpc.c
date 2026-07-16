@@ -727,6 +727,7 @@ bool tsfi_pulse_explorer_get_holders_page(const char *token_addr, int page, char
         total_read += n;
         if (total_read >= 524288 - 1) break;
     }
+    response[total_read] = '\0';
     tsfi_tls_close(&tls);
     close(sockfd);
 
@@ -900,6 +901,7 @@ bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd) {
         total_read += n;
         if (total_read >= 262144 - 1) break;
     }
+    response[total_read] = '\0';
     tsfi_tls_close(&tls);
     close(sockfd);
     
@@ -1058,11 +1060,11 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
     char cache_file[256];
     snprintf(cache_file, sizeof(cache_file), "tmp/dex_pairs_cache_%s.json", clean_addr);
     
-    // Check if cache file is less than 60 seconds old
+    // Check if cache file is less than 30 days old
     struct stat st_file;
     if (stat(cache_file, &st_file) == 0) {
         time_t now = time(NULL);
-        if (now - st_file.st_mtime < 60) {
+        if (now - st_file.st_mtime < 2592000) {
             FILE *f_cache = fopen(cache_file, "r");
             if (f_cache) {
                 size_t n = fread(out_json, 1, out_max_len - 1, f_cache);
@@ -1142,6 +1144,7 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
         total_read += n;
         if (total_read >= 524288 - 1) break;
     }
+    response[total_read] = '\0';
     tsfi_tls_close(&tls);
     close(sockfd);
     
@@ -1149,8 +1152,12 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
     char *body = strstr(response, "\r\n\r\n");
     if (body) {
         body += 4;
+        // Skip leading whitespace/newlines
+        while (*body == ' ' || *body == '\r' || *body == '\n' || *body == '\t') {
+            body++;
+        }
         size_t body_len = strlen(body);
-        if (body_len < out_max_len) {
+        if (body_len < out_max_len && (body[0] == '{' || body[0] == '[')) {
             strcpy(out_json, body);
             success = true;
             parse_and_cache_dexscreener_pairs(body);
@@ -1160,6 +1167,16 @@ bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, siz
             if (f_cache) {
                 fwrite(body, 1, body_len, f_cache);
                 fclose(f_cache);
+            }
+        } else {
+            fprintf(stderr, "[DEXSCREENER] Error: Invalid JSON response or rate-limited. Skipping cache write.\n");
+            if (strstr(response, "1015") == NULL && strstr(response, "Cloudflare") == NULL) {
+                FILE *f_cache = fopen(cache_file, "w");
+                if (f_cache) {
+                    const char *empty_pairs = "{\"pairs\":[]}";
+                    fwrite(empty_pairs, 1, strlen(empty_pairs), f_cache);
+                    fclose(f_cache);
+                }
             }
         }
     }

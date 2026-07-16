@@ -122,8 +122,12 @@ int tsfi_anvil_vm_execute(TSFiAnvilVM *vm, const int *bytecode, int len, float p
                     TSFiSubgoalEntry *entry_b = &vm->subgoal_table[src_b];
                     TSFiSubgoalEntry *entry_dst = &vm->subgoal_table[dst];
                     if (entry_a->key[0] != '\0' && entry_b->key[0] != '\0' && entry_dst->key[0] != '\0') {
-                        if (strcmp(entry_a->value, "TRUE") == 0 && strcmp(entry_b->value, "TRUE") == 0) {
-                            tsfi_anvil_vm_bind(vm, entry_dst->key, "TRUE");
+                        if (entry_a->value[0] == 'T' && entry_b->value[0] == 'T') {
+                            entry_dst->value[0] = 'T';
+                            entry_dst->value[1] = 'R';
+                            entry_dst->value[2] = 'U';
+                            entry_dst->value[3] = 'E';
+                            entry_dst->value[4] = '\0';
                         }
                     }
                 }

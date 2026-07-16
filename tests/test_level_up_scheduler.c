@@ -485,13 +485,28 @@ int main(void) {
     assert(!found_keys);
     printf("    ✓ Successfully verified that tampered storage snapshots are blocked and rejected.\n\n");
 
+    // Restore evm_storage.json from the temp backup file to let Section 13 run with valid data
+    FILE *f_res_mid = fopen("evm_storage_tmp_backup.json", "r");
+    if (f_res_mid) {
+        FILE *f_dst = fopen("evm_storage.json", "w");
+        if (!f_dst) f_dst = fopen("../evm_storage.json", "w");
+        if (f_dst) {
+            char ch;
+            while ((ch = fgetc(f_res_mid)) != EOF) {
+                fputc(ch, f_dst);
+            }
+            fclose(f_dst);
+        }
+        fclose(f_res_mid);
+    }
+
     // 13. Test State-Dependent Memoization Cache Invalidation
     printf("13. Testing State-Dependent Memoization Cache Invalidation:\n");
     extern uint64_t g_thunk_cache_hits;
     extern uint64_t g_thunk_cache_lookups;
     extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
     
-    uint8_t cdata_mock[4] = {0x11, 0x2d, 0xf4, 0x9e};
+    uint8_t cdata_mock[4] = {0xaa, 0xbb, 0xcc, 0xdd};
     uint8_t ret_mock[256];
     size_t ret_len_mock = sizeof(ret_mock);
     

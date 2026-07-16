@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tsfi_strategy_lang.h"
+#include "tsfi_anvil_vm.h"
 
 void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     if (!vm) return;
@@ -33,70 +34,16 @@ static void heapify(TSFiPriorityQueue *pq) {
     }
 }
 
-int tsfi_strategy_vm_execute(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const char *script) {
+int tsfi_strategy_vm_execute(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const char *script, void *logic_vm) {
     if (!vm || !script) return -1;
-
-    char script_copy[512];
-    strncpy(script_copy, script, 511);
-    script_copy[511] = '\0';
-
-    char *token = strtok(script_copy, " ;");
-    while (token) {
-        if (strcmp(token, "SET") == 0) {
-            char *param = strtok(NULL, " ;");
-            char *val_str = strtok(NULL, " ;");
-            if (param && val_str) {
-                int val = atoi(val_str);
-                if (strcmp(param, "depth") == 0) {
-                    vm->depth_priority_scale = val;
-                } else if (strcmp(param, "abductive") == 0) {
-                    vm->abductive_priority_scale = val;
-                }
-            }
-        } else if (strcmp(token, "PRUNE") == 0) {
-            char *thresh_str = strtok(NULL, " ;");
-            if (thresh_str && pq) {
-                int threshold = atoi(thresh_str);
-                // Drop any item exceeding threshold priority
-                int write_idx = 0;
-                for (int i = 0; i < pq->size; i++) {
-                    if (pq->items[i].priority <= threshold) {
-                        pq->items[write_idx++] = pq->items[i];
-                    }
-                }
-                pq->size = write_idx;
-            }
-        } else if (strcmp(token, "WEIGHT") == 0) {
-            char *subgoal_str = strtok(NULL, " ;");
-            char *weight_str = strtok(NULL, " ;");
-            if (subgoal_str && weight_str && pq) {
-                int keycode = atoi(subgoal_str);
-                int weight = atoi(weight_str);
-                for (int i = 0; i < pq->size; i++) {
-                    if (pq->items[i].keycode == keycode) {
-                        pq->items[i].priority = weight;
-                    }
-                }
-            }
-        } else if (strcmp(token, "EVAL") == 0) {
-            vm->executed_evals++;
-            // Re-prioritize active queue items according to scaling strategy
-            if (pq) {
-                for (int i = 0; i < pq->size; i++) {
-                    pq->items[i].priority = (pq->items[i].priority * vm->depth_priority_scale) + vm->abductive_priority_scale;
-                }
-            }
-        }
-        token = strtok(NULL, " ;");
-    }
-
-    if (pq) {
-        heapify(pq);
-    }
-    return 0;
+    uint8_t bytecode[512];
+    int len = 0;
+    int res = tsfi_strategy_compile_script(script, bytecode, 512, &len);
+    if (res != 0) return res;
+    return tsfi_strategy_vm_execute_bytecode(vm, pq, bytecode, len, logic_vm);
 }
 
-int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const uint8_t *bytecode, int len) {
+int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, const uint8_t *bytecode, int len, void *logic_vm) {
     if (!vm || !bytecode || len <= 0) return -1;
 
     int pc = 0;
@@ -215,6 +162,28 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     pc = loop_pc;
                 }
             }
+        } else if (op == 0x18) { // OP_GET_LOGIC dst len chars...
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t str_len = bytecode[pc++];
+                if (pc + str_len <= len && dst < 4) {
+                    char query_key[128];
+                    memcpy(query_key, &bytecode[pc], str_len);
+                    query_key[str_len] = '\0';
+                    pc += str_len;
+
+                    int val = -1;
+                    if (logic_vm) {
+                        const TSFiSubgoalEntry *entry = tsfi_anvil_vm_lookup_subgoal((TSFiAnvilVM *)logic_vm, query_key);
+                        if (entry) {
+                            if (strcmp(entry->value, "TRUE") == 0) val = 1;
+                            else if (strcmp(entry->value, "FALSE") == 0) val = 0;
+                            else if (strcmp(entry->value, "PENDING") == 0) val = 2;
+                        }
+                    }
+                    vm->registers[dst] = val;
+                }
+            }
         }
     }
 
@@ -231,8 +200,8 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
     strncpy(script_copy, script, 511);
     script_copy[511] = '\0';
 
-    // Delimiters include whitespace, parens, braces, commas, and semicolons (excluding equals)
-    const char *delims = " ;(),{}\n\r\t";
+    // Delimiters include whitespace, parens, braces, commas, quotes, and semicolons (excluding equals)
+    const char *delims = " ;(),{}\"\n\r\t";
     
     // Store tokens in an array for multi-token lookahead parsing
     char *tokens[128];
@@ -437,6 +406,22 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 bytecode_out[pc++] = 0x17;
                 bytecode_out[pc++] = (uint8_t)atoi(tokens[idx + 1]);
                 idx += 2;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "get_logic") == 0 || strcmp(t, "GET_LOGIC") == 0) {
+            if (idx + 2 < token_count) {
+                char *key = tokens[idx + 1];
+                char *reg = tokens[idx + 2];
+                int key_len = strlen(key);
+                if (reg[0] == 'R' && reg[1] >= '0' && reg[1] <= '3' && pc + 2 + key_len <= max_len) {
+                    bytecode_out[pc++] = 0x18; // OP_GET_LOGIC
+                    bytecode_out[pc++] = (uint8_t)(reg[1] - '0');
+                    bytecode_out[pc++] = (uint8_t)key_len;
+                    memcpy(&bytecode_out[pc], key, key_len);
+                    pc += key_len;
+                }
+                idx += 3;
             } else {
                 idx++;
             }

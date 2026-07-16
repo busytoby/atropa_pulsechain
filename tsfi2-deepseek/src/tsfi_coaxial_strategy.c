@@ -32,7 +32,7 @@ int tsfi_coaxial_strategy_agent_dispatch(TSFiCoaxialStrategyAgent *agent, const 
 
     // Apply strategy script reweighting if provided
     if (script) {
-        tsfi_strategy_vm_execute(&agent->strategy_vm, &agent->scheduler_queue, script);
+        tsfi_strategy_vm_execute(&agent->strategy_vm, &agent->scheduler_queue, script, agent->observer ? agent->observer->anvil_vm : NULL);
     }
 
     // Pop the highest priority item from scheduler

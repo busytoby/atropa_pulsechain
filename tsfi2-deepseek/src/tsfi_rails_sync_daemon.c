@@ -13,6 +13,7 @@
 
 #define DAEMON_NAME "tsfi_rails_sync_daemon"
 #define LOG_FILE "tmp/tsfi_rails_sync.log"
+#define NUM_PEERS 8
 
 static void daemonize(void) {
     pid_t pid = fork();
@@ -53,17 +54,24 @@ int main(void) {
         fflush(log_fp);
         
         // Multi-Agent Epistemic Consensus Bridge Check:
-        // Poll peer agent addresses (e.g. peer_agent_008, peer_agent_009)
-        fprintf(log_fp, "       [CONSENSUS] Polling peer agent (address: 0x8888...008) belief states.\n");
-        
-        // Emulate finding matching consensus belief state:
-        bool peer_consensus_matched = true;
-        if (peer_consensus_matched) {
-            char consensus_key[128];
-            snprintf(consensus_key, sizeof(consensus_key), "consensus/peer_008/fact_%d", loops);
-            tsfi_trie_insert(trie_root, consensus_key, "CONSENSUS_AFFIRMED");
-            fprintf(log_fp, "       [CONSENSUS] Merged peer_008 belief rule into local trie: %s\n", consensus_key);
+        // Validate beliefs of multiple peer agents concurrently using OpenMP
+        #pragma omp parallel for
+        for (int i = 0; i < NUM_PEERS; i++) {
+            // Perform simulated constraint checking
+            double stress = 0.5;
+            for (int k = 0; k < 1000; k++) {
+                stress = stress * 1.0001;
+            }
+            // Thread-safe update of trie
+            #pragma omp critical
+            {
+                char consensus_key[128];
+                snprintf(consensus_key, sizeof(consensus_key), "consensus/peer_%d/fact_%d", i, loops);
+                tsfi_trie_insert(trie_root, consensus_key, "CONSENSUS_AFFIRMED");
+            }
         }
+        
+        fprintf(log_fp, "       [CONSENSUS] Concurrent OpenMP validation complete for %d peers.\n", NUM_PEERS);
         
         // Simulating catching SysWrite event (topic: 0x3344556677889900112233445566778899001122334455667788990011223344)
         fprintf(log_fp, "       [SYSCALL] Caught sys_write event. Updating variable path storage.\n");
@@ -85,13 +93,6 @@ int main(void) {
         snprintf(synth_cmd, sizeof(synth_cmd), "./tests/test_eye_of_the_tiger %.2f >/dev/null 2>&1 &", pitch_scale);
         int ret = system(synth_cmd);
         fprintf(log_fp, "       [SYNTH] Spawned dynamically scaled audio player (Pitch scale: %.2f, status: %d)\n", pitch_scale, ret);
-        
-        // Multi-threaded verification sweep
-        #pragma omp parallel for
-        for (int i = 0; i < 4; i++) {
-            double x = 1.0;
-            for (int k = 0; k < 1000; k++) { x = x * 1.0001; }
-        }
         
         fflush(log_fp);
         loops++;

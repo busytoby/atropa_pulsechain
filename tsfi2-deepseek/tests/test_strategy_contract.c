@@ -42,7 +42,7 @@ int main(void) {
 
     // 4. Run Strategy Modulation Script (Prioritizing abductive bias)
     const char *strat_script = "SET abductive 20; EVAL;";
-    int res = tsfi_strategy_vm_execute(&strategy_vm, &pq, strat_script);
+    int res = tsfi_strategy_vm_execute(&strategy_vm, &pq, strat_script, NULL);
     assert(res == 0);
 
     // Verify priorities are correctly updated:

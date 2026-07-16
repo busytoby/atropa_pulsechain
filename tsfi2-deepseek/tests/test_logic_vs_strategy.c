@@ -33,7 +33,7 @@ int main(void) {
 
     // 3. Execute Strategy script to prioritize abductive search paths
     const char *script = "SET depth 3; SET abductive 10; EVAL;";
-    int res = tsfi_strategy_vm_execute(&strategy_vm, &pq, script);
+    int res = tsfi_strategy_vm_execute(&strategy_vm, &pq, script, NULL);
     assert(res == 0);
     assert(strategy_vm.executed_evals == 1);
 

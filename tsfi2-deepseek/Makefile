@@ -38,7 +38,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_operator.o $(OBJ_DIR)/tsfi_yang.o $(OBJ_DIR)/tsfi_quan.o \
             $(OBJ_DIR)/tsfi_c_math.o $(OBJ_DIR)/firmware/LauWireFirmware_rtl.o \
             $(OBJ_DIR)/tsfi_vision_classify.o $(OBJ_DIR)/tsfi_cli.o $(OBJ_DIR)/tsfi_svdag.o \
-            $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/lau_yul_thunk_common.o $(OBJ_DIR)/lau_yul_thunk_compiler.o $(OBJ_DIR)/lau_yul_thunk_interpreter.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
+            $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/lau_yul_thunk_common.o $(OBJ_DIR)/lau_yul_thunk_compiler.o $(OBJ_DIR)/lau_yul_thunk_interpreter.o $(OBJ_DIR)/lau_yul_thunk_memo.o $(OBJ_DIR)/lau_yul_thunk_nested.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
             $(OBJ_DIR)/tsfi_merkle.o $(OBJ_DIR)/tsfi_steiner_evi.o $(OBJ_DIR)/tsfi_nebula.o $(OBJ_DIR)/tsfi_divider.o $(OBJ_DIR)/tsfi_serge_usg.o $(OBJ_DIR)/tsfi_dtl_core.o $(OBJ_DIR)/tsfi_delay_line.o $(OBJ_DIR)/tsfi_rtl_latch.o $(OBJ_DIR)/tsfi_shaft_encoder.o $(OBJ_DIR)/tsfi_core_plane.o $(OBJ_DIR)/tsfi_tunnel_latch.o $(OBJ_DIR)/tsfi_thin_film.o $(OBJ_DIR)/tsfi_integrated_circuit.o $(OBJ_DIR)/tsfi_core_rope.o $(OBJ_DIR)/tsfi_ttl_gate.o $(OBJ_DIR)/tsfi_parametron.o $(OBJ_DIR)/tsfi_slt.o $(OBJ_DIR)/tsfi_cla.o $(OBJ_DIR)/tsfi_plated_wire.o $(OBJ_DIR)/tsfi_mema.o $(OBJ_DIR)/tsfi_sar_adc.o $(OBJ_DIR)/tsfi_schmitt.o $(OBJ_DIR)/tsfi_diode_matrix.o $(OBJ_DIR)/tsfi_byte_issue21.o $(OBJ_DIR)/tsfi_byte_issue22.o $(OBJ_DIR)/tsfi_byte_issue23.o $(OBJ_DIR)/tsfi_byte_issue24.o $(OBJ_DIR)/tsfi_oregon_trail.o $(OBJ_DIR)/tsfi_elektuur_issue25.o $(OBJ_DIR)/tsfi_prophecy.o $(OBJ_DIR)/tsfi_valve.o \
             $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
             $(OBJ_DIR)/tsfi_design_pipeline.o \
@@ -378,6 +378,15 @@ tests/test_zmm_epibar_hypobar: tests/test_zmm_epibar_hypobar.c $(CORE_OBJS) $(OB
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_zmm_yue_contracts: tests/test_zmm_yue_contracts.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_zmm_btc_rails: tests/test_zmm_btc_rails.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -Ofast -fomit-frame-pointer -o $@ $^ $(LDFLAGS)
+
+tests/test_serialization_dat: tests/test_serialization_dat.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_coaxial_telemetry_async: tests/test_coaxial_telemetry_async.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_qing_bst: tests/test_qing_bst.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
@@ -840,6 +849,12 @@ tests/test_strategy_contract: tests/test_strategy_contract.c $(CORE_OBJS) $(OBJ_
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_rails_strategy: tests/test_rails_strategy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_domain_strategies: tests/test_domain_strategies.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/bench_logical_inferences: tests/bench_logical_inferences.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_coaxial_strategy: tests/test_coaxial_strategy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o

@@ -201,6 +201,7 @@ void tsfi_qing_bst_invalidate_safe(void) {
 }
 
 void tsfi_qing_bst_populate_safe(void) {
+    if (g_runtime_qing_bst) return;
     pthread_rwlock_wrlock(&g_bst_rwlock);
     if (!g_runtime_qing_bst) {
         g_runtime_qing_bst = tsfi_qing_bst_populate();
