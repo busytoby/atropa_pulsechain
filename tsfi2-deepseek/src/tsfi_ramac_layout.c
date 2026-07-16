@@ -1064,19 +1064,50 @@ int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_re
     }
 
     int bytes_transferred = 0;
+    int i = 0;
 
-    for (int i = 0; i < stream_len; i++) {
-        if (bytes_transferred >= max_out_len) {
-            break;
+    while (i < stream_len && bytes_transferred < max_out_len) {
+        // 1. Pack up to 7 bytes of data into a 56-bit word
+        uint64_t data_chunk = 0;
+        int chunk_size = 0;
+        for (int k = 0; k < 7; k++) {
+            if (i + k < stream_len) {
+                data_chunk |= ((uint64_t)stream[i + k] << (k * 8));
+                chunk_size++;
+            }
         }
 
-        *data_reg = stream[i];
-        *scsi_bus_status |= 0x01;
-        *scsi_bus_status |= 0x02; 
+        // 2. Encode using IBM 7030 SEC-DED ECC
+        uint64_t ecc_word = tsfi_s370_ibm7030_ecc_encode(data_chunk);
 
-        out_buffer[bytes_transferred++] = *data_reg;
-        *scsi_bus_status &= ~0x01;
-        *scsi_bus_status &= ~0x02;
+        // 3. Transmit the 8 bytes of the ECC word over the SCSI handshake protocol
+        uint64_t rx_word = 0;
+        for (int k = 0; k < 8; k++) {
+            uint8_t tx_byte = (ecc_word >> (k * 8)) & 0xFF;
+
+            *data_reg = tx_byte;
+            *scsi_bus_status |= 0x01; // REQ
+            *scsi_bus_status |= 0x02; // ACK
+
+            uint8_t rx_byte = *data_reg;
+            rx_word |= ((uint64_t)rx_byte << (k * 8));
+
+            *scsi_bus_status &= ~0x01;
+            *scsi_bus_status &= ~0x02;
+        }
+
+        // 4. Decode and correct errors on the receiver side
+        uint64_t corrected_data = 0;
+        tsfi_s370_ibm7030_ecc_decode(rx_word, &corrected_data);
+
+        // 5. Unpack the corrected data into the output buffer
+        for (int k = 0; k < chunk_size; k++) {
+            if (bytes_transferred < max_out_len) {
+                out_buffer[bytes_transferred++] = (corrected_data >> (k * 8)) & 0xFF;
+            }
+        }
+
+        i += chunk_size;
     }
 
     return bytes_transferred;
