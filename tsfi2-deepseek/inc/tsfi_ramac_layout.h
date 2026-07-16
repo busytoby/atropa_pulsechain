@@ -580,4 +580,8 @@ int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ram
 // CDC 1604 1's Complement Subtractive Multiplier
 uint64_t tsfi_s370_cdc1604_subtractive_multiply(uint64_t a, uint64_t b, int bit_width);
 
+// Honeywell 800 Traffic Control tick executing combined RAMAC I/O instructions speculatively
+int tsfi_s370_honeywell800_tick_ramac(tsfi_honeywell800_scheduler *sched, int *memory, int mem_size,
+                                      tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size);
+
 #endif // TSFI_RAMAC_LAYOUT_H

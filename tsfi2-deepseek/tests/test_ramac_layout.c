@@ -1800,6 +1800,52 @@ int main(void) {
 
     printf("  [PASS] CDC 1604 Subtractive Multiplier verified successfully.\n");
 
+    // Test Scenario 25: Combined Honeywell 800 Multiprogramming + Speculative RAMAC Controller
+    printf("[Test] Verifying Honeywell 800 Multiprogramming with RAMAC I/O...\n");
+    tsfi_honeywell800_scheduler shared_sched;
+    tsfi_s370_honeywell800_init(&shared_sched);
+
+    int shared_memory[64] = {0};
+    uint64_t platter[64] = {0};
+    tsfi_s370_ibm7030_lau_init(&lau_q);
+
+    shared_memory[0] = (0x01 << 24) | 20;
+    shared_memory[1] = (0x06 << 24) | 8;
+    shared_memory[2] = (0x04 << 24) | 0;
+    shared_memory[20] = 0xABCD;
+
+    shared_memory[4] = (0x05 << 24) | 8;
+    shared_memory[5] = (0x03 << 24) | 21;
+    shared_memory[6] = (0x04 << 24) | 0;
+
+    shared_sched.threads[0].pc = 0;
+    shared_sched.threads[0].is_active = 1;
+    shared_sched.threads[1].pc = 4;
+    shared_sched.threads[1].is_active = 1;
+
+    int step_tid = tsfi_s370_honeywell800_tick_ramac(&shared_sched, shared_memory, 64, &lau_q, platter, 64);
+    assert(step_tid == 0);
+    assert(shared_sched.threads[0].accumulator == 0xABCD);
+
+    step_tid = tsfi_s370_honeywell800_tick_ramac(&shared_sched, shared_memory, 64, &lau_q, platter, 64);
+    assert(step_tid == 1);
+
+    step_tid = tsfi_s370_honeywell800_tick_ramac(&shared_sched, shared_memory, 64, &lau_q, platter, 64);
+    assert(step_tid == 0);
+
+    step_tid = tsfi_s370_honeywell800_tick_ramac(&shared_sched, shared_memory, 64, &lau_q, platter, 64);
+    assert(step_tid == 1);
+
+    while (tsfi_s370_honeywell800_tick_ramac(&shared_sched, shared_memory, 64, &lau_q, platter, 64) >= 0);
+
+    uint64_t sector_val = platter[8];
+    uint64_t corrected_val = 0;
+    int err_t = tsfi_s370_ibm7030_ecc_decode(sector_val, &corrected_val);
+    assert(err_t == 0);
+    assert(corrected_val == 0xABCD);
+
+    printf("  [PASS] Combined Multiprogramming RAMAC Storage verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
