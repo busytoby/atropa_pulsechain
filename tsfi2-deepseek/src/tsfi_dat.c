@@ -542,3 +542,19 @@ tsfi_dat* tsfi_dat_load_mmap(const char *filepath) {
     close(fd);
     return dat;
 }
+
+tsfi_dat* tsfi_dat_compile_relation(tsfi_trie_node *trie_root, const char *rel, const char *subj, const char *obj) {
+    if (!trie_root || !rel || !subj || !obj) return NULL;
+    char path[512];
+    snprintf(path, sizeof(path), "%s/%s/%s", rel, subj, obj);
+    tsfi_trie_insert(trie_root, path, "RELATION_TRUE");
+    return tsfi_dat_compile(trie_root);
+}
+
+int tsfi_dat_retract_relation(tsfi_trie_node *trie_root, const char *rel, const char *subj, const char *obj) {
+    if (!trie_root || !rel || !subj || !obj) return -1;
+    char path[512];
+    snprintf(path, sizeof(path), "%s/%s/%s", rel, subj, obj);
+    tsfi_trie_insert(trie_root, path, "");
+    return 0;
+}
