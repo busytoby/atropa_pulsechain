@@ -1315,6 +1315,18 @@ int interop_poly_trace_load(const char *path, uint64_t *pe_a, size_t *deg_a, uin
 
 int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len) {
     if (!vm || !bytecode || len == 0) return -1;
+    
+    typedef struct {
+        int pc;
+        int stack[64];
+        size_t stack_len;
+        int altstack[64];
+        size_t altstack_len;
+    } ChoicePoint;
+    
+    ChoicePoint cp_stack[16];
+    int cp_len = 0;
+    
     vm->pc = 0;
     vm->halted = 0;
     while ((size_t)vm->pc < len && !vm->halted) {
@@ -1354,6 +1366,30 @@ int interop_stack_vm_execute(InteropStackVM *vm, const int *bytecode, size_t len
                 break;
             case 6:
                 vm->halted = 1;
+                break;
+            case 0x21: // OP_TRY_ME_ELSE: save choice point (expects next instruction to push jump target PC)
+                if ((size_t)vm->pc >= len) return -2;
+                if (cp_len >= 16) return -3;
+                {
+                    ChoicePoint *cp = &cp_stack[cp_len++];
+                    cp->pc = bytecode[vm->pc++]; // read jump target PC
+                    cp->stack_len = vm->stack_len;
+                    memcpy(cp->stack, vm->stack, vm->stack_len * sizeof(int));
+                    cp->altstack_len = vm->altstack_len;
+                    memcpy(cp->altstack, vm->altstack, vm->altstack_len * sizeof(int));
+                }
+                break;
+            case 0x22: // OP_FAIL: backtrack to last choice point
+                if (cp_len == 0) {
+                    vm->halted = 1;
+                } else {
+                    ChoicePoint *cp = &cp_stack[--cp_len];
+                    vm->pc = cp->pc;
+                    vm->stack_len = cp->stack_len;
+                    memcpy(vm->stack, cp->stack, cp->stack_len * sizeof(int));
+                    vm->altstack_len = cp->altstack_len;
+                    memcpy(vm->altstack, cp->altstack, cp->altstack_len * sizeof(int));
+                }
                 break;
             default:
                 return -5;

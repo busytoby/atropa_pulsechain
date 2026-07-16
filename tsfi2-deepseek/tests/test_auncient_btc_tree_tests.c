@@ -206,6 +206,25 @@ int main(void) {
     assert(tsfi_ring_consume(&rb, &t_out) == true);
     assert(t_out.nonce == 888 && strcmp(t_out.target_key, "unify_test") == 0);
 
+    // 12. Verify Backtracking Choice Points
+    printf("       [Verify] Backtracking Choice Points...\n");
+    fflush(stdout);
+    InteropStackVM backtrack_vm;
+    memset(&backtrack_vm, 0, sizeof(InteropStackVM));
+    int backtrack_script[13] = {
+        1, 10,
+        0x21, 9,
+        1, 20,
+        0x22,
+        6,
+        6,
+        1, 30,
+        6
+    };
+    assert(interop_stack_vm_execute(&backtrack_vm, backtrack_script, 12) == 0);
+    printf("         [DEBUG] backtrack stack_len = %d, stack[0] = %d, stack[1] = %d\n", (int)backtrack_vm.stack_len, backtrack_vm.stack[0], backtrack_vm.stack[1]); fflush(stdout);
+    assert(backtrack_vm.stack_len == 2 && backtrack_vm.stack[0] == 10 && backtrack_vm.stack[1] == 30);
+
     printf("[PASS] All 2-stack BTC rails verification tests passed successfully.\n");
     fflush(stdout);
     return 0;
