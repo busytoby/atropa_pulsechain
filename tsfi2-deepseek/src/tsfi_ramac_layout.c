@@ -3038,3 +3038,81 @@ int tsfi_s370_cobol_tombstone_report(char *report_out, int max_len) {
     report_out[max_len - 1] = '\0';
     return 0;
 }
+
+int tsfi_s370_rca501_card_punch(const char *text, uint16_t *card_columns_out, int max_cols) {
+    if (!text || !card_columns_out || max_cols <= 0) return -1;
+
+    int len = strlen(text);
+    int cols = len < max_cols ? len : max_cols;
+
+    for (int i = 0; i < cols; i++) {
+        char c = text[i];
+        uint16_t mask = 0;
+
+        if (c >= '0' && c <= '9') {
+            mask = (1 << (c - '0'));
+        } else if (c >= 'A' && c <= 'I') {
+            mask = (1 << 10) | (1 << (c - 'A' + 1));
+        } else if (c >= 'J' && c <= 'R') {
+            mask = (1 << 11) | (1 << (c - 'J' + 1));
+        } else if (c >= 'S' && c <= 'Z') {
+            mask = (1 << 0) | (1 << (c - 'S' + 2));
+        } else if (c == '$') {
+            mask = (1 << 11) | (1 << 3) | (1 << 8);
+        } else if (c == ' ') {
+            mask = 0;
+        } else {
+            mask = (1 << 8) | (1 << 4);
+        }
+        card_columns_out[i] = mask;
+    }
+    return cols;
+}
+
+int tsfi_s370_rca501_card_read(const uint16_t *card_columns, int col_count, char *text_out, int max_len) {
+    if (!card_columns || col_count <= 0 || !text_out || max_len <= 0) return -1;
+
+    int cols = col_count < max_len - 1 ? col_count : max_len - 1;
+
+    for (int i = 0; i < cols; i++) {
+        uint16_t mask = card_columns[i];
+        char c = ' ';
+
+        if (mask == 0) {
+            c = ' ';
+        } else if (mask == ((1 << 11) | (1 << 3) | (1 << 8))) {
+            c = '$';
+        } else if (mask & (1 << 10)) {
+            for (int r = 1; r <= 9; r++) {
+                if (mask == ((1 << 10) | (1 << r))) {
+                    c = 'A' + r - 1;
+                    break;
+                }
+            }
+        } else if (mask & (1 << 11)) {
+            for (int r = 1; r <= 9; r++) {
+                if (mask == ((1 << 11) | (1 << r))) {
+                    c = 'J' + r - 1;
+                    break;
+                }
+            }
+        } else if (mask & (1 << 0)) {
+            for (int r = 2; r <= 9; r++) {
+                if (mask == ((1 << 0) | (1 << r))) {
+                    c = 'S' + r - 2;
+                    break;
+                }
+            }
+        } else {
+            for (int r = 0; r <= 9; r++) {
+                if (mask == (1 << r)) {
+                    c = '0' + r;
+                    break;
+                }
+            }
+        }
+        text_out[i] = c;
+    }
+    text_out[cols] = '\0';
+    return cols;
+}

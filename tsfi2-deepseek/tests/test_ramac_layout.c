@@ -1908,6 +1908,19 @@ int main(void) {
     assert(strstr(tomb_rep, "R.I.P.") != NULL);
     printf("  [PASS] COBOL Tombstone report successfully generated:\n%s", tomb_rep);
 
+    // Test Scenario 31: Howard Bromberg COBOL Compatibility (RCA 501 Card Punch Emulator)
+    printf("[Test] Verifying RCA 501 Card Punch and Reader Emulator...\n");
+    const char *card_txt = "COBOL $123";
+    uint16_t columns[16];
+    int punch_cols = tsfi_s370_rca501_card_punch(card_txt, columns, 16);
+    assert(punch_cols == 10);
+    
+    char decoded_txt[16];
+    int read_cols = tsfi_s370_rca501_card_read(columns, punch_cols, decoded_txt, 16);
+    assert(read_cols == 10);
+    assert(strcmp(decoded_txt, "COBOL $123") == 0);
+    printf("  [PASS] Card punch/read parity matched: '%s'\n", decoded_txt);
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;

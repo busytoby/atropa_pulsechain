@@ -602,4 +602,10 @@ int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int 
 // Simulated COBOL Tombstone formatting report exporter
 int tsfi_s370_cobol_tombstone_report(char *report_out, int max_len);
 
+// RCA 501 card punch emulator encoding columns into 12-bit masks
+int tsfi_s370_rca501_card_punch(const char *text, uint16_t *card_columns_out, int max_cols);
+
+// RCA 501 card reader emulator decoding 12-bit columns back to characters
+int tsfi_s370_rca501_card_read(const uint16_t *card_columns, int col_count, char *text_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H
