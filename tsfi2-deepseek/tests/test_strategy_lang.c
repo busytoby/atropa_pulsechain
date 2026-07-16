@@ -283,6 +283,23 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL PERFORM subroutines successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL DATA DIVISION variable name mappings
+    uint8_t data_bc[64];
+    int data_len = 0;
+    res = tsfi_strategy_compile_script(
+        "DATA DIVISION. 01 ACCUM PIC 9 USAGE R0. 01 FACTOR PIC 9 USAGE R1. PROCEDURE DIVISION. MOVE 10 TO ACCUM; MOVE 2 TO FACTOR; MULTIPLY FACTOR BY ACCUM;",
+        data_bc, 64, &data_len);
+    assert(res == 0);
+
+    TSFiStrategyVM data_vm;
+    tsfi_strategy_vm_init(&data_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&data_vm, NULL, data_bc, data_len, NULL);
+    assert(res == 0);
+    assert(data_vm.registers[0] == 20);
+    assert(data_vm.registers[1] == 2);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL DATA DIVISION variable mapping successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;

@@ -280,8 +280,62 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
         tok = strtok(NULL, delims);
     }
 
-    int pc = 0;
+    typedef struct {
+        char var_name[32];
+        char reg_name[4];
+    } StrategyVarMap;
+
+    StrategyVarMap var_maps[16];
+    int var_map_count = 0;
+
     int idx = 0;
+    if (token_count > 2 && (strcmp(tokens[0], "DATA") == 0 || strcmp(tokens[0], "data") == 0) &&
+        (strcmp(tokens[1], "DIVISION") == 0 || strcmp(tokens[1], "division") == 0)) {
+        idx = 2;
+        while (idx < token_count) {
+            if (strcmp(tokens[idx], "PROCEDURE") == 0 || strcmp(tokens[idx], "procedure") == 0) {
+                if (idx + 1 < token_count && (strcmp(tokens[idx + 1], "DIVISION") == 0 || strcmp(tokens[idx + 1], "division") == 0)) {
+                    idx += 2;
+                    break;
+                }
+            }
+            if (strcmp(tokens[idx], "01") == 0 || strcmp(tokens[idx], "77") == 0) {
+                if (idx + 1 < token_count) {
+                    char *var_name = tokens[idx + 1];
+                    char *mapped_reg = NULL;
+                    for (int k = idx + 2; k < token_count; k++) {
+                        if (strcmp(tokens[k], "01") == 0 || strcmp(tokens[k], "77") == 0 ||
+                            strcmp(tokens[k], "PROCEDURE") == 0 || strcmp(tokens[k], "procedure") == 0) {
+                            break;
+                        }
+                        if (tokens[k][0] == 'R' && tokens[k][1] >= '0' && tokens[k][1] <= '3' && tokens[k][2] == '\0') {
+                            mapped_reg = tokens[k];
+                            break;
+                        }
+                    }
+                    if (mapped_reg && var_map_count < 16) {
+                        strncpy(var_maps[var_map_count].var_name, var_name, 31);
+                        var_maps[var_map_count].var_name[31] = '\0';
+                        strncpy(var_maps[var_map_count].reg_name, mapped_reg, 3);
+                        var_maps[var_map_count].reg_name[3] = '\0';
+                        var_map_count++;
+                    }
+                }
+            }
+            idx++;
+        }
+    }
+
+    // Resolve all variable tokens in the procedure division
+    for (int i = idx; i < token_count; i++) {
+        for (int m = 0; m < var_map_count; m++) {
+            if (strcmp(tokens[i], var_maps[m].var_name) == 0) {
+                tokens[i] = var_maps[m].reg_name;
+            }
+        }
+    }
+
+    int pc = 0;
     int loop_start_pc = -1;
     int loop_exit_placeholder_pc = -1;
     int if_branch_placeholder_pc = -1;
