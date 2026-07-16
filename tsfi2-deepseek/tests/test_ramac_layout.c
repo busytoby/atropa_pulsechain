@@ -24,22 +24,18 @@ int main(void) {
 
     // 2. Seek Latency Verification
     printf("[Test] Verifying RAMAC seek simulation latency...\n");
-    // Case A: Same sector (0 seek latency)
     double seek_aa = tsfi_ramac_calculate_seek(10, 10);
     printf("  Seek same index (10 -> 10): %.2f us\n", seek_aa);
     assert(seek_aa == 0.0);
 
-    // Case B: Different sector, same head/cyl (rotational delay only)
     double seek_ab = tsfi_ramac_calculate_seek(0, 8);
     printf("  Seek rotational (0 -> 8): %.2f us\n", seek_ab);
     assert(seek_ab > 0.0);
 
-    // Case C: Different head (head swap penalty)
     double seek_ac = tsfi_ramac_calculate_seek(0, 160);
     printf("  Seek head swap (0 -> 160): %.2f us\n", seek_ac);
     assert(seek_ac >= 800.0); 
 
-    // Case D: Different cylinder (cylinder travel penalty)
     double seek_ad = tsfi_ramac_calculate_seek(0, 8000);
     printf("  Seek cylinder travel (0 -> 8000): %.2f us\n", seek_ad);
     assert(seek_ad >= 1500.0); 
@@ -53,13 +49,11 @@ int main(void) {
     assert(disk != NULL);
 
     double total_seek = 0.0;
-    // Insert first key in cylinder 5
     int idx1 = tsfi_ramac_insert_record(disk, "customer_101", "active_record", 5, &total_seek);
     printf("  Inserted 'customer_101' at slot index %d (seek: %.2f us)\n", idx1, total_seek);
     assert(idx1 != -1);
     assert(disk[idx1].is_active);
 
-    // Force a collision on the primary slot of "customer_999" by manually pre-occupying it
     int primary_idx_999 = tsfi_ramac_hash_key("customer_999", 5);
     disk[primary_idx_999].is_active = 1;
     strcpy(disk[primary_idx_999].key, "colliding_dummy");
@@ -72,13 +66,11 @@ int main(void) {
     assert(idx2 != -1);
     assert(idx2 != primary_idx_999);
     
-    // Verify that the overflow record is located in heads 45..49 (same cylinder)
     tsfi_ramac_chs chs2 = tsfi_ramac_index_to_chs(idx2);
     printf("  Collision resolved to Cylinder %d, Head %d, Sector %d\n", chs2.cylinder, chs2.head, chs2.sector);
     assert(chs2.cylinder == 5);
     assert(chs2.head >= 45 && chs2.head < 50);
 
-    // Search validation
     double search_seek = 0.0;
     const char *val1 = tsfi_ramac_search_record(disk, "customer_101", 5, &search_seek);
     assert(val1 != NULL && strcmp(val1, "active_record") == 0);
@@ -148,13 +140,6 @@ int main(void) {
     tsfi_ramac_acc_model alu_model;
     tsfi_ramac_acc_init(&alu_model);
 
-    // ALU Program steps:
-    // 0: ADD ACC1 100 (constant)
-    // 1: ADD ACC2 50  (constant)
-    // 2: CMP ACC1 ACC2
-    // 3: JEQ LABEL_END (should NOT jump because 100 != 50)
-    // 4: SUB ACC1 ACC2 (ACC1 = 100 - 50 = 50)
-    // 5: LABEL_END: ADD ACC1 5 (constant) -> total ACC1 = 55
     tsfi_ramac_instruction prog[6];
     
     strcpy(prog[0].op, "ADD");
@@ -198,6 +183,51 @@ int main(void) {
     printf("  ALU completed execution. ACC1 value: %lld\n", (long long)alu_model.accumulators[1]);
     assert(alu_model.accumulators[1] == 55);
     printf("  [PASS] IBM 305 ALU program steps and logic branching verified successfully.\n");
+
+    // 3.9.8. System/370 Dynamic Address Translation (DAT) verification
+    printf("[Test] Verifying System/370 Dynamic Address Translation (DAT)...\n");
+    // Define a 2-segment table
+    tsfi_s370_segment_entry seg_table[2];
+    seg_table[0].page_table_origin = 0;   // page table 0 starts at index 0
+    seg_table[0].length = 16;
+    seg_table[0].invalid = 0;
+
+    seg_table[1].page_table_origin = 256; // page table 1 starts at index 256
+    seg_table[1].length = 16;
+    seg_table[1].invalid = 1;             // invalid segment
+
+    // Define page entries
+    tsfi_s370_page_entry page_tables[512];
+    memset(page_tables, 0, sizeof(page_tables));
+    page_tables[5].page_frame_real_addr = 0x8F000; // page index 5 maps to physical page 0x8F000
+    page_tables[5].invalid = 0;
+
+    page_tables[6].page_frame_real_addr = 0;
+    page_tables[6].invalid = 1;                    // invalid page
+
+    // Virtual address to translate:
+    // SX = 0
+    // PX = 5
+    // BX = 0x123 (displacement)
+    // Virtual address in 31-bit mode: (0 << 20) | (5 << 12) | 0x123 = 0x5123
+    uint32_t virt_addr = 0x5123;
+    uint32_t phys_addr = 0;
+    int translate_ret1 = tsfi_s370_dat_translate(virt_addr, seg_table, 2, page_tables, &phys_addr);
+    assert(translate_ret1 == 0);
+    printf("  Virtual address 0x%08X translated to physical address 0x%08X\n", virt_addr, phys_addr);
+    assert(phys_addr == 0x8F123);
+
+    // Test invalid segment access: SX = 1 -> Virtual address: (1 << 20) | (5 << 12) | 0x123 = 0x105123
+    uint32_t invalid_seg_addr = 0x105123;
+    int translate_ret2 = tsfi_s370_dat_translate(invalid_seg_addr, seg_table, 2, page_tables, &phys_addr);
+    assert(translate_ret2 == -1);
+
+    // Test invalid page access: SX = 0, PX = 6 -> Virtual address: (0 << 20) | (6 << 12) | 0x123 = 0x6123
+    uint32_t invalid_page_addr = 0x6123;
+    int translate_ret3 = tsfi_s370_dat_translate(invalid_page_addr, seg_table, 2, page_tables, &phys_addr);
+    assert(translate_ret3 == -1);
+
+    printf("  [PASS] System/370 Dynamic Address Translation (DAT) paging verified successfully.\n");
 
     free(disk);
 

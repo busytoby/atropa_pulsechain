@@ -377,3 +377,35 @@ int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *pro
     }
     return 0;
 }
+
+int tsfi_s370_dat_translate(uint32_t virtual_addr, 
+                            tsfi_s370_segment_entry *seg_table, int seg_count,
+                            tsfi_s370_page_entry *page_tables,
+                            uint32_t *out_physical_addr) {
+    if (!seg_table || !page_tables || !out_physical_addr) return -1;
+
+    // S/370 31-bit addressing translation:
+    // SX (Segment Index) = bits 1..11 (11 bits) -> (addr >> 20) & 0x7FF
+    // PX (Page Index)    = bits 12..19 (8 bits) -> (addr >> 12) & 0xFF
+    // BX (Byte Offset)   = bits 20..31 (12 bits) -> addr & 0xFFF
+    uint32_t sx = (virtual_addr >> 20) & 0x7FF;
+    uint32_t px = (virtual_addr >> 12) & 0xFF;
+    uint32_t bx = virtual_addr & 0xFFF;
+
+    if ((int)sx >= seg_count) {
+        return -1; // Segment translation exception (limit exceeded)
+    }
+
+    if (seg_table[sx].invalid) {
+        return -1; // Segment invalid exception
+    }
+
+    // Offset in global page table structure
+    uint32_t pte_idx = seg_table[sx].page_table_origin + px;
+    if (page_tables[pte_idx].invalid) {
+        return -1; // Page invalid exception
+    }
+
+    *out_physical_addr = page_tables[pte_idx].page_frame_real_addr + bx;
+    return 0; // Translation successful
+}

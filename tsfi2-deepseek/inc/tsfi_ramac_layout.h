@@ -46,6 +46,18 @@ typedef struct {
     char label[16]; // Label for jumps
 } tsfi_ramac_instruction;
 
+// System/370 Dynamic Address Translation (DAT) structures
+typedef struct {
+    uint32_t page_table_origin; // Address of page table
+    uint32_t length;            // Segment length
+    int invalid;                // Segment invalid bit (I)
+} tsfi_s370_segment_entry;
+
+typedef struct {
+    uint32_t page_frame_real_addr; // Physical real address page offset
+    int invalid;                   // Page invalid bit (I)
+} tsfi_s370_page_entry;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -90,5 +102,12 @@ int tsfi_ramac_check_parity(const char *str);
 // IBM 305 Processor Loop
 // Executes a plugboard ALU instruction list on the accumulator model
 int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
+
+// System/370 Dynamic Address Translation (DAT) translation lookup emulators
+// Returns 0 on success, -1 on translation exceptions (segment invalid/page invalid)
+int tsfi_s370_dat_translate(uint32_t virtual_addr, 
+                            tsfi_s370_segment_entry *seg_table, int seg_count,
+                            tsfi_s370_page_entry *page_tables,
+                            uint32_t *out_physical_addr);
 
 #endif // TSFI_RAMAC_LAYOUT_H
