@@ -1,5 +1,12 @@
 object "BtcErc20GasToken" {
     code {
+        // Genesis Mint: Assign total supply to the deployer (Account #0)
+        let deployer := 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+        mstore(0, deployer)
+        mstore(32, 10) // Prefix 10 for balances mapping
+        let slot := keccak256(0, 64)
+        sstore(slot, 2100000000000000)
+        
         datacopy(0, dataoffset("runtime"), datasize("runtime"))
         return(0, datasize("runtime"))
     }
@@ -130,8 +137,8 @@ object "BtcErc20GasToken" {
             }
             
             // deposit_utxo(address target, uint256 amount) -> returns (bytes32 utxo_id)
-            // Selector: 0xcd6945be
-            if iszero(sub(selector, 0xcd6945be)) {
+            // Selector: 0x3004ea76
+            if iszero(sub(selector, 0x3004ea76)) {
                 let target := calldataload(4)
                 let resolved_target := resolve_unified_address(target)
                 let amount := calldataload(36)
@@ -157,8 +164,8 @@ object "BtcErc20GasToken" {
             }
             
             // spend_utxo(bytes32 utxo_hash, address recipient, uint256 amount, bytes witness_script) -> returns (uint256 success)
-            // Selector: 0x48e11a62
-            if iszero(sub(selector, 0x48e11a62)) {
+            // Selector: 0x53617681
+            if iszero(sub(selector, 0x53617681)) {
                 let utxo_hash := calldataload(4)
                 let recipient := calldataload(36)
                 let resolved_recipient := resolve_unified_address(recipient)
@@ -199,8 +206,8 @@ object "BtcErc20GasToken" {
             }
             
             // approve_lau_operator(address operator, uint256 approved) -> returns (uint256 success)
-            // Selector: 0xa9c3c1a2
-            if iszero(sub(selector, 0xa9c3c1a2)) {
+            // Selector: 0x4906c269
+            if iszero(sub(selector, 0x4906c269)) {
                 let operator := calldataload(4)
                 let resolved_operator := resolve_unified_address(operator)
                 let approved := calldataload(36)
@@ -215,8 +222,8 @@ object "BtcErc20GasToken" {
             }
             
             // nested_transfer(address to, uint256 amount, uint256 btc_gas_fee, bytes witness_script) -> returns (uint256 success)
-            // Selector: 0x9fa1cf25
-            if iszero(sub(selector, 0x9fa1cf25)) {
+            // Selector: 0x4d2ac82f
+            if iszero(sub(selector, 0x4d2ac82f)) {
                 let to := calldataload(4)
                 let resolved_to := resolve_unified_address(to)
                 let amount := calldataload(36)
@@ -254,8 +261,8 @@ object "BtcErc20GasToken" {
             }
             
             // unify_addresses(address var_addr, address concrete_addr) -> returns (uint256 success)
-            // Selector: 0xb5aa10fa
-            if iszero(sub(selector, 0xb5aa10fa)) {
+            // Selector: 0x126d3d4e
+            if iszero(sub(selector, 0x126d3d4e)) {
                 let var_addr := calldataload(4)
                 let concrete_addr := calldataload(36)
                 
@@ -301,7 +308,6 @@ object "BtcErc20GasToken" {
             }
             
             function is_var_address(addr) -> res {
-                // Address prefix convention: dynamic dynamic_<address> logic variables are resolved in registry
                 res := lt(addr, 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffff)
             }
             
