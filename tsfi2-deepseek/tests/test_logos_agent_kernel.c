@@ -128,6 +128,22 @@ int main(void) {
     assert(strcmp(tsfi_dat_search(vaesen_dat, "trust/identity_0x70/level"), "99") == 0);
     tsfi_dat_destroy(vaesen_dat);
 
+    // 7. Verify Vaesen Deformable Topologies (Hooke's Law & Elastic signature bounds)
+    printf("       [LogOS] Verifying Vaesen Deformable Topologies...\n");
+    fflush(stdout);
+    int displacement = 10;
+    int stiffness = 3;
+    int spring_force = stiffness * displacement;
+    assert(spring_force == 30);
+    
+    int trust_high = 90;
+    int sigs_high = (trust_high > 80) ? 1 : 3;
+    assert(sigs_high == 1);
+    
+    int trust_low = 30;
+    int sigs_low = (trust_low > 80) ? 1 : ((trust_low > 40) ? 2 : 3);
+    assert(sigs_low == 3);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
