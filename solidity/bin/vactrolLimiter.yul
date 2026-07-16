@@ -6,7 +6,8 @@ object "VactrolLimiter" {
     object "runtime" {
         code {
             function SCALE() -> val { val := 1000000000000000000 } // 1e18
-            function V_FORWARD() -> val { val := 1800000000000000000 } // 1.8V forward bias
+            function V_FORWARD_RED() -> val { val := 1800000000000000000 } // 1.8V Red GaP LED
+            function V_FORWARD_GREEN() -> val { val := 2100000000000000000 } // 2.1V Green GaP LED
             function R_DARK() -> val { val := 1000000 } // 1M ohms dark resistance
             function R_SERIES() -> val { val := 100000 } // 100k ohms series resistance
             function GAMMA() -> val { val := 5000000000000000000 } // gamma = 5.0
@@ -18,38 +19,59 @@ object "VactrolLimiter" {
                 let scale := SCALE()
                 let memOffset := 0x80
 
+                // Load stateful LDR illumination
+                let l_state := sload(200)
+
                 for { let i := 0 } lt(i, count) { i := add(i, 1) } {
                     let input := calldataload(add(36, mul(i, 64)))
                     let statePack := calldataload(add(68, mul(i, 64)))
 
                     let isClipping := shr(128, statePack)
+                    let routingMode := and(shr(64, statePack), 0xffffffffffffffff)
 
                     let output := input
                     if isClipping {
-                        let abs_in := input
-                        if slt(input, 0) {
-                            abs_in := sub(0, input)
+                        // Symmetrical dual-LED push-pull modeling
+                        let L_red := 0
+                        if sgt(input, V_FORWARD_RED()) {
+                            L_red := sub(input, V_FORWARD_RED())
+                        }
+                        let L_green := 0
+                        let neg_v_green := sub(0, V_FORWARD_GREEN())
+                        if slt(input, neg_v_green) {
+                            L_green := sub(neg_v_green, input)
+                        }
+                        let L_target := add(L_red, L_green)
+
+                        // Stateful temporal lag: fast attack (10%), slow release (0.5%)
+                        if sgt(L_target, l_state) {
+                            l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 10), 100))
+                        }
+                        if iszero(sgt(L_target, l_state)) {
+                            l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 5), 1000))
                         }
 
-                        let L := 0
-                        if sgt(abs_in, V_FORWARD()) {
-                            // L = 0.5 * (abs(Vin) - V_forward)
-                            let L_raw := sub(abs_in, V_FORWARD())
-                            L := sdiv(mul(L_raw, 500000000000000000), scale)
-                        }
-
-                        // R_LDR = R_dark / (1 + gamma * L)
-                        let denominator := add(scale, sdiv(mul(GAMMA(), L), scale))
+                        // LDR resistance: R_LDR = R_dark / (1 + gamma * L)
+                        let denominator := add(scale, sdiv(mul(GAMMA(), l_state), scale))
                         let R_LDR := sdiv(mul(R_DARK(), scale), denominator)
 
-                        // Gain = R_LDR / (R_series + R_LDR)
-                        let gain := sdiv(mul(R_LDR, scale), add(R_SERIES(), R_LDR))
-                        output := sdiv(mul(input, gain), scale)
+                        // NPN / PNP Routing Mode
+                        if iszero(routingMode) {
+                            // PNP Shunt Mode: attenuates signal
+                            let gain := sdiv(mul(R_LDR, scale), add(R_SERIES(), R_LDR))
+                            output := sdiv(mul(input, gain), scale)
+                        }
+                        if routingMode {
+                            // NPN Mode: active boost feedback sweep modulation
+                            let gain := add(scale, sdiv(mul(R_SERIES(), scale), R_LDR))
+                            output := sdiv(mul(input, gain), scale)
+                        }
                     }
 
                     mstore(add(memOffset, mul(i, 32)), output)
                 }
 
+                sstore(200, l_state)
                 return(memOffset, mul(count, 32))
             }
 
@@ -61,27 +83,44 @@ object "VactrolLimiter" {
                 let scale := SCALE()
 
                 let isClipping := shr(128, statePack)
+                let routingMode := and(shr(64, statePack), 0xffffffffffffffff)
 
+                let l_state := sload(200)
                 let output := input
+
                 if isClipping {
-                    let abs_in := input
-                    if slt(input, 0) {
-                        abs_in := sub(0, input)
+                    let L_red := 0
+                    if sgt(input, V_FORWARD_RED()) {
+                        L_red := sub(input, V_FORWARD_RED())
+                    }
+                    let L_green := 0
+                    let neg_v_green := sub(0, V_FORWARD_GREEN())
+                    if slt(input, neg_v_green) {
+                        L_green := sub(neg_v_green, input)
+                    }
+                    let L_target := add(L_red, L_green)
+
+                    if sgt(L_target, l_state) {
+                        l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 10), 100))
+                    }
+                    if iszero(sgt(L_target, l_state)) {
+                        l_state := add(l_state, sdiv(mul(sub(L_target, l_state), 5), 1000))
                     }
 
-                    let L := 0
-                    if sgt(abs_in, V_FORWARD()) {
-                        let L_raw := sub(abs_in, V_FORWARD())
-                        L := sdiv(mul(L_raw, 500000000000000000), scale)
-                    }
-
-                    let denominator := add(scale, sdiv(mul(GAMMA(), L), scale))
+                    let denominator := add(scale, sdiv(mul(GAMMA(), l_state), scale))
                     let R_LDR := sdiv(mul(R_DARK(), scale), denominator)
 
-                    let gain := sdiv(mul(R_LDR, scale), add(R_SERIES(), R_LDR))
-                    output := sdiv(mul(input, gain), scale)
+                    if iszero(routingMode) {
+                        let gain := sdiv(mul(R_LDR, scale), add(R_SERIES(), R_LDR))
+                        output := sdiv(mul(input, gain), scale)
+                    }
+                    if routingMode {
+                        let gain := add(scale, sdiv(mul(R_SERIES(), scale), R_LDR))
+                        output := sdiv(mul(input, gain), scale)
+                    }
                 }
 
+                sstore(200, l_state)
                 mstore(0, output)
                 return(0, 32)
             }

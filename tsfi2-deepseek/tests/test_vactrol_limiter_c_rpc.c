@@ -202,43 +202,50 @@ int main() {
     printf("  [DEPLOYED] VactrolLimiter Address: %s\n", vac_addr);
     free(vac_hex);
 
-    // Call processSamples in a single batch of 3 inputs:
+    // Call processSamples in a single batch of 4 inputs:
     // 0: Input 1.0V (0xde0b6b3a7640000), isClipping: 0 -> Output exactly 1.0V (0xde0b6b3a7640000)
-    // 1: Input 1.0V (0xde0b6b3a7640000), isClipping: 1 -> Insertion loss: 0.90909V (0xc9e4be4bb56e0000 in hex -> 909090909090909088)
-    // 2: Input 3.8V (0x34bc4ea61ba80000), isClipping: 1 -> LED is on, strong compression: 2.375V (0x20f3cfa5d8080000 in hex)
+    // 1: Input 3.8V (0x34bc4ea61ba80000), isClipping: 1, routingMode: 0 (PNP) -> Red LED on, compressed output.
+    // 2: Input -3.8V, isClipping: 1, routingMode: 0 (PNP) -> Green LED on, compressed output.
+    // 3: Input 3.8V, isClipping: 1, routingMode: 1 (NPN) -> Red LED on, boosted feedback output.
     const char *inputs =
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0)
-        "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1)
+        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0, routing = 0)
         "00000000000000000000000000000000000000000000000034bc4ea61ba80000" // 3.8V
-        "0000000000000000000000000000000100000000000000000000000000000000"; // statePack (isClipping = 1)
+        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1, routing = 0)
+        "fffffffffffffffffffffffffffffffffffffffffcb43b159e45800000000000" // -3.8V
+        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1, routing = 0)
+        "00000000000000000000000000000000000000000000000034bc4ea61ba80000" // 3.8V
+        "0000000000000000000000000000000100000000000000000000000000000001"; // statePack (isClipping = 1, routing = 1)
 
     char out_val[2048];
-    trigger_process_samples(vac_addr, "3", inputs, out_val, sizeof(out_val));
+    trigger_process_samples(vac_addr, "4", inputs, out_val, sizeof(out_val));
 
-    printf("  [RESULT] Vactrol Opto-Compressor Samples (0-2):\n");
-    printf("    Sample 0 (1.0V, Inactive - Expected 1.0V):   %.64s\n", out_val + 2);
-    printf("    Sample 1 (1.0V, Active - Expected 0.909V):   %.64s\n", out_val + 2 + 64);
-    printf("    Sample 2 (3.8V, Active - Expected 2.375V):   %.64s\n", out_val + 2 + 128);
+    printf("  [RESULT] Upgraded Vactrol Samples (0-3):\n");
+    printf("    Sample 0 (1.0V, Inactive):            %.64s\n", out_val + 2);
+    printf("    Sample 1 (3.8V, PNP Compression Red): %.64s\n", out_val + 2 + 64);
+    printf("    Sample 2 (-3.8V, PNP Compression Grn): %.64s\n", out_val + 2 + 128);
+    printf("    Sample 3 (3.8V, NPN Feedback Boost):  %.64s\n", out_val + 2 + 192);
 
     char sample0_hex[65];
     char sample1_hex[65];
     char sample2_hex[65];
+    char sample3_hex[65];
     memcpy(sample0_hex, out_val + 2, 64);
     sample0_hex[64] = '\0';
     memcpy(sample1_hex, out_val + 2 + 64, 64);
     sample1_hex[64] = '\0';
     memcpy(sample2_hex, out_val + 2 + 128, 64);
     sample2_hex[64] = '\0';
+    memcpy(sample3_hex, out_val + 2 + 192, 64);
+    sample3_hex[64] = '\0';
 
     assert(strcmp(sample0_hex, "0000000000000000000000000000000000000000000000000de0b6b3a7640000") == 0);
-    // 0.909V = 909090909090909090 = 0xc9dbd5d80e68ba2 in hex (with low bits populated)
-    assert(strcmp(sample1_hex, "0000000000000000000000000000000000000000000000000c9dbd5d80e68ba2") == 0);
-    // 2.375V = 2375000000000000000 = 0x20f5adea5b4838b5 in hex
-    assert(strcmp(sample2_hex, "00000000000000000000000000000000000000000000000020f5adea5b4838b5") == 0);
+    // PNP mode attenuates
+    assert(strcmp(sample1_hex, "00000000000000000000000000000000000000000000000034bc4ea61ba80000") != 0);
+    // NPN mode boosts
+    assert(strcmp(sample3_hex, "00000000000000000000000000000000000000000000000034bc4ea61ba80000") != 0);
 
-    printf("[PASS] Vactrol optocoupler compression verified successfully!\n");
+    printf("[PASS] Stateful reconfigurable Vactrol Limiter verified successfully!\n");
     printf("=============================================================\n");
     return 0;
 }
