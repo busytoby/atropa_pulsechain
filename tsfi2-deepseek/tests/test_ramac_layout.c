@@ -901,6 +901,20 @@ int main(void) {
     assert(circuit_nodes[1].output == 1); // NOT output is 1
     printf("  [PASS] Dynamic parametron circuit DAG netlist evaluator verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.7. Batten / Peek-a-boo card matching verification
+    printf("[Test] Verifying optical batten card matching simulator...\n");
+    uint32_t card_x[2] = {0x000F000F, 0xF0F0F0F0};
+    uint32_t card_y[2] = {0x0000FFFF, 0x0F0F0F0F};
+    uint32_t match_result[2] = {0};
+    int holes_count = tsfi_s370_peek_a_boo_card_match(card_x, card_y, match_result, 2);
+    assert(holes_count > 0);
+    // card_x[0] & card_y[0] = 0x0000000F -> has 4 holes
+    // card_x[1] & card_y[1] = 0x00000000 -> has 0 holes
+    // total matches should be 4
+    printf("  Optical match holes count: %d\n", holes_count);
+    assert(holes_count == 4);
+    printf("  [PASS] Batten / Peek-a-boo card matching verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

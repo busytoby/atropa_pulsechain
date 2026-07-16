@@ -1423,3 +1423,28 @@ int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_coun
 
     return 0;
 }
+
+int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card_b,
+                                     uint32_t *out_matching, int word_count) {
+    if (!card_a || !card_b || !out_matching || word_count <= 0) {
+        return -1;
+    }
+
+    int match_holes_count = 0;
+
+    for (int i = 0; i < word_count; i++) {
+        // Bitwise AND operation representing stacked cards blocking/allowing light through holes
+        out_matching[i] = card_a[i] & card_b[i];
+
+        // Count set bits (holes allowing light to pass through) in the resulting word
+        uint32_t word = out_matching[i];
+        while (word) {
+            if (word & 1) {
+                match_holes_count++;
+            }
+            word >>= 1;
+        }
+    }
+
+    return match_holes_count;
+}

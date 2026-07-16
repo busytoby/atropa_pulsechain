@@ -304,4 +304,8 @@ int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int pha
 int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_count,
                                        const int *inputs, int input_count);
 
+// Engelbart & Bourne optical Batten/Peek-a-boo card-matching simulator
+int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card_b,
+                                     uint32_t *out_matching, int word_count);
+
 #endif // TSFI_RAMAC_LAYOUT_H
