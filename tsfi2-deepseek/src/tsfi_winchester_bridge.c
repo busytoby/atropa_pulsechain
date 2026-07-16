@@ -12,6 +12,7 @@ TSFiWinchesterBridge* tsfi_winchester_bridge_create(TSFiSynthPerfEngine *perf_en
     bridge->registers.keycode_reg = 0;
     bridge->registers.data_reg = 0;
     bridge->loopback_socket_fd = 99; // Mock virtual loopback socket fd
+    tsfi_ring_init(&bridge->event_ring);
 
     return bridge;
 }
@@ -31,6 +32,9 @@ int tsfi_winchester_bridge_handshake(TSFiWinchesterBridge *bridge) {
     } else {
         keycode = 10; // Default keycode
     }
+
+    // Push keycode to event ring buffer lock-free
+    tsfi_ring_push(&bridge->event_ring, 1, keycode);
 
     // 3. Perform WinchesterMQ SCSI register status handshake loop
     bridge->registers.status_reg = 1; // Request

@@ -2,6 +2,7 @@
 #define TSFI_WINCHESTER_BRIDGE_H
 
 #include "tsfi_synth_perf.h"
+#include "tsfi_spec_queues.h"
 
 // WinchesterMQ SCSI Handshake Registers
 typedef struct {
@@ -15,6 +16,7 @@ typedef struct {
     TSFiSynthPerfEngine *perf_engine;
     TSFiWinchesterRegisters registers;
     int loopback_socket_fd; // Virtual socket fd for SCSI tracking
+    TSFiLockFreeRing event_ring;
 } TSFiWinchesterBridge;
 
 // Create WinchesterMQ Bridge
