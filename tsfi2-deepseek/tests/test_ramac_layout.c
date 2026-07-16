@@ -496,6 +496,70 @@ int main(void) {
     assert(strcmp(unpacked_red, "700") == 0);
     printf("  [PASS] Benson-Lehner Electroplotter data reduction logic verified successfully.\n");
 
+    // 3.9.9.9.9.8. Quadtree Disk Serialization & COMP-3 Native Mappings
+    printf("[Test] Verifying Quadtree index serialization to disk under Rule 13 (.dat.bin)...\n");
+    tsfi_quadtree_node write_nodes[2];
+    memset(write_nodes, 0, sizeof(write_nodes));
+
+    // Mapped boundary node
+    write_nodes[0].boundary_x = 4.25;
+    write_nodes[0].boundary_y = 2.75;
+    write_nodes[0].boundary_size = 10.0;
+    write_nodes[0].is_active = 1;
+    // Mapped value in COMP-3 format (700 -> 70 0C)
+    write_nodes[0].packed_val[0] = 0x70;
+    write_nodes[0].packed_val[1] = 0x0C;
+    write_nodes[0].val_len = 2;
+    write_nodes[0].children_indices[0] = 1;
+    write_nodes[0].children_indices[1] = -1;
+    write_nodes[0].children_indices[2] = -1;
+    write_nodes[0].children_indices[3] = -1;
+
+    // Leaf node
+    write_nodes[1].boundary_x = 2.0;
+    write_nodes[1].boundary_y = 1.0;
+    write_nodes[1].boundary_size = 5.0;
+    write_nodes[1].is_active = 1;
+    write_nodes[1].packed_val[0] = 0x30;
+    write_nodes[1].packed_val[1] = 0x0C; // 300 -> 30 0C
+    write_nodes[1].val_len = 2;
+    write_nodes[1].children_indices[0] = -1;
+    write_nodes[1].children_indices[1] = -1;
+    write_nodes[1].children_indices[2] = -1;
+    write_nodes[1].children_indices[3] = -1;
+
+    // Test Rule 13 extension validation: should fail with .json
+    int ser_ret_json = tsfi_s370_serialize_quadtree("tmp/test_quadtree.json", write_nodes, 2);
+    assert(ser_ret_json == -1);
+
+    // Should pass with .dat.bin
+    int ser_ret_ok = tsfi_s370_serialize_quadtree("tmp/test_quadtree.dat.bin", write_nodes, 2);
+    assert(ser_ret_ok == 0);
+
+    tsfi_quadtree_node read_nodes[4];
+    memset(read_nodes, 0, sizeof(read_nodes));
+
+    int des_ret_json = tsfi_s370_deserialize_quadtree("tmp/test_quadtree.json", read_nodes, 4);
+    assert(des_ret_json == -1);
+
+    int des_count = tsfi_s370_deserialize_quadtree("tmp/test_quadtree.dat.bin", read_nodes, 4);
+    assert(des_count == 2);
+
+    // Assert read nodes boundaries and COMP-3 data properties
+    assert(read_nodes[0].boundary_x == 4.25);
+    assert(read_nodes[0].boundary_y == 2.75);
+    assert(read_nodes[0].packed_val[0] == 0x70);
+    assert(read_nodes[0].packed_val[1] == 0x0C);
+    assert(read_nodes[0].val_len == 2);
+    assert(read_nodes[0].children_indices[0] == 1);
+
+    assert(read_nodes[1].boundary_x == 2.0);
+    assert(read_nodes[1].boundary_y == 1.0);
+    assert(read_nodes[1].packed_val[0] == 0x30);
+    assert(read_nodes[1].packed_val[1] == 0x0C);
+
+    printf("  [PASS] Quadtree serialization, extension rules, and COMP-3 mappings verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

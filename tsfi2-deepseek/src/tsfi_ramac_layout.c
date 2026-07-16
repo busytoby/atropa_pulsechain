@@ -799,3 +799,66 @@ int tsfi_s370_data_reduction_unit(double x, double y, double scale,
     // 2. Package directly to COMP-3 format for immediate COBOL strategy engine consumption
     return tsfi_s370_pack(zoned, dest_out, dest_max_len);
 }
+
+int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int node_count) {
+    if (!filepath || !nodes || node_count <= 0) return -1;
+
+    // Rule 13: strictly check .dat.bin extension for quadtree index
+    int len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
+        return -1; // Extension error
+    }
+
+    FILE *fp = fopen(filepath, "wb");
+    if (!fp) return -1;
+
+    // Write magic signature
+    fwrite("QUAD", 1, 4, fp);
+
+    // Write node count
+    fwrite(&node_count, sizeof(int), 1, fp);
+
+    // Write array of quadtree nodes
+    fwrite(nodes, sizeof(tsfi_quadtree_node), node_count, fp);
+
+    fclose(fp);
+    return 0;
+}
+
+int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int max_nodes) {
+    if (!filepath || !nodes || max_nodes <= 0) return -1;
+
+    // Rule 13: strictly check .dat.bin extension
+    int len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
+        return -1; // Extension error
+    }
+
+    FILE *fp = fopen(filepath, "rb");
+    if (!fp) return -1;
+
+    char magic[4];
+    if (fread(magic, 1, 4, fp) != 4 || memcmp(magic, "QUAD", 4) != 0) {
+        fclose(fp);
+        return -1;
+    }
+
+    int node_count = 0;
+    if (fread(&node_count, sizeof(int), 1, fp) != 1) {
+        fclose(fp);
+        return -1;
+    }
+
+    if (node_count > max_nodes) {
+        fclose(fp);
+        return -1; // Destination buffer size exceeded
+    }
+
+    if ((int)fread(nodes, sizeof(tsfi_quadtree_node), node_count, fp) != node_count) {
+        fclose(fp);
+        return -1;
+    }
+
+    fclose(fp);
+    return node_count;
+}

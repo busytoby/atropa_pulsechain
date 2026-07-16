@@ -97,6 +97,17 @@ typedef struct {
     int is_admin_tier; // Admin tier receives PSW master key 0 privileges
 } tsfi_lau_account;
 
+// Quadtree node partitioning analog coordinates, with values serialized in COMP-3 packed decimal format
+typedef struct {
+    double boundary_x;         // Center coordinates of the quadrant
+    double boundary_y;
+    double boundary_size;
+    uint8_t packed_val[16];    // Value stored in COMP-3 packed decimal format
+    int val_len;               // Length of packed decimal array
+    int children_indices[4];   // Indirection indices of sub-quadrants (-1 if leaf)
+    int is_active;
+} tsfi_quadtree_node;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -185,10 +196,14 @@ int tsfi_s370_packed_add(const uint8_t *a, int a_len,
 int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
                           uint8_t *real_memory, int mem_size);
 
-// Benson-Lehner style Data Reduction Unit (inspired by Research & Engineering Oct 1956)
-// Reduces analog coordinates (x, y) scaling to digital zoned strings and packs to dest COMP-3
-// Returns bytes written to dest_out, or -1 on error
+// Benson-Lehner style Data Reduction Unit
 int tsfi_s370_data_reduction_unit(double x, double y, double scale,
                                   uint8_t *dest_out, int dest_max_len);
+
+// Quadtree serialization to disk using the strict Rule 13 .dat.bin format
+int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int node_count);
+
+// Quadtree deserialization from disk
+int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int max_nodes);
 
 #endif // TSFI_RAMAC_LAYOUT_H
