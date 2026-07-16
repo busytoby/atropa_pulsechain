@@ -669,9 +669,13 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
                         <button class="btn btn-primary" id="btnAudioToggle" style="flex: 1;">Enable Audio Synth</button>
                         <button class="btn btn-secondary" id="btnPlayMelody" style="flex: 1; border-color: var(--neon-magenta); color: var(--text-primary);"><span class="icon">🎶</span> Play Ahoy! Melody</button>
+                        <label style="display: flex; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--text-primary); cursor: pointer; padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.3); white-space: nowrap;">
+                            <input type="checkbox" id="chkLGP30Warmth" style="accent-color: var(--neon-magenta);">
+                            LGP-30 Tube Warmth
+                        </label>
                     </div>
 
                     <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -993,12 +997,30 @@
         const demoGameSequence = ["pong", "anteater", "princessfrog", "crush"];
         let demoGameIdx = 0;
 
+        function makeLGP30TriodeCurve() {
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i - n_samples / 2) / (n_samples / 2);
+                const vg = -5.0 + x * 8.0;
+                let ip = 0.0;
+                if (vg > -6.0) {
+                    ip = 0.002 * Math.pow(vg + 6.0, 1.5);
+                }
+                const target_p = 200.0 - ip * 20000.0;
+                const v_out = Math.max(0.0, Math.min(200.0, target_p));
+                curve[i] = (v_out - 100.0) / 100.0;
+            }
+            return curve;
+        }
+
         class SIDVoice {
             constructor(audioCtx, destination) {
                 this.ctx = audioCtx;
                 this.dest = destination;
                 this.osc = null;
                 this.gain = null;
+                this.shaper = null;
                 this.gate = 0;
                 this.lastFreq = 0;
                 this.lastWave = 0;
@@ -1023,6 +1045,10 @@
                         this.osc.disconnect();
                         this.osc = null;
                     }
+                    if (this.shaper) {
+                        this.shaper.disconnect();
+                        this.shaper = null;
+                    }
                     return;
                 }
 
@@ -1031,10 +1057,24 @@
                         this.osc.stop();
                         this.osc.disconnect();
                     }
+                    if (this.shaper) {
+                        this.shaper.disconnect();
+                    }
                     this.osc = this.ctx.createOscillator();
                     this.gain = this.ctx.createGain();
                     this.osc.type = type;
-                    this.osc.connect(this.gain);
+
+                    const useWarmth = document.getElementById("chkLGP30Warmth") && document.getElementById("chkLGP30Warmth").checked;
+                    if (useWarmth) {
+                        this.shaper = this.ctx.createWaveShaper();
+                        this.shaper.curve = makeLGP30TriodeCurve();
+                        this.shaper.oversample = '4x';
+                        this.osc.connect(this.shaper);
+                        this.shaper.connect(this.gain);
+                    } else {
+                        this.osc.connect(this.gain);
+                    }
+
                     this.gain.connect(this.dest);
                     this.gain.gain.setValueAtTime(0, this.ctx.currentTime);
                     this.osc.start();
