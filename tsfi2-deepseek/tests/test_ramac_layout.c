@@ -225,18 +225,12 @@ int main(void) {
     uint8_t memory_pool[1024];
     memset(memory_pool, 0, sizeof(memory_pool));
 
-    // Store target sector index (120) inside memory pool at offset 10
     int target_sec = 120;
     memcpy(memory_pool + 10, &target_sec, 4);
 
-    // Store payload data inside memory pool at offset 20
     const char *payload_data = "CCW_TEST_DATA";
     memcpy(memory_pool + 20, payload_data, 13);
 
-    // CCW chain definition:
-    // CCW 0: Seek sector 120 (cmd 0x07, address 10, flags 0x02 [chain command], count 4)
-    // CCW 1: Write payload to sector (cmd 0x01, address 20, flags 0x02 [chain command], count 13)
-    // CCW 2: Read payload from sector back to address 40 (cmd 0x02, address 40, flags 0x00, count 13)
     tsfi_s370_ccw ccw_chain[3];
     
     ccw_chain[0].cmd_code = 0x07;
@@ -259,6 +253,45 @@ int main(void) {
     printf("  Read-back CCW data at memory offset 40: '%s'\n", (char*)(memory_pool + 40));
     assert(strcmp((char*)(memory_pool + 40), "CCW_TEST_DATA") == 0);
     printf("  [PASS] System/370 Channel I/O Program execution verified successfully.\n");
+
+    // 3.9.9.5. System/370 Storage Key Hardware Protection
+    printf("[Test] Verifying System/370 Storage Key block protection...\n");
+    tsfi_s370_storage_key block_keys[4];
+    memset(block_keys, 0, sizeof(block_keys));
+    
+    // Block 1 (addr 4096-8191): access key = 5, fetch protection = 1
+    block_keys[1].acc = 5;
+    block_keys[1].fetch_protect = 1;
+    
+    // Block 2 (addr 8192-12287): access key = 6, fetch protection = 0
+    block_keys[2].acc = 6;
+    block_keys[2].fetch_protect = 0;
+
+    // Test 1: Write to block 1 with matching PSW key 5 (should PASS)
+    int key_ret1 = tsfi_s370_check_storage_key(5, 5000, 1, block_keys, 4);
+    assert(key_ret1 == 0);
+    assert(block_keys[1].referenced == 1);
+    assert(block_keys[1].changed == 1);
+
+    // Test 2: Write to block 1 with wrong PSW key 6 (should FAIL / Protection Exception)
+    int key_ret2 = tsfi_s370_check_storage_key(6, 5000, 1, block_keys, 4);
+    assert(key_ret2 == -1);
+
+    // Test 3: Read from block 1 with wrong PSW key 6, fetch protection is 1 (should FAIL)
+    int key_ret3 = tsfi_s370_check_storage_key(6, 5000, 0, block_keys, 4);
+    assert(key_ret3 == -1);
+
+    // Test 4: Read from block 2 with wrong PSW key 7, fetch protection is 0 (should PASS)
+    int key_ret4 = tsfi_s370_check_storage_key(7, 9000, 0, block_keys, 4);
+    assert(key_ret4 == 0);
+    assert(block_keys[2].referenced == 1);
+    assert(block_keys[2].changed == 0); // Read doesn't change
+
+    // Test 5: Master key 0 bypasses write protection on block 1 (should PASS)
+    int key_ret5 = tsfi_s370_check_storage_key(0, 5000, 1, block_keys, 4);
+    assert(key_ret5 == 0);
+
+    printf("  [PASS] System/370 Storage Key hardware protection verified successfully.\n");
 
     free(disk);
 

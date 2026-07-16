@@ -475,3 +475,41 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
 
     return 0; // I/O channel program completed successfully
 }
+
+int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
+                                tsfi_s370_storage_key *block_keys, int block_count) {
+    if (!block_keys || block_count <= 0) return -1;
+
+    // S/370 block protection size: 4096-byte pages
+    int block_idx = real_addr / 4096;
+    if (block_idx >= block_count) {
+        return -1; // Out of bounds
+    }
+
+    // Access key 0 is the master key, allowing unrestricted access
+    if (psw_key != 0) {
+        uint8_t block_key = block_keys[block_idx].acc;
+
+        if (is_write) {
+            // Write protection requires matching access control bits
+            if (psw_key != block_key) {
+                return -1; // Protection Exception
+            }
+        } else {
+            // Read protection requires matching access control bits only if Fetch Protection (F) is enabled
+            if (block_keys[block_idx].fetch_protect) {
+                if (psw_key != block_key) {
+                    return -1; // Protection Exception
+                }
+            }
+        }
+    }
+
+    // Update hardware Referenced (R) and Changed (C) reference bits
+    block_keys[block_idx].referenced = 1;
+    if (is_write) {
+        block_keys[block_idx].changed = 1;
+    }
+
+    return 0; // Access Permitted
+}

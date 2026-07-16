@@ -66,6 +66,14 @@ typedef struct {
     uint16_t count;     // Transfer byte count
 } tsfi_s370_ccw;
 
+// System/370 Storage Key (7-bit hardware protection key per 2KB/4KB block)
+typedef struct {
+    uint8_t acc;           // Access control bits (4 bits, 0-15)
+    uint8_t fetch_protect; // Fetch protection bit (F)
+    uint8_t referenced;    // Reference bit (R)
+    uint8_t changed;       // Change bit (C)
+} tsfi_s370_storage_key;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -118,9 +126,13 @@ int tsfi_s370_dat_translate(uint32_t virtual_addr,
                             uint32_t *out_physical_addr);
 
 // System/370 Channel I/O Program execution emulator
-// Executes chained CCWs against the RAMAC disk structure
 int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
                               tsfi_s370_ccw *ccw_chain, int chain_len,
                               uint8_t *memory_pool, int mem_size);
+
+// System/370 Storage Key hardware protection checks
+// Returns 0 if access is permitted, -1 if protection exception occurs
+int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
+                                tsfi_s370_storage_key *block_keys, int block_count);
 
 #endif // TSFI_RAMAC_LAYOUT_H
