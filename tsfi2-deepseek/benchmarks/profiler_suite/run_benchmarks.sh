@@ -37,6 +37,7 @@ make tests/test_horn_abduction > /dev/null 2>&1 &
 make tests/test_turing_probabilistic > /dev/null 2>&1 &
 make tests/test_disjunction_backtracking > /dev/null 2>&1 &
 make tests/test_disjunction_metaphor > /dev/null 2>&1 &
+make tests/test_datalog_retraction > /dev/null 2>&1 &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -105,6 +106,7 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 ./tests/test_turing_probabilistic > /dev/null 2>&1
 ./tests/test_disjunction_backtracking > /dev/null 2>&1
 ./tests/test_disjunction_metaphor > /dev/null 2>&1
+./tests/test_datalog_retraction > /dev/null 2>&1
 
 echo "[PROCESS] Parsing benchmark outputs and compiling unified JSON results..."
 
