@@ -386,6 +386,9 @@ tests/test_zmm_btc_rails: tests/test_zmm_btc_rails.c $(CORE_OBJS) $(OBJ_DIR)/vul
 tests/test_serialization_dat: tests/test_serialization_dat.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_rails_dat_c_rpc: tests/test_rails_dat_c_rpc.c
+	$(CC) $(CFLAGS) -o $@ $^
+
 tests/test_coaxial_telemetry_async: tests/test_coaxial_telemetry_async.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
