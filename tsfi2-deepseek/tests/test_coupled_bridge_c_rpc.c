@@ -188,7 +188,7 @@ static void trigger_process_samples(const char *contract, const char *count_hex,
 
 int main() {
     printf("=============================================================\n");
-    printf("ELEKTOR COIL-VACTROL COUPLED BRIDGE (ANVIL LIVE)\n");
+    printf("UNIFIED COAX-COIL COUPLED BRIDGE (ANVIL LIVE)\n");
     printf("=============================================================\n");
 
     printf("[C-Test] Compiling CoupledBridge Yul object...\n");
@@ -204,23 +204,23 @@ int main() {
 
     // Call processSamples in a single batch of 3 inputs:
     // 0: Input 1.0V (0xde0b6b3a7640000), isClipping: 0 -> Output exactly 1.0V (0xde0b6b3a7640000)
-    // 1: Input 3.8V (0x34bc4ea61ba80000), isClipping: 1, tapRatio: 0, mode: 0 (PNP) -> Saturated coupling output
-    // 2: Input 3.8V (0x34bc4ea61ba80000), isClipping: 1, tapRatio: 1, mode: 0 (PNP) -> Attenuated further by 1:2 tap ratio (50%)
+    // 1: Input 0.1V (0x16345785d8a0000), isClipping: 1, tapRatio: 0, mode: 0, pickupDistance: 1.0V -> Germanium coupled output
+    // 2: Input 3.8V (0x34bc4ea61ba80000), isClipping: 1, tapRatio: 1, mode: 0, pickupDistance: 1.0V -> Heavy preamp compression and tap attenuation
     const char *inputs =
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // 1.0V
-        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0, tapRatio = 0, mode = 0)
+        "0000000000000000000000000000000000000000000000000000000000000000" // statePack (isClipping = 0, tapRatio = 0, mode = 0, distance = 0)
+        "000000000000000000000000000000000000000000000000016345785d8a0000" // 0.1V
+        "0000000000000000000000000000000100000000000000000de0b6b3a7640000" // statePack (isClipping = 1, tapRatio = 0, mode = 0, distance = 1.0)
         "00000000000000000000000000000000000000000000000034bc4ea61ba80000" // 3.8V
-        "0000000000000000000000000000000100000000000000000000000000000000" // statePack (isClipping = 1, tapRatio = 0, mode = 0)
-        "00000000000000000000000000000000000000000000000034bc4ea61ba80000" // 3.8V
-        "0000000000000000000000000000000100000000000000010000000000000000"; // statePack (isClipping = 1, tapRatio = 1, mode = 0)
+        "0000000000000000000000000000000101000000000000000de0b6b3a7640000"; // statePack (isClipping = 1, tapRatio = 1, mode = 0, distance = 1.0)
 
     char out_val[2048];
     trigger_process_samples(cb_addr, "3", inputs, out_val, sizeof(out_val));
 
     printf("  [RESULT] Coupled Bridge Samples (0-2):\n");
     printf("    Sample 0 (1.0V, Inactive):            %.64s\n", out_val + 2);
-    printf("    Sample 1 (3.8V, PNP 1:1 Saturation):  %.64s\n", out_val + 2 + 64);
-    printf("    Sample 2 (3.8V, PNP 1:2 Tap Switching): %.64s\n", out_val + 2 + 128);
+    printf("    Sample 1 (0.1V, Active Soft Coupling): %.64s\n", out_val + 2 + 64);
+    printf("    Sample 2 (3.8V, Active Hard Saturation): %.64s\n", out_val + 2 + 128);
 
     char sample0_hex[65];
     char sample1_hex[65];
@@ -233,12 +233,12 @@ int main() {
     sample2_hex[64] = '\0';
 
     assert(strcmp(sample0_hex, "0000000000000000000000000000000000000000000000000de0b6b3a7640000") == 0);
-    // PNP 1:1 saturates coupling downwards
-    assert(strcmp(sample1_hex, "00000000000000000000000000000000000000000000000034bc4ea61ba80000") != 0);
-    // PNP 1:2 tap is further attenuated compared to sample 1
-    assert(strcmp(sample2_hex, sample1_hex) != 0);
+    // Soft coupling performs Germanium level shunts
+    assert(strcmp(sample1_hex, "000000000000000000000000000000000000000000000000016345785d8a0000") != 0);
+    // Hard saturation tap switching scales down
+    assert(strcmp(sample2_hex, "00000000000000000000000000000000000000000000000034bc4ea61ba80000") != 0);
 
-    printf("[PASS] Coupled Bridge with mutual core coupling and tap ratio switching verified successfully!\n");
+    printf("[PASS] Unified Coax-Coil Coupled Bridge verified successfully!\n");
     printf("=============================================================\n");
     return 0;
 }
