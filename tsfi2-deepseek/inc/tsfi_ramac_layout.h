@@ -74,6 +74,13 @@ typedef struct {
     uint8_t changed;       // Change bit (C)
 } tsfi_s370_storage_key;
 
+// System/370 Processor Status Word (PSW) Privilege & Security Mode Context
+typedef struct {
+    int supervisor_state; // Privilege mode (1: Supervisor State, 0: Problem State)
+    int lap_enabled;      // Low-Address Protection (LAP) enabled flag (Control Reg 0 bit)
+    uint8_t psw_key;      // Current execution access key (4-bit key, 0-15)
+} tsfi_s370_cpu_state;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -134,5 +141,14 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
 // Returns 0 if access is permitted, -1 if protection exception occurs
 int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
                                 tsfi_s370_storage_key *block_keys, int block_count);
+
+// System/370 Privilege & Security Mode Checks
+// Returns 0 if instruction execution is valid, -1 if privileged operation exception occurs
+int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code);
+
+// System/370 Write Validation (integrates Storage Keys & Low-Address Protection)
+// Returns 0 if write is permitted, -1 if protection exception occurs
+int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
+                             tsfi_s370_storage_key *block_keys, int block_count);
 
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -513,3 +513,42 @@ int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_writ
 
     return 0; // Access Permitted
 }
+
+int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code) {
+    if (!cpu || !op_code) return -1;
+
+    // List of privileged operations in System/370 execution states
+    const char *privileged_ops[] = {
+        "SSK",   // Set Storage Key
+        "ISK",   // Insert Storage Key
+        "LPSW",  // Load Program Status Word
+        "SIO",   // Start I/O
+        "STCTL", // Store Control Register
+        "LCTL"   // Load Control Register
+    };
+    int privileged_count = 6;
+
+    // Problem State (supervisor_state == 0) restricts privileged instructions
+    if (cpu->supervisor_state == 0) {
+        for (int i = 0; i < privileged_count; i++) {
+            if (strcmp(op_code, privileged_ops[i]) == 0) {
+                return -1; // Privileged Operation Exception
+            }
+        }
+    }
+
+    return 0; // Instruction validation passes
+}
+
+int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
+                             tsfi_s370_storage_key *block_keys, int block_count) {
+    if (!cpu) return -1;
+
+    // Low-Address Protection (LAP): write to first 512 bytes (addresses 0..511) in Problem State is prohibited
+    if (cpu->lap_enabled && real_addr < 512 && cpu->supervisor_state == 0) {
+        return -1; // Protection Exception (LAP violation)
+    }
+
+    // Delegate to standard storage key protection checks
+    return tsfi_s370_check_storage_key(cpu->psw_key, real_addr, 1, block_keys, block_count);
+}

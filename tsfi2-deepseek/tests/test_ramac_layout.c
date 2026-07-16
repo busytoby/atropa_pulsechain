@@ -259,39 +259,77 @@ int main(void) {
     tsfi_s370_storage_key block_keys[4];
     memset(block_keys, 0, sizeof(block_keys));
     
-    // Block 1 (addr 4096-8191): access key = 5, fetch protection = 1
     block_keys[1].acc = 5;
     block_keys[1].fetch_protect = 1;
     
-    // Block 2 (addr 8192-12287): access key = 6, fetch protection = 0
     block_keys[2].acc = 6;
     block_keys[2].fetch_protect = 0;
 
-    // Test 1: Write to block 1 with matching PSW key 5 (should PASS)
     int key_ret1 = tsfi_s370_check_storage_key(5, 5000, 1, block_keys, 4);
     assert(key_ret1 == 0);
     assert(block_keys[1].referenced == 1);
     assert(block_keys[1].changed == 1);
 
-    // Test 2: Write to block 1 with wrong PSW key 6 (should FAIL / Protection Exception)
     int key_ret2 = tsfi_s370_check_storage_key(6, 5000, 1, block_keys, 4);
     assert(key_ret2 == -1);
 
-    // Test 3: Read from block 1 with wrong PSW key 6, fetch protection is 1 (should FAIL)
     int key_ret3 = tsfi_s370_check_storage_key(6, 5000, 0, block_keys, 4);
     assert(key_ret3 == -1);
 
-    // Test 4: Read from block 2 with wrong PSW key 7, fetch protection is 0 (should PASS)
     int key_ret4 = tsfi_s370_check_storage_key(7, 9000, 0, block_keys, 4);
     assert(key_ret4 == 0);
     assert(block_keys[2].referenced == 1);
-    assert(block_keys[2].changed == 0); // Read doesn't change
+    assert(block_keys[2].changed == 0);
 
-    // Test 5: Master key 0 bypasses write protection on block 1 (should PASS)
     int key_ret5 = tsfi_s370_check_storage_key(0, 5000, 1, block_keys, 4);
     assert(key_ret5 == 0);
 
     printf("  [PASS] System/370 Storage Key hardware protection verified successfully.\n");
+
+    // 3.9.9.8. System/370 Privilege & Security LAP Check Verification
+    printf("[Test] Verifying System/370 Privilege & Security LAP protections...\n");
+    tsfi_s370_cpu_state cpu;
+    
+    // Test 1: Problem state executing privileged operation SSK (Set Storage Key) should FAIL
+    cpu.supervisor_state = 0; // Problem State
+    cpu.lap_enabled = 1;
+    cpu.psw_key = 5;
+    
+    int priv_ret1 = tsfi_s370_validate_instruction(&cpu, "SSK");
+    assert(priv_ret1 == -1);
+
+    // Test 2: Problem state executing non-privileged ADD should PASS
+    int priv_ret2 = tsfi_s370_validate_instruction(&cpu, "ADD");
+    assert(priv_ret2 == 0);
+
+    // Test 3: Supervisor state executing privileged SSK should PASS
+    cpu.supervisor_state = 1; // Supervisor State
+    int priv_ret3 = tsfi_s370_validate_instruction(&cpu, "SSK");
+    assert(priv_ret3 == 0);
+
+    // Test 4: Write to first 512 bytes with matching key under Problem State and LAP enabled should FAIL
+    cpu.supervisor_state = 0; // Problem State
+    cpu.lap_enabled = 1;
+    cpu.psw_key = 0; // Master key still blocked by LAP in problem state
+    int lap_ret1 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    assert(lap_ret1 == -1);
+
+    // Test 5: Write to first 512 bytes under Supervisor State should PASS
+    cpu.supervisor_state = 1; // Supervisor State
+    cpu.psw_key = 0;
+    int lap_ret2 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    assert(lap_ret2 == 0);
+
+    // Test 6: Write to first 512 bytes with matching key under Problem State but LAP disabled should PASS
+    cpu.supervisor_state = 0; // Problem State
+    cpu.lap_enabled = 0;      // LAP disabled
+    cpu.psw_key = 5;          // Matches block 1 key (5)
+    // 5000 is block 1. Let's make block 0 have key 5 so address 200 (block 0) matches
+    block_keys[0].acc = 5;
+    int lap_ret3 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
+    assert(lap_ret3 == 0);
+
+    printf("  [PASS] System/370 Privilege States & LAP write validations verified successfully.\n");
 
     free(disk);
 
