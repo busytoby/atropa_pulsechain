@@ -501,4 +501,10 @@ int tsfi_s370_ibm7030_vfl_add(const uint64_t *memory,
                               uint32_t bit_addr_b, int len_b, int byte_size_b,
                               uint64_t *out_val);
 
+// IBM 7030 STRETCH Variable Field Length (VFL) bitwise logic
+int tsfi_s370_ibm7030_vfl_logic(const uint64_t *memory, 
+                                uint32_t bit_addr_a, int len_a, int byte_size_a,
+                                uint32_t bit_addr_b, int len_b, int byte_size_b,
+                                const char *op, uint64_t *out_val);
+
 #endif // TSFI_RAMAC_LAYOUT_H

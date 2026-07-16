@@ -1613,6 +1613,26 @@ int main(void) {
 
     printf("  [PASS] IBM 7030 STRETCH VFL Arithmetic verified successfully.\n");
 
+    // Test Scenario 17: IBM 7030 STRETCH Variable Field Length (VFL) Logical Operations
+    printf("[Test] Verifying IBM 7030 STRETCH VFL Logic...\n");
+    uint64_t vfl_logic_memory[4] = {0};
+
+    int l_res = tsfi_s370_ibm7030_write_bits(vfl_logic_memory, 10, 8, 0x0F);
+    assert(l_res == 0);
+    l_res = tsfi_s370_ibm7030_write_bits(vfl_logic_memory, 25, 8, 0xF0);
+    assert(l_res == 0);
+
+    uint64_t vfl_log_val = 0;
+    int log_res = tsfi_s370_ibm7030_vfl_logic(vfl_logic_memory, 10, 1, 8, 25, 1, 8, "XOR", &vfl_log_val);
+    assert(log_res == 0);
+    assert(vfl_log_val == 0xFF);
+
+    log_res = tsfi_s370_ibm7030_vfl_logic(vfl_logic_memory, 10, 1, 8, 25, 1, 8, "AND", &vfl_log_val);
+    assert(log_res == 0);
+    assert(vfl_log_val == 0x00);
+
+    printf("  [PASS] IBM 7030 STRETCH VFL Logic verified successfully.\n");
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
