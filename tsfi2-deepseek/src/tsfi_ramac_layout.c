@@ -1699,3 +1699,69 @@ int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, 
     free(buffer_used);
     return 0;
 }
+
+int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, int *memory, int mem_size, int *registers, int reg_count) {
+    if (!program || program_size <= 0 || !memory || mem_size <= 0 || !registers || reg_count <= 0) {
+        return -1;
+    }
+
+    int pc = 0;
+    int instructions_executed = 0;
+
+    // Safety loop execution limit to prevent infinite loops (e.g. UNCOL VM panic threshold)
+    while (pc >= 0 && pc < program_size && instructions_executed < 10000) {
+        tsfi_uncol_instruction inst = program[pc];
+        instructions_executed++;
+
+        if (strcmp(inst.op, "LOAD") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.address < 0 || inst.address >= mem_size) {
+                return -2; // Execution fault exception
+            }
+            registers[inst.reg_dest] = memory[inst.address];
+            pc++;
+        } else if (strcmp(inst.op, "STORE") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.address < 0 || inst.address >= mem_size) {
+                return -2;
+            }
+            memory[inst.address] = registers[inst.reg_dest];
+            pc++;
+        } else if (strcmp(inst.op, "ADD") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
+                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
+                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
+                return -2;
+            }
+            registers[inst.reg_dest] = registers[inst.reg_src1] + registers[inst.reg_src2];
+            pc++;
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
+                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
+                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
+                return -2;
+            }
+            registers[inst.reg_dest] = registers[inst.reg_src1] - registers[inst.reg_src2];
+            pc++;
+        } else if (strcmp(inst.op, "JMP") == 0) {
+            if (inst.address < 0 || inst.address >= program_size) {
+                return -2;
+            }
+            pc = inst.address;
+        } else if (strcmp(inst.op, "JZ") == 0) {
+            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
+                return -2;
+            }
+            if (registers[inst.reg_dest] == 0) {
+                if (inst.address < 0 || inst.address >= program_size) {
+                    return -2;
+                }
+                pc = inst.address;
+            } else {
+                pc++;
+            }
+        } else {
+            pc++; // NOP
+        }
+    }
+
+    return 0; // VM completed execution successfully
+}

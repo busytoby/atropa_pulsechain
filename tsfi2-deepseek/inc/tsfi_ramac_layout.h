@@ -124,6 +124,15 @@ typedef struct {
     int output;     // Phase state output cache (0 or 1)
 } tsfi_parametron_node;
 
+// UNCOL Universal Computer Oriented Language instruction representation
+typedef struct {
+    char op[16];     // "LOAD", "STORE", "ADD", "SUB", "JMP", "JZ"
+    int reg_dest;    // Destination register index (0..7)
+    int reg_src1;    // Source register 1
+    int reg_src2;    // Source register 2
+    int address;     // Memory address or immediate value or jump label index
+} tsfi_uncol_instruction;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -139,7 +148,7 @@ int tsfi_ramac_layout_optimize(tsfi_dat *dat, const char *filepath);
 // Hashes a key to a primary sector index within a given cylinder
 int tsfi_ramac_hash_key(const char *key, int cylinder);
 
-// Inserts a record into the cylinder-overflow disk layout, keeping overflows within the same cylinder
+// Hashes a key to a primary sector index within a given cylinder
 int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder, double *out_total_seek_us);
 
 // Searches a record in the cylinder-overflow layout
@@ -330,5 +339,8 @@ int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, d
 
 // Ramo-Wooldridge RW-400 polymorphic switching matrix router
 int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, int buffer_count, int *out_route_map);
+
+// UNCOL Universal Computer Oriented Language VM execution loop
+int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, int *memory, int mem_size, int *registers, int reg_count);
 
 #endif // TSFI_RAMAC_LAYOUT_H

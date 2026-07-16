@@ -1020,6 +1020,25 @@ int main(void) {
     assert(sw_conflict_ret == -1); // Routing failed due to destination conflict
     printf("  [PASS] RW-400 polymorphic matrix switch routing verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.7. UNCOL Universal Computer Oriented Language VM Verification
+    printf("[Test] Verifying UNCOL VM execution...\n");
+    // Write simple program:
+    // Memory[0] = 10, Memory[1] = 5
+    // Program: LOAD R0, [0]; LOAD R1, [1]; ADD R2, R0, R1; STORE R2, [2]
+    int uncol_mem[4] = {10, 5, 0, 0};
+    int uncol_regs[8] = {0};
+    tsfi_uncol_instruction uncol_prog[4] = {
+        {"LOAD", 0, 0, 0, 0},
+        {"LOAD", 1, 0, 0, 1},
+        {"ADD", 2, 0, 1, 0},
+        {"STORE", 2, 0, 0, 2}
+    };
+    int vm_ret = tsfi_s370_uncol_vm_exec(uncol_prog, 4, uncol_mem, 4, uncol_regs, 8);
+    assert(vm_ret == 0);
+    assert(uncol_regs[2] == 15);
+    assert(uncol_mem[2] == 15);
+    printf("  [PASS] UNCOL VM execution verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
