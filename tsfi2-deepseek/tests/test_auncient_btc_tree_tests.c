@@ -133,6 +133,25 @@ int main(void) {
     tsfi_dat_destroy(tree_dat);
     tsfi_trie_destroy(tree_root);
 
+    // 8. Verify hybrid Anvil + DAT .dat.bin Knowledge Graph Routing
+    printf("       [Verify] Hybrid Anvil + DAT knowledge graph routing...\n");
+    fflush(stdout);
+    tsfi_trie_node *graph_trie = tsfi_trie_create_node(0);
+    
+    // Map graph subject-predicate-object triples into paths
+    tsfi_trie_insert(graph_trie, "subject/0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/owns_token", "BTC");
+    tsfi_trie_insert(graph_trie, "subject/0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/gas_balance", "100000");
+    
+    tsfi_dat *graph_dat = tsfi_dat_compile(graph_trie);
+    assert(graph_dat != NULL);
+    
+    // Assert successful lookup routing matching the dynamic bindings resolved on-chain
+    const char *graph_res = tsfi_dat_search(graph_dat, "subject/0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266/owns_token");
+    assert(graph_res != NULL && strcmp(graph_res, "BTC") == 0);
+    
+    tsfi_dat_destroy(graph_dat);
+    tsfi_trie_destroy(graph_trie);
+
     printf("[PASS] All 2-stack BTC rails verification tests passed successfully.\n");
     fflush(stdout);
     return 0;
