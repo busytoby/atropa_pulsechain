@@ -92,7 +92,7 @@ object "FormantFilter" {
                     absOut := sub(0, output)
                     sgn := sub(0, 1)
                 }
-                if ugt(absOut, scale) {
+                if gt(absOut, scale) {
                     output := mul(mod(absOut, scale), sgn)
                 }
 
