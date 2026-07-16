@@ -199,6 +199,28 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     pc = target_pc;
                 }
             }
+        } else if (op == 0x1B) { // JNE target_pc dst src
+            if (pc + 2 < len) {
+                uint8_t target_pc = bytecode[pc++];
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4 && vm->registers[dst] != vm->registers[src]) {
+                    if (target_pc <= len) {
+                        pc = target_pc;
+                    }
+                }
+            }
+        } else if (op == 0x1C) { // JGE target_pc dst src
+            if (pc + 2 < len) {
+                uint8_t target_pc = bytecode[pc++];
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4 && vm->registers[dst] >= vm->registers[src]) {
+                    if (target_pc <= len) {
+                        pc = target_pc;
+                    }
+                }
+            }
         }
     }
 
@@ -232,9 +254,55 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
     int idx = 0;
     int loop_start_pc = -1;
     int loop_exit_placeholder_pc = -1;
+    int if_branch_placeholder_pc = -1;
+    int else_jmp_placeholder_pc = -1;
     while (idx < token_count) {
         char *t = tokens[idx];
-        if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
+        if ((strcmp(t, "IF") == 0 || strcmp(t, "if") == 0) &&
+            !(idx + 4 < token_count && strcmp(tokens[idx + 4], "jump") == 0)) {
+            if (idx + 3 < token_count) {
+                char *reg_a = tokens[idx + 1];
+                char *op = tokens[idx + 2];
+                char *reg_b = tokens[idx + 3];
+                if (reg_a[0] == 'R' && reg_b[0] == 'R') {
+                    if (strcmp(op, "==") == 0 || strcmp(op, "JEQ") == 0) {
+                        bytecode_out[pc++] = 0x1B; // JNE (jump if not equal, i.e. skip IF block)
+                        if_branch_placeholder_pc = pc;
+                        bytecode_out[pc++] = 0;
+                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                    } else if (strcmp(op, "<") == 0 || strcmp(op, "JLT") == 0) {
+                        bytecode_out[pc++] = 0x1C; // JGE (jump if greater/equal, i.e. skip IF block)
+                        if_branch_placeholder_pc = pc;
+                        bytecode_out[pc++] = 0;
+                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                    }
+                }
+                idx += 4;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "ELSE") == 0 || strcmp(t, "else") == 0) {
+            if (if_branch_placeholder_pc != -1 && pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x1A; // JUMP past ELSE block
+                else_jmp_placeholder_pc = pc;
+                bytecode_out[pc++] = 0;
+                bytecode_out[if_branch_placeholder_pc] = (uint8_t)pc;
+                if_branch_placeholder_pc = -1;
+            }
+            idx++;
+        } else if (strcmp(t, "END-IF") == 0 || strcmp(t, "end-if") == 0 || strcmp(t, "END_IF") == 0) {
+            if (if_branch_placeholder_pc != -1) {
+                bytecode_out[if_branch_placeholder_pc] = (uint8_t)pc;
+                if_branch_placeholder_pc = -1;
+            }
+            if (else_jmp_placeholder_pc != -1) {
+                bytecode_out[else_jmp_placeholder_pc] = (uint8_t)pc;
+                else_jmp_placeholder_pc = -1;
+            }
+            idx++;
+        } else if (strcmp(t, "PERFORM") == 0 || strcmp(t, "perform") == 0) {
             if (idx + 5 < token_count && (strcmp(tokens[idx + 1], "UNTIL") == 0 || strcmp(tokens[idx + 1], "until") == 0)) {
                 char *reg_a = tokens[idx + 2];
                 char *op = tokens[idx + 3];

@@ -220,6 +220,36 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL PERFORM UNTIL successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL IF-ELSE block conditionals
+    uint8_t if_bc_1[64];
+    int if_len_1 = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 5 TO R0; MOVE 5 TO R1; IF R0 == R1 MOVE 10 TO R2. ELSE MOVE 20 TO R2. END-IF.",
+        if_bc_1, 64, &if_len_1);
+    assert(res == 0);
+
+    TSFiStrategyVM if_vm_1;
+    tsfi_strategy_vm_init(&if_vm_1);
+    res = tsfi_strategy_vm_execute_bytecode(&if_vm_1, NULL, if_bc_1, if_len_1, NULL);
+    assert(res == 0);
+    assert(if_vm_1.registers[2] == 10);
+
+    uint8_t if_bc_2[64];
+    int if_len_2 = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 5 TO R0; MOVE 6 TO R1; IF R0 == R1 MOVE 10 TO R2. ELSE MOVE 20 TO R2. END-IF.",
+        if_bc_2, 64, &if_len_2);
+    assert(res == 0);
+
+    TSFiStrategyVM if_vm_2;
+    tsfi_strategy_vm_init(&if_vm_2);
+    res = tsfi_strategy_vm_execute_bytecode(&if_vm_2, NULL, if_bc_2, if_len_2, NULL);
+    assert(res == 0);
+    assert(if_vm_2.registers[2] == 20);
+
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL IF/ELSE/END-IF successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
