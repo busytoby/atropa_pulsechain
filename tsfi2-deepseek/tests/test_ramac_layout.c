@@ -641,6 +641,18 @@ int main(void) {
     assert(accum_damage > 3.77 && accum_damage < 3.79);
     printf("  [PASS] Alfred M. Freudenthal FET gate fatigue accumulation verified successfully.\n");
 
+    // 3.9.9.9.9.9.9. Alfred M. Freudenthal structural reliability safety solver
+    printf("[Test] Verifying A. M. Freudenthal Gate Oxide Reliability Index...\n");
+    double beta = 0.0, pf = 0.0;
+    int rel_ret = tsfi_s370_fet_reliability_freudenthal(10.0, 1.5, 6.0, 2.0, &beta, &pf);
+    assert(rel_ret == 0);
+    printf("  Gate breakdown Safety Index beta: %.4f, Probability of failure Pf: %.6f\n", beta, pf);
+    // denom = sqrt(1.5^2 + 2.0^2) = sqrt(2.25 + 4.0) = sqrt(6.25) = 2.5
+    // beta = (10.0 - 6.0) / 2.5 = 4.0 / 2.5 = 1.6
+    assert(beta > 1.59 && beta < 1.61);
+    assert(pf > 0.05 && pf < 0.06); // Pf = 0.5 * erfc(1.6 / 1.414) ~ 0.0548
+    printf("  [PASS] Alfred M. Freudenthal FET gate reliability index verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

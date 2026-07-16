@@ -992,3 +992,21 @@ double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, i
 
     return cumulative_damage;
 }
+
+int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_resistance,
+                                          double mean_stress, double std_stress,
+                                          double *out_beta, double *out_pf) {
+    if (std_resistance <= 0.0 || std_stress <= 0.0 || !out_beta || !out_pf) {
+        return -1;
+    }
+
+    // Reliability safety index: beta = (mu_R - mu_S) / sqrt(sigma_R^2 + sigma_S^2)
+    double denom = sqrt(std_resistance * std_resistance + std_stress * std_stress);
+    double beta = (mean_resistance - mean_stress) / denom;
+    *out_beta = beta;
+
+    // Approximate failure probability using standard normal erfc: Pf = 0.5 * erfc(beta / sqrt(2))
+    *out_pf = 0.5 * erfc(beta / sqrt(2.0));
+
+    return 0;
+}
