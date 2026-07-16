@@ -321,6 +321,48 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     }
                 }
             }
+        } else if (op == 0x23) {
+            if (pc + 1 < len) {
+                uint8_t dst_reg = bytecode[pc++];
+                uint8_t num_items = bytecode[pc++];
+                char concat_buf[128] = "";
+                int write_offset = 0;
+                for (uint8_t i = 0; i < num_items; i++) {
+                    if (pc < len) {
+                        uint8_t type = bytecode[pc++];
+                        if (type == 0) {
+                            if (pc < len) {
+                                uint8_t str_len = bytecode[pc++];
+                                if (pc + str_len <= len) {
+                                    if (write_offset + str_len < 127) {
+                                        memcpy(&concat_buf[write_offset], &bytecode[pc], str_len);
+                                        write_offset += str_len;
+                                        concat_buf[write_offset] = '\0';
+                                    }
+                                    pc += str_len;
+                                }
+                            }
+                        } else if (type == 1) {
+                            if (pc < len) {
+                                uint8_t reg = bytecode[pc++];
+                                if (reg < 4) {
+                                    int written = snprintf(&concat_buf[write_offset], 127 - write_offset, "%d", vm->registers[reg]);
+                                    if (written > 0) write_offset += written;
+                                }
+                            }
+                        } else if (type == 2) {
+                            int written = snprintf(&concat_buf[write_offset], 127 - write_offset, "%d", vm->depth_priority_scale);
+                            if (written > 0) write_offset += written;
+                        } else if (type == 3) {
+                            int written = snprintf(&concat_buf[write_offset], 127 - write_offset, "%d", vm->abductive_priority_scale);
+                            if (written > 0) write_offset += written;
+                        }
+                    }
+                }
+                if (dst_reg < 4) {
+                    vm->registers[dst_reg] = atoi(concat_buf);
+                }
+            }
         }
     }
 
@@ -614,6 +656,50 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                     } else {
                         idx++;
                     }
+                } else {
+                    idx++;
+                }
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "STRING") == 0 || strcmp(t, "string") == 0) {
+            int into_idx = idx + 1;
+            while (into_idx < token_count && strcmp(tokens[into_idx], "INTO") != 0 && strcmp(tokens[into_idx], "into") != 0) {
+                into_idx++;
+            }
+            if (into_idx + 1 < token_count) {
+                char *dst_reg = tokens[into_idx + 1];
+                int items_count = into_idx - (idx + 1);
+                if (items_count > 0 && dst_reg[0] == 'R' && dst_reg[1] >= '0' && dst_reg[1] <= '3' && dst_reg[2] == '\0' && pc + 2 < max_len) {
+                    bytecode_out[pc++] = 0x23;
+                    bytecode_out[pc++] = (uint8_t)(dst_reg[1] - '0');
+                    bytecode_out[pc++] = (uint8_t)items_count;
+                    for (int k = idx + 1; k < into_idx; k++) {
+                        char *item_tok = tokens[k];
+                        if (item_tok[0] == 'R' && item_tok[1] >= '0' && item_tok[1] <= '3' && item_tok[2] == '\0') {
+                            if (pc + 1 < max_len) {
+                                bytecode_out[pc++] = 1;
+                                bytecode_out[pc++] = (uint8_t)(item_tok[1] - '0');
+                            }
+                        } else if (strcmp(item_tok, "depth") == 0) {
+                            if (pc < max_len) {
+                                bytecode_out[pc++] = 2;
+                            }
+                        } else if (strcmp(item_tok, "abductive") == 0) {
+                            if (pc < max_len) {
+                                bytecode_out[pc++] = 3;
+                            }
+                        } else {
+                            int slen = strlen(item_tok);
+                            if (pc + 2 + slen < max_len) {
+                                bytecode_out[pc++] = 0;
+                                bytecode_out[pc++] = (uint8_t)slen;
+                                memcpy(&bytecode_out[pc], item_tok, slen);
+                                pc += slen;
+                            }
+                        }
+                    }
+                    idx = into_idx + 2;
                 } else {
                     idx++;
                 }
@@ -942,7 +1028,7 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 "EVAL", "eval", "PRUNE", "prune", "WEIGHT", "weight", "SET_REG",
                 "GET_PRIO", "get_prio", "GET_SIZE", "get_size", "LOOP_UNTIL_EMPTY", "loop_until_empty",
                 "GET_LOGIC", "get_logic", "SET", "depth", "abductive", "==", "JEQ", "<", "JLT", "jump",
-                "DISPLAY", "display", "INSPECT", "inspect", "GO", "go"
+                "DISPLAY", "display", "INSPECT", "inspect", "GO", "go", "STRING", "string"
             };
             for (size_t i = 0; i < sizeof(kws)/sizeof(kws[0]); i++) {
                 if (strcmp(t, kws[i]) == 0) {

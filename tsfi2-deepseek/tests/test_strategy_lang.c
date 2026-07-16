@@ -345,6 +345,22 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL INSPECT successfully.\n");
     fflush(stdout);
 
+    // Verify COBOL STRING statements
+    uint8_t str_bc[64];
+    int str_len = 0;
+    res = tsfi_strategy_compile_script(
+        "MOVE 5 TO R1; STRING 1 R1 INTO R0;",
+        str_bc, 64, &str_len);
+    assert(res == 0);
+
+    TSFiStrategyVM str_vm;
+    tsfi_strategy_vm_init(&str_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&str_vm, NULL, str_bc, str_len, NULL);
+    assert(res == 0);
+    assert(str_vm.registers[0] == 15);
+    printf("  [Strategy COBOL Parser] Compiled and verified COBOL STRING successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
