@@ -621,3 +621,124 @@ int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
 
     return 0; // Interruption and PSW swap completed
 }
+
+int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len) {
+    if (!zoned_str || !packed_out || max_len <= 0) return -1;
+
+    int sign = 0xC; // Default positive sign flag (C or F)
+    const char *digits = zoned_str;
+    if (zoned_str[0] == '-') {
+        sign = 0xD; // Negative sign flag
+        digits++;
+    } else if (zoned_str[0] == '+') {
+        digits++;
+    }
+
+    int len = strlen(digits);
+    if (len == 0) return -1;
+
+    // COMP-3 packed decimal format has (len + 1) / 2 bytes.
+    // If len is even, we pad with a leading zero to fit into whole bytes:
+    // e.g. 4 digits: 01 23 4C -> 3 bytes
+    int is_even = (len % 2 == 0);
+    int packed_len = (len + 2) / 2;
+    if (packed_len > max_len) return -1;
+
+    memset(packed_out, 0, packed_len);
+
+    int digit_idx = 0;
+    for (int i = 0; i < packed_len; i++) {
+        uint8_t high = 0;
+        uint8_t low = 0;
+
+        if (i == 0 && is_even) {
+            // First byte high nibble is padded zero
+            high = 0;
+            low = digits[digit_idx++] - '0';
+        } else {
+            high = digits[digit_idx++] - '0';
+            if (i == packed_len - 1) {
+                low = sign; // Last low nibble is sign C/D/F
+            } else {
+                low = digits[digit_idx++] - '0';
+            }
+        }
+
+        packed_out[i] = (high << 4) | (low & 0x0F);
+    }
+
+    return packed_len;
+}
+
+int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int max_len) {
+    if (!packed || packed_len <= 0 || !zoned_out || max_len <= 0) return -1;
+
+    int zoned_idx = 0;
+    int sign_found = 0;
+    int negative = 0;
+
+    // Temporary digits buffer
+    char digits[128];
+    int digits_idx = 0;
+
+    for (int i = 0; i < packed_len; i++) {
+        uint8_t high = (packed[i] >> 4) & 0x0F;
+        uint8_t low = packed[i] & 0x0F;
+
+        if (high > 9) return -1; // Invalid BCD digit in high nibble
+
+        if (i == 0 && high == 0) {
+            // Skip leading padding zero
+        } else {
+            digits[digits_idx++] = high + '0';
+        }
+
+        if (i == packed_len - 1) {
+            // Last low nibble is sign
+            if (low == 0xC || low == 0xF || low == 0xA || low == 0xE) {
+                negative = 0;
+            } else if (low == 0xD || low == 0xB) {
+                negative = 1;
+            } else {
+                return -1; // Invalid sign nibble
+            }
+            sign_found = 1;
+        } else {
+            if (low > 9) return -1; // Invalid BCD digit in low nibble
+            digits[digits_idx++] = low + '0';
+        }
+    }
+
+    if (!sign_found) return -1;
+
+    digits[digits_idx] = '\0';
+
+    if (negative) {
+        if (zoned_idx + 1 >= max_len) return -1;
+        zoned_out[zoned_idx++] = '-';
+    }
+
+    if (zoned_idx + digits_idx >= max_len) return -1;
+    strcpy(zoned_out + zoned_idx, digits);
+
+    return 0;
+}
+
+int tsfi_s370_packed_add(const uint8_t *a, int a_len,
+                         const uint8_t *b, int b_len,
+                         uint8_t *dest_out, int dest_max_len) {
+    char zoned_a[128];
+    char zoned_b[128];
+
+    if (tsfi_s370_unpack(a, a_len, zoned_a, sizeof(zoned_a)) != 0) return -1;
+    if (tsfi_s370_unpack(b, b_len, zoned_b, sizeof(zoned_b)) != 0) return -1;
+
+    long long val_a = atoll(zoned_a);
+    long long val_b = atoll(zoned_b);
+    long long val_sum = val_a + val_b;
+
+    char zoned_sum[128];
+    snprintf(zoned_sum, sizeof(zoned_sum), "%lld", val_sum);
+
+    return tsfi_s370_pack(zoned_sum, dest_out, dest_max_len);
+}

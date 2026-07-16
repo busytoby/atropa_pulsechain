@@ -370,45 +370,83 @@ int main(void) {
     uint8_t real_memory[1024];
     memset(real_memory, 0, sizeof(real_memory));
 
-    // Setup Program New PSW at real address 88: access control key = 2, problem state = 0 (supervisor), inst_address = 0x2000
-    real_memory[88] = (2 << 4); // key 2
-    real_memory[89] = 0x00;     // supervisor state (problem = 0)
+    real_memory[88] = (2 << 4); 
+    real_memory[89] = 0x00;     
     real_memory[92] = 0x00;
     real_memory[93] = 0x00;
     real_memory[94] = 0x20;
-    real_memory[95] = 0x00;     // 0x00002000
+    real_memory[95] = 0x00;     
 
-    // Setup CPU state and current PSW: key = 5, problem state = 1 (problem), inst_address = 0x5000
     cpu.current_psw.key = 5;
     cpu.current_psw.problem_state = 1;
     cpu.current_psw.instruction_address = 0x5000;
     cpu.psw_key = 5;
-    cpu.supervisor_state = 0; // problem state
+    cpu.supervisor_state = 0; 
 
-    // Trigger Program Interrupt with PIC 0x0004 (Protection Exception)
     int interrupt_ret = tsfi_s370_trigger_program_interrupt(&cpu, 0x0004, real_memory, 1024);
     assert(interrupt_ret == 0);
 
-    // Verify PIC stored at byte offset 142
     assert(real_memory[142] == 0x00);
     assert(real_memory[143] == 0x04);
 
-    // Verify Old PSW saved at address 40
-    assert(real_memory[40] == 0x50); // key 5
-    assert(real_memory[41] == 0x01); // problem state 1
+    assert(real_memory[40] == 0x50); 
+    assert(real_memory[41] == 0x01); 
     assert(real_memory[44] == 0x00);
     assert(real_memory[45] == 0x00);
     assert(real_memory[46] == 0x50);
-    assert(real_memory[47] == 0x00); // address 0x5000
+    assert(real_memory[47] == 0x00); 
 
-    // Verify CPU state updated to New PSW
     assert(cpu.current_psw.key == 2);
     assert(cpu.current_psw.problem_state == 0);
     assert(cpu.current_psw.instruction_address == 0x2000);
     assert(cpu.psw_key == 2);
-    assert(cpu.supervisor_state == 1); // swapped to Supervisor state
+    assert(cpu.supervisor_state == 1); 
 
     printf("  [PASS] System/370 Program Interruption & hardware PSW swap verified successfully.\n");
+
+    // 3.9.9.9.8. System/370 COMP-3 Packed Decimal COBOL-style verification
+    printf("[Test] Verifying System/370 COMP-3 Packed Decimal arithmetic...\n");
+    uint8_t packed_a[32];
+    uint8_t packed_b[32];
+    uint8_t packed_sum[32];
+
+    // Pack positive zoned string "12345" -> 12 34 5C
+    int size_a = tsfi_s370_pack("12345", packed_a, 32);
+    assert(size_a == 3);
+    assert(packed_a[0] == 0x12);
+    assert(packed_a[1] == 0x34);
+    assert(packed_a[2] == 0x5C);
+
+    char unpacked_a[128];
+    int unpack_ret1 = tsfi_s370_unpack(packed_a, size_a, unpacked_a, 128);
+    assert(unpack_ret1 == 0);
+    assert(strcmp(unpacked_a, "12345") == 0);
+
+    // Pack negative zoned string "-1234" -> 01 23 4D
+    int size_b = tsfi_s370_pack("-1234", packed_b, 32);
+    assert(size_b == 3);
+    assert(packed_b[0] == 0x01);
+    assert(packed_b[1] == 0x23);
+    assert(packed_b[2] == 0x4D);
+
+    char unpacked_b[128];
+    int unpack_ret2 = tsfi_s370_unpack(packed_b, size_b, unpacked_b, 128);
+    assert(unpack_ret2 == 0);
+    assert(strcmp(unpacked_b, "-1234") == 0);
+
+    // Add packed decimals: 12345 + (-1234) = 11111 -> 11 11 1C
+    int size_sum = tsfi_s370_packed_add(packed_a, size_a, packed_b, size_b, packed_sum, 32);
+    assert(size_sum == 3);
+    assert(packed_sum[0] == 0x11);
+    assert(packed_sum[1] == 0x11);
+    assert(packed_sum[2] == 0x1C);
+
+    char unpacked_sum[128];
+    int unpack_ret3 = tsfi_s370_unpack(packed_sum, size_sum, unpacked_sum, 128);
+    assert(unpack_ret3 == 0);
+    assert(strcmp(unpacked_sum, "11111") == 0);
+
+    printf("  [PASS] System/370 COBOL-style packed BCD arithmetic verified successfully.\n");
 
     free(disk);
 

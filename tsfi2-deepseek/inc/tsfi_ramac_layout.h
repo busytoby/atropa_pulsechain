@@ -143,8 +143,6 @@ int tsfi_ramac_check_parity(const char *str);
 int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size);
 
 // System/370 Dynamic Address Translation (DAT) translation lookup emulators
-// Returns 0 on success, -1 on translation exceptions (segment invalid/page invalid)
-// out_write_protected is populated with the Page-Protection bit (P)
 int tsfi_s370_dat_translate(uint32_t virtual_addr, 
                             tsfi_s370_segment_entry *seg_table, int seg_count,
                             tsfi_s370_page_entry *page_tables,
@@ -156,7 +154,6 @@ int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
                               uint8_t *memory_pool, int mem_size);
 
 // System/370 Storage Key hardware protection checks
-// Returns 0 if access is permitted, -1 if protection exception occurs
 int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
                                 tsfi_s370_storage_key *block_keys, int block_count);
 
@@ -176,5 +173,17 @@ int tsfi_s370_authorize_psw_key(tsfi_lau_account *account,
 // System/370 Security Hardware Program Interruption & PSW Swap handling
 int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
                                         uint8_t *real_memory, int mem_size);
+
+// System/370 COMP-3 Packed Decimal (COBOL style) Arithmetic Unit emulators
+// Packs zoned string to COMP-3 format (returns bytes written, or -1 on error)
+int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len);
+
+// Unpacks COMP-3 format to zoned string (returns 0 on success, -1 on error)
+int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int max_len);
+
+// Adds two packed decimal byte arrays directly, writing the result in packed COMP-3 format
+int tsfi_s370_packed_add(const uint8_t *a, int a_len,
+                         const uint8_t *b, int b_len,
+                         uint8_t *dest_out, int dest_max_len);
 
 #endif // TSFI_RAMAC_LAYOUT_H
