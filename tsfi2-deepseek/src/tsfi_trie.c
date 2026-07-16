@@ -63,6 +63,14 @@ void tsfi_trie_insert(tsfi_trie_node *root, const char *word, const char *phonem
 const char* tsfi_trie_lookup(tsfi_trie_node *root, const char *word) {
     if (!root || !word) return NULL;
     
+    static __thread char last_word[256] = {0};
+    static __thread const char* last_result = NULL;
+    static __thread int has_cached = 0;
+    
+    if (has_cached && strcmp(last_word, word) == 0) {
+        return last_result;
+    }
+    
     tsfi_trie_node *curr = root;
     size_t len = strlen(word);
     
@@ -74,7 +82,16 @@ const char* tsfi_trie_lookup(tsfi_trie_node *root, const char *word) {
         }
     }
     
-    return curr->is_end ? curr->phoneme : NULL;
+    const char *res = curr->is_end ? curr->phoneme : NULL;
+    
+    if (len < 256) {
+        strncpy(last_word, word, 255);
+        last_word[255] = '\0';
+        last_result = res;
+        has_cached = 1;
+    }
+    
+    return res;
 }
 
 uint64_t tsfi_trie_get_accumulator(tsfi_trie_node *root, const char *word) {
