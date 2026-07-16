@@ -290,46 +290,79 @@ int main(void) {
     printf("[Test] Verifying System/370 Privilege & Security LAP protections...\n");
     tsfi_s370_cpu_state cpu;
     
-    // Test 1: Problem state executing privileged operation SSK (Set Storage Key) should FAIL
-    cpu.supervisor_state = 0; // Problem State
+    cpu.supervisor_state = 0; 
     cpu.lap_enabled = 1;
     cpu.psw_key = 5;
     
     int priv_ret1 = tsfi_s370_validate_instruction(&cpu, "SSK");
     assert(priv_ret1 == -1);
 
-    // Test 2: Problem state executing non-privileged ADD should PASS
     int priv_ret2 = tsfi_s370_validate_instruction(&cpu, "ADD");
     assert(priv_ret2 == 0);
 
-    // Test 3: Supervisor state executing privileged SSK should PASS
-    cpu.supervisor_state = 1; // Supervisor State
+    cpu.supervisor_state = 1; 
     int priv_ret3 = tsfi_s370_validate_instruction(&cpu, "SSK");
     assert(priv_ret3 == 0);
 
-    // Test 4: Write to first 512 bytes with matching key under Problem State and LAP enabled should FAIL
-    cpu.supervisor_state = 0; // Problem State
+    cpu.supervisor_state = 0; 
     cpu.lap_enabled = 1;
-    cpu.psw_key = 0; // Master key still blocked by LAP in problem state
+    cpu.psw_key = 0; 
     int lap_ret1 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
     assert(lap_ret1 == -1);
 
-    // Test 5: Write to first 512 bytes under Supervisor State should PASS
-    cpu.supervisor_state = 1; // Supervisor State
+    cpu.supervisor_state = 1; 
     cpu.psw_key = 0;
     int lap_ret2 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
     assert(lap_ret2 == 0);
 
-    // Test 6: Write to first 512 bytes with matching key under Problem State but LAP disabled should PASS
-    cpu.supervisor_state = 0; // Problem State
-    cpu.lap_enabled = 0;      // LAP disabled
-    cpu.psw_key = 5;          // Matches block 1 key (5)
-    // 5000 is block 1. Let's make block 0 have key 5 so address 200 (block 0) matches
+    cpu.supervisor_state = 0; 
+    cpu.lap_enabled = 0;      
+    cpu.psw_key = 5;          
     block_keys[0].acc = 5;
     int lap_ret3 = tsfi_s370_validate_write(&cpu, 200, block_keys, 4);
     assert(lap_ret3 == 0);
 
     printf("  [PASS] System/370 Privilege States & LAP write validations verified successfully.\n");
+
+    // 3.9.9.9. System/370 LAU Account PKI Key Authorization
+    printf("[Test] Verifying System/370 LAU Account PKI authorization mappings...\n");
+    tsfi_lau_account user_account;
+    strcpy(user_account.account_address, "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    memset(user_account.public_key, 0xAB, 32);
+    user_account.is_admin_tier = 0;
+
+    const uint8_t message[4] = { 'A', 'U', 'T', 'H' };
+    uint8_t sig[32];
+    for (int i = 0; i < 32; i++) {
+        sig[i] = user_account.public_key[i] ^ (message[i % 4] + i);
+    }
+
+    uint8_t psw_key = 0;
+    int auth_ret1 = tsfi_s370_authorize_psw_key(&user_account, sig, 32, message, 4, &psw_key);
+    assert(auth_ret1 == 0);
+    printf("  Regular LAU verified. Authorized PSW Access Key: %d\n", psw_key);
+    assert(psw_key == ((0xAB % 15) + 1));
+
+    // Mismatched signature should FAIL
+    sig[0] ^= 0xFF;
+    int auth_ret2 = tsfi_s370_authorize_psw_key(&user_account, sig, 32, message, 4, &psw_key);
+    assert(auth_ret2 == -1);
+
+    // Supervisor LAU admin verified should yield Key 0
+    tsfi_lau_account admin_account;
+    strcpy(admin_account.account_address, "0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
+    memset(admin_account.public_key, 0xDE, 32);
+    admin_account.is_admin_tier = 1;
+
+    for (int i = 0; i < 32; i++) {
+        sig[i] = admin_account.public_key[i] ^ (message[i % 4] + i);
+    }
+    int auth_ret3 = tsfi_s370_authorize_psw_key(&admin_account, sig, 32, message, 4, &psw_key);
+    assert(auth_ret3 == 0);
+    printf("  Admin LAU verified. Authorized PSW Access Key: %d (Master Key)\n", psw_key);
+    assert(psw_key == 0);
+
+    printf("  [PASS] System/370 LAU Account PKI Key authorizations verified successfully.\n");
 
     free(disk);
 

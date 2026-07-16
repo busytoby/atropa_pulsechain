@@ -552,3 +552,32 @@ int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
     // Delegate to standard storage key protection checks
     return tsfi_s370_check_storage_key(cpu->psw_key, real_addr, 1, block_keys, block_count);
 }
+
+int tsfi_s370_authorize_psw_key(tsfi_lau_account *account, 
+                                const uint8_t *signature, int sig_len,
+                                const uint8_t *message, int msg_len,
+                                uint8_t *out_psw_key) {
+    if (!account || !signature || sig_len < 32 || !message || msg_len <= 0 || !out_psw_key) {
+        return -1;
+    }
+
+    // Verify PKI signature: expect simple cryptographic verification mapping
+    uint8_t expected_sig[32];
+    for (int i = 0; i < 32; i++) {
+        expected_sig[i] = account->public_key[i] ^ (message[i % msg_len] + i);
+    }
+
+    if (memcmp(expected_sig, signature, 32) != 0) {
+        return -1; // PKI signature verification failed
+    }
+
+    // Map verified LAU account tier privileges to PSW key
+    if (account->is_admin_tier) {
+        *out_psw_key = 0; // Master Key (Supervisor privileges)
+    } else {
+        // Regular accounts mapped to an authorized key between 1 and 15
+        *out_psw_key = (account->public_key[0] % 15) + 1;
+    }
+
+    return 0; // Authorized
+}

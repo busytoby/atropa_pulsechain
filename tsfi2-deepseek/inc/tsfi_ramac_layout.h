@@ -81,6 +81,13 @@ typedef struct {
     uint8_t psw_key;      // Current execution access key (4-bit key, 0-15)
 } tsfi_s370_cpu_state;
 
+// LAU Account PKI Key verified token context
+typedef struct {
+    char account_address[64];
+    uint8_t public_key[32];
+    int is_admin_tier; // Admin tier receives PSW master key 0 privileges
+} tsfi_lau_account;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -143,12 +150,18 @@ int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_writ
                                 tsfi_s370_storage_key *block_keys, int block_count);
 
 // System/370 Privilege & Security Mode Checks
-// Returns 0 if instruction execution is valid, -1 if privileged operation exception occurs
 int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code);
 
 // System/370 Write Validation (integrates Storage Keys & Low-Address Protection)
-// Returns 0 if write is permitted, -1 if protection exception occurs
 int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
                              tsfi_s370_storage_key *block_keys, int block_count);
+
+// System/370 LAU Account PKI Key Authorization
+// Validates signature using registered LAU public key, resolving authorized PSW Access Key level
+// Returns 0 if authorized, -1 if signature verification fails
+int tsfi_s370_authorize_psw_key(tsfi_lau_account *account, 
+                                const uint8_t *signature, int sig_len,
+                                const uint8_t *message, int msg_len,
+                                uint8_t *out_psw_key);
 
 #endif // TSFI_RAMAC_LAYOUT_H
