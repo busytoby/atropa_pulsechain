@@ -1301,6 +1301,37 @@ int main(void) {
 
     printf("  [PASS] Bendix G-20 CPU decoder and memory indexing verified successfully.\n");
 
+    // Test Scenario 7: Librascope LGP-30 Twin-Triode Flip-Flop Physical Simulation
+    printf("[Test] Verifying Librascope LGP-30 vacuum tube twin-triode flip flop...\n");
+    tsfi_lgp30_flipflop ff;
+    tsfi_lgp30_flipflop_init(&ff);
+
+    // Run simulator for 100 ticks with no triggers, it should stabilize to Triode 2 conducting
+    double dt = 1.0e-6; // 1 microsecond steps
+    for (int i = 0; i < 100; i++) {
+        tsfi_lgp30_flipflop_tick(&ff, 0.0, 0.0, dt);
+    }
+    // Triode 2 plate voltage should be low (conducting), Triode 1 plate voltage high (cutoff)
+    assert(ff.triode2_plate_v < 100.0);
+    assert(ff.triode1_plate_v > 130.0);
+
+    // Apply trigger SET pulse (e.g. +80V) to turn Triode 1 on and toggle state
+    for (int i = 0; i < 200; i++) {
+        tsfi_lgp30_flipflop_tick(&ff, 80.0, 0.0, dt);
+    }
+    // Now state should have toggled: Triode 1 conducting (low plate V), Triode 2 cutoff (high plate V)
+    assert(ff.triode1_plate_v < 100.0);
+    assert(ff.triode2_plate_v > 130.0);
+
+    // Remove trigger, run 50 ticks to ensure latching (stability)
+    for (int i = 0; i < 50; i++) {
+        tsfi_lgp30_flipflop_tick(&ff, 0.0, 0.0, dt);
+    }
+    assert(ff.triode1_plate_v < 100.0);
+    assert(ff.triode2_plate_v > 130.0);
+
+    printf("  [PASS] Librascope LGP-30 vacuum tube flip flop physical latching verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification

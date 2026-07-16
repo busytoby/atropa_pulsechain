@@ -2118,3 +2118,53 @@ int tsfi_s370_bendixg20_resolve_address(const tsfi_bendixg20_instruction *inst, 
 
     return 0;
 }
+
+void tsfi_lgp30_flipflop_init(tsfi_lgp30_flipflop *ff) {
+    if (!ff) return;
+    ff->triode1_grid_v = -2.0;
+    ff->triode1_plate_v = 150.0;
+    ff->triode2_grid_v = 0.0;
+    ff->triode2_plate_v = 50.0;
+}
+
+void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, double trigger_reset_v, double dt) {
+    if (!ff) return;
+
+    // Physical triode & nodal coupling parameters
+    double vcc = 200.0;     // Supply voltage
+    double rl = 20000.0;    // Plate load resistance
+    double r1 = 100000.0;   // Cross coupling resistor 1
+    double r2 = 50000.0;    // Cross coupling resistor 2 (asymmetric divider for bistability)
+    double bias_v = -50.0;  // Grid bias voltage reference (properly scaled to -50V)
+    double i0 = 0.002;      // Triode current scaling constant
+
+    // Calculate grid targets from cross-coupled plates using proper weighted voltage divider
+    double target_g1 = (ff->triode2_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_set_v;
+    double target_g2 = (ff->triode1_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_reset_v;
+
+    // Grid RC low-pass filter (grid charging delay ~10 us)
+    ff->triode1_grid_v += (target_g1 - ff->triode1_grid_v) * (dt / 0.00001);
+    ff->triode2_grid_v += (target_g2 - ff->triode2_grid_v) * (dt / 0.00001);
+    if (ff->triode1_grid_v > 0.0) ff->triode1_grid_v = 0.0;
+    if (ff->triode2_grid_v > 0.0) ff->triode2_grid_v = 0.0;
+
+    // Compute plate current (using 3/2 power law model of vacuum tube)
+    double ip1 = 0.0;
+    if (ff->triode1_grid_v > -6.0) {
+        ip1 = i0 * pow(ff->triode1_grid_v + 6.0, 1.5);
+    }
+    double ip2 = 0.0;
+    if (ff->triode2_grid_v > -6.0) {
+        ip2 = i0 * pow(ff->triode2_grid_v + 6.0, 1.5);
+    }
+
+    // Plate voltage targets (V = Vcc - Ip*Rl)
+    double target_p1 = vcc - ip1 * rl;
+    double target_p2 = vcc - ip2 * rl;
+    if (target_p1 < 0.0) target_p1 = 0.0;
+    if (target_p2 < 0.0) target_p2 = 0.0;
+
+    // Plate RC low-pass filter (plate charging delay ~2 us)
+    ff->triode1_plate_v += (target_p1 - ff->triode1_plate_v) * (dt / 0.000002);
+    ff->triode2_plate_v += (target_p2 - ff->triode2_plate_v) * (dt / 0.000002);
+}

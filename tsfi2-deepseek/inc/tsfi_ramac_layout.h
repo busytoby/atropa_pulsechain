@@ -165,6 +165,14 @@ typedef struct {
     uint8_t flags;
 } tsfi_bendixg20_instruction;
 
+// LGP-30 Twin-Triode Flip-Flop physical simulator structure
+typedef struct {
+    double triode1_grid_v;  // Grid voltage of Triode 1
+    double triode1_plate_v; // Plate voltage (Normal Q output)
+    double triode2_grid_v;  // Grid voltage of Triode 2
+    double triode2_plate_v; // Plate voltage (Inverted /Q output)
+} tsfi_lgp30_flipflop;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -331,7 +339,7 @@ int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status
 int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double spring_k, double damping_c,
                                        double *out_decay_charges, int steps);
 
-// SAGE AN/FSQ-7 style active-passive dual-CPU redundancy and failover state controller
+// SAGE AN/FSQ-7 active-passive dual-CPU redundancy and failover state controller
 int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *active_cpu);
 
 // Engelbart & Bourne technical information search index resolver
@@ -409,5 +417,11 @@ int tsfi_s370_bendixg20_decode(uint32_t raw_word, tsfi_bendixg20_instruction *in
 
 // Bendix G-20 memory index modification resolver
 int tsfi_s370_bendixg20_resolve_address(const tsfi_bendixg20_instruction *inst, const int *memory_pool, int mem_size, uint32_t *out_effective_address);
+
+// Initializes physical parameters of LGP-30 triode flip flop circuit
+void tsfi_lgp30_flipflop_init(tsfi_lgp30_flipflop *ff);
+
+// Physical ODE simulation tick for Librascope LGP-30 vacuum tube twin-triode flip flop bistable multivibrator
+void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, double trigger_reset_v, double dt);
 
 #endif // TSFI_RAMAC_LAYOUT_H
