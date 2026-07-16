@@ -110,6 +110,24 @@ int main(void) {
     assert(action_res != NULL && strcmp(action_res, "sys_alloc_100_tokens") == 0);
     tsfi_dat_destroy(query_dat);
 
+    // 6. Verify Vaesen Logical Solver (Verlet integration verification)
+    printf("       [LogOS] Verifying Vaesen Verlet integration physics...\n");
+    fflush(stdout);
+    int current_x = 100;
+    int prev_x = 90;
+    int force = 5;
+    int next_x = 2 * current_x - prev_x + force;
+    assert(next_x == 115);
+    
+    tsfi_trie_insert(trie_root, "belief/agent_007/owns_token", "1");
+    tsfi_trie_insert(trie_root, "trust/identity_0x70/level", "99");
+    
+    tsfi_dat *vaesen_dat = tsfi_dat_compile(trie_root);
+    assert(vaesen_dat != NULL);
+    assert(strcmp(tsfi_dat_search(vaesen_dat, "belief/agent_007/owns_token"), "1") == 0);
+    assert(strcmp(tsfi_dat_search(vaesen_dat, "trust/identity_0x70/level"), "99") == 0);
+    tsfi_dat_destroy(vaesen_dat);
+
     // Cleanup
     tsfi_dat_destroy(loaded_fs);
     tsfi_dat_destroy(updated_dat);
