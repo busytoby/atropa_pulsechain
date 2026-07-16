@@ -1801,3 +1801,70 @@ int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int
 
     return 0;
 }
+
+void tsfi_s370_zmm_lock_init(tsfi_zmm_lock_registry *registry) {
+    if (!registry) return;
+    for (int i = 0; i < RAMAC_CYLINDERS; i++) {
+        registry->locked_cylinders[i] = 0;
+        registry->cylinder_owners[i] = -1;
+        registry->lock_ticks[i] = 0;
+    }
+}
+
+int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder, int lock_mode,
+                               uint64_t current_tick, int initiator_priority) {
+    if (!registry || cylinder < 0 || cylinder >= RAMAC_CYLINDERS) {
+        return -1;
+    }
+    if (lock_mode != 1 && lock_mode != 2) {
+        return -1;
+    }
+
+    // 1. Timeout Eviction Check: evict active locks if stale (> 1000 ticks)
+    if (registry->locked_cylinders[cylinder] != 0) {
+        if (current_tick - registry->lock_ticks[cylinder] > 1000) {
+            registry->locked_cylinders[cylinder] = 0;
+            registry->cylinder_owners[cylinder] = -1;
+        }
+    }
+
+    // 2. Grant lock if Unlocked
+    if (registry->locked_cylinders[cylinder] == 0) {
+        registry->locked_cylinders[cylinder] = lock_mode;
+        registry->cylinder_owners[cylinder] = initiator_id;
+        registry->lock_ticks[cylinder] = current_tick;
+        return 0; // Success
+    }
+
+    // 3. Shared Read concurrent access check
+    if (registry->locked_cylinders[cylinder] == 1 && lock_mode == 1) {
+        // Shared lock permits concurrent reads. For simplicity we let the primary owner remain
+        return 0; // Success
+    }
+
+    // 4. Lock Conflict & Priority Preemption Check
+    // High priority initiator (priority > 5) can preempt locks held by lower priority owners
+    if (initiator_priority > 5) {
+        registry->locked_cylinders[cylinder] = lock_mode;
+        registry->cylinder_owners[cylinder] = initiator_id;
+        registry->lock_ticks[cylinder] = current_tick;
+        return 2; // Preempted success
+    }
+
+    return -2; // Lock Denied (Conflict)
+}
+
+int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder) {
+    if (!registry || cylinder < 0 || cylinder >= RAMAC_CYLINDERS) {
+        return -1;
+    }
+
+    if (registry->cylinder_owners[cylinder] == initiator_id) {
+        registry->locked_cylinders[cylinder] = 0;
+        registry->cylinder_owners[cylinder] = -1;
+        registry->lock_ticks[cylinder] = 0;
+        return 0; // Success
+    }
+
+    return -1; // Denied: releasing an unowned lock
+}

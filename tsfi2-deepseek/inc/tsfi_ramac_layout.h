@@ -133,6 +133,13 @@ typedef struct {
     int address;     // Memory address or immediate value or jump label index
 } tsfi_uncol_instruction;
 
+// ZMM transaction lock registry for parallel storage routing
+typedef struct {
+    int locked_cylinders[RAMAC_CYLINDERS]; // 0: Unlocked, 1: Shared Read, 2: Exclusive Write
+    int cylinder_owners[RAMAC_CYLINDERS];   // Owner initiator ID (or -1)
+    uint64_t lock_ticks[RAMAC_CYLINDERS];  // Tick stamp for timeout eviction
+} tsfi_zmm_lock_registry;
+
 // Translates a flat index to CHS coordinates
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index);
 
@@ -348,5 +355,11 @@ int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int
                                               uint8_t *scsi_status_array, uint8_t *data_reg_array,
                                               const uint8_t **streams, const int *stream_lens,
                                               tsfi_ramac_record *disk, int *out_route_map);
+
+// ZMM Lock Registry Interface
+void tsfi_s370_zmm_lock_init(tsfi_zmm_lock_registry *registry);
+int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder, int lock_mode,
+                               uint64_t current_tick, int initiator_priority);
+int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder);
 
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -1076,6 +1076,31 @@ int main(void) {
     free(poly_disk);
     printf("  [PASS] Polymorphic WinchesterMQ SCSI routing verified successfully.\n");
 
+    // 3.9.9.9.9.9.9.9.9.9.9.9.9. ZMM Lock Registry Verification
+    printf("[Test] Verifying ZMM lock registry...\n");
+    tsfi_zmm_lock_registry zmm_locks;
+    tsfi_s370_zmm_lock_init(&zmm_locks);
+
+    // Acquire shared lock on cylinder 5 (initiator 1, priority 2)
+    int acq1 = tsfi_s370_zmm_lock_acquire(&zmm_locks, 1, 5, 1, 100, 2);
+    assert(acq1 == 0);
+
+    // Try to acquire conflicting exclusive lock on cylinder 5 (initiator 2, priority 2) -> denied
+    int acq2 = tsfi_s370_zmm_lock_acquire(&zmm_locks, 2, 5, 2, 101, 2);
+    assert(acq2 == -2);
+
+    // Try to acquire exclusive lock with high priority (initiator 3, priority 8) -> preempted success
+    int acq3 = tsfi_s370_zmm_lock_acquire(&zmm_locks, 3, 5, 2, 102, 8);
+    assert(acq3 == 2);
+    assert(zmm_locks.cylinder_owners[5] == 3);
+
+    // Release owned lock
+    int rel1 = tsfi_s370_zmm_lock_release(&zmm_locks, 3, 5);
+    assert(rel1 == 0);
+    assert(zmm_locks.locked_cylinders[5] == 0);
+
+    printf("  [PASS] ZMM lock registry verified successfully.\n");
+
     free(disk);
 
     // 4. Layout Optimization Verification
