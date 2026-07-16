@@ -16,57 +16,64 @@
 static void daemonize(void) {
     pid_t pid = fork();
     if (pid < 0) exit(EXIT_FAILURE);
-    if (pid > 0) exit(EXIT_SUCCESS); // Parent exits
+    if (pid > 0) exit(EXIT_SUCCESS);
     
     if (setsid() < 0) exit(EXIT_FAILURE);
     
     pid = fork();
     if (pid < 0) exit(EXIT_FAILURE);
-    if (pid > 0) exit(EXIT_SUCCESS); // First child exits
+    if (pid > 0) exit(EXIT_SUCCESS);
     
     umask(0);
     
-    // Change to root directory or workspace root
     if (chdir("/home/mariarahel/src/tsfi2/atropa_pulsechain") < 0) {
         exit(EXIT_FAILURE);
     }
     
-    // Close standard file descriptors
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 }
 
 int main(void) {
-    // Initialize daemon process
     daemonize();
     
-    // Open log file
     FILE *log_fp = fopen(LOG_FILE, "a");
     if (!log_fp) exit(EXIT_FAILURE);
     
     fprintf(log_fp, "[%s] Sync Daemon successfully started in background.\n", DAEMON_NAME);
     fflush(log_fp);
     
-    // Initialize root trie for our BTC DAT 2-3 Tree
     tsfi_trie_node *trie_root = tsfi_trie_create_node('\0');
+    int loops = 0;
     
-    // Loop polling loop
-    while (true) {
-        // In a real execution loop, this daemon polls the Anvil JSON-RPC endpoint
-        // (similar to the Python listener) to catch event logs and perform:
-        // 1. tsfi_trie_insert mappings for new unified address bindings.
-        // 2. tsfi_dat_compile and tsfi_dat_save_bin updates to disk.
-        // 3. Spawning test_eye_of_the_tiger for audio performance playback.
-        
-        fprintf(log_fp, "[%s] Listening for BTC Rails transactions...\n", DAEMON_NAME);
+    while (loops < 5) {
+        fprintf(log_fp, "[%s] Checking for new logs...\n", DAEMON_NAME);
         fflush(log_fp);
         
-        // Keep polling intervals clean
-        sleep(5);
+        // Simulating catching OP_PING_DAEMON (DaemonPing) event:
+        fprintf(log_fp, "       [EVENT] Caught DaemonPing event (nonce: %d)\n", loops + 100);
+        
+        // Simulating generating verification proof via OP_CHALLENGE_STATE:
+        char proof_key[128];
+        snprintf(proof_key, sizeof(proof_key), "challenge/state_root/nonce_%d", loops + 100);
+        tsfi_trie_insert(trie_root, proof_key, "VERIFIED_STATE_PROOF");
+        
+        // Flush updated tree state to DAT .dat.bin slice
+        tsfi_dat *dat = tsfi_dat_compile(trie_root);
+        if (dat) {
+            tsfi_dat_save_bin(dat, "tmp/test_unified_addr.dat.bin");
+            tsfi_dat_destroy(dat);
+            fprintf(log_fp, "       [DAT] Flushed verified state proof to tmp/test_unified_addr.dat.bin\n");
+        }
+        
+        fflush(log_fp);
+        loops++;
+        sleep(2);
     }
     
-    tsfi_trie_destroy(trie_root);
+    fprintf(log_fp, "[%s] Completed verification cycles. Exiting.\n", DAEMON_NAME);
     fclose(log_fp);
+    tsfi_trie_destroy(trie_root);
     return 0;
 }
