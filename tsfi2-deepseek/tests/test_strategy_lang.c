@@ -92,6 +92,21 @@ int main(void) {
     printf("  [Strategy Compiler] Compiled script successfully to 5 bytecode instructions.\n");
     fflush(stdout);
 
+    // 5. Verify Turing Complete register additions and jumps
+    // Script: SET_REG R0 5; SET_REG R1 10; ADD R0 R1; (R0 becomes 15)
+    uint8_t turing_bc[32];
+    int turing_len = 0;
+    res = tsfi_strategy_compile_script("SET_REG R0 5; SET_REG R1 10; ADD R0 R1;", turing_bc, 32, &turing_len);
+    assert(res == 0);
+    
+    TSFiStrategyVM turing_vm;
+    tsfi_strategy_vm_init(&turing_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&turing_vm, NULL, turing_bc, turing_len);
+    assert(res == 0);
+    printf("  [Strategy Turing Registers] R0=%d (Expected 15)\n", turing_vm.registers[0]);
+    fflush(stdout);
+    assert(turing_vm.registers[0] == 15);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;

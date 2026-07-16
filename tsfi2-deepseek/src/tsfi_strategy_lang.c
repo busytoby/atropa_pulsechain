@@ -8,6 +8,7 @@ void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     vm->depth_priority_scale = 1;
     vm->abductive_priority_scale = 1;
     vm->executed_evals = 0;
+    memset(vm->registers, 0, sizeof(vm->registers));
 }
 
 // Restore heap invariants after priority mutations
@@ -137,6 +138,52 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                     }
                 }
             }
+        } else if (op == 0x10) { // ADD dst src
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4) {
+                    vm->registers[dst] += vm->registers[src];
+                }
+            }
+        } else if (op == 0x11) { // SUB dst src
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4) {
+                    vm->registers[dst] -= vm->registers[src];
+                }
+            }
+        } else if (op == 0x12) { // JEQ target_pc dst src
+            if (pc + 2 < len) {
+                uint8_t target_pc = bytecode[pc++];
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4 && vm->registers[dst] == vm->registers[src]) {
+                    if (target_pc < len) {
+                        pc = target_pc;
+                    }
+                }
+            }
+        } else if (op == 0x13) { // JLT target_pc dst src
+            if (pc + 2 < len) {
+                uint8_t target_pc = bytecode[pc++];
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst < 4 && src < 4 && vm->registers[dst] < vm->registers[src]) {
+                    if (target_pc < len) {
+                        pc = target_pc;
+                    }
+                }
+            }
+        } else if (op == 0x14) { // SET_REG reg val
+            if (pc + 1 < len) {
+                uint8_t reg = bytecode[pc++];
+                uint8_t val = bytecode[pc++];
+                if (reg < 4) {
+                    vm->registers[reg] = val;
+                }
+            }
         }
     }
 
@@ -186,6 +233,50 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 bytecode_out[pc++] = 0x05; // OP_WEIGHT
                 bytecode_out[pc++] = (uint8_t)atoi(subgoal_str);
                 bytecode_out[pc++] = (uint8_t)atoi(weight_str);
+            }
+        } else if (strcmp(token, "SET_REG") == 0) {
+            char *reg_str = strtok(NULL, " ;");
+            char *val_str = strtok(NULL, " ;");
+            if (reg_str && val_str && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x14; // SET_REG
+                bytecode_out[pc++] = (uint8_t)(reg_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)atoi(val_str);
+            }
+        } else if (strcmp(token, "ADD") == 0) {
+            char *dst_str = strtok(NULL, " ;");
+            char *src_str = strtok(NULL, " ;");
+            if (dst_str && src_str && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x10; // ADD
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)(src_str[1] - '0');
+            }
+        } else if (strcmp(token, "SUB") == 0) {
+            char *dst_str = strtok(NULL, " ;");
+            char *src_str = strtok(NULL, " ;");
+            if (dst_str && src_str && pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x11; // SUB
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)(src_str[1] - '0');
+            }
+        } else if (strcmp(token, "JEQ") == 0) {
+            char *target_str = strtok(NULL, " ;");
+            char *dst_str = strtok(NULL, " ;");
+            char *src_str = strtok(NULL, " ;");
+            if (target_str && dst_str && src_str && pc + 3 < max_len) {
+                bytecode_out[pc++] = 0x12; // JEQ
+                bytecode_out[pc++] = (uint8_t)atoi(target_str);
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)(src_str[1] - '0');
+            }
+        } else if (strcmp(token, "JLT") == 0) {
+            char *target_str = strtok(NULL, " ;");
+            char *dst_str = strtok(NULL, " ;");
+            char *src_str = strtok(NULL, " ;");
+            if (target_str && dst_str && src_str && pc + 3 < max_len) {
+                bytecode_out[pc++] = 0x13; // JLT
+                bytecode_out[pc++] = (uint8_t)atoi(target_str);
+                bytecode_out[pc++] = (uint8_t)(dst_str[1] - '0');
+                bytecode_out[pc++] = (uint8_t)(src_str[1] - '0');
             }
         }
         token = strtok(NULL, " ;");
