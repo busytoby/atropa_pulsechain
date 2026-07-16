@@ -71,3 +71,25 @@ const TSFiSubgoalEntry* tsfi_anvil_vm_lookup_subgoal(TSFiAnvilVM *vm, const char
 
     return NULL;
 }
+
+int tsfi_anvil_vm_execute(TSFiAnvilVM *vm, const int *bytecode, int len, float prior_h, float prior_e, float threshold) {
+    if (!vm || !bytecode || len <= 0) return -1;
+    
+    int pc = 0;
+    while (pc < len) {
+        int op = bytecode[pc++];
+        if (op == 0x5A) { // OP_VERIFY_ABDUCTIVE
+            // Calculate abductive relation: P(H|E) = (P(H) * 0.8) / P(E)
+            float posterior = (prior_h * 0.8f) / (prior_e > 0.0f ? prior_e : 1.0f);
+            if (posterior < threshold) {
+                // Assert fail: trigger WAM backtrack unbinding!
+                tsfi_anvil_vm_backtrack(vm, 0);
+                return 0; // Verification failed
+            }
+        } else if (op == 0x5B) { // OP_BACKTRACK_RAIL
+            tsfi_anvil_vm_backtrack(vm, 0);
+            return 0;
+        }
+    }
+    return 1; // Passed abductive verification rails
+}

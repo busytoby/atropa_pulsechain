@@ -44,4 +44,7 @@ void tsfi_anvil_vm_memoize_subgoal(TSFiAnvilVM *vm, const char *key, const char 
 // Retrieve memoized subgoal
 const TSFiSubgoalEntry* tsfi_anvil_vm_lookup_subgoal(TSFiAnvilVM *vm, const char *key);
 
+// Run abductive logic verification bytecode
+int tsfi_anvil_vm_execute(TSFiAnvilVM *vm, const int *bytecode, int len, float prior_h, float prior_e, float threshold);
+
 #endif // TSFI_ANVIL_VM_H

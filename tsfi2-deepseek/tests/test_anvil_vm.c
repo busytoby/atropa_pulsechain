@@ -47,6 +47,22 @@ int main(void) {
     const TSFiSubgoalEntry *retained_entry = tsfi_anvil_vm_lookup_subgoal(&vm, "svdag/relation/0");
     assert(retained_entry != NULL);
 
+    // 4. Verify Abductive Verification Bytecode Rails
+    // P(H)=0.6, P(E)=0.5, Posterior = (0.6*0.8)/0.5 = 0.96.
+    // If threshold=0.90, this should pass!
+    int bytecode_pass[1] = { 0x5A };
+    int status = tsfi_anvil_vm_execute(&vm, bytecode_pass, 1, 0.6f, 0.5f, 0.90f);
+    printf("  [Anvil Exec] Pass status: %d (Expected 1)\n", status);
+    fflush(stdout);
+    assert(status == 1);
+
+    // If threshold=0.98, this should fail and backtrack!
+    status = tsfi_anvil_vm_execute(&vm, bytecode_pass, 1, 0.6f, 0.5f, 0.98f);
+    printf("  [Anvil Exec] Fail status: %d (Expected 0)\n", status);
+    fflush(stdout);
+    assert(status == 0);
+    assert(vm.trail_len == 0);
+
     printf("[PASS] WAM Trail backtracking and subgoal memoization verified successfully!\n");
     fflush(stdout);
     return 0;
