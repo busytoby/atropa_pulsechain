@@ -99,6 +99,24 @@ The simulation workspace integrates a specialized **2-stack BTC Script emulator*
 *   **Isolated Custom Logging:** To keep nested transfers isolated from standard ERC-20 indexing monitors, `nested_transfer` transactions do not emit standard ERC-20 `Transfer` events; instead, they emit a custom `NestedTransfer` event containing the path addresses.
 *   **Double-Array Trie (DAT) Persistence:** The dynamic structural state of the 2-3 tree is maintained as a persistent Double-Array Trie database slice saved on disk strictly as `.dat.bin` binary files (never JSON).
 
+### Double-Array Trie (DAT) Construction on the Rails
+The DAT maps sparse string keys (logical paths and addresses) into two compact, contiguous integer arrays (`base` and `check`) to achieve $O(1)$ lookup times.
+1.  **State Transition Equation:** For a state transition from state $s$ to state $t$ on character input $c$:
+    $$t = \text{base}[s] + c$$
+    $$\text{check}[t] = s$$
+2.  **Tail Compression:** Single-child paths are compressed into a separate `tail` character array. The `base` entry is set to a negative value pointing to the tail offset:
+    $$\text{base}[s] = -(\text{tail\_offset} + 1)$$
+3.  **Rails Interpreter Mapping:** During execution verification, the witness script translates string-key traversals into offset lookups. The VM resolves character transitions inside the 32KB stack memory boundary, checking only state index boundaries.
+
+### 2-3 Tree Construction over the DAT
+2-3 trees are self-balancing search trees where nodes can contain either one value and two children (2-nodes) or two values and three children (3-nodes).
+1.  **Logical Path Mapping:** Nodes are flattened into character-based logical structures in the trie:
+    *   `tree_root/type` $\rightarrow$ `"2-node"`
+    *   `tree_root/val1` $\rightarrow$ `Value` (as a 256-bit hash identifier)
+    *   `tree_root/left` $\rightarrow$ `"tree_node_left_child_hash"`
+2.  **Unification Traversals:** To query or insert value $X$, the verification script compares $X$ to the node's values (`val1` and `val2`) on the VM stack, dynamically resolving the next path string key (e.g. `tree_node_left_child_hash/val1`) via the unification dereferencer.
+3.  **Splits and Backtracking:** When inserting a value into a 3-node causes it to overflow, the node splits into two 2-nodes, promoting the middle value. The backtracking trail array tracks the traversed path keys. The script unwinds this trail on the alternate stack (`altstack`), updating the `left`, `middle`, and `right` child bindings in the trie mapping to reconstruct the balanced tree.
+
 ### Running the Verification Suite
 Compile and execute the C unit tests:
 ```bash
