@@ -1125,6 +1125,22 @@ int main(void) {
     assert(report.current_page == 1);
     printf("  [PASS] COBOL RWCS report generation and subtotal cross-footing verified.\n");
 
+    // 66. COBOL MCS (Message Control System) over WinchesterMQ Verification
+    printf("[Test] Verifying COBOL MCS over WinchesterMQ message routing...\n");
+    tsfi_mcs_queue mcs_q;
+    tsfi_mcs_init(&mcs_q, "WMQ_TRANS_Q");
+    
+    int send_res = tsfi_mcs_send(&mcs_q, "TX01", NULL);
+    assert(send_res == 0);
+    assert(mcs_q.count == 1);
+    
+    char rec_buf[32];
+    int rec_res = tsfi_mcs_receive(&mcs_q, rec_buf, sizeof(rec_buf));
+    assert(rec_res == 0);
+    assert(strcmp(rec_buf, "TX01") == 0);
+    assert(mcs_q.count == 0);
+    printf("  [PASS] COBOL MCS over WinchesterMQ transaction queueing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

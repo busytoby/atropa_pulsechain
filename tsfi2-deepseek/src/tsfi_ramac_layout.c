@@ -1,5 +1,6 @@
 #include "tsfi_ramac_layout.h"
 #include "tsfi_strategy_lang.h"
+#include "tsfi_winchester_bridge.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5481,4 +5482,40 @@ int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len) {
                            rep->final_total);
     rep->current_line += 3;
     return written;
+}
+
+void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_mcs_queue));
+    if (name) {
+        strncpy(q->queue_name, name, sizeof(q->queue_name) - 1);
+    }
+}
+
+int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
+    if (!q || !msg) return -1;
+    if (q->count >= 8) return -2;
+    strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
+    q->tail = (q->tail + 1) % 8;
+    q->count++;
+    TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
+    if (wmq) {
+        wmq->registers.status_reg = 1;
+        wmq->registers.keycode_reg = 32;
+        uint32_t packed_word = 0;
+        memcpy(&packed_word, msg, (strlen(msg) < 4) ? strlen(msg) : 4);
+        wmq->registers.data_reg = packed_word;
+        tsfi_winchester_bridge_handshake(wmq);
+    }
+    return 0;
+}
+
+int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len) {
+    if (!q || !msg_out || max_len == 0) return -1;
+    if (q->count == 0) return -2;
+    strncpy(msg_out, q->messages[q->head], max_len - 1);
+    msg_out[max_len - 1] = '\0';
+    q->head = (q->head + 1) % 8;
+    q->count--;
+    return 0;
 }
