@@ -1485,6 +1485,31 @@ int main(void) {
     assert(sorted_keys[2] == 300);
     printf("  [PASS] Single-Level Store addressing and logical access path indexing verified.\n");
 
+    // 142. IBM 3848 Cryptographic Subsystem Simulation Verification
+    printf("[Test] Verifying IBM 3848 Cryptographic Subsystem...\n");
+    tsfi_crypto_subsystem crypto;
+    tsfi_crypto_init(&crypto);
+    assert(crypto.is_key_loaded == 0);
+    
+    uint8_t plaintext[8] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 };
+    uint8_t ciphertext[8] = { 0 };
+    uint8_t decrypted[8] = { 0 };
+    
+    // Load master key
+    assert(tsfi_crypto_load_master_key(&crypto, 0xDEADBEEFCAFEBABEULL) == 0);
+    assert(crypto.is_key_loaded == 1);
+    
+    // Privilege check (Problem State should fail with -2)
+    assert(tsfi_crypto_encrypt(&crypto, plaintext, ciphertext, 0) == -2);
+    
+    // Encrypt in Supervisor State (should succeed)
+    assert(tsfi_crypto_encrypt(&crypto, plaintext, ciphertext, 1) == 0);
+    
+    // Decrypt in Supervisor State (should succeed and restore plaintext)
+    assert(tsfi_crypto_decrypt(&crypto, ciphertext, decrypted, 1) == 0);
+    assert(memcmp(plaintext, decrypted, 8) == 0);
+    printf("  [PASS] 3848 Cryptographic Feistel encryption and supervisor state locks validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

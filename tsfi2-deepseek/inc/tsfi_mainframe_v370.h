@@ -558,4 +558,15 @@ int tsfi_s38_create_object(tsfi_s38_store *store, uint64_t addr, const char *nam
 int tsfi_s38_insert_physical(tsfi_s38_store *store, const char *pf_name, const char *data, int key_val);
 int tsfi_s38_query_logical_path(const tsfi_s38_store *store, const char *lf_name, int *out_keys, int max_keys);
 
+// Scenario 142: IBM 3848 Cryptographic Subsystem Simulation
+typedef struct {
+    uint64_t master_key;
+    int is_key_loaded;
+} tsfi_crypto_subsystem;
+
+void tsfi_crypto_init(tsfi_crypto_subsystem *crypto);
+int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_key);
+int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int supervisor_state);
+int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int supervisor_state);
+
 #endif // TSFI_MAINFRAME_V370_H

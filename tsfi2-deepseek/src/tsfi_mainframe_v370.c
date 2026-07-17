@@ -1622,3 +1622,77 @@ int tsfi_s38_query_logical_path(const tsfi_s38_store *store, const char *lf_name
     
     return count;
 }
+
+void tsfi_crypto_init(tsfi_crypto_subsystem *crypto) {
+    if (!crypto) return;
+    crypto->master_key = 0;
+    crypto->is_key_loaded = 0;
+}
+
+int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_key) {
+    if (!crypto) return -1;
+    crypto->master_key = master_key;
+    crypto->is_key_loaded = 1;
+    return 0;
+}
+
+int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int supervisor_state) {
+    if (!crypto || !plain || !cipher) return -1;
+    if (!supervisor_state) return -2; // Security privilege check
+    if (!crypto->is_key_loaded) return -3;
+    
+    // Feistel structure simulation on 64-bit blocks
+    uint32_t left = ((uint32_t)plain[0] << 24) | ((uint32_t)plain[1] << 16) | ((uint32_t)plain[2] << 8) | plain[3];
+    uint32_t right = ((uint32_t)plain[4] << 24) | ((uint32_t)plain[5] << 16) | ((uint32_t)plain[6] << 8) | plain[7];
+    
+    // Round 1
+    uint32_t temp = left;
+    left = right;
+    right = temp ^ (left ^ (uint32_t)(crypto->master_key & 0xFFFFFFFF));
+    
+    // Round 2
+    temp = left;
+    left = right;
+    right = temp ^ (left ^ (uint32_t)((crypto->master_key >> 32) & 0xFFFFFFFF));
+    
+    cipher[0] = (left >> 24) & 0xFF;
+    cipher[1] = (left >> 16) & 0xFF;
+    cipher[2] = (left >> 8) & 0xFF;
+    cipher[3] = left & 0xFF;
+    cipher[4] = (right >> 24) & 0xFF;
+    cipher[5] = (right >> 16) & 0xFF;
+    cipher[6] = (right >> 8) & 0xFF;
+    cipher[7] = right & 0xFF;
+    
+    return 0;
+}
+
+int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int supervisor_state) {
+    if (!crypto || !cipher || !plain) return -1;
+    if (!supervisor_state) return -2;
+    if (!crypto->is_key_loaded) return -3;
+    
+    uint32_t left = ((uint32_t)cipher[0] << 24) | ((uint32_t)cipher[1] << 16) | ((uint32_t)cipher[2] << 8) | cipher[3];
+    uint32_t right = ((uint32_t)cipher[4] << 24) | ((uint32_t)cipher[5] << 16) | ((uint32_t)cipher[6] << 8) | cipher[7];
+    
+    // Reverse Round 2
+    uint32_t temp = right;
+    right = left;
+    left = temp ^ (right ^ (uint32_t)((crypto->master_key >> 32) & 0xFFFFFFFF));
+    
+    // Reverse Round 1
+    temp = right;
+    right = left;
+    left = temp ^ (right ^ (uint32_t)(crypto->master_key & 0xFFFFFFFF));
+    
+    plain[0] = (left >> 24) & 0xFF;
+    plain[1] = (left >> 16) & 0xFF;
+    plain[2] = (left >> 8) & 0xFF;
+    plain[3] = left & 0xFF;
+    plain[4] = (right >> 24) & 0xFF;
+    plain[5] = (right >> 16) & 0xFF;
+    plain[6] = (right >> 8) & 0xFF;
+    plain[7] = right & 0xFF;
+    
+    return 0;
+}
