@@ -1137,6 +1137,34 @@ int main(void) {
     assert(virtual_tape.current_pointer == 0);
     printf("  [PASS] VM/370 CMS virtual tape write, marks, and skip actions verified.\n");
 
+    // 129. z/VM Virtual Switch (VSwitch) Controller Verification
+    printf("[Test] Verifying z/VM VSwitch Controller...\n");
+    tsfi_zvm_vswitch_manager vsw_mgr;
+    tsfi_zvm_vswitch_init(&vsw_mgr);
+    
+    // Define a VSwitch
+    assert(tsfi_zvm_vswitch_define(&vsw_mgr, "VSWITCH1", 0x1000) == 0);
+    // Duplicate define should fail
+    assert(tsfi_zvm_vswitch_define(&vsw_mgr, "VSWITCH1", 0x1001) == -2);
+    
+    // Couple guests
+    assert(tsfi_zvm_vswitch_couple(&vsw_mgr, "VSWITCH1", "LINUX01", 0x0600) == 0);
+    assert(tsfi_zvm_vswitch_couple(&vsw_mgr, "VSWITCH1", "LINUX02", 0x0600) == 0);
+    
+    // Transmit packets
+    assert(tsfi_zvm_vswitch_transmit(&vsw_mgr, "VSWITCH1", 50) == 0);
+    assert(tsfi_zvm_vswitch_transmit(&vsw_mgr, "VSWITCH1", 75) == 0);
+    
+    // Query VSwitch state
+    int ports = 0, packets = 0;
+    assert(tsfi_zvm_vswitch_query(&vsw_mgr, "VSWITCH1", &ports, &packets) == 0);
+    assert(ports == 2);
+    assert(packets == 125);
+    
+    // Couple to unknown VSwitch should fail
+    assert(tsfi_zvm_vswitch_couple(&vsw_mgr, "VSWITCH2", "LINUX01", 0x0600) == -1);
+    printf("  [PASS] z/VM VSwitch definition, guest coupling, and packet transmission verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

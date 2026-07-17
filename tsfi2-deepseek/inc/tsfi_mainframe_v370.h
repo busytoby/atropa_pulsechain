@@ -308,4 +308,32 @@ int tsfi_cms_tape_read_record(tsfi_cms_tape_drive *tape, char *out_record, int m
 int tsfi_cms_tape_rewind(tsfi_cms_tape_drive *tape);
 int tsfi_cms_tape_skip_file(tsfi_cms_tape_drive *tape, int count);
 
+// z/VM Virtual Switch (VSwitch) Controller
+#define MAX_VSWITCH_PORTS 8
+typedef struct {
+    char userid[16];
+    uint32_t vdev;
+    int is_coupled;
+} tsfi_zvm_vswitch_port;
+
+typedef struct {
+    char name[16];
+    uint32_t rdev;
+    tsfi_zvm_vswitch_port ports[MAX_VSWITCH_PORTS];
+    int port_count;
+    int packet_count;
+} tsfi_zvm_vswitch;
+
+#define MAX_VSWITCHES 4
+typedef struct {
+    tsfi_zvm_vswitch switches[MAX_VSWITCHES];
+    int count;
+} tsfi_zvm_vswitch_manager;
+
+void tsfi_zvm_vswitch_init(tsfi_zvm_vswitch_manager *mgr);
+int tsfi_zvm_vswitch_define(tsfi_zvm_vswitch_manager *mgr, const char *name, uint32_t rdev);
+int tsfi_zvm_vswitch_couple(tsfi_zvm_vswitch_manager *mgr, const char *name, const char *userid, uint32_t vdev);
+int tsfi_zvm_vswitch_transmit(tsfi_zvm_vswitch_manager *mgr, const char *name, int packets);
+int tsfi_zvm_vswitch_query(const tsfi_zvm_vswitch_manager *mgr, const char *name, int *out_ports, int *out_packets);
+
 #endif // TSFI_MAINFRAME_V370_H

@@ -864,3 +864,83 @@ int tsfi_cms_tape_skip_file(tsfi_cms_tape_drive *tape, int count) {
     }
     return 0;
 }
+
+void tsfi_zvm_vswitch_init(tsfi_zvm_vswitch_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_zvm_vswitch_manager));
+}
+
+int tsfi_zvm_vswitch_define(tsfi_zvm_vswitch_manager *mgr, const char *name, uint32_t rdev) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->switches[i].name, name) == 0) {
+            return -2;
+        }
+    }
+    if (mgr->count >= MAX_VSWITCHES) return -1;
+    
+    tsfi_zvm_vswitch *sw = &mgr->switches[mgr->count];
+    strncpy(sw->name, name, sizeof(sw->name) - 1);
+    sw->name[sizeof(sw->name) - 1] = '\0';
+    sw->rdev = rdev;
+    sw->port_count = 0;
+    sw->packet_count = 0;
+    memset(sw->ports, 0, sizeof(sw->ports));
+    
+    mgr->count++;
+    return 0;
+}
+
+int tsfi_zvm_vswitch_couple(tsfi_zvm_vswitch_manager *mgr, const char *name, const char *userid, uint32_t vdev) {
+    if (!mgr || !name || !userid) return -1;
+    int idx = -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->switches[i].name, name) == 0) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx == -1) return -1;
+    
+    tsfi_zvm_vswitch *sw = &mgr->switches[idx];
+    if (sw->port_count >= MAX_VSWITCH_PORTS) return -2;
+    
+    // Check if already coupled
+    for (int p = 0; p < sw->port_count; p++) {
+        if (strcmp(sw->ports[p].userid, userid) == 0 && sw->ports[p].vdev == vdev) {
+            sw->ports[p].is_coupled = 1;
+            return 0;
+        }
+    }
+    
+    tsfi_zvm_vswitch_port *port = &sw->ports[sw->port_count];
+    strncpy(port->userid, userid, sizeof(port->userid) - 1);
+    port->userid[sizeof(port->userid) - 1] = '\0';
+    port->vdev = vdev;
+    port->is_coupled = 1;
+    sw->port_count++;
+    return 0;
+}
+
+int tsfi_zvm_vswitch_transmit(tsfi_zvm_vswitch_manager *mgr, const char *name, int packets) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->switches[i].name, name) == 0) {
+            mgr->switches[i].packet_count += packets;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_zvm_vswitch_query(const tsfi_zvm_vswitch_manager *mgr, const char *name, int *out_ports, int *out_packets) {
+    if (!mgr || !name || !out_ports || !out_packets) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->switches[i].name, name) == 0) {
+            *out_ports = mgr->switches[i].port_count;
+            *out_packets = mgr->switches[i].packet_count;
+            return 0;
+        }
+    }
+    return -1;
+}
