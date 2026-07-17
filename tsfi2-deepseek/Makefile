@@ -327,6 +327,9 @@ bin/test_ramac_extended: tests/test_ramac_extended.c $(CORE_OBJS) $(OBJ_DIR)/vul
 bin/test_ramac_extended_part2: tests/test_ramac_extended_part2.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/tsfi_compliance_auditor: src/tsfi_compliance_auditor.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_gas_audit: tests/test_gas_audit.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^
 
