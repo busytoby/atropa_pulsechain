@@ -1254,6 +1254,26 @@ int main(void) {
     assert(dbtg_cur.current_set_type[3] == 1001);
     printf("  [PASS] DBTG Run-unit, Record-Type, and Set-Type currency tracking verified.\n");
 
+    // 73. DBTG Area (Realm) Control Registry Verification
+    printf("[Test] Verifying DBTG Area (Realm) Control locks...\n");
+    tsfi_dbtg_realm_registry realm_reg;
+    tsfi_dbtg_realm_init(&realm_reg);
+    
+    int realm_reg_ok = tsfi_dbtg_realm_register(&realm_reg, "LEDGER-AREA");
+    assert(realm_reg_ok == 0);
+    assert(realm_reg.area_count == 1);
+    
+    int open_ok = tsfi_dbtg_realm_open(&realm_reg, "LEDGER-AREA", DBTG_LOCK_EXCLUSIVE_UPDATE);
+    assert(open_ok == 0);
+    assert(realm_reg.areas[0].is_open == 1);
+    assert(realm_reg.areas[0].lock_mode == DBTG_LOCK_EXCLUSIVE_UPDATE);
+    
+    int close_ok = tsfi_dbtg_realm_close(&realm_reg, "LEDGER-AREA");
+    assert(close_ok == 0);
+    assert(realm_reg.areas[0].is_open == 0);
+    assert(realm_reg.areas[0].lock_mode == DBTG_LOCK_NONE);
+    printf("  [PASS] DBTG Area Realm registration and locking verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

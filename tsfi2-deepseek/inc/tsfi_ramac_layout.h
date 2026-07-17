@@ -1375,4 +1375,27 @@ typedef struct {
 void tsfi_dbtg_currency_init(tsfi_dbtg_currency *cur);
 void tsfi_dbtg_currency_update(tsfi_dbtg_currency *cur, int run_unit, int record_type, int set_type);
 
+// DBTG Area (Realm) Control Registry
+#define DBTG_LOCK_NONE      0
+#define DBTG_LOCK_RETRIEVAL 1
+#define DBTG_LOCK_EXCLUSIVE_RETRIEVAL 2
+#define DBTG_LOCK_UPDATE    3
+#define DBTG_LOCK_EXCLUSIVE_UPDATE 4
+
+typedef struct {
+    char area_name[32];
+    int lock_mode;
+    int is_open;
+} tsfi_dbtg_area;
+
+typedef struct {
+    tsfi_dbtg_area areas[4];
+    int area_count;
+} tsfi_dbtg_realm_registry;
+
+void tsfi_dbtg_realm_init(tsfi_dbtg_realm_registry *reg);
+int tsfi_dbtg_realm_register(tsfi_dbtg_realm_registry *reg, const char *name);
+int tsfi_dbtg_realm_open(tsfi_dbtg_realm_registry *reg, const char *name, int lock_mode);
+int tsfi_dbtg_realm_close(tsfi_dbtg_realm_registry *reg, const char *name);
+
 #endif // TSFI_RAMAC_LAYOUT_H

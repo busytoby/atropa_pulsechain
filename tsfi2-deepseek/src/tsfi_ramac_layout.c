@@ -5675,3 +5675,44 @@ void tsfi_dbtg_currency_update(tsfi_dbtg_currency *cur, int run_unit, int record
         cur->current_set_type[set_type] = run_unit;
     }
 }
+
+void tsfi_dbtg_realm_init(tsfi_dbtg_realm_registry *reg) {
+    if (!reg) return;
+    memset(reg, 0, sizeof(tsfi_dbtg_realm_registry));
+}
+
+int tsfi_dbtg_realm_register(tsfi_dbtg_realm_registry *reg, const char *name) {
+    if (!reg || !name) return -1;
+    if (reg->area_count >= 4) return -2;
+    strncpy(reg->areas[reg->area_count].area_name, name, sizeof(reg->areas[reg->area_count].area_name) - 1);
+    reg->areas[reg->area_count].lock_mode = DBTG_LOCK_NONE;
+    reg->areas[reg->area_count].is_open = 0;
+    reg->area_count++;
+    return 0;
+}
+
+int tsfi_dbtg_realm_open(tsfi_dbtg_realm_registry *reg, const char *name, int lock_mode) {
+    if (!reg || !name) return -1;
+    for (int i = 0; i < reg->area_count; i++) {
+        if (strcmp(reg->areas[i].area_name, name) == 0) {
+            if (reg->areas[i].is_open) return -3;
+            reg->areas[i].lock_mode = lock_mode;
+            reg->areas[i].is_open = 1;
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_dbtg_realm_close(tsfi_dbtg_realm_registry *reg, const char *name) {
+    if (!reg || !name) return -1;
+    for (int i = 0; i < reg->area_count; i++) {
+        if (strcmp(reg->areas[i].area_name, name) == 0) {
+            if (!reg->areas[i].is_open) return -3;
+            reg->areas[i].lock_mode = DBTG_LOCK_NONE;
+            reg->areas[i].is_open = 0;
+            return 0;
+        }
+    }
+    return -4;
+}
