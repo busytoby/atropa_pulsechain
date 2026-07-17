@@ -1,0 +1,13 @@
+# Olle DSDL Physical Storage Mapper Strategy Example
+# Sets evaluation scales and modifies weights for device page location keys.
+
+SET depth 5;
+SET abductive 12;
+
+# Weight specific physical keycodes representing page ranges
+WEIGHT 30 1;
+WEIGHT 31 2;
+
+# Prune page allocation priorities exceeding the threshold limit
+PRUNE 15;
+EVAL;

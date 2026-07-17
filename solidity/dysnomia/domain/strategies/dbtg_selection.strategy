@@ -1,0 +1,13 @@
+# Olle DBTG Set Selection Rule Strategy Example
+# Sets priority scale metrics, shifts register configurations, and evaluates the record tree.
+
+SET depth 3;
+SET abductive 8;
+
+# Load owner-member relation criteria registers
+SET_REG R0 100;
+SET_REG R1 250;
+ADD R0 R1;
+
+# Evaluate database query path priority modifications
+EVAL;
