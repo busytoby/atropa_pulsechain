@@ -901,6 +901,24 @@ int main(void) {
     assert(strcmp(route_str, "[IMP_ROUTE src=1 dest=2 link=63 type=0] BGP_OPEN") == 0);
     printf("  [PASS] IMP packet encapsulation and proxy routing verified successfully.\n");
 
+    // 51. 1969 Multics Segment Access Gate Verification
+    printf("[Test] Verifying Multics segment access controls...\n");
+    multics_segment_table m_table;
+    tsfi_multics_init(&m_table);
+    
+    int reg_ok = tsfi_multics_register(&m_table, 0x12, 0x1000, 0x500, MULTICS_R | MULTICS_E);
+    assert(reg_ok == 0);
+    
+    int acc_ok1 = tsfi_multics_check_access(&m_table, 0x1200, MULTICS_R);
+    assert(acc_ok1 == 0);
+    
+    int acc_ok2 = tsfi_multics_check_access(&m_table, 0x1200, MULTICS_W);
+    assert(acc_ok2 == -2);
+    
+    int acc_ok3 = tsfi_multics_check_access(&m_table, 0x2000, MULTICS_R);
+    assert(acc_ok3 == -3);
+    printf("  [PASS] Multics segment access controls and fault traps verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

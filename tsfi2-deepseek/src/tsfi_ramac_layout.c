@@ -4898,3 +4898,39 @@ int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *r
                          hdr->src_imp, hdr->dest_imp, hdr->link_num, hdr->msg_type, bgp_payload);
     return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -2;
 }
+
+void tsfi_multics_init(multics_segment_table *table) {
+    if (!table) return;
+    table->count = 0;
+    for (int i = 0; i < 16; i++) {
+        table->segments[i].segment_id = 0;
+        table->segments[i].base_addr = 0;
+        table->segments[i].size = 0;
+        table->segments[i].acl_flags = 0;
+    }
+}
+
+int tsfi_multics_register(multics_segment_table *table, uint32_t segment_id, uintptr_t base_addr, size_t size, uint8_t flags) {
+    if (!table || table->count >= 16) return -1;
+    multics_segment *seg = &table->segments[table->count++];
+    seg->segment_id = segment_id;
+    seg->base_addr = base_addr;
+    seg->size = size;
+    seg->acl_flags = flags;
+    return 0;
+}
+
+int tsfi_multics_check_access(const multics_segment_table *table, uintptr_t addr, uint8_t required_flags) {
+    if (!table) return -1;
+    for (int i = 0; i < table->count; i++) {
+        const multics_segment *seg = &table->segments[i];
+        if (addr >= seg->base_addr && addr < (seg->base_addr + seg->size)) {
+            if ((seg->acl_flags & required_flags) == required_flags) {
+                return 0;
+            } else {
+                return -2;
+            }
+        }
+    }
+    return -3;
+}

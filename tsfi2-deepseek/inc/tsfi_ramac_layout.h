@@ -1163,4 +1163,25 @@ void tsfi_imp_format(imp_header *hdr, uint8_t src, uint8_t dest, uint8_t link, u
 int tsfi_imp_route(const imp_header *hdr, int active_nodes[4]);
 int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *routed_output, size_t max_len);
 
+// 1969 Multics Segment Access Control
+#define MULTICS_R 1
+#define MULTICS_W 2
+#define MULTICS_E 4
+
+typedef struct {
+    uint32_t segment_id;
+    uintptr_t base_addr;
+    size_t size;
+    uint8_t acl_flags;
+} multics_segment;
+
+typedef struct {
+    multics_segment segments[16];
+    int count;
+} multics_segment_table;
+
+void tsfi_multics_init(multics_segment_table *table);
+int tsfi_multics_register(multics_segment_table *table, uint32_t segment_id, uintptr_t base_addr, size_t size, uint8_t flags);
+int tsfi_multics_check_access(const multics_segment_table *table, uintptr_t addr, uint8_t required_flags);
+
 #endif // TSFI_RAMAC_LAYOUT_H
