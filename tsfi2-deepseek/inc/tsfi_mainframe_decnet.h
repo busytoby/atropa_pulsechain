@@ -921,4 +921,25 @@ void tsfi_roscoe_init(tsfi_roscoe_library *lib);
 int tsfi_roscoe_add_member(tsfi_roscoe_library *lib, const char *name);
 int tsfi_roscoe_lock_member(tsfi_roscoe_library *lib, const char *name, int lock_state);
 
+// CYCLADES datagram header (Louis Pouzin)
+typedef struct {
+    uint8_t src_node;
+    uint8_t dest_node;
+    uint16_t seq_num;
+    uint8_t flags;
+} tsfi_cyclades_header;
+
+int tsfi_cyclades_serialize(const tsfi_cyclades_header *hdr, uint8_t *buf, size_t *len_out);
+int tsfi_cyclades_deserialize(const uint8_t *buf, size_t len, tsfi_cyclades_header *hdr_out);
+
+// SWIFT financial telex message parsing
+typedef struct {
+    char sender_bic[16];
+    char receiver_bic[16];
+    char message_type[8];
+    float amount;
+} tsfi_swift_message;
+
+int tsfi_swift_parse(const char *raw_telex, tsfi_swift_message *msg_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 void tsfi_decnet_init(tsfi_decnet_router *router, uint16_t local_id) {
     if (!router) return;
@@ -2064,6 +2065,56 @@ int tsfi_roscoe_lock_member(tsfi_roscoe_library *lib, const char *name, int lock
             lib->members[i].locked = lock_state;
             return 0;
         }
+    }
+    return -2;
+}
+
+int tsfi_cyclades_serialize(const tsfi_cyclades_header *hdr, uint8_t *buf, size_t *len_out) {
+    if (!hdr || !buf || !len_out) return -1;
+    buf[0] = hdr->src_node;
+    buf[1] = hdr->dest_node;
+    buf[2] = (hdr->seq_num >> 8) & 0xFF;
+    buf[3] = hdr->seq_num & 0xFF;
+    buf[4] = hdr->flags;
+    *len_out = 5;
+    return 0;
+}
+
+int tsfi_cyclades_deserialize(const uint8_t *buf, size_t len, tsfi_cyclades_header *hdr_out) {
+    if (!buf || !hdr_out || len < 5) return -1;
+    hdr_out->src_node = buf[0];
+    hdr_out->dest_node = buf[1];
+    hdr_out->seq_num = (buf[2] << 8) | buf[3];
+    hdr_out->flags = buf[4];
+    return 0;
+}
+
+int tsfi_swift_parse(const char *raw_telex, tsfi_swift_message *msg_out) {
+    if (!raw_telex || !msg_out) return -1;
+    const char *s_bic = strstr(raw_telex, "{1:F01");
+    const char *r_bic = strstr(raw_telex, "{2:I103");
+    const char *mt = strstr(raw_telex, "MT:");
+    const char *amt = strstr(raw_telex, "AMT:");
+    
+    if (s_bic && r_bic && mt && amt) {
+        const char *s_end = strchr(s_bic, '}');
+        if (s_end) {
+            size_t len = s_end - (s_bic + 6);
+            if (len > 15) len = 15;
+            memcpy(msg_out->sender_bic, s_bic + 6, len);
+            msg_out->sender_bic[len] = '\0';
+        }
+        const char *r_end = strchr(r_bic, '}');
+        if (r_end) {
+            size_t len = r_end - (r_bic + 7);
+            if (len > 15) len = 15;
+            memcpy(msg_out->receiver_bic, r_bic + 7, len);
+            msg_out->receiver_bic[len] = '\0';
+        }
+        strncpy(msg_out->message_type, mt + 3, 3);
+        msg_out->message_type[3] = '\0';
+        msg_out->amount = atof(amt + 4);
+        return 0;
     }
     return -2;
 }

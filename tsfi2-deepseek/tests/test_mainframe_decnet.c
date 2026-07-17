@@ -1274,6 +1274,38 @@ int main(void) {
     assert(roscoe.members[0].locked == 1);
     printf("  [PASS] Cambex SECDED error correction and ADR Roscoe library locks verified.\n");
 
+    // 73. CYCLADES Datagrams and SWIFT Message Parsing Verification
+    printf("[Test] Verifying CYCLADES Datagrams & SWIFT Telex Messages...\n");
+    
+    // CYCLADES Datagram
+    tsfi_cyclades_header tx_cyc;
+    tx_cyc.src_node = 11;
+    tx_cyc.dest_node = 22;
+    tx_cyc.seq_num = 54321;
+    tx_cyc.flags = 0x02; // SYN
+    
+    uint8_t cyc_buf[8];
+    size_t cyc_len = 0;
+    assert(tsfi_cyclades_serialize(&tx_cyc, cyc_buf, &cyc_len) == 0);
+    assert(cyc_len == 5);
+    
+    tsfi_cyclades_header rx_cyc;
+    assert(tsfi_cyclades_deserialize(cyc_buf, cyc_len, &rx_cyc) == 0);
+    assert(rx_cyc.src_node == 11);
+    assert(rx_cyc.dest_node == 22);
+    assert(rx_cyc.seq_num == 54321);
+    assert(rx_cyc.flags == 0x02);
+    
+    // SWIFT Parse
+    const char *raw_swift = "{1:F01SENDERBICXXX}{2:I103RECEIVERBICX}{4:\nMT:103\nAMT:450000.00}";
+    tsfi_swift_message swift_msg;
+    assert(tsfi_swift_parse(raw_swift, &swift_msg) == 0);
+    assert(strcmp(swift_msg.sender_bic, "SENDERBICXXX") == 0);
+    assert(strcmp(swift_msg.receiver_bic, "RECEIVERBICX") == 0);
+    assert(strcmp(swift_msg.message_type, "103") == 0);
+    assert(swift_msg.amount == 450000.00f);
+    printf("  [PASS] CYCLADES datagram headers and SWIFT banking telex parsing verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
