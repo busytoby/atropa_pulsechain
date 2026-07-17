@@ -837,4 +837,16 @@ void tsfi_compool_init(tsfi_jovial_compool *cp);
 int tsfi_compool_register(tsfi_jovial_compool *cp, const char *name, uint32_t val);
 int tsfi_compool_lookup(const tsfi_jovial_compool *cp, const char *name, uint32_t *val_out);
 
+// JOVIAL Bit-Slice Modifier
+uint32_t tsfi_jovial_bit_slice(uint32_t val, int start, int length);
+uint32_t tsfi_jovial_bit_slice_assign(uint32_t orig_val, uint32_t field_val, int start, int length);
+
+// JOVIAL Overlay Pool
+typedef struct {
+    uint32_t overlay_storage[16];
+} tsfi_jovial_overlay_pool;
+
+uint32_t tsfi_jovial_overlay_read(const tsfi_jovial_overlay_pool *pool, int offset);
+void tsfi_jovial_overlay_write(tsfi_jovial_overlay_pool *pool, int offset, uint32_t val);
+
 #endif // TSFI_RAMAC_LAYOUT_H

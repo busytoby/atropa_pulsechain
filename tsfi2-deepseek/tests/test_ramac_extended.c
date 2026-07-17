@@ -321,6 +321,23 @@ int main(void) {
     assert(stat.status_value == 3);
     printf("  [PASS] JOVIAL COMPOOL and status descriptors verified.\n");
 
+    // 16. JOVIAL Bit-Slice Modifier Verification
+    printf("[Test] Verifying JOVIAL Bit-Slice Modifier...\n");
+    uint32_t raw_word = 0x00000FF0;
+    uint32_t slice = tsfi_jovial_bit_slice(raw_word, 4, 8);
+    assert(slice == 0xFF);
+    
+    uint32_t assigned_word = tsfi_jovial_bit_slice_assign(0, 0x0F, 8, 4);
+    assert(assigned_word == 0x00000F00);
+    printf("  [PASS] JOVIAL bit slice operations verified.\n");
+    
+    // 17. JOVIAL Overlay Memory Space Verification
+    printf("[Test] Verifying JOVIAL Overlay Memory allocation...\n");
+    tsfi_jovial_overlay_pool pool;
+    tsfi_jovial_overlay_write(&pool, 2, 45000);
+    assert(tsfi_jovial_overlay_read(&pool, 2) == 45000);
+    printf("  [PASS] JOVIAL overlay shared memory space verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

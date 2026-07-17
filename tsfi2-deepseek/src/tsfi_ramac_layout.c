@@ -3913,3 +3913,27 @@ int tsfi_compool_lookup(const tsfi_jovial_compool *cp, const char *name, uint32_
     }
     return -2;
 }
+
+uint32_t tsfi_jovial_bit_slice(uint32_t val, int start, int length) {
+    if (length <= 0 || length > 32 || start < 0 || start >= 32) return 0;
+    uint32_t mask = (length == 32) ? 0xFFFFFFFF : ((1U << length) - 1);
+    return (val >> start) & mask;
+}
+
+uint32_t tsfi_jovial_bit_slice_assign(uint32_t orig_val, uint32_t field_val, int start, int length) {
+    if (length <= 0 || length > 32 || start < 0 || start >= 32) return orig_val;
+    uint32_t mask = (length == 32) ? 0xFFFFFFFF : ((1U << length) - 1);
+    field_val &= mask;
+    uint32_t clear_mask = ~(mask << start);
+    return (orig_val & clear_mask) | (field_val << start);
+}
+
+uint32_t tsfi_jovial_overlay_read(const tsfi_jovial_overlay_pool *pool, int offset) {
+    if (!pool || offset < 0 || offset >= 16) return 0;
+    return pool->overlay_storage[offset];
+}
+
+void tsfi_jovial_overlay_write(tsfi_jovial_overlay_pool *pool, int offset, uint32_t val) {
+    if (!pool || offset < 0 || offset >= 16) return;
+    pool->overlay_storage[offset] = val;
+}
