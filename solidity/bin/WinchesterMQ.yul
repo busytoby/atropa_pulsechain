@@ -223,13 +223,15 @@ object "WinchesterMQ" {
             }
 
             // ----------------------------------------------------------------
-            // METHOD 4: readDataPort() -> uint8 val
-            // Selector: 0x52d400d0 (Simulates reading from $DF00)
+            // METHOD 4.5: writeMCSSegment(uint256 indicator, uint256 data) -> void
+            // Selector: 0x98d400d0 (Writes an MCS segment indicator and data word)
             // ----------------------------------------------------------------
-            if eq(selector, 0x52d400d0) {
-                let val := loadTransient(0x20)
-                mstore(0x00, val)
-                return(0x00, 32)
+            if eq(selector, 0x98d400d0) {
+                let indicator := calldataload(4)
+                let data := calldataload(36)
+                sstore(0xF380, indicator)
+                sstore(0xF381, data)
+                return(0, 0)
             }
 
             // ----------------------------------------------------------------
