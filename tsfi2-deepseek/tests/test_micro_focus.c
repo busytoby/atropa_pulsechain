@@ -1296,6 +1296,27 @@ int main(void) {
     assert(code_valid == 1);
     printf("  [PASS] IRS IMF Transaction Code Validator verified.\n");
 
+    // 120. Verify IRS IMF Freeze Code handlers
+    printf("[TEST] Validating IRS IMF Freeze Handlers...\n");
+    char account_state[64] = {0};
+    int set_fr_res = tsfi_mf_imf_set_freeze_code("999-12-3456", 'G', account_state, sizeof(account_state));
+    assert(set_fr_res == 0);
+    int is_frozen = -1;
+    int is_fr_res = tsfi_mf_imf_is_frozen(account_state, &is_frozen);
+    assert(is_fr_res == 0);
+    assert(is_frozen == 1);
+    printf("  [PASS] IRS IMF Freeze Handlers verified.\n");
+
+    // 121. Verify IRS CADE Taxpayer File Lookup
+    printf("[TEST] Validating IRS CADE Taxpayer Lookup...\n");
+    double lookup_bal = 0.0;
+    int lookup_status = -1;
+    int lookup_res = tsfi_mf_cade_lookup_taxpayer("999-12-3456", taxpayer_registry, &lookup_bal, &lookup_status);
+    assert(lookup_res == 0);
+    assert(lookup_bal == 1250.00);
+    assert(lookup_status == 1);
+    printf("  [PASS] IRS CADE Taxpayer Lookup verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

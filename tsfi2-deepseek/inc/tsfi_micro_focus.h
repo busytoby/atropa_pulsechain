@@ -143,5 +143,8 @@ int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, 
 int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len);
 int tsfi_mf_cade_process_daily_batch(const char **ssns, const int *tcs, const double *amounts, int count, double *balances, char *batch_report, int max_len);
 int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, int *is_valid);
+int tsfi_mf_imf_set_freeze_code(const char *ssn, char freeze_code, char *account_state, int max_len);
+int tsfi_mf_imf_is_frozen(const char *account_state, int *is_frozen);
+int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, double *balance_out, int *status_out);
 
 #endif // TSFI_MICRO_FOCUS_H

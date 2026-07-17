@@ -162,5 +162,7 @@
 | 228 | IRS IMF Transaction Processor | PASS | Processes Master File codes and recalculates balances | Volume 33 |
 | 229 | IRS CADE Daily Batch Processor | PASS | Executes daily tax balance calculation runs | Volume 33 |
 | 230 | IRS IMF Transaction Code Validator | PASS | Validates Master File transaction code directives | Volume 33 |
+| 231 | IRS IMF Freeze Code Handlers | PASS | Restricts transaction processing cycles on frozen accounts | Volume 33 |
+| 232 | IRS CADE Taxpayer Lookup | PASS | Queries balance and status fields from registry maps | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 230 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 232 Scenarios validated successfully)

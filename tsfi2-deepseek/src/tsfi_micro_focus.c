@@ -1959,3 +1959,41 @@ int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, i
     }
     return 0;
 }
+
+int tsfi_mf_imf_set_freeze_code(const char *ssn, char freeze_code, char *account_state, int max_len) {
+    if (!ssn || !account_state || max_len <= 0) return -1;
+
+    snprintf(account_state, max_len, "SSN:%s|FREEZE:%c", ssn, freeze_code);
+    return 0;
+}
+
+int tsfi_mf_imf_is_frozen(const char *account_state, int *is_frozen) {
+    if (!account_state || !is_frozen) return -1;
+
+    *is_frozen = 0;
+    const char *freeze_ptr = strstr(account_state, "FREEZE:");
+    if (freeze_ptr) {
+        char f_char = freeze_ptr[7];
+        if (f_char != '\0' && f_char != ' ' && f_char != '0') {
+            *is_frozen = 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, double *balance_out, int *status_out) {
+    if (!ssn || !registry_pool || !balance_out || !status_out) return -1;
+
+    const char *ssn_match = strstr(registry_pool, ssn);
+    if (ssn_match) {
+        const char *bal_ptr = strstr(ssn_match, "BAL:");
+        const char *status_ptr = strstr(ssn_match, "STATUS:");
+        if (bal_ptr && status_ptr) {
+            if (sscanf(bal_ptr, "BAL:%lf", balance_out) == 1 &&
+                sscanf(status_ptr, "STATUS:%d", status_out) == 1) {
+                return 0;
+            }
+        }
+    }
+    return -2;
+}
