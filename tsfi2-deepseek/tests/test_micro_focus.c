@@ -923,6 +923,24 @@ int main(void) {
     assert(query_active == 1);
     printf("  [PASS] CICS HANDLE ABEND Query verified.\n");
 
+    // 77. Verify Majordomo List Archive Message Extractor
+    printf("[TEST] Validating Majordomo Archive Extractor...\n");
+    const char *arc_files[2] = {"msg001.txt", "msg002.txt"};
+    const char *arc_contents[2] = {"Hello from 2026", "Lore of Dysnomia"};
+    char retrieved_content[64] = {0};
+    int arc_get_res = tsfi_mf_majordomo_archive_get("zmm-dev", "msg002.txt", arc_files, arc_contents, 2, retrieved_content, sizeof(retrieved_content));
+    assert(arc_get_res == 0);
+    assert(strcmp(retrieved_content, "Lore of Dysnomia") == 0);
+    printf("  [PASS] Majordomo Archive Extractor verified.\n");
+
+    // 78. Verify CICS Task Execution Delay Emulator
+    printf("[TEST] Validating CICS DELAY...\n");
+    uint32_t simulated_delay_counter = 5;
+    int del_res = tsfi_mf_cics_delay(10, &simulated_delay_counter);
+    assert(del_res == 0);
+    assert(simulated_delay_counter == 15);
+    printf("  [PASS] CICS DELAY verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

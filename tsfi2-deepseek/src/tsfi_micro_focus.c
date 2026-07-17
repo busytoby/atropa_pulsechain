@@ -1479,3 +1479,24 @@ int tsfi_mf_cics_query_abend(int registry_active, int *is_active_out) {
     *is_active_out = registry_active;
     return 0;
 }
+
+int tsfi_mf_majordomo_archive_get(const char *list_name, const char *file_name, const char **archive_files, const char **archive_contents, int archive_count, char *content_out, int max_len) {
+    (void)list_name;
+    if (!file_name || !archive_files || !archive_contents || !content_out || max_len <= 0) return -1;
+
+    for (int i = 0; i < archive_count; i++) {
+        if (strcmp(archive_files[i], file_name) == 0) {
+            snprintf(content_out, max_len, "%s", archive_contents[i]);
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_delay(uint32_t seconds, uint32_t *delay_counter_log) {
+    if (!delay_counter_log) return -1;
+
+    *delay_counter_log += seconds;
+    return 0;
+}
