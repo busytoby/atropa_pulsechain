@@ -1235,6 +1235,21 @@ int main(void) {
     assert(strcmp(pad.stream_association, "pad_stdout") == 0);
     printf("  [PASS] Apollo DFS path resolver and Display Manager pad configuration verified.\n");
 
+    // 71. Apollo Aegis PCB and Token Ring Registers Verification
+    printf("[Test] Verifying Apollo Aegis PCB and Token Ring Registers...\n");
+    tsfi_aegis_pcb pcb;
+    tsfi_aegis_pcb_init(&pcb, 1002, 4, "synth_voice");
+    assert(pcb.process_id == 1002);
+    assert(pcb.priority == 4);
+    assert(strcmp(pcb.process_name, "synth_voice") == 0);
+    
+    tsfi_apollo_ring_register reg;
+    tsfi_apollo_ring_reg_init(&reg);
+    assert(reg.node_bypass == 0);
+    assert(reg.token_held == 0);
+    assert(reg.packets_transmitted == 0);
+    printf("  [PASS] Apollo Aegis process blocks and token ring hardware registers verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

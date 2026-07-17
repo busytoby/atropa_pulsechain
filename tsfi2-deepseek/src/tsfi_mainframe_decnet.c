@@ -1987,3 +1987,22 @@ void tsfi_apollo_dm_init(tsfi_apollo_dm_pad *pad, int id, int w, int h, const ch
         pad->stream_association[0] = '\0';
     }
 }
+
+void tsfi_aegis_pcb_init(tsfi_aegis_pcb *pcb, int pid, int priority, const char *name) {
+    if (!pcb) return;
+    pcb->process_id = pid;
+    pcb->priority = priority;
+    if (name) {
+        strncpy(pcb->process_name, name, 15);
+        pcb->process_name[15] = '\0';
+    } else {
+        pcb->process_name[0] = '\0';
+    }
+}
+
+void tsfi_apollo_ring_reg_init(tsfi_apollo_ring_register *reg) {
+    if (!reg) return;
+    reg->node_bypass = 0;
+    reg->token_held = 0;
+    reg->packets_transmitted = 0;
+}

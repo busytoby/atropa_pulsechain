@@ -883,4 +883,22 @@ typedef struct {
 
 void tsfi_apollo_dm_init(tsfi_apollo_dm_pad *pad, int id, int w, int h, const char *stream);
 
+// Aegis Process Control Block
+typedef struct {
+    int process_id;
+    int priority;
+    char process_name[16];
+} tsfi_aegis_pcb;
+
+void tsfi_aegis_pcb_init(tsfi_aegis_pcb *pcb, int pid, int priority, const char *name);
+
+// Apollo Token Ring hardware register emulation
+typedef struct {
+    int node_bypass;
+    int token_held;
+    uint32_t packets_transmitted;
+} tsfi_apollo_ring_register;
+
+void tsfi_apollo_ring_reg_init(tsfi_apollo_ring_register *reg);
+
 #endif // TSFI_MAINFRAME_DECNET_H
