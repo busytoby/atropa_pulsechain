@@ -45,5 +45,7 @@ int tsfi_mf_imf_is_estate_form(int doc_code, int *result);
 int tsfi_mf_cade_is_audit_or_pending(int status_code, int *is_audit_or_pending);
 int tsfi_mf_imf_is_gift_form(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_suspended(int status_code, int *is_active_or_suspended);
+int tsfi_mf_imf_is_fiduciary_form(int doc_code, int *result);
+int tsfi_mf_cade_is_active_or_under_audit(int status_code, int *is_active_or_audit);
 
 #endif // TSFI_CADE_IMF_H
