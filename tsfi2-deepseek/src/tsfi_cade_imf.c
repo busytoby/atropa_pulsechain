@@ -444,3 +444,23 @@ int tsfi_mf_cade_is_suspended(int status_code, int *is_suspended) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_excise_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 40) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_audit_pending(int status_code, int *is_pending) {
+    if (!is_pending) return -1;
+
+    *is_pending = 0;
+    if (status_code == 4) {
+        *is_pending = 1;
+    }
+    return 0;
+}

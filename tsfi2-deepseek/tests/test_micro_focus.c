@@ -1523,6 +1523,22 @@ int main(void) {
     assert(is_susp == 1);
     printf("  [PASS] IRS CADE Taxpayer Suspended Checker verified.\n");
 
+    // 146. Verify IRS IMF Excise Form Verifier
+    printf("[TEST] Validating IRS IMF Excise Form Verifier...\n");
+    int is_ex = -1;
+    int ex_res = tsfi_mf_imf_is_excise_form(40, &is_ex);
+    assert(ex_res == 0);
+    assert(is_ex == 1);
+    printf("  [PASS] IRS IMF Excise Form Verifier verified.\n");
+
+    // 147. Verify IRS CADE Taxpayer Audit Pending Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Audit Pending Checker...\n");
+    int is_pend = -1;
+    int pend_status_res = tsfi_mf_cade_is_audit_pending(4, &is_pend);
+    assert(pend_status_res == 0);
+    assert(is_pend == 1);
+    printf("  [PASS] IRS CADE Taxpayer Audit Pending Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

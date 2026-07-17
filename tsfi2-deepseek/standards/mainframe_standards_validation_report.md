@@ -188,5 +188,7 @@
 | 254 | IRS CADE Taxpayer Active Checker | PASS | Asserves if account status matches active status codes | Volume 33 |
 | 255 | IRS IMF FICA Form Verifier | PASS | Restricts FICA filings to valid employer withholding ranges | Volume 33 |
 | 256 | IRS CADE Taxpayer Suspended Checker | PASS | Asserves if account status matches pending collection codes | Volume 33 |
+| 257 | IRS IMF Excise Form Verifier | PASS | Restricts excise filings to valid excise form ranges | Volume 33 |
+| 258 | IRS CADE Taxpayer Audit Pending Checker | PASS | Asserves if account status matches pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 256 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 258 Scenarios validated successfully)
