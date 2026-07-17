@@ -175,8 +175,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 220 | CICS Transaction Class Max Tasks Inquirer | PASS | Checks max concurrent tasks for transaction class | Volume 33 |
 | 221 | Majordomo Closed Checker | PASS | Verification utility checking list closed enrollment settings | Volume 33 |
 | 222 | CICS Transaction Class Capacity Percentage Inquirer | PASS | Checks active tasks percentage for transaction class | Volume 33 |
+| 223 | MajorMUD Mainframe Z-machine Init | PASS | Instantiates status registry maps for active MUD spaces | Volume 33 |
+| 224 | MajorMUD Mainframe Z-machine Command | PASS | Parses active player commands and resolves MUD states | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 222 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 224 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

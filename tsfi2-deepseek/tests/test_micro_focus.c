@@ -1,4 +1,5 @@
 #include "tsfi_micro_focus.h"
+#include "tsfi_majormud.h"
 #include "tsfi_ramac_layout.h"
 #include "tsfi_strategy_lang.h"
 #include "tsfi_priority_queue.h"
@@ -1228,6 +1229,23 @@ int main(void) {
     assert(inq_cls_pct_res == 0);
     assert(class_percent_val == 25.0f);
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS ACTPERCENT verified.\n");
+
+    // 113. Verify MajorMUD Mainframe Z-machine Init
+    printf("[TEST] Validating MajorMUD Mainframe Init...\n");
+    char mud_state[256] = {0};
+    int mud_init_res = tsfi_mf_zmachine_majormud_init(mud_state, sizeof(mud_state));
+    assert(mud_init_res == 0);
+    assert(strstr(mud_state, "CLASS:Warrior") != NULL);
+    printf("  [PASS] MajorMUD Mainframe Init verified.\n");
+
+    // 114. Verify MajorMUD Mainframe Z-machine Look Command
+    printf("[TEST] Validating MajorMUD Mainframe Look Command...\n");
+    char mud_resp[256] = {0};
+    int mud_cmd_res = tsfi_mf_zmachine_majormud_command("look", mud_state, mud_resp, sizeof(mud_resp));
+    assert(mud_cmd_res == 0);
+    assert(strstr(mud_resp, "Room 1") != NULL);
+    assert(strstr(mud_resp, "Goblin") != NULL);
+    printf("  [PASS] MajorMUD Mainframe Look Command verified.\n");
 
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;

@@ -135,7 +135,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_mainframe_misc.o \
              $(OBJ_DIR)/tsfi_s370_dat_extensions.o \
              $(OBJ_DIR)/tsfi_ray_tracer.o \
-             $(OBJ_DIR)/tsfi_micro_focus.o
+             $(OBJ_DIR)/tsfi_micro_focus.o \
+             $(OBJ_DIR)/tsfi_majormud.o
 
 
 
