@@ -658,4 +658,8 @@ void tsfi_b5000_mcp_init(tsfi_b5000_mcp_scheduler *sched);
 int tsfi_b5000_mcp_schedule_tick(tsfi_b5000_mcp_scheduler *sched);
 int tsfi_b5000_mcp_yield_active(tsfi_b5000_mcp_scheduler *sched, int block_reason);
 
+// Burroughs B5000 12-bit Syllabic Instruction set decoding and execution
+int tsfi_b5000_decode_syllable(uint16_t syllable, uint8_t *type_out, uint16_t *val_out);
+int tsfi_b5000_execute_word(uint64_t instruction_word, void *strategy_vm, const uint8_t *memory, const tsfi_b5000_descriptor *prt, int prt_size);
+
 #endif // TSFI_RAMAC_LAYOUT_H

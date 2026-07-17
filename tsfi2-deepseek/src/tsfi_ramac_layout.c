@@ -3251,3 +3251,72 @@ int tsfi_b5000_mcp_yield_active(tsfi_b5000_mcp_scheduler *sched, int block_reaso
     sched->tasks[active].state = block_reason; // block or set idle
     return tsfi_b5000_mcp_schedule_tick(sched);
 }
+
+int tsfi_b5000_decode_syllable(uint16_t syllable, uint8_t *type_out, uint16_t *val_out) {
+    if (!type_out || !val_out) return -1;
+    *type_out = (uint8_t)((syllable >> 10) & 0x03);
+    *val_out = (uint16_t)(syllable & 0x3FF);
+    return 0;
+}
+
+int tsfi_b5000_execute_word(uint64_t instruction_word, void *strategy_vm, const uint8_t *memory, const tsfi_b5000_descriptor *prt, int prt_size) {
+    if (!strategy_vm || !memory || !prt || prt_size <= 0) return -1;
+    
+    TSFiStrategyVM *vm = (TSFiStrategyVM *)strategy_vm;
+    
+    uint16_t syllables[4];
+    syllables[0] = (uint16_t)((instruction_word >> 36) & 0xFFF);
+    syllables[1] = (uint16_t)((instruction_word >> 24) & 0xFFF);
+    syllables[2] = (uint16_t)((instruction_word >> 12) & 0xFFF);
+    syllables[3] = (uint16_t)(instruction_word & 0xFFF);
+    
+    for (int i = 0; i < 4; i++) {
+        uint8_t type = 0;
+        uint16_t val = 0;
+        tsfi_b5000_decode_syllable(syllables[i], &type, &val);
+        
+        if (type == 2) { // Literal Call
+            if (vm->eval_stack_ptr < 32) {
+                vm->eval_stack[vm->eval_stack_ptr++] = val;
+            } else {
+                return -2; // Stack overflow
+            }
+        } else if (type == 0) { // Operand Call
+            if (val >= prt_size || !prt[val].is_present) return -3;
+            // Read value from descriptor mapping
+            uint8_t byte_val = 0;
+            if (tsfi_b5000_descriptor_read(&prt[val], memory, 0, &byte_val) != 0) return -4;
+            if (vm->eval_stack_ptr < 32) {
+                vm->eval_stack[vm->eval_stack_ptr++] = byte_val;
+            } else {
+                return -2;
+            }
+        } else if (type == 1) { // Descriptor Call
+            if (val >= prt_size || !prt[val].is_present) return -3;
+            if (vm->eval_stack_ptr < 32) {
+                vm->eval_stack[vm->eval_stack_ptr++] = (int)prt[val].address;
+            } else {
+                return -2;
+            }
+        } else if (type == 3) { // Operator
+            if (val == 0) { // ADD
+                if (vm->eval_stack_ptr >= 2) {
+                    int b = vm->eval_stack[--vm->eval_stack_ptr];
+                    int a = vm->eval_stack[--vm->eval_stack_ptr];
+                    vm->eval_stack[vm->eval_stack_ptr++] = a + b;
+                } else {
+                    return -5; // Stack underflow
+                }
+            } else if (val == 1) { // SUB
+                if (vm->eval_stack_ptr >= 2) {
+                    int b = vm->eval_stack[--vm->eval_stack_ptr];
+                    int a = vm->eval_stack[--vm->eval_stack_ptr];
+                    vm->eval_stack[vm->eval_stack_ptr++] = a - b;
+                } else {
+                    return -5;
+                }
+            }
+        }
+    }
+    return 0;
+}

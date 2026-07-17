@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include "tsfi_ramac_layout.h"
+#include "tsfi_strategy_lang.h"
 
 int main(void) {
     printf("=============================================================\n");
@@ -2053,6 +2054,28 @@ int main(void) {
     assert(mcp.tasks[3].state == 2);
     
     printf("  [PASS] MCP scheduler round-robin execution and task yield verified successfully.\n");
+
+    // Test Scenario 36: Burroughs B5000 12-bit Syllabic Instruction set decoding and execution
+    printf("[Test] Verifying Burroughs B5000 Syllabic Instruction set...\n");
+    uint8_t syl_type = 0;
+    uint16_t syl_val = 0;
+    // Decode literal call: type 2, value 42 (0x82A)
+    int dec_res = tsfi_b5000_decode_syllable(0x82A, &syl_type, &syl_val);
+    assert(dec_res == 0);
+    assert(syl_type == 2);
+    assert(syl_val == 42);
+    
+    TSFiStrategyVM syl_vm;
+    tsfi_strategy_vm_init(&syl_vm);
+    
+    // Pack 4 syllables: Lit 10, Lit 5, ADD, Lit 2
+    uint64_t inst_word = ((uint64_t)0x80A << 36) | ((uint64_t)0x805 << 24) | ((uint64_t)0xC00 << 12) | 0x802;
+    int exec_res = tsfi_b5000_execute_word(inst_word, &syl_vm, b5000_memory, &desc, 1);
+    assert(exec_res == 0);
+    assert(syl_vm.eval_stack_ptr == 2);
+    assert(syl_vm.eval_stack[0] == 15);
+    assert(syl_vm.eval_stack[1] == 2);
+    printf("  [PASS] Syllabic execution stack verified: 10 + 5 = 15, then pushed 2.\n");
 
     free(mock_dat.base);
     free(mock_dat.check);
