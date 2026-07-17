@@ -4,6 +4,7 @@
 #include <time.h>
 #include <assert.h>
 #include "tsfi_strategy_lang.h"
+#include "tsfi_ramac_layout.h"
 
 #define ITERATIONS 1000000
 
@@ -48,6 +49,27 @@ int main(void) {
     printf("  Executed %d Strategy VM cycles successfully.\n", ITERATIONS);
     printf("  Total Time: %.2f ms\n", elapsed_ns / 1e6);
     printf("  Average Latency: %.2f ns/cycle\n", latency);
+    fflush(stdout);
+
+    // Profile COBOL COMP-3 Hex-BCD packing/unpacking
+    printf("[COBOL COMP-3 Benchmark] Profiling BCD packing and unpacking...\n");
+    const char *evm_address = "90f79bf6eb2c4f870365e785982e1f101e93b906";
+    uint8_t packed[32];
+    char unpacked[64];
+    
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (int i = 0; i < ITERATIONS; i++) {
+        int packed_len = tsfi_cobol_pack_hex(evm_address, packed, sizeof(packed));
+        int unpack_res = tsfi_cobol_unpack_hex(packed, packed_len, unpacked, sizeof(unpacked));
+        (void)unpack_res;
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    
+    elapsed_ns = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+    double bcd_latency = elapsed_ns / ITERATIONS;
+    printf("  Packed/Unpacked %d addresses successfully.\n", ITERATIONS);
+    printf("  Total BCD Time: %.2f ms\n", elapsed_ns / 1e6);
+    printf("  Average BCD Latency: %.2f ns/op\n", bcd_latency);
     fflush(stdout);
 
     return 0;
