@@ -12,4 +12,11 @@ int64_t tsfi_mf_comp5_decode(const uint8_t *buffer, int size_bytes, int is_signe
 int tsfi_mf_isam_write_record(const char *filepath_dat_bin, uint32_t key, const uint8_t *record_data, int record_len);
 int tsfi_mf_isam_read_record(const char *filepath_dat_bin, uint32_t key, uint8_t *record_out, int record_len);
 
+// 3. SIF (Standard Interchange Format) CAD Reader
+#include "tsfi_ray_tracer.h"
+int tsfi_mf_sif_parse(const char *sif_line, tsfi_cgm_scene *scene);
+
+// 4. Screen Section Terminal Layout Engine
+int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer, int width, int height);
+
 #endif // TSFI_MICRO_FOCUS_H

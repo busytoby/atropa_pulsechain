@@ -98,3 +98,50 @@ int tsfi_mf_isam_read_record(const char *filepath_dat_bin, uint32_t key, uint8_t
     fclose(f);
     return -7; // Not found
 }
+
+#include "tsfi_ray_tracer.h"
+
+int tsfi_mf_sif_parse(const char *sif_line, tsfi_cgm_scene *scene) {
+    if (!sif_line || !scene) return -1;
+
+    if (strncmp(sif_line, "SIF_SPHERE", 10) == 0) {
+        float x = 0.0f, y = 0.0f, z = 0.0f, rad = 1.0f;
+        char col_char = 'R';
+        int parsed = sscanf(sif_line, "SIF_SPHERE X:%f Y:%f Z:%f R:%f COLOR:%c", &x, &y, &z, &rad, &col_char);
+        if (parsed < 5) return -2;
+
+        tsfi_rt_vec3 color = {1.0f, 0.0f, 0.0f}; // Default red
+        if (col_char == 'G') color = (tsfi_rt_vec3){0.0f, 1.0f, 0.0f};
+        else if (col_char == 'B') color = (tsfi_rt_vec3){0.0f, 0.0f, 1.0f};
+
+        return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, (tsfi_rt_vec3){x, y, z}, color, rad, (tsfi_rt_vec3){0,0,0});
+    }
+    return -2;
+}
+
+int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer, int width, int height) {
+    if (!screen_def || !terminal_buffer || width <= 0 || height <= 0) return -1;
+
+    memset(terminal_buffer, ' ', width * height);
+
+    char def_copy[256];
+    strncpy(def_copy, screen_def, sizeof(def_copy) - 1);
+    def_copy[sizeof(def_copy) - 1] = '\0';
+
+    int line = 1, col = 1;
+    char value[128] = {0};
+
+    int parsed = sscanf(def_copy, "LINE:%d COL:%d VALUE:%[^\n]", &line, &col, value);
+    if (parsed >= 3) {
+        int start_r = line - 1;
+        int start_c = col - 1;
+
+        if (start_r >= 0 && start_r < height && start_c >= 0 && start_c < width) {
+            int val_len = strlen(value);
+            int write_len = (start_c + val_len > width) ? (width - start_c) : val_len;
+            memcpy(&terminal_buffer[start_r * width + start_c], value, write_len);
+            return 0;
+        }
+    }
+    return -2;
+}

@@ -58,6 +58,31 @@ int main(void) {
     assert(res_read_nonexistent == -7);
 
     unlink(filepath); // Cleanup
+
+    // 3. Verify SIF CAD Parser Integration
+    printf("[TEST] Validating SIF CAD parsing...\n");
+    tsfi_cgm_scene sif_scene;
+    tsfi_cgm_scene_init(&sif_scene);
+    const char *sif_line = "SIF_SPHERE X:2.5 Y:-1.0 Z:8.0 R:3.5 COLOR:B";
+    int sif_res = tsfi_mf_sif_parse(sif_line, &sif_scene);
+    assert(sif_res == 0);
+    assert(sif_scene.primitive_count == 1);
+    assert(sif_scene.primitives[0].type == CGM_PRIM_SPHERE);
+    assert(sif_scene.primitives[0].position.x == 2.5f);
+    assert(sif_scene.primitives[0].param1 == 3.5f);
+    assert(sif_scene.primitives[0].color.z == 1.0f); // Blue
+    printf("  [PASS] SIF CAD coordinate translation verified.\n");
+
+    // 4. Verify Screen Section Terminal Layout
+    printf("[TEST] Validating Screen Section rendering...\n");
+    char term_buf[80 * 24];
+    const char *screen_def = "LINE:2 COL:15 VALUE:SYSTEM OK";
+    int term_res = tsfi_mf_screen_section_render(screen_def, term_buf, 80, 24);
+    assert(term_res == 0);
+    // At line 2 (offset 1), col 15 (offset 14): check content
+    assert(strncmp(&term_buf[1 * 80 + 14], "SYSTEM OK", 9) == 0);
+    printf("  [PASS] Screen Section layout rendering verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
