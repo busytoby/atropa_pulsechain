@@ -172,3 +172,33 @@ int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount) {
     }
     return -2;
 }
+
+int tsfi_mf_imf_generate_dln(int site_code, int tax_class, int doc_code, int julian_date, int serial_num, char *dln_out, int max_len) {
+    if (!dln_out || max_len < 15) return -1;
+
+    snprintf(dln_out, max_len, "%02d%01d%02d%03d%06d", site_code, tax_class, doc_code, julian_date, serial_num);
+    return 0;
+}
+
+int tsfi_mf_imf_get_tax_class_name(int tax_class, char *name_out, int max_len) {
+    if (!name_out || max_len <= 0) return -1;
+
+    switch (tax_class) {
+        case 1:
+            snprintf(name_out, max_len, "Individual Income");
+            break;
+        case 2:
+            snprintf(name_out, max_len, "FICA Withholding");
+            break;
+        case 3:
+            snprintf(name_out, max_len, "Corporation Tax");
+            break;
+        case 4:
+            snprintf(name_out, max_len, "Excise Tax");
+            break;
+        default:
+            snprintf(name_out, max_len, "Other/Unknown");
+            break;
+    }
+    return 0;
+}

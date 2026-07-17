@@ -168,5 +168,7 @@
 | 234 | IRS CADE Taxpayer Status Updater | PASS | Modifies current status state parameters on account strings | Volume 33 |
 | 235 | IRS IMF DLN Parser | PASS | Extracts processing site, tax class, and date parameters from locator code | Volume 33 |
 | 236 | IRS CADE Taxpayer Balance Adjuster | PASS | Mutates registered account balance fields with manual offsets | Volume 33 |
+| 237 | IRS IMF DLN Generator | PASS | Natively creates locator codes from component fields | Volume 33 |
+| 238 | IRS IMF Tax Class Inquirer | PASS | Returns standard tax class name strings | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 236 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 238 Scenarios validated successfully)

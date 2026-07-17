@@ -1358,6 +1358,22 @@ int main(void) {
     assert(strstr(taxpayer_registry, "BAL:1100.00") != NULL);
     printf("  [PASS] IRS CADE Balance Adjuster verified.\n");
 
+    // 126. Verify IRS IMF Document Locator Number (DLN) Generator
+    printf("[TEST] Validating IRS IMF DLN Generator...\n");
+    char gen_dln[16] = {0};
+    int gen_dln_res = tsfi_mf_imf_generate_dln(29, 1, 10, 214, 400123, gen_dln, sizeof(gen_dln));
+    assert(gen_dln_res == 0);
+    assert(strcmp(gen_dln, "29110214400123") == 0);
+    printf("  [PASS] IRS IMF DLN Generator verified.\n");
+
+    // 127. Verify IRS IMF Tax Class Inquirer
+    printf("[TEST] Validating IRS IMF Tax Class Inquirer...\n");
+    char class_name[32] = {0};
+    int get_class_res = tsfi_mf_imf_get_tax_class_name(3, class_name, sizeof(class_name));
+    assert(get_class_res == 0);
+    assert(strcmp(class_name, "Corporation Tax") == 0);
+    printf("  [PASS] IRS IMF Tax Class Inquirer verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

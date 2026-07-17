@@ -15,5 +15,7 @@ int tsfi_mf_imf_decode_cycle_code(const char *cycle_code, int *year, int *week, 
 int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status);
 int tsfi_mf_imf_parse_dln(const char *dln, int *site_code, int *tax_class, int *doc_code, int *julian_date, int *serial_num);
 int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount);
+int tsfi_mf_imf_generate_dln(int site_code, int tax_class, int doc_code, int julian_date, int serial_num, char *dln_out, int max_len);
+int tsfi_mf_imf_get_tax_class_name(int tax_class, char *name_out, int max_len);
 
 #endif // TSFI_CADE_IMF_H
