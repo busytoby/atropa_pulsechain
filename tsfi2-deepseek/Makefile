@@ -907,6 +907,9 @@ tests/test_lexical_trie: tests/test_lexical_trie.c $(CORE_OBJS) $(OBJ_DIR)/vulka
 tests/test_anvil_vm: tests/test_anvil_vm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_mpc_arpanet: tests/test_mpc_arpanet.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_ot_accumulator: tests/test_ot_accumulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
