@@ -1132,6 +1132,22 @@ int main(void) {
     assert(acttasks_val == 42);
     printf("  [PASS] CICS INQUIRE SYSTEM ACTTASKS verified.\n");
 
+    // 101. Verify Majordomo List Config KV Line Parser
+    printf("[TEST] Validating Majordomo KV Line Syntax...\n");
+    int kv_line_is_valid = -1;
+    int kv_res = tsfi_mf_majordomo_is_kv_line("moderate = yes", &kv_line_is_valid);
+    assert(kv_res == 0);
+    assert(kv_line_is_valid == 1);
+    printf("  [PASS] Majordomo KV Line Syntax verified.\n");
+
+    // 102. Verify CICS System Inquire Queued Tasks Count Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM QUEUEDTASKS...\n");
+    int queuedtasks_val = 0;
+    int inq_que_res = tsfi_mf_cics_inquire_queuedtasks(5, &queuedtasks_val);
+    assert(inq_que_res == 0);
+    assert(queuedtasks_val == 5);
+    printf("  [PASS] CICS INQUIRE SYSTEM QUEUEDTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

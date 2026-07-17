@@ -1758,3 +1758,21 @@ int tsfi_mf_cics_inquire_acttasks(int active_tasks_count, int *active_tasks_out)
     *active_tasks_out = active_tasks_count;
     return 0;
 }
+
+int tsfi_mf_majordomo_is_kv_line(const char *line, int *is_valid) {
+    if (!line || !is_valid) return -1;
+
+    *is_valid = 0;
+    const char *eq = strchr(line, '=');
+    if (eq && eq != line && *(eq + 1) != '\0') {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_queuedtasks(int queued_tasks_count, int *queued_tasks_out) {
+    if (!queued_tasks_out) return -1;
+
+    *queued_tasks_out = queued_tasks_count;
+    return 0;
+}
