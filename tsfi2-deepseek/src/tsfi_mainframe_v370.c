@@ -1696,3 +1696,41 @@ int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, ui
     
     return 0;
 }
+
+void tsfi_fips60_init(tsfi_fips60_interface *fips) {
+    if (!fips) return;
+    fips->bus_out_command = 0;
+    fips->bus_in_status = 0;
+    fips->command_pending = 0;
+    fips->status_updated = 0;
+}
+
+int tsfi_fips60_bus_out(tsfi_fips60_interface *fips, uint8_t command_byte, const uint8_t *data, uint16_t data_len) {
+    if (!fips) return -1;
+    fips->bus_out_command = command_byte;
+    fips->command_pending = 1;
+    
+    // Process standard commands to resolve controller status
+    if (command_byte == 0x07) { // SEEK
+        fips->bus_in_status = 0x00; // Device normal/idle status
+    } else if (command_byte == 0x01) { // WRITE
+        fips->bus_in_status = 0x0C; // Channel End + Device End
+    } else if (command_byte == 0x02) { // READ
+        fips->bus_in_status = 0x0C; // Channel End + Device End
+    } else if (command_byte == 0x04) { // SENSE
+        fips->bus_in_status = 0x00;
+    } else {
+        fips->bus_in_status = 0x02; // Unit Check (unknown command)
+    }
+    
+    (void)data;
+    (void)data_len;
+    fips->status_updated = 1;
+    return 0;
+}
+
+int tsfi_fips60_status_in(const tsfi_fips60_interface *fips, uint8_t *out_status) {
+    if (!fips || !out_status) return -1;
+    *out_status = fips->bus_in_status;
+    return 0;
+}

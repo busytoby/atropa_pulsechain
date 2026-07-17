@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tsfi_coaxial_observer.h"
+#include "tsfi_mainframe_v370.h"
 
 void tsfi_coaxial_observer_init(TSFiCoaxialObserver *obs, TSFiSHMBridge *bridge, 
                                 TSFiAnvilVM *vm, TSFiOTAccumulator *acc) {
@@ -9,8 +10,10 @@ void tsfi_coaxial_observer_init(TSFiCoaxialObserver *obs, TSFiSHMBridge *bridge,
     obs->shm_bridge = bridge;
     obs->anvil_vm = vm;
     obs->ot_accumulator = acc;
+    obs->fips_interface = NULL;
     obs->last_observed_keycode = -1;
     obs->last_observed_trail_len = 0;
+    obs->last_observed_command = -1;
 }
 
 int tsfi_coaxial_observer_poll(TSFiCoaxialObserver *obs, TSFiCoaxialEvent *event_out) {
@@ -51,6 +54,24 @@ int tsfi_coaxial_observer_poll(TSFiCoaxialObserver *obs, TSFiCoaxialEvent *event
                 tsfi_ot_accumulator_add(obs->ot_accumulator, coord, 0.95f);
             }
             return 1; // Event captured
+        }
+    }
+
+    // 3. Observe FIPS 60 I/O Channel transitions
+    if (obs->fips_interface) {
+        if (obs->fips_interface->command_pending && obs->fips_interface->bus_out_command != obs->last_observed_command) {
+            obs->last_observed_command = obs->fips_interface->bus_out_command;
+            obs->fips_interface->command_pending = 0;
+            event_out->type = COAX_EVENT_CHANNEL_IO;
+            event_out->payload_value = obs->last_observed_command;
+            snprintf(event_out->descriptor, 127, "FIPS 60 Bus-Out Command Captured: 0x%02X", obs->last_observed_command);
+            
+            if (obs->ot_accumulator) {
+                char coord[128];
+                snprintf(coord, sizeof(coord), "svdag/fips60_cmd/0x%02X", obs->last_observed_command);
+                tsfi_ot_accumulator_add(obs->ot_accumulator, coord, 0.97f);
+            }
+            return 1;
         }
     }
 

@@ -5,10 +5,13 @@
 #include "tsfi_anvil_vm.h"
 #include "tsfi_ot_accumulator.h"
 
+struct tsfi_fips60_interface;
+
 // Coaxial Event Types
 typedef enum {
     COAX_EVENT_HARDWARE, // Hardware register state change
-    COAX_EVENT_LOGIC     // Logic VM binding/backtrack change
+    COAX_EVENT_LOGIC,     // Logic VM binding/backtrack change
+    COAX_EVENT_CHANNEL_IO // FIPS 60 I/O channel transition
 } TSFiCoaxialEventType;
 
 // Coaxial Event Payload
@@ -23,8 +26,10 @@ typedef struct {
     TSFiSHMBridge *shm_bridge;
     TSFiAnvilVM *anvil_vm;
     TSFiOTAccumulator *ot_accumulator;
+    struct tsfi_fips60_interface *fips_interface;
     int last_observed_keycode;
     int last_observed_trail_len;
+    int last_observed_command;
 } TSFiCoaxialObserver;
 
 // Initialize Coaxial Observer

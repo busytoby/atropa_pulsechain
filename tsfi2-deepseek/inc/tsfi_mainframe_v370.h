@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "tsfi_ramac_layout.h"
 
 
 
@@ -568,5 +569,17 @@ void tsfi_crypto_init(tsfi_crypto_subsystem *crypto);
 int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_key);
 int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int supervisor_state);
 int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int supervisor_state);
+
+// Scenario 143: NBS FIPS PUB 60 Standard I/O Channel Interface
+typedef struct tsfi_fips60_interface {
+    uint8_t bus_out_command;
+    uint8_t bus_in_status;
+    int command_pending;
+    int status_updated;
+} tsfi_fips60_interface;
+
+void tsfi_fips60_init(tsfi_fips60_interface *fips);
+int tsfi_fips60_bus_out(tsfi_fips60_interface *fips, uint8_t command_byte, const uint8_t *data, uint16_t data_len);
+int tsfi_fips60_status_in(const tsfi_fips60_interface *fips, uint8_t *out_status);
 
 #endif // TSFI_MAINFRAME_V370_H
