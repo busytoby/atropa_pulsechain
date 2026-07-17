@@ -1411,5 +1411,6 @@ int tsfi_scsi_coax_bridge_send_encrypted_frame(tsfi_scsi_transaction *tx, tsfi_c
 int tsfi_appc_coax_bridge_coordinate(tsfi_appc_conversation *conv, tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_des_key_vault *vault, tsfi_coax_frame *frame_out, int *selected_device_id_out);
 int tsfi_appc_consensus_commit(tsfi_appc_conversation *conv, int consensus_success);
 int tsfi_appc_lockstep_abort_check(tsfi_appc_conversation *conv, const tsfi_lockstep_cpu *cpu);
+int tsfi_appc_audit_transaction(tsfi_appc_conversation *conv, const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val);
 
 #endif // TSFI_MAINFRAME_DECNET_H

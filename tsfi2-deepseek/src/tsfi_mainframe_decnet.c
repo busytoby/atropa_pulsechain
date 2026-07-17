@@ -3082,3 +3082,13 @@ int tsfi_appc_lockstep_abort_check(tsfi_appc_conversation *conv, const tsfi_lock
     }
     return 0;
 }
+
+int tsfi_appc_audit_transaction(tsfi_appc_conversation *conv, const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val) {
+    if (!conv || !constraints) return -1;
+    int res = tsfi_audit_constraint(constraints, count, column_id, val);
+    if (res != 0) {
+        conv->state = 3;
+        return res;
+    }
+    return 0;
+}

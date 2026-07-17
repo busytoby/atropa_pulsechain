@@ -2341,6 +2341,26 @@ int main(void) {
     assert(tsfi_appc_lockstep_abort_check(&fault_conv, &fault_cpu) == 1);
     assert(fault_conv.state == 3); // DEALLOCATED
     printf("  [PASS] APPC lockstep fault abort trigger verified.\n");
+    
+    // 116. APPC Schema constraint auditor verification
+    printf("[Test] Verifying APPC constraint audits...\n");
+    tsfi_appc_conversation audit_conv;
+    audit_conv.conversation_id = 771;
+    audit_conv.state = 0; // ALLOCATED
+    
+    tsfi_dictionary_constraint test_rules[1];
+    test_rules[0].column_id = 50;
+    test_rules[0].min_val = 10;
+    test_rules[0].max_val = 20;
+    
+    // Passed audit
+    assert(tsfi_appc_audit_transaction(&audit_conv, test_rules, 1, 50, 15) == 0);
+    assert(audit_conv.state == 0); // unchanged
+    
+    // Failed audit
+    assert(tsfi_appc_audit_transaction(&audit_conv, test_rules, 1, 50, 99) == -2);
+    assert(audit_conv.state == 3); // DEALLOCATED / Aborted
+    printf("  [PASS] APPC dictionary boundary schema check verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
