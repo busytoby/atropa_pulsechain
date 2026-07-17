@@ -935,4 +935,16 @@ int tsfi_algol_common_read(const tsfi_algol_common_block *block, int offset);
 int tsfi_algol_call_cobol(const char *cobol_expr, int regs[8]);
 int tsfi_cobol_call_algol_proc(int proc_id, int param);
 
+// Fred Gruenberger AI Heuristic Maze Solver
+int tsfi_algol_maze_solve(const int maze[16], int curr, int end, int visited[16]);
+
+// Statutory Case Law Indexing Engine
+typedef struct {
+    char case_title[32];
+    char keyword[16];
+    int case_id;
+} tsfi_law_case;
+
+int tsfi_law_query(const tsfi_law_case *db, int db_size, const char *query_word, int results_out[8]);
+
 #endif // TSFI_RAMAC_LAYOUT_H

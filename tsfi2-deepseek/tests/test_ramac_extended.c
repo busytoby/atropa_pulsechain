@@ -477,6 +477,32 @@ int main(void) {
     assert(algol_call_res == 120);
     printf("  [PASS] ALGOL and COBOL cross-language interop call loops verified.\n");
 
+    // 28. Fred Gruenberger AI Heuristic Maze Solver Verification
+    printf("[Test] Verifying AI heuristic maze solver...\n");
+    int maze[16] = {
+        0, 0, 1, 0,
+        1, 0, 1, 0,
+        0, 0, 0, 0,
+        0, 1, 1, 0
+    };
+    int visited[16] = {0};
+    int maze_res = tsfi_algol_maze_solve(maze, 0, 15, visited);
+    assert(maze_res == 1);
+    printf("  [PASS] Heuristic path-solving recursion verified.\n");
+    
+    // 29. Statutory Case Law Indexing Engine Verification
+    printf("[Test] Verifying case law keyword index retrieval...\n");
+    tsfi_law_case law_db[3] = {
+        { "Sherman vs US", "ANTITRUST", 1901 },
+        { "State vs Jones", "LIABILITY", 1923 },
+        { "Doe vs Smith", "CONTRACT", 1955 }
+    };
+    int law_res[8] = {0};
+    int match_cnt = tsfi_law_query(law_db, 3, "LIABILITY", law_res);
+    assert(match_cnt == 1);
+    assert(law_res[0] == 1923);
+    printf("  [PASS] Statutory query router verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

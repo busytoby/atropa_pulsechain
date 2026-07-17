@@ -4135,3 +4135,32 @@ int tsfi_cobol_call_algol_proc(int proc_id, int param) {
     }
     return 0;
 }
+
+int tsfi_algol_maze_solve(const int maze[16], int curr, int end, int visited[16]) {
+    if (curr < 0 || curr >= 16 || maze[curr] == 1 || visited[curr]) return 0;
+    if (curr == end) return 1;
+    
+    visited[curr] = 1;
+    
+    int row = curr / 4;
+    int col = curr % 4;
+    
+    if (row > 0 && tsfi_algol_maze_solve(maze, curr - 4, end, visited)) return 1;
+    if (row < 3 && tsfi_algol_maze_solve(maze, curr + 4, end, visited)) return 1;
+    if (col > 0 && tsfi_algol_maze_solve(maze, curr - 1, end, visited)) return 1;
+    if (col < 3 && tsfi_algol_maze_solve(maze, curr + 1, end, visited)) return 1;
+    
+    return 0;
+}
+
+int tsfi_law_query(const tsfi_law_case *db, int db_size, const char *query_word, int results_out[8]) {
+    if (!db || db_size <= 0 || !query_word || !results_out) return 0;
+    int count = 0;
+    for (int i = 0; i < db_size; i++) {
+        if (strcmp(db[i].keyword, query_word) == 0) {
+            results_out[count++] = db[i].case_id;
+            if (count >= 8) break;
+        }
+    }
+    return count;
+}
