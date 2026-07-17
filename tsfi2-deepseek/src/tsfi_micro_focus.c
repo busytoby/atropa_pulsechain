@@ -964,3 +964,18 @@ int tsfi_mf_majordomo_which(const char *email, const char **lists, int list_coun
 
     return 0;
 }
+
+int tsfi_mf_cics_writeq_td(const char *queue_name, const char *log_message, char *queue_pool, int *queue_count, int max_entries) {
+    if (!queue_name || !log_message || !queue_pool || !queue_count || max_entries <= 0) return -1;
+
+    int idx = *queue_count;
+    if (idx >= max_entries) return -2;
+
+    int entry_size = 64;
+    char *target_slot = queue_pool + (idx * entry_size);
+    memset(target_slot, 0, entry_size);
+    snprintf(target_slot, entry_size, "[%s] %s", queue_name, log_message);
+
+    *queue_count = idx + 1;
+    return 0;
+}

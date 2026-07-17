@@ -510,6 +510,16 @@ int main(void) {
     assert(strstr(which_buf, "cics-admin") != NULL);
     printf("  [PASS] Majordomo which Subscriptions verified.\n");
 
+    // 35. Verify CICS Transient Data Queue Control Emulator
+    printf("[TEST] Validating CICS Transient Data Queue...\n");
+    char td_pool[256] = {0};
+    int td_count = 0;
+    int td_res = tsfi_mf_cics_writeq_td("AUDT", "User login event", td_pool, &td_count, 4);
+    assert(td_res == 0);
+    assert(td_count == 1);
+    assert(strcmp(td_pool, "[AUDT] User login event") == 0);
+    printf("  [PASS] CICS Transient Data Queue Control Emulator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
