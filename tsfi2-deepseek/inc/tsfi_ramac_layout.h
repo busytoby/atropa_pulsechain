@@ -1300,4 +1300,20 @@ int tsfi_ac_filter_add_pattern(tsfi_ac_filter *filter, const char *pattern, int 
 void tsfi_ac_filter_build(tsfi_ac_filter *filter);
 int tsfi_ac_filter_search(const tsfi_ac_filter *filter, const char *text);
 
+// COBOL RWCS (Report Writer Control System) Report Generator
+typedef struct {
+    int page_limit;
+    int line_limit;
+    int current_page;
+    int current_line;
+    double group_total;
+    double final_total;
+} tsfi_rwcs_report;
+
+void tsfi_rwcs_init(tsfi_rwcs_report *rep, int page_limit, int line_limit);
+int tsfi_rwcs_write_header(tsfi_rwcs_report *rep, char *out, size_t max_len);
+int tsfi_rwcs_process_item(tsfi_rwcs_report *rep, char *out, size_t max_len, int item_id, const char *name, double amount);
+int tsfi_rwcs_control_break(tsfi_rwcs_report *rep, char *out, size_t max_len);
+int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

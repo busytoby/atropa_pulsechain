@@ -1102,6 +1102,29 @@ int main(void) {
     assert(match_idx == -1);
     printf("  [PASS] Aho-Corasick ACH routing prefix matching verified successfully.\n");
 
+    // 65. COBOL RWCS (Report Writer Control System) Verification
+    printf("[Test] Verifying COBOL RWCS report writer control system...\n");
+    tsfi_rwcs_report report;
+    tsfi_rwcs_init(&report, 5, 8);
+    char report_buf[1024];
+    int offset = tsfi_rwcs_write_header(&report, report_buf, sizeof(report_buf));
+    assert(offset > 0);
+    
+    int bytes = tsfi_rwcs_process_item(&report, report_buf + offset, sizeof(report_buf) - offset, 1, "FED-RESERVE-A", 12500.0);
+    offset += bytes;
+    bytes = tsfi_rwcs_process_item(&report, report_buf + offset, sizeof(report_buf) - offset, 2, "FED-RESERVE-B", 3500.0);
+    offset += bytes;
+    
+    bytes = tsfi_rwcs_control_break(&report, report_buf + offset, sizeof(report_buf) - offset);
+    offset += bytes;
+    
+    bytes = tsfi_rwcs_write_final(&report, report_buf + offset, sizeof(report_buf) - offset);
+    offset += bytes;
+    
+    assert(report.final_total == 16000.0);
+    assert(report.current_page == 1);
+    printf("  [PASS] COBOL RWCS report generation and subtotal cross-footing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

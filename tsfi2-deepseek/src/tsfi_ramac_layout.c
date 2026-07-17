@@ -5413,3 +5413,72 @@ int tsfi_ac_filter_search(const tsfi_ac_filter *filter, const char *text) {
     }
     return -1;
 }
+
+void tsfi_rwcs_init(tsfi_rwcs_report *rep, int page_limit, int line_limit) {
+    if (!rep) return;
+    rep->page_limit = page_limit;
+    rep->line_limit = line_limit;
+    rep->current_page = 1;
+    rep->current_line = 0;
+    rep->group_total = 0.0;
+    rep->final_total = 0.0;
+}
+
+int tsfi_rwcs_write_header(tsfi_rwcs_report *rep, char *out, size_t max_len) {
+    if (!rep || !out || max_len < 128) return -1;
+    int written = snprintf(out, max_len,
+                           "=========================================\n"
+                           "COBOL FINANCIAL AUDIT REPORT    PAGE: %02d\n"
+                           "=========================================\n"
+                           "ITEM-ID    ITEM-NAME             AMOUNT\n"
+                           "-----------------------------------------\n",
+                           rep->current_page);
+    rep->current_line = 5;
+    return written;
+}
+
+int tsfi_rwcs_process_item(tsfi_rwcs_report *rep, char *out, size_t max_len, int item_id, const char *name, double amount) {
+    if (!rep || !out || max_len < 64) return -1;
+    if (rep->current_line >= rep->line_limit) {
+        rep->current_page++;
+        int header_len = tsfi_rwcs_write_header(rep, out, max_len);
+        int item_len = snprintf(out + header_len, max_len - header_len,
+                                "%06d     %-20.20s  %10.2f\n",
+                                item_id, name, amount);
+        rep->group_total += amount;
+        rep->final_total += amount;
+        rep->current_line++;
+        return header_len + item_len;
+    } else {
+        int item_len = snprintf(out, max_len,
+                                "%06d     %-20.20s  %10.2f\n",
+                                item_id, name, amount);
+        rep->group_total += amount;
+        rep->final_total += amount;
+        rep->current_line++;
+        return item_len;
+    }
+}
+
+int tsfi_rwcs_control_break(tsfi_rwcs_report *rep, char *out, size_t max_len) {
+    if (!rep || !out || max_len < 64) return -1;
+    int written = snprintf(out, max_len,
+                           "-----------------------------------------\n"
+                           "SUBTOTAL:                         %10.2f\n"
+                           "=========================================\n",
+                           rep->group_total);
+    rep->group_total = 0.0;
+    rep->current_line += 3;
+    return written;
+}
+
+int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len) {
+    if (!rep || !out || max_len < 64) return -1;
+    int written = snprintf(out, max_len,
+                           "-----------------------------------------\n"
+                           "GRAND TOTAL:                      %10.2f\n"
+                           "=========================================\n",
+                           rep->final_total);
+    rep->current_line += 3;
+    return written;
+}
