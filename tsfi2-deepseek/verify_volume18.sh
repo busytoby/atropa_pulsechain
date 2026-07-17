@@ -213,8 +213,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 258 | IRS CADE Taxpayer Audit Pending Checker | PASS | Asserves if account status matches pending audit codes | Volume 33 |
 | 259 | IRS IMF Miscellaneous Form Verifier | PASS | Restricts miscellaneous filings to valid miscellaneous ranges | Volume 33 |
 | 260 | IRS CADE Taxpayer Unknown Status Verifier | PASS | Asserves if account status matches unrecognized codes | Volume 33 |
+| 261 | IRS IMF Partnership Form Verifier | PASS | Restricts partnership filings to valid partnership form ranges | Volume 33 |
+| 262 | IRS CADE Taxpayer Dual Active Checker | PASS | Asserves if both account status parameters match active codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 260 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 262 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

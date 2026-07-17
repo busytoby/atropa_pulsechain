@@ -39,5 +39,7 @@ int tsfi_mf_imf_is_excise_form(int doc_code, int *result);
 int tsfi_mf_cade_is_audit_pending(int status_code, int *is_pending);
 int tsfi_mf_imf_is_misc_form(int doc_code, int *result);
 int tsfi_mf_cade_is_unknown_status(int status_code, int *is_unknown);
+int tsfi_mf_imf_is_partnership_form(int doc_code, int *result);
+int tsfi_mf_cade_are_both_active(int status_a, int status_b, int *both_active);
 
 #endif // TSFI_CADE_IMF_H

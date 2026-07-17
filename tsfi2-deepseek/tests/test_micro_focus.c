@@ -1555,6 +1555,22 @@ int main(void) {
     assert(is_unk == 1);
     printf("  [PASS] IRS CADE Taxpayer Unknown Status Verifier verified.\n");
 
+    // 150. Verify IRS IMF Partnership Form Verifier
+    printf("[TEST] Validating IRS IMF Partnership Form Verifier...\n");
+    int is_part = -1;
+    int part_res = tsfi_mf_imf_is_partnership_form(15, &is_part);
+    assert(part_res == 0);
+    assert(is_part == 1);
+    printf("  [PASS] IRS IMF Partnership Form Verifier verified.\n");
+
+    // 151. Verify IRS CADE Taxpayer Dual Active Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Dual Active Checker...\n");
+    int both_act = -1;
+    int both_act_res = tsfi_mf_cade_are_both_active(1, 1, &both_act);
+    assert(both_act_res == 0);
+    assert(both_act == 1);
+    printf("  [PASS] IRS CADE Taxpayer Dual Active Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -484,3 +484,23 @@ int tsfi_mf_cade_is_unknown_status(int status_code, int *is_unknown) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_partnership_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 15) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_are_both_active(int status_a, int status_b, int *both_active) {
+    if (!both_active) return -1;
+
+    *both_active = 0;
+    if (status_a == 1 && status_b == 1) {
+        *both_active = 1;
+    }
+    return 0;
+}
