@@ -2444,3 +2444,56 @@ int tsfi_pki_rotate_key(uint8_t public_keys[11][32], int target_index, const uin
     memcpy(public_keys[target_index], new_key, 32);
     return 0;
 }
+
+void tsfi_migration_init(tsfi_migration_planner *planner) {
+    if (!planner) return;
+    planner->current_phase = 1;
+    planner->network_nodes_ready = 0;
+    planner->compatibility_tests_passed = 0;
+}
+
+int tsfi_migration_advance(tsfi_migration_planner *planner) {
+    if (!planner) return -1;
+    if (planner->current_phase == 1) {
+        if (planner->compatibility_tests_passed >= 5) {
+            planner->current_phase = 2;
+            return 0;
+        }
+        return -2;
+    } else if (planner->current_phase == 2) {
+        if (planner->network_nodes_ready >= 10) {
+            planner->current_phase = 3;
+            return 0;
+        }
+        return -3;
+    }
+    return 1;
+}
+
+void tsfi_vredestein_init(tsfi_vredestein_controller *ctrl) {
+    if (!ctrl) return;
+    ctrl->write_in_progress = 0;
+    ctrl->dirty_flag = 0;
+    ctrl->rollback_executed = 0;
+}
+
+int tsfi_vredestein_commit(tsfi_vredestein_controller *ctrl) {
+    if (!ctrl) return -1;
+    if (ctrl->write_in_progress) {
+        ctrl->write_in_progress = 0;
+        ctrl->dirty_flag = 0;
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_vredestein_rollback(tsfi_vredestein_controller *ctrl) {
+    if (!ctrl) return -1;
+    if (ctrl->write_in_progress || ctrl->dirty_flag) {
+        ctrl->write_in_progress = 0;
+        ctrl->dirty_flag = 0;
+        ctrl->rollback_executed = 1;
+        return 0;
+    }
+    return -2;
+}

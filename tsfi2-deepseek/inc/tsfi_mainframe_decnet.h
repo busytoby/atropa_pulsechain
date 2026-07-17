@@ -1137,4 +1137,25 @@ int tsfi_bank_term_rotate_key(tsfi_bank_terminal *term, uint32_t challenge, uint
 // 11-key PKI key rotation (requires threshold of 6 signatures)
 int tsfi_pki_rotate_key(uint8_t public_keys[11][32], int target_index, const uint8_t *new_key, const uint8_t signatures[11][32], int sig_count);
 
+// Three-Phase Migration Planner
+typedef struct {
+    int current_phase;
+    int network_nodes_ready;
+    int compatibility_tests_passed;
+} tsfi_migration_planner;
+
+void tsfi_migration_init(tsfi_migration_planner *planner);
+int tsfi_migration_advance(tsfi_migration_planner *planner);
+
+// Vredestein Storage Recovery Controller
+typedef struct {
+    int write_in_progress;
+    int dirty_flag;
+    int rollback_executed;
+} tsfi_vredestein_controller;
+
+void tsfi_vredestein_init(tsfi_vredestein_controller *ctrl);
+int tsfi_vredestein_commit(tsfi_vredestein_controller *ctrl);
+int tsfi_vredestein_rollback(tsfi_vredestein_controller *ctrl);
+
 #endif // TSFI_MAINFRAME_DECNET_H

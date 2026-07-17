@@ -1641,6 +1641,36 @@ int main(void) {
     assert(keys[10][0] == 0xFF);
     printf("  [PASS] 11-key PKI key rotation threshold validations verified.\n");
 
+    // 85. Fred Lamond Migration Planner & Vredestein Storage Recovery Verification
+    printf("[Test] Verifying Migration Planner & Vredestein Recovery...\n");
+    tsfi_migration_planner planner;
+    tsfi_migration_init(&planner);
+    assert(planner.current_phase == 1);
+    
+    assert(tsfi_migration_advance(&planner) == -2); // Phase 1 to 2 needs 5 tests
+    planner.compatibility_tests_passed = 5;
+    assert(tsfi_migration_advance(&planner) == 0); // Advanced to Phase 2
+    assert(planner.current_phase == 2);
+    
+    assert(tsfi_migration_advance(&planner) == -3); // Phase 2 to 3 needs 10 nodes
+    planner.network_nodes_ready = 10;
+    assert(tsfi_migration_advance(&planner) == 0); // Advanced to Phase 3
+    assert(planner.current_phase == 3);
+    
+    // Vredestein recovery
+    tsfi_vredestein_controller ctrl;
+    tsfi_vredestein_init(&ctrl);
+    assert(ctrl.rollback_executed == 0);
+    
+    assert(tsfi_vredestein_commit(&ctrl) == -2); // No tx
+    ctrl.write_in_progress = 1;
+    assert(tsfi_vredestein_commit(&ctrl) == 0); // Committed
+    
+    ctrl.dirty_flag = 1;
+    assert(tsfi_vredestein_rollback(&ctrl) == 0); // Rolled back
+    assert(ctrl.rollback_executed == 1);
+    printf("  [PASS] Mainframe migration stages and storage commit rollbacks verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
