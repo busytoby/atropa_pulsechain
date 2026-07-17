@@ -1912,6 +1912,18 @@ int main(void) {
     assert(tsfi_fips127_validate_sql("DROP TABLE schema.table;") == -2); // Unsupported statement verb
     printf("  [PASS] FIPS 127 standard SQL query statement verbs verified.\n");
 
+    // 164. NBS FIPS Peripheral-Level Pre-Validation Filter Verification
+    printf("[Test] Verifying NBS FIPS Peripheral-Level Pre-Validation Filter...\n");
+    int dropped = 0;
+    const char *bad_sql = "DROP TABLE mytable;";
+    assert(tsfi_fips_peripheral_filter("sql", (const uint8_t*)bad_sql, strlen(bad_sql), &dropped) == 0);
+    assert(dropped == 1); // Invalid SQL dropped at peripheral boundary
+    
+    const char *good_sql = "SELECT * FROM mytable;";
+    assert(tsfi_fips_peripheral_filter("sql", (const uint8_t*)good_sql, strlen(good_sql), &dropped) == 0);
+    assert(dropped == 0); // Valid SQL accepted
+    printf("  [PASS] FIPS peripheral pre-validation query filtering and dropped flags verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

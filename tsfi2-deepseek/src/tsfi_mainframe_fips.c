@@ -867,3 +867,34 @@ int tsfi_fips127_validate_sql(const char *sql_query) {
     
     return -2; // Syntax violation or unsupported statement verb
 }
+
+int tsfi_fips_peripheral_filter(const char *data_type, const uint8_t *data, int len, int *out_dropped_flag) {
+    if (!data_type || !data || len <= 0 || !out_dropped_flag) return -1;
+    
+    *out_dropped_flag = 0;
+    
+    // Make a null-terminated copy of the data safely
+    char *buf = malloc(len + 1);
+    if (!buf) return -3;
+    memcpy(buf, data, len);
+    buf[len] = '\0';
+    
+    if (strcmp(data_type, "sql") == 0) {
+        if (tsfi_fips127_validate_sql(buf) != 0) {
+            *out_dropped_flag = 1;
+        }
+    } else if (strcmp(data_type, "password") == 0) {
+        int score = 0;
+        if (tsfi_fips112_validate_password(buf, &score) != 0) {
+            *out_dropped_flag = 1;
+        }
+    } else if (strcmp(data_type, "numeric") == 0) {
+        double val = 0.0;
+        if (tsfi_fips69_parse_numeric(buf, &val) != 0) {
+            *out_dropped_flag = 1;
+        }
+    }
+    
+    free(buf);
+    return 0;
+}

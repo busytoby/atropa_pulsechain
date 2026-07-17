@@ -171,4 +171,7 @@ int tsfi_fips95_resolve_agency(const char *agency_code, char *out_name, int max_
 // Scenario 163: NBS FIPS PUB 127 SQL Syntax Validator
 int tsfi_fips127_validate_sql(const char *sql_query);
 
+// Scenario 164: NBS FIPS Peripheral-Level Pre-Validation Filter
+int tsfi_fips_peripheral_filter(const char *data_type, const uint8_t *data, int len, int *out_dropped_flag);
+
 #endif // TSFI_MAINFRAME_FIPS_H
