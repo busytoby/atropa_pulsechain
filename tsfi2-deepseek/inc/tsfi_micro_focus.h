@@ -67,6 +67,7 @@ int tsfi_mf_majordomo_update_info(const char *list_name, const char *new_info, c
 int tsfi_mf_majordomo_archive_index(const char *list_name, const char **archive_files, int archive_count, char *index_out, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_cics_handle_abend_program(const char *program_name, char *abend_program_registry, int max_name);
+int tsfi_mf_cics_handle_pmg_hit_abend(uint32_t player_id, int hit_type, int *health_in_out, float *x_out, float *y_out, char *action_log, int max_log);
 int tsfi_mf_cics_handle_abend(uint64_t handler_addr, uint64_t *abend_handler_registry, int *registry_active);
 int tsfi_mf_cics_cancel_abend(uint64_t *abend_handler_registry, int *registry_active);
 int tsfi_mf_cics_release(const char *resource_name, uint8_t *storage_pool, uint32_t *allocated_offset);

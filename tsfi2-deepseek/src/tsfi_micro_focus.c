@@ -1433,3 +1433,20 @@ int tsfi_mf_cics_handle_abend_program(const char *program_name, char *abend_prog
     snprintf(abend_program_registry, max_name, "%s", program_name);
     return 0;
 }
+
+int tsfi_mf_cics_handle_pmg_hit_abend(uint32_t player_id, int hit_type, int *health_in_out, float *x_out, float *y_out, char *action_log, int max_log) {
+    if (!health_in_out || !x_out || !y_out || !action_log || max_log <= 0) return -1;
+
+    int dmg = (hit_type == 1) ? *health_in_out : 50;
+    *health_in_out -= dmg;
+
+    if (*health_in_out <= 0) {
+        *health_in_out = 100;
+        *x_out = 0.0f;
+        *y_out = 0.0f;
+        snprintf(action_log, max_log, "ABEND_RECOVERY:PLAYER=%u|ACTION=RESPAWN", player_id);
+    } else {
+        snprintf(action_log, max_log, "PHYSICS_HIT:PLAYER=%u|DAMAGE=%d|HEALTH=%d", player_id, dmg, *health_in_out);
+    }
+    return 0;
+}

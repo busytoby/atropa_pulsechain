@@ -871,6 +871,25 @@ int main(void) {
     assert(strcmp(ab_prog_reg, "ERR_PROG") == 0);
     printf("  [PASS] CICS HANDLE ABEND PROGRAM verified.\n");
 
+    // 72. Verify CICS PMG Abend Hit Physics Handler
+    printf("[TEST] Validating CICS PMG Abend Hit Handler...\n");
+    int player_hp = 80;
+    float player_x = 10.0f;
+    float player_y = 20.0f;
+    char hit_log[128] = {0};
+    int hit_res = tsfi_mf_cics_handle_pmg_hit_abend(101, 0, &player_hp, &player_x, &player_y, hit_log, sizeof(hit_log));
+    assert(hit_res == 0);
+    assert(player_hp == 30);
+    assert(player_x == 10.0f);
+    assert(strstr(hit_log, "DAMAGE=50") != NULL);
+    int hit_res2 = tsfi_mf_cics_handle_pmg_hit_abend(101, 1, &player_hp, &player_x, &player_y, hit_log, sizeof(hit_log));
+    assert(hit_res2 == 0);
+    assert(player_hp == 100);
+    assert(player_x == 0.0f);
+    assert(player_y == 0.0f);
+    assert(strstr(hit_log, "ACTION=RESPAWN") != NULL);
+    printf("  [PASS] CICS PMG Abend Hit Handler verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
