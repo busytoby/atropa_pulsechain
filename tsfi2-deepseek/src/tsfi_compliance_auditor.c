@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
         printf("  %s --password <pass_str>       Validate password complexity (FIPS 112)\n", argv[0]);
         printf("  %s --gks <cmd_byte> <pts_cnt>  Parse graphics primitives (FIPS 120)\n", argv[0]);
         printf("  %s --agency <agency_code>      Resolve federal agency code (FIPS 95)\n", argv[0]);
+        printf("  %s --datetime <date> <time>    Validate date & time interchange (FIPS 4-1 / 58-1)\n", argv[0]);
         return 0;
     }
 
@@ -211,6 +212,15 @@ int main(int argc, char **argv) {
             printf("RESULT: Resolved Agency: %s\n", name);
         } else {
             printf("RESULT: UNRESOLVED CODE\n");
+        }
+    } else if (strcmp(argv[1], "--datetime") == 0 && argc >= 4) {
+        int date_res = tsfi_fips4_validate_date(argv[2]);
+        int time_res = tsfi_fips58_validate_time(argv[3]);
+        printf("[FIPS 4-1 / 58-1 AUDIT] Date: '%s', Time: '%s'\n", argv[2], argv[3]);
+        if (date_res == 0 && time_res == 0) {
+            printf("RESULT: VALID DATE AND TIME FORMATS\n");
+        } else {
+            printf("RESULT: FORMAT VIOLATION (Date: %d, Time: %d)\n", date_res, time_res);
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");
