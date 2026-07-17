@@ -559,6 +559,19 @@ int main(void) {
     assert(active_tasks == 1);
     printf("  [PASS] CICS Interval Control Task Starter Emulator verified.\n");
 
+    // 40. Verify Gauntlet Mainframe BTC Rails VM Transaction Processor
+    printf("[TEST] Validating Gauntlet Mainframe BTC Rails VM Transaction Processor...\n");
+    int32_t health = 1000;
+    uint32_t keys = 2;
+    char tx_out[128] = {0};
+    int btc_res = tsfi_mf_gauntlet_btc_transaction("VALKYRIE", 500, &health, &keys, tx_out, sizeof(tx_out));
+    assert(btc_res == 0);
+    assert(health == 1000);
+    assert(keys == 3);
+    assert(strstr(tx_out, "SATS:500") != NULL);
+    assert(strstr(tx_out, "HERO:VALKYRIE") != NULL);
+    printf("  [PASS] Gauntlet Mainframe BTC Rails VM Transaction Processor verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

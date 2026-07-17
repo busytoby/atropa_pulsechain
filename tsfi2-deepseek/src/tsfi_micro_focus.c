@@ -1015,3 +1015,29 @@ int tsfi_mf_cics_start_task(const char *trans_id, uint32_t delay_seconds, const 
     *active_tasks_count += 1;
     return 0;
 }
+
+int tsfi_mf_gauntlet_btc_transaction(const char *player_id, uint32_t amount_sats, int32_t *health_in_out, uint32_t *keys_in_out, char *tx_out, int max_tx_len) {
+    if (!player_id || !health_in_out || !keys_in_out || !tx_out || max_tx_len <= 0) return -1;
+
+    if (amount_sats >= 500) {
+        *keys_in_out += 1;
+    } else if (amount_sats >= 100) {
+        *health_in_out += 100;
+    } else {
+        return -2;
+    }
+
+    uint64_t tx_hash = 11235813;
+    for (int i = 0; player_id[i] != '\0'; i++) {
+        tx_hash = ((tx_hash << 5) + tx_hash) + (uint8_t)player_id[i];
+    }
+    tx_hash += amount_sats;
+
+    snprintf(tx_out, max_tx_len, "TXID:%016lX | SATS:%d | HERO:%s", tx_hash, amount_sats, player_id);
+
+    char vsam_val[64];
+    snprintf(vsam_val, sizeof(vsam_val), "HP:%d | KEYS:%d | TX:%016lX", *health_in_out, *keys_in_out, tx_hash);
+    tsfi_mf_cics_vsam_write("USERFILE", player_id, vsam_val);
+
+    return 0;
+}
