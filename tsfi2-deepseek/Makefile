@@ -324,6 +324,9 @@ bin/test_ramac_extended: tests/test_ramac_extended.c $(CORE_OBJS) $(OBJ_DIR)/vul
 bin/test_gas_audit: tests/test_gas_audit.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^
 
+bin/test_mcs_sync_client: tests/test_mcs_sync_client.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 
 
 bin/test_valve_synthesis: tests/test_valve_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
