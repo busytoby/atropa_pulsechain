@@ -327,6 +327,19 @@ int main(void) {
     assert(pmg_buffer[5 * 80 + 12] == 'X');
     printf("  [PASS] CICS BMS PMG Sprite Renderer verified.\n");
 
+    // 17. Verify CICS ENQ and DEQ Task Locks
+    printf("[TEST] Validating CICS ENQ/DEQ Task Locks...\n");
+    uint32_t lock_table[16] = {0};
+    int enq_res = tsfi_mf_cics_enq("DATABASE_RECORD", 101, lock_table, 8);
+    assert(enq_res == 0);
+    int enq_res2 = tsfi_mf_cics_enq("DATABASE_RECORD", 102, lock_table, 8);
+    assert(enq_res2 == 1);
+    int deq_res = tsfi_mf_cics_deq("DATABASE_RECORD", 101, lock_table, 8);
+    assert(deq_res == 0);
+    int enq_res3 = tsfi_mf_cics_enq("DATABASE_RECORD", 102, lock_table, 8);
+    assert(enq_res3 == 0);
+    printf("  [PASS] CICS ENQ/DEQ Task locks verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

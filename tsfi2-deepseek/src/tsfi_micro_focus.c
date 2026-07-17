@@ -541,3 +541,56 @@ int tsfi_mf_cics_bms_pmg_render(const uint8_t *pmg_base, int player_x, int playe
 
     return 0;
 }
+
+static uint32_t tsfi_mf_hash_resource(const char *name) {
+    uint32_t hash = 5381;
+    int c;
+    while ((c = (uint8_t)*name++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash;
+}
+
+int tsfi_mf_cics_enq(const char *resource_name, uint32_t task_id, uint32_t *lock_table, int max_locks) {
+    if (!resource_name || !lock_table || max_locks <= 0) return -1;
+
+    uint32_t r_hash = tsfi_mf_hash_resource(resource_name);
+
+    for (int i = 0; i < max_locks; i++) {
+        if (lock_table[i * 2] == r_hash) {
+            if (lock_table[i * 2 + 1] == task_id) {
+                return 0;
+            }
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < max_locks; i++) {
+        if (lock_table[i * 2] == 0) {
+            lock_table[i * 2] = r_hash;
+            lock_table[i * 2 + 1] = task_id;
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_deq(const char *resource_name, uint32_t task_id, uint32_t *lock_table, int max_locks) {
+    if (!resource_name || !lock_table || max_locks <= 0) return -1;
+
+    uint32_t r_hash = tsfi_mf_hash_resource(resource_name);
+
+    for (int i = 0; i < max_locks; i++) {
+        if (lock_table[i * 2] == r_hash) {
+            if (lock_table[i * 2 + 1] == task_id) {
+                lock_table[i * 2] = 0;
+                lock_table[i * 2 + 1] = 0;
+                return 0;
+            }
+            return -2;
+        }
+    }
+
+    return -3;
+}
