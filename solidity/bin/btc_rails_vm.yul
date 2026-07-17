@@ -108,6 +108,42 @@ object "BtcRailsVM" {
                     case 6 { // HALT
                         regHalted := 1
                     }
+                    case 7 { // VERIFY_ACH_ROUTING
+                         if lt(regSP, add(stack_base, 32)) {
+                             regHalted := 1
+                             break
+                         }
+                         regSP := sub(regSP, 32)
+                         let val := mload(regSP)
+                         let temp := val
+                         let d9 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d8 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d7 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d6 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d5 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d4 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d3 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d2 := mod(temp, 10)
+                         temp := div(temp, 10)
+                         let d1 := mod(temp, 10)
+                         let sum := add(
+                             add(mul(3, add(add(d1, d4), d7)), mul(7, add(add(d2, d5), d8))),
+                             add(add(d3, d6), d9)
+                         )
+                         let is_valid := 0
+                         if iszero(mod(sum, 10)) {
+                             is_valid := 1
+                         }
+                         mstore(regSP, is_valid)
+                         regSP := add(regSP, 32)
+                    }
                     default {
                         regHalted := 1
                     }
