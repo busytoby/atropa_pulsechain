@@ -1896,6 +1896,15 @@ int main(void) {
     assert(tsfi_fips120_parse_gks_primitive(gks_stream, 5, &prim_type, &pts_count) == -3);
     printf("  [PASS] FIPS 120 GKS graphical command codes and coordinates parsed correctly.\n");
 
+    // 162. NBS FIPS PUB 95 Agency Code Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 95 Agency Code Validator...\n");
+    char name_buf[128];
+    assert(tsfi_fips95_resolve_agency("NBS ", name_buf, sizeof(name_buf)) == 0);
+    assert(strcmp(name_buf, "National Bureau of Standards") == 0);
+    
+    assert(tsfi_fips95_resolve_agency("INVALID", name_buf, sizeof(name_buf)) == -2);
+    printf("  [PASS] FIPS 95 administrative agency codes correctly parsed and resolved.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

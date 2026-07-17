@@ -165,4 +165,7 @@ int tsfi_fips112_validate_password(const char *password, int *out_complexity_sco
 // Scenario 161: NBS FIPS PUB 120 Graphical Kernel System (GKS) Primitive Parser
 int tsfi_fips120_parse_gks_primitive(const uint8_t *stream, int len, int *out_primitive_type, int *out_point_count);
 
+// Scenario 162: NBS FIPS PUB 95 Agency Code Validator
+int tsfi_fips95_resolve_agency(const char *agency_code, char *out_name, int max_len);
+
 #endif // TSFI_MAINFRAME_FIPS_H

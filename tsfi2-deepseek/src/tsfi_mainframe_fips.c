@@ -834,3 +834,21 @@ int tsfi_fips120_parse_gks_primitive(const uint8_t *stream, int len, int *out_pr
     *out_point_count = point_count;
     return 0;
 }
+
+int tsfi_fips95_resolve_agency(const char *agency_code, char *out_name, int max_len) {
+    if (!agency_code || !out_name || max_len <= 0) return -1;
+    
+    if (strcmp(agency_code, "NBS ") == 0) {
+        snprintf(out_name, max_len, "National Bureau of Standards");
+    } else if (strcmp(agency_code, "DOD ") == 0) {
+        snprintf(out_name, max_len, "Department of Defense");
+    } else if (strcmp(agency_code, "NASA") == 0) {
+        snprintf(out_name, max_len, "National Aeronautics and Space Administration");
+    } else if (strcmp(agency_code, "DOE ") == 0) {
+        snprintf(out_name, max_len, "Department of Energy");
+    } else {
+        return -2; // Unknown Agency Code
+    }
+    
+    return 0;
+}
