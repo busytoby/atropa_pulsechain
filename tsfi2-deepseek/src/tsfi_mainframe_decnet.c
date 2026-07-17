@@ -2981,3 +2981,34 @@ int tsfi_vtam_buf_bind(tsfi_vtam_buf_session *sess, int buffer_size) {
     sess->data_flow_state = 1;
     return 0;
 }
+
+void tsfi_coax_controller_init(tsfi_coax_controller *ctrl) {
+    if (!ctrl) return;
+    ctrl->device_count = 0;
+    memset(ctrl->devices, 0, sizeof(ctrl->devices));
+}
+
+int tsfi_coax_controller_poll(tsfi_coax_controller *ctrl, int *active_device_id_out) {
+    if (!ctrl || !active_device_id_out) return -1;
+    for (int i = 0; i < ctrl->device_count; i++) {
+        ctrl->devices[i].poll_count++;
+        if (ctrl->devices[i].status_register & 0x01) {
+            *active_device_id_out = ctrl->devices[i].device_id;
+            return 0;
+        }
+    }
+    *active_device_id_out = -1;
+    return 1;
+}
+
+int tsfi_scsi_authorize_transaction(tsfi_scsi_transaction *tx, const uint8_t *expected_hash) {
+    if (!tx || !expected_hash) return -1;
+    if (memcmp(tx->payload_hash, expected_hash, 32) == 0) {
+        tx->signature_verified = 1;
+        tx->is_fips_compliant = 1;
+        return 0;
+    }
+    tx->signature_verified = 0;
+    tx->is_fips_compliant = 0;
+    return -2;
+}

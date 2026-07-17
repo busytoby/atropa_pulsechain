@@ -2168,6 +2168,40 @@ int main(void) {
     assert(buf_sess.data_flow_state == 1); // bound
     printf("  [PASS] VTAM session allocation and flow bindings verified.\n");
 
+    // 108. Coaxial Device Register Polling verification
+    printf("[Test] Verifying Coaxial device polling...\n");
+    tsfi_coax_controller coax_ctrl;
+    tsfi_coax_controller_init(&coax_ctrl);
+    assert(coax_ctrl.device_count == 0);
+    
+    coax_ctrl.devices[0].device_id = 88;
+    coax_ctrl.devices[0].status_register = 0x00; // Not ready
+    coax_ctrl.devices[0].poll_count = 0;
+    coax_ctrl.device_count = 1;
+    
+    int active_dev = -1;
+    assert(tsfi_coax_controller_poll(&coax_ctrl, &active_dev) == 1);
+    assert(active_dev == -1);
+    
+    coax_ctrl.devices[0].status_register = 0x01; // Ready flag set
+    assert(tsfi_coax_controller_poll(&coax_ctrl, &active_dev) == 0);
+    assert(active_dev == 88);
+    printf("  [PASS] Coaxial controller keyboard lock status polling verified.\n");
+    
+    // 109. LU-SCSI-FIPS transaction hash auditor verification
+    printf("[Test] Verifying SCSI FIPS transaction hashes...\n");
+    tsfi_scsi_transaction scsi_tx;
+    memset(&scsi_tx, 0, sizeof(scsi_tx));
+    for (int i = 0; i < 32; i++) scsi_tx.payload_hash[i] = 0xBB;
+    
+    uint8_t match_hash[32];
+    memset(match_hash, 0xBB, 32);
+    
+    assert(tsfi_scsi_authorize_transaction(&scsi_tx, match_hash) == 0);
+    assert(scsi_tx.signature_verified == 1);
+    assert(scsi_tx.is_fips_compliant == 1);
+    printf("  [PASS] LU-SCSI-FIPS transaction authorization and signature hashes verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -1378,4 +1378,28 @@ typedef struct {
 void tsfi_vtam_buf_init(tsfi_vtam_buf_session *sess, int sess_id);
 int tsfi_vtam_buf_bind(tsfi_vtam_buf_session *sess, int buffer_size);
 
+// Coaxial Controller Device-Status Register Poller
+typedef struct {
+    int device_id;
+    uint8_t status_register;
+    int poll_count;
+} tsfi_coax_device;
+
+typedef struct {
+    tsfi_coax_device devices[4];
+    int device_count;
+} tsfi_coax_controller;
+
+void tsfi_coax_controller_init(tsfi_coax_controller *ctrl);
+int tsfi_coax_controller_poll(tsfi_coax_controller *ctrl, int *active_device_id_out);
+
+// LU-SCSI-FIPS Transaction Authorization Filter
+typedef struct {
+    uint8_t payload_hash[32];
+    int signature_verified;
+    int is_fips_compliant;
+} tsfi_scsi_transaction;
+
+int tsfi_scsi_authorize_transaction(tsfi_scsi_transaction *tx, const uint8_t *expected_hash);
+
 #endif // TSFI_MAINFRAME_DECNET_H
