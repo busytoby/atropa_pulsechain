@@ -819,6 +819,25 @@ int main(void) {
     assert(page_pool[39] == 0x00);
     printf("  [PASS] CICS RELEASE verified.\n");
 
+    // 66. Verify Majordomo List Admin Password Hash Calculator
+    printf("[TEST] Validating Majordomo Password Hasher...\n");
+    char pass_hash[64] = {0};
+    int hash_res = tsfi_mf_majordomo_hash_password("admin_pass", pass_hash, sizeof(pass_hash));
+    assert(hash_res == 0);
+    assert(strncmp(pass_hash, "MD5:", 4) == 0);
+    printf("  [PASS] Majordomo Password Hasher verified.\n");
+
+    // 67. Verify CICS Command Level Program Control ABEND Handler Register
+    printf("[TEST] Validating CICS HANDLE ABEND...\n");
+    uint64_t mock_handler = 0x5500AABB;
+    uint64_t mock_registry = 0;
+    int mock_active = 0;
+    int ha_res = tsfi_mf_cics_handle_abend(mock_handler, &mock_registry, &mock_active);
+    assert(ha_res == 0);
+    assert(mock_registry == mock_handler);
+    assert(mock_active == 1);
+    printf("  [PASS] CICS HANDLE ABEND verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

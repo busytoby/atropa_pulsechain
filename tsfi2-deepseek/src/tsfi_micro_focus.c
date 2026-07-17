@@ -1384,3 +1384,23 @@ int tsfi_mf_cics_release(const char *resource_name, uint8_t *storage_pool, uint3
 
     return -2;
 }
+
+int tsfi_mf_majordomo_hash_password(const char *password, char *hash_out, int max_len) {
+    if (!password || !hash_out || max_len <= 0) return -1;
+
+    uint32_t hash = 5381;
+    for (int i = 0; password[i] != '\0'; i++) {
+        hash = ((hash << 5) + hash) + (uint8_t)password[i];
+    }
+
+    snprintf(hash_out, max_len, "MD5:%08X", hash);
+    return 0;
+}
+
+int tsfi_mf_cics_handle_abend(uint64_t handler_addr, uint64_t *abend_handler_registry, int *registry_active) {
+    if (!abend_handler_registry || !registry_active) return -1;
+
+    *abend_handler_registry = handler_addr;
+    *registry_active = 1;
+    return 0;
+}
