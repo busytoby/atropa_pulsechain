@@ -1564,6 +1564,14 @@ int main(void) {
     assert(tsfi_fips48_authenticate(&authenticator, 99999, 1234, &auth_status) == -2);
     assert(auth_status == -3);
     assert(authenticator.failed_attempts == 2);
+    
+    // Register LAU token badge and PKI key PIN mapping
+    uint32_t lau_token = 0xBCDE1234;
+    uint16_t pki_pin = 8888;
+    assert(tsfi_fips48_register_lau_badge(&authenticator, "LAU_USER", lau_token, pki_pin) == 0);
+    assert(tsfi_fips48_authenticate(&authenticator, lau_token, pki_pin, &auth_status) == 0);
+    assert(auth_status == 1);
+    assert(authenticator.successful_attempts == 2);
     printf("  [PASS] FIPS 48 personal identification badge readers and PIN locks validated.\n");
 
     tsfi_dat_destroy(dat_mq);

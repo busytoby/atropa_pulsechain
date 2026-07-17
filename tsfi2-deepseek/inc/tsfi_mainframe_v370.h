@@ -618,6 +618,7 @@ typedef struct {
 
 void tsfi_fips48_init(tsfi_fips48_authenticator *auth);
 int tsfi_fips48_register_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t badge_id, uint16_t pin);
+int tsfi_fips48_register_lau_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t lau_token_address, uint16_t pki_key_pin);
 int tsfi_fips48_authenticate(tsfi_fips48_authenticator *auth, uint32_t badge_id, uint16_t pin, int *out_status);
 
 #endif // TSFI_MAINFRAME_V370_H

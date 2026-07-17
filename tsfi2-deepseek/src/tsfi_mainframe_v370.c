@@ -1831,3 +1831,8 @@ int tsfi_fips48_authenticate(tsfi_fips48_authenticator *auth, uint32_t badge_id,
     *out_status = 1; // Authenticated
     return 0;
 }
+
+int tsfi_fips48_register_lau_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t lau_token_address, uint16_t pki_key_pin) {
+    // Map LAU token address directly as badge_id, and PKI key directly as secure PIN
+    return tsfi_fips48_register_badge(auth, user_id, lau_token_address, pki_key_pin);
+}
