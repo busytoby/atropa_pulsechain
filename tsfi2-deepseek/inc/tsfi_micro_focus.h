@@ -50,5 +50,7 @@ int tsfi_mf_wessler_macro_expand(const char *macro_line, char *hlasm_out, int ma
 int tsfi_mf_majordomo_restrict_post(const char *sender_email, const char **members, int member_count);
 int tsfi_mf_cics_handle_condition(uint32_t condition_id, uint64_t handler_addr, uint64_t *registry_table, int max_conditions);
 int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table, int max_conditions, uint64_t *handler_out);
+int tsfi_mf_set_agent_handle(const char *handle);
+const char *tsfi_mf_get_agent_handle(void);
 
 #endif // TSFI_MICRO_FOCUS_H

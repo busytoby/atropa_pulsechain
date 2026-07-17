@@ -409,6 +409,14 @@ int main(void) {
     assert(resolved == 0x1000DEADBEEF);
     printf("  [PASS] CICS HANDLE CONDITION exception registry verified.\n");
 
+    // 25. Verify Agent Handle Registry
+    printf("[TEST] Validating Agent Handle Registry...\n");
+    assert(strcmp(tsfi_mf_get_agent_handle(), "AuncientDefaultAgent") == 0);
+    int handle_res = tsfi_mf_set_agent_handle("AntigravityMasterSession");
+    assert(handle_res == 0);
+    assert(strcmp(tsfi_mf_get_agent_handle(), "AntigravityMasterSession") == 0);
+    printf("  [PASS] Agent Handle Registry verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

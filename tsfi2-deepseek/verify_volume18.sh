@@ -87,8 +87,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 132 | Jon Wessler HLASM Structured Macros | PASS | High Level Assembler macro compiler | Volume 33 |
 | 133 | Majordomo List Access Checker | PASS | Posting restriction authorization lookup | Volume 33 |
 | 134 | CICS HANDLE CONDITION Exception Registry | PASS | System error condition handler router | Volume 33 |
+| 135 | Active Agent Handle Registry | PASS | Thread-local session identity store | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 134 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 135 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
