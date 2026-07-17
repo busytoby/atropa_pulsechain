@@ -61,6 +61,29 @@ int main(void) {
     assert(acc_model.trap_active == 1);
     printf("  [PASS] Non-preferential accumulator models verified.\n");
 
+    // 4. Comprehensive Manchester University Atlas VM Over Anvil Tests
+    printf("[Test] Verifying comprehensive Atlas VM over Anvil operations...\n");
+    tsfi_atlas_vm atlas;
+    tsfi_atlas_vm_init(&atlas);
+    
+    // Test accumulator addition
+    atlas.accumulators[0] = 50;
+    atlas.accumulators[1] = 25;
+    uint8_t add_bc[] = { 0x52 }; // Add ACC B to ACC A
+    int step_res = tsfi_atlas_vm_step(&atlas, add_bc, 1, (const uint8_t*)"");
+    assert(step_res == 0);
+    assert(atlas.accumulators[0] == 75);
+    
+    // Test Extrabcode triggering and PC increments
+    atlas.pc = 0;
+    uint8_t extra_bc[] = { 0x5F, 0x12 }; // Extrabcode 0x12
+    step_res = tsfi_atlas_vm_step(&atlas, extra_bc, 2, (const uint8_t*)"");
+    assert(step_res == 0);
+    assert(atlas.extrabcode_triggered == 1);
+    assert(atlas.extrabcode_val == 0x12);
+    
+    printf("  [PASS] Atlas VM accumulator math and extrabcode systems verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
