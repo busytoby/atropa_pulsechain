@@ -201,5 +201,7 @@
 | 267 | IRS CADE Taxpayer Active Or Suspended Checker | PASS | Asserves if account status matches active or suspended codes | Volume 33 |
 | 268 | IRS IMF Fiduciary Form Verifier | PASS | Restricts fiduciary filings to valid fiduciary form ranges | Volume 33 |
 | 269 | IRS CADE Taxpayer Active Or Under Audit Checker | PASS | Asserves if account status matches active or under audit codes | Volume 33 |
+| 270 | IRS IMF Form 706 Verifier | PASS | Restricts estate filings to Form 706 estate tax return ranges | Volume 33 |
+| 271 | IRS CADE Taxpayer Active Or Audit Pending Checker | PASS | Asserves if account status matches active or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 269 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 271 Scenarios validated successfully)
