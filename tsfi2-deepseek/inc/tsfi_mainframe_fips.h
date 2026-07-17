@@ -115,4 +115,16 @@ int tsfi_fips79_format_label(uint8_t *out_block, const char *file_id, uint32_t s
 int tsfi_fips81_encrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int blocks, const uint8_t *iv, int supervisor_state);
 int tsfi_fips81_decrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int blocks, const uint8_t *iv, int supervisor_state);
 
+// Scenario 152: NBS FIPS PUB 94 Power Disturbance Monitor
+typedef struct {
+    int total_events;
+    int sag_count;
+    int surge_count;
+    int transient_count;
+    int unsafe_power_state;
+} tsfi_fips94_monitor;
+
+void tsfi_fips94_power_init(tsfi_fips94_monitor *mon);
+int tsfi_fips94_audit_voltage(tsfi_fips94_monitor *mon, double nominal_voltage, double actual_voltage, int *out_fault_type);
+
 #endif // TSFI_MAINFRAME_FIPS_H

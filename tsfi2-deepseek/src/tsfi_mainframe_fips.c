@@ -516,3 +516,39 @@ int tsfi_fips81_decrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *cipher
     }
     return 0;
 }
+
+void tsfi_fips94_power_init(tsfi_fips94_monitor *mon) {
+    if (!mon) return;
+    memset(mon, 0, sizeof(tsfi_fips94_monitor));
+}
+
+int tsfi_fips94_audit_voltage(tsfi_fips94_monitor *mon, double nominal_voltage, double actual_voltage, int *out_fault_type) {
+    if (!mon || !out_fault_type || nominal_voltage <= 0.0) return -1;
+    *out_fault_type = 0; // Normal status
+    
+    double deviation = actual_voltage / nominal_voltage;
+    
+    if (deviation <= 0.90) {
+        mon->sag_count++;
+        mon->total_events++;
+        *out_fault_type = 1; // Sag Fault
+        mon->unsafe_power_state = 1;
+        return -2;
+    } else if (deviation >= 1.10 && deviation < 1.30) {
+        mon->surge_count++;
+        mon->total_events++;
+        *out_fault_type = 2; // Surge Fault
+        mon->unsafe_power_state = 1;
+        return -3;
+    } else if (deviation >= 1.30) {
+        mon->transient_count++;
+        mon->total_events++;
+        *out_fault_type = 3; // Transient Spike
+        mon->unsafe_power_state = 1;
+        return -4;
+    }
+    
+    // Normal operation range
+    mon->unsafe_power_state = 0;
+    return 0;
+}

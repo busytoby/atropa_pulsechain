@@ -1717,6 +1717,37 @@ int main(void) {
     assert(memcmp(multi_plain, multi_decrypted, 16) == 0);
     printf("  [PASS] FIPS 81 Cipher Block Chaining (CBC) modes and IV feedback loops verified.\n");
 
+    // 152. NBS FIPS PUB 94 Power Disturbance Monitor Verification
+    printf("[Test] Verifying NBS FIPS PUB 94 Power Disturbance Monitor...\n");
+    tsfi_fips94_monitor power_mon;
+    tsfi_fips94_power_init(&power_mon);
+    assert(power_mon.total_events == 0);
+    
+    int fault = 0;
+    // Audit normal voltage (120V nominal, 120V actual)
+    assert(tsfi_fips94_audit_voltage(&power_mon, 120.0, 120.0, &fault) == 0);
+    assert(fault == 0);
+    assert(power_mon.unsafe_power_state == 0);
+    
+    // Audit Sag (90V actual)
+    assert(tsfi_fips94_audit_voltage(&power_mon, 120.0, 90.0, &fault) == -2);
+    assert(fault == 1);
+    assert(power_mon.sag_count == 1);
+    assert(power_mon.unsafe_power_state == 1);
+    
+    // Audit Surge (140V actual)
+    assert(tsfi_fips94_audit_voltage(&power_mon, 120.0, 140.0, &fault) == -3);
+    assert(fault == 2);
+    assert(power_mon.surge_count == 1);
+    assert(power_mon.unsafe_power_state == 1);
+    
+    // Audit Transient (160V actual)
+    assert(tsfi_fips94_audit_voltage(&power_mon, 120.0, 160.0, &fault) == -4);
+    assert(fault == 3);
+    assert(power_mon.transient_count == 1);
+    assert(power_mon.unsafe_power_state == 1);
+    printf("  [PASS] FIPS 94 power quality sags, surges, and transients correctly classified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
