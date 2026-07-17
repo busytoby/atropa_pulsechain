@@ -6225,3 +6225,37 @@ int tsfi_cp_detach(tsfi_cp_attachment_manager *mgr, uint32_t virt_addr, const ch
     }
     return -3;
 }
+
+void tsfi_cp_smsg_init(tsfi_cp_smsg_receiver *rcv, const char *uid) {
+    if (!rcv) return;
+    memset(rcv, 0, sizeof(tsfi_cp_smsg_receiver));
+    if (uid) {
+        strncpy(rcv->userid, uid, sizeof(rcv->userid) - 1);
+        rcv->userid[sizeof(rcv->userid) - 1] = '\0';
+    }
+    rcv->smsg_enabled = 1;
+}
+
+int tsfi_cp_smsg_send(tsfi_cp_smsg_receiver *rcv, const char *msg) {
+    if (!rcv || !msg) return -1;
+    if (!rcv->smsg_enabled) {
+        return -1;
+    }
+    if (rcv->count >= 8) {
+        return -2;
+    }
+    strncpy(rcv->queue[rcv->tail].payload, msg, sizeof(rcv->queue[rcv->tail].payload) - 1);
+    rcv->queue[rcv->tail].payload[sizeof(rcv->queue[rcv->tail].payload) - 1] = '\0';
+    rcv->tail = (rcv->tail + 1) % 8;
+    rcv->count++;
+    return 0;
+}
+
+int tsfi_cp_smsg_receive(tsfi_cp_smsg_receiver *rcv, char *msg_out) {
+    if (!rcv || !msg_out || rcv->count <= 0) return -1;
+    strncpy(msg_out, rcv->queue[rcv->head].payload, 63);
+    msg_out[63] = '\0';
+    rcv->head = (rcv->head + 1) % 8;
+    rcv->count--;
+    return 0;
+}

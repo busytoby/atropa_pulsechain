@@ -1667,6 +1667,28 @@ int main(void) {
     assert(attach_mgr.devices[0].is_attached == 0);
     printf("  [PASS] VM/370 CP device attachment and detach release verified.\n");
 
+    // 96. VM/370 CP SMSG Queue Processor Verification
+    printf("[Test] Verifying VM/370 CP Special Messages (SMSG)...\n");
+    tsfi_cp_smsg_receiver service_vm;
+    tsfi_cp_smsg_init(&service_vm, "SPOOLER");
+    assert(service_vm.smsg_enabled == 1);
+    assert(service_vm.count == 0);
+    
+    // Send message to SPOOLER VM
+    assert(tsfi_cp_smsg_send(&service_vm, "PRINT FILE 101") == 0);
+    assert(service_vm.count == 1);
+    
+    // Receive message
+    char smsg_buf[64];
+    assert(tsfi_cp_smsg_receive(&service_vm, smsg_buf) == 0);
+    assert(strcmp(smsg_buf, "PRINT FILE 101") == 0);
+    assert(service_vm.count == 0);
+    
+    // Disable receipt and verify send fails
+    service_vm.smsg_enabled = 0;
+    assert(tsfi_cp_smsg_send(&service_vm, "PRINT FILE 102") == -1);
+    printf("  [PASS] VM/370 CP special message instant routing queue verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

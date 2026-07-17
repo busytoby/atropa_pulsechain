@@ -1644,4 +1644,22 @@ int tsfi_cp_attachment_register(tsfi_cp_attachment_manager *mgr, uint32_t phys_a
 int tsfi_cp_attach(tsfi_cp_attachment_manager *mgr, uint32_t phys_addr, const char *uid, uint32_t virt_addr);
 int tsfi_cp_detach(tsfi_cp_attachment_manager *mgr, uint32_t virt_addr, const char *uid);
 
+// VM/370 CP Special Message (SMSG) Queue Processor
+typedef struct {
+    char payload[64];
+} tsfi_cp_smsg_entry;
+
+typedef struct {
+    char userid[16];
+    int smsg_enabled;
+    tsfi_cp_smsg_entry queue[8];
+    int head;
+    int tail;
+    int count;
+} tsfi_cp_smsg_receiver;
+
+void tsfi_cp_smsg_init(tsfi_cp_smsg_receiver *rcv, const char *uid);
+int tsfi_cp_smsg_send(tsfi_cp_smsg_receiver *rcv, const char *msg);
+int tsfi_cp_smsg_receive(tsfi_cp_smsg_receiver *rcv, char *msg_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
