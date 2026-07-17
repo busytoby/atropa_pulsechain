@@ -1296,3 +1296,37 @@ int tsfi_mf_cics_return(const char *next_transaction_id, const uint8_t *commarea
     }
     return 0;
 }
+
+int tsfi_mf_majordomo_validate_config(const char *config_content, int *errors_found) {
+    if (!config_content || !errors_found) return -1;
+
+    int errors = 0;
+    const char *line = config_content;
+    while (line && *line != '\0') {
+        const char *next_line = strchr(line, '\n');
+        int line_len = next_line ? (int)(next_line - line) : (int)strlen(line);
+
+        if (line_len > 0 && line[0] != '#' && line[0] != '\r') {
+            int has_equal = 0;
+            for (int i = 0; i < line_len; i++) {
+                if (line[i] == '=') {
+                    has_equal = 1;
+                    break;
+                }
+            }
+            if (!has_equal) errors++;
+        }
+
+        line = next_line ? next_line + 1 : NULL;
+    }
+
+    *errors_found = errors;
+    return 0;
+}
+
+int tsfi_mf_cics_abend(const char *abend_code, char *abend_log_buffer, int max_len) {
+    if (!abend_code || !abend_log_buffer || max_len <= 0) return -1;
+
+    snprintf(abend_log_buffer, max_len, "CICS_ABEND:CODE=%s", abend_code);
+    return 0;
+}

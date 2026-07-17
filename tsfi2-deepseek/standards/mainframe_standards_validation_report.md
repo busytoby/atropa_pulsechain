@@ -101,5 +101,7 @@
 | 167 | CICS Security Bypass Controller | PASS | Administrative transaction override authorization | Volume 33 |
 | 168 | Majordomo List Archive Index Resolver | PASS | Archive directories parser and indexer | Volume 33 |
 | 169 | CICS Program Control RETURN Emulator | PASS | Dynamic transaction scheduler return linkage | Volume 33 |
+| 170 | Majordomo List Config Validator | PASS | Syntax verification check formatting | Volume 33 |
+| 171 | CICS Program Control ABEND Emulator | PASS | Immediate transaction abnormal termination signal | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 169 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 171 Scenarios validated successfully)

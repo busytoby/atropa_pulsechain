@@ -765,6 +765,22 @@ int main(void) {
     assert(strcmp(ret_log, "RETURN_TRANSID:GAUN|COMMAREA_LEN:0") == 0);
     printf("  [PASS] CICS Program Return verified.\n");
 
+    // 60. Verify Majordomo List Config Validator
+    printf("[TEST] Validating Majordomo Config Validator...\n");
+    int errs_found = -1;
+    int val_cfg_res = tsfi_mf_majordomo_validate_config("reply_to=list\ninvalid_line_no_equal\n#comment\n", &errs_found);
+    assert(val_cfg_res == 0);
+    assert(errs_found == 1);
+    printf("  [PASS] Majordomo Config Validator verified.\n");
+
+    // 61. Verify CICS Program Control ABEND Emulator
+    printf("[TEST] Validating CICS ABEND...\n");
+    char ab_buf[64] = {0};
+    int ab_res = tsfi_mf_cics_abend("AEIP", ab_buf, sizeof(ab_buf));
+    assert(ab_res == 0);
+    assert(strcmp(ab_buf, "CICS_ABEND:CODE=AEIP") == 0);
+    printf("  [PASS] CICS ABEND verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
