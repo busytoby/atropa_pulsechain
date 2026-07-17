@@ -44,5 +44,7 @@
 | 110 | NBS GKS to Ray Tracer Bridge | PASS | Graphical Interface | Volume 33 |
 | 111 | Benson-Lehner OSCAR Polynomial Trace Reader | PASS | Plotter Calibration | Volume 33 |
 | 112 | NBS FIPS 54 COM Microform Layout Translator | PASS | Microfiche Layout | Volume 33 |
+| 113 | Micro Focus COBOL COMP-5 Native Binary | PASS | Native Binary Layout | Volume 33 |
+| 114 | Micro Focus COBOL ISAM Storage Reader/Writer | PASS | Sequential Index Database | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 112 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 114 Scenarios validated successfully)
