@@ -39,6 +39,7 @@ models/
 *.pos
 *.pcm
 *.yuv
+*.wav
 core
 eof_corpus_*.txt
 
