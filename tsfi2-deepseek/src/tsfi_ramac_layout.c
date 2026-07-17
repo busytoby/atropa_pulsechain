@@ -4272,6 +4272,7 @@ int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]) {
         }
     }
     
+    int matched_rule = -1;
     for (int j = 0; j < table->num_rules; j++) {
         int rule_match = 1;
         for (int i = 0; i < table->num_conditions; i++) {
@@ -4279,26 +4280,65 @@ int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]) {
             if (entry == 'Y' && !cond_results[i]) { rule_match = 0; break; }
             if (entry == 'N' && cond_results[i]) { rule_match = 0; break; }
         }
-        
         if (rule_match) {
-            for (int i = 0; i < table->num_actions; i++) {
-                if (table->action_entries[i][j] == 'X') {
-                    int rx = -1, val = -1;
-                    if (sscanf(table->action_stubs[i], "SET R%d %d", &rx, &val) == 2) {
-                        if (rx >= 0 && rx < 8) regs[rx] = val;
-                    } else if (strncmp(table->action_stubs[i], "COMPUTE ", 8) == 0) {
-                        const char *expr = table->action_stubs[i] + 8;
-                        const char *eq = strchr(expr, '=');
-                        int target_r = -1;
-                        if (eq && sscanf(expr, "R%d", &target_r) == 1) {
-                            int comp_val = tsfi_cobol_compute_eval(eq + 1, regs);
-                            if (target_r >= 0 && target_r < 8) regs[target_r] = comp_val;
-                        }
+            matched_rule = j;
+            break;
+        }
+    }
+    
+    if (matched_rule != -1) {
+        int seq_list[4];
+        for (int i = 0; i < table->num_actions; i++) {
+            seq_list[i] = i;
+        }
+        
+        for (int x = 0; x < table->num_actions - 1; x++) {
+            for (int y = x + 1; y < table->num_actions; y++) {
+                int seq_x = table->action_sequence[seq_list[x]][matched_rule];
+                int seq_y = table->action_sequence[seq_list[y]][matched_rule];
+                if (seq_x > seq_y) {
+                    int temp = seq_list[x];
+                    seq_list[x] = seq_list[y];
+                    seq_list[y] = temp;
+                }
+            }
+        }
+        
+        for (int idx = 0; idx < table->num_actions; idx++) {
+            int i = seq_list[idx];
+            if (table->action_entries[i][matched_rule] == 'X') {
+                int rx = -1, val = -1;
+                if (sscanf(table->action_stubs[i], "SET R%d %d", &rx, &val) == 2) {
+                    if (rx >= 0 && rx < 8) regs[rx] = val;
+                } else if (strncmp(table->action_stubs[i], "COMPUTE ", 8) == 0) {
+                    const char *expr = table->action_stubs[i] + 8;
+                    const char *eq = strchr(expr, '=');
+                    int target_r = -1;
+                    if (eq && sscanf(expr, "R%d", &target_r) == 1) {
+                        int comp_val = tsfi_cobol_compute_eval(eq + 1, regs);
+                        if (target_r >= 0 && target_r < 8) regs[target_r] = comp_val;
                     }
                 }
             }
-            return j;
         }
+        return matched_rule;
+    } else {
+        for (int i = 0; i < table->num_actions; i++) {
+            if (table->else_action_entries[i] == 'X') {
+                int rx = -1, val = -1;
+                if (sscanf(table->action_stubs[i], "SET R%d %d", &rx, &val) == 2) {
+                    if (rx >= 0 && rx < 8) regs[rx] = val;
+                } else if (strncmp(table->action_stubs[i], "COMPUTE ", 8) == 0) {
+                    const char *expr = table->action_stubs[i] + 8;
+                    const char *eq = strchr(expr, '=');
+                    int target_r = -1;
+                    if (eq && sscanf(expr, "R%d", &target_r) == 1) {
+                        int comp_val = tsfi_cobol_compute_eval(eq + 1, regs);
+                        if (target_r >= 0 && target_r < 8) regs[target_r] = comp_val;
+                    }
+                }
+            }
+        }
+        return -2;
     }
-    return -1;
 }

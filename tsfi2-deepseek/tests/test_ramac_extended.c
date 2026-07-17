@@ -553,6 +553,8 @@ int main(void) {
     // 34. Full DETAB-X Decision Execution Verification
     printf("[Test] Verifying DETAB-X execution engine...\n");
     tsfi_detabx_table tbl;
+    memset(&tbl, 0, sizeof(tbl));
+    
     strcpy(tbl.condition_stubs[0], "R0 > 5");
     strcpy(tbl.condition_stubs[1], "R1 == 10");
     tbl.condition_entries[0][0] = 'Y';
@@ -567,6 +569,13 @@ int main(void) {
     tbl.action_entries[0][1] = ' ';
     tbl.action_entries[1][1] = 'X';
     
+    // Set execution sequences
+    tbl.action_sequence[0][0] = 1;
+    tbl.action_sequence[1][0] = 2;
+    
+    // Set ELSE rule actions
+    tbl.else_action_entries[0] = 'X'; // Set R2 to 100 on ELSE
+    
     tbl.num_conditions = 2;
     tbl.num_actions = 2;
     tbl.num_rules = 2;
@@ -576,7 +585,13 @@ int main(void) {
     assert(matched_idx == 0);
     assert(interop_exec_regs[2] == 100);
     assert(interop_exec_regs[3] == 1000);
-    printf("  [PASS] DETAB-X execution engine and state mutations verified.\n");
+    
+    // Test ELSE rule execution path
+    int else_regs[8] = { 2, 2, 0, 0, 0, 0, 0, 0 };
+    int matched_else = tsfi_detabx_execute(&tbl, else_regs);
+    assert(matched_else == -2);
+    assert(else_regs[2] == 100);
+    printf("  [PASS] DETAB-X execution engine, ELSE rules, and sequencing verified.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");

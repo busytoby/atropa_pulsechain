@@ -979,6 +979,8 @@ typedef struct {
     char condition_entries[4][4];
     char action_stubs[4][64];
     char action_entries[4][4];
+    char else_action_entries[4];   // Actions executed if no rule matches
+    int action_sequence[4][4];      // Execution sequence order for actions per rule
     int num_conditions;
     int num_actions;
     int num_rules;
