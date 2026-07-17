@@ -1064,4 +1064,13 @@ typedef struct {
 void tsfi_dp_registry_init(tsfi_dp_registry *reg);
 int tsfi_dp_registry_add(tsfi_dp_registry *reg, const char *name, int years, int lang_prof, int cert);
 
+// Relational join row for DP_PROFESSIONALS and ROSCOE_MEMBERS
+typedef struct {
+    char employee_name[32];
+    char member_name[8];
+    int locked;
+} tsfi_dp_roscoe_join_row;
+
+int tsfi_ramac_join_dp_roscoe(const tsfi_dp_registry *dp_reg, const tsfi_roscoe_library *roscoe_lib, tsfi_dp_roscoe_join_row *out_rows, size_t *out_count);
+
 #endif // TSFI_MAINFRAME_DECNET_H

@@ -1494,6 +1494,26 @@ int main(void) {
     assert(dp_reg.professionals[0].certified == 1);
     printf("  [PASS] EFT regulatory latency checks and DP skills database verified.\n");
 
+    // 80. Relational Database Joins (DP Professionals & Roscoe Library Members)
+    printf("[Test] Verifying Relational Joins (DP & Roscoe)...\n");
+    tsfi_dp_registry reg_dp;
+    tsfi_dp_registry_init(&reg_dp);
+    assert(tsfi_dp_registry_add(&reg_dp, "Developer A", 5, 1, 1) == 0);
+    
+    tsfi_roscoe_library reg_roscoe;
+    tsfi_roscoe_init(&reg_roscoe);
+    assert(tsfi_roscoe_add_member(&reg_roscoe, "LIBPART") == 0);
+    assert(tsfi_roscoe_lock_member(&reg_roscoe, "LIBPART", 1) == 0);
+    
+    tsfi_dp_roscoe_join_row join_rows[16];
+    size_t join_count = 0;
+    assert(tsfi_ramac_join_dp_roscoe(&reg_dp, &reg_roscoe, join_rows, &join_count) == 0);
+    assert(join_count == 1);
+    assert(strcmp(join_rows[0].employee_name, "Developer A") == 0);
+    assert(strcmp(join_rows[0].member_name, "LIBPART") == 0);
+    assert(join_rows[0].locked == 1);
+    printf("  [PASS] Relational database joins between DP registry and Roscoe library verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

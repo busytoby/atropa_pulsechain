@@ -2291,3 +2291,22 @@ int tsfi_dp_registry_add(tsfi_dp_registry *reg, const char *name, int years, int
     reg->count++;
     return 0;
 }
+
+int tsfi_ramac_join_dp_roscoe(const tsfi_dp_registry *dp_reg, const tsfi_roscoe_library *roscoe_lib, tsfi_dp_roscoe_join_row *out_rows, size_t *out_count) {
+    if (!dp_reg || !roscoe_lib || !out_rows || !out_count) return -1;
+    size_t count = 0;
+    for (int i = 0; i < dp_reg->count; i++) {
+        for (int j = 0; j < roscoe_lib->member_count; j++) {
+            if (i == j) {
+                strncpy(out_rows[count].employee_name, dp_reg->professionals[i].employee_name, 31);
+                out_rows[count].employee_name[31] = '\0';
+                strncpy(out_rows[count].member_name, roscoe_lib->members[j].member_name, 7);
+                out_rows[count].member_name[7] = '\0';
+                out_rows[count].locked = roscoe_lib->members[j].locked;
+                count++;
+            }
+        }
+    }
+    *out_count = count;
+    return 0;
+}
