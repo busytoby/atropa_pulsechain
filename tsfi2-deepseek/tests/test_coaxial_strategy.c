@@ -48,6 +48,30 @@ int main(void) {
     assert(status == 1);
     assert(strstr(agent.last_payload, "30 15") != NULL);
 
+    // 4. Compile and verify Decision Table strategy
+    tsfi_decision_table table;
+    memset(&table, 0, sizeof(table));
+    strcpy(table.condition_op[0], "==");
+    table.condition_reg_a[0] = 0;
+    table.condition_reg_b[0] = 1;
+    strcpy(table.action_op[0], "MOVE");
+    table.action_reg[0] = 2;
+    table.action_val[0] = 88;
+    table.rule_count = 1;
+    
+    uint8_t agent_bytecode[64];
+    int compiled_len = tsfi_coaxial_strategy_agent_compile_decision_table(&agent, &table, agent_bytecode, 64);
+    assert(compiled_len > 0);
+    
+    TSFiStrategyVM strategy_vm;
+    tsfi_strategy_vm_init(&strategy_vm);
+    strategy_vm.registers[0] = 100;
+    strategy_vm.registers[1] = 100;
+    int exec_res = tsfi_strategy_vm_execute_bytecode(&strategy_vm, NULL, agent_bytecode, compiled_len, NULL);
+    assert(exec_res == 0);
+    assert(strategy_vm.registers[2] == 88);
+    printf("  [PASS] Coaxial agent compiled decision table verified.\n");
+
     // Clean up
     tsfi_zmm_vm_destroy(&zmm);
 

@@ -5,6 +5,7 @@
 #include "tsfi_priority_queue.h"
 #include "tsfi_strategy_lang.h"
 #include "tsfi_zmm_vm.h"
+#include "tsfi_ramac_layout.h"
 
 // Coaxial Strategy Agent Context
 typedef struct {
@@ -24,5 +25,8 @@ int tsfi_coaxial_strategy_agent_collect(TSFiCoaxialStrategyAgent *agent);
 
 // Apply a strategy script to reweight events and dispatch the top event to ZMM
 int tsfi_coaxial_strategy_agent_dispatch(TSFiCoaxialStrategyAgent *agent, const char *script);
+
+// Compile decision table strategies for dynamic agent operations
+int tsfi_coaxial_strategy_agent_compile_decision_table(TSFiCoaxialStrategyAgent *agent, const tsfi_decision_table *table, uint8_t *bytecode_out, int max_len);
 
 #endif // TSFI_COAXIAL_STRATEGY_H

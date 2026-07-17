@@ -49,3 +49,8 @@ int tsfi_coaxial_strategy_agent_dispatch(TSFiCoaxialStrategyAgent *agent, const 
 
     return 0;
 }
+
+int tsfi_coaxial_strategy_agent_compile_decision_table(TSFiCoaxialStrategyAgent *agent, const tsfi_decision_table *table, uint8_t *bytecode_out, int max_len) {
+    if (!agent || !table || !bytecode_out) return -1;
+    return tsfi_compile_decision_table(table, bytecode_out, max_len);
+}
