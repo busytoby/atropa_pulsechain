@@ -6682,3 +6682,29 @@ int tsfi_cp_device_define(tsfi_cp_device_table *tbl, const char *type, uint32_t 
     tbl->count++;
     return 0;
 }
+
+int tsfi_cp_query_virtual(const tsfi_cp_device_table *tbl, char *out_buf, int out_max) {
+    if (!tbl || !out_buf || out_max <= 0) return -1;
+    if (tbl->count == 0) {
+        snprintf(out_buf, out_max, "NO VIRTUAL DEVICES");
+        return 0;
+    }
+    
+    int write_idx = 0;
+    out_buf[0] = '\0';
+    for (int i = 0; i < tbl->count; i++) {
+        char temp[64];
+        snprintf(temp, sizeof(temp), "%03X: TYPE=%s; ",
+                 tbl->devices[i].vdev,
+                 tbl->devices[i].dev_type);
+        
+        int temp_len = strlen(temp);
+        if (write_idx + temp_len < out_max - 1) {
+            strcpy(out_buf + write_idx, temp);
+            write_idx += temp_len;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}

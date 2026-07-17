@@ -1824,4 +1824,6 @@ typedef struct {
 void tsfi_cp_device_table_init(tsfi_cp_device_table *tbl);
 int tsfi_cp_device_define(tsfi_cp_device_table *tbl, const char *type, uint32_t vdev);
 
+int tsfi_cp_query_virtual(const tsfi_cp_device_table *tbl, char *out_buf, int out_max);
+
 #endif // TSFI_RAMAC_LAYOUT_H

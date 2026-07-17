@@ -1984,6 +1984,22 @@ int main(void) {
     assert(tsfi_cp_device_define(&dev_tbl, "GRAF", 0x090) == -3);
     printf("  [PASS] VM/370 CP dynamic device definition tables and duplicates verified.\n");
 
+    // 111. VM/370 CP QUERY VIRTUAL Command Verification
+    printf("[Test] Verifying VM/370 CP QUERY VIRTUAL Command...\n");
+    char dev_report[256];
+    
+    // Verify query output with registered devices
+    assert(tsfi_cp_query_virtual(&dev_tbl, dev_report, sizeof(dev_report)) == 0);
+    assert(strstr(dev_report, "090: TYPE=GRAF") != NULL);
+    assert(strstr(dev_report, "091: TYPE=LINE") != NULL);
+    
+    // Verify empty device table reports correct warning
+    tsfi_cp_device_table empty_tbl;
+    tsfi_cp_device_table_init(&empty_tbl);
+    assert(tsfi_cp_query_virtual(&empty_tbl, dev_report, sizeof(dev_report)) == 0);
+    assert(strcmp(dev_report, "NO VIRTUAL DEVICES") == 0);
+    printf("  [PASS] VM/370 CP virtual device status queries listed successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
