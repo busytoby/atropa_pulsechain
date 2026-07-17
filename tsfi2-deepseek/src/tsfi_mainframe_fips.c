@@ -1018,3 +1018,51 @@ int tsfi_fips30_validate_summary(const char *software_title, const char *status_
     
     return -2; // Unknown or non-compliant status code
 }
+
+int tsfi_fips105_score_documentation(uint8_t phase_mask, int *out_maturity_score) {
+    if (!out_maturity_score) return -1;
+    
+    int score = 0;
+    if (phase_mask & 0x01) score += 25;
+    if (phase_mask & 0x02) score += 25;
+    if (phase_mask & 0x04) score += 25;
+    if (phase_mask & 0x08) score += 25;
+    
+    *out_maturity_score = score;
+    return 0;
+}
+
+int tsfi_fips86_monitor_latency(double measured_delay_ms, double deadline_ms, int *out_priority_adjustment) {
+    if (measured_delay_ms < 0.0 || deadline_ms <= 0.0 || !out_priority_adjustment) {
+        return -1;
+    }
+    
+    if (measured_delay_ms > deadline_ms) {
+        double ratio = measured_delay_ms / deadline_ms;
+        if (ratio > 2.0) {
+            *out_priority_adjustment = 3; // Critical escalation
+        } else if (ratio > 1.5) {
+            *out_priority_adjustment = 2; // High escalation
+        } else {
+            *out_priority_adjustment = 1; // Low escalation
+        }
+        return -2; // Hard deadline violation
+    }
+    
+    *out_priority_adjustment = 0; // Compliant execution latency
+    return 0;
+}
+
+int tsfi_fips19_validate_data_code(const char *data_code, const char *category_flag) {
+    if (!data_code || strlen(data_code) == 0 || !category_flag) {
+        return -1;
+    }
+    
+    if (strcmp(category_flag, "ENT") == 0 ||
+        strcmp(category_flag, "ATT") == 0 ||
+        strcmp(category_flag, "REP") == 0) {
+        return 0;
+    }
+    
+    return -2;
+}

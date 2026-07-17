@@ -1972,6 +1972,34 @@ int main(void) {
     assert(tsfi_fips30_validate_summary("Old scheduler", "BAD") == -2); // Invalid status code check
     printf("  [PASS] FIPS 30 software package summary status descriptors verified.\n");
 
+    // 170. NBS FIPS PUB 105 Software Documentation Scorer Verification
+    printf("[Test] Verifying NBS FIPS PUB 105 Software Documentation Scorer...\n");
+    int maturity = 0;
+    assert(tsfi_fips105_score_documentation(0x0F, &maturity) == 0); // All phases present
+    assert(maturity == 100);
+    
+    assert(tsfi_fips105_score_documentation(0x03, &maturity) == 0); // Requirements + Design
+    assert(maturity == 50);
+    printf("  [PASS] FIPS 105 documentation completeness scorer verified.\n");
+
+    // 171. NBS FIPS PUB 86 Real-Time Event Latency Monitor Verification
+    printf("[Test] Verifying NBS FIPS PUB 86 Real-Time Event Latency Monitor...\n");
+    int adjustment = 0;
+    assert(tsfi_fips86_monitor_latency(10.0, 20.0, &adjustment) == 0); // Compliant
+    assert(adjustment == 0);
+    
+    assert(tsfi_fips86_monitor_latency(45.0, 20.0, &adjustment) == -2); // Deadline missed, ratio > 2.0
+    assert(adjustment == 3); // Critical escalation
+    printf("  [PASS] FIPS 86 real-time event scheduling and task priority adjustments verified.\n");
+
+    // 172. NBS FIPS PUB 19-2 Data Code Dictionary Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 19-2 Data Code Dictionary Validator...\n");
+    assert(tsfi_fips19_validate_data_code("SYS_TYPE", "ENT") == 0);
+    assert(tsfi_fips19_validate_data_code("SYS_DESC", "ATT") == 0);
+    assert(tsfi_fips19_validate_data_code("SYS_VAL", "REP") == 0);
+    assert(tsfi_fips19_validate_data_code("SYS_VAL", "BAD") == -2); // Invalid category
+    printf("  [PASS] FIPS 19-2 data code dictionary registry validator verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     trie_root_mq = NULL; // Unused local pointer clear
     tsfi_trie_destroy(trie_root_mq);

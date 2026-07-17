@@ -191,4 +191,13 @@ int tsfi_fips31_calculate_ale(double asset_value, double threat_frequency, doubl
 // Scenario 169: NBS FIPS PUB 30 Software Summary Descriptors
 int tsfi_fips30_validate_summary(const char *software_title, const char *status_code);
 
+// Scenario 170: NBS FIPS PUB 105 Software Documentation Scorer
+int tsfi_fips105_score_documentation(uint8_t phase_mask, int *out_maturity_score);
+
+// Scenario 171: NBS FIPS PUB 86 Real-Time Event Latency Monitor
+int tsfi_fips86_monitor_latency(double measured_delay_ms, double deadline_ms, int *out_priority_adjustment);
+
+// Scenario 172: NBS FIPS PUB 19-2 Data Code Dictionary Validator
+int tsfi_fips19_validate_data_code(const char *data_code, const char *category_flag);
+
 #endif // TSFI_MAINFRAME_FIPS_H
