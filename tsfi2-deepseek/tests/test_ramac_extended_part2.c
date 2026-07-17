@@ -1384,15 +1384,25 @@ int main(void) {
     tsfi_db_tx_manager tx_mgr;
     tsfi_db_tx_init(&tx_mgr);
     
+    // Inactive checks: update or commit without active transaction should fail
+    assert(tsfi_db_tx_update(&tx_mgr, "test") == -1);
+    int dummy_status = 0;
+    assert(tsfi_db_tx_commit(&tx_mgr, &dummy_status) == -1);
+    
     // Begin transaction
     assert(tsfi_db_tx_begin(&tx_mgr, "CUSTREC", "Name: Alice") == 0);
     assert(tx_mgr.is_active == 1);
     
-    // Update data
+    // Duplicate begin should fail
+    assert(tsfi_db_tx_begin(&tx_mgr, "CUSTREC", "Name: Dave") == -1);
+    
+    // Multi-step updates: Name: Alice -> Name: Bob -> Name: Charlie
     assert(tsfi_db_tx_update(&tx_mgr, "Name: Bob") == 0);
     assert(strcmp(tx_mgr.after_image, "Name: Bob") == 0);
+    assert(tsfi_db_tx_update(&tx_mgr, "Name: Charlie") == 0);
+    assert(strcmp(tx_mgr.after_image, "Name: Charlie") == 0);
     
-    // Abort and Rollback
+    // Abort and Rollback (must restore Name: Alice)
     char restored[128];
     int tx_status = 0;
     assert(tsfi_db_tx_rollback(&tx_mgr, restored, &tx_status) == 0);
@@ -1406,6 +1416,7 @@ int main(void) {
     assert(tsfi_db_tx_update(&tx_mgr, "Name: Charlie") == 0);
     assert(tsfi_db_tx_commit(&tx_mgr, &tx_status) == 0);
     assert(tx_mgr.commit_count == 1);
+    assert(tx_mgr.is_active == 0);
     printf("  [PASS] Database transaction before-image snapshots and rollbacks validated.\n");
 
     tsfi_dat_destroy(dat_mq);
