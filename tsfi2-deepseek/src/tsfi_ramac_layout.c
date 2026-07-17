@@ -4385,7 +4385,7 @@ void tsfi_scoreboard_init(cdc_scoreboard *sb) {
     }
 }
 
-int tsfi_scoreboard_step(cdc_scoreboard *sb) {
+int tsfi_scoreboard_step(cdc_scoreboard *sb, int regs[8]) {
     if (!sb) return 0;
     int done_count = 0;
     for (int i = 0; i < sb->size; i++) {
@@ -4394,7 +4394,6 @@ int tsfi_scoreboard_step(cdc_scoreboard *sb) {
         
         int can_advance = 1;
         if (inst->stage == STAGE_ISSUE) {
-            // Can transition to read operands if dest_reg isn't locked by WAW
             if (inst->dest_reg >= 0 && inst->dest_reg < 8) {
                 int writer = sb->reg_writers[inst->dest_reg];
                 if (writer == -1 || writer == inst->inst_id) {
@@ -4405,7 +4404,6 @@ int tsfi_scoreboard_step(cdc_scoreboard *sb) {
                 inst->stage = STAGE_READ_OPERANDS;
             }
         } else if (inst->stage == STAGE_READ_OPERANDS) {
-            // Check RAW hazards
             if (inst->src1_reg >= 0 && inst->src1_reg < 8) {
                 int writer = sb->reg_writers[inst->src1_reg];
                 if (writer != -1 && writer != inst->inst_id) can_advance = 0;
@@ -4419,8 +4417,18 @@ int tsfi_scoreboard_step(cdc_scoreboard *sb) {
             }
         } else if (inst->stage == STAGE_EXECUTE) {
             inst->stage = STAGE_WRITE_BACK;
+            if (regs) {
+                int val1 = (inst->src1_reg >= 0 && inst->src1_reg < 8) ? regs[inst->src1_reg] : 0;
+                int val2 = (inst->src2_reg >= 0 && inst->src2_reg < 8) ? regs[inst->src2_reg] : 0;
+                int res = 0;
+                if (strcmp(inst->op, "ADD") == 0) res = val1 + val2;
+                else if (strcmp(inst->op, "SUB") == 0) res = val1 - val2;
+                else if (strcmp(inst->op, "MUL") == 0) res = val1 * val2;
+                if (inst->dest_reg >= 0 && inst->dest_reg < 8) {
+                    regs[inst->dest_reg] = res;
+                }
+            }
         } else if (inst->stage == STAGE_WRITE_BACK) {
-            // Check WAR hazards (prior instructions must have read their operands)
             for (int k = 0; k < i; k++) {
                 cdc_instruction *prev = &sb->queue[k];
                 if (prev->stage == STAGE_READ_OPERANDS) {
@@ -4484,4 +4492,20 @@ int tsfi_rand_tablet_interpolate(int raw_x, int raw_y, int raw_grid[4][2], rand_
     pt_out->y = (raw_y < 0) ? 0 : (raw_y > 1023 ? 1023 : raw_y);
     pt_out->pen_down = 1;
     return 0;
+}
+
+void tsfi_rand_tablet_trace_init(rand_tablet_buffer *buf) {
+    if (!buf) return;
+    buf->count = 0;
+}
+
+int tsfi_rand_tablet_trace(rand_tablet_buffer *buf, int raw_x, int raw_y, int raw_grid[4][2]) {
+    if (!buf) return -1;
+    if (buf->count >= 32) return -2;
+    rand_tablet_point pt;
+    int res = tsfi_rand_tablet_interpolate(raw_x, raw_y, raw_grid, &pt);
+    if (res == 0) {
+        buf->points[buf->count++] = pt;
+    }
+    return res;
 }

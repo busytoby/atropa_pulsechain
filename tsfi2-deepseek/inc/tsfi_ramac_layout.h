@@ -1008,7 +1008,7 @@ typedef struct {
 } cdc_scoreboard;
 
 void tsfi_scoreboard_init(cdc_scoreboard *sb);
-int tsfi_scoreboard_step(cdc_scoreboard *sb);
+int tsfi_scoreboard_step(cdc_scoreboard *sb, int regs[8]);
 
 // CDC 6600 PPU System
 typedef struct {
@@ -1034,6 +1034,13 @@ typedef struct {
     int pen_down;
 } rand_tablet_point;
 
+typedef struct {
+    rand_tablet_point points[32];
+    int count;
+} rand_tablet_buffer;
+
 int tsfi_rand_tablet_interpolate(int raw_x, int raw_y, int raw_grid[4][2], rand_tablet_point *pt_out);
+void tsfi_rand_tablet_trace_init(rand_tablet_buffer *buf);
+int tsfi_rand_tablet_trace(rand_tablet_buffer *buf, int raw_x, int raw_y, int raw_grid[4][2]);
 
 #endif // TSFI_RAMAC_LAYOUT_H

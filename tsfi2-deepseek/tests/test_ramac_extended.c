@@ -631,13 +631,18 @@ int main(void) {
     sb.queue[0].stage = STAGE_ISSUE;
     sb.size = 1;
     
-    tsfi_scoreboard_step(&sb);
+    int sb_regs[8] = { 15, 25, 0, 0, 0, 0, 0, 0 };
+    tsfi_scoreboard_step(&sb, sb_regs);
     assert(sb.queue[0].stage == STAGE_READ_OPERANDS);
     assert(sb.reg_writers[2] == 1);
     
-    tsfi_scoreboard_step(&sb);
+    tsfi_scoreboard_step(&sb, sb_regs);
     assert(sb.queue[0].stage == STAGE_EXECUTE);
-    printf("  [PASS] CDC 6600 Scoreboard hazard detection verified.\n");
+    
+    tsfi_scoreboard_step(&sb, sb_regs);
+    assert(sb.queue[0].stage == STAGE_WRITE_BACK);
+    assert(sb_regs[2] == 40);
+    printf("  [PASS] CDC 6600 Scoreboard hazard detection and register updates verified.\n");
     
     // 37. CDC 6600 PPU System Verification
     printf("[Test] Verifying CDC 6600 PPU system scheduler...\n");
@@ -663,7 +668,15 @@ int main(void) {
     assert(pt.x == 512);
     assert(pt.y == 256);
     assert(pt.pen_down == 1);
-    printf("  [PASS] RAND Tablet coordinate translation verified successfully.\n");
+    
+    rand_tablet_buffer tb;
+    tsfi_rand_tablet_trace_init(&tb);
+    int trace_res = tsfi_rand_tablet_trace(&tb, 100, 200, mock_grid);
+    assert(trace_res == 0);
+    assert(tb.count == 1);
+    assert(tb.points[0].x == 100);
+    assert(tb.points[0].y == 200);
+    printf("  [PASS] RAND Tablet coordinate translation and trace buffers verified successfully.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
