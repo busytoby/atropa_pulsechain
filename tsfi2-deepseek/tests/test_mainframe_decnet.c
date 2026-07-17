@@ -374,6 +374,84 @@ int main(void) {
     assert(chan.sense_byte == 0x10);
     printf("  [PASS] S/370 channel adapter status and sense registers verified.\n");
 
+    // 28. SNA MSNF CDRM Cross-Domain (btc-rails VM simulation) Verification
+    printf("[Test] Verifying SNA MSNF Cross-Domain CDRM Sessions...\n");
+    tsfi_msnf_cdrm cdrm;
+    // Map cross-domain to separate btc-rails virtual networks
+    tsfi_msnf_init(&cdrm, 0x1111);
+    assert(cdrm.local_domain_id == 0x1111);
+    assert(cdrm.session_state == 0);
+    
+    assert(tsfi_msnf_establish_session(&cdrm, 0x2222) == 0);
+    assert(cdrm.remote_domain_id == 0x2222);
+    assert(cdrm.session_state == 2); // Active
+    printf("  [PASS] Cross-domain MSNF CDRM session broker verified.\n");
+
+    // 29. X.25 Packet Switching Envelopes Verification
+    printf("[Test] Verifying X.25 Packet Encapsulation...\n");
+    uint8_t sdlc_payload[] = { 0xC0, 0x01, 0x02, 0x03 };
+    tsfi_x25_packet x25_pkt;
+    assert(tsfi_x25_encapsulate_sdlc(sdlc_payload, 4, 7, &x25_pkt) == 0);
+    assert((x25_pkt.gfi_lci & 0x0F) == 7);
+    assert(x25_pkt.packet_type == 0x01);
+    assert(x25_pkt.payload_len == 4);
+    
+    uint8_t rx_sdlc[128];
+    size_t rx_sdlc_len = 0;
+    assert(tsfi_x25_decapsulate_sdlc(&x25_pkt, rx_sdlc, &rx_sdlc_len) == 0);
+    assert(rx_sdlc_len == 4);
+    assert(memcmp(rx_sdlc, sdlc_payload, 4) == 0);
+    printf("  [PASS] X.25 SDLC packet encapsulation decoders verified.\n");
+
+    // 30. IBM 8100/DPCX Distributed System loops Verification
+    printf("[Test] Verifying IBM 8100 Distributed Loops...\n");
+    tsfi_ibm8100_dpcx node8100;
+    tsfi_ibm8100_init(&node8100, 0x8101);
+    assert(node8100.terminal_id == 0x8101);
+    assert(node8100.sync_pending == 0);
+    
+    // Accumulate locally
+    assert(tsfi_ibm8100_process_local(&node8100, 50) == 0);
+    assert(node8100.local_accumulator == 50);
+    assert(node8100.sync_pending == 1);
+    
+    uint8_t sync_f[32];
+    size_t sync_len = 0;
+    assert(tsfi_ibm8100_sync_host(&node8100, sync_f, &sync_len) == 0);
+    assert(sync_len == 7);
+    assert(sync_f[0] == 0x81);
+    assert(((sync_f[1] << 8) | sync_f[2]) == 0x8101);
+    assert(node8100.sync_pending == 0); // Cleared
+    printf("  [PASS] IBM 8100 office DPCX loop sync verified.\n");
+
+    // 31. MSNF 2-3 Tree Operation Replication over TCP/IP Verification
+    printf("[Test] Verifying MSNF 2-3 Tree Replication over TCP/IP...\n");
+    tsfi_msnf_cdrm tree_cdrm;
+    tsfi_msnf_init(&tree_cdrm, 0x1111);
+    assert(tsfi_msnf_establish_session(&tree_cdrm, 0x2222) == 0);
+    
+    tsfi_tcp_connection tcp_conn;
+    tcp_conn.socket_fd = 5;
+    tcp_conn.connected = 1;
+    
+    tsfi_23tree_msg tx_tree;
+    tx_tree.command_type = 1; // INSERT
+    tx_tree.key = 9999;
+    tx_tree.value = 8888;
+    
+    uint8_t t_buf[64];
+    size_t t_len = 0;
+    assert(tsfi_msnf_send_tree_op(&tree_cdrm, &tcp_conn, &tx_tree, t_buf, &t_len) == 0);
+    assert(t_len == 10);
+    assert(t_buf[0] == 0xCD); // CDRM identification
+    
+    tsfi_23tree_msg rx_tree;
+    assert(tsfi_msnf_recv_tree_op(&tree_cdrm, &tcp_conn, t_buf, t_len, &rx_tree) == 0);
+    assert(rx_tree.command_type == 1);
+    assert(rx_tree.key == 9999);
+    assert(rx_tree.value == 8888);
+    printf("  [PASS] 2-3 tree replication codecs over TCP/IP verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

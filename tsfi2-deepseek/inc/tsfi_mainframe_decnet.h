@@ -341,4 +341,51 @@ typedef struct {
 void tsfi_s370_channel_status_init(tsfi_s370_channel_status *chan);
 void tsfi_s370_channel_set_error(tsfi_s370_channel_status *chan, uint8_t sense);
 
+// SNA MSNF CDRM Cross-Domain Session broker (linking btc-rails VM domains)
+typedef struct {
+    uint16_t local_domain_id;
+    uint16_t remote_domain_id;
+    int session_state;
+} tsfi_msnf_cdrm;
+
+void tsfi_msnf_init(tsfi_msnf_cdrm *cdrm, uint16_t local_id);
+int tsfi_msnf_establish_session(tsfi_msnf_cdrm *cdrm, uint16_t remote_id);
+
+// X.25 Packet Switching
+typedef struct {
+    uint8_t gfi_lci;
+    uint8_t packet_type;
+    uint8_t payload[256];
+    size_t payload_len;
+} tsfi_x25_packet;
+
+int tsfi_x25_encapsulate_sdlc(const uint8_t *sdlc_buf, size_t sdlc_len, uint8_t lci, tsfi_x25_packet *x25_out);
+int tsfi_x25_decapsulate_sdlc(const tsfi_x25_packet *x25, uint8_t *sdlc_buf_out, size_t *sdlc_len_out);
+
+// IBM 8100 Distributed Information System Terminal
+typedef struct {
+    uint16_t terminal_id;
+    int local_accumulator;
+    int sync_pending;
+} tsfi_ibm8100_dpcx;
+
+void tsfi_ibm8100_init(tsfi_ibm8100_dpcx *node, uint16_t term_id);
+int tsfi_ibm8100_process_local(tsfi_ibm8100_dpcx *node, int val);
+int tsfi_ibm8100_sync_host(tsfi_ibm8100_dpcx *node, uint8_t *sync_frame_out, size_t *len_out);
+
+// 2-3 Tree message packet replication over TCP/IP
+typedef struct {
+    uint32_t key;
+    uint32_t value;
+    int command_type;
+} tsfi_23tree_msg;
+
+typedef struct {
+    int socket_fd;
+    int connected;
+} tsfi_tcp_connection;
+
+int tsfi_msnf_send_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const tsfi_23tree_msg *msg, uint8_t *pkt_out, size_t *len_out);
+int tsfi_msnf_recv_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const uint8_t *pkt, size_t len, tsfi_23tree_msg *msg_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

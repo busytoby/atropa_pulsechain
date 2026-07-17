@@ -845,3 +845,93 @@ void tsfi_s370_channel_set_error(tsfi_s370_channel_status *chan, uint8_t sense) 
     chan->status_byte = 0x01;
     chan->sense_byte = sense;
 }
+
+void tsfi_msnf_init(tsfi_msnf_cdrm *cdrm, uint16_t local_id) {
+    if (!cdrm) return;
+    cdrm->local_domain_id = local_id;
+    cdrm->remote_domain_id = 0;
+    cdrm->session_state = 0;
+}
+
+int tsfi_msnf_establish_session(tsfi_msnf_cdrm *cdrm, uint16_t remote_id) {
+    if (!cdrm) return -1;
+    cdrm->remote_domain_id = remote_id;
+    cdrm->session_state = 2;
+    return 0;
+}
+
+int tsfi_x25_encapsulate_sdlc(const uint8_t *sdlc_buf, size_t sdlc_len, uint8_t lci, tsfi_x25_packet *x25_out) {
+    if (!sdlc_buf || !x25_out || sdlc_len > 256) return -1;
+    x25_out->gfi_lci = 0x10 | (lci & 0x0F);
+    x25_out->packet_type = 0x01;
+    memcpy(x25_out->payload, sdlc_buf, sdlc_len);
+    x25_out->payload_len = sdlc_len;
+    return 0;
+}
+
+int tsfi_x25_decapsulate_sdlc(const tsfi_x25_packet *x25, uint8_t *sdlc_buf_out, size_t *sdlc_len_out) {
+    if (!x25 || !sdlc_buf_out || !sdlc_len_out) return -1;
+    memcpy(sdlc_buf_out, x25->payload, x25->payload_len);
+    *sdlc_len_out = x25->payload_len;
+    return 0;
+}
+
+void tsfi_ibm8100_init(tsfi_ibm8100_dpcx *node, uint16_t term_id) {
+    if (!node) return;
+    node->terminal_id = term_id;
+    node->local_accumulator = 0;
+    node->sync_pending = 0;
+}
+
+int tsfi_ibm8100_process_local(tsfi_ibm8100_dpcx *node, int val) {
+    if (!node) return -1;
+    node->local_accumulator += val;
+    node->sync_pending = 1;
+    return 0;
+}
+
+int tsfi_ibm8100_sync_host(tsfi_ibm8100_dpcx *node, uint8_t *sync_frame_out, size_t *len_out) {
+    if (!node || !sync_frame_out || !len_out) return -1;
+    if (!node->sync_pending) return -2;
+    
+    sync_frame_out[0] = 0x81;
+    sync_frame_out[1] = (node->terminal_id >> 8) & 0xFF;
+    sync_frame_out[2] = node->terminal_id & 0xFF;
+    sync_frame_out[3] = (node->local_accumulator >> 24) & 0xFF;
+    sync_frame_out[4] = (node->local_accumulator >> 16) & 0xFF;
+    sync_frame_out[5] = (node->local_accumulator >> 8) & 0xFF;
+    sync_frame_out[6] = node->local_accumulator & 0xFF;
+    
+    *len_out = 7;
+    node->sync_pending = 0;
+    return 0;
+}
+
+int tsfi_msnf_send_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const tsfi_23tree_msg *msg, uint8_t *pkt_out, size_t *len_out) {
+    if (!cdrm || !conn || !msg || !pkt_out || !len_out) return -1;
+    if (!conn->connected || cdrm->session_state != 2) return -2;
+    
+    pkt_out[0] = 0xCD;
+    pkt_out[1] = msg->command_type & 0xFF;
+    pkt_out[2] = (msg->key >> 24) & 0xFF;
+    pkt_out[3] = (msg->key >> 16) & 0xFF;
+    pkt_out[4] = (msg->key >> 8) & 0xFF;
+    pkt_out[5] = msg->key & 0xFF;
+    pkt_out[6] = (msg->value >> 24) & 0xFF;
+    pkt_out[7] = (msg->value >> 16) & 0xFF;
+    pkt_out[8] = (msg->value >> 8) & 0xFF;
+    pkt_out[9] = msg->value & 0xFF;
+    
+    *len_out = 10;
+    return 0;
+}
+
+int tsfi_msnf_recv_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const uint8_t *pkt, size_t len, tsfi_23tree_msg *msg_out) {
+    if (!cdrm || !conn || !pkt || !msg_out || len < 10) return -1;
+    if (pkt[0] != 0xCD) return -3;
+    
+    msg_out->command_type = pkt[1];
+    msg_out->key = (pkt[2] << 24) | (pkt[3] << 16) | (pkt[4] << 8) | pkt[5];
+    msg_out->value = (pkt[6] << 24) | (pkt[7] << 16) | (pkt[8] << 8) | pkt[9];
+    return 0;
+}
