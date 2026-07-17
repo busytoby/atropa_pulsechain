@@ -2248,6 +2248,34 @@ int main(void) {
     assert(tsfi_coax_verify(&coax_tx_frame) == 0);
     assert(coax_tx_frame.payload[0] == 0);
     printf("  [PASS] SCSI-Coaxial bridge frame assembly and transmission verified.\n");
+    
+    // 112. SCSI-Coaxial Encrypted Frame Transmission verification
+    printf("[Test] Verifying SCSI-Coaxial encrypted frame send bridge...\n");
+    tsfi_coax_controller enc_ctrl;
+    tsfi_coax_controller_init(&enc_ctrl);
+    
+    enc_ctrl.devices[0].device_id = 112;
+    enc_ctrl.devices[0].status_register = 0x01; // Ready
+    enc_ctrl.device_count = 1;
+    
+    tsfi_scsi_transaction enc_tx_data;
+    memset(&enc_tx_data, 0, sizeof(enc_tx_data));
+    for (int i = 0; i < 32; i++) enc_tx_data.payload_hash[i] = 0x55;
+    
+    tsfi_des_key_vault enc_vault;
+    uint8_t master[8] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
+    tsfi_des_vault_init(&enc_vault, master);
+    assert(tsfi_des_rotate_session_key(&enc_vault) == 0);
+    
+    tsfi_coax_frame enc_frame;
+    memset(&enc_frame, 0, sizeof(enc_frame));
+    
+    int enc_dev = -1;
+    assert(tsfi_scsi_coax_bridge_send_encrypted_frame(&enc_tx_data, &enc_ctrl, &enc_vault, &enc_frame, &enc_dev) == 0);
+    assert(enc_dev == 112);
+    assert(tsfi_coax_verify(&enc_frame) == 0);
+    assert(enc_frame.payload[0] == (0x55 ^ 0xAA)); // XOR result check
+    printf("  [PASS] SCSI-Coaxial bridge encrypted frame transmission and payload verification verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");

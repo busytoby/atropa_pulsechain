@@ -3036,3 +3036,17 @@ int tsfi_scsi_coax_bridge_send_frame(tsfi_scsi_transaction *tx, tsfi_coax_contro
     }
     return res;
 }
+
+int tsfi_scsi_coax_bridge_send_encrypted_frame(tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_des_key_vault *vault, tsfi_coax_frame *frame_out, int *selected_device_id_out) {
+    if (!tx || !coax_ctrl || !vault || !frame_out || !selected_device_id_out) return -1;
+    int res = tsfi_scsi_coax_bridge_transfer(tx, coax_ctrl, selected_device_id_out);
+    if (res == 0) {
+        uint8_t enc_payload[32];
+        for (int i = 0; i < 32; i++) {
+            enc_payload[i] = tx->payload_hash[i] ^ vault->active_session_key[i % 8];
+        }
+        tsfi_coax_assemble(frame_out, enc_payload);
+        return 0;
+    }
+    return res;
+}
