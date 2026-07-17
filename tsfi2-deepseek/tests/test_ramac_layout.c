@@ -2110,6 +2110,37 @@ int main(void) {
     
     printf("  [PASS] Red-Black Rails static-dynamic verification loop passed.\n");
 
+    // Test Scenario 38: Manchester University Atlas One-Level Store Paging Engine
+    printf("[Test] Verifying Manchester University Atlas One-Level Store...\n");
+    tsfi_atlas_one_level_store atlas;
+    tsfi_atlas_one_level_store_init(&atlas);
+    
+    int frame_slot = -1;
+    // Translate unmapped page -> should fault
+    int trans_res = tsfi_atlas_one_level_store_translate(&atlas, 5, &frame_slot);
+    assert(trans_res == -2);
+    assert(atlas.page_fault_count == 1);
+    
+    // Swap page 5 in
+    int swapped_slot = tsfi_atlas_one_level_store_swap(&atlas, 5, 0);
+    assert(swapped_slot >= 0 && swapped_slot < 8);
+    
+    // Translate mapped page -> should hit
+    trans_res = tsfi_atlas_one_level_store_translate(&atlas, 5, &frame_slot);
+    assert(trans_res == 0);
+    assert(frame_slot == swapped_slot);
+    printf("  [PASS] Atlas one-level store page translation and fault swap verified successfully.\n");
+    
+    // Test Scenario 39: R. Patrick's Programming Support Gap Diagnostic
+    printf("[Test] Verifying R. Patrick's Programming Support Gap Diagnostic...\n");
+    uint8_t bad_bc[] = { 0x99, 0x10, 0x05, 0x01 }; // 0x99 (invalid), 0x10 with R5 (out of bounds)
+    tsfi_patrick_gap_report pat_report;
+    int val_res = tsfi_patrick_gap_validate(bad_bc, 4, &pat_report);
+    assert(val_res == 0);
+    assert(pat_report.invalid_opcodes == 1);
+    assert(pat_report.bounds_violations == 1);
+    printf("  [PASS] Patrick programming support gap diagnostics correctly flagged invalid states.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 

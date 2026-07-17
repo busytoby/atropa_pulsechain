@@ -3352,3 +3352,103 @@ int tsfi_red_black_rails_resolve(tsfi_red_black_rails *rails, int task_idx, uint
     *val_out = (uint8_t)(offset * 3);
     return 0;
 }
+
+void tsfi_atlas_one_level_store_init(tsfi_atlas_one_level_store *store) {
+    if (!store) return;
+    store->page_fault_count = 0;
+    for (int i = 0; i < 8; i++) {
+        store->page_frame_core[i] = 0;
+        store->presence_bits[i] = 0;
+        store->dirty_bits[i] = 0;
+    }
+}
+
+int tsfi_atlas_one_level_store_translate(tsfi_atlas_one_level_store *store, uint32_t virtual_page, int *frame_out) {
+    if (!store || !frame_out) return -1;
+    
+    // Look up in core memory frames
+    for (int i = 0; i < 8; i++) {
+        if (store->presence_bits[i] && store->page_frame_core[i] == virtual_page) {
+            *frame_out = i;
+            return 0; // Hit
+        }
+    }
+    
+    // Page Fault (not present in core memory)
+    store->page_fault_count++;
+    return -2; // Miss / Fault
+}
+
+int tsfi_atlas_one_level_store_swap(tsfi_atlas_one_level_store *store, uint32_t virtual_page_in, uint32_t virtual_page_out) {
+    if (!store) return -1;
+    
+    // Evict virtual_page_out if present in core frames
+    int swap_slot = -1;
+    for (int i = 0; i < 8; i++) {
+        if (store->presence_bits[i] && store->page_frame_core[i] == virtual_page_out) {
+            swap_slot = i;
+            break;
+        }
+    }
+    
+    // If virtual_page_out not found, find first empty or default to slot 0
+    if (swap_slot == -1) {
+        for (int i = 0; i < 8; i++) {
+            if (!store->presence_bits[i]) {
+                swap_slot = i;
+                break;
+            }
+        }
+    }
+    if (swap_slot == -1) swap_slot = 0; // Evict frame 0 by default
+    
+    store->page_frame_core[swap_slot] = virtual_page_in;
+    store->presence_bits[swap_slot] = 1;
+    store->dirty_bits[swap_slot] = 0;
+    
+    return swap_slot;
+}
+
+int tsfi_patrick_gap_validate(const uint8_t *bytecode, int len, tsfi_patrick_gap_report *report) {
+    if (!bytecode || len <= 0 || !report) return -1;
+    
+    report->invalid_opcodes = 0;
+    report->unaligned_descriptors = 0;
+    report->bounds_violations = 0;
+    
+    int pc = 0;
+    while (pc < len) {
+        uint8_t op = bytecode[pc++];
+        
+        // Check for valid bytecode ranges based on TSFiStrategyVM opcodes
+        if (!(op <= 0x24 || (op >= 0x30 && op <= 0x34))) {
+            report->invalid_opcodes++;
+            continue;
+        }
+        
+        // Handle instructions with operands to check boundaries
+        if (op == 0x10 || op == 0x11 || op == 0x1D || op == 0x1E) { // Arithmetic (dst, src)
+            if (pc + 1 < len) {
+                uint8_t dst = bytecode[pc++];
+                uint8_t src = bytecode[pc++];
+                if (dst >= 4 || src >= 4) {
+                    report->bounds_violations++;
+                }
+            } else {
+                report->bounds_violations++;
+                break;
+            }
+        } else if (op == 0x30 || op == 0x31) { // Stack Push/Pop Register
+            if (pc < len) {
+                uint8_t reg = bytecode[pc++];
+                if (reg >= 4) {
+                    report->bounds_violations++;
+                }
+            } else {
+                report->bounds_violations++;
+                break;
+            }
+        }
+    }
+    return 0;
+}

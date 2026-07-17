@@ -671,4 +671,25 @@ typedef struct {
 void tsfi_red_black_rails_init(tsfi_red_black_rails *rails);
 int tsfi_red_black_rails_resolve(tsfi_red_black_rails *rails, int task_idx, uint32_t offset, uint8_t *val_out);
 
+// Manchester University Atlas One-Level Store Paging Engine
+typedef struct {
+    uint32_t page_frame_core[8];      // Core memory frames containing virtual pages
+    int presence_bits[8];             // Presence state bits for each frame
+    int dirty_bits[8];                // Dirty/modified state bits
+    uint32_t page_fault_count;        // Count of triggered page faults
+} tsfi_atlas_one_level_store;
+
+void tsfi_atlas_one_level_store_init(tsfi_atlas_one_level_store *store);
+int tsfi_atlas_one_level_store_translate(tsfi_atlas_one_level_store *store, uint32_t virtual_page, int *frame_out);
+int tsfi_atlas_one_level_store_swap(tsfi_atlas_one_level_store *store, uint32_t virtual_page_in, uint32_t virtual_page_out);
+
+// R. Patrick's Programming Support Gap Diagnostic
+typedef struct {
+    int invalid_opcodes;
+    int unaligned_descriptors;
+    int bounds_violations;
+} tsfi_patrick_gap_report;
+
+int tsfi_patrick_gap_validate(const uint8_t *bytecode, int len, tsfi_patrick_gap_report *report);
+
 #endif // TSFI_RAMAC_LAYOUT_H
