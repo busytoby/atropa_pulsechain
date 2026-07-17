@@ -4459,6 +4459,7 @@ void tsfi_ppu_init(cdc_ppu_system *sys) {
         sys->ppus[i].task_active = 0;
         sys->ppus[i].bytes_processed = 0;
         sys->ppus[i].total_bytes = 0;
+        sys->ppus[i].shared_instruction = NULL;
     }
 }
 
@@ -4467,17 +4468,28 @@ void tsfi_ppu_assign(cdc_ppu_system *sys, int ppu_id, int bytes) {
     sys->ppus[ppu_id].task_active = 1;
     sys->ppus[ppu_id].total_bytes = bytes;
     sys->ppus[ppu_id].bytes_processed = 0;
+    sys->ppus[ppu_id].shared_instruction = NULL;
 }
 
 int tsfi_ppu_step(cdc_ppu_system *sys) {
     if (!sys) return 0;
     int processed = 0;
     cdc_ppu *curr = &sys->ppus[sys->current_slot];
-    if (curr->task_active && curr->bytes_processed < curr->total_bytes) {
-        curr->bytes_processed++;
-        processed = 1;
-        if (curr->bytes_processed >= curr->total_bytes) {
-            curr->task_active = 0;
+    if (curr->task_active) {
+        if (curr->shared_instruction) {
+            if (curr->shared_instruction->stage == STAGE_DONE) {
+                curr->task_active = 0;
+                curr->shared_instruction = NULL;
+            } else {
+                curr->bytes_processed++;
+                processed = 1;
+            }
+        } else if (curr->bytes_processed < curr->total_bytes) {
+            curr->bytes_processed++;
+            processed = 1;
+            if (curr->bytes_processed >= curr->total_bytes) {
+                curr->task_active = 0;
+            }
         }
     }
     sys->current_slot = (sys->current_slot + 1) % 10;
@@ -4777,4 +4789,13 @@ int tsfi_pli_exception_trigger(pli_exception_system *sys, const char *type, int 
         }
     }
     return -2;
+}
+
+int tsfi_zerocopy_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, int sb_index) {
+    if (!sys || !sb || ppu_id < 0 || ppu_id >= 10 || sb_index < 0 || sb_index >= sb->size) return -1;
+    sys->ppus[ppu_id].shared_instruction = &sb->queue[sb_index];
+    sys->ppus[ppu_id].task_active = 1;
+    sys->ppus[ppu_id].total_bytes = 4;
+    sys->ppus[ppu_id].bytes_processed = 0;
+    return 0;
 }

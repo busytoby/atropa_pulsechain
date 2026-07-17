@@ -1011,11 +1011,13 @@ void tsfi_scoreboard_init(cdc_scoreboard *sb);
 int tsfi_scoreboard_step(cdc_scoreboard *sb, int regs[8]);
 
 // CDC 6600 PPU System
+// CDC 6600 PPU System
 typedef struct {
     int ppu_id;
     int task_active;
     int bytes_processed;
     int total_bytes;
+    cdc_instruction *shared_instruction; // Zero-copy pointer to scoreboard instruction
 } cdc_ppu;
 
 typedef struct {
@@ -1027,6 +1029,7 @@ void tsfi_ppu_init(cdc_ppu_system *sys);
 void tsfi_ppu_assign(cdc_ppu_system *sys, int ppu_id, int bytes);
 int tsfi_ppu_step(cdc_ppu_system *sys);
 int tsfi_ppu_scoreboard_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, const cdc_instruction *inst);
+int tsfi_zerocopy_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, int sb_index);
 
 // RAND Tablet Coordinate Interpolator
 typedef struct {

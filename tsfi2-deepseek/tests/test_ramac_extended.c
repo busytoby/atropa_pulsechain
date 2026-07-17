@@ -809,6 +809,33 @@ int main(void) {
     assert(pli_regs[5] == 888);
     printf("  [PASS] PL/I exception handler stack matching verified successfully.\n");
 
+    // 46. Zero-Copy PPU Pipeline Verification
+    printf("[Test] Verifying Zero-Copy PPU pipeline updates...\n");
+    cdc_ppu_system zc_sys;
+    tsfi_ppu_init(&zc_sys);
+    cdc_scoreboard zc_sb;
+    tsfi_scoreboard_init(&zc_sb);
+    
+    zc_sb.queue[0].inst_id = 0;
+    strcpy(zc_sb.queue[0].op, "ADD");
+    zc_sb.queue[0].dest_reg = 2;
+    zc_sb.queue[0].src1_reg = 0;
+    zc_sb.queue[0].src2_reg = 1;
+    zc_sb.queue[0].stage = STAGE_ISSUE;
+    zc_sb.size = 1;
+    
+    int zc_res = tsfi_zerocopy_dispatch(&zc_sys, &zc_sb, 4, 0);
+    assert(zc_res == 0);
+    assert(zc_sys.ppus[4].shared_instruction == &zc_sb.queue[0]);
+    assert(zc_sys.ppus[4].task_active == 1);
+    
+    zc_sys.current_slot = 4;
+    int step_processed = tsfi_ppu_step(&zc_sys);
+    assert(step_processed == 1);
+    assert(zc_sys.ppus[4].bytes_processed == 1);
+    assert(zc_sys.ppus[4].shared_instruction->stage == STAGE_ISSUE);
+    printf("  [PASS] Zero-copy shared memory pointer referencing verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
