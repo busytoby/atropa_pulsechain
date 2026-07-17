@@ -404,3 +404,23 @@ int tsfi_mf_cade_is_under_audit(int status_code, int *is_audit) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_individual_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 10) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_active(int status_code, int *is_active) {
+    if (!is_active) return -1;
+
+    *is_active = 0;
+    if (status_code == 1) {
+        *is_active = 1;
+    }
+    return 0;
+}

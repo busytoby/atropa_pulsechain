@@ -205,8 +205,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 250 | IRS CADE Taxpayer Status Name Resolver | PASS | Resolves taxpayer account status names from status digit | Volume 33 |
 | 251 | IRS IMF Corporate Form Verifier | PASS | Restricts corporate filings to valid corporate form ranges | Volume 33 |
 | 252 | IRS CADE Taxpayer Audit Status Verifier | PASS | Asserves if account status matches active audit codes | Volume 33 |
+| 253 | IRS IMF Individual Form Verifier | PASS | Restricts individual filings to valid individual form ranges | Volume 33 |
+| 254 | IRS CADE Taxpayer Active Checker | PASS | Asserves if account status matches active status codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 252 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 254 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

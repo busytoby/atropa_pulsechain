@@ -31,5 +31,7 @@ int tsfi_mf_imf_is_excise_or_misc_form(int doc_code, int *result);
 int tsfi_mf_cade_get_status_name(int status_code, char *name_out, int max_len);
 int tsfi_mf_imf_is_corporate_form(int doc_code, int *result);
 int tsfi_mf_cade_is_under_audit(int status_code, int *is_audit);
+int tsfi_mf_imf_is_individual_form(int doc_code, int *result);
+int tsfi_mf_cade_is_active(int status_code, int *is_active);
 
 #endif // TSFI_CADE_IMF_H
