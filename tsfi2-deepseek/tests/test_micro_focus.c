@@ -1603,6 +1603,22 @@ int main(void) {
     assert(strcmp(estate_mud_resp2, "Estate audit check: 1") == 0);
     printf("  [PASS] Z-machine MajorMUD IRS Estate integration verified.\n");
 
+    // 155. Verify IRS IMF Gift Form Verifier
+    printf("[TEST] Validating IRS IMF Gift Form Verifier...\n");
+    int is_gift = -1;
+    int gift_res = tsfi_mf_imf_is_gift_form(26, &is_gift);
+    assert(gift_res == 0);
+    assert(is_gift == 1);
+    printf("  [PASS] IRS IMF Gift Form Verifier verified.\n");
+
+    // 156. Verify IRS CADE Taxpayer Active Or Suspended Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Active Or Suspended Checker...\n");
+    int is_aos = -1;
+    int aos_res = tsfi_mf_cade_is_active_or_suspended(3, &is_aos);
+    assert(aos_res == 0);
+    assert(is_aos == 1);
+    printf("  [PASS] IRS CADE Taxpayer Active Or Suspended Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

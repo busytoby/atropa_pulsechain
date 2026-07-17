@@ -197,5 +197,7 @@
 | 263 | IRS IMF Estate Form Verifier | PASS | Restricts estate filings to valid estate form ranges | Volume 33 |
 | 264 | IRS CADE Taxpayer Audit Or Pending Checker | PASS | Asserves if account status matches active or pending audit codes | Volume 33 |
 | 265 | Z-machine MajorMUD IRS Estate integration | PASS | Bridges IRS Master File estate queries with zmachine console commands | Volume 33 |
+| 266 | IRS IMF Gift Form Verifier | PASS | Restricts gift filings to valid gift form ranges | Volume 33 |
+| 267 | IRS CADE Taxpayer Active Or Suspended Checker | PASS | Asserves if account status matches active or suspended codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 265 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 267 Scenarios validated successfully)
