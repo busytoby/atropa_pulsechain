@@ -9,6 +9,22 @@
 #include <openssl/sha.h>
 #include "tsfi_zmm_rpc.h"
 #include "lau_yul_thunk.h"
+#ifndef SAMPLE_RATE
+#define SAMPLE_RATE 8000
+#endif
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+#include "tsfi_computel_blue_box.h"
+    #define GRID_SIZE 80
+#define MAX_BGP_PEERS 32
+#define MAX_GGUF_ROUTES 64
+#define MAX_VALIDATOR_BIDS 16
+#include <dirent.h>
+#include <sys/stat.h>
+#include "tsfi_mainframe_decnet.h"
+
+
 
 /*
  * Auncient Computel Single-Frequency (SF) & Multi-Frequency (MF) Switch Controller
@@ -16,365 +32,44 @@
  * Simulates trunk seizure via 2600 Hz SF tones and routing via MF digits (Blue Box).
  */
 
-#ifndef SAMPLE_RATE
-#define SAMPLE_RATE 8000
-#endif
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 // MF frequency pairs for trunk dialing
-static const float mf_freqs_f1[12] = {700.0f, 700.0f, 900.0f, 700.0f, 900.0f, 1100.0f, 700.0f, 900.0f, 1100.0f, 1300.0f, 1100.0f, 1500.0f};
-static const float mf_freqs_f2[12] = {900.0f, 1100.0f, 1100.0f, 1300.0f, 1300.0f, 1300.0f, 1500.0f, 1500.0f, 1500.0f, 1500.0f, 1700.0f, 1700.0f};
 // Map characters: '1'-'9', '0', 'K' (KP), 'S' (ST)
-static const char mf_char_map[12] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'K', 'S'};
-
-#include "tsfi_computel_blue_box.h"
 
 
 
-static RbtNode rbt_node_pool[RBT_MAX_NODES];
-uint32_t rbt_node_count = 0;
-RbtNode *rbt_root = NULL;
-
-static RbtNode* rbt_alloc_node(uint32_t block_number, struct TwoThreeNode *two_three_node) {
-    if (rbt_node_count >= RBT_MAX_NODES) return NULL;
-    RbtNode *node = &rbt_node_pool[rbt_node_count++];
-    node->block_number = block_number;
-    node->two_three_node = two_three_node;
-    node->color = RBT_RED;
-    node->left = NULL;
-    node->right = NULL;
-    node->parent = NULL;
-    return node;
-}
-
-static void rbt_left_rotate(RbtNode **root, RbtNode *x) {
-    RbtNode *y = x->right;
-    x->right = y->left;
-    if (y->left != NULL) y->left->parent = x;
-    y->parent = x->parent;
-    if (x->parent == NULL) *root = y;
-    else if (x == x->parent->left) x->parent->left = y;
-    else x->parent->right = y;
-    y->left = x;
-    x->parent = y;
-}
-
-static void rbt_right_rotate(RbtNode **root, RbtNode *y) {
-    RbtNode *x = y->left;
-    y->left = x->right;
-    if (x->right != NULL) x->right->parent = y;
-    x->parent = y->parent;
-    if (y->parent == NULL) *root = x;
-    else if (y == y->parent->left) y->parent->left = x;
-    else y->parent->right = x;
-    x->right = y;
-    y->parent = x;
-}
-
-static void rbt_insert_fixup(RbtNode **root, RbtNode *z) {
-    while (z != *root && z->parent->color == RBT_RED) {
-        if (z->parent == z->parent->parent->left) {
-            RbtNode *y = z->parent->parent->right;
-            if (y != NULL && y->color == RBT_RED) {
-                z->parent->color = RBT_BLACK;
-                y->color = RBT_BLACK;
-                z->parent->parent->color = RBT_RED;
-                z = z->parent->parent;
-            } else {
-                if (z == z->parent->right) {
-                    z = z->parent;
-                    rbt_left_rotate(root, z);
-                }
-                z->parent->color = RBT_BLACK;
-                z->parent->parent->color = RBT_RED;
-                rbt_right_rotate(root, z->parent->parent);
-            }
-        } else {
-            RbtNode *y = z->parent->parent->left;
-            if (y != NULL && y->color == RBT_RED) {
-                z->parent->color = RBT_BLACK;
-                y->color = RBT_BLACK;
-                z->parent->parent->color = RBT_RED;
-                z = z->parent->parent;
-            } else {
-                if (z == z->parent->left) {
-                    z = z->parent;
-                    rbt_right_rotate(root, z);
-                }
-                z->parent->color = RBT_BLACK;
-                z->parent->parent->color = RBT_RED;
-                rbt_left_rotate(root, z->parent->parent);
-            }
-        }
-    }
-    (*root)->color = RBT_BLACK;
-}
-
-void blue_box_rbt_insert(uint32_t block_number, struct TwoThreeNode *two_three_node) {
-    RbtNode *z = rbt_alloc_node(block_number, two_three_node);
-    if (!z) return;
-
-    RbtNode *y = NULL;
-    RbtNode *x = rbt_root;
-
-    while (x != NULL) {
-        y = x;
-        if (z->block_number < x->block_number) x = x->left;
-        else x = x->right;
-    }
-
-    z->parent = y;
-    if (y == NULL) {
-        rbt_root = z;
-    } else if (z->block_number < y->block_number) {
-        y->left = z;
-    } else {
-        y->right = z;
-    }
-
-    rbt_insert_fixup(&rbt_root, z);
-}
-
-struct TwoThreeNode* blue_box_rbt_lookup(uint32_t block_number) {
-    RbtNode *x = rbt_root;
-    while (x != NULL) {
-        if (block_number == x->block_number) return x->two_three_node;
-        if (block_number < x->block_number) x = x->left;
-        else x = x->right;
-    }
-    return NULL;
-}
 
 
 
-static TwoThreeNode *blue_box_tree_root = NULL;
-
-static void blue_box_sha256(const void *data, size_t len, uint8_t *out) {
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-    SHA256_Update(&ctx, data, len);
-    SHA256_Final(out, &ctx);
-}
-
-TwoThreeNode* blue_box_create_leaf(uint32_t key1, const char *val1, uint32_t key2, const char *val2) {
-    TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
-    node->is_leaf = true;
-    node->num_keys = val2 ? 2 : 1;
-    node->keys[0] = key1;
-    strcpy(node->values[0], val1);
-    if (val2) {
-        node->keys[1] = key2;
-        strcpy(node->values[1], val2);
-    }
-    uint8_t temp[256];
-    int len = snprintf((char*)temp, sizeof(temp), "%u:%s:%u:%s", 
-                       node->keys[0], node->values[0], 
-                       val2 ? node->keys[1] : 0, val2 ? node->values[1] : "");
-    blue_box_sha256(temp, len, node->node_hash);
-    return node;
-}
-
-TwoThreeNode* blue_box_create_internal(TwoThreeNode *c1, TwoThreeNode *c2, TwoThreeNode *c3) {
-    TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
-    node->is_leaf = false;
-    node->children[0] = c1;
-    node->children[1] = c2;
-    if (c3) {
-        node->children[2] = c3;
-        node->num_keys = 2;
-        node->keys[0] = c2->keys[0];
-        node->keys[1] = c3->keys[0];
-        uint8_t concat[TWO_THREE_HASH_SIZE * 3];
-        memcpy(concat, c1->node_hash, TWO_THREE_HASH_SIZE);
-        memcpy(concat + TWO_THREE_HASH_SIZE, c2->node_hash, TWO_THREE_HASH_SIZE);
-        memcpy(concat + TWO_THREE_HASH_SIZE * 2, c3->node_hash, TWO_THREE_HASH_SIZE);
-        blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 3, node->node_hash);
-    } else {
-        node->num_keys = 1;
-        node->keys[0] = c2->keys[0];
-        uint8_t concat[TWO_THREE_HASH_SIZE * 2];
-        memcpy(concat, c1->node_hash, TWO_THREE_HASH_SIZE);
-        memcpy(concat + TWO_THREE_HASH_SIZE, c2->node_hash, TWO_THREE_HASH_SIZE);
-        blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 2, node->node_hash);
-    }
-    return node;
-}
-
-void blue_box_update_node_hash(TwoThreeNode *node) {
-    if (!node) return;
-    if (node->is_leaf) {
-        uint8_t temp[256];
-        int len = snprintf((char*)temp, sizeof(temp), "%u:%s:%u:%s", 
-                           node->keys[0], node->values[0], 
-                           node->num_keys == 2 ? node->keys[1] : 0, 
-                           node->num_keys == 2 ? node->values[1] : "");
-        blue_box_sha256(temp, len, node->node_hash);
-    } else {
-        if (node->children[2]) {
-            uint8_t concat[TWO_THREE_HASH_SIZE * 3];
-            memcpy(concat, node->children[0]->node_hash, TWO_THREE_HASH_SIZE);
-            memcpy(concat + TWO_THREE_HASH_SIZE, node->children[1]->node_hash, TWO_THREE_HASH_SIZE);
-            memcpy(concat + TWO_THREE_HASH_SIZE * 2, node->children[2]->node_hash, TWO_THREE_HASH_SIZE);
-            blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 3, node->node_hash);
-        } else {
-            uint8_t concat[TWO_THREE_HASH_SIZE * 2];
-            memcpy(concat, node->children[0]->node_hash, TWO_THREE_HASH_SIZE);
-            memcpy(concat + TWO_THREE_HASH_SIZE, node->children[1]->node_hash, TWO_THREE_HASH_SIZE);
-            blue_box_sha256(concat, TWO_THREE_HASH_SIZE * 2, node->node_hash);
-        }
-    }
-}
-
-const char* blue_box_retrieve_23_data(TwoThreeNode *node, uint32_t key) {
-    if (!node) return NULL;
-    if (node->is_leaf) {
-        if (node->keys[0] == key) return node->values[0];
-        if (node->num_keys == 2 && node->keys[1] == key) return node->values[1];
-        return NULL;
-    }
-    if (key < node->keys[0]) {
-        return blue_box_retrieve_23_data(node->children[0], key);
-    } else if (node->num_keys == 1 || key < node->keys[1]) {
-        return blue_box_retrieve_23_data(node->children[1], key);
-    } else {
-        return blue_box_retrieve_23_data(node->children[2], key);
-    }
-}
-
-bool blue_box_store_23_data(TwoThreeNode *node, uint32_t key, const char *new_value) {
-    if (!node) return false;
-    if (node->is_leaf) {
-        if (node->keys[0] == key) {
-            strcpy(node->values[0], new_value);
-            blue_box_update_node_hash(node);
-            return true;
-        }
-        if (node->num_keys == 2 && node->keys[1] == key) {
-            strcpy(node->values[1], new_value);
-            blue_box_update_node_hash(node);
-            return true;
-        }
-        return false;
-    }
-    bool updated = false;
-    if (key < node->keys[0]) {
-        updated = blue_box_store_23_data(node->children[0], key, new_value);
-    } else if (node->num_keys == 1 || key < node->keys[1]) {
-        updated = blue_box_store_23_data(node->children[1], key, new_value);
-    } else {
-        updated = blue_box_store_23_data(node->children[2], key, new_value);
-    }
-    if (updated) {
-        blue_box_update_node_hash(node);
-    }
-    return updated;
-}
-
-void blue_box_free_23_tree(TwoThreeNode *node) {
-    if (!node) return;
-    if (!node->is_leaf) {
-        blue_box_free_23_tree(node->children[0]);
-        blue_box_free_23_tree(node->children[1]);
-        blue_box_free_23_tree(node->children[2]);
-    }
-    free(node);
-}
 
 
 
-static int avl_height(AvlNode *n) {
-    return n ? n->height : 0;
-}
 
-static int avl_balance(AvlNode *n) {
-    return n ? avl_height(n->left) - avl_height(n->right) : 0;
-}
 
-static AvlNode* avl_right_rotate(AvlNode *y) {
-    AvlNode *x = y->left;
-    AvlNode *T2 = x->right;
-    x->right = y;
-    y->left = T2;
-    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
-    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
-    return x;
-}
 
-static AvlNode* avl_left_rotate(AvlNode *x) {
-    AvlNode *y = x->right;
-    AvlNode *T2 = y->left;
-    y->left = x;
-    x->right = T2;
-    x->height = 1 + (avl_height(x->left) > avl_height(x->right) ? avl_height(x->left) : avl_height(x->right));
-    y->height = 1 + (avl_height(y->left) > avl_height(y->right) ? avl_height(y->left) : avl_height(y->right));
-    return y;
-}
 
-AvlNode* avl_insert(AvlNode *node, uint32_t val, uint32_t block_number) {
-    if (!node) {
-        AvlNode *n = (AvlNode*)calloc(1, sizeof(AvlNode));
-        n->val = val;
-        n->block_number = block_number;
-        n->height = 1;
-        return n;
-    }
-    if (val == node->val) {
-        node->block_number = block_number;
-        return node;
-    }
-    if (val < node->val) {
-        node->left = avl_insert(node->left, val, block_number);
-    } else {
-        node->right = avl_insert(node->right, val, block_number);
-    }
 
-    node->height = 1 + (avl_height(node->left) > avl_height(node->right) ? avl_height(node->left) : avl_height(node->right));
-    int balance = avl_balance(node);
 
-    if (balance > 1 && val < node->left->val) {
-        return avl_right_rotate(node);
-    }
-    if (balance < -1 && val >= node->right->val) {
-        return avl_left_rotate(node);
-    }
-    if (balance > 1 && val >= node->left->val) {
-        node->left = avl_left_rotate(node->left);
-        return avl_right_rotate(node);
-    }
-    if (balance < -1 && val < node->right->val) {
-        node->right = avl_right_rotate(node->right);
-        return avl_left_rotate(node);
-    }
-    return node;
-}
 
-static void avl_inorder(AvlNode *root, uint32_t *arr, uint32_t *idx, uint32_t max_len) {
-    if (!root || *idx >= max_len) return;
-    avl_inorder(root->left, arr, idx, max_len);
-    if (*idx < max_len) {
-        arr[(*idx)++] = root->block_number;
-    }
-    avl_inorder(root->right, arr, idx, max_len);
-}
 
-static void avl_free(AvlNode *root) {
-    if (!root) return;
-    avl_free(root->left);
-    avl_free(root->right);
-    free(root);
-}
 
-AvlNode *centrex_avl = NULL;
 
-void blue_box_bind_23_tree(TwoThreeNode *root);
+
+
+
+
+
+
+
+
+
 
 typedef struct {
     uint32_t trunk_id;
     const char *address;
 } ImmutableBlueBoxStorageEntry;
+
 
 static const ImmutableBlueBoxStorageEntry immutable_storage[] = {
     {800, "dynamic_0x0000000000000000000000000000000000000800"},
@@ -394,6 +89,7 @@ const char *blue_box_get_immutable_address(uint32_t trunk_id) {
     return NULL;
 }
 
+
 uint32_t calculate_crc32(const uint8_t *data, size_t length) {
     uint32_t crc = 0xFFFFFFFFU;
     for (size_t i = 0; i < length; i++) {
@@ -408,6 +104,7 @@ uint32_t calculate_crc32(const uint8_t *data, size_t length) {
     }
     return ~crc;
 }
+
 
 
 
@@ -434,6 +131,7 @@ void blue_box_init_block(uint32_t block_number, const uint8_t *initial_hash) {
     }
 }
 
+
 void blue_box_set_block_unicode_synth(const char *desc, float freq) {
     if (desc) {
         strncpy(current_block_state.unicode_desc, desc, sizeof(current_block_state.unicode_desc) - 1);
@@ -444,11 +142,13 @@ void blue_box_set_block_unicode_synth(const char *desc, float freq) {
     current_block_state.synth_frequency = freq;
 }
 
+
 void blue_box_register_block_trunk(uint32_t trunk_id) {
     if (trunk_id >= 800 && trunk_id < 832) {
         current_block_state.active_trunk_mask |= (1U << (trunk_id - 800));
     }
 }
+
 
 bool blue_box_commit_block(void) {
     if (current_block_state.is_committed) return false;
@@ -463,7 +163,8 @@ bool blue_box_commit_block(void) {
     return true;
 }
 
-static uint64_t MotzkinPrime = 953467954114363ULL;
+
+const uint64_t MotzkinPrime = 953467954114363ULL;
 static uint64_t accumulator_register = 0;
 
 void blue_box_accumulate_state(uint64_t input_signal) {
@@ -473,177 +174,26 @@ void blue_box_accumulate_state(uint64_t input_signal) {
     }
 }
 
+
 uint64_t blue_box_get_accumulator(void) {
     return accumulator_register;
 }
+
 
 BlueBoxBlockState blue_box_get_block_state(void) {
     return current_block_state;
 }
 
-static double sf_phase = 0.0;
-static double mf_phase_f1 = 0.0;
-static double mf_phase_f2 = 0.0;
-static double red_box_phase_f1 = 0.0;
-static double red_box_phase_f2 = 0.0;
+
 
 /* Generates 2600 Hz SF tone to seize simulated trunk line - phase continuous */
-void generate_sf_seizure(float *buffer, int num_samples) {
-    if (!buffer || num_samples <= 0) return;
-    for (int i = 0; i < num_samples; i++) {
-        buffer[i] = (float)sin(sf_phase);
-        sf_phase += 2.0 * M_PI * 2600.0 / SAMPLE_RATE;
-        if (sf_phase > 2.0 * M_PI) sf_phase -= 2.0 * M_PI;
-    }
-}
 
 /* Generates MF tones to route calls inside tandem trunk switch matrices - phase continuous */
-bool generate_mf_tone(char digit, float *buffer, int num_samples) {
-    if (!buffer || num_samples <= 0) return false;
-
-    int idx = -1;
-    for (int i = 0; i < 12; i++) {
-        if (mf_char_map[i] == digit) {
-            idx = i;
-            break;
-        }
-    }
-
-    if (idx == -1) return false;
-
-    float f1 = mf_freqs_f1[idx];
-    float f2 = mf_freqs_f2[idx];
-
-    for (int i = 0; i < num_samples; i++) {
-        buffer[i] = (float)((sin(mf_phase_f1) + sin(mf_phase_f2)) * 0.5);
-        mf_phase_f1 += 2.0 * M_PI * f1 / SAMPLE_RATE;
-        mf_phase_f2 += 2.0 * M_PI * f2 / SAMPLE_RATE;
-        if (mf_phase_f1 > 2.0 * M_PI) mf_phase_f1 -= 2.0 * M_PI;
-        if (mf_phase_f2 > 2.0 * M_PI) mf_phase_f2 -= 2.0 * M_PI;
-    }
-
-    return true;
-}
 
 /* Generates Red Box payphone coin tones (1700 Hz + 2200 Hz beeps) - phase continuous */
-int generate_red_box_coin_tone(int denomination, float *buffer, int max_samples) {
-    if (!buffer || max_samples <= 0) return 0;
 
-    int beeps = 0;
-    if (denomination == 5) beeps = 1;
-    else if (denomination == 10) beeps = 2;
-    else if (denomination == 25) beeps = 5;
-    else return 0;
 
-    int beep_samples = (int)(0.066f * SAMPLE_RATE); // 66 ms beep
-    int pause_samples = (int)(0.066f * SAMPLE_RATE); // 66 ms pause
-    int total_samples = beeps * (beep_samples + pause_samples);
 
-    if (total_samples > max_samples) return 0;
-
-    int offset = 0;
-    for (int b = 0; b < beeps; b++) {
-        // Generate Beep
-        for (int i = 0; i < beep_samples; i++) {
-            float decay = (float)exp(-3.0 * (double)i / beep_samples);
-            buffer[offset + i] = (float)((sin(red_box_phase_f1) + sin(red_box_phase_f2)) * 0.5 * decay);
-            
-            // Emulate transient gong chirp in first 40 samples
-            if (i < 40) {
-                buffer[offset + i] += (float)(((double)rand() / RAND_MAX) * 0.15);
-            }
-
-            red_box_phase_f1 += 2.0 * M_PI * 1700.0 / SAMPLE_RATE;
-            red_box_phase_f2 += 2.0 * M_PI * 2200.0 / SAMPLE_RATE;
-            if (red_box_phase_f1 > 2.0 * M_PI) red_box_phase_f1 -= 2.0 * M_PI;
-            if (red_box_phase_f2 > 2.0 * M_PI) red_box_phase_f2 -= 2.0 * M_PI;
-        }
-        offset += beep_samples;
-
-        // Generate Pause
-        for (int i = 0; i < pause_samples; i++) {
-            buffer[offset + i] = 0.0f;
-        }
-        offset += pause_samples;
-    }
-
-    return offset;
-}
-
-static bool goertzel_detect(const float *samples, int num_samples, float target_freq) {
-    float s_prev = 0.0f;
-    float s_prev2 = 0.0f;
-    float normalized_freq = target_freq / SAMPLE_RATE;
-    float coeff = 2.0f * (float)cos(2.0 * M_PI * normalized_freq);
-    for (int i = 0; i < num_samples; i++) {
-        float s = samples[i] + coeff * s_prev - s_prev2;
-        s_prev2 = s_prev;
-        s_prev = s;
-    }
-    float power = s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2;
-    return (power > (float)num_samples * 0.1f);
-}
-
-bool blue_box_validate_slug(const float *samples, int num_samples) {
-    if (!samples || num_samples < 200) return false;
-    
-    // 1. Transient check (Variance in the first 40 samples to detect impact chirp)
-    float sum = 0.0f;
-    for (int i = 0; i < 40; i++) sum += samples[i];
-    float mean = sum / 40.0f;
-    float variance = 0.0f;
-    for (int i = 0; i < 40; i++) {
-        float diff = samples[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= 40.0f;
-    if (variance < 0.001f) return false; // Fail if flat/electronic sine wave
-
-    // 2. Exponential Decay check (amplitude comparison)
-    float amp_start = 0.0f;
-    float amp_end = 0.0f;
-    int half = num_samples / 2;
-    for (int i = 0; i < half; i++) {
-        amp_start += (float)fabs(samples[i]);
-        amp_end += (float)fabs(samples[i + half]);
-    }
-    if (amp_start == 0.0f) return false;
-    float ratio = amp_end / amp_start;
-    
-    // Metallic damping ratio must be between 0.1 and 0.85
-    if (ratio < 0.1f || ratio > 0.85f) {
-        return false;
-    }
-    return true;
-}
-
-bool blue_box_detect_and_accumulate(const float *samples, int num_samples) {
-    if (!samples || num_samples <= 0) return false;
-    
-    // Skip SF 2600Hz lines from slug validation; only validate coin tones
-    if (goertzel_detect(samples, num_samples, 2600.0f)) {
-        blue_box_accumulate_state(2600);
-        return true;
-    }
-    
-    if (num_samples >= 200) {
-        if (!blue_box_validate_slug(samples, num_samples)) {
-            // Flag fraud by zeroing active trunk mask
-            current_block_state.active_trunk_mask = 0;
-            return false;
-        }
-    }
-
-    float targets[6] = {700.0f, 900.0f, 1100.0f, 1300.0f, 1500.0f, 1700.0f};
-    uint64_t found_mask = 0;
-    for (int i = 0; i < 6; i++) {
-        if (goertzel_detect(samples, num_samples, targets[i])) {
-            found_mask |= (1ULL << i);
-            blue_box_accumulate_state((uint64_t)targets[i]);
-        }
-    }
-    return found_mask != 0;
-}
 
 static void append_history_record(const char *filepath, const BlueBoxBlockState *state) {
     char hist_path[512];
@@ -656,6 +206,7 @@ static void append_history_record(const char *filepath, const BlueBoxBlockState 
     }
 }
 
+
 bool blue_box_save_state_to_disk(const char *filepath) {
     if (!filepath) return false;
     FILE *f = fopen(filepath, "wb");
@@ -666,6 +217,7 @@ bool blue_box_save_state_to_disk(const char *filepath) {
     fclose(f);
     return written == 1;
 }
+
 
 void blue_box_recover_wal(const char *filepath) {
     char wal_path[512];
@@ -691,6 +243,7 @@ void blue_box_recover_wal(const char *filepath) {
     fclose(wf);
     remove(wal_path);
 }
+
 
 bool blue_box_load_state_from_disk(const char *filepath) {
     if (!filepath) return false;
@@ -726,6 +279,7 @@ bool blue_box_load_state_from_disk(const char *filepath) {
     }
     return true;
 }
+
 
 bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expected_parent_block, const uint8_t *expected_parent_hash) {
     if (!filepath || !expected_parent_hash) return false;
@@ -803,6 +357,7 @@ bool blue_box_commit_and_persist_with_guard(const char *filepath, uint32_t expec
     return false;
 }
 
+
 void blue_box_crypt_payload(uint8_t *payload, size_t length) {
     if (!payload || length == 0) return;
     uint64_t temp_key = current_block_state.session_key;
@@ -813,6 +368,7 @@ void blue_box_crypt_payload(uint8_t *payload, size_t length) {
         payload[i] ^= (uint8_t)(temp_key >> ((i % 8) * 8));
     }
 }
+
 
 bool blue_box_decode_access_code(const char *dial_sequence) {
     if (!dial_sequence) return false;
@@ -836,68 +392,14 @@ bool blue_box_decode_access_code(const char *dial_sequence) {
     return false;
 }
 
-uint32_t blue_box_centrex_lookup(uint32_t dial_code) {
-    AvlNode *x = centrex_avl;
-    while (x != NULL) {
-        if (dial_code == x->val) return x->block_number;
-        if (dial_code < x->val) x = x->left;
-        else x = x->right;
-    }
-    return 0;
-}
 
-static void avl_inorder_routes(AvlNode *root, uint32_t *keys, uint32_t *vals, uint32_t *idx, uint32_t max_len) {
-    if (!root || *idx >= max_len) return;
-    avl_inorder_routes(root->left, keys, vals, idx, max_len);
-    if (*idx < max_len) {
-        keys[*idx] = root->val;
-        vals[*idx] = root->block_number;
-        (*idx)++;
-    }
-    avl_inorder_routes(root->right, keys, vals, idx, max_len);
-}
 
-uint32_t blue_box_centrex_get_sorted_routes(uint32_t *keys_out, uint32_t *vals_out, uint32_t max_results) {
-    uint32_t idx = 0;
-    avl_inorder_routes(centrex_avl, keys_out, vals_out, &idx, max_results);
-    return idx;
-}
 
-void blue_box_centrex_add_alias(uint32_t alias_code, uint32_t target_trunk) {
-    centrex_avl = avl_insert(centrex_avl, alias_code, target_trunk);
-}
 
-uint32_t blue_box_centrex_resolve_route(uint32_t dial_code) {
-    uint32_t resolved = blue_box_centrex_lookup(dial_code);
-    return resolved ? resolved : dial_code;
-}
 
-void blue_box_centrex_add_unicode_alias(const char *unicode_name, uint32_t target_trunk) {
-    if (!unicode_name) return;
-    uint32_t hash = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
-    centrex_avl = avl_insert(centrex_avl, hash, target_trunk);
-}
 
-uint32_t blue_box_centrex_resolve_unicode_route(const char *unicode_name) {
-    if (!unicode_name) return 0;
-    uint32_t current = calculate_crc32((const uint8_t *)unicode_name, strlen(unicode_name));
-    for (int depth = 0; depth < 8; depth++) {
-        uint32_t resolved = blue_box_centrex_lookup(current);
-        if (resolved == 0) return 0;
-        if (resolved >= 800 && resolved < 832) {
-            return resolved; // found physical target trunk
-        }
-        current = resolved; // keep resolving next hop
-    }
-    return 0; // recursion limit reached
-}
 
-void blue_box_centrex_add_unicode_forward(const char *src_name, const char *dest_name) {
-    if (!src_name || !dest_name) return;
-    uint32_t src_hash = calculate_crc32((const uint8_t *)src_name, strlen(src_name));
-    uint32_t dest_hash = calculate_crc32((const uint8_t *)dest_name, strlen(dest_name));
-    centrex_avl = avl_insert(centrex_avl, src_hash, dest_hash);
-}
+
 
 uint32_t blue_box_query_blocks(const char *filepath, const char *field, const char *op, uint64_t value, uint32_t *results_out, uint32_t max_results) {
     if (!filepath || !field || !op || !results_out || max_results == 0) return 0;
@@ -968,6 +470,7 @@ uint32_t blue_box_query_blocks(const char *filepath, const char *field, const ch
     return count;
 }
 
+
 bool blue_box_update_block_gas(const char *filepath, uint32_t block_number, uint32_t new_gas) {
     if (!filepath) return false;
     char hist_path[512];
@@ -1012,6 +515,7 @@ bool blue_box_update_block_gas(const char *filepath, uint32_t block_number, uint
     return found;
 }
 
+
 bool blue_box_delete_block(const char *filepath, uint32_t block_number) {
     if (!filepath) return false;
     char hist_path[512];
@@ -1040,96 +544,13 @@ bool blue_box_delete_block(const char *filepath, uint32_t block_number) {
     return found;
 }
 
-static void rbt_index_23_node(TwoThreeNode *node) {
-    if (!node) return;
-    if (node->is_leaf) {
-        blue_box_rbt_insert(node->keys[0], node);
-        if (node->num_keys == 2) {
-            blue_box_rbt_insert(node->keys[1], node);
-        }
-    } else {
-        rbt_index_23_node(node->children[0]);
-        rbt_index_23_node(node->children[1]);
-        if (node->children[2]) {
-            rbt_index_23_node(node->children[2]);
-        }
-    }
-}
 
-void blue_box_bind_23_tree(TwoThreeNode *root) {
-    blue_box_tree_root = root;
-    if (root) {
-        memcpy(current_block_state.state_hash, root->node_hash, 32);
-        rbt_node_count = 0;
-        rbt_root = NULL;
-        rbt_index_23_node(root);
-    }
-}
 
-static bool in_transaction = false;
-static BlueBoxBlockState transaction_buffer[RBT_MAX_NODES];
-static uint32_t transaction_buffer_count = 0;
 
-void blue_box_begin_transaction() {
-    in_transaction = true;
-    transaction_buffer_count = 0;
-}
 
-bool blue_box_add_to_transaction(const BlueBoxBlockState *state) {
-    if (!in_transaction || transaction_buffer_count >= RBT_MAX_NODES || !state) return false;
-    transaction_buffer[transaction_buffer_count++] = *state;
-    return true;
-}
 
-bool blue_box_commit_transaction(const char *filepath) {
-    if (!in_transaction || !filepath) return false;
 
-    // 1. Write transactional block states to WAL first
-    char wal_path[512];
-    snprintf(wal_path, sizeof(wal_path), "%s.wal", filepath);
-    FILE *wf = fopen(wal_path, "wb");
-    if (wf) {
-        flock(fileno(wf), LOCK_EX);
-        for (uint32_t i = 0; i < transaction_buffer_count; i++) {
-            BlueBoxBlockState *state = &transaction_buffer[i];
-            state->checksum = calculate_crc32((const uint8_t *)state, sizeof(BlueBoxBlockState) - sizeof(uint32_t));
-            fwrite(state, sizeof(BlueBoxBlockState), 1, wf);
-        }
-        fclose(wf);
-    }
 
-    // 2. Write to main history ledger
-    char hist_path[512];
-    snprintf(hist_path, sizeof(hist_path), "%s.hist", filepath);
-    FILE *hf = fopen(hist_path, "ab");
-    if (!hf) return false;
-
-    flock(fileno(hf), LOCK_EX);
-
-    for (uint32_t i = 0; i < transaction_buffer_count; i++) {
-        BlueBoxBlockState *state = &transaction_buffer[i];
-        fwrite(state, sizeof(BlueBoxBlockState), 1, hf);
-
-        char payload[128];
-        snprintf(payload, sizeof(payload), "nonce:%u,gas:%u,unicode:%s,synth:%.2f", state->nonce, state->gas_allowance, state->unicode_desc, state->synth_frequency);
-        TwoThreeNode *tt_node = blue_box_create_leaf(state->block_number, payload, 0, NULL);
-        blue_box_rbt_insert(state->block_number, tt_node);
-    }
-
-    fclose(hf);
-
-    // 3. Commit complete, release/delete WAL log
-    remove(wal_path);
-
-    in_transaction = false;
-    transaction_buffer_count = 0;
-    return true;
-}
-
-void blue_box_rollback_transaction() {
-    in_transaction = false;
-    transaction_buffer_count = 0;
-}
 
 uint64_t blue_box_aggregate_blocks(const char *filepath, const char *field, const char *agg_func) {
     if (!filepath || !field || !agg_func) return 0;
@@ -1178,6 +599,7 @@ uint64_t blue_box_aggregate_blocks(const char *filepath, const char *field, cons
     if (strcmp(agg_func, "COUNT") == 0) return count;
     return 0;
 }
+
 
 // Redundant bottom AVL declarations removed to consolidate at the top.
 
@@ -1247,6 +669,7 @@ uint32_t blue_box_query_blocks_sorted(const char *filepath, const char *field, c
     return idx;
 }
 
+
 static TsfiZmmVmState blue_box_zmm_state;
 static bool blue_box_zmm_initialized = false;
 
@@ -1257,6 +680,7 @@ int blue_box_dispatch_zmm_rpc(const char *json_in, char *output_buf, size_t out_
     }
     return tsfi_zmm_rpc_dispatch(&blue_box_zmm_state, json_in, output_buf, out_max);
 }
+
 
 size_t blue_box_citrix_compress_frame(const uint8_t *fb, size_t size, uint8_t *compressed_out, size_t max_out) {
     if (!fb || size == 0 || !compressed_out || max_out == 0) return 0;
@@ -1275,6 +699,7 @@ size_t blue_box_citrix_compress_frame(const uint8_t *fb, size_t size, uint8_t *c
     return write_idx;
 }
 
+
 size_t blue_box_citrix_compress_audio(const float *samples, size_t count, uint8_t *compressed_out, size_t max_out) {
     if (!samples || count == 0 || !compressed_out || max_out == 0) return 0;
     size_t write_bytes = 0;
@@ -1288,6 +713,7 @@ size_t blue_box_citrix_compress_audio(const float *samples, size_t count, uint8_
     return write_bytes;
 }
 
+
 // 1. Dynamic Rate Matrix
 static uint32_t trunk_rates[32] = {0}; // Maps trunk 800-831 to rates (0-31 offset)
 
@@ -1297,6 +723,7 @@ void blue_box_centrex_set_trunk_rate(uint32_t trunk_id, uint32_t rate_per_min) {
     }
 }
 
+
 uint32_t blue_box_centrex_get_trunk_rate(uint32_t trunk_id) {
     if (trunk_id >= 800 && trunk_id <= 831) {
         return trunk_rates[trunk_id - 800];
@@ -1304,12 +731,14 @@ uint32_t blue_box_centrex_get_trunk_rate(uint32_t trunk_id) {
     return 0;
 }
 
+
 // 2. Multi-Coin Accumulation
 void blue_box_rotate_key_on_coin(int denomination) {
     uint64_t multiplier = 1103515245ULL;
     uint64_t increment = 12345ULL;
     current_block_state.session_key = ((current_block_state.session_key ^ (uint64_t)denomination) * multiplier + increment) & 0xFFFFFFFFFFFFFFFFULL;
 }
+
 
 void blue_box_accumulate_coin(int denomination) {
     uint64_t coin_val = (uint64_t)denomination;
@@ -1319,6 +748,7 @@ void blue_box_accumulate_coin(int denomination) {
     }
     blue_box_rotate_key_on_coin(denomination);
 }
+
 
 // 3. Signed ERC20 Transaction Bridge
 bool blue_box_generate_erc20_tx(char *tx_buf, size_t max_len) {
@@ -1330,6 +760,7 @@ bool blue_box_generate_erc20_tx(char *tx_buf, size_t max_len) {
              current_block_state.state_hash[2], current_block_state.state_hash[3]);
     return true;
 }
+
 
 // 4. Real-time Balance Depletion
 bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds) {
@@ -1358,6 +789,7 @@ bool blue_box_deplete_session_gas(uint32_t trunk_id, uint32_t active_seconds) {
     }
 }
 
+
 // 5. On-Chain Tariff Negotiation
 bool blue_box_negotiate_tariff(uint32_t trunk_id, uint32_t *rate_out) {
     if (!rate_out) return false;
@@ -1383,6 +815,7 @@ bool blue_box_negotiate_tariff(uint32_t trunk_id, uint32_t *rate_out) {
     return true;
 }
 
+
 // 6. UDP Tone Streaming
 bool blue_box_send_udp_tone(uint32_t port, const float *samples, size_t count) {
     if (!samples || count == 0 || port == 0) return false;
@@ -1394,6 +827,7 @@ bool blue_box_send_udp_tone(uint32_t port, const float *samples, size_t count) {
     printf("[UDP STREAM] Port %u: Transmitted %lu compressed audio bytes.\n", port, comp_size);
     return true;
 }
+
 
 // 7. Kermit-over-UDP Packetization
 bool blue_box_kermit_send_udp(uint32_t port, const uint8_t *packet, size_t len) {
@@ -1408,6 +842,7 @@ bool blue_box_kermit_send_udp(uint32_t port, const uint8_t *packet, size_t len) 
     return true;
 }
 
+
 // 8. Real-time UDP Billing Alert
 bool blue_box_send_udp_billing_alert(uint32_t port) {
     if (port == 0) return false;
@@ -1417,12 +852,14 @@ bool blue_box_send_udp_billing_alert(uint32_t port) {
     return true;
 }
 
+
 // 9. Closed-Loop Ouroboros Feedback
 void blue_box_ouroboros_tick(void) {
     extern void tsfi_ouroboros_run_integrated_tick(uint32_t delta_time_ms, uint64_t base);
     uint64_t base = current_block_state.nonce ? current_block_state.nonce : 3;
     tsfi_ouroboros_run_integrated_tick(1, base);
 }
+
 
 // 10. BTC Script Dual Stack verification (A side standard crypto, B side PLL hardware telemetry)
 bool blue_box_verify_dual_stack(const uint8_t *sig, size_t sig_len, const uint8_t *pubkey, size_t pubkey_len, uint64_t max_pll_deviation) {
@@ -1446,343 +883,36 @@ bool blue_box_verify_dual_stack(const uint8_t *sig, size_t sig_len, const uint8_
     return (a_side_ok && b_side_ok);
 }
 
+
 // 11. MF/FSK Tone Generator & Dynamic Vocable Synthesis
-bool blue_box_generate_tone(uint32_t freq1, uint32_t freq2, float *samples_out, size_t count) {
-    if (!samples_out || count == 0) return false;
-    
-    // Write frequencies to WinchesterMQ VM registers via generateTone thunk selector
-    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
-    uint8_t tone_cd[68] = {0x0f, 0xf1, 0x10, 0x00};
-    // Pack freq1 and freq2 as big-endian 32-byte arguments
-    tone_cd[35] = (uint8_t)(freq1 & 0xFF);
-    tone_cd[34] = (uint8_t)((freq1 >> 8) & 0xFF);
-    tone_cd[33] = (uint8_t)((freq1 >> 16) & 0xFF);
-    tone_cd[32] = (uint8_t)((freq1 >> 24) & 0xFF);
-    tone_cd[67] = (uint8_t)(freq2 & 0xFF);
-    tone_cd[66] = (uint8_t)((freq2 >> 8) & 0xFF);
-    tone_cd[65] = (uint8_t)((freq2 >> 16) & 0xFF);
-    tone_cd[64] = (uint8_t)((freq2 >> 24) & 0xFF);
-    
-    uint8_t tone_ret[32];
-    size_t tone_ret_len = 32;
-    lau_yul_thunk_execute("WinchesterMQ", tone_cd, 68, tone_ret, &tone_ret_len);
-    
-    // Synthesize dual sine wave audio samples
-    double fs = 8000.0; // Standard telephony sampling rate (8 kHz)
-    for (size_t n = 0; n < count; n++) {
-        double t = (double)n / fs;
-        samples_out[n] = 0.5 * (sin(2.0 * M_PI * freq1 * t) + sin(2.0 * M_PI * freq2 * t));
-    }
-    return true;
-}
 
 // 12. Visual Coverage & Symmetry Telemetry Classifier
-bool blue_box_evaluate_visual_coverage(const float *x_coords, const float *y_coords, size_t count, float *coverage_out, float *symmetry_out) {
-    if (!x_coords || !y_coords || count == 0 || !coverage_out || !symmetry_out) return false;
-    
-    #define GRID_SIZE 80
-    uint8_t grid[GRID_SIZE][GRID_SIZE];
-    memset(grid, 0, sizeof(grid));
-    
-    size_t active_pixels = 0;
-    for (size_t i = 0; i < count; i++) {
-        // Normalize coordinates from [-1.0, 1.0] to [0, GRID_SIZE-1]
-        int px = (int)((x_coords[i] + 1.0f) * 0.5f * (GRID_SIZE - 1));
-        int py = (int)((y_coords[i] + 1.0f) * 0.5f * (GRID_SIZE - 1));
-        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
-            if (grid[py][px] == 0) {
-                grid[py][px] = 1;
-                active_pixels++;
-            }
-        }
-    }
-    
-    *coverage_out = (float)active_pixels / (GRID_SIZE * GRID_SIZE);
-    
-    // Evaluate symmetry by reflecting along the vertical Y-axis reflection plane
-    size_t sym_hits = 0;
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE / 2; x++) {
-            if (grid[y][x] == grid[y][GRID_SIZE - 1 - x]) {
-                sym_hits++;
-            }
-        }
-    }
-    *symmetry_out = (float)sym_hits / (GRID_SIZE * (GRID_SIZE / 2));
-    return true;
-}
 
 // 13. MF Dialing Sequence State Machine & Router
-static uint32_t g_mf_state = 0; // 0 = idle, 1 = dialing, 2 = routed
-static char g_mf_buffer[32] = {0};
 
-bool blue_box_dial_mf_digit(char digit) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    if (digit == 'K') { // Keypulse (KP) initiates dialing
-        g_mf_state = 1;
-        memset(g_mf_buffer, 0, sizeof(g_mf_buffer));
-        lau_yul_thunk_sstore(0xF130, 1);
-        lau_yul_thunk_sstore(0xF131, 0);
-        printf("[MF STATE] KP tone received. Resetting digit dialing buffer.\n");
-        return true;
-    }
-    if (g_mf_state == 1) {
-        if (digit >= '0' && digit <= '9') {
-            size_t len = strlen(g_mf_buffer);
-            if (len < sizeof(g_mf_buffer) - 1) {
-                g_mf_buffer[len] = digit;
-                // Accumulate hash in VM storage
-                uint64_t hash = 0;
-                for (size_t i = 0; g_mf_buffer[i]; i++) {
-                    hash = hash * 10 + (g_mf_buffer[i] - '0');
-                }
-                lau_yul_thunk_sstore(0xF131, hash);
-                printf("[MF STATE] Digit '%c' appended. Buffer: %s (VM Hash: %lu)\n", digit, g_mf_buffer, hash);
-            }
-            return true;
-        }
-        if (digit == 'S') { // Start (ST) terminates and routes
-            g_mf_state = 2;
-            lau_yul_thunk_sstore(0xF130, 2);
-            printf("[MF STATE] ST tone received. Dialing complete. Routing trunk call to: %s\n", g_mf_buffer);
-            return true;
-        }
-    }
-    return false;
-}
 
 // 14. Formant Vowel Vocable Synthesizer
-bool blue_box_synthesize_vowel(char vowel, float *samples_out, size_t count) {
-    if (!samples_out || count == 0) return false;
-    
-    // Formant definitions: F1, F2, F3 frequencies per vowel vocable
-    uint32_t f1 = 0, f2 = 0, f3 = 0;
-    switch (vowel) {
-        case 'A': f1 = 730;  f2 = 1090; f3 = 2440; break;
-        case 'E': f1 = 530;  f2 = 1840; f3 = 2480; break;
-        case 'I': f1 = 270;  f2 = 2290; f3 = 3010; break;
-        case 'O': f1 = 570;  f2 = 840;  f3 = 2410; break;
-        case 'U': f1 = 300;  f2 = 870;  f3 = 2240; break;
-        default: return false;
-    }
-    
-    double fs = 8000.0;
-    for (size_t n = 0; n < count; n++) {
-        double t = (double)n / fs;
-        // Superpose the three formants to synthesize human vocable
-        samples_out[n] = 0.33f * (sin(2.0 * M_PI * f1 * t) + sin(2.0 * M_PI * f2 * t) + sin(2.0 * M_PI * f3 * t));
-    }
-    return true;
-}
 
 // 15. Wink-Start Handshaking State Machine
-bool blue_box_trigger_wink(uint32_t duration_ms) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    bool valid = (duration_ms >= 150 && duration_ms <= 300);
-    lau_yul_thunk_sstore(0xF135, valid ? 1 : 0);
-    printf("[WINK] Wink pulse processed (duration: %u ms). Valid: %s\n", duration_ms, valid ? "YES" : "NO");
-    return valid;
-}
 
 // 16. Trunk Line Splitting & 2600 Hz Notch Filter
-bool blue_box_apply_notch_filter(const float *samples_in, float *samples_out, size_t count, bool split_active) {
-    if (!samples_in || !samples_out || count == 0) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    lau_yul_thunk_sstore(0xF136, split_active ? 1 : 0);
-    
-    if (!split_active) {
-        memcpy(samples_out, samples_in, count * sizeof(float));
-        return true;
-    }
-    
-    // 2600 Hz notch filter parameters at 8000 Hz sample rate
-    double w0 = 2.0 * M_PI * 2600.0 / 8000.0;
-    double cos_w0 = cos(w0);
-    double r = 0.85;
-    
-    // Filter memory state (2 delays)
-    float x1 = 0.0f, x2 = 0.0f;
-    float y1 = 0.0f, y2 = 0.0f;
-    
-    for (size_t n = 0; n < count; n++) {
-        float x = samples_in[n];
-        float y = (float)(x - 2.0 * cos_w0 * x1 + x2 + 2.0 * r * cos_w0 * y1 - r * r * y2);
-        
-        x2 = x1;
-        x1 = x;
-        y2 = y1;
-        y1 = y;
-        
-        samples_out[n] = y;
-    }
-    
-    return true;
-}
 
 // 17. BGP Peer Table Management & Precedence Routing
-#define MAX_BGP_PEERS 32
 
-typedef struct {
-    uint32_t peer_ip;
-    uint16_t peer_as;
-    uint32_t precedence;
-    uint32_t latency_ms;
-} BGPPeer;
 
-static BGPPeer g_bgp_peers[MAX_BGP_PEERS];
-static size_t g_bgp_peer_count = 0;
 
-bool blue_box_add_bgp_peer(uint32_t peer_ip, uint16_t peer_as, uint32_t precedence, uint32_t latency_ms) {
-    // Check if peer already exists, update if so
-    for (size_t i = 0; i < g_bgp_peer_count; i++) {
-        if (g_bgp_peers[i].peer_ip == peer_ip) {
-            g_bgp_peers[i].peer_as = peer_as;
-            g_bgp_peers[i].precedence = precedence;
-            g_bgp_peers[i].latency_ms = latency_ms;
-            printf("[BGP PEER] Updated peer IP: 0x%X (AS: %u, Precedence: %u, Latency: %u ms)\n",
-                   peer_ip, peer_as, precedence, latency_ms);
-            return true;
-        }
-    }
-    if (g_bgp_peer_count >= MAX_BGP_PEERS) return false;
-    g_bgp_peers[g_bgp_peer_count].peer_ip = peer_ip;
-    g_bgp_peers[g_bgp_peer_count].peer_as = peer_as;
-    g_bgp_peers[g_bgp_peer_count].precedence = precedence;
-    g_bgp_peers[g_bgp_peer_count].latency_ms = latency_ms;
-    g_bgp_peer_count++;
-    printf("[BGP PEER] Added new peer IP: 0x%X (AS: %u, Precedence: %u, Latency: %u ms)\n",
-           peer_ip, peer_as, precedence, latency_ms);
-    return true;
-}
 
-bool blue_box_get_bgp_peer(uint32_t peer_ip, uint32_t *precedence_out, uint32_t *latency_out) {
-    if (!precedence_out || !latency_out) return false;
-    for (size_t i = 0; i < g_bgp_peer_count; i++) {
-        if (g_bgp_peers[i].peer_ip == peer_ip) {
-            *precedence_out = g_bgp_peers[i].precedence;
-            *latency_out = g_bgp_peers[i].latency_ms;
-            return true;
-        }
-    }
-    return false;
-}
 
-uint32_t blue_box_query_bgp_peers_by_precedence(uint32_t precedence, uint32_t *ips_out, uint32_t max_results) {
-    if (!ips_out || max_results == 0) return 0;
-    uint32_t count = 0;
-    for (size_t i = 0; i < g_bgp_peer_count && count < max_results; i++) {
-        if (g_bgp_peers[i].precedence == precedence) {
-            ips_out[count++] = g_bgp_peers[i].peer_ip;
-        }
-    }
-    return count;
-}
 
 // 18. GGUF BGP Layer Routing
-typedef struct {
-    char layer_name[64];
-    uint32_t peer_ip;
-    uint32_t size_bytes;
-} GGUFLayerRoute;
 
-#define MAX_GGUF_ROUTES 64
-static GGUFLayerRoute g_gguf_routes[MAX_GGUF_ROUTES];
-static size_t g_gguf_route_count = 0;
 
-bool blue_box_add_gguf_layer_route(const char *layer_name, uint32_t peer_ip, uint32_t size_bytes) {
-    if (!layer_name || g_gguf_route_count >= MAX_GGUF_ROUTES) return false;
-    for (size_t i = 0; i < g_gguf_route_count; i++) {
-        if (strcmp(g_gguf_routes[i].layer_name, layer_name) == 0 && g_gguf_routes[i].peer_ip == peer_ip) {
-            g_gguf_routes[i].size_bytes = size_bytes;
-            return true;
-        }
-    }
-    strncpy(g_gguf_routes[g_gguf_route_count].layer_name, layer_name, 63);
-    g_gguf_routes[g_gguf_route_count].layer_name[63] = '\0';
-    g_gguf_routes[g_gguf_route_count].peer_ip = peer_ip;
-    g_gguf_routes[g_gguf_route_count].size_bytes = size_bytes;
-    g_gguf_route_count++;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    lau_yul_thunk_sstore(0xF160, g_gguf_route_count);
-    return true;
-}
 
-uint32_t blue_box_select_gguf_layer_peer(const char *layer_name) {
-    if (!layer_name) return 0;
-    uint32_t best_peer_ip = 0;
-    double best_cost = 1e18;
-    
-    for (size_t i = 0; i < g_gguf_route_count; i++) {
-        if (strcmp(g_gguf_routes[i].layer_name, layer_name) == 0) {
-            uint32_t prec = 0, lat = 0;
-            if (!blue_box_get_bgp_peer(g_gguf_routes[i].peer_ip, &prec, &lat)) {
-                lat = 100;
-            }
-            double cost = (double)lat + ((double)g_gguf_routes[i].size_bytes / 100000.0);
-            if (cost < best_cost) {
-                best_cost = cost;
-                best_peer_ip = g_gguf_routes[i].peer_ip;
-            }
-        }
-    }
-    return best_peer_ip;
-}
 
 // 19. Black Box Line Voltage & Billing Status Simulation
-bool blue_box_simulate_black_box(float resistance_ohms, uint32_t *voltage_out, bool *billing_active_out) {
-    if (!voltage_out || !billing_active_out) return false;
-    
-    // V_loop = 48V * R / (R + 1000)
-    float v_loop = 48.0f * resistance_ohms / (resistance_ohms + 1000.0f);
-    uint32_t v_rounded = (uint32_t)(v_loop + 0.5f);
-    *voltage_out = v_rounded;
-    
-    // Black Box threshold window: 10V to 12V suppresses answer-supervision (no billing)
-    bool billing_active = true;
-    if (v_loop >= 10.0f && v_loop <= 12.0f) {
-        billing_active = false;
-    } else if (v_loop < 10.0f) {
-        // Under 10V is considered on-hook / line-dropped
-        billing_active = false;
-    }
-    
-    *billing_active_out = billing_active;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    lau_yul_thunk_sstore(0xF150, v_rounded);
-    lau_yul_thunk_sstore(0xF151, billing_active ? 1 : 0);
-    
-    printf("[BLACK BOX] Clamped resistance: %.1f ohms. Voltage: %u V. Billing active: %s\n",
-           resistance_ohms, v_rounded, billing_active ? "YES" : "NO");
-    return true;
-}
 
 // 20. Hook Flash Signaling detection and flash counting
-static uint32_t g_hook_flash_count = 0;
 
-bool blue_box_trigger_hook_flash(uint32_t duration_ms, bool *flash_detected_out, uint32_t *flash_count_out) {
-    if (!flash_detected_out || !flash_count_out) return false;
-    
-    bool detected = (duration_ms >= 500 && duration_ms <= 1000);
-    if (detected) {
-        g_hook_flash_count++;
-    } else if (duration_ms > 1000) {
-        g_hook_flash_count = 0; // complete disconnect
-    }
-    
-    *flash_detected_out = detected;
-    *flash_count_out = g_hook_flash_count;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    lau_yul_thunk_sstore(0xF152, detected ? 1 : 0);
-    lau_yul_thunk_sstore(0xF153, g_hook_flash_count);
-    
-    printf("[HOOK FLASH] Pulse processed (duration: %u ms). Detected: %s. Total Flashes: %u\n",
-           duration_ms, detected ? "YES" : "NO", g_hook_flash_count);
-    return true;
-}
 
 // 21. AI Driver Telemetry Monitor and Automated Control Loop
 bool blue_box_run_ai_driver(bool enable_ai, uint32_t *command_out) {
@@ -1826,6 +956,7 @@ bool blue_box_run_ai_driver(bool enable_ai, uint32_t *command_out) {
     return true;
 }
 
+
 // 22. AI Speech Sequencer
 bool blue_box_run_ai_speech_sequencer(uint32_t state, char *vowel_sequence_out, size_t max_len) {
     if (!vowel_sequence_out || max_len < 4) return false;
@@ -1854,10 +985,19 @@ bool blue_box_run_ai_speech_sequencer(uint32_t state, char *vowel_sequence_out, 
     return true;
 }
 
+
 // 23. Unified Singular Telecom Dispatch Tick
 bool blue_box_unified_tick(uint32_t delta_time_ms) {
     extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
     extern uint64_t lau_yul_thunk_sload(uint64_t key);
+
+    // Perform lockstep state evaluation of the switch's execution registers
+    tsfi_lockstep_cpu cpu = { delta_time_ms, current_block_state.block_number, 0 };
+    if (tsfi_lockstep_evaluate(&cpu, delta_time_ms, current_block_state.block_number) != 0) {
+        current_block_state.is_committed = false;
+        return false;
+    }
+
     
     // 1. Update System Tick Count
     uint64_t ticks = lau_yul_thunk_sload(0xF180);
@@ -1894,188 +1034,23 @@ bool blue_box_unified_tick(uint32_t delta_time_ms) {
     return true;
 }
 
+
 // 24. Green Box Coin Disposition Control Actions
-bool blue_box_trigger_green_box(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out) {
-    if (!action_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t blue_box_get_accumulator(void);
-    
-    uint32_t action = 0;
-    bool valid = (duration_ms >= 400 && duration_ms <= 600);
-    
-    if (valid) {
-        if (frequency == 1700) {
-            action = 1; // Collect Coin
-            // Vault the coin: reset active accumulator to 0
-            extern void blue_box_deplete_session_gas_override(void);
-            lau_yul_thunk_sstore(0xF120, 0); // resets threat
-        } else if (frequency == 2200) {
-            action = 2; // Return Coin
-            // Return to customer
-        }
-    }
-    
-    *action_out = action;
-    lau_yul_thunk_sstore(0xF185, action);
-    printf("[GREEN BOX] Tone processed: %u Hz (duration: %u ms). Action: %u\n",
-           frequency, duration_ms, action);
-    return true;
-}
 
 // 25. Green Box ERC20 compatible transaction thunk bridge
-bool blue_box_green_box_to_erc20(uint32_t action, char *payload_out, size_t max_len) {
-    if (!payload_out || max_len < 256) return false;
-    
-    const char *method = "";
-    if (action == 1) {
-        method = "erc20_collect";
-    } else if (action == 2) {
-        method = "erc20_refund";
-    } else {
-        return false;
-    }
-    
-    snprintf(payload_out, max_len,
-             "{\"jsonrpc\":\"2.0\",\"method\":\"%s\",\"params\":{\"amount\":%u,\"sig_hash\":\"%02x%02x%02x%02x\"},\"id\":1}",
-             method,
-             current_block_state.gas_allowance,
-             current_block_state.state_hash[4], current_block_state.state_hash[5],
-             current_block_state.state_hash[6], current_block_state.state_hash[7]);
-             
-    return true;
-}
 
 // 26. Green Box Coin Disposition with Diyat fee calculations
-bool blue_box_trigger_green_box_diyat(uint32_t frequency, uint32_t duration_ms, uint32_t *action_out) {
-    if (!action_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    uint32_t action = 0;
-    bool valid = (duration_ms >= 400 && duration_ms <= 600);
-    
-    if (valid) {
-        if (frequency == 1700) {
-            action = 1; // Collect
-            uint64_t session_gas = current_block_state.gas_allowance;
-            uint64_t vault = lau_yul_thunk_sload(0xF186);
-            lau_yul_thunk_sstore(0xF186, vault + session_gas);
-            current_block_state.gas_allowance = 0;
-            lau_yul_thunk_sstore(0xF199, 0);
-        } else if (frequency == 2200) {
-            action = 2; // Return
-            uint64_t session_gas = current_block_state.gas_allowance;
-            uint64_t rate = lau_yul_thunk_sload(0xF196);
-            if (rate == 0) rate = 5; // Default 5%
-            
-            uint64_t fee = (session_gas * rate) / 100;
-            uint64_t refund = session_gas - fee;
-            
-            uint64_t fee_pool = lau_yul_thunk_sload(0xF195);
-            uint64_t refund_pool = lau_yul_thunk_sload(0xF187);
-            
-            lau_yul_thunk_sstore(0xF195, fee_pool + fee);
-            lau_yul_thunk_sstore(0xF187, refund_pool + refund);
-            
-            uint64_t total_gas = lau_yul_thunk_sload(0xF199);
-            lau_yul_thunk_sstore(0xF199, total_gas + refund);
-            current_block_state.gas_allowance = total_gas + refund;
-        }
-    }
-    
-    *action_out = action;
-    lau_yul_thunk_sstore(0xF185, action);
-    printf("[GREEN BOX DIYAT] Tone: %u Hz. Action: %u. Fee Pool: %lu. Allowance: %u\n",
-           frequency, action, lau_yul_thunk_sload(0xF195), current_block_state.gas_allowance);
-    return true;
-}
 
 // 27. QING Coaxial Session and PLL Broadcast Synchronization
-bool blue_box_sync_qing_coaxial(uint32_t user_count, uint32_t pilot_freq, uint32_t *freq_lock_out) {
-    if (!freq_lock_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    uint64_t mod_index = lau_yul_thunk_sload(0xF18C);
-    if (mod_index == 0) mod_index = 100; // Default modulation index
-    
-    uint64_t freq_lock = pilot_freq * (100 + user_count) / 100;
-    *freq_lock_out = (uint32_t)freq_lock;
-    
-    lau_yul_thunk_sstore(0xF18B, user_count);
-    lau_yul_thunk_sstore(0xF125, freq_lock); // Sets target lock deviation
-    
-    printf("[QING SYNC] Users: %u. Pilot Freq: %u Hz. Locked Freq: %lu Hz. Mod Index: %lu\n",
-           user_count, pilot_freq, freq_lock, mod_index);
-    return true;
-}
 
 // 28. Green Box Autonomous Agent
-bool blue_box_run_green_agent(uint32_t *action_out) {
-    if (!action_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    uint64_t wink = lau_yul_thunk_sload(0xF135);
-    uint64_t mute = lau_yul_thunk_sload(0xF121);
-    uint64_t notch = lau_yul_thunk_sload(0xF136);
-    
-    uint32_t action = 0;
-    if (wink == 1 && mute == 0 && notch == 0) {
-        action = 1; // Auto-Collect
-    } else {
-        action = 2; // Auto-Refund
-    }
-    
-    *action_out = action;
-    lau_yul_thunk_sstore(0xF185, action);
-    lau_yul_thunk_sstore(0xF191, action == 1 ? 2 : 3); // State: Auto-Collect (2) or Auto-Refund (3)
-    
-    printf("[GREEN AGENT] Wink: %lu. Mute: %lu. Notch: %lu. Action: %u. State: %lu\n",
-           wink, mute, notch, action, lau_yul_thunk_sload(0xF191));
-    return true;
-}
 
 // 29. Green Box Agent RDBMS Sync
-bool blue_box_save_rdbms_tables(void);
 
-bool blue_box_sync_green_agent_rdbms(uint64_t *hash_out) {
-    if (!hash_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    uint64_t mode = lau_yul_thunk_sload(0xF18E);
-    uint64_t rate = lau_yul_thunk_sload(0xF196);
-    uint64_t last_action = lau_yul_thunk_sload(0xF185);
-    
-    // Compute relational state verification hash
-    uint64_t hash = ((mode * 33 + rate) * 33 + last_action) % MotzkinPrime;
-    *hash_out = hash;
-    
-    lau_yul_thunk_sstore(0xF192, hash);
-    printf("[GREEN RDBMS] Sync complete. Mode: %lu. Rate: %lu. Action: %lu. Hash: %lu\n",
-           mode, rate, last_action, hash);
-           
-    // Serialize and save tables to disk
-    blue_box_save_rdbms_tables();
-    return true;
-}
 
-bool blue_box_write_quadtree_to_disk(uint32_t mode);
 
-bool blue_box_save_rdbms_tables(void) {
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    uint64_t mode = lau_yul_thunk_sload(0xF1B7);
-    return blue_box_write_quadtree_to_disk((uint32_t)mode);
-}
 
 // 31. Dynamic Validator Bidding Registry
-#define MAX_VALIDATOR_BIDS 16
 
 typedef struct {
     uint32_t validator_id;
@@ -2083,6 +1058,7 @@ typedef struct {
     uint32_t latency_ms;
     uint64_t timestamp;
 } ValidatorBid;
+
 
 static ValidatorBid g_validator_bids[MAX_VALIDATOR_BIDS];
 static size_t g_validator_bid_count = 0;
@@ -2115,6 +1091,7 @@ bool blue_box_add_validator_bid(uint32_t validator_id, uint32_t fee_rate, uint32
     return true;
 }
 
+
 bool blue_box_decay_validator_bids(void) {
     extern uint64_t lau_yul_thunk_sload(uint64_t key);
     uint64_t current_time = lau_yul_thunk_sload(0xF180);
@@ -2142,6 +1119,7 @@ bool blue_box_decay_validator_bids(void) {
     }
     return true;
 }
+
 
 bool blue_box_select_validator_route(uint32_t *validator_id_out) {
     if (!validator_id_out) return false;
@@ -2178,6 +1156,7 @@ bool blue_box_select_validator_route(uint32_t *validator_id_out) {
            *validator_id_out, g_validator_bids[best_idx].latency_ms, g_validator_bids[best_idx].fee_rate);
     return true;
 }
+
 
 // 32. OCC Lock-Free Red Box Gas Depletion
 bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds, uint64_t expected_version, bool *conflict_occurred_out) {
@@ -2220,462 +1199,17 @@ bool blue_box_deplete_session_gas_occ(uint32_t trunk_id, uint32_t active_seconds
     return true;
 }
 
+
 // 33. Quadtree RDBMS Serialization (Postgres Mutable vs Block Ledger)
-bool blue_box_write_quadtree_to_disk(uint32_t mode) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    // We fetch our telemetry and profile states
-    uint64_t g_mode = lau_yul_thunk_sload(0xF18E);
-    uint64_t rate = lau_yul_thunk_sload(0xF196);
-    uint64_t last_action = lau_yul_thunk_sload(0xF185);
-    uint64_t total_collected = lau_yul_thunk_sload(0xF186);
-    uint64_t gas_allowance = lau_yul_thunk_sload(0xF199);
-    
-    if (mode == 0) {
-        // Mode 0: PostgreSQL Mutable spatial index mode (Overwrites in-place)
-        FILE *f = fopen("assets/rdbms_tables.dat.bin", "w");
-        if (!f) f = fopen("../assets/rdbms_tables.dat.bin", "w");
-        if (!f) return false;
-        
-        fprintf(f, "{\n  \"quadrants\": {\n");
-        fprintf(f, "    \"NW_blue\": {\"bgp_peers_count\": %lu},\n", (unsigned long)g_bgp_peer_count);
-        fprintf(f, "    \"NE_red\": {\"gas_allowance\": %lu},\n", gas_allowance);
-        fprintf(f, "    \"SW_black\": {\"diode_drop\": 700},\n");
-        fprintf(f, "    \"SE_green\": {\"mode\": %lu, \"diyat_rate\": %lu, \"last_action\": %lu, \"total_collected\": %lu}\n",
-                g_mode, rate, last_action, total_collected);
-        fprintf(f, "  }\n}\n");
-        fclose(f);
-        printf("[QUADTREE] Wrote mutable spatial quadrants to assets/rdbms_tables.dat.bin\n");
-    } else {
-        // Compute new Merkle State Proof Root Hash: H(prev_root + current_states)
-        uint64_t prev_root = lau_yul_thunk_sload(0xF1B5);
-        uint64_t next_root = ((prev_root * 33 + gas_allowance) * 33 + total_collected) % MotzkinPrime;
-        
-        static uint64_t s_last_gas = 0;
-        static uint64_t s_last_collected = 0;
-        static uint64_t s_last_prev = 0;
-        static uint64_t s_last_next = 0;
-        static bool s_has_cache = false;
-        
-        if (s_has_cache && gas_allowance == s_last_gas && total_collected == s_last_collected && prev_root == s_last_prev) {
-            lau_yul_thunk_sstore(0xF1B5, s_last_next);
-            lau_yul_thunk_sstore(0xF19F, 1);
-            printf("[QUADTREE] [MEMO] Redundant state commit bypassed. Next Root retrieved: %lu\n", s_last_next);
-            return true;
-        }
-        
-        s_last_gas = gas_allowance;
-        s_last_collected = total_collected;
-        s_last_prev = prev_root;
-        s_last_next = next_root;
-        s_has_cache = true;
-        
-        uint64_t r23_0 = lau_yul_thunk_sload(0xF1C5);
-        uint64_t r23_1 = lau_yul_thunk_sload(0xF1C7);
-        uint64_t r23_2 = lau_yul_thunk_sload(0xF1C8);
-        uint64_t r23_3 = lau_yul_thunk_sload(0xF1C9);
 
-        FILE *f = fopen("assets/rdbms_ledger.dat.bin", "a");
-        if (!f) f = fopen("../assets/rdbms_ledger.dat.bin", "a");
-        if (!f) return false;
-        
-        lau_yul_thunk_sstore(0xF1B5, next_root);
-        
-        // Append structured transaction record block to global ledger file
-        fprintf(f, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}, \"mode\": \"ledger\"}\n",
-                next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
-        fclose(f);
-        
-        // Output specific file for this preserved node atomically using WAL temporary file pattern
-        char node_path[128];
-        char temp_node_path[128];
-        snprintf(node_path, sizeof(node_path), "assets/rdbms_ledger_%lu.dat.bin", next_root);
-        snprintf(temp_node_path, sizeof(temp_node_path), "assets/temp_ledger_%lu.dat.bin", next_root);
-        FILE *fn = fopen(temp_node_path, "w");
-        if (!fn) {
-            snprintf(node_path, sizeof(node_path), "../assets/rdbms_ledger_%lu.dat.bin", next_root);
-            snprintf(temp_node_path, sizeof(temp_node_path), "../assets/temp_ledger_%lu.dat.bin", next_root);
-            fn = fopen(temp_node_path, "w");
-        }
-        if (fn) {
-            fprintf(fn, "{\"block_root_hash\": %lu, \"state\": {\"gas\": %lu, \"total_collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}, \"mode\": \"ledger\"}\n",
-                    next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
-            fclose(fn);
-            rename(temp_node_path, node_path);
-            printf("[QUADTREE] Wrote node-specific state file atomically: %s\n", node_path);
-        }
 
-        // Copy current storage to block specific binary DAT media snapshot atomically using WAL temporary file pattern
-        extern void persist_reconciliation_data(void);
-        persist_reconciliation_data();
-        char storage_path[128];
-        char temp_storage_path[128];
-        snprintf(storage_path, sizeof(storage_path), "assets/rdbms_storage_%lu.dat.bin", next_root);
-        snprintf(temp_storage_path, sizeof(temp_storage_path), "assets/temp_storage_%lu.dat.bin", next_root);
-        FILE *fs_dst = fopen(temp_storage_path, "wb");
-        if (!fs_dst) {
-            snprintf(storage_path, sizeof(storage_path), "../assets/rdbms_storage_%lu.dat.bin", next_root);
-            snprintf(temp_storage_path, sizeof(temp_storage_path), "../assets/temp_storage_%lu.dat.bin", next_root);
-            fs_dst = fopen(temp_storage_path, "wb");
-        }
-        if (fs_dst) {
-            fwrite("QTDM", 1, 4, fs_dst);
-            
-            // FNV-1a calculation
-            uint64_t computed = 14695981039346656037ULL;
-            for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
-                computed ^= g_yul_evm_context.storage_keys[i].d[0]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_keys[i].d[1]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_keys[i].d[2]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_keys[i].d[3]; computed *= 1099511628211ULL;
-                
-                computed ^= g_yul_evm_context.storage_vals[i].d[0]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_vals[i].d[1]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_vals[i].d[2]; computed *= 1099511628211ULL;
-                computed ^= g_yul_evm_context.storage_vals[i].d[3]; computed *= 1099511628211ULL;
-                
-                computed ^= g_yul_evm_context.storage_addrs[i]; computed *= 1099511628211ULL;
-            }
-            
-            fwrite(&computed, sizeof(uint64_t), 1, fs_dst);
-            uint32_t count = g_yul_evm_context.storage_count;
-            fwrite(&count, sizeof(uint32_t), 1, fs_dst);
-            
-            for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
-                fwrite(&g_yul_evm_context.storage_keys[i], sizeof(u256_t), 1, fs_dst);
-                fwrite(&g_yul_evm_context.storage_vals[i], sizeof(u256_t), 1, fs_dst);
-                fwrite(&g_yul_evm_context.storage_addrs[i], sizeof(uint64_t), 1, fs_dst);
-            }
-            fclose(fs_dst);
-            rename(temp_storage_path, storage_path);
-            printf("[QUADTREE] Wrote block-specific storage snapshot atomically with FNV-1a signature: %s\n", storage_path);
-        }
 
-        // Append to relational RDBMS nodes table
-        FILE *fa = fopen("assets/rdbms_nodes_table.dat.bin", "a");
-        if (!fa) fa = fopen("../assets/rdbms_nodes_table.dat.bin", "a");
-        if (fa) {
-            fprintf(fa, "{\"table\": \"immutable_nodes\", \"row\": {\"root\": %lu, \"gas\": %lu, \"collected\": %lu, \"r23_0\": %lu, \"r23_1\": %lu, \"r23_2\": %lu, \"r23_3\": %lu}}\n",
-                    next_root, gas_allowance, total_collected, r23_0, r23_1, r23_2, r23_3);
-            fclose(fa);
-            printf("[QUADTREE] Relational table row committed to assets/rdbms_nodes_table.dat.bin\n");
-        }
-        printf("[QUADTREE] Appended block to immutable DAG assets/rdbms_ledger.dat.bin. Root Hash: %lu\n", next_root);
-    }
-    
-    lau_yul_thunk_sstore(0xF19F, 1); // Set serialization status active
-    return true;
-}
 
-#include <dirent.h>
-#include <sys/stat.h>
-
-void blue_box_rehydrate_quadtree_states(void) {
-    const char *dir_path = "assets";
-    DIR *d = opendir(dir_path);
-    if (!d) {
-        dir_path = "../assets";
-        d = opendir(dir_path);
-    }
-    if (!d) return;
-
-    struct dirent *dir;
-    char newest_file[256] = "";
-    time_t newest_time = 0;
-
-    while ((dir = readdir(d)) != NULL) {
-        if (strncmp(dir->d_name, "rdbms_ledger_", 13) == 0 && strstr(dir->d_name, ".dat.bin")) {
-            char filepath[512];
-            snprintf(filepath, sizeof(filepath), "%s/%s", dir_path, dir->d_name);
-            struct stat st;
-            if (stat(filepath, &st) == 0) {
-                if (st.st_mtime > newest_time) {
-                    newest_time = st.st_mtime;
-                    strncpy(newest_file, filepath, sizeof(newest_file) - 1);
-                    newest_file[sizeof(newest_file) - 1] = '\0';
-                }
-            }
-        }
-    }
-    closedir(d);
-
-    if (newest_file[0] != '\0') {
-        FILE *f = fopen(newest_file, "r");
-        if (f) {
-            char buf[1024];
-            if (fgets(buf, sizeof(buf), f)) {
-                uint64_t next_root = 0;
-                uint64_t gas = 0;
-                uint64_t collected = 0;
-                uint64_t r23_0 = 0;
-                uint64_t r23_1 = 0;
-                uint64_t r23_2 = 0;
-                uint64_t r23_3 = 0;
-
-                char *p_root = strstr(buf, "\"block_root_hash\":");
-                char *p_gas = strstr(buf, "\"gas\":");
-                char *p_col = strstr(buf, "\"total_collected\":");
-                char *p_r23_0 = strstr(buf, "\"r23_0\":");
-                char *p_r23_1 = strstr(buf, "\"r23_1\":");
-                char *p_r23_2 = strstr(buf, "\"r23_2\":");
-                char *p_r23_3 = strstr(buf, "\"r23_3\":");
-
-                if (p_root) sscanf(p_root, "\"block_root_hash\": %lu", &next_root);
-                if (p_gas) sscanf(p_gas, "\"gas\": %lu", &gas);
-                if (p_col) sscanf(p_col, "\"total_collected\": %lu", &collected);
-                if (p_r23_0) sscanf(p_r23_0, "\"r23_0\": %lu", &r23_0);
-                if (p_r23_1) sscanf(p_r23_1, "\"r23_1\": %lu", &r23_1);
-                if (p_r23_2) sscanf(p_r23_2, "\"r23_2\": %lu", &r23_2);
-                if (p_r23_3) sscanf(p_r23_3, "\"r23_3\": %lu", &r23_3);
-
-                if (next_root > 0) {
-                    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-                    lau_yul_thunk_sstore(0xF1B5, next_root);
-                    lau_yul_thunk_sstore(0xF199, gas);
-                    lau_yul_thunk_sstore(0xF186, collected);
-                    lau_yul_thunk_sstore(0xF18E, 1); // Ledger mode active
-                    
-                    lau_yul_thunk_sstore(0xF1C5, r23_0);
-                    lau_yul_thunk_sstore(0xF1C7, r23_1);
-                    lau_yul_thunk_sstore(0xF1C8, r23_2);
-                    lau_yul_thunk_sstore(0xF1C9, r23_3);
-                    lau_yul_thunk_sstore(0xF1C6, 1);  // Conversion Status: Aligned (1)
-                    
-                    printf("[QUADTREE] [REHYDRATE] Restored latest block ledger state: root=%lu, gas=%lu, collected=%lu, 2-3 Tree Segments=[%lu,%lu,%lu,%lu]\n",
-                           next_root, gas, collected, r23_0, r23_1, r23_2, r23_3);
-
-                    // Copy block specific storage snapshot back to evm_storage.json
-                    char src_path[128];
-                    snprintf(src_path, sizeof(src_path), "assets/rdbms_storage_%lu.dat.bin", next_root);
-                    FILE *fs_src = fopen(src_path, "rb");
-                    if (!fs_src) {
-                        snprintf(src_path, sizeof(src_path), "../assets/rdbms_storage_%lu.dat.bin", next_root);
-                        fs_src = fopen(src_path, "rb");
-                    }
-                    if (fs_src) {
-                        char magic[4];
-                        uint64_t sig = 0;
-                        uint32_t count = 0;
-                        if (fread(magic, 1, 4, fs_src) == 4 && memcmp(magic, "QTDM", 4) == 0 &&
-                            fread(&sig, sizeof(uint64_t), 1, fs_src) == 1 &&
-                            fread(&count, sizeof(uint32_t), 1, fs_src) == 1) {
-                            
-                            u256_t *keys = malloc(sizeof(u256_t) * count);
-                            u256_t *vals = malloc(sizeof(u256_t) * count);
-                            uint64_t *addrs = malloc(sizeof(uint64_t) * count);
-                            bool read_ok = true;
-                            uint64_t computed = 14695981039346656037ULL;
-                            for (uint32_t i = 0; i < count; i++) {
-                                if (fread(&keys[i], sizeof(u256_t), 1, fs_src) != 1 ||
-                                    fread(&vals[i], sizeof(u256_t), 1, fs_src) != 1 ||
-                                    fread(&addrs[i], sizeof(uint64_t), 1, fs_src) != 1) {
-                                    read_ok = false;
-                                    break;
-                                }
-                                computed ^= keys[i].d[0]; computed *= 1099511628211ULL;
-                                computed ^= keys[i].d[1]; computed *= 1099511628211ULL;
-                                computed ^= keys[i].d[2]; computed *= 1099511628211ULL;
-                                computed ^= keys[i].d[3]; computed *= 1099511628211ULL;
-                                
-                                computed ^= vals[i].d[0]; computed *= 1099511628211ULL;
-                                computed ^= vals[i].d[1]; computed *= 1099511628211ULL;
-                                computed ^= vals[i].d[2]; computed *= 1099511628211ULL;
-                                computed ^= vals[i].d[3]; computed *= 1099511628211ULL;
-                                
-                                computed ^= addrs[i]; computed *= 1099511628211ULL;
-                            }
-                            fclose(fs_src);
-                            
-                            if (read_ok && computed == sig) {
-                                g_yul_evm_context.storage_count = count;
-                                for (uint32_t i = 0; i < count; i++) {
-                                    g_yul_evm_context.storage_keys[i] = keys[i];
-                                    g_yul_evm_context.storage_vals[i] = vals[i];
-                                    g_yul_evm_context.storage_addrs[i] = addrs[i];
-                                }
-                                extern void persist_reconciliation_data(void);
-                                persist_reconciliation_data();
-                                printf("[QUADTREE] [REHYDRATE] Securely verified and restored evm_storage.json snapshot for root %lu\n", next_root);
-                                extern void reload_evm_storage_from_json(void);
-                                reload_evm_storage_from_json();
-                            } else {
-                                printf("[QUADTREE] [SECURITY] Storage snapshot FNV-1a verification FAILED for %s! Computed: %lu, Signature in header: %lu\n", src_path, computed, sig);
-                            }
-                            free(keys);
-                            free(vals);
-                            free(addrs);
-                        } else {
-                            fclose(fs_src);
-                        }
-                    }
-                }
-            }
-            fclose(f);
-        }
-    }
-}
-
-uint64_t compute_storage_fnv1a(const char *path, uint64_t *out_expected) {
-    FILE *f = fopen(path, "r");
-    if (!f) return 0;
-    uint64_t hash = 14695981039346656037ULL;
-    char line[1024];
-    *out_expected = 0;
-    while (fgets(line, sizeof(line), f)) {
-        if (strncmp(line, "// SIG:", 7) == 0) {
-            sscanf(line, "// SIG: %lu", out_expected);
-            break;
-        }
-        for (size_t i = 0; line[i] != '\0'; i++) {
-            hash ^= (uint8_t)line[i];
-            hash *= 1099511628211ULL;
-        }
-    }
-    fclose(f);
-    return hash;
-}
-
-bool blue_box_verify_btc_script_transition(const uint8_t *old_row_data, size_t old_len, const uint8_t *witness_script, size_t script_len, const uint8_t *new_row_data, size_t new_len) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    (void)new_row_data;
-    
-    // Simulate simple script: OP_SHA256 OP_EQUALVERIFY
-    // Verify that old_row_data matches the expected hash in witness_script
-    // We compute a basic checksum of old_row_data to verify script constraint
-    uint64_t old_checksum = 0;
-    for (size_t i = 0; i < old_len; i++) {
-        old_checksum = (old_checksum * 33 + old_row_data[i]) % MotzkinPrime;
-    }
-    
-    uint64_t expected_hash = 0;
-    if (script_len >= 8) {
-        for (size_t i = 0; i < 8; i++) {
-            expected_hash = (expected_hash << 8) | witness_script[i];
-        }
-    }
-    
-    // Script transition logic: OP_SHA256(old_row_data) == expected_hash
-    if (old_checksum != expected_hash) {
-        lau_yul_thunk_sstore(0xF1C1, 0); // Verification status: Failed (0)
-        printf("[BTC SCRIPT] Verification failed. Hash mismatch.\n");
-        return false;
-    }
-    
-    // Update register states
-    lau_yul_thunk_sstore(0xF1C0, 100); // Set UTXO leaf index
-    lau_yul_thunk_sstore(0xF1C1, 1);   // Verification status: Success (1)
-    
-    printf("[BTC SCRIPT] Transition verified. New Row committed (length: %zu).\n", new_len);
-    return true;
-}
 
 // 35. Commit Quadtree via Bitcoin Script validation
-bool blue_box_commit_quadtree_via_btc_script(uint64_t old_root, uint64_t next_root, const uint8_t *witness, size_t witness_len) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    uint64_t active_root = lau_yul_thunk_sload(0xF1B5);
-    if (active_root != old_root) {
-        printf("[BTC COMMIT] State collision. expected root: %lu, Active root: %lu\n", old_root, active_root);
-        return false;
-    }
-    
-    // Validate witness transition: H(old_root + delta) == next_root
-    // We fetch delta from witness data bytes
-    uint64_t delta = 0;
-    if (witness_len >= 8) {
-        for (size_t i = 0; i < 8; i++) {
-            delta = (delta << 8) | witness[i];
-        }
-    }
-    
-    uint64_t computed_hash = ((old_root * 33 + delta) * 33 + delta) % MotzkinPrime;
-    if (computed_hash != next_root) {
-        printf("[BTC COMMIT] Script transaction proof failed validation.\n");
-        return false;
-    }
-    
-    // Commit to registers
-    lau_yul_thunk_sstore(0xF1B5, next_root);      // Update Merkle Root
-    lau_yul_thunk_sstore(0xF1C3, next_root);      // Update Committed Root
-    lau_yul_thunk_sstore(0xF1C2, 1);              // Set Commit Trigger Active
-    
-    // Serialize new state to block ledger on disk
-    bool disk_ok = blue_box_write_quadtree_to_disk(1); // Block Ledger Mode
-    
-    printf("[BTC COMMIT] Transaction successfully committed. New Root: %lu (disk status: %d)\n",
-           next_root, disk_ok);
-    return disk_ok;
-}
 
 // 36. Ternary-to-Quaternary state translation (2-3 tree to Quadtree)
-bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_root_1, uint64_t r23_root_2, uint64_t r23_root_3, uint64_t *r_quad_out) {
-    if (!r_quad_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    
-    // Hash-map: Combine 2-3 tree roots into a quaternary root hash
-    uint64_t val = r23_root_0;
-    val = (val * 33 + r23_root_1) % MotzkinPrime;
-    val = (val * 33 + r23_root_2) % MotzkinPrime;
-    val = (val * 33 + r23_root_3) % MotzkinPrime;
-    
-    *r_quad_out = val;
-    
-    // Commit alignment metrics to VM registers
-    lau_yul_thunk_sstore(0xF1C5, r23_root_0); // Segment 0
-    lau_yul_thunk_sstore(0xF1C7, r23_root_1); // Segment 1
-    lau_yul_thunk_sstore(0xF1C8, r23_root_2); // Segment 2
-    lau_yul_thunk_sstore(0xF1C9, r23_root_3); // Segment 3
-    lau_yul_thunk_sstore(0xF1C6, 1);          // Conversion Status: Aligned (1)
-    
-    printf("[BTC CONVERT] 2-3 Tree state mapped to Quadtree root: %lu\n", val);
-    return true;
-}
 
 // 37. Geometry-Based Threat Protection
-bool blue_box_verify_geometry_threat_protection(float coverage, float symmetry) {
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    // Check if coverage or symmetry falls below safe operational limits
-    if (coverage < 0.01f || symmetry < 0.95f) {
-        uint64_t threats = lau_yul_thunk_sload(0xF120);
-        threats++;
-        lau_yul_thunk_sstore(0xF120, threats);
-        
-        if (threats >= 3) {
-            lau_yul_thunk_sstore(0xF121, 1); // Set firewall block active (mute)
-            printf("[SECURITY FIREWALL] Threat limit exceeded. Connection muted.\n");
-        }
-    }
-    return true;
-}
 
 // 38. PLL-Driven Coalition Dynamics & Multi-Tenant Conference Security
-bool blue_box_verify_pll_coalition_security(uint32_t pilot_freq, uint32_t target_freq, uint32_t *session_key_out) {
-    if (!session_key_out) return false;
-    
-    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
-    extern uint64_t lau_yul_thunk_sload(uint64_t key);
-    
-    // Read current PLL locked deviation register
-    uint64_t deviation = lau_yul_thunk_sload(0xF125);
-    
-    // Lock threshold set at deviation <= 100
-    if (deviation <= 100) {
-        // Generate and rotate session key
-        uint64_t key = ((uint64_t)pilot_freq * 33 + target_freq) * 33 % MotzkinPrime;
-        *session_key_out = (uint32_t)key;
-        
-        lau_yul_thunk_sstore(0xF1D0, key); // Save rotated session key
-        lau_yul_thunk_sstore(0xF1D1, 1);   // Security Status: Locked/Secure (1)
-        printf("[CONFERENCE SECURE] PLL Locked. Rotated Session Key: %lu\n", key);
-        return true;
-    } else {
-        lau_yul_thunk_sstore(0xF1D1, 0);   // Security Status: Desynced/Unsecure (0)
-        printf("[CONFERENCE SECURE] PLL Desynced (Deviation: %lu). Secure tunnel offline.\n", deviation);
-        return false;
-    }
-}

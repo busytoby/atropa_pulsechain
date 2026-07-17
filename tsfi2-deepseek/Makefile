@@ -72,6 +72,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zener.o \
             $(OBJ_DIR)/drm-lease-v1-protocol.o \
             $(OBJ_DIR)/tsfi_computel_blue_box.o \
+            $(OBJ_DIR)/tsfi_computel_bb_index.o \
+            $(OBJ_DIR)/tsfi_computel_bb_signal.o \
+            $(OBJ_DIR)/tsfi_computel_bb_quad.o \
             $(OBJ_DIR)/tsfi_ouroboros_pll.o \
             $(OBJ_DIR)/tsfi_sort.o \
             $(OBJ_DIR)/tsfi_qing_bst.o \
@@ -82,8 +85,13 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_dat.o \
             $(OBJ_DIR)/tsfi_graph_select.o \
             $(OBJ_DIR)/tsfi_zmm_rpc.o \
+            $(OBJ_DIR)/tsfi_zmm_rpc_manifold.o \
+            $(OBJ_DIR)/tsfi_zmm_rpc_wave.o \
             $(OBJ_DIR)/tsfi_zmm_rpc_pulse.o \
+            $(OBJ_DIR)/tsfi_mcp_system_list.o \
             $(OBJ_DIR)/tsfi_block_monitor.o \
+            $(OBJ_DIR)/tsfi_block_monitor_price.o \
+            $(OBJ_DIR)/tsfi_block_monitor_token.o \
             $(OBJ_DIR)/tsfi_doxastic_classifier.o \
             $(OBJ_DIR)/tsfi_doxastic_projector.o \
             $(OBJ_DIR)/tsfi_algebraic_query.o \
@@ -121,7 +129,10 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_ramac_lang.o \
             $(OBJ_DIR)/tsfi_mainframe_v370.o \
             $(OBJ_DIR)/tsfi_mainframe_fips.o \
-            $(OBJ_DIR)/tsfi_mainframe_decnet.o
+            $(OBJ_DIR)/tsfi_mainframe_decnet.o \
+            $(OBJ_DIR)/tsfi_mainframe_sna.o \
+            $(OBJ_DIR)/tsfi_mainframe_security.o \
+            $(OBJ_DIR)/tsfi_mainframe_misc.o
 
 
 # --- Plugin Objects ---

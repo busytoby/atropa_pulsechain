@@ -18,33 +18,28 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-
 #define MAX_DILEMMA_LOGS 128
-typedef struct {
-    char event[64];
-    char source[64];
-    char details[256];
-    uint64_t timestamp;
-} DilemmaLogEntry;
-
-static DilemmaLogEntry g_dilemma_logs[MAX_DILEMMA_LOGS];
-static int g_dilemma_log_count = 0;
-
 #define MAX_STORE_KEYS 1024
-typedef struct {
-    char key[128];
-    char value[4096];
-    uint64_t timestamp;
-} StoreEntry;
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+#define SAMPLE_RATE 8000
+#define MAX_ARRANGEMENT 64
+#define MAX_STEPS 32
+#define MAX_REGISTERED_OPERATORS 8
 
-static StoreEntry g_seq_store[MAX_STORE_KEYS];
-static int g_seq_store_count = 0;
-static pthread_mutex_t g_seq_store_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool g_seq_store_loaded = false;
 
-static int extract_json_string(const char *json, const char *key, char *out, size_t max);
 
-static void save_seq_store(void) {
+DilemmaLogEntry g_dilemma_logs[MAX_DILEMMA_LOGS];
+int g_dilemma_log_count = 0;
+
+StoreEntry g_seq_store[MAX_STORE_KEYS];
+int g_seq_store_count = 0;
+pthread_mutex_t g_seq_store_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool g_seq_store_loaded = false;
+
+
+void save_seq_store(void) {
     FILE *f = fopen("tmp/mcp_sequential_store.json", "w");
     if (!f) f = fopen("../tmp/mcp_sequential_store.json", "w");
     if (f) {
@@ -59,7 +54,8 @@ static void save_seq_store(void) {
     }
 }
 
-static void load_seq_store(void) {
+
+void load_seq_store(void) {
     FILE *f = fopen("tmp/mcp_sequential_store.json", "r");
     if (!f) f = fopen("../tmp/mcp_sequential_store.json", "r");
     if (!f) {
@@ -95,8 +91,9 @@ static void load_seq_store(void) {
     g_seq_store_loaded = true;
 }
 
+
 // Helper to extract a string parameter from simple JSON
-static int extract_json_string(const char *json, const char *key, char *out, size_t max) {
+int extract_json_string(const char *json, const char *key, char *out, size_t max) {
     char *k = strstr(json, key);
     if (!k) return 0;
     char *start = strchr(k, ':');
@@ -113,7 +110,8 @@ static int extract_json_string(const char *json, const char *key, char *out, siz
     return 1;
 }
 
-static int extract_json_int(const char *json, const char *key, int default_val) {
+
+int extract_json_int(const char *json, const char *key, int default_val) {
     char *k = strstr(json, key);
     if (!k) return default_val;
     char *start = strchr(k, ':');
@@ -121,7 +119,8 @@ static int extract_json_int(const char *json, const char *key, int default_val) 
     return atoi(start + 1);
 }
 
-static size_t decode_hex(const char *hex, uint8_t *out, size_t max) {
+
+size_t decode_hex(const char *hex, uint8_t *out, size_t max) {
     size_t len = strlen(hex);
     size_t decoded = 0;
     for (size_t i = 0; i < len && decoded < max; i += 2) {
@@ -132,24 +131,13 @@ static size_t decode_hex(const char *hex, uint8_t *out, size_t max) {
     return decoded;
 }
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
-#define SAMPLE_RATE 8000
 
-typedef struct {
-    bool lead_mounted;
-    bool bass_mounted;
-    bool growl_mounted;
-    bool drums_mounted;
-    bool audio_stream_control_mounted;
-} RpcSynthMounts;
 
-static RpcSynthMounts g_rpc_mounts = { false, false, false, false, false };
-static pa_simple *g_rpc_pulse_stream = NULL;
+RpcSynthMounts g_rpc_mounts = { false, false, false, false, false };
+pa_simple *g_rpc_pulse_stream = NULL;
 
-static double rpc_note_to_frequency(const char *note) {
+double rpc_note_to_frequency(const char *note) {
     if (strcmp(note, "C2") == 0) return 65.41;
     if (strcmp(note, "Bb1") == 0) return 58.27;
     if (strcmp(note, "Ab1") == 0) return 51.91;
@@ -171,28 +159,9 @@ static double rpc_note_to_frequency(const char *note) {
     return 0.0;
 }
 
-#define MAX_ARRANGEMENT 64
-#define MAX_STEPS 32
 
-typedef struct {
-    char pattern_name[16];
-    char lead_notes[MAX_STEPS][8];
-    char bass_notes[MAX_STEPS][8];
-    char growl_notes[MAX_STEPS][8];
-    double growl_gain[MAX_STEPS];
-    double growl_mod[MAX_STEPS];
-    uint8_t drum_kick[MAX_STEPS];
-    uint8_t drum_snare[MAX_STEPS];
-    int lead_count;
-    int bass_count;
-    int growl_count;
-    int gain_count;
-    int mod_count;
-    int kick_count;
-    int snare_count;
-} RpcPatternData;
 
-static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_growl, double growl_gain, double growl_mod,
+void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_growl, double growl_gain, double growl_mod,
                            bool has_kick, bool has_snare, double duration) {
     // CCITT in-band tone control check:
     // If a 2600 Hz tone is received, perform line control reset (disconnect / unmount)
@@ -266,18 +235,12 @@ static void rpc_play_polyphonic_step(double f_lead, double f_bass, double f_grow
     free(buffer);
 }
 
-static int g_consecutive_verification_failures = 0;
-static bool g_is_session_locked_out = false;
-static int g_telemetry_23_log_count = 0;
+
+int g_consecutive_verification_failures = 0;
+bool g_is_session_locked_out = false;
+int g_telemetry_23_log_count = 0;
 
 // Fortell-inspired advanced memory diagnostics
-typedef enum {
-    FAULT_NONE = 0,
-    FAULT_OPEN,   // Unmapped memory region
-    FAULT_SHORT,  // Memory overlapping/cross-talk
-    FAULT_GROUND  // Completely zeroed/grounded register state
-} FortellMemoryFault;
-
 static __attribute__((unused)) FortellMemoryFault detect_fortell_memory_fault(void *ptr, size_t size) {
     if (!ptr) return FAULT_OPEN;
     uint8_t *bptr = (uint8_t *)ptr;
@@ -292,21 +255,12 @@ static __attribute__((unused)) FortellMemoryFault detect_fortell_memory_fault(vo
     return FAULT_NONE;
 }
 
-#define MAX_REGISTERED_OPERATORS 8
-typedef struct {
-    int project;
-    int programmer;
-    int key_id;
-    int acl_level;
-    bool is_active;
-} ZmmOperatorEntry;
 
-static ZmmOperatorEntry g_operator_registry[MAX_REGISTERED_OPERATORS];
-static int g_operator_count = 0;
+ZmmOperatorEntry g_operator_registry[MAX_REGISTERED_OPERATORS];
+int g_operator_count = 0;
 
-static int verify_23_tree_traversal_acl(int project, int programmer, int key_id);
 
-static int register_zmm_operator_via_23_tree(int project, int programmer, int key_id) {
+int register_zmm_operator_via_23_tree(int project, int programmer, int key_id) {
     // Check if already registered
     for (int i = 0; i < g_operator_count; i++) {
         if (g_operator_registry[i].project == project &&
@@ -340,7 +294,8 @@ static int register_zmm_operator_via_23_tree(int project, int programmer, int ke
     return 0;
 }
 
-static int verify_23_tree_traversal_acl(int project, int programmer, int key_id) {
+
+int verify_23_tree_traversal_acl(int project, int programmer, int key_id) {
     if (g_is_session_locked_out) {
         printf("[LOCKOUT] Access blocked: Session locked out due to consecutive failures.\n");
         return -1; // Locked out code
@@ -382,7 +337,8 @@ static int verify_23_tree_traversal_acl(int project, int programmer, int key_id)
     return 2; // ADMIN
 }
 
-static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err) {
+
+bool rpc_play_bio_arrangement(const char *file_path, const char **out_err) {
     FILE *f = fopen(file_path, "r");
     if (!f) {
         *out_err = "REVERT: FAILED_TO_OPEN_BIO_ASSET";
@@ -586,7 +542,8 @@ static bool rpc_play_bio_arrangement(const char *file_path, const char **out_err
     return true;
 }
 
-static void extract_json_method(const char *json, char *method_out, size_t max_len) {
+
+void extract_json_method(const char *json, char *method_out, size_t max_len) {
     method_out[0] = '\0';
     const char *m_key = strstr(json, "\"method\"");
     if (!m_key) return;
@@ -601,6 +558,64 @@ static void extract_json_method(const char *json, char *method_out, size_t max_l
     if (len >= max_len) len = max_len - 1;
     strncpy(method_out, start, len);
     method_out[len] = '\0';
+}
+
+
+void tsfi_zmm_rpc_step_async_llm(TsfiZmmVmState *state) {
+    if (!state) return;
+    for (int i = 0; i < 16; i++) {
+        if (state->llm_tx_status[i] == 1) { 
+            if (state->manifest && (state->manifest->active_mask & (1U << 31))) {
+                char prompt_extract[2048] = {0};
+                char *prompt_start = strstr(state->llm_tx_results[i], "for '");
+                if (prompt_start) {
+                    prompt_start += 5;
+                    char *prompt_end = strchr(prompt_start, '\'');
+                    if (prompt_end) {
+                        strncpy(prompt_extract, prompt_start, prompt_end - prompt_start);
+                    }
+                }
+                
+                memset(state->llm_tx_results[i], 0, sizeof(state->llm_tx_results[i]));
+                
+                char cmd[4096];
+                snprintf(cmd, sizeof(cmd), "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/bin/query_local_deepseek /home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf \"%s\"", prompt_extract);
+                
+                FILE *fp = popen(cmd, "r");
+                if (fp) {
+                    char chunk[1024];
+                    while (fgets(chunk, sizeof(chunk), fp) != NULL) {
+                        char esc_chunk[2048] = {0};
+                        int ei = 0;
+                        for(int ci=0; chunk[ci] != 0 && ei < 2046; ci++) {
+                            if (chunk[ci] == '\n') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = 'n';
+                            } else if (chunk[ci] == '"') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = '"';
+                            } else if (chunk[ci] == '\\') {
+                                esc_chunk[ei++] = '\\';
+                                esc_chunk[ei++] = '\\';
+                            } else {
+                                esc_chunk[ei++] = chunk[ci];
+                            }
+                        }
+                        strcat(state->llm_tx_results[i], esc_chunk);
+                    }
+                    pclose(fp);
+                } else {
+                    strcat(state->llm_tx_results[i], "[FRACTURE] Popen failed.\\n");
+                }
+                
+                state->llm_tx_status[i] = 2; // DONE
+            } else {
+                state->llm_tx_status[i] = 2;
+                snprintf(state->llm_tx_results[i], 4096, "ERROR: DNA Manifold Unmounted.");
+            }
+            break;
+        }
+    }
 }
 
 int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *output_buf, size_t out_max) {
@@ -627,6 +642,19 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         if (id_ptr) id = atoi(id_ptr + 1);
     }
 
+    if (method_type == 6 || method_type == 11 || method_type == 19 || 
+        (method_type >= 20 && method_type <= 27) || 
+        (method_type >= 41 && method_type <= 45)) {
+        extern int tsfi_zmm_rpc_dispatch_manifold(TsfiZmmVmState *state, int method_type, const char *min_ptr, char *output_buf, size_t out_max, int id);
+        return tsfi_zmm_rpc_dispatch_manifold(state, method_type, min_ptr, output_buf, out_max, id);
+    }
+    if (method_type == 28 || method_type == 29 || method_type == 33 || 
+        method_type == 34 || (method_type >= 30 && method_type <= 32) || 
+        method_type == 50 || method_type == 51 || method_type == 63 || 
+        method_type == 64 || (method_type >= 52 && method_type <= 59)) {
+        extern int tsfi_zmm_rpc_dispatch_wave(TsfiZmmVmState *state, int method_type, const char *min_ptr, char *output_buf, size_t out_max, int id);
+        return tsfi_zmm_rpc_dispatch_wave(state, method_type, min_ptr, output_buf, out_max, id);
+    }
     if (method_type == 1) { // RUN
         char *code_key = strstr(min_ptr, "\"code\"");
         if (code_key) {
@@ -673,17 +701,20 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
                 return 1;
             }
         }
-    } else if (method_type == 2) { // RESET
+    }
+    if (method_type == 2) { // RESET
         tsfi_zmm_vm_destroy(state);
         tsfi_zmm_vm_init(state);
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Reset OK\", \"id\": %d}\n", id);
         return 1;
-    } else if (method_type == 3) { // INSPECT
+    }
+    if (method_type == 3) { // INSPECT
         float density = state->manifest ? state->manifest->synapse.mass_density : 0.0f;
         int swap = state->manifest ? state->manifest->synapse.request_kernel_swap : 0;
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"density\": %.4f, \"swap\": %d}, \"id\": %d}\n", density, swap, id);
         return 1;
-    } else if (method_type == 4) { // SCRAMBLE
+    }
+    if (method_type == 4) { // SCRAMBLE
         if (state->manifest && state->manifest->contiguous_rf) {
             tsfi_scramble_wave512(state->manifest->contiguous_rf, 2048);
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Scrambled 2KB RF\", \"id\": %d}\n", id);
@@ -691,14 +722,16 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"No Manifest\", \"id\": %d}\n", id);
         }
         return 1;
-    } else if (method_type == 5) { // ATTACH
+    }
+    if (method_type == 5) { // ATTACH
         char shm_id[64];
         if (extract_json_string(min_ptr, "\"shm_id\"", shm_id, sizeof(shm_id))) {
             tsfi_zmm_vm_attach_telemetry(state, shm_id);
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Attached to %s\", \"id\": %d}\n", shm_id, id);
             return 1;
         }
-    } else if (method_type == 35) { // QUERY_KNOWLEDGE_GRAPH
+    }
+    if (method_type == 35) { // QUERY_KNOWLEDGE_GRAPH
         char address_hex[128] = {0};
         if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
             uint64_t virtual_address = 0;
@@ -765,130 +798,8 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             }
             return 1;
         }
-    } else if (method_type == 6) { // GENETIC.BENCHMARK
-        int iterations = 50000;
-        char *iter_key = strstr(min_ptr, "\"iterations\"");
-        if (iter_key) {
-            char *start = strchr(iter_key, ':');
-            if (start) iterations = atoi(start + 1);
-        }
-        if (iterations <= 0) iterations = 50000;
-        char report_buf[4096];
-        tsfi_genetic_benchmark_run(iterations, report_buf, sizeof(report_buf));
-        int n = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"report\": \"");
-        char *optr = output_buf + n;
-        size_t rem = out_max - n;
-        for (char *c = report_buf; *c && rem > 16; c++) {
-            if (*c == '\n') { *optr++ = '\\'; *optr++ = 'n'; rem -= 2; }
-            else if (*c == '\t') { *optr++ = '\\'; *optr++ = 't'; rem -= 2; }
-            else if (*c == '"') { *optr++ = '\\'; *optr++ = '"'; rem -= 2; }
-            else if (*c == '\\') { *optr++ = '\\'; *optr++ = '\\'; rem -= 2; }
-            else { *optr++ = *c; rem--; }
-        }
-        snprintf(optr, rem, "\"}, \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 11) { // GENETIC.ESTABLISH_LLM
-        // This method bootstraps an internal "Model" structure (YANG) via crossover
-        // of a baseline Architecture (Parent A) and a Strategic Input (Parent B).
-        
-        char arch[1024] = "WLOAD W0, 0.5\nWLOAD W1, 0.1\nWADD W2, W0, W1\nWSTORE W2, 0";
-        char strategy[1024] = "WLOAD W0, 0.8\nWLOAD W1, 0.2\nWMUL W2, W0, W1\nWSTORE W2, 0";
-        
-        extract_json_string(min_ptr, "\"architecture\"", arch, sizeof(arch));
-        extract_json_string(min_ptr, "\"strategy\"", strategy, sizeof(strategy));
-
-        // Setup Parents
-        GeneticNode* ParentA = (GeneticNode*)lau_malloc_wired(sizeof(GeneticNode));
-        ParentA->type = GENETIC_TYPE_YI; ParentA->dys_ptr = allocYI();
-        memset(ParentA->dys_ptr, 0, sizeof(struct YI));
-        ((struct YI*)ParentA->dys_ptr)->Xi = tsfi_bn_alloc();
-        tsfi_bn_from_bytes(((struct YI*)ParentA->dys_ptr)->Xi, (const uint8_t*)arch, strlen(arch));
-
-        GeneticNode* ParentB = (GeneticNode*)lau_malloc_wired(sizeof(GeneticNode));
-        ParentB->type = GENETIC_TYPE_YI; ParentB->dys_ptr = allocYI();
-        memset(ParentB->dys_ptr, 0, sizeof(struct YI));
-        ((struct YI*)ParentB->dys_ptr)->Xi = tsfi_bn_alloc();
-        tsfi_bn_from_bytes(((struct YI*)ParentB->dys_ptr)->Xi, (const uint8_t*)strategy, strlen(strategy));
-
-        // Perform Crossover In-Place (Zero-Copy)
-        GeneticNode* InternalLLM = (GeneticNode*)lau_malloc_wired(sizeof(GeneticNode));
-        InternalLLM->type = GENETIC_TYPE_YI; InternalLLM->dys_ptr = allocYI();
-        memset(InternalLLM->dys_ptr, 0, sizeof(struct YI));
-        Fourier_UniversalCrossover_InPlace(ParentA, ParentB, InternalLLM);
-
-        // Extract resulting bytecode
-        char evolved_code[1024] = {0};
-        tsfi_bn_to_bytes(((struct YI*)InternalLLM->dys_ptr)->Xi, (uint8_t*)evolved_code, sizeof(evolved_code) - 1);
-        
-        // Return status and the evolved "Model" bytecode
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"llm_id\": \"%s\", \"bytecode\": \"%s\"}, \"id\": %d}\n", 
-                 InternalLLM->generation_id, evolved_code, id);
-
-        // Cleanup
-        freeYI((struct YI*)ParentA->dys_ptr); lau_free(ParentA);
-        freeYI((struct YI*)ParentB->dys_ptr); lau_free(ParentB);
-        if (InternalLLM->type == GENETIC_TYPE_YI) freeYI((struct YI*)InternalLLM->dys_ptr);
-        else freeYANG((struct YANG*)InternalLLM->dys_ptr);
-        lau_free(InternalLLM);
-        return 1;
-        
-    } else if (method_type == 19) { // GENETIC.AUTONOMOUS_OPTIMIZE
-        // Autonomous optimization script wrapper
-        char target_file[1024] = "tests/ballet_elancer.c";
-        extract_json_string(min_ptr, "\"target\"", target_file, sizeof(target_file));
-        
-        char script_path[256];
-        snprintf(script_path, sizeof(script_path), "/tmp/tsfi_auto_opt_%d.py", getpid());
-        
-        FILE *py = fopen(script_path, "w");
-        if (py) {
-            fprintf(py, 
-                "import subprocess, re, sys\n"
-                "target = '%s'\n"
-                "def run_bench():\n"
-                "    r = subprocess.run(['./bin/' + target.split('/')[-1].replace('.c', '')], capture_output=True, text=True)\n"
-                "    m = re.search(r'Throughput: ([\\d\\.]+) GFLOPS', r.stdout)\n"
-                "    return float(m.group(1)) if m else 0.0\n"
-                "best = run_bench()\n"
-                "with open(target, 'r') as f: content = f.read()\n"
-                "m = re.search(r'__m512 v_c = _mm512_set1_ps\\(([\\d\\.]+)f\\);', content)\n"
-                "if m:\n"
-                "    cur = float(m.group(1))\n"
-                "    for step in [0.0001, -0.0001]:\n"
-                "        new_val = cur + step\n"
-                "        new_content = re.sub(r'__m512 v_c = _mm512_set1_ps\\([\\d\\.]+f\\);', f'__m512 v_c = _mm512_set1_ps({new_val:.4f}f);', content)\n"
-                "        with open(target, 'w') as f: f.write(new_content)\n"
-                "        subprocess.run(['make', 'bin/' + target.split('/')[-1].replace('.c', '')], capture_output=True)\n"
-                "        g = run_bench()\n"
-                "        if g > best:\n"
-                "            best = g\n"
-                "            content = new_content\n"
-                "            break\n"
-                "        else:\n"
-                "            with open(target, 'w') as f: f.write(content)\n"
-                "            subprocess.run(['make', 'bin/' + target.split('/')[-1].replace('.c', '')], capture_output=True)\n"
-                "print(best)\n", target_file);
-            fclose(py);
-            
-            char cmd[512];
-            snprintf(cmd, sizeof(cmd), "python3 %s", script_path);
-            FILE *cmd_out = popen(cmd, "r");
-            float best_gflops = 0.0f;
-            if (cmd_out) {
-                if (fscanf(cmd_out, "%f", &best_gflops) != 1) {
-                    best_gflops = 0.0f;
-                }
-                pclose(cmd_out);
-            }
-            unlink(script_path);
-            
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"optimized\", \"target\": \"%s\", \"best_gflops\": %.2f}, \"id\": %d}\n", target_file, best_gflops, id);
-        } else {
-             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32000, \"message\": \"Failed to create optimization script\"}, \"id\": %d}\n", id);
-        }
-        return 1;
-    
-    } else if (method_type == 12) { // MATH.MOTZKIN
+    }
+    if (method_type == 12) { // MATH.MOTZKIN
         // Generate Motzkin string buffer and grep it
         char* gen_buf = malloc(1024 * 1024);
         size_t gen_offset = 0;
@@ -949,7 +860,8 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"%s\", \"id\": %d}\n", result_str, id);
         free(gen_buf);
 
-    } else if (method_type == 10) { // SHELL.READ_FILE
+    }
+    if (method_type == 10) { // SHELL.READ_FILE
         char path[512];
         if (extract_json_string(min_ptr, "\"path\"", path, sizeof(path))) {
             int secret = extract_json_int(min_ptr, "\"secret\"", 0);
@@ -1000,786 +912,7 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             lau_free(file_data);
             return 1;
         }
-    } else if (method_type == 20) { // manifold.swap_asset
-        int slot = extract_json_int(min_ptr, "\"slot\"", -1);
-        int type = extract_json_int(min_ptr, "\"type\"", 0);
-        char addr_str[64];
-        if (slot >= 0 && slot < 32 && extract_json_string(min_ptr, "\"address\"", addr_str, sizeof(addr_str))) {
-            uintptr_t addr = (uintptr_t)strtoull(addr_str, NULL, 0);
-            if (state->manifest) {
-                state->manifest->slots[slot].type = (ZmmType)type;
-                state->manifest->slots[slot].data_ptr = (void*)addr;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Swapped slot %d to %p\", \"id\": %d}\n", slot, (void*)addr, id);
-                return 1;
-            }
-        }
-    } else if (method_type == 21) { // manifold.set_kernel
-        char name[64];
-        if (extract_json_string(min_ptr, "\"name\"", name, sizeof(name)) && state->manifest) {
-            void (*k)(void*, ZmmSynapse*) = NULL;
-            if (strcmp(name, "blue_teddy_bear") == 0) k = tsfi_kernel_blue_teddy_bear;
-            else if (strcmp(name, "low_density") == 0) k = state->manifest->kernel_low_density;
-            else if (strcmp(name, "high_density") == 0) k = state->manifest->kernel_high_density;
-            
-            if (k) {
-                state->manifest->micro_kernel = k;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Kernel set to %s\", \"id\": %d}\n", name, id);
-                return 1;
-            }
-        }
-    } else if (method_type == 22) { // manifold.set_active_mask
-        int mask = extract_json_int(min_ptr, "\"mask\"", 0);
-        if (state->manifest) {
-            state->manifest->active_mask = (uint32_t)mask;
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Active mask set to 0x%08X\", \"id\": %d}\n", state->manifest->active_mask, id);
-            return 1;
-        }
-    } else if (method_type == 23) { // manifold.set_secret
-        int slot = extract_json_int(min_ptr, "\"slot\"", 0);
-        char val_str[64];
-        if (extract_json_string(min_ptr, "\"value\"", val_str, sizeof(val_str)) && state->manifest) {
-            float val = strtof(val_str, NULL);
-            if (slot >= 0 && slot < 32 && state->manifest->slots[slot].data_ptr) {
-                // If it's a TeddyBear, we can inject into spectral_shift
-                if (state->manifest->slots[slot].type == ZMM_TYPE_MASS) {
-                    TeddyBear *b = (TeddyBear*)state->manifest->slots[slot].data_ptr;
-                    b->spectral_shift = val;
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Secret injected into slot %d: %f\", \"id\": %d}\n", slot, val, id);
-                    return 1;
-                }
-            }
-        }
-    } else if (method_type == 24) { // manifold.dispatch
-        if (state->manifest) {
-            tsfi_dispatch_zmm_dynamic(state->manifest);
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"density\": %f}, \"id\": %d}\n", state->manifest->synapse.mass_density, id);
-            return 1;
-        }
-    } else if (method_type == 25) { // manifold.inspect_slots
-        if (state->manifest) {
-            int head = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"slots\": [");
-            char *optr = output_buf + head;
-            size_t rem = out_max - head - 64;
-            for (int i = 0; i < 32; i++) {
-                int n = snprintf(optr, rem, "{\"slot\": %d, \"type\": %d, \"address\": \"%p\"}%s", 
-                                 i, state->manifest->slots[i].type, state->manifest->slots[i].data_ptr, (i < 31 ? ", " : ""));
-                optr += n; rem -= n;
-                if (rem < 128) break;
-            }
-            snprintf(optr, rem, "]}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 26) { // manifold.upload_asset
-        char hex[1024 * 64]; // Max 64KB upload for now
-        if (extract_json_string(min_ptr, "\"data\"", hex, sizeof(hex))) {
-            size_t bytes_needed = strlen(hex) / 2;
-            void *ptr = lau_malloc_wired(bytes_needed);
-            if (ptr) {
-                decode_hex(hex, (uint8_t*)ptr, bytes_needed);
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"address\": \"%p\", \"size\": %zu}, \"id\": %d}\n", ptr, bytes_needed, id);
-                return 1;
-            }
-        }
-    } else if (method_type == 41) { // manifold.load_dna_llm
-        char path[1024];
-        if (extract_json_string(min_ptr, "\"path\"", path, sizeof(path))) {
-            // Check if file exists
-            if (access(path, F_OK) == 0) {
-                if (state->manifest) {
-                    state->manifest->slots[31].type = ZMM_TYPE_MASS;
-                    state->manifest->slots[31].data_ptr = (void*)0x55555555; // Placeholder
-                    state->manifest->active_mask |= (1U << 31);
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"DNA Model Mounted to ZMM31\", \"address\": \"0x55555555\", \"size\": 1024}, \"id\": %d}\n", id);
-                } else {
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"No ZMM active manifest\", \"id\": %d}\n", id);
-                }
-                return 1;
-            }
-        }
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"DNA File not found\", \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 42) { // manifold.query_llm
-        char prompt[2048];
-        if (extract_json_string(min_ptr, "\"prompt\"", prompt, sizeof(prompt))) {
-            if (state->manifest && (state->manifest->active_mask & (1U << 31))) {
-                uint64_t tx_id = ++state->llm_tx_counter;
-                int slot = tx_id % 16;
-                state->llm_tx_status[slot] = 1;
-                snprintf(state->llm_tx_results[slot], 4096, "for '%s'", prompt); // Temp store prompt
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"pending\"}, \"id\": %d}\n", tx_id, id);
-                return 1;
-            }
-        }
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"DNA model not mounted or invalid prompt\", \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 43) { // manifold.get_receipt
-        char id_str[64];
-        extract_json_string(min_ptr, "\"receipt\"", id_str, sizeof(id_str));
-        char *r_ptr = strstr(min_ptr, "\"receipt\"");
-        if (r_ptr) {
-            r_ptr += 9;
-            while (*r_ptr == ' ' || *r_ptr == ':') r_ptr++;
-            uint64_t tx_id = strtoull(r_ptr, NULL, 10);
-            if (tx_id > 0 && tx_id <= state->llm_tx_counter) {
-                int slot = tx_id % 16;
-                if (state->llm_tx_status[slot] == 2) {
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"done\", \"response\": \"%s\"}, \"id\": %d}\n", tx_id, state->llm_tx_results[slot], id);
-                    state->llm_tx_status[slot] = 0; 
-                    return 1;
-                } else if (state->llm_tx_status[slot] == 1) {
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"receipt\": %lu, \"status\": \"pending\"}, \"id\": %d}\n", tx_id, id);
-                    return 1;
-                }
-            }
-        }
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Receipt not found\", \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 44) { // manifold.mount_instrument
-        char target[64] = {0};
-        if (extract_json_string(min_ptr, "\"target\"", target, sizeof(target))) {
-            if (strcmp(target, "lead") == 0) {
-                g_rpc_mounts.lead_mounted = true;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted lead\", \"id\": %d}\n", id);
-            } else if (strcmp(target, "bass") == 0) {
-                g_rpc_mounts.bass_mounted = true;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted bass\", \"id\": %d}\n", id);
-            } else if (strcmp(target, "growl") == 0) {
-                g_rpc_mounts.growl_mounted = true;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted growl\", \"id\": %d}\n", id);
-            } else if (strcmp(target, "drums") == 0) {
-                g_rpc_mounts.drums_mounted = true;
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted drums\", \"id\": %d}\n", id);
-            } else if (strcmp(target, "audio_stream_control") == 0) {
-                g_rpc_mounts.audio_stream_control_mounted = true;
-                printf("[PDP-11 MOUNT] Device audio_stream_control attached to channel input stream.\n");
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mounted audio_stream_control\", \"id\": %d}\n", id);
-            } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Unknown instrument target\", \"id\": %d}\n", id);
-            }
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Missing target parameter\", \"id\": %d}\n", id);
-        }
-        return 1;
-    } else if (method_type == 45) { // manifold.play_bio
-        char path[256] = {0};
-        int project = extract_json_int(min_ptr, "\"project\"", 0);
-        int programmer = extract_json_int(min_ptr, "\"programmer\"", 0);
-        int key_id = extract_json_int(min_ptr, "\"key_id\"", 0);
-
-        int acl_level = register_zmm_operator_via_23_tree(project, programmer, key_id);
-        if (acl_level == -1) {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: PEER_LOCKED_OUT_DUE_TO_CONSECUTIVE_FAILURES\", \"id\": %d}\n", id);
-            return 1;
-        }
-        if (acl_level < 1) {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: ACL_PERMISSION_DENIED\", \"id\": %d}\n", id);
-            return 1;
-        }
-
-        if (!g_rpc_mounts.lead_mounted && !g_rpc_mounts.bass_mounted && !g_rpc_mounts.growl_mounted && !g_rpc_mounts.drums_mounted) {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"REVERT: NO_INSTRUMENTS_MOUNTED_ON_SYNTHESIZER\", \"id\": %d}\n", id);
-            return 1;
-        }
-
-        if (extract_json_string(min_ptr, "\"path\"", path, sizeof(path))) {
-            if (!g_rpc_pulse_stream) {
-                pa_sample_spec ss;
-                ss.format = PA_SAMPLE_U8;
-                ss.rate = SAMPLE_RATE;
-                ss.channels = 1;
-                int error;
-                g_rpc_pulse_stream = pa_simple_new(NULL, "ZMM_MCP_PlayBio", PA_STREAM_PLAYBACK, NULL, "Synthesizer", &ss, NULL, NULL, &error);
-                if (!g_rpc_pulse_stream) {
-                    snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Failed to connect to PulseAudio\", \"id\": %d}\n", id);
-                    return 1;
-                }
-            }
-
-            const char *err = NULL;
-            if (rpc_play_bio_arrangement(path, &err)) {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\"}, \"id\": %d}\n", id);
-            } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"%s\", \"id\": %d}\n", err, id);
-            }
-
-            if (g_rpc_pulse_stream) {
-                int error;
-                pa_simple_drain(g_rpc_pulse_stream, &error);
-                pa_simple_free(g_rpc_pulse_stream);
-                g_rpc_pulse_stream = NULL;
-            }
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Missing path parameter\", \"id\": %d}\n", id);
-        }
-        return 1;
-    } else if (method_type == 27) { // flow.trigger_choreography
-        // Launch the Google Labs Flow unified masterpiece matrix in the background
-        int sys_ret = system("nohup python3 tools/tsfi_ipomoea_teddy_matrix.py > /tmp/tsfi_choreography.log 2>&1 &");
-        if (sys_ret == 0) {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Atropa/999 Sovereign Choreography Matrix Initiated (Background).\", \"id\": %d}\n", id);
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Failed to launch choreography matrix.\", \"id\": %d}\n", id);
-        }
-        return 1;
-    } else if (method_type == 28) { // wave512.dilemma_log
-        char event_str[64];
-        if (extract_json_string(min_ptr, "\"event\"", event_str, sizeof(event_str))) {
-            char src_str[64] = "External";
-            char det_str[256] = "";
-            extract_json_string(min_ptr, "\"source\"", src_str, sizeof(src_str));
-            extract_json_string(min_ptr, "\"details\"", det_str, sizeof(det_str));
-            
-            if (g_dilemma_log_count < MAX_DILEMMA_LOGS) {
-                snprintf(g_dilemma_logs[g_dilemma_log_count].event, 64, "%s", event_str);
-                snprintf(g_dilemma_logs[g_dilemma_log_count].source, 64, "%s", src_str);
-                snprintf(g_dilemma_logs[g_dilemma_log_count].details, 256, "%s", det_str);
-                g_dilemma_logs[g_dilemma_log_count].timestamp = (uint64_t)time(NULL);
-                g_dilemma_log_count++;
-            } else {
-                for (int i = 1; i < MAX_DILEMMA_LOGS; i++) {
-                    g_dilemma_logs[i - 1] = g_dilemma_logs[i];
-                }
-                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].event, 64, "%s", event_str);
-                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].source, 64, "%s", src_str);
-                snprintf(g_dilemma_logs[MAX_DILEMMA_LOGS - 1].details, 256, "%s", det_str);
-                g_dilemma_logs[MAX_DILEMMA_LOGS - 1].timestamp = (uint64_t)time(NULL);
-            }
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Log registered\", \"id\": %d}\n", id);
-            return 1;
-        } else {
-            int head = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": [");
-            char *optr = output_buf + head;
-            size_t rem = out_max - head - 64;
-            for (int i = 0; i < g_dilemma_log_count; i++) {
-                int n = snprintf(optr, rem, "{\"event\": \"%s\", \"source\": \"%s\", \"details\": \"%s\", \"timestamp\": %lu}%s", 
-                                 g_dilemma_logs[i].event, g_dilemma_logs[i].source, g_dilemma_logs[i].details,
-                                 (unsigned long)g_dilemma_logs[i].timestamp, (i < g_dilemma_log_count - 1 ? ", " : ""));
-                optr += n; rem -= n;
-                if (rem < 128) break;
-            }
-            snprintf(optr, rem, "], \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 29) { // wave512.telemetry
-        extern uint64_t g_thunk_cache_hits;
-        extern uint64_t g_thunk_cache_lookups;
-        extern uint64_t lau_yul_thunk_sload(uint64_t key);
-        extern int tsfi_ouroboros_serialize_pq(char *buf, size_t max_len);
-        extern uint64_t tsfi_ouroboros_get_adaptive_tick_rate(void);
-        
-        typedef struct {
-            uint64_t pc;
-            uint8_t op;
-        } YulTraceStepLocal;
-        
-        extern YulTraceStepLocal s_yul_trace_history[];
-        extern uint32_t s_yul_trace_count;
-        extern uint32_t s_yul_trace_head;
-        extern pthread_mutex_t s_yul_trace_mutex;
-        
-        uint64_t head = lau_yul_thunk_sload(0xF300);
-        uint64_t tail = lau_yul_thunk_sload(0xF301);
-        uint64_t size = lau_yul_thunk_sload(0xF302);
-        uint64_t lock = lau_yul_thunk_sload(0xF303);
-        
-        char pq_buf[1536];
-        tsfi_ouroboros_serialize_pq(pq_buf, sizeof(pq_buf));
-        
-        char trace_buf[1536] = "[";
-        char *t_ptr = trace_buf + 1;
-        size_t t_rem = sizeof(trace_buf) - 2;
-        
-        pthread_mutex_lock(&s_yul_trace_mutex);
-        uint32_t t_count = s_yul_trace_count;
-        uint32_t t_head = s_yul_trace_head;
-        pthread_mutex_unlock(&s_yul_trace_mutex);
-        
-        for (uint32_t i = 0; i < t_count; i++) {
-            uint32_t idx = (t_head + 32 - t_count + i) % 32;
-            int n = snprintf(t_ptr, t_rem, "{\"pc\": %lu, \"op\": %u}%s",
-                             (unsigned long)s_yul_trace_history[idx].pc, s_yul_trace_history[idx].op,
-                             (i < t_count - 1 ? ", " : ""));
-            t_ptr += n;
-            t_rem -= n;
-            if (t_rem < 64) break;
-        }
-        snprintf(t_ptr, t_rem, "]");
-        
-        uint64_t adaptive_tick = tsfi_ouroboros_get_adaptive_tick_rate();
-        uint64_t scsi_tx = lau_yul_thunk_sload(0xF304);
-        uint64_t scsi_err = lau_yul_thunk_sload(0xF305);
-        uint64_t scsi_signals = lau_yul_thunk_sload(0xF306);
-        extern int lau_yul_thunk_cache_height(void);
-        extern int lau_yul_thunk_cache_balance(void);
-        int avl_height = lau_yul_thunk_cache_height();
-        int avl_balance = lau_yul_thunk_cache_balance();
-        char stats_buf[1024] = "[]";
-        extern int lau_yul_thunk_get_cache_stats(char *buf, size_t max_len);
-        lau_yul_thunk_get_cache_stats(stats_buf, sizeof(stats_buf));
-        
-        snprintf(output_buf, out_max, 
-                 "{\"jsonrpc\": \"2.0\", \"result\": {\"cache_hits\": %lu, \"cache_lookups\": %lu, "
-                 "\"evm_queue\": {\"head\": %lu, \"tail\": %lu, \"size\": %lu, \"lock\": %lu}, "
-                 "\"host_heap\": %s, \"yul_trace\": %s, \"adaptive_tick_rate\": %lu, "
-                 "\"scsi_tx_count\": %lu, \"scsi_parity_errors\": %lu, "
-                 "\"avl_height\": %d, \"avl_balance\": %d, \"scsi_signals\": %lu, "
-                 "\"contract_cache_stats\": %s}, \"id\": %d}\n", 
-                 (unsigned long)g_thunk_cache_hits, (unsigned long)g_thunk_cache_lookups,
-                 (unsigned long)head, (unsigned long)tail, (unsigned long)size, (unsigned long)lock,
-                 pq_buf, trace_buf, (unsigned long)adaptive_tick,
-                 (unsigned long)scsi_tx, (unsigned long)scsi_err,
-                 avl_height, avl_balance, (unsigned long)scsi_signals,
-                 stats_buf, id);
-        return 1;
-    } else if (method_type == 33) { // wave512.inject_event
-        uint32_t priority = (uint32_t)extract_json_int(min_ptr, "\"priority\"", 10);
-        uint32_t type = (uint32_t)extract_json_int(min_ptr, "\"type\"", 1);
-        uint64_t timestamp = (uint64_t)extract_json_int(min_ptr, "\"timestamp\"", 0);
-        
-        char hex_data[128] = "";
-        uint8_t data[32] = {0};
-        if (extract_json_string(min_ptr, "\"data\"", hex_data, sizeof(hex_data))) {
-            char *p = hex_data;
-            if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
-            for (int i = 0; i < 32 && *p && *(p+1); i++) {
-                unsigned int byte;
-                sscanf(p, "%2x", &byte);
-                data[i] = (uint8_t)byte;
-                p += 2;
-            }
-        }
-        
-        extern bool tsfi_ouroboros_push_event(uint32_t priority, uint32_t type, uint64_t timestamp, const uint8_t *data);
-        bool push_ok = tsfi_ouroboros_push_event(priority, type, timestamp, data);
-        
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": %s}, \"id\": %d}\n", 
-                 push_ok ? "true" : "false", id);
-        return 1;
-    } else if (method_type == 34) { // wave512.clear_cache
-        extern void lau_yul_thunk_cache_clear(void);
-        lau_yul_thunk_cache_clear();
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 30) { // input.mouse_move
-        int x = extract_json_int(min_ptr, "\"x\"", 0);
-        int y = extract_json_int(min_ptr, "\"y\"", 0);
-        if (!state->reu_ram) {
-            state->reu_size = 0x10000;
-            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
-        }
-        if (state->reu_ram && state->reu_size > 0xF004) {
-            state->reu_ram[0xF000] = (uint8_t)(x & 0xFF);
-            state->reu_ram[0xF001] = (uint8_t)(y & 0xFF);
-            state->reu_ram[0xF003] = (uint8_t)((x >> 8) & 0xFF);
-            state->reu_ram[0xF004] = (uint8_t)((y >> 8) & 0xFF);
-        }
-        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
-        uint8_t command_byte = (0x00 << 6) | 0x01;
-        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
-        cd[35] = command_byte;
-        uint8_t ret[32];
-        size_t ret_len = 32;
-        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
-
-        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
-        char cmd_str[32] = {0};
-        snprintf(cmd_str, sizeof(cmd_str), "MM %d %d", x, y);
-        memcpy(cd_post + 4, cmd_str, 32);
-        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
-
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mouse move OK\", \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 31) { // input.mouse_button
-        int button = extract_json_int(min_ptr, "\"button\"", 272);
-        int btn_state = extract_json_int(min_ptr, "\"state\"", 0);
-        int x = extract_json_int(min_ptr, "\"x\"", -1);
-        int y = extract_json_int(min_ptr, "\"y\"", -1);
-        if (!state->reu_ram) {
-            state->reu_size = 0x10000;
-            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
-        }
-        if (state->reu_ram && state->reu_size > 0xF004 && x >= 0 && y >= 0) {
-            state->reu_ram[0xF000] = (uint8_t)(x & 0xFF);
-            state->reu_ram[0xF001] = (uint8_t)(y & 0xFF);
-            state->reu_ram[0xF003] = (uint8_t)((x >> 8) & 0xFF);
-            state->reu_ram[0xF004] = (uint8_t)((y >> 8) & 0xFF);
-        }
-        uint8_t btn_idx = 0;
-        if (button == 273) btn_idx = 1;
-        if (button == 274) btn_idx = 2;
-        uint8_t command_byte = (0x01 << 6) | (btn_state ? 0x04 : 0x00) | (btn_idx & 0x03);
-
-        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
-        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
-        cd[35] = command_byte;
-        uint8_t ret[32];
-        size_t ret_len = 32;
-        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
-
-        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
-        char cmd_str[32] = {0};
-        snprintf(cmd_str, sizeof(cmd_str), "%s %d", btn_state ? "MD" : "MU", button);
-        memcpy(cd_post + 4, cmd_str, 32);
-        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
-
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Mouse button OK\", \"id\": %d}\n", id);
-        return 1;
-    } else if (method_type == 32) { // input.keyboard
-        int keycode = extract_json_int(min_ptr, "\"keycode\"", 0);
-        int key_state = extract_json_int(min_ptr, "\"state\"", 0);
-        if (!state->reu_ram) {
-            state->reu_size = 0x10000;
-            state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
-        }
-        if (state->reu_ram && state->reu_size > 0xF002) {
-            state->reu_ram[0xF002] = (uint8_t)keycode;
-        }
-        uint8_t command_byte = (0x02 << 6) | (key_state ? 0x20 : 0x00) | (keycode & 0x1F);
-
-        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
-        uint8_t cd[36] = {0x98, 0xd4, 0x00, 0xc0};
-        cd[35] = command_byte;
-        uint8_t ret[32];
-        size_t ret_len = 32;
-        lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len);
-
-        uint8_t cd_post[36] = {0xcc, 0xb0, 0x77, 0xa0};
-        char cmd_str[32] = {0};
-        snprintf(cmd_str, sizeof(cmd_str), "%s %d", key_state ? "KD" : "KU", keycode);
-        memcpy(cd_post + 4, cmd_str, 32);
-        lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
-
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Keyboard event OK\", \"id\": %d}\n", id);
-    } else if (method_type == 50) { // tariffs_query
-        int trunk_id = extract_json_int(min_ptr, "\"trunk_id\"", 800);
-        // Calculate simulated tariff rate: base rate 60 + trunk offset * 5
-        uint32_t rate = 60;
-        if (trunk_id >= 800 && trunk_id <= 831) {
-            rate = 60 + (trunk_id - 800) * 5;
-        }
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"rate\": %u}, \"id\": %d}\n", rate, id);
-        return 1;
-    } else if (method_type == 51) { // wave512.get_price_in_pls
-        char address_hex[128] = {0};
-        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
-            double price = tsfi_pulse_get_price_in_pls(address_hex);
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"address\": \"%s\", \"price_pls\": %.8f}, \"id\": %d}\n", address_hex, price, id);
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 63) { // wave64.get_dexscreener_price
-        char address_hex[128] = {0};
-        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
-            extern bool tsfi_dexscreener_get_price(const char *token_addr, double *out_price_usd);
-            double price_usd = 0.0;
-            bool success = tsfi_dexscreener_get_price(address_hex, &price_usd);
-            if (success) {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"address\": \"%s\", \"price_usd\": %.8f}, \"id\": %d}\n", address_hex, price_usd, id);
-            } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32000, \"message\": \"Failed to retrieve price from DexScreener\"}, \"id\": %d}\n", id);
-            }
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 64) { // wave64.get_dexscreener_pairs
-        char address_hex[128] = {0};
-        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex))) {
-            extern bool tsfi_dexscreener_get_pairs_json(const char *token_addr, char *out_json, size_t out_max_len);
-            static char *pairs_buf = NULL;
-            if (!pairs_buf) {
-                pairs_buf = malloc(524288);
-            }
-            if (pairs_buf && tsfi_dexscreener_get_pairs_json(address_hex, pairs_buf, 524288)) {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", pairs_buf, id);
-            } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32000, \"message\": \"Failed to retrieve pairs from DexScreener\"}, \"id\": %d}\n", id);
-            }
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 52) { // wave512.get_all_prices
-        static char temp_json[131072];
-        tsfi_pulse_get_all_prices_json(temp_json, sizeof(temp_json));
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
-        return 1;
-    } else if (method_type == 53) { // wave512.get_token_holders
-        char address_hex[64] = {0};
-        bool force_refresh = false;
-        char *p_ref = strstr(min_ptr, "\"refresh\"");
-        if (p_ref) {
-            char *colon = strchr(p_ref, ':');
-            if (colon) {
-                while (*colon == ' ' || *colon == ':' || *colon == '\t') colon++;
-                if (strncmp(colon, "true", 4) == 0) {
-                    force_refresh = true;
-                }
-            }
-        }
-        if (extract_json_string(min_ptr, "\"token\"", address_hex, sizeof(address_hex))) {
-            static char temp_json[131072];
-            tsfi_pulse_get_token_holders_json(address_hex, temp_json, sizeof(temp_json), force_refresh);
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing token parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 54) { // wave512.add_discovered_token
-        char address_hex[64] = {0};
-        char symbol[32] = {0};
-        char name[128] = {0};
-        uint64_t decimals = (uint64_t)extract_json_int(min_ptr, "\"decimals\"", 18);
-        if (extract_json_string(min_ptr, "\"address\"", address_hex, sizeof(address_hex)) &&
-            extract_json_string(min_ptr, "\"symbol\"", symbol, sizeof(symbol)) &&
-            extract_json_string(min_ptr, "\"name\"", name, sizeof(name))) {
-            add_discovered_token(address_hex, symbol, name, decimals);
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing address, symbol, or name parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 55) { // wave512.add_swap_edge
-        char token0[64] = {0};
-        char token1[64] = {0};
-        double price = 0.0;
-        char *p_t0 = strstr(min_ptr, "\"token0\"");
-        char *p_t1 = strstr(min_ptr, "\"token1\"");
-        char *p_pr = strstr(min_ptr, "\"price\"");
-        
-        if (p_t0) {
-            char *colon = strchr(p_t0, ':');
-            if (colon) {
-                char *start = strchr(colon, '"');
-                if (start) {
-                    start++;
-                    char *end = strchr(start, '"');
-                    if (end && (size_t)(end - start) < sizeof(token0)) {
-                        strncpy(token0, start, end - start);
-                    }
-                }
-            }
-        }
-        if (p_t1) {
-            char *colon = strchr(p_t1, ':');
-            if (colon) {
-                char *start = strchr(colon, '"');
-                if (start) {
-                    start++;
-                    char *end = strchr(start, '"');
-                    if (end && (size_t)(end - start) < sizeof(token1)) {
-                        strncpy(token1, start, end - start);
-                    }
-                }
-            }
-        }
-        if (p_pr) {
-            char *colon = strchr(p_pr, ':');
-            if (colon) {
-                price = strtod(colon + 1, NULL);
-            }
-        }
-        
-        if (strlen(token0) > 0 && strlen(token1) > 0 && price > 0.0) {
-            add_swap_edge(token0, token1, price);
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
-            return 1;
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing token0, token1, or price parameter\"}, \"id\": %d}\n", id);
-            return 1;
-        }
-    } else if (method_type == 56) { // wave64.retrieve
-        pthread_mutex_lock(&g_seq_store_mutex);
-        if (!g_seq_store_loaded) load_seq_store();
-        
-        char key[128] = {0};
-        bool has_key = extract_json_string(min_ptr, "\"key\"", key, sizeof(key));
-        
-        if (has_key) {
-            int found_idx = -1;
-            for (int i = 0; i < g_seq_store_count; i++) {
-                if (strcmp(g_seq_store[i].key, key) == 0) {
-                    found_idx = i;
-                    break;
-                }
-            }
-            if (found_idx != -1) {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"key\": \"%s\", \"value\": \"%s\", \"timestamp\": %lu}, \"id\": %d}\n",
-                         g_seq_store[found_idx].key, g_seq_store[found_idx].value, (unsigned long)g_seq_store[found_idx].timestamp, id);
-            } else {
-                snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32002, \"message\": \"Key not found\"}, \"id\": %d}\n", id);
-            }
-        } else {
-            // Retrieve all as JSON array
-            size_t n = snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": [");
-            for (int i = 0; i < g_seq_store_count; i++) {
-                size_t rem = out_max - n;
-                int written = snprintf(output_buf + n, rem, "{\"key\":\"%s\",\"value\":\"%s\",\"timestamp\":%lu}%s",
-                                       g_seq_store[i].key, g_seq_store[i].value, (unsigned long)g_seq_store[i].timestamp,
-                                       (i == g_seq_store_count - 1) ? "" : ",");
-                if (written > 0) n += written;
-            }
-            snprintf(output_buf + n, out_max - n, "], \"id\": %d}\n", id);
-        }
-        pthread_mutex_unlock(&g_seq_store_mutex);
-        return 1;
-    } else if (method_type == 57) { // wave64.augment
-        pthread_mutex_lock(&g_seq_store_mutex);
-        if (!g_seq_store_loaded) load_seq_store();
-        
-        char key[128] = {0};
-        char val[4096] = {0};
-        
-        if (extract_json_string(min_ptr, "\"key\"", key, sizeof(key)) &&
-            extract_json_string(min_ptr, "\"value\"", val, sizeof(val))) {
-            
-            int found_idx = -1;
-            for (int i = 0; i < g_seq_store_count; i++) {
-                if (strcmp(g_seq_store[i].key, key) == 0) {
-                    found_idx = i;
-                    break;
-                }
-            }
-            
-            if (found_idx != -1) {
-                // augment/overwrite
-                snprintf(g_seq_store[found_idx].value, sizeof(g_seq_store[found_idx].value), "%s", val);
-                g_seq_store[found_idx].timestamp = (uint64_t)time(NULL);
-            } else if (g_seq_store_count < MAX_STORE_KEYS) {
-                // insert new
-                StoreEntry *e = &g_seq_store[g_seq_store_count++];
-                snprintf(e->key, sizeof(e->key), "%s", key);
-                snprintf(e->value, sizeof(e->value), "%s", val);
-                e->timestamp = (uint64_t)time(NULL);
-            }
-            save_seq_store();
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
-        } else {
-            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32602, \"message\": \"Missing key or value parameter\"}, \"id\": %d}\n", id);
-        }
-        pthread_mutex_unlock(&g_seq_store_mutex);
-        return 1;
-    } else if (method_type == 58) { // wave64.prune
-        pthread_mutex_lock(&g_seq_store_mutex);
-        if (!g_seq_store_loaded) load_seq_store();
-        
-        char key[128] = {0};
-        bool has_key = extract_json_string(min_ptr, "\"key\"", key, sizeof(key));
-        
-        int older_than = extract_json_int(min_ptr, "\"older_than\"", -1);
-        int pruned_count = 0;
-        
-        if (has_key) {
-            for (int i = 0; i < g_seq_store_count; i++) {
-                if (strcmp(g_seq_store[i].key, key) == 0) {
-                    // Remove by shifting
-                    for (int j = i; j < g_seq_store_count - 1; j++) {
-                        g_seq_store[j] = g_seq_store[j + 1];
-                    }
-                    g_seq_store_count--;
-                    pruned_count++;
-                    break;
-                }
-            }
-        } else if (older_than != -1) {
-            for (int i = 0; i < g_seq_store_count; ) {
-                if (g_seq_store[i].timestamp < (uint64_t)older_than) {
-                    for (int j = i; j < g_seq_store_count - 1; j++) {
-                        g_seq_store[j] = g_seq_store[j + 1];
-                    }
-                    g_seq_store_count--;
-                    pruned_count++;
-                } else {
-                    i++;
-                }
-            }
-        } else {
-            // Prune all
-            pruned_count = g_seq_store_count;
-            g_seq_store_count = 0;
-        }
-        
-        if (pruned_count > 0) {
-            save_seq_store();
-        }
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"pruned_count\": %d}, \"id\": %d}\n", pruned_count, id);
-        pthread_mutex_unlock(&g_seq_store_mutex);
-        return 1;
-    } else if (method_type == 59) { // wave64.get_unpriced_tokens
-        static char temp_json[131072];
-        extern int tsfi_pulse_get_unpriced_tokens_json(char *out_buf, size_t max_len);
-        tsfi_pulse_get_unpriced_tokens_json(temp_json, sizeof(temp_json));
-        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": %s, \"id\": %d}\n", temp_json, id);
-        return 1;
-    } else if (method_type == 60 || method_type == 61 || method_type == 62) {
-        extern int tsfi_zmm_rpc_dispatch_pulse(TsfiZmmVmState *state, int method_type, const char *min_ptr, char *output_buf, size_t out_max, int id);
-        return tsfi_zmm_rpc_dispatch_pulse(state, method_type, min_ptr, output_buf, out_max, id);
     }
-
-    
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
-}
-
-void tsfi_zmm_rpc_step_async_llm(TsfiZmmVmState *state) {
-    if (!state) return;
-    for (int i = 0; i < 16; i++) {
-        if (state->llm_tx_status[i] == 1) { 
-            if (state->manifest && (state->manifest->active_mask & (1U << 31))) {
-                char prompt_extract[2048] = {0};
-                char *prompt_start = strstr(state->llm_tx_results[i], "for '");
-                if (prompt_start) {
-                    prompt_start += 5;
-                    char *prompt_end = strchr(prompt_start, '\'');
-                    if (prompt_end) {
-                        strncpy(prompt_extract, prompt_start, prompt_end - prompt_start);
-                    }
-                }
-                
-                memset(state->llm_tx_results[i], 0, sizeof(state->llm_tx_results[i]));
-                
-                char cmd[4096];
-                snprintf(cmd, sizeof(cmd), "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/bin/query_local_deepseek /home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf \"%s\"", prompt_extract);
-                
-                FILE *fp = popen(cmd, "r");
-                if (fp) {
-                    char chunk[1024];
-                    while (fgets(chunk, sizeof(chunk), fp) != NULL) {
-                        char esc_chunk[2048] = {0};
-                        int ei = 0;
-                        for(int ci=0; chunk[ci] != 0 && ei < 2046; ci++) {
-                            if (chunk[ci] == '\n') {
-                                esc_chunk[ei++] = '\\';
-                                esc_chunk[ei++] = 'n';
-                            } else if (chunk[ci] == '"') {
-                                esc_chunk[ei++] = '\\';
-                                esc_chunk[ei++] = '"';
-                            } else if (chunk[ci] == '\\') {
-                                esc_chunk[ei++] = '\\';
-                                esc_chunk[ei++] = '\\';
-                            } else {
-                                esc_chunk[ei++] = chunk[ci];
-                            }
-                        }
-                        strcat(state->llm_tx_results[i], esc_chunk);
-                    }
-                    pclose(fp);
-                } else {
-                    strcat(state->llm_tx_results[i], "[FRACTURE] Popen failed.\\n");
-                }
-                
-                state->llm_tx_status[i] = 2; // DONE
-            } else {
-                state->llm_tx_status[i] = 2;
-                snprintf(state->llm_tx_results[i], 4096, "ERROR: DNA Manifold Unmounted.");
-            }
-            break;
-        }
-    }
 }

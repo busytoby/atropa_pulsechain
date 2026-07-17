@@ -173,4 +173,10 @@ bool blue_box_verify_23_to_quad_conversion(uint64_t r23_root_0, uint64_t r23_roo
 bool blue_box_verify_geometry_threat_protection(float coverage, float symmetry);
 bool blue_box_verify_pll_coalition_security(uint32_t pilot_freq, uint32_t target_freq, uint32_t *session_key_out);
 
+void avl_inorder(AvlNode *node, uint32_t *results_out, uint32_t *idx, uint32_t max_results);
+void avl_free(AvlNode *node);
+void blue_box_update_node_hash(TwoThreeNode *node);
+extern const uint64_t MotzkinPrime;
+extern size_t g_bgp_peer_count;
+
 #endif
