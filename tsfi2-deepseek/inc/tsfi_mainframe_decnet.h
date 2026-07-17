@@ -1407,4 +1407,7 @@ int tsfi_scsi_coax_bridge_transfer(tsfi_scsi_transaction *tx, tsfi_coax_controll
 int tsfi_scsi_coax_bridge_send_frame(tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_coax_frame *frame_out, int *selected_device_id_out);
 int tsfi_scsi_coax_bridge_send_encrypted_frame(tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_des_key_vault *vault, tsfi_coax_frame *frame_out, int *selected_device_id_out);
 
+// APPC Coaxial Coordination Broker
+int tsfi_appc_coax_bridge_coordinate(tsfi_appc_conversation *conv, tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_des_key_vault *vault, tsfi_coax_frame *frame_out, int *selected_device_id_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

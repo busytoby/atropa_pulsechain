@@ -3050,3 +3050,16 @@ int tsfi_scsi_coax_bridge_send_encrypted_frame(tsfi_scsi_transaction *tx, tsfi_c
     }
     return res;
 }
+
+int tsfi_appc_coax_bridge_coordinate(tsfi_appc_conversation *conv, tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_des_key_vault *vault, tsfi_coax_frame *frame_out, int *selected_device_id_out) {
+    if (!conv || !tx || !coax_ctrl || !vault || !frame_out || !selected_device_id_out) return -1;
+    if (conv->state != 0 && conv->state != 1) {
+        return -2;
+    }
+    int res = tsfi_scsi_coax_bridge_send_encrypted_frame(tx, coax_ctrl, vault, frame_out, selected_device_id_out);
+    if (res == 0) {
+        conv->state = 1;
+        return 0;
+    }
+    return res;
+}

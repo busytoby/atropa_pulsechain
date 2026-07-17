@@ -2276,6 +2276,37 @@ int main(void) {
     assert(tsfi_coax_verify(&enc_frame) == 0);
     assert(enc_frame.payload[0] == (0x55 ^ 0xAA)); // XOR result check
     printf("  [PASS] SCSI-Coaxial bridge encrypted frame transmission and payload verification verified.\n");
+    
+    // 113. APPC-Coaxial coordination broker verification
+    printf("[Test] Verifying APPC-Coaxial bridge coordination...\n");
+    tsfi_appc_conversation appc_conv;
+    appc_conv.conversation_id = 999;
+    appc_conv.state = 0; // ALLOCATED
+    
+    tsfi_scsi_transaction broker_tx;
+    memset(&broker_tx, 0, sizeof(broker_tx));
+    for (int i = 0; i < 32; i++) broker_tx.payload_hash[i] = 0x77;
+    
+    tsfi_coax_controller broker_ctrl;
+    tsfi_coax_controller_init(&broker_ctrl);
+    broker_ctrl.devices[0].device_id = 113;
+    broker_ctrl.devices[0].status_register = 0x01; // Ready
+    broker_ctrl.device_count = 1;
+    
+    tsfi_des_key_vault broker_vault;
+    uint8_t broker_master[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    tsfi_des_vault_init(&broker_vault, broker_master);
+    assert(tsfi_des_rotate_session_key(&broker_vault) == 0);
+    
+    tsfi_coax_frame broker_frame;
+    memset(&broker_frame, 0, sizeof(broker_frame));
+    
+    int broker_dev = -1;
+    assert(tsfi_appc_coax_bridge_coordinate(&appc_conv, &broker_tx, &broker_ctrl, &broker_vault, &broker_frame, &broker_dev) == 0);
+    assert(broker_dev == 113);
+    assert(appc_conv.state == 1); // SEND state transition
+    assert(broker_frame.payload[0] == (0x77 ^ 0xFF));
+    printf("  [PASS] APPC-Coaxial coordination broker verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
