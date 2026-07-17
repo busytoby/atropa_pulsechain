@@ -52,6 +52,7 @@ int tsfi_mf_majordomo_info(const char *list_name, char *info_out, int max_len);
 int tsfi_mf_majordomo_help(char *help_out, int max_len);
 int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len);
 int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, const char *record_data);
+int tsfi_mf_zmachine_vulkan_map_render(uint32_t active_room_id, const uint32_t *connections, int conn_count, char *terminal_buffer);
 int tsfi_mf_cics_handle_condition(uint32_t condition_id, uint64_t handler_addr, uint64_t *registry_table, int max_conditions);
 int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table, int max_conditions, uint64_t *handler_out);
 int tsfi_mf_set_agent_handle(const char *handle);

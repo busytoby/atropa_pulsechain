@@ -911,3 +911,33 @@ int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, co
     g_vsam_db_count++;
     return 0;
 }
+
+int tsfi_mf_zmachine_vulkan_map_render(uint32_t active_room_id, const uint32_t *connections, int conn_count, char *terminal_buffer) {
+    if (!terminal_buffer || conn_count < 0) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+
+    int offset = snprintf(terminal_buffer, 80, "VULKAN ZMACHINE ROOM VIEW | ROOM %d | APPC: SYNC | MAJORDOMO: CONNECTED", active_room_id);
+    terminal_buffer[offset] = ' ';
+
+    for (int r = 5; r <= 18; r++) {
+        terminal_buffer[r * 80 + 20] = '|';
+        terminal_buffer[r * 80 + 60] = '|';
+    }
+
+    for (int c = 20; c <= 60; c++) {
+        terminal_buffer[4 * 80 + c] = '=';
+        terminal_buffer[19 * 80 + c] = '=';
+    }
+
+    for (int i = 0; i < conn_count; i++) {
+        uint32_t next_id = connections[i];
+        char conn_lbl[32];
+        int lbl_len = snprintf(conn_lbl, sizeof(conn_lbl), "-> ROOM %d", next_id);
+        if (lbl_len > 0 && lbl_len < 20) {
+            memcpy(terminal_buffer + (8 + i * 2) * 80 + 62, conn_lbl, lbl_len);
+        }
+    }
+
+    return 0;
+}

@@ -488,6 +488,18 @@ int main(void) {
     assert(strcmp(pmg_inv, "SPRITE_SHIELD_0xFA") == 0);
     printf("  [PASS] CICS VSAM PMG Inventory Registration verified.\n");
 
+    // 33. Verify ZMachine Vulkan Map Renderer
+    printf("[TEST] Validating ZMachine Vulkan Map Renderer...\n");
+    char map_buffer[80 * 24];
+    uint32_t map_conns[2] = {10, 11};
+    int map_res = tsfi_mf_zmachine_vulkan_map_render(5, map_conns, 2, map_buffer);
+    assert(map_res == 0);
+    assert(strstr(map_buffer, "VULKAN ZMACHINE ROOM VIEW") != NULL);
+    assert(strstr(map_buffer, "ROOM 5") != NULL);
+    assert(strstr(map_buffer, "-> ROOM 10") != NULL);
+    assert(strstr(map_buffer, "-> ROOM 11") != NULL);
+    printf("  [PASS] ZMachine Vulkan Map Renderer verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
