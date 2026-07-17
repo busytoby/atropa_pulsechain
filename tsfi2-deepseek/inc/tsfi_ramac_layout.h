@@ -970,4 +970,7 @@ uint64_t tsfi_cdc3600_extract_byte(uint64_t word, int bit_position, int byte_len
 uint64_t tsfi_double_to_cdc3600_float(double val);
 double tsfi_cdc3600_float_to_double(uint64_t word);
 
+// DETAB-X Decision-to-COBOL Generator
+int tsfi_detabx_compile(const char *conditions[2], const char *actions[2], const char rules[2][2], char *cobol_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

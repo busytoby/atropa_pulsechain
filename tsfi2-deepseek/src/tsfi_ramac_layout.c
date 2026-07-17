@@ -4217,3 +4217,41 @@ double tsfi_cdc3600_float_to_double(uint64_t word) {
     conv.u = (sign << 63) | ((uint64_t)exp << 52) | frac;
     return conv.d;
 }
+
+int tsfi_detabx_compile(const char *conditions[2], const char *actions[2], const char rules[2][2], char *cobol_out, int max_len) {
+    if (!conditions || !actions || !rules || !cobol_out || max_len <= 0) return -1;
+    
+    cobol_out[0] = '\0';
+    int written = 0;
+    for (int r = 0; r < 2; r++) {
+        char cond_clause[256] = "";
+        int first_cond = 1;
+        for (int c = 0; c < 2; c++) {
+            if (rules[r][c] == 'Y') {
+                if (!first_cond) {
+                    strcat(cond_clause, " AND ");
+                }
+                strcat(cond_clause, conditions[c]);
+                first_cond = 0;
+            }
+        }
+        
+        if (strlen(cond_clause) > 0) {
+            char action_clause[256] = "";
+            for (int a = 0; a < 2; a++) {
+                if (r == a || rules[r][a] == 'Y') {
+                    strcat(action_clause, actions[a]);
+                    strcat(action_clause, "; ");
+                }
+            }
+            
+            char line[512];
+            snprintf(line, sizeof(line), "IF %s THEN %sEND-IF. ", cond_clause, action_clause);
+            if (written + (int)strlen(line) < max_len) {
+                strcat(cobol_out, line);
+                written += strlen(line);
+            }
+        }
+    }
+    return 0;
+}

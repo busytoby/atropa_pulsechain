@@ -535,6 +535,21 @@ int main(void) {
     assert(recon_f == test_f);
     printf("  [PASS] CDC 3600 48-bit float encoding/decoding verified.\n");
 
+    // 33. DETAB-X Decision-to-COBOL Generator Verification
+    printf("[Test] Verifying DETAB-X decision table parser...\n");
+    const char *conds[2] = { "R0 > 5", "R1 == 10" };
+    const char *acts[2] = { "SET R2 100", "COMPUTE R3 = R0 * R1" };
+    char rules[2][2] = {
+        { 'Y', 'Y' },
+        { 'N', 'Y' }
+    };
+    char cobol_buf[512] = "";
+    int detab_res = tsfi_detabx_compile(conds, acts, rules, cobol_buf, sizeof(cobol_buf));
+    assert(detab_res == 0);
+    assert(strstr(cobol_buf, "IF R0 > 5 AND R1 == 10 THEN") != NULL);
+    assert(strstr(cobol_buf, "IF R1 == 10 THEN") != NULL);
+    printf("  [PASS] DETAB-X decision matrix mapping verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
