@@ -1081,4 +1081,25 @@ void tsfi_mackenzie_init(mackenzie_storage *store);
 int tsfi_mackenzie_access(mackenzie_storage *store, int sector_id);
 int tsfi_mackenzie_migrate(mackenzie_storage *store, int age_threshold);
 
+// Cross-Chain Token Tracker
+typedef struct {
+    char token_address[43];
+    int chain_id;
+    char symbol[8];
+    int next_token_on_chain;
+    int next_token_cross_chain;
+} cross_chain_token;
+
+typedef struct {
+    cross_chain_token tokens[16];
+    int count;
+    int current_chain_token[4]; // Current index mapped to chain_id index
+    int current_cross_token[4]; // Current index mapped to token symbol index
+} cross_chain_tracker;
+
+void tsfi_cross_chain_init(cross_chain_tracker *tracker);
+int tsfi_cross_chain_insert(cross_chain_tracker *tracker, const char *addr, int chain_id, const char *symbol);
+int tsfi_cross_chain_navigate_chain(cross_chain_tracker *tracker, int chain_idx);
+int tsfi_cross_chain_navigate_symbol(cross_chain_tracker *tracker, int sym_idx);
+
 #endif // TSFI_RAMAC_LAYOUT_H

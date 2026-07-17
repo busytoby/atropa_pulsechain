@@ -761,6 +761,22 @@ int main(void) {
     assert(mstore.segments[2].location == 0);
     printf("  [PASS] MacKenzie secondary storage paging migration verified.\n");
 
+    // 43. Cross-Chain Token Tracker Verification
+    printf("[Test] Verifying Cross-Chain Token Tracker rings...\n");
+    cross_chain_tracker cc_track;
+    tsfi_cross_chain_init(&cc_track);
+    
+    tsfi_cross_chain_insert(&cc_track, "0x2b591e99af9f6521961f7e00e86b62ec874c229e", 1, "HEX");
+    tsfi_cross_chain_insert(&cc_track, "0x2b591e99af9f6521961f7e00e86b62ec874c229f", 3, "HEX");
+    
+    cc_track.current_cross_token[0] = 0;
+    int next_cc_tok = tsfi_cross_chain_navigate_symbol(&cc_track, 0);
+    assert(next_cc_tok == 1);
+    
+    next_cc_tok = tsfi_cross_chain_navigate_symbol(&cc_track, 0);
+    assert(next_cc_tok == 0);
+    printf("  [PASS] Cross-chain token address ring navigations verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

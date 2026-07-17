@@ -4622,3 +4622,80 @@ int tsfi_mackenzie_migrate(mackenzie_storage *store, int age_threshold) {
     }
     return count;
 }
+
+void tsfi_cross_chain_init(cross_chain_tracker *tracker) {
+    if (!tracker) return;
+    tracker->count = 0;
+    for (int i = 0; i < 4; i++) {
+        tracker->current_chain_token[i] = -1;
+        tracker->current_cross_token[i] = -1;
+    }
+}
+
+int tsfi_cross_chain_insert(cross_chain_tracker *tracker, const char *addr, int chain_id, const char *symbol) {
+    if (!tracker || tracker->count >= 16 || !addr || !symbol) return -1;
+    cross_chain_token *t = &tracker->tokens[tracker->count];
+    strncpy(t->token_address, addr, sizeof(t->token_address) - 1);
+    t->token_address[sizeof(t->token_address) - 1] = '\0';
+    t->chain_id = chain_id;
+    strncpy(t->symbol, symbol, sizeof(t->symbol) - 1);
+    t->symbol[sizeof(t->symbol) - 1] = '\0';
+    
+    t->next_token_on_chain = tracker->count;
+    t->next_token_cross_chain = tracker->count;
+    
+    for (int i = 0; i < tracker->count; i++) {
+        if (tracker->tokens[i].chain_id == chain_id) {
+            int curr = i;
+            while (tracker->tokens[curr].next_token_on_chain != i) {
+                curr = tracker->tokens[curr].next_token_on_chain;
+            }
+            t->next_token_on_chain = tracker->tokens[curr].next_token_on_chain;
+            tracker->tokens[curr].next_token_on_chain = tracker->count;
+            break;
+        }
+    }
+    
+    for (int i = 0; i < tracker->count; i++) {
+        if (strcmp(tracker->tokens[i].symbol, symbol) == 0) {
+            int curr = i;
+            while (tracker->tokens[curr].next_token_cross_chain != i) {
+                curr = tracker->tokens[curr].next_token_cross_chain;
+            }
+            t->next_token_cross_chain = tracker->tokens[curr].next_token_cross_chain;
+            tracker->tokens[curr].next_token_cross_chain = tracker->count;
+            break;
+        }
+    }
+    
+    tracker->count++;
+    return 0;
+}
+
+int tsfi_cross_chain_navigate_chain(cross_chain_tracker *tracker, int chain_idx) {
+    if (!tracker || chain_idx < 0 || chain_idx >= 4) return -1;
+    int curr = tracker->current_chain_token[chain_idx];
+    if (curr == -1) {
+        for (int i = 0; i < tracker->count; i++) {
+            if (tracker->tokens[i].chain_id == chain_idx) {
+                tracker->current_chain_token[chain_idx] = i;
+                return i;
+            }
+        }
+        return -1;
+    }
+    int next = tracker->tokens[curr].next_token_on_chain;
+    tracker->current_chain_token[chain_idx] = next;
+    return next;
+}
+
+int tsfi_cross_chain_navigate_symbol(cross_chain_tracker *tracker, int sym_idx) {
+    if (!tracker || sym_idx < 0 || sym_idx >= 4) return -1;
+    int curr = tracker->current_cross_token[sym_idx];
+    if (curr == -1) {
+        return -1;
+    }
+    int next = tracker->tokens[curr].next_token_cross_chain;
+    tracker->current_cross_token[sym_idx] = next;
+    return next;
+}
