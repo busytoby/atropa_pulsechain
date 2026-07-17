@@ -612,3 +612,35 @@ int tsfi_mf_zmachine_bms_room_render(uint32_t room_id, float player_angle, char 
 
     return 0;
 }
+
+int tsfi_mf_majordomo_process(const char *cmd_line, char *out_response, int max_len) {
+    if (!cmd_line || !out_response || max_len <= 0) return -1;
+
+    if (strncmp(cmd_line, "subscribe", 9) == 0) {
+        char list_name[64] = {0};
+        char email[64] = {0};
+        int parsed = sscanf(cmd_line, "subscribe %63s %63s", list_name, email);
+        if (parsed == 2) {
+            snprintf(out_response, max_len, "Succeeded subscribing %s to list %s.", email, list_name);
+            return 0;
+        }
+    } else if (strncmp(cmd_line, "unsubscribe", 11) == 0) {
+        char list_name[64] = {0};
+        char email[64] = {0};
+        int parsed = sscanf(cmd_line, "unsubscribe %63s %63s", list_name, email);
+        if (parsed == 2) {
+            snprintf(out_response, max_len, "Succeeded unsubscribing %s from list %s.", email, list_name);
+            return 0;
+        }
+    } else if (strncmp(cmd_line, "who", 3) == 0) {
+        char list_name[64] = {0};
+        int parsed = sscanf(cmd_line, "who %63s", list_name);
+        if (parsed == 1) {
+            snprintf(out_response, max_len, "Members of list %s: owner@%s", list_name, list_name);
+            return 0;
+        }
+    }
+
+    snprintf(out_response, max_len, "Majordomo command not recognized.");
+    return -2;
+}

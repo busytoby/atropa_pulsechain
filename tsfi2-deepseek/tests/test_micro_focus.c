@@ -348,6 +348,14 @@ int main(void) {
     assert(strstr(zm_buffer + 23 * 80, "ZMACHINE ROOM 4") != NULL);
     printf("  [PASS] ZMachine CICS 3D Room Renderer verified.\n");
 
+    // 19. Verify Majordomo Mailing List Coordinator
+    printf("[TEST] Validating Majordomo Coordinator...\n");
+    char majordomo_out[128] = {0};
+    int majordomo_res = tsfi_mf_majordomo_process("subscribe zmm-dev admin@dysnomia.org", majordomo_out, sizeof(majordomo_out));
+    assert(majordomo_res == 0);
+    assert(strcmp(majordomo_out, "Succeeded subscribing admin@dysnomia.org to list zmm-dev.") == 0);
+    printf("  [PASS] Majordomo Mailing List Coordinator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
