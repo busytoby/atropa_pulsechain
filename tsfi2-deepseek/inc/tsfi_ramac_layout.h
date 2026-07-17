@@ -738,4 +738,17 @@ typedef struct {
 void tsfi_winchester_socket_init(tsfi_winchester_socket_bridge *bridge, int port);
 int tsfi_winchester_socket_route_event(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, void *pq);
 
+// Manchester University Atlas VM Over Anvil on Rails VM
+typedef struct {
+    tsfi_atlas_one_level_store paging;  // One-level store page frames
+    tsfi_atlas_tlb_cache tlb;            // Associative TLB cache
+    int accumulators[2];                 // Acc A and Acc B
+    uint32_t pc;                         // Program counter
+    int extrabcode_triggered;            // Trap triggered flag
+    int extrabcode_val;                  // Trap vector value
+} tsfi_atlas_vm;
+
+void tsfi_atlas_vm_init(tsfi_atlas_vm *vm);
+int tsfi_atlas_vm_step(tsfi_atlas_vm *vm, const uint8_t *bytecode, int len, const uint8_t *backing_store);
+
 #endif // TSFI_RAMAC_LAYOUT_H

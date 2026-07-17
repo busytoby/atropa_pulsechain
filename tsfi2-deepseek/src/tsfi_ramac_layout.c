@@ -3587,3 +3587,64 @@ int tsfi_winchester_socket_route_event(tsfi_winchester_socket_bridge *bridge, co
     bridge->processed_packets++;
     return 0;
 }
+
+void tsfi_atlas_vm_init(tsfi_atlas_vm *vm) {
+    if (!vm) return;
+    tsfi_atlas_one_level_store_init(&vm->paging);
+    tsfi_atlas_tlb_init(&vm->tlb);
+    vm->accumulators[0] = 0;
+    vm->accumulators[1] = 0;
+    vm->pc = 0;
+    vm->extrabcode_triggered = 0;
+    vm->extrabcode_val = 0;
+}
+
+int tsfi_atlas_vm_step(tsfi_atlas_vm *vm, const uint8_t *bytecode, int len, const uint8_t *backing_store) {
+    if (!vm || !bytecode || len <= 0 || !backing_store) return -1;
+    
+    if (vm->pc >= (uint32_t)len) return -2;
+    
+    uint8_t op = bytecode[vm->pc++];
+    
+    if (op == 0x50) { // Load ACC A from virtual address: 0x50 <virtual_page>
+        if (vm->pc < (uint32_t)len) {
+            uint8_t vpage = bytecode[vm->pc++];
+            uint32_t rpage = 0;
+            int tlb_res = tsfi_atlas_tlb_lookup(&vm->tlb, vpage, &rpage);
+            if (tlb_res != 0) {
+                int frame = 0;
+                int trans_res = tsfi_atlas_one_level_store_translate(&vm->paging, vpage, &frame);
+                if (trans_res != 0) {
+                    frame = tsfi_atlas_one_level_store_swap(&vm->paging, vpage, 0);
+                }
+                rpage = frame * 256;
+                tsfi_atlas_tlb_insert(&vm->tlb, vpage, rpage);
+            }
+            vm->accumulators[0] = backing_store[rpage];
+        }
+    } else if (op == 0x51) { // Store ACC A to virtual address: 0x51 <virtual_page>
+        if (vm->pc < (uint32_t)len) {
+            uint8_t vpage = bytecode[vm->pc++];
+            uint32_t rpage = 0;
+            int tlb_res = tsfi_atlas_tlb_lookup(&vm->tlb, vpage, &rpage);
+            if (tlb_res != 0) {
+                int frame = 0;
+                int trans_res = tsfi_atlas_one_level_store_translate(&vm->paging, vpage, &frame);
+                if (trans_res != 0) {
+                    frame = tsfi_atlas_one_level_store_swap(&vm->paging, vpage, 0);
+                }
+                rpage = frame * 256;
+                tsfi_atlas_tlb_insert(&vm->tlb, vpage, rpage);
+            }
+        }
+    } else if (op == 0x52) { // Add ACC B to A
+        vm->accumulators[0] += vm->accumulators[1];
+    } else if (op == 0x5F) { // Extrabcode Software Interrupt Trap: 0x5F <vector>
+        if (vm->pc < (uint32_t)len) {
+            vm->extrabcode_val = bytecode[vm->pc++];
+            vm->extrabcode_triggered = 1;
+        }
+    }
+    
+    return 0;
+}

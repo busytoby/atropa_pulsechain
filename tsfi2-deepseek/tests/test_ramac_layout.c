@@ -2258,6 +2258,33 @@ int main(void) {
     assert(socket_pq.items[0].keycode == 32);
     printf("  [PASS] WinchesterMQ loopback socket bridge packets routed to task queue.\n");
 
+    // Test Scenario 44: Manchester University Atlas VM Over Anvil on Rails VM
+    printf("[Test] Verifying Manchester University Atlas VM execution...\n");
+    tsfi_atlas_vm atlas_vm;
+    tsfi_atlas_vm_init(&atlas_vm);
+    
+    // Backing store data: page 1 (loaded at frame 0) has value 99
+    uint8_t backing_store[2048];
+    memset(backing_store, 0, sizeof(backing_store));
+    backing_store[0] = 99; 
+    backing_store[256] = 99;
+    
+    // Bytecode: 0x50 0x01 (Load ACC A from page 1), 0x5F 0x07 (Extrabcode 7)
+    uint8_t atlas_bc[] = { 0x50, 0x01, 0x5F, 0x07 };
+    
+    // Execute instruction 1: Load ACC A from page 1 (should trigger page fault and swap)
+    int step_res = tsfi_atlas_vm_step(&atlas_vm, atlas_bc, 4, backing_store);
+    assert(step_res == 0);
+    assert(atlas_vm.paging.page_fault_count == 1);
+    assert(atlas_vm.accumulators[0] == 99);
+    
+    // Execute instruction 2: Extrabcode trap
+    step_res = tsfi_atlas_vm_step(&atlas_vm, atlas_bc, 4, backing_store);
+    assert(step_res == 0);
+    assert(atlas_vm.extrabcode_triggered == 1);
+    assert(atlas_vm.extrabcode_val == 7);
+    printf("  [PASS] Atlas VM step execution, automatic paging, and extrabcode trap verified.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 
