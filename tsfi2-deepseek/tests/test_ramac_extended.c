@@ -937,6 +937,22 @@ int main(void) {
     assert(strcmp(dbl_out, "OWNER_KEY=0xAABBCCDD; MEMBERS=4_BYTES") == 0);
     printf("  [PASS] DBL sector to relation mapping verified successfully.\n");
 
+    // 54. Olle MIS Database Query Broker Verification
+    printf("[Test] Verifying Olle MIS database query broker...\n");
+    mis_database mis_db;
+    tsfi_mis_init(&mis_db);
+    
+    int ins1 = tsfi_mis_insert(&mis_db, "ledger_01", 500, 9);
+    int ins2 = tsfi_mis_insert(&mis_db, "ledger_02", 1500, 9);
+    int ins3 = tsfi_mis_insert(&mis_db, "ledger_03", 200, 8);
+    assert(ins1 == 0 && ins2 == 0 && ins3 == 0);
+    
+    char mis_out[256];
+    int mis_match_cnt = tsfi_mis_query(&mis_db, 9, 400, mis_out, sizeof(mis_out));
+    assert(mis_match_cnt == 2);
+    assert(strcmp(mis_out, "ledger_01,ledger_02") == 0);
+    printf("  [PASS] MIS query path filtering and data retrieval verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

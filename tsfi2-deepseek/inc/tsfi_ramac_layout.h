@@ -1189,4 +1189,20 @@ uint64_t tsfi_bates_hash(const char *token, uint64_t salt);
 int tsfi_bates_authenticate(const char *token, uint64_t salt, uint64_t expected_hash);
 int tsfi_dbl_convert(const uint8_t *raw_sector_data, size_t sector_size, char *db_relation_output, size_t max_len);
 
+// 1970 Volume 16: Olle MIS Query Broker
+typedef struct {
+    char resource_name[32];
+    uint32_t allocation_val;
+    uint32_t parent_node_id;
+} mis_record;
+
+typedef struct {
+    mis_record records[32];
+    int count;
+} mis_database;
+
+void tsfi_mis_init(mis_database *db);
+int tsfi_mis_insert(mis_database *db, const char *name, uint32_t allocation, uint32_t parent_id);
+int tsfi_mis_query(const mis_database *db, uint32_t parent_id, uint32_t min_alloc, char *result_out, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

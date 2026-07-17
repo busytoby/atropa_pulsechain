@@ -4960,3 +4960,40 @@ int tsfi_dbl_convert(const uint8_t *raw_sector_data, size_t sector_size, char *d
     int bytes = snprintf(db_relation_output, max_len, "OWNER_KEY=0x%08X; MEMBERS=%zu_BYTES", owner_key, sector_size - 4);
     return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -3;
 }
+
+void tsfi_mis_init(mis_database *db) {
+    if (!db) return;
+    db->count = 0;
+    for (int i = 0; i < 32; i++) {
+        db->records[i].resource_name[0] = '\0';
+        db->records[i].allocation_val = 0;
+        db->records[i].parent_node_id = 0;
+    }
+}
+
+int tsfi_mis_insert(mis_database *db, const char *name, uint32_t allocation, uint32_t parent_id) {
+    if (!db || db->count >= 32 || !name) return -1;
+    mis_record *r = &db->records[db->count++];
+    strncpy(r->resource_name, name, sizeof(r->resource_name) - 1);
+    r->resource_name[sizeof(r->resource_name) - 1] = '\0';
+    r->allocation_val = allocation;
+    r->parent_node_id = parent_id;
+    return 0;
+}
+
+int tsfi_mis_query(const mis_database *db, uint32_t parent_id, uint32_t min_alloc, char *result_out, size_t max_len) {
+    if (!db || !result_out || max_len == 0) return -1;
+    result_out[0] = '\0';
+    int match_count = 0;
+    for (int i = 0; i < db->count; i++) {
+        const mis_record *r = &db->records[i];
+        if (r->parent_node_id == parent_id && r->allocation_val >= min_alloc) {
+            if (match_count > 0) {
+                strncat(result_out, ",", max_len - strlen(result_out) - 1);
+            }
+            strncat(result_out, r->resource_name, max_len - strlen(result_out) - 1);
+            match_count++;
+        }
+    }
+    return match_count;
+}
