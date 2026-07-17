@@ -2825,3 +2825,21 @@ int tsfi_db2_insert_key(tsfi_db2_index_page *left, tsfi_db2_index_page *right, i
     right->keys[2] = temp_keys[4];
     return 0;
 }
+
+int tsfi_cad_search_components(const tsfi_cad_component *components, size_t count, const char *meta_query, int *matches_out) {
+    if (!components || count == 0 || !meta_query || !matches_out) return -1;
+    int matches = 0;
+    for (size_t i = 0; i < count; i++) {
+        if (strstr(components[i].metadata, meta_query) != NULL) {
+            matches++;
+        }
+    }
+    *matches_out = matches;
+    return 0;
+}
+
+int tsfi_cad_cache_projection(tsfi_ibm3880_cache *cache, tsfi_cad_projection *proj, uint32_t frame_address) {
+    if (!cache || !proj) return -1;
+    proj->frame_address = frame_address;
+    return tsfi_ibm3880_access(cache, frame_address, 0);
+}

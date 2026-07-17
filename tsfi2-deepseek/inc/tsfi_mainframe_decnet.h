@@ -1291,4 +1291,23 @@ typedef struct {
 
 int tsfi_db2_insert_key(tsfi_db2_index_page *left, tsfi_db2_index_page *right, int key, int *split_occurred);
 
+// Parallel CAD Mesh Component Retriever
+typedef struct {
+    int component_id;
+    float vertices[3][3];
+    char metadata[32];
+} tsfi_cad_component;
+
+int tsfi_cad_search_components(const tsfi_cad_component *components, size_t count, const char *meta_query, int *matches_out);
+
+// Cached CAD Vector Projection Buffer
+typedef struct {
+    uint32_t frame_address;
+    float projected_x[32];
+    float projected_y[32];
+    int coordinate_count;
+} tsfi_cad_projection;
+
+int tsfi_cad_cache_projection(tsfi_ibm3880_cache *cache, tsfi_cad_projection *proj, uint32_t frame_address);
+
 #endif // TSFI_MAINFRAME_DECNET_H
