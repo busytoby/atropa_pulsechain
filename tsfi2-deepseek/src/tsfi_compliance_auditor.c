@@ -15,6 +15,14 @@ int main(int argc, char **argv) {
         printf("  %s --basic <file_path>         Execute FIPS 68 Minimal BASIC script\n", argv[0]);
         printf("  %s --cipher <plain_text>       Run FIPS 81 CBC mode validation\n", argv[0]);
         printf("  %s --app <record> <value>      Audit FIPS 73 application controls\n", argv[0]);
+        printf("  %s --ascii-ebcdic <ascii_str>  Translate character sets (FIPS 1-1)\n", argv[0]);
+        printf("  %s --serial-parity <byte_val>  Check serial bits & parity (FIPS 16-1)\n", argv[0]);
+        printf("  %s --access-control <role> <act> Check dataset authorization (FIPS 41)\n", argv[0]);
+        printf("  %s --mac <plain_text>          Generate DES Data Auth MAC (FIPS 113)\n", argv[0]);
+        printf("  %s --x25 <payload_str> <chan>  Encapsulate X.25 packet frame (FIPS 100)\n", argv[0]);
+        printf("  %s --password <pass_str>       Validate password complexity (FIPS 112)\n", argv[0]);
+        printf("  %s --gks <cmd_byte> <pts_cnt>  Parse graphics primitives (FIPS 120)\n", argv[0]);
+        printf("  %s --agency <agency_code>      Resolve federal agency code (FIPS 95)\n", argv[0]);
         return 0;
     }
 
@@ -123,6 +131,86 @@ int main(int argc, char **argv) {
             printf("RESULT: VALID TRANSACTION\n");
         } else {
             printf("RESULT: VALIDATION FAILURE\n");
+        }
+    } else if (strcmp(argv[1], "--ascii-ebcdic") == 0 && argc >= 3) {
+        uint8_t ebcdic[256];
+        char ascii[256];
+        int len = strlen(argv[2]);
+        if (len > 250) len = 250;
+        tsfi_fips1_ascii_to_ebcdic(argv[2], ebcdic, len);
+        tsfi_fips1_ebcdic_to_ascii(ebcdic, ascii, len);
+        ascii[len] = '\0';
+        printf("[FIPS 1-1 AUDIT] Original: '%s'\n", argv[2]);
+        printf("RESULT: Translated back: '%s'\n", ascii);
+    } else if (strcmp(argv[1], "--serial-parity") == 0 && argc >= 3) {
+        uint8_t byte = (uint8_t)atoi(argv[2]);
+        uint16_t serialized = 0;
+        uint8_t deserialized = 0;
+        tsfi_fips16_serialize(byte, 1, &serialized);
+        int check = tsfi_fips16_deserialize(serialized, 1, &deserialized);
+        printf("[FIPS 16-1 AUDIT] Byte: %d, Serialized Bits: 0x%03X\n", byte, serialized);
+        if (check == 0) {
+            printf("RESULT: PARITY CHECK PASSED\n");
+        } else {
+            printf("RESULT: PARITY CHECK FAILED\n");
+        }
+    } else if (strcmp(argv[1], "--access-control") == 0 && argc >= 4) {
+        int res = tsfi_fips41_authorize(argv[2], argv[3]);
+        printf("[FIPS 41 AUDIT] Role: %s, Action: %s\n", argv[2], argv[3]);
+        if (res == 0) {
+            printf("RESULT: AUTHORIZED\n");
+        } else {
+            printf("RESULT: ACCESS DENIED\n");
+        }
+    } else if (strcmp(argv[1], "--mac") == 0 && argc >= 3) {
+        tsfi_crypto_subsystem crypto;
+        tsfi_crypto_init(&crypto);
+        tsfi_crypto_load_master_key(&crypto, 0x1122334455667788ULL);
+        uint8_t mac[8];
+        int len = strlen(argv[2]);
+        tsfi_fips113_generate_mac(&crypto, (const uint8_t*)argv[2], len, mac, 1);
+        printf("[FIPS 113 AUDIT] Data: '%s'\n", argv[2]);
+        printf("RESULT: Generated MAC: 0x%02X%02X%02X%02X%02X%02X%02X%02X\n",
+               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+    } else if (strcmp(argv[1], "--x25") == 0 && argc >= 4) {
+        uint8_t packet[256];
+        int packet_len = 0;
+        uint16_t chan = (uint16_t)atoi(argv[3]);
+        int len = strlen(argv[2]);
+        tsfi_fips100_encapsulate((const uint8_t*)argv[2], len, chan, packet, &packet_len);
+        printf("[FIPS 100 AUDIT] Encapsulated X.25 frame on channel %d: length %d\n", chan, packet_len);
+        printf("RESULT: Frame header bytes: 0x%02X 0x%02X 0x%02X\n", packet[0], packet[1], packet[2]);
+    } else if (strcmp(argv[1], "--password") == 0 && argc >= 3) {
+        int score = 0;
+        int res = tsfi_fips112_validate_password(argv[2], &score);
+        printf("[FIPS 112 AUDIT] Password input: '%s'\n", argv[2]);
+        if (res == 0) {
+            printf("RESULT: VALID (Complexity Score: %d/4)\n", score);
+        } else {
+            printf("RESULT: INVALID PASSWORD FORMAT\n");
+        }
+    } else if (strcmp(argv[1], "--gks") == 0 && argc >= 4) {
+        uint8_t stream[8];
+        stream[0] = (uint8_t)atoi(argv[2]);
+        stream[1] = (uint8_t)atoi(argv[3]);
+        // Dummy point data
+        stream[2] = 0; stream[3] = 0; stream[4] = 0; stream[5] = 0;
+        int prim_type = 0, pts_cnt = 0;
+        int res = tsfi_fips120_parse_gks_primitive(stream, 6, &prim_type, &pts_cnt);
+        printf("[FIPS 120 AUDIT] Type code: %d, Points: %d\n", stream[0], stream[1]);
+        if (res == 0) {
+            printf("RESULT: VALID GKS PRIMITIVE\n");
+        } else {
+            printf("RESULT: FORMAT ERROR\n");
+        }
+    } else if (strcmp(argv[1], "--agency") == 0 && argc >= 3) {
+        char name[128];
+        int res = tsfi_fips95_resolve_agency(argv[2], name, sizeof(name));
+        printf("[FIPS 95 AUDIT] Code: '%s'\n", argv[2]);
+        if (res == 0) {
+            printf("RESULT: Resolved Agency: %s\n", name);
+        } else {
+            printf("RESULT: UNRESOLVED CODE\n");
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");
