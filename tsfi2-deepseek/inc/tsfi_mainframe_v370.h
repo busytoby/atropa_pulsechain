@@ -402,4 +402,24 @@ int tsfi_fep_process_red_rail(tsfi_fep_channel *chan, uint32_t telemetry_data, i
 int tsfi_fep_process_black_rail(tsfi_fep_channel *chan, uint32_t timing_sector_input);
 int tsfi_fep_query_audit(const tsfi_fep_channel *chan, int *out_transactions, int *out_errors, int *out_timing);
 
+// Scenario 133: Model Context Protocol (MCP) Client Channel Multiplexer
+#define MAX_MCP_CHANNELS 4
+typedef struct {
+    int channel_id;
+    char client_name[16];
+    int is_active;
+    int request_count;
+    int security_violations;
+} tsfi_mcp_channel_state;
+
+typedef struct {
+    tsfi_mcp_channel_state channels[MAX_MCP_CHANNELS];
+    int channel_count;
+} tsfi_mcp_multiplexer;
+
+void tsfi_mcp_mux_init(tsfi_mcp_multiplexer *mux);
+int tsfi_mcp_mux_register(tsfi_mcp_multiplexer *mux, int channel_id, const char *client_name);
+int tsfi_mcp_mux_send_request(tsfi_mcp_multiplexer *mux, int channel_id, const char *method, int is_secure_token_valid);
+int tsfi_mcp_mux_query(const tsfi_mcp_multiplexer *mux, int channel_id, int *out_requests, int *out_violations);
+
 #endif // TSFI_MAINFRAME_V370_H

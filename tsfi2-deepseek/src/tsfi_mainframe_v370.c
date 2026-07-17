@@ -1148,3 +1148,55 @@ int tsfi_fep_query_audit(const tsfi_fep_channel *chan, int *out_transactions, in
     *out_timing = (int)chan->audit.timing_sector;
     return 0;
 }
+
+void tsfi_mcp_mux_init(tsfi_mcp_multiplexer *mux) {
+    if (!mux) return;
+    memset(mux, 0, sizeof(tsfi_mcp_multiplexer));
+}
+
+int tsfi_mcp_mux_register(tsfi_mcp_multiplexer *mux, int channel_id, const char *client_name) {
+    if (!mux || !client_name || mux->channel_count >= MAX_MCP_CHANNELS) return -1;
+    for (int i = 0; i < mux->channel_count; i++) {
+        if (mux->channels[i].channel_id == channel_id) {
+            return -2;
+        }
+    }
+    tsfi_mcp_channel_state *ch = &mux->channels[mux->channel_count];
+    ch->channel_id = channel_id;
+    snprintf(ch->client_name, sizeof(ch->client_name), "%s", client_name);
+    ch->is_active = 1;
+    ch->request_count = 0;
+    ch->security_violations = 0;
+    mux->channel_count++;
+    return 0;
+}
+
+int tsfi_mcp_mux_send_request(tsfi_mcp_multiplexer *mux, int channel_id, const char *method, int is_secure_token_valid) {
+    if (!mux || !method) return -1;
+    for (int i = 0; i < mux->channel_count; i++) {
+        if (mux->channels[i].channel_id == channel_id) {
+            if (!mux->channels[i].is_active) {
+                return -3;
+            }
+            if (!is_secure_token_valid) {
+                mux->channels[i].security_violations++;
+                return -2;
+            }
+            mux->channels[i].request_count++;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_mcp_mux_query(const tsfi_mcp_multiplexer *mux, int channel_id, int *out_requests, int *out_violations) {
+    if (!mux || !out_requests || !out_violations) return -1;
+    for (int i = 0; i < mux->channel_count; i++) {
+        if (mux->channels[i].channel_id == channel_id) {
+            *out_requests = mux->channels[i].request_count;
+            *out_violations = mux->channels[i].security_violations;
+            return 0;
+        }
+    }
+    return -1;
+}

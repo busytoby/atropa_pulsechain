@@ -1253,6 +1253,34 @@ int main(void) {
     assert(timing == 107);
     printf("  [PASS] FEP channel isolated Red/Black rail audit indicators validated.\n");
 
+    // 133. Model Context Protocol (MCP) Client Channel Multiplexer Verification
+    printf("[Test] Verifying Model Context Protocol (MCP) Multiplexer...\n");
+    tsfi_mcp_multiplexer mcp_mux;
+    tsfi_mcp_mux_init(&mcp_mux);
+    
+    // Register channels
+    assert(tsfi_mcp_mux_register(&mcp_mux, 1, "CLIENT01") == 0);
+    assert(tsfi_mcp_mux_register(&mcp_mux, 2, "CLIENT02") == 0);
+    // Duplicate register should fail
+    assert(tsfi_mcp_mux_register(&mcp_mux, 1, "CLIENT01_DUP") == -2);
+    
+    // Send standard requests (Red Rail)
+    assert(tsfi_mcp_mux_send_request(&mcp_mux, 1, "tools/list", 1) == 0);
+    assert(tsfi_mcp_mux_send_request(&mcp_mux, 1, "tools/call", 1) == 0);
+    
+    // Send invalid token request (Black Rail validation failure)
+    assert(tsfi_mcp_mux_send_request(&mcp_mux, 1, "tools/call", 0) == -2);
+    
+    // Query stats
+    int requests = 0, violations = 0;
+    assert(tsfi_mcp_mux_query(&mcp_mux, 1, &requests, &violations) == 0);
+    assert(requests == 2);
+    assert(violations == 1);
+    
+    // Send request on unregistered channel should fail
+    assert(tsfi_mcp_mux_send_request(&mcp_mux, 3, "tools/list", 1) == -1);
+    printf("  [PASS] MCP client channel registration and request auditing verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
