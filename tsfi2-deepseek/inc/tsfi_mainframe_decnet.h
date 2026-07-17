@@ -742,6 +742,10 @@ void tsfi_appc_ebcdic_to_ascii(uint8_t *buf, size_t len);
 void tsfi_appc_ascii_to_ebcdic(uint8_t *buf, size_t len);
 void tsfi_appc_set_crypto(tsfi_appc_conversation *conv, void *crypto_session);
 void tsfi_appc_trace(tsfi_appc_conversation *conv, const char *event);
+int tsfi_appc_synclog_archive(tsfi_appc_conversation *conv);
+int tsfi_appc_bind_negotiate(tsfi_appc_conversation *conv, uint32_t capabilities);
+int tsfi_appc_resolve_cpic_rc(uint16_t sense_code);
+int tsfi_appc_check_key_rotation(tsfi_appc_conversation *conv, size_t bytes_processed);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);

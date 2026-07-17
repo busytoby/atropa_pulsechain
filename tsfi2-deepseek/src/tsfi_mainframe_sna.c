@@ -960,3 +960,37 @@ void tsfi_appc_trace(tsfi_appc_conversation *conv, const char *event) {
     }
 }
 
+int tsfi_appc_synclog_archive(tsfi_appc_conversation *conv) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2;
+    return 0;
+}
+
+int tsfi_appc_bind_negotiate(tsfi_appc_conversation *conv, uint32_t capabilities) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2;
+    if (capabilities & 0x01) {
+        conv->pacing_window = 8;
+    }
+    return 0;
+}
+
+int tsfi_appc_resolve_cpic_rc(uint16_t sense_code) {
+    switch (sense_code) {
+        case 0x0801: return 19;
+        case 0x080F: return 20;
+        default: return 20;
+    }
+}
+
+int tsfi_appc_check_key_rotation(tsfi_appc_conversation *conv, size_t bytes_processed) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2;
+    if (bytes_processed > 1024 * 1024) {
+        if (conv->crypto_session) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
