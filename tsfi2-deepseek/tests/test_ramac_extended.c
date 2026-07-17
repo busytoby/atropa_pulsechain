@@ -1831,6 +1831,23 @@ int main(void) {
     assert(tsfi_cp_query_execute(&query_mgr, "INVALID QUERY", q_buf, sizeof(q_buf)) == -1);
     printf("  [PASS] VM/370 CP console queries parsed and resolved successfully.\n");
 
+    // 103. VM/370 CP MSG Console Message Router Verification
+    printf("[Test] Verifying VM/370 CP MSG routing...\n");
+    tsfi_cp_directory dir_inst;
+    tsfi_cp_directory_init(&dir_inst);
+    assert(tsfi_cp_directory_add(&dir_inst, "USER1", 'G', 8192) == 0);
+    assert(tsfi_cp_directory_add(&dir_inst, "USER2", 'G', 8192) == 0);
+    
+    char msg_term[128];
+    // Route from USER1 to USER2
+    assert(tsfi_cp_msg_send(&dir_inst, "USER1", "USER2", "HELLO USER2", msg_term, sizeof(msg_term)) == 0);
+    assert(strcmp(msg_term, "MSG FROM USER1: HELLO USER2") == 0);
+    
+    // Route to missing user
+    assert(tsfi_cp_msg_send(&dir_inst, "USER1", "USER3", "HELLO USER3", msg_term, sizeof(msg_term)) == -1);
+    assert(strstr(msg_term, "NOT LOGGED ON") != NULL);
+    printf("  [PASS] VM/370 CP instant terminal text message routing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -6448,3 +6448,23 @@ int tsfi_cp_query_execute(tsfi_cp_query_manager *mgr, const char *query_cmd, cha
     }
     return -1;
 }
+
+int tsfi_cp_msg_send(const tsfi_cp_directory *dir, const char *sender, const char *recipient, const char *msg_text, char *out_terminal_buf, int out_terminal_max) {
+    if (!dir || !sender || !recipient || !msg_text || !out_terminal_buf || out_terminal_max <= 0) return -1;
+    
+    int found = 0;
+    for (int i = 0; i < dir->entry_count; i++) {
+        if (strcmp(dir->entries[i].userid, recipient) == 0) {
+            found = 1;
+            break;
+        }
+    }
+    
+    if (found) {
+        snprintf(out_terminal_buf, out_terminal_max, "MSG FROM %s: %s", sender, msg_text);
+        return 0;
+    } else {
+        snprintf(out_terminal_buf, out_terminal_max, "ERR: USER %s NOT LOGGED ON", recipient);
+        return -1;
+    }
+}

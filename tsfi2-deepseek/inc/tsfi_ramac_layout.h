@@ -1740,4 +1740,7 @@ typedef struct {
 void tsfi_cp_query_init(tsfi_cp_query_manager *mgr);
 int tsfi_cp_query_execute(tsfi_cp_query_manager *mgr, const char *query_cmd, char *out_buf, int out_max);
 
+// VM/370 CP MSG Terminal Message Router
+int tsfi_cp_msg_send(const tsfi_cp_directory *dir, const char *sender, const char *recipient, const char *msg_text, char *out_terminal_buf, int out_terminal_max);
+
 #endif // TSFI_RAMAC_LAYOUT_H
