@@ -3216,3 +3216,38 @@ int tsfi_b5000_segment_load(const char *filepath, tsfi_b5000_descriptor *desc_ou
     
     return 0;
 }
+
+void tsfi_b5000_mcp_init(tsfi_b5000_mcp_scheduler *sched) {
+    if (!sched) return;
+    sched->active_task_idx = -1;
+    for (int i = 0; i < 4; i++) {
+        sched->tasks[i].task_id = i;
+        sched->tasks[i].pc = 0;
+        memset(sched->tasks[i].registers, 0, sizeof(sched->tasks[i].registers));
+        memset(sched->tasks[i].eval_stack, 0, sizeof(sched->tasks[i].eval_stack));
+        sched->tasks[i].eval_stack_ptr = 0;
+        sched->tasks[i].state = 0; // IDLE
+    }
+}
+
+int tsfi_b5000_mcp_schedule_tick(tsfi_b5000_mcp_scheduler *sched) {
+    if (!sched) return -1;
+    
+    int start = (sched->active_task_idx == -1) ? 0 : (sched->active_task_idx + 1) % 4;
+    for (int i = 0; i < 4; i++) {
+        int idx = (start + i) % 4;
+        if (sched->tasks[idx].state == 1) { // RUNNABLE
+            sched->active_task_idx = idx;
+            return idx;
+        }
+    }
+    return -1; // No runnable tasks
+}
+
+int tsfi_b5000_mcp_yield_active(tsfi_b5000_mcp_scheduler *sched, int block_reason) {
+    if (!sched || sched->active_task_idx == -1) return -1;
+    
+    int active = sched->active_task_idx;
+    sched->tasks[active].state = block_reason; // block or set idle
+    return tsfi_b5000_mcp_schedule_tick(sched);
+}

@@ -639,4 +639,23 @@ int tsfi_b5000_descriptor_read(const tsfi_b5000_descriptor *desc, const uint8_t 
 int tsfi_b5000_descriptor_write(const tsfi_b5000_descriptor *desc, uint8_t *memory, uint32_t offset, uint8_t val);
 int tsfi_b5000_segment_load(const char *filepath, tsfi_b5000_descriptor *desc_out, uint8_t *memory, uint32_t mem_offset, uint32_t max_bytes);
 
+// Burroughs B5000 MCP Cooperative Scheduler
+typedef struct {
+    int task_id;
+    uint32_t pc;
+    int registers[4];
+    int eval_stack[16];
+    int eval_stack_ptr;
+    int state; // 0: IDLE, 1: RUNNABLE, 2: BLOCKED
+} tsfi_b5000_mcp_task;
+
+typedef struct {
+    tsfi_b5000_mcp_task tasks[4];
+    int active_task_idx;
+} tsfi_b5000_mcp_scheduler;
+
+void tsfi_b5000_mcp_init(tsfi_b5000_mcp_scheduler *sched);
+int tsfi_b5000_mcp_schedule_tick(tsfi_b5000_mcp_scheduler *sched);
+int tsfi_b5000_mcp_yield_active(tsfi_b5000_mcp_scheduler *sched, int block_reason);
+
 #endif // TSFI_RAMAC_LAYOUT_H

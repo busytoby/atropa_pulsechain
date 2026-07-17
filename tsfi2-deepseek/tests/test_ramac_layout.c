@@ -2030,6 +2030,30 @@ int main(void) {
     assert(seg_desc.is_present == 1);
     printf("  [PASS] Burroughs B5000 Dynamic Segment Allocation loaded %d bytes successfully.\n", seg_desc.limit);
 
+    // Verify B5000 MCP Cooperative Scheduler
+    printf("[Test] Verifying Burroughs B5000 MCP Cooperative Scheduler...\n");
+    tsfi_b5000_mcp_scheduler mcp;
+    tsfi_b5000_mcp_init(&mcp);
+    
+    // Set tasks 1 and 3 runnable
+    mcp.tasks[1].state = 1;
+    mcp.tasks[3].state = 1;
+    
+    // First schedule tick should choose task 1
+    int active_task = tsfi_b5000_mcp_schedule_tick(&mcp);
+    assert(active_task == 1);
+    
+    // Second schedule tick should choose task 3
+    active_task = tsfi_b5000_mcp_schedule_tick(&mcp);
+    assert(active_task == 3);
+    
+    // Task 3 yields and blocks, scheduling active task back to 1
+    active_task = tsfi_b5000_mcp_yield_active(&mcp, 2); // Block state = 2
+    assert(active_task == 1);
+    assert(mcp.tasks[3].state == 2);
+    
+    printf("  [PASS] MCP scheduler round-robin execution and task yield verified successfully.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 
