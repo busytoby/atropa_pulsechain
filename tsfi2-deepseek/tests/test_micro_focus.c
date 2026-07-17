@@ -1065,6 +1065,24 @@ int main(void) {
     assert(priority_change_val_log[0] == 120);
     printf("  [PASS] CICS CHANGE TASK PRIORITY (target) verified.\n");
 
+    // 93. Verify Majordomo List Subscription Policy Checker
+    printf("[TEST] Validating Majordomo Subscription Checker...\n");
+    int requires_confirm_val = -1;
+    int requires_moderator_val = -1;
+    int sub_pol_res = tsfi_mf_majordomo_check_sub_policy("confirm", "user@dysnomia.org", &requires_confirm_val, &requires_moderator_val);
+    assert(sub_pol_res == 0);
+    assert(requires_confirm_val == 1);
+    assert(requires_moderator_val == 0);
+    printf("  [PASS] Majordomo Subscription Checker verified.\n");
+
+    // 94. Verify CICS Task Execution Priority Change Log Inquirer
+    printf("[TEST] Validating CICS INQUIRE TASK PRIORITY LOG...\n");
+    int logged_priority = 0;
+    int inq_prio_log_res = tsfi_mf_cics_inquire_priority_log(5002, priority_change_task_log, priority_change_val_log, priority_change_count, &logged_priority);
+    assert(inq_prio_log_res == 0);
+    assert(logged_priority == 120);
+    printf("  [PASS] CICS INQUIRE TASK PRIORITY LOG verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -1662,3 +1662,39 @@ int tsfi_mf_cics_change_task_priority(uint32_t target_task_id, int new_priority,
     *log_count += 1;
     return 0;
 }
+
+int tsfi_mf_majordomo_check_sub_policy(const char *policy, const char *email, int *requires_confirm, int *requires_moderator) {
+    (void)email;
+    if (!policy || !requires_confirm || !requires_moderator) return -1;
+
+    *requires_confirm = 0;
+    *requires_moderator = 0;
+
+    if (strcmp(policy, "open") == 0) {
+        // Direct
+    } else if (strcmp(policy, "confirm") == 0) {
+        *requires_confirm = 1;
+    } else if (strcmp(policy, "moderated") == 0) {
+        *requires_moderator = 1;
+    } else if (strcmp(policy, "closed") == 0) {
+        *requires_confirm = 1;
+        *requires_moderator = 1;
+    } else {
+        return -2;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_priority_log(uint32_t target_task_id, const uint32_t *target_task_id_log, const int *prio_registry_log, int log_count, int *priority_out) {
+    if (!target_task_id_log || !prio_registry_log || !priority_out || log_count < 0) return -1;
+
+    *priority_out = 0;
+    for (int i = log_count - 1; i >= 0; i--) {
+        if (target_task_id_log[i] == target_task_id) {
+            *priority_out = prio_registry_log[i];
+            return 0;
+        }
+    }
+
+    return -2;
+}

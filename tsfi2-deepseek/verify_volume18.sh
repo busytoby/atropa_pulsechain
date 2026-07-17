@@ -155,8 +155,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 200 | CICS Task Suspension Inquirer | PASS | Checks if a specific task ID is suspended | Volume 33 |
 | 201 | Majordomo Moderation Action Logger | PASS | Formats details of moderation decisions | Volume 33 |
 | 202 | CICS Target Task Priority Changer | PASS | Modifies priority parameter for target task | Volume 33 |
+| 203 | Majordomo Subscription Policy Checker | PASS | Validates subscription policies and confirmation | Volume 33 |
+| 204 | CICS Task Priority Log Inquirer | PASS | Returns latest updated task priority level | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 202 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 204 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
