@@ -178,4 +178,7 @@ int tsfi_fips_peripheral_filter(const char *data_type, const uint8_t *data, int 
 int tsfi_fips54_generate_com_header(const char *title, int reduction_ratio, char *out_header, int max_len);
 int tsfi_fips54_calculate_grid_coords(int index, int reduction_ratio, int *out_row, int *out_col);
 
+// Scenario 166: NBS FIPS PUB 55 Geographic Location Code Validator
+int tsfi_fips55_resolve_location(const char *fips_code, char *out_location, int max_len);
+
 #endif // TSFI_MAINFRAME_FIPS_H

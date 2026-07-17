@@ -924,3 +924,28 @@ int tsfi_fips54_calculate_grid_coords(int index, int reduction_ratio, int *out_r
     
     return 0;
 }
+
+int tsfi_fips55_resolve_location(const char *fips_code, char *out_location, int max_len) {
+    if (!fips_code || !out_location || max_len <= 0) return -1;
+    
+    int len = strlen(fips_code);
+    if (len != 5) return -2; // Standard 5-digit format required
+    
+    for (int i = 0; i < 5; i++) {
+        if (fips_code[i] < '0' || fips_code[i] > '9') {
+            return -2; // Non-numeric character
+        }
+    }
+    
+    if (strcmp(fips_code, "11001") == 0) {
+        snprintf(out_location, max_len, "Washington, D.C.");
+    } else if (strcmp(fips_code, "36510") == 0) {
+        snprintf(out_location, max_len, "New York City");
+    } else if (strcmp(fips_code, "06440") == 0) {
+        snprintf(out_location, max_len, "Los Angeles");
+    } else {
+        snprintf(out_location, max_len, "Unknown FIPS 55 Location");
+    }
+    
+    return 0;
+}

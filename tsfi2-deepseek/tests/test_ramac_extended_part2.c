@@ -1936,6 +1936,18 @@ int main(void) {
     assert(c == 2); // Col 2 (0-indexed)
     printf("  [PASS] FIPS 54 microform header formats and grid index structures verified.\n");
 
+    // 166. NBS FIPS PUB 55 Geographic Location Code Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 55 Geographic Location Code Validator...\n");
+    char loc_buf[64];
+    assert(tsfi_fips55_resolve_location("11001", loc_buf, sizeof(loc_buf)) == 0);
+    assert(strcmp(loc_buf, "Washington, D.C.") == 0);
+    
+    assert(tsfi_fips55_resolve_location("36510", loc_buf, sizeof(loc_buf)) == 0);
+    assert(strcmp(loc_buf, "New York City") == 0);
+    
+    assert(tsfi_fips55_resolve_location("1234a", loc_buf, sizeof(loc_buf)) == -2); // Non-numeric format
+    printf("  [PASS] FIPS 55 geographic 5-digit location codes resolved and validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
