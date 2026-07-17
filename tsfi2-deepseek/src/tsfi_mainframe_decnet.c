@@ -1260,3 +1260,50 @@ int tsfi_sna_tg_link_fail(tsfi_sna_tg_failover *failover, int link_id) {
     }
     return 0;
 }
+
+void tsfi_sna_bracket_init(tsfi_sna_bracket *b) {
+    if (!b) return;
+    b->bracket_active = 0;
+}
+
+int tsfi_sna_bracket_process(tsfi_sna_bracket *b, int begin_bracket, int end_bracket) {
+    if (!b) return -1;
+    if (begin_bracket) {
+        b->bracket_active = 1;
+    }
+    if (end_bracket) {
+        b->bracket_active = 0;
+    }
+    return 0;
+}
+
+void tsfi_sna_hdx_init(tsfi_sna_hdx *hdx, int initial_turn) {
+    if (!hdx) return;
+    hdx->my_turn = initial_turn;
+}
+
+int tsfi_sna_hdx_process(tsfi_sna_hdx *hdx, int receive_cd, int send_cd) {
+    if (!hdx) return -1;
+    if (receive_cd) {
+        hdx->my_turn = 1;
+    }
+    if (send_cd) {
+        hdx->my_turn = 0;
+    }
+    return 0;
+}
+
+void tsfi_sna_response_init(tsfi_sna_response_tracker *tracker) {
+    if (!tracker) return;
+    tracker->dr1_requested = 0;
+    tracker->dr2_requested = 0;
+    tracker->exception_response_only = 0;
+}
+
+int tsfi_sna_response_parse(tsfi_sna_response_tracker *tracker, uint8_t rh_byte) {
+    if (!tracker) return -1;
+    tracker->dr1_requested = (rh_byte & 0x01) ? 1 : 0;
+    tracker->dr2_requested = (rh_byte & 0x02) ? 1 : 0;
+    tracker->exception_response_only = (rh_byte & 0x04) ? 1 : 0;
+    return 0;
+}

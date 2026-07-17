@@ -683,6 +683,43 @@ int main(void) {
     assert(failover.backup_route_active == 1);
     printf("  [PASS] Transmission Group multi-link path failover verified.\n");
 
+    // 48. SNA Bracket Protocol Verification
+    printf("[Test] Verifying SNA Bracket Protocols...\n");
+    tsfi_sna_bracket bracket;
+    tsfi_sna_bracket_init(&bracket);
+    assert(bracket.bracket_active == 0);
+    
+    assert(tsfi_sna_bracket_process(&bracket, 1, 0) == 0); // Begin bracket
+    assert(bracket.bracket_active == 1);
+    assert(tsfi_sna_bracket_process(&bracket, 0, 1) == 0); // End bracket
+    assert(bracket.bracket_active == 0);
+    printf("  [PASS] Bracket boundary markers verified.\n");
+
+    // 49. SNA Half-Duplex Flip-Flop Verification
+    printf("[Test] Verifying SNA Half-Duplex Flip-Flop...\n");
+    tsfi_sna_hdx hdx;
+    tsfi_sna_hdx_init(&hdx, 1); // Start with my turn
+    assert(hdx.my_turn == 1);
+    
+    assert(tsfi_sna_hdx_process(&hdx, 0, 1) == 0); // Pass turn
+    assert(hdx.my_turn == 0);
+    assert(tsfi_sna_hdx_process(&hdx, 1, 0) == 0); // Receive turn
+    assert(hdx.my_turn == 1);
+    printf("  [PASS] Half-duplex change direction handshakes verified.\n");
+
+    // 50. SNA Response Request Tracker Verification
+    printf("[Test] Verifying SNA Response Request Tracker...\n");
+    tsfi_sna_response_tracker tracker;
+    tsfi_sna_response_init(&tracker);
+    assert(tracker.dr1_requested == 0);
+    
+    // Parse RH byte (DR1 | Exception Response Only = 0x01 | 0x04 = 0x05)
+    assert(tsfi_sna_response_parse(&tracker, 0x05) == 0);
+    assert(tracker.dr1_requested == 1);
+    assert(tracker.dr2_requested == 0);
+    assert(tracker.exception_response_only == 1);
+    printf("  [PASS] Response request state tracking verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

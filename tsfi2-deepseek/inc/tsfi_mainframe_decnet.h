@@ -541,4 +541,30 @@ typedef struct {
 void tsfi_sna_tg_failover_init(tsfi_sna_tg_failover *failover);
 int tsfi_sna_tg_link_fail(tsfi_sna_tg_failover *failover, int link_id);
 
+// SNA Bracket Protocol Boundary Manager
+typedef struct {
+    int bracket_active;
+} tsfi_sna_bracket;
+
+void tsfi_sna_bracket_init(tsfi_sna_bracket *b);
+int tsfi_sna_bracket_process(tsfi_sna_bracket *b, int begin_bracket, int end_bracket);
+
+// SNA Half-Duplex Flip-Flop Turn Handler
+typedef struct {
+    int my_turn;
+} tsfi_sna_hdx;
+
+void tsfi_sna_hdx_init(tsfi_sna_hdx *hdx, int initial_turn);
+int tsfi_sna_hdx_process(tsfi_sna_hdx *hdx, int receive_cd, int send_cd);
+
+// SNA Response Request (DR1/DR2/ER) Tracker
+typedef struct {
+    int dr1_requested;
+    int dr2_requested;
+    int exception_response_only;
+} tsfi_sna_response_tracker;
+
+void tsfi_sna_response_init(tsfi_sna_response_tracker *tracker);
+int tsfi_sna_response_parse(tsfi_sna_response_tracker *tracker, uint8_t rh_byte);
+
 #endif // TSFI_MAINFRAME_DECNET_H
