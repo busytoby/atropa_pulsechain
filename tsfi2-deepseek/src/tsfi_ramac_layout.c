@@ -6857,3 +6857,43 @@ int tsfi_cp_fcb_set_channel(tsfi_cp_fcb *fcb, int channel, int line) {
     fcb->channel_stops[channel - 1] = line;
     return 0;
 }
+
+void tsfi_cp_spool_router_init(tsfi_cp_spool_class_router *router) {
+    if (!router) return;
+    memset(router, 0, sizeof(tsfi_cp_spool_class_router));
+}
+
+int tsfi_cp_spool_router_set(tsfi_cp_spool_class_router *router, const char *dev_name, char class_char) {
+    if (!router || !dev_name) return -1;
+    
+    if (class_char != '*' && (class_char < 'A' || class_char > 'Z')) {
+        return -2;
+    }
+    
+    for (int i = 0; i < router->count; i++) {
+        if (strcmp(router->filters[i].device_name, dev_name) == 0) {
+            router->filters[i].active_class = class_char;
+            return 0;
+        }
+    }
+    
+    if (router->count >= MAX_SPOOL_CLASSES) return -1;
+    strncpy(router->filters[router->count].device_name, dev_name, sizeof(router->filters[router->count].device_name) - 1);
+    router->filters[router->count].device_name[sizeof(router->filters[router->count].device_name) - 1] = '\0';
+    router->filters[router->count].active_class = class_char;
+    router->count++;
+    return 0;
+}
+
+int tsfi_cp_spool_router_match(const tsfi_cp_spool_class_router *router, const char *dev_name, char file_class) {
+    if (!router || !dev_name) return -1;
+    for (int i = 0; i < router->count; i++) {
+        if (strcmp(router->filters[i].device_name, dev_name) == 0) {
+            if (router->filters[i].active_class == '*' || router->filters[i].active_class == file_class) {
+                return 1;
+            }
+            return 0;
+        }
+    }
+    return 1;
+}

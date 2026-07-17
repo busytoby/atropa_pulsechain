@@ -2108,6 +2108,27 @@ int main(void) {
     assert(tsfi_cp_fcb_set_channel(&fcb_state, 2, 90) == -1);
     printf("  [PASS] VM/370 CP forms control buffer page boundaries verified.\n");
 
+    // 117. VM/370 CP Spool Class Router Verification
+    printf("[Test] Verifying VM/370 CP Spool Class Router...\n");
+    tsfi_cp_spool_class_router class_router;
+    tsfi_cp_spool_router_init(&class_router);
+    assert(class_router.count == 0);
+    
+    // Set spool filters
+    assert(tsfi_cp_spool_router_set(&class_router, "00E", 'A') == 0);
+    assert(tsfi_cp_spool_router_set(&class_router, "00D", '*') == 0);
+    assert(class_router.count == 2);
+    
+    // Validate invalid class config values
+    assert(tsfi_cp_spool_router_set(&class_router, "00C", '1') == -2);
+    
+    // Check routing matching invariants
+    assert(tsfi_cp_spool_router_match(&class_router, "00E", 'A') == 1);
+    assert(tsfi_cp_spool_router_match(&class_router, "00E", 'B') == 0);
+    assert(tsfi_cp_spool_router_match(&class_router, "00D", 'B') == 1); // Wildcard matches all
+    assert(tsfi_cp_spool_router_match(&class_router, "00C", 'B') == 1); // Unconfigured matches all
+    printf("  [PASS] VM/370 CP spool device class filtering patterns verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

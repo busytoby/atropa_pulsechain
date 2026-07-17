@@ -1891,4 +1891,20 @@ void tsfi_cp_fcb_init(tsfi_cp_fcb *fcb);
 int tsfi_cp_fcb_load(tsfi_cp_fcb *fcb, const char *name, int page_len);
 int tsfi_cp_fcb_set_channel(tsfi_cp_fcb *fcb, int channel, int line);
 
+// VM/370 CP Spool Class Router
+typedef struct {
+    char device_name[16];
+    char active_class;
+} tsfi_cp_spool_device_class;
+
+#define MAX_SPOOL_CLASSES 8
+typedef struct {
+    tsfi_cp_spool_device_class filters[MAX_SPOOL_CLASSES];
+    int count;
+} tsfi_cp_spool_class_router;
+
+void tsfi_cp_spool_router_init(tsfi_cp_spool_class_router *router);
+int tsfi_cp_spool_router_set(tsfi_cp_spool_class_router *router, const char *dev_name, char class_char);
+int tsfi_cp_spool_router_match(const tsfi_cp_spool_class_router *router, const char *dev_name, char file_class);
+
 #endif // TSFI_RAMAC_LAYOUT_H
