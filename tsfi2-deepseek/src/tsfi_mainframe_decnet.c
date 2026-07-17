@@ -2349,3 +2349,48 @@ float tsfi_market_calculate_share(const tsfi_market_company *companies, size_t c
     if (total == 0.0) return 0.0f;
     return (float)(companies[index].revenue / total);
 }
+
+void tsfi_bank_vault_init(tsfi_bank_vault *vault, uint16_t pin) {
+    if (!vault) return;
+    vault->key_inserted = 0;
+    vault->expected_pin = pin;
+    vault->failed_attempts = 0;
+    vault->vault_locked = 0;
+}
+
+int tsfi_bank_vault_unlock(tsfi_bank_vault *vault, uint16_t pin) {
+    if (!vault) return -1;
+    if (vault->vault_locked) return -3;
+    if (!vault->key_inserted) return -4;
+    if (vault->expected_pin == pin) {
+        vault->failed_attempts = 0;
+        return 0;
+    }
+    vault->failed_attempts++;
+    if (vault->failed_attempts >= 3) {
+        vault->vault_locked = 1;
+    }
+    return -2;
+}
+
+void tsfi_eft_monitor_init(tsfi_eft_monitor *mon, double max_lat) {
+    if (!mon) return;
+    mon->expected_tx_id = 0;
+    mon->dropped_tx_count = 0;
+    mon->max_latency_ms = max_lat;
+}
+
+int tsfi_eft_monitor_check(tsfi_eft_monitor *mon, const tsfi_eft_transaction *tx) {
+    if (!mon || !tx) return -1;
+    if (mon->expected_tx_id == 0) {
+        mon->expected_tx_id = tx->transaction_id;
+    }
+    if (tx->transaction_id > mon->expected_tx_id) {
+        mon->dropped_tx_count += (tx->transaction_id - mon->expected_tx_id);
+    }
+    mon->expected_tx_id = tx->transaction_id + 1;
+    if (tx->latency_ms > mon->max_latency_ms) {
+        return -2;
+    }
+    return 0;
+}

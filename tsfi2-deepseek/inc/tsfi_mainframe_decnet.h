@@ -1093,4 +1093,25 @@ typedef struct {
 float tsfi_market_calculate_growth(const tsfi_market_company *company);
 float tsfi_market_calculate_share(const tsfi_market_company *companies, size_t count, size_t index);
 
+// Bank Vault Security Terminal
+typedef struct {
+    int key_inserted;
+    uint16_t expected_pin;
+    int failed_attempts;
+    int vault_locked;
+} tsfi_bank_vault;
+
+void tsfi_bank_vault_init(tsfi_bank_vault *vault, uint16_t pin);
+int tsfi_bank_vault_unlock(tsfi_bank_vault *vault, uint16_t pin);
+
+// EFT Transaction Drop & Timeout Monitor
+typedef struct {
+    uint32_t expected_tx_id;
+    uint32_t dropped_tx_count;
+    double max_latency_ms;
+} tsfi_eft_monitor;
+
+void tsfi_eft_monitor_init(tsfi_eft_monitor *mon, double max_lat);
+int tsfi_eft_monitor_check(tsfi_eft_monitor *mon, const tsfi_eft_transaction *tx);
+
 #endif // TSFI_MAINFRAME_DECNET_H

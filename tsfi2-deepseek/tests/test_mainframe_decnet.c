@@ -1552,6 +1552,39 @@ int main(void) {
     assert(dec_share > 0.29f && dec_share < 0.31f); // 30% share
     printf("  [PASS] EFT batch settlement queues and market growth stats verified.\n");
 
+    // 82. Bank Vault Security & EFT Timeout Monitor Verification
+    printf("[Test] Verifying Bank Vault Lock & EFT Drop Monitor...\n");
+    tsfi_bank_vault vault;
+    tsfi_bank_vault_init(&vault, 4321);
+    assert(vault.vault_locked == 0);
+    
+    // Unlock attempts
+    assert(tsfi_bank_vault_unlock(&vault, 4321) == -4); // Missing physical key
+    vault.key_inserted = 1;
+    assert(tsfi_bank_vault_unlock(&vault, 1111) == -2); // Wrong PIN
+    assert(tsfi_bank_vault_unlock(&vault, 2222) == -2); // Wrong PIN
+    assert(tsfi_bank_vault_unlock(&vault, 4321) == 0);  // Unlocked
+    assert(vault.failed_attempts == 0);
+    
+    // Test lock-out
+    assert(tsfi_bank_vault_unlock(&vault, 1111) == -2);
+    assert(tsfi_bank_vault_unlock(&vault, 1111) == -2);
+    assert(tsfi_bank_vault_unlock(&vault, 1111) == -2); // 3rd failure
+    assert(vault.vault_locked == 1);
+    assert(tsfi_bank_vault_unlock(&vault, 4321) == -3); // Locked out
+    
+    // EFT Drop Monitor
+    tsfi_eft_monitor eft_mon;
+    tsfi_eft_monitor_init(&eft_mon, 100.0);
+    
+    tsfi_eft_transaction eft_t1 = {1000, 100.0f, 0x03, 50.0};
+    tsfi_eft_transaction eft_t2 = {1005, 200.0f, 0x03, 120.0}; // Gap of 4 dropped, high latency
+    
+    assert(tsfi_eft_monitor_check(&eft_mon, &eft_t1) == 0);
+    assert(tsfi_eft_monitor_check(&eft_mon, &eft_t2) == -2); // Latency timeout
+    assert(eft_mon.dropped_tx_count == 4);
+    printf("  [PASS] Banking security terminal locks and EFT drop/latency monitors verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
