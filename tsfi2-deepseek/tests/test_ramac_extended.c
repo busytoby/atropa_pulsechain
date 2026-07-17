@@ -520,6 +520,13 @@ int main(void) {
     assert(cc.sensors[0].alert_triggered == 1);
     printf("  [PASS] Command control polling loop alert matched.\n");
 
+    // 31. CDC 3600 Bit-Addressable Byte Extraction Verification
+    printf("[Test] Verifying CDC 3600 bit-addressable extraction...\n");
+    uint64_t test_word = 0x0000FF0000000000ULL;
+    uint64_t ext_byte = tsfi_cdc3600_extract_byte(test_word, 40, 8);
+    assert(ext_byte == 0xFF);
+    printf("  [PASS] CDC 3600 sub-word bit extraction verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

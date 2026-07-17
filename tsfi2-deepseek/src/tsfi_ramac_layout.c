@@ -4189,3 +4189,9 @@ int tsfi_command_poll(tsfi_command_center *cc) {
     }
     return triggered;
 }
+
+uint64_t tsfi_cdc3600_extract_byte(uint64_t word, int bit_position, int byte_length) {
+    if (byte_length <= 0 || byte_length > 64 || bit_position < 0 || bit_position >= 64) return 0;
+    uint64_t mask = (byte_length == 64) ? ~0ULL : ((1ULL << byte_length) - 1);
+    return (word >> bit_position) & mask;
+}
