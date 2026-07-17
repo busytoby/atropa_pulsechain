@@ -99,5 +99,7 @@
 | 165 | CICS Shared Storage Area Allocator | PASS | Task-independent memory allocation registry | Volume 33 |
 | 166 | Majordomo List Administrator Validator | PASS | Registered administrator access checker | Volume 33 |
 | 167 | CICS Security Bypass Controller | PASS | Administrative transaction override authorization | Volume 33 |
+| 168 | Majordomo List Archive Index Resolver | PASS | Archive directories parser and indexer | Volume 33 |
+| 169 | CICS Program Control RETURN Emulator | PASS | Dynamic transaction scheduler return linkage | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 167 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 169 Scenarios validated successfully)

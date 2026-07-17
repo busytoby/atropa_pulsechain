@@ -748,6 +748,23 @@ int main(void) {
     assert(bypass_st == 0);
     printf("  [PASS] CICS Security Bypass verified.\n");
 
+    // 58. Verify Majordomo List Archive Index Resolver
+    printf("[TEST] Validating Majordomo Archive Index...\n");
+    const char *archives[2] = {"mail-2026Q1", "mail-2026Q2"};
+    char arch_idx[128] = {0};
+    int arch_res = tsfi_mf_majordomo_archive_index("zmm-dev", archives, 2, arch_idx, sizeof(arch_idx));
+    assert(arch_res == 0);
+    assert(strstr(arch_idx, "mail-2026Q1") != NULL);
+    printf("  [PASS] Majordomo Archive Index verified.\n");
+
+    // 59. Verify CICS Program Return Emulator
+    printf("[TEST] Validating CICS Program Return...\n");
+    char ret_log[128] = {0};
+    int ret_res = tsfi_mf_cics_return("GAUN", NULL, 0, ret_log, sizeof(ret_log));
+    assert(ret_res == 0);
+    assert(strcmp(ret_log, "RETURN_TRANSID:GAUN|COMMAREA_LEN:0") == 0);
+    printf("  [PASS] CICS Program Return verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

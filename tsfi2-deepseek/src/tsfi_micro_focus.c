@@ -1267,3 +1267,32 @@ int tsfi_mf_cics_bypass_security(const char *transaction_id, uint32_t auth_token
     }
     return 0;
 }
+
+int tsfi_mf_majordomo_archive_index(const char *list_name, const char **archive_files, int archive_count, char *index_out, int max_len) {
+    if (!list_name || !archive_files || archive_count < 0 || !index_out || max_len <= 0) return -1;
+
+    int offset = snprintf(index_out, max_len, "ARCHIVE INDEX FOR LIST %s: ", list_name);
+    if (offset < 0 || offset >= max_len) return -2;
+
+    for (int i = 0; i < archive_count; i++) {
+        if (archive_files[i]) {
+            int bytes = snprintf(index_out + offset, max_len - offset, "%s; ", archive_files[i]);
+            if (bytes < 0 || offset + bytes >= max_len) break;
+            offset += bytes;
+        }
+    }
+
+    return 0;
+}
+
+int tsfi_mf_cics_return(const char *next_transaction_id, const uint8_t *commarea, int commarea_len, char *return_status_log, int max_log) {
+    (void)commarea;
+    if (!return_status_log || max_log <= 0) return -1;
+
+    if (next_transaction_id) {
+        snprintf(return_status_log, max_log, "RETURN_TRANSID:%s|COMMAREA_LEN:%d", next_transaction_id, commarea_len);
+    } else {
+        snprintf(return_status_log, max_log, "RETURN_TERMINAL|COMMAREA_LEN:0");
+    }
+    return 0;
+}
