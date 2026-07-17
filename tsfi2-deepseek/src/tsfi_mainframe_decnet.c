@@ -2198,3 +2198,31 @@ int tsfi_rb_gateway_route(const tsfi_rb_packet *pkt, void *out_struct) {
     }
     return -2;
 }
+
+void tsfi_rb_23_init(tsfi_rb_23_node *node) {
+    if (!node) return;
+    node->is_three_node = 0;
+    node->swift_keys[0] = 0;
+    node->swift_keys[1] = 0;
+    node->cyclades_buffer_count = 0;
+}
+
+int tsfi_rb_23_insert(tsfi_rb_23_node *node, uint32_t swift_key, uint32_t cyclades_data) {
+    if (!node) return -1;
+    if (!node->is_three_node) {
+        if (node->swift_keys[0] == 0) {
+            node->swift_keys[0] = swift_key;
+        } else {
+            if (swift_key < node->swift_keys[0]) {
+                node->swift_keys[1] = node->swift_keys[0];
+                node->swift_keys[0] = swift_key;
+            } else {
+                node->swift_keys[1] = swift_key;
+            }
+            node->is_three_node = 1;
+        }
+        node->cyclades_buffer_count += cyclades_data;
+        return 0;
+    }
+    return -2;
+}

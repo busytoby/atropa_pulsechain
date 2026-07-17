@@ -1393,6 +1393,31 @@ int main(void) {
     assert(strcmp(rx_b1.sender_lt, "TESTBICXX098") == 0);
     printf("  [PASS] Red-Black gateway routing of CYCLADES (Red) and SWIFT (Black) verified.\n");
 
+    // 77. 2-3 Tree Insertion Verification
+    printf("[Test] Verifying 2-3 Tree Node Insertions (CYCLADES/SWIFT)...\n");
+    tsfi_rb_23_node tree_node;
+    tsfi_rb_23_init(&tree_node);
+    assert(tree_node.is_three_node == 0);
+    assert(tree_node.swift_keys[0] == 0);
+    assert(tree_node.cyclades_buffer_count == 0);
+    
+    // Insert first key
+    assert(tsfi_rb_23_insert(&tree_node, 1001, 10) == 0);
+    assert(tree_node.swift_keys[0] == 1001);
+    assert(tree_node.cyclades_buffer_count == 10);
+    assert(tree_node.is_three_node == 0);
+    
+    // Insert second key (split threshold -> 3-node transition)
+    assert(tsfi_rb_23_insert(&tree_node, 999, 15) == 0);
+    assert(tree_node.is_three_node == 1);
+    assert(tree_node.swift_keys[0] == 999);
+    assert(tree_node.swift_keys[1] == 1001);
+    assert(tree_node.cyclades_buffer_count == 25);
+    
+    // Attempt third key -> overflow node split trigger
+    assert(tsfi_rb_23_insert(&tree_node, 1005, 5) == -2);
+    printf("  [PASS] 2-3 Tree node insertion and split triggers verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

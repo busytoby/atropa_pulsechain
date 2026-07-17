@@ -992,4 +992,14 @@ typedef struct {
 
 int tsfi_rb_gateway_route(const tsfi_rb_packet *pkt, void *out_struct);
 
+// 2-3 tree node with CYCLADES (Red Rail) and SWIFT (Black Rail)
+typedef struct {
+    int is_three_node;
+    uint32_t swift_keys[2];
+    uint32_t cyclades_buffer_count;
+} tsfi_rb_23_node;
+
+void tsfi_rb_23_init(tsfi_rb_23_node *node);
+int tsfi_rb_23_insert(tsfi_rb_23_node *node, uint32_t swift_key, uint32_t cyclades_data);
+
 #endif // TSFI_MAINFRAME_DECNET_H
