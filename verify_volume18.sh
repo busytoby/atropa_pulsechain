@@ -114,8 +114,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 165 | NBS FIPS PUB 54 Computer Output Microform Layout Generator | PASS | COM Layout Generator | Volume 24 |
 | 166 | NBS FIPS PUB 55 Geographic Location Code Validator | PASS | Geographic Code Resolver | Volume 24 |
 | 167 | NBS FIPS PUB 4-1 / 58-1 Date/Time Validator | PASS | Date & Time Parser | Volume 24 |
+| 168 | NBS FIPS PUB 31 Risk Analysis Calculator | PASS | ALE Risk Calculator | Volume 24 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 167 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 168 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
