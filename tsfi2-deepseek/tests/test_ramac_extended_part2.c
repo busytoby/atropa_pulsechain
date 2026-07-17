@@ -1574,6 +1574,52 @@ int main(void) {
     assert(authenticator.successful_attempts == 2);
     printf("  [PASS] FIPS 48 personal identification badge readers and PIN locks validated.\n");
 
+    // 146. NBS FIPS PUB 62 Magnetic Tape Subsystem Interface Verification
+    printf("[Test] Verifying NBS FIPS PUB 62 Magnetic Tape Subsystem Interface...\n");
+    tsfi_fips62_tape tape;
+    tsfi_fips62_tape_init(&tape);
+    assert(tape.block_position == 0);
+    assert(tape.is_bot == 1);
+    
+    int new_pos = 0;
+    // Command tests
+    assert(tsfi_fips62_tape_command(&tape, 0x3F, &new_pos) == 0); // FORWARD SPACE BLOCK
+    assert(new_pos == 1);
+    assert(tape.is_bot == 0);
+    
+    assert(tsfi_fips62_tape_command(&tape, 0x27, &new_pos) == 0); // BACKSPACE RECORD
+    assert(new_pos == 0);
+    assert(tape.is_bot == 1);
+    
+    assert(tsfi_fips62_tape_command(&tape, 0x1F, NULL) == 0); // WRITE TAPE MARK
+    assert(tape.tape_mark_detected == 1);
+    
+    assert(tsfi_fips62_tape_command(&tape, 0x0F, NULL) == 0); // REWIND
+    assert(tape.block_position == 0);
+    assert(tape.tape_mark_detected == 0);
+    
+    // DAT integration test
+    tsfi_s370_segment_entry seg_table[1];
+    seg_table[0].page_table_origin = 0;
+    seg_table[0].length = 16;
+    seg_table[0].invalid = 0;
+    
+    tsfi_s370_page_entry page_tables[16];
+    memset(page_tables, 0, sizeof(page_tables));
+    page_tables[1].page_frame_real_addr = 0x1000;
+    page_tables[1].invalid = 0;
+    page_tables[1].write_protect = 0;
+    
+    uint8_t memory_pool[8192];
+    memset(memory_pool, 0, sizeof(memory_pool));
+    
+    uint8_t dummy_tape_block[8] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22 };
+    // Virtual address 0x1004 maps to physical/real memory address 0x1004
+    assert(tsfi_fips62_tape_read_to_virtual(&tape, 0x1004, seg_table, 1, page_tables, memory_pool, 8192, dummy_tape_block, 8) == 0);
+    assert(memcmp(memory_pool + 0x1004, dummy_tape_block, 8) == 0);
+    assert(tape.block_position == 1);
+    printf("  [PASS] FIPS 62 tape controller commands and virtual DAT address translation verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

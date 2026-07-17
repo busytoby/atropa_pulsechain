@@ -621,4 +621,20 @@ int tsfi_fips48_register_badge(tsfi_fips48_authenticator *auth, const char *user
 int tsfi_fips48_register_lau_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t lau_token_address, uint16_t pki_key_pin);
 int tsfi_fips48_authenticate(tsfi_fips48_authenticator *auth, uint32_t badge_id, uint16_t pin, int *out_status);
 
+// Scenario 146: NBS FIPS PUB 62 Magnetic Tape Subsystem Interface
+typedef struct {
+    int block_position;
+    int is_bot;
+    int is_eot;
+    int tape_mark_detected;
+} tsfi_fips62_tape;
+
+void tsfi_fips62_tape_init(tsfi_fips62_tape *tape);
+int tsfi_fips62_tape_command(tsfi_fips62_tape *tape, uint8_t cmd_code, int *out_block_pos);
+int tsfi_fips62_tape_read_to_virtual(tsfi_fips62_tape *tape, uint32_t virtual_addr,
+                                     tsfi_s370_segment_entry *seg_table, int seg_count,
+                                     tsfi_s370_page_entry *page_tables,
+                                     uint8_t *memory_pool, int mem_size,
+                                     const uint8_t *tape_data, uint16_t data_len);
+
 #endif // TSFI_MAINFRAME_V370_H

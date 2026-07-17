@@ -1836,3 +1836,77 @@ int tsfi_fips48_register_lau_badge(tsfi_fips48_authenticator *auth, const char *
     // Map LAU token address directly as badge_id, and PKI key directly as secure PIN
     return tsfi_fips48_register_badge(auth, user_id, lau_token_address, pki_key_pin);
 }
+
+void tsfi_fips62_tape_init(tsfi_fips62_tape *tape) {
+    if (!tape) return;
+    tape->block_position = 0;
+    tape->is_bot = 1;
+    tape->is_eot = 0;
+    tape->tape_mark_detected = 0;
+}
+
+int tsfi_fips62_tape_command(tsfi_fips62_tape *tape, uint8_t cmd_code, int *out_block_pos) {
+    if (!tape) return -1;
+    
+    if (cmd_code == 0x0F) { // REWIND
+        tape->block_position = 0;
+        tape->is_bot = 1;
+        tape->is_eot = 0;
+        tape->tape_mark_detected = 0;
+    } else if (cmd_code == 0x3F) { // FORWARD SPACE BLOCK
+        tape->block_position++;
+        tape->is_bot = 0;
+        if (tape->block_position >= 1000) {
+            tape->is_eot = 1;
+        }
+    } else if (cmd_code == 0x27) { // BACKSPACE RECORD
+        if (tape->block_position > 0) {
+            tape->block_position--;
+            tape->is_eot = 0;
+        }
+        if (tape->block_position == 0) {
+            tape->is_bot = 1;
+        }
+    } else if (cmd_code == 0x1F) { // WRITE TAPE MARK
+        tape->tape_mark_detected = 1;
+    } else {
+        return -2; // Unknown command
+    }
+    
+    if (out_block_pos) {
+        *out_block_pos = tape->block_position;
+    }
+    return 0;
+}
+
+int tsfi_fips62_tape_read_to_virtual(tsfi_fips62_tape *tape, uint32_t virtual_addr,
+                                     tsfi_s370_segment_entry *seg_table, int seg_count,
+                                     tsfi_s370_page_entry *page_tables,
+                                     uint8_t *memory_pool, int mem_size,
+                                     const uint8_t *tape_data, uint16_t data_len) {
+    if (!tape || !memory_pool || !tape_data || data_len == 0) return -1;
+    
+    uint32_t physical_addr = 0;
+    int write_protected = 0;
+    
+    // Perform DAT Address Translation
+    int translate_res = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, &physical_addr, &write_protected);
+    if (translate_res != 0) {
+        return -3; // DAT Translation Exception
+    }
+    
+    if (write_protected) {
+        return -4; // Page Protection Exception
+    }
+    
+    if (physical_addr + data_len > (uint32_t)mem_size) {
+        return -5; // Memory out of bounds
+    }
+    
+    // Copy tape block payload to physical real memory
+    memcpy(memory_pool + physical_addr, tape_data, data_len);
+    tape->block_position++;
+    tape->is_bot = 0;
+    
+    return 0;
+}
