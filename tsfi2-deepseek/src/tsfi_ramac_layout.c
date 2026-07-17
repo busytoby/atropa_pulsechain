@@ -6721,3 +6721,34 @@ void tsfi_cp_logout_execute(tsfi_cp_device_table *tbl, tsfi_cp_link_manager *lin
         sleep_state->remaining_seconds = 0;
     }
 }
+
+void tsfi_cp_punch_spooler_init(tsfi_cp_punch_spooler *spl) {
+    if (!spl) return;
+    memset(spl, 0, sizeof(tsfi_cp_punch_spooler));
+}
+
+int tsfi_cp_punch_write(tsfi_cp_punch_spooler *spl, const char *card_data) {
+    if (!spl || !card_data) return -1;
+    if (spl->card_count >= MAX_PUNCH_QUEUE) return -1;
+    
+    strncpy(spl->cards[spl->card_count].data, card_data, 79);
+    spl->cards[spl->card_count].data[79] = '\0';
+    spl->card_count++;
+    return 0;
+}
+
+int tsfi_cp_punch_set_hold(tsfi_cp_punch_spooler *spl, int hold) {
+    if (!spl) return -1;
+    spl->is_held = hold;
+    return 0;
+}
+
+int tsfi_cp_punch_flush(tsfi_cp_punch_spooler *spl, int *cards_flushed) {
+    if (!spl || !cards_flushed) return -1;
+    if (spl->is_held) {
+        return -2;
+    }
+    *cards_flushed = spl->card_count;
+    spl->card_count = 0;
+    return 0;
+}

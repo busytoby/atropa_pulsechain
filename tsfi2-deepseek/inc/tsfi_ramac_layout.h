@@ -1828,4 +1828,21 @@ int tsfi_cp_query_virtual(const tsfi_cp_device_table *tbl, char *out_buf, int ou
 
 void tsfi_cp_logout_execute(tsfi_cp_device_table *tbl, tsfi_cp_link_manager *link_mgr, tsfi_cp_terminal_sleep *sleep_state);
 
+// VM/370 CP Spool Card Punch Queue
+typedef struct {
+    char data[80];
+} tsfi_cp_punch_card;
+
+#define MAX_PUNCH_QUEUE 8
+typedef struct {
+    tsfi_cp_punch_card cards[MAX_PUNCH_QUEUE];
+    int card_count;
+    int is_held;
+} tsfi_cp_punch_spooler;
+
+void tsfi_cp_punch_spooler_init(tsfi_cp_punch_spooler *spl);
+int tsfi_cp_punch_write(tsfi_cp_punch_spooler *spl, const char *card_data);
+int tsfi_cp_punch_set_hold(tsfi_cp_punch_spooler *spl, int hold);
+int tsfi_cp_punch_flush(tsfi_cp_punch_spooler *spl, int *cards_flushed);
+
 #endif // TSFI_RAMAC_LAYOUT_H

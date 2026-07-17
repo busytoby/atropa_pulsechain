@@ -2015,6 +2015,30 @@ int main(void) {
     assert(sleep_logout.remaining_seconds == 0);
     printf("  [PASS] VM/370 CP session logout resource releases verified.\n");
 
+    // 113. VM/370 CP Spool Card Punch Queue Verification
+    printf("[Test] Verifying VM/370 CP Card Punch spooler...\n");
+    tsfi_cp_punch_spooler punch_spl;
+    tsfi_cp_punch_spooler_init(&punch_spl);
+    assert(punch_spl.card_count == 0);
+    assert(punch_spl.is_held == 0);
+    
+    // Write records to virtual punch
+    assert(tsfi_cp_punch_write(&punch_spl, "DATA RECORD 1") == 0);
+    assert(tsfi_cp_punch_write(&punch_spl, "DATA RECORD 2") == 0);
+    assert(punch_spl.card_count == 2);
+    
+    // Hold queue and attempt flush
+    assert(tsfi_cp_punch_set_hold(&punch_spl, 1) == 0);
+    int flushed_count = 0;
+    assert(tsfi_cp_punch_flush(&punch_spl, &flushed_count) == -2);
+    
+    // Release hold and flush
+    assert(tsfi_cp_punch_set_hold(&punch_spl, 0) == 0);
+    assert(tsfi_cp_punch_flush(&punch_spl, &flushed_count) == 0);
+    assert(flushed_count == 2);
+    assert(punch_spl.card_count == 0);
+    printf("  [PASS] VM/370 CP card punch spooler write/hold/flush states verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
