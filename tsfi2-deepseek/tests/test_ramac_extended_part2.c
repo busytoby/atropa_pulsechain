@@ -1787,6 +1787,33 @@ int main(void) {
     assert(completeness == 0);
     printf("  [PASS] FIPS 38 documentation phases and validation percentage checks verified.\n");
 
+    // 155. NBS FIPS PUB 1-1 Character Set Translation Verification
+    printf("[Test] Verifying NBS FIPS PUB 1-1 Character Set Translation...\n");
+    uint8_t ebcdic_buf[8];
+    char ascii_buf[8];
+    assert(tsfi_fips1_ascii_to_ebcdic("HELLO", ebcdic_buf, 5) == 0);
+    assert(tsfi_fips1_ebcdic_to_ascii(ebcdic_buf, ascii_buf, 5) == 0);
+    assert(strncmp(ascii_buf, "HELLO", 5) == 0);
+    printf("  [PASS] FIPS 1-1 ASCII to EBCDIC translations verified.\n");
+
+    // 156. NBS FIPS PUB 16-1 Serial Bit Sequence & Parity Checker Verification
+    printf("[Test] Verifying NBS FIPS PUB 16-1 Serial Bit Sequence & Parity...\n");
+    uint16_t serialized = 0;
+    uint8_t deserialized = 0;
+    // Serialize 'A' (0x41 = 01000001, even parity = 0 since 2 ones)
+    assert(tsfi_fips16_serialize(0x41, 1, &serialized) == 0);
+    assert(tsfi_fips16_deserialize(serialized, 1, &deserialized) == 0);
+    assert(deserialized == 0x41);
+    printf("  [PASS] FIPS 16-1 bit sequencing and parity check loops verified.\n");
+
+    // 157. NBS FIPS PUB 41 Access Control Security Levels Verification
+    printf("[Test] Verifying NBS FIPS PUB 41 Access Control Security Levels...\n");
+    assert(tsfi_fips41_authorize("Owner", "destroy") == 0);
+    assert(tsfi_fips41_authorize("Operator", "write") == 0);
+    assert(tsfi_fips41_authorize("Operator", "audit") == -2); // Privilege violation
+    assert(tsfi_fips41_authorize("Auditor", "audit") == 0);
+    printf("  [PASS] FIPS 41 role-based dataset access authorizations verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

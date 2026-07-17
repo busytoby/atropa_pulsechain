@@ -140,4 +140,15 @@ int tsfi_fips73_audit_transaction(tsfi_fips73_auditor *auditor, const char *reco
 // Scenario 154: NBS FIPS PUB 38 Automated Documentation Compliance Auditor
 int tsfi_fips38_audit_document(const char *doc_content, int *out_completeness_percent);
 
+// Scenario 155: NBS FIPS PUB 1-1 Character Set Translation (ASCII / EBCDIC)
+int tsfi_fips1_ascii_to_ebcdic(const char *ascii_in, uint8_t *ebcdic_out, int len);
+int tsfi_fips1_ebcdic_to_ascii(const uint8_t *ebcdic_in, char *ascii_out, int len);
+
+// Scenario 156: NBS FIPS PUB 16-1 Serial Bit Sequence & Parity Checker
+int tsfi_fips16_serialize(uint8_t byte, int use_even_parity, uint16_t *out_bits);
+int tsfi_fips16_deserialize(uint16_t bits, int use_even_parity, uint8_t *out_byte);
+
+// Scenario 157: NBS FIPS PUB 41 Access Control Security Levels
+int tsfi_fips41_authorize(const char *user_role, const char *action);
+
 #endif // TSFI_MAINFRAME_FIPS_H

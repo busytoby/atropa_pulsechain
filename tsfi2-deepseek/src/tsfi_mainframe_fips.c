@@ -601,3 +601,110 @@ int tsfi_fips38_audit_document(const char *doc_content, int *out_completeness_pe
     *out_completeness_percent = score;
     return 0;
 }
+
+int tsfi_fips1_ascii_to_ebcdic(const char *ascii_in, uint8_t *ebcdic_out, int len) {
+    if (!ascii_in || !ebcdic_out || len <= 0) return -1;
+    for (int i = 0; i < len; i++) {
+        char c = ascii_in[i];
+        if (c >= 'A' && c <= 'I') ebcdic_out[i] = 0xC1 + (c - 'A');
+        else if (c >= 'J' && c <= 'R') ebcdic_out[i] = 0xD1 + (c - 'J');
+        else if (c >= 'S' && c <= 'Z') ebcdic_out[i] = 0xE2 + (c - 'S');
+        else if (c >= 'a' && c <= 'i') ebcdic_out[i] = 0x81 + (c - 'a');
+        else if (c >= 'j' && c <= 'r') ebcdic_out[i] = 0x91 + (c - 'j');
+        else if (c >= 's' && c <= 'z') ebcdic_out[i] = 0xA2 + (c - 's');
+        else if (c >= '0' && c <= '9') ebcdic_out[i] = 0xF0 + (c - '0');
+        else if (c == ' ') ebcdic_out[i] = 0x40;
+        else ebcdic_out[i] = 0x6F; // Default question mark replacement
+    }
+    return 0;
+}
+
+int tsfi_fips1_ebcdic_to_ascii(const uint8_t *ebcdic_in, char *ascii_out, int len) {
+    if (!ebcdic_in || !ascii_out || len <= 0) return -1;
+    for (int i = 0; i < len; i++) {
+        uint8_t e = ebcdic_in[i];
+        if (e >= 0xC1 && e <= 0xC9) ascii_out[i] = 'A' + (e - 0xC1);
+        else if (e >= 0xD1 && e <= 0xD9) ascii_out[i] = 'J' + (e - 0xD1);
+        else if (e >= 0xE2 && e <= 0xE9) ascii_out[i] = 'S' + (e - 0xE2);
+        else if (e >= 0x81 && e <= 0x89) ascii_out[i] = 'a' + (e - 0x81);
+        else if (e >= 0x91 && e <= 0x99) ascii_out[i] = 'j' + (e - 0x91);
+        else if (e >= 0xA2 && e <= 0xA9) ascii_out[i] = 's' + (e - 0xA2);
+        else if (e >= 0xF0 && e <= 0xF9) ascii_out[i] = '0' + (e - 0xF0);
+        else if (e == 0x40) ascii_out[i] = ' ';
+        else ascii_out[i] = '?';
+    }
+    return 0;
+}
+
+int tsfi_fips16_serialize(uint8_t byte, int use_even_parity, uint16_t *out_bits) {
+    if (!out_bits) return -1;
+    
+    // Count 1s in byte for parity
+    int ones = 0;
+    for (int i = 0; i < 8; i++) {
+        if ((byte >> i) & 1) ones++;
+    }
+    
+    // Compute parity bit
+    int parity_bit = 0;
+    if (use_even_parity) {
+        parity_bit = (ones % 2 != 0) ? 1 : 0;
+    } else {
+        parity_bit = (ones % 2 == 0) ? 1 : 0;
+    }
+    
+    // Format output bit sequencing (LSB first, then parity)
+    uint16_t bits = 0;
+    for (int i = 0; i < 8; i++) {
+        bits |= (((byte >> i) & 1) << i);
+    }
+    bits |= (parity_bit << 8);
+    
+    *out_bits = bits;
+    return 0;
+}
+
+int tsfi_fips16_deserialize(uint16_t bits, int use_even_parity, uint8_t *out_byte) {
+    if (!out_byte) return -1;
+    
+    uint8_t byte = (uint8_t)(bits & 0xFF);
+    int parity_bit = (bits >> 8) & 1;
+    
+    // Validate parity
+    int ones = 0;
+    for (int i = 0; i < 8; i++) {
+        if ((byte >> i) & 1) ones++;
+    }
+    
+    int expected_parity = 0;
+    if (use_even_parity) {
+        expected_parity = (ones % 2 != 0) ? 1 : 0;
+    } else {
+        expected_parity = (ones % 2 == 0) ? 1 : 0;
+    }
+    
+    if (parity_bit != expected_parity) {
+        return -2; // Parity Check Failure
+    }
+    
+    *out_byte = byte;
+    return 0;
+}
+
+int tsfi_fips41_authorize(const char *user_role, const char *action) {
+    if (!user_role || !action) return -1;
+    
+    if (strcmp(user_role, "Owner") == 0) {
+        return 0; // Authorized for all actions
+    } else if (strcmp(user_role, "Operator") == 0) {
+        if (strcmp(action, "read") == 0 || strcmp(action, "write") == 0) {
+            return 0;
+        }
+    } else if (strcmp(user_role, "Auditor") == 0) {
+        if (strcmp(action, "read") == 0 || strcmp(action, "audit") == 0) {
+            return 0;
+        }
+    }
+    
+    return -2; // Privilege violation
+}
