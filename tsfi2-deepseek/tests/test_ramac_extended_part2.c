@@ -1430,6 +1430,36 @@ int main(void) {
     assert(tx_mgr.is_active == 0);
     printf("  [PASS] Database transaction before-image snapshots and rollbacks validated.\n");
 
+    // 140. Two-Phase Commit (2PC) Protocol Coordinator Verification
+    printf("[Test] Verifying Two-Phase Commit (2PC) Coordinator...\n");
+    tsfi_2pc_coordinator coordinator;
+    tsfi_2pc_init(&coordinator);
+    assert(coordinator.state == 0);
+    
+    // Add nodes
+    assert(tsfi_2pc_join(&coordinator, 10) == 0);
+    assert(tsfi_2pc_join(&coordinator, 20) == 0);
+    assert(tsfi_2pc_join(&coordinator, 10) == -2); // Duplicate check
+    
+    // Prepare phase
+    assert(tsfi_2pc_prepare(&coordinator) == 0);
+    assert(coordinator.state == 1);
+    assert(coordinator.participants[0].prepared == 1);
+    assert(coordinator.participants[1].prepared == 1);
+    
+    // Commit phase
+    int status_2pc = 0;
+    assert(tsfi_2pc_commit(&coordinator, &status_2pc) == 0);
+    assert(coordinator.state == 2);
+    
+    // Abort/Reset phase
+    tsfi_2pc_init(&coordinator);
+    assert(tsfi_2pc_join(&coordinator, 10) == 0);
+    assert(tsfi_2pc_abort(&coordinator) == 0);
+    assert(coordinator.state == 3);
+    assert(coordinator.participants[0].prepared == 0);
+    printf("  [PASS] Two-Phase Commit multi-node transaction coordination validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

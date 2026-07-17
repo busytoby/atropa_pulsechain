@@ -1503,3 +1503,51 @@ int tsfi_db_tx_commit(tsfi_db_tx_manager *mgr, int *out_db_status) {
     mgr->is_active = 0;
     return 0;
 }
+
+void tsfi_2pc_init(tsfi_2pc_coordinator *coord) {
+    if (!coord) return;
+    memset(coord, 0, sizeof(tsfi_2pc_coordinator));
+    coord->state = 0;
+}
+
+int tsfi_2pc_join(tsfi_2pc_coordinator *coord, int node_key) {
+    if (!coord || coord->state != 0 || coord->participant_count >= MAX_2PC_PARTICIPANTS) return -1;
+    for (int i = 0; i < coord->participant_count; i++) {
+        if (coord->participants[i].node_key == node_key) {
+            return -2;
+        }
+    }
+    coord->participants[coord->participant_count].node_key = node_key;
+    coord->participants[coord->participant_count].prepared = 0;
+    coord->participant_count++;
+    return 0;
+}
+
+int tsfi_2pc_prepare(tsfi_2pc_coordinator *coord) {
+    if (!coord || coord->participant_count == 0) return -1;
+    coord->state = 1;
+    for (int i = 0; i < coord->participant_count; i++) {
+        coord->participants[i].prepared = 1;
+    }
+    return 0;
+}
+
+int tsfi_2pc_commit(tsfi_2pc_coordinator *coord, int *out_db_status) {
+    if (!coord || !out_db_status) return -1;
+    *out_db_status = 0;
+    if (coord->state != 1) {
+        *out_db_status = 202;
+        return -2;
+    }
+    coord->state = 2;
+    return 0;
+}
+
+int tsfi_2pc_abort(tsfi_2pc_coordinator *coord) {
+    if (!coord) return -1;
+    coord->state = 3;
+    for (int i = 0; i < coord->participant_count; i++) {
+        coord->participants[i].prepared = 0;
+    }
+    return 0;
+}

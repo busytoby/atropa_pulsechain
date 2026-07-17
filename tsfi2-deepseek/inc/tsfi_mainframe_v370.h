@@ -510,4 +510,23 @@ int tsfi_db_tx_update(tsfi_db_tx_manager *mgr, const char *new_data);
 int tsfi_db_tx_rollback(tsfi_db_tx_manager *mgr, char *out_restored_data, int *out_db_status);
 int tsfi_db_tx_commit(tsfi_db_tx_manager *mgr, int *out_db_status);
 
+// Scenario 140: Two-Phase Commit (2PC) Protocol Coordinator
+#define MAX_2PC_PARTICIPANTS 4
+typedef struct {
+    int node_key;
+    int prepared;
+} tsfi_2pc_participant;
+
+typedef struct {
+    tsfi_2pc_participant participants[MAX_2PC_PARTICIPANTS];
+    int participant_count;
+    int state;
+} tsfi_2pc_coordinator;
+
+void tsfi_2pc_init(tsfi_2pc_coordinator *coord);
+int tsfi_2pc_join(tsfi_2pc_coordinator *coord, int node_key);
+int tsfi_2pc_prepare(tsfi_2pc_coordinator *coord);
+int tsfi_2pc_commit(tsfi_2pc_coordinator *coord, int *out_db_status);
+int tsfi_2pc_abort(tsfi_2pc_coordinator *coord);
+
 #endif // TSFI_MAINFRAME_V370_H
