@@ -242,3 +242,30 @@ int tsfi_mf_imf_reconcile_balance(double initial_balance, const int *tcs, const 
     }
     return 0;
 }
+
+int tsfi_mf_imf_validate_dln(const char *dln, int *is_valid) {
+    if (!dln || !is_valid) return -1;
+
+    *is_valid = 0;
+    int len = strlen(dln);
+    if (len != 14) return 0;
+
+    for (int i = 0; i < 14; i++) {
+        if (dln[i] < '0' || dln[i] > '9') return 0;
+    }
+
+    int site = 0, tax_class = 0, doc_code = 0, julian = 0, serial = 0;
+    if (sscanf(dln, "%2d%1d%2d%3d%6d", &site, &tax_class, &doc_code, &julian, &serial) == 5) {
+        if (site > 0 && tax_class > 0 && doc_code >= 0 && julian > 0 && julian <= 366 && serial >= 0) {
+            *is_valid = 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_format_batch_summary(int processed, int errors, double total_debit, double total_credit, char *out_buf, int max_len) {
+    if (!out_buf || max_len <= 0) return -1;
+
+    snprintf(out_buf, max_len, "PROC:%06d|ERR:%04d|DEBIT:%.2f|CREDIT:%.2f", processed, errors, total_debit, total_credit);
+    return 0;
+}

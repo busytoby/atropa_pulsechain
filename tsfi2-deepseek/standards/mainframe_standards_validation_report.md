@@ -172,5 +172,7 @@
 | 238 | IRS IMF Tax Class Inquirer | PASS | Returns standard tax class name strings | Volume 33 |
 | 239 | IRS IMF Transaction Sign Resolver | PASS | Resolves tax assessment and credit offset polarity | Volume 33 |
 | 240 | IRS IMF Account Reconciler | PASS | Validates balance status parameters against transaction list logs | Volume 33 |
+| 241 | IRS IMF DLN Validator | PASS | Natively validates locator code patterns and date ranges | Volume 33 |
+| 242 | IRS CADE Batch Report Formatter | PASS | Formats aggregate run statistics into spool layout lines | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 240 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 242 Scenarios validated successfully)

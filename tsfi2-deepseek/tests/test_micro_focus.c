@@ -1392,6 +1392,25 @@ int main(void) {
     assert(reconciled == 1);
     printf("  [PASS] IRS IMF Account Reconciler verified.\n");
 
+    // 130. Verify IRS IMF Document Locator Number (DLN) Validator
+    printf("[TEST] Validating IRS IMF DLN Validator...\n");
+    int dln_valid = -1;
+    int val_dln_res = tsfi_mf_imf_validate_dln("29110214400123", &dln_valid);
+    assert(val_dln_res == 0);
+    assert(dln_valid == 1);
+    printf("  [PASS] IRS IMF DLN Validator verified.\n");
+
+    // 131. Verify IRS CADE Batch Report Formatter
+    printf("[TEST] Validating IRS CADE Batch Report Formatter...\n");
+    char batch_summary[128] = {0};
+    int fmt_batch_res = tsfi_mf_cade_format_batch_summary(1050, 2, 500000.00, 150000.00, batch_summary, sizeof(batch_summary));
+    assert(fmt_batch_res == 0);
+    assert(strstr(batch_summary, "PROC:001050") != NULL);
+    assert(strstr(batch_summary, "ERR:0002") != NULL);
+    assert(strstr(batch_summary, "DEBIT:500000.00") != NULL);
+    assert(strstr(batch_summary, "CREDIT:150000.00") != NULL);
+    printf("  [PASS] IRS CADE Batch Report Formatter verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
