@@ -2118,3 +2118,48 @@ int tsfi_swift_parse(const char *raw_telex, tsfi_swift_message *msg_out) {
     }
     return -2;
 }
+
+void tsfi_cyclades_conn_init(tsfi_cyclades_connection *conn) {
+    if (!conn) return;
+    conn->state = CYCLADES_STATE_CLOSED;
+    conn->local_seq = 100;
+    conn->remote_seq = 0;
+}
+
+int tsfi_cyclades_process_packet(tsfi_cyclades_connection *conn, const tsfi_cyclades_header *packet_in, tsfi_cyclades_header *packet_out) {
+    if (!conn || !packet_in || !packet_out) return -1;
+    if (conn->state == CYCLADES_STATE_CLOSED && (packet_in->flags == 0x02)) {
+        conn->state = CYCLADES_STATE_SYN_RCVD;
+        conn->remote_seq = packet_in->seq_num;
+        packet_out->flags = 0x12;
+        packet_out->seq_num = conn->local_seq;
+        packet_out->src_node = packet_in->dest_node;
+        packet_out->dest_node = packet_in->src_node;
+        return 0;
+    } else if (conn->state == CYCLADES_STATE_SYN_RCVD && (packet_in->flags == 0x10)) {
+        conn->state = CYCLADES_STATE_ESTABLISHED;
+        conn->local_seq++;
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_swift_generate_trailer(const char *block4_text, char *block5_out, size_t max_len) {
+    if (!block4_text || !block5_out || max_len < 32) return -1;
+    uint32_t checksum = 0xABCD0123;
+    for (size_t i = 0; block4_text[i] != '\0'; i++) {
+        checksum ^= block4_text[i];
+        checksum = (checksum << 5) | (checksum >> 27);
+    }
+    snprintf(block5_out, max_len, "{5:MAC-%08X}", checksum);
+    return 0;
+}
+
+int tsfi_swift_verify_trailer(const char *block4_text, const char *block5_trailer) {
+    if (!block4_text || !block5_trailer) return -1;
+    char expected_trailer[32];
+    if (tsfi_swift_generate_trailer(block4_text, expected_trailer, sizeof(expected_trailer)) == 0) {
+        return (strcmp(expected_trailer, block5_trailer) == 0) ? 0 : -2;
+    }
+    return -3;
+}

@@ -1306,6 +1306,41 @@ int main(void) {
     assert(swift_msg.amount == 450000.00f);
     printf("  [PASS] CYCLADES datagram headers and SWIFT banking telex parsing verified.\n");
 
+    // 74. CYCLADES Transport connection states & SWIFT trailer block validation
+    printf("[Test] Verifying CYCLADES connection state & SWIFT trailers...\n");
+    tsfi_cyclades_connection conn;
+    tsfi_cyclades_conn_init(&conn);
+    assert(conn.state == CYCLADES_STATE_CLOSED);
+    
+    tsfi_cyclades_header syn_pkt;
+    syn_pkt.src_node = 1;
+    syn_pkt.dest_node = 2;
+    syn_pkt.seq_num = 200;
+    syn_pkt.flags = 0x02; // SYN
+    
+    tsfi_cyclades_header syn_ack_pkt;
+    assert(tsfi_cyclades_process_packet(&conn, &syn_pkt, &syn_ack_pkt) == 0);
+    assert(conn.state == CYCLADES_STATE_SYN_RCVD);
+    assert(syn_ack_pkt.flags == 0x12); // SYN-ACK
+    
+    tsfi_cyclades_header ack_pkt;
+    ack_pkt.src_node = 1;
+    ack_pkt.dest_node = 2;
+    ack_pkt.seq_num = 201;
+    ack_pkt.flags = 0x10; // ACK
+    
+    tsfi_cyclades_header dummy;
+    assert(tsfi_cyclades_process_packet(&conn, &ack_pkt, &dummy) == 0);
+    assert(conn.state == CYCLADES_STATE_ESTABLISHED);
+    
+    // SWIFT block 5 trailer
+    const char *swift_payload = "MT103 TRANSFER 50000.00 USD";
+    char trailer_buf[32];
+    assert(tsfi_swift_generate_trailer(swift_payload, trailer_buf, sizeof(trailer_buf)) == 0);
+    assert(tsfi_swift_verify_trailer(swift_payload, trailer_buf) == 0);
+    assert(tsfi_swift_verify_trailer(swift_payload, "{5:MAC-INVALID}") == -2);
+    printf("  [PASS] CYCLADES transport states and SWIFT Block 5 trailers verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -942,4 +942,24 @@ typedef struct {
 
 int tsfi_swift_parse(const char *raw_telex, tsfi_swift_message *msg_out);
 
+#define CYCLADES_STATE_CLOSED      0
+#define CYCLADES_STATE_SYN_SENT    1
+#define CYCLADES_STATE_SYN_RCVD    2
+#define CYCLADES_STATE_ESTABLISHED 3
+#define CYCLADES_STATE_FIN_WAIT    4
+
+// CYCLADES Transport Connection
+typedef struct {
+    int state;
+    uint16_t local_seq;
+    uint16_t remote_seq;
+} tsfi_cyclades_connection;
+
+void tsfi_cyclades_conn_init(tsfi_cyclades_connection *conn);
+int tsfi_cyclades_process_packet(tsfi_cyclades_connection *conn, const tsfi_cyclades_header *packet_in, tsfi_cyclades_header *packet_out);
+
+// SWIFT Multi-Block Trailer Generation & Verification
+int tsfi_swift_generate_trailer(const char *block4_text, char *block5_out, size_t max_len);
+int tsfi_swift_verify_trailer(const char *block4_text, const char *block5_trailer);
+
 #endif // TSFI_MAINFRAME_DECNET_H
