@@ -112,7 +112,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_coaxial_strategy.o \
             $(OBJ_DIR)/tsfi_coaxial_telemetry.o \
             $(OBJ_DIR)/tsfi_ramac_layout.o \
-            $(OBJ_DIR)/tsfi_mainframe_v370.o
+            $(OBJ_DIR)/tsfi_mainframe_v370.o \
+            $(OBJ_DIR)/tsfi_mainframe_fips.o
 
 
 # --- Plugin Objects ---
