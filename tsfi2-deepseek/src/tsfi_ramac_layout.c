@@ -3648,3 +3648,89 @@ int tsfi_atlas_vm_step(tsfi_atlas_vm *vm, const uint8_t *bytecode, int len, cons
     
     return 0;
 }
+
+int tsfi_uniservo_init(tsfi_uniservo_tape *tape, const char *filepath) {
+    if (!tape || !filepath) return -1;
+    strncpy(tape->filepath, filepath, sizeof(tape->filepath) - 1);
+    tape->filepath[sizeof(tape->filepath) - 1] = '\0';
+    tape->current_block_pos = 0;
+    tape->parity_errors = 0;
+    
+    FILE *f = fopen(filepath, "rb");
+    if (!f) {
+        tape->total_blocks = 0;
+        return 0;
+    }
+    
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fclose(f);
+    
+    tape->total_blocks = (uint32_t)(size / 256);
+    return 0;
+}
+
+int tsfi_uniservo_read_block(tsfi_uniservo_tape *tape, uint32_t block_idx, uint8_t *buffer, int buf_len) {
+    if (!tape || !buffer || buf_len < 256) return -1;
+    
+    FILE *f = fopen(tape->filepath, "rb");
+    if (!f) return -2;
+    
+    if (fseek(f, block_idx * 256, SEEK_SET) != 0) {
+        fclose(f);
+        return -3;
+    }
+    
+    size_t read_bytes = fread(buffer, 1, 256, f);
+    fclose(f);
+    
+    if (read_bytes < 256) return -4;
+    
+    uint8_t xor_sum = 0;
+    for (int i = 0; i < 255; i++) {
+        xor_sum ^= buffer[i];
+    }
+    
+    if (buffer[255] != xor_sum) {
+        tape->parity_errors++;
+        return -5;
+    }
+    
+    tape->current_block_pos = block_idx;
+    return 0;
+}
+
+int tsfi_uniservo_write_block(tsfi_uniservo_tape *tape, uint32_t block_idx, const uint8_t *buffer, int buf_len) {
+    if (!tape || !buffer || buf_len < 256) return -1;
+    
+    FILE *f = fopen(tape->filepath, "r+b");
+    if (!f) {
+        f = fopen(tape->filepath, "wb");
+        if (!f) return -2;
+    }
+    
+    if (fseek(f, block_idx * 256, SEEK_SET) != 0) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint8_t out_block[256];
+    memcpy(out_block, buffer, 255);
+    
+    uint8_t xor_sum = 0;
+    for (int i = 0; i < 255; i++) {
+        xor_sum ^= out_block[i];
+    }
+    out_block[255] = xor_sum;
+    
+    size_t written_bytes = fwrite(out_block, 1, 256, f);
+    fclose(f);
+    
+    if (written_bytes < 256) return -4;
+    
+    tape->current_block_pos = block_idx;
+    if (block_idx >= tape->total_blocks) {
+        tape->total_blocks = block_idx + 1;
+    }
+    return 0;
+}

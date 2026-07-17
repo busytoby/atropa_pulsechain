@@ -751,4 +751,16 @@ typedef struct {
 void tsfi_atlas_vm_init(tsfi_atlas_vm *vm);
 int tsfi_atlas_vm_step(tsfi_atlas_vm *vm, const uint8_t *bytecode, int len, const uint8_t *backing_store);
 
+// Univac Uniservo Magnetic Tape Drive Emulator
+typedef struct {
+    char filepath[256];
+    uint32_t current_block_pos;
+    uint32_t total_blocks;
+    uint32_t parity_errors;
+} tsfi_uniservo_tape;
+
+int tsfi_uniservo_init(tsfi_uniservo_tape *tape, const char *filepath);
+int tsfi_uniservo_read_block(tsfi_uniservo_tape *tape, uint32_t block_idx, uint8_t *buffer, int buf_len);
+int tsfi_uniservo_write_block(tsfi_uniservo_tape *tape, uint32_t block_idx, const uint8_t *buffer, int buf_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

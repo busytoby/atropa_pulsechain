@@ -84,6 +84,38 @@ int main(void) {
     
     printf("  [PASS] Atlas VM accumulator math and extrabcode systems verified.\n");
 
+    // 5. Univac Uniservo Magnetic Tape Drive Emulator Tests
+    printf("[Test] Verifying Univac Uniservo Magnetic Tape Drive Emulator...\n");
+    tsfi_uniservo_tape tape;
+    int tape_res = tsfi_uniservo_init(&tape, "tmp/test_uniservo_reel.dat.bin");
+    assert(tape_res == 0);
+    
+    uint8_t write_buf[256];
+    memset(write_buf, 0x55, 256);
+    // Write block 0
+    tape_res = tsfi_uniservo_write_block(&tape, 0, write_buf, 256);
+    assert(tape_res == 0);
+    
+    // Read block 0 and verify correct content and parity
+    uint8_t read_buf[256];
+    memset(read_buf, 0, sizeof(read_buf));
+    tape_res = tsfi_uniservo_read_block(&tape, 0, read_buf, 256);
+    assert(tape_res == 0);
+    assert(read_buf[0] == 0x55);
+    
+    // Corrupt parity byte in file and verify parity detection
+    FILE *f = fopen("tmp/test_uniservo_reel.dat.bin", "r+b");
+    assert(f != NULL);
+    fseek(f, 255, SEEK_SET);
+    uint8_t corrupt_byte = 0xFF;
+    fwrite(&corrupt_byte, 1, 1, f);
+    fclose(f);
+    
+    tape_res = tsfi_uniservo_read_block(&tape, 0, read_buf, 256);
+    assert(tape_res == -5); // Parity error
+    assert(tape.parity_errors == 1);
+    printf("  [PASS] Uniservo block read/write and longitudinal parity error detection verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
