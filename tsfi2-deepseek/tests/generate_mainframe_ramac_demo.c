@@ -1,5 +1,6 @@
 #include "tsfi_mainframe_decnet.h"
 #include "tsfi_types.h"
+#include "tsfi_ramac_layout.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,10 +15,6 @@
 #define DURATION 90
 #define TOTAL_FRAMES (DURATION * FPS)
 #define SAMPLES_PER_FRAME (SAMPLE_RATE / FPS)
-
-// DTMF Frequencies (Row/Col)
-static const float DTMF_R1 = 697.0f;
-static const float DTMF_C1 = 1209.0f;
 
 struct wav_header {
     char chunk_id[4];
@@ -74,53 +71,6 @@ static const uint8_t char_glyphs[36][5] = {
     {0x07, 0x08, 0x70, 0x08, 0x07}, // Y
     {0x61, 0x51, 0x49, 0x45, 0x43}  // Z
 };
-
-// 1. Drum Machine: Kick Drum
-float get_kick(float age) {
-    if (age < 0.0f || age > 0.4f) return 0.0f;
-    float freq = 150.0f * expf(-20.0f * age) + 45.0f;
-    float env = expf(-8.0f * age);
-    return sinf(2.0f * M_PI * freq * age) * env;
-}
-
-// 2. Drum Machine: Snare Drum
-float get_snare(float age) {
-    if (age < 0.0f || age > 0.3f) return 0.0f;
-    float noise = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
-    float env = expf(-12.0f * age);
-    float tone = sinf(2.0f * M_PI * 180.0f * age) * expf(-30.0f * age);
-    return (0.7f * noise + 0.3f * tone) * env;
-}
-
-// 3. Drum Machine: Hi-Hat
-float get_hat(float age) {
-    if (age < 0.0f || age > 0.05f) return 0.0f;
-    float noise = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
-    float env = expf(-80.0f * age);
-    return noise * env;
-}
-
-// 4. Sub-Bass Synth (Sine)
-float get_sub_bass(float age, float freq) {
-    if (age < 0.0f || age > 0.8f) return 0.0f;
-    float env = expf(-4.0f * age);
-    return sinf(2.0f * M_PI * freq * age) * env;
-}
-
-// 5. Lead Synth (Sawtooth wave)
-float get_lead(float age, float freq) {
-    if (age < 0.0f || age > 0.4f) return 0.0f;
-    float env = expf(-6.0f * age);
-    float phase = freq * age;
-    float saw = 2.0f * (phase - floorf(phase + 0.5f));
-    return saw * env;
-}
-
-// 6. Pad Synthesizer (FM)
-float get_pad(double t, float freq) {
-    float mod = sinf(2.0f * M_PI * 2.0f * t) * 8.0f;
-    return sinf(2.0f * M_PI * freq * t + mod) * 0.25f;
-}
 
 void draw_pixel(uint8_t *y_plane, int width, int height, int x, int y, uint8_t color) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
@@ -218,10 +168,45 @@ int main(void) {
         return 1;
     }
 
+    int total_samples = DURATION * SAMPLE_RATE;
+    int tape_length = DURATION * 10; // 0.1s step duration -> 900 steps
+    uint8_t *tape_data = malloc(tape_length);
+    double *synth_audio = malloc(total_samples * sizeof(double));
+
+    // Compose paper tape punch patterns
+    for (int step = 0; step < tape_length; step++) {
+        uint8_t pattern = 0x00;
+        
+        // Channel mapping: 
+        // bit 0: 110Hz (Sub-Bass Root)
+        // bit 1: 220Hz (Sub-Bass Third)
+        // bit 2: 330Hz (Arp 1)
+        // bit 3: 440Hz (Arp 2)
+        // bit 4: 550Hz (Arp 3)
+        // bit 5: 660Hz (Lead 1)
+        // bit 6: 770Hz (Lead 2)
+        // bit 7: 880Hz (Percussive click)
+
+        // Drum beats
+        if (step % 4 == 0) pattern |= 0x80; // Click trigger
+        if (step % 10 == 0) pattern |= 0x01; // Bass root note
+        if (step % 10 == 5) pattern |= 0x02; // Bass third note
+
+        // Arpeggiators based on timeline
+        if (step >= 150 && step < 750) {
+            pattern |= (1 << (2 + (step % 5))); // Sweep chord channels
+        }
+        
+        tape_data[step] = pattern;
+    }
+
+    // Synthesize audio natively via the mainframe hardware emulation circuitry
+    tsfi_s370_paper_tape_synthesizer(tape_data, tape_length, 8, synth_audio, total_samples, SAMPLE_RATE);
+
     // Write WAV header
     struct wav_header header;
     memcpy(header.chunk_id, "RIFF", 4);
-    header.chunk_size = 36 + TOTAL_FRAMES * SAMPLES_PER_FRAME * sizeof(int16_t);
+    header.chunk_size = 36 + total_samples * sizeof(int16_t);
     memcpy(header.format, "WAVE", 4);
     memcpy(header.subchunk1_id, "fmt ", 4);
     header.subchunk1_size = 16;
@@ -232,9 +217,21 @@ int main(void) {
     header.block_align = sizeof(int16_t);
     header.bits_per_sample = 16;
     memcpy(header.subchunk2_id, "data", 4);
-    header.subchunk2_size = TOTAL_FRAMES * SAMPLES_PER_FRAME * sizeof(int16_t);
+    header.subchunk2_size = total_samples * sizeof(int16_t);
 
     fwrite(&header, sizeof(header), 1, audio_out);
+
+    // Render 16-bit PCM values
+    int16_t *audio_buf_16 = malloc(total_samples * sizeof(int16_t));
+    for (int i = 0; i < total_samples; i++) {
+        // High gain to amplify the output circuitry signals clearly
+        double val = synth_audio[i] * 64000.0;
+        if (val > 32767.0) val = 32767.0;
+        if (val < -32768.0) val = -32768.0;
+        audio_buf_16[i] = (int16_t)val;
+    }
+    fwrite(audio_buf_16, sizeof(int16_t), total_samples, audio_out);
+    free(audio_buf_16);
 
     int width = 1280;
     int height = 720;
@@ -244,13 +241,11 @@ int main(void) {
     uint8_t *u_plane = malloc(uv_size);
     uint8_t *v_plane = malloc(uv_size);
 
-    int16_t *audio_buf = malloc(SAMPLES_PER_FRAME * sizeof(int16_t));
-
-    // Simulation loop
+    // Simulation loop for video
     for (int frame = 0; frame < TOTAL_FRAMES; frame++) {
         float time_sec = (float)frame / (float)FPS;
 
-        // --- 1. APPC & SNA State Transitions (90s timeline) ---
+        // --- APPC & SNA State Transitions (90s timeline) ---
         const char *scene_name = "NONE";
         if (time_sec < 15.0f) {
             scene_name = "I SYSTEM BOOT";
@@ -279,72 +274,7 @@ int main(void) {
 
         tsfi_appc_update_vulkan_telemetry(&conv, &telem);
 
-        // --- 2. Multi-Instrument Synthesizer Engine (Drums + 5 Synths) ---
-        float bpm = 120.0f;
-        float beat_dur = 60.0f / bpm; // 0.5 seconds
-        
-        for (int s = 0; s < SAMPLES_PER_FRAME; s++) {
-            float t = time_sec + ((float)s / (float)SAMPLE_RATE);
-            
-            // Calculate beat parameters
-            int beat_idx = (int)(t / beat_dur);
-            float last_beat = (float)beat_idx * beat_dur;
-            float age_beat = t - last_beat;
-            
-            float mix = 0.0f;
-
-            // Instrument 1: Drum Channel (Kick, Snare, Hi-hat)
-            float kick_val = 0.0f;
-            float snare_val = 0.0f;
-            float hat_val = 0.0f;
-            
-            // Kick on 1 and 3 beats
-            if (beat_idx % 2 == 0) {
-                kick_val = get_kick(age_beat);
-            }
-            // Snare on 2 and 4 beats
-            if (beat_idx % 2 == 1) {
-                snare_val = get_snare(age_beat);
-            }
-            // Hi-hat on every half beat (8th notes)
-            int hat_idx = (int)(t / (beat_dur / 2.0f));
-            float last_hat = (float)hat_idx * (beat_dur / 2.0f);
-            hat_val = get_hat(t - last_hat);
-            
-            float drums = kick_val * 0.5f + snare_val * 0.35f + hat_val * 0.15f;
-            mix += drums * 0.4f;
-
-            // Instrument 2: Sub-Bass (Deep Sine)
-            float bass_freq = 55.0f; // A1 note
-            if (beat_idx % 4 == 1) bass_freq = 65.41f; // C2 note
-            if (beat_idx % 4 == 3) bass_freq = 48.99f; // G1 note
-            mix += get_sub_bass(age_beat, bass_freq) * 0.35f;
-
-            // Instrument 3: Sawtooth Lead (Arpeggiator)
-            float melody_freqs[4] = {440.0f, 523.25f, 659.25f, 783.99f}; // Am7 arpeggio
-            int note_idx = (int)(t / (beat_dur / 2.0f));
-            float last_note = (float)note_idx * (beat_dur / 2.0f);
-            float lead_freq = melody_freqs[note_idx % 4];
-            mix += get_lead(t - last_note, lead_freq) * 0.15f;
-
-            // Instrument 4: FM Pad (Chords)
-            float pad_freq = 220.0f;
-            if (time_sec >= 35.0f && time_sec < 75.0f) {
-                pad_freq = 261.63f; // C4 chord base
-            }
-            mix += get_pad(t, pad_freq) * 0.15f;
-
-            // Instrument 5: DTMF Chord Generator (Active during SNA/DECnet phase)
-            if (time_sec >= 55.0f && time_sec < 75.0f) {
-                float dtmf_tone = 0.5f * sinf(2.0f * M_PI * DTMF_R1 * t) + 0.5f * sinf(2.0f * M_PI * DTMF_C1 * t);
-                mix += dtmf_tone * 0.1f;
-            }
-
-            audio_buf[s] = (int16_t)(mix * 16384.0f);
-        }
-        fwrite(audio_buf, sizeof(int16_t), SAMPLES_PER_FRAME, audio_out);
-
-        // --- 3. Video Frame Generation ---
+        // --- Video Frame Generation ---
         memset(y_plane, 16, y_size);
         memset(u_plane, 128, uv_size);
         memset(v_plane, 128, uv_size);
@@ -402,7 +332,8 @@ int main(void) {
     free(y_plane);
     free(u_plane);
     free(v_plane);
-    free(audio_buf);
+    free(tape_data);
+    free(synth_audio);
 
     printf("[SUCCESS] Demo streams compiled to:\n");
     printf("  Audio: mainframe_ramac_90s_audio.wav (16-bit standard RIFF WAVE)\n");
