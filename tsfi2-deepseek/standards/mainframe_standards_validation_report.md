@@ -93,5 +93,7 @@
 | 159 | CICS Storage Control FREEMAIN | PASS | Dynamic memory block release emulator | Volume 33 |
 | 160 | Majordomo Moderation Action Handler | PASS | Request accept and reject verdict resolver | Volume 33 |
 | 161 | CICS Dump Control Emulator | PASS | Transaction storage block hexadecimal dump | Volume 33 |
+| 162 | Majordomo Moderation Queue Logger | PASS | Pending subscriber list approval queues | Volume 33 |
+| 163 | CICS Common Work Area Emulator | PASS | Global storage partition read/write sharing | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 161 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 163 Scenarios validated successfully)

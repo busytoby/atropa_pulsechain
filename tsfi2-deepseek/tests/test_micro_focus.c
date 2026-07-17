@@ -680,6 +680,29 @@ int main(void) {
     assert(strstr(dump_buf, "DE AD BE EF") != NULL);
     printf("  [PASS] CICS Dump Control verified.\n");
 
+    // 52. Verify Majordomo Moderation Queue Logger
+    printf("[TEST] Validating Majordomo Moderation Queue...\n");
+    uint32_t pend_cookies[4] = {0};
+    int pend_count = 0;
+    int q_post_res = tsfi_mf_majordomo_queue_post("zmm-dev", "dev@dysnomia.org", "Spam filter", pend_cookies, &pend_count, 4);
+    assert(q_post_res == 0);
+    assert(pend_count == 1);
+    assert(pend_cookies[0] > 77000);
+    printf("  [PASS] Majordomo Moderation Queue verified.\n");
+
+    // 53. Verify CICS Common Work Area (CWA) Emulator
+    printf("[TEST] Validating CICS Common Work Area...\n");
+    uint8_t cwa_pool[256] = {0};
+    uint8_t cwa_in[4] = {0x11, 0x22, 0x33, 0x44};
+    uint8_t cwa_out[4] = {0};
+    int cwa_w = tsfi_mf_cics_cwa_write(32, cwa_in, 4, cwa_pool);
+    assert(cwa_w == 0);
+    int cwa_r = tsfi_mf_cics_cwa_read(32, cwa_out, 4, cwa_pool);
+    assert(cwa_r == 0);
+    assert(cwa_out[0] == 0x11);
+    assert(cwa_out[3] == 0x44);
+    printf("  [PASS] CICS Common Work Area verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

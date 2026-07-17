@@ -1183,3 +1183,32 @@ int tsfi_mf_cics_dump(const char *dump_id, uint32_t code, const uint8_t *payload
 
     return 0;
 }
+
+int tsfi_mf_majordomo_queue_post(const char *list_name, const char *sender, const char *subject, uint32_t *pending_cookies, int *cookie_count, int max_cookies) {
+    if (!list_name || !sender || !subject || !pending_cookies || !cookie_count || max_cookies <= 0) return -1;
+
+    int idx = *cookie_count;
+    if (idx >= max_cookies) return -2;
+
+    uint32_t cookie = 77123;
+    for (int i = 0; list_name[i] != '\0'; i++) cookie += (uint8_t)list_name[i];
+    for (int i = 0; sender[i] != '\0'; i++) cookie += (uint8_t)sender[i];
+
+    pending_cookies[idx] = cookie;
+    *cookie_count = idx + 1;
+    return 0;
+}
+
+int tsfi_mf_cics_cwa_write(uint32_t offset, const uint8_t *data, int len, uint8_t *cwa_pool) {
+    if (!data || len < 0 || !cwa_pool) return -1;
+
+    memcpy(cwa_pool + offset, data, len);
+    return 0;
+}
+
+int tsfi_mf_cics_cwa_read(uint32_t offset, uint8_t *data_out, int len, const uint8_t *cwa_pool) {
+    if (!data_out || len < 0 || !cwa_pool) return -1;
+
+    memcpy(data_out, cwa_pool + offset, len);
+    return 0;
+}
