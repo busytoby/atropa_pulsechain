@@ -607,6 +607,9 @@ int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_l
     if (!conv) return -1;
     conv->conversation_id = (local_lu << 16) | (partner_lu & 0xFFFF);
     conv->state = 0; // Initial allocated state
+    conv->security_active = 0;
+    conv->pacing_window = 4;
+    conv->sync_state = 0;
     return 0;
 }
 
@@ -690,5 +693,58 @@ int tsfi_appc_bridge_terminal(tsfi_appc_conversation *conv, tsfi_ibm3270_termina
     }
     term->buffer_updated = 1;
     return 0;
+}
+
+int tsfi_appc_security_validate(tsfi_appc_conversation *conv, const char *username, const char *password) {
+    if (!conv || !username || !password) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    if (strcmp(username, password) != 0 && strlen(password) >= 4) {
+        conv->security_active = 1;
+        return 0;
+    }
+    conv->security_active = 0;
+    return -3; // Security validation failed
+}
+
+int tsfi_appc_spawn_tp(tsfi_appc_conversation *conv, const char *tp_name) {
+    if (!conv || !tp_name) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    if (conv->security_active == 0) return -4; // Security check required
+    
+    return 0;
+}
+
+int tsfi_appc_pacing_adjust(tsfi_appc_conversation *conv, int congestion_flag) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    if (congestion_flag) {
+        if (conv->pacing_window > 1) {
+            conv->pacing_window--;
+        }
+    } else {
+        if (conv->pacing_window < 16) {
+            conv->pacing_window++;
+        }
+    }
+    return 0;
+}
+
+int tsfi_appc_syncpoint_commit(tsfi_appc_conversation *conv, int phase) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    if (phase == 1) {
+        conv->sync_state = 1; // PREPARED
+        return 0;
+    } else if (phase == 2) {
+        if (conv->sync_state == 1) {
+            conv->sync_state = 2; // COMMITTED
+            return 0;
+        }
+        return -3;
+    }
+    return -4;
 }
 

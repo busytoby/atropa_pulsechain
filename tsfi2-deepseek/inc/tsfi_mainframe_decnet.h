@@ -704,6 +704,9 @@ int tsfi_zvm_vscs_attach(tsfi_zvm_vscs *vscs, int term_lu, int vmid);
 typedef struct {
     int conversation_id;
     int state; // 0=ALLOCATED, 1=SEND, 2=RECEIVE, 3=DEALLOCATED
+    int security_active;
+    int pacing_window;
+    int sync_state; // 0=NONE, 1=PREPARED, 2=COMMITTED
 } tsfi_appc_conversation;
 
 int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu);
@@ -715,6 +718,10 @@ int tsfi_appc_confirmed(tsfi_appc_conversation *conv);
 int tsfi_appc_bridge_winchester(tsfi_appc_conversation *conv, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg);
 int tsfi_appc_bridge_decnet(tsfi_appc_conversation *conv, tsfi_decnet_router *router, uint16_t dest_node);
 int tsfi_appc_bridge_terminal(tsfi_appc_conversation *conv, tsfi_ibm3270_terminal *term);
+int tsfi_appc_security_validate(tsfi_appc_conversation *conv, const char *username, const char *password);
+int tsfi_appc_spawn_tp(tsfi_appc_conversation *conv, const char *tp_name);
+int tsfi_appc_pacing_adjust(tsfi_appc_conversation *conv, int congestion_flag);
+int tsfi_appc_syncpoint_commit(tsfi_appc_conversation *conv, int phase);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);
