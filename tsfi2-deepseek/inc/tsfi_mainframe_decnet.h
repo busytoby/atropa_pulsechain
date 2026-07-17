@@ -707,6 +707,7 @@ typedef struct {
     int security_active;
     int pacing_window;
     int sync_state; // 0=NONE, 1=PREPARED, 2=COMMITTED
+    void *crypto_session;
 } tsfi_appc_conversation;
 
 int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu);
@@ -735,6 +736,12 @@ int tsfi_appc_chain_receive(tsfi_appc_conversation *conv, uint8_t *large_buf, si
 int tsfi_appc_failover(tsfi_appc_conversation *conv, tsfi_sna_er_route *backup_route);
 void cmqei(tsfi_appc_conversation *conv, int *sync_level, int *security_type, int *rc);
 void cmqes(tsfi_appc_conversation *conv, int *state, int *rc);
+int tsfi_appc_serialize_fmh5(const char *tpn, int security_type, const char *user, const char *pwd, uint8_t *buf, size_t *len_out);
+int tsfi_appc_deserialize_fmh5(const uint8_t *buf, size_t len, char *tpn_out, int *security_out, char *user_out, char *pwd_out);
+void tsfi_appc_ebcdic_to_ascii(uint8_t *buf, size_t len);
+void tsfi_appc_ascii_to_ebcdic(uint8_t *buf, size_t len);
+void tsfi_appc_set_crypto(tsfi_appc_conversation *conv, void *crypto_session);
+void tsfi_appc_trace(tsfi_appc_conversation *conv, const char *event);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);

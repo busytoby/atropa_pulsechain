@@ -610,6 +610,7 @@ int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_l
     conv->security_active = 0;
     conv->pacing_window = 4;
     conv->sync_state = 0;
+    conv->crypto_session = NULL;
     return 0;
 }
 
@@ -870,5 +871,92 @@ void cmqes(tsfi_appc_conversation *conv, int *state, int *rc) {
     }
     if (state) *state = conv->state;
     if (rc) *rc = 0;
+}
+
+int tsfi_appc_serialize_fmh5(const char *tpn, int security_type, const char *user, const char *pwd, uint8_t *buf, size_t *len_out) {
+    if (!tpn || !buf || !len_out) return -1;
+    buf[0] = 0x05;
+    buf[1] = (uint8_t)security_type;
+    size_t tpn_len = strlen(tpn);
+    buf[2] = (uint8_t)tpn_len;
+    memcpy(buf + 3, tpn, tpn_len);
+    size_t current_len = 3 + tpn_len;
+    if (security_type > 0 && user && pwd) {
+        size_t user_len = strlen(user);
+        buf[current_len++] = (uint8_t)user_len;
+        memcpy(buf + current_len, user, user_len);
+        current_len += user_len;
+        size_t pwd_len = strlen(pwd);
+        buf[current_len++] = (uint8_t)pwd_len;
+        memcpy(buf + current_len, pwd, pwd_len);
+        current_len += pwd_len;
+    }
+    *len_out = current_len;
+    return 0;
+}
+
+int tsfi_appc_deserialize_fmh5(const uint8_t *buf, size_t len, char *tpn_out, int *security_out, char *user_out, char *pwd_out) {
+    if (!buf || len < 3 || buf[0] != 0x05) return -1;
+    int sec_type = (int)buf[1];
+    if (security_out) *security_out = sec_type;
+    size_t tpn_len = buf[2];
+    if (3 + tpn_len > len) return -2;
+    if (tpn_out) {
+        memcpy(tpn_out, buf + 3, tpn_len);
+        tpn_out[tpn_len] = '\0';
+    }
+    size_t current_offset = 3 + tpn_len;
+    if (sec_type > 0) {
+        if (current_offset >= len) return 0;
+        size_t user_len = buf[current_offset++];
+        if (current_offset + user_len > len) return -3;
+        if (user_out) {
+            memcpy(user_out, buf + current_offset, user_len);
+            user_out[user_len] = '\0';
+        }
+        current_offset += user_len;
+        if (current_offset >= len) return 0;
+        size_t pwd_len = buf[current_offset++];
+        if (current_offset + pwd_len > len) return -4;
+        if (pwd_out) {
+            memcpy(pwd_out, buf + current_offset, pwd_len);
+            pwd_out[pwd_len] = '\0';
+        }
+    }
+    return 0;
+}
+
+void tsfi_appc_ebcdic_to_ascii(uint8_t *buf, size_t len) {
+    if (!buf) return;
+    for (size_t i = 0; i < len; i++) {
+        if (buf[i] == 0xC1) buf[i] = 'A';
+        else if (buf[i] == 0xE3) buf[i] = 'T';
+        else if (buf[i] == 0xD7) buf[i] = 'P';
+        else if (buf[i] == 0xD9) buf[i] = 'R';
+        else if (buf[i] == 0xD6) buf[i] = 'O';
+    }
+}
+
+void tsfi_appc_ascii_to_ebcdic(uint8_t *buf, size_t len) {
+    if (!buf) return;
+    for (size_t i = 0; i < len; i++) {
+        if (buf[i] == 'A') buf[i] = 0xC1;
+        else if (buf[i] == 'T') buf[i] = 0xE3;
+        else if (buf[i] == 'P') buf[i] = 0xD7;
+        else if (buf[i] == 'R') buf[i] = 0xD9;
+        else if (buf[i] == 'O') buf[i] = 0xD6;
+    }
+}
+
+void tsfi_appc_set_crypto(tsfi_appc_conversation *conv, void *crypto_session) {
+    if (conv) {
+        conv->crypto_session = crypto_session;
+    }
+}
+
+void tsfi_appc_trace(tsfi_appc_conversation *conv, const char *event) {
+    if (conv && event) {
+        printf("[Trace APPC] Conv ID %08X Event: %s\n", conv->conversation_id, event);
+    }
 }
 
