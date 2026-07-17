@@ -935,6 +935,28 @@ int main(void) {
     assert(strcmp(rx_art.body, "This is a test post stored in binary dat bin format.") == 0);
     printf("  [PASS] Usenet posting binary serialization, preservation, and retrieval verified.\n");
 
+    // 60. SNA TH MPF to RH Chaining Mappings Verification
+    printf("[Test] Verifying SNA TH MPF to RH Chaining Mappings...\n");
+    tsfi_sna_rh test_rh;
+    
+    // First segment (mpf = 0x02)
+    tsfi_sna_map_th_mpf_to_rh_chain(0x02, &test_rh);
+    assert(test_rh.begin_chain == 1 && test_rh.end_chain == 0);
+    
+    // Middle segment (mpf = 0x00)
+    tsfi_sna_map_th_mpf_to_rh_chain(0x00, &test_rh);
+    assert(test_rh.begin_chain == 0 && test_rh.end_chain == 0);
+    
+    // Last segment (mpf = 0x01)
+    tsfi_sna_map_th_mpf_to_rh_chain(0x01, &test_rh);
+    assert(test_rh.begin_chain == 0 && test_rh.end_chain == 1);
+    
+    // Only segment (mpf = 0x03)
+    tsfi_sna_map_th_mpf_to_rh_chain(0x03, &test_rh);
+    assert(test_rh.begin_chain == 1 && test_rh.end_chain == 1);
+    
+    printf("  [PASS] SNA TH MPF to RH chaining mappings verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

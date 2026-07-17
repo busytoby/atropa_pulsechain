@@ -1540,3 +1540,26 @@ int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article
     memcpy(art_out, buf, sizeof(tsfi_usenet_article));
     return 0;
 }
+
+void tsfi_sna_map_th_mpf_to_rh_chain(uint8_t mpf, tsfi_sna_rh *rh) {
+    if (!rh) return;
+    switch (mpf & 0x03) {
+        case 0x02:
+            rh->begin_chain = 1;
+            rh->end_chain = 0;
+            break;
+        case 0x00:
+            rh->begin_chain = 0;
+            rh->end_chain = 0;
+            break;
+        case 0x01:
+            rh->begin_chain = 0;
+            rh->end_chain = 1;
+            break;
+        case 0x03:
+        default:
+            rh->begin_chain = 1;
+            rh->end_chain = 1;
+            break;
+    }
+}

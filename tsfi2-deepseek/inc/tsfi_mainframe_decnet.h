@@ -659,4 +659,6 @@ void tsfi_usenet_init(tsfi_usenet_article *art, const char *group, uint32_t art_
 int tsfi_usenet_store_bin(const tsfi_usenet_article *art, uint8_t *buf, size_t *len_out);
 int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article *art_out);
 
+void tsfi_sna_map_th_mpf_to_rh_chain(uint8_t mpf, tsfi_sna_rh *rh);
+
 #endif // TSFI_MAINFRAME_DECNET_H
