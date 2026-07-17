@@ -591,6 +591,17 @@ int main(void) {
     assert(strstr(intro_buffer, "Welcome to the zmm-dev mailing list") != NULL);
     printf("  [PASS] Majordomo intro Resolver verified.\n");
 
+    // 43. Verify CICS Resource Lock Manager (ENQ/DEQ)
+    printf("[TEST] Validating CICS Resource Lock Manager...\n");
+    uint32_t lock_tbl[16] = {0};
+    int enq_res_new = tsfi_mf_cics_enq("VSAM_RECRD", 101, lock_tbl, 16);
+    assert(enq_res_new == 0);
+    int dup_enq = tsfi_mf_cics_enq("VSAM_RECRD", 102, lock_tbl, 16);
+    assert(dup_enq == 1);
+    int deq_res_new = tsfi_mf_cics_deq("VSAM_RECRD", 101, lock_tbl, 16);
+    assert(deq_res_new == 0);
+    printf("  [PASS] CICS Resource Lock Manager verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
