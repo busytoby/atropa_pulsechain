@@ -728,6 +728,26 @@ int main(void) {
     assert(sh_reg[0] == 64);
     printf("  [PASS] CICS Shared Storage Area verified.\n");
 
+    // 56. Verify Majordomo List Administrator Validator
+    printf("[TEST] Validating Majordomo Admin Checker...\n");
+    const char *admins[2] = {"admin1@dysnomia.org", "admin2@dysnomia.org"};
+    int is_adm = tsfi_mf_majordomo_is_admin("zmm-dev", "admin2@dysnomia.org", admins, 2);
+    assert(is_adm == 0);
+    int is_adm2 = tsfi_mf_majordomo_is_admin("zmm-dev", "stranger@dysnomia.org", admins, 2);
+    assert(is_adm2 == -2);
+    printf("  [PASS] Majordomo Admin Checker verified.\n");
+
+    // 57. Verify CICS Security Bypass Controller
+    printf("[TEST] Validating CICS Security Bypass...\n");
+    int bypass_st = -1;
+    int bp_res = tsfi_mf_cics_bypass_security("INVT", 0xAAFFBEEF, &bypass_st);
+    assert(bp_res == 0);
+    assert(bypass_st == 1);
+    int bp_res2 = tsfi_mf_cics_bypass_security("INVT", 0x00000000, &bypass_st);
+    assert(bp_res2 == 0);
+    assert(bypass_st == 0);
+    printf("  [PASS] CICS Security Bypass verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

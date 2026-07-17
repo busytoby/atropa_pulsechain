@@ -97,5 +97,7 @@
 | 163 | CICS Common Work Area Emulator | PASS | Global storage partition read/write sharing | Volume 33 |
 | 164 | Majordomo Pending Cookies List | PASS | Pending moderation token filters | Volume 33 |
 | 165 | CICS Shared Storage Area Allocator | PASS | Task-independent memory allocation registry | Volume 33 |
+| 166 | Majordomo List Administrator Validator | PASS | Registered administrator access checker | Volume 33 |
+| 167 | CICS Security Bypass Controller | PASS | Administrative transaction override authorization | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 165 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 167 Scenarios validated successfully)

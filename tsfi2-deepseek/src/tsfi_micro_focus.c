@@ -1244,3 +1244,26 @@ int tsfi_mf_cics_getmain_shared(int length, uint8_t *storage_pool, uint32_t *all
 
     return 0;
 }
+
+int tsfi_mf_majordomo_is_admin(const char *list_name, const char *email, const char **admin_registry, int admin_count) {
+    if (!list_name || !email || !admin_registry || admin_count < 0) return -1;
+
+    for (int i = 0; i < admin_count; i++) {
+        if (admin_registry[i] && strcmp(admin_registry[i], email) == 0) {
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_bypass_security(const char *transaction_id, uint32_t auth_token, int *bypass_status) {
+    if (!transaction_id || !bypass_status) return -1;
+
+    if (auth_token == 0xAAFFBEEF) {
+        *bypass_status = 1;
+    } else {
+        *bypass_status = 0;
+    }
+    return 0;
+}
