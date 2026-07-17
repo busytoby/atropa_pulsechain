@@ -24,5 +24,9 @@ int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer,
 int tsfi_mf_stock_inventory_process(const char *raw_record, char *report_line);
 int tsfi_mf_sales_commission_process(const char *raw_record, char *report_line);
 int tsfi_mf_calculate_diyat_tax(const char *event_code, uint32_t base_value, uint32_t *out_tax);
+int tsfi_diyat_yul_excise_gas_taxes(uint64_t gas_amount, const char *user_address_hex);
+
+#include "tsfi_ramac_layout.h"
+int tsfi_s370_yul_exec_bridge(const tsfi_uncol_instruction *program, int program_size);
 
 #endif // TSFI_MICRO_FOCUS_H

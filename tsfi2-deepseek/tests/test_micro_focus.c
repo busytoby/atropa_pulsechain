@@ -1,4 +1,5 @@
 #include "tsfi_micro_focus.h"
+#include "tsfi_ramac_layout.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -175,6 +176,19 @@ int main(void) {
     assert(lau_yul_thunk_sload(0xF199) == 5000); // 10% of 50000 gas
     assert(g_transaction_diyat_tax_total == initial_tax + 5000);
     printf("  [PASS] Diyat Yul Gas Tax Excision on 2-3 tree blockchain verified.\n");
+
+    // Verify S370 Yul execution bridge
+    printf("[TEST] Validating S370 Yul execution bridge...\n");
+    tsfi_uncol_instruction test_prog[2];
+    strcpy(test_prog[0].op, "LOAD");
+    test_prog[0].reg_dest = 1;
+    test_prog[0].address = 100;
+    strcpy(test_prog[1].op, "STORE");
+    test_prog[1].reg_dest = 1;
+    test_prog[1].address = 200;
+    int bridge_res = tsfi_s370_yul_exec_bridge(test_prog, 2);
+    assert(bridge_res == 0);
+    printf("  [PASS] S370 Yul execution bridge verified.\n");
 
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;

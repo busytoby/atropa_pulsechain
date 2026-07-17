@@ -1,4 +1,5 @@
 #include "tsfi_micro_focus.h"
+#include "tsfi_ramac_layout.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -269,5 +270,16 @@ int tsfi_diyat_yul_excise_gas_taxes(uint64_t gas_amount, const char *user_addres
     extern _Thread_local uint64_t g_transaction_diyat_tax_total;
     g_transaction_diyat_tax_total += tax_val;
 
+    return 0;
+}
+
+int tsfi_s370_yul_exec_bridge(const tsfi_uncol_instruction *program, int program_size) {
+    if (!program || program_size <= 0) return -1;
+
+    char yul_code[1024];
+    int gen_res = tsfi_s370_uncol_to_yul(program, program_size, yul_code, sizeof(yul_code));
+    if (gen_res != 0) return -2;
+
+    printf("[S370 YUL BRIDGE] Compiled UNCOL to Yul bytecode:\n%s\n", yul_code);
     return 0;
 }
