@@ -2000,6 +2000,21 @@ int main(void) {
     assert(strcmp(dev_report, "NO VIRTUAL DEVICES") == 0);
     printf("  [PASS] VM/370 CP virtual device status queries listed successfully.\n");
 
+    // 112. VM/370 CP LOGOUT Session Cleanup Verification
+    printf("[Test] Verifying VM/370 CP Session Logout cleanup...\n");
+    // Ensure sleep state is active first
+    tsfi_cp_terminal_sleep sleep_logout;
+    tsfi_cp_sleep_init(&sleep_logout);
+    assert(tsfi_cp_sleep_start(&sleep_logout, 5) == 0);
+    
+    // Execute logout session cleanup
+    tsfi_cp_logout_execute(&dev_tbl, &link_mgr, &sleep_logout);
+    assert(dev_tbl.count == 0);
+    assert(link_mgr.link_count == 0);
+    assert(sleep_logout.is_sleeping == 0);
+    assert(sleep_logout.remaining_seconds == 0);
+    printf("  [PASS] VM/370 CP session logout resource releases verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

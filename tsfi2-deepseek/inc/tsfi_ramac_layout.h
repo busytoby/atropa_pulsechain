@@ -1826,4 +1826,6 @@ int tsfi_cp_device_define(tsfi_cp_device_table *tbl, const char *type, uint32_t 
 
 int tsfi_cp_query_virtual(const tsfi_cp_device_table *tbl, char *out_buf, int out_max);
 
+void tsfi_cp_logout_execute(tsfi_cp_device_table *tbl, tsfi_cp_link_manager *link_mgr, tsfi_cp_terminal_sleep *sleep_state);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -6708,3 +6708,16 @@ int tsfi_cp_query_virtual(const tsfi_cp_device_table *tbl, char *out_buf, int ou
     }
     return 0;
 }
+
+void tsfi_cp_logout_execute(tsfi_cp_device_table *tbl, tsfi_cp_link_manager *link_mgr, tsfi_cp_terminal_sleep *sleep_state) {
+    if (tbl) {
+        tbl->count = 0;
+    }
+    if (link_mgr) {
+        link_mgr->link_count = 0;
+    }
+    if (sleep_state) {
+        sleep_state->is_sleeping = 0;
+        sleep_state->remaining_seconds = 0;
+    }
+}
