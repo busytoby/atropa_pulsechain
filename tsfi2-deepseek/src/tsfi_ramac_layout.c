@@ -9,8 +9,8 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
-#endif
 
+#endif
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index) {
     tsfi_ramac_chs chs;
 
@@ -24,12 +24,14 @@ tsfi_ramac_chs tsfi_ramac_index_to_chs(int index) {
     return chs;
 }
 
+
 int tsfi_ramac_chs_to_index(tsfi_ramac_chs chs) {
     return chs.cylinder * RAMAC_WORDS_PER_CYLINDER +
            chs.head * RAMAC_WORDS_PER_TRACK +
            chs.sector * RAMAC_WORDS +
            chs.word_offset;
 }
+
 
 double tsfi_ramac_calculate_seek(int from_index, int to_index) {
     tsfi_ramac_chs c1 = tsfi_ramac_index_to_chs(from_index);
@@ -41,6 +43,7 @@ double tsfi_ramac_calculate_seek(int from_index, int to_index) {
 
     return (cylinder_seek + head_swap + rotational_delay) * 1000.0; // Return in microseconds
 }
+
 
 int tsfi_ramac_layout_optimize(tsfi_dat *dat, const char *filepath) {
     if (!dat || !filepath) return -1;
@@ -59,6 +62,7 @@ int tsfi_ramac_layout_optimize(tsfi_dat *dat, const char *filepath) {
     fclose(fp);
     return 0;
 }
+
 
 int tsfi_ramac_hash_key(const char *key, int cylinder) {
     unsigned int hash = 5381;
@@ -80,6 +84,7 @@ int tsfi_ramac_hash_key(const char *key, int cylinder) {
 
     return tsfi_ramac_chs_to_index(chs);
 }
+
 
 int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder, double *out_total_seek_us) {
     int primary_idx = tsfi_ramac_hash_key(key, cylinder);
@@ -148,6 +153,7 @@ int tsfi_ramac_insert_record(tsfi_ramac_record *disk, const char *key, const cha
     return found_slot;
 }
 
+
 const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, int cylinder, double *out_total_seek_us) {
     int primary_idx = tsfi_ramac_hash_key(key, cylinder);
     int current_idx = primary_idx;
@@ -169,6 +175,7 @@ const char* tsfi_ramac_search_record(tsfi_ramac_record *disk, const char *key, i
     return NULL;
 }
 
+
 int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *dest, int max_len) {
     if (!wiring || !src || !dest) return -1;
     int src_s = 0, src_e = 0, dest_s = 0, dest_e = 0;
@@ -187,6 +194,7 @@ int tsfi_ramac_plugboard_route(const char *wiring, const uint8_t *src, uint8_t *
     return size_to_copy;
 }
 
+
 int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const char *value, int cylinder) {
     double temp_seek = 0.0;
     int write_idx = tsfi_ramac_insert_record(disk, key, value, cylinder, &temp_seek);
@@ -200,31 +208,9 @@ int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const ch
     return 0;
 }
 
-void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model) {
-    if (!model) return;
-    memset(model->accumulators, 0, sizeof(model->accumulators));
-    model->isolation_trap = 0;
-    model->trap_active = 0;
-}
 
-int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
-    if (!model || acc_id < 0 || acc_id >= 10) return -1;
-    model->accumulators[acc_id] += val;
-    return 0;
-}
 
-int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val) {
-    if (!model || acc_id < 0 || acc_id >= 10) return -1;
 
-    if (val == 0) {
-        model->isolation_trap = model->accumulators[acc_id];
-        model->trap_active = 1;
-        return -1; 
-    }
-
-    model->accumulators[acc_id] /= val;
-    return 0;
-}
 
 int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, char *response_out, int max_len) {
     if (!disk || !command || !response_out) return -1;
@@ -274,6 +260,7 @@ int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, cha
     return -1;
 }
 
+
 int tsfi_ramac_check_parity(const char *str) {
     if (!str) return 0;
     while (*str) {
@@ -289,1636 +276,879 @@ int tsfi_ramac_check_parity(const char *str) {
     return 1;
 }
 
-int tsfi_ramac_alu_exec(tsfi_ramac_acc_model *model, tsfi_ramac_instruction *program, int program_size) {
-    if (!model || !program || program_size <= 0) return -1;
 
-    int pc = 0;
-    int cmp_flag = 0;
 
-    while (pc >= 0 && pc < program_size) {
-        tsfi_ramac_instruction inst = program[pc];
-        
-        int64_t val = 0;
-        if (inst.constant) {
-            val = inst.acc_src;
-        } else {
-            if (inst.acc_src >= 0 && inst.acc_src < 10) {
-                val = model->accumulators[inst.acc_src];
-            }
-        }
 
-        if (strcmp(inst.op, "ADD") == 0) {
-            tsfi_ramac_acc_add(model, inst.acc_dest, val);
-            pc++;
-        } else if (strcmp(inst.op, "SUB") == 0) {
-            tsfi_ramac_acc_add(model, inst.acc_dest, -val);
-            pc++;
-        } else if (strcmp(inst.op, "DIV") == 0) {
-            int div_ret = tsfi_ramac_acc_div(model, inst.acc_dest, val);
-            if (div_ret == -1 && model->trap_active) {
-                return -1;
-            }
-            pc++;
-        } else if (strcmp(inst.op, "CMP") == 0) {
-            int64_t dest_val = model->accumulators[inst.acc_dest];
-            if (dest_val == val) cmp_flag = 0;
-            else if (dest_val > val) cmp_flag = 1;
-            else cmp_flag = -1;
-            pc++;
-        } else if (strcmp(inst.op, "JEQ") == 0) {
-            if (cmp_flag == 0) {
-                int target_pc = -1;
-                for (int j = 0; j < program_size; j++) {
-                    if (strcmp(program[j].label, inst.label) == 0) {
-                        target_pc = j;
-                        break;
-                    }
-                }
-                if (target_pc != -1) {
-                    pc = target_pc;
-                } else {
-                    pc++;
-                }
-            } else {
-                pc++;
-            }
-        } else {
-            pc++;
-        }
-    }
-    return 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tsfi_lgp30_flipflop_init(tsfi_lgp30_flipflop *ff) {
+    if (!ff) return;
+    ff->triode1_grid_v = -2.0;
+    ff->triode1_plate_v = 150.0;
+    ff->triode2_grid_v = 0.0;
+    ff->triode2_plate_v = 50.0;
 }
 
-int tsfi_s370_dat_translate(uint32_t virtual_addr, 
-                            tsfi_s370_segment_entry *seg_table, int seg_count,
-                            tsfi_s370_page_entry *page_tables,
-                            uint32_t *out_physical_addr, int *out_write_protected) {
-    if (!seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
 
-    uint32_t sx = (virtual_addr >> 20) & 0x7FF;
-    uint32_t px = (virtual_addr >> 12) & 0xFF;
-    uint32_t bx = virtual_addr & 0xFFF;
+void tsfi_lgp30_flipflop_tick(tsfi_lgp30_flipflop *ff, double trigger_set_v, double trigger_reset_v, double dt) {
+    if (!ff) return;
 
-    if ((int)sx >= seg_count) {
-        return -1;
+    double vcc = 200.0;
+    double rl = 20000.0;
+    double r1 = 100000.0;
+    double r2 = 50000.0;
+    double bias_v = -50.0;
+    double i0 = 0.002;
+
+    double target_g1 = (ff->triode2_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_set_v;
+    double target_g2 = (ff->triode1_plate_v * r2 + bias_v * r1) / (r1 + r2) + trigger_reset_v;
+
+    ff->triode1_grid_v += (target_g1 - ff->triode1_grid_v) * (dt / 0.00001);
+    ff->triode2_grid_v += (target_g2 - ff->triode2_grid_v) * (dt / 0.00001);
+    if (ff->triode1_grid_v > 0.0) ff->triode1_grid_v = 0.0;
+    if (ff->triode2_grid_v > 0.0) ff->triode2_grid_v = 0.0;
+
+    double ip1 = 0.0;
+    if (ff->triode1_grid_v > -6.0) {
+        ip1 = i0 * pow(ff->triode1_grid_v + 6.0, 1.5);
+    }
+    double ip2 = 0.0;
+    if (ff->triode2_grid_v > -6.0) {
+        ip2 = i0 * pow(ff->triode2_grid_v + 6.0, 1.5);
     }
 
-    if (seg_table[sx].invalid) {
-        return -1;
-    }
+    double target_p1 = vcc - ip1 * rl;
+    double target_p2 = vcc - ip2 * rl;
+    if (target_p1 < 0.0) target_p1 = 0.0;
+    if (target_p2 < 0.0) target_p2 = 0.0;
 
-    uint32_t pte_idx = seg_table[sx].page_table_origin + px;
-    if (page_tables[pte_idx].invalid) {
-        return -1;
-    }
-
-    *out_physical_addr = page_tables[pte_idx].page_frame_real_addr + bx;
-    *out_write_protected = page_tables[pte_idx].write_protect;
-    return 0;
+    ff->triode1_plate_v += (target_p1 - ff->triode1_plate_v) * (dt / 0.000002);
+    ff->triode2_plate_v += (target_p2 - ff->triode2_plate_v) * (dt / 0.000002);
 }
 
-int tsfi_s370_channel_execute(tsfi_ramac_record *disk, int total_slots,
-                              tsfi_s370_ccw *ccw_chain, int chain_len,
-                              uint8_t *memory_pool, int mem_size) {
-    if (!disk || total_slots <= 0 || !ccw_chain || chain_len <= 0 || !memory_pool || mem_size <= 0) {
-        return -1;
-    }
 
-    int current_ccw_idx = 0;
-    int current_seek_sector = 0;
 
-    while (current_ccw_idx < chain_len) {
-        tsfi_s370_ccw ccw = ccw_chain[current_ccw_idx];
 
-        if (ccw.data_addr >= (uint32_t)mem_size) {
-            return -1;
-        }
 
-        switch (ccw.cmd_code) {
-            case 0x07:
-                if (ccw.data_addr + 4 > (uint32_t)mem_size) return -1;
-                memcpy(&current_seek_sector, memory_pool + ccw.data_addr, 4);
-                if (current_seek_sector < 0 || current_seek_sector >= total_slots) {
-                    return -1;
-                }
-                break;
 
-            case 0x02:
-                if (current_seek_sector >= total_slots || !disk[current_seek_sector].is_active) {
-                    memset(memory_pool + ccw.data_addr, 0, ccw.count < 32 ? ccw.count : 32);
-                } else {
-                    int size_to_copy = ccw.count < 32 ? ccw.count : 32;
-                    if (ccw.data_addr + size_to_copy > (uint32_t)mem_size) return -1;
-                    memcpy(memory_pool + ccw.data_addr, disk[current_seek_sector].value, size_to_copy);
-                }
-                break;
 
-            case 0x01:
-                if (current_seek_sector >= total_slots) return -1;
-                {
-                    int size_to_copy = ccw.count < 32 ? ccw.count : 32;
-                    if (ccw.data_addr + size_to_copy > (uint32_t)mem_size) return -1;
-                    memset(disk[current_seek_sector].value, 0, sizeof(disk[current_seek_sector].value));
-                    memcpy(disk[current_seek_sector].value, memory_pool + ccw.data_addr, size_to_copy);
-                    disk[current_seek_sector].is_active = 1;
-                }
-                break;
 
-            default:
-                return -1;
-        }
 
-        if (ccw.flags & 0x02) {
-            current_ccw_idx++;
-        } else {
-            break;
-        }
-    }
 
-    return 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tsfi_univac_posting_init(tsfi_univac_posting_interpreter *interp) {
+    if (!interp) return;
+    memset(interp->retained_data, ' ', 80);
+    interp->has_master_data = 0;
 }
 
-int tsfi_s370_check_storage_key(uint8_t psw_key, uint32_t real_addr, int is_write,
-                                tsfi_s370_storage_key *block_keys, int block_count) {
-    if (!block_keys || block_count <= 0) return -1;
 
-    int block_idx = real_addr / 4096;
-    if (block_idx >= block_count) {
-        return -1;
-    }
-
-    if (psw_key != 0) {
-        uint8_t block_key = block_keys[block_idx].acc;
-
-        if (is_write) {
-            if (psw_key != block_key) {
-                return -1;
-            }
-        } else {
-            if (block_keys[block_idx].fetch_protect) {
-                if (psw_key != block_key) {
-                    return -1;
-                }
-            }
-        }
-    }
-
-    block_keys[block_idx].referenced = 1;
-    if (is_write) {
-        block_keys[block_idx].changed = 1;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_validate_instruction(tsfi_s370_cpu_state *cpu, const char *op_code) {
-    if (!cpu || !op_code) return -1;
-
-    const char *privileged_ops[] = {
-        "SSK", "ISK", "LPSW", "SIO", "STCTL", "LCTL"
-    };
-    int privileged_count = 6;
-
-    if (cpu->supervisor_state == 0) {
-        for (int i = 0; i < privileged_count; i++) {
-            if (strcmp(op_code, privileged_ops[i]) == 0) {
-                return -1;
-            }
-        }
-    }
-
-    return 0;
-}
-
-int tsfi_s370_validate_write(tsfi_s370_cpu_state *cpu, uint32_t real_addr,
-                             int is_write_protected_page,
-                             tsfi_s370_storage_key *block_keys, int block_count) {
-    if (!cpu) return -1;
-
-    if (is_write_protected_page) {
-        return -1;
-    }
-
-    if (cpu->lap_enabled && real_addr < 512 && cpu->supervisor_state == 0) {
-        return -1;
-    }
-
-    return tsfi_s370_check_storage_key(cpu->psw_key, real_addr, 1, block_keys, block_count);
-}
-
-int tsfi_s370_authorize_psw_key(tsfi_lau_account *account, 
-                                const uint8_t *signature, int sig_len,
-                                const uint8_t *message, int msg_len,
-                                uint8_t *out_psw_key) {
-    if (!account || !signature || sig_len < 32 || !message || msg_len <= 0 || !out_psw_key) {
-        return -1;
-    }
-
-    uint8_t expected_sig[32];
-    for (int i = 0; i < 32; i++) {
-        expected_sig[i] = account->public_key[i] ^ (message[i % msg_len] + i);
-    }
-
-    if (memcmp(expected_sig, signature, 32) != 0) {
-        return -1;
-    }
-
-    if (account->is_admin_tier) {
-        *out_psw_key = 0;
-    } else {
-        *out_psw_key = (account->public_key[0] % 15) + 1;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_trigger_program_interrupt(tsfi_s370_cpu_state *cpu, uint16_t pic,
-                                        uint8_t *real_memory, int mem_size) {
-    if (!cpu || !real_memory || mem_size < 512) {
-        return -1;
-    }
-
-    real_memory[142] = (pic >> 8) & 0xFF;
-    real_memory[143] = pic & 0xFF;
-
-    real_memory[40] = (cpu->current_psw.key << 4);
-    real_memory[41] = cpu->current_psw.problem_state ? 0x01 : 0x00;
-    real_memory[42] = 0x00;
-    real_memory[43] = 0x00;
-    real_memory[44] = (cpu->current_psw.instruction_address >> 24) & 0xFF;
-    real_memory[45] = (cpu->current_psw.instruction_address >> 16) & 0xFF;
-    real_memory[46] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
-    real_memory[47] = cpu->current_psw.instruction_address & 0xFF;
-
-    uint8_t new_key = (real_memory[88] >> 4) & 0x0F;
-    int new_problem_state = real_memory[89] & 0x01;
-    uint32_t new_inst_addr = ((uint32_t)real_memory[92] << 24) |
-                             ((uint32_t)real_memory[93] << 16) |
-                             ((uint32_t)real_memory[94] << 8)  |
-                             (uint32_t)real_memory[95];
-
-    cpu->current_psw.key = new_key;
-    cpu->current_psw.problem_state = new_problem_state;
-    cpu->current_psw.instruction_address = new_inst_addr;
-
-    cpu->psw_key = new_key;
-    cpu->supervisor_state = !new_problem_state;
-
-    return 0;
-}
-
-int tsfi_s370_pack(const char *zoned_str, uint8_t *packed_out, int max_len) {
-    if (!zoned_str || !packed_out || max_len <= 0) return -1;
-
-    int sign = 0xC;
-    const char *digits = zoned_str;
-    if (zoned_str[0] == '-') {
-        sign = 0xD;
-        digits++;
-    } else if (zoned_str[0] == '+') {
-        digits++;
-    }
-
-    int len = strlen(digits);
-    if (len == 0) return -1;
-
-    int is_even = (len % 2 == 0);
-    int packed_len = (len + 2) / 2;
-    if (packed_len > max_len) return -1;
-
-    memset(packed_out, 0, packed_len);
-
-    int digit_idx = 0;
-    for (int i = 0; i < packed_len; i++) {
-        uint8_t high = 0;
-        uint8_t low = 0;
-
-        if (i == 0 && is_even) {
-            high = 0;
-            low = digits[digit_idx++] - '0';
-        } else {
-            high = digits[digit_idx++] - '0';
-            if (i == packed_len - 1) {
-                low = sign;
-            } else {
-                low = digits[digit_idx++] - '0';
-            }
-        }
-
-        packed_out[i] = (high << 4) | (low & 0x0F);
-    }
-
-    return packed_len;
-}
-
-int tsfi_s370_unpack(const uint8_t *packed, int packed_len, char *zoned_out, int max_len) {
-    if (!packed || packed_len <= 0 || !zoned_out || max_len <= 0) return -1;
-
-    int zoned_idx = 0;
-    int sign_found = 0;
-    int negative = 0;
-
-    char digits[128];
-    int digits_idx = 0;
-
-    for (int i = 0; i < packed_len; i++) {
-        uint8_t high = (packed[i] >> 4) & 0x0F;
-        uint8_t low = packed[i] & 0x0F;
-
-        if (high > 9) return -1;
-
-        if (i == 0 && high == 0) {
-            // Skip leading padding zero
-        } else {
-            digits[digits_idx++] = high + '0';
-        }
-
-        if (i == packed_len - 1) {
-            if (low == 0xC || low == 0xF || low == 0xA || low == 0xE) {
-                negative = 0;
-            } else if (low == 0xD || low == 0xB) {
-                negative = 1;
-            } else {
-                return -1;
-            }
-            sign_found = 1;
-        } else {
-            if (low > 9) return -1;
-            digits[digits_idx++] = low + '0';
-        }
-    }
-
-    if (!sign_found) return -1;
-
-    digits[digits_idx] = '\0';
-
-    if (negative) {
-        if (zoned_idx + 1 >= max_len) return -1;
-        zoned_out[zoned_idx++] = '-';
-    }
-
-    if (zoned_idx + digits_idx >= max_len) return -1;
-    strcpy(zoned_out + zoned_idx, digits);
-
-    return 0;
-}
-
-int tsfi_s370_packed_add(const uint8_t *a, int a_len,
-                         const uint8_t *b, int b_len,
-                         uint8_t *dest_out, int dest_max_len) {
-    char zoned_a[128];
-    char zoned_b[128];
-
-    if (tsfi_s370_unpack(a, a_len, zoned_a, sizeof(zoned_a)) != 0) return -1;
-    if (tsfi_s370_unpack(b, b_len, zoned_b, sizeof(zoned_b)) != 0) return -1;
-
-    long long val_a = atoll(zoned_a);
-    long long val_b = atoll(zoned_b);
-    long long val_sum = val_a + val_b;
-
-    char zoned_sum[128];
-    snprintf(zoned_sum, sizeof(zoned_sum), "%lld", val_sum);
-
-    return tsfi_s370_pack(zoned_sum, dest_out, dest_max_len);
-}
-
-int tsfi_s370_trigger_svc(tsfi_s370_cpu_state *cpu, uint8_t svc_code,
-                          uint8_t *real_memory, int mem_size) {
-    if (!cpu || !real_memory || mem_size < 512) {
-        return -1;
-    }
-
-    real_memory[139] = svc_code;
-
-    real_memory[32] = (cpu->current_psw.key << 4);
-    real_memory[33] = cpu->current_psw.problem_state ? 0x01 : 0x00;
-    real_memory[34] = 0x00;
-    real_memory[35] = 0x00;
-    real_memory[36] = (cpu->current_psw.instruction_address >> 24) & 0xFF;
-    real_memory[37] = (cpu->current_psw.instruction_address >> 16) & 0xFF;
-    real_memory[38] = (cpu->current_psw.instruction_address >> 8) & 0xFF;
-    real_memory[39] = cpu->current_psw.instruction_address & 0xFF;
-
-    uint8_t new_key = (real_memory[80] >> 4) & 0x0F;
-    int new_problem_state = real_memory[81] & 0x01;
-    uint32_t new_inst_addr = ((uint32_t)real_memory[84] << 24) |
-                             ((uint32_t)real_memory[85] << 16) |
-                             ((uint32_t)real_memory[86] << 8)  |
-                             (uint32_t)real_memory[87];
-
-    cpu->current_psw.key = new_key;
-    cpu->current_psw.problem_state = new_problem_state;
-    cpu->current_psw.instruction_address = new_inst_addr;
-
-    cpu->psw_key = new_key;
-    cpu->supervisor_state = !new_problem_state;
-
-    return 0;
-}
-
-int tsfi_s370_data_reduction_unit(double x, double y, double scale,
-                                  uint8_t *dest_out, int dest_max_len) {
-    if (!dest_out || dest_max_len <= 0) return -1;
-
-    long long coord_x = (long long)round(x * scale);
-    long long coord_y = (long long)round(y * scale);
-    long long combined = coord_x + coord_y;
-
-    char zoned[128];
-    snprintf(zoned, sizeof(zoned), "%lld", combined);
-
-    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
-}
-
-int tsfi_s370_serialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int node_count) {
-    if (!filepath || !nodes || node_count <= 0) return -1;
-
-    int len = strlen(filepath);
-    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
-        return -1;
-    }
-
-    FILE *fp = fopen(filepath, "wb");
-    if (!fp) return -1;
-
-    fwrite("QUAD", 1, 4, fp);
-    fwrite(&node_count, sizeof(int), 1, fp);
-    fwrite(nodes, sizeof(tsfi_quadtree_node), node_count, fp);
-
-    fclose(fp);
-    return 0;
-}
-
-int tsfi_s370_deserialize_quadtree(const char *filepath, tsfi_quadtree_node *nodes, int max_nodes) {
-    if (!filepath || !nodes || max_nodes <= 0) return -1;
-
-    int len = strlen(filepath);
-    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
-        return -1;
-    }
-
-    FILE *fp = fopen(filepath, "rb");
-    if (!fp) return -1;
-
-    char magic[4];
-    if (fread(magic, 1, 4, fp) != 4 || memcmp(magic, "QUAD", 4) != 0) {
-        fclose(fp);
-        return -1;
-    }
-
-    int node_count = 0;
-    if (fread(&node_count, sizeof(int), 1, fp) != 1) {
-        fclose(fp);
-        return -1;
-    }
-
-    if (node_count > max_nodes) {
-        fclose(fp);
-        return -1;
-    }
-
-    if ((int)fread(nodes, sizeof(tsfi_quadtree_node), node_count, fp) != node_count) {
-        fclose(fp);
-        return -1;
-    }
-
-    fclose(fp);
-    return node_count;
-}
-
-int tsfi_s370_dat_translate_with_tlb(tsfi_s370_cpu_state *cpu, uint32_t virtual_addr,
-                                     tsfi_s370_segment_entry *seg_table, int seg_count,
-                                     tsfi_s370_page_entry *page_tables,
-                                     uint32_t *out_physical_addr, int *out_write_protected) {
-    if (!cpu || !seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
-
-    uint32_t virtual_page = virtual_addr & 0xFFFFF000;
-
-    int slot = (virtual_page >> 12) & 0x7;
-    if (cpu->tlb[slot].valid && cpu->tlb[slot].virtual_page == virtual_page) {
-        *out_physical_addr = cpu->tlb[slot].real_page | (virtual_addr & 0x0FFF);
-        *out_write_protected = cpu->tlb[slot].write_protect;
-        return 0;
-    }
-
-    int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, out_physical_addr, out_write_protected);
-    if (ret != 0) return ret;
-
-    cpu->tlb[slot].virtual_page = virtual_page;
-    cpu->tlb[slot].real_page = *out_physical_addr & 0xFFFFF000;
-    cpu->tlb[slot].write_protect = *out_write_protected;
-    cpu->tlb[slot].valid = 1;
-
-    return 0;
-}
-
-void tsfi_s370_tlb_purge(tsfi_s370_cpu_state *cpu) {
-    if (!cpu) return;
-    for (int i = 0; i < 8; i++) {
-        cpu->tlb[i].valid = 0;
-    }
-}
-
-int tsfi_s370_oscar_reader(double analog_amplitude, const double *calibration_table, int table_size,
-                           uint8_t *dest_out, int dest_max_len) {
-    if (table_size < 2 || !calibration_table || !dest_out || dest_max_len <= 0) {
-        return -1;
-    }
-
-    int idx = 0;
-    while (idx < table_size - 1 && calibration_table[idx + 1] < analog_amplitude) {
-        idx++;
-    }
-
-    double t = 0.0;
-    double range = calibration_table[idx + 1] - calibration_table[idx];
-    if (range > 0.000001) {
-        t = (analog_amplitude - calibration_table[idx]) / range;
-    }
-    double interp_val = idx + t;
-
-    long long final_digital = (long long)round(interp_val * (1000.0 / (table_size - 1)));
+int tsfi_univac_posting_process(tsfi_univac_posting_interpreter *interp, const tsfi_ramac_card *card_in, tsfi_ramac_card *card_out) {
+    if (!interp || !card_in || !card_out) return -1;
     
-    char zoned[128];
-    snprintf(zoned, sizeof(zoned), "%lld", final_digital);
-
-    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
-}
-
-int tsfi_s370_fet_discharge_freudenthal(double initial_charge, double time_step, double mass,
-                                        double spring_k, double damping_c, int steps, double *out_decay_charges) {
-    if (time_step <= 0.0 || mass <= 0.0 || steps <= 0 || !out_decay_charges) {
-        return -1;
+    // Check for control punch tags:
+    // '*' = master card control punch: retain the data
+    if (card_in->columns[0] == '*') {
+        memcpy(interp->retained_data, &card_in->columns[1], 79);
+        interp->retained_data[79] = ' '; // ensure boundary space padding
+        interp->has_master_data = 1;
+        // Output card gets the input card directly
+        memcpy(card_out->columns, card_in->columns, 80);
+        return 1; // Handled master
     }
-
-    double pos = initial_charge;
-    double prev_pos = initial_charge;
-
-    for (int i = 0; i < steps; i++) {
-        double vel = (pos - prev_pos) / time_step;
-        double force = -spring_k * pos - damping_c * vel;
-        double accel = force / mass;
-        double next_pos = 2.0 * pos - prev_pos + accel * time_step * time_step;
-
-        prev_pos = pos;
-        pos = next_pos;
-
-        double t = i * time_step;
-        double relaxation_factor = exp(-t / 1.5);
-        
-        out_decay_charges[i] = pos * relaxation_factor;
+    
+    // '!' = clear control punch: clear the retained registers
+    if (card_in->columns[0] == '!') {
+        memset(interp->retained_data, ' ', 80);
+        interp->has_master_data = 0;
+        memcpy(card_out->columns, card_in->columns, 80);
+        return 2; // Cleared
     }
-
-    return 0;
-}
-
-double tsfi_s370_fet_gate_fatigue_freudenthal(const double *stress_amplitudes, int cycle_count,
-                                              double reference_stress, double shape_parameter) {
-    if (!stress_amplitudes || cycle_count <= 0 || reference_stress <= 0.0 || shape_parameter <= 0.0) {
-        return -1.0;
-    }
-
-    double cumulative_damage = 0.0;
-    for (int i = 0; i < cycle_count; i++) {
-        if (stress_amplitudes[i] > 0.0) {
-            double damage_cycle = pow(stress_amplitudes[i] / reference_stress, shape_parameter);
-            cumulative_damage += damage_cycle;
-        }
-    }
-
-    return cumulative_damage;
-}
-
-int tsfi_s370_fet_reliability_freudenthal(double mean_resistance, double std_resistance,
-                                          double mean_stress, double std_stress,
-                                          double *out_beta, double *out_pf) {
-    if (std_resistance <= 0.0 || std_stress <= 0.0 || !out_beta || !out_pf) {
-        return -1;
-    }
-
-    double denom = sqrt(std_resistance * std_resistance + std_stress * std_stress);
-    double beta = (mean_resistance - mean_stress) / denom;
-    *out_beta = beta;
-    *out_pf = 0.5 * erfc(beta / sqrt(2.0));
-
-    return 0;
-}
-
-int tsfi_s370_portfolio_strategy_keystone(const double *asset_yields, const double *weights, int asset_count,
-                                           double *out_expected_return, double *out_variance) {
-    if (!asset_yields || !weights || asset_count <= 0 || !out_expected_return || !out_variance) {
-        return -1;
-    }
-
-    double expected_return = 0.0;
-    for (int i = 0; i < asset_count; i++) {
-        expected_return += weights[i] * asset_yields[i];
-    }
-    *out_expected_return = expected_return;
-
-    double rho = 0.15;
-    double variance = 0.0;
-
-    for (int i = 0; i < asset_count; i++) {
-        double std_i = asset_yields[i] * 0.25;
-        variance += weights[i] * weights[i] * std_i * std_i;
-
-        for (int j = 0; j < asset_count; j++) {
-            if (i != j) {
-                double std_j = asset_yields[j] * 0.25;
-                variance += weights[i] * weights[j] * std_i * std_j * rho;
-            }
-        }
-    }
-    *out_variance = variance;
-
-    return 0;
-}
-
-int tsfi_s370_executive_decision_villalon(int decision_count, const double *benefit, const double *cost,
-                                          const double *risk_prob, double *out_expected_net_value,
-                                          int *out_optimal_decision_idx) {
-    if (decision_count <= 0 || !benefit || !cost || !risk_prob || !out_expected_net_value || !out_optimal_decision_idx) {
-        return -1;
-    }
-
-    double max_value = -9999999.0;
-    int opt_idx = -1;
-
-    for (int i = 0; i < decision_count; i++) {
-        double value = benefit[i] - cost[i] - (benefit[i] * risk_prob[i]);
-        if (value > max_value) {
-            max_value = value;
-            opt_idx = i;
-        }
-    }
-
-    *out_expected_net_value = max_value;
-    *out_optimal_decision_idx = opt_idx;
-    return 0;
-}
-
-int tsfi_s370_deliberate_creativeness_nelles(double *parameters, int count, unsigned int seed) {
-    if (!parameters || count <= 0) {
-        return -1;
-    }
-
-    for (int i = 0; i < count; i++) {
-        seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF;
-        double perturbation = ((double)(seed % 2000) - 1000.0) / 10000.0;
-        parameters[i] = parameters[i] * (1.0 + perturbation);
-    }
-
-    return 0;
-}
-
-int tsfi_s370_project_scale_zworykin(double initial_budget, double initial_months,
-                                      double *out_actual_budget, double *out_actual_months) {
-    if (initial_budget <= 0.0 || initial_months <= 0.0 || !out_actual_budget || !out_actual_months) {
-        return -1;
-    }
-
-    *out_actual_budget = initial_budget * 500.0;
-    *out_actual_months = initial_months * 6.66666667;
-
-    return 0;
-}
-
-int tsfi_s370_zmachine_read_byte(const tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t *out_val) {
-    if (!disk || !out_val) {
-        return -1;
-    }
-
-    int sector_idx = zmachine_addr / 32;
-    int byte_offset = zmachine_addr % 32;
-
-    int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
-    if (sector_idx >= total_sectors) {
-        return -1;
-    }
-
-    if (!disk[sector_idx].is_active) {
-        *out_val = 0;
+    
+    // Detail card: post the retained master data into columns 0-39, and details into columns 40-79
+    if (interp->has_master_data) {
+        memcpy(card_out->columns, interp->retained_data, 40);
+        memcpy(&card_out->columns[40], &card_in->columns[40], 40);
     } else {
-        *out_val = (uint8_t)disk[sector_idx].value[byte_offset];
+        memcpy(card_out->columns, card_in->columns, 80);
     }
+    
+    return 0; // Handled detail
+}
 
+
+
+
+
+
+void tsfi_winchester_socket_init(tsfi_winchester_socket_bridge *bridge, int port) {
+    if (!bridge) return;
+    bridge->listen_port = port;
+    bridge->connection_active = 1;
+    bridge->processed_packets = 0;
+}
+
+
+int tsfi_winchester_socket_route_event(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, void *pq) {
+    if (!bridge || !event_data || len <= 0 || !pq) return -1;
+    if (!bridge->connection_active) return -2;
+    
+    uint8_t keycode = event_data[0];
+    TSFiPriorityQueue *queue = (TSFiPriorityQueue *)pq;
+    
+    tsfi_priority_queue_push(queue, 10, keycode, "");
+    
+    bridge->processed_packets++;
     return 0;
 }
 
-int tsfi_s370_zmachine_write_byte(tsfi_ramac_record *disk, uint32_t zmachine_addr, uint8_t val) {
-    if (!disk) {
-        return -1;
-    }
 
-    int sector_idx = zmachine_addr / 32;
-    int byte_offset = zmachine_addr % 32;
 
-    int total_sectors = RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS;
-    if (sector_idx >= total_sectors) {
-        return -1;
-    }
 
-    int cylinder = sector_idx / 1000;
-    if (cylinder >= 45) {
-        return -2;
-    }
-
-    disk[sector_idx].value[byte_offset] = (char)val;
-    disk[sector_idx].is_active = 1;
-
-    return 0;
-}
-
-int tsfi_s370_dat_ramac_translate(uint32_t virtual_addr, 
-                                  tsfi_s370_segment_entry *seg_table, int seg_count,
-                                  tsfi_s370_page_entry *page_tables,
-                                  tsfi_ramac_chs *out_chs) {
-    if (!seg_table || !page_tables || !out_chs) {
-        return -1;
-    }
-
-    uint32_t physical_addr = 0;
-    int write_protected = 0;
-
-    int ret = tsfi_s370_dat_translate(virtual_addr, seg_table, seg_count, page_tables, &physical_addr, &write_protected);
-    if (ret != 0) {
-        return ret;
-    }
-
-    int flat_word_index = physical_addr / 4;
-    *out_chs = tsfi_ramac_index_to_chs(flat_word_index);
-
-    return 0;
-}
-
-int tsfi_s370_winchester_mq_handshake(uint8_t *scsi_bus_status, uint8_t *data_reg,
-                                      const uint8_t *stream, int stream_len,
-                                      uint8_t *out_buffer, int max_out_len) {
-    if (!scsi_bus_status || !data_reg || !stream || stream_len <= 0 || !out_buffer || max_out_len <= 0) {
-        return -1;
-    }
-
-    int bytes_transferred = 0;
-    int i = 0;
-
-    while (i < stream_len && bytes_transferred < max_out_len) {
-        // 1. Pack up to 7 bytes of data into a 56-bit word
-        uint64_t data_chunk = 0;
-        int chunk_size = 0;
-        for (int k = 0; k < 7; k++) {
-            if (i + k < stream_len) {
-                data_chunk |= ((uint64_t)stream[i + k] << (k * 8));
-                chunk_size++;
-            }
-        }
-
-        // 2. Encode using IBM 7030 SEC-DED ECC
-        uint64_t ecc_word = tsfi_s370_ibm7030_ecc_encode(data_chunk);
-
-        // 3. Transmit the 8 bytes of the ECC word over the SCSI handshake protocol
-        uint64_t rx_word = 0;
-        for (int k = 0; k < 8; k++) {
-            uint8_t tx_byte = (ecc_word >> (k * 8)) & 0xFF;
-
-            *data_reg = tx_byte;
-            *scsi_bus_status |= 0x01; // REQ
-            *scsi_bus_status |= 0x02; // ACK
-
-            uint8_t rx_byte = *data_reg;
-            rx_word |= ((uint64_t)rx_byte << (k * 8));
-
-            *scsi_bus_status &= ~0x01;
-            *scsi_bus_status &= ~0x02;
-        }
-
-        // 4. Decode and correct errors on the receiver side
-        uint64_t corrected_data = 0;
-        tsfi_s370_ibm7030_ecc_decode(rx_word, &corrected_data);
-
-        // 5. Unpack the corrected data into the output buffer
-        for (int k = 0; k < chunk_size; k++) {
-            if (bytes_transferred < max_out_len) {
-                out_buffer[bytes_transferred++] = (corrected_data >> (k * 8)) & 0xFF;
-            }
-        }
-
-        i += chunk_size;
-    }
-
-    return bytes_transferred;
-}
-
-int tsfi_s370_oscar_reader_polynomial(double analog_amplitude, const double *coefficients, int coeff_count,
-                                      uint8_t *dest_out, int dest_max_len) {
-    if (!coefficients || coeff_count <= 0 || !dest_out || dest_max_len <= 0) {
-        return -1;
-    }
-
-    double eval_val = 0.0;
-    for (int i = 0; i < coeff_count; i++) {
-        eval_val += coefficients[i] * pow(analog_amplitude, i);
-    }
-
-    long long final_digital = (long long)round(eval_val * 1000.0);
-    if (final_digital < 0) final_digital = 0;
-    if (final_digital > 1000) final_digital = 1000;
-
-    char zoned[128];
-    snprintf(zoned, sizeof(zoned), "%lld", final_digital);
-
-    return tsfi_s370_pack(zoned, dest_out, dest_max_len);
-}
-
-int tsfi_s370_punched_card_to_comp3(const tsfi_ramac_card *card, int start_col, int end_col,
-                                    uint8_t *packed_out, int max_len) {
-    if (!card || start_col < 0 || end_col >= 80 || start_col > end_col || !packed_out || max_len <= 0) {
-        return -1;
-    }
-
-    char zoned_buf[64] = {0};
-    int dst_idx = 0;
-    int is_negative = 0;
-
-    for (int c = start_col; c <= end_col; c++) {
-        char ch = card->columns[c];
-        if (ch >= '0' && ch <= '9') {
-            zoned_buf[dst_idx++] = ch;
-        } else if (ch >= 'J' && ch <= 'R') {
-            is_negative = 1;
-            zoned_buf[dst_idx++] = (ch - 'J' + 1) + '0';
-        }
-    }
-    zoned_buf[dst_idx] = '\0';
-
-    if (is_negative) {
-        char temp[64];
-        snprintf(temp, sizeof(temp), "-%s", zoned_buf);
-        strcpy(zoned_buf, temp);
-    }
-
-    return tsfi_s370_pack(zoned_buf, packed_out, max_len);
-}
-
-int tsfi_s370_scsi_stream_to_ramac(tsfi_ramac_record *disk, uint8_t *scsi_status, uint8_t *data_reg,
-                                    const uint8_t *stream, int stream_len, int target_cylinder) {
-    if (!disk || !scsi_status || !data_reg || !stream || stream_len <= 0) {
-        return -1;
-    }
-
-    uint8_t buffer[256];
-    int read_bytes = tsfi_s370_winchester_mq_handshake(scsi_status, data_reg, stream, stream_len, buffer, 256);
-    if (read_bytes <= 0) {
-        return -1;
-    }
-
-    char key[32];
-    char value[32];
-    snprintf(key, sizeof(key), "scsi_key_%d", buffer[0]);
-    snprintf(value, sizeof(value), "scsi_val_%d", buffer[read_bytes - 1]);
-
-    double temp_seek = 0.0;
-    int slot = tsfi_ramac_insert_record(disk, key, value, target_cylinder, &temp_seek);
-    if (slot == -1) {
-        return -1;
-    }
-
-    return slot;
-}
-
-int tsfi_s370_oscar_soft_body_validate(double analog_val, double mass, double spring_k, double damping_c,
-                                       double *out_decay_charges, int steps) {
-    if (!out_decay_charges || steps <= 0) {
-        return -1;
-    }
-
-    double initial_charge = analog_val * 100.0;
-
-    int discharge_ret = tsfi_s370_fet_discharge_freudenthal(initial_charge, 0.1, mass, spring_k, damping_c, steps, out_decay_charges);
-    if (discharge_ret != 0) {
-        return -1;
-    }
-
-    if (fabs(out_decay_charges[steps - 1]) >= fabs(initial_charge)) {
-        return -2;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_sage_redundancy_monitor(int cpu_a_status, int cpu_b_status, int *active_cpu) {
-    if (!active_cpu) {
-        return -1;
-    }
-
-    if (cpu_a_status == 1) {
-        *active_cpu = 1;
-    } else if (cpu_b_status == 1) {
-        *active_cpu = 2;
-    } else {
-        *active_cpu = 0;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_engelbart_index_resolve(const char *abstract, const char **keywords, int keyword_count,
-                                      uint8_t *comp3_out, int max_len) {
-    if (!abstract || !keywords || keyword_count <= 0 || !comp3_out || max_len <= 0) {
-        return -1;
-    }
-
-    int match_count = 0;
-
-    for (int i = 0; i < keyword_count; i++) {
-        if (!keywords[i]) continue;
-        const char *ptr = abstract;
-        int len = strlen(keywords[i]);
-        if (len == 0) continue;
-
-        while ((ptr = strstr(ptr, keywords[i])) != NULL) {
-            match_count++;
-            ptr += len;
-        }
-    }
-
-    char zoned[64];
-    snprintf(zoned, sizeof(zoned), "%d", match_count);
-
-    return tsfi_s370_pack(zoned, comp3_out, max_len);
-}
-
-int tsfi_s370_muroga_parametron_majority(int phase_in_1, int phase_in_2, int phase_in_3, int *phase_out) {
-    if (!phase_out) {
-        return -1;
-    }
-
-    int sum = phase_in_1 + phase_in_2 + phase_in_3;
-    if (sum >= 2) {
-        *phase_out = 1;
-    } else {
-        *phase_out = 0;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_parametron_circuit_eval(tsfi_parametron_node *nodes, int node_count,
-                                       const int *inputs, int input_count) {
-    if (!nodes || node_count <= 0) {
-        return -1;
-    }
-
-    for (int i = 0; i < node_count; i++) {
-        int inputs_resolved[3] = {0};
-
-        for (int s = 0; s < 3; s++) {
-            int src = nodes[i].sources[s];
-            int phase = 0;
-
-            if (src == -1) {
-                phase = 0;
-            } else if (src == -2) {
-                phase = 1;
-            } else if (src < -2) {
-                int inp_idx = -(src + 3);
-                if (inp_idx >= 0 && inp_idx < input_count && inputs) {
-                    phase = inputs[inp_idx];
-                } else {
-                    phase = 0;
-                }
-            } else {
-                if (src < i) {
-                    phase = nodes[src].output;
-                } else {
-                    phase = 0;
-                }
-            }
-
-            if (nodes[i].invert[s]) {
-                phase = (phase == 0) ? 1 : 0;
-            }
-
-            inputs_resolved[s] = phase;
-        }
-
-        int out_phase = 0;
-        int sum = inputs_resolved[0] + inputs_resolved[1] + inputs_resolved[2];
-        if (sum >= 2) {
-            out_phase = 1;
-        }
-        nodes[i].output = out_phase;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_peek_a_boo_card_match(const uint32_t *card_a, const uint32_t *card_b,
-                                     uint32_t *out_matching, int word_count) {
-    if (!card_a || !card_b || !out_matching || word_count <= 0) {
-        return -1;
-    }
-
-    int match_holes_count = 0;
-
-    for (int i = 0; i < word_count; i++) {
-        out_matching[i] = card_a[i] & card_b[i];
-
-        uint32_t word = out_matching[i];
-        while (word) {
-            if (word & 1) {
-                match_holes_count++;
-            }
-            word >>= 1;
-        }
-    }
-
-    return match_holes_count;
-}
-
-int tsfi_s370_muroga_threshold_gate(const int *inputs, const int *weights, int input_count,
-                                    int threshold, int *output) {
-    if (!inputs || !weights || input_count <= 0 || !output) {
-        return -1;
-    }
-
-    int weighted_sum = 0;
-    for (int i = 0; i < input_count; i++) {
-        weighted_sum += inputs[i] * weights[i];
-    }
-
-    if (weighted_sum >= threshold) {
-        *output = 1;
-    } else {
-        *output = 0;
-    }
-
-    return 0;
-}
-
-int tsfi_s370_recomp_ii_decode_word(uint64_t raw_word, int *op1, int *addr1, int *op2, int *addr2) {
-    if (!op1 || !addr1 || !op2 || !addr2) {
-        return -1;
-    }
-
-    uint64_t left_instr = (raw_word >> 20) & 0xFFFFF;
-    *op1 = (left_instr >> 15) & 0x1F;
-    *addr1 = (left_instr >> 3) & 0xFFF;
-
-    uint64_t right_instr = raw_word & 0xFFFFF;
-    *op2 = (right_instr >> 15) & 0x1F;
-    *addr2 = (right_instr >> 3) & 0xFFF;
-
-    return 0;
-}
-
-int tsfi_s370_recomp_ii_drum_schedule(int current_sector, int execution_cycles, int *out_optimal_sector) {
-    if (current_sector < 0 || current_sector >= 64 || execution_cycles < 0 || !out_optimal_sector) {
-        return -1;
-    }
-
-    int sectors_passed = (execution_cycles + 7) / 8;
-    *out_optimal_sector = (current_sector + sectors_passed + 1) % 64;
-
-    return 0;
-}
-
-int tsfi_s370_paper_tape_synthesizer(const uint8_t *tape_data, int length, int channels,
-                                     double *out_audio, int max_samples, double sample_rate) {
-    if (!tape_data || length <= 0 || channels <= 0 || channels > 8 || !out_audio || max_samples <= 0 || sample_rate <= 0.0) {
-        return -1;
-    }
-
-    memset(out_audio, 0, max_samples * sizeof(double));
-
-    double frequencies[8] = {110.0, 220.0, 330.0, 440.0, 550.0, 660.0, 770.0, 880.0};
-    double step_duration = 0.1;
-    int samples_per_step = (int)(step_duration * sample_rate);
-
-    for (int step = 0; step < length; step++) {
-        int start_sample = step * samples_per_step;
-        if (start_sample >= max_samples) break;
-
-        uint8_t row_val = tape_data[step];
-
-        for (int c = 0; c < channels; c++) {
-            if ((row_val >> c) & 1) {
-                double freq = frequencies[c];
-
-                for (int s = 0; s < samples_per_step; s++) {
-                    int out_idx = start_sample + s;
-                    if (out_idx >= max_samples) break;
-
-                    double t = (double)s / sample_rate;
-                    double decay = exp(-t / 0.05);
-                    double signal = sin(2.0 * M_PI * freq * t) * decay * 0.1;
-
-                    out_audio[out_idx] += signal;
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-int tsfi_s370_tx2_simd_alu(uint64_t op_a, uint64_t op_b, int mode, const char *op, uint64_t *out_val) {
-    if (!op || !out_val) {
-        return -1;
-    }
-
-    uint64_t a = op_a & 0xFFFFFFFFFULL;
-    uint64_t b = op_b & 0xFFFFFFFFFULL;
-    uint64_t result = 0;
-
-    int is_add = (strcmp(op, "ADD") == 0);
-    int is_sub = (strcmp(op, "SUB") == 0);
-    if (!is_add && !is_sub) return -1;
-
-    if (mode == 36) {
-        if (is_add) {
-            result = (a + b) & 0xFFFFFFFFFULL;
-        } else {
-            result = (a - b) & 0xFFFFFFFFFULL;
-        }
-    } else if (mode == 18) {
-        uint64_t a_hi = (a >> 18) & 0x3FFFFULL;
-        uint64_t a_lo = a & 0x3FFFFULL;
-        uint64_t b_hi = (b >> 18) & 0x3FFFFULL;
-        uint64_t b_lo = b & 0x3FFFFULL;
-        uint64_t r_hi = 0, r_lo = 0;
-
-        if (is_add) {
-            r_hi = (a_hi + b_hi) & 0x3FFFFULL;
-            r_lo = (a_lo + b_lo) & 0x3FFFFULL;
-        } else {
-            r_hi = (a_hi - b_hi) & 0x3FFFFULL;
-            r_lo = (a_lo - b_lo) & 0x3FFFFULL;
-        }
-        result = (r_hi << 18) | r_lo;
-    } else if (mode == 9) {
-        uint64_t r[4] = {0};
-        for (int i = 0; i < 4; i++) {
-            uint64_t sa = (a >> (i * 9)) & 0x1FFULL;
-            uint64_t sb = (b >> (i * 9)) & 0x1FFULL;
-            if (is_add) {
-                r[i] = (sa + sb) & 0x1FFULL;
-            } else {
-                r[i] = (sa - sb) & 0x1FFULL;
-            }
-        }
-        result = (r[3] << 27) | (r[2] << 18) | (r[1] << 9) | r[0];
-    } else {
-        return -1;
-    }
-
-    *out_val = result;
-    return 0;
-}
-
-int tsfi_s370_tx2_light_pen_track(double pen_x, double pen_y, double *cross_x, double *cross_y, double cross_radius) {
-    if (!cross_x || !cross_y || cross_radius <= 0.0) {
-        return -1;
-    }
-
-    double px[9], py[9];
-    px[0] = *cross_x; py[0] = *cross_y;
-    px[1] = *cross_x + cross_radius; py[1] = *cross_y;
-    px[2] = *cross_x - cross_radius; py[2] = *cross_y;
-    px[3] = *cross_x; py[3] = *cross_y + cross_radius;
-    px[4] = *cross_x; py[4] = *cross_y - cross_radius;
-    double diag = cross_radius * 0.5;
-    px[5] = *cross_x + diag; py[5] = *cross_y + diag;
-    px[6] = *cross_x - diag; py[6] = *cross_y - diag;
-    px[7] = *cross_x + diag; py[7] = *cross_y - diag;
-    px[8] = *cross_x - diag; py[8] = *cross_y + diag;
-
-    double threshold = 0.7 * cross_radius;
-    double sum_x = 0.0, sum_y = 0.0;
-    int detected_count = 0;
-
-    for (int i = 0; i < 9; i++) {
-        double dist = sqrt((px[i] - pen_x) * (px[i] - pen_x) + (py[i] - pen_y) * (py[i] - pen_y));
-        if (dist <= threshold) {
-            sum_x += px[i];
-            sum_y += py[i];
-            detected_count++;
-        }
-    }
-
-    if (detected_count > 0) {
-        *cross_x = sum_x / detected_count;
-        *cross_y = sum_y / detected_count;
-    }
-
-    return detected_count;
-}
-
-int tsfi_s370_rw400_matrix_switch(const int *matrix_connections, int cpu_count, int buffer_count, int *out_route_map) {
-    if (!matrix_connections || cpu_count <= 0 || buffer_count <= 0 || !out_route_map) {
-        return -1;
-    }
-
-    for (int i = 0; i < cpu_count; i++) {
-        out_route_map[i] = -1;
-    }
-
-    int *buffer_used = (int *)calloc(buffer_count, sizeof(int));
-    if (!buffer_used) return -1;
-
-    for (int i = 0; i < cpu_count; i++) {
-        int cpu_connection_count = 0;
-        int connected_buffer = -1;
-
-        for (int j = 0; j < buffer_count; j++) {
-            int idx = i * buffer_count + j;
-            if (matrix_connections[idx] == 1) {
-                cpu_connection_count++;
-                connected_buffer = j;
-            }
-        }
-
-        if (cpu_connection_count > 1) {
-            free(buffer_used);
-            return -1;
-        }
-
-        if (cpu_connection_count == 1) {
-            if (buffer_used[connected_buffer] == 1) {
-                free(buffer_used);
-                return -1;
-            }
-            buffer_used[connected_buffer] = 1;
-            out_route_map[i] = connected_buffer;
-        }
-    }
-
-    free(buffer_used);
-    return 0;
-}
-
-int tsfi_s370_uncol_vm_exec(tsfi_uncol_instruction *program, int program_size, int *memory, int mem_size, int *registers, int reg_count) {
-    if (!program || program_size <= 0 || !memory || mem_size <= 0 || !registers || reg_count <= 0) {
-        return -1;
-    }
-
-    int pc = 0;
-    int instructions_executed = 0;
-
-    while (pc >= 0 && pc < program_size && instructions_executed < 10000) {
-        tsfi_uncol_instruction inst = program[pc];
-        instructions_executed++;
-
-        if (strcmp(inst.op, "LOAD") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.address < 0 || inst.address >= mem_size) {
-                return -2;
-            }
-            registers[inst.reg_dest] = memory[inst.address];
-            pc++;
-        } else if (strcmp(inst.op, "STORE") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.address < 0 || inst.address >= mem_size) {
-                return -2;
-            }
-            memory[inst.address] = registers[inst.reg_dest];
-            pc++;
-        } else if (strcmp(inst.op, "ADD") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
-                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
-                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
-                return -2;
-            }
-            registers[inst.reg_dest] = registers[inst.reg_src1] + registers[inst.reg_src2];
-            pc++;
-        } else if (strcmp(inst.op, "SUB") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
-                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
-                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
-                return -2;
-            }
-            registers[inst.reg_dest] = registers[inst.reg_src1] - registers[inst.reg_src2];
-            pc++;
-        } else if (strcmp(inst.op, "JMP") == 0) {
-            if (inst.address < 0 || inst.address >= program_size) {
-                return -2;
-            }
-            pc = inst.address;
-        } else if (strcmp(inst.op, "JZ") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
-                return -2;
-            }
-            if (registers[inst.reg_dest] == 0) {
-                if (inst.address < 0 || inst.address >= program_size) {
-                    return -2;
-                }
-                pc = inst.address;
-            } else {
-                pc++;
-            }
-        } else {
-            pc++;
-        }
-    }
-
-    return 0;
-}
-
-int tsfi_s370_polymorphic_winchester_mq_route(const int *matrix_connections, int initiator_count, int target_count,
-                                              uint8_t *scsi_status_array, uint8_t *data_reg_array,
-                                              const uint8_t **streams, const int *stream_lens,
-                                              tsfi_ramac_record *disk, int *out_route_map) {
-    if (!matrix_connections || initiator_count <= 0 || target_count <= 0 || 
-        !scsi_status_array || !data_reg_array || !streams || !stream_lens || !disk || !out_route_map) {
-        return -1;
-    }
-
-    int ret = tsfi_s370_rw400_matrix_switch(matrix_connections, initiator_count, target_count, out_route_map);
-    if (ret != 0) {
-        return -1;
-    }
-
-    for (int i = 0; i < initiator_count; i++) {
-        int target_buffer_idx = out_route_map[i];
-        if (target_buffer_idx != -1) {
-            int target_cylinder = target_buffer_idx * 10;
-            if (target_cylinder >= RAMAC_CYLINDERS) {
-                target_cylinder = RAMAC_CYLINDERS - 1;
-            }
-
-            int commit_slot = tsfi_s370_scsi_stream_to_ramac(disk, &scsi_status_array[i], &data_reg_array[i],
-                                                             streams[i], stream_lens[i], target_cylinder);
-            if (commit_slot == -1) {
-                return -2;
-            }
-        }
-    }
-
-    return 0;
-}
-
-void tsfi_s370_zmm_lock_init(tsfi_zmm_lock_registry *registry) {
-    if (!registry) return;
-    for (int i = 0; i < RAMAC_CYLINDERS; i++) {
-        registry->locked_cylinders[i] = 0;
-        registry->cylinder_owners[i] = -1;
-        registry->lock_ticks[i] = 0;
-    }
-}
-
-int tsfi_s370_zmm_lock_acquire(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder, int lock_mode,
-                               uint64_t current_tick, int initiator_priority) {
-    if (!registry || cylinder < 0 || cylinder >= RAMAC_CYLINDERS) {
-        return -1;
-    }
-    if (lock_mode != 1 && lock_mode != 2) {
-        return -1;
-    }
-
-    if (registry->locked_cylinders[cylinder] != 0) {
-        if (current_tick - registry->lock_ticks[cylinder] > 1000) {
-            registry->locked_cylinders[cylinder] = 0;
-            registry->cylinder_owners[cylinder] = -1;
-        }
-    }
-
-    if (registry->locked_cylinders[cylinder] == 0) {
-        registry->locked_cylinders[cylinder] = lock_mode;
-        registry->cylinder_owners[cylinder] = initiator_id;
-        registry->lock_ticks[cylinder] = current_tick;
+int tsfi_uniservo_init(tsfi_uniservo_tape *tape, const char *filepath) {
+    if (!tape || !filepath) return -1;
+    strncpy(tape->filepath, filepath, sizeof(tape->filepath) - 1);
+    tape->filepath[sizeof(tape->filepath) - 1] = '\0';
+    tape->current_block_pos = 0;
+    tape->parity_errors = 0;
+    
+    FILE *f = fopen(filepath, "rb");
+    if (!f) {
+        tape->total_blocks = 0;
         return 0;
     }
+    
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fclose(f);
+    
+    tape->total_blocks = (uint32_t)(size / 256);
+    return 0;
+}
 
-    if (registry->locked_cylinders[cylinder] == 1 && lock_mode == 1) {
-        return 0;
+
+int tsfi_uniservo_read_block(tsfi_uniservo_tape *tape, uint32_t block_idx, uint8_t *buffer, int buf_len) {
+    if (!tape || !buffer || buf_len < 256) return -1;
+    
+    FILE *f = fopen(tape->filepath, "rb");
+    if (!f) return -2;
+    
+    if (fseek(f, block_idx * 256, SEEK_SET) != 0) {
+        fclose(f);
+        return -3;
     }
-
-    if (initiator_priority > 5) {
-        registry->locked_cylinders[cylinder] = lock_mode;
-        registry->cylinder_owners[cylinder] = initiator_id;
-        registry->lock_ticks[cylinder] = current_tick;
-        return 2;
+    
+    size_t read_bytes = fread(buffer, 1, 256, f);
+    fclose(f);
+    
+    if (read_bytes < 256) return -4;
+    
+    uint8_t xor_sum = 0;
+    for (int i = 0; i < 255; i++) {
+        xor_sum ^= buffer[i];
     }
+    
+    if (buffer[255] != xor_sum) {
+        tape->parity_errors++;
+        return -5;
+    }
+    
+    tape->current_block_pos = block_idx;
+    return 0;
+}
 
+
+int tsfi_uniservo_write_block(tsfi_uniservo_tape *tape, uint32_t block_idx, const uint8_t *buffer, int buf_len) {
+    if (!tape || !buffer || buf_len < 256) return -1;
+    
+    FILE *f = fopen(tape->filepath, "r+b");
+    if (!f) {
+        f = fopen(tape->filepath, "wb");
+        if (!f) return -2;
+    }
+    
+    if (fseek(f, block_idx * 256, SEEK_SET) != 0) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint8_t out_block[256];
+    memcpy(out_block, buffer, 255);
+    
+    uint8_t xor_sum = 0;
+    for (int i = 0; i < 255; i++) {
+        xor_sum ^= out_block[i];
+    }
+    out_block[255] = xor_sum;
+    
+    size_t written_bytes = fwrite(out_block, 1, 256, f);
+    fclose(f);
+    
+    if (written_bytes < 256) return -4;
+    
+    tape->current_block_pos = block_idx;
+    if (block_idx >= tape->total_blocks) {
+        tape->total_blocks = block_idx + 1;
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+int tsfi_winchester_socket_route_to_zmm(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, TsfiZmmVmState *zmm) {
+    if (!bridge || !event_data || len <= 0 || !zmm) return -1;
+    if (!bridge->connection_active) return -2;
+    
+    uint8_t keycode = event_data[0];
+    
+    if (zmm->telem) {
+        zmm->telem->zmm_val = keycode;
+    }
+    bridge->processed_packets++;
+    return 0;
+}
+
+
+void tsfi_compool_init(tsfi_jovial_compool *cp) {
+    if (!cp) return;
+    cp->entry_count = 0;
+    for (int i = 0; i < 16; i++) {
+        cp->entries[i].var_name[0] = '\0';
+        cp->entries[i].val = 0;
+    }
+}
+
+
+int tsfi_compool_register(tsfi_jovial_compool *cp, const char *name, uint32_t val) {
+    if (!cp || !name || cp->entry_count >= 16) return -1;
+    
+    for (int i = 0; i < cp->entry_count; i++) {
+        if (strcmp(cp->entries[i].var_name, name) == 0) {
+            cp->entries[i].val = val;
+            return 0;
+        }
+    }
+    
+    strncpy(cp->entries[cp->entry_count].var_name, name, 31);
+    cp->entries[cp->entry_count].var_name[31] = '\0';
+    cp->entries[cp->entry_count].val = val;
+    cp->entry_count++;
+    return 0;
+}
+
+
+int tsfi_compool_lookup(const tsfi_jovial_compool *cp, const char *name, uint32_t *val_out) {
+    if (!cp || !name || !val_out) return -1;
+    for (int i = 0; i < cp->entry_count; i++) {
+        if (strcmp(cp->entries[i].var_name, name) == 0) {
+            *val_out = cp->entries[i].val;
+            return 0;
+        }
+    }
     return -2;
 }
 
-int tsfi_s370_zmm_lock_release(tsfi_zmm_lock_registry *registry, int initiator_id, int cylinder) {
-    if (!registry || cylinder < 0 || cylinder >= RAMAC_CYLINDERS) {
-        return -1;
-    }
 
-    if (registry->cylinder_owners[cylinder] == initiator_id) {
-        registry->locked_cylinders[cylinder] = 0;
-        registry->cylinder_owners[cylinder] = -1;
-        registry->lock_ticks[cylinder] = 0;
-        return 0;
-    }
 
-    return -1;
-}
 
-int tsfi_s370_zyir_exec(tsfi_zyir_instruction *program, int program_size,
-                        uint8_t *yul_memory, int yul_mem_size,
-                        tsfi_ramac_record *zmm_disk, tsfi_zmm_lock_registry *lock_registry,
-                        int initiator_id, int initiator_priority,
-                        int *registers, int reg_count, uint64_t *current_tick) {
-    if (!program || program_size <= 0 || !yul_memory || yul_mem_size <= 0 || 
-        !zmm_disk || !lock_registry || !registers || reg_count <= 0 || !current_tick) {
-        return -1;
-    }
 
-    int pc = 0;
-    int run_limit = 0;
 
-    while (pc >= 0 && pc < program_size && run_limit < 10000) {
-        tsfi_zyir_instruction inst = program[pc];
-        run_limit++;
-        (*current_tick)++;
 
-        if (strcmp(inst.op, "MSTORE") == 0) {
-            if (inst.val_addr + 4 > (uint32_t)yul_mem_size || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
-                return -2;
-            }
-            int val = registers[inst.reg_src1];
-            yul_memory[inst.val_addr] = (val >> 24) & 0xFF;
-            yul_memory[inst.val_addr + 1] = (val >> 16) & 0xFF;
-            yul_memory[inst.val_addr + 2] = (val >> 8) & 0xFF;
-            yul_memory[inst.val_addr + 3] = val & 0xFF;
-            pc++;
-        } else if (strcmp(inst.op, "MLOAD") == 0) {
-            if (inst.val_addr + 4 > (uint32_t)yul_mem_size || inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
-                return -2;
-            }
-            registers[inst.reg_dest] = ((int)yul_memory[inst.val_addr] << 24) |
-                                       ((int)yul_memory[inst.val_addr + 1] << 16) |
-                                       ((int)yul_memory[inst.val_addr + 2] << 8)  |
-                                       (int)yul_memory[inst.val_addr + 3];
-            pc++;
-        } else if (strcmp(inst.op, "ZLOCK") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
-                return -2;
-            }
-            int lock_mode = registers[inst.reg_src1];
-            int lock_res = tsfi_s370_zmm_lock_acquire(lock_registry, initiator_id, inst.val_addr, lock_mode,
-                                                      *current_tick, initiator_priority);
-            registers[inst.reg_dest] = lock_res;
-            pc++;
-        } else if (strcmp(inst.op, "ZRELEASE") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
-                return -2;
-            }
-            int rel_res = tsfi_s370_zmm_lock_release(lock_registry, initiator_id, inst.val_addr);
-            registers[inst.reg_dest] = rel_res;
-            pc++;
-        } else if (strcmp(inst.op, "ZWRITE") == 0) {
-            int cylinder = inst.val_addr;
-            if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_src1 < 0 || inst.reg_src1 >= reg_count) {
-                return -2;
-            }
-            if (lock_registry->locked_cylinders[cylinder] != 2 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
-                return -3;
-            }
-            char key_str[32];
-            char val_str[32];
-            snprintf(key_str, sizeof(key_str), "zyir_key_%d", initiator_id);
-            snprintf(val_str, sizeof(val_str), "zyir_val_%d", registers[inst.reg_src1]);
-            double temp_seek = 0.0;
-            tsfi_ramac_insert_record(zmm_disk, key_str, val_str, cylinder, &temp_seek);
-            pc++;
-        } else if (strcmp(inst.op, "ZREAD") == 0) {
-            int cylinder = inst.val_addr;
-            if (cylinder < 0 || cylinder >= RAMAC_CYLINDERS || inst.reg_dest < 0 || inst.reg_dest >= reg_count) {
-                return -2;
-            }
-            if (lock_registry->locked_cylinders[cylinder] == 0 || lock_registry->cylinder_owners[cylinder] != initiator_id) {
-                return -3;
-            }
-            char key_str[32];
-            snprintf(key_str, sizeof(key_str), "zyir_key_%d", initiator_id);
-            double temp_seek = 0.0;
-            const char *res_val = tsfi_ramac_search_record(zmm_disk, key_str, cylinder, &temp_seek);
-            if (res_val) {
-                int numeric_val = 0;
-                sscanf(res_val, "zyir_val_%d", &numeric_val);
-                registers[inst.reg_dest] = numeric_val;
-            } else {
-                registers[inst.reg_dest] = 0;
-            }
-            pc++;
-        } else if (strcmp(inst.op, "ADD") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
-                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
-                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
-                return -2;
-            }
-            registers[inst.reg_dest] = registers[inst.reg_src1] + registers[inst.reg_src2];
-            pc++;
-        } else if (strcmp(inst.op, "SUB") == 0) {
-            if (inst.reg_dest < 0 || inst.reg_dest >= reg_count || 
-                inst.reg_src1 < 0 || inst.reg_src1 >= reg_count || 
-                inst.reg_src2 < 0 || inst.reg_src2 >= reg_count) {
-                return -2;
-            }
-            registers[inst.reg_dest] = registers[inst.reg_src1] - registers[inst.reg_src2];
-            pc++;
-        } else {
-            pc++;
+
+#include <math.h>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int tsfi_law_query(const tsfi_law_case *db, int db_size, const char *query_word, int results_out[8]) {
+    if (!db || db_size <= 0 || !query_word || !results_out) return 0;
+    int count = 0;
+    for (int i = 0; i < db_size; i++) {
+        if (strcmp(db[i].keyword, query_word) == 0) {
+            results_out[count++] = db[i].case_id;
+            if (count >= 8) break;
         }
     }
-
-    return 0;
+    return count;
 }
 
-int tsfi_s370_uncol_to_yul(const tsfi_uncol_instruction *program, int program_size,
-                           char *yul_code_out, int max_len) {
-    if (!program || program_size <= 0 || !yul_code_out || max_len <= 0) {
-        return -1;
+
+
+
+
+uint64_t tsfi_double_to_cdc3600_float(double val) {
+    union { double d; uint64_t u; } conv;
+    conv.d = val;
+    uint64_t sign = (conv.u >> 63) & 1ULL;
+    int64_t exp = ((conv.u >> 52) & 0x7FFULL) - 1023 + 1024;
+    if (exp < 0) exp = 0;
+    if (exp > 0x7FF) exp = 0x7FF;
+    uint64_t frac = (conv.u >> 16) & 0xFFFFFFFFFULL;
+    return (sign << 47) | ((uint64_t)exp << 36) | frac;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tsfi_mackenzie_init(mackenzie_storage *store) {
+    if (!store) return;
+    store->current_tick = 0;
+    for (int i = 0; i < 8; i++) {
+        store->segments[i].sector_id = i;
+        store->segments[i].access_count = 0;
+        store->segments[i].last_access_tick = 0;
+        store->segments[i].location = 0;
     }
+}
 
-    yul_code_out[0] = '\0';
-    int offset = snprintf(yul_code_out, max_len, "{\n");
 
-    for (int i = 0; i < program_size; i++) {
-        if (offset >= max_len - 64) break;
+int tsfi_mackenzie_access(mackenzie_storage *store, int sector_id) {
+    if (!store || sector_id < 0 || sector_id >= 8) return -1;
+    store->current_tick++;
+    store->segments[sector_id].access_count++;
+    store->segments[sector_id].last_access_tick = store->current_tick;
+    return store->segments[sector_id].location;
+}
 
-        tsfi_uncol_instruction inst = program[i];
-        if (strcmp(inst.op, "LOAD") == 0) {
-            offset += snprintf(yul_code_out + offset, max_len - offset,
-                               "  let r%d := mload(%d)\n", inst.reg_dest, inst.address);
-        } else if (strcmp(inst.op, "STORE") == 0) {
-            offset += snprintf(yul_code_out + offset, max_len - offset,
-                               "  mstore(%d, r%d)\n", inst.address, inst.reg_dest);
-        } else if (strcmp(inst.op, "ADD") == 0) {
-            offset += snprintf(yul_code_out + offset, max_len - offset,
-                               "  let r%d := add(r%d, r%d)\n", inst.reg_dest, inst.reg_src1, inst.reg_src2);
-        } else if (strcmp(inst.op, "SUB") == 0) {
-            offset += snprintf(yul_code_out + offset, max_len - offset,
-                               "  let r%d := sub(r%d, r%d)\n", inst.reg_dest, inst.reg_src1, inst.reg_src2);
+
+int tsfi_mackenzie_migrate(mackenzie_storage *store, int age_threshold) {
+    if (!store) return 0;
+    int count = 0;
+    for (int i = 0; i < 8; i++) {
+        if (store->segments[i].location == 0) {
+            int age = store->current_tick - store->segments[i].last_access_tick;
+            if (age > age_threshold && store->segments[i].access_count < 5) {
+                store->segments[i].location = 1;
+                count++;
+            }
         }
     }
+    return count;
+}
 
-    if (offset < max_len - 3) {
-        snprintf(yul_code_out + offset, max_len - offset, "}\n");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+uint64_t tsfi_bates_hash(const char *token, uint64_t salt) {
+    if (!token) return 0;
+    uint64_t h = salt ^ 953467954114363ULL;
+    while (*token) {
+        h = (h * 33) ^ (uint8_t)(*token);
+        token++;
     }
+    return h;
+}
 
+
+int tsfi_bates_authenticate(const char *token, uint64_t salt, uint64_t expected_hash) {
+    uint64_t computed = tsfi_bates_hash(token, salt);
+    return (computed == expected_hash) ? 0 : -1;
+}
+
+
+
+void tsfi_mis_init(mis_database *db) {
+    if (!db) return;
+    db->count = 0;
+    for (int i = 0; i < 32; i++) {
+        db->records[i].resource_name[0] = '\0';
+        db->records[i].allocation_val = 0;
+        db->records[i].parent_node_id = 0;
+    }
+}
+
+
+int tsfi_mis_insert(mis_database *db, const char *name, uint32_t allocation, uint32_t parent_id) {
+    if (!db || db->count >= 32 || !name) return -1;
+    mis_record *r = &db->records[db->count++];
+    strncpy(r->resource_name, name, sizeof(r->resource_name) - 1);
+    r->resource_name[sizeof(r->resource_name) - 1] = '\0';
+    r->allocation_val = allocation;
+    r->parent_node_id = parent_id;
     return 0;
 }
 
-int tsfi_s370_philco212_decode(uint64_t raw_word, tsfi_philco212_instruction *inst_left, tsfi_philco212_instruction *inst_right) {
-    if (!inst_left || !inst_right) return -1;
 
-    uint64_t clean_word = raw_word & 0xFFFFFFFFFFFFULL;
+int tsfi_mis_query(const mis_database *db, uint32_t parent_id, uint32_t min_alloc, char *result_out, size_t max_len) {
+    if (!db || !result_out || max_len == 0) return -1;
+    result_out[0] = '\0';
+    int match_count = 0;
+    for (int i = 0; i < db->count; i++) {
+        const mis_record *r = &db->records[i];
+        if (r->parent_node_id == parent_id && r->allocation_val >= min_alloc) {
+            if (match_count > 0) {
+                strncat(result_out, ",", max_len - strlen(result_out) - 1);
+            }
+            strncat(result_out, r->resource_name, max_len - strlen(result_out) - 1);
+            match_count++;
+        }
+    }
+    return match_count;
+}
 
-    uint32_t left_val = (clean_word >> 24) & 0xFFFFFF;
-    inst_left->opcode = (left_val >> 16) & 0xFF;
-    inst_left->index_reg = (left_val >> 13) & 0x07;
-    inst_left->mod_mode = (left_val >> 11) & 0x03;
-    inst_left->address = left_val & 0x7FF;
 
-    uint32_t right_val = clean_word & 0xFFFFFF;
-    inst_right->opcode = (right_val >> 16) & 0xFF;
-    inst_right->index_reg = (right_val >> 13) & 0x07;
-    inst_right->mod_mode = (right_val >> 11) & 0x03;
-    inst_right->address = right_val & 0x7FF;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_mcs_queue));
+    strcpy(q->status_key, "00");
+    pthread_mutex_init(&q->lock, NULL);
+    if (name) {
+        strncpy(q->queue_name, name, sizeof(q->queue_name) - 1);
+    }
+}
+
+
+int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
+    if (!q || !msg) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
+    if (q->count >= 8) {
+        strcpy(q->status_key, "10");
+        pthread_mutex_unlock(&q->lock);
+        return -2;
+    }
+    strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
+    q->indicators[q->tail] = MCS_EMI;
+    q->tail = (q->tail + 1) % 8;
+    q->count++;
+    strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
+    TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
+    if (wmq) {
+        wmq->registers.status_reg = 1;
+        wmq->registers.keycode_reg = 32;
+        uint32_t packed_word = 0;
+        memcpy(&packed_word, msg, (strlen(msg) < 4) ? strlen(msg) : 4);
+        wmq->registers.data_reg = packed_word;
+        tsfi_winchester_bridge_handshake(wmq);
+    }
     return 0;
 }
 
-int tsfi_s370_philco212_modify_address(tsfi_philco212_instruction *inst, int *index_registers, int index_reg_count, uint16_t *out_modified_address) {
-    if (!inst || !index_registers || !out_modified_address) return -1;
 
-    if (inst->index_reg >= index_reg_count) {
-        return -1;
+int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len) {
+    if (!q || !msg_out || max_len == 0) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
     }
-
-    if (inst->index_reg == 0) {
-        *out_modified_address = inst->address;
-        return 0;
+    if (q->count == 0) {
+        strcpy(q->status_key, "20");
+        pthread_mutex_unlock(&q->lock);
+        return -2;
     }
-
-    int index_val = index_registers[inst->index_reg];
-
-    switch (inst->mod_mode) {
-        case 0:
-            *out_modified_address = (inst->address + index_val) & 0x7FF;
-            break;
-
-        case 1:
-            *out_modified_address = (inst->address + index_val) & 0x7FF;
-            index_registers[inst->index_reg] = (index_val + 1) & 0x7FF;
-            break;
-
-        case 2:
-            *out_modified_address = (inst->address + index_val) & 0x7FF;
-            index_registers[inst->index_reg] = (index_val - 1) & 0x7FF;
-            break;
-
-        case 3:
-            index_val = (index_val + 1) & 0x7FF;
-            index_registers[inst->index_reg] = index_val;
-            *out_modified_address = (inst->address + index_val) & 0x7FF;
-            break;
-    }
-
+    strncpy(msg_out, q->messages[q->head], max_len - 1);
+    msg_out[max_len - 1] = '\0';
+    q->head = (q->head + 1) % 8;
+    q->count--;
+    strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
     return 0;
 }
+
+
+void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const char *sq1, const char *sq2, const char *sq3) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_mcs_queue));
+    strcpy(q->status_key, "00");
+    pthread_mutex_init(&q->lock, NULL);
+    if (q_name) strncpy(q->queue_name, q_name, sizeof(q->queue_name) - 1);
+    if (sq1) strncpy(q->sub_queue1, sq1, sizeof(q->sub_queue1) - 1);
+    if (sq2) strncpy(q->sub_queue2, sq2, sizeof(q->sub_queue2) - 1);
+    if (sq3) strncpy(q->sub_queue3, sq3, sizeof(q->sub_queue3) - 1);
+}
+
+
+int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator, void *wmq_void) {
+    if (!q || !msg) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
+    if (q->count >= 8) {
+        strcpy(q->status_key, "10");
+        pthread_mutex_unlock(&q->lock);
+        return -2;
+    }
+    strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
+    q->indicators[q->tail] = indicator;
+    q->tail = (q->tail + 1) % 8;
+    q->count++;
+    strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
+    TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
+    if (wmq) {
+        wmq->registers.status_reg = 1;
+        wmq->registers.keycode_reg = 32;
+        uint32_t packed_word = 0;
+        memcpy(&packed_word, msg, (strlen(msg) < 4) ? strlen(msg) : 4);
+        wmq->registers.data_reg = packed_word;
+        tsfi_winchester_bridge_handshake(wmq);
+    }
+    return 0;
+}
+
+
+int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, uint8_t *indicator_out) {
+    if (!q || !msg_out || max_len == 0) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
+    if (q->count == 0) {
+        strcpy(q->status_key, "20");
+        pthread_mutex_unlock(&q->lock);
+        return -2;
+    }
+    strncpy(msg_out, q->messages[q->head], max_len - 1);
+    msg_out[max_len - 1] = '\0';
+    if (indicator_out) {
+        *indicator_out = q->indicators[q->head];
+    }
+    q->head = (q->head + 1) % 8;
+    q->count--;
+    strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
+    return 0;
+}
+
+
+void tsfi_mcs_assembly_init(tsfi_mcs_assembly *buf) {
+    if (!buf) return;
+    memset(buf, 0, sizeof(tsfi_mcs_assembly));
+}
+
+
+int tsfi_mcs_assemble_next(tsfi_mcs_queue *q, tsfi_mcs_assembly *buf, char *msg_out, size_t max_len) {
+    if (!q || !buf || !msg_out || max_len == 0) return -1;
+    char temp_segment[128];
+    uint8_t indicator = 0;
+    int rx_res = tsfi_mcs_receive_segment(q, temp_segment, sizeof(temp_segment), &indicator);
+    if (rx_res != 0) return rx_res;
+    size_t seg_len = strlen(temp_segment);
+    if (buf->assembly_len + seg_len + 1 > sizeof(buf->assembly_buffer)) {
+        strcpy(q->status_key, "30");
+        return -3;
+    }
+    memcpy(buf->assembly_buffer + buf->assembly_len, temp_segment, seg_len);
+    buf->assembly_len += seg_len;
+    buf->assembly_buffer[buf->assembly_len] = '\0';
+    if (indicator == MCS_EMI || indicator == MCS_EGI) {
+        strncpy(msg_out, buf->assembly_buffer, max_len - 1);
+        msg_out[max_len - 1] = '\0';
+        buf->assembly_len = 0;
+        buf->assembly_buffer[0] = '\0';
+        return 1;
+    }
+    return 0;
+}
+
+
+void tsfi_subschema_init(tsfi_subschema_map *map, const char *name, const char *rec, const char *set) {
+    if (!map) return;
+    memset(map, 0, sizeof(tsfi_subschema_map));
+    if (name) strncpy(map->subschema_name, name, sizeof(map->subschema_name) - 1);
+    if (rec) strncpy(map->record_name, rec, sizeof(map->record_name) - 1);
+    if (set) strncpy(map->set_name, set, sizeof(map->set_name) - 1);
+}
+
+
+int tsfi_subschema_map_data(const tsfi_subschema_map *map, const uint8_t *db_record_data, int *registers_out) {
+    if (!map || !db_record_data || !registers_out) return -1;
+    for (int i = 0; i < map->field_count && i < 8; i++) {
+        int offset = map->field_offsets[i];
+        uint32_t val = (db_record_data[offset] << 24) |
+                       (db_record_data[offset+1] << 16) |
+                       (db_record_data[offset+2] << 8) |
+                       db_record_data[offset+3];
+        registers_out[i] = (int)val;
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tsfi_relational_tuple_init(tsfi_relational_tuple *t, const char *rel, const char *key) {
+    if (!t) return;
+    memset(t, 0, sizeof(tsfi_relational_tuple));
+    if (rel) strncpy(t->relation_name, rel, sizeof(t->relation_name) - 1);
+    if (key) strncpy(t->tuple_key, key, sizeof(t->tuple_key) - 1);
+    t->resolved_record_id = -1;
+}
+
+
+int tsfi_relational_map_to_codasyl(const tsfi_relational_tuple *t, const tsfi_dbtg_realm_registry *realm_reg, int *db_status_out) {
+    if (!t || !realm_reg || !db_status_out) return -1;
+    int found_open_realm = 0;
+    for (int i = 0; i < realm_reg->area_count; i++) {
+        if (strcmp(realm_reg->areas[i].area_name, t->relation_name) == 0 && realm_reg->areas[i].is_open) {
+            found_open_realm = 1;
+            break;
+        }
+    }
+    if (!found_open_realm) {
+        *db_status_out = DB_STATUS_NOT_OPEN;
+        return -2;
+    }
+    *db_status_out = DB_STATUS_OK;
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

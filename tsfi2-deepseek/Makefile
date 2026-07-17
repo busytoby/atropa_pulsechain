@@ -112,9 +112,13 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_coaxial_strategy.o \
             $(OBJ_DIR)/tsfi_coaxial_telemetry.o \
             $(OBJ_DIR)/tsfi_ramac_layout.o \
-            $(OBJ_DIR)/tsfi_ramac_layout_part2.o \
-            $(OBJ_DIR)/tsfi_ramac_layout_part3.o \
-            $(OBJ_DIR)/tsfi_ramac_layout_part4.o \
+            $(OBJ_DIR)/tsfi_ramac_acc.o \
+            $(OBJ_DIR)/tsfi_ramac_atlas.o \
+            $(OBJ_DIR)/tsfi_ramac_cp.o \
+            $(OBJ_DIR)/tsfi_ramac_db.o \
+            $(OBJ_DIR)/tsfi_ramac_emul.o \
+            $(OBJ_DIR)/tsfi_ramac_emul_legacy.o \
+            $(OBJ_DIR)/tsfi_ramac_lang.o \
             $(OBJ_DIR)/tsfi_mainframe_v370.o \
             $(OBJ_DIR)/tsfi_mainframe_fips.o \
             $(OBJ_DIR)/tsfi_mainframe_decnet.o
