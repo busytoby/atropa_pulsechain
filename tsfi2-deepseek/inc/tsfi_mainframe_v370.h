@@ -382,4 +382,24 @@ void tsfi_codasyl_schema_init(tsfi_codasyl_schema *schema);
 int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_statement);
 int tsfi_codasyl_schema_validate(const tsfi_codasyl_schema *schema, char *out_error, int max_err_len);
 
+// Scenario 132: IBM Mainframe-to-Minicomputer FEP Red/Black Audit Channel Linker
+typedef struct {
+    int parity_errors;
+    int retry_count;
+    uint32_t timing_sector;
+    int black_rail_valid;
+    int red_rail_valid;
+} tsfi_fep_audit_state;
+
+typedef struct {
+    char device_id[16];
+    tsfi_fep_audit_state audit;
+    int total_transactions;
+} tsfi_fep_channel;
+
+void tsfi_fep_init(tsfi_fep_channel *chan, const char *device_id);
+int tsfi_fep_process_red_rail(tsfi_fep_channel *chan, uint32_t telemetry_data, int parity_bit);
+int tsfi_fep_process_black_rail(tsfi_fep_channel *chan, uint32_t timing_sector_input);
+int tsfi_fep_query_audit(const tsfi_fep_channel *chan, int *out_transactions, int *out_errors, int *out_timing);
+
 #endif // TSFI_MAINFRAME_V370_H

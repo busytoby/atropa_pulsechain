@@ -1100,3 +1100,51 @@ int tsfi_codasyl_schema_validate(const tsfi_codasyl_schema *schema, char *out_er
     
     return 0;
 }
+
+void tsfi_fep_init(tsfi_fep_channel *chan, const char *device_id) {
+    if (!chan) return;
+    memset(chan, 0, sizeof(tsfi_fep_channel));
+    if (device_id) {
+        snprintf(chan->device_id, sizeof(chan->device_id), "%s", device_id);
+    }
+}
+
+int tsfi_fep_process_red_rail(tsfi_fep_channel *chan, uint32_t telemetry_data, int parity_bit) {
+    if (!chan) return -1;
+    int bits = 0;
+    for (int i = 0; i < 32; i++) {
+        if ((telemetry_data >> i) & 1) {
+            bits++;
+        }
+    }
+    int computed_parity = bits % 2;
+    if (computed_parity != parity_bit) {
+        chan->audit.parity_errors++;
+        chan->audit.retry_count++;
+        chan->audit.red_rail_valid = 0;
+        return -2;
+    }
+    chan->audit.red_rail_valid = 1;
+    chan->total_transactions++;
+    return 0;
+}
+
+int tsfi_fep_process_black_rail(tsfi_fep_channel *chan, uint32_t timing_sector_input) {
+    if (!chan) return -1;
+    if (timing_sector_input >= 108) {
+        chan->audit.black_rail_valid = 0;
+        return -2;
+    }
+    chan->audit.timing_sector = timing_sector_input;
+    chan->audit.black_rail_valid = 1;
+    chan->total_transactions++;
+    return 0;
+}
+
+int tsfi_fep_query_audit(const tsfi_fep_channel *chan, int *out_transactions, int *out_errors, int *out_timing) {
+    if (!chan || !out_transactions || !out_errors || !out_timing) return -1;
+    *out_transactions = chan->total_transactions;
+    *out_errors = chan->audit.parity_errors;
+    *out_timing = (int)chan->audit.timing_sector;
+    return 0;
+}

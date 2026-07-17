@@ -1221,6 +1221,38 @@ int main(void) {
     assert(strstr(err_buf, "UNDEFINED MEMBER JOBREC") != NULL);
     printf("  [PASS] CODASYL schema parsed records, sets, and caught invalid references successfully.\n");
 
+    // 132. IBM Mainframe-to-Minicomputer FEP Red/Black Audit Channel Linker Verification
+    printf("[Test] Verifying FEP Red/Black Audit Channel Linker...\n");
+    tsfi_fep_channel fep_chan;
+    tsfi_fep_init(&fep_chan, "FEP01");
+    
+    // Process Red Rail with correct parity
+    // 0x03 has 2 set bits (even parity -> parity bit 0)
+    assert(tsfi_fep_process_red_rail(&fep_chan, 0x03, 0) == 0);
+    assert(fep_chan.audit.red_rail_valid == 1);
+    
+    // Process Red Rail with bad parity (should fail and increment parity error audit)
+    assert(tsfi_fep_process_red_rail(&fep_chan, 0x03, 1) == -2);
+    assert(fep_chan.audit.red_rail_valid == 0);
+    assert(fep_chan.audit.parity_errors == 1);
+    
+    // Process Black Rail (valid timing sector)
+    assert(tsfi_fep_process_black_rail(&fep_chan, 107) == 0);
+    assert(fep_chan.audit.black_rail_valid == 1);
+    assert(fep_chan.audit.timing_sector == 107);
+    
+    // Process Black Rail timing violation
+    assert(tsfi_fep_process_black_rail(&fep_chan, 108) == -2);
+    assert(fep_chan.audit.black_rail_valid == 0);
+    
+    // Query audit metrics
+    int trans = 0, errs = 0, timing = 0;
+    assert(tsfi_fep_query_audit(&fep_chan, &trans, &errs, &timing) == 0);
+    assert(trans == 2); // 1 valid red, 1 valid black
+    assert(errs == 1);
+    assert(timing == 107);
+    printf("  [PASS] FEP channel isolated Red/Black rail audit indicators validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
