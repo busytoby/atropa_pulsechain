@@ -647,4 +647,16 @@ const char *tsfi_sna_resolve_sense(uint16_t sense_code);
 int tsfi_sna_package_piu(const tsfi_sna_th *th, const tsfi_sna_rh *rh, const uint8_t *ru_data, size_t ru_len, uint8_t *piu_out, size_t *piu_len);
 int tsfi_sna_parse_piu(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, tsfi_sna_rh *rh_out, uint8_t *ru_out, size_t *ru_len);
 
+// Usenet Posting Storage & Preservation (Binary `.dat.bin` compliant layout)
+typedef struct {
+    char newsgroup[64];
+    uint32_t article_number;
+    char subject[64];
+    char body[256];
+} tsfi_usenet_article;
+
+void tsfi_usenet_init(tsfi_usenet_article *art, const char *group, uint32_t art_num, const char *subject, const char *body);
+int tsfi_usenet_store_bin(const tsfi_usenet_article *art, uint8_t *buf, size_t *len_out);
+int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article *art_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

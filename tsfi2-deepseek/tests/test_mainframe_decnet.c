@@ -917,6 +917,24 @@ int main(void) {
     assert(memcmp(decoded_ru, "SNA_TEST_RU", 11) == 0);
     printf("  [PASS] SNA unified PIU frame assembly and parsing verified.\n");
 
+    // 59. Usenet Posting Storage & Retrieval Verification
+    printf("[Test] Verifying Usenet Posting Storage & Retrieval...\n");
+    tsfi_usenet_article tx_art;
+    tsfi_usenet_init(&tx_art, "net.general", 1001, "Hello Mainframe World", "This is a test post stored in binary dat bin format.");
+    
+    uint8_t usenet_buf[512];
+    size_t usenet_len = 0;
+    assert(tsfi_usenet_store_bin(&tx_art, usenet_buf, &usenet_len) == 0);
+    assert(usenet_len == sizeof(tsfi_usenet_article));
+    
+    tsfi_usenet_article rx_art;
+    assert(tsfi_usenet_retrieve_bin(usenet_buf, usenet_len, &rx_art) == 0);
+    assert(strcmp(rx_art.newsgroup, "net.general") == 0);
+    assert(rx_art.article_number == 1001);
+    assert(strcmp(rx_art.subject, "Hello Mainframe World") == 0);
+    assert(strcmp(rx_art.body, "This is a test post stored in binary dat bin format.") == 0);
+    printf("  [PASS] Usenet posting binary serialization, preservation, and retrieval verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

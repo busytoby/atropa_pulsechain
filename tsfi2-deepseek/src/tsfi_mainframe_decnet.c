@@ -1504,3 +1504,39 @@ int tsfi_sna_parse_piu(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, 
     }
     return 0;
 }
+
+void tsfi_usenet_init(tsfi_usenet_article *art, const char *group, uint32_t art_num, const char *subject, const char *body) {
+    if (!art) return;
+    art->article_number = art_num;
+    if (group) {
+        strncpy(art->newsgroup, group, 63);
+        art->newsgroup[63] = '\0';
+    } else {
+        art->newsgroup[0] = '\0';
+    }
+    if (subject) {
+        strncpy(art->subject, subject, 63);
+        art->subject[63] = '\0';
+    } else {
+        art->subject[0] = '\0';
+    }
+    if (body) {
+        strncpy(art->body, body, 255);
+        art->body[255] = '\0';
+    } else {
+        art->body[0] = '\0';
+    }
+}
+
+int tsfi_usenet_store_bin(const tsfi_usenet_article *art, uint8_t *buf, size_t *len_out) {
+    if (!art || !buf || !len_out) return -1;
+    memcpy(buf, art, sizeof(tsfi_usenet_article));
+    *len_out = sizeof(tsfi_usenet_article);
+    return 0;
+}
+
+int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article *art_out) {
+    if (!buf || !art_out || len < sizeof(tsfi_usenet_article)) return -1;
+    memcpy(art_out, buf, sizeof(tsfi_usenet_article));
+    return 0;
+}
