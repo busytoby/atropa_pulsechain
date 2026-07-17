@@ -4812,6 +4812,7 @@ void tsfi_rmag_init(rmag_processor *proc) {
     tsfi_rmag_define(proc, "ALGOL_FOR", "for i := 1 step 1 until $1 do");
     tsfi_rmag_define(proc, "YUL_SSTORE", "sstore($1, 1)");
     tsfi_rmag_define(proc, "JOVIAL_TAB", "TABLE $1 STATUS PACKED");
+    tsfi_rmag_define(proc, "FORMAL_PROOF_RULE", "Theorem: Correctness of $1. Invariant: memory_copies(s) == 0. Q.E.D.");
 }
 
 int tsfi_rmag_define(rmag_processor *proc, const char *name, const char *template_str) {
