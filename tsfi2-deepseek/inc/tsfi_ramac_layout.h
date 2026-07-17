@@ -1591,4 +1591,23 @@ void tsfi_cp_console_spool_start(tsfi_cp_console_spool *spool);
 void tsfi_cp_console_spool_write(tsfi_cp_console_spool *spool, const char *text);
 void tsfi_cp_console_spool_stop(tsfi_cp_console_spool *spool);
 
+// VM/370 CP Scheduler Q1 & Q2 CPU Queues
+#define VM_QUEUE_Q1 1
+#define VM_QUEUE_Q2 2
+
+typedef struct {
+    char vm_name[16];
+    int queue_type;
+    int cpu_cycles_used;
+} tsfi_cp_vm_task;
+
+typedef struct {
+    tsfi_cp_vm_task tasks[8];
+    int task_count;
+} tsfi_cp_scheduler;
+
+void tsfi_cp_scheduler_init(tsfi_cp_scheduler *sched);
+int tsfi_cp_scheduler_register(tsfi_cp_scheduler *sched, const char *name, int initial_q);
+int tsfi_cp_scheduler_dispatch(tsfi_cp_scheduler *sched, int task_idx, int cycles);
+
 #endif // TSFI_RAMAC_LAYOUT_H

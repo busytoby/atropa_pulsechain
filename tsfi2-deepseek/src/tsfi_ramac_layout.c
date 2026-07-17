@@ -6125,3 +6125,27 @@ void tsfi_cp_console_spool_stop(tsfi_cp_console_spool *spool) {
     if (!spool) return;
     spool->is_spooling = 0;
 }
+
+void tsfi_cp_scheduler_init(tsfi_cp_scheduler *sched) {
+    if (!sched) return;
+    memset(sched, 0, sizeof(tsfi_cp_scheduler));
+}
+
+int tsfi_cp_scheduler_register(tsfi_cp_scheduler *sched, const char *name, int initial_q) {
+    if (!sched || !name || sched->task_count >= 8) return -1;
+    strncpy(sched->tasks[sched->task_count].vm_name, name, sizeof(sched->tasks[sched->task_count].vm_name) - 1);
+    sched->tasks[sched->task_count].vm_name[sizeof(sched->tasks[sched->task_count].vm_name) - 1] = '\0';
+    sched->tasks[sched->task_count].queue_type = initial_q;
+    sched->tasks[sched->task_count].cpu_cycles_used = 0;
+    sched->task_count++;
+    return 0;
+}
+
+int tsfi_cp_scheduler_dispatch(tsfi_cp_scheduler *sched, int task_idx, int cycles) {
+    if (!sched || task_idx < 0 || task_idx >= sched->task_count) return -1;
+    sched->tasks[task_idx].cpu_cycles_used += cycles;
+    if (sched->tasks[task_idx].queue_type == VM_QUEUE_Q1 && cycles > 50) {
+        sched->tasks[task_idx].queue_type = VM_QUEUE_Q2;
+    }
+    return 0;
+}

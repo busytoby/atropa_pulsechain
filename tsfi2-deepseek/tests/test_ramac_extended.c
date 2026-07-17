@@ -1610,6 +1610,23 @@ int main(void) {
     assert(c_spool.is_spooling == 0);
     printf("  [PASS] VM/370 interactive console spool logging verified.\n");
 
+    // 93. VM/370 CP Scheduler Q1 & Q2 CPU Queues Verification
+    printf("[Test] Verifying VM/370 CP Scheduler task states...\n");
+    tsfi_cp_scheduler scheduler;
+    tsfi_cp_scheduler_init(&scheduler);
+    assert(scheduler.task_count == 0);
+    
+    assert(tsfi_cp_scheduler_register(&scheduler, "VM_USER_A", VM_QUEUE_Q1) == 0);
+    assert(tsfi_cp_scheduler_register(&scheduler, "VM_USER_B", VM_QUEUE_Q1) == 0);
+    assert(scheduler.task_count == 2);
+    
+    assert(tsfi_cp_scheduler_dispatch(&scheduler, 0, 20) == 0);
+    assert(scheduler.tasks[0].queue_type == VM_QUEUE_Q1);
+    
+    assert(tsfi_cp_scheduler_dispatch(&scheduler, 1, 80) == 0);
+    assert(scheduler.tasks[1].queue_type == VM_QUEUE_Q2);
+    printf("  [PASS] VM/370 multi-level queue CPU time allocation scheduler verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
