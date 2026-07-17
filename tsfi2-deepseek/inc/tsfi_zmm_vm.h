@@ -46,6 +46,7 @@ typedef struct {
     // Microtechnic Solutions REU DMA Telemetry Buffer
     uint8_t *reu_ram;
     uint32_t reu_size;
+    int program_counter;
 
     // Async LLM Transaction State
     uint64_t llm_tx_counter;
@@ -62,6 +63,7 @@ void* tsfi_zmm_vm_compile_block(const char *code);
 size_t tsfi_zmm_vm_compile_block_buffer(const char *code, void *buffer, size_t max_len);
 void tsfi_zmm_vm_exec_block(TsfiZmmVmState *state, void *block);
 void tsfi_zmm_vm_free_block(void *block);
+int tsfi_zmm_vm_step_block(TsfiZmmVmState *state, void *block);
 
 // Binary Crossover (Zero-Parse Evolution)
 size_t tsfi_zmm_vm_splice_block(const void *blockA, const void *blockB, void *child_buf, size_t max_len);

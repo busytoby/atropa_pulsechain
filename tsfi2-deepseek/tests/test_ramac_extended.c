@@ -5,6 +5,7 @@
 #include "tsfi_ramac_layout.h"
 #include "tsfi_strategy_lang.h"
 #include "tsfi_winchester_bridge.h"
+#include "tsfi_zmm_vm.h"
 #include "tsfi_dat.h"
 #include "tsfi_trie.h"
 
@@ -1273,6 +1274,38 @@ int main(void) {
     assert(realm_reg.areas[0].is_open == 0);
     assert(realm_reg.areas[0].lock_mode == DBTG_LOCK_NONE);
     printf("  [PASS] DBTG Area Realm registration and locking verified.\n");
+
+    // 74. ZMM VM Programmer Stepper Verification
+    printf("[Test] Verifying ZMM VM Programmer Stepper...\n");
+    TsfiZmmVmState zmm_state;
+    tsfi_zmm_vm_init(&zmm_state);
+    
+    union {
+        uint32_t words[8];
+        float floats[8];
+    } bytecode_block;
+    memset(&bytecode_block, 0, sizeof(bytecode_block));
+    bytecode_block.words[0] = ZMM_OP_WLOAD;
+    bytecode_block.words[1] = 1;
+    bytecode_block.floats[2] = 42.0f;
+    bytecode_block.words[3] = ZMM_OP_WSTORE;
+    bytecode_block.words[4] = 0;
+    bytecode_block.words[5] = 0;
+    bytecode_block.words[6] = ZMM_OP_END;
+    
+    zmm_state.program_counter = 0;
+    int step1 = tsfi_zmm_vm_step_block(&zmm_state, bytecode_block.words);
+    assert(step1 == 3);
+    assert(zmm_state.program_counter == 3);
+    
+    int step2 = tsfi_zmm_vm_step_block(&zmm_state, bytecode_block.words);
+    assert(step2 == 6);
+    
+    int step3 = tsfi_zmm_vm_step_block(&zmm_state, bytecode_block.words);
+    assert(step3 == -1);
+    
+    tsfi_zmm_vm_destroy(&zmm_state);
+    printf("  [PASS] ZMM VM Programmer Stepper instruction step cycles verified.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");

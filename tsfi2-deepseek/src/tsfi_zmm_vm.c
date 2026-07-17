@@ -1511,3 +1511,48 @@ size_t tsfi_zmm_vm_splice_block(const void *blockA, const void *blockB, void *ch
     *out = ZMM_OP_END;
     return (size_t)((char*)out - (char*)child_buf);
 }
+
+int tsfi_zmm_vm_step_block(TsfiZmmVmState *state, void *block) {
+    if (!state || !block) return -1;
+    uint32_t *base = (uint32_t*)block;
+    uint32_t *b = base + state->program_counter;
+    LauWireFirmware *fw = tsfi_wire_firmware_get();
+    uint32_t op = *b;
+    if (op == ZMM_OP_END) {
+        return -1;
+    }
+    int size = get_op_size(op);
+    uint32_t *next_op = b + size;
+    b++;
+    switch (op) {
+        case ZMM_OP_WLOAD: {
+            int r = *b++;
+            float val = *(float*)b;
+            if (r < TSFI_ZMM_REG_COUNT) {
+                wave512 w = wave512_set1(val);
+                tsfi_wire_firmware_load_waveform(fw, r, &w);
+            }
+            break;
+        }
+        case ZMM_OP_WADD: {
+            int d = *b++; int s1 = *b++; int s2 = *b++;
+            if (d < TSFI_ZMM_REG_COUNT) 
+                fw->cell_wave_exec(1, d, s1, s2);
+            break;
+        }
+        case ZMM_OP_WMUL: {
+            int d = *b++; int s1 = *b++; int s2 = *b++;
+            if (d < TSFI_ZMM_REG_COUNT)
+                fw->cell_wave_exec(2, d, s1, s2);
+            break;
+        }
+        case ZMM_OP_WSTORE: {
+            state->output_pos++;
+            break;
+        }
+        default:
+            break;
+    }
+    state->program_counter = (int)(next_op - base);
+    return state->program_counter;
+}
