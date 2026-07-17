@@ -1499,4 +1499,24 @@ typedef struct {
 
 void tsfi_structured_analyze_script(const char *script, tsfi_structured_analysis_report *report);
 
+// Mainframe VTAM Access Subsystem
+#define VTAM_STATE_INIT         0
+#define VTAM_STATE_NEGOTIATE    1
+#define VTAM_STATE_ACTIVE       2
+#define VTAM_STATE_TERMINATED   3
+
+#define VTAM_EV_BIND   0x01
+#define VTAM_EV_SDT    0x02
+#define VTAM_EV_UNBIND 0x03
+
+typedef struct {
+    char logical_unit[16];
+    int session_state;
+    int bytes_transmitted;
+} tsfi_vtam_session;
+
+void tsfi_vtam_session_init(tsfi_vtam_session *session, const char *lu_name);
+int tsfi_vtam_session_handshake(tsfi_vtam_session *session, int event);
+int tsfi_vtam_session_send(tsfi_vtam_session *session, const char *data, int data_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

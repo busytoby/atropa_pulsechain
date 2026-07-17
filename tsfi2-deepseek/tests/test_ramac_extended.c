@@ -1502,6 +1502,25 @@ int main(void) {
     assert(struct_report.backward_jmp_detected == 1);
     printf("  [PASS] Go-To-Less structured static analysis checker verified.\n");
 
+    // 87. Mainframe VTAM Access Subsystem Verification
+    printf("[Test] Verifying VTAM access logical unit sessions...\n");
+    tsfi_vtam_session lu_session;
+    tsfi_vtam_session_init(&lu_session, "LTERM01");
+    assert(lu_session.session_state == VTAM_STATE_INIT);
+    
+    int bind_res = tsfi_vtam_session_handshake(&lu_session, VTAM_EV_BIND);
+    assert(bind_res == 0);
+    assert(lu_session.session_state == VTAM_STATE_NEGOTIATE);
+    
+    int sdt_res = tsfi_vtam_session_handshake(&lu_session, VTAM_EV_SDT);
+    assert(sdt_res == 0);
+    assert(lu_session.session_state == VTAM_STATE_ACTIVE);
+    
+    int vtam_send_res = tsfi_vtam_session_send(&lu_session, "VTAM_PAYLOAD_TEST", 17);
+    assert(vtam_send_res == 17);
+    assert(lu_session.bytes_transmitted == 17);
+    printf("  [PASS] VTAM LU-LU session binds and data traffic verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

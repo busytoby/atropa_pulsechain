@@ -5933,3 +5933,46 @@ void tsfi_structured_analyze_script(const char *script, tsfi_structured_analysis
         }
     }
 }
+
+void tsfi_vtam_session_init(tsfi_vtam_session *session, const char *lu_name) {
+    if (!session) return;
+    memset(session, 0, sizeof(tsfi_vtam_session));
+    if (lu_name) strncpy(session->logical_unit, lu_name, sizeof(session->logical_unit) - 1);
+    session->session_state = VTAM_STATE_INIT;
+}
+
+int tsfi_vtam_session_handshake(tsfi_vtam_session *session, int event) {
+    if (!session) return -1;
+    switch (session->session_state) {
+        case VTAM_STATE_INIT:
+            if (event == VTAM_EV_BIND) {
+                session->session_state = VTAM_STATE_NEGOTIATE;
+                return 0;
+            }
+            break;
+        case VTAM_STATE_NEGOTIATE:
+            if (event == VTAM_EV_SDT) {
+                session->session_state = VTAM_STATE_ACTIVE;
+                return 0;
+            }
+            break;
+        case VTAM_STATE_ACTIVE:
+            if (event == VTAM_EV_UNBIND) {
+                session->session_state = VTAM_STATE_TERMINATED;
+                return 0;
+            }
+            break;
+        default:
+            break;
+    }
+    return -2;
+}
+
+int tsfi_vtam_session_send(tsfi_vtam_session *session, const char *data, int data_len) {
+    if (!session || !data || data_len <= 0) return -1;
+    if (session->session_state != VTAM_STATE_ACTIVE) {
+        return -3;
+    }
+    session->bytes_transmitted += data_len;
+    return data_len;
+}
