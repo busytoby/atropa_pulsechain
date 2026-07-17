@@ -1181,6 +1181,22 @@ int main(void) {
     assert(class_acttasks_val == 3);
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS ACTTASKS verified.\n");
 
+    // 107. Verify Majordomo List Config Open Enrollment State Checker
+    printf("[TEST] Validating Majordomo Open Enrollment Checker...\n");
+    int config_open = -1;
+    int is_op_res = tsfi_mf_majordomo_is_open("list = zmm-dev\nsubscribe = open\n", &config_open);
+    assert(is_op_res == 0);
+    assert(config_open == 1);
+    printf("  [PASS] Majordomo Open Enrollment Checker verified.\n");
+
+    // 108. Verify CICS System Inquire Transaction Class Queued Tasks Count Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM TRANCLASS QUEUEDTASKS...\n");
+    int class_queuedtasks_val = 0;
+    int inq_cls_que_res = tsfi_mf_cics_inquire_tranclass_queuedtasks("FASTTRAN", 1, &class_queuedtasks_val);
+    assert(inq_cls_que_res == 0);
+    assert(class_queuedtasks_val == 1);
+    printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS QUEUEDTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

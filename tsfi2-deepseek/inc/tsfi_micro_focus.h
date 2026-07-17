@@ -65,6 +65,7 @@ int tsfi_mf_majordomo_has_valid_syntax(const char *config, int *is_valid);
 int tsfi_mf_majordomo_is_kv_line(const char *line, int *is_valid);
 int tsfi_mf_majordomo_strip_comments(const char *config, char *config_out, int max_len);
 int tsfi_mf_majordomo_is_moderated(const char *config, int *is_mod);
+int tsfi_mf_majordomo_is_open(const char *config, int *is_op);
 int tsfi_mf_majordomo_check_post_policy(const char *policy, const char *sender, int is_subscriber, int *needs_moderation);
 int tsfi_mf_majordomo_archive_delete(const char *list_name, const char *file_name, const char **archive_files, int *archive_count);
 int tsfi_mf_majordomo_archive_prune(const char *list_name, const char **archive_files, int *archive_count, const char *prune_suffix);
@@ -85,6 +86,7 @@ int tsfi_mf_cics_inquire_acttasks(int active_tasks_count, int *active_tasks_out)
 int tsfi_mf_cics_inquire_queuedtasks(int queued_tasks_count, int *queued_tasks_out);
 int tsfi_mf_cics_inquire_tranclass(const char *class_name, int class_limit_registry, int *class_limit_out);
 int tsfi_mf_cics_inquire_tranclass_acttasks(const char *class_name, int acttasks_registry, int *acttasks_out);
+int tsfi_mf_cics_inquire_tranclass_queuedtasks(const char *class_name, int queuedtasks_registry, int *queuedtasks_out);
 int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_out, int max_len);
 int tsfi_mf_cics_resume(uint32_t task_id, uint32_t *suspend_log, int *log_count);
 int tsfi_mf_cics_change_priority(uint32_t task_id, int new_priority, int *priority_registry_out);

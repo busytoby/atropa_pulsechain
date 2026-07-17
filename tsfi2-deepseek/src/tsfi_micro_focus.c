@@ -1827,3 +1827,23 @@ int tsfi_mf_cics_inquire_tranclass_acttasks(const char *class_name, int acttasks
     *acttasks_out = acttasks_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_is_open(const char *config, int *is_op) {
+    if (!config || !is_op) return -1;
+
+    *is_op = 0;
+    char val[64];
+    int get_res = tsfi_mf_majordomo_get_config("subscribe", config, val, sizeof(val));
+    if (get_res == 0 && strcmp(val, "open") == 0) {
+        *is_op = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_tranclass_queuedtasks(const char *class_name, int queuedtasks_registry, int *queuedtasks_out) {
+    (void)class_name;
+    if (!queuedtasks_out) return -1;
+
+    *queuedtasks_out = queuedtasks_registry;
+    return 0;
+}

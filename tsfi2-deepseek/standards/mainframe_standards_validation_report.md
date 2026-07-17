@@ -148,5 +148,7 @@
 | 214 | CICS Transaction Class Capacity Inquirer | PASS | Checks execution limits on transaction classes | Volume 33 |
 | 215 | Majordomo Moderation Checker | PASS | Verification utility checking list moderation settings | Volume 33 |
 | 216 | CICS Transaction Class Active Tasks Inquirer | PASS | Checks count of active tasks for transaction class | Volume 33 |
+| 217 | Majordomo Open Checker | PASS | Verification utility checking list open enrollment settings | Volume 33 |
+| 218 | CICS Transaction Class Queued Tasks Inquirer | PASS | Checks count of queued tasks for transaction class | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 216 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 218 Scenarios validated successfully)
