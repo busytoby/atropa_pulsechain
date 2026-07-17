@@ -12,6 +12,36 @@ static void strip_trailing_period(char *str) {
     }
 }
 
+static tsfi_mcp_channel_state* find_mcp_channel(tsfi_mcp_multiplexer *mux, int channel_id) {
+    if (!mux) return NULL;
+    for (int i = 0; i < mux->channel_count; i++) {
+        if (mux->channels[i].channel_id == channel_id) {
+            return &mux->channels[i];
+        }
+    }
+    return NULL;
+}
+
+static tsfi_zvm_23_node* find_23_node(tsfi_zvm_23_tree *tree, int key) {
+    if (!tree) return NULL;
+    for (int i = 0; i < tree->node_count; i++) {
+        if (tree->nodes[i].key == key) {
+            return &tree->nodes[i];
+        }
+    }
+    return NULL;
+}
+
+static tsfi_s38_object* find_s38_object(tsfi_s38_store *store, const char *name) {
+    if (!store || !name) return NULL;
+    for (int i = 0; i < store->object_count; i++) {
+        if (strcmp(store->objects[i].object_name, name) == 0) {
+            return &store->objects[i];
+        }
+    }
+    return NULL;
+}
+
 void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts) {
     if (!opts) return;
     opts->chardel_char = '@';
@@ -1158,10 +1188,8 @@ void tsfi_mcp_mux_init(tsfi_mcp_multiplexer *mux) {
 
 int tsfi_mcp_mux_register(tsfi_mcp_multiplexer *mux, int channel_id, const char *client_name) {
     if (!mux || !client_name || mux->channel_count >= MAX_MCP_CHANNELS) return -1;
-    for (int i = 0; i < mux->channel_count; i++) {
-        if (mux->channels[i].channel_id == channel_id) {
-            return -2;
-        }
+    if (find_mcp_channel(mux, channel_id) != NULL) {
+        return -2;
     }
     tsfi_mcp_channel_state *ch = &mux->channels[mux->channel_count];
     ch->channel_id = channel_id;
@@ -1175,30 +1203,28 @@ int tsfi_mcp_mux_register(tsfi_mcp_multiplexer *mux, int channel_id, const char 
 
 int tsfi_mcp_mux_send_request(tsfi_mcp_multiplexer *mux, int channel_id, const char *method, int is_secure_token_valid) {
     if (!mux || !method) return -1;
-    for (int i = 0; i < mux->channel_count; i++) {
-        if (mux->channels[i].channel_id == channel_id) {
-            if (!mux->channels[i].is_active) {
-                return -3;
-            }
-            if (!is_secure_token_valid) {
-                mux->channels[i].security_violations++;
-                return -2;
-            }
-            mux->channels[i].request_count++;
-            return 0;
+    tsfi_mcp_channel_state *ch = find_mcp_channel(mux, channel_id);
+    if (ch) {
+        if (!ch->is_active) {
+            return -3;
         }
+        if (!is_secure_token_valid) {
+            ch->security_violations++;
+            return -2;
+        }
+        ch->request_count++;
+        return 0;
     }
     return -1;
 }
 
 int tsfi_mcp_mux_query(const tsfi_mcp_multiplexer *mux, int channel_id, int *out_requests, int *out_violations) {
     if (!mux || !out_requests || !out_violations) return -1;
-    for (int i = 0; i < mux->channel_count; i++) {
-        if (mux->channels[i].channel_id == channel_id) {
-            *out_requests = mux->channels[i].request_count;
-            *out_violations = mux->channels[i].security_violations;
-            return 0;
-        }
+    tsfi_mcp_channel_state *ch = find_mcp_channel((tsfi_mcp_multiplexer*)mux, channel_id);
+    if (ch) {
+        *out_requests = ch->request_count;
+        *out_violations = ch->security_violations;
+        return 0;
     }
     return -1;
 }
@@ -1321,13 +1347,11 @@ int tsfi_zvm_23_tree_add_node(tsfi_zvm_23_tree *tree, int key, const char *dat_b
 
 int tsfi_zvm_23_tree_mount(tsfi_zvm_23_tree *tree, int key, const char *client_ip) {
     if (!tree || !client_ip) return -1;
-    for (int i = 0; i < tree->node_count; i++) {
-        if (tree->nodes[i].key == key) {
-            tsfi_zvm_23_node *node = &tree->nodes[i];
-            node->is_mounted = 1;
-            snprintf(node->mounted_client_ip, sizeof(node->mounted_client_ip), "%s", client_ip);
-            return 0;
-        }
+    tsfi_zvm_23_node *node = find_23_node(tree, key);
+    if (node) {
+        node->is_mounted = 1;
+        snprintf(node->mounted_client_ip, sizeof(node->mounted_client_ip), "%s", client_ip);
+        return 0;
     }
     return -1;
 }
@@ -1336,20 +1360,17 @@ int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip
     if (!tree || !client_ip || !dml_statement || !out_db_status) return -1;
     *out_db_status = 0;
     
-    for (int i = 0; i < tree->node_count; i++) {
-        if (tree->nodes[i].key == key) {
-            tsfi_zvm_23_node *node = &tree->nodes[i];
-            if (!node->is_mounted || strcmp(node->mounted_client_ip, client_ip) != 0) {
-                *out_db_status = 101; // Security/Mount failure status
-                return -3;
-            }
-            // Mock compile/execute DML statement success check
-            if (strstr(dml_statement, "STORE") != NULL || strstr(dml_statement, "GET") != NULL) {
-                return 0;
-            }
-            *out_db_status = 105; // Bad DML syntax status
-            return -2;
+    tsfi_zvm_23_node *node = find_23_node(tree, key);
+    if (node) {
+        if (!node->is_mounted || strcmp(node->mounted_client_ip, client_ip) != 0) {
+            *out_db_status = 101;
+            return -3;
         }
+        if (strstr(dml_statement, "STORE") != NULL || strstr(dml_statement, "GET") != NULL) {
+            return 0;
+        }
+        *out_db_status = 105;
+        return -2;
     }
     return -1;
 }
@@ -1592,27 +1613,17 @@ int tsfi_s38_insert_physical(tsfi_s38_store *store, const char *pf_name, const c
 int tsfi_s38_query_logical_path(const tsfi_s38_store *store, const char *lf_name, int *out_keys, int max_keys) {
     if (!store || !lf_name || !out_keys || max_keys <= 0) return -1;
     
-    // Find Logical File object
-    const tsfi_s38_object *lf = NULL;
-    for (int i = 0; i < store->object_count; i++) {
-        if (store->objects[i].is_logical && strcmp(store->objects[i].object_name, lf_name) == 0) {
-            lf = &store->objects[i];
-            break;
-        }
-    }
-    if (!lf) return -2; // LF not found
+    const tsfi_s38_object *lf = find_s38_object((tsfi_s38_store*)store, lf_name);
+    if (!lf || !lf->is_logical) return -2;
     
-    // Collect records
     int count = 0;
     int temp_keys[MAX_S38_RECORDS];
     for (int i = 0; i < store->pf_record_count; i++) {
-        // Mock filtering/projection by matching parent physical file
         if (count < max_keys) {
             temp_keys[count++] = store->physical_records[i].key_val;
         }
     }
     
-    // Sort keys to simulate Access Path sorting (ascending)
     for (int i = 0; i < count - 1; i++) {
         for (int j = i + 1; j < count; j++) {
             if (temp_keys[i] > temp_keys[j]) {
