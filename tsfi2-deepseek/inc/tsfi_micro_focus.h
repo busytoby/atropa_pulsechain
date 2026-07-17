@@ -52,6 +52,8 @@ int tsfi_mf_majordomo_info(const char *list_name, char *info_out, int max_len);
 int tsfi_mf_majordomo_help(char *help_out, int max_len);
 int tsfi_mf_majordomo_lists(char *lists_out, int max_len);
 int tsfi_mf_majordomo_intro(const char *list_name, char *intro_out, int max_len);
+int tsfi_mf_majordomo_parse_config(const char *config_content, const char *key, char *val_out, int max_len);
+int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_majordomo_which(const char *email, const char **lists, int list_count, char *out_buffer, int max_len);
 int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len);
 int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, const char *record_data);

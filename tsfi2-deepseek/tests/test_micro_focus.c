@@ -602,6 +602,25 @@ int main(void) {
     assert(deq_res_new == 0);
     printf("  [PASS] CICS Resource Lock Manager verified.\n");
 
+    // 44. Verify Majordomo List Config Parser
+    printf("[TEST] Validating Majordomo Config Parser...\n");
+    const char *cfg = "reply_to = list\nmoderate = yes\n";
+    char config_val[64] = {0};
+    int cfg_res = tsfi_mf_majordomo_parse_config(cfg, "moderate", config_val, sizeof(config_val));
+    assert(cfg_res == 0);
+    assert(strcmp(config_val, "yes") == 0);
+    printf("  [PASS] Majordomo Config Parser verified.\n");
+
+    // 45. Verify CICS Task Suspend Emulator
+    printf("[TEST] Validating CICS Task Suspend...\n");
+    uint32_t susp_log[8] = {0};
+    int susp_count = 0;
+    int susp_res = tsfi_mf_cics_suspend(202, susp_log, &susp_count, 8);
+    assert(susp_res == 0);
+    assert(susp_count == 1);
+    assert(susp_log[0] == 202);
+    printf("  [PASS] CICS Task Suspend verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

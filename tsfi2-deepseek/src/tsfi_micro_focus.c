@@ -1066,3 +1066,42 @@ int tsfi_mf_majordomo_intro(const char *list_name, char *intro_out, int max_len)
     snprintf(intro_out, max_len, "Welcome to the %s mailing list. Keep all discussions on-topic.", list_name);
     return 0;
 }
+
+int tsfi_mf_majordomo_parse_config(const char *config_content, const char *key, char *val_out, int max_len) {
+    if (!config_content || !key || !val_out || max_len <= 0) return -1;
+
+    const char *line = config_content;
+    while (line && *line != '\0') {
+        const char *next_line = strchr(line, '\n');
+        int line_len = next_line ? (int)(next_line - line) : (int)strlen(line);
+
+        int key_len = (int)strlen(key);
+        if (line_len > key_len && strncmp(line, key, key_len) == 0) {
+            const char *sep = strchr(line, '=');
+            if (sep && (sep < next_line || !next_line)) {
+                sep++;
+                while (*sep == ' ' || *sep == '\t') sep++;
+                int val_len = next_line ? (int)(next_line - sep) : (int)strlen(sep);
+                if (val_len >= max_len) val_len = max_len - 1;
+                memcpy(val_out, sep, val_len);
+                val_out[val_len] = '\0';
+                return 0;
+            }
+        }
+
+        line = next_line ? next_line + 1 : NULL;
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log) {
+    if (!suspend_log || !log_count || max_log <= 0) return -1;
+
+    int idx = *log_count;
+    if (idx >= max_log) return -2;
+
+    suspend_log[idx] = task_id;
+    *log_count = idx + 1;
+    return 0;
+}
