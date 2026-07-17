@@ -217,6 +217,7 @@ int tsfi_ramac_write_verified(tsfi_ramac_record *disk, const char *key, const ch
 void tsfi_ramac_acc_init(tsfi_ramac_acc_model *model);
 int tsfi_ramac_acc_add(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
 int tsfi_ramac_acc_div(tsfi_ramac_acc_model *model, int acc_id, int64_t val);
+int tsfi_ramac_verify_and_isolate_space_charge(tsfi_ramac_acc_model *model, double current, double voltage, double distance);
 
 // IBM 370 printer-keyboard inquiry station console parser
 int tsfi_ramac_inquiry_station(tsfi_ramac_record *disk, const char *command, char *response_out, int max_len);

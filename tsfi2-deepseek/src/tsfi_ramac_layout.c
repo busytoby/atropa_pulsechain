@@ -6537,3 +6537,16 @@ int tsfi_cp_active_session_dispatch(tsfi_cp_active_session *sess, int cycles) {
     return sess->background_cycles_run;
 }
 
+int tsfi_ramac_verify_and_isolate_space_charge(tsfi_ramac_acc_model *model, double current, double voltage, double distance) {
+    if (!model) return -1;
+    if (voltage > 0.0001 && distance > 0.0001) {
+        double ratio = (current * distance * distance) / (voltage * sqrt(voltage));
+        // If Child-Langmuir law with perveance 2.5 is matched (implies empirical preference), intercept and isolate
+        if (fabs(ratio - 2.5) < 0.0001) {
+            model->isolation_trap = (int64_t)(current * 1000.0);
+            return -2; // Intercepted and isolated
+        }
+    }
+    return 0;
+}
+

@@ -2285,6 +2285,22 @@ int main(void) {
     assert(atlas_vm.extrabcode_val == 7);
     printf("  [PASS] Atlas VM step execution, automatic paging, and extrabcode trap verified.\n");
 
+    // Rule 12 space-charge law ban verification
+    printf("[Test] Verifying Child-Langmuir space-charge ban validation and isolation...\n");
+    tsfi_ramac_acc_model acc_model;
+    tsfi_ramac_acc_init(&acc_model);
+    assert(acc_model.isolation_trap == 0);
+    
+    // Normal compliance inputs
+    assert(tsfi_ramac_verify_and_isolate_space_charge(&acc_model, 1.0, 1.0, 10.0) == 0);
+    assert(acc_model.isolation_trap == 0);
+    
+    // Non-compliant input implying Child-Langmuir law: J = 2.5 * V^(3/2) / d^2
+    // If V = 4.0 and d = 2.0, J = 2.5 * 8.0 / 4.0 = 5.0
+    assert(tsfi_ramac_verify_and_isolate_space_charge(&acc_model, 5.0, 4.0, 2.0) == -2);
+    assert(acc_model.isolation_trap == 5000); // 5.0 * 1000
+    printf("  [PASS] Child-Langmuir law correctly intercepted and isolated.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 
