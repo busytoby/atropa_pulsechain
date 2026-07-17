@@ -6177,3 +6177,51 @@ int tsfi_cp_directory_check(const tsfi_cp_directory *dir, const char *uid, char 
     }
     return -1;
 }
+
+void tsfi_cp_attachment_init(tsfi_cp_attachment_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_cp_attachment_manager));
+}
+
+int tsfi_cp_attachment_register(tsfi_cp_attachment_manager *mgr, uint32_t phys_addr) {
+    if (!mgr || mgr->device_count >= 8) return -1;
+    mgr->devices[mgr->device_count].physical_address = phys_addr;
+    mgr->devices[mgr->device_count].virtual_address = 0;
+    mgr->devices[mgr->device_count].is_attached = 0;
+    memset(mgr->devices[mgr->device_count].dedicated_user, 0, 16);
+    mgr->device_count++;
+    return 0;
+}
+
+int tsfi_cp_attach(tsfi_cp_attachment_manager *mgr, uint32_t phys_addr, const char *uid, uint32_t virt_addr) {
+    if (!mgr || !uid) return -1;
+    for (int i = 0; i < mgr->device_count; i++) {
+        if (mgr->devices[i].physical_address == phys_addr) {
+            if (mgr->devices[i].is_attached) {
+                return -2;
+            }
+            mgr->devices[i].virtual_address = virt_addr;
+            strncpy(mgr->devices[i].dedicated_user, uid, 15);
+            mgr->devices[i].dedicated_user[15] = '\0';
+            mgr->devices[i].is_attached = 1;
+            return 0;
+        }
+    }
+    return -3;
+}
+
+int tsfi_cp_detach(tsfi_cp_attachment_manager *mgr, uint32_t virt_addr, const char *uid) {
+    if (!mgr || !uid) return -1;
+    for (int i = 0; i < mgr->device_count; i++) {
+        if (mgr->devices[i].is_attached && mgr->devices[i].virtual_address == virt_addr) {
+            if (strcmp(mgr->devices[i].dedicated_user, uid) != 0) {
+                return -2;
+            }
+            mgr->devices[i].virtual_address = 0;
+            memset(mgr->devices[i].dedicated_user, 0, 16);
+            mgr->devices[i].is_attached = 0;
+            return 0;
+        }
+    }
+    return -3;
+}

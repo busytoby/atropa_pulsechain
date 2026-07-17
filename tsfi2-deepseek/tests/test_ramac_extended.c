@@ -1642,6 +1642,31 @@ int main(void) {
     assert(tsfi_cp_directory_check(&directory, "GUEST", 'G') == -1);
     printf("  [PASS] VM/370 hypervisor directory user privileges verified.\n");
 
+    // 95. VM/370 CP Device Attachment Manager Verification
+    printf("[Test] Verifying VM/370 CP device attachments...\n");
+    tsfi_cp_attachment_manager attach_mgr;
+    tsfi_cp_attachment_init(&attach_mgr);
+    assert(attach_mgr.device_count == 0);
+    
+    // Register physical address
+    assert(tsfi_cp_attachment_register(&attach_mgr, 0x191) == 0);
+    assert(attach_mgr.device_count == 1);
+    
+    // Attach physical 0x191 to user VM1 as virtual 0x091
+    assert(tsfi_cp_attach(&attach_mgr, 0x191, "VM1", 0x091) == 0);
+    assert(attach_mgr.devices[0].is_attached == 1);
+    
+    // Try to attach again
+    assert(tsfi_cp_attach(&attach_mgr, 0x191, "VM2", 0x092) == -2);
+    
+    // Detach with wrong owner
+    assert(tsfi_cp_detach(&attach_mgr, 0x091, "VM2") == -2);
+    
+    // Detach successfully
+    assert(tsfi_cp_detach(&attach_mgr, 0x091, "VM1") == 0);
+    assert(attach_mgr.devices[0].is_attached == 0);
+    printf("  [PASS] VM/370 CP device attachment and detach release verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -1626,4 +1626,22 @@ void tsfi_cp_directory_init(tsfi_cp_directory *dir);
 int tsfi_cp_directory_add(tsfi_cp_directory *dir, const char *uid, char priv, uint32_t max_store);
 int tsfi_cp_directory_check(const tsfi_cp_directory *dir, const char *uid, char required_priv);
 
+// VM/370 CP Virtual-to-Physical Device Attachment Manager
+typedef struct {
+    uint32_t physical_address;
+    uint32_t virtual_address;
+    char dedicated_user[16];
+    int is_attached;
+} tsfi_cp_device_attachment;
+
+typedef struct {
+    tsfi_cp_device_attachment devices[8];
+    int device_count;
+} tsfi_cp_attachment_manager;
+
+void tsfi_cp_attachment_init(tsfi_cp_attachment_manager *mgr);
+int tsfi_cp_attachment_register(tsfi_cp_attachment_manager *mgr, uint32_t phys_addr);
+int tsfi_cp_attach(tsfi_cp_attachment_manager *mgr, uint32_t phys_addr, const char *uid, uint32_t virt_addr);
+int tsfi_cp_detach(tsfi_cp_attachment_manager *mgr, uint32_t virt_addr, const char *uid);
+
 #endif // TSFI_RAMAC_LAYOUT_H
