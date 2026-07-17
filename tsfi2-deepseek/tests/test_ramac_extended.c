@@ -2129,6 +2129,29 @@ int main(void) {
     assert(tsfi_cp_spool_router_match(&class_router, "00C", 'B') == 1); // Unconfigured matches all
     printf("  [PASS] VM/370 CP spool device class filtering patterns verified.\n");
 
+    // 118. VM/370 CP Spool Transfer Manager Verification
+    printf("[Test] Verifying VM/370 CP Spool Transfer Manager...\n");
+    tsfi_cp_spool_queue_v3 src_q, dst_q;
+    tsfi_cp_spool_queue_v3_init(&src_q);
+    tsfi_cp_spool_queue_v3_init(&dst_q);
+    
+    assert(tsfi_cp_spool_push_v3(&src_q, "CARD DATA 1", 101) == 0);
+    assert(tsfi_cp_spool_push_v3(&src_q, "CARD DATA 2", 102) == 0);
+    assert(tsfi_cp_spool_push_v3(&src_q, "CARD DATA 3", 103) == 0);
+    assert(src_q.count == 3);
+    
+    // Transfer specific file ID
+    assert(tsfi_cp_spool_transfer(&src_q, &dst_q, 102) == 0);
+    assert(src_q.count == 2);
+    assert(dst_q.count == 1);
+    assert(dst_q.queue[0].file_id == 102);
+    
+    // Transfer all remaining files (-1)
+    assert(tsfi_cp_spool_transfer(&src_q, &dst_q, -1) == 0);
+    assert(src_q.count == 0);
+    assert(dst_q.count == 3);
+    printf("  [PASS] VM/370 CP spool transfer queue routing and compaction verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

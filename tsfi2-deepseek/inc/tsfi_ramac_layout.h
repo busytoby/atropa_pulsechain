@@ -1907,4 +1907,6 @@ void tsfi_cp_spool_router_init(tsfi_cp_spool_class_router *router);
 int tsfi_cp_spool_router_set(tsfi_cp_spool_class_router *router, const char *dev_name, char class_char);
 int tsfi_cp_spool_router_match(const tsfi_cp_spool_class_router *router, const char *dev_name, char file_class);
 
+int tsfi_cp_spool_transfer(tsfi_cp_spool_queue_v3 *src_q, tsfi_cp_spool_queue_v3 *dst_q, int file_id);
+
 #endif // TSFI_RAMAC_LAYOUT_H

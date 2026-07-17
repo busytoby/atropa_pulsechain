@@ -6897,3 +6897,30 @@ int tsfi_cp_spool_router_match(const tsfi_cp_spool_class_router *router, const c
     }
     return 1;
 }
+
+int tsfi_cp_spool_transfer(tsfi_cp_spool_queue_v3 *src_q, tsfi_cp_spool_queue_v3 *dst_q, int file_id) {
+    if (!src_q || !dst_q) return -1;
+    int moved_count = 0;
+    
+    for (int i = 0; i < src_q->count; i++) {
+        if (src_q->queue[i].file_id != 0 && (file_id == -1 || src_q->queue[i].file_id == file_id)) {
+            if (tsfi_cp_spool_push_v3(dst_q, src_q->queue[i].card_data, src_q->queue[i].file_id) == 0) {
+                moved_count++;
+                src_q->queue[i].file_id = 0;
+            }
+        }
+    }
+    
+    int write_idx = 0;
+    for (int i = 0; i < src_q->count; i++) {
+        if (src_q->queue[i].file_id != 0) {
+            if (write_idx != i) {
+                src_q->queue[write_idx] = src_q->queue[i];
+            }
+            write_idx++;
+        }
+    }
+    src_q->count = write_idx;
+    
+    return (moved_count > 0) ? 0 : -1;
+}
