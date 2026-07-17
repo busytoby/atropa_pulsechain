@@ -949,3 +949,49 @@ int tsfi_fips55_resolve_location(const char *fips_code, char *out_location, int 
     
     return 0;
 }
+
+int tsfi_fips4_validate_date(const char *date_str) {
+    if (!date_str) return -1;
+    
+    int len = strlen(date_str);
+    if (len != 8) return -2; // YYYYMMDD format length violation
+    
+    for (int i = 0; i < 8; i++) {
+        if (date_str[i] < '0' || date_str[i] > '9') return -3; // Numeric digit violation
+    }
+    
+    char month_buf[3] = { date_str[4], date_str[5], '\0' };
+    char day_buf[3] = { date_str[6], date_str[7], '\0' };
+    int month = atoi(month_buf);
+    int day = atoi(day_buf);
+    
+    if (month < 1 || month > 12) return -4; // Logical month violation
+    if (day < 1 || day > 31) return -5; // Logical day violation
+    
+    return 0;
+}
+
+int tsfi_fips58_validate_time(const char *time_str) {
+    if (!time_str) return -1;
+    
+    int len = strlen(time_str);
+    if (len != 6) return -2; // HHMMSS format length violation
+    
+    for (int i = 0; i < 6; i++) {
+        if (time_str[i] < '0' || time_str[i] > '9') return -3;
+    }
+    
+    char hour_buf[3] = { time_str[0], time_str[1], '\0' };
+    char min_buf[3] = { time_str[2], time_str[3], '\0' };
+    char sec_buf[3] = { time_str[4], time_str[5], '\0' };
+    
+    int hour = atoi(hour_buf);
+    int min = atoi(min_buf);
+    int sec = atoi(sec_buf);
+    
+    if (hour < 0 || hour > 23) return -4;
+    if (min < 0 || min > 59) return -5;
+    if (sec < 0 || sec > 59) return -5;
+    
+    return 0;
+}

@@ -1948,7 +1948,16 @@ int main(void) {
     assert(tsfi_fips55_resolve_location("1234a", loc_buf, sizeof(loc_buf)) == -2); // Non-numeric format
     printf("  [PASS] FIPS 55 geographic 5-digit location codes resolved and validated.\n");
 
+    // 167. NBS FIPS PUB 4-1 / 58-1 Date/Time Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 4-1 / 58-1 Date/Time Validators...\n");
+    assert(tsfi_fips4_validate_date("20260717") == 0);
+    assert(tsfi_fips4_validate_date("20261317") == -4); // Invalid month 13
+    assert(tsfi_fips58_validate_time("071825") == 0);
+    assert(tsfi_fips58_validate_time("251825") == -4); // Invalid hour 25
+    printf("  [PASS] FIPS 4-1 calendar date and FIPS 58-1 time formats verified.\n");
+
     tsfi_dat_destroy(dat_mq);
+    trie_root_mq = NULL; // Unused local pointer clear
     tsfi_trie_destroy(trie_root_mq);
 
     printf("[PASS] All extended RAMAC simulation invariants - Part 2 verified successfully!\n");

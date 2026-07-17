@@ -181,4 +181,8 @@ int tsfi_fips54_calculate_grid_coords(int index, int reduction_ratio, int *out_r
 // Scenario 166: NBS FIPS PUB 55 Geographic Location Code Validator
 int tsfi_fips55_resolve_location(const char *fips_code, char *out_location, int max_len);
 
+// Scenario 167: NBS FIPS PUB 4-1 / 58-1 Date and Time Interchange Validator
+int tsfi_fips4_validate_date(const char *date_str);
+int tsfi_fips58_validate_time(const char *time_str);
+
 #endif // TSFI_MAINFRAME_FIPS_H
