@@ -2077,6 +2077,24 @@ int main(void) {
     assert(des_vault.active_session_key[0] == (0x01 ^ 0));
     printf("  [PASS] DES key-encryption-key wrapping and session key rotations verified.\n");
 
+    // 103. Vulkan CAD Vertex memory buffer maps verification
+    printf("[Test] Verifying Vulkan CAD memory mapping...\n");
+    tsfi_cad_projection v_proj;
+    v_proj.frame_address = 0x9000;
+    v_proj.coordinate_count = 2;
+    v_proj.projected_x[0] = 12.5f;
+    v_proj.projected_y[0] = 34.0f;
+    v_proj.projected_x[1] = 56.1f;
+    v_proj.projected_y[1] = 78.9f;
+    
+    float mapped_memory[4];
+    assert(tsfi_cad_map_vulkan_buffer(NULL, &v_proj, mapped_memory) == 0);
+    assert(mapped_memory[0] == 12.5f);
+    assert(mapped_memory[1] == 34.0f);
+    assert(mapped_memory[2] == 56.1f);
+    assert(mapped_memory[3] == 78.9f);
+    printf("  [PASS] Vulkan CAD projection buffer mapping verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

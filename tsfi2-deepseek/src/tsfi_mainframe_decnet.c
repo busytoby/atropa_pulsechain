@@ -2905,3 +2905,14 @@ int tsfi_des_rotate_session_key(tsfi_des_key_vault *vault) {
     vault->rotations_count++;
     return 0;
 }
+
+int tsfi_cad_map_vulkan_buffer(struct VulkanContext *vk, const tsfi_cad_projection *proj, void *vk_mapped_memory) {
+    if (!proj || !vk_mapped_memory) return -1;
+    (void)vk;
+    float *dest = (float*)vk_mapped_memory;
+    for (int i = 0; i < proj->coordinate_count && i < 32; i++) {
+        dest[i * 2] = proj->projected_x[i];
+        dest[i * 2 + 1] = proj->projected_y[i];
+    }
+    return 0;
+}

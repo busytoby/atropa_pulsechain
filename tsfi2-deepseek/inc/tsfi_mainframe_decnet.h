@@ -1330,4 +1330,8 @@ typedef struct {
 void tsfi_des_vault_init(tsfi_des_key_vault *vault, const uint8_t *kek);
 int tsfi_des_rotate_session_key(tsfi_des_key_vault *vault);
 
+// Vulkan CAD Vertex Mapper
+struct VulkanContext;
+int tsfi_cad_map_vulkan_buffer(struct VulkanContext *vk, const tsfi_cad_projection *proj, void *vk_mapped_memory);
+
 #endif // TSFI_MAINFRAME_DECNET_H
