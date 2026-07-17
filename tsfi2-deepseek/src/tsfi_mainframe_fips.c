@@ -552,3 +552,23 @@ int tsfi_fips94_audit_voltage(tsfi_fips94_monitor *mon, double nominal_voltage, 
     mon->unsafe_power_state = 0;
     return 0;
 }
+
+void tsfi_fips73_audit_init(tsfi_fips73_auditor *auditor) {
+    if (!auditor) return;
+    memset(auditor, 0, sizeof(tsfi_fips73_auditor));
+}
+
+int tsfi_fips73_audit_transaction(tsfi_fips73_auditor *auditor, const char *record_name, int payload_val) {
+    if (!auditor) return -1;
+    
+    auditor->parsed_transactions++;
+    
+    // Validation checks under FIPS 73 Processing Controls
+    if (!record_name || record_name[0] == '\0' || payload_val <= 0) {
+        auditor->validation_failures++;
+        return -2; // Validation check failed
+    }
+    
+    auditor->valid_transactions++;
+    return 0;
+}

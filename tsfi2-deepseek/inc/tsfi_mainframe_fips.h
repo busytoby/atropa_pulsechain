@@ -127,4 +127,14 @@ typedef struct {
 void tsfi_fips94_power_init(tsfi_fips94_monitor *mon);
 int tsfi_fips94_audit_voltage(tsfi_fips94_monitor *mon, double nominal_voltage, double actual_voltage, int *out_fault_type);
 
+// Scenario 153: NBS FIPS PUB 73 Application Processing Controls Audit
+typedef struct {
+    int parsed_transactions;
+    int validation_failures;
+    int valid_transactions;
+} tsfi_fips73_auditor;
+
+void tsfi_fips73_audit_init(tsfi_fips73_auditor *auditor);
+int tsfi_fips73_audit_transaction(tsfi_fips73_auditor *auditor, const char *record_name, int payload_val);
+
 #endif // TSFI_MAINFRAME_FIPS_H

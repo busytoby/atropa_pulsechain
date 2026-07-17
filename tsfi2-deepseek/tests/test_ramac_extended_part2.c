@@ -1748,6 +1748,23 @@ int main(void) {
     assert(power_mon.unsafe_power_state == 1);
     printf("  [PASS] FIPS 94 power quality sags, surges, and transients correctly classified.\n");
 
+    // 153. NBS FIPS PUB 73 Application Processing Controls Audit Verification
+    printf("[Test] Verifying NBS FIPS PUB 73 Application Processing Controls Audit...\n");
+    tsfi_fips73_auditor fips_auditor;
+    tsfi_fips73_audit_init(&fips_auditor);
+    assert(fips_auditor.parsed_transactions == 0);
+    
+    // Valid transaction test
+    assert(tsfi_fips73_audit_transaction(&fips_auditor, "PAYROLL_TX_01", 1000) == 0);
+    assert(fips_auditor.parsed_transactions == 1);
+    assert(fips_auditor.valid_transactions == 1);
+    
+    // Invalid transaction test (zero value)
+    assert(tsfi_fips73_audit_transaction(&fips_auditor, "PAYROLL_TX_02", 0) == -2);
+    assert(fips_auditor.parsed_transactions == 2);
+    assert(fips_auditor.validation_failures == 1);
+    printf("  [PASS] FIPS 73 input control range checks and processing audits verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
