@@ -621,6 +621,25 @@ int main(void) {
     assert(susp_log[0] == 202);
     printf("  [PASS] CICS Task Suspend verified.\n");
 
+    // 46. Verify Majordomo Subscription Approval Cookie Generator
+    printf("[TEST] Validating Majordomo Cookie Generator...\n");
+    char cook[32] = {0};
+    int cook_res = tsfi_mf_majordomo_gen_cookie("dev@dysnomia.org", "zmm-dev", 99, cook, sizeof(cook));
+    assert(cook_res == 0);
+    assert(strlen(cook) == 16);
+    printf("  [PASS] Majordomo Cookie Generator verified.\n");
+
+    // 47. Verify CICS Command Security Authorization
+    printf("[TEST] Validating CICS Command Security...\n");
+    int auth_status = -1;
+    int sec_res = tsfi_mf_cics_query_security("sysadmin", "VSAM_INVENT", "WRITE", &auth_status);
+    assert(sec_res == 0);
+    assert(auth_status == 0);
+    int sec_res2 = tsfi_mf_cics_query_security("guest", "VSAM_INVENT", "WRITE", &auth_status);
+    assert(sec_res2 == 0);
+    assert(auth_status == -2);
+    printf("  [PASS] CICS Command Security verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

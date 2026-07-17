@@ -87,5 +87,7 @@
 | 153 | CICS Resource Lock Manager | PASS | Multi-task resource serialization ENQ/DEQ | Volume 33 |
 | 154 | Majordomo Config Parser | PASS | Configuration file key-value parser | Volume 33 |
 | 155 | CICS Task Suspend Emulator | PASS | Cooperative task scheduler suspend log | Volume 33 |
+| 156 | Majordomo Confirmation Cookie Builder | PASS | Cryptographic subscription request token | Volume 33 |
+| 157 | CICS Query Command Security | PASS | Transaction resource access authorization | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 155 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 157 Scenarios validated successfully)

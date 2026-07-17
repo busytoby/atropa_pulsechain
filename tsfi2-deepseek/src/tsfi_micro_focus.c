@@ -1105,3 +1105,31 @@ int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count
     *log_count = idx + 1;
     return 0;
 }
+
+int tsfi_mf_majordomo_gen_cookie(const char *email, const char *list_name, uint32_t salt, char *cookie_out, int max_len) {
+    if (!email || !list_name || !cookie_out || max_len <= 0) return -1;
+
+    uint64_t hash = 5381 + salt;
+    for (int i = 0; email[i] != '\0'; i++) {
+        hash = ((hash << 5) + hash) + (uint8_t)email[i];
+    }
+    for (int i = 0; list_name[i] != '\0'; i++) {
+        hash = ((hash << 5) + hash) + (uint8_t)list_name[i];
+    }
+
+    snprintf(cookie_out, max_len, "%016lX", hash);
+    return 0;
+}
+
+int tsfi_mf_cics_query_security(const char *user_id, const char *resource_name, const char *access_type, int *auth_verdict) {
+    if (!user_id || !resource_name || !access_type || !auth_verdict) return -1;
+
+    if (strstr(user_id, "admin") != NULL || strstr(user_id, "sys") != NULL) {
+        *auth_verdict = 0;
+    } else if (strcmp(access_type, "READ") == 0) {
+        *auth_verdict = 0;
+    } else {
+        *auth_verdict = -2;
+    }
+    return 0;
+}
