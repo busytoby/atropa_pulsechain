@@ -139,17 +139,5 @@ int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int com
 int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, char *terminal_buffer);
 int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset);
 int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
-int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len);
-int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len);
-int tsfi_mf_cade_process_daily_batch(const char **ssns, const int *tcs, const double *amounts, int count, double *balances, char *batch_report, int max_len);
-int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, int *is_valid);
-int tsfi_mf_imf_set_freeze_code(const char *ssn, char freeze_code, char *account_state, int max_len);
-int tsfi_mf_imf_is_frozen(const char *account_state, int *is_frozen);
-int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, double *balance_out, int *status_out);
-int tsfi_mf_imf_encode_cycle_code(int year, int week, int day, char *cycle_out, int max_len);
-int tsfi_mf_imf_decode_cycle_code(const char *cycle_code, int *year, int *week, int *day);
-int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status);
-int tsfi_mf_imf_parse_dln(const char *dln, int *site_code, int *tax_class, int *doc_code, int *julian_date, int *serial_num);
-int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount);
 
 #endif // TSFI_MICRO_FOCUS_H
