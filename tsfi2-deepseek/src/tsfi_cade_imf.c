@@ -301,3 +301,28 @@ int tsfi_mf_cade_export_registry(const char *registry_pool, char *export_buf, in
     export_buf[copy_len] = '\0';
     return 0;
 }
+
+int tsfi_mf_imf_validate_doc_code(int doc_code, int *is_valid) {
+    if (!is_valid) return -1;
+
+    *is_valid = 0;
+    if (doc_code == 10 || doc_code == 20 || doc_code == 30) {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_compact_registry(char *registry_pool) {
+    if (!registry_pool) return -1;
+
+    int read_idx = 0;
+    int write_idx = 0;
+    while (registry_pool[read_idx] != '\0') {
+        if (registry_pool[read_idx] != ' ') {
+            registry_pool[write_idx++] = registry_pool[read_idx];
+        }
+        read_idx++;
+    }
+    registry_pool[write_idx] = '\0';
+    return 0;
+}

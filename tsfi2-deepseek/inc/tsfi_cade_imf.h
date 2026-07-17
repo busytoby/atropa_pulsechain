@@ -23,5 +23,7 @@ int tsfi_mf_imf_validate_dln(const char *dln, int *is_valid);
 int tsfi_mf_cade_format_batch_summary(int processed, int errors, double total_debit, double total_credit, char *out_buf, int max_len);
 int tsfi_mf_imf_get_doc_code_name(int doc_code, char *name_out, int max_len);
 int tsfi_mf_cade_export_registry(const char *registry_pool, char *export_buf, int max_len);
+int tsfi_mf_imf_validate_doc_code(int doc_code, int *is_valid);
+int tsfi_mf_cade_compact_registry(char *registry_pool);
 
 #endif // TSFI_CADE_IMF_H

@@ -1427,6 +1427,22 @@ int main(void) {
     assert(strstr(exported_reg, "BAL:1100.00") != NULL);
     printf("  [PASS] IRS CADE Registry Exporter verified.\n");
 
+    // 134. Verify IRS IMF Document Code Validator
+    printf("[TEST] Validating IRS IMF Doc Code Validator...\n");
+    int doc_valid = -1;
+    int val_doc_res = tsfi_mf_imf_validate_doc_code(10, &doc_valid);
+    assert(val_doc_res == 0);
+    assert(doc_valid == 1);
+    printf("  [PASS] IRS IMF Doc Code Validator verified.\n");
+
+    // 135. Verify IRS CADE Taxpayer Registry Compactor
+    printf("[TEST] Validating IRS CADE Registry Compactor...\n");
+    char registry_spacey[64] = "SSN:999-12-3456 | BAL:100.00";
+    int compact_res = tsfi_mf_cade_compact_registry(registry_spacey);
+    assert(compact_res == 0);
+    assert(strcmp(registry_spacey, "SSN:999-12-3456|BAL:100.00") == 0);
+    printf("  [PASS] IRS CADE Registry Compactor verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
