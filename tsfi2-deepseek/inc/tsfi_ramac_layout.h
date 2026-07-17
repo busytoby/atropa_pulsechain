@@ -1845,4 +1845,39 @@ int tsfi_cp_punch_write(tsfi_cp_punch_spooler *spl, const char *card_data);
 int tsfi_cp_punch_set_hold(tsfi_cp_punch_spooler *spl, int hold);
 int tsfi_cp_punch_flush(tsfi_cp_punch_spooler *spl, int *cards_flushed);
 
+// CMS JCL FILEDEF Dataset Binder
+typedef struct {
+    char ddname[16];
+    char dsname[64];
+    char device_class[8];
+} tsfi_cms_filedef;
+
+#define MAX_FILEDEFS 8
+typedef struct {
+    tsfi_cms_filedef entries[MAX_FILEDEFS];
+    int count;
+} tsfi_cms_filedef_table;
+
+void tsfi_cms_filedef_init(tsfi_cms_filedef_table *tbl);
+int tsfi_cms_filedef_bind(tsfi_cms_filedef_table *tbl, const char *ddname, const char *dsname, const char *device_class);
+int tsfi_cms_filedef_resolve(const tsfi_cms_filedef_table *tbl, const char *ddname, char *out_dsname, int max_len);
+
+// VM/370 RSCS Network Node Spool Linker
+typedef struct {
+    char node_name[16];
+    int is_active;
+    int routed_files;
+} tsfi_rscs_node;
+
+#define MAX_RSCS_NODES 8
+typedef struct {
+    tsfi_rscs_node nodes[MAX_RSCS_NODES];
+    int node_count;
+} tsfi_rscs_manager;
+
+void tsfi_rscs_init(tsfi_rscs_manager *mgr);
+int tsfi_rscs_add_node(tsfi_rscs_manager *mgr, const char *name);
+int tsfi_rscs_route_spool(tsfi_rscs_manager *mgr, const char *target_node, int spool_file_id);
+int tsfi_rscs_deactivate_node(tsfi_rscs_manager *mgr, const char *name);
+
 #endif // TSFI_RAMAC_LAYOUT_H

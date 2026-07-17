@@ -6752,3 +6752,84 @@ int tsfi_cp_punch_flush(tsfi_cp_punch_spooler *spl, int *cards_flushed) {
     spl->card_count = 0;
     return 0;
 }
+
+void tsfi_cms_filedef_init(tsfi_cms_filedef_table *tbl) {
+    if (!tbl) return;
+    memset(tbl, 0, sizeof(tsfi_cms_filedef_table));
+}
+
+int tsfi_cms_filedef_bind(tsfi_cms_filedef_table *tbl, const char *ddname, const char *dsname, const char *device_class) {
+    if (!tbl || !ddname || !dsname || !device_class) return -1;
+    
+    for (int i = 0; i < tbl->count; i++) {
+        if (strcasecmp(tbl->entries[i].ddname, ddname) == 0) {
+            strncpy(tbl->entries[i].dsname, dsname, sizeof(tbl->entries[i].dsname) - 1);
+            tbl->entries[i].dsname[sizeof(tbl->entries[i].dsname) - 1] = '\0';
+            strncpy(tbl->entries[i].device_class, device_class, sizeof(tbl->entries[i].device_class) - 1);
+            tbl->entries[i].device_class[sizeof(tbl->entries[i].device_class) - 1] = '\0';
+            return 0;
+        }
+    }
+    
+    if (tbl->count >= MAX_FILEDEFS) return -1;
+    strncpy(tbl->entries[tbl->count].ddname, ddname, sizeof(tbl->entries[tbl->count].ddname) - 1);
+    tbl->entries[tbl->count].ddname[sizeof(tbl->entries[tbl->count].ddname) - 1] = '\0';
+    strncpy(tbl->entries[tbl->count].dsname, dsname, sizeof(tbl->entries[tbl->count].dsname) - 1);
+    tbl->entries[tbl->count].dsname[sizeof(tbl->entries[tbl->count].dsname) - 1] = '\0';
+    strncpy(tbl->entries[tbl->count].device_class, device_class, sizeof(tbl->entries[tbl->count].device_class) - 1);
+    tbl->entries[tbl->count].device_class[sizeof(tbl->entries[tbl->count].device_class) - 1] = '\0';
+    tbl->count++;
+    return 0;
+}
+
+int tsfi_cms_filedef_resolve(const tsfi_cms_filedef_table *tbl, const char *ddname, char *out_dsname, int max_len) {
+    if (!tbl || !ddname || !out_dsname || max_len <= 0) return -1;
+    for (int i = 0; i < tbl->count; i++) {
+        if (strcasecmp(tbl->entries[i].ddname, ddname) == 0) {
+            strncpy(out_dsname, tbl->entries[i].dsname, max_len - 1);
+            out_dsname[max_len - 1] = '\0';
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void tsfi_rscs_init(tsfi_rscs_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_rscs_manager));
+}
+
+int tsfi_rscs_add_node(tsfi_rscs_manager *mgr, const char *name) {
+    if (!mgr || !name || mgr->node_count >= MAX_RSCS_NODES) return -1;
+    strncpy(mgr->nodes[mgr->node_count].node_name, name, sizeof(mgr->nodes[mgr->node_count].node_name) - 1);
+    mgr->nodes[mgr->node_count].node_name[sizeof(mgr->nodes[mgr->node_count].node_name) - 1] = '\0';
+    mgr->nodes[mgr->node_count].is_active = 1;
+    mgr->nodes[mgr->node_count].routed_files = 0;
+    mgr->node_count++;
+    return 0;
+}
+
+int tsfi_rscs_route_spool(tsfi_rscs_manager *mgr, const char *target_node, int spool_file_id) {
+    if (!mgr || !target_node || spool_file_id < 0) return -1;
+    for (int i = 0; i < mgr->node_count; i++) {
+        if (strcmp(mgr->nodes[i].node_name, target_node) == 0) {
+            if (!mgr->nodes[i].is_active) {
+                return -2;
+            }
+            mgr->nodes[i].routed_files++;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_rscs_deactivate_node(tsfi_rscs_manager *mgr, const char *name) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->node_count; i++) {
+        if (strcmp(mgr->nodes[i].node_name, name) == 0) {
+            mgr->nodes[i].is_active = 0;
+            return 0;
+        }
+    }
+    return -1;
+}

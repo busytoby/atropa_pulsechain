@@ -2039,6 +2039,52 @@ int main(void) {
     assert(punch_spl.card_count == 0);
     printf("  [PASS] VM/370 CP card punch spooler write/hold/flush states verified.\n");
 
+    // 114. CMS JCL FILEDEF Dataset Binder Verification
+    printf("[Test] Verifying CMS JCL FILEDEF Dataset Binder...\n");
+    tsfi_cms_filedef_table fd_tbl;
+    tsfi_cms_filedef_init(&fd_tbl);
+    assert(fd_tbl.count == 0);
+    
+    // Bind files
+    assert(tsfi_cms_filedef_bind(&fd_tbl, "INFILE", "MY.INPUT.DATA", "DISK") == 0);
+    assert(tsfi_cms_filedef_bind(&fd_tbl, "OUTFILE", "MY.OUTPUT.DATA", "PRINTER") == 0);
+    assert(fd_tbl.count == 2);
+    
+    // Resolve files
+    char resolved_dsname[64];
+    assert(tsfi_cms_filedef_resolve(&fd_tbl, "INFILE", resolved_dsname, sizeof(resolved_dsname)) == 0);
+    assert(strcmp(resolved_dsname, "MY.INPUT.DATA") == 0);
+    
+    // Overwrite binding
+    assert(tsfi_cms_filedef_bind(&fd_tbl, "INFILE", "NEW.INPUT.DATA", "DISK") == 0);
+    assert(tsfi_cms_filedef_resolve(&fd_tbl, "INFILE", resolved_dsname, sizeof(resolved_dsname)) == 0);
+    assert(strcmp(resolved_dsname, "NEW.INPUT.DATA") == 0);
+    assert(fd_tbl.count == 2);
+    printf("  [PASS] CMS FILEDEF logical-to-physical device bindings verified.\n");
+    
+    // 115. VM/370 RSCS Network Node Spool Linker Verification
+    printf("[Test] Verifying VM/370 RSCS network node spool routing...\n");
+    tsfi_rscs_manager rscs_mgr;
+    tsfi_rscs_init(&rscs_mgr);
+    assert(rscs_mgr.node_count == 0);
+    
+    // Add nodes
+    assert(tsfi_rscs_add_node(&rscs_mgr, "NYCVM") == 0);
+    assert(tsfi_rscs_add_node(&rscs_mgr, "CHIVM") == 0);
+    assert(rscs_mgr.node_count == 2);
+    
+    // Route file successfully
+    assert(tsfi_rscs_route_spool(&rscs_mgr, "NYCVM", 1001) == 0);
+    assert(rscs_mgr.nodes[0].routed_files == 1);
+    
+    // Deactivate node and route
+    assert(tsfi_rscs_deactivate_node(&rscs_mgr, "NYCVM") == 0);
+    assert(tsfi_rscs_route_spool(&rscs_mgr, "NYCVM", 1002) == -2);
+    
+    // Route to unknown node
+    assert(tsfi_rscs_route_spool(&rscs_mgr, "SFVM", 1003) == -1);
+    printf("  [PASS] VM/370 RSCS spool packet routing loops verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
