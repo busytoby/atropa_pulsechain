@@ -6833,3 +6833,27 @@ int tsfi_rscs_deactivate_node(tsfi_rscs_manager *mgr, const char *name) {
     }
     return -1;
 }
+
+void tsfi_cp_fcb_init(tsfi_cp_fcb *fcb) {
+    if (!fcb) return;
+    memset(fcb, 0, sizeof(tsfi_cp_fcb));
+    strcpy(fcb->fcb_name, "DEFAULT");
+    fcb->page_length_lines = 66;
+}
+
+int tsfi_cp_fcb_load(tsfi_cp_fcb *fcb, const char *name, int page_len) {
+    if (!fcb || !name || page_len <= 0 || page_len > 256) return -1;
+    strncpy(fcb->fcb_name, name, sizeof(fcb->fcb_name) - 1);
+    fcb->fcb_name[sizeof(fcb->fcb_name) - 1] = '\0';
+    fcb->page_length_lines = page_len;
+    memset(fcb->channel_stops, 0, sizeof(fcb->channel_stops));
+    return 0;
+}
+
+int tsfi_cp_fcb_set_channel(tsfi_cp_fcb *fcb, int channel, int line) {
+    if (!fcb || channel < 1 || channel > 12 || line < 0 || line > fcb->page_length_lines) {
+        return -1;
+    }
+    fcb->channel_stops[channel - 1] = line;
+    return 0;
+}

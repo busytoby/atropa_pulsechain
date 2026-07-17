@@ -2085,6 +2085,29 @@ int main(void) {
     assert(tsfi_rscs_route_spool(&rscs_mgr, "SFVM", 1003) == -1);
     printf("  [PASS] VM/370 RSCS spool packet routing loops verified.\n");
 
+    // 116. VM/370 CP Forms Control Buffer (FCB) Spool Filter Verification
+    printf("[Test] Verifying VM/370 CP Forms Control Buffer (FCB) Filter...\n");
+    tsfi_cp_fcb fcb_state;
+    tsfi_cp_fcb_init(&fcb_state);
+    assert(strcmp(fcb_state.fcb_name, "DEFAULT") == 0);
+    assert(fcb_state.page_length_lines == 66);
+    
+    // Load custom FCB definitions
+    assert(tsfi_cp_fcb_load(&fcb_state, "STD8", 88) == 0);
+    assert(strcmp(fcb_state.fcb_name, "STD8") == 0);
+    assert(fcb_state.page_length_lines == 88);
+    
+    // Set channel stops
+    assert(tsfi_cp_fcb_set_channel(&fcb_state, 1, 5) == 0);
+    assert(tsfi_cp_fcb_set_channel(&fcb_state, 12, 80) == 0);
+    assert(fcb_state.channel_stops[0] == 5);
+    assert(fcb_state.channel_stops[11] == 80);
+    
+    // Set invalid channel or line parameters
+    assert(tsfi_cp_fcb_set_channel(&fcb_state, 13, 10) == -1);
+    assert(tsfi_cp_fcb_set_channel(&fcb_state, 2, 90) == -1);
+    printf("  [PASS] VM/370 CP forms control buffer page boundaries verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

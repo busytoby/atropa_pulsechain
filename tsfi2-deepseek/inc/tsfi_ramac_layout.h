@@ -1880,4 +1880,15 @@ int tsfi_rscs_add_node(tsfi_rscs_manager *mgr, const char *name);
 int tsfi_rscs_route_spool(tsfi_rscs_manager *mgr, const char *target_node, int spool_file_id);
 int tsfi_rscs_deactivate_node(tsfi_rscs_manager *mgr, const char *name);
 
+// VM/370 CP Forms Control Buffer (FCB) Spool Filter
+typedef struct {
+    char fcb_name[16];
+    int page_length_lines;
+    int channel_stops[12];
+} tsfi_cp_fcb;
+
+void tsfi_cp_fcb_init(tsfi_cp_fcb *fcb);
+int tsfi_cp_fcb_load(tsfi_cp_fcb *fcb, const char *name, int page_len);
+int tsfi_cp_fcb_set_channel(tsfi_cp_fcb *fcb, int channel, int line);
+
 #endif // TSFI_RAMAC_LAYOUT_H
