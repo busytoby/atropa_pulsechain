@@ -93,6 +93,17 @@ int main(void) {
     assert(sif_scene.primitive_count == 12);
     printf("  [PASS] SIF CAD Teddy Bear model parser verified (12 primitives).\n");
 
+    // Verify SIF_PLANE parsing
+    const char *plane_line = "SIF_PLANE NX:0.0 NY:1.0 NZ:0.0 D:-5.0 COLOR:G";
+    int plane_res = tsfi_mf_sif_parse(plane_line, &sif_scene);
+    assert(plane_res == 0);
+    assert(sif_scene.primitive_count == 13);
+    assert(sif_scene.primitives[12].type == CGM_PRIM_PLANE);
+    assert(sif_scene.primitives[12].position.y == 1.0f); // Normal vector Y
+    assert(sif_scene.primitives[12].param1 == -5.0f); // Distance
+    assert(sif_scene.primitives[12].color.y == 1.0f); // Green
+    printf("  [PASS] SIF CAD plane primitive parser verified.\n");
+
     // 4. Verify Screen Section Terminal Layout
     printf("[TEST] Validating Screen Section rendering...\n");
     char term_buf[80 * 24];

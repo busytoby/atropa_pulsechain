@@ -116,6 +116,18 @@ int tsfi_mf_sif_parse(const char *sif_line, tsfi_cgm_scene *scene) {
 
         return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, (tsfi_rt_vec3){x, y, z}, color, rad, (tsfi_rt_vec3){0,0,0});
     }
+    if (strncmp(sif_line, "SIF_PLANE", 9) == 0) {
+        float nx = 0.0f, ny = 1.0f, nz = 0.0f, d = 0.0f;
+        char col_char = 'R';
+        int parsed = sscanf(sif_line, "SIF_PLANE NX:%f NY:%f NZ:%f D:%f COLOR:%c", &nx, &ny, &nz, &d, &col_char);
+        if (parsed < 5) return -2;
+
+        tsfi_rt_vec3 color = {1.0f, 0.0f, 0.0f}; // Default red
+        if (col_char == 'G') color = (tsfi_rt_vec3){0.0f, 1.0f, 0.0f};
+        else if (col_char == 'B') color = (tsfi_rt_vec3){0.0f, 0.0f, 1.0f};
+
+        return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_PLANE, (tsfi_rt_vec3){nx, ny, nz}, color, d, (tsfi_rt_vec3){0,0,0});
+    }
     return -2;
 }
 
