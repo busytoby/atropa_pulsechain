@@ -1435,3 +1435,13 @@ int tsfi_sna_map_lu_type(uint8_t unified_type) {
         default:               return SNA_LU_TYPE0;
     }
 }
+
+const char *tsfi_sna_resolve_sense(uint16_t sense_code) {
+    switch (sense_code) {
+        case SNA_SENSE_RESOURCE_UNAVAILABLE: return "Resource Not Available";
+        case SNA_SENSE_SESSION_LIMIT:        return "Session Limit Exceeded";
+        case SNA_SENSE_END_USER_UNAVAILABLE: return "End-User Not Available";
+        case SNA_SENSE_PATH_OUT_OF_ORDER:    return "Path Out of Order";
+        default:                             return "Unknown/General Protocol Error";
+    }
+}

@@ -634,4 +634,11 @@ int tsfi_sna_deserialize_rh(const uint8_t *buf, size_t len, tsfi_sna_rh *rh_out)
 
 int tsfi_sna_map_lu_type(uint8_t unified_type);
 
+#define SNA_SENSE_RESOURCE_UNAVAILABLE 0x0801
+#define SNA_SENSE_SESSION_LIMIT        0x0805
+#define SNA_SENSE_END_USER_UNAVAILABLE 0x080F
+#define SNA_SENSE_PATH_OUT_OF_ORDER    0x0821
+
+const char *tsfi_sna_resolve_sense(uint16_t sense_code);
+
 #endif // TSFI_MAINFRAME_DECNET_H

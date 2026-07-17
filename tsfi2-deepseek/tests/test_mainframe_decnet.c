@@ -843,6 +843,15 @@ int main(void) {
     assert(tsfi_sna_map_lu_type(LU_TYPE_DISK) == SNA_LU_TYPE0);
     printf("  [PASS] Standard SNA LU type mapping verified.\n");
 
+    // 57. SNA Sense Code Resolver Verification
+    printf("[Test] Verifying SNA Sense Code Resolver...\n");
+    assert(strcmp(tsfi_sna_resolve_sense(SNA_SENSE_RESOURCE_UNAVAILABLE), "Resource Not Available") == 0);
+    assert(strcmp(tsfi_sna_resolve_sense(SNA_SENSE_SESSION_LIMIT), "Session Limit Exceeded") == 0);
+    assert(strcmp(tsfi_sna_resolve_sense(SNA_SENSE_END_USER_UNAVAILABLE), "End-User Not Available") == 0);
+    assert(strcmp(tsfi_sna_resolve_sense(SNA_SENSE_PATH_OUT_OF_ORDER), "Path Out of Order") == 0);
+    assert(strcmp(tsfi_sna_resolve_sense(0xFFFF), "Unknown/General Protocol Error") == 0);
+    printf("  [PASS] Standard SNA Sense Code resolver verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
