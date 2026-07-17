@@ -6656,3 +6656,29 @@ int tsfi_cp_query_disk(const tsfi_cp_link_manager *mgr, char *out_buf, int out_m
     }
     return 0;
 }
+
+void tsfi_cp_device_table_init(tsfi_cp_device_table *tbl) {
+    if (!tbl) return;
+    memset(tbl, 0, sizeof(tsfi_cp_device_table));
+}
+
+int tsfi_cp_device_define(tsfi_cp_device_table *tbl, const char *type, uint32_t vdev) {
+    if (!tbl || !type) return -1;
+    if (tbl->count >= MAX_DYN_DEVICES) return -1;
+    
+    if (strcasecmp(type, "GRAF") != 0 && strcasecmp(type, "LINE") != 0) {
+        return -2;
+    }
+    
+    for (int i = 0; i < tbl->count; i++) {
+        if (tbl->devices[i].vdev == vdev) {
+            return -3;
+        }
+    }
+    
+    tbl->devices[tbl->count].vdev = vdev;
+    strncpy(tbl->devices[tbl->count].dev_type, type, sizeof(tbl->devices[tbl->count].dev_type) - 1);
+    tbl->devices[tbl->count].dev_type[sizeof(tbl->devices[tbl->count].dev_type) - 1] = '\0';
+    tbl->count++;
+    return 0;
+}

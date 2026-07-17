@@ -1966,6 +1966,24 @@ int main(void) {
     assert(strcmp(disk_report, "NO ACTIVE MINIDISKS") == 0);
     printf("  [PASS] VM/370 CP minidisk status queries parsed and listed successfully.\n");
 
+    // 110. VM/370 CP Dynamic Device Definer Verification
+    printf("[Test] Verifying VM/370 CP Dynamic Device Definitions...\n");
+    tsfi_cp_device_table dev_tbl;
+    tsfi_cp_device_table_init(&dev_tbl);
+    assert(dev_tbl.count == 0);
+    
+    // Define virtual devices
+    assert(tsfi_cp_device_define(&dev_tbl, "GRAF", 0x090) == 0);
+    assert(tsfi_cp_device_define(&dev_tbl, "LINE", 0x091) == 0);
+    assert(dev_tbl.count == 2);
+    
+    // Define invalid device type
+    assert(tsfi_cp_device_define(&dev_tbl, "PRT", 0x092) == -2);
+    
+    // Define duplicate address
+    assert(tsfi_cp_device_define(&dev_tbl, "GRAF", 0x090) == -3);
+    printf("  [PASS] VM/370 CP dynamic device definition tables and duplicates verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

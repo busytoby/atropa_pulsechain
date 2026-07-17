@@ -1809,4 +1809,19 @@ int tsfi_cp_link_execute(tsfi_cp_link_manager *mgr, const char *requester, const
 
 int tsfi_cp_query_disk(const tsfi_cp_link_manager *mgr, char *out_buf, int out_max);
 
+// VM/370 CP Dynamic Device Definer
+typedef struct {
+    uint32_t vdev;
+    char dev_type[8];
+} tsfi_cp_virtual_device;
+
+#define MAX_DYN_DEVICES 8
+typedef struct {
+    tsfi_cp_virtual_device devices[MAX_DYN_DEVICES];
+    int count;
+} tsfi_cp_device_table;
+
+void tsfi_cp_device_table_init(tsfi_cp_device_table *tbl);
+int tsfi_cp_device_define(tsfi_cp_device_table *tbl, const char *type, uint32_t vdev);
+
 #endif // TSFI_RAMAC_LAYOUT_H
