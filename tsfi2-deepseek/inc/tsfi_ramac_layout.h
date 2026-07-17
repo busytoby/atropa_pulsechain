@@ -1279,4 +1279,8 @@ int tsfi_nacha_generate_entry(char *record_out, size_t max_len, uint8_t tx_code,
 int tsfi_nacha_validate_record(const char *record);
 int tsfi_nacha_generate_file(char *file_out, size_t max_len, const ach_batch *batch, uint8_t tx_code, const char *origin_routing, const char *dest_routing);
 
+// COBOL COMP-3 Hex-BCD standards
+int tsfi_cobol_pack_hex(const char *hex_in, uint8_t *comp3_out, size_t max_len);
+int tsfi_cobol_unpack_hex(const uint8_t *comp3_in, size_t comp3_len, char *hex_out, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

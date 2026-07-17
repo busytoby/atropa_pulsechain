@@ -5251,3 +5251,83 @@ int tsfi_nacha_generate_file(char *file_out, size_t max_len, const ach_batch *ba
     }
     return line_count;
 }
+
+int tsfi_cobol_pack_hex(const char *hex_in, uint8_t *comp3_out, size_t max_len) {
+    if (!hex_in || !comp3_out) return -1;
+    if (hex_in[0] == '0' && (hex_in[1] == 'x' || hex_in[1] == 'X')) {
+        hex_in += 2;
+    }
+    size_t len = strlen(hex_in);
+    size_t total_nibbles = len + 1;
+    if (total_nibbles % 2 != 0) {
+        total_nibbles++;
+    }
+    size_t needed_bytes = total_nibbles / 2;
+    if (needed_bytes > max_len) return -2;
+    
+    size_t in_idx = 0;
+    size_t out_idx = 0;
+    
+    if (len % 2 == 0) {
+        char ch = hex_in[in_idx++];
+        uint8_t val = 0;
+        if (ch >= '0' && ch <= '9') val = ch - '0';
+        else if (ch >= 'a' && ch <= 'f') val = ch - 'a' + 10;
+        else if (ch >= 'A' && ch <= 'F') val = ch - 'A' + 10;
+        comp3_out[out_idx++] = val;
+    }
+    
+    while (in_idx < len) {
+        char ch1 = hex_in[in_idx++];
+        uint8_t val1 = 0;
+        if (ch1 >= '0' && ch1 <= '9') val1 = ch1 - '0';
+        else if (ch1 >= 'a' && ch1 <= 'f') val1 = ch1 - 'a' + 10;
+        else if (ch1 >= 'A' && ch1 <= 'F') val1 = ch1 - 'A' + 10;
+        
+        if (in_idx < len) {
+            char ch2 = hex_in[in_idx++];
+            uint8_t val2 = 0;
+            if (ch2 >= '0' && ch2 <= '9') val2 = ch2 - '0';
+            else if (ch2 >= 'a' && ch2 <= 'f') val2 = ch2 - 'a' + 10;
+            else if (ch2 >= 'A' && ch2 <= 'F') val2 = ch2 - 'A' + 10;
+            comp3_out[out_idx++] = (val1 << 4) | val2;
+        } else {
+            comp3_out[out_idx++] = (val1 << 4) | 0x0F;
+            return (int)out_idx;
+        }
+    }
+    return -3;
+}
+
+int tsfi_cobol_unpack_hex(const uint8_t *comp3_in, size_t comp3_len, char *hex_out, size_t max_len) {
+    if (!comp3_in || comp3_len == 0 || !hex_out) return -1;
+    uint8_t last_byte = comp3_in[comp3_len - 1];
+    if ((last_byte & 0x0F) != 0x0F) return -2;
+    
+    size_t out_idx = 0;
+    const char hex_chars[] = "0123456789abcdef";
+    size_t start_idx = 0;
+    
+    if ((comp3_in[0] >> 4) == 0) {
+        if (out_idx + 1 >= max_len) return -3;
+        hex_out[out_idx++] = hex_chars[comp3_in[0] & 0x0F];
+        start_idx = 1;
+    }
+    
+    for (size_t i = start_idx; i < comp3_len; i++) {
+        uint8_t b = comp3_in[i];
+        uint8_t n1 = b >> 4;
+        uint8_t n2 = b & 0x0F;
+        
+        if (i == comp3_len - 1) {
+            if (out_idx + 1 >= max_len) return -3;
+            hex_out[out_idx++] = hex_chars[n1];
+        } else {
+            if (out_idx + 2 >= max_len) return -3;
+            hex_out[out_idx++] = hex_chars[n1];
+            hex_out[out_idx++] = hex_chars[n2];
+        }
+    }
+    hex_out[out_idx] = '\0';
+    return 0;
+}

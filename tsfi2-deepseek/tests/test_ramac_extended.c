@@ -1073,6 +1073,19 @@ int main(void) {
     assert(lines % 10 == 0);
     printf("  [PASS] Certifiable block-padded NACHA file compiled successfully with %d lines.\n", lines);
 
+    // 63. COBOL COMP-3 Hex-BCD Encoding/Decoding Verification
+    printf("[Test] Verifying COBOL COMP-3 Hex-BCD formatting for hashes and addresses...\n");
+    const char *evm_address = "90f79bf6eb2c4f870365e785982e1f101e93b906";
+    uint8_t packed_address[32];
+    int packed_len = tsfi_cobol_pack_hex(evm_address, packed_address, sizeof(packed_address));
+    assert(packed_len == 21);
+    
+    char unpacked_address[64];
+    int unpack_res = tsfi_cobol_unpack_hex(packed_address, packed_len, unpacked_address, sizeof(unpacked_address));
+    assert(unpack_res == 0);
+    assert(strcmp(unpacked_address, evm_address) == 0);
+    printf("  [PASS] COBOL COMP-3 Hex-BCD packing/unpacking for 160-bit addresses verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
