@@ -39,5 +39,6 @@ int tsfi_mf_cics_getmain(int length, const char *suspend_type, uint8_t *storage_
 int tsfi_mf_cics_bms_cad_render(const char *map_name, const tsfi_cgm_scene *scene, char *terminal_buffer);
 int tsfi_mf_cics_bms_marauder_map(const char *map_name, const uint32_t *active_node_coordinates, int node_count, char *terminal_buffer);
 int tsfi_mf_cics_bms_first_person_render(float player_x, float player_y, float player_angle, char *terminal_buffer);
+int tsfi_mf_cics_bms_pmg_render(const uint8_t *pmg_base, int player_x, int player_y, char *terminal_buffer);
 
 #endif // TSFI_MICRO_FOCUS_H

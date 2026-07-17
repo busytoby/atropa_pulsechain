@@ -512,3 +512,32 @@ int tsfi_mf_cics_bms_first_person_render(float player_x, float player_y, float p
 
     return 0;
 }
+
+int tsfi_mf_cics_bms_pmg_render(const uint8_t *pmg_base, int player_x, int player_y, char *terminal_buffer) {
+    if (!pmg_base || !terminal_buffer) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+
+    int header_offset = snprintf(terminal_buffer, 80, "CICS BMS PMG SPRITE DISPLAY");
+    terminal_buffer[header_offset] = ' ';
+
+    for (int y = 0; y < 16; y++) {
+        uint8_t byte_val = pmg_base[y];
+        int term_y = player_y + y;
+
+        if (term_y >= 1 && term_y < 24) {
+            for (int bit = 0; bit < 8; bit++) {
+                int term_x = player_x + bit;
+                if (term_x >= 0 && term_x < 80) {
+                    if (byte_val & (1 << (7 - bit))) {
+                        terminal_buffer[term_y * 80 + term_x] = 'X';
+                    } else {
+                        terminal_buffer[term_y * 80 + term_x] = '.';
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}

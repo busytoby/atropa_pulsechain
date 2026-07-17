@@ -314,6 +314,19 @@ int main(void) {
     assert(strchr(fp_buffer, '_') != NULL);
     printf("  [PASS] 3D First-Person CICS BMS Viewport verified.\n");
 
+    // 16. Verify CICS BMS PMG Sprite Render
+    printf("[TEST] Validating CICS BMS PMG Sprite Renderer...\n");
+    uint8_t pmg_sprite[16] = {
+        0x3C, 0x7E, 0xFF, 0xFF, 0xFF, 0xFF, 0x7E, 0x3C
+    };
+    char pmg_buffer[80 * 24];
+    int pmg_res = tsfi_mf_cics_bms_pmg_render(pmg_sprite, 10, 5, pmg_buffer);
+    assert(pmg_res == 0);
+    assert(strncmp(pmg_buffer, "CICS BMS PMG SPRITE DISPLAY", 27) == 0);
+    assert(pmg_buffer[5 * 80 + 10] == '.');
+    assert(pmg_buffer[5 * 80 + 12] == 'X');
+    printf("  [PASS] CICS BMS PMG Sprite Renderer verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
