@@ -2232,6 +2232,23 @@ int main(void) {
     assert(tsfi_cp_vma_execute(&vma, "BALR") == -1);
     printf("  [PASS] VM/370 CP virtual machine assist bypass intercepts verified.\n");
 
+    // 122. VM/370 APL 3270 Copy Screen Printer Formatter Verification
+    printf("[Test] Verifying VM/370 APL 3270 Copy Screen Formatter...\n");
+    tsfi_cp_apl_screen apl_scr;
+    tsfi_cp_apl_screen_init(&apl_scr);
+    
+    // Fill screen with test data
+    assert(tsfi_cp_apl_screen_write(&apl_scr, 0, 0, "APL WORKSPACE") == 0);
+    assert(tsfi_cp_apl_screen_write(&apl_scr, 2, 5, "x \x01 y") == 0); // Contains 0x01 Quad symbol
+    
+    tsfi_cp_spool_printer printer_dev;
+    tsfi_cp_printer_init(&printer_dev);
+    
+    assert(tsfi_cp_apl_copy_to_printer(&apl_scr, &printer_dev) == 0);
+    // 24 lines should have been written to the printer
+    assert(printer_dev.line_count == 24);
+    printf("  [PASS] VM/370 CP APL console screen translation spool writes verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

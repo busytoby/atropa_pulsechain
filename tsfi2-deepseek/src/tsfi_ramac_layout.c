@@ -7055,3 +7055,37 @@ int tsfi_cp_vma_execute(tsfi_cp_vma_controller *ctrl, const char *instr_type) {
         return 1;
     }
 }
+
+void tsfi_cp_apl_screen_init(tsfi_cp_apl_screen *scr) {
+    if (!scr) return;
+    memset(scr->screen_buffer, ' ', sizeof(scr->screen_buffer));
+}
+
+int tsfi_cp_apl_screen_write(tsfi_cp_apl_screen *scr, int row, int col, const char *data) {
+    if (!scr || !data || row < 0 || row >= APL_SCREEN_ROWS || col < 0 || col >= APL_SCREEN_COLS) {
+        return -1;
+    }
+    int len = strlen(data);
+    for (int i = 0; i < len && (col + i) < APL_SCREEN_COLS; i++) {
+        scr->screen_buffer[row][col + i] = data[i];
+    }
+    return 0;
+}
+
+int tsfi_cp_apl_copy_to_printer(const tsfi_cp_apl_screen *scr, tsfi_cp_spool_printer *prt) {
+    if (!scr || !prt) return -1;
+    for (int r = 0; r < APL_SCREEN_ROWS; r++) {
+        char temp_row[APL_SCREEN_COLS + 1];
+        for (int c = 0; c < APL_SCREEN_COLS; c++) {
+            char ch = scr->screen_buffer[r][c];
+            if (ch == 0x01) {
+                temp_row[c] = 'Q';
+            } else {
+                temp_row[c] = ch;
+            }
+        }
+        temp_row[APL_SCREEN_COLS] = '\0';
+        tsfi_cp_printer_write_record(prt, temp_row);
+    }
+    return 0;
+}

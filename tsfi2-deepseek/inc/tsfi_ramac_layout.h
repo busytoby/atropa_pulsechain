@@ -1959,4 +1959,15 @@ void tsfi_cp_vma_init(tsfi_cp_vma_controller *ctrl);
 int tsfi_cp_vma_set(tsfi_cp_vma_controller *ctrl, int enable);
 int tsfi_cp_vma_execute(tsfi_cp_vma_controller *ctrl, const char *instr_type);
 
+// VM/370 Release 3 APL 3270 Copy Screen Printer Formatter
+#define APL_SCREEN_ROWS 24
+#define APL_SCREEN_COLS 80
+typedef struct {
+    char screen_buffer[APL_SCREEN_ROWS][APL_SCREEN_COLS];
+} tsfi_cp_apl_screen;
+
+void tsfi_cp_apl_screen_init(tsfi_cp_apl_screen *scr);
+int tsfi_cp_apl_screen_write(tsfi_cp_apl_screen *scr, int row, int col, const char *data);
+int tsfi_cp_apl_copy_to_printer(const tsfi_cp_apl_screen *scr, tsfi_cp_spool_printer *prt);
+
 #endif // TSFI_RAMAC_LAYOUT_H
