@@ -1779,3 +1779,55 @@ int tsfi_com_generate_index_frame(const tsfi_com_formatter *fmt, char *out_index
     }
     return 0;
 }
+
+void tsfi_fips48_init(tsfi_fips48_authenticator *auth) {
+    if (!auth) return;
+    memset(auth, 0, sizeof(tsfi_fips48_authenticator));
+}
+
+int tsfi_fips48_register_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t badge_id, uint16_t pin) {
+    if (!auth || !user_id || auth->badge_count >= MAX_FIPS48_BADGES) return -1;
+    
+    for (int i = 0; i < auth->badge_count; i++) {
+        if (auth->badges[i].badge_id == badge_id) {
+            return -2; // Duplicate badge ID
+        }
+    }
+    
+    tsfi_fips48_badge *badge = &auth->badges[auth->badge_count];
+    snprintf(badge->user_id, sizeof(badge->user_id), "%s", user_id);
+    badge->badge_id = badge_id;
+    badge->pin = pin;
+    badge->is_active = 1;
+    auth->badge_count++;
+    return 0;
+}
+
+int tsfi_fips48_authenticate(tsfi_fips48_authenticator *auth, uint32_t badge_id, uint16_t pin, int *out_status) {
+    if (!auth || !out_status) return -1;
+    *out_status = 0;
+    
+    tsfi_fips48_badge *target = NULL;
+    for (int i = 0; i < auth->badge_count; i++) {
+        if (auth->badges[i].badge_id == badge_id && auth->badges[i].is_active) {
+            target = &auth->badges[i];
+            break;
+        }
+    }
+    
+    if (!target) {
+        auth->failed_attempts++;
+        *out_status = -3; // Badge not found/inactive
+        return -2;
+    }
+    
+    if (target->pin != pin) {
+        auth->failed_attempts++;
+        *out_status = -2; // PIN mismatch
+        return -2;
+    }
+    
+    auth->successful_attempts++;
+    *out_status = 1; // Authenticated
+    return 0;
+}

@@ -600,4 +600,24 @@ void tsfi_com_init(tsfi_com_formatter *fmt);
 int tsfi_com_format_record(tsfi_com_formatter *fmt, const char *record_text, uint8_t *out_frame, uint16_t *out_len);
 int tsfi_com_generate_index_frame(const tsfi_com_formatter *fmt, char *out_index_data, int max_len);
 
+// Scenario 145: NBS FIPS PUB 48 Personal Identification Token Authenticator
+#define MAX_FIPS48_BADGES 16
+typedef struct {
+    char user_id[16];
+    uint32_t badge_id;
+    uint16_t pin;
+    int is_active;
+} tsfi_fips48_badge;
+
+typedef struct {
+    tsfi_fips48_badge badges[MAX_FIPS48_BADGES];
+    int badge_count;
+    int failed_attempts;
+    int successful_attempts;
+} tsfi_fips48_authenticator;
+
+void tsfi_fips48_init(tsfi_fips48_authenticator *auth);
+int tsfi_fips48_register_badge(tsfi_fips48_authenticator *auth, const char *user_id, uint32_t badge_id, uint16_t pin);
+int tsfi_fips48_authenticate(tsfi_fips48_authenticator *auth, uint32_t badge_id, uint16_t pin, int *out_status);
+
 #endif // TSFI_MAINFRAME_V370_H

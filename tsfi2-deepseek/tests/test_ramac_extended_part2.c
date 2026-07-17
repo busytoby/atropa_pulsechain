@@ -1538,6 +1538,34 @@ int main(void) {
     assert(strstr(index_out, "RECORD 005") != NULL);
     printf("  [PASS] Computer Output Microform frame mapping and index generation verified.\n");
 
+    // 145. NBS FIPS PUB 48 Personal Identification Token Authenticator Verification
+    printf("[Test] Verifying NBS FIPS PUB 48 Personal Identification Token Authenticator...\n");
+    tsfi_fips48_authenticator authenticator;
+    tsfi_fips48_init(&authenticator);
+    
+    // Register badge readers
+    assert(tsfi_fips48_register_badge(&authenticator, "USER_A", 10001, 1234) == 0);
+    assert(tsfi_fips48_register_badge(&authenticator, "USER_B", 10002, 5678) == 0);
+    assert(tsfi_fips48_register_badge(&authenticator, "USER_A", 10001, 4321) == -2); // Duplicate ID check
+    
+    // Authenticate checks
+    int auth_status = 0;
+    // Successful login
+    assert(tsfi_fips48_authenticate(&authenticator, 10001, 1234, &auth_status) == 0);
+    assert(auth_status == 1);
+    assert(authenticator.successful_attempts == 1);
+    
+    // Invalid PIN login
+    assert(tsfi_fips48_authenticate(&authenticator, 10001, 9999, &auth_status) == -2);
+    assert(auth_status == -2);
+    assert(authenticator.failed_attempts == 1);
+    
+    // Non-existent badge login
+    assert(tsfi_fips48_authenticate(&authenticator, 99999, 1234, &auth_status) == -2);
+    assert(auth_status == -3);
+    assert(authenticator.failed_attempts == 2);
+    printf("  [PASS] FIPS 48 personal identification badge readers and PIN locks validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
