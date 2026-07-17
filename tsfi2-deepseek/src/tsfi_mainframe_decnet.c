@@ -1701,3 +1701,31 @@ int tsfi_usenet_verify_article(const tsfi_usenet_article *art, const uint8_t *pu
     }
     return 0;
 }
+
+void tsfi_bna_node_init(tsfi_bna_node *node, int id, const char *host) {
+    if (!node) return;
+    node->node_id = id;
+    node->bna_active = 1;
+    if (host) {
+        strncpy(node->hostname, host, 15);
+        node->hostname[15] = '\0';
+    } else {
+        node->hostname[0] = '\0';
+    }
+}
+
+void tsfi_ddp_bridge_init(tsfi_ddp_bridge *bridge) {
+    if (!bridge) return;
+    bridge->sna_lu_count = 0;
+    bridge->decnet_node_count = 0;
+    bridge->bna_node_count = 0;
+    bridge->coaxial_carrier_frequency = 10.0f;
+}
+
+int tsfi_ddp_bridge_status(const tsfi_ddp_bridge *bridge, char *status_out, size_t max_len) {
+    if (!bridge || !status_out || max_len == 0) return -1;
+    snprintf(status_out, max_len, "DDP Bridge: SNA LUs=%d, DECnet Nodes=%d, BNA Nodes=%d, Coaxial Freq=%.1fMHz",
+             bridge->sna_lu_count, bridge->decnet_node_count, bridge->bna_node_count,
+             bridge->coaxial_carrier_frequency);
+    return 0;
+}

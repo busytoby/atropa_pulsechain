@@ -723,4 +723,24 @@ typedef struct {
 int tsfi_usenet_sign_article(const tsfi_usenet_article *art, const uint8_t *private_key, tsfi_usenet_signature *sig_out);
 int tsfi_usenet_verify_article(const tsfi_usenet_article *art, const uint8_t *public_key, const tsfi_usenet_signature *sig);
 
+// Burroughs Network Architecture (BNA) Node Definition
+typedef struct {
+    int node_id;
+    int bna_active;
+    char hostname[16];
+} tsfi_bna_node;
+
+void tsfi_bna_node_init(tsfi_bna_node *node, int id, const char *host);
+
+// Distributed Data Processing (DDP) Unified Network Bridge
+typedef struct {
+    int sna_lu_count;
+    int decnet_node_count;
+    int bna_node_count;
+    float coaxial_carrier_frequency;
+} tsfi_ddp_bridge;
+
+void tsfi_ddp_bridge_init(tsfi_ddp_bridge *bridge);
+int tsfi_ddp_bridge_status(const tsfi_ddp_bridge *bridge, char *status_out, size_t max_len);
+
 #endif // TSFI_MAINFRAME_DECNET_H

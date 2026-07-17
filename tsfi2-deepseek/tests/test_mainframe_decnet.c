@@ -1044,6 +1044,29 @@ int main(void) {
     
     printf("  [PASS] APPC conversation states, 3270 formatting, and FIPS 186-5 signatures verified.\n");
 
+    // 63. DDP & BNA Networks Integration Verification
+    printf("[Test] Verifying DDP & BNA Networks Integration...\n");
+    tsfi_bna_node bna_node;
+    tsfi_bna_node_init(&bna_node, 101, "BURR_B6700");
+    assert(bna_node.node_id == 101);
+    assert(bna_node.bna_active == 1);
+    assert(strcmp(bna_node.hostname, "BURR_B6700") == 0);
+    
+    tsfi_ddp_bridge ddp;
+    tsfi_ddp_bridge_init(&ddp);
+    ddp.sna_lu_count = 5;
+    ddp.decnet_node_count = 3;
+    ddp.bna_node_count = 2;
+    ddp.coaxial_carrier_frequency = 12.5f;
+    
+    char ddp_status[128];
+    assert(tsfi_ddp_bridge_status(&ddp, ddp_status, sizeof(ddp_status)) == 0);
+    assert(strstr(ddp_status, "SNA LUs=5") != NULL);
+    assert(strstr(ddp_status, "DECnet Nodes=3") != NULL);
+    assert(strstr(ddp_status, "BNA Nodes=2") != NULL);
+    assert(strstr(ddp_status, "Coaxial Freq=12.5MHz") != NULL);
+    printf("  [PASS] BNA node configurations and DDP bridge statuses verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
