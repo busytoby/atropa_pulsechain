@@ -290,6 +290,20 @@ int main(void) {
     assert(screen_buffer[12 * 80 + 40] == 'O');
     printf("  [PASS] CICS BMS CAD Map Formatter verified.\n");
 
+    // 14. Verify CICS BMS Marauder Map Render
+    printf("[TEST] Validating CICS BMS Marauder Map Formatter...\n");
+    uint32_t active_nodes[2] = {
+        (5 << 16) | 10,
+        (15 << 16) | 50
+    };
+    char marauder_buffer[80 * 24];
+    int marauder_res = tsfi_mf_cics_bms_marauder_map("MARAUD", active_nodes, 2, marauder_buffer);
+    assert(marauder_res == 0);
+    assert(strncmp(marauder_buffer, "MARAUD MARAUDER MAP", 19) == 0);
+    assert(marauder_buffer[5 * 80 + 10] == '*');
+    assert(marauder_buffer[15 * 80 + 50] == '*');
+    printf("  [PASS] CICS BMS Marauder Map Formatter verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

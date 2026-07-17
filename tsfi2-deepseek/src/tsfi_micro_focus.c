@@ -424,3 +424,24 @@ int tsfi_mf_cics_bms_cad_render(const char *map_name, const tsfi_cgm_scene *scen
 
     return 0;
 }
+
+int tsfi_mf_cics_bms_marauder_map(const char *map_name, const uint32_t *active_node_coordinates, int node_count, char *terminal_buffer) {
+    if (!map_name || !active_node_coordinates || !terminal_buffer || node_count < 0) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+
+    int header_offset = snprintf(terminal_buffer, 80, "%s MARAUDER MAP", map_name);
+    terminal_buffer[header_offset] = ' ';
+
+    for (int i = 0; i < node_count; i++) {
+        uint32_t val = active_node_coordinates[i];
+        uint32_t line = (val >> 16) & 0xFFFF;
+        uint32_t col = val & 0xFFFF;
+
+        if (line >= 1 && line < 24 && col < 80) {
+            terminal_buffer[line * 80 + col] = '*';
+        }
+    }
+
+    return 0;
+}
