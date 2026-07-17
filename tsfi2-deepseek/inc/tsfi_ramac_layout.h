@@ -1743,4 +1743,7 @@ int tsfi_cp_query_execute(tsfi_cp_query_manager *mgr, const char *query_cmd, cha
 // VM/370 CP MSG Terminal Message Router
 int tsfi_cp_msg_send(const tsfi_cp_directory *dir, const char *sender, const char *recipient, const char *msg_text, char *out_terminal_buf, int out_terminal_max);
 
+// VM/370 CP WARNING Broadcast Manager
+int tsfi_cp_warning_broadcast(const tsfi_cp_directory *dir, const char *sender_uid, const char *warn_text, char out_terminals[8][128], int *broadcast_count);
+
 #endif // TSFI_RAMAC_LAYOUT_H

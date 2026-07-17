@@ -48,8 +48,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 101 | VM/370 CP Spool Purging Manager | PASS | Queue Purging Reset | Volume 19 |
 | 102 | VM/370 CP Resource Query Manager | PASS | Console State Query | Volume 19 |
 | 103 | VM/370 CP MSG Console Message Router | PASS | Terminal Msg Router | Volume 19 |
+| 104 | VM/370 CP WARNING Broadcast Manager | PASS | Terminal Broadcast | Volume 19 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 103 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 104 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

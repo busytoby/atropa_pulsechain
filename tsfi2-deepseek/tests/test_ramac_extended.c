@@ -1848,6 +1848,26 @@ int main(void) {
     assert(strstr(msg_term, "NOT LOGGED ON") != NULL);
     printf("  [PASS] VM/370 CP instant terminal text message routing verified.\n");
 
+    // 104. VM/370 CP WARNING Broadcast Manager Verification
+    printf("[Test] Verifying VM/370 CP WARNING broadcasts...\n");
+    tsfi_cp_directory dir_brd;
+    tsfi_cp_directory_init(&dir_brd);
+    assert(tsfi_cp_directory_add(&dir_brd, "ADMIN", 'A', 65536) == 0);
+    assert(tsfi_cp_directory_add(&dir_brd, "USER1", 'G', 8192) == 0);
+    
+    char warn_terms[8][128];
+    int brd_count = 0;
+    
+    // Broadcast from ADMIN (Class A)
+    assert(tsfi_cp_warning_broadcast(&dir_brd, "ADMIN", "SHUTDOWN IN 5 MIN", warn_terms, &brd_count) == 0);
+    assert(brd_count == 2);
+    assert(strcmp(warn_terms[0], "WARN: SHUTDOWN IN 5 MIN") == 0);
+    assert(strcmp(warn_terms[1], "WARN: SHUTDOWN IN 5 MIN") == 0);
+    
+    // Attempt broadcast from USER1 (Class G - non-admin)
+    assert(tsfi_cp_warning_broadcast(&dir_brd, "USER1", "SHUTDOWN IN 5 MIN", warn_terms, &brd_count) == -2);
+    printf("  [PASS] VM/370 CP console warning broadcast permissions verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

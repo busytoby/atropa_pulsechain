@@ -6468,3 +6468,20 @@ int tsfi_cp_msg_send(const tsfi_cp_directory *dir, const char *sender, const cha
         return -1;
     }
 }
+
+int tsfi_cp_warning_broadcast(const tsfi_cp_directory *dir, const char *sender_uid, const char *warn_text, char out_terminals[8][128], int *broadcast_count) {
+    if (!dir || !sender_uid || !warn_text || !out_terminals || !broadcast_count) return -1;
+    
+    int priv_ok = tsfi_cp_directory_check(dir, sender_uid, 'A');
+    if (priv_ok != 0) {
+        return -2;
+    }
+    
+    *broadcast_count = 0;
+    for (int i = 0; i < dir->entry_count; i++) {
+        snprintf(out_terminals[i], 127, "WARN: %s", warn_text);
+        out_terminals[i][127] = '\0';
+        (*broadcast_count)++;
+    }
+    return 0;
+}
