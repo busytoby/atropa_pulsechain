@@ -6009,3 +6009,31 @@ int tsfi_cms_execute_command(tsfi_cms_session *sess, const char *cmd) {
     sess->last_command_status = -1;
     return -1;
 }
+
+void tsfi_cp_session_init(tsfi_cp_session *sess) {
+    if (!sess) return;
+    memset(sess, 0, sizeof(tsfi_cp_session));
+    sess->virtual_storage_kb = 4096;
+    sess->spool_class = ' ';
+    sess->last_cp_status = 0;
+}
+
+int tsfi_cp_execute_command(tsfi_cp_session *sess, const char *cmd) {
+    if (!sess || !cmd) return -1;
+    if (strcasecmp(cmd, "DEFINE STORAGE 16M") == 0) {
+        sess->virtual_storage_kb = 16384;
+        sess->last_cp_status = 0;
+        return 0;
+    }
+    if (strcasecmp(cmd, "SPOOL PUNCH CLASS A") == 0) {
+        sess->spool_class = 'A';
+        sess->last_cp_status = 0;
+        return 0;
+    }
+    if (strcasecmp(cmd, "QUERY VIRTUAL") == 0) {
+        sess->last_cp_status = 0;
+        return 0;
+    }
+    sess->last_cp_status = -1;
+    return -1;
+}

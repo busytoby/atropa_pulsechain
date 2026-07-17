@@ -1529,4 +1529,14 @@ typedef struct {
 void tsfi_cms_session_init(tsfi_cms_session *sess);
 int tsfi_cms_execute_command(tsfi_cms_session *sess, const char *cmd);
 
+// VM/370 Control Program (CP) Hypervisor
+typedef struct {
+    uint32_t virtual_storage_kb;
+    char spool_class;
+    int last_cp_status;
+} tsfi_cp_session;
+
+void tsfi_cp_session_init(tsfi_cp_session *sess);
+int tsfi_cp_execute_command(tsfi_cp_session *sess, const char *cmd);
+
 #endif // TSFI_RAMAC_LAYOUT_H

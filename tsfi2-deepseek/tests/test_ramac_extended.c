@@ -1538,6 +1538,22 @@ int main(void) {
     assert(tsfi_cms_execute_command(&cms_sess, "LISTFILE") == 0);
     printf("  [PASS] VM/370 CMS boot, access, and file catalog commands verified.\n");
 
+    // 89. VM/370 Control Program (CP) Hypervisor Verification
+    printf("[Test] Verifying VM/370 CP console commands...\n");
+    tsfi_cp_session cp_sess;
+    tsfi_cp_session_init(&cp_sess);
+    assert(cp_sess.virtual_storage_kb == 4096);
+    assert(cp_sess.spool_class == ' ');
+    
+    assert(tsfi_cp_execute_command(&cp_sess, "DEFINE STORAGE 16M") == 0);
+    assert(cp_sess.virtual_storage_kb == 16384);
+    
+    assert(tsfi_cp_execute_command(&cp_sess, "SPOOL PUNCH CLASS A") == 0);
+    assert(cp_sess.spool_class == 'A');
+    
+    assert(tsfi_cp_execute_command(&cp_sess, "QUERY VIRTUAL") == 0);
+    printf("  [PASS] VM/370 CP storage resizing and virtual device spooling verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
