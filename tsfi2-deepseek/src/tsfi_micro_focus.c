@@ -1531,3 +1531,27 @@ int tsfi_mf_cics_resume(uint32_t task_id, uint32_t *suspend_log, int *log_count)
 
     return -2;
 }
+
+int tsfi_mf_majordomo_archive_delete(const char *list_name, const char *file_name, const char **archive_files, int *archive_count) {
+    (void)list_name;
+    if (!file_name || !archive_files || !archive_count || *archive_count < 0) return -1;
+
+    for (int i = 0; i < *archive_count; i++) {
+        if (strcmp(archive_files[i], file_name) == 0) {
+            for (int j = i; j < *archive_count - 1; j++) {
+                archive_files[j] = archive_files[j + 1];
+            }
+            *archive_count -= 1;
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_out, int max_len) {
+    if (!status_out || max_len <= 0) return -1;
+
+    snprintf(status_out, max_len, "TASK:%u|STATUS=%s", task_id, is_suspended ? "SUSPENDED" : "RUNNING");
+    return 0;
+}

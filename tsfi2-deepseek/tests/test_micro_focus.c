@@ -959,6 +959,24 @@ int main(void) {
     assert(active_suspend_log[1] == 4003);
     printf("  [PASS] CICS RESUME verified.\n");
 
+    // 81. Verify Majordomo List Archive Message Deleter
+    printf("[TEST] Validating Majordomo Archive Deleter...\n");
+    const char *arc_del_files[3] = {"msg001.txt", "msg002.txt", "msg003.txt"};
+    int arc_del_count = 3;
+    int arc_del_res = tsfi_mf_majordomo_archive_delete("zmm-dev", "msg002.txt", arc_del_files, &arc_del_count);
+    assert(arc_del_res == 0);
+    assert(arc_del_count == 2);
+    assert(strcmp(arc_del_files[1], "msg003.txt") == 0);
+    printf("  [PASS] Majordomo Archive Deleter verified.\n");
+
+    // 82. Verify CICS Task Execution Inquire Emulator
+    printf("[TEST] Validating CICS INQUIRE TASK...\n");
+    char task_inq_buf[64] = {0};
+    int inq_res = tsfi_mf_cics_inquire_task(5002, 1, task_inq_buf, sizeof(task_inq_buf));
+    assert(inq_res == 0);
+    assert(strstr(task_inq_buf, "TASK:5002|STATUS=SUSPENDED") != NULL);
+    printf("  [PASS] CICS INQUIRE TASK verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -122,5 +122,7 @@
 | 188 | CICS Task Execution Delay Emulator | PASS | Task execution delay timer | Volume 33 |
 | 189 | Majordomo Config Key Overwriter | PASS | Command setting list configuration parameters | Volume 33 |
 | 190 | CICS Task Execution Resumer Emulator | PASS | Dynamic task reactivation handler | Volume 33 |
+| 191 | Majordomo Archive Message Deleter | PASS | Command removing message from list archives | Volume 33 |
+| 192 | CICS Task Execution Inquire Emulator | PASS | Dynamic task parameters query reporter | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 190 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 192 Scenarios validated successfully)
