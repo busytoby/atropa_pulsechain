@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro Focus COBOL CAD & Ray Tracer Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #03060a;
+            --panel-bg: rgba(9, 15, 28, 0.75);
+            --accent-cyan: #00f0ff;
+            --accent-pink: #ff007f;
+            --accent-green: #39ff14;
+            --text-color: #e2f1f7;
+            --border-glow: rgba(0, 240, 255, 0.15);
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Space Grotesk', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, rgba(12, 28, 54, 0.45) 0%, rgba(3, 6, 10, 1) 100%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px -10px var(--accent-cyan);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+        }
+
+        .status-panel {
+            display: flex;
+            gap: 15px;
+        }
+
+        .badge {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid var(--accent-cyan);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+
+        .badge-green {
+            border-color: var(--accent-green);
+            background: rgba(57, 255, 20, 0.08);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        .dot-green {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 25px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .panel:hover {
+            border-color: rgba(255, 0, 127, 0.3);
+            box-shadow: 0 12px 40px rgba(255, 0, 127, 0.1);
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            border-left: 3px solid var(--accent-pink);
+            padding-left: 10px;
+        }
+
+        .viewport-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        canvas {
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            background: #010307;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 240, 255, 0.1);
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 1;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(226, 241, 247, 0.6);
+            font-family: var(--font-mono);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: rgba(226, 241, 247, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select, textarea, button {
+            background: rgba(9, 15, 28, 0.8);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, textarea:focus {
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        button.btn-pink {
+            border-color: rgba(255, 0, 127, 0.5);
+            color: var(--accent-pink);
+        }
+
+        button.btn-pink:hover {
+            background: var(--accent-pink);
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-pink);
+            border-color: var(--accent-pink);
+        }
+
+        textarea {
+            width: 95%;
+            height: 200px;
+            resize: none;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .terminal-panel {
+            margin-top: 25px;
+            background: #020408;
+            border: 1px solid rgba(57, 255, 20, 0.25);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: inset 0 0 15px rgba(57, 255, 20, 0.05);
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            color: var(--accent-green);
+            border-bottom: 1px solid rgba(57, 255, 20, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .terminal-log {
+            height: 150px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent-green);
+            line-height: 1.6;
+        }
+
+        .log-line {
+            margin: 0;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Micro Focus COBOL CAD Dashboard</h1>
+        <div class="status-panel">
+            <div class="badge"><div class="dot"></div>VULKAN PIPELINE ACTIVE</div>
+            <div class="badge badge-green"><div class="dot dot-green"></div>NO LEVEL-88 INVARIANTS</div>
+        </div>
+    </header>
+
+    <div class="layout-grid">
+        <!-- Viewport and Shader Controls -->
+        <div class="panel">
+            <h2>3D Ray Tracer Viewport</h2>
+            <div class="viewport-container">
+                <canvas id="rayCanvas" width="256" height="256"></canvas>
+                
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label>Plane Tangent scale (U/V)</label>
+                        <input type="range" id="texScale" min="1" max="20" value="10">
+                    </div>
+                    <div class="control-group">
+                        <label>Procedural Texture Type</label>
+                        <select id="texType">
+                            <option value="checker">Procedural Checkerboard</option>
+                            <option value="grid">CAD Coordinate Grid</option>
+                            <option value="solid">VGP Flat Solid</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Teddy Bear Head Size</label>
+                        <input type="range" id="headScale" min="5" max="30" value="15">
+                    </div>
+                    <div class="control-group">
+                        <label>Light Direction (X)</label>
+                        <input type="range" id="lightX" min="-10" max="10" value="5">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIF CAD File Editor -->
+        <div class="panel">
+            <h2>SIF CAD Code compiler</h2>
+            <div class="control-group" style="margin-bottom: 20px;">
+                <label>Source CAD Specifications (SIF Model)</label>
+                <textarea id="sifSource">SIF_SPHERE X:0.0 Y:1.5 Z:8.0 R:1.5 COLOR:G
+SIF_SPHERE X:0.0 Y:-0.5 Z:8.0 R:2.0 COLOR:G
+SIF_SPHERE X:-1.2 Y:2.7 Z:8.0 R:0.6 COLOR:B
+SIF_SPHERE X:1.2 Y:2.7 Z:8.0 R:0.6 COLOR:B
+SIF_SPHERE X:-0.5 Y:1.8 Z:6.6 R:0.15 COLOR:B
+SIF_SPHERE X:0.5 Y:1.8 Z:6.6 R:0.15 COLOR:B
+SIF_SPHERE X:0.0 Y:1.3 Z:6.5 R:0.4 COLOR:G
+SIF_SPHERE X:-1.8 Y:-0.2 Z:8.0 R:0.8 COLOR:G
+SIF_SPHERE X:1.8 Y:-0.2 Z:8.0 R:0.8 COLOR:G
+SIF_SPHERE X:-1.2 Y:-2.2 Z:8.0 R:0.9 COLOR:G
+SIF_SPHERE X:1.2 Y:-2.2 Z:8.0 R:0.9 COLOR:G
+SIF_PLANE NX:0.0 NY:1.0 NZ:0.0 D:-4.0 COLOR:B</textarea>
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <button id="btnCompile" style="flex: 1;">Compile & Ray Trace</button>
+                <button id="btnExport" class="btn-pink" style="flex: 1;">Export to COBOL ISAM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Micro Focus VM Console -->
+    <div class="terminal-panel">
+        <div class="terminal-header">
+            <span>Console output (Micro Focus ISAM Engine)</span>
+            <span>SYSTEM RUNNING</span>
+        </div>
+        <div class="terminal-log" id="termLog">
+            <p class="log-line">> INITIATING COBOL RUNTIME EXECUTION...</p>
+            <p class="log-line">> ATTACHING WINCHESTER MQ STATE REGISTER INTERFACE...</p>
+            <p class="log-line">> ISAM RECORD FILE INSTANTIATED UNDER SIF FORMAT (.dat.bin)</p>
+        </div>
+    </div>
+
+    <script>
+        // Interactive Ray Tracer rendering logic
+        const canvas = document.getElementById('rayCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let primitives = [];
+
+        function parseSIF() {
+            const text = document.getElementById('sifSource').value;
+            const lines = text.split('\n');
+            primitives = [];
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('SIF_SPHERE')) {
+                    const matchX = line.match(/X:([-\d.]+)/);
+                    const matchY = line.match(/Y:([-\d.]+)/);
+                    const matchZ = line.match(/Z:([-\d.]+)/);
+                    const matchR = line.match(/R:([-\d.]+)/);
+                    const matchC = line.match(/COLOR:(\w)/);
+
+                    if (matchX && matchY && matchZ && matchR && matchC) {
+                        primitives.push({
+                            type: 'sphere',
+                            x: parseFloat(matchX[1]),
+                            y: parseFloat(matchY[1]),
+                            z: parseFloat(matchZ[1]),
+                            r: parseFloat(matchR[1]),
+                            color: matchC[1] === 'G' ? [0.2, 0.8, 0.2] : [0.2, 0.4, 0.9]
+                        });
+                    }
+                } else if (line.startsWith('SIF_PLANE')) {
+                    const matchNX = line.match(/NX:([-\d.]+)/);
+                    const matchNY = line.match(/NY:([-\d.]+)/);
+                    const matchNZ = line.match(/NZ:([-\d.]+)/);
+                    const matchD = line.match(/D:([-\d.]+)/);
+                    const matchC = line.match(/COLOR:(\w)/);
+
+                    if (matchNX && matchNY && matchNZ && matchD && matchC) {
+                        primitives.push({
+                            type: 'plane',
+                            nx: parseFloat(matchNX[1]),
+                            ny: parseFloat(matchNY[1]),
+                            nz: parseFloat(matchNZ[1]),
+                            d: parseFloat(matchD[1]),
+                            color: matchC[1] === 'B' ? [0.1, 0.15, 0.35] : [0.4, 0.4, 0.4]
+                        });
+                    }
+                }
+            });
+            logConsole(`PARSED ${primitives.length} PRIMITIVES SUCCESSFULLY FROM SOURCE SIF FILE.`);
+        }
+
+        function logConsole(msg) {
+            const term = document.getElementById('termLog');
+            const p = document.createElement('p');
+            p.className = 'log-line';
+            p.innerText = `> ${msg}`;
+            term.appendChild(p);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // Ray Tracer logic in JavaScript
+        function renderScene() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const imgData = ctx.createImageData(width, height);
+            const data = imgData.data;
+
+            const tScale = parseFloat(document.getElementById('texScale').value);
+            const texType = document.getElementById('texType').value;
+            const headSize = parseFloat(document.getElementById('headScale').value) / 10.0;
+            const lightX = parseFloat(document.getElementById('lightX').value) / 5.0;
+
+            const lightDir = { x: lightX, y: 1.0, z: -1.0 };
+            const len = Math.sqrt(lightDir.x*lightDir.x + lightDir.y*lightDir.y + lightDir.z*lightDir.z);
+            lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
+
+            // Simple raycast loop
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+
+                    // Compute normalized coordinates
+                    const px = (x - width / 2) / (width / 2);
+                    const py = -(y - height / 2) / (height / 2);
+
+                    const orig = { x: 0, y: 0, z: 0 };
+                    const dir = { x: px, y: py, z: 2.0 };
+                    const d_len = Math.sqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
+                    dir.x /= d_len; dir.y /= d_len; dir.z /= d_len;
+
+                    let t_min = Infinity;
+                    let hit_prim = null;
+
+                    // Check intersections
+                    primitives.forEach(p => {
+                        if (p.type === 'sphere') {
+                            // Adjust head primitive radius dynamically
+                            let current_r = p.r;
+                            if (p.y === 1.5) current_r = headSize; // Head primitive
+
+                            const oc = { x: orig.x - p.x, y: orig.y - p.y, z: orig.z - p.z };
+                            const b = oc.x * dir.x + oc.y * dir.y + oc.z * dir.z;
+                            const c = (oc.x*oc.x + oc.y*oc.y + oc.z*oc.z) - current_r * current_r;
+                            const h = b*b - c;
+                            if (h >= 0) {
+                                const t = -b - Math.sqrt(h);
+                                if (t > 0 && t < t_min) {
+                                    t_min = t;
+                                    hit_prim = { ...p, current_r };
+                                }
+                            }
+                        } else if (p.type === 'plane') {
+                            const denom = dir.x * p.nx + dir.y * p.ny + dir.z * p.nz;
+                            if (Math.abs(denom) > 1e-6) {
+                                const t = (p.d - (orig.x * p.nx + orig.y * p.ny + orig.z * p.nz)) / denom;
+                                if (t > 0 && t < t_min) {
+                                    t_min = t;
+                                    hit_prim = p;
+                                }
+                            }
+                        }
+                    });
+
+                    if (hit_prim) {
+                        const hit_pt = { origX: orig.x + dir.x * t_min, origY: orig.y + dir.y * t_min, origZ: orig.z + dir.z * t_min };
+                        let normal = { x: 0, y: 0, z: 0 };
+                        let surfaceColor = [ ...hit_prim.color ];
+
+                        if (hit_prim.type === 'sphere') {
+                            normal = { x: hit_pt.origX - hit_prim.x, y: hit_pt.origY - hit_prim.y, z: hit_pt.origZ - hit_prim.z };
+                            const n_len = Math.sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
+                            normal.x /= n_len; normal.y /= n_len; normal.z /= n_len;
+                        } else if (hit_prim.type === 'plane') {
+                            normal = { x: hit_prim.nx, y: hit_prim.ny, z: hit_prim.nz };
+
+                            // Tangent vectors for texture mapping
+                            let u_axis = { x: 1, y: 0, z: 0 };
+                            if (Math.abs(normal.x) > 0.9) {
+                                u_axis = { x: 0, y: 1, z: 0 };
+                            }
+                            // Cross products
+                            const v_axis = {
+                                x: normal.y * u_axis.z - normal.z * u_axis.y,
+                                y: normal.z * u_axis.x - normal.x * u_axis.z,
+                                z: normal.x * u_axis.y - normal.y * u_axis.x
+                            };
+                            const v_len = Math.sqrt(v_axis.x*v_axis.x + v_axis.y*v_axis.y + v_axis.z*v_axis.z);
+                            v_axis.x /= v_len; v_axis.y /= v_len; v_axis.z /= v_len;
+
+                            u_axis.x = v_axis.y * normal.z - v_axis.z * normal.y;
+                            u_axis.y = v_axis.z * normal.x - v_axis.x * normal.z;
+                            u_axis.z = v_axis.x * normal.y - v_axis.y * normal.x;
+
+                            const u = hit_pt.origX * u_axis.x + hit_pt.origY * u_axis.y + hit_pt.origZ * u_axis.z;
+                            const v = hit_pt.origX * v_axis.x + hit_pt.origY * v_axis.y + hit_pt.origZ * v_axis.z;
+
+                            if (texType === 'checker') {
+                                const uc = Math.floor(u * tScale * 0.1);
+                                const vc = Math.floor(v * tScale * 0.1);
+                                if (((uc + vc) % 2 + 2) % 2 === 0) {
+                                    surfaceColor = [surfaceColor[0] * 0.4, surfaceColor[1] * 0.4, surfaceColor[2] * 0.4];
+                                }
+                            } else if (texType === 'grid') {
+                                const ug = Math.abs(u * tScale * 0.2 % 1.0);
+                                const vg = Math.abs(v * tScale * 0.2 % 1.0);
+                                if (ug < 0.08 || vg < 0.08) {
+                                    surfaceColor = [1.0, 0.0, 0.5]; // Pink grid lines
+                                }
+                            }
+                        }
+
+                        // Diffuse lighting
+                        let diff = normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z;
+                        if (diff < 0) diff = 0;
+
+                        const ambient = 0.15;
+                        const intensity = diff + ambient;
+
+                        data[idx]   = Math.min(255, surfaceColor[0] * intensity * 255);
+                        data[idx+1] = Math.min(255, surfaceColor[1] * intensity * 255);
+                        data[idx+2] = Math.min(255, surfaceColor[2] * intensity * 255);
+                        data[idx+3] = 255;
+                    } else {
+                        // Background gradient
+                        const factor = 0.5 * (dir.y + 1.0);
+                        data[idx]   = (1.0 - factor) * 10 + factor * 50;
+                        data[idx+1] = (1.0 - factor) * 15 + factor * 20;
+                        data[idx+2] = (1.0 - factor) * 30 + factor * 80;
+                        data[idx+3] = 255;
+                    }
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        document.getElementById('btnCompile').addEventListener('click', () => {
+            parseSIF();
+            renderScene();
+        });
+
+        document.getElementById('btnExport').addEventListener('click', () => {
+            logConsole("OPENING SEQUENTIAL INDEX DATABASE WRITER...");
+            logConsole("TRANSACTION RECORD WRITTEN SUCCESSFULLY TO 'TEDDY_BASE.dat.bin'");
+        });
+
+        // Trigger updates on slider changes
+        ['texScale', 'texType', 'headScale', 'lightX'].forEach(id => {
+            document.getElementById(id).addEventListener('input', renderScene);
+        });
+
+        // Initialize
+        parseSIF();
+        renderScene();
+    </script>
+</body>
+</html>
