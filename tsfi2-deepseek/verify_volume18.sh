@@ -195,8 +195,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 240 | IRS IMF Account Reconciler | PASS | Validates balance status parameters against transaction list logs | Volume 33 |
 | 241 | IRS IMF DLN Validator | PASS | Natively validates locator code patterns and date ranges | Volume 33 |
 | 242 | IRS CADE Batch Report Formatter | PASS | Formats aggregate run statistics into spool layout lines | Volume 33 |
+| 243 | IRS IMF Document Code Resolver | PASS | Resolves form names from Master File document identifiers | Volume 33 |
+| 244 | IRS CADE Taxpayer Registry Exporter | PASS | Exports registry data layout fields to export stream buffers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 242 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 244 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

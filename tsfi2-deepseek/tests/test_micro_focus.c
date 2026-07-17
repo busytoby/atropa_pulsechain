@@ -1411,6 +1411,22 @@ int main(void) {
     assert(strstr(batch_summary, "CREDIT:150000.00") != NULL);
     printf("  [PASS] IRS CADE Batch Report Formatter verified.\n");
 
+    // 132. Verify IRS IMF Document Code name resolver
+    printf("[TEST] Validating IRS IMF Doc Code Resolver...\n");
+    char doc_name[32] = {0};
+    int get_doc_res = tsfi_mf_imf_get_doc_code_name(20, doc_name, sizeof(doc_name));
+    assert(get_doc_res == 0);
+    assert(strcmp(doc_name, "Form 1120") == 0);
+    printf("  [PASS] IRS IMF Doc Code Resolver verified.\n");
+
+    // 133. Verify IRS CADE Taxpayer Registry Exporter
+    printf("[TEST] Validating IRS CADE Registry Exporter...\n");
+    char exported_reg[256] = {0};
+    int exp_res = tsfi_mf_cade_export_registry(taxpayer_registry, exported_reg, sizeof(exported_reg));
+    assert(exp_res == 0);
+    assert(strstr(exported_reg, "BAL:1100.00") != NULL);
+    printf("  [PASS] IRS CADE Registry Exporter verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -269,3 +269,35 @@ int tsfi_mf_cade_format_batch_summary(int processed, int errors, double total_de
     snprintf(out_buf, max_len, "PROC:%06d|ERR:%04d|DEBIT:%.2f|CREDIT:%.2f", processed, errors, total_debit, total_credit);
     return 0;
 }
+
+int tsfi_mf_imf_get_doc_code_name(int doc_code, char *name_out, int max_len) {
+    if (!name_out || max_len <= 0) return -1;
+
+    switch (doc_code) {
+        case 10:
+            snprintf(name_out, max_len, "Form 1040");
+            break;
+        case 20:
+            snprintf(name_out, max_len, "Form 1120");
+            break;
+        case 30:
+            snprintf(name_out, max_len, "Form 941");
+            break;
+        default:
+            snprintf(name_out, max_len, "Form Misc");
+            break;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_export_registry(const char *registry_pool, char *export_buf, int max_len) {
+    if (!registry_pool || !export_buf || max_len <= 0) return -1;
+
+    int copy_len = strlen(registry_pool);
+    if (copy_len >= max_len) {
+        copy_len = max_len - 1;
+    }
+    memcpy(export_buf, registry_pool, copy_len);
+    export_buf[copy_len] = '\0';
+    return 0;
+}
