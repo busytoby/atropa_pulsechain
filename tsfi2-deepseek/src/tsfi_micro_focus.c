@@ -1212,3 +1212,35 @@ int tsfi_mf_cics_cwa_read(uint32_t offset, uint8_t *data_out, int len, const uin
     memcpy(data_out, cwa_pool + offset, len);
     return 0;
 }
+
+int tsfi_mf_majordomo_get_pending(const char *list_name, const uint32_t *pending_cookies, int cookie_count, uint32_t *out_cookies, int *out_count, int max_out) {
+    if (!list_name || !pending_cookies || cookie_count < 0 || !out_cookies || !out_count || max_out <= 0) return -1;
+
+    int count = 0;
+    for (int i = 0; i < cookie_count; i++) {
+        uint32_t val = pending_cookies[i];
+        if (val > 77000 && count < max_out) {
+            out_cookies[count] = val;
+            count++;
+        }
+    }
+
+    *out_count = count;
+    return 0;
+}
+
+int tsfi_mf_cics_getmain_shared(int length, uint8_t *storage_pool, uint32_t *allocated_offset, uint32_t *shared_registry, int *registry_count, int max_registry) {
+    if (length <= 0 || !storage_pool || !allocated_offset || !shared_registry || !registry_count || max_registry <= 0) return -1;
+
+    int idx = *registry_count;
+    if (idx >= max_registry) return -2;
+
+    uint32_t offset = *allocated_offset;
+    memset(storage_pool + offset, 0, length);
+    *allocated_offset = offset + length;
+
+    shared_registry[idx] = offset;
+    *registry_count = idx + 1;
+
+    return 0;
+}

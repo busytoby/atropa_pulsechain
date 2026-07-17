@@ -116,8 +116,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 161 | CICS Dump Control Emulator | PASS | Transaction storage block hexadecimal dump | Volume 33 |
 | 162 | Majordomo Moderation Queue Logger | PASS | Pending subscriber list approval queues | Volume 33 |
 | 163 | CICS Common Work Area Emulator | PASS | Global storage partition read/write sharing | Volume 33 |
+| 164 | Majordomo Pending Cookies List | PASS | Pending moderation token filters | Volume 33 |
+| 165 | CICS Shared Storage Area Allocator | PASS | Task-independent memory allocation registry | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 163 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 165 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

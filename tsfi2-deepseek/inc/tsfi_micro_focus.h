@@ -57,7 +57,9 @@ int tsfi_mf_majordomo_unsubscribe(const char *list_name, const char *email, cons
 int tsfi_mf_majordomo_moderate(uint32_t cookie, const char *action, char *verdict_out, int max_len);
 int tsfi_mf_majordomo_gen_cookie(const char *email, const char *list_name, uint32_t salt, char *cookie_out, int max_len);
 int tsfi_mf_majordomo_queue_post(const char *list_name, const char *sender, const char *subject, uint32_t *pending_cookies, int *cookie_count, int max_cookies);
+int tsfi_mf_majordomo_get_pending(const char *list_name, const uint32_t *pending_cookies, int cookie_count, uint32_t *out_cookies, int *out_count, int max_out);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
+int tsfi_mf_cics_getmain_shared(int length, uint8_t *storage_pool, uint32_t *allocated_offset, uint32_t *shared_registry, int *registry_count, int max_registry);
 int tsfi_mf_cics_cwa_write(uint32_t offset, const uint8_t *data, int len, uint8_t *cwa_pool);
 int tsfi_mf_cics_cwa_read(uint32_t offset, uint8_t *data_out, int len, const uint8_t *cwa_pool);
 int tsfi_mf_cics_dump(const char *dump_id, uint32_t code, const uint8_t *payload, int len, char *dump_out, int max_len);

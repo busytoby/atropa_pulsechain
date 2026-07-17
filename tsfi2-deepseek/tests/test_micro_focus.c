@@ -703,6 +703,31 @@ int main(void) {
     assert(cwa_out[3] == 0x44);
     printf("  [PASS] CICS Common Work Area verified.\n");
 
+    // 54. Verify Majordomo Pending Moderation Cookie List
+    printf("[TEST] Validating Majordomo Pending Cookie List...\n");
+    uint32_t active_cookies[4] = {78120, 1002, 78550, 203};
+    uint32_t filtered_cookies[4] = {0};
+    int filtered_count = 0;
+    int filter_res = tsfi_mf_majordomo_get_pending("zmm-dev", active_cookies, 4, filtered_cookies, &filtered_count, 4);
+    assert(filter_res == 0);
+    assert(filtered_count == 2);
+    assert(filtered_cookies[0] == 78120);
+    assert(filtered_cookies[1] == 78550);
+    printf("  [PASS] Majordomo Pending Cookie List verified.\n");
+
+    // 55. Verify CICS Shared Storage Area (SSA) Allocator
+    printf("[TEST] Validating CICS FREEMAIN/GETMAIN Shared...\n");
+    uint8_t sh_pool[512] = {0};
+    uint32_t sh_offset = 64;
+    uint32_t sh_reg[8] = {0};
+    int sh_reg_count = 0;
+    int sh_alloc = tsfi_mf_cics_getmain_shared(32, sh_pool, &sh_offset, sh_reg, &sh_reg_count, 8);
+    assert(sh_alloc == 0);
+    assert(sh_offset == 96);
+    assert(sh_reg_count == 1);
+    assert(sh_reg[0] == 64);
+    printf("  [PASS] CICS Shared Storage Area verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
