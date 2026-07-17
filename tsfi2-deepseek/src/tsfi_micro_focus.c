@@ -1874,3 +1874,23 @@ int tsfi_mf_cics_inquire_tranclass_maxtasks(const char *class_name, int maxtasks
     *maxtasks_out = maxtasks_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_is_closed(const char *config, int *is_cl) {
+    if (!config || !is_cl) return -1;
+
+    *is_cl = 0;
+    char val[64];
+    int get_res = tsfi_mf_majordomo_get_config("subscribe", config, val, sizeof(val));
+    if (get_res == 0 && strcmp(val, "closed") == 0) {
+        *is_cl = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_tranclass_percent(const char *class_name, int acttasks_registry, int maxtasks_registry, float *percent_out) {
+    (void)class_name;
+    if (!percent_out || maxtasks_registry <= 0) return -1;
+
+    *percent_out = ((float)acttasks_registry / (float)maxtasks_registry) * 100.0f;
+    return 0;
+}

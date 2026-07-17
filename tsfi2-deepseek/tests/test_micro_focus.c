@@ -1213,6 +1213,22 @@ int main(void) {
     assert(class_maxtasks_val == 8);
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS MAXTASKS verified.\n");
 
+    // 111. Verify Majordomo List Config Closed Enrollment State Checker
+    printf("[TEST] Validating Majordomo Closed Enrollment Checker...\n");
+    int config_closed = -1;
+    int is_cl_res = tsfi_mf_majordomo_is_closed("list = zmm-dev\nsubscribe = closed\n", &config_closed);
+    assert(is_cl_res == 0);
+    assert(config_closed == 1);
+    printf("  [PASS] Majordomo Closed Enrollment Checker verified.\n");
+
+    // 112. Verify CICS System Inquire Transaction Class Active Percentage Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM TRANCLASS ACTPERCENT...\n");
+    float class_percent_val = 0.0f;
+    int inq_cls_pct_res = tsfi_mf_cics_inquire_tranclass_percent("FASTTRAN", 2, 8, &class_percent_val);
+    assert(inq_cls_pct_res == 0);
+    assert(class_percent_val == 25.0f);
+    printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS ACTPERCENT verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

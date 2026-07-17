@@ -173,8 +173,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 218 | CICS Transaction Class Queued Tasks Inquirer | PASS | Checks count of queued tasks for transaction class | Volume 33 |
 | 219 | Majordomo KV Value Extractor | PASS | Extract value from key-value configuration lines | Volume 33 |
 | 220 | CICS Transaction Class Max Tasks Inquirer | PASS | Checks max concurrent tasks for transaction class | Volume 33 |
+| 221 | Majordomo Closed Checker | PASS | Verification utility checking list closed enrollment settings | Volume 33 |
+| 222 | CICS Transaction Class Capacity Percentage Inquirer | PASS | Checks active tasks percentage for transaction class | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 220 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 222 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
