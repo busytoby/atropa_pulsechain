@@ -2179,6 +2179,85 @@ int main(void) {
     
     printf("  [PASS] Univac selective posting interpreter master/detail posting verified.\n");
 
+    // Test Scenario 41: Burton Grad's Decision Table Compiler
+    printf("[Test] Verifying Burton Grad's Decision Table Compiler...\n");
+    tsfi_decision_table dtable;
+    memset(&dtable, 0, sizeof(dtable));
+    strcpy(dtable.condition_op[0], "==");
+    dtable.condition_reg_a[0] = 0; // R0
+    dtable.condition_reg_b[0] = 1; // R1
+    strcpy(dtable.action_op[0], "MOVE");
+    dtable.action_reg[0] = 2; // R2
+    dtable.action_val[0] = 42;
+    dtable.rule_count = 1;
+    
+    uint8_t dt_bytecode[64];
+    int dt_len = tsfi_compile_decision_table(&dtable, dt_bytecode, 64);
+    assert(dt_len > 0);
+    
+    // Test case 1: condition matches (R0 == R1)
+    TSFiStrategyVM dt_vm1;
+    tsfi_strategy_vm_init(&dt_vm1);
+    dt_vm1.registers[0] = 5;
+    dt_vm1.registers[1] = 5;
+    int exec_res_dt = tsfi_strategy_vm_execute_bytecode(&dt_vm1, NULL, dt_bytecode, dt_len, NULL);
+    assert(exec_res_dt == 0);
+    assert(dt_vm1.registers[2] == 42);
+    
+    // Test case 2: condition fails (R0 != R1)
+    TSFiStrategyVM dt_vm2;
+    tsfi_strategy_vm_init(&dt_vm2);
+    dt_vm2.registers[0] = 5;
+    dt_vm2.registers[1] = 6;
+    exec_res_dt = tsfi_strategy_vm_execute_bytecode(&dt_vm2, NULL, dt_bytecode, dt_len, NULL);
+    assert(exec_res_dt == 0);
+    assert(dt_vm2.registers[2] == 0);
+    printf("  [PASS] Decision table compiler output compiled and executed successfully.\n");
+    
+    // Test Scenario 42: Fully Associative TLB Cache (Manchester Atlas PAR Extension)
+    printf("[Test] Verifying Fully Associative TLB Cache...\n");
+    tsfi_atlas_tlb_cache tlb;
+    tsfi_atlas_tlb_init(&tlb);
+    
+    // Insert 4 pages
+    tsfi_atlas_tlb_insert(&tlb, 0x10, 0x1000);
+    tsfi_atlas_tlb_insert(&tlb, 0x20, 0x2000);
+    tsfi_atlas_tlb_insert(&tlb, 0x30, 0x3000);
+    tsfi_atlas_tlb_insert(&tlb, 0x40, 0x4000);
+    
+    // Access page 0x10 to update its LRU status
+    uint32_t real_pg = 0;
+    int tlb_res = tsfi_atlas_tlb_lookup(&tlb, 0x10, &real_pg);
+    assert(tlb_res == 0 && real_pg == 0x1000);
+    
+    // Insert 5th page -> should evict page 0x20 (the LRU page)
+    tsfi_atlas_tlb_insert(&tlb, 0x50, 0x5000);
+    
+    // Page 0x10 should still hit
+    tlb_res = tsfi_atlas_tlb_lookup(&tlb, 0x10, &real_pg);
+    assert(tlb_res == 0);
+    
+    // Page 0x20 should miss
+    tlb_res = tsfi_atlas_tlb_lookup(&tlb, 0x20, &real_pg);
+    assert(tlb_res == -2);
+    printf("  [PASS] TLB Fully Associative LRU Cache replacement verified.\n");
+    
+    // Test Scenario 43: WinchesterMQ Loopback Socket Driver
+    printf("[Test] Verifying WinchesterMQ Socket Driver...\n");
+    tsfi_winchester_socket_bridge bridge;
+    tsfi_winchester_socket_init(&bridge, 9999);
+    
+    TSFiPriorityQueue socket_pq;
+    socket_pq.size = 0;
+    
+    uint8_t packet[] = { 32 }; // keycode 32
+    int socket_res = tsfi_winchester_socket_route_event(&bridge, packet, 1, &socket_pq);
+    assert(socket_res == 0);
+    assert(bridge.processed_packets == 1);
+    assert(socket_pq.size == 1);
+    assert(socket_pq.items[0].keycode == 32);
+    printf("  [PASS] WinchesterMQ loopback socket bridge packets routed to task queue.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 

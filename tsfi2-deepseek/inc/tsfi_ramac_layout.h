@@ -701,4 +701,41 @@ typedef struct {
 void tsfi_univac_posting_init(tsfi_univac_posting_interpreter *interp);
 int tsfi_univac_posting_process(tsfi_univac_posting_interpreter *interp, const tsfi_ramac_card *card_in, tsfi_ramac_card *card_out);
 
+// Burton Grad's Decision Table Compiler
+typedef struct {
+    char condition_op[4][8];    // "==", "<", ">"
+    int condition_reg_a[4];     // register index (e.g. 0 for R0)
+    int condition_reg_b[4];     // register index (e.g. 1 for R1)
+    int condition_val[4];       // constant value if reg_b is -1
+    int action_reg[4];          // target register for action
+    int action_val[4];          // constant value for action
+    char action_op[4][8];       // "MOVE", "ADD"
+    int rule_count;
+} tsfi_decision_table;
+
+int tsfi_compile_decision_table(const tsfi_decision_table *table, uint8_t *bytecode_out, int max_len);
+
+// Fully Associative TLB Cache (Manchester Atlas PAR Extension)
+typedef struct {
+    uint32_t virtual_pages[4];
+    uint32_t real_pages[4];
+    int valid_bits[4];
+    uint32_t access_timestamp[4];
+    uint32_t clock_counter;
+} tsfi_atlas_tlb_cache;
+
+void tsfi_atlas_tlb_init(tsfi_atlas_tlb_cache *tlb);
+int tsfi_atlas_tlb_lookup(tsfi_atlas_tlb_cache *tlb, uint32_t virtual_page, uint32_t *real_page_out);
+void tsfi_atlas_tlb_insert(tsfi_atlas_tlb_cache *tlb, uint32_t virtual_page, uint32_t real_page);
+
+// WinchesterMQ Socket loopback driver
+typedef struct {
+    int listen_port;
+    int connection_active;
+    int processed_packets;
+} tsfi_winchester_socket_bridge;
+
+void tsfi_winchester_socket_init(tsfi_winchester_socket_bridge *bridge, int port);
+int tsfi_winchester_socket_route_event(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, void *pq);
+
 #endif // TSFI_RAMAC_LAYOUT_H

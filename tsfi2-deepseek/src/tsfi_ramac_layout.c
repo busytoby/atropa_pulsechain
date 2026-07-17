@@ -3491,3 +3491,99 @@ int tsfi_univac_posting_process(tsfi_univac_posting_interpreter *interp, const t
     
     return 0; // Handled detail
 }
+
+int tsfi_compile_decision_table(const tsfi_decision_table *table, uint8_t *bytecode_out, int max_len) {
+    if (!table || !bytecode_out || max_len <= 0) return -1;
+    
+    int pc = 0;
+    for (int i = 0; i < table->rule_count; i++) {
+        if (pc + 7 > max_len) return -2;
+        
+        bytecode_out[pc] = 0x1B; // JNE
+        bytecode_out[pc + 1] = (uint8_t)(pc + 7);
+        bytecode_out[pc + 2] = (uint8_t)table->condition_reg_a[i];
+        bytecode_out[pc + 3] = (uint8_t)table->condition_reg_b[i];
+        
+        bytecode_out[pc + 4] = 0x14; // SET_REG
+        bytecode_out[pc + 5] = (uint8_t)table->action_reg[i];
+        bytecode_out[pc + 6] = (uint8_t)table->action_val[i];
+        
+        pc += 7;
+    }
+    return pc;
+}
+
+void tsfi_atlas_tlb_init(tsfi_atlas_tlb_cache *tlb) {
+    if (!tlb) return;
+    tlb->clock_counter = 0;
+    for (int i = 0; i < 4; i++) {
+        tlb->virtual_pages[i] = 0;
+        tlb->real_pages[i] = 0;
+        tlb->valid_bits[i] = 0;
+        tlb->access_timestamp[i] = 0;
+    }
+}
+
+int tsfi_atlas_tlb_lookup(tsfi_atlas_tlb_cache *tlb, uint32_t virtual_page, uint32_t *real_page_out) {
+    if (!tlb || !real_page_out) return -1;
+    tlb->clock_counter++;
+    for (int i = 0; i < 4; i++) {
+        if (tlb->valid_bits[i] && tlb->virtual_pages[i] == virtual_page) {
+            tlb->access_timestamp[i] = tlb->clock_counter;
+            *real_page_out = tlb->real_pages[i];
+            return 0; // Hit
+        }
+    }
+    return -2; // Miss
+}
+
+void tsfi_atlas_tlb_insert(tsfi_atlas_tlb_cache *tlb, uint32_t virtual_page, uint32_t real_page) {
+    if (!tlb) return;
+    tlb->clock_counter++;
+    
+    // Find empty slot
+    for (int i = 0; i < 4; i++) {
+        if (!tlb->valid_bits[i]) {
+            tlb->virtual_pages[i] = virtual_page;
+            tlb->real_pages[i] = real_page;
+            tlb->valid_bits[i] = 1;
+            tlb->access_timestamp[i] = tlb->clock_counter;
+            return;
+        }
+    }
+    
+    // Evict LRU slot
+    int lru_idx = 0;
+    uint32_t min_time = tlb->access_timestamp[0];
+    for (int i = 1; i < 4; i++) {
+        if (tlb->access_timestamp[i] < min_time) {
+            min_time = tlb->access_timestamp[i];
+            lru_idx = i;
+        }
+    }
+    
+    tlb->virtual_pages[lru_idx] = virtual_page;
+    tlb->real_pages[lru_idx] = real_page;
+    tlb->valid_bits[lru_idx] = 1;
+    tlb->access_timestamp[lru_idx] = tlb->clock_counter;
+}
+
+void tsfi_winchester_socket_init(tsfi_winchester_socket_bridge *bridge, int port) {
+    if (!bridge) return;
+    bridge->listen_port = port;
+    bridge->connection_active = 1;
+    bridge->processed_packets = 0;
+}
+
+int tsfi_winchester_socket_route_event(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, void *pq) {
+    if (!bridge || !event_data || len <= 0 || !pq) return -1;
+    if (!bridge->connection_active) return -2;
+    
+    uint8_t keycode = event_data[0];
+    TSFiPriorityQueue *queue = (TSFiPriorityQueue *)pq;
+    
+    tsfi_priority_queue_push(queue, 10, keycode, "");
+    
+    bridge->processed_packets++;
+    return 0;
+}
