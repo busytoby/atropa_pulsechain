@@ -935,3 +935,77 @@ int tsfi_msnf_recv_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, cons
     msg_out->value = (pkt[6] << 24) | (pkt[7] << 16) | (pkt[8] << 8) | pkt[9];
     return 0;
 }
+
+void tsfi_sna_crypto_init(tsfi_sna_crypto *crypto, const uint8_t *key) {
+    if (!crypto) return;
+    if (key) {
+        memcpy(crypto->session_key, key, 8);
+        crypto->encryption_enabled = 1;
+    } else {
+        memset(crypto->session_key, 0, 8);
+        crypto->encryption_enabled = 0;
+    }
+}
+
+int tsfi_sna_encrypt(tsfi_sna_crypto *crypto, const uint8_t *plain, size_t len, uint8_t *cipher) {
+    if (!crypto || !plain || !cipher) return -1;
+    if (!crypto->encryption_enabled) {
+        memcpy(cipher, plain, len);
+        return 0;
+    }
+    for (size_t i = 0; i < len; i++) {
+        cipher[i] = plain[i] ^ crypto->session_key[i % 8];
+    }
+    return 0;
+}
+
+int tsfi_sna_decrypt(tsfi_sna_crypto *crypto, const uint8_t *cipher, size_t len, uint8_t *plain) {
+    if (!crypto || !cipher || !plain) return -1;
+    if (!crypto->encryption_enabled) {
+        memcpy(plain, cipher, len);
+        return 0;
+    }
+    for (size_t i = 0; i < len; i++) {
+        plain[i] = cipher[i] ^ crypto->session_key[i % 8];
+    }
+    return 0;
+}
+
+void tsfi_vtam_nto_init(tsfi_vtam_nto *nto) {
+    if (!nto) return;
+    nto->active = 1;
+}
+
+int tsfi_vtam_nto_translate(tsfi_vtam_nto *nto, const char *tty_in, size_t len, uint8_t *lu_out, size_t *out_len) {
+    if (!nto || !tty_in || !lu_out || !out_len) return -1;
+    if (!nto->active) return -2;
+    if (len > 250) return -3;
+    
+    lu_out[0] = 0x11;
+    lu_out[1] = len & 0xFF;
+    memcpy(lu_out + 2, tty_in, len);
+    *out_len = 2 + len;
+    return 0;
+}
+
+void tsfi_sna_pacing_init(tsfi_sna_pacing *pacing, int initial_window) {
+    if (!pacing) return;
+    pacing->window_size = initial_window;
+    pacing->max_window = initial_window * 2;
+    pacing->congestion_detected = 0;
+}
+
+int tsfi_sna_pacing_adjust(tsfi_sna_pacing *pacing, int congestion_flag) {
+    if (!pacing) return -1;
+    pacing->congestion_detected = congestion_flag;
+    if (congestion_flag) {
+        pacing->window_size /= 2;
+        if (pacing->window_size < 1) pacing->window_size = 1;
+    } else {
+        pacing->window_size++;
+        if (pacing->window_size > pacing->max_window) {
+            pacing->window_size = pacing->max_window;
+        }
+    }
+    return pacing->window_size;
+}

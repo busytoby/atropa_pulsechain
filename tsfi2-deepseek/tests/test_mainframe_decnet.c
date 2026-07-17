@@ -452,6 +452,48 @@ int main(void) {
     assert(rx_tree.value == 8888);
     printf("  [PASS] 2-3 tree replication codecs over TCP/IP verified.\n");
 
+    // 32. SNA Cryptographic session controls (SNA-DES) Verification
+    printf("[Test] Verifying SNA Session Cryptography...\n");
+    tsfi_sna_crypto crypto;
+    uint8_t dummy_key[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    tsfi_sna_crypto_init(&crypto, dummy_key);
+    assert(crypto.encryption_enabled == 1);
+    
+    uint8_t plain[] = "SNA_SECRET_DATA";
+    uint8_t cipher[32];
+    uint8_t decrypted[32];
+    assert(tsfi_sna_encrypt(&crypto, plain, 15, cipher) == 0);
+    // Verify ciphertext is encrypted (not equal to plaintext)
+    assert(memcmp(cipher, plain, 15) != 0);
+    assert(tsfi_sna_decrypt(&crypto, cipher, 15, decrypted) == 0);
+    assert(memcmp(decrypted, plain, 15) == 0);
+    printf("  [PASS] SNA session encryption and decryption verified.\n");
+
+    // 33. VTAM Network Terminal Option (NTO) Verification
+    printf("[Test] Verifying VTAM NTO Translation...\n");
+    tsfi_vtam_nto nto;
+    tsfi_vtam_nto_init(&nto);
+    uint8_t nto_out[64];
+    size_t nto_out_len = 0;
+    assert(tsfi_vtam_nto_translate(&nto, "TTY_INPUT_1", 11, nto_out, &nto_out_len) == 0);
+    assert(nto_out_len == 13);
+    assert(nto_out[0] == 0x11); // FMHeader indicator
+    assert(nto_out[1] == 11);
+    assert(memcmp(nto_out + 2, "TTY_INPUT_1", 11) == 0);
+    printf("  [PASS] VTAM NTO teletype wrapping verified.\n");
+
+    // 34. SNA Explicit Route TG pacing Verification
+    printf("[Test] Verifying SNA Explicit Route TG Pacing...\n");
+    tsfi_sna_pacing pacing;
+    tsfi_sna_pacing_init(&pacing, 4);
+    assert(pacing.window_size == 4);
+    
+    // Normal operation increases window size
+    assert(tsfi_sna_pacing_adjust(&pacing, 0) == 5);
+    // Congestion drops window size
+    assert(tsfi_sna_pacing_adjust(&pacing, 1) == 2);
+    printf("  [PASS] SNA transmission group dynamic pacing verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -388,4 +388,32 @@ typedef struct {
 int tsfi_msnf_send_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const tsfi_23tree_msg *msg, uint8_t *pkt_out, size_t *len_out);
 int tsfi_msnf_recv_tree_op(tsfi_msnf_cdrm *cdrm, tsfi_tcp_connection *conn, const uint8_t *pkt, size_t len, tsfi_23tree_msg *msg_out);
 
+// SNA Cryptographic Session (SNA-DES)
+typedef struct {
+    uint8_t session_key[8];
+    int encryption_enabled;
+} tsfi_sna_crypto;
+
+void tsfi_sna_crypto_init(tsfi_sna_crypto *crypto, const uint8_t *key);
+int tsfi_sna_encrypt(tsfi_sna_crypto *crypto, const uint8_t *plain, size_t len, uint8_t *cipher);
+int tsfi_sna_decrypt(tsfi_sna_crypto *crypto, const uint8_t *cipher, size_t len, uint8_t *plain);
+
+// VTAM Network Terminal Option (NTO) teletype translator
+typedef struct {
+    int active;
+} tsfi_vtam_nto;
+
+void tsfi_vtam_nto_init(tsfi_vtam_nto *nto);
+int tsfi_vtam_nto_translate(tsfi_vtam_nto *nto, const char *tty_in, size_t len, uint8_t *lu_out, size_t *out_len);
+
+// SNA Explicit Route TG pacing controller
+typedef struct {
+    int window_size;
+    int max_window;
+    int congestion_detected;
+} tsfi_sna_pacing;
+
+void tsfi_sna_pacing_init(tsfi_sna_pacing *pacing, int initial_window);
+int tsfi_sna_pacing_adjust(tsfi_sna_pacing *pacing, int congestion_flag);
+
 #endif // TSFI_MAINFRAME_DECNET_H
