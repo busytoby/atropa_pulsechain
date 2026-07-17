@@ -1909,4 +1909,43 @@ int tsfi_cp_spool_router_match(const tsfi_cp_spool_class_router *router, const c
 
 int tsfi_cp_spool_transfer(tsfi_cp_spool_queue_v3 *src_q, tsfi_cp_spool_queue_v3 *dst_q, int file_id);
 
+// VM/370 Release 3 Discontiguous Shared Segment (DCSS) Manager
+typedef struct {
+    char segment_name[16];
+    uint32_t start_address;
+    uint32_t end_address;
+    int is_loaded;
+} tsfi_cp_dcss_segment;
+
+#define MAX_DCSS_SEGMENTS 8
+typedef struct {
+    tsfi_cp_dcss_segment segments[MAX_DCSS_SEGMENTS];
+    int count;
+} tsfi_cp_dcss_manager;
+
+void tsfi_cp_dcss_init(tsfi_cp_dcss_manager *mgr);
+int tsfi_cp_dcss_register(tsfi_cp_dcss_manager *mgr, const char *name, uint32_t start_addr, uint32_t end_addr);
+int tsfi_cp_dcss_diagnose_find(const tsfi_cp_dcss_manager *mgr, const char *name);
+int tsfi_cp_dcss_diagnose_load(tsfi_cp_dcss_manager *mgr, const char *name);
+int tsfi_cp_dcss_diagnose_purge(tsfi_cp_dcss_manager *mgr, const char *name);
+
+// CMS VSAM Indexed Access Simulator
+typedef struct {
+    char key[32];
+    char val[64];
+} tsfi_vsam_record;
+
+#define MAX_VSAM_RECORDS 16
+typedef struct {
+    tsfi_vsam_record records[MAX_VSAM_RECORDS];
+    int count;
+    int is_opened;
+} tsfi_vsam_file;
+
+void tsfi_vsam_init(tsfi_vsam_file *file);
+int tsfi_vsam_open(tsfi_vsam_file *file);
+int tsfi_vsam_close(tsfi_vsam_file *file);
+int tsfi_vsam_put(tsfi_vsam_file *file, const char *key, const char *val);
+int tsfi_vsam_get(const tsfi_vsam_file *file, const char *key, char *out_val, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

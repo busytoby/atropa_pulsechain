@@ -6924,3 +6924,107 @@ int tsfi_cp_spool_transfer(tsfi_cp_spool_queue_v3 *src_q, tsfi_cp_spool_queue_v3
     
     return (moved_count > 0) ? 0 : -1;
 }
+
+void tsfi_cp_dcss_init(tsfi_cp_dcss_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_cp_dcss_manager));
+}
+
+int tsfi_cp_dcss_register(tsfi_cp_dcss_manager *mgr, const char *name, uint32_t start_addr, uint32_t end_addr) {
+    if (!mgr || !name || mgr->count >= MAX_DCSS_SEGMENTS) return -1;
+    strncpy(mgr->segments[mgr->count].segment_name, name, sizeof(mgr->segments[mgr->count].segment_name) - 1);
+    mgr->segments[mgr->count].segment_name[sizeof(mgr->segments[mgr->count].segment_name) - 1] = '\0';
+    mgr->segments[mgr->count].start_address = start_addr;
+    mgr->segments[mgr->count].end_address = end_addr;
+    mgr->segments[mgr->count].is_loaded = 0;
+    mgr->count++;
+    return 0;
+}
+
+int tsfi_cp_dcss_diagnose_find(const tsfi_cp_dcss_manager *mgr, const char *name) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->segments[i].segment_name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_dcss_diagnose_load(tsfi_cp_dcss_manager *mgr, const char *name) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->segments[i].segment_name, name) == 0) {
+            mgr->segments[i].is_loaded = 1;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_dcss_diagnose_purge(tsfi_cp_dcss_manager *mgr, const char *name) {
+    if (!mgr || !name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->segments[i].segment_name, name) == 0) {
+            mgr->segments[i].is_loaded = 0;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void tsfi_vsam_init(tsfi_vsam_file *file) {
+    if (!file) return;
+    memset(file, 0, sizeof(tsfi_vsam_file));
+}
+
+int tsfi_vsam_open(tsfi_vsam_file *file) {
+    if (!file) return -1;
+    file->is_opened = 1;
+    return 0;
+}
+
+int tsfi_vsam_close(tsfi_vsam_file *file) {
+    if (!file) return -1;
+    file->is_opened = 0;
+    return 0;
+}
+
+int tsfi_vsam_put(tsfi_vsam_file *file, const char *key, const char *val) {
+    if (!file || !file->is_opened || !key || !val) return -1;
+    
+    for (int i = 0; i < file->count; i++) {
+        if (strcmp(file->records[i].key, key) == 0) {
+            strncpy(file->records[i].val, val, sizeof(file->records[i].val) - 1);
+            file->records[i].val[sizeof(file->records[i].val) - 1] = '\0';
+            return 0;
+        }
+    }
+    
+    if (file->count >= MAX_VSAM_RECORDS) return -1;
+    
+    int insert_idx = file->count;
+    while (insert_idx > 0 && strcmp(file->records[insert_idx - 1].key, key) > 0) {
+        file->records[insert_idx] = file->records[insert_idx - 1];
+        insert_idx--;
+    }
+    
+    strncpy(file->records[insert_idx].key, key, sizeof(file->records[insert_idx].key) - 1);
+    file->records[insert_idx].key[sizeof(file->records[insert_idx].key) - 1] = '\0';
+    strncpy(file->records[insert_idx].val, val, sizeof(file->records[insert_idx].val) - 1);
+    file->records[insert_idx].val[sizeof(file->records[insert_idx].val) - 1] = '\0';
+    file->count++;
+    return 0;
+}
+
+int tsfi_vsam_get(const tsfi_vsam_file *file, const char *key, char *out_val, int max_len) {
+    if (!file || !file->is_opened || !key || !out_val || max_len <= 0) return -1;
+    for (int i = 0; i < file->count; i++) {
+        if (strcmp(file->records[i].key, key) == 0) {
+            strncpy(out_val, file->records[i].val, max_len - 1);
+            out_val[max_len - 1] = '\0';
+            return 0;
+        }
+    }
+    return -1;
+}

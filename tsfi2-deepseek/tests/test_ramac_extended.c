@@ -2152,6 +2152,62 @@ int main(void) {
     assert(dst_q.count == 3);
     printf("  [PASS] VM/370 CP spool transfer queue routing and compaction verified.\n");
 
+    // 119. VM/370 Release 3 Discontiguous Shared Segment (DCSS) Manager Verification
+    printf("[Test] Verifying VM/370 Release 3 Shared Segments...\n");
+    tsfi_cp_dcss_manager dcss_mgr;
+    tsfi_cp_dcss_init(&dcss_mgr);
+    assert(dcss_mgr.count == 0);
+    
+    // Register segments
+    assert(tsfi_cp_dcss_register(&dcss_mgr, "CMSVSAM", 0x100000, 0x1FFFFF) == 0);
+    assert(tsfi_cp_dcss_register(&dcss_mgr, "CMSBAM", 0x200000, 0x27FFFF) == 0);
+    assert(dcss_mgr.count == 2);
+    
+    // Find segment via DIAGNOSE pseudo-opcode
+    int seg_idx = tsfi_cp_dcss_diagnose_find(&dcss_mgr, "CMSVSAM");
+    assert(seg_idx == 0);
+    assert(dcss_mgr.segments[seg_idx].is_loaded == 0);
+    
+    // Load segment via DIAGNOSE pseudo-opcode
+    assert(tsfi_cp_dcss_diagnose_load(&dcss_mgr, "CMSVSAM") == 0);
+    assert(dcss_mgr.segments[seg_idx].is_loaded == 1);
+    
+    // Purge segment
+    assert(tsfi_cp_dcss_diagnose_purge(&dcss_mgr, "CMSVSAM") == 0);
+    assert(dcss_mgr.segments[seg_idx].is_loaded == 0);
+    printf("  [PASS] VM/370 Release 3 discontiguous shared segment dynamic overlays verified.\n");
+    
+    // 120. CMS VSAM Indexed Access Simulator Verification
+    printf("[Test] Verifying CMS VSAM Indexed Access Simulator...\n");
+    tsfi_vsam_file vsam;
+    tsfi_vsam_init(&vsam);
+    assert(vsam.is_opened == 0);
+    
+    // Put before open should fail
+    assert(tsfi_vsam_put(&vsam, "KEY01", "VAL01") == -1);
+    
+    // Open and insert sorted
+    assert(tsfi_vsam_open(&vsam) == 0);
+    assert(tsfi_vsam_put(&vsam, "KEY02", "VAL02") == 0);
+    assert(tsfi_vsam_put(&vsam, "KEY01", "VAL01") == 0);
+    assert(vsam.count == 2);
+    // Verify sorting order
+    assert(strcmp(vsam.records[0].key, "KEY01") == 0);
+    assert(strcmp(vsam.records[1].key, "KEY02") == 0);
+    
+    // Retrieve record
+    char vsam_out[64];
+    assert(tsfi_vsam_get(&vsam, "KEY01", vsam_out, sizeof(vsam_out)) == 0);
+    assert(strcmp(vsam_out, "VAL01") == 0);
+    
+    // Overwrite record
+    assert(tsfi_vsam_put(&vsam, "KEY01", "VAL01_NEW") == 0);
+    assert(tsfi_vsam_get(&vsam, "KEY01", vsam_out, sizeof(vsam_out)) == 0);
+    assert(strcmp(vsam_out, "VAL01_NEW") == 0);
+    
+    assert(tsfi_vsam_close(&vsam) == 0);
+    printf("  [PASS] CMS VSAM indexed KSDS queries and sorting invariants verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
