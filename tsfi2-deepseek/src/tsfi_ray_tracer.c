@@ -11,6 +11,14 @@ static float vec3_dot(tsfi_rt_vec3 a, tsfi_rt_vec3 b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+static tsfi_rt_vec3 vec3_cross(tsfi_rt_vec3 a, tsfi_rt_vec3 b) {
+    return (tsfi_rt_vec3){
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    };
+}
+
 static tsfi_rt_vec3 vec3_normalize(tsfi_rt_vec3 v) {
     float len = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
     if (len > 0.0001f) {
@@ -138,21 +146,40 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
                 const tsfi_cgm_primitive *prim = &scene->primitives[hit_idx];
                 // Intersection point
                 tsfi_rt_vec3 hit_pt = {orig.x + dir.x * t_min, orig.y + dir.y * t_min, orig.z + dir.z * t_min};
+                tsfi_rt_vec3 color = prim->color;
                 tsfi_rt_vec3 normal = {0,0,0};
-
                 if (prim->type == CGM_PRIM_SPHERE) {
                     normal = vec3_normalize(vec3_sub(hit_pt, prim->position));
                 } else if (prim->type == CGM_PRIM_PLANE) {
                     normal = prim->position; // Normal is stored in position
+                    
+                    // Generate stable tangent axes for procedural texturing
+                    tsfi_rt_vec3 u_axis = {0,0,0};
+                    if (fabsf(normal.x) > 0.9f) {
+                        u_axis = (tsfi_rt_vec3){0.0f, 1.0f, 0.0f};
+                    } else {
+                        u_axis = (tsfi_rt_vec3){1.0f, 0.0f, 0.0f};
+                    }
+                    tsfi_rt_vec3 v_axis = vec3_normalize(vec3_cross(normal, u_axis));
+                    u_axis = vec3_normalize(vec3_cross(v_axis, normal));
+
+                    float u = vec3_dot(hit_pt, u_axis);
+                    float v = vec3_dot(hit_pt, v_axis);
+
+                    int u_cell = (int)floorf(u * 0.5f);
+                    int v_cell = (int)floorf(v * 0.5f);
+                    if (((u_cell + v_cell) % 2 + 2) % 2 == 0) {
+                        color = (tsfi_rt_vec3){color.x * 0.6f, color.y * 0.6f, color.z * 0.6f};
+                    }
                 }
 
                 // Diffuse lighting
                 float diffuse = vec3_dot(normal, scene->light_dir);
                 if (diffuse < 0.0f) diffuse = 0.0f;
 
-                float r = prim->color.x * (scene->ambient_color.x + diffuse);
-                float g = prim->color.y * (scene->ambient_color.y + diffuse);
-                float b = prim->color.z * (scene->ambient_color.z + diffuse);
+                float r = color.x * (scene->ambient_color.x + diffuse);
+                float g = color.y * (scene->ambient_color.y + diffuse);
+                float b = color.z * (scene->ambient_color.z + diffuse);
 
                 if (r > 1.0f) r = 1.0f;
                 if (g > 1.0f) g = 1.0f;
