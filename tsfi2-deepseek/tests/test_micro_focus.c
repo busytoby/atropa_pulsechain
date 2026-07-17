@@ -583,6 +583,14 @@ int main(void) {
     assert(strstr(sh_log, "CENTROID=(2.00,3.00)") != NULL);
     printf("  [PASS] Vulkan ZMachine 3D Shader Dispatcher verified.\n");
 
+    // 42. Verify Majordomo List Introduction Resolver
+    printf("[TEST] Validating Majordomo intro Resolver...\n");
+    char intro_buffer[128] = {0};
+    int intro_res = tsfi_mf_majordomo_intro("zmm-dev", intro_buffer, sizeof(intro_buffer));
+    assert(intro_res == 0);
+    assert(strstr(intro_buffer, "Welcome to the zmm-dev mailing list") != NULL);
+    printf("  [PASS] Majordomo intro Resolver verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -1059,3 +1059,10 @@ int tsfi_mf_vulkan_zmachine_dispatch_shader(uint32_t room_id, const float *verte
     snprintf(shader_log, max_log_len, "VK_DISPATCH: ROOM=%u | VERTICES=%d | CENTROID=(%.2f,%.2f)", room_id, vertex_count, centroid_x, centroid_y);
     return 0;
 }
+
+int tsfi_mf_majordomo_intro(const char *list_name, char *intro_out, int max_len) {
+    if (!list_name || !intro_out || max_len <= 0) return -1;
+
+    snprintf(intro_out, max_len, "Welcome to the %s mailing list. Keep all discussions on-topic.", list_name);
+    return 0;
+}
