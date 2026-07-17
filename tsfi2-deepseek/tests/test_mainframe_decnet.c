@@ -511,6 +511,18 @@ int main(void) {
     assert(payload_bytes[0] == LU_TYPE_SOCKET);
     printf("  [PASS] SNA unified LU mapping and route headers verified.\n");
 
+    // 36. Unified LU to WinchesterMQ Bridge Verification
+    printf("[Test] Verifying Unified LU to WinchesterMQ Bridge...\n");
+    uint8_t scsi_status = 0;
+    uint8_t data_reg = 0;
+    uint8_t keycode_reg = 0;
+    
+    assert(tsfi_vtam_lu_bridge_winchester(&registry, 0x5002, &scsi_status, &data_reg, &keycode_reg) == 1);
+    assert(scsi_status == 0x03); // DATA_IN phase trigger
+    assert(data_reg == LU_TYPE_SOCKET); // Send LU type
+    assert(keycode_reg == 32); // 'd' keycode for Winchester MQ ACK compliance
+    printf("  [PASS] Unified LU to WinchesterMQ SCSI bridge mappings verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

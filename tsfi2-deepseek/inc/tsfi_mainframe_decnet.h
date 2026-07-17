@@ -438,5 +438,6 @@ typedef struct {
 void tsfi_vtam_lu_registry_init(tsfi_vtam_lu_registry *reg);
 int tsfi_vtam_lu_registry_add(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t type, const char *name);
 int tsfi_vtam_lu_registry_route(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *data, size_t len);
+int tsfi_vtam_lu_bridge_winchester(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg);
 
 #endif // TSFI_MAINFRAME_DECNET_H

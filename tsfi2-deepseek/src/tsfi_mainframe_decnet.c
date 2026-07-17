@@ -1049,3 +1049,16 @@ int tsfi_vtam_lu_registry_route(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8
     }
     return -2;
 }
+
+int tsfi_vtam_lu_bridge_winchester(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg) {
+    if (!reg || !scsi_status || !data_reg || !keycode_reg) return -1;
+    for (int i = 0; i < reg->count; i++) {
+        if (reg->lus[i].lu_address == addr && reg->lus[i].active) {
+            *scsi_status = 0x03;
+            *data_reg = reg->lus[i].lu_type;
+            *keycode_reg = 32;
+            return i;
+        }
+    }
+    return -2;
+}
