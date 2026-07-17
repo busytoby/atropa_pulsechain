@@ -906,6 +906,23 @@ int main(void) {
     assert(ab_active_status == 1);
     printf("  [PASS] CICS HANDLE ABEND RESET verified.\n");
 
+    // 75. Verify Majordomo Moderation Header Injector
+    printf("[TEST] Validating Majordomo Header Injector...\n");
+    char injected_headers[128] = {0};
+    int inj_res = tsfi_mf_majordomo_inject_mod_headers("dev@dysnomia.org", "zmm-dev", 77123, injected_headers, sizeof(injected_headers));
+    assert(inj_res == 0);
+    assert(strstr(injected_headers, "X-Majordomo-Sender: dev@dysnomia.org") != NULL);
+    assert(strstr(injected_headers, "X-Majordomo-Cookie: 77123") != NULL);
+    printf("  [PASS] Majordomo Header Injector verified.\n");
+
+    // 76. Verify CICS Command Level Program Control ABEND Query Emulator
+    printf("[TEST] Validating CICS HANDLE ABEND Query...\n");
+    int query_active = -1;
+    int query_res = tsfi_mf_cics_query_abend(1, &query_active);
+    assert(query_res == 0);
+    assert(query_active == 1);
+    printf("  [PASS] CICS HANDLE ABEND Query verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

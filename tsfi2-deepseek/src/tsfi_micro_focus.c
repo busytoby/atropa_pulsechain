@@ -1465,3 +1465,17 @@ int tsfi_mf_cics_reset_abend(int *registry_active) {
     *registry_active = 1;
     return 0;
 }
+
+int tsfi_mf_majordomo_inject_mod_headers(const char *sender, const char *list_name, uint32_t cookie, char *msg_out, int max_len) {
+    if (!sender || !list_name || !msg_out || max_len <= 0) return -1;
+
+    snprintf(msg_out, max_len, "X-Majordomo-Sender: %s\nX-Majordomo-List: %s\nX-Majordomo-Cookie: %u\n", sender, list_name, cookie);
+    return 0;
+}
+
+int tsfi_mf_cics_query_abend(int registry_active, int *is_active_out) {
+    if (!is_active_out) return -1;
+
+    *is_active_out = registry_active;
+    return 0;
+}
