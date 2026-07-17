@@ -1686,4 +1686,21 @@ typedef struct {
 void tsfi_cp_printer_init(tsfi_cp_spool_printer *prt);
 int tsfi_cp_printer_write_record(tsfi_cp_spool_printer *prt, const char *record);
 
+// VM/370 CP Spool Class Filter
+typedef struct {
+    char card_data[80];
+    char spool_class;
+} tsfi_cp_spool_card_v2;
+
+#define MAX_SPOOL_CARDS_V2 16
+typedef struct {
+    tsfi_cp_spool_card_v2 queue[MAX_SPOOL_CARDS_V2];
+    int count;
+    char active_reader_class;
+} tsfi_cp_spool_queue_v2;
+
+void tsfi_cp_spool_queue_v2_init(tsfi_cp_spool_queue_v2 *q, char reader_class);
+int tsfi_cp_spool_push_v2(tsfi_cp_spool_queue_v2 *q, const char *data, char card_class);
+int tsfi_cp_spool_pop_v2(tsfi_cp_spool_queue_v2 *q, char *data_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

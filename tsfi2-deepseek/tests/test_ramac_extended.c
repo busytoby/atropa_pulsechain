@@ -1731,6 +1731,35 @@ int main(void) {
     assert(printer.line_count == 0);
     printf("  [PASS] VM/370 CP spooled print carriage control vertical skips verified.\n");
 
+    // 99. VM/370 CP Spool Class Filter Verification
+    printf("[Test] Verifying VM/370 CP Spool Class filtering...\n");
+    tsfi_cp_spool_queue_v2 filter_q;
+    tsfi_cp_spool_queue_v2_init(&filter_q, 'A'); // Filter for Class A spool cards only
+    
+    // Push different classes
+    assert(tsfi_cp_spool_push_v2(&filter_q, "CARD A1", 'A') == 0);
+    assert(tsfi_cp_spool_push_v2(&filter_q, "CARD B1", 'B') == 0);
+    assert(tsfi_cp_spool_push_v2(&filter_q, "CARD A2", 'A') == 0);
+    assert(filter_q.count == 3);
+    
+    // Pop: first should yield A1
+    char pop_buf[80];
+    assert(tsfi_cp_spool_pop_v2(&filter_q, pop_buf) == 0);
+    assert(strcmp(pop_buf, "CARD A1") == 0);
+    
+    // Pop: next should yield A2 (skipping B1 because queue is filtered to Class A)
+    assert(tsfi_cp_spool_pop_v2(&filter_q, pop_buf) == 0);
+    assert(strcmp(pop_buf, "CARD A2") == 0);
+    
+    // Try to pop again: no Class A cards left
+    assert(tsfi_cp_spool_pop_v2(&filter_q, pop_buf) == -2);
+    
+    // Set filter to '*' and pop B1
+    filter_q.active_reader_class = '*';
+    assert(tsfi_cp_spool_pop_v2(&filter_q, pop_buf) == 0);
+    assert(strcmp(pop_buf, "CARD B1") == 0);
+    printf("  [PASS] VM/370 CP spool file reader class filters verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

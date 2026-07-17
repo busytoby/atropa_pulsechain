@@ -6321,3 +6321,34 @@ int tsfi_cp_printer_write_record(tsfi_cp_spool_printer *prt, const char *record)
     }
     return 0;
 }
+
+void tsfi_cp_spool_queue_v2_init(tsfi_cp_spool_queue_v2 *q, char reader_class) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_cp_spool_queue_v2));
+    q->active_reader_class = reader_class;
+}
+
+int tsfi_cp_spool_push_v2(tsfi_cp_spool_queue_v2 *q, const char *data, char card_class) {
+    if (!q || !data || q->count >= MAX_SPOOL_CARDS_V2) return -1;
+    strncpy(q->queue[q->count].card_data, data, sizeof(q->queue[q->count].card_data) - 1);
+    q->queue[q->count].card_data[sizeof(q->queue[q->count].card_data) - 1] = '\0';
+    q->queue[q->count].spool_class = card_class;
+    q->count++;
+    return 0;
+}
+
+int tsfi_cp_spool_pop_v2(tsfi_cp_spool_queue_v2 *q, char *data_out) {
+    if (!q || !data_out || q->count <= 0) return -1;
+    for (int i = 0; i < q->count; i++) {
+        if (q->active_reader_class == '*' || q->queue[i].spool_class == q->active_reader_class) {
+            strncpy(data_out, q->queue[i].card_data, 79);
+            data_out[79] = '\0';
+            for (int j = i; j < q->count - 1; j++) {
+                q->queue[j] = q->queue[j + 1];
+            }
+            q->count--;
+            return 0;
+        }
+    }
+    return -2;
+}
