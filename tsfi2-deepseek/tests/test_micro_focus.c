@@ -1247,6 +1247,14 @@ int main(void) {
     assert(strstr(mud_resp, "Goblin") != NULL);
     printf("  [PASS] MajorMUD Mainframe Look Command verified.\n");
 
+    // 115. Verify MajorMUD Mainframe Z-machine Bridge Action
+    printf("[TEST] Validating MajorMUD Mainframe Bridge Action...\n");
+    char bridge_resp[256] = {0};
+    int mud_bridge_res = tsfi_mf_zmachine_majormud_bridge_action(4, "look", mud_state, bridge_resp, sizeof(bridge_resp));
+    assert(mud_bridge_res == 0);
+    assert(strstr(bridge_resp, "Room 4") != NULL);
+    printf("  [PASS] MajorMUD Mainframe Bridge Action verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

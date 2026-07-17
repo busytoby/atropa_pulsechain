@@ -54,3 +54,22 @@ int tsfi_mf_zmachine_majormud_command(const char *cmd, char *mud_state, char *re
 
     return 0;
 }
+
+int tsfi_mf_zmachine_majormud_bridge_action(uint32_t room_id, const char *command, char *mud_state, char *response_out, int max_len) {
+    if (!command || !mud_state || !response_out || max_len <= 0) return -1;
+
+    int hp = 100, gold = 50, xp = 0, room = 1, monster_hp = 30;
+    char class_name[32] = "Warrior";
+
+    if (sscanf(mud_state, "HP:%d|GOLD:%d|XP:%d|CLASS:%31[^|]|ROOM:%d|MONSTER_HP:%d",
+               &hp, &gold, &xp, class_name, &room, &monster_hp) < 6) {
+        return -2;
+    }
+
+    room = (int)room_id;
+
+    snprintf(mud_state, 128, "HP:%d|GOLD:%d|XP:%d|CLASS:%s|ROOM:%d|MONSTER_HP:%d",
+             hp, gold, xp, class_name, room, monster_hp);
+
+    return tsfi_mf_zmachine_majormud_command(command, mud_state, response_out, max_len);
+}
