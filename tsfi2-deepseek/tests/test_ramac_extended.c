@@ -1713,6 +1713,24 @@ int main(void) {
     assert(vcpu.psw_instruction_address == 0x00000000);
     printf("  [PASS] VM/370 CP virtual CPU execution state transitions verified.\n");
 
+    // 98. VM/370 CP Spool Printer Carriage Controller Verification
+    printf("[Test] Verifying VM/370 CP Spool Printer Carriage...\n");
+    tsfi_cp_spool_printer printer;
+    tsfi_cp_printer_init(&printer);
+    assert(printer.page_count == 1);
+    assert(printer.line_count == 0);
+    
+    // Write double-spaced line
+    assert(tsfi_cp_printer_write_record(&printer, "0DOUBLE SPACE LINE") == 0);
+    assert(printer.line_count == 2);
+    assert(printer.last_skip_count == 2);
+    
+    // Write page eject
+    assert(tsfi_cp_printer_write_record(&printer, "1NEW PAGE HEADER") == 0);
+    assert(printer.page_count == 2);
+    assert(printer.line_count == 0);
+    printf("  [PASS] VM/370 CP spooled print carriage control vertical skips verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -6286,3 +6286,38 @@ int tsfi_cp_vcpu_control(tsfi_cp_vcpu *vcpu, const char *action) {
     }
     return -1;
 }
+
+void tsfi_cp_printer_init(tsfi_cp_spool_printer *prt) {
+    if (!prt) return;
+    memset(prt, 0, sizeof(tsfi_cp_spool_printer));
+    prt->page_count = 1;
+}
+
+int tsfi_cp_printer_write_record(tsfi_cp_spool_printer *prt, const char *record) {
+    if (!prt || !record || record[0] == '\0') return -1;
+    char ctrl = record[0];
+    switch (ctrl) {
+        case '1':
+            prt->line_count = 0;
+            prt->page_count++;
+            prt->last_skip_count = 0;
+            break;
+        case ' ':
+            prt->line_count += 1;
+            prt->last_skip_count = 1;
+            break;
+        case '0':
+            prt->line_count += 2;
+            prt->last_skip_count = 2;
+            break;
+        case '-':
+            prt->line_count += 3;
+            prt->last_skip_count = 3;
+            break;
+        default:
+            prt->line_count += 1;
+            prt->last_skip_count = 1;
+            break;
+    }
+    return 0;
+}

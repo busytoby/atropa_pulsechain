@@ -1676,4 +1676,14 @@ typedef struct {
 void tsfi_cp_vcpu_init(tsfi_cp_vcpu *vcpu);
 int tsfi_cp_vcpu_control(tsfi_cp_vcpu *vcpu, const char *action);
 
+// VM/370 CP Spool Printer Carriage Controller
+typedef struct {
+    int line_count;
+    int page_count;
+    int last_skip_count;
+} tsfi_cp_spool_printer;
+
+void tsfi_cp_printer_init(tsfi_cp_spool_printer *prt);
+int tsfi_cp_printer_write_record(tsfi_cp_spool_printer *prt, const char *record);
+
 #endif // TSFI_RAMAC_LAYOUT_H
