@@ -803,6 +803,22 @@ int main(void) {
     assert(memcmp(page_pool + 32, "MAP_DFH0", 8) == 0);
     printf("  [PASS] CICS LOAD verified.\n");
 
+    // 64. Verify Majordomo List Admin Password Checker
+    printf("[TEST] Validating Majordomo Password Checker...\n");
+    int pwd_res = tsfi_mf_majordomo_check_password("zmm-dev", "secret123", "secret123");
+    assert(pwd_res == 0);
+    int pwd_res2 = tsfi_mf_majordomo_check_password("zmm-dev", "wrongpass", "secret123");
+    assert(pwd_res2 == -2);
+    printf("  [PASS] Majordomo Password Checker verified.\n");
+
+    // 65. Verify CICS Program Control RELEASE Emulator
+    printf("[TEST] Validating CICS RELEASE...\n");
+    int rel_res = tsfi_mf_cics_release("MAP_DFH0", page_pool, &page_offset);
+    assert(rel_res == 0);
+    assert(page_pool[32] == 0x00);
+    assert(page_pool[39] == 0x00);
+    printf("  [PASS] CICS RELEASE verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -1358,3 +1358,29 @@ int tsfi_mf_cics_load(const char *resource_name, uint32_t *loaded_address, uint8
     *loaded_address = offset;
     return 0;
 }
+
+int tsfi_mf_majordomo_check_password(const char *list_name, const char *password, const char *stored_hash_or_pass) {
+    (void)list_name;
+    if (!password || !stored_hash_or_pass) return -1;
+
+    if (strcmp(password, stored_hash_or_pass) == 0) {
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_mf_cics_release(const char *resource_name, uint8_t *storage_pool, uint32_t *allocated_offset) {
+    if (!resource_name || !storage_pool || !allocated_offset) return -1;
+
+    uint32_t offset = 0;
+    int len = (int)strlen(resource_name);
+    while (offset < *allocated_offset) {
+        if (memcmp(storage_pool + offset, resource_name, len) == 0) {
+            memset(storage_pool + offset, 0, len);
+            return 0;
+        }
+        offset++;
+    }
+
+    return -2;
+}

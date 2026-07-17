@@ -126,8 +126,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 171 | CICS Program Control ABEND Emulator | PASS | Immediate transaction abnormal termination signal | Volume 33 |
 | 172 | Majordomo Request Discarder | PASS | Pending moderation cookie deletion handler | Volume 33 |
 | 173 | CICS Program Control LOAD Emulator | PASS | Dynamic resource offset allocator and map registry | Volume 33 |
+| 174 | Majordomo Admin Password Checker | PASS | Administrative command authorization registry | Volume 33 |
+| 175 | CICS Program Control RELEASE Emulator | PASS | Dynamic memory resource freeing scheduler | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 173 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 175 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
