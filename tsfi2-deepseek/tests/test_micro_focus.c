@@ -855,6 +855,22 @@ int main(void) {
     assert(mock_active == 0);
     printf("  [PASS] CICS HANDLE ABEND CANCEL verified.\n");
 
+    // 70. Verify Majordomo List Description Info Editor
+    printf("[TEST] Validating Majordomo Info Editor...\n");
+    char mock_info[64] = {0};
+    int upd_res = tsfi_mf_majordomo_update_info("zmm-dev", "New Dev List Description", mock_info, sizeof(mock_info));
+    assert(upd_res == 0);
+    assert(strcmp(mock_info, "LIST:zmm-dev|INFO:New Dev List Description") == 0);
+    printf("  [PASS] Majordomo Info Editor verified.\n");
+
+    // 71. Verify CICS Command Level Program Control ABEND Program Register
+    printf("[TEST] Validating CICS HANDLE ABEND PROGRAM...\n");
+    char ab_prog_reg[32] = {0};
+    int hap_res = tsfi_mf_cics_handle_abend_program("ERR_PROG", ab_prog_reg, sizeof(ab_prog_reg));
+    assert(hap_res == 0);
+    assert(strcmp(ab_prog_reg, "ERR_PROG") == 0);
+    printf("  [PASS] CICS HANDLE ABEND PROGRAM verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

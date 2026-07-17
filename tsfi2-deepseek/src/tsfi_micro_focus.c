@@ -1419,3 +1419,17 @@ int tsfi_mf_cics_cancel_abend(uint64_t *abend_handler_registry, int *registry_ac
     *registry_active = 0;
     return 0;
 }
+
+int tsfi_mf_majordomo_update_info(const char *list_name, const char *new_info, char *info_store, int max_store) {
+    if (!list_name || !new_info || !info_store || max_store <= 0) return -1;
+
+    snprintf(info_store, max_store, "LIST:%s|INFO:%s", list_name, new_info);
+    return 0;
+}
+
+int tsfi_mf_cics_handle_abend_program(const char *program_name, char *abend_program_registry, int max_name) {
+    if (!program_name || !abend_program_registry || max_name <= 0) return -1;
+
+    snprintf(abend_program_registry, max_name, "%s", program_name);
+    return 0;
+}

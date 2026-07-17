@@ -63,8 +63,10 @@ int tsfi_mf_majordomo_welcome(const char *list_name, const char *owner_email, ch
 int tsfi_mf_majordomo_hash_password(const char *password, char *hash_out, int max_len);
 int tsfi_mf_majordomo_discard(uint32_t cookie, uint32_t *pending_cookies, int *cookie_count);
 int tsfi_mf_majordomo_validate_config(const char *config_content, int *errors_found);
+int tsfi_mf_majordomo_update_info(const char *list_name, const char *new_info, char *info_store, int max_store);
 int tsfi_mf_majordomo_archive_index(const char *list_name, const char **archive_files, int archive_count, char *index_out, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
+int tsfi_mf_cics_handle_abend_program(const char *program_name, char *abend_program_registry, int max_name);
 int tsfi_mf_cics_handle_abend(uint64_t handler_addr, uint64_t *abend_handler_registry, int *registry_active);
 int tsfi_mf_cics_cancel_abend(uint64_t *abend_handler_registry, int *registry_active);
 int tsfi_mf_cics_release(const char *resource_name, uint8_t *storage_pool, uint32_t *allocated_offset);

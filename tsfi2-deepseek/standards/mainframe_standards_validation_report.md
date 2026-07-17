@@ -111,5 +111,7 @@
 | 177 | CICS Abend Handler Registry | PASS | Custom transaction crash interceptor callback | Volume 33 |
 | 178 | Majordomo Welcome Guidelines | PASS | Welcome message template text generator | Volume 33 |
 | 179 | CICS Abend Handler Canceller | PASS | Registered failure recovery disabling scheduler | Volume 33 |
+| 180 | Majordomo Info Editor | PASS | Stored list descriptions update handler | Volume 33 |
+| 181 | CICS Abend Program Registry | PASS | External failure recovery application interceptor | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 179 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 181 Scenarios validated successfully)
