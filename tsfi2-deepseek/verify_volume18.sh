@@ -41,8 +41,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 94 | VM/370 CP Directory Privilege Controller | PASS | Directory Privilege | Volume 19 |
 | 95 | VM/370 CP Device Attachment Manager | PASS | Device Channel Attach | Volume 19 |
 | 96 | VM/370 CP SMSG Queue Processor | PASS | Special Message Router | Volume 19 |
+| 97 | VM/370 CP Virtual CPU Controller | PASS | CPU State Controller | Volume 19 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 96 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 97 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

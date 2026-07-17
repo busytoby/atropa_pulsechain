@@ -1689,6 +1689,30 @@ int main(void) {
     assert(tsfi_cp_smsg_send(&service_vm, "PRINT FILE 102") == -1);
     printf("  [PASS] VM/370 CP special message instant routing queue verified.\n");
 
+    // 97. VM/370 CP Virtual CPU Controller Verification
+    printf("[Test] Verifying VM/370 CP Virtual CPU (VCPU) controller...\n");
+    tsfi_cp_vcpu vcpu;
+    tsfi_cp_vcpu_init(&vcpu);
+    assert(vcpu.state == VCPU_STOPPED);
+    
+    // Start processor execution
+    assert(tsfi_cp_vcpu_control(&vcpu, "START") == 0);
+    assert(vcpu.state == VCPU_RUNNING);
+    
+    // Simulate some work address offset update
+    vcpu.psw_instruction_address = 0x00FF8000;
+    
+    // Stop processor execution
+    assert(tsfi_cp_vcpu_control(&vcpu, "STOP") == 0);
+    assert(vcpu.state == VCPU_STOPPED);
+    assert(vcpu.psw_instruction_address == 0x00FF8000);
+    
+    // Reset CPU registers
+    assert(tsfi_cp_vcpu_control(&vcpu, "RESET") == 0);
+    assert(vcpu.state == VCPU_STOPPED);
+    assert(vcpu.psw_instruction_address == 0x00000000);
+    printf("  [PASS] VM/370 CP virtual CPU execution state transitions verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -1662,4 +1662,18 @@ void tsfi_cp_smsg_init(tsfi_cp_smsg_receiver *rcv, const char *uid);
 int tsfi_cp_smsg_send(tsfi_cp_smsg_receiver *rcv, const char *msg);
 int tsfi_cp_smsg_receive(tsfi_cp_smsg_receiver *rcv, char *msg_out);
 
+// VM/370 CP Virtual CPU Controller
+#define VCPU_STOPPED   0
+#define VCPU_RUNNING   1
+#define VCPU_CHECKSTOP 2
+
+typedef struct {
+    int state;
+    uint32_t psw_instruction_address;
+    uint32_t psw_mask;
+} tsfi_cp_vcpu;
+
+void tsfi_cp_vcpu_init(tsfi_cp_vcpu *vcpu);
+int tsfi_cp_vcpu_control(tsfi_cp_vcpu *vcpu, const char *action);
+
 #endif // TSFI_RAMAC_LAYOUT_H

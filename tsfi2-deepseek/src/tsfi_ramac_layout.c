@@ -6259,3 +6259,30 @@ int tsfi_cp_smsg_receive(tsfi_cp_smsg_receiver *rcv, char *msg_out) {
     rcv->count--;
     return 0;
 }
+
+void tsfi_cp_vcpu_init(tsfi_cp_vcpu *vcpu) {
+    if (!vcpu) return;
+    memset(vcpu, 0, sizeof(tsfi_cp_vcpu));
+    vcpu->state = VCPU_STOPPED;
+    vcpu->psw_instruction_address = 0x00000000;
+    vcpu->psw_mask = 0x00000000;
+}
+
+int tsfi_cp_vcpu_control(tsfi_cp_vcpu *vcpu, const char *action) {
+    if (!vcpu || !action) return -1;
+    if (strcasecmp(action, "START") == 0) {
+        vcpu->state = VCPU_RUNNING;
+        return 0;
+    }
+    if (strcasecmp(action, "STOP") == 0) {
+        vcpu->state = VCPU_STOPPED;
+        return 0;
+    }
+    if (strcasecmp(action, "RESET") == 0) {
+        vcpu->state = VCPU_STOPPED;
+        vcpu->psw_instruction_address = 0x00000000;
+        vcpu->psw_mask = 0x00000000;
+        return 0;
+    }
+    return -1;
+}
