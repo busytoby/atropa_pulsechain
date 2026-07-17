@@ -33,5 +33,6 @@ int tsfi_s370_yul_exec_bridge(const tsfi_uncol_instruction *program, int program
 int tsfi_mf_scsi_winchester_handshake(uint32_t keycode, uint8_t *storage_registers);
 int tsfi_mf_dat_write_23_node(const char *filepath_dat_bin, uint32_t node_id, const uint8_t *payload, int len);
 int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulator_state);
+int tsfi_mf_wessler_dsa_link(uint32_t *current_save_area, uint32_t *next_save_area);
 
 #endif // TSFI_MICRO_FOCUS_H

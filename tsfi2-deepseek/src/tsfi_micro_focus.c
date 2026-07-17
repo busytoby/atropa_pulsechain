@@ -342,3 +342,15 @@ int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulato
     *accumulator_state += empirical_power;
     return 0;
 }
+
+int tsfi_mf_wessler_dsa_link(uint32_t *current_save_area, uint32_t *next_save_area) {
+    if (!current_save_area || !next_save_area) return -1;
+
+    uint32_t curr_addr = (uint32_t)(uintptr_t)current_save_area;
+    uint32_t next_addr = (uint32_t)(uintptr_t)next_save_area;
+
+    next_save_area[1] = curr_addr;
+    current_save_area[2] = next_addr;
+
+    return 0;
+}

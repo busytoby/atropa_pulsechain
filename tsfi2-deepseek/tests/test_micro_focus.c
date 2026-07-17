@@ -220,6 +220,16 @@ int main(void) {
     assert(acc_state == 1500);
     printf("  [PASS] Accumulator Redirection verified.\n");
 
+    // 9. Verify Wessler DSA Linker
+    printf("[TEST] Validating Wessler DSA Linker...\n");
+    uint32_t current_dsa[18] = {0};
+    uint32_t next_dsa[18] = {0};
+    int dsa_res = tsfi_mf_wessler_dsa_link(current_dsa, next_dsa);
+    assert(dsa_res == 0);
+    assert(next_dsa[1] == (uint32_t)(uintptr_t)current_dsa);
+    assert(current_dsa[2] == (uint32_t)(uintptr_t)next_dsa);
+    printf("  [PASS] Wessler DSA Linker save area forward/backward chains verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
