@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Mainframe & VM Swarm Monitor</title>
+    <style>
+        :root {
+            --bg-color: #05080c;
+            --panel-bg: rgba(10, 20, 38, 0.7);
+            --glow-green: #00ff66;
+            --glow-blue: #00d2ff;
+            --glow-amber: #ffb700;
+            --text-color: #d1f4ff;
+            --border-glow: rgba(0, 255, 102, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, rgba(10, 25, 50, 0.4) 0%, rgba(5, 8, 12, 1) 100%);
+        }
+
+        h1, h2, h3 {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--glow-green);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px -5px var(--glow-green);
+        }
+
+        .system-status {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-badge {
+            background: rgba(0, 255, 102, 0.1);
+            border: 1px solid var(--glow-green);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse-border 2s infinite;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--glow-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--glow-green);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            border-color: rgba(0, 210, 255, 0.4);
+            box-shadow: 0 4px 25px rgba(0, 210, 255, 0.15);
+        }
+
+        .oscilloscope-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            background: #020508;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        button {
+            flex: 1;
+            background: rgba(0, 210, 255, 0.1);
+            border: 1px solid var(--glow-blue);
+            color: var(--glow-blue);
+            padding: 10px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--glow-blue);
+            color: #000;
+            box-shadow: 0 0 10px var(--glow-blue);
+        }
+
+        button.success {
+            background: rgba(0, 255, 102, 0.1);
+            border-color: var(--glow-green);
+            color: var(--glow-green);
+        }
+
+        button.success:hover {
+            background: var(--glow-green);
+            color: #000;
+            box-shadow: 0 0 10px var(--glow-green);
+        }
+
+        /* Register and Scoreboard Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(209, 244, 255, 0.1);
+        }
+
+        th {
+            color: var(--glow-blue);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .reg-val {
+            color: var(--glow-amber);
+            font-weight: bold;
+        }
+
+        .terminal-log {
+            height: 180px;
+            overflow-y: auto;
+            background: #020408;
+            border: 1px solid rgba(255, 183, 0, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 12px;
+            color: #ffcc00;
+            margin-top: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-left: 2px solid var(--glow-amber);
+            padding-left: 8px;
+        }
+
+        /* Animations */
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--glow-green); }
+            50% { border-color: rgba(0, 255, 102, 0.3); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Auncient Mainframe Terminal</h1>
+            <div style="font-size: 12px; color: var(--glow-blue);">Volume 15 Edition // 1969 Swarm Architecture</div>
+        </div>
+        <div class="system-status">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                ZMM Core: ONLINE
+            </div>
+            <div class="status-badge" style="border-color: var(--glow-blue); color: var(--glow-blue);">
+                <div class="status-dot" style="background-color: var(--glow-blue); box-shadow: 0 0 8px var(--glow-blue);"></div>
+                IMP Gateway: CONNECTED
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Column 1: Oscilloscope and Controls -->
+        <div class="panel oscilloscope-container">
+            <h2>19D/20D Oscilloscope Visualizer</h2>
+            <canvas id="scopeCanvas" width="500" height="400"></canvas>
+            <div class="controls">
+                <button class="success" onclick="triggerQuery()">Trigger Hodges Query</button>
+                <button onclick="dispatchPPUJob()">Dispatch PPU Scoreboard Job</button>
+            </div>
+            <div class="terminal-log" id="logConsole">
+                <div class="log-entry">[SYSTEM] Initializing Mainframe telemetry links...</div>
+                <div class="log-entry">[SYSTEM] Connected to WinchesterMQ socket loopback.</div>
+            </div>
+        </div>
+
+        <!-- Column 2: Registers & Scoreboard States -->
+        <div class="panel">
+            <h2>VM State Registers</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Register</th>
+                        <th>Mapping (Yul State)</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Base</td>
+                        <td>Reference phase alignment</td>
+                        <td class="reg-val" id="regBase">5208</td>
+                    </tr>
+                    <tr>
+                        <td>Channel</td>
+                        <td>Transmission route setting</td>
+                        <td class="reg-val" id="regChannel">14171583</td>
+                    </tr>
+                    <tr>
+                        <td>Dynamo</td>
+                        <td>Dynamic tracking frequency</td>
+                        <td class="reg-val" id="regDynamo">23194903</td>
+                    </tr>
+                    <tr>
+                        <td>Chin</td>
+                        <td>Bottom field warping bounds</td>
+                        <td class="reg-val" id="regChin">43240815</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 style="margin-top: 30px;">Scoreboard Scheduler Slots</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Slot</th>
+                        <th>Opcode</th>
+                        <th>Dest</th>
+                        <th>Src1</th>
+                        <th>Src2</th>
+                        <th>Stage</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreboardBody">
+                    <tr>
+                        <td>PPU_0</td>
+                        <td>ADD</td>
+                        <td>R2</td>
+                        <td>R0</td>
+                        <td>R1</td>
+                        <td style="color: var(--glow-green);">STAGE_EXECUTE</td>
+                    </tr>
+                    <tr>
+                        <td>PPU_1</td>
+                        <td>MUL</td>
+                        <td>R3</td>
+                        <td>R2</td>
+                        <td>R1</td>
+                        <td style="color: var(--glow-amber);">STAGE_READ_OPERANDS</td>
+                    </tr>
+                    <tr>
+                        <td>PPU_2</td>
+                        <td>SUB</td>
+                        <td>R4</td>
+                        <td>R3</td>
+                        <td>R0</td>
+                        <td style="color: #666;">STAGE_ISSUE</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('scopeCanvas');
+        const ctx = canvas.getContext('2d');
+        const consoleEl = document.getElementById('logConsole');
+        let angle = 0;
+
+        function addLog(msg) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleEl.appendChild(entry);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // Simulating the 19D Lissajous figure projection on the CRT tube
+        function drawLissajous() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw scanning scanlines grid
+            ctx.strokeStyle = 'rgba(0, 255, 102, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.height; i += 10) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#00ff66';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00ff66';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const scale = 120;
+
+            for (let i = 0; i < 400; i++) {
+                const theta = (i * 2.0 * Math.PI) / 100;
+                // Modulated by Base and Dynamo registers
+                const x = Math.sin(theta * 3 + angle) * Math.cos(theta * 2 + angle * 0.5) * scale;
+                const y = Math.cos(theta * 5 + angle * 0.7) * Math.sin(theta * 3 + angle) * scale;
+
+                if (i === 0) {
+                    ctx.moveTo(cx + x, cy + y);
+                } else {
+                    ctx.lineTo(cx + x, cy + y);
+                }
+            }
+            ctx.stroke();
+
+            ctx.shadowBlur = 0; // Reset shadow
+            angle += 0.03;
+            requestAnimationFrame(drawLissajous);
+        }
+
+        function triggerQuery() {
+            addLog("HODGES_QUERY: Initiating vehicle record registration lookup...");
+            setTimeout(() => {
+                addLog("HODGES_QUERY: [HIT] Matched Plate: PLS-369 // Routing via IMP Link 99.");
+            }, 800);
+        }
+
+        function dispatchPPUJob() {
+            addLog("DISPATCHER: Offloaded new computation sequence to PPU_3 Scoreboard.");
+            const scBody = document.getElementById('scoreboardBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>PPU_3</td>
+                <td>ADD</td>
+                <td>R5</td>
+                <td>R4</td>
+                <td>R1</td>
+                <td style="color: var(--glow-blue);">STAGE_ISSUE</td>
+            `;
+            scBody.appendChild(row);
+        }
+
+        drawLissajous();
+    </script>
+</body>
+</html>
