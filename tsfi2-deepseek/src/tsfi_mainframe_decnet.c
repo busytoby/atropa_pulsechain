@@ -3026,3 +3026,13 @@ int tsfi_scsi_coax_bridge_transfer(tsfi_scsi_transaction *tx, tsfi_coax_controll
     *selected_device_id_out = -1;
     return 1;
 }
+
+int tsfi_scsi_coax_bridge_send_frame(tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, tsfi_coax_frame *frame_out, int *selected_device_id_out) {
+    if (!tx || !coax_ctrl || !frame_out || !selected_device_id_out) return -1;
+    int res = tsfi_scsi_coax_bridge_transfer(tx, coax_ctrl, selected_device_id_out);
+    if (res == 0) {
+        tsfi_coax_assemble(frame_out, tx->payload_hash);
+        return 0;
+    }
+    return res;
+}

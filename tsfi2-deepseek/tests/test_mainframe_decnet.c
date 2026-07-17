@@ -2226,6 +2226,29 @@ int main(void) {
     assert(bridge_tx.signature_verified == 1);
     printf("  [PASS] SCSI-Coaxial bridge transfer mode scheduling verified.\n");
 
+    // 111. SCSI-Coaxial Frame Transmission Bridge verification
+    printf("[Test] Verifying SCSI-Coaxial frame send bridge...\n");
+    tsfi_coax_controller tx_ctrl;
+    tsfi_coax_controller_init(&tx_ctrl);
+    
+    tx_ctrl.devices[0].device_id = 111;
+    tx_ctrl.devices[0].status_register = 0x01; // Ready
+    tx_ctrl.device_count = 1;
+    
+    tsfi_scsi_transaction tx_data;
+    memset(&tx_data, 0, sizeof(tx_data));
+    for (int i = 0; i < 32; i++) tx_data.payload_hash[i] = (uint8_t)i;
+    
+    tsfi_coax_frame coax_tx_frame;
+    memset(&coax_tx_frame, 0, sizeof(coax_tx_frame));
+    
+    int tx_dev = -1;
+    assert(tsfi_scsi_coax_bridge_send_frame(&tx_data, &tx_ctrl, &coax_tx_frame, &tx_dev) == 0);
+    assert(tx_dev == 111);
+    assert(tsfi_coax_verify(&coax_tx_frame) == 0);
+    assert(coax_tx_frame.payload[0] == 0);
+    printf("  [PASS] SCSI-Coaxial bridge frame assembly and transmission verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
