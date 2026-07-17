@@ -1307,6 +1307,29 @@ int main(void) {
     tsfi_zmm_vm_destroy(&zmm_state);
     printf("  [PASS] ZMM VM Programmer Stepper instruction step cycles verified.\n");
 
+    // 75. CODASYL DB-EXCEPTION Declarative Verification
+    printf("[Test] Verifying CODASYL DB-EXCEPTION declaratives...\n");
+    tsfi_dbtg_realm_registry exception_realm_reg;
+    tsfi_dbtg_realm_init(&exception_realm_reg);
+    tsfi_dbtg_realm_register(&exception_realm_reg, "MUTABLE-AREA");
+    
+    tsfi_dbtg_realm_open(&exception_realm_reg, "MUTABLE-AREA", DBTG_LOCK_RETRIEVAL);
+    
+    tsfi_dbtg_exception_context db_exc_ctx;
+    tsfi_dbtg_exception_init(&db_exc_ctx);
+    
+    int exc_check_val = tsfi_dbtg_validate_action(&db_exc_ctx, &exception_realm_reg, "MUTABLE-AREA", 1);
+    assert(exc_check_val == -3);
+    assert(db_exc_ctx.db_status == DB_STATUS_LOCK_VIOLATION);
+    assert(db_exc_ctx.exception_triggered == 1);
+    assert(strcmp(db_exc_ctx.failing_realm, "MUTABLE-AREA") == 0);
+    
+    exc_check_val = tsfi_dbtg_validate_action(&db_exc_ctx, &exception_realm_reg, "MUTABLE-AREA", 0);
+    assert(exc_check_val == 0);
+    assert(db_exc_ctx.db_status == DB_STATUS_OK);
+    assert(db_exc_ctx.exception_triggered == 0);
+    printf("  [PASS] DB-EXCEPTION declarative lock and status validation verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

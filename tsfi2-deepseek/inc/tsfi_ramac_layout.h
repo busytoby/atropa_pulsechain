@@ -1398,4 +1398,18 @@ int tsfi_dbtg_realm_register(tsfi_dbtg_realm_registry *reg, const char *name);
 int tsfi_dbtg_realm_open(tsfi_dbtg_realm_registry *reg, const char *name, int lock_mode);
 int tsfi_dbtg_realm_close(tsfi_dbtg_realm_registry *reg, const char *name);
 
+// CODASYL DB-EXCEPTION Declarative Procedures
+#define DB_STATUS_OK              0
+#define DB_STATUS_LOCK_VIOLATION 1801
+#define DB_STATUS_NOT_OPEN        1802
+
+typedef struct {
+    int db_status;
+    char failing_realm[32];
+    int exception_triggered;
+} tsfi_dbtg_exception_context;
+
+void tsfi_dbtg_exception_init(tsfi_dbtg_exception_context *ctx);
+int tsfi_dbtg_validate_action(tsfi_dbtg_exception_context *ctx, const tsfi_dbtg_realm_registry *reg, const char *realm_name, int is_write_action);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -5716,3 +5716,39 @@ int tsfi_dbtg_realm_close(tsfi_dbtg_realm_registry *reg, const char *name) {
     }
     return -4;
 }
+
+void tsfi_dbtg_exception_init(tsfi_dbtg_exception_context *ctx) {
+    if (!ctx) return;
+    memset(ctx, 0, sizeof(tsfi_dbtg_exception_context));
+    ctx->db_status = DB_STATUS_OK;
+}
+
+int tsfi_dbtg_validate_action(tsfi_dbtg_exception_context *ctx, const tsfi_dbtg_realm_registry *reg, const char *realm_name, int is_write_action) {
+    if (!ctx || !reg || !realm_name) return -1;
+    for (int i = 0; i < reg->area_count; i++) {
+        if (strcmp(reg->areas[i].area_name, realm_name) == 0) {
+            if (!reg->areas[i].is_open) {
+                ctx->db_status = DB_STATUS_NOT_OPEN;
+                strncpy(ctx->failing_realm, realm_name, sizeof(ctx->failing_realm) - 1);
+                ctx->exception_triggered = 1;
+                return -2;
+            }
+            if (is_write_action) {
+                if (reg->areas[i].lock_mode == DBTG_LOCK_RETRIEVAL ||
+                    reg->areas[i].lock_mode == DBTG_LOCK_EXCLUSIVE_RETRIEVAL) {
+                    ctx->db_status = DB_STATUS_LOCK_VIOLATION;
+                    strncpy(ctx->failing_realm, realm_name, sizeof(ctx->failing_realm) - 1);
+                    ctx->exception_triggered = 1;
+                    return -3;
+                }
+            }
+            ctx->db_status = DB_STATUS_OK;
+            ctx->exception_triggered = 0;
+            return 0;
+        }
+    }
+    ctx->db_status = DB_STATUS_NOT_OPEN;
+    strncpy(ctx->failing_realm, realm_name, sizeof(ctx->failing_realm) - 1);
+    ctx->exception_triggered = 1;
+    return -4;
+}
