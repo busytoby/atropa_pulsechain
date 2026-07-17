@@ -754,6 +754,21 @@ int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table
     return -2;
 }
 
+int tsfi_mf_majordomo_info(const char *list_name, char *info_out, int max_len) {
+    if (!list_name || !info_out || max_len <= 0) return -1;
+
+    if (strcmp(list_name, "zmm-dev") == 0) {
+        snprintf(info_out, max_len, "This list coordinates low-level Yul virtual memory development.");
+        return 0;
+    } else if (strcmp(list_name, "cics-admin") == 0) {
+        snprintf(info_out, max_len, "Mailing list for CICS system programmers and administrators.");
+        return 0;
+    }
+
+    snprintf(info_out, max_len, "Mailing list info not found.");
+    return -2;
+}
+
 static _Thread_local char g_active_agent_handle[64] = "AuncientDefaultAgent";
 
 int tsfi_mf_set_agent_handle(const char *handle) {

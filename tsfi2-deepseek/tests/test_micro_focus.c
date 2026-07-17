@@ -417,6 +417,14 @@ int main(void) {
     assert(strcmp(tsfi_mf_get_agent_handle(), "AntigravityMasterSession") == 0);
     printf("  [PASS] Agent Handle Registry verified.\n");
 
+    // 26. Verify Majordomo List Info Repository
+    printf("[TEST] Validating Majordomo List Info Repository...\n");
+    char info_buffer[128] = {0};
+    int info_res = tsfi_mf_majordomo_info("zmm-dev", info_buffer, sizeof(info_buffer));
+    assert(info_res == 0);
+    assert(strstr(info_buffer, "low-level Yul") != NULL);
+    printf("  [PASS] Majordomo List Info Repository verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
