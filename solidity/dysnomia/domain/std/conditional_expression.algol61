@@ -1,0 +1,6 @@
+begin
+  integer a, b, max;
+  a := 15;
+  b := 42;
+  max := if a > b then a else b
+end
