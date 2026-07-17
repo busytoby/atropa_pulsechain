@@ -981,6 +981,20 @@ int main(void) {
     assert(cyl == 12 && pg == 100);
     printf("  [PASS] DSDL device page mapping coordinates verified successfully.\n");
 
+    // 57. COBOL Financial Ledger & Audit Broker Verification
+    printf("[Test] Verifying COBOL financial ledger & audit broker...\n");
+    cobol_ledger ledger;
+    tsfi_cobol_ledger_init(&ledger);
+    
+    int add_res = tsfi_cobol_ledger_add(&ledger, 1001, "Account_Zero", 10000.0);
+    assert(add_res == 0);
+    
+    char audit_log[256];
+    int tx_res = tsfi_cobol_ledger_transaction(&ledger, 1001, -250.50, audit_log, sizeof(audit_log));
+    assert(tx_res == 0);
+    assert(strcmp(audit_log, "ACC=1001; HOLDER=Account_Zero; OLD=10000.00; NEW=9749.50; DELTA=-250.50") == 0);
+    printf("  [PASS] COBOL ledger transactional audit logs verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -5056,3 +5056,38 @@ int tsfi_dsdl_resolve(const dsdl_mapping_table *table, uint32_t record_id, uint3
     }
     return -1;
 }
+
+void tsfi_cobol_ledger_init(cobol_ledger *ledger) {
+    if (!ledger) return;
+    ledger->count = 0;
+    for (int i = 0; i < 16; i++) {
+        ledger->accounts[i].account_id = 0;
+        ledger->accounts[i].balance = 0.0;
+        ledger->accounts[i].account_holder[0] = '\0';
+    }
+}
+
+int tsfi_cobol_ledger_add(cobol_ledger *ledger, uint32_t acc_id, const char *holder, double initial_balance) {
+    if (!ledger || ledger->count >= 16 || !holder) return -1;
+    cobol_account *acc = &ledger->accounts[ledger->count++];
+    acc->account_id = acc_id;
+    acc->balance = initial_balance;
+    strncpy(acc->account_holder, holder, sizeof(acc->account_holder) - 1);
+    acc->account_holder[sizeof(acc->account_holder) - 1] = '\0';
+    return 0;
+}
+
+int tsfi_cobol_ledger_transaction(cobol_ledger *ledger, uint32_t acc_id, double amount, char *audit_out, size_t max_len) {
+    if (!ledger || !audit_out || max_len == 0) return -1;
+    for (int i = 0; i < ledger->count; i++) {
+        cobol_account *acc = &ledger->accounts[i];
+        if (acc->account_id == acc_id) {
+            double old_bal = acc->balance;
+            acc->balance += amount;
+            int bytes = snprintf(audit_out, max_len, "ACC=%u; HOLDER=%s; OLD=%.2f; NEW=%.2f; DELTA=%.2f",
+                                 acc->account_id, acc->account_holder, old_bal, acc->balance, amount);
+            return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -2;
+        }
+    }
+    return -3;
+}

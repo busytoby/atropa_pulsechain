@@ -1235,4 +1235,20 @@ void tsfi_dsdl_init(dsdl_mapping_table *table);
 int tsfi_dsdl_register(dsdl_mapping_table *table, uint32_t record_id, uint32_t cylinder, uint32_t page);
 int tsfi_dsdl_resolve(const dsdl_mapping_table *table, uint32_t record_id, uint32_t *out_cylinder, uint32_t *out_page);
 
+// 1971 Volume 17: COBOL Financial Ledger & Audit Broker
+typedef struct {
+    uint32_t account_id;
+    double balance;
+    char account_holder[32];
+} cobol_account;
+
+typedef struct {
+    cobol_account accounts[16];
+    int count;
+} cobol_ledger;
+
+void tsfi_cobol_ledger_init(cobol_ledger *ledger);
+int tsfi_cobol_ledger_add(cobol_ledger *ledger, uint32_t acc_id, const char *holder, double initial_balance);
+int tsfi_cobol_ledger_transaction(cobol_ledger *ledger, uint32_t acc_id, double amount, char *audit_out, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H
