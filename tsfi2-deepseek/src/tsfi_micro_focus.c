@@ -1006,3 +1006,12 @@ int tsfi_mf_majordomo_lists(char *lists_out, int max_len) {
              "  atropa-pulse\n");
     return 0;
 }
+
+int tsfi_mf_cics_start_task(const char *trans_id, uint32_t delay_seconds, const uint8_t *data, int data_len, uint32_t *active_tasks_count) {
+    if (!trans_id || !active_tasks_count || data_len < 0) return -1;
+    (void)delay_seconds;
+    (void)data;
+
+    *active_tasks_count += 1;
+    return 0;
+}

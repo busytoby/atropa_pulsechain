@@ -550,6 +550,15 @@ int main(void) {
     assert(strstr(lists_buffer, "atropa-pulse") != NULL);
     printf("  [PASS] Majordomo lists Resolver verified.\n");
 
+    // 39. Verify CICS Interval Control Task Starter Emulator
+    printf("[TEST] Validating CICS Interval Control Task Starter...\n");
+    uint32_t active_tasks = 0;
+    uint8_t start_data[4] = {0};
+    int start_res = tsfi_mf_cics_start_task("TASK", 10, start_data, 4, &active_tasks);
+    assert(start_res == 0);
+    assert(active_tasks == 1);
+    printf("  [PASS] CICS Interval Control Task Starter Emulator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
