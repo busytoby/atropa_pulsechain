@@ -37,6 +37,8 @@ models/
 *.txt
 *.log
 *.pos
+*.pcm
+*.yuv
 core
 eof_corpus_*.txt
 
