@@ -1459,6 +1459,22 @@ int main(void) {
     assert(offset_loc == 4);
     printf("  [PASS] IRS CADE Registry Offset Locator verified.\n");
 
+    // 138. Verify IRS IMF Excise/Misc Form Verifier
+    printf("[TEST] Validating IRS IMF Excise Form Verifier...\n");
+    int is_excise = -1;
+    int excise_chk_res = tsfi_mf_imf_is_excise_or_misc_form(45, &is_excise);
+    assert(excise_chk_res == 0);
+    assert(is_excise == 1);
+    printf("  [PASS] IRS IMF Excise Form Verifier verified.\n");
+
+    // 139. Verify IRS CADE Taxpayer Status Name Resolver
+    printf("[TEST] Validating IRS CADE Taxpayer Status Name Resolver...\n");
+    char status_name[32] = {0};
+    int get_stat_res = tsfi_mf_cade_get_status_name(2, status_name, sizeof(status_name));
+    assert(get_stat_res == 0);
+    assert(strcmp(status_name, "Under Audit") == 0);
+    printf("  [PASS] IRS CADE Taxpayer Status Name Resolver verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

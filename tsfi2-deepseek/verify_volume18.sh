@@ -201,8 +201,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 246 | IRS CADE Registry Compactor | PASS | Strips whitespace characters from registry data buffers | Volume 33 |
 | 247 | IRS IMF Document Code Locator | PASS | Natively resolves document identifiers from standard form names | Volume 33 |
 | 248 | IRS CADE Record Offset Locator | PASS | Computes taxpayer entry alignment offsets within registry strings | Volume 33 |
+| 249 | IRS IMF Excise Form Verifier | PASS | Restricts form types to excise or miscellaneous ranges | Volume 33 |
+| 250 | IRS CADE Taxpayer Status Name Resolver | PASS | Resolves taxpayer account status names from status digit | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 248 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 250 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

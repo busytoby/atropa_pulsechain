@@ -354,3 +354,33 @@ int tsfi_mf_cade_locate_record_offset(const char *ssn, const char *registry_pool
     *offset_out = -1;
     return -2;
 }
+
+int tsfi_mf_imf_is_excise_or_misc_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code >= 40) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_get_status_name(int status_code, char *name_out, int max_len) {
+    if (!name_out || max_len <= 0) return -1;
+
+    switch (status_code) {
+        case 1:
+            snprintf(name_out, max_len, "Active");
+            break;
+        case 2:
+            snprintf(name_out, max_len, "Under Audit");
+            break;
+        case 3:
+            snprintf(name_out, max_len, "Pending Collection");
+            break;
+        default:
+            snprintf(name_out, max_len, "Unknown Status");
+            break;
+    }
+    return 0;
+}
