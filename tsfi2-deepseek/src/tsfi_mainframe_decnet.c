@@ -1,5 +1,7 @@
 #include "tsfi_mainframe_decnet.h"
 #include <stdio.h>
+#include <math.h>
+#include <string.h>
 
 void tsfi_decnet_init(tsfi_decnet_router *router, uint16_t local_id) {
     if (!router) return;
@@ -1925,5 +1927,32 @@ int tsfi_apollo_control_synth_bird_call(const tsfi_apollo_frame *frame, float *f
         frequency_sweep_out[i] = start_freq + (end_freq - start_freq) * t;
     }
     *sweep_points_out = points;
+    return 0;
+}
+
+int tsfi_apollo_spool_phonemes(const tsfi_apollo_frame *frame, const char *text, tsfi_apollo_phoneme *phonemes_out, size_t *count_out) {
+    if (!frame || !text || !phonemes_out || !count_out) return -1;
+    size_t i = 0;
+    for (; text[i] != '\0' && i < 128; i++) {
+        phonemes_out[i].phoneme_char = text[i];
+        phonemes_out[i].pitch_frequency = 300.0f + (frame->ring_id * 2.0f) + (text[i] * 3.0f);
+        phonemes_out[i].amplitude = 0.8f;
+    }
+    *count_out = i;
+    return 0;
+}
+
+int tsfi_apollo_render_soundscape(const tsfi_apollo_soundscape_node *nodes, size_t node_count, float *mixed_signal_out, size_t points) {
+    if (!nodes || node_count == 0 || !mixed_signal_out || points == 0) return -1;
+    memset(mixed_signal_out, 0, points * sizeof(float));
+    for (size_t i = 0; i < points; i++) {
+        float sample = 0.0f;
+        for (size_t n = 0; n < node_count; n++) {
+            float dist = sqrtf(nodes[n].x_pos * nodes[n].x_pos + nodes[n].y_pos * nodes[n].y_pos) + 1.0f;
+            float attenuation = 1.0f / dist;
+            sample += sinf((float)i * 0.1f * (float)(nodes[n].node_id % 10)) * nodes[n].volume_level * attenuation;
+        }
+        mixed_signal_out[i] = sample / (float)node_count;
+    }
     return 0;
 }

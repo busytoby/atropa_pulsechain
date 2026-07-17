@@ -851,4 +851,23 @@ int tsfi_apollo_deserialize(const uint8_t *buf, size_t len, tsfi_apollo_frame *f
 // Apollo synthesizer interface for bird call generation
 int tsfi_apollo_control_synth_bird_call(const tsfi_apollo_frame *frame, float *frequency_sweep_out, size_t *sweep_points_out);
 
+// Apollo Ring-Spooled Phoneme structure
+typedef struct {
+    char phoneme_char;
+    float pitch_frequency;
+    float amplitude;
+} tsfi_apollo_phoneme;
+
+int tsfi_apollo_spool_phonemes(const tsfi_apollo_frame *frame, const char *text, tsfi_apollo_phoneme *phonemes_out, size_t *count_out);
+
+// Distributed Avian Soundscapes Node mapping
+typedef struct {
+    int node_id;
+    float x_pos;
+    float y_pos;
+    float volume_level;
+} tsfi_apollo_soundscape_node;
+
+int tsfi_apollo_render_soundscape(const tsfi_apollo_soundscape_node *nodes, size_t node_count, float *mixed_signal_out, size_t points);
+
 #endif // TSFI_MAINFRAME_DECNET_H

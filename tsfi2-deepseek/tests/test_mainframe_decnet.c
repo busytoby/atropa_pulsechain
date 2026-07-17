@@ -1195,6 +1195,30 @@ int main(void) {
     assert(frequency_sweep[99] == 6040.0f); // 6000.0 + (2 * 20.0)
     printf("  [PASS] Apollo synthesizer bird call sweep generation verified.\n");
 
+    // 69. Apollo Advanced Audio Verification (Phonemes & Soundscape Mix)
+    printf("[Test] Verifying Apollo Phonemes & Soundscape Mixer...\n");
+    tsfi_apollo_phoneme phonemes[32];
+    size_t phoneme_count = 0;
+    assert(tsfi_apollo_spool_phonemes(&tx_frame, "BIRD", phonemes, &phoneme_count) == 0);
+    assert(phoneme_count == 4);
+    assert(phonemes[0].phoneme_char == 'B');
+    assert(phonemes[0].pitch_frequency > 300.0f);
+    
+    tsfi_apollo_soundscape_node nodes[2];
+    nodes[0].node_id = 10;
+    nodes[0].x_pos = 1.0f;
+    nodes[0].y_pos = 0.0f;
+    nodes[0].volume_level = 0.5f;
+    
+    nodes[1].node_id = 20;
+    nodes[1].x_pos = 0.0f;
+    nodes[1].y_pos = 1.0f;
+    nodes[1].volume_level = 0.5f;
+    
+    float mix[50];
+    assert(tsfi_apollo_render_soundscape(nodes, 2, mix, 50) == 0);
+    printf("  [PASS] Apollo phoneme spooling and multi-node soundscape rendering verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
