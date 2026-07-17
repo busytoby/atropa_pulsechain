@@ -128,5 +128,7 @@
 | 194 | CICS Task Execution Priority Changer | PASS | Alters current task execution priority level | Volume 33 |
 | 195 | Majordomo Post Policy Checker | PASS | Verification utility checking list post policy | Volume 33 |
 | 196 | CICS Task Priority Inquire Emulator | PASS | Dynamic task execution priority query check | Volume 33 |
+| 197 | Majordomo Moderation Forwarder | PASS | Request accept and forward dispatcher | Volume 33 |
+| 198 | CICS Target Task Suspend Emulator | PASS | Put another transaction task to sleep | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 196 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 198 Scenarios validated successfully)

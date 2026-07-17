@@ -1011,6 +1011,24 @@ int main(void) {
     assert(priority_out_val == 200);
     printf("  [PASS] CICS INQUIRE TASK PRIORITY verified.\n");
 
+    // 87. Verify Majordomo List Moderation Request Forwarder
+    printf("[TEST] Validating Majordomo Forwarder...\n");
+    char forward_buf[128] = {0};
+    int fwd_res = tsfi_mf_majordomo_approve_forward(77123, "zmm-dev", "Approve post request payload body text", forward_buf, sizeof(forward_buf));
+    assert(fwd_res == 0);
+    assert(strstr(forward_buf, "FORWARD:LIST=zmm-dev|COOKIE=77123") != NULL);
+    printf("  [PASS] Majordomo Forwarder verified.\n");
+
+    // 88. Verify CICS Target Task Suspend Emulator
+    printf("[TEST] Validating CICS SUSPEND TASK...\n");
+    uint32_t active_tasks_suspended[4] = {3001, 3002};
+    int active_tasks_count = 2;
+    int target_sus_res = tsfi_mf_cics_suspend_task(3003, active_tasks_suspended, &active_tasks_count, 4);
+    assert(target_sus_res == 0);
+    assert(active_tasks_count == 3);
+    assert(active_tasks_suspended[2] == 3003);
+    printf("  [PASS] CICS SUSPEND TASK verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

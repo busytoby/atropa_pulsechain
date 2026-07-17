@@ -1607,3 +1607,20 @@ int tsfi_mf_cics_inquire_priority(uint32_t task_id, int priority_registry, int *
     *priority_out = priority_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_approve_forward(uint32_t cookie, const char *list_name, const char *msg_body, char *output_forward_log, int max_len) {
+    if (!list_name || !msg_body || !output_forward_log || max_len <= 0) return -1;
+
+    snprintf(output_forward_log, max_len, "FORWARD:LIST=%s|COOKIE=%u|BODY=%s", list_name, cookie, msg_body);
+    return 0;
+}
+
+int tsfi_mf_cics_suspend_task(uint32_t target_task_id, uint32_t *suspend_log, int *log_count, int max_log) {
+    if (!suspend_log || !log_count || *log_count < 0 || max_log <= 0) return -1;
+
+    if (*log_count >= max_log) return -2;
+
+    suspend_log[*log_count] = target_task_id;
+    *log_count += 1;
+    return 0;
+}
