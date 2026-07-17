@@ -1200,4 +1200,22 @@ void tsfi_failover_init(tsfi_failover_group *group);
 int tsfi_failover_add_node(tsfi_failover_group *group, int node_id, int is_primary);
 int tsfi_failover_tick(tsfi_failover_group *group, int current_tick, int max_missed_ticks);
 
+// CYCLADES Transport Station (TS) Connection State Machine
+#define CYCLADES_STATE_LISTEN 10
+
+#define CYCLADES_EVENT_ACTIVE_OPEN 1
+#define CYCLADES_EVENT_RCV_SYN 2
+#define CYCLADES_EVENT_SEND_SYN_ACK 3
+#define CYCLADES_EVENT_CLOSE 4
+
+typedef struct {
+    int connection_id;
+    int state;
+    uint16_t local_port;
+    uint16_t remote_port;
+} tsfi_cyclades_ts_conn;
+
+void tsfi_cyclades_ts_init(tsfi_cyclades_ts_conn *conn, int conn_id, uint16_t port);
+int tsfi_cyclades_ts_transition(tsfi_cyclades_ts_conn *conn, int event);
+
 #endif // TSFI_MAINFRAME_DECNET_H

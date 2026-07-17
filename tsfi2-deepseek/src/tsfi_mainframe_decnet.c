@@ -2619,3 +2619,48 @@ int tsfi_failover_tick(tsfi_failover_group *group, int current_tick, int max_mis
     }
     return 0;
 }
+
+void tsfi_cyclades_ts_init(tsfi_cyclades_ts_conn *conn, int conn_id, uint16_t port) {
+    if (!conn) return;
+    conn->connection_id = conn_id;
+    conn->state = CYCLADES_STATE_CLOSED;
+    conn->local_port = port;
+    conn->remote_port = 0;
+}
+
+int tsfi_cyclades_ts_transition(tsfi_cyclades_ts_conn *conn, int event) {
+    if (!conn) return -1;
+    switch (conn->state) {
+        case CYCLADES_STATE_CLOSED:
+            if (event == CYCLADES_EVENT_ACTIVE_OPEN) {
+                conn->state = CYCLADES_STATE_SYN_SENT;
+                return 0;
+            }
+            break;
+        case CYCLADES_STATE_LISTEN:
+            if (event == CYCLADES_EVENT_RCV_SYN) {
+                conn->state = CYCLADES_STATE_SYN_RCVD;
+                return 0;
+            }
+            break;
+        case CYCLADES_STATE_SYN_SENT:
+            if (event == CYCLADES_EVENT_RCV_SYN) {
+                conn->state = CYCLADES_STATE_ESTABLISHED;
+                return 0;
+            }
+            break;
+        case CYCLADES_STATE_SYN_RCVD:
+            if (event == CYCLADES_EVENT_SEND_SYN_ACK) {
+                conn->state = CYCLADES_STATE_ESTABLISHED;
+                return 0;
+            }
+            break;
+        case CYCLADES_STATE_ESTABLISHED:
+            if (event == CYCLADES_EVENT_CLOSE) {
+                conn->state = CYCLADES_STATE_FIN_WAIT;
+                return 0;
+            }
+            break;
+    }
+    return -2;
+}

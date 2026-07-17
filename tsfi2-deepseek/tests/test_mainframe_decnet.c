@@ -1867,6 +1867,25 @@ int main(void) {
     assert(local_store.rollback_executed == 0);
     printf("  [PASS] Failover recovery and post-promotion consensus storage commits verified.\n");
 
+    // 92. CYCLADES Transport Station Connection Handshake Verification
+    printf("[Test] Verifying CYCLADES TS Connection State transitions...\n");
+    tsfi_cyclades_ts_conn ts_conn;
+    tsfi_cyclades_ts_init(&ts_conn, 7001, 80);
+    assert(ts_conn.state == CYCLADES_STATE_CLOSED);
+    
+    // Active open
+    assert(tsfi_cyclades_ts_transition(&ts_conn, CYCLADES_EVENT_ACTIVE_OPEN) == 0);
+    assert(ts_conn.state == CYCLADES_STATE_SYN_SENT);
+    
+    // Receive SYN -> Established
+    assert(tsfi_cyclades_ts_transition(&ts_conn, CYCLADES_EVENT_RCV_SYN) == 0);
+    assert(ts_conn.state == CYCLADES_STATE_ESTABLISHED);
+    
+    // Close -> Fin-Wait
+    assert(tsfi_cyclades_ts_transition(&ts_conn, CYCLADES_EVENT_CLOSE) == 0);
+    assert(ts_conn.state == CYCLADES_STATE_FIN_WAIT);
+    printf("  [PASS] CYCLADES Transport Station handshake states verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
