@@ -189,6 +189,28 @@ int tsfi_mf_sif_serialize(const tsfi_cgm_scene *scene, char *out_buffer, size_t 
         strcat(out_buffer, line);
         current_len += line_len;
     }
+    return 0;
+}
 
+int tsfi_mf_stock_inventory_process(const char *raw_record, char *report_line) {
+    if (!raw_record || !report_line) return -1;
+
+    char id[5] = {0};
+    char name[13] = {0};
+    memcpy(id, raw_record, 4);
+    memcpy(name, raw_record + 4, 12);
+
+    uint32_t qty = tsfi_mf_comp5_decode((const uint8_t*)(raw_record + 16), 4, 0);
+    uint32_t price = tsfi_mf_comp5_decode((const uint8_t*)(raw_record + 20), 4, 0);
+    uint32_t value = qty * price;
+
+    const char *status_str = "NORMAL";
+    if (qty == 0) {
+        status_str = "OUT OF STOCK";
+    } else if (qty < 10) {
+        status_str = "LOW STOCK";
+    }
+
+    sprintf(report_line, "ID:%s NAME:%-12s QTY:%04u VALUE:%08u STATUS:%s", id, name, qty, value, status_str);
     return 0;
 }

@@ -122,6 +122,23 @@ int main(void) {
     assert(strncmp(&term_buf[1 * 80 + 14], "SYSTEM OK", 9) == 0);
     printf("  [PASS] Screen Section layout rendering verified.\n");
 
+    // 5. Verify Michael Coughlan Stock Inventory Processing
+    printf("[TEST] Validating Coughlan Stock Inventory record processing...\n");
+    char raw_record[24];
+    memcpy(raw_record, "A001", 4);
+    memcpy(raw_record + 4, "TeddyBear   ", 12);
+    tsfi_mf_comp5_encode(5, (uint8_t*)(raw_record + 16), 4);
+    tsfi_mf_comp5_encode(100, (uint8_t*)(raw_record + 20), 4);
+
+    char report_line[128];
+    int stock_res = tsfi_mf_stock_inventory_process(raw_record, report_line);
+    assert(stock_res == 0);
+    assert(strstr(report_line, "ID:A001") != NULL);
+    assert(strstr(report_line, "QTY:0005") != NULL);
+    assert(strstr(report_line, "VALUE:00000500") != NULL);
+    assert(strstr(report_line, "STATUS:LOW STOCK") != NULL);
+    printf("  [PASS] Coughlan Stock record layout and explicit status verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
