@@ -5786,3 +5786,17 @@ int tsfi_dbtg_navigate_set(int current_idx, int record_count, int direction_mode
             return -1;
     }
 }
+
+int tsfi_dbtg_insert_sorted(tsfi_dbtg_sorted_record *records, int current_count, int max_capacity, int record_id, int sort_key) {
+    if (!records || current_count < 0 || current_count >= max_capacity) return -1;
+    int insert_idx = 0;
+    while (insert_idx < current_count && records[insert_idx].sort_key < sort_key) {
+        insert_idx++;
+    }
+    for (int i = current_count; i > insert_idx; i--) {
+        records[i] = records[i - 1];
+    }
+    records[insert_idx].record_id = record_id;
+    records[insert_idx].sort_key = sort_key;
+    return current_count + 1;
+}

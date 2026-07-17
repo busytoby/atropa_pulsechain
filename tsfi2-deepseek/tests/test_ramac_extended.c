@@ -1358,6 +1358,27 @@ int main(void) {
     assert(tsfi_dbtg_navigate_set(0, count, DBTG_NAV_PRIOR) == 4);
     printf("  [PASS] DBTG FIRST, LAST, NEXT, and PRIOR offset mappings verified.\n");
 
+    // 78. DBTG Set Sort Order Invariants Verification
+    printf("[Test] Verifying DBTG Set Sort Order invariants...\n");
+    tsfi_dbtg_sorted_record sorted_records[4];
+    memset(sorted_records, 0, sizeof(sorted_records));
+    
+    int s_count = 0;
+    s_count = tsfi_dbtg_insert_sorted(sorted_records, s_count, 4, 101, 50);
+    assert(s_count == 1);
+    
+    s_count = tsfi_dbtg_insert_sorted(sorted_records, s_count, 4, 102, 20);
+    assert(s_count == 2);
+    assert(sorted_records[0].record_id == 102);
+    assert(sorted_records[1].record_id == 101);
+    
+    s_count = tsfi_dbtg_insert_sorted(sorted_records, s_count, 4, 103, 35);
+    assert(s_count == 3);
+    assert(sorted_records[0].record_id == 102);
+    assert(sorted_records[1].record_id == 103);
+    assert(sorted_records[2].record_id == 101);
+    printf("  [PASS] DBTG Set Sorted insertion key alignment verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

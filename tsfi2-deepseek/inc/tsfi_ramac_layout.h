@@ -1436,4 +1436,12 @@ int tsfi_dbtg_validate_disconnect(const tsfi_dbtg_set_membership *sm, int *db_st
 
 int tsfi_dbtg_navigate_set(int current_idx, int record_count, int direction_mode);
 
+// DBTG Set Sort Order Invariants
+typedef struct {
+    int record_id;
+    int sort_key;
+} tsfi_dbtg_sorted_record;
+
+int tsfi_dbtg_insert_sorted(tsfi_dbtg_sorted_record *records, int current_count, int max_capacity, int record_id, int sort_key);
+
 #endif // TSFI_RAMAC_LAYOUT_H
