@@ -1876,3 +1876,41 @@ int tsfi_sdc_lisp_filter(const char *query_expr, const char *record_key, const c
     }
     return 0;
 }
+
+int tsfi_s240_audit(const char *user, int action_type, const char *resource, char *log_out, size_t max_len) {
+    if (!user || !resource || !log_out || max_len == 0) return -1;
+    const char *action_str = "UNKNOWN";
+    if (action_type == S240_ACCESS) action_str = "UNAUTHORIZED_ACCESS";
+    else if (action_type == S240_MODIFY) action_str = "UNAUTHORIZED_MODIFICATION";
+    else if (action_type == S240_DESTROY) action_str = "UNAUTHORIZED_DESTRUCTION";
+    
+    snprintf(log_out, max_len, "S240_AUDIT: User=%s, Action=%s, Resource=%s", user, action_str, resource);
+    return 0;
+}
+
+int tsfi_cpa_verify(const tsfi_cpa_audit *audit, float allowed_variance) {
+    if (!audit) return -1;
+    float diff = audit->total_ledger_sum - audit->total_rendered_sum;
+    if (diff < 0.0f) diff = -diff;
+    return (diff <= allowed_variance) ? 0 : -2;
+}
+
+int tsfi_apollo_serialize(const tsfi_apollo_frame *frame, uint8_t *buf, size_t *len_out) {
+    if (!frame || !buf || !len_out) return -1;
+    buf[0] = (frame->ring_id >> 8) & 0xFF;
+    buf[1] = frame->ring_id & 0xFF;
+    buf[2] = frame->source_node;
+    buf[3] = frame->dest_node;
+    buf[4] = frame->control_token;
+    *len_out = 5;
+    return 0;
+}
+
+int tsfi_apollo_deserialize(const uint8_t *buf, size_t len, tsfi_apollo_frame *frame_out) {
+    if (!buf || !frame_out || len < 5) return -1;
+    frame_out->ring_id = (buf[0] << 8) | buf[1];
+    frame_out->source_node = buf[2];
+    frame_out->dest_node = buf[3];
+    frame_out->control_token = buf[4];
+    return 0;
+}

@@ -822,4 +822,30 @@ uint32_t tsfi_sdc_handshake_exchange(tsfi_sdc_handshake *hs, uint32_t foreign_de
 // SDC LISP-based database query filter
 int tsfi_sdc_lisp_filter(const char *query_expr, const char *record_key, const char *record_val);
 
+#define S240_ACCESS  1
+#define S240_MODIFY  2
+#define S240_DESTROY 3
+
+// S.240 Computer Crime Bill Audit Logger
+int tsfi_s240_audit(const char *user, int action_type, const char *resource, char *log_out, size_t max_len);
+
+// CPA Transaction-to-Graphics Auditing Bridge
+typedef struct {
+    float total_ledger_sum;
+    float total_rendered_sum;
+} tsfi_cpa_audit;
+
+int tsfi_cpa_verify(const tsfi_cpa_audit *audit, float allowed_variance);
+
+// Apollo Domain Token Ring Frame Header Codec
+typedef struct {
+    uint16_t ring_id;
+    uint8_t source_node;
+    uint8_t dest_node;
+    uint8_t control_token;
+} tsfi_apollo_frame;
+
+int tsfi_apollo_serialize(const tsfi_apollo_frame *frame, uint8_t *buf, size_t *len_out);
+int tsfi_apollo_deserialize(const uint8_t *buf, size_t len, tsfi_apollo_frame *frame_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

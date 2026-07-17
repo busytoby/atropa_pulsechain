@@ -1147,6 +1147,44 @@ int main(void) {
     
     printf("  [PASS] SDC advanced features (ACM, Handshake, LISP filter) verified.\n");
 
+    // 67. Vin McLellan's Systems Verification (S.240, CPA, Apollo Frame)
+    printf("[Test] Verifying Vin McLellan's Systems...\n");
+    
+    // S.240 Audit
+    char audit_log[128];
+    assert(tsfi_s240_audit("mariarahel", S240_ACCESS, "RAMAC_REC_01", audit_log, sizeof(audit_log)) == 0);
+    assert(strstr(audit_log, "User=mariarahel") != NULL);
+    assert(strstr(audit_log, "Action=UNAUTHORIZED_ACCESS") != NULL);
+    assert(strstr(audit_log, "Resource=RAMAC_REC_01") != NULL);
+    
+    // CPA Verify
+    tsfi_cpa_audit cpa;
+    cpa.total_ledger_sum = 1000.0f;
+    cpa.total_rendered_sum = 1000.02f;
+    assert(tsfi_cpa_verify(&cpa, 0.05f) == 0);
+    assert(tsfi_cpa_verify(&cpa, 0.01f) == -2);
+    
+    // Apollo Frame
+    tsfi_apollo_frame tx_frame;
+    tx_frame.ring_id = 99;
+    tx_frame.source_node = 1;
+    tx_frame.dest_node = 2;
+    tx_frame.control_token = 1;
+    
+    uint8_t frame_buf[8];
+    size_t frame_len = 0;
+    assert(tsfi_apollo_serialize(&tx_frame, frame_buf, &frame_len) == 0);
+    assert(frame_len == 5);
+    
+    tsfi_apollo_frame rx_frame;
+    assert(tsfi_apollo_deserialize(frame_buf, frame_len, &rx_frame) == 0);
+    assert(rx_frame.ring_id == 99);
+    assert(rx_frame.source_node == 1);
+    assert(rx_frame.dest_node == 2);
+    assert(rx_frame.control_token == 1);
+    
+    printf("  [PASS] Vin McLellan's systems (S.240, CPA, Apollo Frame) verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
