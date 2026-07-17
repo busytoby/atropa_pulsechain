@@ -520,6 +520,16 @@ int main(void) {
     assert(strcmp(td_pool, "[AUDT] User login event") == 0);
     printf("  [PASS] CICS Transient Data Queue Control Emulator verified.\n");
 
+    // 36. Verify PMG Ballistics Trajectory Logger
+    printf("[TEST] Validating PMG Ballistics Trajectory Logger...\n");
+    char traj_pool[256] = {0};
+    int traj_count = 0;
+    int traj_res = tsfi_mf_pmg_log_trajectory(3, 1.25f, -0.75f, traj_pool, &traj_count, 4);
+    assert(traj_res == 0);
+    assert(traj_count == 1);
+    assert(strcmp(traj_pool, "[TRAJ] MISSILE 3: VX=1.25, VY=-0.75") == 0);
+    printf("  [PASS] PMG Ballistics Trajectory Logger verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

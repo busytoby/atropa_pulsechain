@@ -54,6 +54,7 @@ int tsfi_mf_majordomo_which(const char *email, const char **lists, int list_coun
 int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len);
 int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, const char *record_data);
 int tsfi_mf_cics_writeq_td(const char *queue_name, const char *log_message, char *queue_pool, int *queue_count, int max_entries);
+int tsfi_mf_pmg_log_trajectory(uint8_t missile_id, float vx, float vy, char *queue_pool, int *queue_count, int max_entries);
 int tsfi_mf_zmachine_vulkan_map_render(uint32_t active_room_id, const uint32_t *connections, int conn_count, char *terminal_buffer);
 int tsfi_mf_cics_handle_condition(uint32_t condition_id, uint64_t handler_addr, uint64_t *registry_table, int max_conditions);
 int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table, int max_conditions, uint64_t *handler_out);

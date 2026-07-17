@@ -979,3 +979,11 @@ int tsfi_mf_cics_writeq_td(const char *queue_name, const char *log_message, char
     *queue_count = idx + 1;
     return 0;
 }
+
+int tsfi_mf_pmg_log_trajectory(uint8_t missile_id, float vx, float vy, char *queue_pool, int *queue_count, int max_entries) {
+    if (!queue_pool || !queue_count || max_entries <= 0) return -1;
+
+    char msg[64];
+    snprintf(msg, sizeof(msg), "MISSILE %d: VX=%.2f, VY=%.2f", missile_id, vx, vy);
+    return tsfi_mf_cics_writeq_td("TRAJ", msg, queue_pool, queue_count, max_entries);
+}
