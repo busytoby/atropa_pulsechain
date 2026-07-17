@@ -154,6 +154,17 @@ int main(void) {
     assert(strstr(comm_line, "COMM:000900") != NULL); // (10000*0.05) + (5000*0.08) = 500 + 400 = 900
     printf("  [PASS] Coughlan Sales Commission calculation and record layout verified.\n");
 
+    // Verify Diyat Tax calculations
+    printf("[TEST] Validating Diyat Tax calculations...\n");
+    uint32_t tax_val = 0;
+    int diyat_res = tsfi_mf_calculate_diyat_tax("SEMI", 100000, &tax_val);
+    assert(diyat_res == 0);
+    assert(tax_val == 120000);
+    diyat_res = tsfi_mf_calculate_diyat_tax("HALF", 100000, &tax_val);
+    assert(diyat_res == 0);
+    assert(tax_val == 50000);
+    printf("  [PASS] Diyat Tax rates verified without level-88 indicators.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

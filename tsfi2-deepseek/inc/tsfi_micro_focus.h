@@ -23,5 +23,6 @@ int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer,
 // 5. Michael Coughlan Stock & Sales Processing
 int tsfi_mf_stock_inventory_process(const char *raw_record, char *report_line);
 int tsfi_mf_sales_commission_process(const char *raw_record, char *report_line);
+int tsfi_mf_calculate_diyat_tax(const char *event_code, uint32_t base_value, uint32_t *out_tax);
 
 #endif // TSFI_MICRO_FOCUS_H

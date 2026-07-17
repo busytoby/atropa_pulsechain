@@ -235,3 +235,23 @@ int tsfi_mf_sales_commission_process(const char *raw_record, char *report_line) 
     sprintf(report_line, "REP:%s NAME:%-12s SALES:%06u COMM:%06u", id, name, sales, commission);
     return 0;
 }
+
+int tsfi_mf_calculate_diyat_tax(const char *event_code, uint32_t base_value, uint32_t *out_tax) {
+    if (!event_code || !out_tax) return -1;
+
+    if (strcmp(event_code, "FULL") == 0) {
+        *out_tax = base_value;
+        return 0;
+    } else if (strcmp(event_code, "SEMI") == 0) {
+        *out_tax = (base_value * 120) / 100;
+        return 0;
+    } else if (strcmp(event_code, "HALF") == 0) {
+        *out_tax = base_value / 2;
+        return 0;
+    } else if (strcmp(event_code, "MUTE") == 0) {
+        *out_tax = base_value / 10;
+        return 0;
+    }
+
+    return -2;
+}
