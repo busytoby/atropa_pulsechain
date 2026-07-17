@@ -181,8 +181,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 226 | Mainframe RAMAC Synthesizer Demo Generator | PASS | Natively compiles and synthesizes YUV video and WAV audio stream | Volume 33 |
 | 227 | IRS CADE Taxpayer Registry | PASS | Instantiates taxpayer account metadata registers | Volume 33 |
 | 228 | IRS IMF Transaction Processor | PASS | Processes Master File codes and recalculates balances | Volume 33 |
+| 229 | IRS CADE Daily Batch Processor | PASS | Executes daily tax balance calculation runs | Volume 33 |
+| 230 | IRS IMF Transaction Code Validator | PASS | Validates Master File transaction code directives | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 228 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 230 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

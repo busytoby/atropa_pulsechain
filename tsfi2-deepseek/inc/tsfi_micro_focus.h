@@ -141,5 +141,7 @@ int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_
 int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
 int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len);
 int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len);
+int tsfi_mf_cade_process_daily_batch(const char **ssns, const int *tcs, const double *amounts, int count, double *balances, char *batch_report, int max_len);
+int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, int *is_valid);
 
 #endif // TSFI_MICRO_FOCUS_H

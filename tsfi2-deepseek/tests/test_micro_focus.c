@@ -1273,6 +1273,29 @@ int main(void) {
     assert(strstr(imf_log, "TC846") != NULL);
     printf("  [PASS] IRS IMF Transaction Processor verified.\n");
 
+    // 118. Verify IRS CADE Daily Batch Processing Cycle
+    printf("[TEST] Validating IRS CADE Daily Batch Processor...\n");
+    const char *ssns[] = {"999-12-3456", "999-12-7890"};
+    const int tcs[] = {150, 846};
+    const double amounts[] = {300.00, 100.00};
+    double balances[] = {1000.00, 500.00};
+    char batch_report[256] = {0};
+    int batch_res = tsfi_mf_cade_process_daily_batch(ssns, tcs, amounts, 2, balances, batch_report, sizeof(batch_report));
+    assert(batch_res == 0);
+    assert(balances[0] == 1300.00);
+    assert(balances[1] == 400.00);
+    assert(strstr(batch_report, "ASSESSMENTS: 300.00") != NULL);
+    assert(strstr(batch_report, "REFUNDS: 100.00") != NULL);
+    printf("  [PASS] IRS CADE Daily Batch Processor verified.\n");
+
+    // 119. Verify IRS IMF Transaction Code Validator
+    printf("[TEST] Validating IRS IMF Transaction Code Validator...\n");
+    int code_valid = -1;
+    int val_code_res = tsfi_mf_imf_validate_transaction_code(290, 50.00, &code_valid);
+    assert(val_code_res == 0);
+    assert(code_valid == 1);
+    printf("  [PASS] IRS IMF Transaction Code Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

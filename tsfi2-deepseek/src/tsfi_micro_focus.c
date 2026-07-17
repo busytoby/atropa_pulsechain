@@ -1924,3 +1924,38 @@ int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, doubl
     }
     return 0;
 }
+
+int tsfi_mf_cade_process_daily_batch(const char **ssns, const int *tcs, const double *amounts, int count, double *balances, char *batch_report, int max_len) {
+    if (!ssns || !tcs || !amounts || !balances || !batch_report || max_len <= 0) return -1;
+
+    double total_assessments = 0.0;
+    double total_refunds = 0.0;
+    int success_count = 0;
+    char temp_log[128];
+
+    for (int i = 0; i < count; i++) {
+        int res = tsfi_mf_imf_process_transaction(ssns[i], tcs[i], amounts[i], &balances[i], temp_log, sizeof(temp_log));
+        if (res == 0) {
+            success_count++;
+            if (tcs[i] == 150 || tcs[i] == 290) {
+                total_assessments += amounts[i];
+            } else if (tcs[i] == 846) {
+                total_refunds += amounts[i];
+            }
+        }
+    }
+
+    snprintf(batch_report, max_len, "CADE DAILY BATCH: PROCESSED %d/%d | ASSESSMENTS: %.2f | REFUNDS: %.2f",
+             success_count, count, total_assessments, total_refunds);
+    return 0;
+}
+
+int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, int *is_valid) {
+    if (!is_valid) return -1;
+
+    *is_valid = 0;
+    if (amount >= 0.0 && (transaction_code == 150 || transaction_code == 846 || transaction_code == 290)) {
+        *is_valid = 1;
+    }
+    return 0;
+}
