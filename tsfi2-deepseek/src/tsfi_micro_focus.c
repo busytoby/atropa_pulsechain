@@ -378,3 +378,25 @@ int tsfi_mf_cics_translate(const char *cics_statement, char *macro_call_out, int
     snprintf(macro_call_out, max_len, "DFHECALL");
     return 0;
 }
+
+int tsfi_mf_cics_getmain(int length, const char *suspend_type, uint8_t *storage_pool, uint32_t *allocated_offset) {
+    if (length <= 0 || !storage_pool || !allocated_offset) return -1;
+
+    uint32_t current_free = *allocated_offset;
+    uint32_t needed_bytes = 8 + (uint32_t)length;
+
+    uint8_t size_buf[4];
+    tsfi_mf_comp5_encode((int64_t)needed_bytes, size_buf, 4);
+    memcpy(storage_pool + current_free, size_buf, 4);
+
+    uint32_t suspend_flag = 0;
+    if (suspend_type && strcmp(suspend_type, "SUSPEND") == 0) {
+        suspend_flag = 1;
+    }
+    uint8_t suspend_buf[4];
+    tsfi_mf_comp5_encode((int64_t)suspend_flag, suspend_buf, 4);
+    memcpy(storage_pool + current_free + 4, suspend_buf, 4);
+
+    *allocated_offset = current_free + needed_bytes;
+    return (int)(current_free + 8);
+}

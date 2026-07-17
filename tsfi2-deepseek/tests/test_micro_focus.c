@@ -266,6 +266,17 @@ int main(void) {
     assert(strcmp(cics_out, "DFHBMS TYPE=SEND,TEXT='WS-OUT',LEN=42") == 0);
     printf("  [PASS] CICS command translation verified.\n");
 
+    // 12. Verify CICS GETMAIN Allocator
+    printf("[TEST] Validating CICS GETMAIN Allocator...\n");
+    uint8_t pool[1024] = {0};
+    uint32_t alloc_offset = 0;
+    int user_offset = tsfi_mf_cics_getmain(64, "SUSPEND", pool, &alloc_offset);
+    assert(user_offset == 8);
+    assert(alloc_offset == 72); // 8 header + 64 body
+    assert(tsfi_mf_comp5_decode(pool, 4, 0) == 72);
+    assert(tsfi_mf_comp5_decode(pool + 4, 4, 0) == 1);
+    printf("  [PASS] CICS GETMAIN allocator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
