@@ -1713,6 +1713,30 @@ int main(void) {
     assert(consensus_eng.nodes[1].node_id == 300);
     printf("  [PASS] DECnet neighbor configuration auto-registration verified.\n");
 
+    // 88. Integrated Vredestein storage consensus broker verification
+    printf("[Test] Verifying Vredestein Consensus process broker...\n");
+    tsfi_consensus_engine c_eng;
+    tsfi_consensus_init(&c_eng);
+    assert(tsfi_consensus_add_node(&c_eng, 10, 1) == 0);
+    assert(tsfi_consensus_execute(&c_eng) == 0); // Decided Commit
+    
+    tsfi_vredestein_controller v_ctrl;
+    tsfi_vredestein_init(&v_ctrl);
+    v_ctrl.write_in_progress = 1;
+    
+    assert(tsfi_vredestein_process_consensus(&v_ctrl, &c_eng) == 0); // Committed successfully
+    assert(v_ctrl.write_in_progress == 0);
+    
+    // Test Rollback Integration
+    tsfi_consensus_init(&c_eng);
+    assert(tsfi_consensus_add_node(&c_eng, 10, 0) == 0);
+    assert(tsfi_consensus_execute(&c_eng) == 0); // Decided Abort
+    
+    v_ctrl.dirty_flag = 1;
+    assert(tsfi_vredestein_process_consensus(&v_ctrl, &c_eng) == 0); // Rolled back
+    assert(v_ctrl.rollback_executed == 1);
+    printf("  [PASS] Vredestein transaction commit/rollback consensus broker verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

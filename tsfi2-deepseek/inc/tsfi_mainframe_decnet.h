@@ -1179,4 +1179,7 @@ int tsfi_consensus_execute(tsfi_consensus_engine *eng);
 // Decnet and Consensus Integration
 int tsfi_decnet_broadcast_consensus(const tsfi_decnet_router *router, tsfi_consensus_engine *eng);
 
+// Vredestein Consensus Process Broker
+int tsfi_vredestein_process_consensus(tsfi_vredestein_controller *ctrl, const tsfi_consensus_engine *eng);
+
 #endif // TSFI_MAINFRAME_DECNET_H

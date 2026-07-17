@@ -2559,3 +2559,13 @@ int tsfi_decnet_broadcast_consensus(const tsfi_decnet_router *router, tsfi_conse
     }
     return count;
 }
+
+int tsfi_vredestein_process_consensus(tsfi_vredestein_controller *ctrl, const tsfi_consensus_engine *eng) {
+    if (!ctrl || !eng) return -1;
+    if (eng->global_state == 1) {
+        return tsfi_vredestein_commit(ctrl);
+    } else if (eng->global_state == 2) {
+        return tsfi_vredestein_rollback(ctrl);
+    }
+    return -3;
+}
