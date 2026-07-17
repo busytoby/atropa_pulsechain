@@ -470,6 +470,14 @@ int main(void) {
     assert(strstr(help_buffer, "subscribe") != NULL);
     printf("  [PASS] Majordomo Help Resolver verified.\n");
 
+    // 31. Verify CICS VSAM Key-Sequenced File Control Emulator
+    printf("[TEST] Validating CICS VSAM File Control...\n");
+    char vsam_buffer[128] = {0};
+    int vsam_res = tsfi_mf_cics_vsam_read("USERFILE", "K001", vsam_buffer, sizeof(vsam_buffer));
+    assert(vsam_res == 0);
+    assert(strstr(vsam_buffer, "J. WESSLER") != NULL);
+    printf("  [PASS] CICS VSAM Key-Sequenced File Control Emulator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

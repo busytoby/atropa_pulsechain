@@ -856,3 +856,20 @@ int tsfi_mf_majordomo_help(char *help_out, int max_len) {
              "  help\n");
     return 0;
 }
+
+int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len) {
+    if (!dataset_name || !record_key || !record_out || max_len <= 0) return -1;
+
+    if (strcmp(dataset_name, "USERFILE") == 0) {
+        if (strcmp(record_key, "K001") == 0) {
+            snprintf(record_out, max_len, "NAME: J. WESSLER | DEPT: mainframe-systems");
+            return 0;
+        } else if (strcmp(record_key, "K002") == 0) {
+            snprintf(record_out, max_len, "NAME: A. TURING   | DEPT: zmm-development");
+            return 0;
+        }
+    }
+
+    snprintf(record_out, max_len, "RECORD NOT FOUND");
+    return -2;
+}

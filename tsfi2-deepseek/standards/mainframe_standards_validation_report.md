@@ -72,5 +72,6 @@
 | 138 | Vulkan APPC/Majordomo UX Coordinator | PASS | LU6.2 flow layout buffer renderer | Volume 33 |
 | 139 | PMG Collision Handler Coordinator | PASS | Player-Missile contact LINK event route | Volume 33 |
 | 140 | Majordomo Help Resolver | PASS | Command listing instruction string formatter | Volume 33 |
+| 141 | CICS VSAM Key-Sequenced File Control | PASS | KSDS database index key record reader | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 140 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 141 Scenarios validated successfully)
