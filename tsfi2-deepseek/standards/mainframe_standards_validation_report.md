@@ -132,5 +132,7 @@
 | 198 | CICS Target Task Suspend Emulator | PASS | Put another transaction task to sleep | Volume 33 |
 | 199 | Majordomo Moderation Rejection Notifier | PASS | Notification formatter for moderation rejection | Volume 33 |
 | 200 | CICS Task Suspension Inquirer | PASS | Checks if a specific task ID is suspended | Volume 33 |
+| 201 | Majordomo Moderation Action Logger | PASS | Formats details of moderation decisions | Volume 33 |
+| 202 | CICS Target Task Priority Changer | PASS | Modifies priority parameter for target task | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 200 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 202 Scenarios validated successfully)

@@ -1644,3 +1644,21 @@ int tsfi_mf_cics_inquire_suspended(uint32_t target_task_id, const uint32_t *susp
     }
     return 0;
 }
+
+int tsfi_mf_majordomo_log_moderation(uint32_t cookie, const char *list_name, const char *action, const char *moderator, char *log_out, int max_len) {
+    if (!list_name || !action || !moderator || !log_out || max_len <= 0) return -1;
+
+    snprintf(log_out, max_len, "MODERATION_LOG:COOKIE=%u|LIST=%s|ACTION=%s|MODERATOR=%s", cookie, list_name, action, moderator);
+    return 0;
+}
+
+int tsfi_mf_cics_change_task_priority(uint32_t target_task_id, int new_priority, uint32_t *target_task_id_log, int *prio_registry_log, int *log_count, int max_log) {
+    if (!target_task_id_log || !prio_registry_log || !log_count || *log_count < 0 || max_log <= 0) return -1;
+
+    if (*log_count >= max_log) return -2;
+
+    target_task_id_log[*log_count] = target_task_id;
+    prio_registry_log[*log_count] = new_priority;
+    *log_count += 1;
+    return 0;
+}

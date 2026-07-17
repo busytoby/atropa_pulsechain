@@ -1045,6 +1045,26 @@ int main(void) {
     assert(is_task_suspended == 1);
     printf("  [PASS] CICS INQUIRE TASK SUSPEND verified.\n");
 
+    // 91. Verify Majordomo List Moderation Logger
+    printf("[TEST] Validating Majordomo Moderation Logger...\n");
+    char audit_log_buf[128] = {0};
+    int audit_log_res = tsfi_mf_majordomo_log_moderation(77123, "zmm-dev", "accept", "admin@dysnomia.org", audit_log_buf, sizeof(audit_log_buf));
+    assert(audit_log_res == 0);
+    assert(strstr(audit_log_buf, "COOKIE=77123|LIST=zmm-dev|ACTION=accept|MODERATOR=admin@dysnomia.org") != NULL);
+    printf("  [PASS] Majordomo Moderation Logger verified.\n");
+
+    // 92. Verify CICS Target Task Priority Changer
+    printf("[TEST] Validating CICS CHANGE TASK PRIORITY (target)...\n");
+    uint32_t priority_change_task_log[4] = {0};
+    int priority_change_val_log[4] = {0};
+    int priority_change_count = 0;
+    int prio_chg_res = tsfi_mf_cics_change_task_priority(5002, 120, priority_change_task_log, priority_change_val_log, &priority_change_count, 4);
+    assert(prio_chg_res == 0);
+    assert(priority_change_count == 1);
+    assert(priority_change_task_log[0] == 5002);
+    assert(priority_change_val_log[0] == 120);
+    printf("  [PASS] CICS CHANGE TASK PRIORITY (target) verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
