@@ -59,6 +59,66 @@ int main(void) {
     // 6. Test Invalidate Page (IPTE) tracking
     tsfi_s370_track_ipte(0x000123);
 
-    printf("[SUCCESS] All 31-bit DAT Extensions validated successfully!\n");
+    // --- CPU & Channel Security verification tests ---
+
+    uint8_t real_memory[1024];
+    memset(real_memory, 0, sizeof(real_memory));
+    
+    // Set up New PSW at address 88: key=0, problem_state=0, address=0x8899
+    real_memory[88] = 0x00; // Key 0
+    real_memory[89] = 0x00; // Problem state 0 (Supervisor state)
+    real_memory[92] = 0x00;
+    real_memory[93] = 0x00;
+    real_memory[94] = 0x88;
+    real_memory[95] = 0x99;
+
+    tsfi_s370_storage_key block_keys[2];
+    memset(block_keys, 0, sizeof(block_keys));
+    block_keys[0].acc = 1; // Acc key 1
+
+    cpu.lap_enabled = 1;
+    cpu.supervisor_state = 0; // Problem state
+    cpu.psw_key = 1;          // Match block key
+
+    // A. LAP Violation Test (triggers interrupt, swaps PSW using offset 88 in emulation)
+    int lap_res = tsfi_s370_validate_write_with_interrupt(&cpu, 100, 0, block_keys, 2, real_memory, 1024);
+    assert(lap_res == -1);
+    assert(g_dat_stats.lap_violations == 1);
+    assert(cpu.current_psw.instruction_address == 0x8899);
+
+    // B. CCW Chain Auditing Test
+    tsfi_s370_ccw ccw_chain[2];
+    ccw_chain[0].data_addr = 0x100;
+    ccw_chain[0].count = 0x200;
+    ccw_chain[1].data_addr = 0x800;
+    ccw_chain[1].count = 0x900; // 0x800 + 0x900 = 0x1100, exceeds limit (0x1000)
+
+    int ccw_audit_res1 = tsfi_s370_audit_ccw_chain(ccw_chain, 2, 0x1000);
+    assert(ccw_audit_res1 == -1);
+    assert(g_dat_stats.ccw_violations == 1);
+
+    int ccw_audit_res2 = tsfi_s370_audit_ccw_chain(ccw_chain, 1, 0x1000);
+    assert(ccw_audit_res2 == 0);
+
+    // C. Interval Timer Emulation Test
+    // Reset New PSW at address 88 to 0x5555
+    real_memory[94] = 0x55;
+    real_memory[95] = 0x55;
+
+    // Set timer value at address 80 to 2
+    real_memory[80] = 0x00;
+    real_memory[81] = 0x00;
+    real_memory[82] = 0x00;
+    real_memory[83] = 0x02;
+
+    cpu.current_psw.instruction_address = 0x4444;
+
+    // Tick for 0.01 seconds -> decrements by 192 (new value will be negative)
+    tsfi_s370_tick_interval_timer(&cpu, real_memory, 1024, 0.01);
+    assert(g_dat_stats.timer_interrupt_pending == 1);
+    // Instruction address must swap to external handler
+    assert(cpu.current_psw.instruction_address == 0x5555);
+
+    printf("[SUCCESS] All 31-bit DAT Extensions & CPU security verification validated successfully!\n");
     return 0;
 }
