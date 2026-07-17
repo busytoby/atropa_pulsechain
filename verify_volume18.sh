@@ -117,8 +117,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 168 | NBS FIPS PUB 31 Risk Analysis Calculator | PASS | ALE Risk Calculator | Volume 24 |
 | 169 | NBS FIPS PUB 30 Software Summary Descriptors | PASS | Software Index Validator | Volume 24 |
 | 170 | NBS FIPS PUB 105 Software Documentation Scorer | PASS | Documentation Maturity Evaluator | Volume 24 |
+| 171 | NBS FIPS PUB 86 Real-Time Event Latency Monitor | PASS | Latency Monitor | Volume 24 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 170 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 171 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
