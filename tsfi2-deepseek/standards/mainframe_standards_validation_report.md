@@ -120,5 +120,7 @@
 | 186 | CICS Abend Handler Query Emulator | PASS | Dynamic error exit activation check | Volume 33 |
 | 187 | Majordomo Archive Message Extractor | PASS | Message retrieval from list archives | Volume 33 |
 | 188 | CICS Task Execution Delay Emulator | PASS | Task execution delay timer | Volume 33 |
+| 189 | Majordomo Config Key Overwriter | PASS | Command setting list configuration parameters | Volume 33 |
+| 190 | CICS Task Execution Resumer Emulator | PASS | Dynamic task reactivation handler | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 188 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 190 Scenarios validated successfully)

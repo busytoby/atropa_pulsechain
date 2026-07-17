@@ -941,6 +941,24 @@ int main(void) {
     assert(simulated_delay_counter == 15);
     printf("  [PASS] CICS DELAY verified.\n");
 
+    // 79. Verify Majordomo List Config Overwriter
+    printf("[TEST] Validating Majordomo Config Writer...\n");
+    char test_cfg_buf[128] = "reply_to = list\nmoderate = no\n";
+    int wr_cfg_res = tsfi_mf_majordomo_write_config("moderate", "yes", test_cfg_buf, sizeof(test_cfg_buf));
+    assert(wr_cfg_res == 0);
+    assert(strstr(test_cfg_buf, "moderate = yes") != NULL);
+    printf("  [PASS] Majordomo Config Writer verified.\n");
+
+    // 80. Verify CICS Task Execution Resumer Emulator
+    printf("[TEST] Validating CICS RESUME...\n");
+    uint32_t active_suspend_log[4] = {4001, 4002, 4003};
+    int active_suspend_count = 3;
+    int res_res = tsfi_mf_cics_resume(4002, active_suspend_log, &active_suspend_count);
+    assert(res_res == 0);
+    assert(active_suspend_count == 2);
+    assert(active_suspend_log[1] == 4003);
+    printf("  [PASS] CICS RESUME verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

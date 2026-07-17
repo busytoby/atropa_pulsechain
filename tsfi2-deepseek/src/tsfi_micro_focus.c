@@ -1500,3 +1500,34 @@ int tsfi_mf_cics_delay(uint32_t seconds, uint32_t *delay_counter_log) {
     *delay_counter_log += seconds;
     return 0;
 }
+
+int tsfi_mf_majordomo_write_config(const char *key, const char *val, char *config_in_out, int max_len) {
+    if (!key || !val || !config_in_out || max_len <= 0) return -1;
+
+    char search_pattern[64];
+    snprintf(search_pattern, sizeof(search_pattern), "%s =", key);
+    char *match = strstr(config_in_out, search_pattern);
+    if (match) {
+        snprintf(match, max_len - (match - config_in_out), "%s = %s\n", key, val);
+    } else {
+        int current_len = (int)strlen(config_in_out);
+        snprintf(config_in_out + current_len, max_len - current_len, "%s = %s\n", key, val);
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_resume(uint32_t task_id, uint32_t *suspend_log, int *log_count) {
+    if (!suspend_log || !log_count || *log_count < 0) return -1;
+
+    for (int i = 0; i < *log_count; i++) {
+        if (suspend_log[i] == task_id) {
+            for (int j = i; j < *log_count - 1; j++) {
+                suspend_log[j] = suspend_log[j + 1];
+            }
+            *log_count -= 1;
+            return 0;
+        }
+    }
+
+    return -2;
+}
