@@ -1141,6 +1141,27 @@ int main(void) {
     assert(mcs_q.count == 0);
     printf("  [PASS] COBOL MCS over WinchesterMQ transaction queueing verified.\n");
 
+    // 67. Hierarchical CODASYL-compliant MCS Verification
+    printf("[Test] Verifying hierarchical CODASYL-compliant MCS...\n");
+    tsfi_mcs_queue h_mcs;
+    tsfi_mcs_init_hierarchical(&h_mcs, "PAYROLL", "US", "DEPT1", "WEEKLY");
+    assert(strcmp(h_mcs.queue_name, "PAYROLL") == 0);
+    assert(strcmp(h_mcs.sub_queue1, "US") == 0);
+    assert(strcmp(h_mcs.status_key, "00") == 0);
+    
+    int seg_res = tsfi_mcs_send_segment(&h_mcs, "SEG01", MCS_ESI, NULL);
+    assert(seg_res == 0);
+    assert(h_mcs.count == 1);
+    
+    char seg_buf[32];
+    uint8_t ind = 0;
+    int rx_res = tsfi_mcs_receive_segment(&h_mcs, seg_buf, sizeof(seg_buf), &ind);
+    assert(rx_res == 0);
+    assert(strcmp(seg_buf, "SEG01") == 0);
+    assert(ind == MCS_ESI);
+    assert(strcmp(h_mcs.status_key, "00") == 0);
+    printf("  [PASS] Hierarchical CODASYL-compliant MCS segment routing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

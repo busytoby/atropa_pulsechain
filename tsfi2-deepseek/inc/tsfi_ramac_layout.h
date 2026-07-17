@@ -1317,16 +1317,29 @@ int tsfi_rwcs_control_break(tsfi_rwcs_report *rep, char *out, size_t max_len);
 int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len);
 
 // COBOL MCS (Message Control System) over WinchesterMQ
+#define MCS_ESI 0x01
+#define MCS_EMI 0x02
+#define MCS_EGI 0x04
+
 typedef struct {
     char queue_name[16];
+    char sub_queue1[16];
+    char sub_queue2[16];
+    char sub_queue3[16];
     char messages[8][128];
+    uint8_t indicators[8];
     int head;
     int tail;
     int count;
+    char status_key[3];
 } tsfi_mcs_queue;
 
 void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name);
 int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq);
 int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len);
+
+void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const char *sq1, const char *sq2, const char *sq3);
+int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator, void *wmq);
+int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, uint8_t *indicator_out);
 
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -5487,6 +5487,7 @@ int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len) {
 void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
     if (!q) return;
     memset(q, 0, sizeof(tsfi_mcs_queue));
+    strcpy(q->status_key, "00");
     if (name) {
         strncpy(q->queue_name, name, sizeof(q->queue_name) - 1);
     }
@@ -5494,10 +5495,15 @@ void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
 
 int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
     if (!q || !msg) return -1;
-    if (q->count >= 8) return -2;
+    if (q->count >= 8) {
+        strcpy(q->status_key, "10");
+        return -2;
+    }
     strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
+    q->indicators[q->tail] = MCS_EMI;
     q->tail = (q->tail + 1) % 8;
     q->count++;
+    strcpy(q->status_key, "00");
     TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
     if (wmq) {
         wmq->registers.status_reg = 1;
@@ -5512,10 +5518,64 @@ int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
 
 int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len) {
     if (!q || !msg_out || max_len == 0) return -1;
-    if (q->count == 0) return -2;
+    if (q->count == 0) {
+        strcpy(q->status_key, "20");
+        return -2;
+    }
     strncpy(msg_out, q->messages[q->head], max_len - 1);
     msg_out[max_len - 1] = '\0';
     q->head = (q->head + 1) % 8;
     q->count--;
+    strcpy(q->status_key, "00");
+    return 0;
+}
+
+void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const char *sq1, const char *sq2, const char *sq3) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_mcs_queue));
+    strcpy(q->status_key, "00");
+    if (q_name) strncpy(q->queue_name, q_name, sizeof(q->queue_name) - 1);
+    if (sq1) strncpy(q->sub_queue1, sq1, sizeof(q->sub_queue1) - 1);
+    if (sq2) strncpy(q->sub_queue2, sq2, sizeof(q->sub_queue2) - 1);
+    if (sq3) strncpy(q->sub_queue3, sq3, sizeof(q->sub_queue3) - 1);
+}
+
+int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator, void *wmq_void) {
+    if (!q || !msg) return -1;
+    if (q->count >= 8) {
+        strcpy(q->status_key, "10");
+        return -2;
+    }
+    strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
+    q->indicators[q->tail] = indicator;
+    q->tail = (q->tail + 1) % 8;
+    q->count++;
+    strcpy(q->status_key, "00");
+    TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
+    if (wmq) {
+        wmq->registers.status_reg = 1;
+        wmq->registers.keycode_reg = 32;
+        uint32_t packed_word = 0;
+        memcpy(&packed_word, msg, (strlen(msg) < 4) ? strlen(msg) : 4);
+        wmq->registers.data_reg = packed_word;
+        tsfi_winchester_bridge_handshake(wmq);
+    }
+    return 0;
+}
+
+int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, uint8_t *indicator_out) {
+    if (!q || !msg_out || max_len == 0) return -1;
+    if (q->count == 0) {
+        strcpy(q->status_key, "20");
+        return -2;
+    }
+    strncpy(msg_out, q->messages[q->head], max_len - 1);
+    msg_out[max_len - 1] = '\0';
+    if (indicator_out) {
+        *indicator_out = q->indicators[q->head];
+    }
+    q->head = (q->head + 1) % 8;
+    q->count--;
+    strcpy(q->status_key, "00");
     return 0;
 }
