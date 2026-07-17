@@ -1620,6 +1620,36 @@ int main(void) {
     assert(tape.block_position == 1);
     printf("  [PASS] FIPS 62 tape controller commands and virtual DAT address translation verified.\n");
 
+    // 147. NBS FIPS PUB 63 Rotating Mass Storage Subsystem Interface Verification
+    printf("[Test] Verifying NBS FIPS PUB 63 Rotating Mass Storage Subsystem Interface...\n");
+    tsfi_fips63_disk fips_disk;
+    tsfi_fips63_disk_init(&fips_disk);
+    assert(fips_disk.current_cylinder == 0);
+    assert(fips_disk.current_sector == 0);
+    assert(fips_disk.is_ready == 1);
+    
+    uint8_t status_byte = 0xFF;
+    // Seek cylinder test
+    assert(tsfi_fips63_disk_command(&fips_disk, 0x07, 10, 0, &status_byte) == 0);
+    assert(status_byte == 0x00);
+    assert(fips_disk.current_cylinder == 10);
+    
+    // Seek Cylinder out of bounds test (cylinder >= 45)
+    assert(tsfi_fips63_disk_command(&fips_disk, 0x07, 50, 0, &status_byte) == -2);
+    assert(status_byte == 0x02); // Seek Check
+    
+    // Write sector test
+    assert(tsfi_fips63_disk_command(&fips_disk, 0x01, 10, 5, &status_byte) == 0);
+    assert(status_byte == 0x0C); // Channel End + Device End
+    assert(fips_disk.current_sector == 5);
+    
+    // Recalibrate drive test
+    assert(tsfi_fips63_disk_command(&fips_disk, 0x03, 0, 0, &status_byte) == 0);
+    assert(fips_disk.current_cylinder == 0);
+    assert(fips_disk.current_sector == 0);
+    assert(fips_disk.recalibrate_requested == 1);
+    printf("  [PASS] FIPS 63 rotating disk commands and status reporting validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

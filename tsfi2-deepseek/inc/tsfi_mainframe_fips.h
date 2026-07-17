@@ -83,4 +83,15 @@ int tsfi_fips62_tape_read_to_virtual(tsfi_fips62_tape *tape, uint32_t virtual_ad
                                      uint8_t *memory_pool, int mem_size,
                                      const uint8_t *tape_data, uint16_t data_len);
 
+// Scenario 147: NBS FIPS PUB 63 Rotating Mass Storage Subsystem Interface
+typedef struct {
+    uint32_t current_cylinder;
+    uint32_t current_sector;
+    int is_ready;
+    int recalibrate_requested;
+} tsfi_fips63_disk;
+
+void tsfi_fips63_disk_init(tsfi_fips63_disk *disk);
+int tsfi_fips63_disk_command(tsfi_fips63_disk *disk, uint8_t cmd_code, uint32_t cylinder, uint32_t sector, uint8_t *out_status);
+
 #endif // TSFI_MAINFRAME_FIPS_H

@@ -294,3 +294,39 @@ int tsfi_fips62_tape_read_to_virtual(tsfi_fips62_tape *tape, uint32_t virtual_ad
     
     return 0;
 }
+
+void tsfi_fips63_disk_init(tsfi_fips63_disk *disk) {
+    if (!disk) return;
+    disk->current_cylinder = 0;
+    disk->current_sector = 0;
+    disk->is_ready = 1;
+    disk->recalibrate_requested = 0;
+}
+
+int tsfi_fips63_disk_command(tsfi_fips63_disk *disk, uint8_t cmd_code, uint32_t cylinder, uint32_t sector, uint8_t *out_status) {
+    if (!disk || !out_status) return -1;
+    *out_status = 0x00; // Default status is Normal/Success
+    
+    if (cmd_code == 0x07) { // SEEK CYLINDER
+        if (cylinder >= 45) {
+            *out_status = 0x02; // Seek Check (Out of range error)
+            return -2;
+        }
+        disk->current_cylinder = cylinder;
+    } else if (cmd_code == 0x01) { // WRITE SECTOR
+        disk->current_sector = sector;
+        *out_status = 0x0C; // Channel End + Device End
+    } else if (cmd_code == 0x02) { // READ SECTOR
+        disk->current_sector = sector;
+        *out_status = 0x0C; // Channel End + Device End
+    } else if (cmd_code == 0x03) { // RECALIBRATE DRIVE HEAD
+        disk->current_cylinder = 0;
+        disk->current_sector = 0;
+        disk->recalibrate_requested = 1;
+    } else {
+        *out_status = 0x04; // Command Reject (Unit Check)
+        return -3;
+    }
+    
+    return 0;
+}
