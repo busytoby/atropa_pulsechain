@@ -4,6 +4,7 @@
 #include <string.h>
 #include "tsfi_ramac_layout.h"
 #include "tsfi_strategy_lang.h"
+#include "tsfi_winchester_bridge.h"
 #include "tsfi_dat.h"
 #include "tsfi_trie.h"
 
@@ -1196,6 +1197,34 @@ int main(void) {
     
     pthread_mutex_unlock(&lock_q.lock);
     printf("  [PASS] CODASYL MCS queue mutex locking and status key realignment verified.\n");
+
+    // 70. WinchesterMQ MCS Structured Header Packets Verification
+    printf("[Test] Verifying WinchesterMQ MCS packet header routing...\n");
+    tsfi_trie_node *trie_root_mq = tsfi_trie_create_node('\0');
+    tsfi_trie_insert(trie_root_mq, "021000021", "Fed_Branch_A");
+    tsfi_dat *dat_mq = tsfi_dat_compile(trie_root_mq);
+    assert(dat_mq != NULL);
+    
+    TSFiSynthPerfEngine *perf_engine = tsfi_synth_perf_create(dat_mq, trie_root_mq);
+    assert(perf_engine != NULL);
+    TSFiWinchesterBridge *wmq_bridge = tsfi_winchester_bridge_create(perf_engine);
+    assert(wmq_bridge != NULL);
+    
+    TSFiWinchesterMCSHeader mcs_header;
+    strncpy(mcs_header.source_terminal, "TERM01", sizeof(mcs_header.source_terminal));
+    strncpy(mcs_header.dest_queue, "PAYROLL", sizeof(mcs_header.dest_queue));
+    mcs_header.timestamp = 1716200000;
+    mcs_header.message_len = 11;
+    
+    int send_packet_res = tsfi_winchester_bridge_send_packet(wmq_bridge, &mcs_header, "PAYLOAD_DATA");
+    assert(send_packet_res == 0);
+    assert(wmq_bridge->registers.status_reg == ((1 << 8) | 3));
+    
+    tsfi_winchester_bridge_destroy(wmq_bridge);
+    tsfi_synth_perf_destroy(perf_engine);
+    tsfi_dat_destroy(dat_mq);
+    tsfi_trie_destroy(trie_root_mq);
+    printf("  [PASS] WinchesterMQ MCS structured packet header handshakes verified.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");

@@ -63,3 +63,26 @@ void tsfi_winchester_bridge_destroy(TSFiWinchesterBridge *bridge) {
     if (!bridge) return;
     free(bridge);
 }
+
+int tsfi_winchester_bridge_send_packet(TSFiWinchesterBridge *bridge, const TSFiWinchesterMCSHeader *header, const char *payload) {
+    if (!bridge || !header || !payload) return -1;
+    uint32_t w1;
+    memcpy(&w1, header->source_terminal, 4);
+    bridge->registers.status_reg = (1 << 8) | 1;
+    bridge->registers.keycode_reg = (0x01 << 16) | 32;
+    bridge->registers.data_reg = w1;
+    tsfi_winchester_bridge_handshake(bridge);
+    
+    bridge->registers.status_reg = (1 << 8) | 1;
+    bridge->registers.keycode_reg = (0x01 << 16) | 32;
+    bridge->registers.data_reg = header->message_len;
+    tsfi_winchester_bridge_handshake(bridge);
+    
+    uint32_t pay_word = 0;
+    memcpy(&pay_word, payload, (strlen(payload) < 4) ? strlen(payload) : 4);
+    bridge->registers.status_reg = (1 << 8) | 1;
+    bridge->registers.keycode_reg = (0x02 << 16) | 32;
+    bridge->registers.data_reg = pay_word;
+    tsfi_winchester_bridge_handshake(bridge);
+    return 0;
+}

@@ -28,4 +28,13 @@ int tsfi_winchester_bridge_handshake(TSFiWinchesterBridge *bridge);
 // Destroy WinchesterMQ Bridge
 void tsfi_winchester_bridge_destroy(TSFiWinchesterBridge *bridge);
 
+typedef struct {
+    char source_terminal[16];
+    char dest_queue[16];
+    uint32_t timestamp;
+    uint32_t message_len;
+} TSFiWinchesterMCSHeader;
+
+int tsfi_winchester_bridge_send_packet(TSFiWinchesterBridge *bridge, const TSFiWinchesterMCSHeader *header, const char *payload);
+
 #endif // TSFI_WINCHESTER_BRIDGE_H
