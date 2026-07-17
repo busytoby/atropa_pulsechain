@@ -42,6 +42,16 @@ static tsfi_s38_object* find_s38_object(tsfi_s38_store *store, const char *name)
     return NULL;
 }
 
+static int has_record(const tsfi_codasyl_schema *schema, const char *record_name) {
+    if (!schema || !record_name) return 0;
+    for (int i = 0; i < schema->record_count; i++) {
+        if (strcmp(schema->records[i].record_name, record_name) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts) {
     if (!opts) return;
     opts->chardel_char = '@';
@@ -1109,16 +1119,8 @@ int tsfi_codasyl_schema_validate(const tsfi_codasyl_schema *schema, char *out_er
     for (int i = 0; i < schema->set_count; i++) {
         const tsfi_codasyl_ddl_set *set = &schema->sets[i];
         
-        int owner_found = 0;
-        int member_found = 0;
-        for (int r = 0; r < schema->record_count; r++) {
-            if (strcmp(schema->records[r].record_name, set->owner_record) == 0) {
-                owner_found = 1;
-            }
-            if (strcmp(schema->records[r].record_name, set->member_record) == 0) {
-                member_found = 1;
-            }
-        }
+        int owner_found = has_record(schema, set->owner_record);
+        int member_found = has_record(schema, set->member_record);
         
         if (!owner_found) {
             snprintf(out_error, max_err_len, "SET %s REFERS TO UNDEFINED OWNER %s", set->set_name, set->owner_record);
@@ -1246,14 +1248,7 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     if (sscanf(dml_statement, "STORE %31s", rec_name) == 1) {
         strip_trailing_period(rec_name);
         
-        int rec_found = 0;
-        for (int i = 0; i < rt->schema->record_count; i++) {
-            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
-                rec_found = 1;
-                break;
-            }
-        }
-        if (!rec_found) {
+        if (!has_record(rt->schema, rec_name)) {
             *out_db_status = 117;
             return -2;
         }
@@ -1267,14 +1262,7 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     if (sscanf(dml_statement, "GET %31s", rec_name) == 1) {
         strip_trailing_period(rec_name);
         
-        int rec_found = 0;
-        for (int i = 0; i < rt->schema->record_count; i++) {
-            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
-                rec_found = 1;
-                break;
-            }
-        }
-        if (!rec_found) {
+        if (!has_record(rt->schema, rec_name)) {
             *out_db_status = 117;
             return -2;
         }
@@ -1288,13 +1276,7 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
         strip_trailing_period(rec_name);
         strip_trailing_period(set_name);
         
-        int rec_found = 0;
-        for (int i = 0; i < rt->schema->record_count; i++) {
-            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
-                rec_found = 1;
-                break;
-            }
-        }
+        int rec_found = has_record(rt->schema, rec_name);
         int set_found = 0;
         for (int i = 0; i < rt->schema->set_count; i++) {
             if (strcmp(rt->schema->sets[i].set_name, set_name) == 0) {
