@@ -1908,6 +1908,26 @@ int main(void) {
     assert(session.is_connected == 1);
     printf("  [PASS] VM/370 CP session disconnect/reconnect and dispatch routing verified.\n");
 
+    // 107. VM/370 CP Terminal Options Configurator Verification
+    printf("[Test] Verifying VM/370 CP Terminal Options...\n");
+    tsfi_cp_terminal_options t_opts;
+    tsfi_cp_term_opts_init(&t_opts);
+    
+    char processed[64];
+    // Test character delete backspacing
+    tsfi_cp_term_opts_process(&t_opts, "CMS@ COMMAND", processed, sizeof(processed));
+    assert(strcmp(processed, "CM COMMAND") == 0);
+    
+    // Test line delete resetting
+    tsfi_cp_term_opts_process(&t_opts, "CMS COMMAND#NEW COMMAND", processed, sizeof(processed));
+    assert(strcmp(processed, "NEW COMMAND") == 0);
+    
+    // Disable CHARDEL option and verify '@' is treated literally
+    assert(tsfi_cp_term_opts_config(&t_opts, "CHARDEL", 0) == 0);
+    tsfi_cp_term_opts_process(&t_opts, "CMS@ COMMAND", processed, sizeof(processed));
+    assert(strcmp(processed, "CMS@ COMMAND") == 0);
+    printf("  [PASS] VM/370 CP terminal CHARDEL/LINEDEL option filters verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

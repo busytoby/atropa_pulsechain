@@ -6543,3 +6543,42 @@ int tsfi_cp_active_session_dispatch(tsfi_cp_active_session *sess, int cycles) {
     sess->background_cycles_run += cycles;
     return sess->background_cycles_run;
 }
+
+void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts) {
+    if (!opts) return;
+    opts->chardel_char = '@';
+    opts->linedel_char = '#';
+    opts->is_chardel_enabled = 1;
+    opts->is_linedel_enabled = 1;
+}
+
+int tsfi_cp_term_opts_config(tsfi_cp_terminal_options *opts, const char *param, int enable) {
+    if (!opts || !param) return -1;
+    if (strcasecmp(param, "CHARDEL") == 0) {
+        opts->is_chardel_enabled = enable;
+        return 0;
+    }
+    if (strcasecmp(param, "LINEDEL") == 0) {
+        opts->is_linedel_enabled = enable;
+        return 0;
+    }
+    return -1;
+}
+
+void tsfi_cp_term_opts_process(const tsfi_cp_terminal_options *opts, const char *in_buf, char *out_buf, int out_max) {
+    if (!opts || !in_buf || !out_buf || out_max <= 0) return;
+    int write_idx = 0;
+    for (int i = 0; in_buf[i] != '\0' && write_idx < out_max - 1; i++) {
+        char c = in_buf[i];
+        if (opts->is_chardel_enabled && c == opts->chardel_char) {
+            if (write_idx > 0) {
+                write_idx--;
+            }
+        } else if (opts->is_linedel_enabled && c == opts->linedel_char) {
+            write_idx = 0;
+        } else {
+            out_buf[write_idx++] = c;
+        }
+    }
+    out_buf[write_idx] = '\0';
+}

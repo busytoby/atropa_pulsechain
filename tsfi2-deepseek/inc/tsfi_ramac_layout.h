@@ -1769,4 +1769,16 @@ int tsfi_cp_active_session_disconnect(tsfi_cp_active_session *sess);
 int tsfi_cp_active_session_connect(tsfi_cp_active_session *sess);
 int tsfi_cp_active_session_dispatch(tsfi_cp_active_session *sess, int cycles);
 
+// VM/370 CP Terminal Options Configurator
+typedef struct {
+    char chardel_char;
+    char linedel_char;
+    int is_chardel_enabled;
+    int is_linedel_enabled;
+} tsfi_cp_terminal_options;
+
+void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts);
+int tsfi_cp_term_opts_config(tsfi_cp_terminal_options *opts, const char *param, int enable);
+void tsfi_cp_term_opts_process(const tsfi_cp_terminal_options *opts, const char *in_buf, char *out_buf, int out_max);
+
 #endif // TSFI_RAMAC_LAYOUT_H
