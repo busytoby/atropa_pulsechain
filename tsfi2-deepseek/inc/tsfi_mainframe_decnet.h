@@ -901,4 +901,24 @@ typedef struct {
 
 void tsfi_apollo_ring_reg_init(tsfi_apollo_ring_register *reg);
 
+// Cambex SECDED ECC Memory model
+uint8_t tsfi_secded_encode(uint8_t data);
+int tsfi_secded_decode(uint8_t data, uint8_t parity, uint8_t *corrected_data_out);
+
+// ADR Roscoe Library Administration
+typedef struct {
+    char member_name[8];
+    int version;
+    int locked;
+} tsfi_roscoe_member;
+
+typedef struct {
+    tsfi_roscoe_member members[16];
+    int member_count;
+} tsfi_roscoe_library;
+
+void tsfi_roscoe_init(tsfi_roscoe_library *lib);
+int tsfi_roscoe_add_member(tsfi_roscoe_library *lib, const char *name);
+int tsfi_roscoe_lock_member(tsfi_roscoe_library *lib, const char *name, int lock_state);
+
 #endif // TSFI_MAINFRAME_DECNET_H

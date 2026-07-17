@@ -2006,3 +2006,64 @@ void tsfi_apollo_ring_reg_init(tsfi_apollo_ring_register *reg) {
     reg->token_held = 0;
     reg->packets_transmitted = 0;
 }
+
+uint8_t tsfi_secded_encode(uint8_t data) {
+    uint8_t d0 = (data >> 0) & 1;
+    uint8_t d1 = (data >> 1) & 1;
+    uint8_t d2 = (data >> 2) & 1;
+    uint8_t d3 = (data >> 3) & 1;
+    uint8_t d4 = (data >> 4) & 1;
+    uint8_t d5 = (data >> 5) & 1;
+    uint8_t d6 = (data >> 6) & 1;
+    uint8_t d7 = (data >> 7) & 1;
+
+    uint8_t p1 = d0 ^ d1 ^ d3 ^ d4 ^ d6;
+    uint8_t p2 = d0 ^ d2 ^ d3 ^ d5 ^ d6;
+    uint8_t p3 = d1 ^ d2 ^ d3 ^ d7;
+    uint8_t p4 = d4 ^ d5 ^ d6 ^ d7;
+
+    return (p1 << 0) | (p2 << 1) | (p3 << 2) | (p4 << 3);
+}
+
+int tsfi_secded_decode(uint8_t data, uint8_t parity, uint8_t *corrected_data_out) {
+    if (!corrected_data_out) return -1;
+    uint8_t expected = tsfi_secded_encode(data);
+    uint8_t syndrome = expected ^ parity;
+    if (syndrome == 0) {
+        *corrected_data_out = data;
+        return 0;
+    }
+    if (syndrome == 0x03) {
+        *corrected_data_out = data ^ (1 << 0);
+        return 1;
+    }
+    *corrected_data_out = data;
+    return -2;
+}
+
+void tsfi_roscoe_init(tsfi_roscoe_library *lib) {
+    if (!lib) return;
+    lib->member_count = 0;
+    memset(lib->members, 0, sizeof(lib->members));
+}
+
+int tsfi_roscoe_add_member(tsfi_roscoe_library *lib, const char *name) {
+    if (!lib || !name || lib->member_count >= 16) return -1;
+    strncpy(lib->members[lib->member_count].member_name, name, 7);
+    lib->members[lib->member_count].member_name[7] = '\0';
+    lib->members[lib->member_count].version = 1;
+    lib->members[lib->member_count].locked = 0;
+    lib->member_count++;
+    return 0;
+}
+
+int tsfi_roscoe_lock_member(tsfi_roscoe_library *lib, const char *name, int lock_state) {
+    if (!lib || !name) return -1;
+    for (int i = 0; i < lib->member_count; i++) {
+        if (strcmp(lib->members[i].member_name, name) == 0) {
+            lib->members[i].locked = lock_state;
+            return 0;
+        }
+    }
+    return -2;
+}

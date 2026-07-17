@@ -1250,6 +1250,30 @@ int main(void) {
     assert(reg.packets_transmitted == 0);
     printf("  [PASS] Apollo Aegis process blocks and token ring hardware registers verified.\n");
 
+    // 72. Cambex SECDED and ADR Roscoe Verification
+    printf("[Test] Verifying Cambex SECDED and ADR Roscoe...\n");
+    uint8_t raw_data = 0xA5;
+    uint8_t parity_ecc = tsfi_secded_encode(raw_data);
+    
+    // Correct decode
+    uint8_t corrected_val = 0;
+    assert(tsfi_secded_decode(raw_data, parity_ecc, &corrected_val) == 0);
+    assert(corrected_val == raw_data);
+    
+    // Single bit error decode
+    uint8_t corrupted_data = raw_data ^ 1; // Flip bit 0
+    assert(tsfi_secded_decode(corrupted_data, parity_ecc, &corrected_val) == 1);
+    assert(corrected_val == raw_data);
+    
+    // ADR Roscoe
+    tsfi_roscoe_library roscoe;
+    tsfi_roscoe_init(&roscoe);
+    assert(tsfi_roscoe_add_member(&roscoe, "MAINPGM") == 0);
+    assert(roscoe.member_count == 1);
+    assert(tsfi_roscoe_lock_member(&roscoe, "MAINPGM", 1) == 0);
+    assert(roscoe.members[0].locked == 1);
+    printf("  [PASS] Cambex SECDED error correction and ADR Roscoe library locks verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
