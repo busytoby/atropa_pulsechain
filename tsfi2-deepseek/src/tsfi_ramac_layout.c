@@ -6098,3 +6098,30 @@ int tsfi_iucv_receive(tsfi_iucv_broker *broker, int path_id, char *msg_out) {
     broker->paths[path_id].message_pending = 0;
     return 0;
 }
+
+void tsfi_cp_console_spool_init(tsfi_cp_console_spool *spool) {
+    if (!spool) return;
+    memset(spool, 0, sizeof(tsfi_cp_console_spool));
+}
+
+void tsfi_cp_console_spool_start(tsfi_cp_console_spool *spool) {
+    if (!spool) return;
+    spool->is_spooling = 1;
+    spool->log_len = 0;
+    spool->log_buffer[0] = '\0';
+}
+
+void tsfi_cp_console_spool_write(tsfi_cp_console_spool *spool, const char *text) {
+    if (!spool || !text || !spool->is_spooling) return;
+    int len = strlen(text);
+    if (spool->log_len + len < 511) {
+        memcpy(spool->log_buffer + spool->log_len, text, len);
+        spool->log_len += len;
+        spool->log_buffer[spool->log_len] = '\0';
+    }
+}
+
+void tsfi_cp_console_spool_stop(tsfi_cp_console_spool *spool) {
+    if (!spool) return;
+    spool->is_spooling = 0;
+}

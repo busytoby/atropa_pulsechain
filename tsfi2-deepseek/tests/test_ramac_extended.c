@@ -1592,6 +1592,24 @@ int main(void) {
     assert(broker.paths[path_id].message_pending == 0);
     printf("  [PASS] VM/370 IUCV program-to-program messages routed successfully.\n");
 
+    // 92. VM/370 CP Console Spool Logger Verification
+    printf("[Test] Verifying VM/370 CP Virtual Console Spool Logger...\n");
+    tsfi_cp_console_spool c_spool;
+    tsfi_cp_console_spool_init(&c_spool);
+    assert(c_spool.is_spooling == 0);
+    
+    tsfi_cp_console_spool_start(&c_spool);
+    assert(c_spool.is_spooling == 1);
+    
+    tsfi_cp_console_spool_write(&c_spool, "MSG TO CONSOLE: IPL CMS\n");
+    tsfi_cp_console_spool_write(&c_spool, "MSG TO CONSOLE: ACCESS 191 A\n");
+    assert(c_spool.log_len > 0);
+    assert(strstr(c_spool.log_buffer, "IPL CMS") != NULL);
+    
+    tsfi_cp_console_spool_stop(&c_spool);
+    assert(c_spool.is_spooling == 0);
+    printf("  [PASS] VM/370 interactive console spool logging verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

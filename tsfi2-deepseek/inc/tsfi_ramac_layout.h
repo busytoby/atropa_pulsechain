@@ -1579,4 +1579,16 @@ int tsfi_iucv_connect(tsfi_iucv_broker *broker, const char *src, const char *des
 int tsfi_iucv_send(tsfi_iucv_broker *broker, int path_id, const char *msg);
 int tsfi_iucv_receive(tsfi_iucv_broker *broker, int path_id, char *msg_out);
 
+// VM/370 CP Virtual Console Spool Logger
+typedef struct {
+    int is_spooling;
+    char log_buffer[512];
+    int log_len;
+} tsfi_cp_console_spool;
+
+void tsfi_cp_console_spool_init(tsfi_cp_console_spool *spool);
+void tsfi_cp_console_spool_start(tsfi_cp_console_spool *spool);
+void tsfi_cp_console_spool_write(tsfi_cp_console_spool *spool, const char *text);
+void tsfi_cp_console_spool_stop(tsfi_cp_console_spool *spool);
+
 #endif // TSFI_RAMAC_LAYOUT_H
