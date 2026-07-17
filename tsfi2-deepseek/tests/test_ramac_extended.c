@@ -1816,6 +1816,21 @@ int main(void) {
     assert(purge_stats.total_purged == 3);
     printf("  [PASS] VM/370 CP spool queue purging and memory resets verified.\n");
 
+    // 102. VM/370 CP Resource Query Manager Verification
+    printf("[Test] Verifying VM/370 CP Resource Queries...\n");
+    tsfi_cp_query_manager query_mgr;
+    tsfi_cp_query_init(&query_mgr);
+    
+    char q_buf[128];
+    assert(tsfi_cp_query_execute(&query_mgr, "QUERY TIME", q_buf, sizeof(q_buf)) == 0);
+    assert(strstr(q_buf, "CONNECT TIME") != NULL);
+    
+    assert(tsfi_cp_query_execute(&query_mgr, "QUERY NAMES", q_buf, sizeof(q_buf)) == 0);
+    assert(strstr(q_buf, "ACTIVE USERS") != NULL);
+    
+    assert(tsfi_cp_query_execute(&query_mgr, "INVALID QUERY", q_buf, sizeof(q_buf)) == -1);
+    printf("  [PASS] VM/370 CP console queries parsed and resolved successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

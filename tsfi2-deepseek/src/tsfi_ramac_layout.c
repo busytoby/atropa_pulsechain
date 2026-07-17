@@ -6429,3 +6429,22 @@ int tsfi_cp_execute_purge(tsfi_cp_purge_stats *stats, tsfi_cp_spool_queue_v3 *rd
     }
     return -1;
 }
+
+void tsfi_cp_query_init(tsfi_cp_query_manager *mgr) {
+    if (!mgr) return;
+    mgr->simulated_connect_time_sec = 3600;
+    mgr->active_user_count = 2;
+}
+
+int tsfi_cp_query_execute(tsfi_cp_query_manager *mgr, const char *query_cmd, char *out_buf, int out_max) {
+    if (!mgr || !query_cmd || !out_buf || out_max <= 0) return -1;
+    if (strcasecmp(query_cmd, "QUERY TIME") == 0) {
+        snprintf(out_buf, out_max, "CONNECT TIME: %u SEC", mgr->simulated_connect_time_sec);
+        return 0;
+    }
+    if (strcasecmp(query_cmd, "QUERY NAMES") == 0) {
+        snprintf(out_buf, out_max, "ACTIVE USERS: %d", mgr->active_user_count);
+        return 0;
+    }
+    return -1;
+}

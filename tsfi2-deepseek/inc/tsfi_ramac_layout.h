@@ -1731,4 +1731,13 @@ typedef struct {
 void tsfi_cp_purge_stats_init(tsfi_cp_purge_stats *stats);
 int tsfi_cp_execute_purge(tsfi_cp_purge_stats *stats, tsfi_cp_spool_queue_v3 *rdr, tsfi_cp_spool_printer *prt, const char *cmd);
 
+// VM/370 CP Resource Query Manager
+typedef struct {
+    uint32_t simulated_connect_time_sec;
+    int active_user_count;
+} tsfi_cp_query_manager;
+
+void tsfi_cp_query_init(tsfi_cp_query_manager *mgr);
+int tsfi_cp_query_execute(tsfi_cp_query_manager *mgr, const char *query_cmd, char *out_buf, int out_max);
+
 #endif // TSFI_RAMAC_LAYOUT_H
