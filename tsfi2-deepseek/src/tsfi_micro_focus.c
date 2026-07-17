@@ -1847,3 +1847,30 @@ int tsfi_mf_cics_inquire_tranclass_queuedtasks(const char *class_name, int queue
     *queuedtasks_out = queuedtasks_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_get_kv_value(const char *line, char *val_out, int max_len) {
+    if (!line || !val_out || max_len <= 0) return -1;
+
+    const char *eq = strchr(line, '=');
+    if (eq) {
+        const char *val_start = eq + 1;
+        while (*val_start == ' ') val_start++;
+        int val_len = 0;
+        while (val_start[val_len] != '\n' && val_start[val_len] != '\0' && val_start[val_len] != '\r') {
+            val_len++;
+        }
+        if (val_len >= max_len) val_len = max_len - 1;
+        memcpy(val_out, val_start, val_len);
+        val_out[val_len] = '\0';
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_mf_cics_inquire_tranclass_maxtasks(const char *class_name, int maxtasks_registry, int *maxtasks_out) {
+    (void)class_name;
+    if (!maxtasks_out) return -1;
+
+    *maxtasks_out = maxtasks_registry;
+    return 0;
+}

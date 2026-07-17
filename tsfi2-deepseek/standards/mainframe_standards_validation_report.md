@@ -150,5 +150,7 @@
 | 216 | CICS Transaction Class Active Tasks Inquirer | PASS | Checks count of active tasks for transaction class | Volume 33 |
 | 217 | Majordomo Open Checker | PASS | Verification utility checking list open enrollment settings | Volume 33 |
 | 218 | CICS Transaction Class Queued Tasks Inquirer | PASS | Checks count of queued tasks for transaction class | Volume 33 |
+| 219 | Majordomo KV Value Extractor | PASS | Extract value from key-value configuration lines | Volume 33 |
+| 220 | CICS Transaction Class Max Tasks Inquirer | PASS | Checks max concurrent tasks for transaction class | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 218 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 220 Scenarios validated successfully)

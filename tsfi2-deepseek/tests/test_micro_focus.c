@@ -1197,6 +1197,22 @@ int main(void) {
     assert(class_queuedtasks_val == 1);
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS QUEUEDTASKS verified.\n");
 
+    // 109. Verify Majordomo List Config KV Line Value Extractor
+    printf("[TEST] Validating Majordomo KV Line Value Extractor...\n");
+    char kv_val_out[64] = {0};
+    int kv_val_res = tsfi_mf_majordomo_get_kv_value("subscribe = open", kv_val_out, sizeof(kv_val_out));
+    assert(kv_val_res == 0);
+    assert(strcmp(kv_val_out, "open") == 0);
+    printf("  [PASS] Majordomo KV Line Value Extractor verified.\n");
+
+    // 110. Verify CICS System Inquire Transaction Class Max Tasks Limit Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM TRANCLASS MAXTASKS...\n");
+    int class_maxtasks_val = 0;
+    int inq_cls_max_res = tsfi_mf_cics_inquire_tranclass_maxtasks("FASTTRAN", 8, &class_maxtasks_val);
+    assert(inq_cls_max_res == 0);
+    assert(class_maxtasks_val == 8);
+    printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS MAXTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
