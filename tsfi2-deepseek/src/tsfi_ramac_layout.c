@@ -6352,3 +6352,45 @@ int tsfi_cp_spool_pop_v2(tsfi_cp_spool_queue_v2 *q, char *data_out) {
     }
     return -2;
 }
+
+void tsfi_cp_spool_queue_v3_init(tsfi_cp_spool_queue_v3 *q) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_cp_spool_queue_v3));
+}
+
+int tsfi_cp_spool_push_v3(tsfi_cp_spool_queue_v3 *q, const char *data, int file_id) {
+    if (!q || !data || q->count >= MAX_SPOOL_CARDS_V3) return -1;
+    strncpy(q->queue[q->count].card_data, data, sizeof(q->queue[q->count].card_data) - 1);
+    q->queue[q->count].card_data[sizeof(q->queue[q->count].card_data) - 1] = '\0';
+    q->queue[q->count].file_id = file_id;
+    q->queue[q->count].is_held = 0;
+    q->count++;
+    return 0;
+}
+
+int tsfi_cp_spool_hold(tsfi_cp_spool_queue_v3 *q, int file_id, int hold) {
+    if (!q) return -1;
+    for (int i = 0; i < q->count; i++) {
+        if (q->queue[i].file_id == file_id) {
+            q->queue[i].is_held = hold;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_spool_pop_v3(tsfi_cp_spool_queue_v3 *q, char *data_out) {
+    if (!q || !data_out || q->count <= 0) return -1;
+    for (int i = 0; i < q->count; i++) {
+        if (!q->queue[i].is_held) {
+            strncpy(data_out, q->queue[i].card_data, 79);
+            data_out[79] = '\0';
+            for (int j = i; j < q->count - 1; j++) {
+                q->queue[j] = q->queue[j + 1];
+            }
+            q->count--;
+            return 0;
+        }
+    }
+    return -2;
+}

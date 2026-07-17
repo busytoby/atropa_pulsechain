@@ -1760,6 +1760,35 @@ int main(void) {
     assert(strcmp(pop_buf, "CARD B1") == 0);
     printf("  [PASS] VM/370 CP spool file reader class filters verified.\n");
 
+    // 100. VM/370 CP Spool File Hold Manager Verification
+    printf("[Test] Verifying VM/370 CP Spool File Hold / Release...\n");
+    tsfi_cp_spool_queue_v3 hold_q;
+    tsfi_cp_spool_queue_v3_init(&hold_q);
+    
+    // Push spool files
+    assert(tsfi_cp_spool_push_v3(&hold_q, "CARD DATA 1", 101) == 0);
+    assert(tsfi_cp_spool_push_v3(&hold_q, "CARD DATA 2", 102) == 0);
+    assert(hold_q.count == 2);
+    
+    // Set file 101 to HOLD
+    assert(tsfi_cp_spool_hold(&hold_q, 101, 1) == 0);
+    
+    // Pop: should bypass held file 101 and return card 2 (file 102)
+    char hold_buf[80];
+    assert(tsfi_cp_spool_pop_v3(&hold_q, hold_buf) == 0);
+    assert(strcmp(hold_buf, "CARD DATA 2") == 0);
+    assert(hold_q.count == 1);
+    
+    // Pop again: should fail with -2 because remaining file 101 is held
+    assert(tsfi_cp_spool_pop_v3(&hold_q, hold_buf) == -2);
+    
+    // Release file 101 and pop successfully
+    assert(tsfi_cp_spool_hold(&hold_q, 101, 0) == 0);
+    assert(tsfi_cp_spool_pop_v3(&hold_q, hold_buf) == 0);
+    assert(strcmp(hold_buf, "CARD DATA 1") == 0);
+    assert(hold_q.count == 0);
+    printf("  [PASS] VM/370 CP spool file hold and release states verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

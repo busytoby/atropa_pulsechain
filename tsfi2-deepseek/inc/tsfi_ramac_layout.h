@@ -1703,4 +1703,22 @@ void tsfi_cp_spool_queue_v2_init(tsfi_cp_spool_queue_v2 *q, char reader_class);
 int tsfi_cp_spool_push_v2(tsfi_cp_spool_queue_v2 *q, const char *data, char card_class);
 int tsfi_cp_spool_pop_v2(tsfi_cp_spool_queue_v2 *q, char *data_out);
 
+// VM/370 CP Spool File Hold Manager
+typedef struct {
+    char card_data[80];
+    int file_id;
+    int is_held;
+} tsfi_cp_spool_card_v3;
+
+#define MAX_SPOOL_CARDS_V3 16
+typedef struct {
+    tsfi_cp_spool_card_v3 queue[MAX_SPOOL_CARDS_V3];
+    int count;
+} tsfi_cp_spool_queue_v3;
+
+void tsfi_cp_spool_queue_v3_init(tsfi_cp_spool_queue_v3 *q);
+int tsfi_cp_spool_push_v3(tsfi_cp_spool_queue_v3 *q, const char *data, int file_id);
+int tsfi_cp_spool_hold(tsfi_cp_spool_queue_v3 *q, int file_id, int hold);
+int tsfi_cp_spool_pop_v3(tsfi_cp_spool_queue_v3 *q, char *data_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
