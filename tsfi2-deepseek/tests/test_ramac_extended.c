@@ -1086,6 +1086,22 @@ int main(void) {
     assert(strcmp(unpacked_address, evm_address) == 0);
     printf("  [PASS] COBOL COMP-3 Hex-BCD packing/unpacking for 160-bit addresses verified.\n");
 
+    // 64. Aho-Corasick ACH Routing Prefix Filter Verification
+    printf("[Test] Verifying Aho-Corasick routing prefix filter...\n");
+    tsfi_ac_filter ac;
+    tsfi_ac_filter_init(&ac);
+    int ac_add_res = tsfi_ac_filter_add_pattern(&ac, "021000", 1);
+    assert(ac_add_res == 0);
+    ac_add_res = tsfi_ac_filter_add_pattern(&ac, "021002", 2);
+    assert(ac_add_res == 0);
+    tsfi_ac_filter_build(&ac);
+    
+    int match_idx = tsfi_ac_filter_search(&ac, "021000021");
+    assert(match_idx == 1);
+    match_idx = tsfi_ac_filter_search(&ac, "122000004");
+    assert(match_idx == -1);
+    printf("  [PASS] Aho-Corasick ACH routing prefix matching verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

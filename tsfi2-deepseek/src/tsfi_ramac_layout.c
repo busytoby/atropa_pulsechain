@@ -5331,3 +5331,85 @@ int tsfi_cobol_unpack_hex(const uint8_t *comp3_in, size_t comp3_len, char *hex_o
     hex_out[out_idx] = '\0';
     return 0;
 }
+
+void tsfi_ac_filter_init(tsfi_ac_filter *filter) {
+    if (!filter) return;
+    memset(filter, 0, sizeof(tsfi_ac_filter));
+    for (int i = 0; i < 10; i++) {
+        filter->nodes[0].next_states[i] = -1;
+    }
+    filter->nodes[0].fail_state = 0;
+    filter->nodes[0].match_pattern_idx = -1;
+    filter->node_count = 1;
+}
+
+int tsfi_ac_filter_add_pattern(tsfi_ac_filter *filter, const char *pattern, int pattern_idx) {
+    if (!filter || !pattern || filter->node_count >= 128) return -1;
+    int current = 0;
+    for (int i = 0; pattern[i] != '\0'; i++) {
+        if (pattern[i] < '0' || pattern[i] > '9') continue;
+        int digit = pattern[i] - '0';
+        if (filter->nodes[current].next_states[digit] == -1) {
+            if (filter->node_count >= 128) return -2;
+            int next_node = filter->node_count++;
+            for (int k = 0; k < 10; k++) {
+                filter->nodes[next_node].next_states[k] = -1;
+            }
+            filter->nodes[next_node].fail_state = 0;
+            filter->nodes[next_node].match_pattern_idx = -1;
+            filter->nodes[current].next_states[digit] = next_node;
+        }
+        current = filter->nodes[current].next_states[digit];
+    }
+    filter->nodes[current].match_pattern_idx = pattern_idx;
+    return 0;
+}
+
+void tsfi_ac_filter_build(tsfi_ac_filter *filter) {
+    if (!filter) return;
+    int queue[128];
+    int head = 0, tail = 0;
+    for (int i = 0; i < 10; i++) {
+        int next = filter->nodes[0].next_states[i];
+        if (next != -1) {
+            filter->nodes[next].fail_state = 0;
+            queue[tail++] = next;
+        } else {
+            filter->nodes[0].next_states[i] = 0;
+        }
+    }
+    while (head < tail) {
+        int r = queue[head++];
+        for (int i = 0; i < 10; i++) {
+            int u = filter->nodes[r].next_states[i];
+            if (u != -1 && u != 0) {
+                queue[tail++] = u;
+                int fail = filter->nodes[r].fail_state;
+                while (filter->nodes[fail].next_states[i] == -1) {
+                    fail = filter->nodes[fail].fail_state;
+                }
+                filter->nodes[u].fail_state = filter->nodes[fail].next_states[i];
+                if (filter->nodes[filter->nodes[u].fail_state].match_pattern_idx != -1) {
+                    filter->nodes[u].match_pattern_idx = filter->nodes[filter->nodes[u].fail_state].match_pattern_idx;
+                }
+            } else {
+                int fail = filter->nodes[r].fail_state;
+                filter->nodes[r].next_states[i] = filter->nodes[fail].next_states[i];
+            }
+        }
+    }
+}
+
+int tsfi_ac_filter_search(const tsfi_ac_filter *filter, const char *text) {
+    if (!filter || !text) return -1;
+    int current = 0;
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (text[i] < '0' || text[i] > '9') continue;
+        int digit = text[i] - '0';
+        current = filter->nodes[current].next_states[digit];
+        if (filter->nodes[current].match_pattern_idx != -1) {
+            return filter->nodes[current].match_pattern_idx;
+        }
+    }
+    return -1;
+}

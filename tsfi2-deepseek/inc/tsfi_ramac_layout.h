@@ -1283,4 +1283,21 @@ int tsfi_nacha_generate_file(char *file_out, size_t max_len, const ach_batch *ba
 int tsfi_cobol_pack_hex(const char *hex_in, uint8_t *comp3_out, size_t max_len);
 int tsfi_cobol_unpack_hex(const uint8_t *comp3_in, size_t comp3_len, char *hex_out, size_t max_len);
 
+// Aho-Corasick Routing Prefix Filter (Rule 11 compliant)
+typedef struct {
+    int next_states[10];
+    int fail_state;
+    int match_pattern_idx;
+} tsfi_ac_node;
+
+typedef struct {
+    tsfi_ac_node nodes[128];
+    int node_count;
+} tsfi_ac_filter;
+
+void tsfi_ac_filter_init(tsfi_ac_filter *filter);
+int tsfi_ac_filter_add_pattern(tsfi_ac_filter *filter, const char *pattern, int pattern_idx);
+void tsfi_ac_filter_build(tsfi_ac_filter *filter);
+int tsfi_ac_filter_search(const tsfi_ac_filter *filter, const char *text);
+
 #endif // TSFI_RAMAC_LAYOUT_H
