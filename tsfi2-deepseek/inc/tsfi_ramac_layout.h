@@ -1757,4 +1757,16 @@ int tsfi_cp_sleep_start(tsfi_cp_terminal_sleep *t, int seconds);
 int tsfi_cp_sleep_tick(tsfi_cp_terminal_sleep *t);
 int tsfi_cp_sleep_interrupt(tsfi_cp_terminal_sleep *t);
 
+// VM/370 CP Disconnect/Connect Session Monitor
+typedef struct {
+    char userid[16];
+    int is_connected;
+    int background_cycles_run;
+} tsfi_cp_active_session;
+
+void tsfi_cp_active_session_init(tsfi_cp_active_session *sess, const char *uid);
+int tsfi_cp_active_session_disconnect(tsfi_cp_active_session *sess);
+int tsfi_cp_active_session_connect(tsfi_cp_active_session *sess);
+int tsfi_cp_active_session_dispatch(tsfi_cp_active_session *sess, int cycles);
+
 #endif // TSFI_RAMAC_LAYOUT_H

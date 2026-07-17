@@ -50,8 +50,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 103 | VM/370 CP MSG Console Message Router | PASS | Terminal Msg Router | Volume 19 |
 | 104 | VM/370 CP WARNING Broadcast Manager | PASS | Terminal Broadcast | Volume 19 |
 | 105 | VM/370 CP Virtual Terminal Sleep Manager | PASS | Terminal Sleep State | Volume 19 |
+| 106 | VM/370 CP Disconnect/Connect Session Monitor | PASS | Session Connect Monitor | Volume 19 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 105 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 106 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

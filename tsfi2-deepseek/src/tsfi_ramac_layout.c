@@ -6515,3 +6515,31 @@ int tsfi_cp_sleep_interrupt(tsfi_cp_terminal_sleep *t) {
     t->remaining_seconds = 0;
     return 0;
 }
+
+void tsfi_cp_active_session_init(tsfi_cp_active_session *sess, const char *uid) {
+    if (!sess) return;
+    memset(sess, 0, sizeof(tsfi_cp_active_session));
+    if (uid) {
+        strncpy(sess->userid, uid, sizeof(sess->userid) - 1);
+        sess->userid[sizeof(sess->userid) - 1] = '\0';
+    }
+    sess->is_connected = 1;
+}
+
+int tsfi_cp_active_session_disconnect(tsfi_cp_active_session *sess) {
+    if (!sess) return -1;
+    sess->is_connected = 0;
+    return 0;
+}
+
+int tsfi_cp_active_session_connect(tsfi_cp_active_session *sess) {
+    if (!sess) return -1;
+    sess->is_connected = 1;
+    return 0;
+}
+
+int tsfi_cp_active_session_dispatch(tsfi_cp_active_session *sess, int cycles) {
+    if (!sess) return -1;
+    sess->background_cycles_run += cycles;
+    return sess->background_cycles_run;
+}

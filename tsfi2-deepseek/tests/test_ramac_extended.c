@@ -1888,6 +1888,26 @@ int main(void) {
     assert(sleep_state.remaining_seconds == 0);
     printf("  [PASS] VM/370 CP virtual terminal sleep countdown and interrupt verified.\n");
 
+    // 106. VM/370 CP Disconnect/Connect Session Monitor Verification
+    printf("[Test] Verifying VM/370 CP Disconnect session monitor...\n");
+    tsfi_cp_active_session session;
+    tsfi_cp_active_session_init(&session, "VM_USER_A");
+    assert(session.is_connected == 1);
+    assert(session.background_cycles_run == 0);
+    
+    // Disconnect terminal session
+    assert(tsfi_cp_active_session_disconnect(&session) == 0);
+    assert(session.is_connected == 0);
+    
+    // Background scheduler cycle dispatching
+    assert(tsfi_cp_active_session_dispatch(&session, 500) == 500);
+    assert(session.background_cycles_run == 500);
+    
+    // Connect terminal back
+    assert(tsfi_cp_active_session_connect(&session) == 0);
+    assert(session.is_connected == 1);
+    printf("  [PASS] VM/370 CP session disconnect/reconnect and dispatch routing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
