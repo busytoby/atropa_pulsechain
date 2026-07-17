@@ -4934,3 +4934,29 @@ int tsfi_multics_check_access(const multics_segment_table *table, uintptr_t addr
     }
     return -3;
 }
+
+uint64_t tsfi_bates_hash(const char *token, uint64_t salt) {
+    if (!token) return 0;
+    uint64_t h = salt ^ 953467954114363ULL;
+    while (*token) {
+        h = (h * 33) ^ (uint8_t)(*token);
+        token++;
+    }
+    return h;
+}
+
+int tsfi_bates_authenticate(const char *token, uint64_t salt, uint64_t expected_hash) {
+    uint64_t computed = tsfi_bates_hash(token, salt);
+    return (computed == expected_hash) ? 0 : -1;
+}
+
+int tsfi_dbl_convert(const uint8_t *raw_sector_data, size_t sector_size, char *db_relation_output, size_t max_len) {
+    if (!raw_sector_data || sector_size == 0 || !db_relation_output || max_len == 0) return -1;
+    if (sector_size < 4) return -2;
+    uint32_t owner_key = ((uint32_t)raw_sector_data[0] << 24) |
+                         ((uint32_t)raw_sector_data[1] << 16) |
+                         ((uint32_t)raw_sector_data[2] << 8)  |
+                         (uint32_t)raw_sector_data[3];
+    int bytes = snprintf(db_relation_output, max_len, "OWNER_KEY=0x%08X; MEMBERS=%zu_BYTES", owner_key, sector_size - 4);
+    return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -3;
+}

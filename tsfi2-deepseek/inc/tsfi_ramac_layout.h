@@ -1184,4 +1184,9 @@ void tsfi_multics_init(multics_segment_table *table);
 int tsfi_multics_register(multics_segment_table *table, uint32_t segment_id, uintptr_t base_addr, size_t size, uint8_t flags);
 int tsfi_multics_check_access(const multics_segment_table *table, uintptr_t addr, uint8_t required_flags);
 
+// 1970 Volume 16: Bates Security Vault & DBL Converter
+uint64_t tsfi_bates_hash(const char *token, uint64_t salt);
+int tsfi_bates_authenticate(const char *token, uint64_t salt, uint64_t expected_hash);
+int tsfi_dbl_convert(const uint8_t *raw_sector_data, size_t sector_size, char *db_relation_output, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

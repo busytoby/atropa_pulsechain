@@ -919,6 +919,24 @@ int main(void) {
     assert(acc_ok3 == -3);
     printf("  [PASS] Multics segment access controls and fault traps verified.\n");
 
+    // 52. Bates Security Vault Verification
+    printf("[Test] Verifying Bates mainframe cryptographic vault...\n");
+    uint64_t hash = tsfi_bates_hash("ADMIN_TOKEN_99", 12345ULL);
+    int auth_ok = tsfi_bates_authenticate("ADMIN_TOKEN_99", 12345ULL, hash);
+    assert(auth_ok == 0);
+    int auth_fail = tsfi_bates_authenticate("BAD_TOKEN", 12345ULL, hash);
+    assert(auth_fail == -1);
+    printf("  [PASS] Cryptographic token authorization verified successfully.\n");
+    
+    // 53. DBL Schema Converter Verification
+    printf("[Test] Verifying DBL database schema transformations...\n");
+    uint8_t raw_sector[8] = { 0xAA, 0xBB, 0xCC, 0xDD, 0x11, 0x22, 0x33, 0x44 };
+    char dbl_out[128];
+    int dbl_res = tsfi_dbl_convert(raw_sector, 8, dbl_out, sizeof(dbl_out));
+    assert(dbl_res == 0);
+    assert(strcmp(dbl_out, "OWNER_KEY=0xAABBCCDD; MEMBERS=4_BYTES") == 0);
+    printf("  [PASS] DBL sector to relation mapping verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
