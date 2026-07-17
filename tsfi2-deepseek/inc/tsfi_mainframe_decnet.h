@@ -1114,4 +1114,24 @@ typedef struct {
 void tsfi_eft_monitor_init(tsfi_eft_monitor *mon, double max_lat);
 int tsfi_eft_monitor_check(tsfi_eft_monitor *mon, const tsfi_eft_transaction *tx);
 
+// EFT Cumulative Limit & Fraud Guard
+typedef struct {
+    float daily_total;
+    float max_daily_limit;
+    float single_tx_limit;
+} tsfi_eft_guard;
+
+void tsfi_eft_guard_init(tsfi_eft_guard *guard, float max_daily, float single_limit);
+int tsfi_eft_guard_check(tsfi_eft_guard *guard, float tx_amount);
+
+// Bank Terminal Key Rotation
+typedef struct {
+    uint32_t master_key;
+    uint32_t session_key;
+    int session_active;
+} tsfi_bank_terminal;
+
+void tsfi_bank_term_init(tsfi_bank_terminal *term, uint32_t master);
+int tsfi_bank_term_rotate_key(tsfi_bank_terminal *term, uint32_t challenge, uint32_t response);
+
 #endif // TSFI_MAINFRAME_DECNET_H

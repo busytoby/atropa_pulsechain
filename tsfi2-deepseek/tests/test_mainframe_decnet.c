@@ -1585,6 +1585,33 @@ int main(void) {
     assert(eft_mon.dropped_tx_count == 4);
     printf("  [PASS] Banking security terminal locks and EFT drop/latency monitors verified.\n");
 
+    // 83. EFT Limit Guard & Bank Terminal Key Rotation Verification
+    printf("[Test] Verifying EFT Limit Guard & Bank Terminal Key Rotation...\n");
+    tsfi_eft_guard guard;
+    tsfi_eft_guard_init(&guard, 5000.0f, 2000.0f);
+    assert(guard.daily_total == 0.0f);
+    
+    assert(tsfi_eft_guard_check(&guard, 1500.0f) == 0);
+    assert(guard.daily_total == 1500.0f);
+    assert(tsfi_eft_guard_check(&guard, 2500.0f) == -2); // Exceeds single limit
+    assert(tsfi_eft_guard_check(&guard, 1800.0f) == 0);
+    assert(tsfi_eft_guard_check(&guard, 1800.0f) == -3); // Exceeds daily limit (1500 + 1800 + 1800 = 5100 > 5000)
+    
+    // Bank Terminal key rotation
+    tsfi_bank_terminal bank_term;
+    tsfi_bank_term_init(&bank_term, 0xABCDE987);
+    assert(bank_term.session_active == 0);
+    
+    uint32_t challenge = 0x11223344;
+    uint32_t response = challenge ^ 0xABCDE987;
+    assert(tsfi_bank_term_rotate_key(&bank_term, challenge, response) == 0);
+    assert(bank_term.session_active == 1);
+    assert(bank_term.session_key == challenge + 0x12345);
+    
+    assert(tsfi_bank_term_rotate_key(&bank_term, challenge, 0x00000000) == -2); // Bad response
+    assert(bank_term.session_active == 0);
+    printf("  [PASS] EFT threshold compliance and bank terminal key rotations verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -2394,3 +2394,37 @@ int tsfi_eft_monitor_check(tsfi_eft_monitor *mon, const tsfi_eft_transaction *tx
     }
     return 0;
 }
+
+void tsfi_eft_guard_init(tsfi_eft_guard *guard, float max_daily, float single_limit) {
+    if (!guard) return;
+    guard->daily_total = 0.0f;
+    guard->max_daily_limit = max_daily;
+    guard->single_tx_limit = single_limit;
+}
+
+int tsfi_eft_guard_check(tsfi_eft_guard *guard, float tx_amount) {
+    if (!guard) return -1;
+    if (tx_amount > guard->single_tx_limit) return -2;
+    if (guard->daily_total + tx_amount > guard->max_daily_limit) return -3;
+    guard->daily_total += tx_amount;
+    return 0;
+}
+
+void tsfi_bank_term_init(tsfi_bank_terminal *term, uint32_t master) {
+    if (!term) return;
+    term->master_key = master;
+    term->session_key = 0;
+    term->session_active = 0;
+}
+
+int tsfi_bank_term_rotate_key(tsfi_bank_terminal *term, uint32_t challenge, uint32_t response) {
+    if (!term) return -1;
+    uint32_t expected = challenge ^ term->master_key;
+    if (response == expected) {
+        term->session_key = challenge + 0x12345;
+        term->session_active = 1;
+        return 0;
+    }
+    term->session_active = 0;
+    return -2;
+}
