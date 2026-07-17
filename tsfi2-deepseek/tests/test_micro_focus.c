@@ -378,6 +378,14 @@ int main(void) {
     assert(strstr(digest_buffer, "Mainframe operations active.") != NULL);
     printf("  [PASS] Majordomo Digest Builder verified.\n");
 
+    // 22. Verify Wessler HLASM Macro Expansion
+    printf("[TEST] Validating Wessler HLASM Macro Expansion...\n");
+    char hlasm_out[64] = {0};
+    int macro_res = tsfi_mf_wessler_macro_expand("IF (R3,EQ,R4)", hlasm_out, sizeof(hlasm_out));
+    assert(macro_res == 0);
+    assert(strcmp(hlasm_out, "CR R3,R4\nBC 7,L1") == 0);
+    printf("  [PASS] Wessler HLASM Macro Expansion verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

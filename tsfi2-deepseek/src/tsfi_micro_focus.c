@@ -688,3 +688,29 @@ int tsfi_mf_majordomo_digest(const char **posts, int post_count, char *digest_ou
 
     return 0;
 }
+
+int tsfi_mf_wessler_macro_expand(const char *macro_line, char *hlasm_out, int max_len) {
+    if (!macro_line || !hlasm_out || max_len <= 0) return -1;
+
+    if (strstr(macro_line, "IF (") != NULL) {
+        char reg1[16] = {0};
+        char reg2[16] = {0};
+        char cond[16] = {0};
+        int parsed = sscanf(macro_line, "IF (%15[^,],%15[^,],%15[^)])", reg1, cond, reg2);
+        if (parsed == 3) {
+            int mask = 7;
+            if (strcmp(cond, "NE") == 0) mask = 8;
+            snprintf(hlasm_out, max_len, "CR %s,%s\nBC %d,L1", reg1, reg2, mask);
+            return 0;
+        }
+    } else if (strcmp(macro_line, "ELSE") == 0) {
+        snprintf(hlasm_out, max_len, "B L2\nL1 EQU *");
+        return 0;
+    } else if (strcmp(macro_line, "ENDIF") == 0) {
+        snprintf(hlasm_out, max_len, "L2 EQU *");
+        return 0;
+    }
+
+    snprintf(hlasm_out, max_len, "DS 0H");
+    return -2;
+}
