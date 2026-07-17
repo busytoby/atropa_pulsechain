@@ -1255,6 +1255,24 @@ int main(void) {
     assert(strstr(bridge_resp, "Room 4") != NULL);
     printf("  [PASS] MajorMUD Mainframe Bridge Action verified.\n");
 
+    // 116. Verify IRS CADE Taxpayer Account Registry
+    printf("[TEST] Validating IRS CADE Taxpayer Account Registry...\n");
+    char taxpayer_registry[128] = {0};
+    int cade_reg_res = tsfi_mf_cade_register_taxpayer("999-12-3456", 1250.00, 1, taxpayer_registry, sizeof(taxpayer_registry));
+    assert(cade_reg_res == 0);
+    assert(strstr(taxpayer_registry, "BAL:1250.00") != NULL);
+    printf("  [PASS] IRS CADE Taxpayer Account Registry verified.\n");
+
+    // 117. Verify IRS IMF Transaction Processor
+    printf("[TEST] Validating IRS IMF Transaction Processor...\n");
+    double tax_balance = 1250.00;
+    char imf_log[128] = {0};
+    int imf_res = tsfi_mf_imf_process_transaction("999-12-3456", 846, 250.00, &tax_balance, imf_log, sizeof(imf_log));
+    assert(imf_res == 0);
+    assert(tax_balance == 1000.00);
+    assert(strstr(imf_log, "TC846") != NULL);
+    printf("  [PASS] IRS IMF Transaction Processor verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

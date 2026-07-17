@@ -1894,3 +1894,33 @@ int tsfi_mf_cics_inquire_tranclass_percent(const char *class_name, int acttasks_
     *percent_out = ((float)acttasks_registry / (float)maxtasks_registry) * 100.0f;
     return 0;
 }
+
+int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len) {
+    if (!ssn || !registry_out || max_len <= 0) return -1;
+
+    snprintf(registry_out, max_len, "SSN:%s|BAL:%.2f|STATUS:%d", ssn, balance, status);
+    return 0;
+}
+
+int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len) {
+    if (!ssn || !balance_in_out || !log_out || max_len <= 0) return -1;
+
+    switch (transaction_code) {
+        case 150:
+            *balance_in_out += amount;
+            snprintf(log_out, max_len, "TC150: Tax Return Filed for SSN %s. Assessment: +%.2f", ssn, amount);
+            break;
+        case 846:
+            *balance_in_out -= amount;
+            snprintf(log_out, max_len, "TC846: Refund Issued for SSN %s. Amount: -%.2f", ssn, amount);
+            break;
+        case 290:
+            *balance_in_out += amount;
+            snprintf(log_out, max_len, "TC290: Additional Tax Assessment for SSN %s. Amount: +%.2f", ssn, amount);
+            break;
+        default:
+            snprintf(log_out, max_len, "TC%d: Unknown IMF Transaction Code for SSN %s", transaction_code, ssn);
+            return -2;
+    }
+    return 0;
+}

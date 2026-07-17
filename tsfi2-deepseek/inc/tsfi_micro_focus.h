@@ -139,5 +139,7 @@ int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int com
 int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, char *terminal_buffer);
 int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset);
 int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
+int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len);
+int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len);
 
 #endif // TSFI_MICRO_FOCUS_H
