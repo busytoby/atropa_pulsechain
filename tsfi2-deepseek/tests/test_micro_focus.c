@@ -398,6 +398,17 @@ int main(void) {
     assert(rejected == 1);
     printf("  [PASS] Majordomo List Access Checker verified.\n");
 
+    // 24. Verify CICS HANDLE CONDITION Exception Registry
+    printf("[TEST] Validating CICS HANDLE CONDITION Exception Registry...\n");
+    uint64_t registry[8] = {0};
+    int reg_res = tsfi_mf_cics_handle_condition(12, 0x1000DEADBEEF, registry, 4);
+    assert(reg_res == 0);
+    uint64_t resolved = 0;
+    int raise_res = tsfi_mf_cics_raise_condition(12, registry, 4, &resolved);
+    assert(raise_res == 0);
+    assert(resolved == 0x1000DEADBEEF);
+    printf("  [PASS] CICS HANDLE CONDITION exception registry verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

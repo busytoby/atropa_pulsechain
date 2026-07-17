@@ -726,3 +726,30 @@ int tsfi_mf_majordomo_restrict_post(const char *sender_email, const char **membe
 
     return 1;
 }
+
+int tsfi_mf_cics_handle_condition(uint32_t condition_id, uint64_t handler_addr, uint64_t *registry_table, int max_conditions) {
+    if (!registry_table || max_conditions <= 0) return -1;
+
+    for (int i = 0; i < max_conditions; i++) {
+        if (registry_table[i * 2] == condition_id || registry_table[i * 2] == 0) {
+            registry_table[i * 2] = condition_id;
+            registry_table[i * 2 + 1] = handler_addr;
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table, int max_conditions, uint64_t *handler_out) {
+    if (!registry_table || max_conditions <= 0 || !handler_out) return -1;
+
+    for (int i = 0; i < max_conditions; i++) {
+        if (registry_table[i * 2] == condition_id) {
+            *handler_out = registry_table[i * 2 + 1];
+            return 0;
+        }
+    }
+
+    return -2;
+}
