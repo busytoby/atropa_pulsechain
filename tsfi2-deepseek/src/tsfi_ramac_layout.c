@@ -4342,3 +4342,37 @@ int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]) {
         return -2;
     }
 }
+
+int tsfi_detabx_validate(const tsfi_detabx_table *table) {
+    if (!table) return -3;
+    
+    for (int j1 = 0; j1 < table->num_rules - 1; j1++) {
+        for (int j2 = j1 + 1; j2 < table->num_rules; j2++) {
+            int overlap = 1;
+            for (int i = 0; i < table->num_conditions; i++) {
+                char e1 = table->condition_entries[i][j1];
+                char e2 = table->condition_entries[i][j2];
+                if (e1 != '-' && e1 != '\0' && e2 != '-' && e2 != '\0' && e1 != e2) {
+                    overlap = 0;
+                    break;
+                }
+            }
+            
+            if (overlap) {
+                int same_actions = 1;
+                for (int a = 0; a < table->num_actions; a++) {
+                    if (table->action_entries[a][j1] != table->action_entries[a][j2]) {
+                        same_actions = 0;
+                        break;
+                    }
+                }
+                if (same_actions) {
+                    return -2;
+                } else {
+                    return -1;
+                }
+            }
+        }
+    }
+    return 0;
+}

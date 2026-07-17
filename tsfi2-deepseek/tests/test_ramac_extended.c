@@ -593,6 +593,31 @@ int main(void) {
     assert(else_regs[2] == 100);
     printf("  [PASS] DETAB-X execution engine, ELSE rules, and sequencing verified.\n");
 
+    // 35. DETAB-X Contradiction & Redundancy Validation Verification
+    printf("[Test] Verifying DETAB-X contradiction & redundancy validator...\n");
+    tsfi_detabx_table val_tbl;
+    memset(&val_tbl, 0, sizeof(val_tbl));
+    val_tbl.num_conditions = 2;
+    val_tbl.num_actions = 2;
+    val_tbl.num_rules = 2;
+    
+    val_tbl.condition_entries[0][0] = 'Y';
+    val_tbl.condition_entries[1][0] = 'Y';
+    val_tbl.condition_entries[0][1] = 'Y';
+    val_tbl.condition_entries[1][1] = 'Y';
+    
+    val_tbl.action_entries[0][0] = 'X';
+    val_tbl.action_entries[0][1] = 'X';
+    
+    int val_res = tsfi_detabx_validate(&val_tbl);
+    assert(val_res == -2);
+    
+    val_tbl.action_entries[0][1] = ' ';
+    val_tbl.action_entries[1][1] = 'X';
+    val_res = tsfi_detabx_validate(&val_tbl);
+    assert(val_res == -1);
+    printf("  [PASS] DETAB-X static analysis validator verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

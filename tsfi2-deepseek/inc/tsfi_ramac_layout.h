@@ -987,5 +987,6 @@ typedef struct {
 } tsfi_detabx_table;
 
 int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]);
+int tsfi_detabx_validate(const tsfi_detabx_table *table);
 
 #endif // TSFI_RAMAC_LAYOUT_H
