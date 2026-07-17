@@ -763,4 +763,24 @@ int tsfi_uniservo_init(tsfi_uniservo_tape *tape, const char *filepath);
 int tsfi_uniservo_read_block(tsfi_uniservo_tape *tape, uint32_t block_idx, uint8_t *buffer, int buf_len);
 int tsfi_uniservo_write_block(tsfi_uniservo_tape *tape, uint32_t block_idx, const uint8_t *buffer, int buf_len);
 
+// CODASYL DBTG Set Relationship Schema
+typedef struct {
+    char owner_name[32];
+    char member_name[32];
+    int relation_id;
+} tsfi_codasyl_dbtg_set;
+
+// COBOL File Description (FD) & SORT-MERGE
+typedef struct {
+    char filename[32];
+    int record_length;
+    int key_start;
+    int key_len;
+} tsfi_cobol_fd;
+
+int tsfi_cobol_sort_merge(const tsfi_cobol_fd *fd, tsfi_ramac_card *cards, int card_count);
+
+// COBOL Report Writer Division
+void tsfi_cobol_report_writer(const char *title, int total_acc, char *output_report, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

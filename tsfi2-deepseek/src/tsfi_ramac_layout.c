@@ -3734,3 +3734,40 @@ int tsfi_uniservo_write_block(tsfi_uniservo_tape *tape, uint32_t block_idx, cons
     }
     return 0;
 }
+
+int tsfi_cobol_sort_merge(const tsfi_cobol_fd *fd, tsfi_ramac_card *cards, int card_count) {
+    if (!fd || !cards || card_count <= 0) return -1;
+    if (fd->key_start < 0 || fd->key_start + fd->key_len > 80) return -2;
+    
+    // Bubble sort records based on key substring comparison
+    for (int i = 0; i < card_count - 1; i++) {
+        for (int j = 0; j < card_count - i - 1; j++) {
+            char key_a[80];
+            char key_b[80];
+            memcpy(key_a, &cards[j].columns[fd->key_start], fd->key_len);
+            key_a[fd->key_len] = '\0';
+            memcpy(key_b, &cards[j+1].columns[fd->key_start], fd->key_len);
+            key_b[fd->key_len] = '\0';
+            
+            if (strcmp(key_a, key_b) > 0) {
+                tsfi_ramac_card temp = cards[j];
+                cards[j] = cards[j+1];
+                cards[j+1] = temp;
+            }
+        }
+    }
+    return 0;
+}
+
+void tsfi_cobol_report_writer(const char *title, int total_acc, char *output_report, int max_len) {
+    if (!title || !output_report || max_len <= 0) return;
+    
+    snprintf(output_report, max_len,
+             "========================================\n"
+             "           COBOL REPORT WRITER          \n"
+             "Title: %s\n"
+             "----------------------------------------\n"
+             "ACCUMULATOR GRAND TOTAL: %-10d\n"
+             "========================================\n",
+             title, total_acc);
+}

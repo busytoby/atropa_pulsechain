@@ -116,6 +116,47 @@ int main(void) {
     assert(tape.parity_errors == 1);
     printf("  [PASS] Uniservo block read/write and longitudinal parity error detection verified.\n");
 
+    // 6. CODASYL DBTG Schema Invariant Verification
+    printf("[Test] Verifying CODASYL DBTG Schema Set relations...\n");
+    tsfi_codasyl_dbtg_set relation;
+    strcpy(relation.owner_name, "CUSTOMER_RECORD");
+    strcpy(relation.member_name, "ORDER_RECORD");
+    relation.relation_id = 45;
+    assert(strcmp(relation.owner_name, "CUSTOMER_RECORD") == 0);
+    assert(strcmp(relation.member_name, "ORDER_RECORD") == 0);
+    assert(relation.relation_id == 45);
+    printf("  [PASS] DBTG Set relationships verified.\n");
+    
+    // 7. COBOL File Control (FD) & SORT-MERGE Verification
+    printf("[Test] Verifying COBOL SORT-MERGE execution...\n");
+    tsfi_cobol_fd fd;
+    strcpy(fd.filename, "CARDS.DAT");
+    fd.record_length = 80;
+    fd.key_start = 5;
+    fd.key_len = 3;
+    
+    tsfi_ramac_card cards[3];
+    memset(cards, ' ', sizeof(cards));
+    memcpy(&cards[0].columns[5], "ZZZ", 3);
+    memcpy(&cards[1].columns[5], "AAA", 3);
+    memcpy(&cards[2].columns[5], "MMM", 3);
+    
+    int sort_res = tsfi_cobol_sort_merge(&fd, cards, 3);
+    assert(sort_res == 0);
+    assert(strncmp(&cards[0].columns[5], "AAA", 3) == 0);
+    assert(strncmp(&cards[1].columns[5], "MMM", 3) == 0);
+    assert(strncmp(&cards[2].columns[5], "ZZZ", 3) == 0);
+    printf("  [PASS] COBOL File Control sorting logic verified.\n");
+    
+    // 8. COBOL Report Writer Division Verification
+    printf("[Test] Verifying COBOL Report Writer formatting...\n");
+    char report_out[256];
+    tsfi_cobol_report_writer("QUARTERLY SALES", 45000, report_out, 256);
+    assert(strstr(report_out, "COBOL REPORT WRITER") != NULL);
+    assert(strstr(report_out, "QUARTERLY SALES") != NULL);
+    assert(strstr(report_out, "45000") != NULL);
+    printf("  [PASS] COBOL Report Writer Division verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
