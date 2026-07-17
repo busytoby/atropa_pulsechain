@@ -39,5 +39,10 @@
 | 105 | VM/370 CP Virtual Terminal Sleep Manager | PASS | Terminal Sleep State | Volume 19 |
 | 106 | VM/370 CP Disconnect/Connect Session Monitor | PASS | Session Connect Monitor | Volume 19 |
 | 107 | VM/370 CP Terminal Options Configurator | PASS | Terminal Line Edit | Volume 19 |
+| 108 | CGI/CGM Operational Code Interpreter | PASS | Vector Graphics | Volume 33 |
+| 109 | Mainframe Punched-Card CAD System Reader | PASS | CAD Vector Parsing | Volume 33 |
+| 110 | NBS GKS to Ray Tracer Bridge | PASS | Graphical Interface | Volume 33 |
+| 111 | Benson-Lehner OSCAR Polynomial Trace Reader | PASS | Plotter Calibration | Volume 33 |
+| 112 | NBS FIPS 54 COM Microform Layout Translator | PASS | Microfiche Layout | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 107 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 112 Scenarios validated successfully)

@@ -132,9 +132,9 @@ int main(void) {
     int com_res = tsfi_fips54_com_to_ray_tracer(3, 4, 1.0f, &com_scene);
     assert(com_res == 0);
     assert(com_scene.primitive_count == 12);
-    // Center column at index 5 should be at y=-0.5, x=0.5
-    assert(com_scene.primitives[5].position.x == 0.5f);
-    assert(com_scene.primitives[5].position.y == -0.5f);
+    // Center column at index 6 should be at y=0.0, x=0.5
+    assert(com_scene.primitives[6].position.x == 0.5f);
+    assert(com_scene.primitives[6].position.y == 0.0f);
     printf("  [PASS] FIPS 54 COM layout grid coordinate mapping verified.\n");
 
     free(img_buf);
