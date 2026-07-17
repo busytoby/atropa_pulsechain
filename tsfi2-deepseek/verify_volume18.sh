@@ -151,8 +151,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 196 | CICS Task Priority Inquire Emulator | PASS | Dynamic task execution priority query check | Volume 33 |
 | 197 | Majordomo Moderation Forwarder | PASS | Request accept and forward dispatcher | Volume 33 |
 | 198 | CICS Target Task Suspend Emulator | PASS | Put another transaction task to sleep | Volume 33 |
+| 199 | Majordomo Moderation Rejection Notifier | PASS | Notification formatter for moderation rejection | Volume 33 |
+| 200 | CICS Task Suspension Inquirer | PASS | Checks if a specific task ID is suspended | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 198 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 200 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

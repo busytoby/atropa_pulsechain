@@ -1029,6 +1029,22 @@ int main(void) {
     assert(active_tasks_suspended[2] == 3003);
     printf("  [PASS] CICS SUSPEND TASK verified.\n");
 
+    // 89. Verify Majordomo List Moderation Request Reject and Notify Notifier
+    printf("[TEST] Validating Majordomo Reject Notifier...\n");
+    char reject_buf[128] = {0};
+    int rj_res = tsfi_mf_majordomo_reject_notify(77123, "zmm-dev", "spammer@dysnomia.org", reject_buf, sizeof(reject_buf));
+    assert(rj_res == 0);
+    assert(strstr(reject_buf, "REJECT:LIST=zmm-dev|COOKIE=77123|SENDER=spammer@dysnomia.org") != NULL);
+    printf("  [PASS] Majordomo Reject Notifier verified.\n");
+
+    // 90. Verify CICS Task Execution Status Inquire Suspended Emulator
+    printf("[TEST] Validating CICS INQUIRE TASK SUSPEND...\n");
+    int is_task_suspended = -1;
+    int inq_sus_res = tsfi_mf_cics_inquire_suspended(3003, active_tasks_suspended, active_tasks_count, &is_task_suspended);
+    assert(inq_sus_res == 0);
+    assert(is_task_suspended == 1);
+    printf("  [PASS] CICS INQUIRE TASK SUSPEND verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

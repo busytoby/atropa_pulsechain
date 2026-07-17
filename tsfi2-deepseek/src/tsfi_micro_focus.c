@@ -1624,3 +1624,23 @@ int tsfi_mf_cics_suspend_task(uint32_t target_task_id, uint32_t *suspend_log, in
     *log_count += 1;
     return 0;
 }
+
+int tsfi_mf_majordomo_reject_notify(uint32_t cookie, const char *list_name, const char *sender, char *output_reject_log, int max_len) {
+    if (!list_name || !sender || !output_reject_log || max_len <= 0) return -1;
+
+    snprintf(output_reject_log, max_len, "REJECT:LIST=%s|COOKIE=%u|SENDER=%s|REASON=MODERATION_DENIED", list_name, cookie, sender);
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_suspended(uint32_t target_task_id, const uint32_t *suspend_log, int log_count, int *is_suspended_out) {
+    if (!suspend_log || !is_suspended_out || log_count < 0) return -1;
+
+    *is_suspended_out = 0;
+    for (int i = 0; i < log_count; i++) {
+        if (suspend_log[i] == target_task_id) {
+            *is_suspended_out = 1;
+            break;
+        }
+    }
+    return 0;
+}

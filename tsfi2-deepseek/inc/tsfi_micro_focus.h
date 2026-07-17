@@ -64,7 +64,9 @@ int tsfi_mf_majordomo_archive_delete(const char *list_name, const char *file_nam
 int tsfi_mf_majordomo_archive_prune(const char *list_name, const char **archive_files, int *archive_count, const char *prune_suffix);
 int tsfi_mf_majordomo_write_config(const char *key, const char *val, char *config_in_out, int max_len);
 int tsfi_mf_majordomo_approve_forward(uint32_t cookie, const char *list_name, const char *msg_body, char *output_forward_log, int max_len);
+int tsfi_mf_majordomo_reject_notify(uint32_t cookie, const char *list_name, const char *sender, char *output_reject_log, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
+int tsfi_mf_cics_inquire_suspended(uint32_t target_task_id, const uint32_t *suspend_log, int log_count, int *is_suspended_out);
 int tsfi_mf_cics_suspend_task(uint32_t target_task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_cics_inquire_priority(uint32_t task_id, int priority_registry, int *priority_out);
 int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_out, int max_len);
