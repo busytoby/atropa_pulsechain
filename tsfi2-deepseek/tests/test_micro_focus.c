@@ -277,6 +277,19 @@ int main(void) {
     assert(tsfi_mf_comp5_decode(pool + 4, 4, 0) == 1);
     printf("  [PASS] CICS GETMAIN allocator verified.\n");
 
+    // 13. Verify CICS BMS CAD Map Render
+    printf("[TEST] Validating CICS BMS CAD Map Formatter...\n");
+    tsfi_cgm_scene cgm_scene;
+    tsfi_cgm_scene_init(&cgm_scene);
+    tsfi_rt_vec3 color = {1,0,0};
+    tsfi_cgm_scene_add_primitive(&cgm_scene, CGM_PRIM_SPHERE, (tsfi_rt_vec3){0, 0, 5}, color, 1.5f, (tsfi_rt_vec3){0,0,0});
+    char screen_buffer[80 * 24];
+    int bms_res = tsfi_mf_cics_bms_cad_render("CADMAP", &cgm_scene, screen_buffer);
+    assert(bms_res == 0);
+    assert(strncmp(screen_buffer, "CADMAP BMS CAD SCREEN", 21) == 0);
+    assert(screen_buffer[12 * 80 + 40] == 'O');
+    printf("  [PASS] CICS BMS CAD Map Formatter verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

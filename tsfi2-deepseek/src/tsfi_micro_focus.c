@@ -400,3 +400,27 @@ int tsfi_mf_cics_getmain(int length, const char *suspend_type, uint8_t *storage_
     *allocated_offset = current_free + needed_bytes;
     return (int)(current_free + 8);
 }
+
+int tsfi_mf_cics_bms_cad_render(const char *map_name, const tsfi_cgm_scene *scene, char *terminal_buffer) {
+    if (!map_name || !scene || !terminal_buffer) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+
+    int header_offset = snprintf(terminal_buffer, 80, "%s BMS CAD SCREEN", map_name);
+    terminal_buffer[header_offset] = ' ';
+
+    for (int i = 0; i < scene->primitive_count; i++) {
+        const tsfi_cgm_primitive *p = &scene->primitives[i];
+        
+        int line = 12 + (int)(p->position.y * 2.0f);
+        int col = 40 + (int)(p->position.x * 4.0f);
+
+        if (line >= 1 && line < 24 && col >= 0 && col < 80) {
+            char symbol = 'O';
+            if (p->type == CGM_PRIM_PLANE) symbol = '-';
+            terminal_buffer[line * 80 + col] = symbol;
+        }
+    }
+
+    return 0;
+}

@@ -36,5 +36,6 @@ int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulato
 int tsfi_mf_wessler_dsa_link(uint32_t *current_save_area, uint32_t *next_save_area);
 int tsfi_mf_cics_translate(const char *cics_statement, char *macro_call_out, int max_len);
 int tsfi_mf_cics_getmain(int length, const char *suspend_type, uint8_t *storage_pool, uint32_t *allocated_offset);
+int tsfi_mf_cics_bms_cad_render(const char *map_name, const tsfi_cgm_scene *scene, char *terminal_buffer);
 
 #endif // TSFI_MICRO_FOCUS_H
