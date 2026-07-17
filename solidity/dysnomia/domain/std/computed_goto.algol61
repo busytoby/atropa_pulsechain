@@ -1,0 +1,12 @@
+begin
+  integer target;
+  switch S := label1, label2;
+  target := 2;
+  goto S[target];
+label1:
+  target := 10;
+  goto end;
+label2:
+  target := 20;
+end:
+end
