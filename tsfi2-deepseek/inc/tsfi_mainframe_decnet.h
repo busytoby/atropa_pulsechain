@@ -729,6 +729,12 @@ void cminit(const char *sym_dest, tsfi_appc_conversation *conv, int *rc);
 void cmall(tsfi_appc_conversation *conv, int *rc);
 void cmsend(tsfi_appc_conversation *conv, const uint8_t *buf, size_t *len, int *rc);
 void cmrcv(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len, int *rc);
+int tsfi_appc_synclog_mirror(tsfi_appc_conversation *conv, const uint8_t *log_data, size_t len);
+int tsfi_appc_chain_send(tsfi_appc_conversation *conv, const uint8_t *large_data, size_t len);
+int tsfi_appc_chain_receive(tsfi_appc_conversation *conv, uint8_t *large_buf, size_t *len_out);
+int tsfi_appc_failover(tsfi_appc_conversation *conv, tsfi_sna_er_route *backup_route);
+void cmqei(tsfi_appc_conversation *conv, int *sync_level, int *security_type, int *rc);
+void cmqes(tsfi_appc_conversation *conv, int *state, int *rc);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);

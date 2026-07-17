@@ -815,3 +815,60 @@ void cmrcv(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len, int *rc) {
     }
 }
 
+int tsfi_appc_synclog_mirror(tsfi_appc_conversation *conv, const uint8_t *log_data, size_t len) {
+    if (!conv || !log_data || len == 0) return -1;
+    if (conv->state == 3) return -2;
+    return 0;
+}
+
+int tsfi_appc_chain_send(tsfi_appc_conversation *conv, const uint8_t *large_data, size_t len) {
+    if (!conv || !large_data || len == 0) return -1;
+    if (conv->state != 1) return -2;
+    size_t offset = 0;
+    while (offset < len) {
+        size_t chunk_len = (len - offset > 256) ? 256 : (len - offset);
+        int res = tsfi_appc_send_data(conv, large_data + offset, chunk_len);
+        if (res != 0) return -3;
+        offset += chunk_len;
+    }
+    return 0;
+}
+
+int tsfi_appc_chain_receive(tsfi_appc_conversation *conv, uint8_t *large_buf, size_t *len_out) {
+    if (!conv || !large_buf || !len_out) return -1;
+    if (conv->state != 2) return -2;
+    size_t dummy_len = 0;
+    int res = tsfi_appc_receive_data(conv, large_buf, &dummy_len);
+    if (res != 0) return -3;
+    *len_out = dummy_len;
+    return 0;
+}
+
+int tsfi_appc_failover(tsfi_appc_conversation *conv, tsfi_sna_er_route *backup_route) {
+    if (!conv || !backup_route) return -1;
+    if (conv->state == 3) return -2;
+    if (backup_route->active) {
+        return 0;
+    }
+    return -3;
+}
+
+void cmqei(tsfi_appc_conversation *conv, int *sync_level, int *security_type, int *rc) {
+    if (!conv) {
+        if (rc) *rc = 19;
+        return;
+    }
+    if (sync_level) *sync_level = conv->sync_state;
+    if (security_type) *security_type = conv->security_active;
+    if (rc) *rc = 0;
+}
+
+void cmqes(tsfi_appc_conversation *conv, int *state, int *rc) {
+    if (!conv) {
+        if (rc) *rc = 19;
+        return;
+    }
+    if (state) *state = conv->state;
+    if (rc) *rc = 0;
+}
+
