@@ -202,3 +202,43 @@ int tsfi_mf_imf_get_tax_class_name(int tax_class, char *name_out, int max_len) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_get_transaction_sign(int transaction_code, int *sign_out) {
+    if (!sign_out) return -1;
+
+    switch (transaction_code) {
+        case 150:
+        case 290:
+            *sign_out = 1;
+            break;
+        case 846:
+        case 610:
+            *sign_out = -1;
+            break;
+        default:
+            *sign_out = 0;
+            return -2;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_reconcile_balance(double initial_balance, const int *tcs, const double *amounts, int count, double final_balance, int *is_reconciled) {
+    if (!tcs || !amounts || !is_reconciled) return -1;
+
+    double running_bal = initial_balance;
+    for (int i = 0; i < count; i++) {
+        int sign = 0;
+        int sign_res = tsfi_mf_imf_get_transaction_sign(tcs[i], &sign);
+        if (sign_res == 0) {
+            running_bal += (sign * amounts[i]);
+        }
+    }
+
+    *is_reconciled = 0;
+    double diff = running_bal - final_balance;
+    if (diff < 0.0) diff = -diff;
+    if (diff < 0.001) {
+        *is_reconciled = 1;
+    }
+    return 0;
+}

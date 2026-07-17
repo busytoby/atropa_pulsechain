@@ -191,8 +191,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 236 | IRS CADE Taxpayer Balance Adjuster | PASS | Mutates registered account balance fields with manual offsets | Volume 33 |
 | 237 | IRS IMF DLN Generator | PASS | Natively creates locator codes from component fields | Volume 33 |
 | 238 | IRS IMF Tax Class Inquirer | PASS | Returns standard tax class name strings | Volume 33 |
+| 239 | IRS IMF Transaction Sign Resolver | PASS | Resolves tax assessment and credit offset polarity | Volume 33 |
+| 240 | IRS IMF Account Reconciler | PASS | Validates balance status parameters against transaction list logs | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 238 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 240 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -17,5 +17,7 @@ int tsfi_mf_imf_parse_dln(const char *dln, int *site_code, int *tax_class, int *
 int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount);
 int tsfi_mf_imf_generate_dln(int site_code, int tax_class, int doc_code, int julian_date, int serial_num, char *dln_out, int max_len);
 int tsfi_mf_imf_get_tax_class_name(int tax_class, char *name_out, int max_len);
+int tsfi_mf_imf_get_transaction_sign(int transaction_code, int *sign_out);
+int tsfi_mf_imf_reconcile_balance(double initial_balance, const int *tcs, const double *amounts, int count, double final_balance, int *is_reconciled);
 
 #endif // TSFI_CADE_IMF_H

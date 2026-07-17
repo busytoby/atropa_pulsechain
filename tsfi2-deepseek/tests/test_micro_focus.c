@@ -1374,6 +1374,24 @@ int main(void) {
     assert(strcmp(class_name, "Corporation Tax") == 0);
     printf("  [PASS] IRS IMF Tax Class Inquirer verified.\n");
 
+    // 128. Verify IRS IMF Transaction Code Sign Resolver
+    printf("[TEST] Validating IRS IMF Transaction Sign Resolver...\n");
+    int sign_val = 0;
+    int sign_res = tsfi_mf_imf_get_transaction_sign(846, &sign_val);
+    assert(sign_res == 0);
+    assert(sign_val == -1);
+    printf("  [PASS] IRS IMF Transaction Sign Resolver verified.\n");
+
+    // 129. Verify IRS IMF Account Balance Reconciler
+    printf("[TEST] Validating IRS IMF Account Reconciler...\n");
+    const int recon_tcs[] = {150, 610, 290};
+    const double recon_amounts[] = {500.00, 200.00, 100.00};
+    int reconciled = -1;
+    int recon_res = tsfi_mf_imf_reconcile_balance(1000.00, recon_tcs, recon_amounts, 3, 1400.00, &reconciled);
+    assert(recon_res == 0);
+    assert(reconciled == 1);
+    printf("  [PASS] IRS IMF Account Reconciler verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
