@@ -1539,6 +1539,22 @@ int main(void) {
     assert(is_pend == 1);
     printf("  [PASS] IRS CADE Taxpayer Audit Pending Checker verified.\n");
 
+    // 148. Verify IRS IMF Miscellaneous Form Verifier
+    printf("[TEST] Validating IRS IMF Miscellaneous Form Verifier...\n");
+    int is_misc = -1;
+    int misc_res = tsfi_mf_imf_is_misc_form(50, &is_misc);
+    assert(misc_res == 0);
+    assert(is_misc == 1);
+    printf("  [PASS] IRS IMF Miscellaneous Form Verifier verified.\n");
+
+    // 149. Verify IRS CADE Taxpayer Unknown Status Verifier
+    printf("[TEST] Validating IRS CADE Taxpayer Unknown Status Verifier...\n");
+    int is_unk = -1;
+    int unk_status_res = tsfi_mf_cade_is_unknown_status(9, &is_unk);
+    assert(unk_status_res == 0);
+    assert(is_unk == 1);
+    printf("  [PASS] IRS CADE Taxpayer Unknown Status Verifier verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
