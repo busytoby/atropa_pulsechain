@@ -1551,3 +1551,83 @@ int tsfi_2pc_abort(tsfi_2pc_coordinator *coord) {
     }
     return 0;
 }
+
+void tsfi_s38_store_init(tsfi_s38_store *store) {
+    if (!store) return;
+    memset(store, 0, sizeof(tsfi_s38_store));
+}
+
+int tsfi_s38_create_object(tsfi_s38_store *store, uint64_t addr, const char *name, int is_logical, const char *parent_pf, const char *key_field) {
+    if (!store || !name || store->object_count >= MAX_S38_OBJECTS) return -1;
+    
+    // Single-Level Store requires unique addresses
+    for (int i = 0; i < store->object_count; i++) {
+        if (store->objects[i].object_address == addr) {
+            return -2;
+        }
+    }
+    
+    tsfi_s38_object *obj = &store->objects[store->object_count];
+    obj->object_address = addr;
+    snprintf(obj->object_name, sizeof(obj->object_name), "%s", name);
+    obj->is_logical = is_logical;
+    if (parent_pf) {
+        snprintf(obj->parent_pf_name, sizeof(obj->parent_pf_name), "%s", parent_pf);
+    }
+    if (key_field) {
+        snprintf(obj->key_field, sizeof(obj->key_field), "%s", key_field);
+    }
+    store->object_count++;
+    return 0;
+}
+
+int tsfi_s38_insert_physical(tsfi_s38_store *store, const char *pf_name, const char *data, int key_val) {
+    if (!store || !pf_name || !data || store->pf_record_count >= MAX_S38_RECORDS) return -1;
+    
+    tsfi_s38_record *rec = &store->physical_records[store->pf_record_count];
+    snprintf(rec->data, sizeof(rec->data), "%s", data);
+    rec->key_val = key_val;
+    store->pf_record_count++;
+    return 0;
+}
+
+int tsfi_s38_query_logical_path(const tsfi_s38_store *store, const char *lf_name, int *out_keys, int max_keys) {
+    if (!store || !lf_name || !out_keys || max_keys <= 0) return -1;
+    
+    // Find Logical File object
+    const tsfi_s38_object *lf = NULL;
+    for (int i = 0; i < store->object_count; i++) {
+        if (store->objects[i].is_logical && strcmp(store->objects[i].object_name, lf_name) == 0) {
+            lf = &store->objects[i];
+            break;
+        }
+    }
+    if (!lf) return -2; // LF not found
+    
+    // Collect records
+    int count = 0;
+    int temp_keys[MAX_S38_RECORDS];
+    for (int i = 0; i < store->pf_record_count; i++) {
+        // Mock filtering/projection by matching parent physical file
+        if (count < max_keys) {
+            temp_keys[count++] = store->physical_records[i].key_val;
+        }
+    }
+    
+    // Sort keys to simulate Access Path sorting (ascending)
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = i + 1; j < count; j++) {
+            if (temp_keys[i] > temp_keys[j]) {
+                int temp = temp_keys[i];
+                temp_keys[i] = temp_keys[j];
+                temp_keys[j] = temp;
+            }
+        }
+    }
+    
+    for (int i = 0; i < count; i++) {
+        out_keys[i] = temp_keys[i];
+    }
+    
+    return count;
+}

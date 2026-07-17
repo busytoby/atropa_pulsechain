@@ -1460,6 +1460,31 @@ int main(void) {
     assert(coordinator.participants[0].prepared == 0);
     printf("  [PASS] Two-Phase Commit multi-node transaction coordination validated.\n");
 
+    // 141. IBM System/38 Single-Level Store and Logical Access Path Manager Verification
+    printf("[Test] Verifying IBM System/38 Single-Level Store and Logical Access Path Manager...\n");
+    tsfi_s38_store s38_db;
+    tsfi_s38_store_init(&s38_db);
+    
+    // Create physical & logical file objects under Single-Level Store address space
+    assert(tsfi_s38_create_object(&s38_db, 0xFF00FF000100ULL, "CUSTPF", 0, NULL, NULL) == 0);
+    assert(tsfi_s38_create_object(&s38_db, 0xFF00FF000200ULL, "CUSTLF", 1, "CUSTPF", "CUSTID") == 0);
+    // Duplicate address check
+    assert(tsfi_s38_create_object(&s38_db, 0xFF00FF000100ULL, "DUPPF", 0, NULL, NULL) == -2);
+    
+    // Insert unsorted records into physical file
+    assert(tsfi_s38_insert_physical(&s38_db, "CUSTPF", "Record B", 200) == 0);
+    assert(tsfi_s38_insert_physical(&s38_db, "CUSTPF", "Record A", 100) == 0);
+    assert(tsfi_s38_insert_physical(&s38_db, "CUSTPF", "Record C", 300) == 0);
+    
+    // Query Logical File and verify access path sorts records dynamically by key_val
+    int sorted_keys[8];
+    int res_keys = tsfi_s38_query_logical_path(&s38_db, "CUSTLF", sorted_keys, 8);
+    assert(res_keys == 3);
+    assert(sorted_keys[0] == 100);
+    assert(sorted_keys[1] == 200);
+    assert(sorted_keys[2] == 300);
+    printf("  [PASS] Single-Level Store addressing and logical access path indexing verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

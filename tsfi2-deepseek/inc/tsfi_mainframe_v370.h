@@ -529,4 +529,33 @@ int tsfi_2pc_prepare(tsfi_2pc_coordinator *coord);
 int tsfi_2pc_commit(tsfi_2pc_coordinator *coord, int *out_db_status);
 int tsfi_2pc_abort(tsfi_2pc_coordinator *coord);
 
+// Scenario 141: IBM System/38 Single-Level Store and Logical Access Path Manager
+#define MAX_S38_OBJECTS 16
+#define MAX_S38_RECORDS 32
+
+typedef struct {
+    uint64_t object_address;
+    char object_name[32];
+    int is_logical;
+    char parent_pf_name[32];
+    char key_field[16];
+} tsfi_s38_object;
+
+typedef struct {
+    char data[64];
+    int key_val;
+} tsfi_s38_record;
+
+typedef struct {
+    tsfi_s38_object objects[MAX_S38_OBJECTS];
+    int object_count;
+    tsfi_s38_record physical_records[MAX_S38_RECORDS];
+    int pf_record_count;
+} tsfi_s38_store;
+
+void tsfi_s38_store_init(tsfi_s38_store *store);
+int tsfi_s38_create_object(tsfi_s38_store *store, uint64_t addr, const char *name, int is_logical, const char *parent_pf, const char *key_field);
+int tsfi_s38_insert_physical(tsfi_s38_store *store, const char *pf_name, const char *data, int key_val);
+int tsfi_s38_query_logical_path(const tsfi_s38_store *store, const char *lf_name, int *out_keys, int max_keys);
+
 #endif // TSFI_MAINFRAME_V370_H
