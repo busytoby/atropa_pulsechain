@@ -155,4 +155,8 @@ int tsfi_fips41_authorize(const char *user_role, const char *action);
 int tsfi_fips113_generate_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, uint8_t *out_mac, int supervisor_state);
 int tsfi_fips113_verify_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, const uint8_t *expected_mac, int supervisor_state);
 
+// Scenario 159: NBS FIPS PUB 100 / X.25 Packet Network Interface
+int tsfi_fips100_encapsulate(const uint8_t *payload, int len, uint16_t channel, uint8_t *out_packet, int *out_len);
+int tsfi_fips100_decapsulate(const uint8_t *packet, int len, uint8_t *out_payload, int *out_len, uint16_t *out_channel);
+
 #endif // TSFI_MAINFRAME_FIPS_H

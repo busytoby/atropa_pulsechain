@@ -753,3 +753,40 @@ int tsfi_fips113_verify_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, 
     
     return -3; // MAC mismatch
 }
+
+int tsfi_fips100_encapsulate(const uint8_t *payload, int len, uint16_t channel, uint8_t *out_packet, int *out_len) {
+    if (!payload || len <= 0 || !out_packet || !out_len || channel > 0x0FFF) return -1;
+    
+    // GFI (General Format Identifier) & LCGN (Logical Channel Group Number)
+    out_packet[0] = 0x10 | ((channel >> 8) & 0x0F);
+    // LCN (Logical Channel Number)
+    out_packet[1] = channel & 0xFF;
+    // Packet Type Identifier (0x00 is a standard data packet with P(S)=0, P(R)=0, M-bit=0)
+    out_packet[2] = 0x00;
+    
+    memcpy(out_packet + 3, payload, len);
+    *out_len = len + 3;
+    
+    return 0;
+}
+
+int tsfi_fips100_decapsulate(const uint8_t *packet, int len, uint8_t *out_payload, int *out_len, uint16_t *out_channel) {
+    if (!packet || len < 4 || !out_payload || !out_len || !out_channel) return -1;
+    
+    // Check GFI mask
+    if ((packet[0] & 0xF0) != 0x10) {
+        return -2; // Non-compliant GFI
+    }
+    
+    *out_channel = ((packet[0] & 0x0F) << 8) | packet[1];
+    
+    // Check Packet Type Identifier
+    if (packet[2] != 0x00) {
+        return -3; // Unsupported control packet or sequence error
+    }
+    
+    *out_len = len - 3;
+    memcpy(out_payload, packet + 3, *out_len);
+    
+    return 0;
+}

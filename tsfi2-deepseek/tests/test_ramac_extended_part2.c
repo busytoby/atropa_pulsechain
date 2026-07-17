@@ -1854,6 +1854,26 @@ int main(void) {
     assert(tsfi_fips113_verify_mac(&fips113_crypto, test_data, 16, mac_out, 1) == 0);
     printf("  [PASS] FIPS 113 DAA message authentication codes and verification checks verified.\n");
 
+    // 159. NBS FIPS PUB 100 / X.25 Packet Network Interface Verification
+    printf("[Test] Verifying NBS FIPS PUB 100 / X.25 Packet Network Interface...\n");
+    uint8_t x25_packet[32];
+    int packet_len = 0;
+    const uint8_t x25_payload[8] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
+    assert(tsfi_fips100_encapsulate(x25_payload, 8, 0x0123, x25_packet, &packet_len) == 0);
+    assert(packet_len == 11);
+    assert(x25_packet[0] == 0x11); // Modulo 8 + LCGN=1
+    assert(x25_packet[1] == 0x23); // LCN=0x23
+    assert(x25_packet[2] == 0x00); // Packet Type=Data
+    
+    uint8_t recovered_payload[32];
+    int recovered_len = 0;
+    uint16_t recovered_channel = 0;
+    assert(tsfi_fips100_decapsulate(x25_packet, packet_len, recovered_payload, &recovered_len, &recovered_channel) == 0);
+    assert(recovered_len == 8);
+    assert(recovered_channel == 0x0123);
+    assert(memcmp(recovered_payload, x25_payload, 8) == 0);
+    printf("  [PASS] FIPS 100 X.25 packet encapsulation, logical channel routing, and header checks verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
