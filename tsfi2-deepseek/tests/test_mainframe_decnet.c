@@ -1341,6 +1341,28 @@ int main(void) {
     assert(tsfi_swift_verify_trailer(swift_payload, "{5:MAC-INVALID}") == -2);
     printf("  [PASS] CYCLADES transport states and SWIFT Block 5 trailers verified.\n");
 
+    // 75. CYCLADES Sliding Window and SWIFT Block 1 Verification
+    printf("[Test] Verifying CYCLADES Sliding Window & SWIFT Block 1 Parsing...\n");
+    
+    // CYCLADES Sliding Window
+    tsfi_cyclades_window win;
+    win.window_start = 1000;
+    win.window_size = 10;
+    assert(tsfi_cyclades_window_verify(&win, 1005) == 0);
+    assert(tsfi_cyclades_window_verify(&win, 999) == -2);
+    assert(tsfi_cyclades_window_verify(&win, 1010) == -2);
+    
+    // SWIFT Block 1
+    const char *raw_b1 = "{1:F01TESTBICXX09812345432100}";
+    tsfi_swift_block1 b1;
+    assert(tsfi_swift_parse_block1(raw_b1, &b1) == 0);
+    assert(b1.application_id == 'F');
+    assert(strcmp(b1.service_id, "01") == 0);
+    assert(strcmp(b1.sender_lt, "TESTBICXX098") == 0);
+    assert(strcmp(b1.session_num, "1234") == 0);
+    assert(strcmp(b1.seq_num, "543210") == 0);
+    printf("  [PASS] CYCLADES sliding window verification and SWIFT Block 1 header parsing verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

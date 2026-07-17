@@ -962,4 +962,23 @@ int tsfi_cyclades_process_packet(tsfi_cyclades_connection *conn, const tsfi_cycl
 int tsfi_swift_generate_trailer(const char *block4_text, char *block5_out, size_t max_len);
 int tsfi_swift_verify_trailer(const char *block4_text, const char *block5_trailer);
 
+// CYCLADES Sliding Window Flow Control
+typedef struct {
+    uint16_t window_start;
+    uint16_t window_size;
+} tsfi_cyclades_window;
+
+int tsfi_cyclades_window_verify(const tsfi_cyclades_window *win, uint16_t seq);
+
+// SWIFT Block 1 Parsing
+typedef struct {
+    char application_id;
+    char service_id[3];
+    char sender_lt[16];
+    char session_num[8];
+    char seq_num[8];
+} tsfi_swift_block1;
+
+int tsfi_swift_parse_block1(const char *raw_block1, tsfi_swift_block1 *b1_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

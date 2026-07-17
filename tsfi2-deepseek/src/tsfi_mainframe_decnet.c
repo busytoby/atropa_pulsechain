@@ -2163,3 +2163,28 @@ int tsfi_swift_verify_trailer(const char *block4_text, const char *block5_traile
     }
     return -3;
 }
+
+int tsfi_cyclades_window_verify(const tsfi_cyclades_window *win, uint16_t seq) {
+    if (!win) return -1;
+    uint16_t offset = seq - win->window_start;
+    return (offset < win->window_size) ? 0 : -2;
+}
+
+int tsfi_swift_parse_block1(const char *raw_block1, tsfi_swift_block1 *b1_out) {
+    if (!raw_block1 || !b1_out) return -1;
+    const char *p = strstr(raw_block1, "{1:");
+    if (p) {
+        p += 3;
+        b1_out->application_id = p[0];
+        memcpy(b1_out->service_id, p + 1, 2);
+        b1_out->service_id[2] = '\0';
+        memcpy(b1_out->sender_lt, p + 3, 12);
+        b1_out->sender_lt[12] = '\0';
+        memcpy(b1_out->session_num, p + 15, 4);
+        b1_out->session_num[4] = '\0';
+        memcpy(b1_out->seq_num, p + 19, 6);
+        b1_out->seq_num[6] = '\0';
+        return 0;
+    }
+    return -2;
+}
