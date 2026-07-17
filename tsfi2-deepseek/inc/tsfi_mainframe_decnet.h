@@ -1134,4 +1134,7 @@ typedef struct {
 void tsfi_bank_term_init(tsfi_bank_terminal *term, uint32_t master);
 int tsfi_bank_term_rotate_key(tsfi_bank_terminal *term, uint32_t challenge, uint32_t response);
 
+// 11-key PKI key rotation (requires threshold of 6 signatures)
+int tsfi_pki_rotate_key(uint8_t public_keys[11][32], int target_index, const uint8_t *new_key, const uint8_t signatures[11][32], int sig_count);
+
 #endif // TSFI_MAINFRAME_DECNET_H

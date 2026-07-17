@@ -1612,6 +1612,35 @@ int main(void) {
     assert(bank_term.session_active == 0);
     printf("  [PASS] EFT threshold compliance and bank terminal key rotations verified.\n");
 
+    // 84. 11-key PKI Key Rotation Verification
+    printf("[Test] Verifying 11-key PKI Key Rotation...\n");
+    uint8_t keys[11][32];
+    memset(keys, 0, sizeof(keys));
+    for (int i = 0; i < 11; i++) {
+        keys[i][0] = (uint8_t)(i + 1);
+    }
+    
+    uint8_t new_pub[32];
+    memset(new_pub, 0, sizeof(new_pub));
+    new_pub[0] = 0xFF;
+    
+    // Prepare signatures: 5 valid ones (under threshold)
+    uint8_t sigs[11][32];
+    memset(sigs, 0, sizeof(sigs));
+    for (int i = 0; i < 5; i++) {
+        sigs[i][0] = (uint8_t)(i + 1);
+    }
+    
+    // Attempt rotation with 5 signatures (fails)
+    assert(tsfi_pki_rotate_key(keys, 10, new_pub, sigs, 5) == -2);
+    assert(keys[10][0] == 11);
+    
+    // Provide 6 signatures (meets threshold)
+    sigs[5][0] = 6;
+    assert(tsfi_pki_rotate_key(keys, 10, new_pub, sigs, 6) == 0);
+    assert(keys[10][0] == 0xFF);
+    printf("  [PASS] 11-key PKI key rotation threshold validations verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

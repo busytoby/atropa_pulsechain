@@ -2428,3 +2428,19 @@ int tsfi_bank_term_rotate_key(tsfi_bank_terminal *term, uint32_t challenge, uint
     term->session_active = 0;
     return -2;
 }
+
+int tsfi_pki_rotate_key(uint8_t public_keys[11][32], int target_index, const uint8_t *new_key, const uint8_t signatures[11][32], int sig_count) {
+    if (!public_keys || target_index < 0 || target_index >= 11 || !new_key || !signatures) return -1;
+    int valid_sigs = 0;
+    for (int i = 0; i < sig_count; i++) {
+        for (int k = 0; k < 11; k++) {
+            if (memcmp(public_keys[k], signatures[i], 32) == 0) {
+                valid_sigs++;
+                break;
+            }
+        }
+    }
+    if (valid_sigs < 6) return -2;
+    memcpy(public_keys[target_index], new_key, 32);
+    return 0;
+}
