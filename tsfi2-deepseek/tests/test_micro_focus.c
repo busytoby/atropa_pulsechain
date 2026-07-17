@@ -781,6 +781,28 @@ int main(void) {
     assert(strcmp(ab_buf, "CICS_ABEND:CODE=AEIP") == 0);
     printf("  [PASS] CICS ABEND verified.\n");
 
+    // 62. Verify Majordomo List Moderation Request Discarder
+    printf("[TEST] Validating Majordomo Discarder...\n");
+    uint32_t active_cookies_list[4] = {77123, 77200, 77300};
+    int active_cookies_count = 3;
+    int disc_res = tsfi_mf_majordomo_discard(77200, active_cookies_list, &active_cookies_count);
+    assert(disc_res == 0);
+    assert(active_cookies_count == 2);
+    assert(active_cookies_list[1] == 77300);
+    printf("  [PASS] Majordomo Discarder verified.\n");
+
+    // 63. Verify CICS Program Control LOAD Emulator
+    printf("[TEST] Validating CICS LOAD...\n");
+    uint8_t page_pool[256] = {0};
+    uint32_t page_offset = 32;
+    uint32_t map_address = 0;
+    int ld_res = tsfi_mf_cics_load("MAP_DFH0", &map_address, page_pool, &page_offset);
+    assert(ld_res == 0);
+    assert(map_address == 32);
+    assert(page_offset == 32 + 8);
+    assert(memcmp(page_pool + 32, "MAP_DFH0", 8) == 0);
+    printf("  [PASS] CICS LOAD verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

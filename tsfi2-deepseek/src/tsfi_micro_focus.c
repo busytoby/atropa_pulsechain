@@ -1330,3 +1330,31 @@ int tsfi_mf_cics_abend(const char *abend_code, char *abend_log_buffer, int max_l
     snprintf(abend_log_buffer, max_len, "CICS_ABEND:CODE=%s", abend_code);
     return 0;
 }
+
+int tsfi_mf_majordomo_discard(uint32_t cookie, uint32_t *pending_cookies, int *cookie_count) {
+    if (!pending_cookies || !cookie_count || *cookie_count < 0) return -1;
+
+    for (int i = 0; i < *cookie_count; i++) {
+        if (pending_cookies[i] == cookie) {
+            for (int j = i; j < *cookie_count - 1; j++) {
+                pending_cookies[j] = pending_cookies[j + 1];
+            }
+            *cookie_count -= 1;
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_load(const char *resource_name, uint32_t *loaded_address, uint8_t *storage_pool, uint32_t *allocated_offset) {
+    if (!resource_name || !loaded_address || !storage_pool || !allocated_offset) return -1;
+
+    uint32_t offset = *allocated_offset;
+    int len = (int)strlen(resource_name);
+    memcpy(storage_pool + offset, resource_name, len);
+    *allocated_offset = offset + len;
+
+    *loaded_address = offset;
+    return 0;
+}
