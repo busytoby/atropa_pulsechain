@@ -234,3 +234,52 @@ int tsfi_s370_dat_translate_256(const tsfi_s370_addr_256 *virtual_addr,
 
     return 0;
 }
+
+// 512-bit Dynamic Address Translation (DAT)
+int tsfi_s370_dat_translate_512(const tsfi_s370_addr_512 *virtual_addr,
+                                 const tsfi_s370_segment_entry_512 *seg_table, int seg_count,
+                                 const tsfi_s370_page_entry_512 *page_tables,
+                                 tsfi_s370_addr_512 *out_physical_addr, int *out_write_protected) {
+    if (!virtual_addr || !seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
+
+    // Hashing bits 256..511 for SX (parts [4] through [7])
+    uint64_t sx_hash = virtual_addr->parts[4] ^ virtual_addr->parts[5] ^ virtual_addr->parts[6] ^ virtual_addr->parts[7];
+    int sx = (int)(sx_hash % (uint64_t)seg_count);
+
+    if (seg_table[sx].invalid) {
+        return -1;
+    }
+
+    // PX is parts [2] and [3] (bits 128..255)
+    uint64_t px_hash = virtual_addr->parts[2] ^ virtual_addr->parts[3];
+    uint64_t pte_idx = seg_table[sx].page_table_origin + px_hash;
+
+    if (page_tables[pte_idx].invalid) {
+        return -2;
+    }
+
+    // BX is parts [0] and [1] (bits 0..127)
+    // Real physical page frame is page_tables[pte_idx].real_page_frame
+    for (int i = 2; i < 8; i++) {
+        out_physical_addr->parts[i] = page_tables[pte_idx].real_page_frame.parts[i];
+    }
+    
+    // Add offset (virtual_addr parts [0] and [1])
+    uint64_t base_offset_low = page_tables[pte_idx].real_page_frame.parts[0];
+    uint64_t base_offset_high = page_tables[pte_idx].real_page_frame.parts[1];
+    
+    uint64_t add_offset_low = virtual_addr->parts[0];
+    uint64_t add_offset_high = virtual_addr->parts[1];
+    
+    uint64_t result_low = base_offset_low + add_offset_low;
+    uint64_t carry = (result_low < base_offset_low) ? 1 : 0;
+    uint64_t result_high = base_offset_high + add_offset_high + carry;
+    
+    out_physical_addr->parts[0] = result_low;
+    out_physical_addr->parts[1] = result_high;
+
+    *out_write_protected = page_tables[pte_idx].write_protect;
+    g_dat_stats.translation_512_count++;
+
+    return 0;
+}

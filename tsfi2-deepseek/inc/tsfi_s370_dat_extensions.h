@@ -22,6 +22,24 @@ typedef struct {
     int write_protect;
 } tsfi_s370_page_entry_256;
 
+// 512-bit Virtual/Real Address representation (ZMM-native scale)
+typedef struct {
+    uint64_t parts[8];
+} tsfi_s370_addr_512;
+
+// 512-bit Segment Table Entry
+typedef struct {
+    uint64_t page_table_origin;
+    int invalid;
+} tsfi_s370_segment_entry_512;
+
+// 512-bit Page Table Entry
+typedef struct {
+    tsfi_s370_addr_512 real_page_frame;
+    int invalid;
+    int write_protect;
+} tsfi_s370_page_entry_512;
+
 // Extended 31-bit address translation stats
 typedef struct {
     uint64_t tlb_hits;
@@ -35,6 +53,7 @@ typedef struct {
     uint64_t ccw_violations;
     int timer_interrupt_pending;
     uint64_t translation_256_count;
+    uint64_t translation_512_count;
 } tsfi_s370_dat_stats;
 
 extern tsfi_s370_dat_stats g_dat_stats;
@@ -67,5 +86,11 @@ int tsfi_s370_dat_translate_256(const tsfi_s370_addr_256 *virtual_addr,
                                  const tsfi_s370_segment_entry_256 *seg_table, int seg_count,
                                  const tsfi_s370_page_entry_256 *page_tables,
                                  tsfi_s370_addr_256 *out_physical_addr, int *out_write_protected);
+
+// 512-bit Dynamic Address Translation (DAT)
+int tsfi_s370_dat_translate_512(const tsfi_s370_addr_512 *virtual_addr,
+                                 const tsfi_s370_segment_entry_512 *seg_table, int seg_count,
+                                 const tsfi_s370_page_entry_512 *page_tables,
+                                 tsfi_s370_addr_512 *out_physical_addr, int *out_write_protected);
 
 #endif // TSFI_S370_DAT_EXTENSIONS_H

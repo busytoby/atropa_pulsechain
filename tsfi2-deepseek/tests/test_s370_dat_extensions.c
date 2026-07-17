@@ -129,8 +129,6 @@ int main(void) {
 
     tsfi_s370_page_entry_256 page_table_256[2];
     memset(page_table_256, 0, sizeof(page_table_256));
-    
-    // Set real page frame to 0xAA00BB00CC00DD00
     page_table_256[0].real_page_frame.parts[3] = 0xAA00;
     page_table_256[0].real_page_frame.parts[2] = 0xBB00;
     page_table_256[0].real_page_frame.parts[1] = 0xCC00;
@@ -138,7 +136,6 @@ int main(void) {
     page_table_256[0].invalid = 0;
     page_table_256[0].write_protect = 1;
 
-    // Set virtual address: Segment Index = 0 (parts 2 & 3), Page Index = 0 (part 1), Offset = 0xFFULL (part 0)
     tsfi_s370_addr_256 virt_addr_256;
     virt_addr_256.parts[3] = 0x00;
     virt_addr_256.parts[2] = 0x00;
@@ -157,6 +154,53 @@ int main(void) {
     assert(wp_256 == 1);
     assert(g_dat_stats.translation_256_count == 1);
 
-    printf("[SUCCESS] All 31-bit DAT Extensions, CPU security, and 256-bit DAT validated successfully!\n");
+    // --- 512-bit Dynamic Address Translation (DAT) validation ---
+    printf("[TEST] Validating 512-bit Dynamic Address Translation (DAT)...\n");
+
+    tsfi_s370_segment_entry_512 seg_table_512[2];
+    memset(seg_table_512, 0, sizeof(seg_table_512));
+    seg_table_512[0].page_table_origin = 0;
+    seg_table_512[0].invalid = 0;
+    seg_table_512[1].invalid = 1;
+
+    tsfi_s370_page_entry_512 page_table_512[2];
+    memset(page_table_512, 0, sizeof(page_table_512));
+    
+    // Base address has real frame with low = 0xFFFFFFFFFFFFFFF0ULL (to verify offset carry addition)
+    page_table_512[0].real_page_frame.parts[7] = 0x1111;
+    page_table_512[0].real_page_frame.parts[6] = 0x2222;
+    page_table_512[0].real_page_frame.parts[5] = 0x3333;
+    page_table_512[0].real_page_frame.parts[4] = 0x4444;
+    page_table_512[0].real_page_frame.parts[3] = 0x5555;
+    page_table_512[0].real_page_frame.parts[2] = 0x6666;
+    page_table_512[0].real_page_frame.parts[1] = 0x7777000000000000ULL;
+    page_table_512[0].real_page_frame.parts[0] = 0xFFFFFFFFFFFFFFF0ULL;
+    page_table_512[0].invalid = 0;
+    page_table_512[0].write_protect = 0;
+
+    tsfi_s370_addr_512 virt_addr_512;
+    memset(&virt_addr_512, 0, sizeof(virt_addr_512));
+    // Offset is 0x20, which triggers low overflow and high carry
+    virt_addr_512.parts[0] = 0x20ULL;
+
+    tsfi_s370_addr_512 phys_addr_512;
+    int wp_512 = 0;
+
+    int ret_512 = tsfi_s370_dat_translate_512(&virt_addr_512, seg_table_512, 2, page_table_512, &phys_addr_512, &wp_512);
+    assert(ret_512 == 0);
+    assert(phys_addr_512.parts[7] == 0x1111);
+    assert(phys_addr_512.parts[6] == 0x2222);
+    assert(phys_addr_512.parts[5] == 0x3333);
+    assert(phys_addr_512.parts[4] == 0x4444);
+    assert(phys_addr_512.parts[3] == 0x5555);
+    assert(phys_addr_512.parts[2] == 0x6666);
+    // Carry maps +1 to parts[1] (0x7777000000000000 + 1)
+    assert(phys_addr_512.parts[1] == 0x7777000000000001ULL);
+    // Low part wraps around to 0x10 (0xFFFFFFFFFFFFFFF0 + 0x20)
+    assert(phys_addr_512.parts[0] == 0x10ULL);
+    assert(wp_512 == 0);
+    assert(g_dat_stats.translation_512_count == 1);
+
+    printf("[SUCCESS] All 31-bit DAT Extensions, CPU security, 256-bit DAT, and 512-bit DAT validated successfully!\n");
     return 0;
 }
