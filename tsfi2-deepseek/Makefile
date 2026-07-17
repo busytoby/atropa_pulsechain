@@ -323,6 +323,9 @@ bin/test_ramac_layout: tests/test_ramac_layout.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_
 bin/test_ramac_extended: tests/test_ramac_extended.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_ramac_extended_part2: tests/test_ramac_extended_part2.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_gas_audit: tests/test_gas_audit.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^
 
