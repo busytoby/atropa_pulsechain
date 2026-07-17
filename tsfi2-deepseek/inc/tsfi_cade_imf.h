@@ -25,5 +25,7 @@ int tsfi_mf_imf_get_doc_code_name(int doc_code, char *name_out, int max_len);
 int tsfi_mf_cade_export_registry(const char *registry_pool, char *export_buf, int max_len);
 int tsfi_mf_imf_validate_doc_code(int doc_code, int *is_valid);
 int tsfi_mf_cade_compact_registry(char *registry_pool);
+int tsfi_mf_imf_get_doc_code_by_name(const char *name, int *doc_code_out);
+int tsfi_mf_cade_locate_record_offset(const char *ssn, const char *registry_pool, int *offset_out);
 
 #endif // TSFI_CADE_IMF_H

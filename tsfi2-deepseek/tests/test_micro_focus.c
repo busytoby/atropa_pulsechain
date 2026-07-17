@@ -1443,6 +1443,22 @@ int main(void) {
     assert(strcmp(registry_spacey, "SSN:999-12-3456|BAL:100.00") == 0);
     printf("  [PASS] IRS CADE Registry Compactor verified.\n");
 
+    // 136. Verify IRS IMF Document Code locator
+    printf("[TEST] Validating IRS IMF Doc Code Locator...\n");
+    int look_doc = 0;
+    int look_doc_res = tsfi_mf_imf_get_doc_code_by_name("Form 1040", &look_doc);
+    assert(look_doc_res == 0);
+    assert(look_doc == 10);
+    printf("  [PASS] IRS IMF Doc Code Locator verified.\n");
+
+    // 137. Verify IRS CADE Taxpayer Registry Offset Locator
+    printf("[TEST] Validating IRS CADE Registry Offset Locator...\n");
+    int offset_loc = -1;
+    int loc_res = tsfi_mf_cade_locate_record_offset("999-12-3456", registry_spacey, &offset_loc);
+    assert(loc_res == 0);
+    assert(offset_loc == 4);
+    printf("  [PASS] IRS CADE Registry Offset Locator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

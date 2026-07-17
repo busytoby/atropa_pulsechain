@@ -326,3 +326,31 @@ int tsfi_mf_cade_compact_registry(char *registry_pool) {
     registry_pool[write_idx] = '\0';
     return 0;
 }
+
+int tsfi_mf_imf_get_doc_code_by_name(const char *name, int *doc_code_out) {
+    if (!name || !doc_code_out) return -1;
+
+    if (strcmp(name, "Form 1040") == 0) {
+        *doc_code_out = 10;
+    } else if (strcmp(name, "Form 1120") == 0) {
+        *doc_code_out = 20;
+    } else if (strcmp(name, "Form 941") == 0) {
+        *doc_code_out = 30;
+    } else {
+        *doc_code_out = 0;
+        return -2;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_locate_record_offset(const char *ssn, const char *registry_pool, int *offset_out) {
+    if (!ssn || !registry_pool || !offset_out) return -1;
+
+    const char *ssn_match = strstr(registry_pool, ssn);
+    if (ssn_match) {
+        *offset_out = ssn_match - registry_pool;
+        return 0;
+    }
+    *offset_out = -1;
+    return -2;
+}
