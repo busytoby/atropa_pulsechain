@@ -1349,3 +1349,44 @@ int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new
     }
     return 0;
 }
+
+int tsfi_sna_serialize_th(const tsfi_sna_th *th, uint8_t *buf, size_t *len_out) {
+    if (!th || !buf || !len_out) return -1;
+    if (th->fid_type == SNA_FID_TYPE2) {
+        buf[0] = (SNA_FID_TYPE2 << 4) | (th->mpf & 0x0F);
+        buf[1] = 0;
+        buf[2] = th->daf & 0xFF;
+        buf[3] = th->oaf & 0xFF;
+        buf[4] = (th->sn >> 8) & 0xFF;
+        buf[5] = th->sn & 0xFF;
+        *len_out = 6;
+    } else {
+        buf[0] = (SNA_FID_TYPE4 << 4) | (th->mpf & 0x0F);
+        buf[1] = 0;
+        buf[2] = (th->daf >> 8) & 0xFF;
+        buf[3] = th->daf & 0xFF;
+        buf[4] = (th->oaf >> 8) & 0xFF;
+        buf[5] = th->oaf & 0xFF;
+        buf[6] = (th->sn >> 8) & 0xFF;
+        buf[7] = th->sn & 0xFF;
+        *len_out = 8;
+    }
+    return 0;
+}
+
+int tsfi_sna_deserialize_th(const uint8_t *buf, size_t len, tsfi_sna_th *th_out) {
+    if (!buf || !th_out || len < 6) return -1;
+    th_out->fid_type = (buf[0] >> 4) & 0x0F;
+    th_out->mpf = buf[0] & 0x0F;
+    if (th_out->fid_type == SNA_FID_TYPE2) {
+        th_out->daf = buf[2];
+        th_out->oaf = buf[3];
+        th_out->sn = (buf[4] << 8) | buf[5];
+    } else {
+        if (len < 8) return -2;
+        th_out->daf = (buf[2] << 8) | buf[3];
+        th_out->oaf = (buf[4] << 8) | buf[5];
+        th_out->sn = (buf[6] << 8) | buf[7];
+    }
+    return 0;
+}

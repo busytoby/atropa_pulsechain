@@ -592,4 +592,19 @@ typedef struct {
 void tsfi_sna_key_rotation_init(tsfi_sna_key_rotation *rot, const uint8_t *dist_key);
 int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new_key);
 
+#define SNA_FID_TYPE2 0x02
+#define SNA_FID_TYPE4 0x04
+
+// SNA Transmission Header (TH) Format
+typedef struct {
+    uint8_t fid_type;
+    uint8_t mpf;
+    uint16_t daf;
+    uint16_t oaf;
+    uint16_t sn;
+} tsfi_sna_th;
+
+int tsfi_sna_serialize_th(const tsfi_sna_th *th, uint8_t *buf, size_t *len_out);
+int tsfi_sna_deserialize_th(const uint8_t *buf, size_t len, tsfi_sna_th *th_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

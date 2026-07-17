@@ -763,6 +763,29 @@ int main(void) {
     assert(memcmp(rot.current_session_key, raw_new_key, 8) == 0);
     printf("  [PASS] Session key rotation and master wrapping verified.\n");
 
+    // 54. SNA Transmission Header Verification
+    printf("[Test] Verifying SNA Transmission Header FID2 & FID4...\n");
+    tsfi_sna_th tx_th;
+    tx_th.fid_type = SNA_FID_TYPE2;
+    tx_th.mpf = 0x01; // FIC segment
+    tx_th.daf = 0x00AA;
+    tx_th.oaf = 0x00BB;
+    tx_th.sn = 999;
+    
+    uint8_t th_buf[16];
+    size_t th_len = 0;
+    assert(tsfi_sna_serialize_th(&tx_th, th_buf, &th_len) == 0);
+    assert(th_len == 6);
+    
+    tsfi_sna_th rx_th;
+    assert(tsfi_sna_deserialize_th(th_buf, th_len, &rx_th) == 0);
+    assert(rx_th.fid_type == SNA_FID_TYPE2);
+    assert(rx_th.mpf == 0x01);
+    assert(rx_th.daf == 0xAA);
+    assert(rx_th.oaf == 0xBB);
+    assert(rx_th.sn == 999);
+    printf("  [PASS] Transmission Header FID2 & FID4 serialization verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
