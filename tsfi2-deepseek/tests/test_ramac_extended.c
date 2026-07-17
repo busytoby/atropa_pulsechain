@@ -1789,6 +1789,33 @@ int main(void) {
     assert(hold_q.count == 0);
     printf("  [PASS] VM/370 CP spool file hold and release states verified.\n");
 
+    // 101. VM/370 CP Spool Purging Manager Verification
+    printf("[Test] Verifying VM/370 CP Spool Purging...\n");
+    tsfi_cp_spool_queue_v3 rdr_q;
+    tsfi_cp_spool_queue_v3_init(&rdr_q);
+    assert(tsfi_cp_spool_push_v3(&rdr_q, "PURGE DATA", 201) == 0);
+    assert(rdr_q.count == 1);
+    
+    tsfi_cp_spool_printer prt_device;
+    tsfi_cp_printer_init(&prt_device);
+    assert(tsfi_cp_printer_write_record(&prt_device, "0LINE TO BE PURGED") == 0);
+    assert(prt_device.line_count == 2);
+    
+    tsfi_cp_purge_stats purge_stats;
+    tsfi_cp_purge_stats_init(&purge_stats);
+    
+    // Execute Purge Reader
+    assert(tsfi_cp_execute_purge(&purge_stats, &rdr_q, &prt_device, "PURGE RDR") == 0);
+    assert(rdr_q.count == 0);
+    assert(purge_stats.reader_count == 1);
+    
+    // Execute Purge All
+    assert(tsfi_cp_execute_purge(&purge_stats, &rdr_q, &prt_device, "PURGE ALL") == 0);
+    assert(prt_device.line_count == 0);
+    assert(purge_stats.printer_count == 2);
+    assert(purge_stats.total_purged == 3);
+    printf("  [PASS] VM/370 CP spool queue purging and memory resets verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

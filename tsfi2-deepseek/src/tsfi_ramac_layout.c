@@ -6394,3 +6394,38 @@ int tsfi_cp_spool_pop_v3(tsfi_cp_spool_queue_v3 *q, char *data_out) {
     }
     return -2;
 }
+
+void tsfi_cp_purge_stats_init(tsfi_cp_purge_stats *stats) {
+    if (!stats) return;
+    memset(stats, 0, sizeof(tsfi_cp_purge_stats));
+}
+
+int tsfi_cp_execute_purge(tsfi_cp_purge_stats *stats, tsfi_cp_spool_queue_v3 *rdr, tsfi_cp_spool_printer *prt, const char *cmd) {
+    if (!stats || !cmd) return -1;
+    if (strcasecmp(cmd, "PURGE RDR") == 0) {
+        if (rdr) {
+            stats->reader_count = rdr->count;
+            stats->total_purged += rdr->count;
+            rdr->count = 0;
+            memset(rdr->queue, 0, sizeof(rdr->queue));
+        }
+        return 0;
+    }
+    if (strcasecmp(cmd, "PURGE ALL") == 0) {
+        if (rdr) {
+            stats->reader_count = rdr->count;
+            stats->total_purged += rdr->count;
+            rdr->count = 0;
+            memset(rdr->queue, 0, sizeof(rdr->queue));
+        }
+        if (prt) {
+            stats->printer_count = prt->line_count;
+            stats->total_purged += prt->line_count;
+            prt->line_count = 0;
+            prt->page_count = 1;
+            prt->last_skip_count = 0;
+        }
+        return 0;
+    }
+    return -1;
+}

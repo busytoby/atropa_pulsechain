@@ -1721,4 +1721,14 @@ int tsfi_cp_spool_push_v3(tsfi_cp_spool_queue_v3 *q, const char *data, int file_
 int tsfi_cp_spool_hold(tsfi_cp_spool_queue_v3 *q, int file_id, int hold);
 int tsfi_cp_spool_pop_v3(tsfi_cp_spool_queue_v3 *q, char *data_out);
 
+// VM/370 CP Spool Purging Manager
+typedef struct {
+    int reader_count;
+    int printer_count;
+    int total_purged;
+} tsfi_cp_purge_stats;
+
+void tsfi_cp_purge_stats_init(tsfi_cp_purge_stats *stats);
+int tsfi_cp_execute_purge(tsfi_cp_purge_stats *stats, tsfi_cp_spool_queue_v3 *rdr, tsfi_cp_spool_printer *prt, const char *cmd);
+
 #endif // TSFI_RAMAC_LAYOUT_H
