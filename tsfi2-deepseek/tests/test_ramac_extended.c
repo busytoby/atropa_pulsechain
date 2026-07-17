@@ -1349,6 +1349,15 @@ int main(void) {
     assert(db_stat == DB_STATUS_OK);
     printf("  [PASS] DBTG Set Membership mandatory retention bounds verified.\n");
 
+    // 77. DBTG Set Directional Navigation Verification
+    printf("[Test] Verifying DBTG Set Directional Navigation...\n");
+    int count = 5;
+    assert(tsfi_dbtg_navigate_set(2, count, DBTG_NAV_FIRST) == 0);
+    assert(tsfi_dbtg_navigate_set(2, count, DBTG_NAV_LAST) == 4);
+    assert(tsfi_dbtg_navigate_set(2, count, DBTG_NAV_NEXT) == 3);
+    assert(tsfi_dbtg_navigate_set(0, count, DBTG_NAV_PRIOR) == 4);
+    printf("  [PASS] DBTG FIRST, LAST, NEXT, and PRIOR offset mappings verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

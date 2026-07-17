@@ -5770,3 +5770,19 @@ int tsfi_dbtg_validate_disconnect(const tsfi_dbtg_set_membership *sm, int *db_st
     *db_status_out = DB_STATUS_OK;
     return 0;
 }
+
+int tsfi_dbtg_navigate_set(int current_idx, int record_count, int direction_mode) {
+    if (record_count <= 0) return -1;
+    switch (direction_mode) {
+        case DBTG_NAV_FIRST:
+            return 0;
+        case DBTG_NAV_LAST:
+            return record_count - 1;
+        case DBTG_NAV_NEXT:
+            return (current_idx + 1) % record_count;
+        case DBTG_NAV_PRIOR:
+            return (current_idx - 1 + record_count) % record_count;
+        default:
+            return -1;
+    }
+}

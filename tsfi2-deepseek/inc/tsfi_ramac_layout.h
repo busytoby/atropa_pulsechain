@@ -1428,4 +1428,12 @@ typedef struct {
 void tsfi_dbtg_set_membership_init(tsfi_dbtg_set_membership *sm, const char *name, int ins_mode, int ret_mode);
 int tsfi_dbtg_validate_disconnect(const tsfi_dbtg_set_membership *sm, int *db_status_out);
 
+// DBTG Set Directional Navigation
+#define DBTG_NAV_FIRST 0
+#define DBTG_NAV_LAST  1
+#define DBTG_NAV_NEXT  2
+#define DBTG_NAV_PRIOR 3
+
+int tsfi_dbtg_navigate_set(int current_idx, int record_count, int direction_mode);
+
 #endif // TSFI_RAMAC_LAYOUT_H
