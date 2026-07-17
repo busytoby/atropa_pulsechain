@@ -1009,3 +1009,43 @@ int tsfi_sna_pacing_adjust(tsfi_sna_pacing *pacing, int congestion_flag) {
     }
     return pacing->window_size;
 }
+
+void tsfi_vtam_lu_registry_init(tsfi_vtam_lu_registry *reg) {
+    if (!reg) return;
+    reg->count = 0;
+    for (int i = 0; i < 16; i++) {
+        reg->lus[i].active = 0;
+        reg->lus[i].lu_address = 0;
+        reg->lus[i].lu_type = 0;
+        reg->lus[i].resource_name[0] = '\0';
+    }
+}
+
+int tsfi_vtam_lu_registry_add(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t type, const char *name) {
+    if (!reg || !name) return -1;
+    if (reg->count >= 16) return -2;
+    for (int i = 0; i < reg->count; i++) {
+        if (reg->lus[i].lu_address == addr) return -3;
+    }
+    tsfi_vtam_lu *lu = &reg->lus[reg->count];
+    lu->lu_address = addr;
+    lu->lu_type = type;
+    lu->active = 1;
+    strncpy(lu->resource_name, name, 31);
+    lu->resource_name[31] = '\0';
+    reg->count++;
+    return 0;
+}
+
+int tsfi_vtam_lu_registry_route(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *data, size_t len) {
+    if (!reg || !data) return -1;
+    for (int i = 0; i < reg->count; i++) {
+        if (reg->lus[i].lu_address == addr && reg->lus[i].active) {
+            if (len > 0) {
+                data[0] = reg->lus[i].lu_type;
+            }
+            return i;
+        }
+    }
+    return -2;
+}

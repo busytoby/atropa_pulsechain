@@ -490,9 +490,26 @@ int main(void) {
     
     // Normal operation increases window size
     assert(tsfi_sna_pacing_adjust(&pacing, 0) == 5);
-    // Congestion drops window size
     assert(tsfi_sna_pacing_adjust(&pacing, 1) == 2);
     printf("  [PASS] SNA transmission group dynamic pacing verified.\n");
+
+    // 35. SNA Unified LU Registry Verification
+    printf("[Test] Verifying SNA Unified LU Registry...\n");
+    tsfi_vtam_lu_registry registry;
+    tsfi_vtam_lu_registry_init(&registry);
+    assert(registry.count == 0);
+    
+    // Register different device types as LUs
+    assert(tsfi_vtam_lu_registry_add(&registry, 0x5001, LU_TYPE_FILE, "/atropa_pulsechain") == 0);
+    assert(tsfi_vtam_lu_registry_add(&registry, 0x5002, LU_TYPE_SOCKET, "Port 10042") == 0);
+    assert(tsfi_vtam_lu_registry_add(&registry, 0x5003, LU_TYPE_TERMINAL, "WaylandTTY") == 0);
+    assert(registry.count == 3);
+    
+    uint8_t payload_bytes[] = { 0x00, 0xAA, 0xBB };
+    // Route to LU 0x5002 (Socket type = 0x02) and verify type injection header
+    assert(tsfi_vtam_lu_registry_route(&registry, 0x5002, payload_bytes, 3) == 1);
+    assert(payload_bytes[0] == LU_TYPE_SOCKET);
+    printf("  [PASS] SNA unified LU mapping and route headers verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");

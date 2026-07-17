@@ -416,4 +416,27 @@ typedef struct {
 void tsfi_sna_pacing_init(tsfi_sna_pacing *pacing, int initial_window);
 int tsfi_sna_pacing_adjust(tsfi_sna_pacing *pacing, int congestion_flag);
 
+#define LU_TYPE_FILE     0x01
+#define LU_TYPE_SOCKET   0x02
+#define LU_TYPE_TERMINAL 0x03
+#define LU_TYPE_DISK     0x04
+
+// Unified SNA Logical Unit (LU)
+typedef struct {
+    uint8_t lu_type;
+    uint16_t lu_address;
+    char resource_name[32];
+    int active;
+} tsfi_vtam_lu;
+
+// SNA LU Registry
+typedef struct {
+    tsfi_vtam_lu lus[16];
+    int count;
+} tsfi_vtam_lu_registry;
+
+void tsfi_vtam_lu_registry_init(tsfi_vtam_lu_registry *reg);
+int tsfi_vtam_lu_registry_add(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t type, const char *name);
+int tsfi_vtam_lu_registry_route(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *data, size_t len);
+
 #endif // TSFI_MAINFRAME_DECNET_H
