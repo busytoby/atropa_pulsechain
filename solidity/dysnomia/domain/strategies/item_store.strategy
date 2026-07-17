@@ -1,0 +1,23 @@
+# COBOL Item Storage Strategy Example
+# Maps data variables to registers, performs computation, and pushes to stack.
+
+DATA DIVISION.
+01 ITEM-CODE    PIC 9 USAGE R0.
+01 ITEM-PRICE   PIC 9 USAGE R1.
+01 ITEM-TAX     PIC 9 USAGE R2.
+01 TOTAL-COST   PIC 9 USAGE R3.
+
+PROCEDURE DIVISION.
+    MOVE 150 TO ITEM-PRICE.
+    MOVE 15 TO ITEM-TAX.
+    
+    # Perform math: TOTAL-COST = ITEM-PRICE + ITEM-TAX
+    ADD ITEM-TAX TO ITEM-PRICE.
+    MOVE ITEM-PRICE TO TOTAL-COST.
+    
+    # Store the calculated item value to stack
+    PUSH_REG TOTAL-COST.
+    
+    # Adjust depth priority scale
+    SET depth 4.
+    EVAL.

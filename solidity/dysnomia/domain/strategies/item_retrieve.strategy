@@ -1,0 +1,24 @@
+# COBOL Item Retrieval Strategy Example
+# Pops stored items from the stack, applies thresholds, and evaluates.
+
+DATA DIVISION.
+01 ITEM-RETRIEVED PIC 9 USAGE R0.
+01 THRESHOLD      PIC 9 USAGE R1.
+01 EXCEEDED-FLAG  PIC 9 USAGE R2.
+
+PROCEDURE DIVISION.
+    MOVE 100 TO THRESHOLD.
+    
+    # Retrieve the top item from stack
+    POP_REG ITEM-RETRIEVED.
+    
+    IF ITEM-RETRIEVED > THRESHOLD
+        MOVE 1 TO EXCEEDED-FLAG.
+        SET depth 8.
+    ELSE
+        MOVE 0 TO EXCEEDED-FLAG.
+        SET depth 2.
+    END-IF.
+    
+    # Evaluate priority adjustments
+    EVAL.
