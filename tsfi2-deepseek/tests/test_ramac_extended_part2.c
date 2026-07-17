@@ -1379,6 +1379,35 @@ int main(void) {
     assert(sub_aud.authorized_attempts == 2);
     printf("  [PASS] Subschema database privileges and security attempts audited.\n");
 
+    // 139. CODASYL Database Transaction Recovery and Rollback Auditor Verification
+    printf("[Test] Verifying Database Transaction Recovery and Rollback Auditor...\n");
+    tsfi_db_tx_manager tx_mgr;
+    tsfi_db_tx_init(&tx_mgr);
+    
+    // Begin transaction
+    assert(tsfi_db_tx_begin(&tx_mgr, "CUSTREC", "Name: Alice") == 0);
+    assert(tx_mgr.is_active == 1);
+    
+    // Update data
+    assert(tsfi_db_tx_update(&tx_mgr, "Name: Bob") == 0);
+    assert(strcmp(tx_mgr.after_image, "Name: Bob") == 0);
+    
+    // Abort and Rollback
+    char restored[128];
+    int tx_status = 0;
+    assert(tsfi_db_tx_rollback(&tx_mgr, restored, &tx_status) == 0);
+    assert(tx_status == 0);
+    assert(tx_mgr.is_active == 0);
+    assert(strcmp(restored, "Name: Alice") == 0);
+    assert(tx_mgr.rollback_count == 1);
+    
+    // Commit transaction flow
+    assert(tsfi_db_tx_begin(&tx_mgr, "CUSTREC", "Name: Bob") == 0);
+    assert(tsfi_db_tx_update(&tx_mgr, "Name: Charlie") == 0);
+    assert(tsfi_db_tx_commit(&tx_mgr, &tx_status) == 0);
+    assert(tx_mgr.commit_count == 1);
+    printf("  [PASS] Database transaction before-image snapshots and rollbacks validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

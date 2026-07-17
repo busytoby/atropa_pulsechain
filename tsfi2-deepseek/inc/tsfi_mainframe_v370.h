@@ -494,4 +494,20 @@ void tsfi_subschema_audit_init(tsfi_subschema_auditor *auditor);
 int tsfi_subschema_add_rule(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int allowed_mask);
 int tsfi_subschema_authorize(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int priv_mask, int *out_authorized);
 
+// Scenario 139: CODASYL Database Transaction Recovery and Rollback Auditor
+typedef struct {
+    char record_name[32];
+    char before_image[128];
+    char after_image[128];
+    int is_active;
+    int rollback_count;
+    int commit_count;
+} tsfi_db_tx_manager;
+
+void tsfi_db_tx_init(tsfi_db_tx_manager *mgr);
+int tsfi_db_tx_begin(tsfi_db_tx_manager *mgr, const char *record_name, const char *initial_data);
+int tsfi_db_tx_update(tsfi_db_tx_manager *mgr, const char *new_data);
+int tsfi_db_tx_rollback(tsfi_db_tx_manager *mgr, char *out_restored_data, int *out_db_status);
+int tsfi_db_tx_commit(tsfi_db_tx_manager *mgr, int *out_db_status);
+
 #endif // TSFI_MAINFRAME_V370_H

@@ -1464,3 +1464,42 @@ int tsfi_subschema_authorize(tsfi_subschema_auditor *auditor, const char *subsch
     auditor->denied_attempts++;
     return 0;
 }
+
+void tsfi_db_tx_init(tsfi_db_tx_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_db_tx_manager));
+}
+
+int tsfi_db_tx_begin(tsfi_db_tx_manager *mgr, const char *record_name, const char *initial_data) {
+    if (!mgr || !record_name || mgr->is_active) return -1;
+    snprintf(mgr->record_name, sizeof(mgr->record_name), "%s", record_name);
+    snprintf(mgr->before_image, sizeof(mgr->before_image), "%s", initial_data ? initial_data : "");
+    mgr->after_image[0] = '\0';
+    mgr->is_active = 1;
+    return 0;
+}
+
+int tsfi_db_tx_update(tsfi_db_tx_manager *mgr, const char *new_data) {
+    if (!mgr || !mgr->is_active || !new_data) return -1;
+    snprintf(mgr->after_image, sizeof(mgr->after_image), "%s", new_data);
+    return 0;
+}
+
+int tsfi_db_tx_rollback(tsfi_db_tx_manager *mgr, char *out_restored_data, int *out_db_status) {
+    if (!mgr || !mgr->is_active || !out_db_status) return -1;
+    *out_db_status = 0;
+    if (out_restored_data) {
+        strcpy(out_restored_data, mgr->before_image);
+    }
+    mgr->rollback_count++;
+    mgr->is_active = 0;
+    return 0;
+}
+
+int tsfi_db_tx_commit(tsfi_db_tx_manager *mgr, int *out_db_status) {
+    if (!mgr || !mgr->is_active || !out_db_status) return -1;
+    *out_db_status = 0;
+    mgr->commit_count++;
+    mgr->is_active = 0;
+    return 0;
+}
