@@ -1201,3 +1201,62 @@ int tsfi_sscp_lu_control(tsfi_sscp_lu_session *sess, uint8_t cmd) {
     }
     return -2;
 }
+
+void tsfi_sna_chain_init(tsfi_sna_chain_assembler *assembler) {
+    if (!assembler) return;
+    assembler->len = 0;
+    assembler->assembly_complete = 0;
+}
+
+int tsfi_sna_chain_add(tsfi_sna_chain_assembler *assembler, uint8_t chain_indicator, const uint8_t *data, size_t len) {
+    if (!assembler || !data) return -1;
+    if (assembler->len + len > 1024) return -2;
+    memcpy(assembler->buffer + assembler->len, data, len);
+    assembler->len += len;
+    if (chain_indicator == SNA_CHAIN_LIC || chain_indicator == SNA_CHAIN_OIC) {
+        assembler->assembly_complete = 1;
+        return 1;
+    }
+    assembler->assembly_complete = 0;
+    return 0;
+}
+
+void tsfi_sna_bind_profile_init(tsfi_sna_bind_profile *profile) {
+    if (!profile) return;
+    profile->profile_id = 1;
+    profile->pacing_in = 2;
+    profile->pacing_out = 2;
+    profile->duplex_mode = 0;
+}
+
+int tsfi_sna_bind_profile_negotiate(tsfi_sna_bind_profile *local, const tsfi_sna_bind_profile *requested) {
+    if (!local || !requested) return -1;
+    local->profile_id = requested->profile_id;
+    if (requested->pacing_in < local->pacing_in) {
+        local->pacing_in = requested->pacing_in;
+    }
+    if (requested->pacing_out < local->pacing_out) {
+        local->pacing_out = requested->pacing_out;
+    }
+    local->duplex_mode = requested->duplex_mode;
+    return 0;
+}
+
+void tsfi_sna_tg_failover_init(tsfi_sna_tg_failover *failover) {
+    if (!failover) return;
+    failover->active_links = 3;
+    failover->backup_route_active = 0;
+}
+
+int tsfi_sna_tg_link_fail(tsfi_sna_tg_failover *failover, int link_id) {
+    if (!failover) return -1;
+    (void)link_id;
+    if (failover->active_links > 0) {
+        failover->active_links--;
+    }
+    if (failover->active_links == 0) {
+        failover->backup_route_active = 1;
+        return 1;
+    }
+    return 0;
+}

@@ -506,4 +506,39 @@ int tsfi_sscp_lu_control(tsfi_sscp_lu_session *sess, uint8_t cmd);
 #define SNA_CMD_ACTLU  0x0E
 #define SNA_CMD_DACTLU 0x0F
 
+#define SNA_CHAIN_FIC 0x01
+#define SNA_CHAIN_MIC 0x02
+#define SNA_CHAIN_LIC 0x03
+#define SNA_CHAIN_OIC 0x04
+
+// SNA Request Unit (RU) Chaining Assembler
+typedef struct {
+    uint8_t buffer[1024];
+    size_t len;
+    int assembly_complete;
+} tsfi_sna_chain_assembler;
+
+void tsfi_sna_chain_init(tsfi_sna_chain_assembler *assembler);
+int tsfi_sna_chain_add(tsfi_sna_chain_assembler *assembler, uint8_t chain_indicator, const uint8_t *data, size_t len);
+
+// SNA Session BIND Profile
+typedef struct {
+    uint8_t profile_id;
+    int pacing_in;
+    int pacing_out;
+    int duplex_mode;
+} tsfi_sna_bind_profile;
+
+void tsfi_sna_bind_profile_init(tsfi_sna_bind_profile *profile);
+int tsfi_sna_bind_profile_negotiate(tsfi_sna_bind_profile *local, const tsfi_sna_bind_profile *requested);
+
+// SNA Transmission Group (TG) Failover
+typedef struct {
+    int active_links;
+    int backup_route_active;
+} tsfi_sna_tg_failover;
+
+void tsfi_sna_tg_failover_init(tsfi_sna_tg_failover *failover);
+int tsfi_sna_tg_link_fail(tsfi_sna_tg_failover *failover, int link_id);
+
 #endif // TSFI_MAINFRAME_DECNET_H

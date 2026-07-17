@@ -635,6 +635,54 @@ int main(void) {
     assert(sscp_lu.lu_active == 0);
     printf("  [PASS] SSCP ACTLU and DACTLU control handshakes verified.\n");
 
+    // 45. SNA Request Unit (RU) Chaining Verification
+    printf("[Test] Verifying SNA RU Chaining...\n");
+    tsfi_sna_chain_assembler assembler;
+    tsfi_sna_chain_init(&assembler);
+    assert(assembler.len == 0);
+    
+    // Add segments to chain assembler
+    assert(tsfi_sna_chain_add(&assembler, SNA_CHAIN_FIC, (uint8_t*)"FIRST_", 6) == 0);
+    assert(tsfi_sna_chain_add(&assembler, SNA_CHAIN_MIC, (uint8_t*)"MID_", 4) == 0);
+    assert(tsfi_sna_chain_add(&assembler, SNA_CHAIN_LIC, (uint8_t*)"LAST", 4) == 1); // Finished assembly
+    assert(assembler.len == 14);
+    assert(memcmp(assembler.buffer, "FIRST_MID_LAST", 14) == 0);
+    printf("  [PASS] SNA RU chain packet accumulation verified.\n");
+
+    // 46. SNA Session BIND Profile Negotiation Verification
+    printf("[Test] Verifying SNA Session BIND Profile Negotiation...\n");
+    tsfi_sna_bind_profile local_prof;
+    tsfi_sna_bind_profile requested_prof;
+    
+    tsfi_sna_bind_profile_init(&local_prof);
+    tsfi_sna_bind_profile_init(&requested_prof);
+    requested_prof.pacing_in = 1; // Limit input pacing window
+    requested_prof.duplex_mode = 1; // Request full duplex
+    
+    assert(tsfi_sna_bind_profile_negotiate(&local_prof, &requested_prof) == 0);
+    assert(local_prof.pacing_in == 1);
+    assert(local_prof.duplex_mode == 1);
+    printf("  [PASS] SNA session BIND profile parameters verified.\n");
+
+    // 47. SNA Transmission Group Failover Verification
+    printf("[Test] Verifying SNA Transmission Group Failovers...\n");
+    tsfi_sna_tg_failover failover;
+    tsfi_sna_tg_failover_init(&failover);
+    assert(failover.active_links == 3);
+    assert(failover.backup_route_active == 0);
+    
+    // Fail first two links: TG group remains active
+    assert(tsfi_sna_tg_link_fail(&failover, 1) == 0);
+    assert(tsfi_sna_tg_link_fail(&failover, 2) == 0);
+    assert(failover.active_links == 1);
+    assert(failover.backup_route_active == 0);
+    
+    // Fail final link: triggers failover backup route
+    assert(tsfi_sna_tg_link_fail(&failover, 3) == 1);
+    assert(failover.active_links == 0);
+    assert(failover.backup_route_active == 1);
+    printf("  [PASS] Transmission Group multi-link path failover verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
