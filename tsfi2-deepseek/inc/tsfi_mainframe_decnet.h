@@ -1182,4 +1182,22 @@ int tsfi_decnet_broadcast_consensus(const tsfi_decnet_router *router, tsfi_conse
 // Vredestein Consensus Process Broker
 int tsfi_vredestein_process_consensus(tsfi_vredestein_controller *ctrl, const tsfi_consensus_engine *eng);
 
+// Distributed Node Failover & Sync
+typedef struct {
+    int node_id;
+    int is_active;
+    int last_heartbeat_tick;
+    int is_primary;
+} tsfi_failover_node;
+
+typedef struct {
+    tsfi_failover_node nodes[4];
+    int node_count;
+    int active_primary_id;
+} tsfi_failover_group;
+
+void tsfi_failover_init(tsfi_failover_group *group);
+int tsfi_failover_add_node(tsfi_failover_group *group, int node_id, int is_primary);
+int tsfi_failover_tick(tsfi_failover_group *group, int current_tick, int max_missed_ticks);
+
 #endif // TSFI_MAINFRAME_DECNET_H

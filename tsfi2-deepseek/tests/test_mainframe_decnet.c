@@ -1815,6 +1815,34 @@ int main(void) {
     assert(store_node.rollback_executed == 1);
     printf("  [PASS] Cryptographic multi-sig threshold consensus roll forward and rollback verified.\n");
 
+    // 90. Distributed node failover & heartbeat checks verification
+    printf("[Test] Verifying Distributed Node Failover & Heartbeats...\n");
+    tsfi_failover_group group;
+    tsfi_failover_init(&group);
+    assert(group.node_count == 0);
+    assert(group.active_primary_id == -1);
+    
+    // Add primary and backup nodes
+    assert(tsfi_failover_add_node(&group, 100, 1) == 0); // Node 100 is primary
+    assert(tsfi_failover_add_node(&group, 200, 0) == 0); // Node 200 is backup
+    assert(group.node_count == 2);
+    assert(group.active_primary_id == 100);
+    
+    // Primary sends heartbeat update at tick 5
+    group.nodes[0].last_heartbeat_tick = 5;
+    
+    // Tick at 8 (missed = 3, threshold = 4) -> running normally
+    assert(tsfi_failover_tick(&group, 8, 4) == 0);
+    assert(group.active_primary_id == 100);
+    assert(group.nodes[0].is_active == 1);
+    
+    // Tick at 10 (missed = 5, threshold = 4) -> triggers failover promotion of node 200
+    assert(tsfi_failover_tick(&group, 10, 4) == 1);
+    assert(group.active_primary_id == 200);
+    assert(group.nodes[0].is_active == 0); // Node 100 offline
+    assert(group.nodes[1].is_active == 1); // Node 200 active primary
+    printf("  [PASS] Mainframe distributed node failover and backup promotion verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

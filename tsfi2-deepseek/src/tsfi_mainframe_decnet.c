@@ -2569,3 +2569,53 @@ int tsfi_vredestein_process_consensus(tsfi_vredestein_controller *ctrl, const ts
     }
     return -3;
 }
+
+void tsfi_failover_init(tsfi_failover_group *group) {
+    if (!group) return;
+    group->node_count = 0;
+    group->active_primary_id = -1;
+    memset(group->nodes, 0, sizeof(group->nodes));
+}
+
+int tsfi_failover_add_node(tsfi_failover_group *group, int node_id, int is_primary) {
+    if (!group || group->node_count >= 4) return -1;
+    group->nodes[group->node_count].node_id = node_id;
+    group->nodes[group->node_count].is_active = 1;
+    group->nodes[group->node_count].last_heartbeat_tick = 0;
+    group->nodes[group->node_count].is_primary = is_primary;
+    if (is_primary) {
+        group->active_primary_id = node_id;
+    }
+    group->node_count++;
+    return 0;
+}
+
+int tsfi_failover_tick(tsfi_failover_group *group, int current_tick, int max_missed_ticks) {
+    if (!group) return -1;
+    int primary_idx = -1;
+    for (int i = 0; i < group->node_count; i++) {
+        if (group->nodes[i].node_id == group->active_primary_id) {
+            primary_idx = i;
+            break;
+        }
+    }
+    if (primary_idx != -1) {
+        int missed = current_tick - group->nodes[primary_idx].last_heartbeat_tick;
+        if (missed > max_missed_ticks) {
+            group->nodes[primary_idx].is_active = 0;
+            int promoted = 0;
+            for (int i = 0; i < group->node_count; i++) {
+                if (group->nodes[i].is_active && !group->nodes[i].is_primary) {
+                    group->active_primary_id = group->nodes[i].node_id;
+                    promoted = 1;
+                    break;
+                }
+            }
+            if (!promoted) {
+                group->active_primary_id = -1;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
