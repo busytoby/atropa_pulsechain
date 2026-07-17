@@ -1883,6 +1883,19 @@ int main(void) {
     assert(tsfi_fips112_validate_password("short", &score) == -2); // too short
     printf("  [PASS] FIPS 112 password length constraints and character class scoring validated.\n");
 
+    // 161. NBS FIPS PUB 120 GKS Primitive Parser Verification
+    printf("[Test] Verifying NBS FIPS PUB 120 Graphical Kernel System Primitive Parser...\n");
+    uint8_t gks_stream[8] = { 0x01, 0x02, 10, 20, 30, 40, 0, 0 }; // Polyline, 2 points: (10,20) and (30,40)
+    int prim_type = 0;
+    int pts_count = 0;
+    assert(tsfi_fips120_parse_gks_primitive(gks_stream, 6, &prim_type, &pts_count) == 0);
+    assert(prim_type == 0x01);
+    assert(pts_count == 2);
+    
+    // Truncated buffer check
+    assert(tsfi_fips120_parse_gks_primitive(gks_stream, 5, &prim_type, &pts_count) == -3);
+    printf("  [PASS] FIPS 120 GKS graphical command codes and coordinates parsed correctly.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

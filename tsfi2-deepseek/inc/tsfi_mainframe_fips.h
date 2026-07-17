@@ -162,4 +162,7 @@ int tsfi_fips100_decapsulate(const uint8_t *packet, int len, uint8_t *out_payloa
 // Scenario 160: NBS FIPS PUB 112 Password Security Validator
 int tsfi_fips112_validate_password(const char *password, int *out_complexity_score);
 
+// Scenario 161: NBS FIPS PUB 120 Graphical Kernel System (GKS) Primitive Parser
+int tsfi_fips120_parse_gks_primitive(const uint8_t *stream, int len, int *out_primitive_type, int *out_point_count);
+
 #endif // TSFI_MAINFRAME_FIPS_H

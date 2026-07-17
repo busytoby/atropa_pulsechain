@@ -816,3 +816,21 @@ int tsfi_fips112_validate_password(const char *password, int *out_complexity_sco
     *out_complexity_score = has_lower + has_upper + has_digit + has_symbol;
     return 0;
 }
+
+int tsfi_fips120_parse_gks_primitive(const uint8_t *stream, int len, int *out_primitive_type, int *out_point_count) {
+    if (!stream || len < 2 || !out_primitive_type || !out_point_count) return -1;
+    
+    uint8_t type = stream[0];
+    if (type != 0x01 && type != 0x02 && type != 0x03) {
+        return -2; // Unknown GKS primitive type
+    }
+    
+    int point_count = stream[1];
+    if (len < 2 + 2 * point_count) {
+        return -3; // Buffer size violation (truncated coordinates)
+    }
+    
+    *out_primitive_type = type;
+    *out_point_count = point_count;
+    return 0;
+}
