@@ -161,8 +161,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 206 | CICS Task Current Priority Inquirer | PASS | Checks active priority value for dynamic tasks | Volume 33 |
 | 207 | Majordomo Config Resetter | PASS | Resets list configuration back to defaults | Volume 33 |
 | 208 | CICS System Max Tasks Inquirer | PASS | Checks concurrent task capacity limits | Volume 33 |
+| 209 | Majordomo Config Syntax Checker | PASS | Validates configuration structure format | Volume 33 |
+| 210 | CICS System Active Tasks Inquirer | PASS | Checks count of active emulator tasks | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 208 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 210 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

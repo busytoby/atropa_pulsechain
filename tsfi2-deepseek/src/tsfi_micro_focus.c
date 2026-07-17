@@ -1741,3 +1741,20 @@ int tsfi_mf_cics_inquire_maxtasks(int maxtasks_registry, int *maxtasks_out) {
     *maxtasks_out = maxtasks_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_has_valid_syntax(const char *config, int *is_valid) {
+    if (!config || !is_valid) return -1;
+
+    *is_valid = 0;
+    if (strstr(config, "list =") != NULL) {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_acttasks(int active_tasks_count, int *active_tasks_out) {
+    if (!active_tasks_out) return -1;
+
+    *active_tasks_out = active_tasks_count;
+    return 0;
+}

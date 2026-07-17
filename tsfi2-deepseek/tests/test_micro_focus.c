@@ -1116,6 +1116,22 @@ int main(void) {
     assert(maxtasks_val == 256);
     printf("  [PASS] CICS INQUIRE SYSTEM MAXTASKS verified.\n");
 
+    // 99. Verify Majordomo List Config Syntax Checker
+    printf("[TEST] Validating Majordomo Config Syntax...\n");
+    int syntax_is_valid = -1;
+    int syn_res = tsfi_mf_majordomo_has_valid_syntax(reset_cfg_buf, &syntax_is_valid);
+    assert(syn_res == 0);
+    assert(syntax_is_valid == 1);
+    printf("  [PASS] Majordomo Config Syntax verified.\n");
+
+    // 100. Verify CICS System Inquire Active Tasks Count Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM ACTTASKS...\n");
+    int acttasks_val = 0;
+    int inq_act_res = tsfi_mf_cics_inquire_acttasks(42, &acttasks_val);
+    assert(inq_act_res == 0);
+    assert(acttasks_val == 42);
+    printf("  [PASS] CICS INQUIRE SYSTEM ACTTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
