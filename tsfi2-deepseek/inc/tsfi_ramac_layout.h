@@ -1452,4 +1452,24 @@ typedef struct {
 
 void tsfi_dbtg_resolve_calc(const char *key, uint32_t total_pages, uint32_t slots_per_page, tsfi_dbtg_calc_address *address_out);
 
+// CODASYL DML Command Execution Tracker
+#define DBTG_VERB_STORE      1
+#define DBTG_VERB_GET        2
+#define DBTG_VERB_MODIFY     3
+#define DBTG_VERB_ERASE      4
+#define DBTG_VERB_CONNECT    5
+#define DBTG_VERB_DISCONNECT 6
+
+typedef struct {
+    int store_count;
+    int get_count;
+    int modify_count;
+    int erase_count;
+    int connect_count;
+    int disconnect_count;
+} tsfi_dbtg_dml_tracker;
+
+void tsfi_dbtg_dml_tracker_init(tsfi_dbtg_dml_tracker *tracker);
+int tsfi_dbtg_execute_dml(tsfi_dbtg_dml_tracker *tracker, int verb_opcode);
+
 #endif // TSFI_RAMAC_LAYOUT_H

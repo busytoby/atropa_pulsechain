@@ -1395,6 +1395,27 @@ int main(void) {
     assert(addr1.target_page != addr2.target_page || addr1.target_slot != addr2.target_slot);
     printf("  [PASS] DBTG CALC location hashing target page and slot resolver verified.\n");
 
+    // 80. DBTG DML Command Execution Tracker Verification
+    printf("[Test] Verifying DBTG DML Command Tracker...\n");
+    tsfi_dbtg_dml_tracker dml_track;
+    tsfi_dbtg_dml_tracker_init(&dml_track);
+    
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_STORE) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_GET) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_GET) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_MODIFY) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_ERASE) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_CONNECT) == 0);
+    assert(tsfi_dbtg_execute_dml(&dml_track, DBTG_VERB_DISCONNECT) == 0);
+    
+    assert(dml_track.store_count == 1);
+    assert(dml_track.get_count == 2);
+    assert(dml_track.modify_count == 1);
+    assert(dml_track.erase_count == 1);
+    assert(dml_track.connect_count == 1);
+    assert(dml_track.disconnect_count == 1);
+    printf("  [PASS] DBTG DML verb call volume metrics tracking verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

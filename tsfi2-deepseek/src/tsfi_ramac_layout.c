@@ -5811,3 +5811,35 @@ void tsfi_dbtg_resolve_calc(const char *key, uint32_t total_pages, uint32_t slot
     address_out->target_page = hash % total_pages;
     address_out->target_slot = (hash / total_pages) % slots_per_page;
 }
+
+void tsfi_dbtg_dml_tracker_init(tsfi_dbtg_dml_tracker *tracker) {
+    if (!tracker) return;
+    memset(tracker, 0, sizeof(tsfi_dbtg_dml_tracker));
+}
+
+int tsfi_dbtg_execute_dml(tsfi_dbtg_dml_tracker *tracker, int verb_opcode) {
+    if (!tracker) return -1;
+    switch (verb_opcode) {
+        case DBTG_VERB_STORE:
+            tracker->store_count++;
+            break;
+        case DBTG_VERB_GET:
+            tracker->get_count++;
+            break;
+        case DBTG_VERB_MODIFY:
+            tracker->modify_count++;
+            break;
+        case DBTG_VERB_ERASE:
+            tracker->erase_count++;
+            break;
+        case DBTG_VERB_CONNECT:
+            tracker->connect_count++;
+            break;
+        case DBTG_VERB_DISCONNECT:
+            tracker->disconnect_count++;
+            break;
+        default:
+            return -2;
+    }
+    return 0;
+}
