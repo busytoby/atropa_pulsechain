@@ -354,3 +354,27 @@ int tsfi_mf_wessler_dsa_link(uint32_t *current_save_area, uint32_t *next_save_ar
 
     return 0;
 }
+
+int tsfi_mf_cics_translate(const char *cics_statement, char *macro_call_out, int max_len) {
+    if (!cics_statement || !macro_call_out || max_len <= 0) return -1;
+
+    if (strstr(cics_statement, "EXEC CICS SEND TEXT") != NULL) {
+        const char *from_ptr = strstr(cics_statement, "FROM(");
+        const char *len_ptr = strstr(cics_statement, "LENGTH(");
+        char from_val[64] = "MSG";
+        char len_val[16] = "0";
+
+        if (from_ptr) {
+            sscanf(from_ptr, "FROM(%63[^)])", from_val);
+        }
+        if (len_ptr) {
+            sscanf(len_ptr, "LENGTH(%15[^)])", len_val);
+        }
+
+        snprintf(macro_call_out, max_len, "DFHBMS TYPE=SEND,TEXT='%s',LEN=%s", from_val, len_val);
+        return 0;
+    }
+
+    snprintf(macro_call_out, max_len, "DFHECALL");
+    return 0;
+}

@@ -34,5 +34,6 @@ int tsfi_mf_scsi_winchester_handshake(uint32_t keycode, uint8_t *storage_registe
 int tsfi_mf_dat_write_23_node(const char *filepath_dat_bin, uint32_t node_id, const uint8_t *payload, int len);
 int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulator_state);
 int tsfi_mf_wessler_dsa_link(uint32_t *current_save_area, uint32_t *next_save_area);
+int tsfi_mf_cics_translate(const char *cics_statement, char *macro_call_out, int max_len);
 
 #endif // TSFI_MICRO_FOCUS_H

@@ -258,6 +258,14 @@ int main(void) {
     assert(strat_vm.abductive_priority_scale == 10);
     printf("  [PASS] Domain .strategy script parsed and executed successfully.\n");
 
+    // 11. Verify CICS Command Translator
+    printf("[TEST] Validating CICS Command Translator...\n");
+    char cics_out[128] = {0};
+    int cics_res = tsfi_mf_cics_translate("EXEC CICS SEND TEXT FROM(WS-OUT) LENGTH(42)", cics_out, sizeof(cics_out));
+    assert(cics_res == 0);
+    assert(strcmp(cics_out, "DFHBMS TYPE=SEND,TEXT='WS-OUT',LEN=42") == 0);
+    printf("  [PASS] CICS command translation verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
