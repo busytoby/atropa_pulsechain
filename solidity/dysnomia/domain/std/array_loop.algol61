@@ -1,0 +1,12 @@
+begin
+  integer array data[1:5];
+  integer i;
+  integer sum;
+  
+  sum := 0;
+  for i := 1 step 1 until 5 do
+  begin
+    data[i] := i * 10;
+    sum := sum + data[i]
+  end
+end
