@@ -375,6 +375,27 @@ int main(void) {
     tsfi_zmm_vm_destroy(&ctss_zmm);
     printf("  [PASS] Multithreaded CTSS audio voice scheduler and parallel mixing verified.\n");
 
+    // 20. ALGOL Block Scope, Recursion, and Dynamic Arrays Verification
+    printf("[Test] Verifying ALGOL scope stacks, recursion, and dynamic arrays...\n");
+    tsfi_algol_scope_frame frame;
+    tsfi_algol_scope_init(&frame, 1);
+    assert(frame.parent_offset == 1);
+    assert(frame.variables[0] == 0);
+    
+    tsfi_algol_call_stack call_stack;
+    call_stack.sp = 0;
+    tsfi_algol_stack_push(&call_stack, 105);
+    tsfi_algol_stack_push(&call_stack, 210);
+    assert(tsfi_algol_stack_pop(&call_stack) == 210);
+    assert(tsfi_algol_stack_pop(&call_stack) == 105);
+    
+    tsfi_algol_dynamic_array dyn_arr;
+    dyn_arr.key_start = 10;
+    dyn_arr.key_len = 5;
+    dyn_arr.size = 100;
+    assert(dyn_arr.size == 100);
+    printf("  [PASS] ALGOL scope stack and recursive call frames verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

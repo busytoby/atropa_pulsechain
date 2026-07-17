@@ -880,4 +880,25 @@ void tsfi_zmm_ctss_start(tsfi_zmm_ctss_scheduler *sched);
 void tsfi_zmm_ctss_stop(tsfi_zmm_ctss_scheduler *sched);
 void tsfi_zmm_ctss_mix(tsfi_zmm_ctss_scheduler *sched, int *output_mix, int max_len);
 
+// ALGOL VM Extensions for Rails VM (Strategy VM)
+typedef struct {
+    int variables[8]; // Local scope registers
+    int parent_offset;
+} tsfi_algol_scope_frame;
+
+typedef struct {
+    int return_pcs[8]; // Call stack return addresses
+    int sp;
+} tsfi_algol_call_stack;
+
+typedef struct {
+    int key_start;
+    int key_len;
+    int size;
+} tsfi_algol_dynamic_array;
+
+void tsfi_algol_scope_init(tsfi_algol_scope_frame *frame, int parent);
+void tsfi_algol_stack_push(tsfi_algol_call_stack *stack, int pc);
+int tsfi_algol_stack_pop(tsfi_algol_call_stack *stack);
+
 #endif // TSFI_RAMAC_LAYOUT_H

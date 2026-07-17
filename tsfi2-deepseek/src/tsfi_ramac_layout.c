@@ -4022,3 +4022,21 @@ void tsfi_zmm_ctss_mix(tsfi_zmm_ctss_scheduler *sched, int *output_mix, int max_
     }
     pthread_mutex_unlock(&sched->mix_mutex);
 }
+
+void tsfi_algol_scope_init(tsfi_algol_scope_frame *frame, int parent) {
+    if (!frame) return;
+    frame->parent_offset = parent;
+    for (int i = 0; i < 8; i++) {
+        frame->variables[i] = 0;
+    }
+}
+
+void tsfi_algol_stack_push(tsfi_algol_call_stack *stack, int pc) {
+    if (!stack || stack->sp >= 8) return;
+    stack->return_pcs[stack->sp++] = pc;
+}
+
+int tsfi_algol_stack_pop(tsfi_algol_call_stack *stack) {
+    if (!stack || stack->sp <= 0) return -1;
+    return stack->return_pcs[--stack->sp];
+}
