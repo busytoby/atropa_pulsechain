@@ -1353,4 +1353,26 @@ typedef struct {
 void tsfi_mcs_assembly_init(tsfi_mcs_assembly *buf);
 int tsfi_mcs_assemble_next(tsfi_mcs_queue *q, tsfi_mcs_assembly *buf, char *msg_out, size_t max_len);
 
+// COBOL Sub-schema Data Division Mapper
+typedef struct {
+    char subschema_name[32];
+    char record_name[32];
+    char set_name[32];
+    int field_offsets[8];
+    int field_count;
+} tsfi_subschema_map;
+
+void tsfi_subschema_init(tsfi_subschema_map *map, const char *name, const char *rec, const char *set);
+int tsfi_subschema_map_data(const tsfi_subschema_map *map, const uint8_t *db_record_data, int *registers_out);
+
+// DBTG Database Currency Indicators
+typedef struct {
+    int current_run_unit;
+    int current_record_type[8];
+    int current_set_type[8];
+} tsfi_dbtg_currency;
+
+void tsfi_dbtg_currency_init(tsfi_dbtg_currency *cur);
+void tsfi_dbtg_currency_update(tsfi_dbtg_currency *cur, int run_unit, int record_type, int set_type);
+
 #endif // TSFI_RAMAC_LAYOUT_H

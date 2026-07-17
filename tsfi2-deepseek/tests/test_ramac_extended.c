@@ -1226,6 +1226,34 @@ int main(void) {
     tsfi_trie_destroy(trie_root_mq);
     printf("  [PASS] WinchesterMQ MCS structured packet header handshakes verified.\n");
 
+    // 71. COBOL Sub-schema Data Division Mapper Verification
+    printf("[Test] Verifying COBOL Sub-schema mapper...\n");
+    tsfi_subschema_map ss_map;
+    tsfi_subschema_init(&ss_map, "LEDGER-SS", "ENTRY-REC", "LEDGER-SET");
+    ss_map.field_offsets[0] = 0;
+    ss_map.field_offsets[1] = 4;
+    ss_map.field_count = 2;
+    
+    uint8_t record_data[8] = { 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x03, 0xE8 };
+    int registers[8] = {0};
+    int map_res = tsfi_subschema_map_data(&ss_map, record_data, registers);
+    assert(map_res == 0);
+    assert(registers[0] == 5);
+    assert(registers[1] == 1000);
+    printf("  [PASS] COBOL Sub-schema record data byte mapping verified.\n");
+
+    // 72. DBTG Database Currency Indicators Verification
+    printf("[Test] Verifying DBTG database currency tracking...\n");
+    tsfi_dbtg_currency dbtg_cur;
+    tsfi_dbtg_currency_init(&dbtg_cur);
+    assert(dbtg_cur.current_run_unit == -1);
+    
+    tsfi_dbtg_currency_update(&dbtg_cur, 1001, 2, 3);
+    assert(dbtg_cur.current_run_unit == 1001);
+    assert(dbtg_cur.current_record_type[2] == 1001);
+    assert(dbtg_cur.current_set_type[3] == 1001);
+    printf("  [PASS] DBTG Run-unit, Record-Type, and Set-Type currency tracking verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

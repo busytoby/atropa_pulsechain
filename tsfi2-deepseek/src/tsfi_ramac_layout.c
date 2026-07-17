@@ -5634,3 +5634,44 @@ int tsfi_mcs_assemble_next(tsfi_mcs_queue *q, tsfi_mcs_assembly *buf, char *msg_
     }
     return 0;
 }
+
+void tsfi_subschema_init(tsfi_subschema_map *map, const char *name, const char *rec, const char *set) {
+    if (!map) return;
+    memset(map, 0, sizeof(tsfi_subschema_map));
+    if (name) strncpy(map->subschema_name, name, sizeof(map->subschema_name) - 1);
+    if (rec) strncpy(map->record_name, rec, sizeof(map->record_name) - 1);
+    if (set) strncpy(map->set_name, set, sizeof(map->set_name) - 1);
+}
+
+int tsfi_subschema_map_data(const tsfi_subschema_map *map, const uint8_t *db_record_data, int *registers_out) {
+    if (!map || !db_record_data || !registers_out) return -1;
+    for (int i = 0; i < map->field_count && i < 8; i++) {
+        int offset = map->field_offsets[i];
+        uint32_t val = (db_record_data[offset] << 24) |
+                       (db_record_data[offset+1] << 16) |
+                       (db_record_data[offset+2] << 8) |
+                       db_record_data[offset+3];
+        registers_out[i] = (int)val;
+    }
+    return 0;
+}
+
+void tsfi_dbtg_currency_init(tsfi_dbtg_currency *cur) {
+    if (!cur) return;
+    cur->current_run_unit = -1;
+    for (int i = 0; i < 8; i++) {
+        cur->current_record_type[i] = -1;
+        cur->current_set_type[i] = -1;
+    }
+}
+
+void tsfi_dbtg_currency_update(tsfi_dbtg_currency *cur, int run_unit, int record_type, int set_type) {
+    if (!cur) return;
+    cur->current_run_unit = run_unit;
+    if (record_type >= 0 && record_type < 8) {
+        cur->current_record_type[record_type] = run_unit;
+    }
+    if (set_type >= 0 && set_type < 8) {
+        cur->current_set_type[set_type] = run_unit;
+    }
+}
