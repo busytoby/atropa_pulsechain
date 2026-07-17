@@ -2208,6 +2208,30 @@ int main(void) {
     assert(tsfi_vsam_close(&vsam) == 0);
     printf("  [PASS] CMS VSAM indexed KSDS queries and sorting invariants verified.\n");
 
+    // 121. VM/370 Release 3 Virtual Machine Assist (VMA) Verification
+    printf("[Test] Verifying VM/370 Release 3 Virtual Machine Assist (VMA)...\n");
+    tsfi_cp_vma_controller vma;
+    tsfi_cp_vma_init(&vma);
+    assert(vma.assist_enabled == 0);
+    assert(vma.software_intercepts == 0);
+    assert(vma.assisted_instructions == 0);
+    
+    // Execute instruction without VMA active (requires software trap)
+    assert(tsfi_cp_vma_execute(&vma, "SVC") == 1);
+    assert(vma.software_intercepts == 1);
+    assert(vma.assisted_instructions == 0);
+    
+    // Enable VMA assist
+    assert(tsfi_cp_vma_set(&vma, 1) == 0);
+    assert(tsfi_cp_vma_execute(&vma, "SVC") == 0);
+    assert(tsfi_cp_vma_execute(&vma, "LPSW") == 0);
+    assert(vma.software_intercepts == 1);
+    assert(vma.assisted_instructions == 2);
+    
+    // Invalid instruction parameter
+    assert(tsfi_cp_vma_execute(&vma, "BALR") == -1);
+    printf("  [PASS] VM/370 CP virtual machine assist bypass intercepts verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

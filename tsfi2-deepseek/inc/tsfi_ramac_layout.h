@@ -1948,4 +1948,15 @@ int tsfi_vsam_close(tsfi_vsam_file *file);
 int tsfi_vsam_put(tsfi_vsam_file *file, const char *key, const char *val);
 int tsfi_vsam_get(const tsfi_vsam_file *file, const char *key, char *out_val, int max_len);
 
+// VM/370 Release 3 Virtual Machine Assist (VMA) Intercept Controller
+typedef struct {
+    int assist_enabled;
+    int software_intercepts;
+    int assisted_instructions;
+} tsfi_cp_vma_controller;
+
+void tsfi_cp_vma_init(tsfi_cp_vma_controller *ctrl);
+int tsfi_cp_vma_set(tsfi_cp_vma_controller *ctrl, int enable);
+int tsfi_cp_vma_execute(tsfi_cp_vma_controller *ctrl, const char *instr_type);
+
 #endif // TSFI_RAMAC_LAYOUT_H

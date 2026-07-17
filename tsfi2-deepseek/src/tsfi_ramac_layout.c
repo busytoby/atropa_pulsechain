@@ -7028,3 +7028,30 @@ int tsfi_vsam_get(const tsfi_vsam_file *file, const char *key, char *out_val, in
     }
     return -1;
 }
+
+void tsfi_cp_vma_init(tsfi_cp_vma_controller *ctrl) {
+    if (!ctrl) return;
+    ctrl->assist_enabled = 0;
+    ctrl->software_intercepts = 0;
+    ctrl->assisted_instructions = 0;
+}
+
+int tsfi_cp_vma_set(tsfi_cp_vma_controller *ctrl, int enable) {
+    if (!ctrl) return -1;
+    ctrl->assist_enabled = enable;
+    return 0;
+}
+
+int tsfi_cp_vma_execute(tsfi_cp_vma_controller *ctrl, const char *instr_type) {
+    if (!ctrl || !instr_type) return -1;
+    if (strcasecmp(instr_type, "SVC") != 0 && strcasecmp(instr_type, "LPSW") != 0) {
+        return -1;
+    }
+    if (ctrl->assist_enabled) {
+        ctrl->assisted_instructions++;
+        return 0;
+    } else {
+        ctrl->software_intercepts++;
+        return 1;
+    }
+}
