@@ -362,6 +362,36 @@ void draw_ui_elements(VulkanSystem *s) {
         snprintf(buf, sizeof(buf), "INTENSITY : %.2f", s->telem->current_intensity);
         draw_debug_text(s->paint_buffer, 10, 40, buf, color, true);
 
+        if (strncmp(s->telem->last_directive_str, "APPC ", 5) == 0) {
+            int state = 0;
+            int pacing = 0;
+            unsigned int conv_id = 0;
+            char tp_name[64] = {0};
+            sscanf(s->telem->last_directive_str, "APPC TP:%63s ID:%X S:%d P:%d", tp_name, &conv_id, &state, &pacing);
+            
+            uint32_t grid_color = (state == 1) ? 0xFF0000FF : (state == 2) ? 0xFF00FF00 : 0xFFFFFF00;
+            draw_debug_text(s->paint_buffer, 200, 10, "--- APPC VULKAN GRID CONSOLE ---", grid_color, true);
+            
+            char type_buf[128];
+            snprintf(type_buf, sizeof(type_buf), "CONV MODE: %s", (state % 2 == 0) ? "MAPPED (GREEN)" : "BASIC (BLUE)");
+            uint32_t type_color = (state % 2 == 0) ? 0xFF00FF00 : 0xFFFF0000;
+            draw_debug_text(s->paint_buffer, 200, 25, type_buf, type_color, true);
+            
+            char pace_buf[128];
+            snprintf(pace_buf, sizeof(pace_buf), "PACING ENVELOPE: ");
+            for (int p = 0; p < pacing && p < 16; p++) {
+                strcat(pace_buf, "[]");
+            }
+            draw_debug_text(s->paint_buffer, 200, 40, pace_buf, 0xFF00FFFF, true);
+            
+            if (s->telem->recip_symmetry == 0.0f) {
+                draw_debug_text(s->paint_buffer, 200, 55, "WARNING: SECURE CONVERSATION NOT ESTABLISHED", 0xFF0000FF, true);
+                staging_blend_over_avx512(s->paint_buffer, 0, 0, 100, 100, 0xFF0000FF);
+            } else {
+                draw_debug_text(s->paint_buffer, 200, 55, "SECURITY VERIFIED: LEVEL_PROGRAM", 0xFF00FF00, true);
+            }
+        }
+
         // 2. Vision Analysis (Direct Probe)
         uint8_t max_val = tsfi_vision_max_value_raw(s->paint_buffer->data, s->paint_buffer->size);
         snprintf(buf, 256, "VISION MAX: %u", max_val);

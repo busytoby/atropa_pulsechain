@@ -752,6 +752,7 @@ int tsfi_appc_set_conversation_type(tsfi_appc_conversation *conv, int conv_type)
 void cmsctpn(tsfi_appc_conversation *conv, const char *tpn, int *rc);
 void cmectpn(tsfi_appc_conversation *conv, char *tpn_out, int *rc);
 int tsfi_appc_teardown_session(tsfi_appc_conversation *conv, tsfi_sscp_lu_session *sscp);
+void tsfi_appc_update_vulkan_telemetry(tsfi_appc_conversation *conv, void *telem_state);
 
 #define APPC_SEC_NONE    0
 #define APPC_SEC_SAME    1
