@@ -4509,3 +4509,15 @@ int tsfi_rand_tablet_trace(rand_tablet_buffer *buf, int raw_x, int raw_y, int ra
     }
     return res;
 }
+
+int tsfi_ppu_scoreboard_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, const cdc_instruction *inst) {
+    if (!sys || !sb || !inst || ppu_id < 0 || ppu_id >= 10) return -1;
+    if (sb->size >= 8) return -2;
+    
+    tsfi_ppu_assign(sys, ppu_id, 4);
+    sb->queue[sb->size] = *inst;
+    sb->queue[sb->size].inst_id = ppu_id;
+    sb->queue[sb->size].stage = STAGE_ISSUE;
+    sb->size++;
+    return 0;
+}

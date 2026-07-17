@@ -1026,6 +1026,7 @@ typedef struct {
 void tsfi_ppu_init(cdc_ppu_system *sys);
 void tsfi_ppu_assign(cdc_ppu_system *sys, int ppu_id, int bytes);
 int tsfi_ppu_step(cdc_ppu_system *sys);
+int tsfi_ppu_scoreboard_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, const cdc_instruction *inst);
 
 // RAND Tablet Coordinate Interpolator
 typedef struct {

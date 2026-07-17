@@ -679,6 +679,21 @@ int main(void) {
     assert(tb.points[0].y == 200);
     printf("  [PASS] RAND Tablet coordinate translation and trace buffers verified successfully.\n");
 
+    // 39. CDC 6600 PPU-Driven Scoreboard Dispatch Verification
+    printf("[Test] Verifying PPU-driven scoreboard dispatch...\n");
+    cdc_ppu_system multi_ppu;
+    tsfi_ppu_init(&multi_ppu);
+    cdc_scoreboard shared_sb;
+    tsfi_scoreboard_init(&shared_sb);
+    
+    cdc_instruction sample_inst = { 0, "MUL", 3, 0, 1, STAGE_ISSUE };
+    int dispatch_res = tsfi_ppu_scoreboard_dispatch(&multi_ppu, &shared_sb, 5, &sample_inst);
+    assert(dispatch_res == 0);
+    assert(multi_ppu.ppus[5].task_active == 1);
+    assert(shared_sb.size == 1);
+    assert(shared_sb.queue[0].inst_id == 5);
+    printf("  [PASS] Asynchronous PPU scoreboard job offloading verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
