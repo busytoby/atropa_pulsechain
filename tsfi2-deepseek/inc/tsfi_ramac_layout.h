@@ -973,4 +973,17 @@ double tsfi_cdc3600_float_to_double(uint64_t word);
 // DETAB-X Decision-to-COBOL Generator
 int tsfi_detabx_compile(const char *conditions[2], const char *actions[2], const char rules[2][2], char *cobol_out, int max_len);
 
+// Full DETAB-X Decision Engine
+typedef struct {
+    char condition_stubs[4][64];
+    char condition_entries[4][4];
+    char action_stubs[4][64];
+    char action_entries[4][4];
+    int num_conditions;
+    int num_actions;
+    int num_rules;
+} tsfi_detabx_table;
+
+int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]);
+
 #endif // TSFI_RAMAC_LAYOUT_H

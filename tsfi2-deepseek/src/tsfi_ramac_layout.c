@@ -4060,6 +4060,7 @@ void tsfi_algol_matrix_multiply(const tsfi_algol_matrix *a, const tsfi_algol_mat
 
 int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]) {
     if (!expression || !reg_values) return 0;
+    while (*expression == ' ' || *expression == '\t') expression++;
     int rx = -1, ry = -1, rz = -1;
     char op1 = '\0', op2 = '\0';
     
@@ -4254,4 +4255,50 @@ int tsfi_detabx_compile(const char *conditions[2], const char *actions[2], const
         }
     }
     return 0;
+}
+
+int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]) {
+    if (!table || !regs) return -1;
+    
+    int cond_results[4] = {0};
+    for (int i = 0; i < table->num_conditions; i++) {
+        int rx = -1, val = -1;
+        char op[4] = "";
+        if (sscanf(table->condition_stubs[i], "R%d %3s %d", &rx, op, &val) == 3) {
+            int reg_val = (rx >= 0 && rx < 8) ? regs[rx] : 0;
+            if (strcmp(op, ">") == 0) cond_results[i] = (reg_val > val);
+            else if (strcmp(op, "==") == 0) cond_results[i] = (reg_val == val);
+            else if (strcmp(op, "<") == 0) cond_results[i] = (reg_val < val);
+        }
+    }
+    
+    for (int j = 0; j < table->num_rules; j++) {
+        int rule_match = 1;
+        for (int i = 0; i < table->num_conditions; i++) {
+            char entry = table->condition_entries[i][j];
+            if (entry == 'Y' && !cond_results[i]) { rule_match = 0; break; }
+            if (entry == 'N' && cond_results[i]) { rule_match = 0; break; }
+        }
+        
+        if (rule_match) {
+            for (int i = 0; i < table->num_actions; i++) {
+                if (table->action_entries[i][j] == 'X') {
+                    int rx = -1, val = -1;
+                    if (sscanf(table->action_stubs[i], "SET R%d %d", &rx, &val) == 2) {
+                        if (rx >= 0 && rx < 8) regs[rx] = val;
+                    } else if (strncmp(table->action_stubs[i], "COMPUTE ", 8) == 0) {
+                        const char *expr = table->action_stubs[i] + 8;
+                        const char *eq = strchr(expr, '=');
+                        int target_r = -1;
+                        if (eq && sscanf(expr, "R%d", &target_r) == 1) {
+                            int comp_val = tsfi_cobol_compute_eval(eq + 1, regs);
+                            if (target_r >= 0 && target_r < 8) regs[target_r] = comp_val;
+                        }
+                    }
+                }
+            }
+            return j;
+        }
+    }
+    return -1;
 }

@@ -550,6 +550,34 @@ int main(void) {
     assert(strstr(cobol_buf, "IF R1 == 10 THEN") != NULL);
     printf("  [PASS] DETAB-X decision matrix mapping verified successfully.\n");
 
+    // 34. Full DETAB-X Decision Execution Verification
+    printf("[Test] Verifying DETAB-X execution engine...\n");
+    tsfi_detabx_table tbl;
+    strcpy(tbl.condition_stubs[0], "R0 > 5");
+    strcpy(tbl.condition_stubs[1], "R1 == 10");
+    tbl.condition_entries[0][0] = 'Y';
+    tbl.condition_entries[1][0] = 'Y';
+    tbl.condition_entries[0][1] = 'N';
+    tbl.condition_entries[1][1] = 'Y';
+    
+    strcpy(tbl.action_stubs[0], "SET R2 100");
+    strcpy(tbl.action_stubs[1], "COMPUTE R3 = R1 * R2");
+    tbl.action_entries[0][0] = 'X';
+    tbl.action_entries[1][0] = 'X';
+    tbl.action_entries[0][1] = ' ';
+    tbl.action_entries[1][1] = 'X';
+    
+    tbl.num_conditions = 2;
+    tbl.num_actions = 2;
+    tbl.num_rules = 2;
+    
+    int interop_exec_regs[8] = { 7, 10, 0, 0, 0, 0, 0, 0 };
+    int matched_idx = tsfi_detabx_execute(&tbl, interop_exec_regs);
+    assert(matched_idx == 0);
+    assert(interop_exec_regs[2] == 100);
+    assert(interop_exec_regs[3] == 1000);
+    printf("  [PASS] DETAB-X execution engine and state mutations verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
