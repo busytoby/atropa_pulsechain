@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 int tsfi_vtam_serialize_piu(const tsfi_vtam_piu_header *piu, const uint8_t *payload, size_t pay_len, uint8_t *buf_out, size_t *len_out) {
@@ -605,26 +606,89 @@ void tsfi_zvm_gcs_set_vtam(tsfi_zvm_gcs *gcs, int active) {
 int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu) {
     if (!conv) return -1;
     conv->conversation_id = (local_lu << 16) | (partner_lu & 0xFFFF);
-    conv->state = 0;
+    conv->state = 0; // Initial allocated state
     return 0;
 }
 
 int tsfi_appc_send_data(tsfi_appc_conversation *conv, const uint8_t *data, size_t len) {
     if (!conv || !data || len == 0) return -1;
-    conv->state = 1;
+    conv->state = 1; // Transition to SEND state
     return 0;
 }
 
 int tsfi_appc_receive_data(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len_out) {
     if (!conv || !buf || !len_out) return -1;
-    conv->state = 2;
+    conv->state = 2; // Transition to RECEIVE state
     *len_out = 0;
     return 0;
 }
 
 int tsfi_appc_deallocate(tsfi_appc_conversation *conv) {
     if (!conv) return -1;
-    conv->state = 3;
+    conv->state = 3; // DEALLOCATED
+    return 0;
+}
+
+int tsfi_appc_confirm(tsfi_appc_conversation *conv) {
+    if (!conv) return -1;
+    if (conv->state != 1) return -2; // Can only confirm from SEND state
+    conv->state = 4; // Transition to CONFIRM state
+    return 0;
+}
+
+int tsfi_appc_confirmed(tsfi_appc_conversation *conv) {
+    if (!conv) return -1;
+    if (conv->state != 4) return -2; // Can only respond to CONFIRM
+    conv->state = 1; // Return back to SEND state after confirmation
+    return 0;
+}
+
+int tsfi_appc_bridge_winchester(tsfi_appc_conversation *conv, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg) {
+    if (!conv || !scsi_status || !data_reg || !keycode_reg) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+    
+    uint8_t cd[36] = {0};
+    cd[0] = 0x90; // APPC request signature
+    cd[1] = (uint8_t)conv->state;
+    cd[2] = (uint8_t)(conv->conversation_id >> 8);
+    cd[3] = (uint8_t)(conv->conversation_id & 0xFF);
+    
+    uint8_t ret[32];
+    size_t ret_len = 32;
+    if (lau_yul_thunk_execute("WinchesterMQ", cd, 36, ret, &ret_len)) {
+        *scsi_status = ret[0];
+        *data_reg = ret[1];
+        *keycode_reg = ret[2];
+        return 0;
+    }
+    return -3; // Handshake loop failure
+}
+
+int tsfi_appc_bridge_decnet(tsfi_appc_conversation *conv, tsfi_decnet_router *router, uint16_t dest_node) {
+    if (!conv || !router) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    uint16_t next_hop;
+    if (tsfi_decnet_route_packet(router, dest_node, &next_hop) == 0) {
+        conv->state = 2; // Transition to RECEIVE mode waiting for hop response
+        return 0;
+    }
+    return -3; // DECnet routing lookup failure
+}
+
+int tsfi_appc_bridge_terminal(tsfi_appc_conversation *conv, tsfi_ibm3270_terminal *term) {
+    if (!conv || !term) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    
+    char status_msg[64];
+    snprintf(status_msg, sizeof(status_msg), "APPC CONV %08X STATE %d", conv->conversation_id, conv->state);
+    
+    for (size_t i = 0; i < strlen(status_msg); i++) {
+        tsfi_ibm3270_write_char(term, status_msg[i], i);
+    }
+    term->buffer_updated = 1;
     return 0;
 }
 

@@ -710,6 +710,11 @@ int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_l
 int tsfi_appc_send_data(tsfi_appc_conversation *conv, const uint8_t *data, size_t len);
 int tsfi_appc_receive_data(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len_out);
 int tsfi_appc_deallocate(tsfi_appc_conversation *conv);
+int tsfi_appc_confirm(tsfi_appc_conversation *conv);
+int tsfi_appc_confirmed(tsfi_appc_conversation *conv);
+int tsfi_appc_bridge_winchester(tsfi_appc_conversation *conv, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg);
+int tsfi_appc_bridge_decnet(tsfi_appc_conversation *conv, tsfi_decnet_router *router, uint16_t dest_node);
+int tsfi_appc_bridge_terminal(tsfi_appc_conversation *conv, tsfi_ibm3270_terminal *term);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);
