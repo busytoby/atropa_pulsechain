@@ -1,4 +1,5 @@
 #include "tsfi_mainframe_decnet.h"
+#include <stdio.h>
 
 void tsfi_decnet_init(tsfi_decnet_router *router, uint16_t local_id) {
     if (!router) return;
@@ -1073,4 +1074,77 @@ int tsfi_vtam_lu_bridge_coaxial(tsfi_vtam_lu_registry *reg, uint16_t addr, int *
         }
     }
     return -2;
+}
+
+void tsfi_nau_session_init(tsfi_nau_session *sess) {
+    if (!sess) return;
+    sess->sscp_id = 0;
+    sess->pu_id = 0;
+    sess->lu_id = 0;
+    sess->session_active = 0;
+}
+
+int tsfi_nau_session_bind(tsfi_nau_session *sess, uint16_t sscp, uint16_t pu, uint16_t lu) {
+    if (!sess) return -1;
+    sess->sscp_id = sscp;
+    sess->pu_id = pu;
+    sess->lu_id = lu;
+    sess->session_active = 1;
+    return 0;
+}
+
+void tsfi_3705_tg_init(tsfi_3705_tg_reorder *tg) {
+    if (!tg) return;
+    tg->expected_tg_seq = 0;
+    tg->received_tg_seq = 0;
+    tg->out_of_sequence_count = 0;
+}
+
+int tsfi_3705_tg_process(tsfi_3705_tg_reorder *tg, uint16_t seq) {
+    if (!tg) return -1;
+    tg->received_tg_seq = seq;
+    if (seq != tg->expected_tg_seq) {
+        tg->out_of_sequence_count++;
+        tg->expected_tg_seq = seq + 1;
+        return 1;
+    }
+    tg->expected_tg_seq++;
+    return 0;
+}
+
+void tsfi_sna_er_init(tsfi_sna_er_route *er, uint8_t route_num) {
+    if (!er) return;
+    er->route_number = route_num;
+    er->active = 0;
+}
+
+int tsfi_sna_er_activate(tsfi_sna_er_route *er) {
+    if (!er) return -1;
+    er->active = 1;
+    return 0;
+}
+
+int tsfi_sna_er_deactivate(tsfi_sna_er_route *er) {
+    if (!er) return -1;
+    er->active = 0;
+    return 0;
+}
+
+void tsfi_mainframe_connection_status(const tsfi_msnf_cdrm *cdrm, const tsfi_nau_session *nau, const tsfi_sna_er_route *er, char *report_out, size_t max_len) {
+    if (!report_out || max_len == 0) return;
+    snprintf(report_out, max_len,
+             "MAINFRAME CONNECTION STATUS\n"
+             "---------------------------\n"
+             "CDRM Session State: %s (Local: 0x%04X, Remote: 0x%04X)\n"
+             "NAU Session State : %s (SSCP: 0x%04X, PU: 0x%04X, LU: 0x%04X)\n"
+             "Explicit Route State: %s (Route Number: %d)\n",
+             cdrm ? (cdrm->session_state == 2 ? "ACTIVE" : "INACTIVE") : "UNKNOWN",
+             cdrm ? cdrm->local_domain_id : 0,
+             cdrm ? cdrm->remote_domain_id : 0,
+             nau ? (nau->session_active ? "ACTIVE" : "INACTIVE") : "UNKNOWN",
+             nau ? nau->sscp_id : 0,
+             nau ? nau->pu_id : 0,
+             nau ? nau->lu_id : 0,
+             er ? (er->active ? "ACTIVE" : "INACTIVE") : "UNKNOWN",
+             er ? er->route_number : 0);
 }

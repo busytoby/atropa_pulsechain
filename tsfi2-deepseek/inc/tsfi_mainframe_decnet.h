@@ -441,4 +441,38 @@ int tsfi_vtam_lu_registry_route(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8
 int tsfi_vtam_lu_bridge_winchester(tsfi_vtam_lu_registry *reg, uint16_t addr, uint8_t *scsi_status, uint8_t *data_reg, uint8_t *keycode_reg);
 int tsfi_vtam_lu_bridge_coaxial(tsfi_vtam_lu_registry *reg, uint16_t addr, int *coax_phase, int *coax_signal);
 
+// SNA Network Addressable Unit (NAU) Session Manager
+typedef struct {
+    uint16_t sscp_id;
+    uint16_t pu_id;
+    uint16_t lu_id;
+    int session_active;
+} tsfi_nau_session;
+
+void tsfi_nau_session_init(tsfi_nau_session *sess);
+int tsfi_nau_session_bind(tsfi_nau_session *sess, uint16_t sscp, uint16_t pu, uint16_t lu);
+
+// IBM 3705 Transmission Group (TG) Sequence Reordering
+typedef struct {
+    uint16_t expected_tg_seq;
+    uint16_t received_tg_seq;
+    int out_of_sequence_count;
+} tsfi_3705_tg_reorder;
+
+void tsfi_3705_tg_init(tsfi_3705_tg_reorder *tg);
+int tsfi_3705_tg_process(tsfi_3705_tg_reorder *tg, uint16_t seq);
+
+// SNA Path Control Explicit Route Route State
+typedef struct {
+    uint8_t route_number;
+    int active;
+} tsfi_sna_er_route;
+
+void tsfi_sna_er_init(tsfi_sna_er_route *er, uint8_t route_num);
+int tsfi_sna_er_activate(tsfi_sna_er_route *er);
+int tsfi_sna_er_deactivate(tsfi_sna_er_route *er);
+
+// Mainframe Connection Visibility status reporter
+void tsfi_mainframe_connection_status(const tsfi_msnf_cdrm *cdrm, const tsfi_nau_session *nau, const tsfi_sna_er_route *er, char *report_out, size_t max_len);
+
 #endif // TSFI_MAINFRAME_DECNET_H

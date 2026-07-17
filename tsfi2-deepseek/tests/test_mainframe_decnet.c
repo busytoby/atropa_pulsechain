@@ -534,6 +534,61 @@ int main(void) {
     assert(coax_signal == LU_TYPE_FILE);
     printf("  [PASS] Unified LU to coaxial line signal bridge mappings verified.\n");
 
+    // 38. SNA Network Addressable Unit (NAU) Bindings Verification
+    printf("[Test] Verifying SNA NAU Session Bindings...\n");
+    tsfi_nau_session nau_sess;
+    tsfi_nau_session_init(&nau_sess);
+    assert(nau_sess.session_active == 0);
+    assert(tsfi_nau_session_bind(&nau_sess, 0x1000, 0x2000, 0x3000) == 0);
+    assert(nau_sess.sscp_id == 0x1000);
+    assert(nau_sess.pu_id == 0x2000);
+    assert(nau_sess.lu_id == 0x3000);
+    assert(nau_sess.session_active == 1);
+    printf("  [PASS] NAU session establishment verified.\n");
+
+    // 39. IBM 3705 Transmission Group (TG) Sequence Verification
+    printf("[Test] Verifying IBM 3705 TG Sequence Tracking...\n");
+    tsfi_3705_tg_reorder tg;
+    tsfi_3705_tg_init(&tg);
+    assert(tg.expected_tg_seq == 0);
+    
+    // Process sequential packet
+    assert(tsfi_3705_tg_process(&tg, 0) == 0);
+    assert(tg.expected_tg_seq == 1);
+    
+    // Process out-of-sequence packet (skips to sequence 3)
+    assert(tsfi_3705_tg_process(&tg, 3) == 1); // Triggers out of sequence flag
+    assert(tg.out_of_sequence_count == 1);
+    assert(tg.expected_tg_seq == 4);
+    printf("  [PASS] IBM 3705 multi-link transmission sequence checks verified.\n");
+
+    // 40. SNA Explicit Route Activation Verification
+    printf("[Test] Verifying SNA Explicit Route Activation...\n");
+    tsfi_sna_er_route er_route;
+    tsfi_sna_er_init(&er_route, 5);
+    assert(er_route.route_number == 5);
+    assert(er_route.active == 0);
+    
+    assert(tsfi_sna_er_activate(&er_route) == 0);
+    assert(er_route.active == 1);
+    assert(tsfi_sna_er_deactivate(&er_route) == 0);
+    assert(er_route.active == 0);
+    printf("  [PASS] SNA Explicit Route ACT and DEACT protocols verified.\n");
+
+    // 41. Mainframe Connection Status Visibility Verification
+    printf("[Test] Verifying Mainframe Connection Status Visibility...\n");
+    tsfi_msnf_cdrm cdrm_vis;
+    tsfi_msnf_init(&cdrm_vis, 0x1111);
+    assert(tsfi_msnf_establish_session(&cdrm_vis, 0x2222) == 0);
+    
+    char status_report[512];
+    tsfi_mainframe_connection_status(&cdrm_vis, &nau_sess, &er_route, status_report, 512);
+    // Verify visibility strings are contained in the report
+    assert(strstr(status_report, "CDRM Session State: ACTIVE") != NULL);
+    assert(strstr(status_report, "NAU Session State : ACTIVE") != NULL);
+    assert(strstr(status_report, "Explicit Route State: INACTIVE") != NULL);
+    printf("  [PASS] Unified connection visibility reporter verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
