@@ -53,5 +53,6 @@ int tsfi_mf_cics_handle_condition(uint32_t condition_id, uint64_t handler_addr, 
 int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table, int max_conditions, uint64_t *handler_out);
 int tsfi_mf_set_agent_handle(const char *handle);
 const char *tsfi_mf_get_agent_handle(void);
+int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int commarea_len, uint8_t *storage_pool, uint32_t *allocated_offset);
 
 #endif // TSFI_MICRO_FOCUS_H

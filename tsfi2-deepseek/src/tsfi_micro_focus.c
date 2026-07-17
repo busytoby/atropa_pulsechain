@@ -781,3 +781,28 @@ int tsfi_mf_set_agent_handle(const char *handle) {
 const char *tsfi_mf_get_agent_handle(void) {
     return g_active_agent_handle;
 }
+
+int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int commarea_len, uint8_t *storage_pool, uint32_t *allocated_offset) {
+    if (!program_name || !storage_pool || !allocated_offset || commarea_len < 0) return -1;
+
+    uint32_t current_free = *allocated_offset;
+    uint32_t needed_bytes = 12 + (uint32_t)commarea_len;
+
+    uint8_t len_buf[4];
+    tsfi_mf_comp5_encode((int64_t)commarea_len, len_buf, 4);
+    memcpy(storage_pool + current_free, len_buf, 4);
+
+    char prog_pad[8];
+    memset(prog_pad, ' ', 8);
+    int p_len = strlen(program_name);
+    if (p_len > 8) p_len = 8;
+    memcpy(prog_pad, program_name, p_len);
+    memcpy(storage_pool + current_free + 4, prog_pad, 8);
+
+    if (commarea && commarea_len > 0) {
+        memcpy(storage_pool + current_free + 12, commarea, commarea_len);
+    }
+
+    *allocated_offset = current_free + needed_bytes;
+    return (int)(current_free + 12);
+}

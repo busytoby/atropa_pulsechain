@@ -425,6 +425,19 @@ int main(void) {
     assert(strstr(info_buffer, "low-level Yul") != NULL);
     printf("  [PASS] Majordomo List Info Repository verified.\n");
 
+    // 27. Verify CICS Program Control LINK Emulator
+    printf("[TEST] Validating CICS Program Control LINK Emulator...\n");
+    uint8_t link_pool[1024] = {0};
+    uint32_t link_offset = 0;
+    const uint8_t comm_data[6] = "HELLO";
+    int linked_user_offset = tsfi_mf_cics_link("UPDTPROG", comm_data, 6, link_pool, &link_offset);
+    assert(linked_user_offset == 12);
+    assert(link_offset == 18);
+    assert(tsfi_mf_comp5_decode(link_pool, 4, 0) == 6);
+    assert(memcmp(link_pool + 4, "UPDTPROG", 8) == 0);
+    assert(memcmp(link_pool + 12, "HELLO", 5) == 0);
+    printf("  [PASS] CICS Program Control LINK Emulator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
