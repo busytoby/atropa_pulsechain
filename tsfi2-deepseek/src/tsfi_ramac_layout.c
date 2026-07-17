@@ -13,28 +13,21 @@
 
 tsfi_ramac_chs tsfi_ramac_index_to_chs(int index) {
     tsfi_ramac_chs chs;
-    int words_per_sector = RAMAC_WORDS;
-    int words_per_track = RAMAC_SECTORS * words_per_sector;
-    int words_per_cylinder = RAMAC_HEADS * words_per_track;
 
-    chs.cylinder = index / words_per_cylinder;
-    int rem = index % words_per_cylinder;
-    chs.head = rem / words_per_track;
-    rem = rem % words_per_track;
-    chs.sector = rem / words_per_sector;
-    chs.word_offset = rem % words_per_sector;
+    chs.cylinder = index / RAMAC_WORDS_PER_CYLINDER;
+    int rem = index % RAMAC_WORDS_PER_CYLINDER;
+    chs.head = rem / RAMAC_WORDS_PER_TRACK;
+    rem = rem % RAMAC_WORDS_PER_TRACK;
+    chs.sector = rem / RAMAC_WORDS;
+    chs.word_offset = rem % RAMAC_WORDS;
 
     return chs;
 }
 
 int tsfi_ramac_chs_to_index(tsfi_ramac_chs chs) {
-    int words_per_sector = RAMAC_WORDS;
-    int words_per_track = RAMAC_SECTORS * words_per_sector;
-    int words_per_cylinder = RAMAC_HEADS * words_per_track;
-
-    return chs.cylinder * words_per_cylinder +
-           chs.head * words_per_track +
-           chs.sector * words_per_sector +
+    return chs.cylinder * RAMAC_WORDS_PER_CYLINDER +
+           chs.head * RAMAC_WORDS_PER_TRACK +
+           chs.sector * RAMAC_WORDS +
            chs.word_offset;
 }
 

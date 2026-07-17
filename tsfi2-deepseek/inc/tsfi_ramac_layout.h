@@ -9,6 +9,8 @@
 #define RAMAC_HEADS      50  // 50 disks, 1 head per surface
 #define RAMAC_SECTORS    20  // 20 sectors per track
 #define RAMAC_WORDS      8   // 8 words (32 bytes) per sector
+#define RAMAC_WORDS_PER_TRACK (RAMAC_SECTORS * RAMAC_WORDS)
+#define RAMAC_WORDS_PER_CYLINDER (RAMAC_HEADS * RAMAC_WORDS_PER_TRACK)
 
 typedef struct {
     int cylinder;
