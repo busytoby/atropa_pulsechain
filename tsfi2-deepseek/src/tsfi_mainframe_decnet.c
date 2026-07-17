@@ -1390,3 +1390,38 @@ int tsfi_sna_deserialize_th(const uint8_t *buf, size_t len, tsfi_sna_th *th_out)
     }
     return 0;
 }
+
+int tsfi_sna_serialize_rh(const tsfi_sna_rh *rh, uint8_t *buf, size_t *len_out) {
+    if (!rh || !buf || !len_out) return -1;
+    buf[0] = ((rh->ru_category & 0x03) << 6) |
+             ((rh->is_response & 0x01) << 5) |
+             ((rh->format_indicator & 0x01) << 4) |
+             ((rh->sense_data_included & 0x01) << 3);
+    buf[1] = ((rh->begin_chain & 0x01) << 7) |
+             ((rh->end_chain & 0x01) << 6) |
+             ((rh->dr1_indicator & 0x01) << 5) |
+             ((rh->dr2_indicator & 0x01) << 4) |
+             ((rh->exception_response & 0x01) << 3);
+    buf[2] = ((rh->change_direction & 0x01) << 7) |
+             ((rh->begin_bracket & 0x01) << 6) |
+             ((rh->end_bracket & 0x01) << 5);
+    *len_out = 3;
+    return 0;
+}
+
+int tsfi_sna_deserialize_rh(const uint8_t *buf, size_t len, tsfi_sna_rh *rh_out) {
+    if (!buf || !rh_out || len < 3) return -1;
+    rh_out->ru_category = (buf[0] >> 6) & 0x03;
+    rh_out->is_response = (buf[0] >> 5) & 0x01;
+    rh_out->format_indicator = (buf[0] >> 4) & 0x01;
+    rh_out->sense_data_included = (buf[0] >> 3) & 0x01;
+    rh_out->begin_chain = (buf[1] >> 7) & 0x01;
+    rh_out->end_chain = (buf[1] >> 6) & 0x01;
+    rh_out->dr1_indicator = (buf[1] >> 5) & 0x01;
+    rh_out->dr2_indicator = (buf[1] >> 4) & 0x01;
+    rh_out->exception_response = (buf[1] >> 3) & 0x01;
+    rh_out->change_direction = (buf[2] >> 7) & 0x01;
+    rh_out->begin_bracket = (buf[2] >> 6) & 0x01;
+    rh_out->end_bracket = (buf[2] >> 5) & 0x01;
+    return 0;
+}

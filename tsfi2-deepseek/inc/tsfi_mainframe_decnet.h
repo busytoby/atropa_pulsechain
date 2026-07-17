@@ -607,4 +607,23 @@ typedef struct {
 int tsfi_sna_serialize_th(const tsfi_sna_th *th, uint8_t *buf, size_t *len_out);
 int tsfi_sna_deserialize_th(const uint8_t *buf, size_t len, tsfi_sna_th *th_out);
 
+// SNA Request/Response Header (RH) Format
+typedef struct {
+    uint8_t ru_category; // 0=FMD, 1=NC, 2=DFC, 3=SC
+    int is_response;     // 0=Request, 1=Response
+    int format_indicator;
+    int sense_data_included;
+    int begin_chain;
+    int end_chain;
+    int dr1_indicator;
+    int dr2_indicator;
+    int exception_response;
+    int change_direction;
+    int begin_bracket;
+    int end_bracket;
+} tsfi_sna_rh;
+
+int tsfi_sna_serialize_rh(const tsfi_sna_rh *rh, uint8_t *buf, size_t *len_out);
+int tsfi_sna_deserialize_rh(const uint8_t *buf, size_t len, tsfi_sna_rh *rh_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

@@ -786,6 +786,43 @@ int main(void) {
     assert(rx_th.sn == 999);
     printf("  [PASS] Transmission Header FID2 & FID4 serialization verified.\n");
 
+    // 55. SNA Request/Response Header (RH) Verification
+    printf("[Test] Verifying SNA Request/Response Header (RH)...\n");
+    tsfi_sna_rh tx_rh;
+    tx_rh.ru_category = 2; // DFC
+    tx_rh.is_response = 0;
+    tx_rh.format_indicator = 1;
+    tx_rh.sense_data_included = 0;
+    tx_rh.begin_chain = 1;
+    tx_rh.end_chain = 0;
+    tx_rh.dr1_indicator = 1;
+    tx_rh.dr2_indicator = 0;
+    tx_rh.exception_response = 1;
+    tx_rh.change_direction = 1;
+    tx_rh.begin_bracket = 0;
+    tx_rh.end_bracket = 0;
+    
+    uint8_t rh_buf[4];
+    size_t rh_len = 0;
+    assert(tsfi_sna_serialize_rh(&tx_rh, rh_buf, &rh_len) == 0);
+    assert(rh_len == 3);
+    
+    tsfi_sna_rh rx_rh;
+    assert(tsfi_sna_deserialize_rh(rh_buf, rh_len, &rx_rh) == 0);
+    assert(rx_rh.ru_category == 2);
+    assert(rx_rh.is_response == 0);
+    assert(rx_rh.format_indicator == 1);
+    assert(rx_rh.sense_data_included == 0);
+    assert(rx_rh.begin_chain == 1);
+    assert(rx_rh.end_chain == 0);
+    assert(rx_rh.dr1_indicator == 1);
+    assert(rx_rh.dr2_indicator == 0);
+    assert(rx_rh.exception_response == 1);
+    assert(rx_rh.change_direction == 1);
+    assert(rx_rh.begin_bracket == 0);
+    assert(rx_rh.end_bracket == 0);
+    printf("  [PASS] Request/Response Header (RH) serialization verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
