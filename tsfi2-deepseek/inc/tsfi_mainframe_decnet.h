@@ -1334,4 +1334,22 @@ int tsfi_des_rotate_session_key(tsfi_des_key_vault *vault);
 struct VulkanContext;
 int tsfi_cad_map_vulkan_buffer(struct VulkanContext *vk, const tsfi_cad_projection *proj, void *vk_mapped_memory);
 
+// Fault-Tolerant Lockstep State Evaluator
+typedef struct {
+    uint32_t reg_a;
+    uint32_t reg_b;
+    int divergence_detected;
+} tsfi_lockstep_cpu;
+
+int tsfi_lockstep_evaluate(tsfi_lockstep_cpu *cpu, uint32_t state_a, uint32_t state_b);
+
+// Data Dictionary Partition Constraint Auditor
+typedef struct {
+    int column_id;
+    int min_val;
+    int max_val;
+} tsfi_dictionary_constraint;
+
+int tsfi_audit_constraint(const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val);
+
 #endif // TSFI_MAINFRAME_DECNET_H

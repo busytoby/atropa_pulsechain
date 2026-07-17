@@ -2916,3 +2916,28 @@ int tsfi_cad_map_vulkan_buffer(struct VulkanContext *vk, const tsfi_cad_projecti
     }
     return 0;
 }
+
+int tsfi_lockstep_evaluate(tsfi_lockstep_cpu *cpu, uint32_t state_a, uint32_t state_b) {
+    if (!cpu) return -1;
+    cpu->reg_a = state_a;
+    cpu->reg_b = state_b;
+    if (state_a != state_b) {
+        cpu->divergence_detected = 1;
+        return 1;
+    }
+    cpu->divergence_detected = 0;
+    return 0;
+}
+
+int tsfi_audit_constraint(const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val) {
+    if (!constraints || count == 0) return -1;
+    for (size_t i = 0; i < count; i++) {
+        if (constraints[i].column_id == column_id) {
+            if (val < constraints[i].min_val || val > constraints[i].max_val) {
+                return -2;
+            }
+            return 0;
+        }
+    }
+    return -3;
+}

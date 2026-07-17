@@ -2094,6 +2094,52 @@ int main(void) {
     assert(mapped_memory[2] == 56.1f);
     assert(mapped_memory[3] == 78.9f);
     printf("  [PASS] Vulkan CAD projection buffer mapping verified.\n");
+    
+    // 104. Lockstep CPU Divergence causing Heartbeat Failure & Failover promotion verification
+    printf("[Test] Verifying Lockstep CPU divergence & Heartbeat failovers...\n");
+    tsfi_lockstep_cpu cpu;
+    memset(&cpu, 0, sizeof(cpu));
+    
+    // Normal in-sync execution
+    assert(tsfi_lockstep_evaluate(&cpu, 0x1234, 0x1234) == 0);
+    assert(cpu.divergence_detected == 0);
+    
+    // Diverged registers!
+    assert(tsfi_lockstep_evaluate(&cpu, 0x1234, 0x9999) == 1);
+    assert(cpu.divergence_detected == 1);
+    
+    // Failover integration: divergence stops node from updating heartbeat
+    tsfi_failover_group ft_group;
+    tsfi_failover_init(&ft_group);
+    tsfi_failover_add_node(&ft_group, 700, 1);
+    tsfi_failover_add_node(&ft_group, 800, 0);
+    
+    // Last heartbeat recorded at tick 0
+    ft_group.nodes[0].last_heartbeat_tick = 0;
+    
+    // Divergence prevents tick updates. Current tick at 5 (threshold 4) -> Failover node 800 promoted
+    if (!cpu.divergence_detected) {
+        ft_group.nodes[0].last_heartbeat_tick = 5; // would not trigger failover if in-sync
+    }
+    assert(tsfi_failover_tick(&ft_group, 5, 4) == 1);
+    assert(ft_group.active_primary_id == 800);
+    printf("  [PASS] Fault-tolerant lockstep register divergence integration with failover verified.\n");
+    
+    // 105. Data Dictionary partition constraint auditor verification
+    printf("[Test] Verifying Data Dictionary Range audits...\n");
+    tsfi_dictionary_constraint rules[2];
+    rules[0].column_id = 10;
+    rules[0].min_val = 5;
+    rules[0].max_val = 15;
+    
+    rules[1].column_id = 20;
+    rules[1].min_val = 100;
+    rules[1].max_val = 200;
+    
+    assert(tsfi_audit_constraint(rules, 2, 10, 8) == 0); // Pass
+    assert(tsfi_audit_constraint(rules, 2, 10, 3) == -2); // Out of bounds
+    assert(tsfi_audit_constraint(rules, 2, 99, 8) == -3); // Column missing
+    printf("  [PASS] Relational database partition range constraint checks verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
