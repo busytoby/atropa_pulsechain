@@ -987,3 +987,11 @@ int tsfi_mf_pmg_log_trajectory(uint8_t missile_id, float vx, float vy, char *que
     snprintf(msg, sizeof(msg), "MISSILE %d: VX=%.2f, VY=%.2f", missile_id, vx, vy);
     return tsfi_mf_cics_writeq_td("TRAJ", msg, queue_pool, queue_count, max_entries);
 }
+
+int tsfi_mf_cics_isc_route(const char *target_system, const char *transaction_id, const uint8_t *payload, int payload_len, char *route_log_buffer, int max_log_len) {
+    if (!target_system || !transaction_id || !route_log_buffer || max_log_len <= 0) return -1;
+    (void)payload;
+
+    snprintf(route_log_buffer, max_log_len, "ISC_ROUTE: TARGET=%s | TRANS=%s | PAYLOAD_LEN=%d", target_system, transaction_id, payload_len);
+    return 0;
+}

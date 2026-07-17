@@ -530,6 +530,17 @@ int main(void) {
     assert(strcmp(traj_pool, "[TRAJ] MISSILE 3: VX=1.25, VY=-0.75") == 0);
     printf("  [PASS] PMG Ballistics Trajectory Logger verified.\n");
 
+    // 37. Verify CICS Intersystem Communication (ISC) PMG Router
+    printf("[TEST] Validating CICS Intersystem Communication PMG Router...\n");
+    char route_log[128] = {0};
+    uint8_t pmg_data[4] = {0x01, 0x02, 0x03, 0x04};
+    int route_res = tsfi_mf_cics_isc_route("REMTSYS", "PMGT", pmg_data, 4, route_log, sizeof(route_log));
+    assert(route_res == 0);
+    assert(strstr(route_log, "TARGET=REMTSYS") != NULL);
+    assert(strstr(route_log, "TRANS=PMGT") != NULL);
+    assert(strstr(route_log, "PAYLOAD_LEN=4") != NULL);
+    printf("  [PASS] CICS Intersystem Communication PMG Router verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
