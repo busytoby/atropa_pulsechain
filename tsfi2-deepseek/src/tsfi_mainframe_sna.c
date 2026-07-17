@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "tsfi_types.h"
 
 
 int tsfi_vtam_serialize_piu(const tsfi_vtam_piu_header *piu, const uint8_t *payload, size_t pay_len, uint8_t *buf_out, size_t *len_out) {
@@ -1026,5 +1027,16 @@ int tsfi_appc_teardown_session(tsfi_appc_conversation *conv, tsfi_sscp_lu_sessio
     if (!conv || !sscp) return -1;
     conv->state = 3;
     return tsfi_sscp_lu_control(sscp, 0x0F);
+}
+
+void tsfi_appc_update_vulkan_telemetry(tsfi_appc_conversation *conv, void *telem_state) {
+    if (!conv || !telem_state) return;
+    LauTelemetryState *telem = (LauTelemetryState *)telem_state;
+    snprintf(telem->last_directive_str, sizeof(telem->last_directive_str),
+             "APPC TP:%.20s ID:%08X S:%d P:%d",
+             conv->tp_name[0] ? conv->tp_name : "NONE",
+             conv->conversation_id, conv->state, conv->pacing_window);
+    telem->current_intensity = (float)conv->state / 4.0f;
+    telem->recip_symmetry = (float)conv->pacing_window / 16.0f;
 }
 
