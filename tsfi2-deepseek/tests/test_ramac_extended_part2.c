@@ -2713,6 +2713,30 @@ int main(void) {
     assert(tsfi_decnet_age_routes(&aging_router) == 1);
     printf("  [PASS] DECnet route cache expiration aging verified.\n");
 
+    // 216. AFIPS Workload Benchmark and Exam Certification Verification
+    printf("[Test] Verifying AFIPS Workload Benchmark and Exam Certification...\n");
+    tsfi_afips_ncc_workload wl;
+    wl.transaction_count = 100;
+    wl.lock_contentions = 5;
+    wl.read_operations = 400;
+    wl.write_operations = 100;
+    
+    float throughput = 0.0f;
+    float contention = 0.0f;
+    assert(tsfi_afips_audit_ncc(&wl, &throughput, &contention) == 0);
+    assert(throughput == 5.0f);
+    assert(contention == 0.05f);
+    
+    tsfi_afips_exam_grades grades;
+    grades.systems_engineering_score = 85;
+    grades.operations_proficiency_score = 78;
+    grades.ethical_conduct_confirmed = 1;
+    assert(tsfi_afips_evaluate_certification(&grades) == 0);
+    
+    grades.systems_engineering_score = 60;
+    assert(tsfi_afips_evaluate_certification(&grades) == -2);
+    printf("  [PASS] AFIPS workload metrics and examiner certifications verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
     trie_root_mq = NULL;

@@ -308,6 +308,25 @@ int tsfi_fips102_certify_report(const uint8_t *report, size_t report_len, const 
 // Keyed-Hash Message Authentication Code (FIPS 198-1)
 int tsfi_fips198_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *data, size_t data_len, uint8_t *mac_out);
 
+// AFIPS NCC Database Workload Benchmark
+typedef struct {
+    uint32_t transaction_count;
+    uint32_t lock_contentions;
+    uint32_t read_operations;
+    uint32_t write_operations;
+} tsfi_afips_ncc_workload;
+
+int tsfi_afips_audit_ncc(const tsfi_afips_ncc_workload *wl, float *throughput_out, float *contention_rate_out);
+
+// AFIPS Certification Examination Evaluator
+typedef struct {
+    int systems_engineering_score;
+    int operations_proficiency_score;
+    int ethical_conduct_confirmed;
+} tsfi_afips_exam_grades;
+
+int tsfi_afips_evaluate_certification(const tsfi_afips_exam_grades *grades);
+
 #include "tsfi_mainframe_decnet.h"
 
 #endif // TSFI_MAINFRAME_FIPS_H

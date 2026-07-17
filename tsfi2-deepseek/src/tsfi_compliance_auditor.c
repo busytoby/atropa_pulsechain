@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
         printf("  %s --risk-ale <val> <fq> <imp> Calculate Annual Loss Expectancy (FIPS 31)\n", argv[0]);
         printf("  %s --software-summary <t> <st> Validate program registry status (FIPS 30)\n", argv[0]);
         printf("  %s --selftest                  Execute FIPS 140-3 Cryptographic Self-Tests\n", argv[0]);
+        printf("  %s --afips-ncc <tx> <lck> <rd> <wr> Audit AFIPS NCC workload\n", argv[0]);
+        printf("  %s --afips-exam <eng> <ops> <eth> Evaluate AFIPS exam certification\n", argv[0]);
         return 0;
     }
 
@@ -252,6 +254,34 @@ int main(int argc, char **argv) {
             printf("RESULT: ALL SELF-TESTS PASSED\n");
         } else {
             printf("RESULT: INTEGRITY FAILURE (Error Code: %d)\n", res);
+        }
+    } else if (strcmp(argv[1], "--afips-ncc") == 0 && argc >= 6) {
+        tsfi_afips_ncc_workload wl;
+        wl.transaction_count = atoi(argv[2]);
+        wl.lock_contentions = atoi(argv[3]);
+        wl.read_operations = atoi(argv[4]);
+        wl.write_operations = atoi(argv[5]);
+        float throughput = 0.0f;
+        float contention = 0.0f;
+        int res = tsfi_afips_audit_ncc(&wl, &throughput, &contention);
+        printf("[AFIPS NCC AUDIT] Transactions: %u\n", wl.transaction_count);
+        if (res == 0) {
+            printf("RESULT: THROUGHPUT: %.2f, CONTENTION: %.2f\n", throughput, contention);
+        } else {
+            printf("RESULT: AUDIT FAILURE\n");
+        }
+    } else if (strcmp(argv[1], "--afips-exam") == 0 && argc >= 5) {
+        tsfi_afips_exam_grades grades;
+        grades.systems_engineering_score = atoi(argv[2]);
+        grades.operations_proficiency_score = atoi(argv[3]);
+        grades.ethical_conduct_confirmed = atoi(argv[4]);
+        int res = tsfi_afips_evaluate_certification(&grades);
+        printf("[AFIPS EXAM AUDIT] Engineering Score: %d, Operations Score: %d\n", 
+               grades.systems_engineering_score, grades.operations_proficiency_score);
+        if (res == 0) {
+            printf("RESULT: CERTIFICATION GRANTED\n");
+        } else {
+            printf("RESULT: CERTIFICATION DENIED\n");
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");

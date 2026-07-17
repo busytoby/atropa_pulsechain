@@ -1705,4 +1705,26 @@ int tsfi_fips198_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *
     return 0;
 }
 
+int tsfi_afips_audit_ncc(const tsfi_afips_ncc_workload *wl, float *throughput_out, float *contention_rate_out) {
+    if (!wl || !throughput_out || !contention_rate_out) return -1;
+    if (wl->transaction_count == 0) {
+        *throughput_out = 0.0f;
+        *contention_rate_out = 0.0f;
+        return 0;
+    }
+    *throughput_out = (float)(wl->read_operations + wl->write_operations) / (float)wl->transaction_count;
+    *contention_rate_out = (float)wl->lock_contentions / (float)wl->transaction_count;
+    return 0;
+}
+
+int tsfi_afips_evaluate_certification(const tsfi_afips_exam_grades *grades) {
+    if (!grades) return -1;
+    if (grades->systems_engineering_score >= 70 &&
+        grades->operations_proficiency_score >= 70 &&
+        grades->ethical_conduct_confirmed == 1) {
+        return 0;
+    }
+    return -2;
+}
+
 // DECnet and SDLC implementations relocated to tsfi_mainframe_decnet.c
