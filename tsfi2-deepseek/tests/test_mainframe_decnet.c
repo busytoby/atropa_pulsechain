@@ -744,7 +744,19 @@ int main(void) {
     assert(rx_cmd.command_code == SNA_CMD_BIND);
     assert(rx_cmd.local_addr == 0x1234);
     assert(rx_cmd.remote_addr == 0x5678);
-    printf("  [PASS] BIND/UNBIND command packet codecs verified.\n");
+    
+    // Validate SDT & CLEAR commands
+    tx_cmd.command_code = SNA_CMD_SDT;
+    assert(tsfi_sna_serialize_session_cmd(&tx_cmd, cmd_buf, &cmd_len) == 0);
+    assert(tsfi_sna_deserialize_session_cmd(cmd_buf, cmd_len, &rx_cmd) == 0);
+    assert(rx_cmd.command_code == SNA_CMD_SDT);
+
+    tx_cmd.command_code = SNA_CMD_CLEAR;
+    assert(tsfi_sna_serialize_session_cmd(&tx_cmd, cmd_buf, &cmd_len) == 0);
+    assert(tsfi_sna_deserialize_session_cmd(cmd_buf, cmd_len, &rx_cmd) == 0);
+    assert(rx_cmd.command_code == SNA_CMD_CLEAR);
+
+    printf("  [PASS] BIND/UNBIND/SDT/CLEAR command packet codecs verified.\n");
 
     // 53. SNA Session Key Rotation Verification
     printf("[Test] Verifying SNA Session Key Rotations...\n");

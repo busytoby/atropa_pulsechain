@@ -570,9 +570,8 @@ int tsfi_sna_response_parse(tsfi_sna_response_tracker *tracker, uint8_t rh_byte)
 // SNA PIU Block Check Character (BCC)
 uint8_t tsfi_sna_piu_bcc(const uint8_t *data, size_t len);
 
-// SNA BIND/UNBIND Command Codec
-#define SNA_CMD_BIND   0x31
-#define SNA_CMD_UNBIND 0x32
+// SNA CLEAR Command
+#define SNA_CMD_CLEAR  0xA1
 
 typedef struct {
     uint8_t command_code;
