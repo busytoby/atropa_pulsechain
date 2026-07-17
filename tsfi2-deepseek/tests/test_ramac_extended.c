@@ -2303,6 +2303,30 @@ int main(void) {
     assert(tsfi_cp_mss_query(&mss, "MSSGRP01", owner, sizeof(owner)) == 0);
     printf("  [PASS] VM/370 CP mass storage sharing mount locks verified.\n");
 
+    // 125. VM/370 Release 4 CP IUCV Multi-Path Connector Verification
+    printf("[Test] Verifying VM/370 Release 4 CP IUCV Multi-Path Connector...\n");
+    tsfi_cp_iucv_multipath iucv_mp;
+    tsfi_cp_iucv_mp_init(&iucv_mp);
+    assert(iucv_mp.count == 0);
+    
+    // Connect multiplexed paths
+    assert(tsfi_cp_iucv_mp_connect(&iucv_mp, 10, "RSCS") == 0);
+    assert(tsfi_cp_iucv_mp_connect(&iucv_mp, 20, "CMSVM") == 0);
+    assert(iucv_mp.count == 2);
+    
+    // Send message via path 10
+    char msg_target[16];
+    assert(tsfi_cp_iucv_mp_send(&iucv_mp, 10, "SYSMSG", msg_target) == 0);
+    assert(strcmp(msg_target, "RSCS") == 0);
+    
+    // Disconnect path and send should fail
+    assert(tsfi_cp_iucv_mp_disconnect(&iucv_mp, 10) == 0);
+    assert(tsfi_cp_iucv_mp_send(&iucv_mp, 10, "SYSMSG", msg_target) == -2);
+    
+    // Send on unknown path should fail
+    assert(tsfi_cp_iucv_mp_send(&iucv_mp, 30, "SYSMSG", msg_target) == -1);
+    printf("  [PASS] VM/370 CP IUCV multi-path connection resolution verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

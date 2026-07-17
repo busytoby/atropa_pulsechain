@@ -2006,4 +2006,22 @@ int tsfi_cp_mss_mount(tsfi_cp_mss_manager *mgr, const char *group_name, const ch
 int tsfi_cp_mss_unmount(tsfi_cp_mss_manager *mgr, const char *group_name, const char *vm_name);
 int tsfi_cp_mss_query(const tsfi_cp_mss_manager *mgr, const char *group_name, char *out_owner, int max_len);
 
+// VM/370 Release 4 CP IUCV Multi-Path Connector
+typedef struct {
+    int path_id;
+    char target_userid[16];
+    int is_active;
+} tsfi_cp_iucv_path;
+
+#define MAX_IUCV_PATHS 8
+typedef struct {
+    tsfi_cp_iucv_path paths[MAX_IUCV_PATHS];
+    int count;
+} tsfi_cp_iucv_multipath;
+
+void tsfi_cp_iucv_mp_init(tsfi_cp_iucv_multipath *mp);
+int tsfi_cp_iucv_mp_connect(tsfi_cp_iucv_multipath *mp, int path_id, const char *target);
+int tsfi_cp_iucv_mp_send(const tsfi_cp_iucv_multipath *mp, int path_id, const char *msg, char *out_target);
+int tsfi_cp_iucv_mp_disconnect(tsfi_cp_iucv_multipath *mp, int path_id);
+
 #endif // TSFI_RAMAC_LAYOUT_H

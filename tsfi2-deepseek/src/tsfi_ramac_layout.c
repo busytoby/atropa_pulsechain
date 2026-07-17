@@ -7203,3 +7203,55 @@ int tsfi_cp_mss_query(const tsfi_cp_mss_manager *mgr, const char *group_name, ch
     }
     return -1;
 }
+
+void tsfi_cp_iucv_mp_init(tsfi_cp_iucv_multipath *mp) {
+    if (!mp) return;
+    memset(mp, 0, sizeof(tsfi_cp_iucv_multipath));
+}
+
+int tsfi_cp_iucv_mp_connect(tsfi_cp_iucv_multipath *mp, int path_id, const char *target) {
+    if (!mp || !target || path_id < 0) return -1;
+    
+    for (int i = 0; i < mp->count; i++) {
+        if (mp->paths[i].path_id == path_id) {
+            strncpy(mp->paths[i].target_userid, target, sizeof(mp->paths[i].target_userid) - 1);
+            mp->paths[i].target_userid[sizeof(mp->paths[i].target_userid) - 1] = '\0';
+            mp->paths[i].is_active = 1;
+            return 0;
+        }
+    }
+    
+    if (mp->count >= MAX_IUCV_PATHS) return -1;
+    mp->paths[mp->count].path_id = path_id;
+    strncpy(mp->paths[mp->count].target_userid, target, sizeof(mp->paths[mp->count].target_userid) - 1);
+    mp->paths[mp->count].target_userid[sizeof(mp->paths[mp->count].target_userid) - 1] = '\0';
+    mp->paths[mp->count].is_active = 1;
+    mp->count++;
+    return 0;
+}
+
+int tsfi_cp_iucv_mp_send(const tsfi_cp_iucv_multipath *mp, int path_id, const char *msg, char *out_target) {
+    if (!mp || !msg || !out_target) return -1;
+    for (int i = 0; i < mp->count; i++) {
+        if (mp->paths[i].path_id == path_id) {
+            if (!mp->paths[i].is_active) {
+                return -2;
+            }
+            strncpy(out_target, mp->paths[i].target_userid, 15);
+            out_target[15] = '\0';
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_iucv_mp_disconnect(tsfi_cp_iucv_multipath *mp, int path_id) {
+    if (!mp) return -1;
+    for (int i = 0; i < mp->count; i++) {
+        if (mp->paths[i].path_id == path_id) {
+            mp->paths[i].is_active = 0;
+            return 0;
+        }
+    }
+    return -1;
+}
