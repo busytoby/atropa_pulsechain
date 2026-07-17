@@ -1418,6 +1418,54 @@ int main(void) {
     assert(tsfi_rb_23_insert(&tree_node, 1005, 5) == -2);
     printf("  [PASS] 2-3 Tree node insertion and split triggers verified.\n");
 
+    // 78. Gibson Mix, CAD vector transform, and relational query optimizer verification
+    printf("[Test] Verifying Gibson Mix, CAD, and Optimizer...\n");
+    
+    // Gibson Mix
+    tsfi_gibson_mix_input gibson;
+    gibson.load_store_count = 1000;
+    gibson.add_sub_count = 500;
+    gibson.multiply_count = 100;
+    gibson.divide_count = 20;
+    gibson.branch_count = 300;
+    gibson.logic_count = 80;
+    
+    float mips = tsfi_gibson_mix_calculate_mips(&gibson);
+    assert(mips > 0.0f);
+    
+    // CAD/CAM Vector Pipeline
+    tsfi_cad_line line_in;
+    line_in.start.x = 10.0f;
+    line_in.start.y = 20.0f;
+    line_in.end.x = 30.0f;
+    line_in.end.y = 40.0f;
+    line_in.color = 2;
+    
+    tsfi_cad_line line_out;
+    tsfi_cad_transform_line(&line_in, 2.0f, 5.0f, -5.0f, &line_out);
+    assert(line_out.start.x == 25.0f);
+    assert(line_out.start.y == 35.0f);
+    assert(line_out.end.x == 65.0f);
+    assert(line_out.end.y == 75.0f);
+    assert(line_out.color == 2);
+    
+    // Relational Query Optimizer cost model
+    tsfi_optimizer_input opt;
+    opt.total_pages = 1000;
+    opt.total_tuples = 10000;
+    opt.selectivity = 0.05f;
+    
+    // Sequential Scan
+    opt.has_index = 0;
+    float seq_cost = tsfi_optimizer_estimate_cost(&opt);
+    assert(seq_cost == 1000.0f);
+    
+    // Index Scan
+    opt.has_index = 1;
+    float index_cost = tsfi_optimizer_estimate_cost(&opt);
+    assert(index_cost == 51.0f);
+    printf("  [PASS] Gibson Mix, CAD vector pipeline, and relational query optimizer verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -2226,3 +2226,43 @@ int tsfi_rb_23_insert(tsfi_rb_23_node *node, uint32_t swift_key, uint32_t cyclad
     }
     return -2;
 }
+
+float tsfi_gibson_mix_calculate_mips(const tsfi_gibson_mix_input *input) {
+    if (!input) return 0.0f;
+    double total_time_us = 
+        input->load_store_count * 1.5 +
+        input->add_sub_count * 1.0 +
+        input->multiply_count * 5.0 +
+        input->divide_count * 12.0 +
+        input->branch_count * 2.0 +
+        input->logic_count * 0.8;
+    
+    double total_instructions = 
+        input->load_store_count +
+        input->add_sub_count +
+        input->multiply_count +
+        input->divide_count +
+        input->branch_count +
+        input->logic_count;
+
+    if (total_time_us == 0.0) return 0.0f;
+    return (float)(total_instructions / total_time_us);
+}
+
+void tsfi_cad_transform_line(const tsfi_cad_line *line_in, float scale, float tx, float ty, tsfi_cad_line *line_out) {
+    if (!line_in || !line_out) return;
+    line_out->start.x = line_in->start.x * scale + tx;
+    line_out->start.y = line_in->start.y * scale + ty;
+    line_out->end.x = line_in->end.x * scale + tx;
+    line_out->end.y = line_in->end.y * scale + ty;
+    line_out->color = line_in->color;
+}
+
+float tsfi_optimizer_estimate_cost(const tsfi_optimizer_input *input) {
+    if (!input) return -1.0f;
+    if (input->has_index) {
+        return 1.0f + (float)input->total_pages * input->selectivity;
+    } else {
+        return (float)input->total_pages;
+    }
+}

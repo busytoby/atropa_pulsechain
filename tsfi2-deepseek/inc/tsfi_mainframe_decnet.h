@@ -1002,4 +1002,40 @@ typedef struct {
 void tsfi_rb_23_init(tsfi_rb_23_node *node);
 int tsfi_rb_23_insert(tsfi_rb_23_node *node, uint32_t swift_key, uint32_t cyclades_data);
 
+// Gibson Mix performance tracker
+typedef struct {
+    uint32_t load_store_count;
+    uint32_t add_sub_count;
+    uint32_t multiply_count;
+    uint32_t divide_count;
+    uint32_t branch_count;
+    uint32_t logic_count;
+} tsfi_gibson_mix_input;
+
+float tsfi_gibson_mix_calculate_mips(const tsfi_gibson_mix_input *input);
+
+// CAD/CAM vector pipeline
+typedef struct {
+    float x;
+    float y;
+} tsfi_cad_point;
+
+typedef struct {
+    tsfi_cad_point start;
+    tsfi_cad_point end;
+    int color;
+} tsfi_cad_line;
+
+void tsfi_cad_transform_line(const tsfi_cad_line *line_in, float scale, float tx, float ty, tsfi_cad_line *line_out);
+
+// Relational query optimizer cost model
+typedef struct {
+    uint32_t total_pages;
+    uint32_t total_tuples;
+    float selectivity;
+    int has_index;
+} tsfi_optimizer_input;
+
+float tsfi_optimizer_estimate_cost(const tsfi_optimizer_input *input);
+
 #endif // TSFI_MAINFRAME_DECNET_H
