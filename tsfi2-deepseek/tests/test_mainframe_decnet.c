@@ -583,11 +583,57 @@ int main(void) {
     
     char status_report[512];
     tsfi_mainframe_connection_status(&cdrm_vis, &nau_sess, &er_route, status_report, 512);
-    // Verify visibility strings are contained in the report
     assert(strstr(status_report, "CDRM Session State: ACTIVE") != NULL);
     assert(strstr(status_report, "NAU Session State : ACTIVE") != NULL);
     assert(strstr(status_report, "Explicit Route State: INACTIVE") != NULL);
     printf("  [PASS] Unified connection visibility reporter verified.\n");
+
+    // 42. SNA LU-LU Stage Pacing Verification
+    printf("[Test] Verifying SNA LU-LU Stage Pacing...\n");
+    tsfi_sna_stage_pacing stage_p;
+    tsfi_sna_stage_pacing_init(&stage_p, 2);
+    assert(stage_p.credits_left == 2);
+    
+    assert(tsfi_sna_stage_pacing_consume(&stage_p) == 0);
+    assert(tsfi_sna_stage_pacing_consume(&stage_p) == 0);
+    // Out of credits
+    assert(tsfi_sna_stage_pacing_consume(&stage_p) == -2);
+    
+    // Recovery response restores credit pool
+    tsfi_sna_stage_pacing_response(&stage_p);
+    assert(stage_p.credits_left == 2);
+    printf("  [PASS] SNA LU stage-by-stage flow pacing verified.\n");
+
+    // 43. SNA Function Management Header (FMH) Codec Verification
+    printf("[Test] Verifying SNA FMH Codecs...\n");
+    tsfi_sna_fmh tx_fmh;
+    tx_fmh.fmh_type = 0x05; // FMH-5 Transaction Attach
+    tx_fmh.fmh_len = 0x04;
+    tx_fmh.destination_id = 0x8899;
+    
+    uint8_t fmh_buf[16];
+    size_t fmh_len = 0;
+    assert(tsfi_sna_serialize_fmh(&tx_fmh, fmh_buf, &fmh_len) == 0);
+    assert(fmh_len == 4);
+    
+    tsfi_sna_fmh rx_fmh;
+    assert(tsfi_sna_deserialize_fmh(fmh_buf, fmh_len, &rx_fmh) == 0);
+    assert(rx_fmh.fmh_type == 0x05);
+    assert(rx_fmh.fmh_len == 0x04);
+    assert(rx_fmh.destination_id == 0x8899);
+    printf("  [PASS] SNA FMH-5 attach header codecs verified.\n");
+
+    // 44. SNA SSCP-LU Service Control Session Verification
+    printf("[Test] Verifying SNA SSCP-LU Session Controls...\n");
+    tsfi_sscp_lu_session sscp_lu;
+    tsfi_sscp_lu_init(&sscp_lu);
+    assert(sscp_lu.lu_active == 0);
+    
+    assert(tsfi_sscp_lu_control(&sscp_lu, SNA_CMD_ACTLU) == 0);
+    assert(sscp_lu.lu_active == 1);
+    assert(tsfi_sscp_lu_control(&sscp_lu, SNA_CMD_DACTLU) == 0);
+    assert(sscp_lu.lu_active == 0);
+    printf("  [PASS] SSCP ACTLU and DACTLU control handshakes verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");

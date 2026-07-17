@@ -475,4 +475,35 @@ int tsfi_sna_er_deactivate(tsfi_sna_er_route *er);
 // Mainframe Connection Visibility status reporter
 void tsfi_mainframe_connection_status(const tsfi_msnf_cdrm *cdrm, const tsfi_nau_session *nau, const tsfi_sna_er_route *er, char *report_out, size_t max_len);
 
+// SNA LU-LU Stage Pacing
+typedef struct {
+    int stage_window;
+    int credits_left;
+} tsfi_sna_stage_pacing;
+
+void tsfi_sna_stage_pacing_init(tsfi_sna_stage_pacing *pacing, int window);
+int tsfi_sna_stage_pacing_consume(tsfi_sna_stage_pacing *pacing);
+void tsfi_sna_stage_pacing_response(tsfi_sna_stage_pacing *pacing);
+
+// SNA Function Management Header (FMH) Codec
+typedef struct {
+    uint8_t fmh_type;
+    uint8_t fmh_len;
+    uint16_t destination_id;
+} tsfi_sna_fmh;
+
+int tsfi_sna_serialize_fmh(const tsfi_sna_fmh *fmh, uint8_t *buf, size_t *len_out);
+int tsfi_sna_deserialize_fmh(const uint8_t *buf, size_t len, tsfi_sna_fmh *fmh_out);
+
+// SNA SSCP-LU Service Control Sessions
+typedef struct {
+    int lu_active;
+} tsfi_sscp_lu_session;
+
+void tsfi_sscp_lu_init(tsfi_sscp_lu_session *sess);
+int tsfi_sscp_lu_control(tsfi_sscp_lu_session *sess, uint8_t cmd);
+
+#define SNA_CMD_ACTLU  0x0E
+#define SNA_CMD_DACTLU 0x0F
+
 #endif // TSFI_MAINFRAME_DECNET_H

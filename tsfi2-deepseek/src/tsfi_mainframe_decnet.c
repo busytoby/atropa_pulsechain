@@ -1148,3 +1148,56 @@ void tsfi_mainframe_connection_status(const tsfi_msnf_cdrm *cdrm, const tsfi_nau
              er ? (er->active ? "ACTIVE" : "INACTIVE") : "UNKNOWN",
              er ? er->route_number : 0);
 }
+
+void tsfi_sna_stage_pacing_init(tsfi_sna_stage_pacing *pacing, int window) {
+    if (!pacing) return;
+    pacing->stage_window = window;
+    pacing->credits_left = window;
+}
+
+int tsfi_sna_stage_pacing_consume(tsfi_sna_stage_pacing *pacing) {
+    if (!pacing) return -1;
+    if (pacing->credits_left <= 0) return -2;
+    pacing->credits_left--;
+    return 0;
+}
+
+void tsfi_sna_stage_pacing_response(tsfi_sna_stage_pacing *pacing) {
+    if (!pacing) return;
+    pacing->credits_left = pacing->stage_window;
+}
+
+int tsfi_sna_serialize_fmh(const tsfi_sna_fmh *fmh, uint8_t *buf, size_t *len_out) {
+    if (!fmh || !buf || !len_out) return -1;
+    buf[0] = fmh->fmh_type;
+    buf[1] = fmh->fmh_len;
+    buf[2] = (fmh->destination_id >> 8) & 0xFF;
+    buf[3] = fmh->destination_id & 0xFF;
+    *len_out = 4;
+    return 0;
+}
+
+int tsfi_sna_deserialize_fmh(const uint8_t *buf, size_t len, tsfi_sna_fmh *fmh_out) {
+    if (!buf || !fmh_out || len < 4) return -1;
+    fmh_out->fmh_type = buf[0];
+    fmh_out->fmh_len = buf[1];
+    fmh_out->destination_id = (buf[2] << 8) | buf[3];
+    return 0;
+}
+
+void tsfi_sscp_lu_init(tsfi_sscp_lu_session *sess) {
+    if (!sess) return;
+    sess->lu_active = 0;
+}
+
+int tsfi_sscp_lu_control(tsfi_sscp_lu_session *sess, uint8_t cmd) {
+    if (!sess) return -1;
+    if (cmd == SNA_CMD_ACTLU) {
+        sess->lu_active = 1;
+        return 0;
+    } else if (cmd == SNA_CMD_DACTLU) {
+        sess->lu_active = 0;
+        return 0;
+    }
+    return -2;
+}
