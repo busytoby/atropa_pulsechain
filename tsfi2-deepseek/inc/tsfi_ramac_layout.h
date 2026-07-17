@@ -989,4 +989,51 @@ typedef struct {
 int tsfi_detabx_execute(const tsfi_detabx_table *table, int regs[8]);
 int tsfi_detabx_validate(const tsfi_detabx_table *table);
 
+// CDC 6600 Scoreboard Scheduler
+typedef enum { STAGE_ISSUE, STAGE_READ_OPERANDS, STAGE_EXECUTE, STAGE_WRITE_BACK, STAGE_DONE } cdc_stage;
+
+typedef struct {
+    int inst_id;
+    char op[8];
+    int dest_reg;
+    int src1_reg;
+    int src2_reg;
+    cdc_stage stage;
+} cdc_instruction;
+
+typedef struct {
+    cdc_instruction queue[8];
+    int size;
+    int reg_writers[8];
+} cdc_scoreboard;
+
+void tsfi_scoreboard_init(cdc_scoreboard *sb);
+int tsfi_scoreboard_step(cdc_scoreboard *sb);
+
+// CDC 6600 PPU System
+typedef struct {
+    int ppu_id;
+    int task_active;
+    int bytes_processed;
+    int total_bytes;
+} cdc_ppu;
+
+typedef struct {
+    cdc_ppu ppus[10];
+    int current_slot;
+} cdc_ppu_system;
+
+void tsfi_ppu_init(cdc_ppu_system *sys);
+void tsfi_ppu_assign(cdc_ppu_system *sys, int ppu_id, int bytes);
+int tsfi_ppu_step(cdc_ppu_system *sys);
+
+// RAND Tablet Coordinate Interpolator
+typedef struct {
+    int x;
+    int y;
+    int pen_down;
+} rand_tablet_point;
+
+int tsfi_rand_tablet_interpolate(int raw_x, int raw_y, int raw_grid[4][2], rand_tablet_point *pt_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

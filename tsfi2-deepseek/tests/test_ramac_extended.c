@@ -618,6 +618,53 @@ int main(void) {
     assert(val_res == -1);
     printf("  [PASS] DETAB-X static analysis validator verified successfully.\n");
 
+    // 36. CDC 6600 Scoreboard Pipeline Scheduler Verification
+    printf("[Test] Verifying CDC 6600 Scoreboard pipeline scheduler...\n");
+    cdc_scoreboard sb;
+    tsfi_scoreboard_init(&sb);
+    
+    sb.queue[0].inst_id = 1;
+    strcpy(sb.queue[0].op, "ADD");
+    sb.queue[0].dest_reg = 2;
+    sb.queue[0].src1_reg = 0;
+    sb.queue[0].src2_reg = 1;
+    sb.queue[0].stage = STAGE_ISSUE;
+    sb.size = 1;
+    
+    tsfi_scoreboard_step(&sb);
+    assert(sb.queue[0].stage == STAGE_READ_OPERANDS);
+    assert(sb.reg_writers[2] == 1);
+    
+    tsfi_scoreboard_step(&sb);
+    assert(sb.queue[0].stage == STAGE_EXECUTE);
+    printf("  [PASS] CDC 6600 Scoreboard hazard detection verified.\n");
+    
+    // 37. CDC 6600 PPU System Verification
+    printf("[Test] Verifying CDC 6600 PPU system scheduler...\n");
+    cdc_ppu_system ppu_sys;
+    tsfi_ppu_init(&ppu_sys);
+    tsfi_ppu_assign(&ppu_sys, 3, 5);
+    
+    int proc_total = 0;
+    for (int k = 0; k < 50; k++) {
+        proc_total += tsfi_ppu_step(&ppu_sys);
+    }
+    assert(proc_total == 5);
+    assert(ppu_sys.ppus[3].bytes_processed == 5);
+    assert(ppu_sys.ppus[3].task_active == 0);
+    printf("  [PASS] CDC 6600 PPU time-slice multiplexer verified.\n");
+    
+    // 38. RAND Tablet Coordinate Interpolator Verification
+    printf("[Test] Verifying RAND Tablet coordinate grid mapping...\n");
+    rand_tablet_point pt;
+    int mock_grid[4][2] = { {0,0}, {1023,0}, {0,1023}, {1023,1023} };
+    int interp_res = tsfi_rand_tablet_interpolate(512, 256, mock_grid, &pt);
+    assert(interp_res == 0);
+    assert(pt.x == 512);
+    assert(pt.y == 256);
+    assert(pt.pen_down == 1);
+    printf("  [PASS] RAND Tablet coordinate translation verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

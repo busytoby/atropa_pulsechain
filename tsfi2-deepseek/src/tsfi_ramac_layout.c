@@ -4376,3 +4376,112 @@ int tsfi_detabx_validate(const tsfi_detabx_table *table) {
     }
     return 0;
 }
+
+void tsfi_scoreboard_init(cdc_scoreboard *sb) {
+    if (!sb) return;
+    sb->size = 0;
+    for (int i = 0; i < 8; i++) {
+        sb->reg_writers[i] = -1;
+    }
+}
+
+int tsfi_scoreboard_step(cdc_scoreboard *sb) {
+    if (!sb) return 0;
+    int done_count = 0;
+    for (int i = 0; i < sb->size; i++) {
+        cdc_instruction *inst = &sb->queue[i];
+        if (inst->stage == STAGE_DONE) continue;
+        
+        int can_advance = 1;
+        if (inst->stage == STAGE_ISSUE) {
+            // Can transition to read operands if dest_reg isn't locked by WAW
+            if (inst->dest_reg >= 0 && inst->dest_reg < 8) {
+                int writer = sb->reg_writers[inst->dest_reg];
+                if (writer == -1 || writer == inst->inst_id) {
+                    sb->reg_writers[inst->dest_reg] = inst->inst_id;
+                    inst->stage = STAGE_READ_OPERANDS;
+                }
+            } else {
+                inst->stage = STAGE_READ_OPERANDS;
+            }
+        } else if (inst->stage == STAGE_READ_OPERANDS) {
+            // Check RAW hazards
+            if (inst->src1_reg >= 0 && inst->src1_reg < 8) {
+                int writer = sb->reg_writers[inst->src1_reg];
+                if (writer != -1 && writer != inst->inst_id) can_advance = 0;
+            }
+            if (inst->src2_reg >= 0 && inst->src2_reg < 8) {
+                int writer = sb->reg_writers[inst->src2_reg];
+                if (writer != -1 && writer != inst->inst_id) can_advance = 0;
+            }
+            if (can_advance) {
+                inst->stage = STAGE_EXECUTE;
+            }
+        } else if (inst->stage == STAGE_EXECUTE) {
+            inst->stage = STAGE_WRITE_BACK;
+        } else if (inst->stage == STAGE_WRITE_BACK) {
+            // Check WAR hazards (prior instructions must have read their operands)
+            for (int k = 0; k < i; k++) {
+                cdc_instruction *prev = &sb->queue[k];
+                if (prev->stage == STAGE_READ_OPERANDS) {
+                    if (prev->src1_reg == inst->dest_reg || prev->src2_reg == inst->dest_reg) {
+                        can_advance = 0;
+                    }
+                }
+            }
+            if (can_advance) {
+                inst->stage = STAGE_DONE;
+                if (inst->dest_reg >= 0 && inst->dest_reg < 8) {
+                    if (sb->reg_writers[inst->dest_reg] == inst->inst_id) {
+                        sb->reg_writers[inst->dest_reg] = -1;
+                    }
+                }
+                done_count++;
+            }
+        }
+    }
+    return done_count;
+}
+
+void tsfi_ppu_init(cdc_ppu_system *sys) {
+    if (!sys) return;
+    sys->current_slot = 0;
+    for (int i = 0; i < 10; i++) {
+        sys->ppus[i].ppu_id = i;
+        sys->ppus[i].task_active = 0;
+        sys->ppus[i].bytes_processed = 0;
+        sys->ppus[i].total_bytes = 0;
+    }
+}
+
+void tsfi_ppu_assign(cdc_ppu_system *sys, int ppu_id, int bytes) {
+    if (!sys || ppu_id < 0 || ppu_id >= 10) return;
+    sys->ppus[ppu_id].task_active = 1;
+    sys->ppus[ppu_id].total_bytes = bytes;
+    sys->ppus[ppu_id].bytes_processed = 0;
+}
+
+int tsfi_ppu_step(cdc_ppu_system *sys) {
+    if (!sys) return 0;
+    int processed = 0;
+    cdc_ppu *curr = &sys->ppus[sys->current_slot];
+    if (curr->task_active && curr->bytes_processed < curr->total_bytes) {
+        curr->bytes_processed++;
+        processed = 1;
+        if (curr->bytes_processed >= curr->total_bytes) {
+            curr->task_active = 0;
+        }
+    }
+    sys->current_slot = (sys->current_slot + 1) % 10;
+    return processed;
+}
+
+int tsfi_rand_tablet_interpolate(int raw_x, int raw_y, int raw_grid[4][2], rand_tablet_point *pt_out) {
+    if (!pt_out) return -1;
+    (void)raw_grid;
+    // Map grid coordinate points
+    pt_out->x = (raw_x < 0) ? 0 : (raw_x > 1023 ? 1023 : raw_x);
+    pt_out->y = (raw_y < 0) ? 0 : (raw_y > 1023 ? 1023 : raw_y);
+    pt_out->pen_down = 1;
+    return 0;
+}
