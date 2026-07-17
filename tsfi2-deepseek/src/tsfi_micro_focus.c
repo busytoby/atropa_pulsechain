@@ -714,3 +714,15 @@ int tsfi_mf_wessler_macro_expand(const char *macro_line, char *hlasm_out, int ma
     snprintf(hlasm_out, max_len, "DS 0H");
     return -2;
 }
+
+int tsfi_mf_majordomo_restrict_post(const char *sender_email, const char **members, int member_count) {
+    if (!sender_email || !members || member_count < 0) return -1;
+
+    for (int i = 0; i < member_count; i++) {
+        if (members[i] && strcmp(members[i], sender_email) == 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}

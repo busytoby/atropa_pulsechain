@@ -64,5 +64,6 @@
 | 130 | Majordomo Moderation Approval Queue | PASS | Cookie authentication authorization | Volume 33 |
 | 131 | Majordomo Mailing List Digest Builder | PASS | Multi-post digest formatting layout | Volume 33 |
 | 132 | Jon Wessler HLASM Structured Macros | PASS | High Level Assembler macro compiler | Volume 33 |
+| 133 | Majordomo List Access Checker | PASS | Posting restriction authorization lookup | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 132 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 133 Scenarios validated successfully)

@@ -386,6 +386,18 @@ int main(void) {
     assert(strcmp(hlasm_out, "CR R3,R4\nBC 7,L1") == 0);
     printf("  [PASS] Wessler HLASM Macro Expansion verified.\n");
 
+    // 23. Verify Majordomo List Access Checker
+    printf("[TEST] Validating Majordomo List Access Checker...\n");
+    const char *members[2] = {
+        "user1@domain.com",
+        "user2@domain.com"
+    };
+    int allowed = tsfi_mf_majordomo_restrict_post("user1@domain.com", members, 2);
+    assert(allowed == 0);
+    int rejected = tsfi_mf_majordomo_restrict_post("attacker@evil.com", members, 2);
+    assert(rejected == 1);
+    printf("  [PASS] Majordomo List Access Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -47,5 +47,6 @@ int tsfi_mf_majordomo_process(const char *cmd_line, char *out_response, int max_
 int tsfi_mf_majordomo_approve(uint32_t cookie, const char *action, uint32_t *pending_cookies, int max_pending);
 int tsfi_mf_majordomo_digest(const char **posts, int post_count, char *digest_out, int max_len);
 int tsfi_mf_wessler_macro_expand(const char *macro_line, char *hlasm_out, int max_len);
+int tsfi_mf_majordomo_restrict_post(const char *sender_email, const char **members, int member_count);
 
 #endif // TSFI_MICRO_FOCUS_H
