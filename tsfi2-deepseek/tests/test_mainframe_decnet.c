@@ -815,7 +815,17 @@ int main(void) {
     assert(rx_th.fid_type == SNA_FID_TYPE3);
     assert(rx_th.daf == 0xAA); // Local Session ID
     
-    printf("  [PASS] Transmission Header FID1, FID2, FID3, & FID4 serialization verified.\n");
+    // Validate FID0 (10-byte raw compatibility header)
+    tx_th.fid_type = SNA_FID_TYPE0;
+    assert(tsfi_sna_serialize_th(&tx_th, th_buf, &th_len) == 0);
+    assert(th_len == 10);
+    assert(tsfi_sna_deserialize_th(th_buf, th_len, &rx_th) == 0);
+    assert(rx_th.fid_type == SNA_FID_TYPE0);
+    assert(rx_th.daf == 0x00AA);
+    assert(rx_th.oaf == 0x00BB);
+    assert(rx_th.sn == 999);
+    
+    printf("  [PASS] Transmission Header FID0, FID1, FID2, FID3, & FID4 serialization verified.\n");
 
     // 55. SNA Request/Response Header (RH) Verification
     printf("[Test] Verifying SNA Request/Response Header (RH)...\n");

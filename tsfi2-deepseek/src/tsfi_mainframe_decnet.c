@@ -1352,8 +1352,8 @@ int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new
 
 int tsfi_sna_serialize_th(const tsfi_sna_th *th, uint8_t *buf, size_t *len_out) {
     if (!th || !buf || !len_out) return -1;
-    if (th->fid_type == SNA_FID_TYPE1) {
-        buf[0] = (SNA_FID_TYPE1 << 4) | (th->mpf & 0x0F);
+    if (th->fid_type == SNA_FID_TYPE0 || th->fid_type == SNA_FID_TYPE1) {
+        buf[0] = (th->fid_type << 4) | (th->mpf & 0x0F);
         buf[1] = 0;
         buf[2] = (th->daf >> 8) & 0xFF;
         buf[3] = th->daf & 0xFF;
@@ -1394,7 +1394,7 @@ int tsfi_sna_deserialize_th(const uint8_t *buf, size_t len, tsfi_sna_th *th_out)
     if (!buf || !th_out || len < 2) return -1;
     th_out->fid_type = (buf[0] >> 4) & 0x0F;
     th_out->mpf = buf[0] & 0x0F;
-    if (th_out->fid_type == SNA_FID_TYPE1) {
+    if (th_out->fid_type == SNA_FID_TYPE0 || th_out->fid_type == SNA_FID_TYPE1) {
         if (len < 10) return -2;
         th_out->daf = (buf[2] << 8) | buf[3];
         th_out->oaf = (buf[4] << 8) | buf[5];

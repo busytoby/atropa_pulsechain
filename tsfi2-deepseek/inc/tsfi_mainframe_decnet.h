@@ -591,6 +591,7 @@ typedef struct {
 void tsfi_sna_key_rotation_init(tsfi_sna_key_rotation *rot, const uint8_t *dist_key);
 int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new_key);
 
+#define SNA_FID_TYPE0 0x00
 #define SNA_FID_TYPE1 0x01
 #define SNA_FID_TYPE2 0x02
 #define SNA_FID_TYPE3 0x03
