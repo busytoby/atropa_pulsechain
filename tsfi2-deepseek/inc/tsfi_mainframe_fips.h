@@ -185,4 +185,10 @@ int tsfi_fips55_resolve_location(const char *fips_code, char *out_location, int 
 int tsfi_fips4_validate_date(const char *date_str);
 int tsfi_fips58_validate_time(const char *time_str);
 
+// Scenario 168: NBS FIPS PUB 31 Risk Analysis Calculator
+int tsfi_fips31_calculate_ale(double asset_value, double threat_frequency, double impact_multiplier, double *out_ale);
+
+// Scenario 169: NBS FIPS PUB 30 Software Summary Descriptors
+int tsfi_fips30_validate_summary(const char *software_title, const char *status_code);
+
 #endif // TSFI_MAINFRAME_FIPS_H

@@ -24,6 +24,8 @@ int main(int argc, char **argv) {
         printf("  %s --gks <cmd_byte> <pts_cnt>  Parse graphics primitives (FIPS 120)\n", argv[0]);
         printf("  %s --agency <agency_code>      Resolve federal agency code (FIPS 95)\n", argv[0]);
         printf("  %s --datetime <date> <time>    Validate date & time interchange (FIPS 4-1 / 58-1)\n", argv[0]);
+        printf("  %s --risk-ale <val> <fq> <imp> Calculate Annual Loss Expectancy (FIPS 31)\n", argv[0]);
+        printf("  %s --software-summary <t> <st> Validate program registry status (FIPS 30)\n", argv[0]);
         return 0;
     }
 
@@ -221,6 +223,26 @@ int main(int argc, char **argv) {
             printf("RESULT: VALID DATE AND TIME FORMATS\n");
         } else {
             printf("RESULT: FORMAT VIOLATION (Date: %d, Time: %d)\n", date_res, time_res);
+        }
+    } else if (strcmp(argv[1], "--risk-ale") == 0 && argc >= 5) {
+        double val = atof(argv[2]);
+        double fq = atof(argv[3]);
+        double imp = atof(argv[4]);
+        double ale = 0.0;
+        int res = tsfi_fips31_calculate_ale(val, fq, imp, &ale);
+        printf("[FIPS 31 AUDIT] Asset Value: %.2f, Frequency: %.2f, Impact: %.2f\n", val, fq, imp);
+        if (res == 0) {
+            printf("RESULT: CALCULATED ALE: %.2f\n", ale);
+        } else {
+            printf("RESULT: CALCULATION ERROR (Error: %d)\n", res);
+        }
+    } else if (strcmp(argv[1], "--software-summary") == 0 && argc >= 4) {
+        int res = tsfi_fips30_validate_summary(argv[2], argv[3]);
+        printf("[FIPS 30 AUDIT] Software Title: '%s', Status Code: '%s'\n", argv[2], argv[3]);
+        if (res == 0) {
+            printf("RESULT: COMPLIANT STATUS DESCRIPTOR\n");
+        } else {
+            printf("RESULT: COMPLIANCE VIOLATION (Error: %d)\n", res);
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");

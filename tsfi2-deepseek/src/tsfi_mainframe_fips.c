@@ -995,3 +995,26 @@ int tsfi_fips58_validate_time(const char *time_str) {
     
     return 0;
 }
+
+int tsfi_fips31_calculate_ale(double asset_value, double threat_frequency, double impact_multiplier, double *out_ale) {
+    if (asset_value < 0.0 || threat_frequency < 0.0 || impact_multiplier < 0.0 || !out_ale) {
+        return -1;
+    }
+    
+    *out_ale = asset_value * threat_frequency * impact_multiplier;
+    return 0;
+}
+
+int tsfi_fips30_validate_summary(const char *software_title, const char *status_code) {
+    if (!software_title || strlen(software_title) == 0 || !status_code) {
+        return -1;
+    }
+    
+    if (strcmp(status_code, "ACT") == 0 ||
+        strcmp(status_code, "DEV") == 0 ||
+        strcmp(status_code, "HIS") == 0) {
+        return 0; // Valid summary descriptors
+    }
+    
+    return -2; // Unknown or non-compliant status code
+}

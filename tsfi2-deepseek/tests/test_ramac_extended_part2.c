@@ -1956,6 +1956,22 @@ int main(void) {
     assert(tsfi_fips58_validate_time("251825") == -4); // Invalid hour 25
     printf("  [PASS] FIPS 4-1 calendar date and FIPS 58-1 time formats verified.\n");
 
+    // 168. NBS FIPS PUB 31 Risk Analysis Calculator Verification
+    printf("[Test] Verifying NBS FIPS PUB 31 Risk Analysis Calculator (ALE)...\n");
+    double ale = 0.0;
+    assert(tsfi_fips31_calculate_ale(100000.0, 0.5, 0.2, &ale) == 0);
+    assert(ale == 10000.0);
+    
+    assert(tsfi_fips31_calculate_ale(-1.0, 0.5, 0.2, &ale) == -1); // Negative input check
+    printf("  [PASS] FIPS 31 Risk assessment calculations (ALE) verified.\n");
+
+    // 169. NBS FIPS PUB 30 Software Summary Descriptors Verification
+    printf("[Test] Verifying NBS FIPS PUB 30 Software Summary Descriptors...\n");
+    assert(tsfi_fips30_validate_summary("Atropa VM kernel", "ACT") == 0);
+    assert(tsfi_fips30_validate_summary("Test subsystem", "DEV") == 0);
+    assert(tsfi_fips30_validate_summary("Old scheduler", "BAD") == -2); // Invalid status code check
+    printf("  [PASS] FIPS 30 software package summary status descriptors verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     trie_root_mq = NULL; // Unused local pointer clear
     tsfi_trie_destroy(trie_root_mq);
