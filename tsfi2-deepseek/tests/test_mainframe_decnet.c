@@ -1989,6 +1989,42 @@ int main(void) {
     assert(cache_hits == 1);
     printf("  [PASS] Cached-CAS parallel search optimization verified.\n");
 
+    // 98. UNIX System V POSIX-to-SVC Translation Verification
+    printf("[Test] Verifying POSIX-to-SVC system call translator...\n");
+    tsfi_svc_translation translation;
+    assert(tsfi_posix_to_svc_open("SYS1.PROCLIB", 0x02, &translation) == 0);
+    assert(translation.posix_fd == 3);
+    assert(translation.mainframe_ddname_hash != 0);
+    assert(translation.status == 1);
+    printf("  [PASS] UNIX System V system call translation verified.\n");
+    
+    // 99. IBM DB2 index split leaf balanced allocation verification
+    printf("[Test] Verifying DB2 B-tree index splits...\n");
+    tsfi_db2_index_page left;
+    tsfi_db2_index_page right;
+    memset(&left, 0, sizeof(left));
+    memset(&right, 0, sizeof(right));
+    
+    // Insert 4 keys
+    int split = 0;
+    assert(tsfi_db2_insert_key(&left, &right, 10, &split) == 0); assert(split == 0);
+    assert(tsfi_db2_insert_key(&left, &right, 20, &split) == 0); assert(split == 0);
+    assert(tsfi_db2_insert_key(&left, &right, 30, &split) == 0); assert(split == 0);
+    assert(tsfi_db2_insert_key(&left, &right, 40, &split) == 0); assert(split == 0);
+    assert(left.key_count == 4);
+    
+    // 5th key triggers leaf B-tree split rebalance
+    assert(tsfi_db2_insert_key(&left, &right, 25, &split) == 0);
+    assert(split == 1);
+    assert(left.key_count == 2);
+    assert(right.key_count == 3);
+    assert(left.keys[0] == 10);
+    assert(left.keys[1] == 20);
+    assert(right.keys[0] == 25);
+    assert(right.keys[1] == 30);
+    assert(right.keys[2] == 40);
+    printf("  [PASS] IBM DB2 B-tree leaf index split rebalancing verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

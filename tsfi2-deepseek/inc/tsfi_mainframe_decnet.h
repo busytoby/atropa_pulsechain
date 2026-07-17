@@ -1273,4 +1273,22 @@ int tsfi_ibm3880_access(tsfi_ibm3880_cache *cache, uint32_t address, int is_writ
 // Cached Content-Addressable Storage (Cached-CAS)
 int tsfi_cached_cas_filter(tsfi_ibm3880_cache *cache, tsfi_cas_page *pages, size_t count, const char *search_term, int *cache_hits_out);
 
+// UNIX System V / Mainframe SVC Translator
+typedef struct {
+    int posix_fd;
+    int mainframe_ddname_hash;
+    int status;
+} tsfi_svc_translation;
+
+int tsfi_posix_to_svc_open(const char *path, int flags, tsfi_svc_translation *trans_out);
+
+// IBM DB2 Index Tree Page Splitter
+typedef struct {
+    int keys[4];
+    int key_count;
+    int sibling_page_id;
+} tsfi_db2_index_page;
+
+int tsfi_db2_insert_key(tsfi_db2_index_page *left, tsfi_db2_index_page *right, int key, int *split_occurred);
+
 #endif // TSFI_MAINFRAME_DECNET_H

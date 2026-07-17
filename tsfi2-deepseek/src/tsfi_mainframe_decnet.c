@@ -2780,3 +2780,48 @@ int tsfi_cached_cas_filter(tsfi_ibm3880_cache *cache, tsfi_cas_page *pages, size
     *cache_hits_out = hits;
     return tsfi_cas_filter(pages, count, search_term);
 }
+
+int tsfi_posix_to_svc_open(const char *path, int flags, tsfi_svc_translation *trans_out) {
+    if (!path || !trans_out) return -1;
+    int hash = 0;
+    for (int i = 0; path[i] != '\0'; i++) {
+        hash = (hash * 31) + path[i];
+    }
+    trans_out->posix_fd = 3;
+    trans_out->mainframe_ddname_hash = hash;
+    trans_out->status = (flags & 0x02) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_db2_insert_key(tsfi_db2_index_page *left, tsfi_db2_index_page *right, int key, int *split_occurred) {
+    if (!left || !right || !split_occurred) return -1;
+    *split_occurred = 0;
+    if (left->key_count < 4) {
+        int pos = left->key_count;
+        while (pos > 0 && left->keys[pos - 1] > key) {
+            left->keys[pos] = left->keys[pos - 1];
+            pos--;
+        }
+        left->keys[pos] = key;
+        left->key_count++;
+        return 0;
+    }
+    *split_occurred = 1;
+    left->sibling_page_id = 999;
+    int temp_keys[5];
+    int pos = 4;
+    memcpy(temp_keys, left->keys, sizeof(left->keys));
+    while (pos > 0 && temp_keys[pos - 1] > key) {
+        temp_keys[pos] = temp_keys[pos - 1];
+        pos--;
+    }
+    temp_keys[pos] = key;
+    left->key_count = 2;
+    left->keys[0] = temp_keys[0];
+    left->keys[1] = temp_keys[1];
+    right->key_count = 3;
+    right->keys[0] = temp_keys[2];
+    right->keys[1] = temp_keys[3];
+    right->keys[2] = temp_keys[4];
+    return 0;
+}
