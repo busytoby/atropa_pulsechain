@@ -806,3 +806,30 @@ int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int com
     *allocated_offset = current_free + needed_bytes;
     return (int)(current_free + 12);
 }
+
+int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, char *terminal_buffer) {
+    if (!terminal_buffer) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+
+    int offset = snprintf(terminal_buffer, 80, "VULKAN APPC SESSION LAYOUT | TRANS ID: %08X", transaction_id);
+    terminal_buffer[offset] = ' ';
+
+    const char *state_str = "RECEIVE";
+    if (state_flags == 1) state_str = "SEND";
+    else if (state_flags == 2) state_str = "CONFIRM";
+    else if (state_flags == 3) state_str = "SYNCPOINT";
+
+    char status[80];
+    int status_len = snprintf(status, sizeof(status), "UX STATE: %s | MAJORDOMO INBOX: ACTIVE", state_str);
+    if (status_len > 0 && status_len < 80) {
+        memcpy(terminal_buffer + 5 * 80 + 10, status, status_len);
+    }
+
+    for (int col = 0; col < 80; col++) {
+        terminal_buffer[2 * 80 + col] = '=';
+        terminal_buffer[22 * 80 + col] = '=';
+    }
+
+    return 0;
+}

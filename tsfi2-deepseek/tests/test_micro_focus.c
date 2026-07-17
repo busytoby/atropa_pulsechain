@@ -438,6 +438,16 @@ int main(void) {
     assert(memcmp(link_pool + 12, "HELLO", 5) == 0);
     printf("  [PASS] CICS Program Control LINK Emulator verified.\n");
 
+    // 28. Verify Vulkan APPC Session Layout
+    printf("[TEST] Validating Vulkan APPC Session Layout...\n");
+    char appc_buffer[80 * 24];
+    int appc_res = tsfi_mf_vulkan_appc_layout(0xCAFEBAB4, 2, appc_buffer);
+    assert(appc_res == 0);
+    assert(strstr(appc_buffer, "VULKAN APPC SESSION LAYOUT") != NULL);
+    assert(strstr(appc_buffer, "TRANS ID: CAFEBAB4") != NULL);
+    assert(strstr(appc_buffer, "UX STATE: CONFIRM") != NULL);
+    printf("  [PASS] Vulkan APPC Session Layout verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

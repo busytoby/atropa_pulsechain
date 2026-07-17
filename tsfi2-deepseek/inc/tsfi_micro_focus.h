@@ -54,5 +54,6 @@ int tsfi_mf_cics_raise_condition(uint32_t condition_id, uint64_t *registry_table
 int tsfi_mf_set_agent_handle(const char *handle);
 const char *tsfi_mf_get_agent_handle(void);
 int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int commarea_len, uint8_t *storage_pool, uint32_t *allocated_offset);
+int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, char *terminal_buffer);
 
 #endif // TSFI_MICRO_FOCUS_H
