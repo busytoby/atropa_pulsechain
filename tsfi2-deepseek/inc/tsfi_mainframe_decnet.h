@@ -641,4 +641,7 @@ int tsfi_sna_map_lu_type(uint8_t unified_type);
 
 const char *tsfi_sna_resolve_sense(uint16_t sense_code);
 
+int tsfi_sna_package_piu(const tsfi_sna_th *th, const tsfi_sna_rh *rh, const uint8_t *ru_data, size_t ru_len, uint8_t *piu_out, size_t *piu_len);
+int tsfi_sna_parse_piu(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, tsfi_sna_rh *rh_out, uint8_t *ru_out, size_t *ru_len);
+
 #endif // TSFI_MAINFRAME_DECNET_H

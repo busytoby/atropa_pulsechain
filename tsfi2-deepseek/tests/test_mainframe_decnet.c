@@ -852,6 +852,42 @@ int main(void) {
     assert(strcmp(tsfi_sna_resolve_sense(0xFFFF), "Unknown/General Protocol Error") == 0);
     printf("  [PASS] Standard SNA Sense Code resolver verified.\n");
 
+    // 58. SNA PIU Unified Packaging Verification
+    printf("[Test] Verifying SNA PIU Unified Packaging...\n");
+    tsfi_sna_th piu_th;
+    piu_th.fid_type = SNA_FID_TYPE2;
+    piu_th.mpf = 0x03; // Only segment
+    piu_th.daf = 0x11;
+    piu_th.oaf = 0x22;
+    piu_th.sn = 42;
+    
+    tsfi_sna_rh piu_rh;
+    memset(&piu_rh, 0, sizeof(piu_rh));
+    piu_rh.ru_category = 0; // FMD
+    piu_rh.is_response = 0;
+    piu_rh.begin_chain = 1;
+    piu_rh.end_chain = 1;
+    
+    uint8_t ru_payload[] = "SNA_TEST_RU";
+    uint8_t piu_packet[64];
+    size_t piu_packet_len = 0;
+    
+    assert(tsfi_sna_package_piu(&piu_th, &piu_rh, ru_payload, 11, piu_packet, &piu_packet_len) == 0);
+    assert(piu_packet_len == 6 + 3 + 11 + 1); // TH(6) + RH(3) + RU(11) + BCC(1) = 21 bytes
+    
+    tsfi_sna_th decoded_th;
+    tsfi_sna_rh decoded_rh;
+    uint8_t decoded_ru[32];
+    size_t decoded_ru_len = 0;
+    
+    assert(tsfi_sna_parse_piu(piu_packet, piu_packet_len, &decoded_th, &decoded_rh, decoded_ru, &decoded_ru_len) == 0);
+    assert(decoded_th.fid_type == SNA_FID_TYPE2);
+    assert(decoded_th.sn == 42);
+    assert(decoded_rh.begin_chain == 1);
+    assert(decoded_ru_len == 11);
+    assert(memcmp(decoded_ru, "SNA_TEST_RU", 11) == 0);
+    printf("  [PASS] SNA unified PIU frame assembly and parsing verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

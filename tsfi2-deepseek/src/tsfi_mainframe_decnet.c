@@ -1445,3 +1445,36 @@ const char *tsfi_sna_resolve_sense(uint16_t sense_code) {
         default:                             return "Unknown/General Protocol Error";
     }
 }
+
+int tsfi_sna_package_piu(const tsfi_sna_th *th, const tsfi_sna_rh *rh, const uint8_t *ru_data, size_t ru_len, uint8_t *piu_out, size_t *piu_len) {
+    if (!th || !rh || !piu_out || !piu_len) return -1;
+    size_t th_len = 0;
+    if (tsfi_sna_serialize_th(th, piu_out, &th_len) != 0) return -2;
+    size_t rh_len = 0;
+    if (tsfi_sna_serialize_rh(rh, piu_out + th_len, &rh_len) != 0) return -3;
+    if (ru_data && ru_len > 0) {
+        memcpy(piu_out + th_len + rh_len, ru_data, ru_len);
+    } else {
+        ru_len = 0;
+    }
+    size_t payload_len = th_len + rh_len + ru_len;
+    uint8_t bcc = tsfi_sna_piu_bcc(piu_out, payload_len);
+    piu_out[payload_len] = bcc;
+    *piu_len = payload_len + 1;
+    return 0;
+}
+
+int tsfi_sna_parse_piu(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, tsfi_sna_rh *rh_out, uint8_t *ru_out, size_t *ru_len) {
+    if (!piu || piu_len < 10 || !th_out || !rh_out || !ru_out || !ru_len) return -1;
+    uint8_t rx_bcc = piu[piu_len - 1];
+    if (tsfi_sna_piu_bcc(piu, piu_len - 1) != rx_bcc) return -2;
+    if (tsfi_sna_deserialize_th(piu, piu_len - 1, th_out) != 0) return -3;
+    size_t th_len = (th_out->fid_type == SNA_FID_TYPE2) ? 6 : 8;
+    if (tsfi_sna_deserialize_rh(piu + th_len, piu_len - th_len - 1, rh_out) != 0) return -4;
+    size_t rh_len = 3;
+    *ru_len = piu_len - th_len - rh_len - 1;
+    if (*ru_len > 0) {
+        memcpy(ru_out, piu + th_len + rh_len, *ru_len);
+    }
+    return 0;
+}
