@@ -1843,6 +1843,30 @@ int main(void) {
     assert(group.nodes[1].is_active == 1); // Node 200 active primary
     printf("  [PASS] Mainframe distributed node failover and backup promotion verified.\n");
 
+    // 91. Heartbeat Failover Recovery Consensus Routing Verification
+    printf("[Test] Verifying Heartbeat Failover & Consensus integration loop...\n");
+    tsfi_failover_group f_group;
+    tsfi_failover_init(&f_group);
+    tsfi_failover_add_node(&f_group, 500, 1);
+    tsfi_failover_add_node(&f_group, 600, 0);
+    
+    assert(tsfi_failover_tick(&f_group, 10, 4) == 1);
+    assert(f_group.active_primary_id == 600);
+    
+    tsfi_consensus_engine c_loop;
+    tsfi_consensus_init(&c_loop);
+    assert(tsfi_consensus_add_node(&c_loop, f_group.active_primary_id, 1) == 0);
+    assert(tsfi_consensus_execute(&c_loop) == 0);
+    assert(c_loop.global_state == 1);
+    
+    tsfi_vredestein_controller local_store;
+    tsfi_vredestein_init(&local_store);
+    local_store.write_in_progress = 1;
+    assert(tsfi_vredestein_process_consensus(&local_store, &c_loop) == 0);
+    assert(local_store.write_in_progress == 0);
+    assert(local_store.rollback_executed == 0);
+    printf("  [PASS] Failover recovery and post-promotion consensus storage commits verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
