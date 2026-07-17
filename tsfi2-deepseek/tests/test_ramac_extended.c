@@ -527,6 +527,14 @@ int main(void) {
     assert(ext_byte == 0xFF);
     printf("  [PASS] CDC 3600 sub-word bit extraction verified.\n");
 
+    // 32. CDC 3600 48-bit Floating Point Conversion Verification
+    printf("[Test] Verifying CDC 3600 48-bit float conversions...\n");
+    double test_f = 128.5;
+    uint64_t cdc_word = tsfi_double_to_cdc3600_float(test_f);
+    double recon_f = tsfi_cdc3600_float_to_double(cdc_word);
+    assert(recon_f == test_f);
+    printf("  [PASS] CDC 3600 48-bit float encoding/decoding verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

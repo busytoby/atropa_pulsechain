@@ -966,4 +966,8 @@ int tsfi_command_poll(tsfi_command_center *cc);
 // CDC 3600 Bit-Addressable Byte Extraction
 uint64_t tsfi_cdc3600_extract_byte(uint64_t word, int bit_position, int byte_length);
 
+// CDC 3600 48-bit Floating Point Converters
+uint64_t tsfi_double_to_cdc3600_float(double val);
+double tsfi_cdc3600_float_to_double(uint64_t word);
+
 #endif // TSFI_RAMAC_LAYOUT_H

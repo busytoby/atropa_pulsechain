@@ -4195,3 +4195,25 @@ uint64_t tsfi_cdc3600_extract_byte(uint64_t word, int bit_position, int byte_len
     uint64_t mask = (byte_length == 64) ? ~0ULL : ((1ULL << byte_length) - 1);
     return (word >> bit_position) & mask;
 }
+
+uint64_t tsfi_double_to_cdc3600_float(double val) {
+    union { double d; uint64_t u; } conv;
+    conv.d = val;
+    uint64_t sign = (conv.u >> 63) & 1ULL;
+    int64_t exp = ((conv.u >> 52) & 0x7FFULL) - 1023 + 1024;
+    if (exp < 0) exp = 0;
+    if (exp > 0x7FF) exp = 0x7FF;
+    uint64_t frac = (conv.u >> 16) & 0xFFFFFFFFFULL;
+    return (sign << 47) | ((uint64_t)exp << 36) | frac;
+}
+
+double tsfi_cdc3600_float_to_double(uint64_t word) {
+    uint64_t sign = (word >> 47) & 1ULL;
+    int64_t exp = ((word >> 36) & 0x7FFULL) - 1024 + 1023;
+    if (exp < 0) exp = 0;
+    if (exp > 0x7FF) exp = 0x7FF;
+    uint64_t frac = (word & 0xFFFFFFFFFULL) << 16;
+    union { double d; uint64_t u; } conv;
+    conv.u = (sign << 63) | ((uint64_t)exp << 52) | frac;
+    return conv.d;
+}
