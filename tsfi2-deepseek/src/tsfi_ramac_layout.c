@@ -4521,3 +4521,104 @@ int tsfi_ppu_scoreboard_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int pp
     sb->size++;
     return 0;
 }
+
+void tsfi_ids_init(ids_currency_tracker *tracker) {
+    if (!tracker) return;
+    tracker->size = 0;
+    tracker->current_run_unit = -1;
+    for (int i = 0; i < 4; i++) {
+        tracker->current_record_type[i] = -1;
+        tracker->current_set[i] = -1;
+    }
+}
+
+int tsfi_ids_insert(ids_currency_tracker *tracker, int record_id, int parent_id, const char *data) {
+    if (!tracker || tracker->size >= 16) return -1;
+    ids_record *r = &tracker->records[tracker->size];
+    r->record_id = record_id;
+    r->parent_record_id = parent_id;
+    r->next_record_id = record_id;
+    if (data) {
+        strncpy(r->data, data, sizeof(r->data) - 1);
+        r->data[sizeof(r->data) - 1] = '\0';
+    }
+    
+    for (int i = 0; i < tracker->size; i++) {
+        if (tracker->records[i].parent_record_id == parent_id) {
+            int curr = i;
+            while (tracker->records[curr].next_record_id != tracker->records[i].record_id) {
+                int next_found = 0;
+                for (int k = 0; k < tracker->size; k++) {
+                    if (tracker->records[k].record_id == tracker->records[curr].next_record_id) {
+                        curr = k;
+                        next_found = 1;
+                        break;
+                    }
+                }
+                if (!next_found) break;
+            }
+            r->next_record_id = tracker->records[curr].next_record_id;
+            tracker->records[curr].next_record_id = record_id;
+            break;
+        }
+    }
+    tracker->current_run_unit = record_id;
+    tracker->size++;
+    return 0;
+}
+
+int tsfi_ids_navigate_next(ids_currency_tracker *tracker, int set_id) {
+    if (!tracker || set_id < 0 || set_id >= 4) return -1;
+    int curr_id = tracker->current_set[set_id];
+    if (curr_id == -1) {
+        if (tracker->size > 0) {
+            tracker->current_set[set_id] = tracker->records[0].record_id;
+            return tracker->records[0].record_id;
+        }
+        return -1;
+    }
+    
+    for (int i = 0; i < tracker->size; i++) {
+        if (tracker->records[i].record_id == curr_id) {
+            int next_id = tracker->records[i].next_record_id;
+            tracker->current_set[set_id] = next_id;
+            tracker->current_run_unit = next_id;
+            return next_id;
+        }
+    }
+    return -1;
+}
+
+void tsfi_mackenzie_init(mackenzie_storage *store) {
+    if (!store) return;
+    store->current_tick = 0;
+    for (int i = 0; i < 8; i++) {
+        store->segments[i].sector_id = i;
+        store->segments[i].access_count = 0;
+        store->segments[i].last_access_tick = 0;
+        store->segments[i].location = 0;
+    }
+}
+
+int tsfi_mackenzie_access(mackenzie_storage *store, int sector_id) {
+    if (!store || sector_id < 0 || sector_id >= 8) return -1;
+    store->current_tick++;
+    store->segments[sector_id].access_count++;
+    store->segments[sector_id].last_access_tick = store->current_tick;
+    return store->segments[sector_id].location;
+}
+
+int tsfi_mackenzie_migrate(mackenzie_storage *store, int age_threshold) {
+    if (!store) return 0;
+    int count = 0;
+    for (int i = 0; i < 8; i++) {
+        if (store->segments[i].location == 0) {
+            int age = store->current_tick - store->segments[i].last_access_tick;
+            if (age > age_threshold && store->segments[i].access_count < 5) {
+                store->segments[i].location = 1;
+                count++;
+            }
+        }
+    }
+    return count;
+}

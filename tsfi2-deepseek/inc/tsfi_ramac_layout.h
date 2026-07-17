@@ -1044,4 +1044,41 @@ int tsfi_rand_tablet_interpolate(int raw_x, int raw_y, int raw_grid[4][2], rand_
 void tsfi_rand_tablet_trace_init(rand_tablet_buffer *buf);
 int tsfi_rand_tablet_trace(rand_tablet_buffer *buf, int raw_x, int raw_y, int raw_grid[4][2]);
 
+// CODASYL IDS Currency Tracker
+typedef struct {
+    int record_id;
+    int next_record_id;
+    int parent_record_id;
+    char data[32];
+} ids_record;
+
+typedef struct {
+    ids_record records[16];
+    int size;
+    int current_run_unit;
+    int current_record_type[4];
+    int current_set[4];
+} ids_currency_tracker;
+
+void tsfi_ids_init(ids_currency_tracker *tracker);
+int tsfi_ids_insert(ids_currency_tracker *tracker, int record_id, int parent_id, const char *data);
+int tsfi_ids_navigate_next(ids_currency_tracker *tracker, int set_id);
+
+// MacKenzie Storage Migrator
+typedef struct {
+    int sector_id;
+    int access_count;
+    int last_access_tick;
+    int location; // 0 = RAMAC Cylinder, 1 = Tape Block
+} mackenzie_segment;
+
+typedef struct {
+    mackenzie_segment segments[8];
+    int current_tick;
+} mackenzie_storage;
+
+void tsfi_mackenzie_init(mackenzie_storage *store);
+int tsfi_mackenzie_access(mackenzie_storage *store, int sector_id);
+int tsfi_mackenzie_migrate(mackenzie_storage *store, int age_threshold);
+
 #endif // TSFI_RAMAC_LAYOUT_H

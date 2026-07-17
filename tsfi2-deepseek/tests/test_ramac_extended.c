@@ -725,6 +725,42 @@ int main(void) {
     assert(hazard_sb.queue[1].stage == STAGE_EXECUTE);
     printf("  [PASS] RAW hazard blocking and release pipeline cycles verified successfully.\n");
 
+    // 41. CODASYL IDS Currency Tracker Verification
+    printf("[Test] Verifying CODASYL IDS currency tracker and navigation rings...\n");
+    ids_currency_tracker ids_track;
+    tsfi_ids_init(&ids_track);
+    
+    tsfi_ids_insert(&ids_track, 100, 0, "PARENT_REC");
+    tsfi_ids_insert(&ids_track, 101, 100, "CHILD_1");
+    tsfi_ids_insert(&ids_track, 102, 100, "CHILD_2");
+    
+    ids_track.current_set[0] = 101;
+    int next_rec = tsfi_ids_navigate_next(&ids_track, 0);
+    assert(next_rec == 102);
+    
+    next_rec = tsfi_ids_navigate_next(&ids_track, 0);
+    assert(next_rec == 101);
+    printf("  [PASS] IDS circular records ring navigation verified.\n");
+    
+    // 42. MacKenzie Dynamic Drum-to-Tape Segment Migrator Verification
+    printf("[Test] Verifying MacKenzie drum-to-tape segment migration...\n");
+    mackenzie_storage mstore;
+    tsfi_mackenzie_init(&mstore);
+    
+    for (int k = 0; k < 5; k++) {
+        tsfi_mackenzie_access(&mstore, 2);
+    }
+    
+    for (int k = 0; k < 20; k++) {
+        mstore.current_tick++;
+    }
+    
+    int mig_cnt = tsfi_mackenzie_migrate(&mstore, 10);
+    assert(mig_cnt > 0);
+    assert(mstore.segments[3].location == 1);
+    assert(mstore.segments[2].location == 0);
+    printf("  [PASS] MacKenzie secondary storage paging migration verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
