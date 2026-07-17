@@ -4,6 +4,8 @@
 #include <string.h>
 #include "tsfi_ramac_layout.h"
 #include "tsfi_strategy_lang.h"
+#include "tsfi_dat.h"
+#include "tsfi_trie.h"
 
 int main(void) {
     printf("=============================================================\n");
@@ -1023,6 +1025,32 @@ int main(void) {
     uint64_t hash_total = tsfi_ach_calc_hash_total(&batch);
     assert(hash_total == 2100002ULL);
     printf("  [PASS] COBOL ACH routing numbers and batch checksums verified successfully.\n");
+
+    // 60. 2-3 Tree ACH Routing upon DAT Verification
+    printf("[Test] Verifying 2-3 Tree ACH routing upon DAT...\n");
+    typedef struct {
+        char routing_key[10];
+        char value[32];
+    } test_23_node;
+    
+    test_23_node node1 = { "021000021", "Fed_Branch_A" };
+    
+    tsfi_trie_node *trie_root = tsfi_trie_create_node('\0');
+    tsfi_trie_insert(trie_root, node1.routing_key, node1.value);
+    
+    tsfi_dat *dat = tsfi_dat_compile(trie_root);
+    assert(dat != NULL);
+    
+    const char *resolved_branch = tsfi_dat_search(dat, node1.routing_key);
+    assert(resolved_branch != NULL);
+    assert(strcmp(resolved_branch, "Fed_Branch_A") == 0);
+    
+    int dat_check = tsfi_ach_verify_routing(node1.routing_key);
+    assert(dat_check == 0);
+    
+    tsfi_dat_destroy(dat);
+    tsfi_trie_destroy(trie_root);
+    printf("  [PASS] 2-3 tree ACH routing node key resolved upon DAT successfully.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
