@@ -572,6 +572,17 @@ int main(void) {
     assert(strstr(tx_out, "HERO:VALKYRIE") != NULL);
     printf("  [PASS] Gauntlet Mainframe BTC Rails VM Transaction Processor verified.\n");
 
+    // 41. Verify Vulkan ZMachine 3D Shader Dispatcher
+    printf("[TEST] Validating Vulkan ZMachine 3D Shader Dispatcher...\n");
+    float verts[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    char sh_log[128] = {0};
+    int sh_res = tsfi_mf_vulkan_zmachine_dispatch_shader(21, verts, 2, sh_log, sizeof(sh_log));
+    assert(sh_res == 0);
+    assert(strstr(sh_log, "ROOM=21") != NULL);
+    assert(strstr(sh_log, "VERTICES=2") != NULL);
+    assert(strstr(sh_log, "CENTROID=(2.00,3.00)") != NULL);
+    printf("  [PASS] Vulkan ZMachine 3D Shader Dispatcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

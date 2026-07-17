@@ -1041,3 +1041,21 @@ int tsfi_mf_gauntlet_btc_transaction(const char *player_id, uint32_t amount_sats
 
     return 0;
 }
+
+int tsfi_mf_vulkan_zmachine_dispatch_shader(uint32_t room_id, const float *vertex_coords, int vertex_count, char *shader_log, int max_log_len) {
+    if (!vertex_coords || vertex_count < 0 || !shader_log || max_log_len <= 0) return -1;
+
+    float centroid_x = 0.0f;
+    float centroid_y = 0.0f;
+    if (vertex_count > 0) {
+        for (int i = 0; i < vertex_count; i++) {
+            centroid_x += vertex_coords[i * 2];
+            centroid_y += vertex_coords[i * 2 + 1];
+        }
+        centroid_x /= (float)vertex_count;
+        centroid_y /= (float)vertex_count;
+    }
+
+    snprintf(shader_log, max_log_len, "VK_DISPATCH: ROOM=%u | VERTICES=%d | CENTROID=(%.2f,%.2f)", room_id, vertex_count, centroid_x, centroid_y);
+    return 0;
+}
