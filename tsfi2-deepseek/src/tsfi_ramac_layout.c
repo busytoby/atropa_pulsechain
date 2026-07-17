@@ -7089,3 +7089,49 @@ int tsfi_cp_apl_copy_to_printer(const tsfi_cp_apl_screen *scr, tsfi_cp_spool_pri
     }
     return 0;
 }
+
+void tsfi_cp_share_init(tsfi_cp_share_table *tbl) {
+    if (!tbl) return;
+    memset(tbl, 0, sizeof(tsfi_cp_share_table));
+}
+
+int tsfi_cp_share_set(tsfi_cp_share_table *tbl, const char *uid, int absolute, int val) {
+    if (!tbl || !uid) return -1;
+    if (absolute == 1 && (val < 1 || val > 100)) return -2;
+    if (absolute == 0 && (val < 1 || val > 10000)) return -3;
+    
+    for (int i = 0; i < tbl->count; i++) {
+        if (strcmp(tbl->entries[i].userid, uid) == 0) {
+            tbl->entries[i].is_absolute = absolute;
+            tbl->entries[i].value = val;
+            return 0;
+        }
+    }
+    
+    if (tbl->count >= MAX_SHARE_ENTRIES) return -1;
+    strncpy(tbl->entries[tbl->count].userid, uid, sizeof(tbl->entries[tbl->count].userid) - 1);
+    tbl->entries[tbl->count].userid[sizeof(tbl->entries[tbl->count].userid) - 1] = '\0';
+    tbl->entries[tbl->count].is_absolute = absolute;
+    tbl->entries[tbl->count].value = val;
+    tbl->count++;
+    return 0;
+}
+
+int tsfi_cp_share_calculate_slice(const tsfi_cp_share_table *tbl, const char *uid, int total_weight_sum, int *slice_ms) {
+    if (!tbl || !uid || !slice_ms) return -1;
+    for (int i = 0; i < tbl->count; i++) {
+        if (strcmp(tbl->entries[i].userid, uid) == 0) {
+            if (tbl->entries[i].is_absolute) {
+                *slice_ms = tbl->entries[i].value * 1000 / 100;
+            } else {
+                if (total_weight_sum <= 0) {
+                    *slice_ms = 100;
+                } else {
+                    *slice_ms = tbl->entries[i].value * 1000 / total_weight_sum;
+                }
+            }
+            return 0;
+        }
+    }
+    return -1;
+}

@@ -1970,4 +1970,21 @@ void tsfi_cp_apl_screen_init(tsfi_cp_apl_screen *scr);
 int tsfi_cp_apl_screen_write(tsfi_cp_apl_screen *scr, int row, int col, const char *data);
 int tsfi_cp_apl_copy_to_printer(const tsfi_cp_apl_screen *scr, tsfi_cp_spool_printer *prt);
 
+// VM/370 Release 3 CP Scheduler Share Configurator
+typedef struct {
+    char userid[16];
+    int is_absolute;
+    int value;
+} tsfi_cp_share_entry;
+
+#define MAX_SHARE_ENTRIES 8
+typedef struct {
+    tsfi_cp_share_entry entries[MAX_SHARE_ENTRIES];
+    int count;
+} tsfi_cp_share_table;
+
+void tsfi_cp_share_init(tsfi_cp_share_table *tbl);
+int tsfi_cp_share_set(tsfi_cp_share_table *tbl, const char *uid, int absolute, int val);
+int tsfi_cp_share_calculate_slice(const tsfi_cp_share_table *tbl, const char *uid, int total_weight_sum, int *slice_ms);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -2249,6 +2249,31 @@ int main(void) {
     assert(printer_dev.line_count == 24);
     printf("  [PASS] VM/370 CP APL console screen translation spool writes verified.\n");
 
+    // 123. VM/370 Release 3 CP Scheduler Share Configurator Verification
+    printf("[Test] Verifying VM/370 CP Scheduler Share Configurator...\n");
+    tsfi_cp_share_table shares;
+    tsfi_cp_share_init(&shares);
+    assert(shares.count == 0);
+    
+    // Set relative share
+    assert(tsfi_cp_share_set(&shares, "USER01", 0, 100) == 0);
+    // Set absolute share
+    assert(tsfi_cp_share_set(&shares, "USER02", 1, 20) == 0);
+    assert(shares.count == 2);
+    
+    // Test invalid value parameter validations
+    assert(tsfi_cp_share_set(&shares, "USER03", 1, 105) == -2);
+    assert(tsfi_cp_share_set(&shares, "USER03", 0, 20000) == -3);
+    
+    // Calculate timeslices
+    int share_slice_ms = 0;
+    assert(tsfi_cp_share_calculate_slice(&shares, "USER02", 400, &share_slice_ms) == 0);
+    assert(share_slice_ms == 200); // 20% of 1000ms
+    
+    assert(tsfi_cp_share_calculate_slice(&shares, "USER01", 400, &share_slice_ms) == 0);
+    assert(share_slice_ms == 250); // 100 / 400 * 1000ms
+    printf("  [PASS] VM/370 CP scheduler share timeslices verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
