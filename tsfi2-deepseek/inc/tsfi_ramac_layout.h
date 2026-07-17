@@ -947,4 +947,20 @@ typedef struct {
 
 int tsfi_law_query(const tsfi_law_case *db, int db_size, const char *query_word, int results_out[8]);
 
+// Command Control System
+typedef struct {
+    char sensor_name[16];
+    int curr_value;
+    int threshold;
+    int alert_triggered;
+} tsfi_command_sensor;
+
+typedef struct {
+    tsfi_command_sensor sensors[4];
+    int sensor_count;
+} tsfi_command_center;
+
+void tsfi_command_init(tsfi_command_center *cc);
+int tsfi_command_poll(tsfi_command_center *cc);
+
 #endif // TSFI_RAMAC_LAYOUT_H

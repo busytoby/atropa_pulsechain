@@ -4164,3 +4164,28 @@ int tsfi_law_query(const tsfi_law_case *db, int db_size, const char *query_word,
     }
     return count;
 }
+
+void tsfi_command_init(tsfi_command_center *cc) {
+    if (!cc) return;
+    cc->sensor_count = 0;
+    for (int i = 0; i < 4; i++) {
+        cc->sensors[i].sensor_name[0] = '\0';
+        cc->sensors[i].curr_value = 0;
+        cc->sensors[i].threshold = 0;
+        cc->sensors[i].alert_triggered = 0;
+    }
+}
+
+int tsfi_command_poll(tsfi_command_center *cc) {
+    if (!cc) return 0;
+    int triggered = 0;
+    for (int i = 0; i < cc->sensor_count; i++) {
+        if (cc->sensors[i].curr_value > cc->sensors[i].threshold) {
+            cc->sensors[i].alert_triggered = 1;
+            triggered = 1;
+        } else {
+            cc->sensors[i].alert_triggered = 0;
+        }
+    }
+    return triggered;
+}

@@ -504,6 +504,21 @@ int main(void) {
     assert(law_res[0] == 1923);
     printf("  [PASS] Statutory query router verified successfully.\n");
 
+    // 30. Command Control warning interlock Verification
+    printf("[Test] Verifying command control polling loops...\n");
+    tsfi_command_center cc;
+    tsfi_command_init(&cc);
+    
+    strcpy(cc.sensors[0].sensor_name, "RADAR_WARN");
+    cc.sensors[0].curr_value = 85;
+    cc.sensors[0].threshold = 50;
+    cc.sensor_count = 1;
+    
+    int poll_alert = tsfi_command_poll(&cc);
+    assert(poll_alert == 1);
+    assert(cc.sensors[0].alert_triggered == 1);
+    printf("  [PASS] Command control polling loop alert matched.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
