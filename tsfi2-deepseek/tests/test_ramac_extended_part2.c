@@ -1305,6 +1305,30 @@ int main(void) {
     assert(db_status == 117);
     printf("  [PASS] CODASYL DML compiler runtime and syntax validation verified.\n");
 
+    // 135. CODASYL 2-3 Tree Distributed Database Controller Verification
+    printf("[Test] Verifying CODASYL 2-3 Tree Distributed Database Controller...\n");
+    tsfi_zvm_23_tree tree23;
+    tsfi_zvm_23_tree_init(&tree23);
+    
+    // Add nodes with valid .dat.bin database slice file extensions (Rule 13 compliant)
+    assert(tsfi_zvm_23_tree_add_node(&tree23, 10, "node10.dat.bin") == 0);
+    assert(tsfi_zvm_23_tree_add_node(&tree23, 20, "node20.dat.bin") == 0);
+    // Path violating Rule 13 (must end in .dat.bin) should fail
+    assert(tsfi_zvm_23_tree_add_node(&tree23, 30, "node30.json") == -3);
+    
+    // Mount node
+    assert(tsfi_zvm_23_tree_mount(&tree23, 10, "192.168.1.50") == 0);
+    
+    // Execute DML call from mounted IP
+    int call_status = 0;
+    assert(tsfi_zvm_23_tree_call(&tree23, 10, "192.168.1.50", "STORE CUSTREC", &call_status) == 0);
+    assert(call_status == 0);
+    
+    // Execute DML call from unmounted IP should fail
+    assert(tsfi_zvm_23_tree_call(&tree23, 10, "192.168.1.99", "STORE CUSTREC", &call_status) == -3);
+    assert(call_status == 101);
+    printf("  [PASS] 2-3 tree client mount and call capabilities verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

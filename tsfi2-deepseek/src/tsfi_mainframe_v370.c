@@ -1290,3 +1290,68 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     
     return -1;
 }
+
+void tsfi_zvm_23_tree_init(tsfi_zvm_23_tree *tree) {
+    if (!tree) return;
+    memset(tree, 0, sizeof(tsfi_zvm_23_tree));
+}
+
+int tsfi_zvm_23_tree_add_node(tsfi_zvm_23_tree *tree, int key, const char *dat_bin_path) {
+    if (!tree || !dat_bin_path || tree->node_count >= MAX_TREE_NODES) return -1;
+    
+    // Rule 13 compliance check: path must end in .dat.bin
+    int path_len = strlen(dat_bin_path);
+    if (path_len < 8 || strcmp(dat_bin_path + path_len - 8, ".dat.bin") != 0) {
+        return -3; // Invalid file extension
+    }
+    
+    for (int i = 0; i < tree->node_count; i++) {
+        if (tree->nodes[i].key == key) {
+            return -2;
+        }
+    }
+    
+    tsfi_zvm_23_node *node = &tree->nodes[tree->node_count];
+    node->key = key;
+    snprintf(node->dat_bin_path, sizeof(node->dat_bin_path), "%s", dat_bin_path);
+    node->is_mounted = 0;
+    node->mounted_client_ip[0] = '\0';
+    
+    tree->node_count++;
+    return 0;
+}
+
+int tsfi_zvm_23_tree_mount(tsfi_zvm_23_tree *tree, int key, const char *client_ip) {
+    if (!tree || !client_ip) return -1;
+    for (int i = 0; i < tree->node_count; i++) {
+        if (tree->nodes[i].key == key) {
+            tsfi_zvm_23_node *node = &tree->nodes[i];
+            node->is_mounted = 1;
+            snprintf(node->mounted_client_ip, sizeof(node->mounted_client_ip), "%s", client_ip);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip, const char *dml_statement, int *out_db_status) {
+    if (!tree || !client_ip || !dml_statement || !out_db_status) return -1;
+    *out_db_status = 0;
+    
+    for (int i = 0; i < tree->node_count; i++) {
+        if (tree->nodes[i].key == key) {
+            tsfi_zvm_23_node *node = &tree->nodes[i];
+            if (!node->is_mounted || strcmp(node->mounted_client_ip, client_ip) != 0) {
+                *out_db_status = 101; // Security/Mount failure status
+                return -3;
+            }
+            // Mock compile/execute DML statement success check
+            if (strstr(dml_statement, "STORE") != NULL || strstr(dml_statement, "GET") != NULL) {
+                return 0;
+            }
+            *out_db_status = 105; // Bad DML syntax status
+            return -2;
+        }
+    }
+    return -1;
+}

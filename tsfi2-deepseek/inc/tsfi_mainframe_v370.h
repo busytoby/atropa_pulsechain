@@ -432,4 +432,23 @@ typedef struct {
 void tsfi_codasyl_dml_init(tsfi_codasyl_dml_runtime *rt, tsfi_codasyl_schema *schema, tsfi_dbtg_currency *currency);
 int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_statement, int *out_db_status);
 
+// Scenario 135: CODASYL 2-3 Tree Distributed Database Controller
+#define MAX_TREE_NODES 16
+typedef struct {
+    int key;
+    char dat_bin_path[64];
+    int is_mounted;
+    char mounted_client_ip[32];
+} tsfi_zvm_23_node;
+
+typedef struct {
+    tsfi_zvm_23_node nodes[MAX_TREE_NODES];
+    int node_count;
+} tsfi_zvm_23_tree;
+
+void tsfi_zvm_23_tree_init(tsfi_zvm_23_tree *tree);
+int tsfi_zvm_23_tree_add_node(tsfi_zvm_23_tree *tree, int key, const char *dat_bin_path);
+int tsfi_zvm_23_tree_mount(tsfi_zvm_23_tree *tree, int key, const char *client_ip);
+int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip, const char *dml_statement, int *out_db_status);
+
 #endif // TSFI_MAINFRAME_V370_H
