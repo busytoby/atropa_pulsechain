@@ -1475,6 +1475,22 @@ int main(void) {
     assert(strcmp(status_name, "Under Audit") == 0);
     printf("  [PASS] IRS CADE Taxpayer Status Name Resolver verified.\n");
 
+    // 140. Verify IRS IMF Corporate Form Verifier
+    printf("[TEST] Validating IRS IMF Corporate Form Verifier...\n");
+    int is_corp = -1;
+    int corp_res = tsfi_mf_imf_is_corporate_form(20, &is_corp);
+    assert(corp_res == 0);
+    assert(is_corp == 1);
+    printf("  [PASS] IRS IMF Corporate Form Verifier verified.\n");
+
+    // 141. Verify IRS CADE Taxpayer Audit Status Verifier
+    printf("[TEST] Validating IRS CADE Taxpayer Audit Status Verifier...\n");
+    int is_audit = -1;
+    int audit_res = tsfi_mf_cade_is_under_audit(2, &is_audit);
+    assert(audit_res == 0);
+    assert(is_audit == 1);
+    printf("  [PASS] IRS CADE Taxpayer Audit Status Verifier verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

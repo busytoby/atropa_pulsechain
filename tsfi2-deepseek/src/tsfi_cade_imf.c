@@ -384,3 +384,23 @@ int tsfi_mf_cade_get_status_name(int status_code, char *name_out, int max_len) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_corporate_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 20) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_under_audit(int status_code, int *is_audit) {
+    if (!is_audit) return -1;
+
+    *is_audit = 0;
+    if (status_code == 2) {
+        *is_audit = 1;
+    }
+    return 0;
+}
