@@ -3937,3 +3937,27 @@ void tsfi_jovial_overlay_write(tsfi_jovial_overlay_pool *pool, int offset, uint3
     if (!pool || offset < 0 || offset >= 16) return;
     pool->overlay_storage[offset] = val;
 }
+
+uint32_t tsfi_jovial_table_read(const tsfi_jovial_table *table, int item_idx, int word_idx) {
+    if (!table || item_idx < 0 || item_idx >= 4 || word_idx < 0 || word_idx >= 2) return 0;
+    
+    int index = 0;
+    if (table->is_parallel) {
+        index = word_idx * 4 + item_idx;
+    } else {
+        index = item_idx * 2 + word_idx;
+    }
+    return table->data[index];
+}
+
+void tsfi_jovial_table_write(tsfi_jovial_table *table, int item_idx, int word_idx, uint32_t val) {
+    if (!table || item_idx < 0 || item_idx >= 4 || word_idx < 0 || word_idx >= 2) return;
+    
+    int index = 0;
+    if (table->is_parallel) {
+        index = word_idx * 4 + item_idx;
+    } else {
+        index = item_idx * 2 + word_idx;
+    }
+    table->data[index] = val;
+}

@@ -849,4 +849,13 @@ typedef struct {
 uint32_t tsfi_jovial_overlay_read(const tsfi_jovial_overlay_pool *pool, int offset);
 void tsfi_jovial_overlay_write(tsfi_jovial_overlay_pool *pool, int offset, uint32_t val);
 
+// JOVIAL Parallel vs Serial Table Packing
+typedef struct {
+    uint32_t data[8]; // 4 items x 2 words
+    int is_parallel;  // 1 for parallel, 0 for serial
+} tsfi_jovial_table;
+
+uint32_t tsfi_jovial_table_read(const tsfi_jovial_table *table, int item_idx, int word_idx);
+void tsfi_jovial_table_write(tsfi_jovial_table *table, int item_idx, int word_idx, uint32_t val);
+
 #endif // TSFI_RAMAC_LAYOUT_H

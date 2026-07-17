@@ -338,6 +338,25 @@ int main(void) {
     assert(tsfi_jovial_overlay_read(&pool, 2) == 45000);
     printf("  [PASS] JOVIAL overlay shared memory space verified.\n");
 
+    // 18. JOVIAL Parallel vs Serial Table Packing Verification
+    printf("[Test] Verifying JOVIAL table packing modes...\n");
+    tsfi_jovial_table serial_tbl;
+    memset(&serial_tbl, 0, sizeof(serial_tbl));
+    serial_tbl.is_parallel = 0;
+    
+    tsfi_jovial_table_write(&serial_tbl, 1, 0, 777);
+    assert(serial_tbl.data[2] == 777);
+    assert(tsfi_jovial_table_read(&serial_tbl, 1, 0) == 777);
+    
+    tsfi_jovial_table parallel_tbl;
+    memset(&parallel_tbl, 0, sizeof(parallel_tbl));
+    parallel_tbl.is_parallel = 1;
+    
+    tsfi_jovial_table_write(&parallel_tbl, 1, 0, 888);
+    assert(parallel_tbl.data[1] == 888);
+    assert(tsfi_jovial_table_read(&parallel_tbl, 1, 0) == 888);
+    printf("  [PASS] JOVIAL parallel and serial table layouts verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
