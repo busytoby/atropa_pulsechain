@@ -835,6 +835,14 @@ int main(void) {
     assert(rx_rh.end_bracket == 0);
     printf("  [PASS] Request/Response Header (RH) serialization verified.\n");
 
+    // 56. SNA LU Type Mapping Verification
+    printf("[Test] Verifying SNA LU Type Mapping...\n");
+    assert(tsfi_sna_map_lu_type(LU_TYPE_FILE) == SNA_LU_TYPE1);
+    assert(tsfi_sna_map_lu_type(LU_TYPE_SOCKET) == SNA_LU_TYPE62);
+    assert(tsfi_sna_map_lu_type(LU_TYPE_TERMINAL) == SNA_LU_TYPE2);
+    assert(tsfi_sna_map_lu_type(LU_TYPE_DISK) == SNA_LU_TYPE0);
+    printf("  [PASS] Standard SNA LU type mapping verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

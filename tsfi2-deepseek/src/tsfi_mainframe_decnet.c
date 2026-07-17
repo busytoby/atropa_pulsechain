@@ -1425,3 +1425,13 @@ int tsfi_sna_deserialize_rh(const uint8_t *buf, size_t len, tsfi_sna_rh *rh_out)
     rh_out->end_bracket = (buf[2] >> 5) & 0x01;
     return 0;
 }
+
+int tsfi_sna_map_lu_type(uint8_t unified_type) {
+    switch (unified_type) {
+        case LU_TYPE_FILE:     return SNA_LU_TYPE1;
+        case LU_TYPE_SOCKET:   return SNA_LU_TYPE62;
+        case LU_TYPE_TERMINAL: return SNA_LU_TYPE2;
+        case LU_TYPE_DISK:     return SNA_LU_TYPE0;
+        default:               return SNA_LU_TYPE0;
+    }
+}

@@ -625,4 +625,13 @@ typedef struct {
 int tsfi_sna_serialize_rh(const tsfi_sna_rh *rh, uint8_t *buf, size_t *len_out);
 int tsfi_sna_deserialize_rh(const uint8_t *buf, size_t len, tsfi_sna_rh *rh_out);
 
+#define SNA_LU_TYPE0   0x00
+#define SNA_LU_TYPE1   0x01
+#define SNA_LU_TYPE2   0x02
+#define SNA_LU_TYPE3   0x03
+#define SNA_LU_TYPE4   0x04
+#define SNA_LU_TYPE62  0x06
+
+int tsfi_sna_map_lu_type(uint8_t unified_type);
+
 #endif // TSFI_MAINFRAME_DECNET_H
