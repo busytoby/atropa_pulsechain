@@ -1729,3 +1729,116 @@ int tsfi_ddp_bridge_status(const tsfi_ddp_bridge *bridge, char *status_out, size
              bridge->coaxial_carrier_frequency);
     return 0;
 }
+
+int tsfi_braille_translate(const char *ascii_in, uint8_t *braille_out, size_t *len_out) {
+    if (!ascii_in || !braille_out || !len_out) return -1;
+    size_t i = 0;
+    for (; ascii_in[i] != '\0' && i < 256; i++) {
+        char c = ascii_in[i];
+        if (c >= 'A' && c <= 'Z') {
+            braille_out[i] = (c - 'A' + 1) & 0x3F;
+        } else if (c >= 'a' && c <= 'z') {
+            braille_out[i] = (c - 'a' + 1) & 0x3F;
+        } else if (c == ' ') {
+            braille_out[i] = 0x00;
+        } else {
+            braille_out[i] = 0x2A;
+        }
+    }
+    *len_out = i;
+    return 0;
+}
+
+void tsfi_bubble_init(tsfi_bubble_memory *bm) {
+    if (!bm) return;
+    bm->active_track = 0;
+    bm->write_latch = 0;
+    memset(bm->bubble_data, 0, sizeof(bm->bubble_data));
+}
+
+int tsfi_bubble_read(tsfi_bubble_memory *bm, uint32_t track, uint8_t *val) {
+    if (!bm || !val || track >= 256) return -1;
+    bm->active_track = track;
+    *val = bm->bubble_data[track];
+    return 0;
+}
+
+int tsfi_bubble_write(tsfi_bubble_memory *bm, uint32_t track, uint8_t val) {
+    if (!bm || track >= 256) return -1;
+    bm->active_track = track;
+    bm->bubble_data[track] = val;
+    return 0;
+}
+
+void tsfi_adds_init(tsfi_adds_terminal *term) {
+    if (!term) return;
+    memset(term->screen_buffer, ' ', sizeof(term->screen_buffer));
+    term->cursor_pos = 0;
+}
+
+int tsfi_adds_write_char(tsfi_adds_terminal *term, uint8_t ebcdic_char) {
+    if (!term || term->cursor_pos >= 80 * 24) return -1;
+    char ascii_val = ' ';
+    if (ebcdic_char == 0x40) {
+        ascii_val = ' ';
+    } else if (ebcdic_char >= 0xC1 && ebcdic_char <= 0xC9) {
+        ascii_val = 'A' + (ebcdic_char - 0xC1);
+    } else {
+        ascii_val = '?';
+    }
+    term->screen_buffer[term->cursor_pos++] = ascii_val;
+    return 0;
+}
+
+void tsfi_plato_init(tsfi_cdc_plato *plato) {
+    if (!plato) return;
+    plato->terminal_connected = 1;
+    plato->keystroke_count = 0;
+}
+
+int tsfi_plato_process_key(tsfi_cdc_plato *plato, uint8_t keycode) {
+    if (!plato || !plato->terminal_connected) return -1;
+    plato->keystroke_count++;
+    return (keycode == 32) ? 1 : 0;
+}
+
+void tsfi_mis_budget_init(tsfi_mis_budget *mb, float cpu_r, float mem_r, float storage_r, float limit) {
+    if (!mb) return;
+    mb->cpu_rate = cpu_r;
+    mb->memory_rate = mem_r;
+    mb->storage_rate = storage_r;
+    mb->budget_limit = limit;
+    mb->current_cost = 0.0f;
+}
+
+float tsfi_mis_calculate_cost(tsfi_mis_budget *mb, float cpu_hours, float mem_gb_hours, float storage_gb) {
+    if (!mb) return 0.0f;
+    float cost = (cpu_hours * mb->cpu_rate) + (mem_gb_hours * mb->memory_rate) + (storage_gb * mb->storage_rate);
+    mb->current_cost += cost;
+    return cost;
+}
+
+int tsfi_mis_is_over_budget(const tsfi_mis_budget *mb) {
+    if (!mb) return 0;
+    return (mb->current_cost > mb->budget_limit) ? 1 : 0;
+}
+
+void tsfi_sdc_init(tsfi_sdc_crypto *sdc, uint32_t mask, const uint8_t *m_key) {
+    if (!sdc) return;
+    sdc->auth_mask = mask;
+    if (m_key) {
+        memcpy(sdc->master_key, m_key, 16);
+    } else {
+        memset(sdc->master_key, 0, 16);
+    }
+}
+
+int tsfi_sdc_validate_record(const tsfi_sdc_crypto *sdc, const uint8_t *record_data, size_t len, uint32_t signature) {
+    if (!sdc || !record_data || len == 0) return -1;
+    uint32_t checksum = sdc->auth_mask;
+    for (size_t i = 0; i < len; i++) {
+        checksum ^= record_data[i];
+        checksum ^= sdc->master_key[i % 16];
+    }
+    return (checksum == signature) ? 0 : -2;
+}

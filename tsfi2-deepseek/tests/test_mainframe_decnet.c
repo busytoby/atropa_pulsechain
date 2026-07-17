@@ -1067,6 +1067,63 @@ int main(void) {
     assert(strstr(ddp_status, "Coaxial Freq=12.5MHz") != NULL);
     printf("  [PASS] BNA node configurations and DDP bridge statuses verified.\n");
 
+    // 64. Sojka's Systems Verification (Braille WP, Bubble Memory, ADDS, PLATO)
+    printf("[Test] Verifying Sojka's Systems...\n");
+    
+    // Braille WP
+    uint8_t braille[16];
+    size_t braille_len = 0;
+    assert(tsfi_braille_translate("HELLO", braille, &braille_len) == 0);
+    assert(braille_len == 5);
+    assert(braille[0] == 8); // 'H' -> 8th letter
+    assert(braille[1] == 5); // 'E' -> 5th letter
+    
+    // Bubble Memory
+    tsfi_bubble_memory bm;
+    tsfi_bubble_init(&bm);
+    assert(tsfi_bubble_write(&bm, 12, 0xEF) == 0);
+    uint8_t bubble_val = 0;
+    assert(tsfi_bubble_read(&bm, 12, &bubble_val) == 0);
+    assert(bubble_val == 0xEF);
+    
+    // ADDS Terminal
+    tsfi_adds_terminal term;
+    tsfi_adds_init(&term);
+    assert(tsfi_adds_write_char(&term, 0xC1) == 0); // EBCDIC 'A'
+    assert(term.screen_buffer[0] == 'A');
+    assert(term.cursor_pos == 1);
+    
+    // CDC PLATO
+    tsfi_cdc_plato plato;
+    tsfi_plato_init(&plato);
+    assert(tsfi_plato_process_key(&plato, 32) == 1);
+    assert(plato.keystroke_count == 1);
+    
+    printf("  [PASS] Sojka's systems (Braille, Bubble Memory, ADDS, PLATO) verified.\n");
+
+    // 65. Sojka's Extended Systems (MIS Budget, SDC Cryptographic validation)
+    printf("[Test] Verifying Sojka's Extended Systems...\n");
+    
+    // MIS Budget
+    tsfi_mis_budget mb;
+    tsfi_mis_budget_init(&mb, 150.0f, 25.0f, 0.5f, 1000.0f);
+    assert(tsfi_mis_calculate_cost(&mb, 4.0f, 10.0f, 100.0f) == 900.0f); // 4*150 + 10*25 + 100*0.5 = 900
+    assert(tsfi_mis_is_over_budget(&mb) == 0);
+    assert(tsfi_mis_calculate_cost(&mb, 1.0f, 0.0f, 300.0f) == 300.0f);  // +300 = 1200
+    assert(tsfi_mis_is_over_budget(&mb) == 1);
+    
+    // SDC Crypto validation
+    tsfi_sdc_crypto sdc;
+    uint8_t mkey[16] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00 };
+    tsfi_sdc_init(&sdc, 0xDEADBEEF, mkey);
+    
+    uint8_t dummy_rec[] = { 0xAA, 0xBB, 0xCC };
+    uint32_t expected_sig = 0xDEADBEEF ^ 0xAA ^ 0xBB ^ 0xCC ^ 0x11 ^ 0x22 ^ 0x33;
+    assert(tsfi_sdc_validate_record(&sdc, dummy_rec, 3, expected_sig) == 0);
+    assert(tsfi_sdc_validate_record(&sdc, dummy_rec, 3, 0x00) == -2);
+    
+    printf("  [PASS] Sojka's extended systems (MIS Budget, SDC Cryptography) verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

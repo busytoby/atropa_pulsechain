@@ -743,4 +743,58 @@ typedef struct {
 void tsfi_ddp_bridge_init(tsfi_ddp_bridge *bridge);
 int tsfi_ddp_bridge_status(const tsfi_ddp_bridge *bridge, char *status_out, size_t max_len);
 
+// Braille Word Processor cell mapping (FIPS-compliant accessibility)
+int tsfi_braille_translate(const char *ascii_in, uint8_t *braille_out, size_t *len_out);
+
+// Magnetic Bubble Memory Controller
+typedef struct {
+    uint32_t active_track;
+    int write_latch;
+    uint8_t bubble_data[256];
+} tsfi_bubble_memory;
+
+void tsfi_bubble_init(tsfi_bubble_memory *bm);
+int tsfi_bubble_read(tsfi_bubble_memory *bm, uint32_t track, uint8_t *val);
+int tsfi_bubble_write(tsfi_bubble_memory *bm, uint32_t track, uint8_t val);
+
+// NCR / ADDS Regent Terminal Emulator
+typedef struct {
+    char screen_buffer[80 * 24];
+    int cursor_pos;
+} tsfi_adds_terminal;
+
+void tsfi_adds_init(tsfi_adds_terminal *term);
+int tsfi_adds_write_char(tsfi_adds_terminal *term, uint8_t ebcdic_char);
+
+// CDC PLATO Interactive Terminal loop
+typedef struct {
+    int terminal_connected;
+    int keystroke_count;
+} tsfi_cdc_plato;
+
+void tsfi_plato_init(tsfi_cdc_plato *plato);
+int tsfi_plato_process_key(tsfi_cdc_plato *plato, uint8_t keycode);
+
+// MIS Budget Survey & Cost Allocation Metrics
+typedef struct {
+    float cpu_rate;
+    float memory_rate;
+    float storage_rate;
+    float budget_limit;
+    float current_cost;
+} tsfi_mis_budget;
+
+void tsfi_mis_budget_init(tsfi_mis_budget *mb, float cpu_r, float mem_r, float storage_r, float limit);
+float tsfi_mis_calculate_cost(tsfi_mis_budget *mb, float cpu_hours, float mem_gb_hours, float storage_gb);
+int tsfi_mis_is_over_budget(const tsfi_mis_budget *mb);
+
+// System Development Corporation (SDC) Cryptographic validation
+typedef struct {
+    uint32_t auth_mask;
+    uint8_t master_key[16];
+} tsfi_sdc_crypto;
+
+void tsfi_sdc_init(tsfi_sdc_crypto *sdc, uint32_t mask, const uint8_t *m_key);
+int tsfi_sdc_validate_record(const tsfi_sdc_crypto *sdc, const uint8_t *record_data, size_t len, uint32_t signature);
+
 #endif // TSFI_MAINFRAME_DECNET_H
