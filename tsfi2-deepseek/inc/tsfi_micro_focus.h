@@ -59,6 +59,7 @@ int tsfi_mf_majordomo_gen_cookie(const char *email, const char *list_name, uint3
 int tsfi_mf_majordomo_queue_post(const char *list_name, const char *sender, const char *subject, uint32_t *pending_cookies, int *cookie_count, int max_cookies);
 int tsfi_mf_majordomo_is_admin(const char *list_name, const char *email, const char **admin_registry, int admin_count);
 int tsfi_mf_majordomo_check_password(const char *list_name, const char *password, const char *stored_hash_or_pass);
+int tsfi_mf_majordomo_get_config(const char *key, const char *config, char *val_out, int max_len);
 int tsfi_mf_majordomo_check_post_policy(const char *policy, const char *sender, int is_subscriber, int *needs_moderation);
 int tsfi_mf_majordomo_archive_delete(const char *list_name, const char *file_name, const char **archive_files, int *archive_count);
 int tsfi_mf_majordomo_archive_prune(const char *list_name, const char **archive_files, int *archive_count, const char *prune_suffix);
@@ -73,6 +74,7 @@ int tsfi_mf_cics_inquire_priority_log(uint32_t target_task_id, const uint32_t *t
 int tsfi_mf_cics_inquire_suspended(uint32_t target_task_id, const uint32_t *suspend_log, int log_count, int *is_suspended_out);
 int tsfi_mf_cics_suspend_task(uint32_t target_task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_cics_inquire_priority(uint32_t task_id, int priority_registry, int *priority_out);
+int tsfi_mf_cics_inquire_current_priority(uint32_t task_id, int priority_registry, int *priority_out);
 int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_out, int max_len);
 int tsfi_mf_cics_resume(uint32_t task_id, uint32_t *suspend_log, int *log_count);
 int tsfi_mf_cics_change_priority(uint32_t task_id, int new_priority, int *priority_registry_out);

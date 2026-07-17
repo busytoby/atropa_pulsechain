@@ -136,5 +136,7 @@
 | 202 | CICS Target Task Priority Changer | PASS | Modifies priority parameter for target task | Volume 33 |
 | 203 | Majordomo Subscription Policy Checker | PASS | Validates subscription policies and confirmation | Volume 33 |
 | 204 | CICS Task Priority Log Inquirer | PASS | Returns latest updated task priority level | Volume 33 |
+| 205 | Majordomo Config Key Getter | PASS | Reads specified list configuration parameters | Volume 33 |
+| 206 | CICS Task Current Priority Inquirer | PASS | Checks active priority value for dynamic tasks | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 204 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 206 Scenarios validated successfully)

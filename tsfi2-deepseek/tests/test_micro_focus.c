@@ -1083,6 +1083,22 @@ int main(void) {
     assert(logged_priority == 120);
     printf("  [PASS] CICS INQUIRE TASK PRIORITY LOG verified.\n");
 
+    // 95. Verify Majordomo List Config Getter
+    printf("[TEST] Validating Majordomo Config Getter...\n");
+    char get_cfg_val[64] = {0};
+    int get_cfg_res = tsfi_mf_majordomo_get_config("moderate", test_cfg_buf, get_cfg_val, sizeof(get_cfg_val));
+    assert(get_cfg_res == 0);
+    assert(strcmp(get_cfg_val, "yes") == 0);
+    printf("  [PASS] Majordomo Config Getter verified.\n");
+
+    // 96. Verify CICS Task Execution Inquire Current Priority Emulator
+    printf("[TEST] Validating CICS INQUIRE TASK CURRENT PRIORITY...\n");
+    int current_prio_val = 0;
+    int inq_curr_res = tsfi_mf_cics_inquire_current_priority(6001, 200, &current_prio_val);
+    assert(inq_curr_res == 0);
+    assert(current_prio_val == 200);
+    printf("  [PASS] CICS INQUIRE TASK CURRENT PRIORITY verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

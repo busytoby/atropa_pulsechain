@@ -1698,3 +1698,32 @@ int tsfi_mf_cics_inquire_priority_log(uint32_t target_task_id, const uint32_t *t
 
     return -2;
 }
+
+int tsfi_mf_majordomo_get_config(const char *key, const char *config, char *val_out, int max_len) {
+    if (!key || !config || !val_out || max_len <= 0) return -1;
+
+    char search_pattern[64];
+    snprintf(search_pattern, sizeof(search_pattern), "%s =", key);
+    char *match = strstr(config, search_pattern);
+    if (match) {
+        char *val_start = match + strlen(search_pattern);
+        while (*val_start == ' ') val_start++;
+        int val_len = 0;
+        while (val_start[val_len] != '\n' && val_start[val_len] != '\0' && val_start[val_len] != '\r') {
+            val_len++;
+        }
+        if (val_len >= max_len) val_len = max_len - 1;
+        memcpy(val_out, val_start, val_len);
+        val_out[val_len] = '\0';
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_mf_cics_inquire_current_priority(uint32_t task_id, int priority_registry, int *priority_out) {
+    (void)task_id;
+    if (!priority_out) return -1;
+
+    *priority_out = priority_registry;
+    return 0;
+}
