@@ -424,3 +424,23 @@ int tsfi_mf_cade_is_active(int status_code, int *is_active) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_fica_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 30) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_suspended(int status_code, int *is_suspended) {
+    if (!is_suspended) return -1;
+
+    *is_suspended = 0;
+    if (status_code == 3) {
+        *is_suspended = 1;
+    }
+    return 0;
+}

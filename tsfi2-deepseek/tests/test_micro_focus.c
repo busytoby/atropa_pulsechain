@@ -1507,6 +1507,22 @@ int main(void) {
     assert(is_act == 1);
     printf("  [PASS] IRS CADE Taxpayer Active Checker verified.\n");
 
+    // 144. Verify IRS IMF FICA Form Verifier
+    printf("[TEST] Validating IRS IMF FICA Form Verifier...\n");
+    int is_fica = -1;
+    int fica_res = tsfi_mf_imf_is_fica_form(30, &is_fica);
+    assert(fica_res == 0);
+    assert(is_fica == 1);
+    printf("  [PASS] IRS IMF FICA Form Verifier verified.\n");
+
+    // 145. Verify IRS CADE Taxpayer Suspended Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Suspended Checker...\n");
+    int is_susp = -1;
+    int susp_status_res = tsfi_mf_cade_is_suspended(3, &is_susp);
+    assert(susp_status_res == 0);
+    assert(is_susp == 1);
+    printf("  [PASS] IRS CADE Taxpayer Suspended Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

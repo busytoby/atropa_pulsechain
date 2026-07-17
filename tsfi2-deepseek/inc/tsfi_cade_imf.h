@@ -33,5 +33,7 @@ int tsfi_mf_imf_is_corporate_form(int doc_code, int *result);
 int tsfi_mf_cade_is_under_audit(int status_code, int *is_audit);
 int tsfi_mf_imf_is_individual_form(int doc_code, int *result);
 int tsfi_mf_cade_is_active(int status_code, int *is_active);
+int tsfi_mf_imf_is_fica_form(int doc_code, int *result);
+int tsfi_mf_cade_is_suspended(int status_code, int *is_suspended);
 
 #endif // TSFI_CADE_IMF_H
