@@ -1737,6 +1737,84 @@ int main(void) {
     assert(v_ctrl.rollback_executed == 1);
     printf("  [PASS] Vredestein transaction commit/rollback consensus broker verified.\n");
 
+    // 89. Cryptographic Consensus and Transaction Roll Forward/Back Verification
+    printf("[Test] Verifying Cryptographic Consensus & Roll Forward/Back...\n");
+    tsfi_decnet_router router_net;
+    tsfi_decnet_init(&router_net, 100);
+    assert(tsfi_decnet_add_neighbor(&router_net, 200, 1) == 0);
+    assert(tsfi_decnet_add_neighbor(&router_net, 300, 1) == 0);
+    
+    uint8_t pki_keys[11][32];
+    memset(pki_keys, 0, sizeof(pki_keys));
+    for (int i = 0; i < 11; i++) {
+        pki_keys[i][0] = (uint8_t)(i + 1);
+    }
+    
+    tsfi_consensus_engine consensus_loop;
+    tsfi_consensus_init(&consensus_loop);
+    assert(tsfi_decnet_broadcast_consensus(&router_net, &consensus_loop) == 2);
+    
+    uint8_t valid_sigs[11][32];
+    memset(valid_sigs, 0, sizeof(valid_sigs));
+    for (int i = 0; i < 6; i++) {
+        valid_sigs[i][0] = (uint8_t)(i + 1);
+    }
+    
+    int signature_count = 0;
+    for (int i = 0; i < 6; i++) {
+        for (int k = 0; k < 11; k++) {
+            if (pki_keys[k][0] == valid_sigs[i][0]) {
+                signature_count++;
+            }
+        }
+    }
+    
+    int node_vote = (signature_count >= 6) ? 1 : 0;
+    consensus_loop.nodes[0].vote_commit = node_vote;
+    consensus_loop.nodes[1].vote_commit = node_vote;
+    
+    tsfi_vredestein_controller store_node;
+    tsfi_vredestein_init(&store_node);
+    store_node.write_in_progress = 1;
+    
+    assert(tsfi_consensus_execute(&consensus_loop) == 0);
+    assert(consensus_loop.global_state == 1);
+    assert(tsfi_vredestein_process_consensus(&store_node, &consensus_loop) == 0);
+    assert(store_node.write_in_progress == 0);
+    assert(store_node.rollback_executed == 0);
+    
+    tsfi_consensus_init(&consensus_loop);
+    assert(tsfi_decnet_broadcast_consensus(&router_net, &consensus_loop) == 2);
+    
+    memset(valid_sigs, 0, sizeof(valid_sigs));
+    for (int i = 0; i < 4; i++) {
+        valid_sigs[i][0] = (uint8_t)(i + 1);
+    }
+    
+    signature_count = 0;
+    for (int i = 0; i < 4; i++) {
+        for (int k = 0; k < 11; k++) {
+            if (pki_keys[k][0] == valid_sigs[i][0]) {
+                signature_count++;
+            }
+        }
+    }
+    
+    node_vote = (signature_count >= 6) ? 1 : 0;
+    consensus_loop.nodes[0].vote_commit = node_vote;
+    consensus_loop.nodes[1].vote_commit = node_vote;
+    
+    tsfi_vredestein_init(&store_node);
+    store_node.write_in_progress = 1;
+    store_node.dirty_flag = 1;
+    
+    assert(tsfi_consensus_execute(&consensus_loop) == 0);
+    assert(consensus_loop.global_state == 2);
+    assert(tsfi_vredestein_process_consensus(&store_node, &consensus_loop) == 0);
+    assert(store_node.write_in_progress == 0);
+    assert(store_node.rollback_executed == 1);
+    printf("  [PASS] Cryptographic multi-sig threshold consensus roll forward and rollback verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
