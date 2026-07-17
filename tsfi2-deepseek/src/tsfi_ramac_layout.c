@@ -6060,3 +6060,41 @@ int tsfi_cp_spool_pop(tsfi_cp_spool_queue *q, char *data_out) {
     q->count--;
     return 0;
 }
+
+void tsfi_iucv_broker_init(tsfi_iucv_broker *broker) {
+    if (!broker) return;
+    memset(broker, 0, sizeof(tsfi_iucv_broker));
+}
+
+int tsfi_iucv_connect(tsfi_iucv_broker *broker, const char *src, const char *dest) {
+    if (!broker || !src || !dest) return -1;
+    for (int i = 0; i < MAX_IUCV_PATHS; i++) {
+        if (broker->paths[i].status == IUCV_PATH_FREE) {
+            broker->paths[i].path_id = i;
+            strncpy(broker->paths[i].source_user, src, sizeof(broker->paths[i].source_user) - 1);
+            strncpy(broker->paths[i].dest_user, dest, sizeof(broker->paths[i].dest_user) - 1);
+            broker->paths[i].status = IUCV_PATH_ACTIVE;
+            broker->paths[i].message_pending = 0;
+            return i;
+        }
+    }
+    return -2;
+}
+
+int tsfi_iucv_send(tsfi_iucv_broker *broker, int path_id, const char *msg) {
+    if (!broker || path_id < 0 || path_id >= MAX_IUCV_PATHS) return -1;
+    if (broker->paths[path_id].status != IUCV_PATH_ACTIVE) return -2;
+    strncpy(broker->paths[path_id].buffered_message, msg, sizeof(broker->paths[path_id].buffered_message) - 1);
+    broker->paths[path_id].buffered_message[sizeof(broker->paths[path_id].buffered_message) - 1] = '\0';
+    broker->paths[path_id].message_pending = 1;
+    return 0;
+}
+
+int tsfi_iucv_receive(tsfi_iucv_broker *broker, int path_id, char *msg_out) {
+    if (!broker || path_id < 0 || path_id >= MAX_IUCV_PATHS || !msg_out) return -1;
+    if (broker->paths[path_id].status != IUCV_PATH_ACTIVE || !broker->paths[path_id].message_pending) return -2;
+    strncpy(msg_out, broker->paths[path_id].buffered_message, 63);
+    msg_out[63] = '\0';
+    broker->paths[path_id].message_pending = 0;
+    return 0;
+}

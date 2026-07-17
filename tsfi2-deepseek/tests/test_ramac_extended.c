@@ -1572,6 +1572,26 @@ int main(void) {
     assert(spool_q.count == 0);
     printf("  [PASS] VM/370 card queue spool push and pop verified.\n");
 
+    // 91. VM/370 IUCV Inter-User Communication Verification
+    printf("[Test] Verifying VM/370 IUCV broker messages...\n");
+    tsfi_iucv_broker broker;
+    tsfi_iucv_broker_init(&broker);
+    
+    int path_id = tsfi_iucv_connect(&broker, "USERVM1", "USERVM2");
+    assert(path_id >= 0);
+    assert(broker.paths[path_id].status == IUCV_PATH_ACTIVE);
+    
+    int send_ok = tsfi_iucv_send(&broker, path_id, "DIRECT_IUCV_MSG_1");
+    assert(send_ok == 0);
+    assert(broker.paths[path_id].message_pending == 1);
+    
+    char recv_buf[64];
+    int recv_ok = tsfi_iucv_receive(&broker, path_id, recv_buf);
+    assert(recv_ok == 0);
+    assert(strcmp(recv_buf, "DIRECT_IUCV_MSG_1") == 0);
+    assert(broker.paths[path_id].message_pending == 0);
+    printf("  [PASS] VM/370 IUCV program-to-program messages routed successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

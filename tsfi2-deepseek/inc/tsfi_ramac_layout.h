@@ -1556,4 +1556,27 @@ void tsfi_cp_spool_queue_init(tsfi_cp_spool_queue *q);
 int tsfi_cp_spool_push(tsfi_cp_spool_queue *q, const char *data);
 int tsfi_cp_spool_pop(tsfi_cp_spool_queue *q, char *data_out);
 
+// VM/370 Inter-User Communication Vehicle (IUCV)
+#define IUCV_PATH_FREE   0
+#define IUCV_PATH_ACTIVE 1
+
+typedef struct {
+    int path_id;
+    char source_user[16];
+    char dest_user[16];
+    int status;
+    char buffered_message[64];
+    int message_pending;
+} tsfi_iucv_path;
+
+#define MAX_IUCV_PATHS 8
+typedef struct {
+    tsfi_iucv_path paths[MAX_IUCV_PATHS];
+} tsfi_iucv_broker;
+
+void tsfi_iucv_broker_init(tsfi_iucv_broker *broker);
+int tsfi_iucv_connect(tsfi_iucv_broker *broker, const char *src, const char *dest);
+int tsfi_iucv_send(tsfi_iucv_broker *broker, int path_id, const char *msg);
+int tsfi_iucv_receive(tsfi_iucv_broker *broker, int path_id, char *msg_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
