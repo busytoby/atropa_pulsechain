@@ -1930,6 +1930,44 @@ int main(void) {
     assert(tsfi_sni_gateway_translate(&gw, 0x9999, &translated_lu) == -2); // Mapping missing
     printf("  [PASS] SNA SNI gateway logical unit address translations verified.\n");
 
+    // 95. CAS Parallel Database Page Filtering Verification
+    printf("[Test] Verifying CAS page filtering...\n");
+    tsfi_cas_page pages[3];
+    pages[0].page_id = 1;
+    strcpy(pages[0].data_payload, "RECORD_VALUE_GOLD");
+    pages[0].match_tag = 0;
+    
+    pages[1].page_id = 2;
+    strcpy(pages[1].data_payload, "RECORD_VALUE_SILVER");
+    pages[1].match_tag = 0;
+    
+    pages[2].page_id = 3;
+    strcpy(pages[2].data_payload, "RECORD_VALUE_BRONZE");
+    pages[2].match_tag = 0;
+    
+    int hits = tsfi_cas_filter(pages, 3, "SILVER");
+    assert(hits == 1);
+    assert(pages[1].match_tag == 1);
+    assert(pages[0].match_tag == 0);
+    printf("  [PASS] Content-addressable storage parallel page matching verified.\n");
+    
+    // 96. IBM 3880 Mainframe Cache Controller Verification
+    printf("[Test] Verifying IBM 3880 cache hits/misses...\n");
+    tsfi_ibm3880_cache cache;
+    tsfi_ibm3880_init(&cache);
+    assert(cache.cache_hits == 0);
+    assert(cache.cache_misses == 0);
+    
+    // Read miss loads address
+    assert(tsfi_ibm3880_access(&cache, 0xABCDE, 0) == 1);
+    assert(cache.cache_misses == 1);
+    assert(cache.active_count == 1);
+    
+    // Subsequent access is hit
+    assert(tsfi_ibm3880_access(&cache, 0xABCDE, 0) == 0);
+    assert(cache.cache_hits == 1);
+    printf("  [PASS] IBM 3880 cache hit-miss counting and staging loops verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

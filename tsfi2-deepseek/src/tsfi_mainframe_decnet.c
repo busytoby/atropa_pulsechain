@@ -2719,3 +2719,50 @@ int tsfi_sni_gateway_translate(const tsfi_sni_gateway *gw, uint16_t local_lu, ui
     }
     return -2;
 }
+
+int tsfi_cas_filter(tsfi_cas_page *pages, size_t count, const char *search_term) {
+    if (!pages || count == 0 || !search_term) return -1;
+    int matches = 0;
+    for (size_t i = 0; i < count; i++) {
+        if (strstr(pages[i].data_payload, search_term) != NULL) {
+            pages[i].match_tag = 1;
+            matches++;
+        } else {
+            pages[i].match_tag = 0;
+        }
+    }
+    return matches;
+}
+
+void tsfi_ibm3880_init(tsfi_ibm3880_cache *cache) {
+    if (!cache) return;
+    cache->cache_hits = 0;
+    cache->cache_misses = 0;
+    cache->active_count = 0;
+    memset(cache->cached_addresses, 0, sizeof(cache->cached_addresses));
+}
+
+int tsfi_ibm3880_access(tsfi_ibm3880_cache *cache, uint32_t address, int is_write) {
+    if (!cache) return -1;
+    int found_idx = -1;
+    for (int i = 0; i < cache->active_count; i++) {
+        if (cache->cached_addresses[i] == address) {
+            found_idx = i;
+            break;
+        }
+    }
+    if (found_idx != -1) {
+        cache->cache_hits++;
+        return 0;
+    }
+    cache->cache_misses++;
+    if (!is_write) {
+        if (cache->active_count < 4) {
+            cache->cached_addresses[cache->active_count] = address;
+            cache->active_count++;
+        } else {
+            cache->cached_addresses[0] = address;
+        }
+    }
+    return 1;
+}

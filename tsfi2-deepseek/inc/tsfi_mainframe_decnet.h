@@ -1250,4 +1250,24 @@ void tsfi_sni_gateway_init(tsfi_sni_gateway *gw);
 int tsfi_sni_gateway_add(tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t target_lu);
 int tsfi_sni_gateway_translate(const tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t *target_lu_out);
 
+// Parallel Database Page Filter (CAS Simulator)
+typedef struct {
+    int page_id;
+    char data_payload[64];
+    int match_tag;
+} tsfi_cas_page;
+
+int tsfi_cas_filter(tsfi_cas_page *pages, size_t count, const char *search_term);
+
+// IBM 3880 Cache Controller
+typedef struct {
+    int cache_hits;
+    int cache_misses;
+    uint32_t cached_addresses[4];
+    int active_count;
+} tsfi_ibm3880_cache;
+
+void tsfi_ibm3880_init(tsfi_ibm3880_cache *cache);
+int tsfi_ibm3880_access(tsfi_ibm3880_cache *cache, uint32_t address, int is_write);
+
 #endif // TSFI_MAINFRAME_DECNET_H
