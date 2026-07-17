@@ -1099,6 +1099,23 @@ int main(void) {
     assert(current_prio_val == 200);
     printf("  [PASS] CICS INQUIRE TASK CURRENT PRIORITY verified.\n");
 
+    // 97. Verify Majordomo List Config Resetter
+    printf("[TEST] Validating Majordomo Config Resetter...\n");
+    char reset_cfg_buf[128] = {0};
+    int reset_res = tsfi_mf_majordomo_reset_config("zmm-dev", reset_cfg_buf, sizeof(reset_cfg_buf));
+    assert(reset_res == 0);
+    assert(strstr(reset_cfg_buf, "list = zmm-dev") != NULL);
+    assert(strstr(reset_cfg_buf, "moderate = yes") != NULL);
+    printf("  [PASS] Majordomo Config Resetter verified.\n");
+
+    // 98. Verify CICS System Inquire Max Tasks Limit Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM MAXTASKS...\n");
+    int maxtasks_val = 0;
+    int inq_max_res = tsfi_mf_cics_inquire_maxtasks(256, &maxtasks_val);
+    assert(inq_max_res == 0);
+    assert(maxtasks_val == 256);
+    printf("  [PASS] CICS INQUIRE SYSTEM MAXTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

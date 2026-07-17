@@ -138,5 +138,7 @@
 | 204 | CICS Task Priority Log Inquirer | PASS | Returns latest updated task priority level | Volume 33 |
 | 205 | Majordomo Config Key Getter | PASS | Reads specified list configuration parameters | Volume 33 |
 | 206 | CICS Task Current Priority Inquirer | PASS | Checks active priority value for dynamic tasks | Volume 33 |
+| 207 | Majordomo Config Resetter | PASS | Resets list configuration back to defaults | Volume 33 |
+| 208 | CICS System Max Tasks Inquirer | PASS | Checks concurrent task capacity limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 206 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 208 Scenarios validated successfully)

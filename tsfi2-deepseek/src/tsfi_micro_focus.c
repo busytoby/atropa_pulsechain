@@ -1727,3 +1727,17 @@ int tsfi_mf_cics_inquire_current_priority(uint32_t task_id, int priority_registr
     *priority_out = priority_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_reset_config(const char *list_name, char *config_in_out, int max_len) {
+    if (!list_name || !config_in_out || max_len <= 0) return -1;
+
+    snprintf(config_in_out, max_len, "list = %s\nmoderate = yes\nsubscribe = open\n", list_name);
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_maxtasks(int maxtasks_registry, int *maxtasks_out) {
+    if (!maxtasks_out) return -1;
+
+    *maxtasks_out = maxtasks_registry;
+    return 0;
+}
