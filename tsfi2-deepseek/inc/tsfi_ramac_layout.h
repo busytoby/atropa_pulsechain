@@ -1102,4 +1102,19 @@ int tsfi_cross_chain_insert(cross_chain_tracker *tracker, const char *addr, int 
 int tsfi_cross_chain_navigate_chain(cross_chain_tracker *tracker, int chain_idx);
 int tsfi_cross_chain_navigate_symbol(cross_chain_tracker *tracker, int sym_idx);
 
+// COBOL Real-Time Interrupt Controller
+typedef struct {
+    int interrupt_code;
+    char cobol_handler[64];
+} tsfi_cobol_interrupt_vector;
+
+typedef struct {
+    tsfi_cobol_interrupt_vector vectors[4];
+    int vector_count;
+} tsfi_cobol_interrupt_controller;
+
+void tsfi_interrupt_init(tsfi_cobol_interrupt_controller *ctrl);
+int tsfi_interrupt_register(tsfi_cobol_interrupt_controller *ctrl, int code, const char *handler);
+int tsfi_interrupt_dispatch(tsfi_cobol_interrupt_controller *ctrl, int code, int regs[8]);
+
 #endif // TSFI_RAMAC_LAYOUT_H

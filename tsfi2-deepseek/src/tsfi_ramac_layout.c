@@ -4699,3 +4699,45 @@ int tsfi_cross_chain_navigate_symbol(cross_chain_tracker *tracker, int sym_idx) 
     tracker->current_cross_token[sym_idx] = next;
     return next;
 }
+
+void tsfi_interrupt_init(tsfi_cobol_interrupt_controller *ctrl) {
+    if (!ctrl) return;
+    ctrl->vector_count = 0;
+    for (int i = 0; i < 4; i++) {
+        ctrl->vectors[i].interrupt_code = -1;
+        ctrl->vectors[i].cobol_handler[0] = '\0';
+    }
+}
+
+int tsfi_interrupt_register(tsfi_cobol_interrupt_controller *ctrl, int code, const char *handler) {
+    if (!ctrl || ctrl->vector_count >= 4 || !handler) return -1;
+    ctrl->vectors[ctrl->vector_count].interrupt_code = code;
+    strncpy(ctrl->vectors[ctrl->vector_count].cobol_handler, handler, sizeof(ctrl->vectors[ctrl->vector_count].cobol_handler) - 1);
+    ctrl->vectors[ctrl->vector_count].cobol_handler[sizeof(ctrl->vectors[ctrl->vector_count].cobol_handler) - 1] = '\0';
+    ctrl->vector_count++;
+    return 0;
+}
+
+int tsfi_interrupt_dispatch(tsfi_cobol_interrupt_controller *ctrl, int code, int regs[8]) {
+    if (!ctrl || !regs) return -1;
+    for (int i = 0; i < ctrl->vector_count; i++) {
+        if (ctrl->vectors[i].interrupt_code == code) {
+            const char *handler = ctrl->vectors[i].cobol_handler;
+            int rx = -1, val = -1;
+            if (sscanf(handler, "SET R%d %d", &rx, &val) == 2) {
+                if (rx >= 0 && rx < 8) regs[rx] = val;
+                return 0;
+            } else if (strncmp(handler, "COMPUTE ", 8) == 0) {
+                const char *expr = handler + 8;
+                const char *eq = strchr(expr, '=');
+                int target_r = -1;
+                if (eq && sscanf(expr, "R%d", &target_r) == 1) {
+                    int comp_val = tsfi_cobol_compute_eval(eq + 1, regs);
+                    if (target_r >= 0 && target_r < 8) regs[target_r] = comp_val;
+                    return 0;
+                }
+            }
+        }
+    }
+    return -2;
+}

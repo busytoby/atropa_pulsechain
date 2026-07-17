@@ -777,6 +777,24 @@ int main(void) {
     assert(next_cc_tok == 0);
     printf("  [PASS] Cross-chain token address ring navigations verified successfully.\n");
 
+    // 44. COBOL Real-Time Interrupt Controller Verification
+    printf("[Test] Verifying COBOL real-time interrupt dispatcher...\n");
+    tsfi_cobol_interrupt_controller int_ctrl;
+    tsfi_interrupt_init(&int_ctrl);
+    
+    tsfi_interrupt_register(&int_ctrl, 12, "SET R3 999");
+    tsfi_interrupt_register(&int_ctrl, 15, "COMPUTE R2 = R0 + R1");
+    
+    int int_regs[8] = { 100, 200, 0, 0, 0, 0, 0, 0 };
+    int disp_res = tsfi_interrupt_dispatch(&int_ctrl, 12, int_regs);
+    assert(disp_res == 0);
+    assert(int_regs[3] == 999);
+    
+    disp_res = tsfi_interrupt_dispatch(&int_ctrl, 15, int_regs);
+    assert(disp_res == 0);
+    assert(int_regs[2] == 300);
+    printf("  [PASS] Asynchronous COBOL interrupt dispatcher verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
