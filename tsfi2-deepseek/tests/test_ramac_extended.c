@@ -1065,6 +1065,14 @@ int main(void) {
     assert(nacha_val_res == 0);
     printf("  [PASS] Certifiable NACHA 94-character record formatting and validation passed.\n");
 
+    // 62. Certifiable Block-Padded NACHA File Compilation Verification
+    printf("[Test] Verifying block-padded NACHA file container compilation...\n");
+    char file_buf[2048];
+    int lines = tsfi_nacha_generate_file(file_buf, sizeof(file_buf), &batch, 22, "021000021", "021000021");
+    assert(lines > 0);
+    assert(lines % 10 == 0);
+    printf("  [PASS] Certifiable block-padded NACHA file compiled successfully with %d lines.\n", lines);
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

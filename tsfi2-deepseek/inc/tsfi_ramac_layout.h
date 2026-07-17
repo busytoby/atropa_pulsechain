@@ -1277,5 +1277,6 @@ int tsfi_ach_verify_routing(const char *routing);
 
 int tsfi_nacha_generate_entry(char *record_out, size_t max_len, uint8_t tx_code, const char *routing, const char *account, double amount);
 int tsfi_nacha_validate_record(const char *record);
+int tsfi_nacha_generate_file(char *file_out, size_t max_len, const ach_batch *batch, uint8_t tx_code, const char *origin_routing, const char *dest_routing);
 
 #endif // TSFI_RAMAC_LAYOUT_H

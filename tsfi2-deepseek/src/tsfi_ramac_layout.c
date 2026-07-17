@@ -5196,3 +5196,58 @@ int tsfi_nacha_validate_record(const char *record) {
     }
     return 0;
 }
+
+int tsfi_nacha_generate_file(char *file_out, size_t max_len, const ach_batch *batch, uint8_t tx_code, const char *origin_routing, const char *dest_routing) {
+    if (!file_out || max_len < 1000 || !batch || !origin_routing || !dest_routing) return -1;
+    if (tsfi_ach_verify_routing(origin_routing) != 0 || tsfi_ach_verify_routing(dest_routing) != 0) return -2;
+    file_out[0] = '\0';
+    size_t offset = 0;
+    int line_count = 0;
+    int written = snprintf(file_out + offset, max_len - offset,
+                           "101 %-10.10s%-10.10s2607161944A094101%9.9s%-26.26s\n",
+                           dest_routing, origin_routing, "FedReserve", "Origin Bank");
+    offset += written;
+    line_count++;
+    written = snprintf(file_out + offset, max_len - offset,
+                       "5220%-16.16s%-20.20s%-10.10sPPDDescription   260716260716   1%8.8s0000001\n",
+                       "Company Name", "Discretionary Data", "CompanyID", "FedReserve");
+    offset += written;
+    line_count++;
+    double total_amount = 0.0;
+    for (int i = 0; i < batch->count; i++) {
+        char entry_buf[96];
+        char acc_num[18];
+        snprintf(acc_num, sizeof(acc_num), "ACC%d", i);
+        int entry_res = tsfi_nacha_generate_entry(entry_buf, sizeof(entry_buf), tx_code,
+                                                   batch->entries[i].routing_number, acc_num, batch->entries[i].amount);
+        if (entry_res != 0) return -3;
+        total_amount += batch->entries[i].amount;
+        written = snprintf(file_out + offset, max_len - offset, "%s\n", entry_buf);
+        offset += written;
+        line_count++;
+    }
+    uint64_t hash_total = tsfi_ach_calc_hash_total(batch);
+    uint64_t total_cents = (uint64_t)round(total_amount * 100.0);
+    written = snprintf(file_out + offset, max_len - offset,
+                       "8220%06d%010llu%012llu%012llu%-10.10s%-25.25s%8.8s0000001\n",
+                       batch->count, (unsigned long long)(hash_total % 10000000000ULL),
+                       0ULL, (unsigned long long)total_cents, "CompanyID", "", "FedReserve");
+    offset += written;
+    line_count++;
+    int total_records = line_count + 1;
+    int block_count = (total_records + 9) / 10;
+    written = snprintf(file_out + offset, max_len - offset,
+                       "9000001%06d%08d%010llu%012llu%012llu%-39.39s\n",
+                       block_count, total_records, (unsigned long long)(hash_total % 10000000000ULL),
+                       0ULL, (unsigned long long)total_cents, "");
+    offset += written;
+    line_count++;
+    int target_lines = block_count * 10;
+    while (line_count < target_lines) {
+        written = snprintf(file_out + offset, max_len - offset,
+                           "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\n");
+        offset += written;
+        line_count++;
+    }
+    return line_count;
+}
