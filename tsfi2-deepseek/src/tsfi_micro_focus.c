@@ -833,3 +833,13 @@ int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, ch
 
     return 0;
 }
+
+int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset) {
+    if (!storage_pool || !allocated_offset) return -1;
+
+    uint8_t comm_block[2];
+    comm_block[0] = player_id;
+    comm_block[1] = playfield_id;
+
+    return tsfi_mf_cics_link("COLDETCT", comm_block, 2, storage_pool, allocated_offset);
+}

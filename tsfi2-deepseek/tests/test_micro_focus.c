@@ -448,6 +448,19 @@ int main(void) {
     assert(strstr(appc_buffer, "UX STATE: CONFIRM") != NULL);
     printf("  [PASS] Vulkan APPC Session Layout verified.\n");
 
+    // 29. Verify PMG Collision Handler Coordinator
+    printf("[TEST] Validating PMG Collision Handler Coordinator...\n");
+    uint8_t pmg_pool[512] = {0};
+    uint32_t pmg_offset = 0;
+    int pmg_coll_res = tsfi_mf_pmg_handle_collision(2, 4, pmg_pool, &pmg_offset);
+    assert(pmg_coll_res == 12);
+    assert(pmg_offset == 14);
+    assert(tsfi_mf_comp5_decode(pmg_pool, 4, 0) == 2);
+    assert(memcmp(pmg_pool + 4, "COLDETCT", 8) == 0);
+    assert(pmg_pool[12] == 2);
+    assert(pmg_pool[13] == 4);
+    printf("  [PASS] PMG Collision Handler Coordinator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
