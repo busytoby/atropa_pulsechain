@@ -1746,4 +1746,15 @@ int tsfi_cp_msg_send(const tsfi_cp_directory *dir, const char *sender, const cha
 // VM/370 CP WARNING Broadcast Manager
 int tsfi_cp_warning_broadcast(const tsfi_cp_directory *dir, const char *sender_uid, const char *warn_text, char out_terminals[8][128], int *broadcast_count);
 
+// VM/370 CP Virtual Terminal Sleep Manager
+typedef struct {
+    int is_sleeping;
+    int remaining_seconds;
+} tsfi_cp_terminal_sleep;
+
+void tsfi_cp_sleep_init(tsfi_cp_terminal_sleep *t);
+int tsfi_cp_sleep_start(tsfi_cp_terminal_sleep *t, int seconds);
+int tsfi_cp_sleep_tick(tsfi_cp_terminal_sleep *t);
+int tsfi_cp_sleep_interrupt(tsfi_cp_terminal_sleep *t);
+
 #endif // TSFI_RAMAC_LAYOUT_H

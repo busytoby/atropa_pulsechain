@@ -1868,6 +1868,26 @@ int main(void) {
     assert(tsfi_cp_warning_broadcast(&dir_brd, "USER1", "SHUTDOWN IN 5 MIN", warn_terms, &brd_count) == -2);
     printf("  [PASS] VM/370 CP console warning broadcast permissions verified.\n");
 
+    // 105. VM/370 CP Virtual Terminal Sleep Manager Verification
+    printf("[Test] Verifying VM/370 CP Terminal Sleep states...\n");
+    tsfi_cp_terminal_sleep sleep_state;
+    tsfi_cp_sleep_init(&sleep_state);
+    assert(sleep_state.is_sleeping == 0);
+    
+    // Start terminal sleep
+    assert(tsfi_cp_sleep_start(&sleep_state, 10) == 0);
+    assert(sleep_state.is_sleeping == 1);
+    assert(sleep_state.remaining_seconds == 10);
+    
+    // Tick timer down
+    assert(tsfi_cp_sleep_tick(&sleep_state) == 9);
+    
+    // Interrupt sleep
+    assert(tsfi_cp_sleep_interrupt(&sleep_state) == 0);
+    assert(sleep_state.is_sleeping == 0);
+    assert(sleep_state.remaining_seconds == 0);
+    printf("  [PASS] VM/370 CP virtual terminal sleep countdown and interrupt verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

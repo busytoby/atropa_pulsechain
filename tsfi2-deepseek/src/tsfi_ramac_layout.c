@@ -6485,3 +6485,33 @@ int tsfi_cp_warning_broadcast(const tsfi_cp_directory *dir, const char *sender_u
     }
     return 0;
 }
+
+void tsfi_cp_sleep_init(tsfi_cp_terminal_sleep *t) {
+    if (!t) return;
+    t->is_sleeping = 0;
+    t->remaining_seconds = 0;
+}
+
+int tsfi_cp_sleep_start(tsfi_cp_terminal_sleep *t, int seconds) {
+    if (!t || seconds <= 0) return -1;
+    t->is_sleeping = 1;
+    t->remaining_seconds = seconds;
+    return 0;
+}
+
+int tsfi_cp_sleep_tick(tsfi_cp_terminal_sleep *t) {
+    if (!t || !t->is_sleeping) return 0;
+    t->remaining_seconds--;
+    if (t->remaining_seconds <= 0) {
+        t->remaining_seconds = 0;
+        t->is_sleeping = 0;
+    }
+    return t->remaining_seconds;
+}
+
+int tsfi_cp_sleep_interrupt(tsfi_cp_terminal_sleep *t) {
+    if (!t) return -1;
+    t->is_sleeping = 0;
+    t->remaining_seconds = 0;
+    return 0;
+}
