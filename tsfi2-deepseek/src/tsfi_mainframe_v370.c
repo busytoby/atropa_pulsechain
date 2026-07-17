@@ -1355,3 +1355,42 @@ int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip
     }
     return -1;
 }
+
+int tsfi_codasyl_to_relational_translate(const tsfi_codasyl_schema *schema, char *out_sql, int max_len) {
+    if (!schema || !out_sql || max_len <= 0) return -1;
+    out_sql[0] = '\0';
+    
+    int write_len = 0;
+    
+    for (int r = 0; r < schema->record_count; r++) {
+        char table_sql[128];
+        snprintf(table_sql, sizeof(table_sql), "CREATE TABLE %s (ID INT PRIMARY KEY, DATA CHAR(%d)); ", 
+                 schema->records[r].record_name, 
+                 schema->records[r].record_len);
+        
+        int temp_len = strlen(table_sql);
+        if (write_len + temp_len < max_len - 1) {
+            strcpy(out_sql + write_len, table_sql);
+            write_len += temp_len;
+        } else {
+            return -2;
+        }
+    }
+    
+    for (int s = 0; s < schema->set_count; s++) {
+        char set_sql[256];
+        snprintf(set_sql, sizeof(set_sql), "ALTER TABLE %s ADD FOREIGN KEY (OWNER_ID) REFERENCES %s (ID); ", 
+                 schema->sets[s].member_record, 
+                 schema->sets[s].owner_record);
+                 
+        int temp_len = strlen(set_sql);
+        if (write_len + temp_len < max_len - 1) {
+            strcpy(out_sql + write_len, set_sql);
+            write_len += temp_len;
+        } else {
+            return -2;
+        }
+    }
+    
+    return 0;
+}

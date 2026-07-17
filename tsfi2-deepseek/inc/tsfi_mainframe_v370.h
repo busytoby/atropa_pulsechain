@@ -451,4 +451,6 @@ int tsfi_zvm_23_tree_add_node(tsfi_zvm_23_tree *tree, int key, const char *dat_b
 int tsfi_zvm_23_tree_mount(tsfi_zvm_23_tree *tree, int key, const char *client_ip);
 int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip, const char *dml_statement, int *out_db_status);
 
+int tsfi_codasyl_to_relational_translate(const tsfi_codasyl_schema *schema, char *out_sql, int max_len);
+
 #endif // TSFI_MAINFRAME_V370_H

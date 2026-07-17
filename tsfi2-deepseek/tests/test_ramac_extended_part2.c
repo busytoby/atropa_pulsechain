@@ -1329,6 +1329,14 @@ int main(void) {
     assert(call_status == 101);
     printf("  [PASS] 2-3 tree client mount and call capabilities verified.\n");
 
+    // 136. CODASYL DDL to Relational Schema Translator Verification
+    printf("[Test] Verifying CODASYL DDL to Relational Translator...\n");
+    char sql_buf[512];
+    assert(tsfi_codasyl_to_relational_translate(&schema, sql_buf, sizeof(sql_buf)) == 0);
+    assert(strstr(sql_buf, "CREATE TABLE CUSTREC (ID INT PRIMARY KEY, DATA CHAR(128));") != NULL);
+    assert(strstr(sql_buf, "ALTER TABLE ORDERREC ADD FOREIGN KEY (OWNER_ID) REFERENCES CUSTREC (ID);") != NULL);
+    printf("  [PASS] CODASYL schema successfully translated into relational SQL schemas.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
