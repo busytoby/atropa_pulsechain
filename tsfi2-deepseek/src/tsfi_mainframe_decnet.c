@@ -2941,3 +2941,43 @@ int tsfi_audit_constraint(const tsfi_dictionary_constraint *constraints, size_t 
     }
     return -3;
 }
+
+void tsfi_sna_path_init(tsfi_sna_path_control *pc) {
+    if (!pc) return;
+    pc->route_count = 0;
+    memset(pc->routes, 0, sizeof(pc->routes));
+}
+
+int tsfi_sna_path_add(tsfi_sna_path_control *pc, uint8_t subarea, uint8_t element, int cost) {
+    if (!pc || pc->route_count >= 8) return -1;
+    pc->routes[pc->route_count].subarea_id = subarea;
+    pc->routes[pc->route_count].element_id = element;
+    pc->routes[pc->route_count].explicit_route_cost = cost;
+    pc->route_count++;
+    return 0;
+}
+
+int tsfi_sna_path_route(const tsfi_sna_path_control *pc, uint8_t subarea, int *cost_out) {
+    if (!pc || !cost_out) return -1;
+    for (int i = 0; i < pc->route_count; i++) {
+        if (pc->routes[i].subarea_id == subarea) {
+            *cost_out = pc->routes[i].explicit_route_cost;
+            return 0;
+        }
+    }
+    return -2;
+}
+
+void tsfi_vtam_buf_init(tsfi_vtam_buf_session *sess, int sess_id) {
+    if (!sess) return;
+    sess->session_id = sess_id;
+    sess->buffer_allocation = 0;
+    sess->data_flow_state = -1;
+}
+
+int tsfi_vtam_buf_bind(tsfi_vtam_buf_session *sess, int buffer_size) {
+    if (!sess || buffer_size <= 0) return -1;
+    sess->buffer_allocation = buffer_size;
+    sess->data_flow_state = 1;
+    return 0;
+}

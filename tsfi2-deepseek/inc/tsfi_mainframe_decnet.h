@@ -1352,4 +1352,30 @@ typedef struct {
 
 int tsfi_audit_constraint(const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val);
 
+// SNA Path Control Routing Engine
+typedef struct {
+    uint8_t subarea_id;
+    uint8_t element_id;
+    int explicit_route_cost;
+} tsfi_sna_pc_route;
+
+typedef struct {
+    tsfi_sna_pc_route routes[8];
+    int route_count;
+} tsfi_sna_path_control;
+
+void tsfi_sna_path_init(tsfi_sna_path_control *pc);
+int tsfi_sna_path_add(tsfi_sna_path_control *pc, uint8_t subarea, uint8_t element, int cost);
+int tsfi_sna_path_route(const tsfi_sna_path_control *pc, uint8_t subarea, int *cost_out);
+
+// VTAM Session Initiator & Buffer Manager
+typedef struct {
+    int session_id;
+    int buffer_allocation;
+    int data_flow_state;
+} tsfi_vtam_buf_session;
+
+void tsfi_vtam_buf_init(tsfi_vtam_buf_session *sess, int sess_id);
+int tsfi_vtam_buf_bind(tsfi_vtam_buf_session *sess, int buffer_size);
+
 #endif // TSFI_MAINFRAME_DECNET_H

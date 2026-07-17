@@ -2140,6 +2140,33 @@ int main(void) {
     assert(tsfi_audit_constraint(rules, 2, 10, 3) == -2); // Out of bounds
     assert(tsfi_audit_constraint(rules, 2, 99, 8) == -3); // Column missing
     printf("  [PASS] Relational database partition range constraint checks verified.\n");
+    
+    // 106. SNA Path Control Route verification
+    printf("[Test] Verifying SNA Path Control routing tables...\n");
+    tsfi_sna_path_control pc;
+    tsfi_sna_path_init(&pc);
+    assert(pc.route_count == 0);
+    
+    assert(tsfi_sna_path_add(&pc, 12, 1, 10) == 0);
+    assert(pc.route_count == 1);
+    
+    int route_cost = 0;
+    assert(tsfi_sna_path_route(&pc, 12, &route_cost) == 0);
+    assert(route_cost == 10);
+    assert(tsfi_sna_path_route(&pc, 99, &route_cost) == -2);
+    printf("  [PASS] SNA subarea path control route table resolution verified.\n");
+    
+    // 107. VTAM Session Bindings verification
+    printf("[Test] Verifying VTAM session buffer bindings...\n");
+    tsfi_vtam_buf_session buf_sess;
+    tsfi_vtam_buf_init(&buf_sess, 4001);
+    assert(buf_sess.session_id == 4001);
+    assert(buf_sess.data_flow_state == -1); // unbound
+    
+    assert(tsfi_vtam_buf_bind(&buf_sess, 2048) == 0);
+    assert(buf_sess.buffer_allocation == 2048);
+    assert(buf_sess.data_flow_state == 1); // bound
+    printf("  [PASS] VTAM session allocation and flow bindings verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
