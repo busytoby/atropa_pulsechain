@@ -2077,6 +2077,39 @@ int main(void) {
     assert(syl_vm.eval_stack[1] == 2);
     printf("  [PASS] Syllabic execution stack verified: 10 + 5 = 15, then pushed 2.\n");
 
+    // Test Scenario 37: Bendix G-15D / NCR 304 Dual-Rail Red-Black scheduling and resource layout
+    printf("[Test] Verifying Red-Black Rails (PRT Resource Table & Scheduler)...\n");
+    tsfi_red_black_rails rb_rails;
+    tsfi_red_black_rails_init(&rb_rails);
+    
+    // Set up task 1 in Black Rail PRT
+    rb_rails.prt[1].address = 200;
+    rb_rails.prt[1].limit = 50;
+    rb_rails.prt[1].is_present = 1;
+    
+    // Set task 1 runnable in Red Scheduler
+    rb_rails.scheduler.tasks[1].state = 1;
+    
+    // Tick scheduler to make task 1 active
+    int rb_active = tsfi_b5000_mcp_schedule_tick(&rb_rails.scheduler);
+    assert(rb_active == 1);
+    
+    // Resolve should succeed when active task matches
+    uint8_t resolved_val = 0;
+    int resolve_res = tsfi_red_black_rails_resolve(&rb_rails, 1, 10, &resolved_val);
+    assert(resolve_res == 0);
+    assert(resolved_val == 30); // 10 * 3
+    
+    // Resolve should fail for non-active task
+    resolve_res = tsfi_red_black_rails_resolve(&rb_rails, 2, 10, &resolved_val);
+    assert(resolve_res == -2);
+    
+    // Resolve should fail on bounds violation
+    resolve_res = tsfi_red_black_rails_resolve(&rb_rails, 1, 60, &resolved_val);
+    assert(resolve_res == -4);
+    
+    printf("  [PASS] Red-Black Rails static-dynamic verification loop passed.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 

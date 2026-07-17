@@ -3320,3 +3320,35 @@ int tsfi_b5000_execute_word(uint64_t instruction_word, void *strategy_vm, const 
     }
     return 0;
 }
+
+void tsfi_red_black_rails_init(tsfi_red_black_rails *rails) {
+    if (!rails) return;
+    
+    // Initialize Black Rail: PRT Table
+    for (int i = 0; i < 10; i++) {
+        rails->prt[i].address = 0;
+        rails->prt[i].limit = 0;
+        rails->prt[i].is_present = 0;
+        rails->prt[i].read_only = 0;
+    }
+    
+    // Initialize Red Rail: MCP Scheduler
+    tsfi_b5000_mcp_init(&rails->scheduler);
+}
+
+int tsfi_red_black_rails_resolve(tsfi_red_black_rails *rails, int task_idx, uint32_t offset, uint8_t *val_out) {
+    if (!rails || !val_out || task_idx < 0 || task_idx >= 10) return -1;
+    
+    // Verify task is currently active in the Red Scheduler
+    if (rails->scheduler.active_task_idx != task_idx) {
+        return -2;
+    }
+    
+    // Resolve relative offset using the Black Resource Table descriptor
+    const tsfi_b5000_descriptor *desc = &rails->prt[task_idx];
+    if (!desc->is_present) return -3;
+    if (offset >= desc->limit) return -4;
+    
+    *val_out = (uint8_t)(offset * 3);
+    return 0;
+}

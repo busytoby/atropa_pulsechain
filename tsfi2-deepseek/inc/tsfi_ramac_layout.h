@@ -662,4 +662,13 @@ int tsfi_b5000_mcp_yield_active(tsfi_b5000_mcp_scheduler *sched, int block_reaso
 int tsfi_b5000_decode_syllable(uint16_t syllable, uint8_t *type_out, uint16_t *val_out);
 int tsfi_b5000_execute_word(uint64_t instruction_word, void *strategy_vm, const uint8_t *memory, const tsfi_b5000_descriptor *prt, int prt_size);
 
+// Bendix G-15D / NCR 304 Dual-Rail Red-Black scheduling and resource layout
+typedef struct {
+    tsfi_b5000_descriptor prt[10];      // Black Rail: Stable PRT Resource Table
+    tsfi_b5000_mcp_scheduler scheduler; // Red Rail: Active Red Scheduler
+} tsfi_red_black_rails;
+
+void tsfi_red_black_rails_init(tsfi_red_black_rails *rails);
+int tsfi_red_black_rails_resolve(tsfi_red_black_rails *rails, int task_idx, uint32_t offset, uint8_t *val_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
