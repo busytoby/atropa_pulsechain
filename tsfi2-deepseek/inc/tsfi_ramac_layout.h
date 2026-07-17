@@ -1151,4 +1151,16 @@ void tsfi_rmag_init(rmag_processor *proc);
 int tsfi_rmag_define(rmag_processor *proc, const char *name, const char *template_str);
 int tsfi_rmag_expand(rmag_processor *proc, const char *input, const char *arg, char *output, size_t max_len);
 
+// 1969 ARPANET IMP Routing
+typedef struct {
+    uint8_t src_imp;
+    uint8_t dest_imp;
+    uint8_t link_num;
+    uint8_t msg_type;
+} imp_header;
+
+void tsfi_imp_format(imp_header *hdr, uint8_t src, uint8_t dest, uint8_t link, uint8_t type);
+int tsfi_imp_route(const imp_header *hdr, int active_nodes[4]);
+int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *routed_output, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -4869,3 +4869,32 @@ int tsfi_rmag_expand(rmag_processor *proc, const char *input, const char *arg, c
     output[max_len - 1] = '\0';
     return -2;
 }
+
+void tsfi_imp_format(imp_header *hdr, uint8_t src, uint8_t dest, uint8_t link, uint8_t type) {
+    if (!hdr) return;
+    hdr->src_imp = src;
+    hdr->dest_imp = dest;
+    hdr->link_num = link;
+    hdr->msg_type = type;
+}
+
+int tsfi_imp_route(const imp_header *hdr, int active_nodes[4]) {
+    if (!hdr || !active_nodes) return -1;
+    int target_idx = hdr->dest_imp % 4;
+    if (active_nodes[target_idx]) {
+        return target_idx;
+    }
+    for (int i = 0; i < 4; i++) {
+        if (active_nodes[i] && i != target_idx) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *routed_output, size_t max_len) {
+    if (!hdr || !bgp_payload || !routed_output || max_len == 0) return -1;
+    int bytes = snprintf(routed_output, max_len, "[IMP_ROUTE src=%d dest=%d link=%d type=%d] %s",
+                         hdr->src_imp, hdr->dest_imp, hdr->link_num, hdr->msg_type, bgp_payload);
+    return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -2;
+}

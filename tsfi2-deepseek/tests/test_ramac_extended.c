@@ -884,6 +884,23 @@ int main(void) {
     assert(strcmp(proof_out, "Theorem: Correctness of Zero-Copy PPU Shared Ring Buffer. Invariant: memory_copies(s) == 0. Q.E.D.") == 0);
     printf("  [PASS] Formal proof generation templates verified successfully.\n");
 
+    // 50. 1969 ARPANET IMP Packet Routing Verification
+    printf("[Test] Verifying ARPANET IMP packet routing...\n");
+    imp_header test_hdr;
+    tsfi_imp_format(&test_hdr, 1, 2, 63, 0);
+    assert(test_hdr.src_imp == 1);
+    assert(test_hdr.dest_imp == 2);
+    
+    int active_nodes[4] = { 1, 1, 0, 1 };
+    int next_hop = tsfi_imp_route(&test_hdr, active_nodes);
+    assert(next_hop == 0 || next_hop == 1 || next_hop == 3);
+    
+    char route_str[256];
+    int proxy_res = tsfi_bgp_proxy_route(&test_hdr, "BGP_OPEN", route_str, sizeof(route_str));
+    assert(proxy_res == 0);
+    assert(strcmp(route_str, "[IMP_ROUTE src=1 dest=2 link=63 type=0] BGP_OPEN") == 0);
+    printf("  [PASS] IMP packet encapsulation and proxy routing verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
