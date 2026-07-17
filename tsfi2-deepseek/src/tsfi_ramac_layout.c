@@ -3771,3 +3771,39 @@ void tsfi_cobol_report_writer(const char *title, int total_acc, char *output_rep
              "========================================\n",
              title, total_acc);
 }
+
+int tsfi_codasyl_dml_find(const tsfi_codasyl_subschema *subschema, const tsfi_codasyl_dbtg_set *sets, int set_count, int relation_id) {
+    if (!subschema || !sets || set_count <= 0) return -1;
+    
+    int authorized = 0;
+    for (int i = 0; i < 4; i++) {
+        if (subschema->allowed_relation_ids[i] == relation_id) {
+            authorized = 1;
+            break;
+        }
+    }
+    if (!authorized) return -2;
+    
+    for (int i = 0; i < set_count; i++) {
+        if (sets[i].relation_id == relation_id) {
+            return i;
+        }
+    }
+    return -3;
+}
+
+void tsfi_codasyl_checkpoint_save(const tsfi_codasyl_dbtg_set *sets, int count, tsfi_codasyl_checkpoint *checkpoint) {
+    if (!sets || count <= 0 || !checkpoint) return;
+    checkpoint->active_relations_count = count > 10 ? 10 : count;
+    for (int i = 0; i < checkpoint->active_relations_count; i++) {
+        checkpoint->saved_relation_ids[i] = sets[i].relation_id;
+    }
+}
+
+void tsfi_codasyl_checkpoint_rollback(tsfi_codasyl_dbtg_set *sets, int *count, const tsfi_codasyl_checkpoint *checkpoint) {
+    if (!sets || !count || !checkpoint) return;
+    *count = checkpoint->active_relations_count;
+    for (int i = 0; i < *count; i++) {
+        sets[i].relation_id = checkpoint->saved_relation_ids[i];
+    }
+}

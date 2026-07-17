@@ -783,4 +783,22 @@ int tsfi_cobol_sort_merge(const tsfi_cobol_fd *fd, tsfi_ramac_card *cards, int c
 // COBOL Report Writer Division
 void tsfi_cobol_report_writer(const char *title, int total_acc, char *output_report, int max_len);
 
+// CODASYL DBTG Subschema Mapping
+typedef struct {
+    char subschema_name[32];
+    int allowed_relation_ids[4]; // Authorized relations subset
+} tsfi_codasyl_subschema;
+
+// CODASYL DBTG DML (Data Manipulation Language) commands
+int tsfi_codasyl_dml_find(const tsfi_codasyl_subschema *subschema, const tsfi_codasyl_dbtg_set *sets, int set_count, int relation_id);
+
+// CODASYL Transaction Recovery / Rollback Protocol
+typedef struct {
+    int saved_relation_ids[10];
+    int active_relations_count;
+} tsfi_codasyl_checkpoint;
+
+void tsfi_codasyl_checkpoint_save(const tsfi_codasyl_dbtg_set *sets, int count, tsfi_codasyl_checkpoint *checkpoint);
+void tsfi_codasyl_checkpoint_rollback(tsfi_codasyl_dbtg_set *sets, int *count, const tsfi_codasyl_checkpoint *checkpoint);
+
 #endif // TSFI_RAMAC_LAYOUT_H

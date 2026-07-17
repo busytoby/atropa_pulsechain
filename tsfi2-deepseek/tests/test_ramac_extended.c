@@ -157,6 +157,39 @@ int main(void) {
     assert(strstr(report_out, "45000") != NULL);
     printf("  [PASS] COBOL Report Writer Division verified.\n");
 
+    // 9. CODASYL DBTG Subschema, DML, and Transaction Checkpoint Verification
+    printf("[Test] Verifying CODASYL DML find & transactional rollback...\n");
+    tsfi_codasyl_subschema sub;
+    strcpy(sub.subschema_name, "FINANCE_SUB");
+    sub.allowed_relation_ids[0] = 101;
+    sub.allowed_relation_ids[1] = 102;
+    sub.allowed_relation_ids[2] = -1;
+    
+    tsfi_codasyl_dbtg_set sets[2];
+    sets[0].relation_id = 101;
+    sets[1].relation_id = 105;
+    
+    // Relation 101 is authorized and present
+    int dml_find_res = tsfi_codasyl_dml_find(&sub, sets, 2, 101);
+    assert(dml_find_res == 0);
+    
+    // Relation 105 is NOT authorized in subschema -> should fail
+    dml_find_res = tsfi_codasyl_dml_find(&sub, sets, 2, 105);
+    assert(dml_find_res == -2);
+    
+    // Checkpoint transaction state
+    tsfi_codasyl_checkpoint checkpoint;
+    tsfi_codasyl_checkpoint_save(sets, 2, &checkpoint);
+    
+    // Mutate relation
+    sets[0].relation_id = 999;
+    
+    // Rollback to restore
+    int active_cnt = 2;
+    tsfi_codasyl_checkpoint_rollback(sets, &active_cnt, &checkpoint);
+    assert(sets[0].relation_id == 101);
+    printf("  [PASS] CODASYL DML and transaction rollback verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
